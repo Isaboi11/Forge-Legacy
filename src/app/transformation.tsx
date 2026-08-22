@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -25,6 +25,7 @@ import {
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { usePersist } from '@/hooks/usePersist';
+import { ensurePhotoReminder } from '@/lib/photo-reminder';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -64,6 +65,14 @@ export default function TransformationRoute() {
     }, [refetch]),
   );
 
+  /* Re-schedule only if the preference says ON and the OS is holding nothing — a reinstall or a
+     restored backup keeps the stored preference and loses the notification. `ensurePhotoReminder` is a
+     no-op when one already exists, which is what stops a frequent visitor resetting their own countdown
+     forever; see its header. Never prompts. */
+  useEffect(() => {
+    if (remind?.enabled) void ensurePhotoReminder(true, remind.freq);
+  }, [remind?.enabled, remind?.freq]);
+
   const entries = data ?? [];
   const newestId = entries[0]?.id ?? null;
 
@@ -81,12 +90,25 @@ export default function TransformationRoute() {
   const summaryLine = `${entries.length} progress ${entries.length === 1 ? 'entry' : 'entries'} across ${groups.length} ${groups.length === 1 ? 'chapter' : 'chapters'}`;
 
   const r: Remind = remind ?? { enabled: false, freq: 'monthly' };
-  const toggleRemind = () => {
-    persist(() => setRemind({ ...r, enabled: !r.enabled }), { onOk: refetchRemind });
+  /*
+   * ⚠ THE SWITCH IS NOT ALLOWED TO CLAIM "On" ON ITS OWN AUTHORITY.
+   *
+   * This row spent months saying "On · monthly" while nothing was scheduled (see `setRemind`). The fix
+   * to the scheduler leaves one way for that same silence to come back: iOS accepts the schedule and
+   * never displays it, because notifications are off for the app. `setRemind` now reports what the
+   * device actually did, and the row says so.
+   */
+  const [blocked, setBlocked] = useState(false);
+  const applyRemind = (next: Remind) => {
+    persist(() => setRemind(next), {
+      onOk: (res) => {
+        setBlocked(res === 'denied');
+        refetchRemind();
+      },
+    });
   };
-  const pickFreq = (f: RemindFreq) => {
-    persist(() => setRemind({ ...r, freq: f }), { onOk: refetchRemind });
-  };
+  const toggleRemind = () => applyRemind({ ...r, enabled: !r.enabled });
+  const pickFreq = (f: RemindFreq) => applyRemind({ ...r, freq: f });
 
   const doDelete = () => {
     if (!confirmDelete || deleting) return;
@@ -141,12 +163,19 @@ export default function TransformationRoute() {
           <BellGlyph />
           <View style={styles.remindText}>
             <Text style={styles.remindTitle}>Capture reminder</Text>
-            <Text style={styles.remindSub}>{r.enabled ? `On · ${FREQ_LABEL[r.freq]}` : 'Off'}</Text>
+            <Text style={styles.remindSub}>
+              {!r.enabled ? 'Off' : blocked ? 'Notifications are off for Forge' : `On · ${FREQ_LABEL[r.freq]}`}
+            </Text>
           </View>
           <Pressable onPress={toggleRemind} accessibilityRole="switch" accessibilityState={{ checked: r.enabled }} accessibilityLabel="Toggle capture reminder" style={[styles.switch, r.enabled ? styles.switchOn : styles.switchOff]}>
             <View style={[styles.knob, r.enabled ? styles.knobOn : styles.knobOff]} />
           </Pressable>
         </View>
+        {r.enabled && blocked ? (
+          <Text style={styles.remindBlocked}>
+            Turn notifications on for Forge Legacy in your phone&apos;s Settings and this will start.
+          </Text>
+        ) : null}
         {r.enabled ? (
           <View style={styles.freqRow}>
             {FREQ_OPTS.map(([f, lbl]) => {
@@ -418,6 +447,7 @@ const styles = StyleSheet.create({
   remindRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal700 },
   remindText: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'baseline', gap: 7 },
   remindTitle: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
+  remindBlocked: { fontSize: 11, lineHeight: 15, color: flColor.gray600, paddingHorizontal: 12, paddingTop: 6 },
   remindSub: { fontSize: 10.5, color: flColor.gray600 },
   switch: { width: 38, height: 22, borderRadius: flRadius.pill, borderWidth: 1, justifyContent: 'center' },
   switchOn: { backgroundColor: flColor.bronze400, borderColor: flColor.bronzeBorder },

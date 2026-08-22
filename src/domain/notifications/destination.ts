@@ -36,6 +36,7 @@ export type NotificationDestination =
   | { pathname: '/workout-join'; params: { athlete: string } }
   | { pathname: '/squad/[id]'; params: { id: string } }
   | { pathname: '/squad-post/[id]'; params: { id: string } }
+  | '/transformation'
   | '/friends'
   | '/discover-squads'
   | '/'
@@ -118,6 +119,17 @@ export function destinationFor(n: NotificationTarget): NotificationDestination {
      */
     case 'training_briefing':
       return '/';
+    /*
+     * The one LOCAL notification in this file — scheduled on the device by `lib/photo-reminder`, not
+     * sent by anything. It routes here rather than through a special case in `push.tsx` precisely so it
+     * cannot drift: a reminder tap and a push tap resolve through the same function.
+     *
+     * ⚠ WITHOUT THIS ARM IT WOULD HAVE WORKED, WRONGLY. The `default` below carries no `squadId` for
+     * this kind and would have landed the athlete on `/inbox` — a screen that will never contain the
+     * reminder they just tapped, because a local notification writes no feed row.
+     */
+    case 'progress_photo':
+      return '/transformation';
     default:
       return n.squadId ? { pathname: '/squad/[id]', params: { id: n.squadId } } : '/inbox';
   }

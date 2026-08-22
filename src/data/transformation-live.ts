@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
+import { syncPhotoReminder, type ReminderResult } from '@/lib/photo-reminder';
 
 /**
  * Transformation gallery data (L-17) — a personal, owner-scoped progress-photo archive (migration 0044).
@@ -188,6 +189,8 @@ export async function uploadTransformationMedia(draftId: string, key: PoseKey | 
 }
 
 // ── Capture reminder (device-local) ──
+// The scheduling half lives in `lib/photo-reminder` — see its header for why this is a local
+// notification rather than a push, and why it ships over the air.
 export type RemindFreq = 'weekly' | 'biweekly' | 'monthly';
 export interface Remind {
   enabled: boolean;
@@ -207,12 +210,25 @@ export async function getRemind(): Promise<Remind> {
   }
   return { enabled: false, freq: 'monthly' };
 }
-export async function setRemind(r: Remind): Promise<void> {
+/**
+ * Save the preference AND make the device obey it.
+ *
+ * ⚠ THE SCHEDULING CALL IS THE WHOLE POINT OF THIS FUNCTION NOW. For months this wrote a key that
+ * nothing read — the switch moved, the sub-line said "On · monthly", and no reminder was ever
+ * scheduled (PO: *"hasn't sent any reminders for progress pics even though I did"*). The write and the
+ * schedule live in ONE function so that cannot come apart again: there is no way to record the
+ * preference without acting on it.
+ *
+ * Returns what the device actually did, so the screen can stop claiming "On" when iOS has notifications
+ * turned off for the app — which would reproduce this exact bug one layer down.
+ */
+export async function setRemind(r: Remind): Promise<ReminderResult> {
   try {
     await AsyncStorage.setItem(REMIND_KEY, JSON.stringify(r));
   } catch {
     // best-effort device pref
   }
+  return syncPhotoReminder(r.enabled, r.freq);
 }
 
 /**
