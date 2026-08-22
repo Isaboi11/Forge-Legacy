@@ -1,7 +1,7 @@
 # Forge Legacy — Status Archive, August 2026
 
 **Type:** Historical record, split out of `Forge-Legacy-Master-Status.md`
-**Covers:** the 41 Recently-Completed entries below the 15 most recent, as of 2026-08-21
+**Covers:** the 42 Recently-Completed entries below the 15 most recent, as of 2026-08-22
 
 > ## Why this file exists
 >
@@ -22,6 +22,31 @@
 > **Read this file when the dashboard does not explain something.** It is the same content, one level back.
 
 ---
+
+### 0. ⭐ Business operations — the support channel, and the programs panel that was fabricating drop-offs (2026-08-17, `0166` + `0167` **APPLIED — verified 2026-08-18** · app code OTA-safe · site NOT redeployed)
+
+> **✅ CORRECTED 2026-08-18: BOTH MIGRATIONS ARE APPLIED.** This heading read *"AUTHORED NOT APPLIED"* and was stale in the **"still to do"** direction — the same failure as the eleven applied files once listed as pending, and the reason `supabase/apply/preflight-*.sql` exists at all. Asked of the live catalogue rather than the ledger by `supabase/apply/preflight-0166-0167.sql`: all six objects report `PRESENT` — `admin_feature_adoption` (0166), and `feedback`, `is_app_admin`, `admin_guard`, `feedback_tg_rate_limit`, `feedback_tg_touch` (0167).
+>
+> It was checked because the web deploy was about to ship `feedback-live.ts` and the "Send Feedback" settings row against them. Had the note been true, that button would have errored on tap for every athlete.
+
+**The ask was "a dashboard for literally everything about the business."** The answer was that four of the six things named — revenue, crashes, support, suggestions — **generate no data at all**, so panels for them would render `0` and a `0` reads as a fact. Order inverted: turn on collection now, build the viewing page after launch. Decisions taken: the business dashboard will live as a password-protected page on **forgelegacy.app** reusing the `app_admins` gate (not in the app); **pre-launch is data-gaps only**; website scope is **traffic visibility only**, no CMS.
+
+**⚠ TWO NUMBERS ON THE SHIPPED DASHBOARD WERE WRONG, AND ONE WAS FABRICATED.** `admin_feature_adoption` (0130:533) still hardcoded the pre-`0155` enum. Completed short programs were invisible — the `finished` key was never emitted and `num()` coerces a missing key to `0` — and worse, the drop-off exclusion read `state in ('graduated','ended_early')`, so **every successfully finished short program untouched for 21 days was counted as somebody who quit**. The panel did not read low; it invented abandonment out of completions. ⚠ The comment at `admin-live.ts:373` promised the fix landed in "migration 0157" and named `admin_program_metrics` — `0157` is `week_templates` and **no such function has ever existed**. It was never written. The on-screen subtitle had meanwhile always claimed *"and not finished"*, so the copy had been describing behaviour the SQL never had.
+
+**Shipped:**
+- **`0166_admin_programs_finished.sql`** — `finished` becomes its own bucket and joins the drop-off exclusion. ⚠ Kept **separate from `graduated`, never summed**: D-RCM-30 gives a sub-4-week program no rank credit, and `honor_metrics()` / `rank-live.ts` both filter `state = 'graduated'` — merging them would make the dashboard disagree with the rank engine. Label corrected from "Weeks completed" (which counted *programs*) to "Finished (under 4 weeks)".
+- **`0167_feedback.sql`** — `feedback` table, RLS (insert-own/select-own, **no UPDATE or DELETE** so a report cannot be edited after we read it), a 6-per-hour rate-limit trigger that **raises rather than dropping**, an operator push reusing `0137` verbatim, `admin_feedback()` and `admin_feedback_set_status()`. ⚠ **`body` is deliberate free text** — the exact inverse of `app_events`/P6-A1-D3, and the one table in the schema that stores words the athlete wrote. The header says so, twice, because a future reader will otherwise "fix" it with `sanitizeProps`.
+- **`/feedback` screen + `site/support.html`** — one work item, two obligations. Apple requires a **Support URL** and rejects a bare `mailto:`; before this the only support touchpoint in the entire binary was a sentence of copy inside the privacy sheet. Settings row added to the **existing `about` section** (relabelled "Help & About") because `content.test.mjs:97`/`:125` assert the exact section-key array.
+- **Disclosure shipped FIRST, per P6-A1-D8** — `site/privacy.html` §2 "Support messages and feedback", with the matching in-app summary line, both written before the migration was authored.
+- **`Docs/Business-Operations-Map.md`** — identity block, systems map, and the dated deadline calendar (**Zions auto-closes 2026-08-31**, D-U-N-S propagation, Apple conversion, §9b, Utah annual renewal).
+
+**Two pre-existing gaps found and closed on the way:** `admin_recent_signups` (0137) **was never added to `supabase/seed/admin-roundtrip.mjs`** despite 0130's standing rule — the one guard that catches a missing `admin_guard()` had a hole in it for 30 migrations. And Cloudflare Zone Analytics **has been collecting website traffic since 2026-08-16**; that was never a gap, only a discoverability one, so no beacon was added and none should be.
+
+**Gate:** typecheck clean · **2515/2515 tests pass** · lint back at baseline (1 pre-existing error in `use-color-scheme.web.ts`, 13 warnings, none from these files).
+
+⛔ **NOT DONE UNTIL:** `0166` then `0167` are pasted (each self-checks), the site is re-uploaded with the now-**25** staged files, and `curl -I https://forgelegacy.app/support` returns **200**. Nothing here touches `package.json`/`app.json`/`eas.json`, so the fingerprint is unmoved and the app half is OTA-deliverable — confirm with `fingerprint:compare` anyway.
+
+**Still on hold by decision:** crash capture (Tier 1.1 — genuinely lost forever while open, and Apple's free crash reporting sees **no** JavaScript errors), the RevenueCat receiver (RevenueCat's own dashboard records every sale regardless), review fetching (Apple retains the history), and the unified ops page (pointless before revenue exists).
 
 ### 0. ⭐ Holt's two-exercise program — the difficulty filter met a catalogue where `Intermediate` means "normal" (2026-08-17, Coach Holt — CODE only, no migration, OTA-safe)
 
