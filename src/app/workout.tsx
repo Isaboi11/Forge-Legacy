@@ -3537,6 +3537,10 @@ export default function WorkoutScreen() {
           onPick={applyPick}
           exerciseName={ex.name}
           message={progression?.message ?? null}
+          /* The engine's own verdict, for the card's eyebrow. Passed rather than re-derived in the
+             sheet from the numbers, so the word over the weight and the reason behind it can never
+             disagree — see `VERDICT` there. */
+          action={progression?.action ?? null}
           basis={
             progression?.basis
               ? `Last time: ${progression.basis.weight} ${unitLabel(units)} × ${progression.basis.reps.join(', ')}`
