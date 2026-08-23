@@ -1,7 +1,7 @@
 # Forge Legacy — Status Archive, August 2026
 
 **Type:** Historical record, split out of `Forge-Legacy-Master-Status.md`
-**Covers:** the 42 Recently-Completed entries below the 15 most recent, as of 2026-08-22
+**Covers:** the 43 Recently-Completed entries below the 15 most recent, as of 2026-08-22
 
 > ## Why this file exists
 >
@@ -22,6 +22,37 @@
 > **Read this file when the dashboard does not explain something.** It is the same content, one level back.
 
 ---
+
+### 0. ⭐ The cold start — a new athlete could not be recommended anything, and a forgotten password had no way back (2026-08-17, Onboarding + Auth + Catalog — CODE only, no migration, OTA-safe)
+
+**Method:** the app walked cold as a brand-new user across all **87** routes — boot router, both auth steps, onboarding, every tab's empty state, the first freestyle workout, the social surfaces and the paywall. Every finding was verified against the code rather than reported from reading, and **two of the eight were already fixed** — they are recorded below as such rather than quietly re-done.
+
+**⚠ THE HEADLINE WAS A DATA GAP WEARING A FEATURE GAP'S CLOTHES.** `catalogCanRecommend()` was false, so Home's starting-point card never drew *"Help me find one"* and a beginner's only doors were freestyle, build-your-own and browse — three doors that each assume they already know what to train. The cause was not the guard, which is correct and well argued: `CATALOG_ALIAS` mapped **3 ids, all strength, all gym**, while **14 programs** shipped. Measured before anything changed: **51 of 54** goal × experience × access combinations resolved to a program that does not exist and fell through to Strength Foundation I.
+
+**Shipped:**
+- **`CATALOG_ALIAS` extended to the catalog that actually ships** — Bodyweight Foundation, Close Quarters, Muscle Building Intermediate, Frame by Frame, Athletic Conditioning Foundation, Iron & Engine and Mobility Foundation are reachable from the intake for the first time. **All 54 combinations now resolve into the catalog**; `canRecommend()` is true.
+- **The home and bodyweight tiers stopped borrowing gym ids** (`intendedProgramId`). `fbh-full-body-3` and `cond-circuit` each meant two access tiers at once, which is precisely why neither could be aliased honestly — one entry cannot answer a dumbbells-only athlete and a commercial-gym athlete. New test: **home and bodyweight access never resolve to a barbell program**.
+- **⚠ `canRecommend` now follows the alias to its TARGET.** It accepted the mere *existence* of an alias entry — safe only while the table was nearly empty. Filling the table in to open the on-ramp would have made the guard return true for **any** catalog, including an empty one. It is now stricter than it was, not looser.
+- **Endurance resolves to Conditioning — a judgement, recorded as one.** The `run-*` ids have nothing behind them and the Running family is genuinely unauthored. But the intake never asks about running: it offers *"Improve Endurance — go longer. Build your engine and stamina."*, which is the question Athletic Conditioning Foundation and Iron & Engine are written to answer. Re-point three alias lines when the Running family lands.
+- **Password reset, both halves.** `resetPassword()` had been wired to Supabase since Gate B with **zero callers** — the screen was never built, so forgetting a password meant abandoning the record the product exists to keep. Added `forgot` / `sent` / `reset` steps. ⚠ **The emailed link SIGNS YOU IN**, so `routeFor` now tests `recovering` *ahead of* every session rule; without it the athlete lands on Home holding a session they cannot reproduce, still not knowing their password. `updatePassword` clears the flag only on success.
+- **Terms and Privacy are tappable where consent is actually given** — flat text on the create-account screen, readable only from Account Settings, which needs the account not yet made. Same `LEGAL` copy, same sheet; nothing forked. App Store review asks for this.
+- **Create Account says why it will not submit** — the button sat silently disabled behind an 8-character rule stated only in a placeholder that vanishes as you type. Plus a Show/Hide toggle, absent entirely.
+- **Onboarding's two dead affordances.** The avatar sat under *"Add a photo"* in a plain `View`, with `photoUri: null` hard-coded and the picker called "a fast-follow" — now wired to `useMediaPicker`. And the progress header rendered on `idx >= 0`, which is `-1` on the transition step: **the back chevron never rendered on the final screen**, making "Enter Forge" a one-way door and its own `step === 'transition'` branch unreachable code.
+- **The handle skip names its cost** — handle search is the only way anyone can add you (SOC-D15), and Edit Profile has always said so, *months later*, to somebody who already hit it. The sentence now appears at the decision.
+- **`Difficulty` → `Technique` in both filter sheets**, with a hint: *"How demanding the movement is to perform well — not how fit you need to be."* Read as fitness, a beginner filters to `Beginner` on their first visit and removes most of a catalogue that is 590/733 Intermediate. **Data unchanged — the tags are correct, the word was wrong.**
+
+**Checked and already correct — no change made:**
+- **The Home Gym prompt at the first picker already exists** — unconditional in the picker header, fires exactly when `ownedGear === null`, dismissible, both doors offered.
+- **Both dev harnesses already redirect on `!__DEV__`**, and Metro strips their bodies from the production bundle.
+- **The tour is not a gap** — 101 anchors across 28 surfaces, every declared anchor rung by an authored step, replayable from Account Settings, teaching *decisions* rather than button locations.
+
+**Verified:** `tsc --noEmit` clean · **2,518 domain tests, 0 failing** (was 2,497 — the recommendation suite was rewritten to read the catalog off disk instead of asserting a hand-listed idea of it, which is how it drifted in the first place) · `expo lint` at baseline (1 pre-existing error in `use-color-scheme.web.ts`, untouched).
+
+**⚠ OPEN — the next content gap.** **18 of 54** combinations (every dumbbells answer except muscle) resolve to Bodyweight Foundation, because the catalog holds exactly one dumbbell program. The direction is safe — it never prescribes gear they lack — but a dumbbell owner asking for strength is under-served. One dumbbell strength or conditioning block closes it.
+
+**⚠ OPEN — spec amendment owed.** W-21/W-22/W-23 all name "Difficulty" as a filter category and **W22-D15** governs the detail-screen chip, which was deliberately **left alone**. The filter and the exercise-detail row therefore disagree today. Needs a PO ruling on whether the rename extends to W-22.
+
+**⚠ SEQUENCING.** Coach Holt is premium-gated. Flipping `entitlement_config.default_tier` to `FREE` *before* this pass would have left a free new athlete with no recommender **and** no coach.
 
 ### 0. ⭐ Business operations — the support channel, and the programs panel that was fabricating drop-offs (2026-08-17, `0166` + `0167` **APPLIED — verified 2026-08-18** · app code OTA-safe · site NOT redeployed)
 
