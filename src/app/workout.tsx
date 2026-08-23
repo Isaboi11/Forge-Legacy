@@ -94,6 +94,9 @@ import { JoinRequestBanner } from '@/components/forge/JoinRequestBanner';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { playlistLabel } from '@/domain/workout/playlist';
 import { enrichSessionExercises, equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
+import { familyOfExercise } from '@/domain/home-artwork/bridges';
+import { resolveAsset } from '@/domain/home-artwork/manifest';
+import { resolveArtworkSource } from '@/domain/home-artwork/artwork-source';
 import { getRestMode, nextRestMode, setRestMode, type RestMode } from '@/lib/rest-timer-pref';
 import { getWheelInput, setWheelInput } from '@/lib/set-input-pref';
 import { useKeyboardInset } from '@/lib/useKeyboardInset';
@@ -2169,10 +2172,26 @@ export default function WorkoutScreen() {
        null)
     : null;
   const coachEquip = equipmentForCatalogKey(ex.catalogKey);
+  /**
+   * ⭐ THE NUMBER HOLT IS RECOMMENDING — which is NOT the same as the number on the bar.
+   *
+   * ⚠ THIS DISTINCTION WAS MISSED ONCE AND IT CHANGED THE WHOLE SHEET. `coachLoad` above reads what the
+   * SET carries (logged, typed, or prescribed). `progression.suggestedWeight` is what the engine says to
+   * do next, and until this pass it reached the athlete only as the PLACEHOLDER in the weight field
+   * (`placeholderWeight`, rung 2) — a grey hint that vanishes the moment you type, and which nothing
+   * ever committed. So Holt could say "go to 50" and the only way to take his advice was to type 50.
+   *
+   * The card states this number, the pills bracket THIS number, and `onUseWeight` is what finally makes
+   * accepting it one tap.
+   */
+  const coachRec = progression?.suggestedWeight ?? null;
+  const coachReps = progression?.suggestedReps ?? null;
+  /* What the sheet is talking about. His recommendation when he has one; otherwise the bar as it is. */
+  const coachAnchor = coachRec ?? coachLoad;
   const coachLighter =
-    coachLoad != null
+    coachAnchor != null
       ? backOffTo({
-          current: coachLoad,
+          current: coachAnchor,
           /* Every working weight they have on record for this lift, newest first — `backOffTo` picks the
              closest one that is a real step down and ignores the rest. */
           recent: (liftHist?.sessions ?? []).map((s) => sessionPerformance(s)?.weight).filter((w): w is number => w != null),
@@ -2182,7 +2201,31 @@ export default function WorkoutScreen() {
   /* Null when the lift adds no pounds at all — a band, a bodyweight movement, mobility. Offering
      "too easy" there would name a weight that cannot be put on anything. */
   const coachStepUp = incrementFor(patternOf(ex), experience, coachEquip);
-  const coachHeavier = coachLoad != null && coachStepUp > 0 ? coachLoad + coachStepUp : null;
+  const coachHeavier = coachAnchor != null && coachStepUp > 0 ? coachAnchor + coachStepUp : null;
+  /**
+   * The one-tap accept — and `null` is the common answer.
+   *
+   * ⚠ OFFERED ONLY WHEN IT WOULD DO SOMETHING. If the sets already carry his number there is nothing to
+   * apply, and a button that writes the value already present would be the most prominent control in
+   * the sheet doing nothing at all. That was the defect caught in the design draft; this is the guard
+   * that keeps it caught.
+   */
+  const coachUseWeight = coachRec != null && coachRec !== coachLoad ? () => setRemainingLoad(coachRec) : null;
+  /**
+   * The engraved figure in the card — the same nine-family artwork Home's hero draws from, chosen by
+   * this lift's movement pattern and equipment.
+   *
+   * ⚠ RESOLVED THROUGH THE MANIFEST, NEVER BY BUILDING A FILENAME. `manifest.ts` says so in its own
+   * header — the canonical keys are underscored (`hip_hinge`) and the files are hyphenated
+   * (`hip-hinge.png`), so a call site that concatenated a path would miss on exactly one family and
+   * look like a missing asset rather than a bug.
+   */
+  const coachArt = (() => {
+    const fam = familyOfExercise(patternOf(ex), coachEquip ?? '');
+    if (!fam) return undefined;
+    const path = resolveAsset('exercise_family', fam, athleteProfile?.sex === 'female' ? 'female' : 'male');
+    return path ? resolveArtworkSource(path) : undefined;
+  })();
 
   const holtHidden =
     /*
@@ -3537,13 +3580,11 @@ export default function WorkoutScreen() {
           onPick={applyPick}
           exerciseName={ex.name}
           message={progression?.message ?? null}
-          /* The engine's own verdict, for the card's eyebrow. Passed rather than re-derived in the
-             sheet from the numbers, so the word over the weight and the reason behind it can never
-             disagree — see `VERDICT` there. */
-          action={progression?.action ?? null}
+          /* A sentence, not a label — "You completed 45 lb × 8, 8, 8 last time." reads as the coach
+             citing what he saw. The old "Last time: 45 lb × 8, 8, 8" was a field and a value. */
           basis={
             progression?.basis
-              ? `Last time: ${progression.basis.weight} ${unitLabel(units)} × ${progression.basis.reps.join(', ')}`
+              ? `You completed ${progression.basis.weight} ${unitLabel(units)} × ${progression.basis.reps.join(', ')} last time.`
               : null
           }
           unit={unitLabel(units)}
@@ -3597,7 +3638,10 @@ export default function WorkoutScreen() {
             if (!prefsLoaded) return;
             persistPref(() => saveAppPrefs({ ...appPrefs, coachIntensity: level }), { onOk: () => refetchPrefs() });
           }}
-          currentLoad={coachLoad}
+          weight={coachAnchor}
+          reps={coachReps}
+          onUseWeight={coachUseWeight}
+          artwork={coachArt}
           lighterTo={coachLighter}
           heavierTo={coachHeavier}
           onSetLoad={setRemainingLoad}

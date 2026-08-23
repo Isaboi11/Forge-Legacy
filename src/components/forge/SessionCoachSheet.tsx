@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { Image } from 'expo-image';
 
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { HoltMark } from '@/components/forge/HoltMark';
 import { INTENSITY_LEVELS, type IntensityLevel } from '@/domain/coach/rulebook/intensity';
 import type { IntensityProposal } from '@/domain/coach/intensity-learning';
-import type { ProgressionAction } from '@/domain/coach/progression';
 import type { SuggestionGroup } from '@/domain/coach/session-suggest';
 
 /**
@@ -54,32 +54,48 @@ const INTENSITY_CHIP: Record<IntensityLevel, string> = {
 };
 
 /**
- * Holt's verdict in two words, over the number he is recommending.
+ * A glyph per level, and the ONLY icons in the sheet.
  *
- * ⚠ DERIVED FROM `progression.action`, NEVER INVENTED. The engine already decides which of five things
- * it is doing and says so in a field; restating that in the eyebrow costs nothing and cannot drift. An
- * eyebrow guessed from the numbers — "is 65 less than 72.5, then say REBUILDING" — would be a second,
- * worse copy of a decision that already exists, and the two would disagree the first time the rulebook
- * changed. There is no `null` entry: an action Holt has no word for shows no eyebrow rather than a
- * wrong one.
+ * ⚠ THE PLAIN ROWS DELIBERATELY HAVE NONE (PO: *"don't add icons beside every row… icons would start
+ * adding visual noise again. Keep the chevrons. Keep the typography. Let the hierarchy do the work."*).
+ * These four earn theirs because the row is a SCALE — quiet to loud, left to right — and the glyphs
+ * climb with it where four similar two-word labels do not. Same reason the balance row keeps its
+ * scales: an icon is allowed where it carries meaning the text cannot.
  */
-const VERDICT: Record<ProgressionAction, string> = {
-  add_weight: 'GOING UP',
-  add_reps: 'MORE REPS',
-  hold: 'STAY HERE',
-  back_off: 'REBUILDING',
-  no_history: 'FIRST TIME',
+const INTENSITY_ICON: Record<IntensityLevel, React.ReactNode> = {
+  reminders: (
+    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M20 14a2 2 0 0 1-2 2H8l-4 3V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" />
+    </Svg>
+  ),
+  steady: (
+    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M3 12c2.5-5 4.5-5 7 0s4.5 5 7 0" />
+    </Svg>
+  ),
+  push: (
+    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.emberFlame} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 3c3 4 5 6 5 9a5 5 0 0 1-10 0c0-1.4.6-2.6 1.6-3.8.7 1 1.4 1.5 2.1 1.5C10.4 8 11 5.6 12 3z" />
+    </Svg>
+  ),
+  drive: (
+    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.emberFlame} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M13 2L5 13h6l-1 9 8-11h-6z" />
+    </Svg>
+  ),
 };
+
 
 export function SessionCoachSheet({
   onClose,
   exerciseName,
   message,
   basis,
-  action,
   unit,
-  /** Null = do not offer it. Never a chip that says "lighter" without saying how much lighter. */
-  currentLoad,
+  weight,
+  reps,
+  onUseWeight,
+  artwork,
   lighterTo,
   heavierTo,
   onSetLoad,
@@ -108,12 +124,31 @@ export function SessionCoachSheet({
    * old layout charged.
    */
   message: string | null;
-  /** The evidence under the number: "Last time: 65 lb × 10, 8, 8". Shown, never hidden. */
+  /** The evidence: "You completed 45 lb × 8, 8, 8 last time." Shown, never hidden. */
   basis: string | null;
-  /** Which of the five things the engine is doing, for the eyebrow. Null → no eyebrow. */
-  action: ProgressionAction | null;
   unit: string;
-  currentLoad: number | null;
+  /**
+   * ⭐ THE NUMBER HOLT IS RECOMMENDING — his `suggestedWeight` when he has one, otherwise the bar as it
+   * is. Null on a lift that names no weight at all (a run, a plank), which removes the card entirely.
+   *
+   * ⚠ `lighterTo` / `heavierTo` ARE DERIVED FROM THIS SAME NUMBER upstream, and they have to be. The
+   * card states it in 38pt and the two pills read as corrections to it, so a pill computed from a
+   * different anchor produces the defect this design was drafted with: 50 stated, 47.5 offered as "too
+   * easy" — tapping up moving you down. `weight-bracket.test.mjs` is the guard.
+   */
+  weight: number | null;
+  /** The rep target beside it — "50 LB × 8". Null when the prescription names no reps. */
+  reps: number | null;
+  /**
+   * Accept the recommendation in one tap, or null when there is nothing to accept.
+   *
+   * ⚠ NULL IS THE COMMON ANSWER AND MUST STAY MEANINGFUL. `/workout` passes a function only when the
+   * recommended weight differs from what the sets already carry; rendering the button unconditionally
+   * would make the most prominent control in the sheet a no-op most of the time.
+   */
+  onUseWeight: (() => void) | null;
+  /** The engraved family figure for this lift, resolved through the artwork manifest. */
+  artwork: number | undefined;
   lighterTo: number | null;
   heavierTo: number | null;
   onSetLoad: (to: number) => void;
@@ -184,7 +219,7 @@ export function SessionCoachSheet({
   const [balanceOpen, setBalanceOpen] = useState(false);
   /* The card is built around a NUMBER. With no load to name — a run, a plank, a set to failure — there
      is no card to build, and Holt's line falls back to plain text at the left margin, as it was. */
-  const hasCard = currentLoad != null;
+  const hasCard = weight != null;
 
   return (
     <View style={styles.wrap}>
@@ -263,32 +298,67 @@ export function SessionCoachSheet({
             rather than as one option among several.
           */}
           {hasCard ? (
-            <View style={styles.card}>
-              <View style={styles.cardTop}>
-                <Text style={styles.cardNumber}>{currentLoad}</Text>
-                <Text style={styles.cardUnit}>{unit.toUpperCase()}</Text>
-                <View style={styles.grow} />
-                {action ? <Text style={styles.cardVerdict}>{VERDICT[action]}</Text> : null}
+            <View style={styles.group}>
+              <Text style={styles.groupLabel}>HOLT RECOMMENDS</Text>
+              <View style={styles.card}>
+                {/* ⚠ BEHIND THE TEXT, AND CLIPPED BY THE CARD'S OWN RADIUS. `pointerEvents="none"` so it
+                    cannot eat the tap meant for "Use" — an image that swallows a button is the exact
+                    bug an absolutely-positioned decoration invites. */}
+                {artwork ? (
+                  <Image source={artwork} style={styles.cardArt} contentFit="cover" pointerEvents="none" />
+                ) : null}
+                <View style={styles.cardTop}>
+                  <Text style={styles.cardNumber}>{weight}</Text>
+                  <Text style={styles.cardUnit}>{unit.toUpperCase()}</Text>
+                  {reps != null ? <Text style={styles.cardReps}>&times; {reps}</Text> : null}
+                </View>
+                {basis ? <Text style={styles.cardBasis}>{basis}</Text> : null}
+
+                {/* The card's own footer, under a hairline: the question on the left, the accept on the
+                    right. Both are optional and the rule differs — see each. */}
+                {message || onUseWeight ? (
+                  <View style={styles.cardFoot}>
+                    {message ? (
+                      <Pressable
+                        onPress={() => setWhyOpen((v) => !v)}
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: whyOpen }}
+                        accessibilityLabel={`Why ${weight} ${unit}?`}
+                        hitSlop={8}
+                        style={styles.whyRow}
+                      >
+                        <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round">
+                          <Circle cx={12} cy={12} r={9} />
+                          <Path d="M12 11v5" />
+                          <Path d="M12 7.6v.6" />
+                        </Svg>
+                        <Text style={styles.whyText}>
+                          Why {weight} {unit}?
+                        </Text>
+                      </Pressable>
+                    ) : (
+                      <View style={styles.grow} />
+                    )}
+                    {onUseWeight ? (
+                      <Pressable
+                        onPress={run(onUseWeight)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Use ${weight} ${unit}`}
+                        style={({ pressed }) => [styles.use, pressed && styles.usePressed]}
+                      >
+                        <Text style={styles.useText}>
+                          Use {weight} {unit}
+                        </Text>
+                        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <Path d="M5 12h13" />
+                          <Path d="M13 6l6 6-6 6" />
+                        </Svg>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                ) : null}
+                {whyOpen && message ? <Text style={styles.why}>{message}</Text> : null}
               </View>
-              {basis ? <Text style={styles.basis}>{basis}</Text> : null}
-              {message ? (
-                <Pressable
-                  onPress={() => setWhyOpen((v) => !v)}
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: whyOpen }}
-                  accessibilityLabel="Why this weight?"
-                  hitSlop={8}
-                  style={styles.whyRow}
-                >
-                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round">
-                    <Circle cx={12} cy={12} r={9} />
-                    <Path d="M12 11v5" />
-                    <Path d="M12 7.6v.6" />
-                  </Svg>
-                  <Text style={styles.whyText}>Why this weight?</Text>
-                </Pressable>
-              ) : null}
-              {whyOpen && message ? <Text style={styles.why}>{message}</Text> : null}
             </View>
           ) : (
             <>
@@ -326,9 +396,12 @@ export function SessionCoachSheet({
             a border, every item demands attention."* A named movement is not a decision waiting to be
             weighed against three others; it is one thing to apply. A hairline under it is enough.
 
-            ⚠ THE HEADING IS HOLT'S OWN WORDS, not a static label. `swapPicks.reason` is "Instead of
-            <this lift>" — writing "SWAP MOVEMENT" here would throw away the one line that says the
-            suggestions are ABOUT the exercise in front of you.
+            ⚠ THE HEADING IS STATIC, AND THIS REVERSES AN EARLIER DECISION IN THIS FILE. It used to
+            render `swapPicks.reason` — "Instead of Alternating Dumbbell Curl" — on the theory that
+            Holt's own words beat a label. On screen it read as long and robotic, and the context was
+            already unmissable: the sheet's own header names the exercise two inches above. `reason` is
+            still what `session-suggest` returns and still what the balance row below shows, where it
+            carries information the header does not.
 
             ⚠ STILL ONE TAP. These stayed at the top level rather than moving behind a disclosure: the
             value of a named suggestion is applying it standing at a rack with one hand free, and a tap
@@ -336,7 +409,7 @@ export function SessionCoachSheet({
           */}
           {swapPicks ? (
             <View style={styles.group}>
-              <Text style={styles.groupLabel}>{swapPicks.reason.toUpperCase()}</Text>
+              <Text style={styles.groupLabel}>SWAP MOVEMENT</Text>
               <View style={styles.rows}>
                 {swapPicks.picks.map((p) => (
                   <Row key={p.key} label={p.name} onPress={run(() => onPick('swap', p.key, p.name))} />
@@ -361,26 +434,68 @@ export function SessionCoachSheet({
             be a row that exists to say nothing.
           */}
           {addPicks ? (
-            <View style={styles.rows}>
-              <Row
-                label="Balance today's workout"
-                sub={addPicks.reason}
-                expanded={balanceOpen}
+            <View style={styles.balanceWrap}>
+              {/* ⚠ THE ONE GREEN THING IN THE SHEET, and it is green because it is the only line here
+                  that is an OBSERVATION rather than an instruction. Bronze is what Holt says to do;
+                  this is what he noticed. `greenMuted` at 7% — a tint, not a status banner. */}
+              <Pressable
                 onPress={() => setBalanceOpen((v) => !v)}
-              />
-              {balanceOpen
-                ? addPicks.picks.map((p) => (
-                    <Row key={p.key} label={p.name} inset onPress={run(() => onPick('add', p.key, p.name))} />
-                  ))
-                : null}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: balanceOpen }}
+                accessibilityLabel={`Balance today's workout. ${addPicks.reason}`}
+                style={({ pressed }) => [styles.balance, pressed && styles.rowPressed]}
+              >
+                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.greenMuted} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M12 4v16" />
+                  <Path d="M7 8h10" />
+                  <Path d="M7 8l-3 6h6z" />
+                  <Path d="M17 8l3 6h-6z" />
+                </Svg>
+                <View style={styles.grow}>
+                  <Text style={styles.rowLabel}>Balance today&rsquo;s workout</Text>
+                  <Text style={styles.rowSub} numberOfLines={2}>
+                    {addPicks.reason}
+                  </Text>
+                </View>
+                <Svg
+                  width={17}
+                  height={17}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={flColor.gray600}
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={balanceOpen ? styles.chevOpen : undefined}
+                >
+                  <Path d="M9 5l7 7-7 7" />
+                </Svg>
+              </Pressable>
+              {balanceOpen ? (
+                <View style={styles.balanceOpen}>
+                  {addPicks.picks.map((p, i) => (
+                    <Row
+                      key={p.key}
+                      label={p.name}
+                      last={i === addPicks.picks.length - 1}
+                      onPress={run(() => onPick('add', p.key, p.name))}
+                    />
+                  ))}
+                </View>
+              ) : null}
             </View>
           ) : null}
 
           {/*
-            ══ 6 · ADJUST TODAY ══
+            ══ 6 · CHANGE THE PLAN ══
 
-            The actions that change the session rather than this lift. All rows, because none of them is
-            a choice between alternatives — each is one door.
+            PO: *"'Adjust today' isn't quite the right category… 'Change the plan' sounds more like
+            you're talking to a coach rather than operating workout software."*
+
+            ⚠ THE CONTAINER IS THE THIRD ZONE, AND IT IS DOING REAL WORK. The sheet now reads as what
+            Holt THINKS (the tinted card, the tinted observation), what this EXERCISE could be (bare
+            rows, no container), and what you can do to the WORKOUT (these, boxed). Same row component
+            throughout; the enclosure is what says these are utilities rather than coaching.
 
             ⚠ EVERY ROW HERE IS CONDITIONAL EXCEPT THREE. The superset row has three states — offer it,
             offer to break it, or say nothing — and the escape reads "Can't do this one" when Holt had
@@ -388,8 +503,8 @@ export function SessionCoachSheet({
             athlete has already been given answers and this is the way past them.
           */}
           <View style={styles.group}>
-            <Text style={styles.groupLabel}>ADJUST TODAY</Text>
-            <View style={styles.rows}>
+            <Text style={styles.groupLabel}>CHANGE THE PLAN</Text>
+            <View style={styles.planBox}>
               {swapPicks ? null : <Row label="Can't do this one" onPress={run(onSwap)} />}
               {swapPicks ? <Row label="Something else…" onPress={run(onSwap)} /> : null}
               {isSuperset ? (
@@ -398,7 +513,7 @@ export function SessionCoachSheet({
                 <Row label="Short on time" sub={`Pair with ${supersetWithName}`} onPress={run(onSuperset)} />
               ) : null}
               <Row label="Add a movement" onPress={run(onAdd)} />
-              <Row label="Move past this" onPress={run(onSkip)} />
+              <Row label="Move past this" last onPress={run(onSkip)} />
             </View>
           </View>
 
@@ -417,6 +532,7 @@ export function SessionCoachSheet({
                 <Chip
                   key={level}
                   label={INTENSITY_CHIP[level]}
+                  icon={INTENSITY_ICON[level]}
                   on={intensity === level}
                   onPress={() => onSetIntensity(level)}
                 />
@@ -447,6 +563,7 @@ function Row({
   accent,
   inset,
   expanded,
+  last,
   onPress,
 }: {
   label: string;
@@ -457,6 +574,8 @@ function Row({
   inset?: boolean;
   /** Present → this row opens something rather than leaving, and the chevron turns to say so. */
   expanded?: boolean;
+  /** Last in an ENCLOSED list — drops the hairline, which would otherwise double the box's border. */
+  last?: boolean;
   onPress: () => void;
 }) {
   return (
@@ -465,7 +584,7 @@ function Row({
       accessibilityRole="button"
       accessibilityLabel={sub ? `${label}. ${sub}` : label}
       accessibilityState={expanded == null ? undefined : { expanded }}
-      style={({ pressed }) => [styles.row, inset && styles.rowInset, pressed && styles.rowPressed]}
+      style={({ pressed }) => [styles.row, inset && styles.rowInset, last && styles.rowLast, pressed && styles.rowPressed]}
     >
       <View style={styles.grow}>
         <Text style={[styles.rowLabel, accent && styles.rowLabelAccent]} numberOfLines={2}>
@@ -496,7 +615,18 @@ function Row({
   );
 }
 
-function Chip({ label, on, onPress }: { label: string; on?: boolean; onPress: () => void }) {
+function Chip({
+  label,
+  on,
+  icon,
+  onPress,
+}: {
+  label: string;
+  on?: boolean;
+  /** Optional and rare — see `INTENSITY_ICON` for the only place it is used and why. */
+  icon?: React.ReactNode;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       onPress={onPress}
@@ -504,6 +634,7 @@ function Chip({ label, on, onPress }: { label: string; on?: boolean; onPress: ()
       accessibilityLabel={label}
       style={({ pressed }) => [styles.chip, on && styles.chipOn, pressed && styles.chipPressed]}
     >
+      {icon}
       <Text style={styles.chipText}>{label}</Text>
     </Pressable>
   );
@@ -572,8 +703,50 @@ const styles = StyleSheet.create({
     paddingTop: 15,
     paddingBottom: 14,
     gap: 9,
+    // Required — `cardArt` bleeds past every edge and this is what turns that into a crop.
+    overflow: 'hidden',
+  },
+  /* ⚠ CLIPPED BY THE CARD, WHICH IS WHY THE CARD CARRIES `overflow: 'hidden'`. The figure bleeds off
+     the right edge deliberately — a fully contained illustration reads as a sticker, and this one is
+     meant to be the card's material rather than a picture placed on it. Low opacity because it sits
+     under 38pt type and must never compete with it. */
+  cardArt: {
+    position: 'absolute',
+    right: -18,
+    top: -10,
+    bottom: -10,
+    width: 190,
+    opacity: 0.5,
   },
   cardTop: { flexDirection: 'row', alignItems: 'baseline', gap: 7 },
+  cardReps: { fontSize: 19, fontWeight: '600', color: flColor.bronze400, letterSpacing: 0.2 },
+  /* Cream rather than the gray `basis` used elsewhere — inside the card it is the coach's own sentence,
+     and at 40% grey over an illustration it stopped being readable. */
+  cardBasis: { fontSize: 13, lineHeight: 19, color: flColor.gray400, maxWidth: '78%' },
+  cardFoot: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 3,
+    paddingTop: 11,
+    borderTopWidth: 1,
+    borderTopColor: flColor.bronzeBorderSubtle,
+  },
+  /* The accept. The only filled control in the sheet — nothing else may take this treatment, or it
+     stops meaning "this is the thing Holt is asking you to do". */
+  use: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    minHeight: 40,
+    paddingHorizontal: 15,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.bronzeDark,
+  },
+  usePressed: { opacity: 0.82 },
+  useText: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
   /* Playfair, as every number the app treats as an achievement is set. `lineHeight` pinned to the size
      so the baseline row does not gain the font's own leading and push the card open. */
   cardNumber: {
@@ -616,6 +789,17 @@ const styles = StyleSheet.create({
     borderBottomColor: flColor.charcoal700,
   },
   rowInset: { paddingLeft: 14 },
+  rowLast: { borderBottomWidth: 0 },
+
+  /* Zone two of three: the observation. Green, and the only green in the sheet — see the row itself. */
+  balanceWrap: { borderWidth: 1, borderColor: 'rgba(90,158,104,0.26)', borderRadius: flRadius.md, backgroundColor: 'rgba(90,158,104,0.07)', overflow: 'hidden' },
+  balance: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 62, paddingHorizontal: 14, paddingVertical: 10 },
+  /* The revealed movements, divided off the observation that named them. */
+  balanceOpen: { paddingHorizontal: 14, borderTopWidth: 1, borderTopColor: 'rgba(90,158,104,0.20)' },
+
+  /* Zone three: utilities, enclosed. `paddingHorizontal` on the box rather than on each row so the
+     dividers run the full width of the container the way a grouped list does. */
+  planBox: { borderWidth: 1, borderColor: flColor.charcoal600, borderRadius: flRadius.md, paddingHorizontal: 14, backgroundColor: flColor.charcoal900 },
   rowPressed: { opacity: 0.6 },
   rowLabel: { fontSize: 14.5, lineHeight: 19, color: flColor.cream100 },
   rowLabelAccent: { fontSize: 13.5, color: flColor.bronze400 },
@@ -634,7 +818,11 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorderSubtle,
     backgroundColor: flColor.charcoal800,
     minHeight: 44,
+    // Row + center: a chip may now carry a leading glyph, and the default column would stack it.
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
   },
   chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   chipPressed: { opacity: 0.82 },
