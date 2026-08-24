@@ -849,6 +849,24 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⚠ **A tree-wide publish ships every undeployed client half in the tree.** Check for pending migrations
 > before publishing anything, not just before publishing the feature that needs them.
 
+### 0. ⭐ Two PO reports, and both were worse than reported — a list that never looked again, and a feature with no door (2026-08-24, Workouts tab / Program Builder — **no migration**, ✅ **WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6**)
+
+**PO: *"When I build a template it says saved but doesn't pop up on my saved templates right away. There is a delay."*** ⚠ **There was no delay and nothing was slow.** The Workouts tab read the template list ONCE per tab mount and never again — `useQuery` runs on mount and on a deps change, and `[]` means neither ever happens twice. "Your Templates" showed whatever was true when the tab first rendered, **for the life of the session**; the "delay" was however long it took for something to unmount the tab.
+
+⚠ **THE LINE DIRECTLY ABOVE IT ALREADY DID THE RIGHT THING, AND SAID SO.** `myPrograms` has been refetched on focus since it was written, with a comment reading *"so a program just built ... shows up the moment they come back to this tab."* The templates query sat one line below that sentence and did not do it. **`/templates` — the hub — was always correct** and refetches both lists on focus, so the same athlete saw the template in one place and not the other. That is what made it read as a delay rather than as a screen that never looked again. ⚠ **Same shape as the coach bubble's stale draft name** (a `[]` effect reading a fact that changes on another screen); this is the recurring version of that bug here.
+
+**PO: *"Right now I had to really search for the use a saved week feature in building a program. Should just be a subtle button under the days of the week."*** ⚠ **In the default program shape it was not hard to find — it was UNREACHABLE.** The only two doors were the `⋯` in a week's AppBar and the `⋯` on a row of the WEEKS list, and **both exist only when `vary` is true. `vary` defaults to false.** So an athlete building an ordinary program — one week's shape, repeated — had no path to it at all, and "I searched and could not find it" is exactly what happened.
+
+**The draft model was never the problem.** `weekTemplateIntoWeek` has handled repeat mode since it was written (*"the index is meaningless there and is ignored"*) and `chooseWeekTemplate` already resolves the non-vary target. **Only the door was missing** — the feature shipped the week before with its own logic complete and its entrance behind a menu that half the athletes never see.
+
+Now a subtle row under the day list, where the PO asked for it: in `WeekDaysView` for the open week, and in `SetupView` for repeat mode. **Deliberately NOT in vary's `SetupView`**, where the list is WEEKS and one row could not say which week it meant — that shape already has its own doors. Measurably quieter than the same action in the sheet: hairline charcoal border, no fill, one line, because the sheet's version is the first of three offers and this one sits under a half-built workout list it must not compete with.
+
+**Files:** `src/app/(tabs)/workouts.tsx` · `src/app/program-builder.tsx` (`UseSavedWeekRow`).
+
+**Gates:** tsc **0** · **2,785 tests green** · lint **at baseline**. ⚠ **NEITHER FIX HAS A TEST** — both are wiring (a focus refetch and a render path) and this suite is domain-level. Recorded rather than glossed.
+
+✅ **WEB + OTA DEPLOYED AND VERIFIED 2026-08-24.** Web `entry-17bd86b829cbd32a073ce8149f437481.js` — 200 with a matching hash, and the served 13.4 MB bundle was searched for `Use a saved week` and `Fill this week from a week you have saved`; both **PRESENT in the live JS**. **OTA `01a035e2-f8c4-7ea0-8c2c-5154f59b4bb4`, commit `8ae07d6`, runtime `411fd2b6…`** — `fingerprint:compare` matched build 6 exactly before publishing and the manifest endpoint returned this id to an iOS client on that runtime. ⏳ **Still not looked at by a human on a device.**
+
 ### 0. ⭐ "I don't know which of these to choose" — Holt can finally answer it, off the shelf he did not write (2026-08-24, Coach Holt / W-2 Discover — **no migration**, ✅ **WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6**, ⏳ never rendered for a human)
 
 **PO:** *"should we have a button in the program that says (and it would be a subtle button) don't know
