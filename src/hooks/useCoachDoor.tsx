@@ -34,7 +34,12 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
  * against the old "Build me a program" chip, where the athlete's line and Holt's next question
  * contradicted each other.
  */
-export type CoachIntent = 'build' | 'import';
+/**
+ * ⚠ `recommend` IS THE ONE INTENT THAT DOES NOT END IN HOLT BUILDING ANYTHING. It carries the athlete's
+ * *"I don't know which of these to choose"* from the Discover shelf into the conversation, so he opens
+ * already reading the catalogue rather than offering to replace it with something he wrote.
+ */
+export type CoachIntent = 'build' | 'import' | 'recommend';
 
 export interface CoachDoorValue {
   /** True while the chat sheet is on screen. Read by `CoachBubble`, which does the rendering. */

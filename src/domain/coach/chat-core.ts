@@ -34,6 +34,9 @@ import {
   type Limitation,
 } from './constraints.ts';
 import { AUTHORED_GOALS } from './rulebook/skeletons.ts';
+/* Type-only — the shelf is passed IN by the caller, exactly like `learned`. `domain/coach/**` reads no
+   database and this does not change that. */
+import type { Recommendation as ShelfRecommendation } from './recommend.ts';
 import { RACE_SPEC, weeklyVolumePlan } from './rulebook/endurance.ts';
 import { pick, pickNamed } from './rulebook/voice.ts';
 import { BODY_PART_LABEL, BODY_PARTS, SPLIT_LABEL, type BodyPart, type DayFocus, type SplitName } from './day.ts';
@@ -57,6 +60,8 @@ export type Turn =
    *  answer used to be. The openers and the help menu carry none, and correctly render as chips. */
   | { kind: 'chips'; chips: Chip[]; ctl?: QuestionControl }
   | { kind: 'program'; card: ProgramCard }
+  /** A program off the shelf — somebody else's work, offered with reasons AND reservations. */
+  | { kind: 'pick'; card: PickCard }
   | { kind: 'day'; card: DayCard }
   | { kind: 'edit'; card: EditCard }
   | { kind: 'refusal'; card: RefusalCard }
@@ -171,6 +176,23 @@ export interface Chip {
    * make correcting your level indistinguishable from answering the question mid-build, and one of the
    * two must not kick off an assembly.
    */
+  /**
+   * Leaves the shelf and puts Holt to work — the escape hatch on every recommendation and every refusal.
+   *
+   * ⚠ **IT NEEDS ITS OWN FLAG BECAUSE THE MODE HAS TO CHANGE, AND A PATCH CANNOT CHANGE IT.** A chip's
+   * `patch` fills in constraints; the conversation's MODE is not one. Without this, "write me one
+   * instead" fell straight back into `advance(..., 'pick')` — the same four answers, the same shelf, the
+   * same card — so the one door out of a recommendation quietly returned you to it.
+   *
+   * ⚠ **AND IT IS NOT AN `OPENERS` LABEL, DELIBERATELY.** Routing it through `fromOpener` would work and
+   * would put "Build me something" in the transcript directly under a card the athlete had just turned
+   * down, which reads as the app not having heard them. The request is the same; the sentence is not.
+   *
+   * ⚠ Whatever has already been answered is KEPT. Goal, level, days and room are the same facts a build
+   * needs, so he asks for the two the shelf never needed — session length, and anything to work around —
+   * rather than starting the conversation again.
+   */
+  startsBuild?: boolean;
   levelOnly?: boolean;
   label: string;
   /** What tapping it fills in. The typed path resolves to the same thing — see `interpret`. */
@@ -321,8 +343,78 @@ const offerable = (g: Goal): boolean => AUTHORED_GOALS.includes(g) && !NOT_OFFER
  * So the mode decides which questions exist. A day asks: what, how long, where, how experienced, anything
  * to avoid. Nothing else.
  */
-export function nextQuestion(c: ChatState, mode: 'program' | 'day' = 'program'): Question | null {
-  return withControl(mode === 'day' ? nextDayQuestion(c) : askProgram(c));
+/**
+ * Which conversation is being had.
+ *
+ * ⚠ **`pick` IS NOT A THIRD THING HOLT BUILDS.** `program` and `day` both end in `assemble()` or
+ * `buildDayWorkout()` — Holt writing training. `pick` ends in an ID off the shelf and writes nothing.
+ * It is a mode because it asks a DIFFERENT, SHORTER set of questions, and because everything downstream
+ * needs to know that the artifact at the end is somebody else's work rather than his.
+ */
+export type ChatMode = 'program' | 'day' | 'pick';
+
+export function nextQuestion(c: ChatState, mode: ChatMode = 'program'): Question | null {
+  return withControl(mode === 'day' ? nextDayQuestion(c) : mode === 'pick' ? askShelf(c) : askProgram(c));
+}
+
+/**
+ * ══ THE SHELF'S OWN QUESTIONNAIRE — SHORTER THAN THE BUILD'S, AND SHORTER ON PURPOSE ══
+ *
+ * PO, 2026-08-24: *"should we have a button in the program that says (and it would be a subtle button)
+ * don't know which to choose? Let us help"* — and then, of the two ways to answer it, *"I say build
+ * both"*. This is the half that answers the question as asked, with a program off the shelf.
+ *
+ * Four questions, and every one of them is a fact the athlete owns about themselves. What is dropped
+ * from `askProgram`, and why each one had to go:
+ *
+ *   · **`size`** — a catalogue program is however many weeks its author wrote. Asking would be taking an
+ *     answer that is about to be overruled by a JSON file, which is the exact defect `sizeQuestion`'s own
+ *     note records against asking a race how long it should be.
+ *   · **`time`** — likewise. The sessions are already written; their length is a fact about them.
+ *   · **`limits`** — ⚠ **THE ONE THAT MATTERS.** `assemble()` unions the excluded patterns and writes
+ *     around a bad shoulder. A fixed set of authored sessions cannot, and asking anyway would collect an
+ *     answer nothing could act on. `constraints.ts` already refused to ship that shape once, for the
+ *     absent `wrists` flag: *"a checkbox that changes nothing is worse than an absent one — the athlete
+ *     ticks it, believes they have been heard, and gets the same program."* So the limit is STATED on the
+ *     card instead (`SHELF_CANNOT_ADAPT`), where it doubles as the honest reason to have him write one.
+ *
+ * ⚠ **A RACE IS LET STRAIGHT THROUGH, unanswered.** There is not one Running program on the shelf, so
+ * asking a marathon runner about their room and their days would be four questions collected in order to
+ * say no. `recommendFromShelf` refuses on the goal alone; this returns `null` immediately so it can.
+ */
+function askShelf(c: ChatState): Question | null {
+  const goalQuestion = askProgram({});
+  if (c.goal == null && !c.pickingRace) return goalQuestion;
+  if (c.goal == null) return askProgram({ pickingRace: true });
+
+  // Nothing on the shelf answers a race. Let the recommender say so rather than interrogating them first.
+  if (isEnduranceGoal(c.goal)) return null;
+
+  if (c.experience == null) return experienceQuestion(c);
+
+  if (c.daysPerWeek == null) {
+    return {
+      id: 'days',
+      /* The build flow's own line. It is the same question about the same diary, and two phrasings of it
+         would be the app sounding like two people. */
+      ask: pick('ask_days'),
+      chips: [2, 3, 4, 5, 6].map((n) => chip(`${n} days`, { daysPerWeek: n })),
+    };
+  }
+
+  if (c.environment == null) {
+    return {
+      id: 'where',
+      ask: pick('ask_where'),
+      chips: [
+        chip('Full gym', { environment: 'full_gym' }),
+        chip('My home gym', { environment: 'home' }),
+        chip('Bodyweight only', { environment: 'bodyweight' }),
+      ],
+    };
+  }
+
+  return null;
 }
 
 /**
@@ -845,6 +937,16 @@ export const OPENERS: string[] = [
   'What should I train today?',
   'Change my program',
   "I've got a program already",
+  /*
+   * ⚠ **THE ONE DOOR THAT DOES NOT END IN HOLT WRITING ANYTHING**, and it was added because the app had
+   * no answer to a question athletes were actually asking (PO, 2026-08-24). Stood in front of fourteen
+   * named programs, the only help on offer was a door OUT of the catalogue — *let me write you a
+   * different one* — which replaces the question rather than answering it.
+   *
+   * Phrased as the athlete's sentence, not as a capability. "Recommend a program" is a description of
+   * what the app does; this is the thing somebody is about to say.
+   */
+  'Which one should I pick?',
   'How do I…?',
 ];
 
@@ -853,6 +955,8 @@ export type OpenerAction =
   | { kind: 'build'; mode: 'program' | 'day'; patch: Partial<CoachConstraints> }
   | { kind: 'import' }
   | { kind: 'edit' }
+  /** Read the shelf. Ends in somebody else's program, or in an honest no — never in a build. */
+  | { kind: 'pick' }
   | { kind: 'help' };
 
 export function fromOpener(label: string): OpenerAction | null {
@@ -869,6 +973,8 @@ export function fromOpener(label: string): OpenerAction | null {
       return { kind: 'edit' };
     case "I've got a program already":
       return { kind: 'import' };
+    case 'Which one should I pick?':
+      return { kind: 'pick' };
     case 'How do I…?':
       return { kind: 'help' };
     default:
@@ -989,14 +1095,26 @@ export const HOME_CARDS: readonly HomeCard[] = [
 
 /** The two quiet rows under the cards. Same contract: `opener` must be an `OPENERS` member. */
 export interface HomeRow {
-  /** Which glyph the 26×26 outlined container holds — a rounded square, or a circle. */
-  icon: 'document' | 'question';
+  /** Which glyph the 26×26 outlined container holds — a rounded square, a circle, or the shelf. */
+  icon: 'document' | 'question' | 'shelf';
   label: string;
   opener: string;
 }
 
 export const HOME_ROWS: readonly HomeRow[] = [
   { icon: 'document', label: 'I already have a program', opener: "I've got a program already" },
+  /*
+   * ⚠ **A THIRD ROW, WHICH IS A DELTA FROM `Coach Holt Chat v2.dc.html` §3 — RECORDED, NOT SLIPPED IN.**
+   * The design fixes three capability cards over TWO quiet rows. This is a third, and the reason it goes
+   * here rather than staying a Discover-only link is the test one file over: *"Five doors in, five doors
+   * drawn. A missing one is a capability with no way to reach it from Home."* A door reachable from
+   * exactly one screen in the app is the same defect the Discover link was added to fix, one level up.
+   *
+   * It stays a ROW rather than becoming a fourth card, deliberately. Picking off the shelf is not what
+   * Holt is for — the hierarchy the design argues for is still true, and this belongs under the rule with
+   * the other two footnotes.
+   */
+  { icon: 'shelf', label: "I don't know which to choose", opener: 'Which one should I pick?' },
   /* ⚠ IT SAYS THE QUESTION, NOT A DESCRIPTION OF THE QUESTION (PO, 2026-08-14). "Ask Holt something"
      is a category; "How do I…" is the sentence somebody is actually about to finish, and it is the same
      words the topics themselves answer. */
@@ -1240,7 +1358,7 @@ export const dayPreamble = (): string => pick('preamble_day');
  * asks for — a long run is as long as it is, so a stated session budget would be a question whose answer
  * changes nothing.
  */
-export const readyToBuild = (c: ChatState, mode: 'program' | 'day' = 'program'): boolean => nextQuestion(c, mode) == null;
+export const readyToBuild = (c: ChatState, mode: ChatMode = 'program'): boolean => nextQuestion(c, mode) == null;
 
 /** The goal keys the chat can actually offer, so a chip can never name a dead end. */
 export const OFFERABLE_GOALS: readonly Goal[] = AUTHORED_GOALS.filter(offerable);
@@ -1401,6 +1519,65 @@ export function refusalCardFor(goal: Goal, weeksAvailable: number, daysPerWeek: 
     primary: `Build the ${alt.label}`,
     secondary: 'Pick another race',
     altGoal: spec.fallback,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// THE SHELF CARD
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * A program Holt did not write, offered with his reasons and his reservations.
+ *
+ * ⚠ **`kicker` SAYS WHOSE WORK IT IS**, and that is not decoration. Every other card in this thread is
+ * something Holt built out of the athlete's answers; this one is a named, authored, locked program that
+ * existed before the conversation started. A card that looked identical to a `ProgramCard` would be him
+ * quietly taking the credit — and, worse, would imply the block had been shaped around the answers when
+ * it was only matched against them.
+ *
+ * ⚠ **AND THERE IS NO SCORE ON IT.** `Recommendation.score` orders the shelf and stops there. A
+ * percentage would invite exactly the comparison this whole flow exists to spare somebody, and it would
+ * claim a precision a hand-tuned table does not have.
+ */
+export interface PickCard {
+  kicker: string;
+  title: string;
+  /** `6 weeks · 3 days a week · Strength` — the shape of the block in one line. */
+  subtitle: string;
+  /** Why this one. Only ever things that actually matched. */
+  because: string[];
+  /** Where it does not match what they said. ⚠ Rendered ALWAYS — see `recommend.ts`. */
+  caveats: string[];
+  /** The program's own authored aims, in its author's words. Two, at most — it is a card, not the page. */
+  aims: string[];
+  /** Where "See the program" goes. */
+  programId: string;
+  /** The one genuine alternative, when there is one. Absent is the common case and is not a failure. */
+  runnerUpName: string | null;
+  runnerUpId: string | null;
+}
+
+/**
+ * Build the card from a recommendation.
+ *
+ * Pure and total: everything on it comes off the `ShelfProgram`, so the card can never name a week count
+ * or a session frequency the catalogue does not actually carry.
+ */
+export function pickCardFor(rec: ShelfRecommendation, runnerUp: ShelfRecommendation | null): PickCard {
+  const p = rec.program;
+  return {
+    kicker: 'FROM THE FORGE SHELF',
+    title: p.name,
+    subtitle: [`${p.durationWeeks} weeks`, `${p.frequencyPerWeek} days a week`, p.family].join(' · '),
+    because: rec.because,
+    caveats: rec.caveats,
+    /* ⚠ THE PROGRAM'S OWN GOALS, VERBATIM AND UNTRIMMED — "Add weight to a tested bench press", not a
+       summary of it. They are the best copy the catalogue owns and they were written by the person who
+       wrote the training. Two, because a card with five bullets is a page. */
+    aims: p.goals.slice(0, 2),
+    programId: p.id,
+    runnerUpName: runnerUp?.program.name ?? null,
+    runnerUpId: runnerUp?.program.id ?? null,
   };
 }
 

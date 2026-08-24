@@ -30,6 +30,8 @@ import { saveTemplate } from '@/data/templates-live';
 import { saveWeekTemplate, startWeekTemplate } from '@/data/week-templates-live';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { assemble } from '@/domain/coach/assemble';
+import { recommendFromShelf, SHELF_CANNOT_ADAPT, type ShelfProgram } from '@/domain/coach/recommend';
+import { getProgramDefinitions } from '@/domain/training/programs';
 import {
   dayPreamble,
   INTRO,
@@ -51,6 +53,7 @@ import {
   LEVEL_CHIPS,
   nextQuestion,
   preamble,
+  pickCardFor,
   programCardFor,
   readyToBuild,
   startingLoadLine,
@@ -66,7 +69,9 @@ import {
   type Chip,
   type FocusPick,
   type DayCard,
+  type PickCard,
   type ProgramCard,
+  type ChatMode,
   type QuestionControl,
   type RefusalCard,
   type Turn,
@@ -274,8 +279,11 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
   const [draft, setDraft] = useState('');
   /* Declared ABOVE the intro effect, which sets it: a hook cannot close over a const declared below it,
      and react-compiler catches the attempt rather than letting it become a stale closure. */
-  const [busy, setBusy] = useState<'thinking' | 'building' | null>(null);
-  const [mode, setMode] = useState<'program' | 'day' | null>(null);
+  /* ⚠ `reading` IS NOT A SYNONYM FOR `building`. He is not building anything when he reads the shelf —
+     saying BUILDING over a catalogue lookup would be the status strip claiming authorship of somebody
+     else's program, which is the same lie the card's kicker exists to prevent. */
+  const [busy, setBusy] = useState<'thinking' | 'building' | 'reading' | null>(null);
+  const [mode, setMode] = useState<ChatMode | null>(null);
   const [constraints, setConstraints] = useState<ChatState>({});
   /**
    * What Holt just built, and enough of it to act on.
@@ -347,7 +355,17 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
      mid-flight, and that is already what `introStep` says — setting a `busy` flag from the effect body
      would be a synchronous setState in an effect AND a duplicate of a fact we already hold. */
   const introTyping = INTRO[introStep] != null;
-  const waiting = busy ?? (introTyping ? ('thinking' as const) : null);
+  /*
+   * ⚠ `reading` COLLAPSES TO `thinking` HERE, AND ONLY THE WORD IN THE HEADER KEEPS THE DISTINCTION.
+   *
+   * The medallion and the typing indicator answer one question — is he working — and they have exactly
+   * two animations for it. Inventing a third state for both would be new artwork in service of a
+   * distinction nobody can see at 52pt. What the athlete CAN read is the status word, and that is where
+   * "READING" earns its keep: it is the difference between Holt writing them a block and Holt looking
+   * something up, which is the one claim this whole flow is careful about.
+   */
+  const working = busy === 'reading' ? ('thinking' as const) : busy;
+  const waiting = working ?? (introTyping ? ('thinking' as const) : null);
 
   /* Guards the greeting against running twice. Read and written INSIDE the effect only — react-compiler
      errors on `ref.current` touched during render, and it is right to: that is a render whose output
@@ -428,7 +446,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
   /* ── the turn cycle ────────────────────────────────────────────────────────────────────────────── */
 
   const advance = useCallback(
-    async (next: ChatState, mode_: 'program' | 'day') => {
+    async (next: ChatState, mode_: ChatMode) => {
       const merged = { ...next };
       setConstraints(merged);
       if (merged.experience) void rememberExperience(merged.experience);
@@ -445,6 +463,101 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
            hardcoded line did ("Good. What are you training for?"), now varied so it does not become the
              tic that makes him sound like a script. */
           if (q) say({ kind: 'holt', text: `${pick('ack')} ${q.ask}` }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+          return;
+        }
+
+        /*
+         * ⚠ **THE SHELF BRANCH RETURNS BEFORE `completeFor`, AND THAT IS LOAD-BEARING.**
+         *
+         * `completeFor` fills a `CoachConstraints` — session length, limitations, equipment — with
+         * defaults for anything the questionnaire did not ask. That is exactly right for a build and
+         * exactly wrong here: this flow deliberately never asks about session length or a bad shoulder
+         * (see `askShelf`), so running it would manufacture answers the athlete never gave and then
+         * match a program against them. Nothing downstream would notice, and the card would quietly be
+         * claiming a fit computed from invented input.
+         */
+        if (mode_ === 'pick') {
+          setBusy('reading');
+          await pause(650);
+          /*
+           * ⚠ **THE PROGRAM THEY ARE ALREADY ON COMES OFF THE SHELF FIRST.**
+           *
+           * Nothing in `recommend.ts` knows what the athlete owns — it is pure, and it ranks a list it is
+           * handed. So without this it will happily answer "which of these should I take" with the block
+           * they are four weeks into, because that block genuinely is the best match for their goal,
+           * their level and their week. Correct by the numbers and useless as an answer.
+           *
+           * Swallowed to null rather than surfaced: failing to read the active program is a reason to
+           * recommend from the whole shelf, never a reason to refuse to recommend at all.
+           */
+          const active = await fetchActiveProgram().catch(() => null);
+          const running = active?.sourceDefinitionId ?? null;
+
+          /* Projected here, at the boundary, exactly like `learned` — `domain/coach/**` reads no data of
+             its own, so the shelf is handed in rather than imported by the recommender. */
+          const shelf: ShelfProgram[] = getProgramDefinitions()
+            .filter((d) => d.id !== running)
+            .map((d) => ({
+              id: d.id,
+              name: d.name,
+              family: d.family,
+              difficulty: d.difficulty ?? null,
+              durationWeeks: d.durationWeeks,
+              frequencyPerWeek: d.frequencyPerWeek,
+              environment: d.environment ?? null,
+              description: d.description ?? null,
+              theme: d.theme ?? null,
+              goals: d.goals ?? [],
+            }));
+          const answer = recommendFromShelf(
+            {
+              /* Always answered. `askShelf` asks the goal first and cannot report ready without it. */
+              goal: merged.goal!,
+              /*
+               * ⚠ **THESE THREE ARE DEFAULTED, AND THE DEFAULTS ARE PROVABLY NEVER READ.**
+               *
+               * `askShelf` reports ready in exactly two situations: every question answered, or an
+               * ENDURANCE goal — which it short-circuits on the goal alone, because no amount of asking
+               * about a room changes the fact that the shelf has no running programs. On that second
+               * path none of these three has been asked, and `recommendFromShelf` refuses on
+               * `isEnduranceGoal` before reading a single other field.
+               *
+               * ⚠ Written as defaults rather than a `!` because `experience!.lifting` is a CRASH, not a
+               * lint complaint: a brand-new athlete whose very first tap is "Run a race" has no
+               * remembered level, and the non-null assertion would have thrown a TypeError on a coach
+               * about to say something perfectly sensible. And a default is only safe here because the
+               * refusal makes it unreachable — this is the project's own standing lesson about a value
+               * that is only ever its default, which is worse than an absent one precisely because it
+               * renders a confident, specific, false claim. It renders nothing.
+               */
+              experience: merged.experience?.lifting ?? 'beginner',
+              daysPerWeek: merged.daysPerWeek ?? 3,
+              environment: merged.environment ?? 'full_gym',
+            },
+            shelf,
+          );
+          setBusy(null);
+
+          if (!answer.ok) {
+            /* ⚠ A REFUSAL IS NOT AN ERROR — the same rule the endurance path already keeps. He says the
+               no in his own voice and then offers the door that CAN help, because a recommendation flow
+               that dead-ends is the defect the Discover link was added to fix. */
+            say(
+              { kind: 'holt', text: answer.reason },
+              { kind: 'chips', chips: [{ label: 'Write me one instead', patch: {}, startsBuild: true }, { label: "I'll look myself", patch: {}, goTo: '/workouts' }] },
+            );
+            return;
+          }
+
+          setBuilt(null);
+          say(
+            { kind: 'holt', text: pick('ack') + " Here's the one I'd put you on." },
+            { kind: 'pick', card: pickCardFor(answer.best, answer.runnerUp) },
+            /* ⚠ SAID EVERY TIME, NOT ONLY WHEN SOMETHING LOOKS WRONG. It is the standing limit of this
+               whole flow — he did not write these and cannot bend one around anybody — and it doubles as
+               the honest reason to have him write one. See `SHELF_CANNOT_ADAPT`. */
+            { kind: 'holt', text: SHELF_CANNOT_ADAPT },
+          );
           return;
         }
 
@@ -978,6 +1091,27 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
       return;
     }
 
+    /*
+     * Leaving the shelf for the workshop. The mode has to move, which no patch can do — see `startsBuild`.
+     *
+     * ⚠ AND IT PAYS THE ALLOWANCE THE OPENER WOULD HAVE. Reading the shelf is free; having Holt write a
+     * block is what `holt_programs` meters, and this chip is the same request the BUILD door makes. A
+     * free bypass of a metered door is a hole in the gate, not a kindness.
+     */
+    if (chip.startsBuild) {
+      say({ kind: 'me', text: chip.label });
+      if (!guard('holt_programs')) {
+        say({ kind: 'holt', text: pick('allowance_program') });
+        return;
+      }
+      setMode('program');
+      void (async () => {
+        if (!(await guardActiveProgram())) return;
+        await advance({ ...constraints, ...chip.patch }, 'program');
+      })();
+      return;
+    }
+
     /* The only chips that leave. `goTo` is a route string the sheet pushes — nothing about training. */
     if (chip.goTo) {
       say({ kind: 'me', text: chip.label });
@@ -1015,6 +1149,21 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
 
       if (opener.kind === 'edit') {
         void beginEdit();
+        return;
+      }
+
+      /*
+       * ⚠ **NO ALLOWANCE IS SPENT HERE, AND IT RETURNS ABOVE THE GUARD TO MAKE SURE OF IT.**
+       *
+       * `holt_programs` meters what it costs to have Holt WRITE something. He writes nothing on this
+       * path — he names a program that has been sitting in the catalogue since before the conversation
+       * started, and the cap that actually applies is the one on programs you KEEP, which is charged at
+       * the adopt on Program Detail. Charging his authoring allowance for a recommendation would be
+       * billing for a signpost.
+       */
+      if (opener.kind === 'pick') {
+        setMode('pick');
+        void advance({ ...constraints }, 'pick');
         return;
       }
 
@@ -1089,9 +1238,14 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     if (!intent || intentFired.current) return undefined;
     if (introStep < INTRO.length + 1) return undefined;
     intentFired.current = true;
-    /* Both openers already exist and both are real chips — the door is only choosing which one the
+    /* Every opener already exists and every one is a real chip — the door is only choosing which one the
        athlete would have tapped, having already said so on the previous screen. */
-    const label = intent === 'import' ? "I've got a program already" : 'Build me something';
+    const label =
+      intent === 'import'
+        ? "I've got a program already"
+        : intent === 'recommend'
+          ? 'Which one should I pick?'
+          : 'Build me something';
     const id = setTimeout(() => tapChipRef.current({ label, patch: {} }), 240);
     return () => clearTimeout(id);
   }, [intent, introStep]);
@@ -1373,7 +1527,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
               <Text style={styles.headerStatus}>YOUR COACH</Text>
               <View style={styles.headerDot} />
               <Text style={styles.headerStatus}>
-                {busy === 'building' ? 'BUILDING' : busy === 'thinking' ? 'THINKING' : 'READY'}
+                {busy === 'building' ? 'BUILDING' : busy === 'reading' ? 'READING' : busy === 'thinking' ? 'THINKING' : 'READY'}
               </Text>
             </View>
           </View>
@@ -1718,14 +1872,22 @@ function CoachHome({ onOpener }: { onOpener: (opener: string) => void }) {
             accessibilityLabel={r.label}
             style={({ pressed }) => [styles.homeRow, i === HOME_ROWS.length - 1 && styles.homeRowLast, pressed && styles.homeRowPressed]}
           >
-            {/* Rounded square for the document, a circle for the question — the container's shape is the
-                only thing separating two rows that are otherwise identical. */}
+            {/* Rounded square for the document and the shelf, a circle for the question — the container's
+                shape is most of what separates rows that are otherwise identical, and the glyph does the
+                rest. */}
             <View style={[styles.homeGlyph, r.icon === 'question' && styles.homeGlyphRound]}>
               <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                 {r.icon === 'document' ? (
                   <>
                     <Path d="M6.5 3.5h7L18 8v12.5h-11.5z" />
                     <Path d="M13.5 3.5V8H18" />
+                  </>
+                ) : r.icon === 'shelf' ? (
+                  /* Three spines stood on a shelf — the fourteen programs you are stood in front of, which
+                     is the picture the question is about. Not a magnifying glass: this is not a search. */
+                  <>
+                    <Path d="M5 4.5v13M9.5 4.5v13M14 5.5l3.5 12.2" />
+                    <Path d="M3 19.5h18" />
                   </>
                 ) : (
                   <>
@@ -2242,6 +2404,9 @@ function TurnView({
 
     case 'day':
       return <DayCardView card={turn.card} onPreview={handoff.onPreview} onStart={handoff.onStart} onSave={handoff.onSave} />;
+
+    case 'pick':
+      return <PickCardView card={turn.card} onChip={onChip} />;
 
     case 'refusal':
       return <RefusalCardView card={turn.card} onChip={onChip} />;
@@ -3067,6 +3232,107 @@ function DayCardView({
  * buttons did nothing. `altGoal` on the card is what made the primary possible: the label was a
  * sentence, and a sentence is not a goal key.
  */
+/**
+ * ══ A PROGRAM HOLT DID NOT WRITE ══
+ *
+ * Deliberately NOT the `ProgramCardView` treatment. That card is an artifact — weeks, days, every
+ * movement, and buttons that start or save something Holt just built out of the athlete's answers. This
+ * one names an authored, shipped program and sends them to its own screen to read it.
+ *
+ * ⚠ **THE CAVEATS RENDER AT THE SAME WEIGHT AS THE REASONS, NOT AS SMALL PRINT.** They are the honest
+ * half of a recommendation — the days that do not match, the rung that is a stretch, the kit the block
+ * assumes — and a card that whispered them would be the app asserting a fit it did not achieve. The
+ * project's own standing lesson is about exactly this shape: a confident, specific, false claim about
+ * the athlete is worse than no claim at all.
+ *
+ * ⚠ **AND THERE IS NO NUMBER ON IT.** `Recommendation.score` orders the shelf and never leaves the
+ * domain — a percentage would invite the comparison this whole flow exists to spare somebody.
+ */
+function PickCardView({ card, onChip }: { card: PickCard; onChip: (c: Chip) => void }) {
+  return (
+    <View style={styles.pickCard}>
+      <Text style={styles.kickerBronze}>{card.kicker}</Text>
+      <View style={styles.pickHead}>
+        <Text style={styles.pickTitle}>{card.title}</Text>
+        <Text style={styles.pickMeta}>{card.subtitle}</Text>
+      </View>
+
+      {/* The program's own authored aims, in its author's words — the best copy the catalogue owns. */}
+      {card.aims.length > 0 ? (
+        <View style={styles.pickAims}>
+          {card.aims.map((a) => (
+            <Text key={a} style={styles.pickAim}>
+              {a}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+
+      <View style={styles.pickReasons}>
+        {card.because.map((b) => (
+          <View key={b} style={styles.pickReasonRow}>
+            <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M20 6L9 17l-5-5" />
+            </Svg>
+            <Text style={styles.pickReason}>{b}</Text>
+          </View>
+        ))}
+        {card.caveats.map((c) => (
+          <View key={c} style={styles.pickReasonRow}>
+            {/* An open circle, not a warning triangle. Nothing has gone wrong — these are the terms. */}
+            <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M12 4.5a7.5 7.5 0 100 15 7.5 7.5 0 000-15z" />
+            </Svg>
+            <Text style={styles.pickCaveat}>{c}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.cardActions}>
+        <View style={styles.ctaGrow}>
+          {/* ⚠ "SEE THE PROGRAM", NOT "START IT". Program Detail is where a block is read, adopted and
+              charged against the plan cap — routing straight into an adopt would take a decision the
+              athlete has not made yet, off a card they have had for four seconds. */}
+          <Button
+            variant="primary"
+            fullWidth
+            onPress={() => onChip({ label: 'See the program', patch: {}, goTo: `/program/${card.programId}` })}
+            accessibilityLabel={`See ${card.title}`}
+          >
+            See the program
+          </Button>
+        </View>
+        <Button
+          variant="text"
+          onPress={() => onChip({ label: 'Write me one instead', patch: {}, startsBuild: true })}
+          accessibilityLabel="Have Coach Holt write a program instead"
+        >
+          Write me one
+        </Button>
+      </View>
+
+      {/* The runner-up is a row, not a second card. It exists so the recommendation reads as a CHOICE
+          rather than an instruction — and it is absent whenever nothing else was genuinely in contention,
+          because a distant second is filler dressed as an option. */}
+      {card.runnerUpName && card.runnerUpId ? (
+        <Pressable
+          onPress={() => onChip({ label: card.runnerUpName!, patch: {}, goTo: `/program/${card.runnerUpId}` })}
+          accessibilityRole="button"
+          accessibilityLabel={`Or look at ${card.runnerUpName}`}
+          style={({ pressed }) => [styles.pickAlt, pressed && styles.homeRowPressed]}
+        >
+          <Text style={styles.pickAltLabel}>
+            Or have a look at <Text style={styles.pickAltName}>{card.runnerUpName}</Text>
+          </Text>
+          <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round">
+            <Path d="M9 6l6 6-6 6" />
+          </Svg>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
 function RefusalCardView({ card, onChip }: { card: RefusalCard; onChip: (c: Chip) => void }) {
   return (
     <View style={styles.refusalCard}>
@@ -3579,6 +3845,39 @@ const styles = StyleSheet.create({
      not something to do inside a design pass. */
 
   /* ── refusal ────────────────────────────────────────────────────────────────────────────────── */
+  /* ══ THE SHELF CARD ══ Modelled on the refusal card — recessed, bronze-edged — because both are Holt
+     pointing at something rather than handing over something he made. */
+  pickCard: {
+    borderRadius: flRadius.xl,
+    backgroundColor: flColor.surfaceRecessed,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    padding: 16,
+    gap: 12,
+    boxShadow: 'inset 0 1px 0 rgba(198,156,100,0.16)',
+  },
+  pickHead: { gap: 3 },
+  pickTitle: { fontFamily: flFont.display, fontSize: 21, color: flColor.cream100 },
+  pickMeta: { fontSize: 12.5, color: flColor.gray600 },
+  pickAims: { gap: 4, paddingLeft: 11, borderLeftWidth: 2, borderLeftColor: flColor.bronzeBorderSubtle },
+  pickAim: { fontSize: 13, lineHeight: 20, color: flColor.gray400, fontStyle: 'italic' },
+  pickReasons: { gap: 8 },
+  pickReasonRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
+  /* ⚠ THE SAME SIZE AND LINE HEIGHT AS A REASON. Only the colour separates them, and only by one step —
+     see the note on `PickCardView`. Shrinking a caveat is how it becomes small print. */
+  pickReason: { flex: 1, fontSize: 13.5, lineHeight: 20, color: flColor.cream100 },
+  pickCaveat: { flex: 1, fontSize: 13.5, lineHeight: 20, color: flColor.gray400 },
+  pickAlt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingTop: 11,
+    borderTopWidth: 1,
+    borderTopColor: flColor.charcoal500,
+  },
+  pickAltLabel: { flex: 1, fontSize: 12.5, color: flColor.gray600 },
+  pickAltName: { color: flColor.bronze400 },
+
   refusalCard: {
     borderRadius: flRadius.xl,
     backgroundColor: flColor.surfaceRecessed,

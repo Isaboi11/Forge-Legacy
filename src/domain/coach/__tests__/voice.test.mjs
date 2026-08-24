@@ -127,12 +127,16 @@ test('every opener means something', () => {
   assert.equal(fromOpener('45 minutes and dumbbells'), null, 'the retired opener must not still resolve');
 });
 
-test('the openers are the four real reasons to open him', () => {
+test('the openers are the real reasons to open him', () => {
   const kinds = OPENERS.map((l) => fromOpener(l).kind);
   assert.ok(kinds.includes('build'), 'build a program');
   assert.ok(kinds.includes('import'), 'bring one you already have');
   assert.ok(kinds.includes('edit'), 'change the one you are already running');
   assert.ok(kinds.includes('help'), 'ask how the app works');
+  /* ⚠ THE ONE THAT ENDS IN SOMEBODY ELSE'S WORK. Added 2026-08-24 for the athlete stood in front of the
+     catalogue who does not know which of fourteen to take — the one question Holt could not answer, and
+     could only ever respond to by offering to replace it with something he wrote. */
+  assert.ok(kinds.includes('pick'), 'have him choose one off the shelf');
 });
 
 test('typing is off, and that is a decision rather than an accident', () => {

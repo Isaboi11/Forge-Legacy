@@ -218,7 +218,7 @@ test('every opener is a real thing Holt can do', () => {
   for (const label of OPENERS) {
     const r = fromOpener(label);
     assert.ok(r, `"${label}" is offered but leads nowhere`);
-    assert.ok(['build', 'import', 'edit', 'help'].includes(r.kind), `"${label}" has no action`);
+    assert.ok(['build', 'import', 'edit', 'pick', 'help'].includes(r.kind), `"${label}" has no action`);
     if (r.kind === 'build') assert.ok(r.mode === 'program' || r.mode === 'day');
   }
 });
@@ -300,8 +300,14 @@ test('⚠ every Home tile fires an opener that resolves', () => {
   }
 });
 
-test('Home covers all five openers, once each', () => {
-  // Five doors in, five doors drawn. A missing one is a capability with no way to reach it from Home.
+test('Home covers every opener, once each', () => {
+  /*
+   * Every door in, every door drawn. A missing one is a capability with no way to reach it from Home.
+   *
+   * ⚠ NOT A COUNT ANY MORE. This read "all five" and asserted five for months, which meant the sixth
+   * door — "Which one should I pick?", added 2026-08-24 — could only be added by editing the test that
+   * was guarding the invariant. The invariant was never the number; it is that the two sets are equal.
+   */
   const fired = [...HOME_CARDS, ...HOME_ROWS].map((t) => t.opener);
   assert.deepEqual([...fired].sort(), [...OPENERS].sort());
   assert.equal(new Set(fired).size, fired.length, 'two tiles fire the same opener');

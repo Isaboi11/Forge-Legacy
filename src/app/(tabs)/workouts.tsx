@@ -12,6 +12,7 @@ import { Pill } from '@/components/forge/composites/Pill';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
+import { useCoachDoor } from '@/hooks/useCoachDoor';
 import { getPrograms } from '@/domain/training/active-program';
 import { fetchMyPrograms, type SavedProgram } from '@/data/programs-live';
 import { fetchProgramSessions } from '@/data/programs-live';
@@ -67,6 +68,7 @@ export default function WorkoutsScreen() {
      the hook. The active workout is a pushed route, so it can never be interrupted by one. */
   useEarnedMoments();
   const router = useRouter();
+  const { openCoach } = useCoachDoor();
   const { startWorkout } = useWorkoutSession();
   const [tab, setTab] = useState<'mine' | 'discover'>('mine');
   const [family, setFamily] = useState<string>('All');
@@ -465,6 +467,38 @@ export default function WorkoutsScreen() {
                 ))}
               </ScrollView>
             </View>
+
+            {/*
+              ══ THE ONE PLACE THE QUESTION IS ACTUALLY ASKED (PO, 2026-08-24) ══
+
+              *"should we have a button in the program that says (and it would be a subtle button) don't
+              know which to choose? Let us help"*
+
+              ⚠ **IT SITS HERE, UNDER THE FILTER, AND NOT ON HOME.** Home already carries this door — the
+              lead card of the first-program block is Coach Holt — but only for an athlete who has no
+              program at all. The moment somebody is stood in front of the shelf comparing names, the help
+              disappeared, and the only thing on this screen that could help was a door OUT of it.
+
+              ⚠ **AND IT OPENS THE COACH THAT ALREADY EXISTS, rather than a second picker.** Home's own
+              note records the decision this would otherwise undo: "Build it with me" and "Help me find
+              one" were collapsed into one door because they were two doors to the same room. This is the
+              same room, entered with `recommend` so Holt arrives already reading the catalogue instead of
+              offering to replace it.
+
+              ⚠ **A ROW, NOT A CARD.** "Subtle" was the ask and it is also correct: a card here would
+              compete with the programs it is offering to help choose between, which is the problem.
+            */}
+            <Pressable
+              onPress={() => openCoach('recommend')}
+              accessibilityRole="button"
+              accessibilityLabel="Not sure which program to choose? Ask Coach Holt"
+              style={({ pressed }) => [styles.helpMeChoose, pressed && styles.helpMePressed]}
+            >
+              <Text style={styles.helpMeText}>
+                Not sure which one? <Text style={styles.helpMeLink}>Ask Coach Holt.</Text>
+              </Text>
+              <ChevronRightIcon size={15} color={flColor.bronze400} />
+            </Pressable>
 
             {/* Recommended Next — real catalog */}
             <View>
@@ -1030,6 +1064,13 @@ const styles = StyleSheet.create({
     color: flColor.gray600,
     marginBottom: 10,
   },
+  /* Deliberately the quietest interactive thing on the tab — no border, no fill, no icon container.
+     It is a sentence with an arrow, and it earns its place by being where the question gets asked
+     rather than by being loud. */
+  helpMeChoose: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
+  helpMePressed: { opacity: 0.6 },
+  helpMeText: { flex: 1, fontSize: 13, color: flColor.gray600 },
+  helpMeLink: { color: flColor.bronze400, fontWeight: '600' },
   chips: { gap: 8, paddingRight: 4 },
   chip: {
     paddingVertical: 9,
