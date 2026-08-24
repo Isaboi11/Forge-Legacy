@@ -1075,6 +1075,7 @@ function ProgramBuilderScreen() {
           onOpenDayMenu={setDayMenu}
           onOpenJump={() => setJumpOpen(true)}
           onOpenWeekSheet={() => setWeekSheet({ index: draft.openWeek ?? 0, entering: false })}
+          onUseSavedWeek={() => setWeekTplFor(draft.openWeek ?? 0)}
           onAdvance={advanceWeek}
         />
       ) : (
@@ -1092,6 +1093,8 @@ function ProgramBuilderScreen() {
           onOpenDayMenu={setDayMenu}
           onOpenWeek={openWeek}
           onOpenWeekMenu={(i) => setWeekSheet({ index: i, entering: false })}
+          /* Index 0: repeat mode has one week and `weekTemplateIntoWeek` ignores the index there. */
+          onUseSavedWeek={() => setWeekTplFor(0)}
           onOpenImport={openImport}
           onOpenJump={() => setJumpOpen(true)}
           onRepeat={requestRepeat}
@@ -2027,6 +2030,7 @@ function SetupView({
   onOpenDayMenu,
   onOpenWeek,
   onOpenWeekMenu,
+  onUseSavedWeek,
   onOpenJump,
   onOpenImport,
   onRepeat,
@@ -2047,6 +2051,7 @@ function SetupView({
   onOpenDayMenu: (i: number) => void;
   onOpenWeek: (i: number) => void;
   onOpenWeekMenu: (i: number) => void;
+  onUseSavedWeek: () => void;
   onOpenJump: () => void;
   onOpenImport: () => void;
   onRepeat: () => void;
@@ -2315,6 +2320,11 @@ function SetupView({
         </TourAnchor>
         )}
 
+        {/* ⚠ REPEAT MODE ONLY. In `vary` the list above is WEEKS, not days, and a single row under it
+            could not say which week it meant — that shape already has its door on each week's own row
+            and inside the week itself. Here there is exactly one week, so there is no ambiguity. */}
+        {draft.vary ? null : <UseSavedWeekRow onPress={onUseSavedWeek} />}
+
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </Animated.ScrollView>
 
@@ -2368,6 +2378,42 @@ function StructureOption({
 // WEEK DAY-LIST — one week's workouts, in Customize mode
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * ══ THE DOOR TO A SAVED WEEK, WHERE THE WEEK IS (PO, 2026-08-24) ══
+ *
+ * *"Right now I had to really search for the use a saved week feature in building a program. Should just
+ * be a subtle button under the days of the week."*
+ *
+ * ⚠ **AND IT WAS WORSE THAN HARD TO FIND — IN THE DEFAULT PROGRAM SHAPE IT WAS UNREACHABLE.** The only
+ * two ways in were the `⋯` in a week's AppBar and the `⋯` on a row of the WEEKS list, and both of those
+ * exist only when `vary` is true. `vary` DEFAULTS TO FALSE. So an athlete building an ordinary program —
+ * one week's shape, repeated — had no path to the feature at all, and the report reads as "I searched
+ * and could not find it" because that is exactly what happened.
+ *
+ * The draft model was never the problem: `weekTemplateIntoWeek` has handled repeat mode since it was
+ * written (*"Repeat mode has one week and it is `days`; the index is meaningless there and is ignored"*)
+ * and `chooseWeekTemplate` already resolves the non-vary target. Only the door was missing.
+ *
+ * ⚠ **SUBTLE, AND MEASURABLY QUIETER THAN THE SAME ROW IN THE SHEET.** The sheet's version carries a
+ * bronze tint and a bronze border because there it is the FIRST of three choices being offered. Here it
+ * sits under a list of workouts the athlete is in the middle of building, and it must not compete with
+ * them — so it is a hairline charcoal border, no fill, and one line of text.
+ */
+function UseSavedWeekRow({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Fill this week from a week you have saved"
+      style={({ pressed }) => [styles.useWeekRow, pressed ? styles.pressed : null]}
+    >
+      <Glyph d={LINES} size={14} color={flColor.bronze400} width={1.8} />
+      <Text style={styles.useWeekText}>Use a saved week</Text>
+      <Glyph d="M9 6l6 6-6 6" size={14} color={flColor.gray600} width={2} />
+    </Pressable>
+  );
+}
+
 function WeekDaysView({
   draft,
   days,
@@ -2376,6 +2422,7 @@ function WeekDaysView({
   onOpenDayMenu,
   onOpenJump,
   onOpenWeekSheet,
+  onUseSavedWeek,
   onAdvance,
 }: {
   draft: ProgramDraft;
@@ -2385,6 +2432,7 @@ function WeekDaysView({
   onOpenDayMenu: (i: number) => void;
   onOpenJump: () => void;
   onOpenWeekSheet: () => void;
+  onUseSavedWeek: () => void;
   onAdvance: () => void;
 }) {
   const rise = useEntryRise(360);
@@ -2451,6 +2499,8 @@ function WeekDaysView({
             );
           })}
         </View>
+
+        <UseSavedWeekRow onPress={onUseSavedWeek} />
       </Animated.ScrollView>
 
       <LinearGradient colors={['rgba(6,7,8,0.35)', 'rgba(6,7,8,0.82)']} style={styles.footer}>
@@ -3099,6 +3149,21 @@ const styles = StyleSheet.create({
   cardioIntro: { fontSize: 12.5, lineHeight: 19, color: flColor.gray600, marginBottom: 2 },
 
   // "Use a template" — the whole-day shortcut, and its chooser
+  /* The quiet door under the day list. Hairline border, no fill, one line — it sits beneath workouts
+     the athlete is mid-way through building and must not compete with them. The sheet's version of the
+     same action is bronze-tinted because there it is the first of three offers; here it is a footnote. */
+  useWeekRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    marginTop: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal700,
+  },
+  useWeekText: { flex: 1, fontSize: 13, color: flColor.gray400 },
   templateLink: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 22, paddingVertical: 14, paddingHorizontal: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
   templateLinkText: { flex: 1, minWidth: 0, gap: 3 },
   templateLinkTitle: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },

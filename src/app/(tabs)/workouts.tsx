@@ -81,11 +81,33 @@ export default function WorkoutsScreen() {
   // The athlete's own programs. Refetched on focus so a program just built, duplicated, or ended shows
   // up the moment they come back to this tab.
   const { data: myPrograms, refetch: refetchMine } = useQuery(fetchMyPrograms, []);
-  const { data: templateData } = useQuery(fetchTemplates, []);
+  /*
+   * ⚠ **THIS READ ONCE PER TAB MOUNT AND NEVER AGAIN, DIRECTLY UNDER A COMMENT PROMISING THE OPPOSITE.**
+   *
+   * PO, 2026-08-24: *"When I build a template it says saved but doesn't pop up on my saved templates
+   * right away. There is a delay."* There was no delay and nothing was slow — the list was simply never
+   * asked a second time. `useQuery` runs on mount and on a deps change; `[]` means neither ever happens
+   * again, so "Your Templates" showed whatever was true when the tab first rendered, for the life of the
+   * session. The "delay" was however long it took for something to unmount the tab.
+   *
+   * The line above it — `myPrograms` — has been refetched on focus since it was written, and its comment
+   * says why in as many words: *"so a program just built ... shows up the moment they come back to this
+   * tab."* The templates query sat one line below that sentence and did not do it.
+   *
+   * ⚠ SAME SHAPE AS THE COACH BUBBLE'S STALE DRAFT NAME, which told athletes for the rest of the day
+   * that a program they had already saved was still sitting unsaved. A `[]` effect reading a fact that
+   * changes on another screen is the recurring version of this bug in this codebase.
+   *
+   * `/templates` — the hub — was always correct: it refetches both lists on focus. So the same athlete
+   * saw the template in one place and not the other, which is what made it read as a delay rather than
+   * as a screen that never looked again.
+   */
+  const { data: templateData, refetch: refetchTemplates } = useQuery(fetchTemplates, []);
   useFocusEffect(
     useCallback(() => {
       refetchMine();
-    }, [refetchMine]),
+      refetchTemplates();
+    }, [refetchMine, refetchTemplates]),
   );
   // Memoized: `?? []` would mint a fresh array every render and defeat the catalog memo below.
   const mine = useMemo(() => myPrograms ?? [], [myPrograms]);
