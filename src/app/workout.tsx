@@ -4003,9 +4003,20 @@ export default function WorkoutScreen() {
       {optionsOpen ? (
         <View style={styles.pickerWrap}>
           <Pressable style={styles.pickerBackdrop} onPress={() => setOptionsOpen(false)} accessibilityLabel="Close" />
-          <View style={styles.picker}>
+          {/*
+            ⚠ CAPPED AND SCROLLABLE, like every other sheet on this screen. It was neither, and it was
+            the tallest: eleven rows at 68pt each is ~920pt of sheet against an 852pt iPhone 14. Once the
+            sheet is taller than the viewport it covers the backdrop completely, and the backdrop is the
+            only way out — no X, no cancel row, no back handler, and the AppBar is underneath. Taps on
+            the sheet's own background hit the inert `picker` View; RN does not fall through to a sibling
+            behind it. So the athlete was sealed in mid-workout with two exits, both destructive: "Skip
+            this exercise" and "End workout". `justifyContent: 'flex-end'` sent the overflow off the TOP,
+            so the title was chopped off-screen and it read as a broken render rather than a long sheet.
+            Invisible on the web preview, where a desktop window leaves backdrop showing.
+          */}
+          <View style={[styles.picker, styles.optionsSheet]}>
             <Text style={styles.pickerTitle}>Workout Options</Text>
-            <View style={styles.optList}>
+            <ScrollView style={styles.optScroll} contentContainerStyle={styles.optList} showsVerticalScrollIndicator={false}>
               <OptionRow
                 onPress={openWorkoutName}
                 title="Name this workout"
@@ -4119,7 +4130,7 @@ export default function WorkoutScreen() {
                 sub={hasLoggedSet(session) ? 'Finish and save your session' : 'Log at least one set to save'}
                 icon={<Rect x={6} y={6} width={12} height={12} rx={1.5} />}
               />
-            </View>
+            </ScrollView>
           </View>
         </View>
       ) : null}
@@ -5081,7 +5092,11 @@ const styles = StyleSheet.create({
   ovRowSub: { fontSize: 11.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray400 },
 
   // workout options sheet
-  optList: { gap: 8 },
+  optionsSheet: { maxHeight: '82%' },
+  /* `flexShrink: 1` is the part that matters: an RN flex child defaults to flexShrink 0, so without it
+     the ScrollView keeps its full content height and pushes straight back through the 82% cap. */
+  optScroll: { flexShrink: 1 },
+  optList: { gap: 8, paddingBottom: 4 },
   optRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   optRowTint: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   optRowDanger: { borderColor: 'rgba(190,90,76,0.3)', backgroundColor: 'rgba(190,90,76,0.12)' },
