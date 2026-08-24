@@ -14,6 +14,29 @@ so every row it creates goes through the same RLS the app uses — which is what
 actually reachable by the account Apple signs in to. A service-key seed can write rows the reviewer's own
 session then cannot read, and that fails in the one way nobody catches before submission.
 
+⛔ **THE ADDRESSES BELOW WERE ASPIRATIONAL AND ARE NOT WHAT EXISTS. CORRECTED 2026-08-24 FROM THE LIVE
+DATABASE.** `review@forgelegacy.app` and `demo.sam@forgelegacy.app` were never created — `site/README.md`
+records that **only `support@` and `isaiah@` route** in Cloudflare Email Routing. The seed was actually run
+with Gmail plus-addresses, and **those are the real credentials**, both `email_confirmed`, both last signed
+in 2026-08-19:
+
+| Account | Handle | **Real login email** |
+|---|---|---|
+| Reviewer | `alex.review` | `isaiahaltamirano11+review@gmail.com` |
+| Squad partner | `sam.torres` | `isaiahaltamirano11+sam@gmail.com` |
+
+⚠ **KEEP THESE. DO NOT "TIDY" THEM TO A forgelegacy.app ADDRESS BEFORE SUBMISSION.** They are confirmed,
+they work, and they forward to a real inbox the PO can read — so a password reset is possible, which is the
+one recovery path a reviewer does not have. Changing the email on a confirmed auth account days before
+submission risks re-confirmation on an account Apple is about to sign in to. Apple does not care about the
+domain of a demo account; it cares that the credentials work.
+
+⛔ **CHECK APP STORE CONNECT.** The demo account was typed into App Review Information on 2026-08-21. If it
+was typed from this file, it says `review@forgelegacy.app` — an address that receives nothing and matches no
+account, which is a "could not sign in" rejection. Verify the field matches the table above.
+
+The command as originally written (addresses now known to be wrong):
+
 ```
 SB_EMAIL=review@forgelegacy.app  SB_PASS=…  \
 SB2_EMAIL=demo.sam@forgelegacy.app SB2_PASS=… \

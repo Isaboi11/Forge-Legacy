@@ -1,7 +1,12 @@
 # Forge Legacy — Status Archive, August 2026
 
 **Type:** Historical record, split out of `Forge-Legacy-Master-Status.md`
-**Covers:** the 43 Recently-Completed entries below the 15 most recent, as of 2026-08-22
+**Covers:** the **51** Recently-Completed entries below the 15 most recent, as of 2026-08-24
+
+> ⚠ This line read **43 … as of 2026-08-22** while 51 entries were already filed, and the dashboard's
+> own pointer one file over read **47**. Two hand-maintained counts of the same countable thing, both
+> stale, both in the reassuring direction — the exact drift the dashboard records as its recurring
+> failure. Count the `### 0.` headings; do not trust either number.
 
 > ## Why this file exists
 >
@@ -22,6 +27,162 @@
 > **Read this file when the dashboard does not explain something.** It is the same content, one level back.
 
 ---
+
+### 0. ⭐ Onboarding asks the three questions Coach Holt was always promised — and the two stores that already held them could not be read (2026-08-19, Onboarding + Coach — **MIGRATION `0169` REQUIRED**, client code is OTA-safe)
+
+**PO report:** *"the flow that's in right now doesn't have them pick their experience level during the initial onboarding… I don't think we collect the equipment or the level."* Correct in effect, and the reason was worse than the report: **the data WAS being collected, into two device-local stores nothing downstream could read.**
+
+⚠ **THE ENGINE HAD BEEN WAITING FOR THIS SINCE IT WAS WRITTEN.** `domain/coach/constraints.ts` opens by stating *"Goal and experience come from onboarding, equipment from the Home Gym profile, units from Settings… `missingFor()` is what decides which questions get asked, so an athlete who has filled their profile in answers three questions and not eight."* `missingFor()` shipped. Nothing ever handed it a profile. **Four surfaces each held part of the answer and none of them met:**
+
+| Store | Held | Lived in | Read by |
+|---|---|---|---|
+| `lib/home-level.ts` | experience | **AsyncStorage** | `recommendProgram` only |
+| `lib/home-intake.ts` | goals + equipment | **AsyncStorage** | `recommendProgram` only |
+| `profiles.home_gym_equipment` (0021) | owned gear | Supabase | Coach Holt |
+| `app/coach.tsx` | all three, re-asked | — | itself |
+
+So: neither local store survived a reinstall or reached a second device; **Coach Holt could read neither of them** and re-asked experience and equipment on every single build; and both sat behind the quiet link *under* the three doors, so anyone taking the **recommended** door never saw them at all. Meanwhile `complete_onboarding` had been writing **`athlete_type = 'Hybrid'` hard-coded for every athlete in the app** — the value Rank reads — and `environment = null`, a column added by `0007` explicitly *"written at the Equipment step"* that no step ever wrote.
+
+**Onboarding now asks three questions** — Goal (up to 3, first is primary), Experience, Equipment (+ a conditional gear grid for a home setup) — going from 4 steps to 6, or 7 for a home gym. This is **executing the LOCKED `Onboarding-First-Time-Journey-Architecture-v1.0`**, whose arc has specified Goals → Experience → Equipment since June; ONB-Amendment-002 deferred them to opt-in surfaces, those surfaces were built on AsyncStorage, and the deferral is what this closes. *"Amendment locked but never applied"* remains the recurring pattern of this board.
+
+⚠ **THE PAYOFF IS MEASURED IN QUESTIONS REMOVED, PERMANENTLY.** Holt's single-session flow goes **6 → 3** (focus · time · limits) and the program flow **8 → 5**. Deliberately NOT moved into onboarding: days-per-week, split style and limitations — those are per-build, not per-athlete (*a shoulder that hurts this week is not a profile field*), and days-per-week is meaningless for "just today's workout", which is the flow a struggling new athlete actually needs.
+
+⚠ **SKIPPED IS NOT FIXED.** The chooser screen renders **"What I already know"** naming everything carried over, with *"Not right today? Change it"* restoring all three questions. A shorter flow that cannot show its assumptions is indistinguishable from one that decided for the athlete, and the first they would learn of a wrong carry-over is a program built on it. The line renders only when something was genuinely carried — an empty summary would be the generic teaser the coach spec forbids.
+
+⚠ **ONE DESIGN HOLE FOUND MID-BUILD AND CLOSED IN THE SAME MIGRATION:** `athlete_type` was being derived from the primary goal and **the goal itself was not being stored** — and that derivation is lossy (fatloss · health · athletic all → `Hybrid`), so reading the goal back out of it would have been a guess dressed as a lookup and Holt would have opened by asking a fat-loss athlete whether they wanted to build muscle. `0169` adds **`training_goals text[]`** (element 1 = primary, the same rule `home-intake.ts` already used) beside **`experience text`**. Both nullable with **no default, deliberately**: null means *ask*, and a default `'beginner'` would be indistinguishable from an answer and hand a ten-year lifter beginner progressions with total confidence.
+
+**Two refusals kept rather than papered over.** `coachGoalForGoalId` returns **null** for `endurance` (five race goals sit behind one bucket, and the plan is built backwards from a date the athlete has not given) and for `athletic` (spans `conditioning`, which the wizard itself declines to draw). Both still derive an Athlete Type, because that mapping is coarse *by design* and correct at its own grain. A race plan therefore **never** skips the goal question, and there is a test asserting exactly that.
+
+**`StepId` and the step list moved out of the screen into `domain/coach/intake-steps.ts`.** ⚠ The failure this guards against is *a flow that still works*: skipping a step the profile has not answered does not crash, does not fail `tsc`, and simply never asks — the engine then builds on whatever the screen defaulted to. Twelve tests assert the lists directly, including that the survivors keep their **original order** rather than merely their count, and an exhaustive sweep over all 96 flag combinations checking every emitted step is one the screen can draw.
+
+Also closed: `null` vs `[]` is preserved end-to-end (0021's three states — never set up / owns nothing / owns these), de-selecting the home-setup bucket clears the gear list back to `null` rather than `[]`, and the training answers are written **after** the RPC and never throw, because the account is already committed by then and the cost of losing them is precisely that Holt asks two questions he could have skipped — today's behaviour, not a broken one.
+
+**Files:** `0169_athlete_experience.sql` · `app/onboarding.tsx` · `app/coach.tsx` · `domain/onboarding/{derive,service}.ts` · `domain/coach/intake-steps.ts` (new) · `data/coach-profile-live.ts` (new). tsc **0** · **2,585 tests green** (+24) · lint **at baseline** (1 pre-existing error, 13 warnings) · web export clean. ✅ **`0169` APPLIED 2026-08-19** (via `supabase/apply/pending-0169.sql`; §3 returned 25 athletes / 0 / 0 — and the count row is itself the proof both columns exist, since Postgres errors on a column that does not). ✅ **Client DEPLOYED to the web preview 2026-08-19** (`forgelegacy.expo.app`, `entry-7ccc85b78c72d513e7b5c08a4eef33ed.js` — the served hash was checked against the local build, not assumed). ⏳ **NOT published as an OTA**, so phones and TestFlight are still on the old bundle; the answer-counts stay 0 until that ships. Gate before the deploy, over the WHOLE working tree (three sessions' work, since publishing bundles the tree and not the commits): tsc **exit 0** · **2,609 tests green, 0 failing** · lint **at baseline** (1 error, 13 warnings, unchanged) · web export **exit 0** · no changes to `package.json`/`app.json`/`eas.json`, so the batch is **OTA-safe with no new native build**.
+
+### 0. ⭐ "The days have not progressed" — the season was fine and the PICTURE of it was the defect (2026-08-19, C-3 — **`0168` APPLIED, and it disproved the diagnosis rather than fixing it**; client code is OTA-safe)
+
+**PO: *"look at my competition with @kingmo. It doesn't look like the days have progressed and it should've been done by now from when it started."***
+
+⚠ **THE FIRST DIAGNOSIS WAS WRONG, AND `0168`'s REPORT IS WHAT KILLED IT.** The reasoning was that `advance_challenges()` had been reverted to 0059's SQUAD-only body — which fits the symptom exactly and is a genuine unguarded hole (see below). **The database says otherwise.** `0168` §3 returned four FRIENDS competitions, and **both live ones are `ACTIVE`** — a state only 0087's body can produce, because 0059's never promotes a friends competition out of ENROLLMENT. §2's assertions did not raise either. **The lifecycle was healthy the whole time.** Recorded because a plausible mechanism that fits every word of a report is not evidence, and the migration earned its place by *refuting* itself rather than by repairing anything.
+
+**⭐ AND THE COMPETITION IS NOT THE LENGTH IT WAS ASKED FOR.** PO: *"I made a **2 day** competition for me and king mo."* The row says **three** days, and that is the whole of *"it should've been done by now"* — it was built a day longer than requested. `Math.max(3, …)` in Create Challenge's custom-days field moved the `2` to a `3`, **left the `2` sitting in the input**, and said nothing. The only thing that disagreed was the run summary underneath — which is precisely the field-vs-summary split that clamp was written to close, closed for `0` and left open for everything below 3. ⛔ **AND 3 WAS NEVER THE RULE:** `Create-Challenge-Wireframe-Spec-C2` §4.3 says *"Custom range must be ≥ 1 day"* and leads its presets with **Daily**; `challenges` only constrains `end_at > start_at`. The floor was neither a product decision nor a database limit — it was a number in a clamp. **`MIN_DAYS = 1` now, a `Daily` preset chip exists (the spec's first, and it had none), and a clamped entry is STATED next to the field** rather than applied behind it.
+
+**AND EVERY NUMBER THE SCREEN DREW ABOUT IT WAS WRONG TOO**, in a way that reads as a frozen competition rather than as a rendering bug. `Yiiiiiiip` — FRIENDS, roster 2, `ACTIVE`, Aug 17 → Aug 20 — was on day 3 of 3, ending at local midnight:
+
+- **The timeline is a WEEK grid, and Create Challenge sells 3-day runs.** `Forge Challenge.dc.html` draws week segments, and the screen was built to it literally — correct for the 4-week and 8-week presets it was drawn against, wrong for everything shorter. A 3-day duel got `ceil(3/7)` = **one** segment, filled by `elapsed / 7 days`, so **the bar could never pass 43% however far the season ran**, and the caption read **"Week 1 of 1" from the first hour to the last**. Two thirds of the way through, the athlete saw a barely-moved sliver and a line that had not changed since creation. Now: **one segment per day for any run of 14 days or fewer** (14 is where segments stop being legible on a phone), week segments beyond that — `Day 2 of 3 • 1 day remaining`.
+- **"final day" was unreachable.** Tested as `ceil((end - now) / DAY) === 0`, true only in the instant of expiry — by which point the state flips to COMPLETED and the line is not drawn. **The branch had never once run**; every competition's last day read *"1 days remaining"*, plural included.
+- **The arithmetic sat inline in a `.tsx`**, where nothing can load it under `node --test`. That is how it managed to be wrong three ways at once. It is now `src/domain/challenges/season.ts`, pure, with **13 unit tests written against this competition's real dates** — including one asserting that the three days of `Yiiiiiiip` produce three *different* captions, because one unchanging caption **is** the bug report.
+
+**AND THE THREE STRUCTURAL FAULTS FOUND ON THE WAY, ALL REAL, ALL FIXED.** None caused this report; each would have caused it eventually.
+
+**(1) `0165` SAID "FOUR OBJECTS". THERE ARE SIX.** `0059_challenges.sql` and `0087_friend_challenges.sql` both define the same set, and **0059's are SQUAD-ONLY**. 0165 restated and asserted four of them — `can_read_challenge`, `challenges_select`, `challenges_insert`, `challenge_participants_insert` — and its own header, 0059's ⛔ banner, and `challenge-join-agreement.test.mjs` all name that same four. **The two it missed are `challenge_hub()` and `advance_challenges()`**, and they are precisely the two that decide whether a competition moves at all. 0059's `advance_challenges` carries `and context = 'SQUAD' and is_squad_member(...)` on **both** clauses, so under that body a friends competition is never promoted and never completed: **the days do not progress and no winner is ever written.** Re-pasting 0059 is this project's *documented recovery procedure* — there is no CLI and no service key — so this is a trap, not a risk, and 0165 left two thirds of it open. **`0168` restates 0087's body verbatim (machine-diffed, not retyped) and asserts BOTH missed objects in both directions** — positive (`can_read_challenge` present) and negative (`is_squad_member` absent), because a body could gain the call and keep the gate.
+
+**(2) THE ONE SCREEN IT WAS REACHABLE FROM WAS THE ONE SCREEN THAT COULD NOT FIX IT.** Only `/competitions` and the Trophy Case called `advance_challenges()`. But `challenge_hub()` lists exactly two things: competitions you have **not** joined (ENROLLMENT or ACTIVE) and ones you **have** (ACTIVE only). **A competition you created — so you are a participant — that is stuck in ENROLLMENT matches neither, and vanishes off the hub entirely.** The routes that survive are the inbox row and the push, both of which open `/challenge/<id>` — which advanced nothing. `fetchChallengeDetail` now advances before it reads, so opening the competition is enough to start it, finish it and crown it.
+
+**(3) AND THE ANSWER WAS THROWN AWAY.** `await supabase.rpc('advance_challenges', …)` with no error check, in both call sites. **supabase-js rejects nothing** — it resolves `{ data, error }`. So a revoked grant, a raise inside the function, or a reverted body all rendered as a screen that looked completely healthy sitting next to a competition whose clock never moved. **That is why this survived 0163, 0164 and 0165.** One shared `advanceChallenges()` now *returns* the failure — it must not throw either, because a season you can still read and score is worth showing — and **both** competition screens render it as a plain sentence.
+
+**THE CORONATION FIRES FROM THE SCREEN THAT CLOSES THE SEASON.** Because C-3 now advances on the way in, C-3 is very often the screen that actually completes a competition — an invited friend arrives from the inbox and the season ends as they land. It now opens `/podium/<id>` once per device for a finished, unplayed season, then hands off to C-4. ⚠ **No freshness gate on C-3, unlike the hub, and the difference is deliberate:** `podiumIsFresh` exists so a **list** cannot ambush you with a season that closed last month; opening a competition is not passing through, it is asking about that competition specifically, and its result is the answer. `markPodiumSeen` still holds it to once.
+
+**AND THE HERO STOPPED LYING WHEN THE CLOCK AND THE STATE DISAGREE.** The same frozen-caption failure from the other end: an ENROLLMENT whose start was days ago read **"Starts in 0 days"** indefinitely, and an ACTIVE season past its end read **"final day"** forever. Overdue states are now named (`Starting now`, `The season is over — settling the final standings`, `Season complete`); seeing one should be brief, because the advance runs on the way in, so it usually means the advance **failed** — and the line below the hero now says why.
+
+**WHAT THE `0168` REPORT ALSO SHOWED, for the record:** four FRIENDS competitions, all created 2026-08-17, all by Isa Altamirano. `Yiiiiiiip` (Moses Ruiz, **roster 2** — the only one anybody joined) and `Biiiiiig lifters` (Wes Price, roster 1, ends Aug 24) are ACTIVE; two `Biiiiiig Lifters`/`Biiiiiig lifters` duplicates are CANCELLED with 0 results, which is the 2026-08-17 `42501` story and is correct. **No competition is overdue in either direction.**
+
+`tsc` 0 · **2,609 tests green** (36 new) · lint clean · **thirteen mutations applied, thirteen caught** — four on the lifecycle guards (C-3 stops advancing · the error goes back to being discarded · 0168 reverts to 0059's gate · C-3 stops opening the podium), five on the season clock (revert to the week grid · restore the unreachable final-day test · drop the singular · unclamp the current segment · drop the degenerate-window guard) and four on the duration floor (put 3 back · hardcode it in the clamp · remove the Daily preset · stop detecting a rewritten entry). ⚠ **One assertion was rewritten after it failed on its own documentation** — `doesNotMatch(/Math\.max\(3,/)` matched the comment *explaining* the defect as readily as a relapse, so it now reads the `durationDays` line alone.
+
+⚠ **`0168` IS APPLIED. THE CLIENT IS NOT DEPLOYED** — all of it is OTA-safe and none of it has reached a device or the web preview yet.
+
+**Files:** `src/domain/challenges/season.ts` (new) · `src/domain/challenges/__tests__/season.test.mjs` (new) · `src/app/create-challenge.tsx` · `src/app/challenge/[id].tsx` · `src/app/competitions.tsx` · `src/data/challenges-live.ts` · `src/data/trophy-case-live.ts` · `src/data/__tests__/challenge-lifecycle.test.mjs` (new) · `supabase/migrations/0168_challenge_lifecycle_reassert.sql` (new) · `supabase/apply/pending-0168.sql` (new) · `supabase/migrations/0059_challenges.sql` + `0165_challenge_policy_reassert.sql` (comment corrections — both said "four objects").
+
+⚠ **THE EXISTING `Yiiiiiiip` IS STILL 3 DAYS.** `start_at`/`end_at` are written at creation and nothing here rewrites them — `context` and the window are immutable by design (CS-D5). It closes at local midnight tonight regardless. The fix applies to the next competition; **shortening this one would mean editing the row by hand, and it is on its final day anyway.**
+
+### 0. ⭐ The landing page is Landing v6 — the product now introduces itself before the philosophy (2026-08-18, `site/index.html` — marketing site only, no app code, no migration, **NOT YET RE-UPLOADED to Cloudflare**)
+
+**`site/index.html` was restructured from Landing v5 to Landing v6** against the design project's
+`design_handoff_landing_v6/` bundle (`Forge Legacy Landing v6.dc.html` + its README change order).
+A **change order, not a rebuild** — the visual language, the phone mocks, the imagery and most copy
+are byte-identical; the page was sliced by line range, reassembled in the new order, and 27 asserted
+string substitutions applied.
+
+**Ten sections became thirteen, and the order is the point.** A stranger meets the product before the
+philosophy: **§ 2 "What Forge Legacy actually is"** (new — four cards naming tracker / chapters /
+rank / people) and **§ 3 "The part you use every morning"** (the active-workout mock, moved up from
+§ 8) now land in the first two screens instead of two thirds down. **§ 8 Holt is new** — the biggest
+gap between the product being built and the product the site sold. **Squads was demoted** out of the
+"Difference N" series to § 9, because it was reading as a load-bearing pillar and someone who trains
+alone should never wonder whether the app is for them. The old § 8 split in two, its feature grid and
+credibility block landing in the new **§ 11 "The rest of it"** with *"What's real today"* demoted from
+a card to a quiet rule — the migration and test counts now live only in the FAQ.
+
+⚠ **Moving a section moves its background parity.** Four sections had to flip so `--fl-base` still
+lands on 3, 5, 7, 9, 11, 13. ⚠ **`#chapters` / `#squads` / `#final` all still resolve** — they moved
+from 3/5/10 to 5/9/13 and the ids travelled with them.
+
+**Two behaviour bugs fixed.** The two decorative phone-scroll loops (44 s and 46 s) had **never been
+gated** — they ran from page load, so a visitor reaching the squad mock arrived mid-loop at an
+arbitrary frame. Both now declare `animation-play-state: paused` and the scene engine starts them at
+frame zero when their section is first seen. And the hero CTA stack was pinned `align-items:
+flex-start` on a phone-first page; it now centres below 760px and left-aligns above.
+
+⚠ **TWO v6 ITEMS ARE DELIBERATELY NOT SHIPPED, AND THEY ARE THE SAME DECISION.** The design ships
+live `<a href>` CTAs labelled **"Download for iPhone"** plus the sticky bottom bar. **There is still
+no App Store listing**, so the 2026-08-16 PO decision stands: both CTAs remain non-interactive
+`Coming to the App Store` spans and the sticky bar stays out. *Understating is safe; overstating is a
+false claim on a public page.* The v6 labels are recorded in the § 1 comment so the launch swap is
+mechanical — and note the hero and the final CTA now want **different** labels ("Download for iPhone"
+vs "Start Chapter One", the latter because by § 13 the visitor has read Chapters and Sealed).
+
+✅ **Holt's launch gate is clear**, which is why § 8 is present tense — Holt ships in the build this
+page advertises. The gate is written into a comment above the section.
+
+**Verified by rendering, not by reading**: 87 static checks pass; 0 horizontal overflow at 390 and
+1280; 0 of 22 images broken; 0 of 41 unresolved tokens; all **98** animated elements settle; both
+`--pcols` grids render 1 / 2 / 4 / 4 and never 3 + 1; `prefers-reduced-motion` reduces both loops to
+computed `animation-name: none`; JS-off keeps the same height and all 1,472 words. Page is 169 KB
+(438 KB with assets) against a 900 KB budget.
+
+⚠ **THE LIVE SITE STILL SERVES v5.** `forgelegacy.app` is a Cloudflare Worker with static assets and
+this change is local only. Re-upload the 25-file set (never the whole directory — `_exported-bundle.html`
+is 4 MB and git-ignored), then re-verify `/` · `/support` · `/privacy` · `/terms` · `www` all 200.
+⚠ **Re-measure the FAQ's 167 migrations / 2,552 tests on publish day** — both move weekly.
+
+See `site/README.md` → *"The v6 restructure — 2026-08-18"* for the full section table, the launch-swap
+table, and three headless-rendering traps that each look exactly like a real regression.
+
+### 0. ⭐ Coach Holt answers the door — the new-user backlog closed, and the expert stopped being misjudged (2026-08-18, Home + Coach + Program Detail + Builder — CODE only, no migration, **DEPLOYED** `entry-bc6ff828`)
+
+**Method:** three walkthroughs of the shipping app — cold start across all 87 routes, then as a never-trained / eighteen-month / fifteen-year athlete, then a stress test of the front door those produced. One consolidated backlog; every code item on it is now shipped and live. Each "outstanding" claim was re-verified against the working tree before being acted on rather than carried from notes.
+
+**⚠ THE PASS BEFORE THIS ONE MADE THE EXPERT'S PROBLEM WORSE, AND THAT IS WHY IT LED HERE.** Repairing `CATALOG_ALIAS` turned *"Help me find one"* back on — which promoted the door that hands an advanced lifter **Strength Foundation II**, a block tagged `Intermediate` whose stated goals include *"improve gym confidence"*, from hidden to the second card on Home. The fix for it had been written up and not built.
+
+**Shipped — the front door:**
+- **Holt leads the Home starting-point card** — *"Build it with me"*. His open/closed flag moved into a small `CoachDoorProvider` so a screen can open him; the bubble still renders the sheet, because it owns the teaser rules and the workout/ceremony/tour suppression, and a second mounting would give the app two coaches that could both be open.
+- **⚠ The door carries an INTENT.** Without it, tapping *"Build it with me"* opened his opener menu and asked somebody to say a second time what they had just said — the same defect already recorded against the old "Build me a program" chip. The opener list is suppressed entirely when the athlete arrived through a door that already answered it.
+- **The quiet fallback points at Holt**, not the catalogue, so the app tells one story about who writes programs.
+
+**Shipped — the beginner:**
+- **Level asked before block length, and beginners are not asked the block length at all.** *"A block, or one week?"* is a question about programming structure; somebody who has never trained picks one and hopes. `weeks` is left undefined so the engine's own `defaultWeeksFor` decides. ⚠ The session-length question STAYS — *"how long have you got?"* is a diary question anyone can answer, and pruning it would have made their program worse.
+- **Starting weights, as a method and never a number** (`startingLoadLine`) — empty bar / lightest pair you could do fifteen with / just you. Written into the build rather than said mid-set, because in-workout coaching is capped at **zero** on Free and anything said there could never reach the athletes who need it. A test fails if any digit or unit enters that copy.
+- **"How did that feel?"** on the first set of a movement they have never done (`first-set.ts`) — five gates, once ever. ⚠ It does **not** reach past beginners: `intraSession` is false for every beginner cell on purpose and that decision is untouched. This asks rather than infers, and unlike the nudge it may go DOWN, because the athlete said so.
+- **"How To" is loud on a first meeting** and recedes afterwards. 735 exercises carry published coaching and it was styled as a footnote.
+- **"Ask me again"** replaces "Adjust it" for beginners — with a real rebuild behind it, not a softer label over the Builder.
+- **Change my training level** — `forgetExperience()` had **zero callers**, so the first level an athlete ever gave was permanent.
+
+**Shipped — the expert and the middle:**
+- **`catalogServesLevel`** — the recommendation is withheld when the shelf holds nothing at the athlete's level, and the card says so. Data-driven off the program's own `difficulty`, and it only ever looks DOWNWARD (a beginner offered an Intermediate program is normal). A test asserts today's catalogue genuinely fails an advanced lifter, so authoring one turns it red.
+- **"I've got a program already" is a door on Home**, straight to the paste importer — *"Build my own"* was the wrong promise for somebody who wants to bring one across.
+- **Finishing a program offers what comes next** (`nextAfter`), on the sealed record. ⚠ **Existence-checked**: seven programs name a successor and **six of those names are unauthored**, so a miss hands to Holt rather than promising a program nobody wrote. `graduated`/`finished` only — never `ended_early`.
+- **The specialisation blocks are reachable.** Squat Ascent, Bench Approach and Deadlift Measure were returned by **zero** of the 54 intake combinations and could not be — the intake has no *"I want a bigger bench"*. Offered at graduation instead, which is what their own design records call them: standalone blocks run BETWEEN general programs. Identified by `percentOfMax`, not an id list. ⚠ Deliberately **not** ranked into the alternates, which `recommendProgramOptions` documents a decision against.
+- **The import counter is wired** — `markFreeImportUsed()` also had zero callers, so the one-import cap could never bite. Spent on a successful save only; an abandoned paste costs nothing.
+
+**Also shipped:** password reset both halves (recovery outranks the session in `routeFor`, or the emailed link lands on Home); Terms/Privacy tappable where consent is given; onboarding's avatar picker and its unreachable back chevron; the handle skip naming its cost; `Difficulty → Technique` on both filter sheets; running experience derived from base mileage rather than one chip setting both.
+
+**Verified:** `tsc --noEmit` clean · **2,544 domain tests, 0 failing** (from 2,497) · `expo lint` at baseline (1 pre-existing error in `use-color-scheme.web.ts`) · deployed and confirmed by hash AND by grepping the served bundle for the new copy.
+
+**⚠ OPEN — decisions, not code.** The free in-workout Holt cap is still **0**, so the one capability that lands at the moment of highest need converts nobody (`entitlement_config.free_caps`, one value, no deploy). The Technique rename covers both filter sheets but not W-22's detail chip, which W22-D15 governs — the two now disagree and an amendment is owed either way.
+
+**⚠ OPEN — content, Production Standard.** **15 of 18** dumbbell answers resolve to Bodyweight Foundation, a program that ignores the equipment they said they own. **1 of 14** programs is tagged Advanced and it is conditioning — the root cause of the expert fix above. The Running family is unauthored, though Holt generates all five race distances with zero refusals, so that gap is the catalogue's alone.
+
+**⚠ PROCESS.** `eas` is on no PATH here — `npx eas-cli@latest deploy --prod` is the working command, and `npx eas` fails with a confusing *"could not determine executable to run"*. **The first deploy of a session reported success and silently did not take** — its own deployment URL 404'd while production kept serving the old bundle. Always verify the served `entry-<hash>.js` against the build; the CLI's 🎉 is not evidence.
 
 ### 0. ⭐ The cold start — a new athlete could not be recommended anything, and a forgotten password had no way back (2026-08-17, Onboarding + Auth + Catalog — CODE only, no migration, OTA-safe)
 
