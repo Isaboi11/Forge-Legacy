@@ -8,7 +8,7 @@
 -- session therefore issues a delete that matches zero rows and RESOLVES WITHOUT AN ERROR — it reports
 -- success and removes nothing. A SQUAD competition still vanishes, because it cascades when its squad is
 -- deleted; a FRIENDS competition has no squad to cascade from, so it survives in both athletes' history.
--- All six below are FRIENDS competitions, which is exactly that asymmetry.
+-- All eight below are FRIENDS competitions, which is exactly that asymmetry.
 --
 -- `cancel_challenge` is not an alternative: it refuses any terminal state (CS-D14 — a closed season's
 -- standings are immutable), and all six are COMPLETED.
@@ -18,6 +18,11 @@
 --
 -- Safe to re-run: a second run deletes nothing.
 
+-- ⚠ REGENERATED, NOT HAND-EDITED, after the 0177 verification runs added two more (22:38, 22:39).
+--   This list is an OUTPUT of `qa-residue.mjs`, so it goes stale the moment the harness runs again:
+--   re-run the script rather than appending an id by hand — and re-run it AFTER pasting, where it
+--   must print "Nothing stranded". All eight are `QA Head to Head <timestamp>`. Nothing real.
+
 begin;
   delete from public.challenge_results      where challenge_id in (
     'c1cbdab0-910a-4728-9906-54c466b96870',
@@ -25,7 +30,9 @@ begin;
     '9e8de2a4-30be-4203-a4cd-8d3b73c76da4',
     'dc6a842e-0d6f-4268-af4f-1192bcfd2b23',
     '0a762d5c-dd91-414a-90f3-17419c17efcd',
-    'e3b9c6bd-cca5-4d05-bb52-0ff979b132f8'
+    'e3b9c6bd-cca5-4d05-bb52-0ff979b132f8',
+    'abe8b8e9-3c11-4430-b2a6-bec80e80adcb',
+    '3c1f7508-429c-44c2-88d9-547c6b844dc7'
   );
   delete from public.challenge_participants where challenge_id in (
     'c1cbdab0-910a-4728-9906-54c466b96870',
@@ -33,7 +40,9 @@ begin;
     '9e8de2a4-30be-4203-a4cd-8d3b73c76da4',
     'dc6a842e-0d6f-4268-af4f-1192bcfd2b23',
     '0a762d5c-dd91-414a-90f3-17419c17efcd',
-    'e3b9c6bd-cca5-4d05-bb52-0ff979b132f8'
+    'e3b9c6bd-cca5-4d05-bb52-0ff979b132f8',
+    'abe8b8e9-3c11-4430-b2a6-bec80e80adcb',
+    '3c1f7508-429c-44c2-88d9-547c6b844dc7'
   );
   delete from public.challenges             where id in (
     'c1cbdab0-910a-4728-9906-54c466b96870',
@@ -41,6 +50,8 @@ begin;
     '9e8de2a4-30be-4203-a4cd-8d3b73c76da4',
     'dc6a842e-0d6f-4268-af4f-1192bcfd2b23',
     '0a762d5c-dd91-414a-90f3-17419c17efcd',
-    'e3b9c6bd-cca5-4d05-bb52-0ff979b132f8'
+    'e3b9c6bd-cca5-4d05-bb52-0ff979b132f8',
+    'abe8b8e9-3c11-4430-b2a6-bec80e80adcb',
+    '3c1f7508-429c-44c2-88d9-547c6b844dc7'
   );
 commit;
