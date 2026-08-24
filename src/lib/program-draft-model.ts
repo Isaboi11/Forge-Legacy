@@ -416,6 +416,96 @@ export function copyWeek(d: ProgramDraft, from: number, to: number): ProgramDraf
   return { ...d, weekPlans: plans.map((w, i) => (i === to ? { days: cloneDays(plans[from].days) } : w)) };
 }
 
+/**
+ * How a saved week template lands in a program week — everything the sheet has to say before it applies.
+ *
+ * Computed rather than described, because the two facts that matter are both arithmetic: a week template
+ * carries its own number of days, the program carries `daysPerWeek`, and they are under no obligation to
+ * agree. Getting that wrong in either direction is silent data loss, so the numbers are produced here and
+ * the screen states them BEFORE the athlete commits.
+ */
+export interface WeekFit {
+  /** Days that will actually be written. */
+  taken: number;
+  /** Days on the END of the template that cannot fit, because the program has fewer training days. */
+  dropped: number;
+  /** Program day slots left with nothing in them, because the template is shorter than the week. */
+  emptied: number;
+}
+
+export function weekFit(d: ProgramDraft, sourceDays: number): WeekFit {
+  const taken = Math.min(sourceDays, d.daysPerWeek);
+  return { taken, dropped: Math.max(0, sourceDays - d.daysPerWeek), emptied: Math.max(0, d.daysPerWeek - sourceDays) };
+}
+
+/**
+ * A SAVED WEEK TEMPLATE, written into one week of a program.
+ *
+ * The week-level counterpart of `templateIntoDay`, and the thing whose absence made the two libraries
+ * feel inconsistent: a day template could fill a program day, and a week template could only ever be run
+ * on its own.
+ *
+ * ══ IT REPLACES THE WEEK. THERE IS NO APPEND ══
+ *
+ * `templateIntoDay` offers append because a day can honestly be built from two shapes stacked together.
+ * A week cannot: appending would have to mean "add these days to the end", and the end is fixed by
+ * `daysPerWeek`. So this is always a replacement, the sheet says so, and `weekFit` above tells the athlete
+ * exactly what that costs before they agree to it.
+ *
+ * ══ POSITION OWNS THE LETTER, THE TEMPLATE OWNS EVERYTHING ELSE ══
+ *
+ * Day letters are the program's own coordinate system — `lockedCells` and the schedule both address days
+ * by position — so slot 0 stays `A` no matter what the template called it. The NAME travels, because
+ * "Push" is the template's content rather than its address.
+ *
+ * ══ SHORTER TEMPLATE ⇒ THE REMAINING DAYS ARE EMPTIED, NOT LEFT ══
+ *
+ * A 3-day week dropped into a 4-day program leaves day D blank rather than keeping whatever was there.
+ * Keeping it would produce a hybrid week the athlete never authored and cannot see the seam in — the
+ * worse of the two failures, and the one they would find weeks later. `weekFit().emptied` is what the
+ * confirmation names.
+ *
+ * Ids are regenerated so the copy never aliases the template; group ids ride along unchanged, exactly as
+ * `copyWeek` carries them, because the whole week moves as a unit and adjacency is what makes a superset.
+ */
+export function weekTemplateIntoWeek(d: ProgramDraft, weekIndex: number, source: ProgramDay[]): ProgramDraft {
+  if (!source.length) return d;
+
+  const filled = Array.from({ length: d.daysPerWeek }, (_, i) => {
+    const slot = emptyDay(i);
+    const from = source[i];
+    if (!from) return slot;
+    const [copy] = cloneDays([from]);
+    return { ...copy, letter: slot.letter, ...clampDayRows(copy) };
+  });
+
+  // Repeat mode has one week and it is `days`; the index is meaningless there and is ignored.
+  if (!d.vary) return { ...d, days: filled, openDay: null };
+
+  const plans = d.weekPlans;
+  if (!plans || !plans[weekIndex]) return d;
+  return {
+    ...d,
+    weekPlans: plans.map((w, i) => (i === weekIndex ? { days: filled } : w)),
+    openWeek: weekIndex,
+    openDay: null,
+  };
+}
+
+/**
+ * Pull every row back inside what the builder's own steppers can express (1–8 sets, 1–60 reps).
+ *
+ * A week template can only have been authored by this builder, so in practice nothing is ever out of
+ * range — this defends against a `structure` that was edited by something else, where the alternative is
+ * a value sitting in a program that no control on the screen can reach or correct. Same guard, same
+ * reason, as `templateIntoDay`.
+ */
+function clampDayRows(day: ProgramDay): Pick<ProgramDay, 'warmup' | 'main' | 'cooldown'> {
+  const fix = (list: ProgramExercise[]): ProgramExercise[] =>
+    list.map((x) => (x.kind === 'cardio' ? x : { ...x, sets: clampSets(x.sets ?? 1), reps: clampReps(x.reps ?? 1) }));
+  return { warmup: fix(day.warmup), main: fix(day.main), cooldown: fix(day.cooldown) };
+}
+
 /** Empty a week back to its day skeleton. */
 export function clearWeek(d: ProgramDraft, index: number): ProgramDraft {
   const plans = d.weekPlans;

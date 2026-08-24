@@ -594,19 +594,29 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
     },
   ],
 
+  /*
+   * ⚠ BOTH STEPS WERE REWRITTEN 2026-08-24, AND THE SECOND ONE WAS ARGUING AGAINST A SHIPPED FEATURE.
+   *
+   * It read: "New ones come from training. There's no blank template to fill in." That was true when
+   * templates could only be CAPTURED (0091) — and W-25 shipped the Free Workout Builder, so the anchor
+   * this step points at (`templates-new`) is now literally the two buttons that build one from blank.
+   * A walkthrough that talks the athlete out of the control it is spotlighting is worse than no
+   * walkthrough, and it survived because copy is not typechecked and nothing fails when a feature
+   * outgrows its own tour.
+   */
   templates: [
     {
       key: 'tp-list',
       title: 'Sessions worth doing again',
-      body: 'Each of these is a workout you finished and kept. Open one to see its shape and every time you’ve run it — or start it again as today’s session.',
+      body: 'A template is a workout you can run whenever you want — one you kept after training it, one you built here, or one of Forge’s. Open it to see its shape and every time you’ve run it, or start it as today’s session.',
       anchor: 'templates-list',
       pad: 8,
       radius: 16,
     },
     {
       key: 'tp-new',
-      title: 'New ones come from training',
-      body: 'There’s no blank template to fill in. Start a freestyle workout, build it as you go, and keep it when you’re done — a shape you’ve proven beats one you guessed at.',
+      title: 'Two sizes: a day, or a week',
+      body: 'Build a template for a single session. Build a week for several days you run in order — and a saved week can be dropped straight into a week of any program you build. You can also keep a session after training it, from The Record.',
       anchor: 'templates-new',
       pad: 8,
       radius: 14,

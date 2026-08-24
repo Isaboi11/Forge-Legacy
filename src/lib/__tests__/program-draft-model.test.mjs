@@ -38,6 +38,8 @@ import {
   dayAtStop,
   completedWeeks,
   templateIntoDay,
+  weekTemplateIntoWeek,
+  weekFit,
 } from '../program-draft-model.ts';
 
 const ex = (name) => ({ id: name, name, equip: 'Barbell', muscles: ['Chest'], type: 'Compound', sets: 3, reps: 10 });
@@ -618,4 +620,100 @@ test('lockedCells maps schedule-space slots to builder-space rows across a blank
   assert.equal(isLockedCell(locked, 0, 2), true, 'the second TRAINED day is builder row 2, not row 1');
   assert.equal(isLockedCell(locked, 0, 1), false, 'the blank row is not the trained session');
   assert.equal(isLockedCell(locked, 0, 0), false, 'an untrained built day stays editable');
+});
+
+// ── weekTemplateIntoWeek (a saved week, dropped into one week of a program) ─────────────────────
+//
+// The counterpart to templateIntoDay, and the case its absence left open. The interesting behaviour is
+// entirely at the seam between two day counts that were authored independently and need not agree.
+
+/** A week template's days, as `structure.days` holds them: named, with real rows. */
+const tplWeek = (names) =>
+  names.map((n, i) => ({
+    letter: 'ABCDEF'[i],
+    name: n,
+    warmup: [],
+    main: [{ ...ex(`${n}-lift`), id: `${n}-lift` }],
+    cooldown: [],
+  }));
+
+const weekDraft = (daysPerWeek, weeks = 4) => ({
+  ...newDraft(),
+  weeks,
+  daysPerWeek,
+  vary: true,
+  weekPlans: Array.from({ length: weeks }, () => ({ days: makeDays(daysPerWeek, []) })),
+});
+
+test('weekFit reports exactly what will happen at each day count', () => {
+  assert.deepEqual(weekFit(weekDraft(4), 4), { taken: 4, dropped: 0, emptied: 0 }, 'an exact match costs nothing');
+  assert.deepEqual(weekFit(weekDraft(4), 3), { taken: 3, dropped: 0, emptied: 1 }, 'a shorter week leaves a blank day');
+  assert.deepEqual(weekFit(weekDraft(3), 5), { taken: 3, dropped: 2, emptied: 0 }, 'a longer week cannot all fit');
+});
+
+test('a saved week lands in the week it was aimed at, and nowhere else', () => {
+  const d = weekTemplateIntoWeek(weekDraft(3), 2, tplWeek(['Push', 'Pull', 'Legs']));
+  assert.deepEqual(d.weekPlans[2].days.map((x) => x.name), ['Push', 'Pull', 'Legs']);
+  assert.deepEqual(d.weekPlans[1].days.map((x) => x.name), ['', '', ''], 'week 2 is untouched');
+  assert.equal(d.openWeek, 2, 'you land on the week you just filled');
+  assert.equal(d.openDay, null, 'and on the week, not inside a day of it');
+});
+
+test('the program keeps its own day letters — position is the address, not the template', () => {
+  const source = tplWeek(['Push', 'Pull', 'Legs']).map((day) => ({ ...day, letter: 'Z' }));
+  const d = weekTemplateIntoWeek(weekDraft(3), 0, source);
+  assert.deepEqual(d.weekPlans[0].days.map((x) => x.letter), ['A', 'B', 'C']);
+  assert.deepEqual(d.weekPlans[0].days.map((x) => x.name), ['Push', 'Pull', 'Legs'], 'but the NAME travels');
+});
+
+test('a shorter week EMPTIES the days it does not reach, rather than leaving a hybrid', () => {
+  const seeded = weekTemplateIntoWeek(weekDraft(4), 0, tplWeek(['A1', 'B1', 'C1', 'D1']));
+  const d = weekTemplateIntoWeek(seeded, 0, tplWeek(['Push', 'Pull', 'Legs']));
+  assert.deepEqual(d.weekPlans[0].days.map((x) => x.name), ['Push', 'Pull', 'Legs', '']);
+  assert.equal(d.weekPlans[0].days[3].main.length, 0, 'day D still holding D1 would be a week nobody authored');
+});
+
+test('a longer week is truncated to the program, and weekFit is what says so', () => {
+  const source = tplWeek(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+  assert.equal(weekFit(weekDraft(3), source.length).dropped, 2);
+  const d = weekTemplateIntoWeek(weekDraft(3), 0, source);
+  assert.deepEqual(d.weekPlans[0].days.map((x) => x.name), ['Mon', 'Tue', 'Wed']);
+});
+
+test('every row is re-idded, so editing the program never reaches back into the template', () => {
+  const source = tplWeek(['Push', 'Pull']);
+  const d = weekTemplateIntoWeek(weekDraft(2), 0, source);
+  const landed = d.weekPlans[0].days.flatMap((x) => x.main.map((r) => r.id));
+  const original = source.flatMap((x) => x.main.map((r) => r.id));
+  assert.equal(landed.length, 2);
+  for (const id of landed) assert.ok(!original.includes(id), 'a shared id means one edit changes both');
+});
+
+test('applying the same week to two program weeks produces two independent copies', () => {
+  const source = tplWeek(['Push', 'Pull']);
+  const once = weekTemplateIntoWeek(weekDraft(2), 0, source);
+  const twice = weekTemplateIntoWeek(once, 1, source);
+  const a = twice.weekPlans[0].days[0].main[0].id;
+  const b = twice.weekPlans[1].days[0].main[0].id;
+  assert.notEqual(a, b);
+});
+
+test('rows outside the steppers clamp on the way in', () => {
+  const wild = tplWeek(['Push']);
+  wild[0].main[0] = { ...wild[0].main[0], sets: 40, reps: 500 };
+  const d = weekTemplateIntoWeek(weekDraft(2), 0, wild);
+  assert.equal(d.weekPlans[0].days[0].main[0].sets, clampSets(40));
+  assert.equal(d.weekPlans[0].days[0].main[0].reps, clampReps(500));
+});
+
+test('in Repeat mode it fills the one week there is', () => {
+  const d = weekTemplateIntoWeek({ ...newDraft(), daysPerWeek: 3, days: makeDays(3, []) }, 0, tplWeek(['Push', 'Pull', 'Legs']));
+  assert.deepEqual(d.days.map((x) => x.name), ['Push', 'Pull', 'Legs']);
+  assert.equal(d.weekPlans, null, 'filling the repeat template must not invent per-week plans');
+});
+
+test('an empty source, or a week index that does not exist, changes nothing', () => {
+  const base = weekDraft(3);
+  assert.equal(weekTemplateIntoWeek(base, 0, []), base, 'nothing to apply is not an edit');
+  assert.deepEqual(weekTemplateIntoWeek(base, 9, tplWeek(['Push'])), base);
 });

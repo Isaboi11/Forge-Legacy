@@ -69,7 +69,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { fetchTemplates } from '@/data/templates-live';
 import { daySectionsSummary, templateRowsToDay, type DaySections } from '@/domain/program/template-day';
 import { STRUCTURED_DEVELOPMENT_MIN_WEEKS } from '@/domain/rank/thresholds';
-import { fetchWeekTemplate, saveWeekTemplate } from '@/data/week-templates-live';
+import { fetchWeekTemplate, fetchWeekTemplates, saveWeekTemplate, weekSummary } from '@/data/week-templates-live';
 import { defaultAudiences, filterStarters, starterMeta } from '@/domain/workout/starter-templates';
 import { useProfile } from '@/lib/profile';
 import type { Sex } from '@/domain/profile/schema';
@@ -114,6 +114,9 @@ import {
   setRepeatMode,
   setVaryMode,
   templateIntoDay,
+  weekFit,
+  weekTemplateIntoWeek,
+  type WeekFit,
   weekBuilt,
   weekComplete,
   weeksLoseContent,
@@ -303,7 +306,17 @@ function ProgramBuilderScreen() {
   const [draft, setDraft] = useState<ProgramDraft | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pendingResize, setPendingResize] = useState<{ kind: 'weeks' | 'days'; to: number; msg: string } | null>(null);
+  /**
+   * `'repeat'` joins the two resize kinds because it is the same event wearing different clothes: a
+   * structural choice that costs the athlete work they have already done.
+   *
+   * ⚠ AND IT WAS THE ONE THAT DID NOT ASK. Shrinking the week count has confirmed since the first build;
+   * flipping Customize → Repeat did not, and it costs MORE. `setRepeatMode` only sets `vary: false`, so
+   * the built weeks are merely hidden — but `draftToStructure` writes `weekPlans: d.vary ? … : null`, so
+   * the next Save makes it permanent with no undo. Hidden-then-silently-discarded is the worst of both:
+   * nothing looks destructive at the moment the athlete chooses it.
+   */
+  const [pendingResize, setPendingResize] = useState<{ kind: 'weeks' | 'days' | 'repeat'; to: number; msg: string } | null>(null);
 
   /*
    * ── IMPORT FROM A SPREADSHEET ────────────────────────────────────────────
@@ -566,6 +579,18 @@ function ProgramBuilderScreen() {
   const [templateSheet, setTemplateSheet] = useState(false);
   const [templatePending, setTemplatePending] = useState<{ name: string; rows: DaySections } | null>(null);
 
+  /**
+   * "Use a saved week" — the week-level counterpart of the day chooser above.
+   *
+   * ⚠ IT CONFIRMS MORE OFTEN THAN THE DAY ONE DOES, and that is the whole difference between them. A day
+   * template can honestly be ADDED to a day; a week replaces a week, because the number of days is fixed
+   * by `daysPerWeek` and there is no end to append to. So the only question worth asking is what the
+   * replacement COSTS — which is arithmetic (`weekFit`), not opinion, and is stated in the sheet before
+   * anything is written. A week that fits exactly, into a week with nothing in it, asks nothing at all.
+   */
+  const [weekTplFor, setWeekTplFor] = useState<number | null>(null);
+  const [weekTplPending, setWeekTplPending] = useState<{ index: number; name: string; days: ProgramDay[]; fit: WeekFit } | null>(null);
+
   // Boot + picker round-trip in one pass: read the stored draft, absorb anything the Picker handed back,
   // persist, then render. Runs on every focus, so returning from the Picker lands the new exercises.
   useFocusEffect(
@@ -697,6 +722,34 @@ function ProgramBuilderScreen() {
     showToast(mode === 'replace' ? `This day is now ${p.name}.` : `${p.name} added to this day.`);
   };
 
+  /**
+   * A saved week was chosen for week `index`.
+   *
+   * Silent only when there is genuinely nothing to say: the target week is empty AND the template's day
+   * count matches the program's exactly. Any other combination writes over something or leaves something
+   * blank, and the athlete is told which before it happens.
+   */
+  const chooseWeekTemplate = (index: number, name: string, days: ProgramDay[]) => {
+    setWeekTplFor(null);
+    if (!draft) return;
+    const fit = weekFit(draft, days.length);
+    const target = draft.vary ? draft.weekPlans?.[index] : { days: draft.days };
+    if (!weekBuilt(target) && fit.dropped === 0 && fit.emptied === 0) {
+      mutate((d) => weekTemplateIntoWeek(d, index, days));
+      showToast(`Week ${index + 1} is now ${name}.`);
+      return;
+    }
+    setWeekTplPending({ index, name, days, fit });
+  };
+
+  const applyPendingWeek = () => {
+    const p = weekTplPending;
+    setWeekTplPending(null);
+    if (!p) return;
+    mutate((d) => weekTemplateIntoWeek(d, p.index, p.days));
+    showToast(`Week ${p.index + 1} is now ${p.name}.`);
+  };
+
   // Shrinking weeks/days can destroy built content — confirm first (design `pendingResize`).
   const requestWeeks = (n: number) => {
     if (!draft) return;
@@ -730,7 +783,26 @@ function ProgramBuilderScreen() {
     const p = pendingResize;
     setPendingResize(null);
     if (!p) return;
-    mutate((d) => (p.kind === 'weeks' ? applyWeeks(d, p.to) : applyDaysPerWeek(d, p.to)));
+    mutate((d) => (p.kind === 'repeat' ? setRepeatMode(d) : p.kind === 'weeks' ? applyWeeks(d, p.to) : applyDaysPerWeek(d, p.to)));
+  };
+
+  /**
+   * Switching to one repeating week. Asks only when there is per-week work to lose — which means weeks
+   * BEYOND THE FIRST, because week 1's days are what the repeating template would be built from anyway.
+   */
+  const requestRepeat = () => {
+    if (!draft || !draft.vary) return;
+    const built = (draft.weekPlans ?? []).map((w, i) => (i > 0 && weekBuilt(w) ? i + 1 : 0)).filter(Boolean);
+    if (built.length === 0) {
+      mutate(setRepeatMode);
+      return;
+    }
+    const which = built.length === 1 ? `Week ${built[0]} holds` : `Weeks ${built.join(', ')} hold`;
+    setPendingResize({
+      kind: 'repeat',
+      to: 0,
+      msg: `${which} workouts of their own. Switching to one repeating week sets them aside — switch back and they return, but saving from here keeps only the repeating week.`,
+    });
   };
 
   // Leaving is not the same as discarding. The draft autosaves and the builder resumes it on re-entry,
@@ -1022,7 +1094,7 @@ function ProgramBuilderScreen() {
           onOpenWeekMenu={(i) => setWeekSheet({ index: i, entering: false })}
           onOpenImport={openImport}
           onOpenJump={() => setJumpOpen(true)}
-          onRepeat={() => mutate(setRepeatMode)}
+          onRepeat={requestRepeat}
           onVary={() => mutate(setVaryMode)}
           onSave={onSave}
         />
@@ -1237,6 +1309,57 @@ function ProgramBuilderScreen() {
         </View>
       </BottomSheet>
 
+      <WeekTemplateSheet
+        open={weekTplFor != null}
+        weekNumber={(weekTplFor ?? 0) + 1}
+        daysPerWeek={draft.daysPerWeek}
+        onClose={() => setWeekTplFor(null)}
+        onChoose={(name, days) => chooseWeekTemplate(weekTplFor ?? 0, name, days)}
+      />
+
+      {/* What the replacement COSTS, in numbers, before it happens. Only ever opened when there is
+          something to say — see `chooseWeekTemplate`. */}
+      <BottomSheet
+        open={weekTplPending != null}
+        onClose={() => setWeekTplPending(null)}
+        title={weekTplPending ? `Week ${weekTplPending.index + 1}` : ''}
+      >
+        <View style={styles.resizeSheet}>
+          <Text style={styles.resizeMsg}>
+            {weekTplPending
+              ? [
+                  `Week ${weekTplPending.index + 1} becomes ${weekTplPending.name}.`,
+                  weekBuilt(draft.vary ? draft.weekPlans?.[weekTplPending.index] : { days: draft.days })
+                    ? 'What you built in it is replaced.'
+                    : null,
+                  /* Stated as a COUNT and a REASON, because "2 days won't fit" without the reason reads
+                     as a bug in the import rather than as the arithmetic of two day counts. */
+                  weekTplPending.fit.dropped > 0
+                    ? `This week has ${weekTplPending.fit.taken + weekTplPending.fit.dropped} days and your program trains ${draft.daysPerWeek} — only the first ${weekTplPending.fit.taken} come in.`
+                    : null,
+                  weekTplPending.fit.emptied > 0
+                    ? `It has ${weekTplPending.fit.taken} days, so the last ${weekTplPending.fit.emptied === 1 ? 'day' : `${weekTplPending.fit.emptied} days`} of this week ${weekTplPending.fit.emptied === 1 ? 'is' : 'are'} left empty.`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' ')
+              : ''}
+          </Text>
+          <View style={styles.resizeActions}>
+            <View style={styles.resizeBtn}>
+              <Button variant="secondary" fullWidth onPress={() => setWeekTplPending(null)} accessibilityLabel="Keep this week as it is">
+                Keep it
+              </Button>
+            </View>
+            <View style={styles.resizeBtn}>
+              <Button variant="destructive" fullWidth onPress={applyPendingWeek} accessibilityLabel="Use the saved week">
+                Use it
+              </Button>
+            </View>
+          </View>
+        </View>
+      </BottomSheet>
+
       <BottomSheet open={jumpOpen} onClose={() => setJumpOpen(false)} title="Jump to week">
         <ScrollView style={styles.jumpScroll} showsVerticalScrollIndicator={false}>
           {(draft.weekPlans ?? []).map((w, i) => {
@@ -1277,9 +1400,33 @@ function ProgramBuilderScreen() {
         <View style={styles.resizeSheet}>
           <Text style={styles.resizeMsg}>
             {weekSheet?.entering
-              ? "Copy a week you've already built into this one, or start from scratch."
-              : 'Copy another week in, or clear this one.'}
+              ? "Start from a week you've saved, copy one you've already built, or start from scratch."
+              : 'Bring in a saved week, copy another week, or clear this one.'}
           </Text>
+
+          {/* ── A SAVED WEEK ────────────────────────────────────────────────────────────────────────
+              First, above Copy, because it reaches OUTSIDE this program — and that is the wider door.
+              Copy answers "again, like week 2"; this answers "the week I built for exactly this", which
+              is the one an athlete arrives holding. Until this existed a day template could fill a day
+              and a week template could only ever be run on its own, which made the two libraries read as
+              different KINDS of thing when they are the same idea at two sizes. ── */}
+          <Pressable
+            onPress={() => {
+              const i = weekSheet?.index ?? 0;
+              setWeekSheet(null);
+              setWeekTplFor(i);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Use a week you have saved"
+            style={({ pressed }) => [styles.templateLink, pressed ? styles.pressed : null]}
+          >
+            <Glyph d={LINES} size={16} color={flColor.bronze300} width={1.8} />
+            <View style={styles.templateLinkText}>
+              <Text style={styles.templateLinkTitle}>Use a saved week</Text>
+              <Text style={styles.templateLinkSub}>One of your week templates becomes this week</Text>
+            </View>
+            <Glyph d="M9 6l6 6-6 6" size={15} color={flColor.gray600} width={2} />
+          </Pressable>
           {weekSheet
             ? (() => {
                 const sources = (draft.weekPlans ?? [])
@@ -1609,7 +1756,15 @@ function ProgramBuilderScreen() {
         )}
       </BottomSheet>
 
-      <BottomSheet open={pendingResize != null} onClose={() => setPendingResize(null)} title="Remove content?">
+      {/* ⚠ THE REPEAT CASE IS WORDED DIFFERENTLY BECAUSE IT IS DIFFERENT. Shrinking removes content now;
+          switching to Repeat sets it aside and only discards it on the next Save. Titling that "Remove
+          content?" would be a threat the app does not carry out, and the athlete would learn the sheet
+          lies. */}
+      <BottomSheet
+        open={pendingResize != null}
+        onClose={() => setPendingResize(null)}
+        title={pendingResize?.kind === 'repeat' ? 'Use one repeating week?' : 'Remove content?'}
+      >
         <View style={styles.resizeSheet}>
           <Text style={styles.resizeMsg}>{pendingResize?.msg ?? ''}</Text>
           <View style={styles.resizeActions}>
@@ -1619,8 +1774,13 @@ function ProgramBuilderScreen() {
               </Button>
             </View>
             <View style={styles.resizeBtn}>
-              <Button variant="destructive" fullWidth onPress={confirmResize} accessibilityLabel="Remove content">
-                Remove
+              <Button
+                variant="destructive"
+                fullWidth
+                onPress={confirmResize}
+                accessibilityLabel={pendingResize?.kind === 'repeat' ? 'Switch to one repeating week' : 'Remove content'}
+              >
+                {pendingResize?.kind === 'repeat' ? 'Switch' : 'Remove'}
               </Button>
             </View>
           </View>
@@ -1756,6 +1916,87 @@ function TemplateDayRow({
       </View>
       <Glyph d="M9 6l6 6-6 6" size={15} color={flColor.gray600} width={2} />
     </Pressable>
+  );
+}
+
+/**
+ * The weeks the athlete has saved, offered for one week of a program.
+ *
+ * ⚠ NO FORGE SHELF HERE, and the asymmetry with `TemplateDaySheet` is deliberate. That sheet searches two
+ * libraries because Forge ships 81 day sessions and "where's my push day" is genuinely answered by
+ * either. There is no Forge week catalogue — a week template is a thing an athlete builds — so a second
+ * labelled section would be a permanently empty heading.
+ *
+ * ⚠ AND NO SEARCH FIELD, for the same reason inverted: the day sheet searches because it lists eighty-odd
+ * rows. Weeks are counted in single figures. A search box over four rows is furniture.
+ *
+ * Loaded on OPEN rather than on mount: most builds never ask for this, and the builder must not spend a
+ * round-trip on a sheet that may never open. Same rule the day sheet follows.
+ */
+function WeekTemplateSheet({
+  open,
+  weekNumber,
+  daysPerWeek,
+  onClose,
+  onChoose,
+}: {
+  open: boolean;
+  weekNumber: number;
+  daysPerWeek: number;
+  onClose: () => void;
+  onChoose: (name: string, days: ProgramDay[]) => void;
+}) {
+  const { data, loading, error } = useQuery(() => (open ? fetchWeekTemplates() : Promise.resolve([])), [open]);
+  const rows = data ?? [];
+
+  return (
+    <BottomSheet open={open} onClose={onClose} title={`Use a saved week for week ${weekNumber}`} scroll>
+      <View style={styles.tplCol}>
+        <Text style={styles.tplIntro}>
+          Its days become this week. You can change anything afterwards — nothing is linked, so editing the program
+          never touches the saved week.
+        </Text>
+
+        {loading ? <Text style={styles.tplEmpty}>Loading your weeks…</Text> : null}
+        {error ? <Text style={styles.tplEmpty}>{error}</Text> : null}
+
+        {!loading && !error && rows.length === 0 ? (
+          /* The honest empty state names the OTHER door rather than apologising: a week template is built
+             on the Templates tab, and an athlete who has none has not been anywhere near it. */
+          <Text style={styles.tplEmpty}>
+            You haven’t saved any weeks yet. Build one from Workouts → Your Templates → Build a Week, and it will
+            show up here.
+          </Text>
+        ) : null}
+
+        {rows.map((w) => {
+          const days = w.structure.days ?? [];
+          /* The cost is stated on the ROW, not only in the confirmation — an athlete choosing between
+             three saved weeks should be able to see which one fits before they tap one of them. */
+          const over = days.length - daysPerWeek;
+          const note = over > 0 ? `${over} day${over === 1 ? '' : 's'} won’t fit` : over < 0 ? `leaves ${-over} day${over === -1 ? '' : 's'} empty` : 'fits exactly';
+          return (
+            <Pressable
+              key={w.id}
+              onPress={() => onChoose(w.name, days)}
+              accessibilityRole="button"
+              accessibilityLabel={`Use ${w.name} for week ${weekNumber} — ${weekSummary(w)}, ${note}`}
+              style={({ pressed }) => [styles.tplRow, pressed ? styles.pressed : null]}
+            >
+              <View style={styles.tplRowText}>
+                <Text style={styles.tplRowName} numberOfLines={1}>
+                  {w.name}
+                </Text>
+                <Text style={styles.tplRowSub} numberOfLines={1}>
+                  {weekSummary(w)} · {note}
+                </Text>
+              </View>
+              <Glyph d="M9 6l6 6-6 6" size={15} color={flColor.gray600} width={2} />
+            </Pressable>
+          );
+        })}
+      </View>
+    </BottomSheet>
   );
 }
 
