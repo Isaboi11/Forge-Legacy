@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   CARDIO_ACTIVITIES,
   CARDIO_DEFAULTS,
+  CARDIO_SEARCH_ALIASES,
   FIRST_TARGET,
   OUTDOOR_CAPABLE,
   STORED_TYPE,
@@ -38,6 +39,7 @@ import {
   parseDistanceIn,
   parsePace,
   parseWithin,
+  resolveModality,
   sessionActivityType,
   setModality,
   toDistanceIn,
@@ -581,4 +583,93 @@ test('the log form steps a pool by a length and a road by a tenth', () => {
   assert.equal(distanceStepIn('m'), 25);
   assert.equal(distanceStepIn('mi'), 0.1);
   assert.equal(distanceStepIn('km'), 0.1);
+});
+
+
+/*
+ * ══ FINDING THEM AT ALL ══
+ *
+ * These seven are the ONLY way to log conditioning: the 49 catalogue rows that duplicated them are
+ * hidden. So a term that reaches none of them is the app saying it has no rowing machine, and search
+ * read `name` alone — which five of the seven do not answer to.
+ */
+
+/** term → the activity an athlete typing it is looking for. */
+const SEARCHES = [
+  ['running', 'run'], ['jog', 'run'], ['jogging', 'run'], ['treadmill', 'run'],
+  ['walking', 'walk'],
+  ['bike', 'bike'], ['biking', 'bike'], ['bicycle', 'bike'], ['cycling', 'bike'], ['spin', 'bike'], ['stationary bike', 'bike'],
+  ['rowing', 'row'], ['rower', 'row'], ['erg', 'row'], ['ergometer', 'row'],
+  ['elliptical', 'elliptical'], ['cross trainer', 'elliptical'],
+  ['stairs', 'stair'], ['stairmaster', 'stair'], ['stepmill', 'stair'], ['stair climber', 'stair'],
+  ['swimming', 'swim'], ['pool', 'swim'], ['laps', 'swim'],
+];
+
+/** The picker's own rule: every token must land somewhere in name + aliases. */
+const finds = (term, key) => {
+  const a = CARDIO_ACTIVITIES.find((x) => x.key === key);
+  const fields = [a.name, ...CARDIO_SEARCH_ALIASES[key]].map((f) => f.toLowerCase());
+  return term.trim().toLowerCase().split(/\s+/).filter(Boolean)
+    .every((t) => fields.some((f) => f.includes(t)));
+};
+
+test('every activity answers to what people actually type for it', () => {
+  const missed = SEARCHES.filter(([term, key]) => !finds(term, key));
+  assert.deepEqual(missed, [], `these searches find nothing: ${JSON.stringify(missed)}`);
+});
+
+test('each of the seven is reachable by its OWN name — the bug was that five were not', () => {
+  // "Ride" never answered to "bike", "Row" never to "rowing", "Swim" never to "swimming".
+  for (const a of CARDIO_ACTIVITIES) {
+    assert.ok(finds(a.name, a.key), `${a.name} cannot find itself`);
+  }
+});
+
+test('every activity answers to "cardio" and to "conditioning"', () => {
+  // The category has a name; searching it must not return nothing.
+  for (const a of CARDIO_ACTIVITIES) {
+    assert.ok(finds('cardio', a.key), `${a.name} is not reachable by "cardio"`);
+    assert.ok(finds('conditioning', a.key), `${a.name} is not reachable by "conditioning"`);
+  }
+});
+
+test('an alias never sends a term to the wrong machine', () => {
+  // Substring matching is generous, and these are the pairs it could plausibly cross.
+  assert.equal(finds('rowing', 'run'), false, '"rowing" is not a run');
+  assert.equal(finds('treadmill', 'row'), false, 'a rower is not a treadmill');
+  assert.equal(finds('swimming', 'bike'), false);
+  assert.equal(finds('stairmaster', 'elliptical'), false);
+});
+
+/*
+ * ══ A MACHINE HAS ONE MODALITY, AND EVERY CALLER USED TO GUESS ══
+ *
+ * `OUTDOOR_CAPABLE` always said so. The callers wrote `?? 'outdoor'`, so a stair climber with no
+ * stored modality was outdoors — which is how it got drawn an Outdoor/Treadmill toggle.
+ */
+test('resolveModality never puts a machine outdoors, whatever it is handed', () => {
+  for (const k of ['row', 'elliptical', 'swim', 'stair']) {
+    assert.equal(resolveModality(k, 'outdoor'), 'indoor', `${k} has no outdoors`);
+    assert.equal(resolveModality(k, null), 'indoor', k);
+    assert.equal(resolveModality(k, undefined), 'indoor', k);
+    assert.equal(resolveModality(k, 'indoor'), 'indoor', k);
+  }
+});
+
+test('resolveModality still honours the athlete for the three that CAN go outside', () => {
+  for (const k of ['run', 'walk', 'bike']) {
+    assert.equal(resolveModality(k, 'indoor'), 'indoor', k);
+    assert.equal(resolveModality(k, 'outdoor'), 'outdoor', k);
+    // No stored modality falls back to the activity's own default, not a hard-coded 'outdoor'.
+    assert.equal(resolveModality(k, null), CARDIO_DEFAULTS[k].modality, k);
+  }
+});
+
+test('the modality a toggle would be offered for is exactly the modality that resolves both ways', () => {
+  // The gate the two builders and the workout card now render on. If these ever disagree, a control
+  // appears for a choice that does not exist — which is the defect this pass closed.
+  for (const a of CARDIO_ACTIVITIES) {
+    const twoWay = resolveModality(a.key, 'outdoor') !== resolveModality(a.key, 'indoor');
+    assert.equal(twoWay, OUTDOOR_CAPABLE[a.key], a.key);
+  }
 });

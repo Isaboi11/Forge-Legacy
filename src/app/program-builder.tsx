@@ -60,6 +60,8 @@ import {
   hasRateTarget,
   parseDistanceIn,
   newCardioBlock,
+  OUTDOOR_CAPABLE,
+  resolveModality,
   FIRST_TARGET,
   usesSpeed,
   type CardioActivity,
@@ -2823,7 +2825,9 @@ function ExerciseCard({
   const cardio = item.kind === 'cardio';
   const activity = (item.activity ?? 'run') as CardioActivity;
   const speed = cardio && usesSpeed(activity);
-  const indoor = item.modality === 'indoor';
+  /* A machine is always indoors — the toggle below is offered only where there is a choice. */
+  const modality = resolveModality(activity, item.modality);
+  const indoor = modality === 'indoor';
   const id = (n: number) => n;
 
   /** Yards (or metres) for a swim, miles (or kilometres) for everything else. Storage is miles regardless. */
@@ -2834,7 +2838,7 @@ function ExerciseCard({
   // Slot A: sets for a lift, distance for a block. Slot B: reps, or pace/speed. Time is cardio-only.
   const aVal = cardio ? (item.targetMi == null ? 'Open' : fmtDistanceIn(item.targetMi, distUnit)) : String(item.sets ?? 1);
   const aUnit = cardio ? (item.targetMi == null ? '' : distUnit) : 'sets';
-  const bVal = cardio ? effortLabel({ ...item, activity, name: item.name, equip: item.equip ?? '', modality: item.modality ?? 'outdoor', targetMi: item.targetMi ?? null }, id, id) : String(item.reps ?? 1);
+  const bVal = cardio ? effortLabel({ ...item, activity, name: item.name, equip: item.equip ?? '', modality, targetMi: item.targetMi ?? null }, id, id) : String(item.reps ?? 1);
   const bUnit = cardio ? (speed ? (item.targetSpdMph == null ? 'speed' : 'mph') : item.targetPaceSec == null ? 'pace' : '/mi') : 'reps';
   const tVal = item.targetSec == null ? 'Open' : fmtDuration(item.targetSec);
   const tOpen = item.targetSec == null;
@@ -2903,7 +2907,12 @@ function ExerciseCard({
         </Pressable>
       ) : null}
 
-      {cardio ? (
+      {/* Offered only to run, walk and ride. A rower, elliptical, pool swim and stair climber each had
+          this row, and its indoor half read "Treadmill" because the label only special-cased the bike —
+          so the stair climber's own control offered to put it on a treadmill or outdoors, and neither is
+          a thing it can be. Gating on `OUTDOOR_CAPABLE` is also what makes the label right with no
+          second special case. */}
+      {cardio && OUTDOOR_CAPABLE[activity] ? (
         <View style={styles.modRow}>
           <Pressable
             onPress={() => onModality('outdoor')}

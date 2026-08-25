@@ -17,7 +17,7 @@
  * The mapping onto the 6 locked browse categories lives in `catalog-core` (pure + unit-tested).
  */
 
-import { CARDIO_ACTIVITIES, cardioKey } from '../workout/conditioning.ts';
+import { CARDIO_ACTIVITIES, CARDIO_SEARCH_ALIASES, cardioKey } from '../workout/conditioning.ts';
 import { type MatchResult } from '../program/exercise-match.ts';
 import { ALIASES_BY_ID, resolveAgainstCatalog } from './aliases.ts';
 import { mergeForSearch } from './custom-core.ts';
@@ -358,7 +358,9 @@ export const CONDITIONING_ROWS: PickerItem[] = CARDIO_ACTIVITIES.map((c) => ({
   difficulty: 'Beginner',
   pattern: 'Locomotion',
   modality: 'cardio',
-  aliases: [],
+  /* What people type. Without these the section answered to `name` alone, and five of the seven
+     could not be found by their own name — "bike" missed Ride, "rowing" missed Row. */
+  aliases: CARDIO_SEARCH_ALIASES[c.key],
   environments: [],
   /*
    * REPS, and it is not a contradiction. A run is obviously measured by time and distance — but never

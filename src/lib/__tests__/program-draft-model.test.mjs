@@ -149,6 +149,54 @@ test('absorbBuilderInbox appends to the addressed section with the design defaul
   assert.equal(d.days[0].main.length, 0, 'no other day touched');
 });
 
+test('a cardio pick from the Picker becomes a BLOCK, not three sets of eight', () => {
+  // The 49 catalogue rows that duplicated conditioning are hidden precisely because picking "Interval
+  // Run" built 3 × 8 reps of a run. The Picker's own "Running & Cardio" section hands back the same
+  // shape of key, and this mapper treated it as a strength row — rebuilding the trap one door over.
+  const d = absorbBuilderInbox(newDraft(), {
+    vary: false,
+    week: 0,
+    day: 0,
+    section: 'main',
+    items: [{ catalogKey: 'cardio:stair', name: 'Stair Climber', equip: 'Floors climbed', muscles: [], type: 'cardio' }],
+  });
+  const row = d.days[0].main[0];
+  assert.equal(row.kind, 'cardio', 'a run is not a strength row');
+  assert.equal(row.activity, 'stair');
+  assert.equal(row.sets, undefined, 'a cardio block has no sets');
+  assert.equal(row.reps, undefined, 'nor reps');
+  assert.equal(row.modality, 'indoor', 'a stair climber has no outdoors');
+  assert.equal(row.name, 'Stair Climb', 'named by the model, not by the picker row');
+});
+
+test('every conditioning activity survives the Picker round-trip as itself', () => {
+  for (const key of ['run', 'walk', 'bike', 'row', 'elliptical', 'stair', 'swim']) {
+    const row = absorbBuilderInbox(newDraft(), {
+      vary: false,
+      week: 0,
+      day: 0,
+      section: 'main',
+      items: [{ catalogKey: `cardio:${key}`, name: 'whatever the row said', equip: '', muscles: [], type: '' }],
+    }).days[0].main[0];
+    assert.equal(row.kind, 'cardio', key);
+    assert.equal(row.activity, key, key);
+  }
+});
+
+test('a normal lift is untouched by the cardio branch', () => {
+  const row = absorbBuilderInbox(newDraft(), {
+    vary: false,
+    week: 0,
+    day: 0,
+    section: 'main',
+    items: [{ catalogKey: 'ex:barbell-back-squat', name: 'Back Squat', equip: 'Barbell', muscles: ['Quads'], type: 'Compound' }],
+  }).days[0].main[0];
+  assert.equal(row.kind, undefined);
+  assert.equal(row.sets, 3);
+  assert.equal(row.reps, 10);
+  assert.equal(row.name, 'Back Squat');
+});
+
 test('absorbBuilderInbox uses per-section defaults: warm-up 2×12, cool-down 1×30', () => {
   const mk = (section) =>
     absorbBuilderInbox(newDraft(), {

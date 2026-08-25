@@ -42,6 +42,7 @@ import {
   filtersActive,
   itemByKey,
   matchesTokens,
+  searchFields,
   searchTokens,
   MUSCLE_FILTER_GROUPS,
   PICKER_DB,
@@ -317,6 +318,30 @@ export default function ExercisePickerScreen() {
     customs: customItems,
   });
   const hasFilters = filtersActive(applied);
+
+  /*
+   * ══ CONDITIONING IS MATCHED BEFORE THE SCREEN DECIDES IT FOUND NOTHING ══
+   *
+   * This used to be computed inline, INSIDE the `hasResults` branch — so a search that only a cardio
+   * activity could answer fell into the "No matches" empty state and the section that held the answer
+   * was never rendered. Five of the seven were unreachable that way: nothing in the visible catalogue
+   * matches "elliptical", "stair climber", "swim", "ride" or "bike", because the 49 rows that used to
+   * are hidden. Run, Walk and Row only ever appeared by luck — unrelated lifts ("row" hits 81) kept
+   * the results non-empty for them.
+   *
+   * Matched on `searchFields`, not the name: token-AND over name + aliases + equipment, the same rule
+   * the catalogue runs. That is what makes "bike" reach Ride and "treadmill" reach Run.
+   *
+   * ⚠ NOT rendered when the CARDIO chip is applied — `buildSections` widens the pool for that one
+   * filter, so these same seven rows are already in `sections.results` and this would draw each twice.
+   */
+  const cardioRows = (() => {
+    if (applied.cat.includes('CARDIO')) return [];
+    const tokens = searchTokens(search);
+    return tokens.length ? CONDITIONING_ROWS.filter((c) => matchesTokens(tokens, searchFields(c))) : CONDITIONING_ROWS;
+  })();
+  /** The screen has something to show if EITHER list does. */
+  const hasAnything = sections.hasResults || cardioRows.length > 0;
 
 /**
  * Choosing an exercise puts the keyboard away.
@@ -636,7 +661,7 @@ export default function ExercisePickerScreen() {
 
       {/* body */}
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        {sections.hasResults ? (
+        {hasAnything ? (
           <>
             {sections.best.length ? (
               <View style={styles.section}>
@@ -686,7 +711,7 @@ export default function ExercisePickerScreen() {
                   ))}
                 </View>
               </>
-            ) : (
+            ) : sections.hasResults ? (
               <>
                 <View style={styles.resultsHead}>
                   <SectionHeader label={search.trim() ? 'Results' : 'Exercises'} />
@@ -694,24 +719,18 @@ export default function ExercisePickerScreen() {
                 </View>
                 <View style={styles.rows}>{sections.results.map(renderRow)}</View>
               </>
-            )}
+            ) : null}
             {/* BELOW the catalog, not above it. Pinning three runs over 809 lifts made every athlete
                 adding a bench press scroll past cardio first — paying on the common case to help the
                 rare one. Search is where finding them actually matters, and it still surfaces them
                 instantly. */}
-            {(() => {
-              // Token-AND, the same rule the catalogue uses — otherwise "treadmill run" finds a
-              // lift and misses the treadmill sitting three rows below it.
-              const tokens = searchTokens(search);
-              const rows = tokens.length ? CONDITIONING_ROWS.filter((c) => matchesTokens(tokens, [c.name])) : CONDITIONING_ROWS;
-              return rows.length ? (
-                <View style={styles.section}>
-                  <SectionHeader label="Running & Cardio" />
-                  <Text style={styles.bestSub}>Measured in distance and time, not sets and reps</Text>
-                  <View style={styles.rows}>{rows.map(renderRow)}</View>
-                </View>
-              ) : null;
-            })()}
+            {cardioRows.length ? (
+              <View style={styles.section}>
+                <SectionHeader label="Running & Cardio" />
+                <Text style={styles.bestSub}>Measured in distance and time, not sets and reps</Text>
+                <View style={styles.rows}>{cardioRows.map(renderRow)}</View>
+              </View>
+            ) : null}
 
             {/* ══ ALWAYS AT THE BOTTOM OF THE LIST (W-23 §6, §15.1 entry 1) ══
                 The quiet one. It is not for the athlete who searched and found nothing — the empty state

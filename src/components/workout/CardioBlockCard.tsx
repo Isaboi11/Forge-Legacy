@@ -41,6 +41,7 @@ import {
   type CardioResult,
   type Modality,
   OUTDOOR_CAPABLE,
+  resolveModality,
 } from '@/domain/workout/conditioning';
 import {
   currentPaceSec,
@@ -172,7 +173,9 @@ interface Props {
 
 export function CardioBlockCard({ exercise, index, units, onSetModality, onSave, onLiveChange }: Props) {
   const activity: CardioActivity = exercise.activity ?? 'run';
-  const modality: Modality = exercise.modality ?? 'outdoor';
+  /* `?? 'outdoor'` put every machine outdoors when no modality was stored — a rower, an elliptical,
+     a pool swim and a stair climber. `resolveModality` is the model's own answer. */
+  const modality: Modality = resolveModality(activity, exercise.modality);
   const treadmill = modality === 'indoor';
   const result: CardioResult | undefined = exercise.cardio;
   const logged = isLogged(result);
@@ -848,6 +851,19 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
           </View>
         </View>
 
+        {/*
+          ══ ONLY WHERE THERE IS A CHOICE TO MAKE ══
+
+          The comment above `useRunTracker` has claimed since it was written that machines "are
+          indoor-only (`OUTDOOR_CAPABLE`), so the Outdoor toggle never renders" — and nothing here
+          ever checked. A stair climber, a rower, an elliptical and a pool swim each drew an
+          Outdoor/Treadmill segment, and the indoor half was LABELLED "Treadmill" because the label
+          only special-cased the bike. Tapping Outdoor on a stair climber saved the bout as outdoors.
+
+          Gating it here is also what makes that label correct without a second special case: only
+          run, walk and ride reach it, and for them "Treadmill" (or "Indoor" for a bike) is true.
+        */}
+        {OUTDOOR_CAPABLE[activity] ? (
         <View style={styles.segment}>
           {(['outdoor', 'indoor'] as Modality[]).map((m) => {
             const on = modality === m;
@@ -867,6 +883,7 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
             );
           })}
         </View>
+        ) : null}
 
         {/* THE PRESCRIPTION, and only when there is one.
             Read-only, on the strength logger's rule: Target comes from the program and does not move;

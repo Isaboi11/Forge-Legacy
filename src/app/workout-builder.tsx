@@ -16,6 +16,7 @@ import { savePlannedWorkout } from '@/data/planned-workout-live';
 import type { ProgramExercise } from '@/data/programs-live';
 import {
   CARDIO_ACTIVITIES,
+  resolveModality,
   bumpDistance,
   bumpDuration,
   bumpPace,
@@ -136,16 +137,27 @@ export default function WorkoutBuilderScreen() {
             ...d,
             [inbox.section]: [
               ...d[inbox.section],
-              ...inbox.items.map((it) => ({
-                id: newExerciseId(),
-                catalogKey: it.catalogKey,
-                name: it.name,
-                equip: it.equip,
-                muscles: it.muscles ?? [],
-                type: it.type ?? '',
-                sets: defaultSets(inbox.section),
-                reps: defaultReps(inbox.section),
-              })),
+              /* A conditioning key becomes a cardio BLOCK, not three sets of eight. The Picker's
+                 "Running & Cardio" section hands back `cardio:<activity>` and this mapped it like any
+                 other row — producing exactly the "Interval Run" trap the catalogue cleanup removed,
+                 one door over. Same reader (`activityFromKey`) and same block (`newCardioBlock`) as
+                 this screen's own Add-a-cardio-block sheet, so both doors agree. */
+              ...inbox.items.map((it) => {
+                const activity = activityFromKey(it.catalogKey ?? '');
+                if (activity) {
+                  return { id: newExerciseId(), catalogKey: it.catalogKey, kind: 'cardio' as const, ...newCardioBlock(activity) };
+                }
+                return {
+                  id: newExerciseId(),
+                  catalogKey: it.catalogKey,
+                  name: it.name,
+                  equip: it.equip,
+                  muscles: it.muscles ?? [],
+                  type: it.type ?? '',
+                  sets: defaultSets(inbox.section),
+                  reps: defaultReps(inbox.section),
+                };
+              }),
             ],
           };
         }
@@ -532,7 +544,7 @@ function Row({
                 activity,
                 name: item.name,
                 equip: item.equip ?? '',
-                modality: item.modality ?? 'outdoor',
+                modality: resolveModality(activity, item.modality),
                 targetMi: item.targetMi ?? null,
                 targetPaceSec: item.targetPaceSec ?? null,
                 targetSpdMph: item.targetSpdMph ?? null,
@@ -630,8 +642,9 @@ function hydrate(name: string, exercises: TemplateExercise[], editId: string): W
   for (const e of exercises) {
     // A cardio row read back has to come back as a cardio row. The activity comes from the `cardio:<x>`
     // catalogKey written on save; anything unreadable falls back to a run, the only honest default for a
-    // distance-and-pace block. Modality is not stored on a template, so it resets to the outdoor default
-    // and the athlete flips it on the card — the same place they set it in the first place.
+    // distance-and-pace block. Modality is not stored on a template, so it resets to the ACTIVITY's own
+    // default and the athlete flips it on the card — the same place they set it in the first place.
+    // ⚠ It used to reset to 'outdoor' for everything, which put a rower and a stair climber outdoors.
     const isCardio = e.kind === 'cardio';
     const row: ProgramExercise = {
       id: newExerciseId(),
@@ -643,7 +656,7 @@ function hydrate(name: string, exercises: TemplateExercise[], editId: string): W
         ? {
             kind: 'cardio' as const,
             activity: activityFromKey(e.catalogKey) ?? 'run',
-            modality: 'outdoor' as const,
+            modality: resolveModality(activityFromKey(e.catalogKey) ?? 'run', null),
             targetMi: e.targetMi ?? null,
             targetSec: e.targetDurationSec ?? null,
           }

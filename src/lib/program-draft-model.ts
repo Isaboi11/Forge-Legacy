@@ -3,6 +3,7 @@ import type { BuilderInbox, BuilderSection } from '@/lib/builder-inbox';
 // ⚠ RELATIVE AND EXTENSIONED, NOT `@/`. This is a RUNTIME import and `node --test` loads this file
 // directly, where the alias does not resolve — the type-only imports above survive only because they are
 // stripped before anything tries. The same rule `domain/program/prescription` states about its own.
+import { activityFromKey, newCardioBlock } from '../domain/workout/conditioning.ts';
 import { supersetLabelAt } from '../domain/program/prescription.ts';
 import { totalSessions } from '../domain/program/progress-core.ts';
 
@@ -285,6 +286,35 @@ export function applyDaysPerWeek(d: ProgramDraft, n: number): ProgramDraft {
   return next.vary ? ensureWeeks(next) : next;
 }
 
+/**
+ * ══ A RUN IS NOT THREE SETS OF EIGHT ══
+ *
+ * Everything the Picker handed back used to become a strength row. That is the exact trap the 2026-08-03
+ * cleanup closed by hiding the 49 catalogue rows that duplicated conditioning — and it survived one door
+ * over, because the Picker's own "Running & Cardio" section hands back a `cardio:<activity>` key and this
+ * mapped it like any other: "Run", 3 × 8, no distance, no pace, no clock.
+ *
+ * `activityFromKey` is the same reader the Active Workout has always used on this hand-off; the builders
+ * simply never called it. A conditioning key becomes the block the builder's own cardio sheet would have
+ * made (`newCardioBlock`), so both doors produce the identical row.
+ */
+function toDayRow(it: BuilderInbox['items'][number], section: BuilderSection): ProgramExercise {
+  const activity = activityFromKey(it.catalogKey ?? '');
+  if (activity) {
+    return { id: newExerciseId(), catalogKey: it.catalogKey, kind: 'cardio', ...newCardioBlock(activity) };
+  }
+  return {
+    id: newExerciseId(),
+    catalogKey: it.catalogKey,
+    name: it.name,
+    equip: it.equip,
+    muscles: it.muscles ?? [],
+    type: it.type ?? '',
+    sets: defaultSets(section),
+    reps: defaultReps(section),
+  };
+}
+
 /** Append the exercises the Picker handed back to the addressed week/day/section. */
 export function absorbBuilderInbox(draft: ProgramDraft, inbox: BuilderInbox): ProgramDraft {
   let d = draft;
@@ -294,16 +324,7 @@ export function absorbBuilderInbox(draft: ProgramDraft, inbox: BuilderInbox): Pr
   const day = days[inbox.day];
   if (!day) return d;
 
-  const added: ProgramExercise[] = inbox.items.map((it) => ({
-    id: newExerciseId(),
-    catalogKey: it.catalogKey,
-    name: it.name,
-    equip: it.equip,
-    muscles: it.muscles ?? [],
-    type: it.type ?? '',
-    sets: defaultSets(inbox.section),
-    reps: defaultReps(inbox.section),
-  }));
+  const added: ProgramExercise[] = inbox.items.map((it) => toDayRow(it, inbox.section));
 
   const nextDay: ProgramDay = { ...day, [inbox.section]: [...day[inbox.section], ...added] };
   return { ...withActiveDays(d, days.map((x, i) => (i === inbox.day ? nextDay : x))), openDay: inbox.day };

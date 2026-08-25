@@ -185,6 +185,29 @@ export const CARDIO_ACTIVITIES: { key: CardioActivity; name: string; sub: string
   { key: 'swim', name: 'Swim', sub: 'Pool lengths', symbol: 'swim' },
 ];
 
+/**
+ * ══ WHAT PEOPLE TYPE WHEN THEY WANT ONE OF THESE ══
+ *
+ * These seven ARE conditioning — the 49 catalogue rows that duplicated them are hidden
+ * (`HIDDEN_EXERCISE_IDS`), so a term that reaches none of them is not a near miss, it is the app
+ * saying it has no rowing machine. Search read `name` and nothing else, and five of the seven cannot
+ * be found by their own name that way: **Ride** does not answer to "bike", **Row** not to "rowing",
+ * **Swim** not to "swimming", and nothing at all answers to "treadmill" or "cardio".
+ *
+ * Every activity also answers to CARDIO and CONDITIONING so the category can be found by its own name.
+ */
+const EVERY_CARDIO = ['cardio', 'conditioning'];
+export const CARDIO_SEARCH_ALIASES: Record<CardioActivity, string[]> = {
+  run: [...EVERY_CARDIO, 'running', 'jog', 'jogging', 'treadmill'],
+  walk: [...EVERY_CARDIO, 'walking', 'treadmill', 'steps', 'stroll'],
+  // The name is "Ride", so the word almost everybody types is not in it.
+  bike: [...EVERY_CARDIO, 'bike', 'biking', 'bicycle', 'cycling', 'cycle', 'spinning', 'spin bike', 'stationary bike', 'exercise bike', 'indoor bike', 'trainer'],
+  row: [...EVERY_CARDIO, 'rowing', 'rower', 'erg', 'ergometer', 'rowing machine'],
+  elliptical: [...EVERY_CARDIO, 'cross trainer', 'crosstrainer'],
+  stair: [...EVERY_CARDIO, 'stairs', 'stairmaster', 'stair master', 'stepmill', 'step mill', 'stepper', 'stair climb'],
+  swim: [...EVERY_CARDIO, 'swimming', 'pool', 'laps', 'lengths'],
+};
+
 /** The verb a name is built from. Ride, not Bike — you go for a ride. */
 export const VERB: Record<CardioActivity, string> = {
   run: 'Run',
@@ -304,6 +327,19 @@ export const CARDIO_DEFAULTS: Record<CardioActivity, CardioBlock> = {
 };
 
 export const newCardioBlock = (a: CardioActivity): CardioBlock => ({ ...CARDIO_DEFAULTS[a] });
+
+/**
+ * The modality a block is actually in — the ONE place a missing one is filled in.
+ *
+ * `OUTDOOR_CAPABLE` has said since it was written that a machine has no outdoors, and `deriveName` and
+ * `deriveEquip` both honour it. But every CALLER reaching for a fallback wrote `?? 'outdoor'`, so a
+ * stair climber carrying no modality was outdoors as far as the UI was concerned — which is how a
+ * rower, an elliptical, a pool swim and a stair climber each got drawn an Outdoor/Treadmill toggle.
+ */
+export function resolveModality(activity: CardioActivity, modality: Modality | null | undefined): Modality {
+  if (!OUTDOOR_CAPABLE[activity]) return 'indoor';
+  return modality ?? CARDIO_DEFAULTS[activity].modality;
+}
 
 /** Switching modality renames the block and its equipment, and no-ops when already selected. */
 export function setModality<T extends CardioBlock>(block: T, modality: Modality): T {
