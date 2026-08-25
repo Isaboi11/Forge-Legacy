@@ -1,7 +1,7 @@
 # Forge Legacy — Status Archive, August 2026
 
 **Type:** Historical record, split out of `Forge-Legacy-Master-Status.md`
-**Covers:** the **54** Recently-Completed entries below the 15 most recent, as of 2026-08-24
+**Covers:** the **55** Recently-Completed entries below the 15 most recent, as of 2026-08-25
 
 > ⚠ This line read **43 … as of 2026-08-22** while 51 entries were already filed, and the dashboard's
 > own pointer one file over read **47**. Two hand-maintained counts of the same countable thing, both
@@ -27,6 +27,120 @@
 > **Read this file when the dashboard does not explain something.** It is the same content, one level back.
 
 ---
+
+### 0. ⭐ The last two listing blockers close — the age rating is answered against a questionnaire that changed, and the filter list stops being a mechanism with nothing in it (2026-08-20, App Store listing + `0173` — **MIGRATION `0173` AUTHORED, NOT APPLIED**; no client code, nothing to deploy)
+
+**Two items, both of them the tail of `0171`.** The Guideline 1.2 controls shipped and deployed on 08-19, which
+unblocked the age rating; and `0171` itself had written into its own header that its filter list was seeded with
+impersonation patterns only and that a slur list was **owed**. Both are now done on paper. Neither is live yet, and
+the difference is stated below rather than assumed.
+
+**⚠ THE AGE RATING QUESTIONNAIRE IS NOT THE ONE THIS PROJECT WAS WRITTEN AGAINST, AND ANSWERING IT FROM MEMORY WOULD
+HAVE BEEN WRONG.** Apple replaced it in 2025. The tiers are now **4+ / 9+ / 13+ / 16+ / 18+** — **12+ and 17+ no
+longer exist** — and the form is split into **In-App Controls · Capabilities · Content Descriptors** instead of a flat
+content list. Every developer had to re-answer by 31 January 2026. ⚠ **A second change lands in September 2026: the
+Social Media questions become REQUIRED to submit** a new app, an update, or a notarisation — and we submit inside that
+window, so they are not optional for us. Answered question by question in **`Docs/App-Store-Listing-Copy.md` §6b**,
+with Apple's own definitions quoted next to each answer.
+
+**Result: `13+`, and `16+` in Australia.** It is driven **twice over** — by *Social Media = Present* and independently
+by *Contests = Frequent* — so the rating does not hang off a single debatable box.
+
+**⚠ TWO ANSWERS ARE JUDGEMENT CALLS AND BOTH ARE ARGUED IN WRITING, because either could be disagreed with later.**
+**(1) Social Media = Present.** A real case exists for *Not Present*: squads cap at 50, joining is request-only,
+friends are mutual, and **there is no follower system and never will be** (a settled decision, not a gap). It is
+answered Present anyway — a reviewer who opens Discover, joins a squad and finds a feed with comments and reactions
+will call that a social feed, and understating a capability on an app that **just failed Guideline 1.2 for the same
+kind of omission** is the worst available second impression. 13+ costs a strength app nothing. The third option,
+*"Social Media Disabled for Users Under 13"*, would be a **false declaration** — it presumes an age gate we do not
+have. **(2) Medical or Treatment Information = None**, worth 13+ infrequent / **16+ frequent** if answered otherwise.
+`domain/coach/rulebook/limitations.ts` is the only candidate and its own header calls itself *"the closest thing in
+the app to health guidance"* — so it was read rather than assumed. It contains **no diagnosis, no treatment and no
+injury vocabulary at all**: a grep for medical / injur / pain / doctor / physician / diagnos returns nothing. It is a
+mechanical exclusion map. ⛔ **That answer is conditional on it staying that way** — the day any coaching copy tells an
+athlete what to do about an injury, the rating moves to 16+.
+
+**Also verified rather than asserted, because that is what a signed declaration requires:** *Unrestricted Web Access =
+Not Present* (`components/external-link.tsx` is the only browser path and `openBrowserAsync` opens a fixed set of our
+own URLs — this single question forces **16+** on its own if answered wrong) · *Advertising = Not Present* (no ad SDK
+in `package.json`, the same evidence that lets the privacy labels claim no tracking and skip ATT) · *Alcohol, Tobacco
+or Drug Use = None* (grepped for ten substance terms across the rulebook, settings copy and `exercises.json` — **zero
+hits**) · *Messaging and Chat = Present*, but ⚠ **Coach Holt is NOT what makes it Present** — squad post comments are;
+Holt is a rulebook with no human on the other end, and there are no DMs.
+
+**`0173` — the filter list, and the eighteen words that are deliberately NOT in it.** 37 patterns across racial,
+ethnic, homophobic, transphobic and ableist slurs, hate claims, profanity, sexual solicitation and threats.
+⚠ **THE EXCLUSIONS ARE THE HARDER HALF AND THEY ARE DOCUMENTED IN THE MIGRATION HEADER**, because the match is a
+**substring** with no word boundary available: **`rapist` is inside `therapist`** and **`pedo` is inside `pedometer`**
+— both handles a real athlete on a *fitness* app would pick — and `kike` is the ordinary Spanish nickname for Enrique,
+`Nazir` contains `nazi`, `Van Dyke` contains `dyke`, `Cummings` contains `cum`, and this app ships programs with
+`Titan` in the name. A blocked signup is **silent**: the person reads "That name or handle is not available." and
+leaves, and nobody hears about it. One collision is knowingly accepted and written down instead of hidden: `cunt`
+rejects `Scunthorpe`.
+
+**⚠ AND `0171`'S OWN SEED HAD THREE DEAD ROWS, FOUND WHILE DOING THIS.** `_` in a LIKE pattern is a **single-character
+wildcard, not a literal** — and the trigger strips every non-alphanumeric from the input *before* comparing. So
+`forge_admin`, `forge_support` and `coach_holt` can never match their literal forms. They still match "forgeXadmin"
+and friends, which is also impersonation, so they are left alone rather than deleted; the one real gap — nothing
+checking the **name** column for `forgeadmin` — is closed. Recorded because the next person to add a pattern will
+reach for an underscore.
+
+**The guard is verified empirically in both directions, which is the point.** A blocklist that only proves it catches
+slurs has proved half of nothing. `pending-0173.sql` §2 asserts **8 known-bad handles rejected** (including two
+punctuation-evasion forms) **and 20 known-good handles untouched** — the exclusion list made executable, so adding a
+careless pattern later fails the assertion instead of silently turning athletes away. Re-run locally against the real
+patterns: **46 rows, 8 rejected, 30 survive** (the 20 plus 10 realistic product handles).
+
+**⏳ WHAT IS AND IS NOT TRUE, in the three terms this project uses.** `0173`: **SQL not applied** · no client code
+changed, so there is **nothing to deploy** — the trigger reading the table has been live since `0171`, meaning the
+list takes effect the moment the paste runs · **not observed**. ⏳ **The PO reports both `0172` and `0173` pasted on
+2026-08-20; §3's one-row report has NOT been read back, so neither is recorded as applied here.** The prediction to
+check it against is in the bundle: **total 46 · both 13 · handle 33 · name 0 · added_here 37 ·
+existing_profiles_now_failing 0**.
+
+**✅ THE AGE RATING IS ENTERED, NOT JUST ANSWERED — App Store Connect, 2026-08-20, calculated `13+`.**
+⚠ **And Step 1 had a trap that cost an attempt: "Social Media Disabled for Users Under 13" is its own Yes/No row,
+it sits BELOW THE FOLD of a scrolling panel, and it must be `No`.** Its own description is what gives it away — it
+declares that *"the **Declared Age Range API** is called to check users' age ranges before enabling social media
+features."* Forge calls no such API. Set to Yes, **Step 7 refuses to save** and demands Age Assurance = Yes, which
+would be a second declaration of a mechanism that does not exist. ⚠ **The failure mode is that everything visible
+on screen was correct** — Parental Controls No, Age Assurance No, Web Access No, UGC Yes, Social Media Yes — and the
+offending row was simply off-screen. Step 1 is now written out in full, top to bottom, in §6b's click-path so nobody
+has to discover what is below the fold.
+
+**⚠ AND A SEPARATE FIND: `0172` IS IN THE TREE, HAS A PASTE BUNDLE, AND IS RECORDED NOWHERE.** It shipped inside
+commit `731e2dd` alongside the moderation work, and neither this board nor `GO-LIVE.md` mentions it — so it is
+presumed **unapplied**. It is not cosmetic: it re-applies the per-column grants `0169` skipped, and until it runs,
+deploying `0169`'s client half raises **42501 on every read of `profiles`**. **Paste `pending-0172.sql` before
+`pending-0173.sql`, and before any deploy that carries the Coach Holt onboarding read.**
+
+**⭐ AND SCREENSHOT 05 IS FIXED — BY RECAPTIONING IT, WHICH WAS THE ONLY MOVE LEFT.** The frame showed a rank
+pillar under the caption *"Earned once. Yours for good."* illustrated by a rank that had not moved
+(*"I've started."*, `LIFETIME 5`, *"0 of the path walked"*). **PO: *"I don't have enough to screenshot the
+other ranks."*** So a reshoot was never available, and the fix was the words: the band now reads **"Everyone
+starts at zero."** — same capture, and the empty state stops contradicting the caption and becomes the point
+of it. `final/05.png` replaced at 1320 × 2868; the old file sits one folder **above** `final/` so the upload
+set stays exactly eight.
+
+**⚠ AND THE FRAMES ARE SET IN GEORGIA, NOT PLAYFAIR DISPLAY — WHICH WAS NOT OBVIOUS AND WOULD HAVE SHOWN.**
+`--fl-font-display` is `"Playfair Display", Georgia, …`; the machine that framed the set did not have
+Playfair, so **every caption in all eight frames is the CSS fallback.** Rendering the replacement in the
+*intended* font would have made 05 the one frame in eight with different letterforms — the kind of defect
+that is invisible in the file and obvious on the product page. Caught by re-rendering the **old** caption in
+each candidate font and pixel-diffing against the real file: Playfair 400/500 peaked at 61–68% ink overlap,
+**Georgia at 78 px hit 86.4%** (mean abs difference 4.1/255). ⚠ **The band background is a vertical gradient
+PLUS a centred horizontal glow**, so a flat fill leaves a visible patch; it was rebuilt from a text-free
+row's horizontal profile, re-levelled per row, verified identical to within 1–2 levels across seven clean
+rows. Every constant needed to re-cut a band is now recorded in `Docs/App-Store-Listing-Copy.md` §8.
+
+**Files:** `supabase/migrations/0173_moderation_blocklist_language.sql` · `supabase/apply/pending-0173.sql` (§1 diffed
+against the migration — **37 of 37 value rows identical**, one comment line differs by design) ·
+`Docs/App-Store-Listing-Copy.md` (**new §6b**; §6's rating row; §7 resolution banner + the requirement table gaining a
+*Now* column; §8's three checkboxes) · `Docs/GO-LIVE.md` (**v1.9** — items 4b and 10.4 were stale in the *pessimistic*
+direction, which is rarer here than the reverse and still wrong).
+
+
+
 
 ### 0. ⭐ The store listing has its screenshots — and the crop is what made four of the eight shippable (2026-08-19, App Store listing — no code, no migration, not an OTA)
 
