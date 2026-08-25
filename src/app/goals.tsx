@@ -68,6 +68,11 @@ import { usePersist } from '@/hooks/usePersist';
  * route through that celebrate step. Achieving is confirmed first (ConfirmSheet) — it's permanent (GD-D5).
  */
 
+/* Athletes read the "e.g. Squat 405 lb" placeholder as the only shape a goal may take and stall.
+   The kinds come first, then one example from each end of the range. */
+const GOAL_HINT =
+  'Anything this chapter is for — a lift, a bodyweight, a distance, a habit. “Squat 405 lb” · “Run 100 miles” · “Train 3× a week”';
+
 const PLUS = 'M12 5v14M5 12h14';
 const CHEVRON = 'M9 6l6 6-6 6';
 const PENCIL = 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z';
@@ -598,6 +603,23 @@ function GoalForm({
   /** What the goal actually stores — a change is resolved to the reading it means before it is saved. */
   const finalTarget = isBody ? bodyTarget : parseTarget(target);
   const bodyReady = !isBody || (dirPick != null && finalTarget != null && bodyProblem == null);
+  /* Label AND explanation follow the chosen form: under "an amount to change" this box holds the 15,
+     not the 200, and the line under the label has to say so or the number is read as a goal weight. */
+  const dirVerb = dirLabels[dirPick ?? 'up'].toLowerCase();
+  const targetLabel = isBody
+    ? targetMode === 'change'
+      ? `Amount to ${dirVerb}`
+      : metricKind === 'body_weight'
+        ? 'Goal Weight'
+        : 'Goal Measurement'
+    : 'Target Value · optional';
+  const targetHint = isBody
+    ? targetMode === 'change'
+      ? `How much you want to ${dirVerb} from where you are now.`
+      : metricKind === 'body_weight'
+        ? 'The weight you want to reach.'
+        : 'The measurement you want to reach.'
+    : 'The number that finishes it — 405 lb, 100 miles, 12 workouts. Leave it blank and you’ll mark this one done yourself.';
   const liftResults = ((): string[] => {
     const q = liftSearch.trim().toLowerCase();
     const names = PICKER_DB.map((x) => x.name);
@@ -668,12 +690,11 @@ function GoalForm({
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
       <AppBar title={existing ? 'Edit Goal' : isPrimary ? 'Chapter Goal' : 'Supporting Goal'} onClose={cancel} />
       <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <Field label="Goal" counter={`${name.length}/${GOAL_NAME_MAX}`}>
+        <Field label="Goal" counter={`${name.length}/${GOAL_NAME_MAX}`} hint={GOAL_HINT}>
           <TextInput style={styles.input} value={name} onChangeText={(t) => setName(t.slice(0, GOAL_NAME_MAX))} placeholder="e.g. Squat 405 lb" placeholderTextColor={flColor.gray600} maxLength={GOAL_NAME_MAX} />
         </Field>
 
-        {/* The label follows the chosen form: under "an amount to change" this box holds the 15, not the 200. */}
-        <Field label={isBody ? (targetMode === 'change' ? `Amount to ${dirLabels[dirPick ?? 'up'].toLowerCase()}` : metricKind === 'body_weight' ? 'Goal Weight' : 'Goal Measurement') : 'Target Value · optional'}>
+        <Field label={targetLabel} hint={targetHint}>
           <TextInput
             style={styles.input}
             value={target}
@@ -926,13 +947,15 @@ function GoalForm({
   );
 }
 
-function Field({ label, counter, children }: { label: string; counter?: string; children: React.ReactNode }) {
+/** `hint` is the plain-language line under the label — what this box is allowed to hold. */
+function Field({ label, counter, hint, children }: { label: string; counter?: string; hint?: string; children: React.ReactNode }) {
   return (
     <View style={styles.field}>
-      <View style={styles.fieldHead}>
+      <View style={[styles.fieldHead, hint ? styles.fieldHeadTight : null]}>
         <Text style={styles.fieldLabel}>{label}</Text>
         {counter ? <Text style={styles.fieldCounter}>{counter}</Text> : null}
       </View>
+      {hint ? <Text style={styles.fieldHint}>{hint}</Text> : null}
       {children}
     </View>
   );
@@ -1028,6 +1051,8 @@ const styles = StyleSheet.create({
   fieldHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
   fieldCounter: { fontSize: 11, color: flColor.gray600 },
+  fieldHeadTight: { marginBottom: 5 },
+  fieldHint: { marginBottom: 10, fontSize: 12, lineHeight: 17.5, color: flColor.gray600 },
   input: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, color: flColor.cream100, fontSize: 15, paddingVertical: 13, paddingHorizontal: 14 },
   customUnit: { marginTop: 10 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
