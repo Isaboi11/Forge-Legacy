@@ -287,16 +287,37 @@ export interface SquadPostComment {
   id: string;
   body: string;
   createdAt: string;
+  /** When the author last rewrote it; null means never (0178). Drives the "edited" mark. */
+  editedAt: string | null;
   authorId: string;
   authorName: string;
   authorAvatar: string | null;
   authorIsOwner: boolean;
 }
 
+/**
+ * The four acknowledgement kinds — `Social-Architecture-Amendment-004` SOC-A4-D3, LOCKED.
+ *
+ * ⚠ ONE PER ATHLETE PER POST, and this is which. Not a set to collect: the PK on
+ * `squad_post_reactions` is still `(post_id, user_id)`, so choosing a kind REPLACES the last one.
+ */
+export const ACK_KINDS = ['respect', 'honor', 'support', 'strength'] as const;
+export type AckKind = (typeof ACK_KINDS)[number];
+
+/** Labels for the press-and-hold chooser. Order is SOC-A4-D3's order and should stay that way. */
+export const ACK_LABEL: Record<AckKind, string> = {
+  respect: 'Respect',
+  honor: 'Honor',
+  support: 'Support',
+  strength: 'Strength',
+};
+
 export interface SquadPostThread {
   post: SquadFeedPost;
   squadName: string;
   comments: SquadPostComment[];
+  /** Which acknowledgement I left. Meaningless unless `post.iReacted`; defaults to `respect`. */
+  myKind: AckKind;
 }
 
 interface FeedRow {
@@ -375,22 +396,41 @@ export async function fetchSquadPost(postId: string): Promise<SquadPostThread | 
 
   const { data: cData, error: cErr } = await supabase
     .from('squad_post_comments')
-    .select('id, body, created_at, author_id, profiles(name, avatar_url)')
+    .select('id, body, created_at, edited_at, author_id, profiles(name, avatar_url)')
     .eq('post_id', postId)
     .order('created_at', { ascending: true });
   if (cErr) throw cErr;
 
-  const comments = ((cData ?? []) as unknown as { id: string; body: string; created_at: string; author_id: string; profiles: { name: string | null; avatar_url: string | null } | null }[]).map((c) => ({
+  const comments = ((cData ?? []) as unknown as { id: string; body: string; created_at: string; edited_at: string | null; author_id: string; profiles: { name: string | null; avatar_url: string | null } | null }[]).map((c) => ({
     id: c.id,
     body: c.body,
     createdAt: c.created_at,
+    editedAt: c.edited_at ?? null,
     authorId: c.author_id,
     authorName: c.profiles?.name ?? 'Athlete',
     authorAvatar: c.profiles?.avatar_url ?? null,
     authorIsOwner: c.author_id === row.squad_owner_id,
   }));
 
-  return { post: toPost(row), squadName: row.squad_name ?? 'Squad', comments };
+  /*
+   * WHICH kind I left, for the detail screen's control.
+   *
+   * ⚠ READ HERE RATHER THAN ADDED TO `squad_post_one`. That RPC returns `i_reacted` and is shared with
+   * the feed; widening its OUT columns forces a drop-and-recreate, and rebuilding a function body from
+   * an older copy is the documented way this schema has silently lost features three times (0088, 0092,
+   * 0106). One extra RLS-scoped row read is the cheaper correctness.
+   *
+   * Absent reads as `respect`, which is what every acknowledgement written before 0178 was.
+   */
+  const { data: mine } = await supabase
+    .from('squad_post_reactions')
+    .select('kind')
+    .eq('post_id', postId)
+    .eq('user_id', (await supabase.auth.getUser()).data.user?.id ?? '')
+    .maybeSingle();
+  const myKind = ((mine as { kind?: string } | null)?.kind ?? 'respect') as AckKind;
+
+  return { post: toPost(row), squadName: row.squad_name ?? 'Squad', comments, myKind };
 }
 
 export interface NewSquadPost {
@@ -596,7 +636,12 @@ export async function addSquadComment(postId: string, body: string): Promise<voi
   if (error) throw error;
 }
 
-/** Toggle my "respect" reaction on a post. Pass the current state; returns the new state. */
+/**
+ * Toggle my acknowledgement on a post. Pass the current state; returns the new state.
+ *
+ * A plain tap still means `respect` — SOC-A4-D3: *"a tap acknowledges rather than opening a chooser"*.
+ * Press-and-hold picks a kind, which goes through `setSquadReactionKind` below.
+ */
 export async function toggleSquadReaction(postId: string, reacted: boolean): Promise<boolean> {
   const {
     data: { user },
@@ -607,9 +652,49 @@ export async function toggleSquadReaction(postId: string, reacted: boolean): Pro
     if (error) throw error;
     return false;
   }
-  const { error } = await supabase.from('squad_post_reactions').insert({ post_id: postId, user_id: user.id });
+  const { error } = await supabase.from('squad_post_reactions').insert({ post_id: postId, user_id: user.id, kind: 'respect' });
   if (error) throw error;
   return true;
+}
+
+/**
+ * Acknowledge with a specific kind — the press-and-hold path (SOC-A4-D3, 0178).
+ *
+ * ⚠ UPSERT, NOT INSERT. The primary key is `(post_id, user_id)`, so an athlete who has already
+ * acknowledged and then picks a different kind is CHANGING their answer, not adding a second one. An
+ * insert would fail on the conflict and read as "the button is broken"; a delete-then-insert would drop
+ * the acknowledgement for anyone reading the post in between.
+ */
+export async function setSquadReactionKind(postId: string, kind: AckKind): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  const { error } = await supabase
+    .from('squad_post_reactions')
+    .upsert({ post_id: postId, user_id: user.id, kind }, { onConflict: 'post_id,user_id' });
+  if (error) throw error;
+}
+
+/**
+ * Edit my own comment (0178).
+ *
+ * ⚠ THE AUTHOR CHECK IS RLS, NOT THIS FUNCTION. `squad_post_comments_update` is
+ * `author_id = auth.uid()` on both USING and WITH CHECK, so an edit of somebody else's comment matches
+ * zero rows rather than being refused — which is why the caller must not read "no error" as "it saved".
+ * The screen refetches and shows the row it got back.
+ *
+ * ⚠ `edited_at` IS SET HERE, BY THE CLIENT. There is no trigger: a comment that changed after people
+ * read it has to say so, and the column is the only thing that can tell them.
+ */
+export async function editSquadComment(commentId: string, body: string): Promise<void> {
+  const trimmed = body.trim();
+  if (!trimmed) throw new Error('A comment cannot be empty — delete it instead.');
+  const { error } = await supabase
+    .from('squad_post_comments')
+    .update({ body: trimmed, edited_at: new Date().toISOString() })
+    .eq('id', commentId);
+  if (error) throw error;
 }
 
 /** Compact relative time: "Just now" · "12m" · "3h" · "2d" · "5w" · then a short date. */

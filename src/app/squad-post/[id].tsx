@@ -16,8 +16,10 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
-import { addSquadComment, asTransformationLayout, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, squadPostTypeDef, timeAgo, toggleSquadReaction, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
+import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { useKeyboardInset } from '@/lib/useKeyboardInset';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { openPlaylist, PlaylistChip } from '@/components/forge/composites/Playlist';
@@ -40,6 +42,13 @@ export default function SquadPostRoute() {
 
   // Optimistic reaction override (event-handler writes only — base values come from `data`).
   const [reactOverride, setReactOverride] = useState<{ on: boolean; n: number } | null>(null);
+  const keyboardInset = useKeyboardInset();
+  /** The press-and-hold kind chooser (SOC-A4-D3). */
+  const [ackOpen, setAckOpen] = useState(false);
+  /** Optimistic kind, so the label under the flame changes on tap rather than after the refetch. */
+  const [kindOverride, setKindOverride] = useState<AckKind | null>(null);
+  /** Which comment is being rewritten, and the draft. Null = nobody is editing. */
+  const [editing, setEditing] = useState<{ id: string; body: string } | null>(null);
   const [commentText, setCommentText] = useState('');
   const [sending, setSending] = useState(false);
   /** Measured, so a progress card fills the column it is in rather than assuming the screen's width. */
@@ -67,6 +76,47 @@ export default function SquadPostRoute() {
       setReactOverride({ on: reacted, n: count }); // revert
       showToast(errorMessage(e));
     });
+  };
+
+  /**
+   * Pick a kind from the hold sheet.
+   *
+   * Acknowledges if they had not yet — choosing "Support" on a post you have not acknowledged is
+   * obviously an acknowledgement, and making them tap first would be a riddle.
+   */
+  const onPickKind = (kind: AckKind) => {
+    if (!post) return;
+    setAckOpen(false);
+    const wasReacted = reactOverride?.on ?? post.iReacted;
+    const count = reactOverride?.n ?? post.respectCount;
+    const prevKind = kindOverride ?? data?.myKind ?? 'respect';
+    setKindOverride(kind);
+    if (!wasReacted) setReactOverride({ on: true, n: count + 1 });
+    setSquadReactionKind(post.id, kind).catch((e: unknown) => {
+      setKindOverride(prevKind);
+      if (!wasReacted) setReactOverride({ on: wasReacted, n: count });
+      showToast(errorMessage(e));
+    });
+  };
+
+  /** Save a rewritten comment. Refetches rather than patching state — RLS decides what actually landed. */
+  const onSaveEdit = () => {
+    const e = editing;
+    if (!e || sending) return;
+    const body = e.body.trim();
+    if (!body) return;
+    setSending(true);
+    editSquadComment(e.id, body).then(
+      () => {
+        setSending(false);
+        setEditing(null);
+        refetch();
+      },
+      (err: unknown) => {
+        setSending(false);
+        showToast(errorMessage(err));
+      },
+    );
   };
 
   const onSend = () => {
@@ -114,6 +164,7 @@ export default function SquadPostRoute() {
   const comments = data?.comments ?? [];
   const reacted = reactOverride?.on ?? post.iReacted;
   const respect = reactOverride?.n ?? post.respectCount;
+  const myKind: AckKind = kindOverride ?? data?.myKind ?? 'respect';
 
   return (
     <View style={styles.root}>
@@ -141,6 +192,73 @@ export default function SquadPostRoute() {
           ) : null
         }
       />
+
+      {/*
+        ══ THE FOUR KINDS (SOC-A4-D3) ══
+
+        A sheet rather than a row of four buttons beside the flame: the amendment's whole point is that
+        the DEFAULT is a single tap, and four permanent controls would put the chooser back on the post.
+        The current kind is marked, because this sheet changes an answer as often as it gives one.
+      */}
+      <BottomSheet open={ackOpen} onClose={() => setAckOpen(false)} title="Acknowledge">
+        <Text style={styles.ackIntro}>
+          A tap gives Respect. Hold it — like you just did — to say something more particular.
+        </Text>
+        <View style={styles.ackList}>
+          {ACK_KINDS.map((k) => {
+            const on = reacted && k === myKind;
+            return (
+              <Pressable
+                key={k}
+                onPress={() => onPickKind(k)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                accessibilityLabel={ACK_LABEL[k]}
+                style={({ pressed }) => [styles.ackRow, on ? styles.ackRowOn : null, pressed ? styles.ackRowPressed : null]}
+              >
+                <FlameIcon size={17} color={on ? flColor.bronze300 : flColor.gray400} />
+                <Text style={[styles.ackRowText, on ? styles.ackRowTextOn : null]}>{ACK_LABEL[k]}</Text>
+                {on ? <Text style={styles.ackRowMark}>Yours</Text> : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      </BottomSheet>
+
+      {/*
+        ══ EDIT YOUR OWN COMMENT ══
+
+        PO: *"I also want to be able to edit my comment."* `squad_post_comments` had INSERT and DELETE
+        policies since 0041 and no UPDATE policy at all, so this could not have worked whatever the
+        client sent — RLS denies by default. 0178 adds the policy and `edited_at`.
+
+        A sheet, not an inline field: the thread is inside a ScrollView above a sticky composer, and a
+        growing multiline input in the middle of it would fight both.
+      */}
+      <BottomSheet open={editing != null} onClose={() => setEditing(null)} title="Edit comment">
+        <TextInput
+          value={editing?.body ?? ''}
+          onChangeText={(v) => setEditing((e) => (e ? { ...e, body: v } : e))}
+          multiline
+          maxLength={1000}
+          placeholder="Say it better"
+          placeholderTextColor={flColor.gray600}
+          accessibilityLabel="Your comment"
+          style={styles.editInput}
+        />
+        {/* ⚠ EMPTY IS NOT AN EDIT. The table's own check refuses a blank body, so the control is disabled
+            rather than letting the athlete tap into an error. Deleting a comment is deleting it. */}
+        <Pressable
+          onPress={onSaveEdit}
+          disabled={!editing?.body.trim() || sending}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !editing?.body.trim() || sending }}
+          accessibilityLabel="Save your edit"
+          style={[styles.editSave, editing?.body.trim() && !sending ? styles.editSaveOn : styles.editSaveOff]}
+        >
+          <Text style={styles.editSaveText}>{sending ? 'Saving…' : 'Save'}</Text>
+        </Pressable>
+      </BottomSheet>
 
       <ReportSheet
         open={reportOpen}
@@ -234,9 +352,38 @@ export default function SquadPostRoute() {
 
           {/* engagement */}
           <View style={styles.engagement}>
-            <Pressable onPress={onReact} accessibilityRole="button" accessibilityState={{ selected: reacted }} accessibilityLabel="Respect" style={styles.engItem} hitSlop={8}>
+            {/*
+              ══ TAP ACKNOWLEDGES · HOLD CHOOSES THE KIND ══
+
+              PO: *"the acknowledgment doesn't let me choose what kind of acknowledgment I give and there
+              are multiple."* There are four — **Respect · Honor · Support · Strength** — locked in
+              `Social-Architecture-Amendment-004` SOC-A4-D3 since August, with the interaction locked too:
+              *"a tap acknowledges rather than opening a chooser. The four kinds moved to a
+              press-and-hold on the same control."*
+
+              ⚠ THE AMENDMENT DESCRIBED A COLUMN THAT DID NOT EXIST. It argued against deleting three of
+              the four because they would be *"values in `post_reactions` that nothing can produce"* —
+              but `squad_post_reactions` had no `kind` column at all (0041), so there was nothing to
+              strand and nothing to choose. 0178 adds it.
+
+              ⚠ A LONG PRESS MUST NOT ALSO FIRE THE TAP. `onLongPress` suppresses `onPress` in RN only
+              when it is handled — which it is here — so a hold opens the sheet and does not additionally
+              stamp a `respect` on the way past.
+            */}
+            <Pressable
+              onPress={onReact}
+              onLongPress={() => setAckOpen(true)}
+              delayLongPress={280}
+              accessibilityRole="button"
+              accessibilityState={{ selected: reacted }}
+              accessibilityLabel={reacted ? `Acknowledged with ${ACK_LABEL[myKind]}. Press and hold to change it.` : 'Acknowledge. Press and hold to choose a kind.'}
+              style={styles.engItem}
+              hitSlop={8}
+            >
               <FlameIcon size={17} color={reacted ? flColor.bronze300 : flColor.gray400} />
               <Text style={[styles.engText, reacted ? styles.engTextOn : null]}>{respect}</Text>
+              {/* The kind, named, once there is one — a flame alone cannot say which of four it was. */}
+              {reacted ? <Text style={styles.engKind}>{ACK_LABEL[myKind]}</Text> : null}
             </Pressable>
             <View style={styles.engItem}>
               <CommentGlyph />
@@ -248,12 +395,31 @@ export default function SquadPostRoute() {
         {/* comments */}
         <View style={styles.comments}>
           <Text style={styles.commentsCount}>{comments.length === 1 ? '1 Comment' : `${comments.length} Comments`}</Text>
-          {comments.length > 0 ? comments.map((c) => <CommentItem key={c.id} comment={c} />) : <Text style={styles.noComments}>No comments yet. Be the first to respond.</Text>}
+          {comments.length > 0 ? (
+            comments.map((c) => (
+              <CommentItem key={c.id} comment={c} isMine={!!myId && c.authorId === myId} onEdit={() => setEditing({ id: c.id, body: c.body })} />
+            ))
+          ) : (
+            <Text style={styles.noComments}>No comments yet. Be the first to respond.</Text>
+          )}
         </View>
       </ScrollView>
 
-      {/* sticky composer */}
-      <View style={styles.composer}>
+      {/*
+        ══ THE COMPOSER RIDES THE KEYBOARD ══
+
+        PO: *"When commenting on a post in squad workout I need to be able to see what I'm typing. The
+        keyboard covers it."*
+
+        This screen had NO keyboard handling of any kind — no `KeyboardAvoidingView`, no inset. The
+        composer is pinned to the bottom of a `flex: 1` root, so the keyboard opened straight over the
+        top of it and the athlete typed into a field they could not see. `useKeyboardInset` is the app's
+        one answer to this and is already used by nine other screens; it was simply never wired here.
+
+        ⚠ ADDED TO `paddingBottom`, NOT REPLACING IT. The 16pt at the foot is the composer's own
+        breathing room and is what it sits on when no keyboard is up.
+      */}
+      <View style={[styles.composer, keyboardInset > 0 && { paddingBottom: 16 + keyboardInset }]}>
         <TextInput
           value={commentText}
           onChangeText={setCommentText}
@@ -360,7 +526,14 @@ function RecapStat({ n, label }: { n: string; label: string }) {
   );
 }
 
-function CommentItem({ comment }: { comment: SquadPostComment }) {
+/**
+ * One comment. Mine gains an Edit control; everybody else's does not.
+ *
+ * ⚠ THE OWNER DOES NOT GET ONE EITHER, and that asymmetry is deliberate — see 0178. A squad owner CAN
+ * delete a comment, because removal is moderation; rewriting somebody's words while their name stays on
+ * them is not, and RLS refuses it regardless of what this screen draws.
+ */
+function CommentItem({ comment, isMine, onEdit }: { comment: SquadPostComment; isMine: boolean; onEdit: () => void }) {
   return (
     <View style={styles.comment}>
       <Avatar src={comment.authorAvatar ?? undefined} name={comment.authorName} size="listRow" />
@@ -369,8 +542,16 @@ function CommentItem({ comment }: { comment: SquadPostComment }) {
           <Text style={styles.commentAuthor}>{comment.authorName}</Text>
           {comment.authorIsOwner ? <OwnerBadge /> : null}
           <Text style={styles.commentTime}>{timeAgo(comment.createdAt)}</Text>
+          {/* ⚠ SAYS SO WHEN IT CHANGED. A comment people replied to and then read differently is worth
+              marking; `edited_at` is the only thing that can tell them. Null on every older row. */}
+          {comment.editedAt ? <Text style={styles.commentEdited}>edited</Text> : null}
         </View>
         <Text style={styles.commentText}>{comment.body}</Text>
+        {isMine ? (
+          <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel="Edit your comment" hitSlop={8} style={styles.commentEditBtn}>
+            <Text style={styles.commentEditText}>Edit</Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );
@@ -483,6 +664,49 @@ const styles = StyleSheet.create({
   commentAuthor: { fontSize: 13.5, fontWeight: '500', color: flColor.cream100 },
   commentTime: { fontSize: 11, color: flColor.gray600 },
   commentText: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400, marginTop: 4 },
+
+  /* The kind, named under the count — a flame alone cannot say which of four it was. */
+  engKind: { fontSize: 11, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronze400 },
+
+  ackIntro: { fontSize: 13, lineHeight: 19, color: flColor.gray400, marginBottom: 12 },
+  ackList: { gap: 8 },
+  ackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal900,
+  },
+  ackRowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  ackRowPressed: { opacity: 0.75 },
+  ackRowText: { flex: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  ackRowTextOn: { color: flColor.bronze300 },
+  ackRowMark: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
+
+  commentEdited: { fontSize: 11, fontStyle: 'italic', color: flColor.gray600 },
+  commentEditBtn: { alignSelf: 'flex-start', paddingVertical: 4, paddingRight: 8 },
+  commentEditText: { fontSize: 12, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronze400 },
+
+  editInput: {
+    minHeight: 108,
+    borderWidth: 1,
+    borderColor: flColor.charcoal500,
+    borderRadius: flRadius.md,
+    backgroundColor: flColor.surfaceRecessed,
+    color: flColor.cream100,
+    fontSize: 15,
+    lineHeight: 21,
+    padding: 12,
+    textAlignVertical: 'top',
+  },
+  editSave: { marginTop: 12, minHeight: 48, borderRadius: flRadius.lg, alignItems: 'center', justifyContent: 'center' },
+  editSaveOn: { backgroundColor: flColor.bronze400 },
+  editSaveOff: { backgroundColor: flColor.charcoal600 },
+  editSaveText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.6, color: flColor.cream100 },
 
   composer: {
     flexDirection: 'row',
