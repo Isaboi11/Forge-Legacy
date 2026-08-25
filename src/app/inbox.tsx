@@ -84,7 +84,7 @@ export default function InboxScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title="Notifications" serif onBack={goBack} />
+      <AppBar title="Notifications" onBack={goBack} />
 
       {loading && !data ? (
         <View style={styles.center}>

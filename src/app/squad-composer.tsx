@@ -385,7 +385,8 @@ export default function SquadComposerRoute() {
       <View style={styles.root}>
         <ComposerBg />
         <AppBar
-          title={<BarTitle title={fromSquad ? 'Post to Squad' : 'New Post'} sub={fromSquad ? 'Training, recognition & coordination' : 'Share it where it belongs'} />}
+          title={fromSquad ? 'Post to Squad' : 'New Post'}
+          subtitle={fromSquad ? 'Training, recognition & coordination' : 'Share it where it belongs'}
           onBack={() => router.back()}
         />
         <ScrollView contentContainerStyle={styles.pickScroll} showsVerticalScrollIndicator={false}>
@@ -499,7 +500,8 @@ export default function SquadComposerRoute() {
       <AppBar
         /* The subtitle names the DESTINATION, not the screen. It read "Your squad" unconditionally,
            which becomes a falsehood the moment this composer can post to friends. */
-        title={<BarTitle title={def.label} sub={audience === 'FRIENDS' ? 'Your friends' : audience === 'BOTH' ? 'Your friends & squad' : 'Your squad'} />}
+        title={def.label}
+        subtitle={audience === 'FRIENDS' ? 'Your friends' : audience === 'BOTH' ? 'Your friends & squad' : 'Your squad'}
         onBack={backToPick}
         actions={
           <Pressable ref={postRef} onPress={submit} disabled={!valid || posting} accessibilityRole="button" accessibilityLabel="Post" style={[styles.postBtn, valid ? styles.postBtnOn : styles.postBtnOff]}>
@@ -664,15 +666,6 @@ export default function SquadComposerRoute() {
 
 function ComposerBg() {
   return <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.34)' }} />;
-}
-
-function BarTitle({ title, sub }: { title: string; sub: string }) {
-  return (
-    <View>
-      <Text style={styles.barTitle}>{title}</Text>
-      <Text style={styles.barSub}>{sub}</Text>
-    </View>
-  );
 }
 
 function TypeCard({ label, icon, onPress, locked = false, subLabel }: { label: string; icon: React.ReactNode; onPress: () => void; locked?: boolean; subLabel?: string }) {

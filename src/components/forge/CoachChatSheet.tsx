@@ -1515,7 +1515,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
         <View style={styles.grabWrap} {...handleResponder.panHandlers}>
           <View style={styles.grab} />
         </View>
-        {/* §2 — medallion, serif name, liveness line, two icon-over-caption actions. NO RULE UNDERNEATH:
+        {/* §2 — medallion, name, liveness line, two icon-over-caption actions. NO RULE UNDERNEATH:
             the separation is spacing plus the warm wash, and a hard line under it flattens the header
             into a toolbar. */}
         <View style={styles.header}>

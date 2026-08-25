@@ -209,7 +209,7 @@ export default function TrophyCaseScreen() {
         {/* Opaque at the top, translucent at the bottom — scrolled content dissolves under the tally
             rather than stopping at a hard edge. */}
         <LinearGradient colors={['#0a0b0c', 'rgba(10,11,12,0.85)']} style={StyleSheet.absoluteFill} pointerEvents="none" />
-        <AppBar title={<Text style={styles.barTitle}>Trophy Case</Text>} onBack={goBack} transparent />
+        <AppBar title="Trophy Case" onBack={goBack} transparent />
 
         <View style={styles.identity}>
           <Avatar src={data.avatarUrl ?? undefined} name={data.name} size={46} ring />
@@ -428,7 +428,7 @@ function Shell({ children, onBack }: { children: ReactNode; onBack: () => void }
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
-      <AppBar title={<Text style={styles.barTitle}>Trophy Case</Text>} onBack={onBack} />
+      <AppBar title="Trophy Case" onBack={onBack} />
       <View style={styles.center}>{children}</View>
     </View>
   );

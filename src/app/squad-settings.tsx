@@ -109,7 +109,7 @@ export default function SquadSettingsScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-        <AppBar title="Settings" serif onBack={backToSquad} />
+        <AppBar title="Settings" onBack={backToSquad} />
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -120,7 +120,7 @@ export default function SquadSettingsScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-        <AppBar title="Settings" serif onBack={backToSquad} />
+        <AppBar title="Settings" onBack={backToSquad} />
         <View style={styles.center}>
           <Text style={styles.missingTitle}>This squad isn’t available.</Text>
           <Pressable onPress={backToSquad} accessibilityRole="button" accessibilityLabel="Back" style={styles.backBtn}>
@@ -271,7 +271,7 @@ export default function SquadSettingsScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title="Settings" serif onBack={backToSquad} />
+      <AppBar title="Settings" onBack={backToSquad} />
 
       <ScrollView
         ref={tourScroller}
@@ -655,7 +655,7 @@ function MemberSettings({ squad, members, onBack }: { squad: SquadDetail; member
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title="Settings" serif onBack={onBack} />
+      <AppBar title="Settings" onBack={onBack} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* header */}

@@ -110,7 +110,7 @@ export default function AccomplishmentsScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
-        <AppBar title="Accomplishments" serif onBack={() => router.back()} />
+        <AppBar title="Accomplishments" onBack={() => router.back()} />
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -159,7 +159,6 @@ export default function AccomplishmentsScreen() {
       <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
       <AppBar
         title="Accomplishments"
-        serif
         onBack={() => router.back()}
         actions={
           <Pressable ref={addRef} onPress={() => setView({ mode: 'form' })} accessibilityRole="button" accessibilityLabel="Add accomplishment" hitSlop={8} style={styles.addBtn}>

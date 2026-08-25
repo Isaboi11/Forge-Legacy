@@ -72,7 +72,7 @@ export default function WeeklyReviewScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title="Your Week" onBack={back} serif />
+      <AppBar title="Your Week" onBack={back} />
 
       {loading ? (
         /* The frame and the app bar are already true — this screen is reached from a card that has
@@ -99,7 +99,7 @@ export default function WeeklyReviewScreen() {
           {/* Holt first. The numbers are evidence for what he says, so they read better underneath it —
               the same order the Active Workout puts an instruction above the history it came from.
 
-              ⚠ His sentences are SANS. The display serif is reserved for hero names and screen titles;
+              ⚠ His sentences are SANS. The display is reserved for hero names and screen titles;
               a paragraph set in it reads as a pull quote, and this is a quiet weekly read. */}
           <View style={styles.holt}>
             <HoltMark size={BUBBLE_SIZE} />

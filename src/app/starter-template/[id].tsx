@@ -56,7 +56,7 @@ export default function StarterTemplateScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.bg2} base="#060708" overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
-        <AppBar title={<Text style={styles.barTitle}>Template</Text>} onBack={goBack} />
+        <AppBar title="Template" onBack={goBack} />
         <View style={styles.status}>
           <Text style={styles.notFoundTitle}>Not found</Text>
           <Text style={styles.statusDetail}>This starter template no longer ships with Forge.</Text>
@@ -108,7 +108,7 @@ export default function StarterTemplateScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.bg2} base="#060708" overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
-      <AppBar title={<Text style={styles.barTitle}>{def.name}</Text>} onBack={goBack} />
+      <AppBar title={def.name} onBack={goBack} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>

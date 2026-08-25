@@ -2755,8 +2755,7 @@ export default function WorkoutScreen() {
         onChangeText={noop}
       />
       <AppBar
-        title={<Text style={styles.barTitle} numberOfLines={1}>{session.workoutName}</Text>}
-        serif
+        title={session.workoutName}
         onBack={onLeave}
         actions={
           <>

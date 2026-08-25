@@ -203,7 +203,7 @@ export default function SquadInviteRoute() {
     return (
       <View style={styles.root}>
         <InviteBg />
-        <AppBar title="Invite to Squad" serif onBack={() => router.back()} />
+        <AppBar title="Invite to Squad" onBack={() => router.back()} />
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -214,7 +214,7 @@ export default function SquadInviteRoute() {
     return (
       <View style={styles.root}>
         <InviteBg />
-        <AppBar title="Invite to Squad" serif onBack={() => router.back()} />
+        <AppBar title="Invite to Squad" onBack={() => router.back()} />
         <View style={styles.center}>
           <Text style={styles.missingTitle}>This squad isn’t available.</Text>
           <Text style={styles.missingBody}>{error ? 'Couldn’t load it — check your connection.' : 'It may have been deleted.'}</Text>
@@ -230,7 +230,7 @@ export default function SquadInviteRoute() {
     return (
       <View style={styles.root}>
         <InviteBg />
-        <AppBar title="Invite to Squad" serif onBack={() => router.back()} />
+        <AppBar title="Invite to Squad" onBack={() => router.back()} />
         <View style={styles.center}>
           <Text style={styles.missingTitle}>Only the owner can invite to {squad.name}.</Text>
           <Text style={styles.missingBody}>Ask them to share the squad’s invite code, or to open invites to all members in Squad Settings.</Text>
@@ -245,7 +245,7 @@ export default function SquadInviteRoute() {
   return (
     <View style={styles.root}>
       <InviteBg />
-      <AppBar title="Invite to Squad" serif onBack={() => router.back()} />
+      <AppBar title="Invite to Squad" onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* SQUAD HEADER */}

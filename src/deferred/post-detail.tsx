@@ -71,7 +71,7 @@ function PostDetail({
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.32)' }} />
       <AppBar
-        title={<Text style={styles.barTitle}>Post</Text>}
+        title="Post"
         onBack={onBack}
         actions={
           <>

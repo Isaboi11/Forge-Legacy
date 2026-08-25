@@ -213,7 +213,7 @@ export default function SquadDetailRoute() {
     return (
       <View style={styles.root}>
         <DetailBg />
-        <AppBar title="Members" serif onBack={() => setView('detail')} />
+        <AppBar title="Members" onBack={() => setView('detail')} />
         <ScrollView contentContainerStyle={styles.membersScroll} showsVerticalScrollIndicator={false}>
           <View style={styles.membersHead}>
             <Text style={styles.membersSquad}>{squad.name}</Text>

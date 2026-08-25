@@ -2083,7 +2083,7 @@ function SetupView({
 
   return (
     <>
-      <AppBar title={title} serif onClose={onCancel} />
+      <AppBar title={title} onClose={onCancel} />
 
       <Animated.ScrollView
         ref={tourScroller}
@@ -2433,7 +2433,6 @@ function WeekDaysView({
     <>
       <AppBar
         title={`Week ${week + 1}`}
-        serif
         onBack={onBack}
         actions={
           <Pressable onPress={onOpenWeekSheet} accessibilityRole="button" accessibilityLabel="Week options" hitSlop={6} style={styles.barBtn}>
@@ -2587,7 +2586,7 @@ function DayBuilder({
 
   return (
     <>
-      <AppBar title={dayName(day)} serif onBack={onBack} />
+      <AppBar title={dayName(day)} onBack={onBack} />
 
       <Animated.ScrollView
         ref={tourScroller}

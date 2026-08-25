@@ -156,7 +156,6 @@ export default function FriendsFeedScreen() {
       <ScreenBackground atmospheric overlay={null} radials={[BG_RADIAL.friendsApex]} />
       <AppBar
         title="Friends"
-        serif
         onBack={() => router.back()}
         actions={
           <Pressable

@@ -90,7 +90,7 @@ export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, 
               what identifies him here too — so the sentence over the set table and the sentence in the
               conversation are visibly the same person speaking, rather than two bronze things.
 
-              It also finishes the job the `named` flag started. That flag showed a serif "Coach Holt"
+              It also finishes the job the `named` flag started. That flag showed a "Coach Holt"
               exactly once, on the introduction, on the reasoning that every later line is from someone
               you have met — which is true of the CHAT, where the thread is right there. In the gym,
               five sets later, an unattributed sentence in the corner is a sentence from nobody.

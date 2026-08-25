@@ -121,7 +121,7 @@ export default function ProgressPhotoPostRoute() {
     return (
       <View style={styles.root}>
         <PostBg />
-        <AppBar title={<BarTitle sub="" />} onBack={() => router.back()} />
+        <AppBar title="Progress Photos" onBack={() => router.back()} />
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -138,7 +138,7 @@ export default function ProgressPhotoPostRoute() {
     return (
       <View style={styles.root}>
         <PostBg />
-        <AppBar title={<BarTitle sub="" />} onBack={() => router.back()} />
+        <AppBar title="Progress Photos" onBack={() => router.back()} />
         <View style={styles.center}>
           <Text style={styles.emptyTitle}>No progress captures yet</Text>
           <Text style={styles.emptyBody}>Capture a set in your Transformation archive and you can lay it out here.</Text>
@@ -312,7 +312,8 @@ export default function ProgressPhotoPostRoute() {
           live in this tree before it can become a PNG — same arrangement as `ShareCardHost` on
           `/share-config`. It renders nothing until an export is in flight. */}
       <ProgressCardHost />
-      <AppBar title={<BarTitle sub={`${entry.label}${entry.chapterName ? ` · ${entry.chapterName}` : ''}`} />} onBack={() => (router.canGoBack() ? router.back() : router.replace('/transformation'))} />
+      <AppBar title="Progress Photos"
+        subtitle={`${entry.label}${entry.chapterName ? ` · ${entry.chapterName}` : ''}`} onBack={() => (router.canGoBack() ? router.back() : router.replace('/transformation'))} />
 
       <ScrollView style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* ── FORMAT ── */}
@@ -495,15 +496,6 @@ export default function ProgressPhotoPostRoute() {
 
 function PostBg() {
   return <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(6,7,8,0.36)' }} />;
-}
-
-function BarTitle({ sub }: { sub: string }) {
-  return (
-    <View>
-      <Text style={styles.barTitle}>Progress Photos</Text>
-      {sub ? <Text style={styles.barSub}>{sub}</Text> : null}
-    </View>
-  );
 }
 
 function SendTile({ label, icon, busy, onPress }: { label: string; icon: React.ReactNode; busy: boolean; onPress: () => void }) {

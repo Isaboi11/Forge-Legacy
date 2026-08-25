@@ -140,7 +140,7 @@ export default function SquadPostRoute() {
     return (
       <View style={styles.root}>
         <PostBg />
-        <AppBar title={<Text style={styles.barTitle}>Post</Text>} onBack={() => router.back()} />
+        <AppBar title="Post" onBack={() => router.back()} />
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -151,7 +151,7 @@ export default function SquadPostRoute() {
     return (
       <View style={styles.root}>
         <PostBg />
-        <AppBar title={<Text style={styles.barTitle}>Post</Text>} onBack={() => router.back()} />
+        <AppBar title="Post" onBack={() => router.back()} />
         <View style={styles.center}>
           <Text style={styles.missingTitle}>Post not found</Text>
           <Text style={styles.missingBody}>{error ? 'Couldn’t load it — check your connection.' : 'It may have been deleted.'}</Text>
@@ -176,7 +176,7 @@ export default function SquadPostRoute() {
         * ⚠ HIDDEN ON YOUR OWN POST. Reporting yourself is noise in the operator queue and reads as a bug.
         */}
       <AppBar
-        title={<Text style={styles.barTitle}>Post</Text>}
+        title="Post"
         onBack={() => router.back()}
         actions={
           post.authorId && post.authorId !== myId ? (

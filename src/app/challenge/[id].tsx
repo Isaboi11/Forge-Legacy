@@ -518,7 +518,7 @@ function Shell({ children, onBack }: { children: React.ReactNode; onBack: () => 
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title="Competition" serif onBack={onBack} />
+      <AppBar title="Competition" onBack={onBack} />
       {children}
     </View>
   );

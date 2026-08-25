@@ -124,7 +124,7 @@ export default function SquadsScreen() {
       <ScreenBackground image={SCREEN_BG.squadsHub} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
 
       <AppBar
-        title={<Text style={styles.barTitle}>Squads</Text>}
+        title="Squads"
         actions={
           <>
             <Pressable ref={discoverRef} onPress={openDiscover} accessibilityRole="button" accessibilityLabel="Discover squads" style={styles.headerBtn} hitSlop={6}>

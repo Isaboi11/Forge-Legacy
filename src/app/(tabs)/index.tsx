@@ -10,7 +10,7 @@ import { NotificationBell } from '@/components/forge/compositions/NotificationBe
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
-import { ForgeMarkIcon, ChevronRightIcon, PlanSheetIcon, BarbellIcon } from '@/components/forge/primitives/icons/HomeIcons';
+import { ChevronRightIcon, PlanSheetIcon, BarbellIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { WorkoutsTabIcon, LegacyTabIcon, SquadsTabIcon } from '@/components/forge/primitives/icons/NavIcons';
 import { ChapterTitleBlock } from '@/components/forge/compositions/ChapterTitleBlock';
 import { TodaysWorkoutCard } from '@/components/forge/compositions/TodaysWorkoutCard';
@@ -75,16 +75,6 @@ import type { Program, Workout } from '@/domain/training/schema';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
 import { enrichSessionExercises, equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
-
-/** AppBar wordmark — pillar mark + serif "Forge Legacy", left-aligned. */
-function HomeWordmark() {
-  return (
-    <View style={styles.wordmark}>
-      <ForgeMarkIcon />
-      <Text style={styles.wordmarkText}>Forge Legacy</Text>
-    </View>
-  );
-}
 
 /**
  * "Chapter I — Building Your Foundation" → { number, name }, from the live DB chapter name (no hardcode).
@@ -1212,7 +1202,7 @@ export default function HomeScreen() {
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
 
       <AppBar
-        title={<HomeWordmark />}
+        title="Forge Legacy"
         actions={<NotificationBell />}
         avatar={<Avatar name={liveProfile?.name ?? ''} src={liveProfile?.avatarUrl ?? undefined} size="appBar" />}
         onAvatar={() => router.push('/account-settings')}
@@ -1850,17 +1840,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 8,
     gap: 20,
-  },
-  wordmark: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  wordmarkText: {
-    fontFamily: 'PlayfairDisplay_600SemiBold',
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-    color: flColor.cream100,
   },
 });

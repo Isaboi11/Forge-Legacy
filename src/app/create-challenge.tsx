@@ -260,7 +260,7 @@ export default function CreateChallengeScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
-      <AppBar title="Create Challenge" serif onBack={() => router.back()} />
+      <AppBar title="Create Challenge" onBack={() => router.back()} />
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">

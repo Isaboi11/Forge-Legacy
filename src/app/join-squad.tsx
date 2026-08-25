@@ -145,7 +145,7 @@ export default function JoinSquadRoute() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
-        <AppBar title="Join a Squad" serif onBack={() => setSquad(null)} />
+        <AppBar title="Join a Squad" onBack={() => setSquad(null)} />
 
         <ScrollView contentContainerStyle={styles.commitScroll} showsVerticalScrollIndicator={false}>
           <View style={styles.identity}>
@@ -175,7 +175,7 @@ export default function JoinSquadRoute() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
-      <AppBar title="Join a Squad" serif onBack={() => router.back()} />
+      <AppBar title="Join a Squad" onBack={() => router.back()} />
 
       <View style={styles.body}>
         <View style={styles.crest}>

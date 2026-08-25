@@ -116,7 +116,7 @@ export default function ChapterDetailScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-        <AppBar title="Chapter" serif onBack={() => router.back()} />
+        <AppBar title="Chapter" onBack={() => router.back()} />
         <View style={styles.center}>{loading ? <ActivityIndicator color={flColor.bronze400} /> : <Text style={styles.err}>Chapter not found.</Text>}</View>
       </View>
     );
@@ -133,7 +133,7 @@ export default function ChapterDetailScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title={data.number} serif onBack={() => router.back()} />
+      <AppBar title={data.number} onBack={() => router.back()} />
 
       <ScrollView
         ref={tourScroller}

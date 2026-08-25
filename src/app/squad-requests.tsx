@@ -126,7 +126,7 @@ export default function SquadRequestsScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-        <AppBar title="Join Requests" serif onBack={goBack} />
+        <AppBar title="Join Requests" onBack={goBack} />
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -139,7 +139,7 @@ export default function SquadRequestsScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-        <AppBar title="Join Requests" serif onBack={goBack} />
+        <AppBar title="Join Requests" onBack={goBack} />
         <View style={styles.center}>
           <Text style={styles.missingTitle}>Only the owner reviews join requests.</Text>
           <Pressable onPress={goBack} accessibilityRole="button" accessibilityLabel="Back" style={styles.outlineBtn}>
@@ -154,7 +154,7 @@ export default function SquadRequestsScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-        <AppBar title="Join Requests" serif onBack={goBack} />
+        <AppBar title="Join Requests" onBack={goBack} />
         <View style={styles.center}>
           <Text style={styles.missingTitle}>Couldn’t load join requests.</Text>
           <Text style={styles.missingBody}>{error}</Text>
@@ -171,7 +171,7 @@ export default function SquadRequestsScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title="Join Requests" serif onBack={goBack} />
+      <AppBar title="Join Requests" onBack={goBack} />
 
       <ScrollView
         ref={tourScroller}

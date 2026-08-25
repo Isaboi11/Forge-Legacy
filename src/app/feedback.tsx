@@ -75,7 +75,7 @@ export default function FeedbackRoute() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
-      <AppBar title={FEEDBACK_COPY.title} serif onBack={() => router.back()} />
+      <AppBar title={FEEDBACK_COPY.title} onBack={() => router.back()} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}

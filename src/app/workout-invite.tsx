@@ -159,7 +159,7 @@ export default function WorkoutInviteScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
-      <AppBar title={<Text style={styles.barTitle}>Workout Invite</Text>} onBack={close} />
+      <AppBar title="Workout Invite" onBack={close} />
 
       {loading ? (
         <View style={styles.center}>

@@ -171,7 +171,7 @@ export default function CompetitionHistoryScreen() {
 
       {/* Fixed header — search and filters never scroll away. */}
       <View style={styles.header}>
-        <AppBar title={<Text style={styles.barTitle}>Competition History</Text>} onBack={goBack} />
+        <AppBar title="Competition History" onBack={goBack} />
 
         <View style={styles.searchWrap}>
           <SearchGlyph />

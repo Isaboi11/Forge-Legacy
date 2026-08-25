@@ -553,7 +553,6 @@ export default function ExercisePickerScreen() {
       <ScreenBackground image={SCREEN_BG.slate2} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
       <AppBar
         title={isReplace ? 'Replace Exercise' : 'Add Exercise'}
-        serif
         onBack={() => router.back()}
         actions={
           <Pressable onPress={openFilter} accessibilityRole="button" accessibilityLabel="Filter" hitSlop={6} style={styles.filterBtn}>

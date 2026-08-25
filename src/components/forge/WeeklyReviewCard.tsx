@@ -74,7 +74,7 @@ export function WeeklyReviewCard({ review, entitled, onView, onSkip }: WeeklyRev
         </View>
       </View>
 
-      {/* ⚠ SET IN SANS, NOT THE DISPLAY SERIF. `foundation.css` reserves the serif for hero names, screen
+      {/* ⚠ SET IN SANS, NOT THE DISPLAY SERIF. `foundation.css` reserves the for hero names, screen
           titles and the legacy statement; a three-sentence paragraph in it reads as a pull quote, and a
           weekly review is a quiet read rather than an announcement.
 

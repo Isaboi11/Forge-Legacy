@@ -496,7 +496,7 @@ export default function CoachScreen() {
 
   return (
     <View style={styles.root}>
-      <AppBar title="Coach Holt" serif onClose={() => router.back()} onBack={showBack ? back : undefined} />
+      <AppBar title="Coach Holt" onClose={() => router.back()} onBack={showBack ? back : undefined} />
 
       {profileQ.loading || intro == null ? (
         <View style={styles.center}>

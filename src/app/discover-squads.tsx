@@ -138,7 +138,7 @@ export default function DiscoverSquadsScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title="Discover Squads" serif onBack={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/squads'))} />
+      <AppBar title="Discover Squads" onBack={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/squads'))} />
 
       <ScrollView
         ref={tourScroller}

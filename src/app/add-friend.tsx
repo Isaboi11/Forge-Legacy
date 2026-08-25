@@ -232,7 +232,7 @@ export default function AddFriendScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.32)' }} />
-      <AppBar title={<Text style={styles.barTitle}>Add Friend</Text>} onBack={goBack} />
+      <AppBar title="Add Friend" onBack={goBack} />
 
       {/* ── FIXED. The one control on this screen must never scroll out from under you: the lists below can
               run to any length, and an Add field that disappears as you read them is the field you came for.

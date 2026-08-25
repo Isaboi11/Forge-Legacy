@@ -248,7 +248,7 @@ export default function ProgramDetailScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate2} overlay={{ flat: 'rgba(5,5,5,0.3)' }} />
-        <AppBar title="Program" serif onBack={() => router.back()} />
+        <AppBar title="Program" onBack={() => router.back()} />
         <View style={styles.center}>
           <Text style={styles.emptyTitle}>Program not found</Text>
           <Text style={styles.emptyBody}>{error ?? 'It may have been deleted.'}</Text>

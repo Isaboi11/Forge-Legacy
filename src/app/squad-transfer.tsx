@@ -51,7 +51,7 @@ export default function SquadTransferRoute() {
     return (
       <View style={styles.root}>
         <TransferBg />
-        <AppBar title="Transfer Ownership" serif onBack={backToSquad} />
+        <AppBar title="Transfer Ownership" onBack={backToSquad} />
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -62,7 +62,7 @@ export default function SquadTransferRoute() {
     return (
       <View style={styles.root}>
         <TransferBg />
-        <AppBar title="Transfer Ownership" serif onBack={backToSquad} />
+        <AppBar title="Transfer Ownership" onBack={backToSquad} />
         <View style={styles.center}>
           <Text style={styles.missingTitle}>{squad ? 'Only the owner can transfer this squad.' : 'This squad isn’t available.'}</Text>
         </View>
@@ -93,7 +93,7 @@ export default function SquadTransferRoute() {
   return (
     <View style={styles.root}>
       <TransferBg />
-      <AppBar title="Transfer Ownership" serif onBack={backToSquad} />
+      <AppBar title="Transfer Ownership" onBack={backToSquad} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* header */}

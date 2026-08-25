@@ -106,7 +106,7 @@ export default function ProgramShareScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate2} base="#050505" />
-        <AppBar title={<Text style={styles.barTitle}>Program</Text>} onBack={goBack} />
+        <AppBar title="Program" onBack={goBack} />
         <View style={styles.center}>
           <Text style={styles.emptyTitle}>This program isn’t being shared any more.</Text>
           <Text style={styles.emptyBody}>{error ?? 'It may have been withdrawn.'}</Text>
@@ -122,7 +122,7 @@ export default function ProgramShareScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.32)' }} />
-      <AppBar title={<Text style={styles.barTitle}>Shared Program</Text>} onBack={goBack} />
+      <AppBar title="Shared Program" onBack={goBack} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.from}>

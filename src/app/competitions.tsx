@@ -133,7 +133,7 @@ export default function CompetitionsScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.bg2} base="#060708" overlay={{ flat: 'rgba(6,7,8,0.30)' }} />
-      <AppBar title={<Text style={styles.barTitle}>Competitions</Text>} onBack={goBack} />
+      <AppBar title="Competitions" onBack={goBack} />
 
       {loading && !data ? (
         <View style={styles.center}>

@@ -120,7 +120,7 @@ export default function HomeGymScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(6,7,8,0.30)' }} />
-        <AppBar title="My Home Gym" serif onBack={exit} />
+        <AppBar title="My Home Gym" onBack={exit} />
         <View style={styles.loading}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -133,7 +133,6 @@ export default function HomeGymScreen() {
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(6,7,8,0.30)' }} />
       <AppBar
         title="My Home Gym"
-        serif
         onBack={exit}
         actions={
           <Pressable

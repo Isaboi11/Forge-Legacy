@@ -74,7 +74,7 @@ export default function SquadRecordsScreen() {
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
 
       {/* The design hand-rolls this bar: letterspaced uppercase, closer to an engraved plate than a title. */}
-      <AppBar title={<Text style={styles.barTitle}>Squad Records</Text>} onBack={goBack} />
+      <AppBar title="Squad Records" onBack={goBack} />
 
       {loading && !data ? (
         <View style={styles.center}>

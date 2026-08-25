@@ -91,7 +91,7 @@ export default function CurrentChampionsScreen() {
 
       <View style={styles.header}>
         <LinearGradient colors={['#0a0b0c', 'rgba(10,11,12,0.86)'] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
-        <AppBar title={<Text style={styles.barTitle}>Current Champions</Text>} onBack={goBack} />
+        <AppBar title="Current Champions" onBack={goBack} />
         {data ? (
           <View style={styles.identity}>
             <Text style={styles.squadName} numberOfLines={1}>

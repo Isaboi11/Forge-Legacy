@@ -63,7 +63,7 @@ export default function ExerciseDetailScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.bg2} overlay={{ flat: 'rgba(6,7,8,0.3)' }} />
-        <AppBar title="Exercise" serif onBack={() => router.back()} />
+        <AppBar title="Exercise" onBack={() => router.back()} />
         <View style={styles.center}>
           <Text style={styles.errorTitle}>Exercise not found</Text>
           <Text style={styles.errorDetail}>“{id}” isn’t in the catalog.</Text>
@@ -83,7 +83,7 @@ export default function ExerciseDetailScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.bg2} overlay={{ flat: 'rgba(6,7,8,0.3)' }} />
-      <AppBar title="Exercise" serif onBack={() => router.back()} />
+      <AppBar title="Exercise" onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* 1 · demonstration — the `.dc`'s first block, above the name */}

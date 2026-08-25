@@ -75,7 +75,7 @@ export default function ProgressHubScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.3} overlay={{ flat: 'rgba(5,5,5,0.4)' }} />
-        <AppBar title="Progress" serif onBack={() => router.back()} />
+        <AppBar title="Progress" onBack={() => router.back()} />
         <View style={styles.center}>{loading ? <ActivityIndicator color={flColor.bronze400} /> : <Text style={styles.err}>Couldn’t load progress.</Text>}</View>
       </View>
     );
@@ -94,7 +94,7 @@ export default function ProgressHubScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.28} overlay={{ flat: 'rgba(5,5,5,0.5)' }} />
-      <AppBar title="Progress" serif onBack={() => router.back()} />
+      <AppBar title="Progress" onBack={() => router.back()} />
 
       <ScrollView
         ref={tourScroller}

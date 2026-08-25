@@ -222,7 +222,6 @@ export default function LegacyScreen() {
 
       <AppBar
         title="Legacy"
-        serif
         avatar={<Avatar name={profile.name} src={profile.avatarUrl ?? undefined} size="appBar" />}
         onAvatar={() => router.push('/account-settings')}
       />
@@ -520,7 +519,7 @@ function LegacyShell({
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} imageOpacityPaper={0.7} overlay={{ flat: 'rgba(5,5,5,0.30)' }} scrimFade scrollY={scrollY} />
-      <AppBar title="Legacy" serif avatar={<Avatar name={avatarName} src={avatarSrc} size="appBar" />} onAvatar={() => router.push('/account-settings')} />
+      <AppBar title="Legacy" avatar={<Avatar name={avatarName} src={avatarSrc} size="appBar" />} onAvatar={() => router.push('/account-settings')} />
       <View style={styles.statusWrap}>{children}</View>
     </View>
   );

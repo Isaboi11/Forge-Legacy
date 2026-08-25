@@ -144,7 +144,7 @@ export default function GoalsScreen() {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
-        <AppBar title="Goals" serif onBack={() => router.back()} />
+        <AppBar title="Goals" onBack={() => router.back()} />
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -279,7 +279,7 @@ function GoalHub({
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
-      <AppBar title="Goals" serif onBack={() => router.back()} />
+      <AppBar title="Goals" onBack={() => router.back()} />
       <ScrollView
         ref={tourScroller}
         onScroll={onTourScroll}

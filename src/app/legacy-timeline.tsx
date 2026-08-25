@@ -159,7 +159,7 @@ export default function LegacyTimelineScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.legacy} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title="Timeline" serif onBack={goBack} />
+      <AppBar title="Timeline" onBack={goBack} />
 
       {loading && !data ? (
         <View style={styles.center}>

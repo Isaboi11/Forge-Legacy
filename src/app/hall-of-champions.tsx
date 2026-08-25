@@ -56,7 +56,7 @@ export default function HallOfChampionsScreen() {
 
       <View style={styles.header}>
         <LinearGradient colors={['#0a0b0c', 'rgba(10,11,12,0.86)'] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
-        <AppBar title={<Text style={styles.barTitle}>Hall of Champions</Text>} onBack={goBack} />
+        <AppBar title="Hall of Champions" onBack={goBack} />
         {data ? (
           <View style={styles.identity}>
             <View style={styles.crest}>

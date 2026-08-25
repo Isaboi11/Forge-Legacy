@@ -212,7 +212,7 @@ export default function ExerciseLibraryScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(6,7,8,0.30)' }} />
-      <AppBar title={flat && !query.trim() && view ? result.title : 'Exercise Library'} serif onBack={onBack} />
+      <AppBar title={flat && !query.trim() && view ? result.title : 'Exercise Library'} onBack={onBack} />
 
       {/* search + filter */}
       <View style={styles.searchRow}>
