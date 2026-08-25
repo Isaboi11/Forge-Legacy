@@ -107,6 +107,16 @@ export default function WorkoutBuilderScreen() {
   const [saving, setSaving] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [cardioSheet, setCardioSheet] = useState<BuilderSection | null>(null);
+  /**
+   * WHICH exercise's coaching cue is being written — W-25 §3.5 / §5.3, specified with the screen and
+   * never built. `toTemplateExercises` and `hydrate` below have round-tripped `coachNote` since the
+   * field existed, and `templateToSessionExercises` carries it into the logger; the only thing missing
+   * was somewhere to type it, so a cue could reach this builder from a program day and never be
+   * authored in it. Same sheet, same cap and same wording as the Program Builder — one field, written
+   * one way, wherever a day gets built.
+   */
+  const [noteSheet, setNoteSheet] = useState<{ section: BuilderSection; index: number } | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
 
   /*
    * Boot and the picker round-trip in one pass, on every focus — read the stored draft, absorb anything
@@ -346,6 +356,12 @@ export default function WorkoutBuilderScreen() {
                   }
                   onPair={() => patch(sec.key, (l) => pairWithNext(l, i))}
                   onUnpair={() => patch(sec.key, (l) => unpairAt(l, i))}
+                  onEditNote={() => {
+                    /* Seeded from what is already there, so opening an existing cue EDITS it. Without
+                       this the sheet opens blank and saving silently replaces the note with nothing. */
+                    setNoteDraft(it.coachNote ?? '');
+                    setNoteSheet({ section: sec.key, index: i });
+                  }}
                 />
               ))}
 
@@ -414,6 +430,58 @@ export default function WorkoutBuilderScreen() {
         </View>
       </BottomSheet>
 
+      {/* ── THE COACHING CUE ────────────────────────────────────────────────────────────────────────
+          W-25 §5.3 asked for a text area that expands in the card. It is a sheet instead, for the same
+          reason the Program Builder's is: a multiline field growing inside a row inside a ScrollView
+          fights the keyboard on a phone, and the cue is written once and read many times. The cap is
+          280, NOT the 200 §5.3 names — that number predates `coachNote`, and both builders write the
+          same field. A day authored in the Program Builder can reach this screen through a saved
+          template, so a shorter cap here would silently truncate a cue on the way past. */}
+      <BottomSheet
+        open={noteSheet != null}
+        onClose={() => setNoteSheet(null)}
+        title={(noteSheet && draft[noteSheet.section][noteSheet.index]?.name) || 'Coaching note'}
+      >
+        <Text style={styles.cardioIntro}>
+          What should you know while you’re doing it? Grip, tempo, effort, a form cue, when to back off.
+          You’ll see it on the exercise when you train this.
+        </Text>
+        {/* A raw multiline field rather than `InputField`, which is specified single-line for names and
+            short capped fields. A cue runs to a sentence or three. */}
+        <TextInput
+          value={noteDraft}
+          onChangeText={setNoteDraft}
+          multiline
+          maxLength={280}
+          placeholder="Underhand close grip"
+          placeholderTextColor={flColor.gray600}
+          accessibilityLabel="Coaching note for this exercise"
+          style={styles.noteInput}
+        />
+        <View style={styles.noteActions}>
+          <Button
+            variant="primary"
+            fullWidth
+            onPress={() => {
+              const at = noteSheet;
+              if (!at) return setNoteSheet(null);
+              const next = noteDraft.trim().slice(0, 280);
+              /* Trimmed to null, never ''. An author who opened the field and thought better of it must
+                 not put an empty bubble on the athlete's screen for the whole exercise — `coachLine`
+                 treats whitespace as nothing, and this keeps the stored value honest too. */
+              patch(at.section, (l) => l.map((x, k) => (k === at.index ? { ...x, coachNote: next || null } : x)));
+              setNoteSheet(null);
+            }}
+            accessibilityLabel="Save the coaching note"
+          >
+            Save Note
+          </Button>
+          <Button variant="text" fullWidth onPress={() => setNoteSheet(null)} accessibilityLabel="Cancel">
+            Cancel
+          </Button>
+        </View>
+      </BottomSheet>
+
       <ConfirmSheet
         open={confirmLeave}
         onClose={() => setConfirmLeave(false)}
@@ -445,6 +513,7 @@ function Row({
   onTime,
   onPair,
   onUnpair,
+  onEditNote,
 }: {
   item: ProgramExercise;
   first: boolean;
@@ -460,6 +529,8 @@ function Row({
   onTime: (dir: 1 | -1) => void;
   onPair: () => void;
   onUnpair: () => void;
+  /** Open the coaching-cue sheet for this row. */
+  onEditNote: () => void;
 }) {
   const cardio = item.kind === 'cardio';
   const activity = (item.activity ?? 'run') as CardioActivity;
@@ -558,6 +629,34 @@ function Row({
           />
         ) : null}
       </View>
+
+      {/*
+        ══ THE AUTHOR'S CUE ══
+
+        "Underhand close grip." "4 seconds down, then push up." Written here and shown to whoever trains
+        the session — spoken by the coin as they walk up to the lift, and standing in its ⋯ menu for the
+        whole exercise. It is NOT the athlete's log note; that one is written during the session and says
+        how the lift felt. The two live side by side and neither overwrites the other.
+
+        Above the superset link, not below it: this row is about THIS exercise, the link is about its
+        relationship to the next one. A row with a cue shows it rather than hiding the session's own
+        instructions behind a tap.
+      */}
+      <Pressable
+        onPress={onEditNote}
+        accessibilityRole="button"
+        accessibilityLabel={item.coachNote ? `Edit the coaching note on ${item.name}` : `Add a coaching note to ${item.name}`}
+        style={({ pressed }) => [styles.exNoteRow, pressed ? styles.exNotePressed : null]}
+      >
+        <Glyph
+          d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5"
+          size={13}
+          color={item.coachNote ? flColor.bronze400 : flColor.gray600}
+        />
+        <Text style={[styles.exNoteText, item.coachNote ? styles.exNoteTextSet : null]} numberOfLines={2}>
+          {item.coachNote ? item.coachNote : 'Add a coaching note'}
+        </Text>
+      </Pressable>
 
       {!last ? (
         <Pressable onPress={onPair} accessibilityRole="button" accessibilityLabel={`Superset ${item.name} with the exercise below`} style={styles.pairLink}>
@@ -736,6 +835,35 @@ const styles = StyleSheet.create({
   pairHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingVertical: 7, paddingHorizontal: 13, backgroundColor: flColor.bronzeTint, borderBottomWidth: 1, borderBottomColor: flColor.bronzeBorderSubtle },
   pairHeadText: { flex: 1, fontSize: 10.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze400 },
   pairBreak: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray400 },
+  /* Same row as the Program Builder's, to the pixel — the two builders author one field and should not
+     look like they author two. */
+  exNoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderTopWidth: 1,
+    borderTopColor: flColor.charcoal700,
+  },
+  exNotePressed: { backgroundColor: flColor.charcoal700 },
+  exNoteText: { flex: 1, fontSize: 12, color: flColor.gray600 },
+  /* An authored cue reads as prose — cream and italic, the same voice the logger shows it back in. */
+  exNoteTextSet: { color: flColor.cream100, fontStyle: 'italic' },
+  noteInput: {
+    minHeight: 92,
+    borderWidth: 1,
+    borderColor: flColor.charcoal500,
+    borderRadius: flRadius.md,
+    backgroundColor: flColor.surfaceRecessed,
+    color: flColor.cream100,
+    fontSize: 14,
+    lineHeight: 20,
+    padding: 12,
+    textAlignVertical: 'top',
+  },
+  noteActions: { gap: 8, marginTop: 12 },
+
   pairLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 8, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   pairLinkText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5, color: flColor.bronze400 },
 

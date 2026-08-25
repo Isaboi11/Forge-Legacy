@@ -109,14 +109,50 @@ test('a missing rep count is 0, not undefined — a template row must be drawabl
   assert.equal(rows[1].catalogKey, null, 'and an unmatched movement saves as a name with no key, not undefined');
 });
 
-test('the launch shape is exactly four fields — nothing extra reaches the workout screen', () => {
+test('a day Holt built reaches the workout screen with the cues he wrote on it', () => {
   /*
-   * `WorkoutLaunch.exercises` is written by three other callers (an invite, a shared session, Home).
-   * Growing a fifth field here to carry the cue would put it into a payload none of them writes and all
-   * of them read. The cue is lost on Start and kept on Save; that is the honest trade, stated.
+   * ⚠ THIS TEST USED TO ASSERT THE OPPOSITE, AND IT WAS RIGHT AT THE TIME.
+   *
+   * It read: *"the launch shape is exactly four fields — nothing extra reaches the workout screen"*,
+   * on the reasoning that `WorkoutLaunch.exercises` is written by three other callers and growing a
+   * fifth field would put one into a payload none of them writes. True then: the field was declared
+   * inline as four properties. It is `TemplateExercise[]` now, which has carried an optional
+   * `coachNote` since cues existed and whose consumer already reads it — so the cue is no longer an
+   * invention.
+   *
+   * ⚠ AND THE THING IT WAS GUARDING WAS NOT HYPOTHETICAL. `buildDayWorkout` writes a cue onto Holt's
+   * rows already, which is why this assertion had to be rewritten rather than merely relaxed: every
+   * cue he wrote was being dropped on `Start it now` and kept on `Save for later`. Same day, same
+   * coach, two answers — and the one the athlete gets when they train it was the empty one.
    */
   const rows = launchRowsFor(aDay());
+  assert.ok(rows.length > 0, 'the fixture must actually build a day');
+  assert.ok(
+    rows.some((r) => typeof r.coachNote === 'string' && r.coachNote.length > 0),
+    'Holt writes cues on the days he builds; at least one must survive the crossing',
+  );
   for (const r of rows) {
-    assert.deepEqual(Object.keys(r).sort(), ['catalogKey', 'name', 'sets', 'targetReps']);
+    assert.ok(
+      Object.keys(r).every((k) => ['catalogKey', 'name', 'sets', 'targetReps', 'coachNote'].includes(k)),
+      `no field beyond the five may reach the workout screen — got ${Object.keys(r).join(', ')}`,
+    );
+  }
+});
+
+test("a cue Holt wrote survives Start it now — it used to be dropped, and Save for later kept it", () => {
+  /*
+   * The asymmetry this closes: the same day, saved, kept every word Holt said about how to do the
+   * movement, and started, arrived with none of it. `templateRowsFor` and `launchRowsFor` now agree.
+   */
+  const day = { name: 'Pull', main: [{ catalogKey: 'k', name: 'Row', sets: 4, reps: 8, coachNote: 'Underhand close grip' }] };
+  assert.equal(launchRowsFor(day)[0].coachNote, 'Underhand close grip');
+  assert.equal(templateRowsFor(day)[0].coachNote, 'Underhand close grip', 'and the save path is unchanged');
+});
+
+test('an empty or whitespace cue grows no key on either path', () => {
+  for (const note of ['', null, undefined]) {
+    const day = { name: 'Pull', main: [{ catalogKey: 'k', name: 'Row', sets: 4, reps: 8, coachNote: note }] };
+    assert.equal('coachNote' in launchRowsFor(day)[0], false, `launch: ${JSON.stringify(note)}`);
+    assert.equal('coachNote' in templateRowsFor(day)[0], false, `template: ${JSON.stringify(note)}`);
   }
 });

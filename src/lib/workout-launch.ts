@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import type { TemplateExercise } from '@/data/templates-live';
+
 /**
  * What the Active Workout was opened FROM — the RN analogue of the design's
  * `forge_workout_launch_context_v1`. Any entry point that starts a program's session writes the program
@@ -44,8 +46,28 @@ export interface WorkoutLaunch {
   /**
    * An explicit shape to open with (0093) — what an invite carries. Distinct from `templateId` because an
    * invite SNAPSHOTS its workout rather than pointing at one: the guest may not own the source program.
+   *
+   * ══ WIDENED FROM FOUR FIELDS TO THE WHOLE ROW ══
+   *
+   * It was declared as `{ catalogKey, name, sets, targetReps }[]`, and the consumer read exactly those
+   * four and stamped `section: 'main'` on every one. That is the honest shape of an INVITE, which
+   * snapshots a workout down to its bones — but it is not the only thing that travels this way. A
+   * workout built through Home's **"Build for later"** hands its whole `TemplateExercise[]` to this
+   * field (both from the builder's Save & Start and from the hero that parks it), and arrived stripped
+   * of its warm-up and cool-down sections, its supersets, its cardio blocks — each one silently folded
+   * into a flat list of main-section strength sets — and, once cues could be authored, its coaching
+   * notes as well. The `starterId` comment above describes this exact failure as the reason a starter
+   * definition is NOT sent through here; the planned workout was sent through here anyway.
+   *
+   * ⚠ THIS IS A WIDENING, NOT A CHANGE OF MEANING. `TemplateExercise` requires precisely the four
+   * fields this used to declare and makes every other one optional, so an invite's four-field row is
+   * already a valid value and every existing writer type-checks unchanged. The consumer now runs
+   * `templateToSessionExercises`, whose set construction is identical to the branch it replaced
+   * (`Math.max(1, e.sets)`, `targetReps || 8`) and whose section default is the same `'main'` — so a
+   * four-field invite builds byte-for-byte the session it built before, and a richer row keeps what it
+   * was carrying instead of having it thrown away on arrival.
    */
-  exercises?: { catalogKey: string | null; name: string; sets: number; targetReps: number }[];
+  exercises?: TemplateExercise[];
   /** Overrides the session's name — a shared workout is named by whoever invited you (0092). */
   workoutName?: string;
   /**

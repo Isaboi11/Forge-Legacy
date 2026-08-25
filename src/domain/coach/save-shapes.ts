@@ -42,12 +42,17 @@ export interface TemplateRow {
   coachNote?: string;
 }
 
-/** The four fields the Active Workout opens with. */
+/**
+ * The fields the Active Workout opens with.
+ *
+ * ⚠ IT WAS FOUR, AND THE FIFTH IS THE COACHING CUE. See `launchRowsFor` below for what that cost.
+ */
 export interface LaunchRow {
   catalogKey: string | null;
   name: string;
   sets: number;
   targetReps: number;
+  coachNote?: string;
 }
 
 /**
@@ -88,9 +93,21 @@ export function templateRowsFor(day: BuiltDay): TemplateRow[] {
 /**
  * The same day, as the shape the Active Workout opens with.
  *
- * The coaching cue does NOT travel: `WorkoutLaunch.exercises` carries four fields, and inventing a fifth
- * would put a field into a payload three other callers write. Starting a day Holt built loses his cue;
- * saving it as a template keeps it. That is a real gap and it is stated rather than papered over.
+ * ══ THE CUE NOW TRAVELS, AND THE REASON IT DID NOT IS GONE ══
+ *
+ * This function used to declare its own gap: *"The coaching cue does NOT travel: `WorkoutLaunch.exercises`
+ * carries four fields, and inventing a fifth would put a field into a payload three other callers write.
+ * Starting a day Holt built loses his cue; saving it as a template keeps it."* Honest, and the cost was
+ * real — **`Start it now` on a day Holt built threw away everything he had said about how to do it**,
+ * while `Save for later` on the identical day kept every word. Same day, same coach, two answers.
+ *
+ * `WorkoutLaunch.exercises` is now `TemplateExercise[]`, which has held an optional `coachNote` since
+ * cues existed, so the fifth field is no longer an invention — it is a field the payload already
+ * declares, and the consumer already reads it (`templateToSessionExercises`). Nothing is being widened
+ * for this; a stated gap is being closed because the thing that justified it changed underneath.
+ *
+ * Still `main` only, and still absent rather than empty when there is no cue — an author who wrote
+ * nothing must not put an empty italic line under the athlete's exercise for the whole lift.
  */
 export function launchRowsFor(day: BuiltDay): LaunchRow[] {
   return day.main.map((e) => ({
@@ -98,5 +115,6 @@ export function launchRowsFor(day: BuiltDay): LaunchRow[] {
     name: e.name,
     sets: e.sets ?? SETS_FALLBACK,
     targetReps: targetReps(e.reps),
+    ...(e.coachNote ? { coachNote: e.coachNote } : {}),
   }));
 }

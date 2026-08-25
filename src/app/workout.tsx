@@ -489,6 +489,24 @@ export default function WorkoutScreen() {
   // rest-timer runtime — deadline-based so the count survives re-renders and a paused freeze holds its remaining
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
   const [restPaused, setRestPaused] = useState(false);
+  /**
+   * KEEP THE BIG REST PANEL UP — PO: *"when the timer starts you should be able to click it for it to
+   * stay up if you want. Maybe a small 'stay' on the card when it starts."*
+   *
+   * The panel shows for ~3 seconds and then demotes to the header chip, which is right as a DEFAULT —
+   * it is a 288pt card sitting over the exercise, and most of a rest is spent looking at the sets.
+   * It is wrong as the only option: an athlete who wants the countdown in front of them had no way to
+   * ask for it, and the chip's numerals are small enough to need looking for.
+   *
+   * ⚠ STICKY FOR THE SESSION, NOT FOR ONE REST. Clearing it each time would mean tapping Stay after
+   * every set for the whole workout, which is worse than the problem. It is a preference the athlete
+   * states once and takes back once.
+   *
+   * ⚠ NOT PERSISTED. `rest-timer-pref` stores the MODE, which is a setting; this is a mood for the
+   * session in front of you, and a panel that reappeared over tomorrow's workout because of a tap made
+   * today would be the app remembering the wrong thing.
+   */
+  const [restPinned, setRestPinned] = useState(false);
   const [pausedRemaining, setPausedRemaining] = useState<number | null>(null);
   const [restTotal, setRestTotal] = useState(90);
   const [now, setNow] = useState(() => Date.now());
@@ -804,19 +822,21 @@ export default function WorkoutScreen() {
              the first OPEN slot when it is sent none, and the slot this shape covers is not always that
              one. A resolution made from live marks two seconds ago cannot go stale the way a card can. */
           ...(slot ? { programId: slot.programId, programWeek: slot.weekIndex, programDay: slot.dayIndex } : null),
-          exercises: shape.map((e, i) => ({
-            name: e.name,
-            catalogKey: e.catalogKey ?? undefined,
-            section: 'main',
-            position: i,
-            sets: Array.from({ length: Math.max(1, e.sets) }, (_, si) => ({
-              setIndex: si,
-              targetReps: e.targetReps || 8,
-              weight: null,
-              actualReps: null,
-              done: false,
-            })),
-          })),
+          /*
+           * ⚠ THE ONE CROSSING, NOT A SECOND COPY OF IT. This was a hand-rolled `shape.map` that read
+           * four fields and hard-coded `section: 'main'` — right for an invite, which snapshots a
+           * workout down to its bones, and wrong for the other thing that arrives here: a workout built
+           * through Home's "Build for later" sends its whole `TemplateExercise[]`, and was landing with
+           * its warm-up and cool-down flattened into main, its supersets dissolved, its cardio blocks
+           * turned into sets of reps, and its coaching cues dropped.
+           *
+           * `templateToSessionExercises` is the converter that already handles all of that, and its set
+           * construction is character-for-character what stood here (`Math.max(1, e.sets)`,
+           * `targetReps || 8`, the same `'main'` default), so an invite's four-field rows build exactly
+           * the session they built before. The `starterId` field in `workout-launch.ts` names this very
+           * failure as its reason for existing; the planned workout was walking into it regardless.
+           */
+          exercises: templateToSessionExercises(shape),
         });
         setPhase('active');
         return;
@@ -1162,7 +1182,8 @@ export default function WorkoutScreen() {
         ? Math.max(0, Math.ceil((restEndsAt - now) / 1000))
         : 0;
   const restRunning = restEndsAt != null || (restPaused && pausedRemaining != null);
-  const restProminent = restRunning && restTotal - restRemaining < 3; // shows for ~3s, then demotes to the compact chip
+  /* Shows for ~3s and then demotes to the compact chip — unless the athlete pinned it. See `restPinned`. */
+  const restProminent = restRunning && (restPinned || restTotal - restRemaining < 3);
   const restPauseToggle = () => {
     if (restPaused && pausedRemaining != null) {
       const ms = Date.now();
@@ -2128,7 +2149,27 @@ export default function WorkoutScreen() {
     showToast(`Added ${name}`);
   };
 
-  const saysFull = saysRaw ? { ...saysRaw, text: inUnits(saysRaw.text) } : null;
+  /*
+   * ⚠ THE PLAN CUE SAYS IT IS FOR EVERY SET, AND IT HAS TO SAY SO OUT LOUD.
+   *
+   * Holt's cue is an ARRIVAL line: `coachLine` retires it once the first set is logged, which is right
+   * for "go up to 95 lb" — that sentence is answered by doing it — and reads as a broken coach for
+   * "underhand close grip", which is true of set four as much as set one. The PO's call is to keep the
+   * retirement and fix the WORDING: he says it once, says it covers the whole exercise, and gets out of
+   * the way. The cue itself does not leave with him — it stays in italic under the exercise name and in
+   * the ⋯ menu for as long as the athlete is on this lift.
+   *
+   * Added in the RENDER rather than in `coachLine`, alongside `inUnits` and for the same reason: that
+   * function returns the sentence the plan holds, and stitching presentation into it would put this
+   * suffix into the unit tests, the chat sheet and anywhere else the line is read.
+   *
+   * ⚠ AND IT IS ADDED BEFORE THE DISMISS COMPARISON BELOW, which keys on the final text. Suffixing
+   * afterwards would mean the athlete closed one string while the next render produced another, and the
+   * X would stop working.
+   */
+  const saysFull = saysRaw
+    ? { ...saysRaw, text: saysRaw.source === 'plan' ? `${inUnits(saysRaw.text)} — that holds for every set.` : inUnits(saysRaw.text) }
+    : null;
   /* Closed by the athlete, and only while he is still saying the same thing. See `dismissedSay`. */
   const says = saysFull && saysFull.text === dismissedSay ? null : saysFull;
   /* The collapsed strip's `Prev`, indexed to the SAME set position last time — set 3 against last week's
@@ -3036,6 +3077,15 @@ export default function WorkoutScreen() {
                     </View>
                     {/* meta */}
                     <View style={styles.heroMeta}>
+                      {/*
+                        ⚠ NOT A CARD, AND DELIBERATELY NOT THE ONE THAT WAS DELETED. `THE PLAN SAYS` used
+                        to be a hero card stacked here and was removed in the "cards are for acting inside
+                        of" pass — correctly: a cue is information, and information gets a line, not a
+                        bordered box you cannot act in. This is that line. It sits under the name, in the
+                        same italic cream the ⋯ menu and the builder's own row show it in, and it is drawn
+                        in BOTH hero faces (see the collapsed strip below) because the hero auto-collapses
+                        the moment the first set resolves — which is exactly when a grip cue is still true.
+                      */}
                       <View style={styles.heroTitleRow}>
                         <Text style={styles.heroName}>{ex.name}</Text>
                         <View style={styles.heroActionsTop}>
@@ -3051,6 +3101,7 @@ export default function WorkoutScreen() {
                           </Pressable>
                         </View>
                       </View>
+                      {ex.coachNote ? <Text style={styles.planCueLine}>{ex.coachNote}</Text> : null}
                       <View style={styles.heroEquipRow}>
                         <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.6} strokeLinecap="square">
                           <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
@@ -3177,6 +3228,16 @@ export default function WorkoutScreen() {
                       {prevText ? <>Prev <Text style={styles.heroStripPrev}>{prevText}</Text>{'   '}</> : null}
                       Goal <Text style={styles.heroStripGoal}>{goalText}</Text>
                     </Text>
+                    {/* ⚠ THE CUE HAS TO BE HERE, NOT ONLY IN THE EXPANDED FACE. The hero auto-collapses
+                        on the first resolved set, so from set two onward this strip is the whole of the
+                        lift the athlete can see — and "underhand close grip" is exactly as true then as
+                        it was walking up. One line and clipped: the strip is a summary, and the full text
+                        is a tap away in the expanded card and in the ⋯ menu. */}
+                    {ex.coachNote ? (
+                      <Text style={styles.heroStripCue} numberOfLines={1}>
+                        {ex.coachNote}
+                      </Text>
+                    ) : null}
                   </View>
                   <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <Path d="M6 9l6 6 6-6" />
@@ -3365,8 +3426,50 @@ export default function WorkoutScreen() {
                   {setsDone === 0 ? (
                     <Text style={styles.tableHint}>Tap a weight or a rep count to change it — then Log Set marks it done.</Text>
                   ) : null}
+
                 </View>
               </TourAnchor>
+              )}
+
+              {/*
+                ══ THE ATHLETE'S OWN NOTE, ON THE CARD ══
+
+                PO: *"there's no place to type and leave a note that's obvious for me."* Correct, and the
+                field was not missing — it was **written, saved, read back as LAST TIME, and reachable
+                only from the ⋮ sheet**, eleven rows down and below the fold. A control the athlete cannot
+                find is a control that does not exist, and this one had the additional problem that its
+                OUTPUT is visible (LAST TIME sits on the hero) while its INPUT was not — so the app showed
+                you notes with no evident way to have written one.
+
+                ⚠ HERE, NOT INSIDE THE SET TABLE, AND THAT IS THE WHOLE POINT OF THE POSITION. The three
+                bodies above are mutually exclusive — a strength table, a `CardioBlockCard`, or nothing at
+                all for a superset member — so a row placed inside the table would have appeared on
+                exactly one kind of exercise and been missing from a run and from every superset. One
+                instance below all three covers each of them.
+
+                ⚠ EXCEPT A FUSED SUPERSET, WHICH IS THE ONE HONEST EXCLUSION. That card draws two
+                exercises merged into one, so "a note about this exercise" has no referent — tapping a
+                member's name opens it on its own card, and the row is there.
+
+                ⚠ NOT A CARD AND NOT A SECOND DASHED BUTTON. `Add Set` owns the dashed bronze treatment
+                just above; repeating it would put two equal-weight targets in a row where only one is
+                part of logging. Same quiet row both builders use for the author's cue — so "a note lives
+                here" looks the same on all three screens.
+              */}
+              {ssFused ? null : (
+                <Pressable
+                  onPress={openNote}
+                  accessibilityRole="button"
+                  accessibilityLabel={ex.note ? `Edit your note on ${ex.name}` : `Add a note about ${ex.name} for next time`}
+                  style={({ pressed }) => [styles.exerciseNoteRow, pressed ? styles.exerciseNotePressed : null]}
+                >
+                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={ex.note ? flColor.bronze400 : flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5" />
+                  </Svg>
+                  <Text style={[styles.exerciseNoteText, ex.note ? styles.exerciseNoteTextSet : null]} numberOfLines={2}>
+                    {ex.note ? ex.note : 'Add a note for next time'}
+                  </Text>
+                </Pressable>
               )}
 
               {/* exercise nav dots */}
@@ -3677,9 +3780,28 @@ export default function WorkoutScreen() {
                 <Text style={styles.restCtlText}>+15s</Text>
               </Pressable>
             </View>
-            <Pressable onPress={restSkip} accessibilityRole="button" accessibilityLabel="Skip rest" style={styles.restSkip} hitSlop={6}>
-              <Text style={styles.restSkipText}>Skip Rest</Text>
-            </Pressable>
+            {/*
+              ⚠ TWO DIFFERENT KINDS OF LEAVING, SIDE BY SIDE AND NAMED APART. `Stay` / `Minimise` changes
+              what you can SEE; `Skip Rest` ends the rest itself. Collapsing them into one control — or
+              letting a tap on the backdrop do either — is how an athlete who only wanted the panel out
+              of the way ends up back at the bar early. The pin is the quiet one of the pair.
+            */}
+            <View style={styles.restOverlayFoot}>
+              <Pressable
+                onPress={() => setRestPinned((v) => !v)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: restPinned }}
+                accessibilityLabel={restPinned ? 'Minimise the rest timer to the header' : 'Keep the rest timer on screen'}
+                style={styles.restSkip}
+                hitSlop={6}
+              >
+                <Text style={[styles.restSkipText, restPinned ? styles.restStayOn : null]}>{restPinned ? 'Minimise' : 'Stay'}</Text>
+              </Pressable>
+              <View style={styles.restFootDot} />
+              <Pressable onPress={restSkip} accessibilityRole="button" accessibilityLabel="Skip rest" style={styles.restSkip} hitSlop={6}>
+                <Text style={styles.restSkipText}>Skip Rest</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       ) : null}
@@ -3845,6 +3967,12 @@ export default function WorkoutScreen() {
           <Pressable style={styles.pickerBackdrop} onPress={() => setNoteOpen(null)} accessibilityLabel="Close" />
           <View style={styles.picker}>
             <Text style={styles.pickerTitle}>{session.exercises[noteOpen]?.name ?? 'Note'}</Text>
+            {/* ⚠ SAYS WHAT THE NOTE IS FOR, which the sheet never did. The note's whole value is that it
+                comes back — it is shown as LAST TIME the next time this lift comes round — and an athlete
+                who does not know that has no reason to write one. This is also the line that keeps it
+                distinct from the plan's cue without naming the distinction: this one is yours, about
+                today. */}
+            <Text style={styles.noteIntro}>How it went, for next time — you’ll see this when this lift comes round again.</Text>
             <TextInput
               value={noteDraft}
               onChangeText={setNoteDraft}
@@ -4784,8 +4912,13 @@ const styles = StyleSheet.create({
   restCtlBtn: { minWidth: 52, height: 44, paddingHorizontal: 10, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, alignItems: 'center', justifyContent: 'center' },
   restCtlText: { fontSize: 12, fontWeight: '700', color: flColor.gray400 },
   restCtlRound: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, alignItems: 'center', justifyContent: 'center' },
+  restOverlayFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
+  restFootDot: { width: 3, height: 3, borderRadius: flRadius.round, backgroundColor: flColor.charcoal500 },
   restSkip: { paddingVertical: 2, paddingHorizontal: 8 },
   restSkipText: { fontSize: 11, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
+  /* Bronze ONLY while pinned — it is the one state that is a standing choice rather than a one-off tap,
+     and it needs to say so from across a gym floor. Unpinned it is the same grey as Skip beside it. */
+  restStayOn: { color: flColor.bronze300 },
 
   // fuse flash (green light around the row)
   fuseWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 5 },
@@ -4926,6 +5059,33 @@ const styles = StyleSheet.create({
   removeSet: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, minHeight: 44, borderWidth: 1, borderColor: flColor.charcoal500, borderRadius: flRadius.md },
   removeSetOff: { opacity: 0.32 },
   removeSetText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray400 },
+  /*
+   * THE ATHLETE'S NOTE ROW — the same shape both builders use for the author's cue, on purpose: one
+   * treatment for "a note lives here", whichever screen you are on. Sentence case and no uppercase
+   * tracking, unlike Add Set / Remove Set above it, because this is not part of logging a set.
+   *
+   * ⚠ A STRIP, NOT A CARD, AND IT SITS AT THE SAME LEVEL AS THE TABLE. It is a direct child of the
+   * scroll body (18pt gutter, 14pt gap already applied), so it carries no margin of its own and takes
+   * the table's own `charcoal900` surface — it reads as a small shelf under the table rather than a
+   * fourth bordered object competing with it. No bronze until there is a note to show: an empty
+   * prompt in the accent colour would claim the eye every session for something most exercises
+   * never get.
+   */
+  exerciseNoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal900,
+  },
+  exerciseNotePressed: { backgroundColor: flColor.charcoal700 },
+  exerciseNoteText: { flex: 1, fontSize: 13, color: flColor.gray600 },
+  /* A written note reads as prose — the same cream italic LAST TIME shows it back in next session. */
+  exerciseNoteTextSet: { color: flColor.cream100, fontStyle: 'italic' },
 
   // exercise nav
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
@@ -4987,6 +5147,19 @@ const styles = StyleSheet.create({
      `coachNoteSub` survives: the ⋮ Options sheet still shows the plan's cue, and should. */
   /* Not clamped to one line like `optSub` — a cue is the content of its row, not a caption on it. */
   coachNoteSub: { fontSize: 12, lineHeight: 18, color: flColor.cream100, fontStyle: 'italic', marginTop: 2 },
+  /*
+   * THE AUTHOR'S CUE, UNDER THE NAME, IN BOTH HERO FACES.
+   *
+   * ⚠ A LINE AND NOT A CARD — see the render. The card this replaces was deleted on purpose and must not
+   * come back: no border, no background, no bronze edge. What it takes from bronze is nothing; it is
+   * cream italic, which is the voice the ⋯ menu, the Program Builder's row and the Workout Builder's row
+   * all already show a cue in, so the same sentence looks like the same sentence everywhere it appears.
+   *
+   * Unclamped here because the hero is roomy and a cue runs to a sentence or three; the strip below
+   * clamps to one, because a strip is a summary.
+   */
+  planCueLine: { fontSize: 13, lineHeight: 19, color: flColor.cream100, fontStyle: 'italic', marginTop: -4 },
+  heroStripCue: { fontSize: 11.5, lineHeight: 16, color: flColor.cream100, fontStyle: 'italic', marginTop: 1 },
   lastNoteText: { fontSize: 13.5, lineHeight: 20, color: flColor.cream100, fontStyle: 'italic' },
   noteInput: {
     fontFamily: flFont.sans,
@@ -5009,6 +5182,7 @@ const styles = StyleSheet.create({
   picker: { backgroundColor: flColor.charcoal900, borderTopLeftRadius: flRadius.xl, borderTopRightRadius: flRadius.xl, borderTopWidth: 1, borderColor: flColor.charcoal600, paddingHorizontal: 22, paddingTop: 16, paddingBottom: 24, gap: 12 },
   pickerHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pickerTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  noteIntro: { fontSize: 13, lineHeight: 19, color: flColor.gray400, marginTop: 8, marginBottom: 2 },
   pickerToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 11, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600 },
   pickerToggleText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray400 },
   pickerBtns: { gap: 4, marginTop: 4 },
