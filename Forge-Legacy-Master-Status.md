@@ -849,6 +849,34 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⚠ **A tree-wide publish ships every undeployed client half in the tree.** Check for pending migrations
 > before publishing anything, not just before publishing the feature that needs them.
 
+> **✅ DEPLOYED 2026-08-25 — BOTH SURFACES, AND BOTH MIGRATIONS APPLIED FIRST.**
+> Web: `entry-3a0a84f8218e98874aea6eb8d971a0fe.js` — `forgelegacy.expo.app` returned **200 twice** with a
+> hash matching `dist/index.html`, and the live bundle was searched for **nine** strings only this pass's
+> code contains (`Add a note for next time`, `that holds for every set`, `Add a coaching note`,
+> `Underhand close grip`, `Measured by GPS as you go`, `rank building whether you look at it`,
+> `Minimise`, `Say it better`, `built something real`). **All nine PRESENT.**
+> **iOS OTA `01a039a8-f8d2-74e9-a13e-79dd7fc490cf`** on runtime `411fd2b68cbe11016f037dd7881b3fe813a1e148`,
+> commit `0db5868`. `fingerprint:compare --build-id 078d2838-ce5c-476a-8527-35d186343bf5` returned an
+> **exact match** BEFORE publishing, and the manifest endpoint was then queried as a build-6 iOS client
+> and returned this update's id. **Deliverable, not merely published.**
+> (Android also published — runtime `a8afa07c…`, update `01a039a8-f8d2-774c-93e7-74d765955f99`. No Android
+> build exists, so it reaches nobody; recorded only so the id is not mistaken for the iOS one.)
+> ✅ **`0178` + `0179` APPLIED AND VERIFIED BY THE PO BEFORE THE DEPLOY**, which was the required order:
+> the squad post screen reads `squad_post_comments.edited_at` and `squad_post_reactions.kind`, so shipping
+> first would have made every post read "Post not found". `0178` reported **10 acknowledgements, all
+> `respect`** (so `non_respect_kinds: 0`, exactly as predicted); `0179` reported `policies: 3`,
+> `signals_ok: true`, `nudge_rows: 0`.
+> ⚠ **`my_signals` CAME BACK ALL ZEROS AND THAT IS NOT A DEFECT — THE PREDICTION WAS WRONG.** The bundle
+> said `sessions` would roughly match the PO's finished workouts. The Supabase SQL editor has no
+> authenticated user, so `auth.uid()` is NULL and every `athlete_id = auth.uid()` matches nothing. The
+> check was designed wrong and told us nothing. What it was meant to prove is verified by a better route:
+> §2 **called** `coach_nudge_signals()` and got all eight keys back, and a mistyped column would have
+> raised there rather than returning a zero. **Do not repeat this shape of sanity check in a paste bundle.**
+> ⚠ **`fingerprint:compare` STILL NEEDS `--build-id` IN NON-INTERACTIVE MODE** — bare `--non-interactive`
+> exits 1 with "Insufficent arguments", which reads exactly like a failed comparison.
+> ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
+> Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
+
 ### 0. ⭐ A coaching cue can finally be written where a workout is built — and three doors were eating the ones Holt already wrote (2026-08-25, W-25 Workout Builder / Active Workout / Coach Holt — **no migration**, ⏳ **NOT DEPLOYED**)
 
 **PO:** *"When I'm either doing final touches on a coach holt program or building a program, I should be
