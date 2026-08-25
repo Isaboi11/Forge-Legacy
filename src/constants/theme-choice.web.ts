@@ -41,6 +41,9 @@ function readSync(): ThemeName {
   }
 }
 
+/** TRUE: `localStorage` is synchronous, so the theme is right before a single token module evaluates. */
+export const THEME_IS_SYNC = true;
+
 let active: ThemeName = readSync();
 
 export function activeTheme(): ThemeName {

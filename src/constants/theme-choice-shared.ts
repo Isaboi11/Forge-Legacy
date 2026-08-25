@@ -27,7 +27,18 @@ export const DEFAULT_THEME: ThemeName = 'forge';
 
 export const isThemeName = (x: unknown): x is ThemeName => x === 'forge' || x === 'paper';
 
+/**
+ * ⚠ THE LABEL IS "ALABASTER"; THE ID STAYS `paper`, AND THAT IS DELIBERATE.
+ *
+ * The id is stored in `profiles.app_prefs` and mirrored to device storage, so renaming it would orphan
+ * the preference of anyone who had already chosen it — for a string nobody sees. It also matches the
+ * DESIGN source this palette was transcribed from (`forge-paper-theme.js`, the `* - Paper.dc.html`
+ * artboards), which keeps the code traceable back to the artboards it came from.
+ *
+ * Alabaster is a soft white stone used for CARVING, which is the app's own vocabulary — engraved,
+ * inscription, sealed, "carved in permanent record". It reads as Forge's equal rather than its absence.
+ */
 export const THEME_OPTIONS: readonly { id: ThemeName; label: string; hint: string }[] = [
   { id: 'forge', label: 'Forge', hint: 'Dark iron and bronze. The original.' },
-  { id: 'paper', label: 'Paper', hint: 'Warm ivory and aged brass, like a printed record.' },
+  { id: 'paper', label: 'Alabaster', hint: 'Carved white stone and aged brass.' },
 ];

@@ -34,6 +34,15 @@ import { DEFAULT_THEME, isThemeName, THEME_STORAGE_KEY, type ThemeName } from '.
 
 export { DEFAULT_THEME, isThemeName, THEME_STORAGE_KEY, THEME_OPTIONS, type ThemeName } from './theme-choice-shared.ts';
 
+/**
+ * Whether `activeTheme()` is already correct at import time.
+ *
+ * FALSE here: AsyncStorage is a promise, so native cannot know the theme until `Boot` has awaited it.
+ * TRUE on web, where `localStorage` is synchronous — which is why the boot gate holds a frame on one
+ * platform and not the other.
+ */
+export const THEME_IS_SYNC = false;
+
 let active: ThemeName = DEFAULT_THEME;
 
 /**
