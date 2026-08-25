@@ -638,7 +638,7 @@ const styles = StyleSheet.create({
   commitBtnDone: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   commitBtnPressed: { transform: [{ scale: 0.99 }], opacity: 0.9 },
   commitBtnBusy: { opacity: 0.6 },
-  commitLabel: { fontSize: 15, fontWeight: '600', color: flColor.bronze300 },
+  commitLabel: { fontSize: 15, fontWeight: '600', color: flColor.onBronze },
   commitLabelDone: { color: flColor.gray400 },
 
   // request-note sheet

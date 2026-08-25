@@ -871,5 +871,5 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeMetalBorder,
     boxShadow: `${flShadow.glowSubtle}, ${flShadow.card}`,
   },
-  ctaLabel: { fontSize: 15, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
+  ctaLabel: { fontSize: 15, fontWeight: '700', letterSpacing: 0.3, color: flColor.onBronze },
 });

@@ -62,14 +62,27 @@ export const flColor = {
   /** `--fl-surface-nav` — the tab bar's own fill. Was an inline literal in `TabBar`, twice. */
   surfaceNav: 'rgba(13, 13, 15, 0.92)',
   /**
-   * Text and glyphs sitting ON a bronze fill — badge counts, the wordmark chip, pill labels.
+   * Text and glyphs sitting ON a bronze fill — selected chips, badge counts, button labels.
    *
-   * ⚠ THE SAME VALUE IN BOTH THEMES, AND THAT IS THE POINT. It is not "the dark colour", it is the
-   *   colour that is legible on bronze — and bronze stays bronze in Paper. `Forge Home - Paper.dc.html`
-   *   still renders `#1A1206` on its badges. This was a raw literal in 28 places precisely because it
-   *   never had a name to be found by.
+   * ⚠ PO CALL, 2026-08-25: *"white lettering if there is the bronze button around it."* It used to be
+   *   `#1A1206`, a near-black brown, in 40 files.
+   *
+   * ⚠ WHITE ONLY WORKS BECAUSE `bronzeSolid` MOVED WITH IT, and that is the whole point of these two
+   *   tokens being introduced together. White on the OLD selected-chip fill (`bronze400`) measures
+   *   3.17:1 in Forge and 3.87:1 in Paper — below AA for the 8–12px bold labels these actually are,
+   *   and WCAG "large text" starts at 18.7px bold, so none of them qualify. On `bronzeSolid` it is
+   *   6.27:1 and 4.90:1. Changing the letters without darkening the chip would have looked like the
+   *   request and quietly failed it.
    */
-  onBronze: '#1A1206',
+  onBronze: '#FFFFFF',
+  /**
+   * The SOLID bronze fill under white lettering — selected segments, chips, badges, count pills.
+   *
+   * Distinct from `bronze400`, which stays the accent for borders, icons and text ON a dark or cream
+   * surface. This is the "bronze button" surface, and it is deliberately a step darker so the white
+   * on it is legible rather than merely present.
+   */
+  bronzeSolid: '#765B44',
   /**
    * A LIGHT dimming backdrop — the popover/menu scrim, not the modal one.
    *

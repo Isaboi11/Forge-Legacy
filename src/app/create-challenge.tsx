@@ -778,7 +778,7 @@ function CheckGlyph({ size = 12, color = '#6E8E74' }: { size?: number; color?: s
 
 function TickGlyph() {
   return (
-    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#1A1206" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M5 12.5l4.5 4.5L19 7" />
     </Svg>
   );
@@ -870,7 +870,7 @@ const styles = StyleSheet.create({
   segTrack: { flexDirection: 'row', gap: 5, padding: 3, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal800 },
   segBtn: { flex: 1, paddingVertical: 9, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.pill, overflow: 'hidden' },
   segLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
-  segLabelOn: { color: '#1A1206' },
+  segLabelOn: { color: flColor.onBronze },
   modeHint: { fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
   measureList: { overflow: 'hidden', borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   measureRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 13, paddingVertical: 12 },
@@ -967,6 +967,6 @@ const styles = StyleSheet.create({
   commitBtn: { position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1 },
   commitBtnOn: { borderColor: flColor.bronzeMetalBorder, boxShadow: `${flShadow.bronzeMetalTopRim}, ${flShadow.card}` },
   commitBtnOff: { backgroundColor: flColor.charcoal800, borderColor: flColor.charcoal600, opacity: 0.75 },
-  commitLabel: { fontSize: 15, fontWeight: '700', color: '#F7F5F1', textShadowColor: 'rgba(8,5,2,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
+  commitLabel: { fontSize: 15, fontWeight: '700', color: flColor.onBronze, textShadowColor: 'rgba(8,5,2,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
   commitLabelOff: { fontSize: 15, fontWeight: '600', color: flColor.gray600 },
 });

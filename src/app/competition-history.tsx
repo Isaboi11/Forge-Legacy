@@ -331,7 +331,7 @@ function HistoryRow({ past: p, onPress }: { past: PastChallenge; onPress: () => 
       {r.champion ? (
         <View style={styles.markChamp}>
           <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={StyleSheet.absoluteFill} />
-          <CrownGlyph size={16} color="#1A1206" />
+          <CrownGlyph size={16} color={flColor.onBronze} />
         </View>
       ) : (
         <View style={styles.markPlace}>

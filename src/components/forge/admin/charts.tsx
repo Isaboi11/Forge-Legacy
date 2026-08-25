@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
   cohortCellUnknown: { backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: flColor.charcoal600 },
   cohortCellText: { color: flColor.cream100, fontSize: 10, fontVariant: ['tabular-nums'] },
   // The top of the ramp is light enough that cream text on it fails contrast.
-  cohortCellTextDark: { color: '#1A1206' },
+  cohortCellTextDark: { color: flColor.onBronze },
 
   legend: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 10, flexWrap: 'wrap' },
   legendSwatch: { width: 16, height: 9, borderRadius: 1.5 },

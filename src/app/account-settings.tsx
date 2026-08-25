@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     boxShadow: '0 0 20px rgba(181, 138, 97, 0.14)',
   },
-  avatarInitials: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', color: '#1A1206' },
+  avatarInitials: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', color: flColor.onBronze },
   identityText: { flex: 1 },
   name: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100 },
   rank: { fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 3 },

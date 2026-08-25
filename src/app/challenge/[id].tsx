@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeMetalBorder,
     boxShadow: `${flShadow.bronzeMetalTopRim}, ${flShadow.card}`,
   },
-  joinLabel: { fontSize: 15, fontWeight: '700', color: '#F7F5F1', textShadowColor: 'rgba(8,5,2,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
+  joinLabel: { fontSize: 15, fontWeight: '700', color: flColor.onBronze, textShadowColor: 'rgba(8,5,2,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
   joinNote: { marginTop: 9, marginBottom: 6, fontSize: 11.5, lineHeight: 17, textAlign: 'center', color: flColor.gray600 },
   callOffBtn: { marginTop: 26, alignItems: 'center', justifyContent: 'center', paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600 },
   callOffLabel: { fontSize: 13, fontWeight: '600', color: flColor.gray600 },

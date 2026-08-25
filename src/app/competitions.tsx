@@ -397,7 +397,7 @@ function HistoryRow({ past: p, divided, onOpen }: { past: PastChallenge; divided
       {p.isWinner ? (
         <View style={styles.champDisc}>
           <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={StyleSheet.absoluteFill} />
-          <TrophyGlyph size={16} color="#1A1206" />
+          <TrophyGlyph size={16} color={flColor.onBronze} />
         </View>
       ) : (
         <View style={styles.placeDisc}>
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
     boxShadow: `${flShadow.bronzeMetalTopRim}, ${flShadow.card}`,
   },
   createBtnPressed: { opacity: 0.9, transform: [{ scale: 0.99 }] },
-  createLabel: { fontSize: 15, fontWeight: '700', color: '#F7F5F1', textShadowColor: 'rgba(8,5,2,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
+  createLabel: { fontSize: 15, fontWeight: '700', color: flColor.onBronze, textShadowColor: 'rgba(8,5,2,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
 
   // chips
   /* Charcoal, not red — see the twin in `challenge/[id].tsx`. The seasons listed below are still true. */
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeMetalBorder,
     boxShadow: flShadow.bronzeMetalTopRim,
   },
-  joinLabel: { fontSize: 12, fontWeight: '700', color: '#F7F5F1' },
+  joinLabel: { fontSize: 12, fontWeight: '700', color: flColor.onBronze },
   btnBusy: { opacity: 0.6 },
 
   // active

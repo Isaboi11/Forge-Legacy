@@ -61,7 +61,7 @@ export default function HallOfChampionsScreen() {
           <View style={styles.identity}>
             <View style={styles.crest}>
               <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={StyleSheet.absoluteFill} />
-              <CrownGlyph size={24} color="#1A1206" />
+              <CrownGlyph size={24} color={flColor.onBronze} />
             </View>
             <View style={styles.identityText}>
               <Text style={styles.squadName} numberOfLines={1}>

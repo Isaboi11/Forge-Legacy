@@ -1626,7 +1626,7 @@ const styles = StyleSheet.create({
   upNextDiamond: { width: 5, height: 5, transform: [{ rotate: '45deg' }], backgroundColor: flColor.bronze400 },
   upNextText: { fontSize: 12, color: flColor.gray600 },
   holdText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze300 },
-  holdTextDark: { color: '#1A1206' },
+  holdTextDark: { color: flColor.onBronze },
   // alignSelf, not just textAlign: the Pressable would otherwise stretch to the column's full width and
   // sit its label on the left edge, off-axis from the medallion and the Hold-to-Seal button above it.
   textLink: { alignSelf: 'center', paddingVertical: 12 },

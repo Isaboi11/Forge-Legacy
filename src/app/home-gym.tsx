@@ -184,7 +184,7 @@ export default function HomeGymScreen() {
                       </View>
                       {sel ? (
                         <View style={styles.check}>
-                          <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#1A1206" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                          <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
                             <Path d={CHECK} />
                           </Svg>
                         </View>
@@ -216,7 +216,7 @@ export default function HomeGymScreen() {
         <Text style={styles.summary}>{ownedSummary(owned.length)}</Text>
         <Button variant="primary" fullWidth onPress={onSave} disabled={saving} accessibilityLabel="Save my home gym">
           <View style={styles.saveInner}>
-            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="#1A1206" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <Path d={STAR} />
             </Svg>
             <Text style={styles.saveText}>Save My Home Gym</Text>
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: flColor.bronze400,
+    backgroundColor: flColor.bronzeSolid,
   },
   cardLabel: { fontSize: 13, fontWeight: '600', color: flColor.cream100, marginBottom: 2 },
   cardLabelOn: { color: flColor.bronze300 },
@@ -322,5 +322,5 @@ const styles = StyleSheet.create({
   },
   summary: { fontSize: 12, fontWeight: '600', color: flColor.gray400, textAlign: 'center' },
   saveInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  saveText: { fontSize: 14, fontWeight: '700', color: '#1A1206' },
+  saveText: { fontSize: 14, fontWeight: '700', color: flColor.onBronze },
 });

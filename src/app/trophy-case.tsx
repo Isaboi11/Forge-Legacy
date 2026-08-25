@@ -101,7 +101,7 @@ const TIER: Record<TrophyTier, { accent: string; ring: string; emblem: readonly 
     accent: flColor.bronze300,
     ring: flColor.bronze400,
     emblem: ['#453322', '#1a140e'],
-    glyph: '#1A1206',
+    glyph: flColor.onBronze,
     glow: 'rgba(186, 134, 84,0.24)',
   },
   silver: {

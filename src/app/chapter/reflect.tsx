@@ -276,7 +276,7 @@ export default function ChapterReflectionScreen() {
           <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.3} overlay={{ flat: 'rgba(5,5,5,0.72)' }} />
           <ScrollView contentContainerStyle={[styles.sealedScroll, { paddingTop: insets.top + 28, paddingBottom: 190 + insets.bottom }]} showsVerticalScrollIndicator={false}>
             <View style={styles.savedMark}>
-              <Glyph d={CHECK} size={26} color="#1A1206" width={2.4} />
+              <Glyph d={CHECK} size={26} color={flColor.onBronze} width={2.4} />
             </View>
 
             <Text style={styles.sealedEyebrow}>{isPost ? 'Reflection Saved' : 'Chapter Sealed'}</Text>
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
      silently clips the top of tall content, so the wrapper no longer centres. */
   savedWrap: {},
   sealedScroll: { alignItems: 'center', paddingHorizontal: 30 },
-  savedMark: { width: 52, height: 52, borderRadius: flRadius.md, backgroundColor: flColor.bronze400, alignItems: 'center', justifyContent: 'center', marginBottom: 22 },
+  savedMark: { width: 52, height: 52, borderRadius: flRadius.md, backgroundColor: flColor.bronzeSolid, alignItems: 'center', justifyContent: 'center', marginBottom: 22 },
 
   sealedEyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
   sealedName: { fontFamily: flFont.sans, fontSize: 12, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.gray400, textAlign: 'center', marginTop: 14 },

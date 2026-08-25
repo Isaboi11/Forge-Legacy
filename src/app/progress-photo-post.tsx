@@ -405,7 +405,7 @@ export default function ProgressPhotoPostRoute() {
                   )}
                   {on ? (
                     <View style={styles.poseCheck}>
-                      <Svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="#1A1206" strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
+                      <Svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
                         <Path d="M20 6L9 17l-5-5" />
                       </Svg>
                     </View>
@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
   /** An unselected thumbnail is still legible, just plainly not in the card. */
   poseImgOff: { opacity: 0.42 },
   poseEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  poseCheck: { position: 'absolute', top: 3, right: 3, width: 14, height: 14, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronze400 },
+  poseCheck: { position: 'absolute', top: 3, right: 3, width: 14, height: 14, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeSolid },
   poseCap: { fontSize: 8, fontWeight: '600', letterSpacing: 0.5, color: flColor.gray600, textAlign: 'center' },
   poseCapOn: { color: flColor.bronze300 },
 

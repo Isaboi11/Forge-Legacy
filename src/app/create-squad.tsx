@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
   catChipOn: { borderColor: flColor.bronzeBorder },
   catChipOff: { borderColor: flColor.charcoal500, backgroundColor: flColor.surfaceRecessed },
   catChipLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
-  catChipLabelOn: { color: '#1A1206' },
+  catChipLabelOn: { color: flColor.onBronze },
 
   // joining (public only)
   joinBlock: { marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
   segTrack: { flexDirection: 'row', gap: 5, padding: 3, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal800 },
   segBtn: { flex: 1, paddingVertical: 9, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.pill, overflow: 'hidden' },
   segLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
-  segLabelOn: { color: '#1A1206' },
+  segLabelOn: { color: flColor.onBronze },
   hintRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 12 },
   hintIcon: { flexShrink: 0, marginTop: 1 },
   hintText: { flex: 1, fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
@@ -469,6 +469,6 @@ const styles = StyleSheet.create({
   commitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1 },
   commitBtnOn: { borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
   commitBtnOff: { backgroundColor: flColor.charcoal800, borderColor: flColor.charcoal600, opacity: 0.75 },
-  commitLabel: { fontSize: 15, fontWeight: '600', color: flColor.bronze300 },
+  commitLabel: { fontSize: 15, fontWeight: '600', color: flColor.onBronze },
   commitLabelOff: { fontSize: 15, fontWeight: '600', color: flColor.gray600 },
 });

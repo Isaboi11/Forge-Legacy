@@ -1142,7 +1142,7 @@ const styles = StyleSheet.create({
   },
   tabActive: { boxShadow: '0 1px 8px rgba(186, 134, 84,0.4)' },
   tabText: { fontSize: 11.5, fontWeight: '600', letterSpacing: 0.2 },
-  tabTextActive: { color: '#1A1206' },
+  tabTextActive: { color: flColor.onBronze },
   tabTextIdle: { color: flColor.gray400 },
 
   // tab body

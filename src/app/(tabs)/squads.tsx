@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   dailyLabel: { fontSize: 11.5, letterSpacing: 0.2, color: flColor.gray400 },
   segments: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
   segment: { flex: 1, height: 6, borderRadius: 3 },
-  segmentOn: { backgroundColor: flColor.bronze400, boxShadow: '0 0 6px rgba(186, 134, 84,0.35)' },
+  segmentOn: { backgroundColor: flColor.bronzeSolid, boxShadow: '0 0 6px rgba(186, 134, 84,0.35)' },
   segmentOff: { backgroundColor: 'rgba(151,137,113,0.26)', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)' },
 
   // pending join requests (owner only)
@@ -464,11 +464,11 @@ const styles = StyleSheet.create({
     height: 22,
     paddingHorizontal: 7,
     borderRadius: flRadius.pill,
-    backgroundColor: flColor.bronze400,
+    backgroundColor: flColor.bronzeSolid,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  requestCountText: { fontSize: 12, fontWeight: '700', color: '#1A1206' },
+  requestCountText: { fontSize: 12, fontWeight: '700', color: flColor.onBronze },
   requestLabel: { flex: 1, fontSize: 12.5, color: flColor.bronze300 },
 
   // empty state

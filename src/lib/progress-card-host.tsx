@@ -15,6 +15,7 @@ import Svg, {
 import type { ProgressCardPhoto, ProgressPostCard } from '@/data/squad-feed-live';
 import { EXPORT_SCALE, formatSpec, gridGeometry, heroGeometry, type Rect as GRect } from '@/domain/share/progress-card';
 import { measureText } from '@/domain/share/text-measure';
+import { flColor } from '@/constants/foundation';
 
 /**
  * Rasterises the Progress Photo Post card on device.
@@ -185,7 +186,7 @@ function Mark({ x, y, size }: { x: number; y: number; size: number }) {
     <G>
       <Rect x={x} y={y} width={size} height={size} rx={size * 0.235} ry={size * 0.235} fill={BRONZE_D} />
       <G transform={`translate(${gx}, ${gy}) scale(${k})`}>
-        <Path d={ANVIL} fill="#1A1206" />
+        <Path d={ANVIL} fill={flColor.onBronze} />
       </G>
     </G>
   );

@@ -96,7 +96,7 @@ const MARK = [
 
 function ForgeMark({ size }: { size: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="#1A1206">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={flColor.onBronze}>
       {MARK.map((d) => (
         <Path key={d} d={d} />
       ))}
@@ -582,7 +582,7 @@ function FreeState({
                     <Text style={styles.badgeText}>{copy.badge}</Text>
                   </View>
                 ) : null}
-                <View style={[styles.radio, on && styles.radioOn]}>{on ? <Check size={12} color="#1A1206" /> : null}</View>
+                <View style={[styles.radio, on && styles.radioOn]}>{on ? <Check size={12} color={flColor.onBronze} /> : null}</View>
                 <View style={styles.planText}>
                   <Text style={styles.planTitle}>{copy.title}</Text>
                   <Text style={styles.planCadence}>{copy.cadence}</Text>
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
   chipValue: { paddingHorizontal: 11, paddingVertical: 3, borderRadius: flRadius.pill, borderWidth: 1 },
   chipValuePremium: { backgroundColor: flColor.bronze400, borderColor: flColor.bronzeBorder },
   chipValueFree: { backgroundColor: flColor.charcoal800, borderColor: flColor.charcoal500 },
-  chipTextPremium: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: '#1A1206' },
+  chipTextPremium: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: flColor.onBronze },
   chipTextFree: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, color: flColor.gray400 },
 
   planCard: {
@@ -832,10 +832,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: flRadius.pill,
-    backgroundColor: flColor.bronze400,
+    backgroundColor: flColor.bronzeSolid,
     boxShadow: flShadow.glowSubtle,
   },
-  badgeText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: '#1A1206' },
+  badgeText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.onBronze },
   radio: {
     width: 22,
     height: 22,
@@ -845,7 +845,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  radioOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronze400 },
+  radioOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeSolid },
   planText: { flex: 1 },
   planTitle: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   planCadence: { fontSize: 12, color: flColor.gray600, marginTop: 2 },

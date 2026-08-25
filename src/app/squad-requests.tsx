@@ -510,7 +510,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     boxShadow: flShadow.glowSubtle,
   },
-  countBadgeText: { fontSize: 12, fontWeight: '700', color: '#1A1206' },
+  countBadgeText: { fontSize: 12, fontWeight: '700', color: flColor.onBronze },
 
   // request card
   card: { overflow: 'hidden', backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, boxShadow: flShadow.card },
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
   declineLabel: { fontSize: 13, fontWeight: '600', color: flColor.gray600 },
   approveBtn: { flex: 1.7, position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 11, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
   approvePressed: { transform: [{ scale: 0.98 }], opacity: 0.9 },
-  approveLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
+  approveLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.onBronze },
   btnBusy: { opacity: 0.6 },
 
   // footer

@@ -891,7 +891,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   segmentTextActive: {
-    color: flColor.cream100,
+    color: flColor.onBronze,
     textShadowColor: 'rgba(8,5,2,0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 1,

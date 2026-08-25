@@ -315,7 +315,7 @@ export default function SquadGoalScreen() {
                 <View style={styles.mileRail}>
                   <View style={[styles.mileDot, m.reached && styles.mileDotOn]}>
                     {m.reached ? (
-                      <CheckGlyph color="#1A1206" />
+                      <CheckGlyph color={flColor.onBronze} />
                     ) : m.isTarget ? (
                       <MedalGlyph />
                     ) : (

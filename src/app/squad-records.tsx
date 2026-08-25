@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     borderRadius: flRadius.pill,
     boxShadow: flShadow.glowSubtle,
   },
-  newPillText: { fontSize: 8, fontWeight: '800', letterSpacing: 0.8, color: '#1A1206' },
+  newPillText: { fontSize: 8, fontWeight: '800', letterSpacing: 0.8, color: flColor.onBronze },
   attrRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   attrText: { flex: 1, fontSize: 11.5, color: flColor.gray600 },
 

@@ -60,7 +60,7 @@ import { useQuery } from '@/lib/useQuery';
  *  6. The video branch was dead: `isVideo` tested for a type that is not one of the canonical ten and
  *     appears in no data. Not carried.
  *  7. Grain at 0.08 where every other screen uses 0.06, and two hand-mixed knockout blacks (#160f06 in
- *     the header marker, #1A1206 in this same file's loading gate). One value each.
+ *     the header marker, `flColor.onBronze` in this same file's loading gate). One value each.
  *
  * DEFERRED-HONEST: no filter, no jump-to-year, no search — matching the design. Worth revisiting when an
  * athlete's rail runs to hundreds of nodes; at that point it is the same problem the honor catalog has.
@@ -215,7 +215,7 @@ function ChapterHeader({ chapter: c, onPress }: { chapter: TimelineChapter; onPr
         {/* THREE STATES, NOT TWO. `sealed` and `isActive` are separate facts and a chapter can be
             neither — closed without being sealed. That case used to take the active branch by default,
             so it got the open-book emblem AND a live green dot claiming it was still being written. */}
-        {c.sealed ? <FlameGlyph size={15} color="#1A1206" /> : <BookGlyph size={15} color="#1A1206" />}
+        {c.sealed ? <FlameGlyph size={15} color={flColor.onBronze} /> : <BookGlyph size={15} color={flColor.onBronze} />}
       </View>
 
       <View style={styles.chapterBody}>

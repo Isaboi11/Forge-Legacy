@@ -1009,8 +1009,8 @@ function FilterGroup({
 const styles = StyleSheet.create({
   root: { flex: 1 },
   filterBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  filterBadge: { position: 'absolute', top: 3, right: 2, minWidth: 15, height: 15, paddingHorizontal: 3, borderRadius: 999, backgroundColor: flColor.bronze400, alignItems: 'center', justifyContent: 'center' },
-  filterBadgeText: { fontSize: 9, fontWeight: '800', color: '#1A1206' },
+  filterBadge: { position: 'absolute', top: 3, right: 2, minWidth: 15, height: 15, paddingHorizontal: 3, borderRadius: 999, backgroundColor: flColor.bronzeSolid, alignItems: 'center', justifyContent: 'center' },
+  filterBadgeText: { fontSize: 9, fontWeight: '800', color: flColor.onBronze },
 
   subHeader: { paddingHorizontal: 18, paddingTop: 6, paddingBottom: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
   banner: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal900 },
@@ -1092,7 +1092,7 @@ const styles = StyleSheet.create({
   ssRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
   ssRowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   ssBox: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: flColor.charcoal600, alignItems: 'center', justifyContent: 'center' },
-  ssBoxOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronze400 },
+  ssBoxOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeSolid },
   ssText: { flex: 1 },
   ssTitle: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
   ssTitleOn: { color: flColor.bronze300 },

@@ -220,7 +220,7 @@ export default function ProfileVisibilityScreen() {
         durationMs={2000}
         onDismiss={() => setToast(false)}
         icon={
-          <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="#1A1206" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <Path d={EYE} />
           </Svg>
         }

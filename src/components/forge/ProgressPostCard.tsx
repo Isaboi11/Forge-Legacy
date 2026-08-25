@@ -211,7 +211,7 @@ function HeroSlide({ card, photo, s, w, h, counter }: { card: ProgressCardData; 
 function ForgeMark({ size }: { size: number }) {
   return (
     <View style={[styles.mark, { width: size, height: size, borderRadius: size * 0.235 }]}>
-      <Svg width={size * 0.62} height={size * 0.62} viewBox="0 0 24 24" fill="#1A1206">
+      <Svg width={size * 0.62} height={size * 0.62} viewBox="0 0 24 24" fill={flColor.onBronze}>
         <Path d="M10.9 3.2H13.1V15H10.9Z" />
         <Path d="M7.6 7.1L9.6 5.8V15H7.6Z" />
         <Path d="M16.4 7.1L14.4 5.8V15H16.4Z" />
@@ -269,5 +269,5 @@ const styles = StyleSheet.create({
   dotOn: { backgroundColor: flColor.bronze300 },
   dotOff: { backgroundColor: 'rgba(240,238,234,0.34)' },
 
-  mark: { alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronze400 },
+  mark: { alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeSolid },
 });

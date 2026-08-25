@@ -124,7 +124,7 @@ export function PinManagerSheet({ open, onClose }: { open: boolean; onClose: (ch
                               </Text>
                             </View>
                             <View style={[styles.mark, pinned && styles.markOn]}>
-                              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={pinned ? '#1A1206' : flColor.bronze300} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+                              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={pinned ? flColor.onBronze : flColor.bronze300} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
                                 <Path d={pinned ? 'M5 12.5l4.5 4.5L19 6.5' : 'M12 5v14M5 12h14'} />
                               </Svg>
                             </View>
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   rowSub: { fontSize: 11.5, color: flColor.gray600, marginTop: 2 },
 
   mark: { width: 26, height: 26, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: flColor.bronzeBorder },
-  markOn: { backgroundColor: flColor.bronze400, borderColor: flColor.bronze400 },
+  markOn: { backgroundColor: flColor.bronzeSolid, borderColor: flColor.bronze400 },
 
   footer: { marginTop: 14 },
 });

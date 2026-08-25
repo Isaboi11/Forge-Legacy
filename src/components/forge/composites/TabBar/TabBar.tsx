@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     height: 17,
     paddingHorizontal: 5,
     borderRadius: flRadius.pill,
-    backgroundColor: flColor.bronze400,
+    backgroundColor: flColor.bronzeSolid,
     borderWidth: 1.5,
     borderColor: flColor.surfaceNav, // the bar's own fill, so the badge reads as lifted off the icon
     alignItems: 'center',

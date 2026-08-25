@@ -594,7 +594,7 @@ function OutsideRow({ label, icon, onPress }: { label: string; icon: React.React
 // ── glyphs ──
 function AnvilGlyph() {
   return (
-    <Svg width={13} height={13} viewBox="0 0 24 24" fill="#1A1206">
+    <Svg width={13} height={13} viewBox="0 0 24 24" fill={flColor.onBronze}>
       <Path d="M10.9 3.2H13.1V15H10.9Z" />
       <Path d="M7.6 7.1L9.6 5.8V15H7.6Z" />
       <Path d="M16.4 7.1L14.4 5.8V15H16.4Z" />
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
   // preview card
   card: { alignSelf: 'center', width: '100%', maxWidth: 300, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#0d0b09', padding: 18, alignItems: 'center', boxShadow: flShadow.borderInset, marginTop: 22 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 16 },
-  anvilTile: { width: 20, height: 20, borderRadius: 6, backgroundColor: flColor.bronze400, alignItems: 'center', justifyContent: 'center' },
+  anvilTile: { width: 20, height: 20, borderRadius: 6, backgroundColor: flColor.bronzeSolid, alignItems: 'center', justifyContent: 'center' },
   brandText: { fontSize: 10, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.gray400 },
 
   compareWrap: { alignSelf: 'stretch' },

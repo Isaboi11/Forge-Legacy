@@ -74,8 +74,10 @@ export const flColor = {
   iconContainerBg: '#EFEBE0',
   /** `--fl-surface-nav` — the cleanest, lightest step on the tonal ladder. */
   surfaceNav: 'rgba(250,247,240,0.97)',
-  /** ⚠ NOT inverted — bronze stays bronze, so what reads on it stays the same. See the Forge twin. */
-  onBronze: '#1A1206',
+  /** ⚠ White, per the PO. Legible only because `bronzeSolid` is a step darker — see the Forge twin. */
+  onBronze: '#FFFFFF',
+  /** `--fl-bronze-600`. White on it measures 4.90:1; on `bronze400` it would be 3.87:1. */
+  bronzeSolid: '#8C6B3C',
   /** The lighter menu/popover scrim. `--fl-overlay-dark` is the design's value and suits it exactly. */
   overlayScrim: 'rgba(35,31,26,0.42)',
   /**

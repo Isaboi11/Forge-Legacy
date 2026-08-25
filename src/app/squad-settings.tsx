@@ -1086,7 +1086,7 @@ const styles = StyleSheet.create({
 
   // join-request badge
   requestBadge: { minWidth: 22, height: 22, paddingHorizontal: 8, borderRadius: flRadius.pill, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.glowSubtle },
-  requestBadgeText: { fontSize: 12, fontWeight: '700', color: '#1A1206' },
+  requestBadgeText: { fontSize: 12, fontWeight: '700', color: flColor.onBronze },
 
   // discovery (0050) — joining + category
   joinBlock: { marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
@@ -1096,11 +1096,11 @@ const styles = StyleSheet.create({
   catChipOn: { borderColor: flColor.bronzeBorder },
   catChipOff: { borderColor: flColor.charcoal500, backgroundColor: flColor.surfaceRecessed },
   catChipLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
-  catChipLabelOn: { color: '#1A1206' },
+  catChipLabelOn: { color: flColor.onBronze },
   catHint: { marginTop: 10, fontSize: 11, lineHeight: 16, color: flColor.gray600 },
   segBtn: { flex: 1, paddingVertical: 9, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.pill, overflow: 'hidden' },
   segLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
-  segLabelOn: { color: '#1A1206' },
+  segLabelOn: { color: flColor.onBronze },
 
   // ownership
   ownershipRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal900, boxShadow: flShadow.card },
@@ -1146,7 +1146,7 @@ const styles = StyleSheet.create({
   notifTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   notifSub: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
   sw: { width: 46, height: 27, borderRadius: flRadius.pill, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 2 },
-  swOn: { backgroundColor: flColor.bronze400, borderColor: flColor.bronze400, alignItems: 'flex-end' },
+  swOn: { backgroundColor: flColor.bronzeSolid, borderColor: flColor.bronze400, alignItems: 'flex-end' },
   swOff: { backgroundColor: flColor.charcoal900, borderColor: flColor.charcoal700, alignItems: 'flex-start' },
   swKnob: { width: 21, height: 21, borderRadius: 10.5 },
   swKnobOn: { backgroundColor: '#E4D4B8' },

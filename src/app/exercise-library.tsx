@@ -593,11 +593,11 @@ const styles = StyleSheet.create({
     height: 15,
     paddingHorizontal: 3,
     borderRadius: 999,
-    backgroundColor: flColor.bronze400,
+    backgroundColor: flColor.bronzeSolid,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterBadgeText: { fontSize: 9, fontWeight: '800', color: '#1A1206' },
+  filterBadgeText: { fontSize: 9, fontWeight: '800', color: flColor.onBronze },
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 7, paddingHorizontal: 18, paddingBottom: 12 },
   chip: {

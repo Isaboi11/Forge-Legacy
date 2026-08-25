@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
   chipOn: { borderColor: flColor.bronzeBorder },
   chipOff: { borderColor: flColor.charcoal500, backgroundColor: flColor.charcoal800 },
   chipLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
-  chipLabelOn: { color: '#1A1206' },
+  chipLabelOn: { color: flColor.onBronze },
 
   // results header
   resultsHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 22, marginBottom: 12, marginHorizontal: 4 },
@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
   actionBtnDone: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   actionBtnPressed: { transform: [{ scale: 0.99 }], opacity: 0.9 },
   actionBtnBusy: { opacity: 0.6 },
-  actionLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
+  actionLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.onBronze },
   actionLabelDone: { color: flColor.gray400 },
 
   // skeleton

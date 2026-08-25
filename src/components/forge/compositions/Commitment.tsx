@@ -44,7 +44,7 @@ export function AcceptCommitment({ accepted, onToggle, label = 'I accept these v
     >
       <View style={[styles.box, accepted ? styles.boxOn : null]}>
         {accepted ? (
-          <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#1A1206" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+          <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
             <Path d="M5 12.5l4 4 10-10" />
           </Svg>
         ) : null}
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  boxOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronze400, boxShadow: flShadow.glowSubtle },
+  boxOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeSolid, boxShadow: flShadow.glowSubtle },
   acceptLabel: { flex: 1, fontSize: 13.5, color: flColor.gray400 },
   acceptLabelOn: { color: flColor.cream100, fontWeight: '600' },
 })

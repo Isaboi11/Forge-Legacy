@@ -101,7 +101,7 @@ export function BeforeAfterSlider({ before, after, beforeLabel, afterLabel, befo
 
       <Animated.View style={[styles.divider, dividerStyle]} pointerEvents="none" />
       <Animated.View style={[styles.handle, handleStyle]} pointerEvents="none">
-        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#1A1206" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
           <Path d="M9 7l-4 5 4 5M15 7l4 5-4 5" />
         </Svg>
       </Animated.View>

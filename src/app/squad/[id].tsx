@@ -1300,7 +1300,7 @@ function ChevronRight({ color = flColor.gray600, size = 17 }: { color?: string; 
 }
 function HallCrownIcon() {
   return (
-    <Svg width={21} height={21} viewBox="0 0 24 24" fill="#1A1206">
+    <Svg width={21} height={21} viewBox="0 0 24 24" fill={flColor.onBronze}>
       <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
     </Svg>
   );
@@ -1545,7 +1545,7 @@ const styles = StyleSheet.create({
   ciImg: { width: '100%', height: '100%' },
   ciInitials: { width: '100%', height: '100%', backgroundColor: '#2c2118', alignItems: 'center', justifyContent: 'center' },
   ciInitialsText: { fontSize: 15, fontWeight: '700', color: flColor.bronze300 },
-  ciPlayBadge: { position: 'absolute', bottom: -1, right: -1, width: 19, height: 19, borderRadius: 9.5, backgroundColor: flColor.bronze400, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: flColor.charcoal900, paddingLeft: 1 },
+  ciPlayBadge: { position: 'absolute', bottom: -1, right: -1, width: 19, height: 19, borderRadius: 9.5, backgroundColor: flColor.bronzeSolid, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: flColor.charcoal900, paddingLeft: 1 },
   ciFirst: { maxWidth: 72, fontSize: 12.5, color: flColor.gray400 },
   ciCtaDisc: { width: 58, height: 58, borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronzeBorder, borderStyle: 'dashed', backgroundColor: flColor.bronzeTint, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   ciCtaText: { color: flColor.bronze300, fontWeight: '600' },

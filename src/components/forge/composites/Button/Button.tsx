@@ -97,7 +97,7 @@ export function Button({
           >
             {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
             {hasLabel ? (
-              <Text style={[styles.filledLabel, lg && styles.filledLabelLg, { color: disabled ? 'rgba(240,237,232,0.42)' : '#F7F5F1' }]}>{children}</Text>
+              <Text style={[styles.filledLabel, lg && styles.filledLabelLg, { color: disabled ? 'rgba(240,237,232,0.42)' : flColor.onBronze }]}>{children}</Text>
             ) : null}
             {trailingIcon ? <View style={styles.iconWrap}>{trailingIcon}</View> : null}
           </LinearGradient>

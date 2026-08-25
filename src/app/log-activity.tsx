@@ -235,6 +235,6 @@ const styles = StyleSheet.create({
   commitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1 },
   commitBtnOn: { borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
   commitBtnOff: { backgroundColor: flColor.charcoal800, borderColor: flColor.charcoal600, opacity: 0.75 },
-  commitLabel: { fontSize: 15, fontWeight: '600', color: flColor.bronze300 },
+  commitLabel: { fontSize: 15, fontWeight: '600', color: flColor.onBronze },
   commitLabelOff: { fontSize: 15, fontWeight: '600', color: flColor.gray600 },
 });

@@ -595,8 +595,8 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: 0 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34, gap: 4 },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round },
-  badge: { position: 'absolute', top: 4, right: 3, minWidth: 15, paddingHorizontal: 3, alignItems: 'center', borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal900, backgroundColor: flColor.bronze400 },
-  badgeText: { fontSize: 8.5, fontWeight: '700', color: '#1A1206' },
+  badge: { position: 'absolute', top: 4, right: 3, minWidth: 15, paddingHorizontal: 3, alignItems: 'center', borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal900, backgroundColor: flColor.bronzeSolid },
+  badgeText: { fontSize: 8.5, fontWeight: '700', color: flColor.onBronze },
 
   composerBar: { height: 68, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
   composerText: { flex: 1, minWidth: 0, fontSize: 15, color: flColor.gray600 },

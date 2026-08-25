@@ -3811,7 +3811,7 @@ export default function WorkoutScreen() {
         <View style={styles.sealWrap} pointerEvents="none">
           <View style={styles.sealCard}>
             <View style={styles.sealMedal}>
-              <Svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="#1A1206" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+              <Svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
                 <Path d="M20 6L9 17l-5-5" />
               </Svg>
             </View>
@@ -3837,7 +3837,7 @@ export default function WorkoutScreen() {
           <Pressable style={styles.prBackdrop} onPress={() => setPrPrompt(null)} accessibilityLabel="Dismiss" />
           <View style={styles.prCard}>
             <View style={styles.prMedal}>
-              <Svg width={28} height={28} viewBox="0 0 24 24" fill="#1A1206">
+              <Svg width={28} height={28} viewBox="0 0 24 24" fill={flColor.onBronze}>
                 <Path d="M12 2l2.6 7.1H22l-6 4.4 2.3 7.1-6.3-4.6-6.3 4.6 2.3-7.1-6-4.4h7.4z" />
               </Svg>
             </View>
@@ -4348,7 +4348,7 @@ export default function WorkoutScreen() {
                       </View>
                       <View style={[styles.pCheck, on && styles.pCheckOn]}>
                         {on ? (
-                          <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#1A1206" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+                          <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
                             <Path d="M20 6L9 17l-5-5" />
                           </Svg>
                         ) : null}
@@ -4926,7 +4926,7 @@ const styles = StyleSheet.create({
   // exercise-complete seal
   sealWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', zIndex: 44 },
   sealCard: { width: 292, paddingTop: 26, paddingHorizontal: 24, paddingBottom: 22, borderRadius: flRadius.xl, backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorder, alignItems: 'center', gap: 12, boxShadow: flShadow.elevated },
-  sealMedal: { width: 66, height: 66, borderRadius: 33, backgroundColor: flColor.bronze400, borderWidth: 1, borderColor: flColor.bronzeMetalBorder, alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.glowSubtle },
+  sealMedal: { width: 66, height: 66, borderRadius: 33, backgroundColor: flColor.bronzeSolid, borderWidth: 1, borderColor: flColor.bronzeMetalBorder, alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.glowSubtle },
   sealKicker: { fontSize: 11, fontWeight: '600', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.bronze400 },
   sealName: { fontFamily: flFont.display, fontSize: 26, fontWeight: '600', letterSpacing: -0.3, color: flColor.cream100, textAlign: 'center', lineHeight: 28 },
   sealStats: { flexDirection: 'row', alignItems: 'center', gap: 9 },
@@ -4939,7 +4939,7 @@ const styles = StyleSheet.create({
   prWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', padding: 22, zIndex: 60 },
   prBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(6,9,12,0.62)' },
   prCard: { width: 302, paddingTop: 24, paddingHorizontal: 22, paddingBottom: 20, borderRadius: flRadius.xl, backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorder, alignItems: 'center', gap: 12, boxShadow: flShadow.elevated },
-  prMedal: { width: 62, height: 62, borderRadius: 31, backgroundColor: flColor.bronze400, borderWidth: 1, borderColor: flColor.bronzeMetalBorder, alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.glowSubtle },
+  prMedal: { width: 62, height: 62, borderRadius: 31, backgroundColor: flColor.bronzeSolid, borderWidth: 1, borderColor: flColor.bronzeMetalBorder, alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.glowSubtle },
   prKicker: { fontSize: 11, fontWeight: '600', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.bronze400 },
   prName: { fontFamily: flFont.display, fontSize: 24, fontWeight: '600', letterSpacing: -0.3, color: flColor.cream100, textAlign: 'center', lineHeight: 26 },
   prPerf: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronze300 },
@@ -5293,7 +5293,7 @@ const styles = StyleSheet.create({
   ceremonyWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(6,9,12,0.72)', alignItems: 'center', justifyContent: 'center', padding: 22, zIndex: 70 },
   ceremonyCard: { width: '100%', maxWidth: 360, maxHeight: '88%', borderRadius: flRadius.xl, backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorder, boxShadow: flShadow.elevated, overflow: 'hidden' },
   ceremonyScroll: { paddingTop: 26, paddingHorizontal: 22, paddingBottom: 18, alignItems: 'center' },
-  ceremonyInsignia: { width: 72, height: 72, borderRadius: 20, backgroundColor: flColor.bronze400, borderWidth: 1, borderColor: flColor.bronzeMetalBorder, alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.glowSubtle },
+  ceremonyInsignia: { width: 72, height: 72, borderRadius: 20, backgroundColor: flColor.bronzeSolid, borderWidth: 1, borderColor: flColor.bronzeMetalBorder, alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.glowSubtle },
   ceremonyEyebrow: { marginTop: 14, fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
   ceremonyTitle: { marginTop: 4, fontFamily: flFont.display, fontSize: 27, fontWeight: '600', letterSpacing: -0.4, color: flColor.cream100, textAlign: 'center' },
   statRow: { flexDirection: 'row', gap: 10, marginTop: 20, width: '100%' },
@@ -5307,7 +5307,7 @@ const styles = StyleSheet.create({
   partnerChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   partnerChip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6, paddingLeft: 6, paddingRight: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   pAvatarSm: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  pAvatarSmText: { fontSize: 10, fontWeight: '700', color: '#1A1206' },
+  pAvatarSmText: { fontSize: 10, fontWeight: '700', color: flColor.onBronze },
   partnerChipName: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
   tagBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 8, paddingHorizontal: 15, borderRadius: flRadius.pill, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorder },
   tagBtnText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
@@ -5329,5 +5329,5 @@ const styles = StyleSheet.create({
   pName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   pSub: { fontSize: 12, color: flColor.gray600 },
   pCheck: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: flColor.charcoal500, alignItems: 'center', justifyContent: 'center' },
-  pCheckOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronze400 },
+  pCheckOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeSolid },
 });
