@@ -1,7 +1,7 @@
 # Forge Legacy — Status Archive, August 2026
 
 **Type:** Historical record, split out of `Forge-Legacy-Master-Status.md`
-**Covers:** the **51** Recently-Completed entries below the 15 most recent, as of 2026-08-24
+**Covers:** the **52** Recently-Completed entries below the 15 most recent, as of 2026-08-24
 
 > ⚠ This line read **43 … as of 2026-08-22** while 51 entries were already filed, and the dashboard's
 > own pointer one file over read **47**. Two hand-maintained counts of the same countable thing, both
@@ -27,6 +27,28 @@
 > **Read this file when the dashboard does not explain something.** It is the same content, one level back.
 
 ---
+
+### 0. ⭐ Referrals finally have the one fact they were missing — and the migration's own self-check found a live privilege escalation (2026-08-19, Phase E 4.4 — **MIGRATION `0170` APPLIED AND VERIFIED**, client code is OTA-safe)
+
+**The referral half.** `0145` shipped the entire economic side of referrals in June — `referral_codes`, `referral_credits`, `my_referral_code()`, and `grant_referral_credit()` with MA3-D19's 12-month rolling cap enforced in SQL — and **nothing in `src/` had ever called any of it.** The gap was one fact: `grant_referral_credit(p_referee, p_code)` takes the code **as an argument**, and the database had never known which code an athlete arrived through. Fine if people pay the instant they are invited; MA3-D20 grants on **first successful payment**, which is weeks later. `0170` adds the attribution store, `record_referral_attribution()` and `my_referral_attribution()`; the client half is the code, the capture off the link, and the flush. **First attribution wins, enforced by a primary key** — last-write-wins would let an athlete about to subscribe paste a different friend's code and move the credit off whoever actually brought them in.
+
+⚠ **NO REWARD IS PROMISED ANYWHERE IN THE COPY, DELIBERATELY.** MA3-D17 makes referral two-sided and the obvious invite line is *"we both get a month free"* — but the credit cannot be granted until §4.2's webhook exists, and `default_tier` is still `PREMIUM` so nobody is paying for anything. That line would be a **new** false billing claim added to the four Phase F is already working through. Attribution records silently in the meantime, which is the conservative order: recording who reached whom before announcing a reward, rather than announcing one against attributions that were never captured. `referralLinkFor()`'s header carries a ⛔ marking Phase F as owing this a revisit.
+
+### ⛔ AND THE SELF-CHECK FOUND A LIVE HOLE — WRITTEN TO ASSERT SOMETHING BELIEVED ALREADY TRUE, IT FAILED ON THE FIRST RUN AND IT WAS RIGHT
+
+`0145` deliberately withheld the `authenticated` grant from five internal functions; `claim_founder_seat` says so in a comment on the line after its own definition — *"Not granted to `authenticated`. Deliberately: seats are claimed server-side after a confirmed payment."* **`0147` §1 then ran `grant execute on all functions in schema public to authenticated`** — correctly, and for the reason its header explains at length — and **its §3 take-back list of twelve functions did not include these five.** A blanket grant silently reversed five targeted revokes two migrations later. Nothing failed. `0147`'s own §4 assertion could not catch it: it counts what **`anon`** can reach, and this was **`authenticated`**.
+
+⚠ **THE SHARP ONE WAS NOT REFERRALS.** `claim_founder_seat(p_athlete uuid)` is `SECURITY DEFINER`, takes the athlete **as an argument**, and never consults `auth.uid()`. **Any signed-in athlete could award themselves — or anyone else — a lifetime Founder entitlement (the $149 SKU) for nothing, and burn all 100 seats doing it.** Invisible today only because `default_tier = 'PREMIUM'` makes everyone Premium anyway, and the `athlete_entitlement` row it writes **survives Phase F** — so it was a hole that pays out precisely when money starts moving. The other four: `grant_referral_credit` (credit without a payment, against MA3-D20), and `athlete_tier` / `athlete_caps` / `athlete_live_counts`, each taking an arbitrary uuid and answering questions about a stranger's subscription and usage.
+
+**Fixed in `0170` §1b, checked the way `0150` says to rather than the way `0147` did** — that migration exists because revoking `evaluate_honors` broke Finish Workout for every athlete with `tsc`, tests and lint all green. Verified before revoking: **zero `src/` RPC call sites for all five**, and every SQL caller (`my_entitlement`, `my_tier`, `athlete_caps`, `consume_holt_allowance`, `programs_cap_guard`, `week_templates_cap_guard`) is `SECURITY DEFINER`, so the permission check runs against the owner and no path can notice the revoke. **Verified after: `client_reachable_fns = 0` and `founder_seats_claimed = 0`** — the revoke held, and nobody had found the hole first.
+
+⚠ **THE GENERALISABLE LESSON, AND IT IS NOT ABOUT REFERRALS:** a targeted `revoke` is only true until the next blanket `grant`, and neither statement fails when the second undoes the first. `0170`'s assertion is deliberately kept broad over all five rather than narrowed back to the one that prompted it, because the failure mode is the blanket grant, not the function.
+
+**Two self-inflicted errors worth the entry, both mine.** The paste bundle ended with `select public.my_referral_code()` — and `0145`'s header says in bold that **the SQL editor has no `auth.uid()`**, so every `my_*` function raises `28000` there. The editor runs a script in ONE transaction, so a failure on the last statement **rolled back the table, both functions and the security fix**, all of which had already succeeded. And the first fix was re-run against the editor's stale buffer rather than the edited file. Then a third, structural one: `pending-0170.sql` ended in several `select`s and **the editor shows only the last statement's result**, so the two security checks ran and were invisible — which is why `supabase/apply/verify-0170.sql` returns **one row, nine columns**.
+
+**One real gap, reported not papered over.** MA3-D21 says attach referrals to *squad and challenge* invites. Squad is done. **Challenge invites never leave the app** — they are `method: 'in_app'` to existing friends, so there is no link to carry a referral and the recipient already has an account. `challenges-live.ts:415` calls a challenge invite *"an install opportunity"*; as built it cannot be one. That needs a product decision, not invented code. **Also still open: no surface yet for typing in a code you were given verbally.**
+
+tsc 0 · **2,633 tests green** (24 new: the alphabet pinned against `0145`'s generator, an ambiguous character rejected rather than repaired, and a guard asserting no message promises a reward) · lint at baseline · `0170` applied and verified · ⏳ **not yet deployed.**
 
 ### 0. ⭐ Onboarding asks the three questions Coach Holt was always promised — and the two stores that already held them could not be read (2026-08-19, Onboarding + Coach — **MIGRATION `0169` REQUIRED**, client code is OTA-safe)
 
