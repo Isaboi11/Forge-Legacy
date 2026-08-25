@@ -115,7 +115,12 @@ export default function SquadsScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
+      {/* ⚠ `squadsHub` — NOT `slate`. This plate was imported with the other six (FORGE_DELTAS §16) and
+          `backgrounds.ts` has always described it as one of "the two squad surfaces", but nothing ever
+          rendered it: `grep SCREEN_BG.squadsHub` returned zero call sites. `Squads Hub - Paper.dc.html`
+          shows the ridgeline at the top of this screen, which is what the plate carries and what the
+          slate texture does not. Unfinished wiring, found while tuning the mountain plates. */}
+      <ScreenBackground image={SCREEN_BG.squadsHub} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
 
       <AppBar
         title={<Text style={styles.barTitle}>Squads</Text>}

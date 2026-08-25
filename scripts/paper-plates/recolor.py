@@ -71,39 +71,39 @@ BG = ROOT / "assets" / "backgrounds"
 CREAM = np.array([0xF4, 0xEF, 0xE3], dtype=np.float32)
 BRONZE = np.array([0x94, 0x68, 0x38], dtype=np.float32)
 
-#: How much of the cream→bronze ramp a plate is allowed to travel, overall.
+#: ⚠ EVERY PLATE IS TUNED SEPARATELY, because they are not all the same KIND of image.
 #:
-#: ⚠ PO CALL, 2026-08-25: *"the background is too prominent, I would make it 50% more subtle."*
-#: At 1.0 the veining carried real weight and competed with the cards sitting on it. Halving the mix
-#: keeps every bit of the texture — the grain, the veins, their shape and their position are all
-#: unchanged — and simply lets less bronze into it, so the plate reads as paper STOCK rather than as an
-#: image. This is the honest lever for "more subtle": raising GAMMA instead would have crushed the
-#: midtones and lost detail rather than volume.
-STRENGTH = 0.5
+#: PO, 2026-08-25, looking at the design's own Paper artboards: the slate screens should be *more*
+#: subtle again, and *"the ones with the mountains need to be more prominent and shouldn't be too far
+#: in the background."* Those pull in opposite directions, so a single global strength cannot serve
+#: both — it was one number until this pass, and that is why the mountains were washing out at the
+#: same setting that still left the slate too busy.
+#:
+#:   strength — how far along the cream→bronze ramp the plate may travel. Lower = subtler overall.
+#:   gamma    — how hard the midtones are pushed toward cream. HIGHER separates a bright subject from
+#:              its field, which is what makes a mountain range read while its slate ground stays
+#:              paper. On a plain texture it simply thins the veining.
+#:
+#: The two hybrids (`squads-hub-bg`, `squad-bg-continued`) are a mountain range over a slate field, so
+#: they take a high gamma AND full strength: the peaks are the bright part of the source, so pushing
+#: the midtones down drops the field to cream while the peaks keep their bronze. Chosen by rendering
+#: the candidates, not by prediction.
+PLATES = {
+    "forge-slate":        dict(gamma=2.6, strength=0.30),
+    "forge-slate2":       dict(gamma=2.6, strength=0.30),
+    "forge-bg-2":         dict(gamma=2.6, strength=0.30),
+    "legacy-bg":          dict(gamma=2.6, strength=0.30),
+    # Pictorial — see INVERT below. Legacy also raises its render opacity in Paper (0.375 -> 0.70),
+    # because a plate cannot be made prominent by recolouring alone when it is drawn at 37%.
+    "hero-mountains":     dict(gamma=4.5, strength=1.00, invert=True),
+    "squad-bg-continued": dict(gamma=4.0, strength=1.00),
+    "squads-hub-bg":      dict(gamma=4.0, strength=1.00),
+}
 
-GAMMA = 2.0
-#: Inverted plates need a much harder gamma — see the note on `INVERT` in the header. In
-#: `hero-mountains` the peaks AND most of the sky are dark, so simply flipping the ramp bronzes 81% of
-#: the image into a slab. 6.0 pulls the sky back to cream and leaves the ridgeline as the dark figure;
-#: it was chosen by rendering 2.0 / 4.0 / 6.0 composited at the 0.375 opacity Legacy actually uses.
-INVERT_GAMMA = 6.0
 LO_PCT, HI_PCT = 1.0, 99.0
 
-PLATES = [
-    "forge-slate",
-    "forge-slate2",
-    "forge-bg-2",
-    "legacy-bg",
-    "hero-mountains",
-    "squad-bg-continued",
-    "squads-hub-bg",
-]
 
-#: Pictorial plates — see the header. These depict a subject, so their figure must stay dark on paper.
-INVERT = {"hero-mountains"}
-
-
-def recolor(src: Path, dst: Path, invert: bool = False) -> None:
+def recolor(src: Path, dst: Path, gamma: float, strength: float, invert: bool = False) -> None:
     im = Image.open(src)
     has_alpha = im.mode in ("RGBA", "LA") or "transparency" in im.info
     alpha = im.getchannel("A") if has_alpha else None
@@ -119,10 +119,10 @@ def recolor(src: Path, dst: Path, invert: bool = False) -> None:
     if invert:
         # Keep the subject dark: bright sky -> cream, dark peaks -> bronze. The gamma is applied to
         # the flipped value so it still favours cream, otherwise the whole sky bronzes over.
-        t = (1.0 - t) ** INVERT_GAMMA
+        t = (1.0 - t) ** gamma
     else:
-        t = t**GAMMA
-    t = t * STRENGTH
+        t = t**gamma
+    t = t * strength
     out = CREAM + (BRONZE - CREAM) * t[..., None]
 
     res = Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), "RGB")
@@ -135,8 +135,8 @@ def recolor(src: Path, dst: Path, invert: bool = False) -> None:
     pct = np.percentile(t, [50, 95, 99])
     print(
         f"  {src.name:26s} -> {dst.name:32s} "
-        f"{'INVERTED ' if invert else '         '}"
-        f"lum[{lo:5.1f},{hi:6.1f}]  bronze-mix p50/p95/p99 "
+        f"{'INV ' if invert else '    '}g{gamma:.1f} s{strength:.2f}  "
+        f"bronze-mix p50/p95/p99 "
         f"{pct[0]*100:4.1f}% {pct[1]*100:4.1f}% {pct[2]*100:5.1f}%  "
         f"{dst.stat().st_size/1_048_576:.1f} MB"
     )
@@ -148,13 +148,13 @@ def main() -> int:
         return 1
     print(f"Paper plates -> {BG}")
     missing = 0
-    for name in PLATES:
+    for name, cfg in PLATES.items():
         src = BG / f"{name}.png"
         if not src.exists():
             print(f"  !! missing {src.name}", file=sys.stderr)
             missing += 1
             continue
-        recolor(src, BG / f"{name}-paper.png", invert=name in INVERT)
+        recolor(src, BG / f"{name}-paper.png", **cfg)
     return 1 if missing else 0
 
 

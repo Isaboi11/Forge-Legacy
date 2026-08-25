@@ -73,6 +73,7 @@ export function ScreenBackground({
   base = DEFAULT_BASE,
   imagePosition = 'center',
   imageOpacity = 1,
+  imageOpacityPaper,
   overlay,
   radials,
   atmospheric = false,
@@ -86,6 +87,18 @@ export function ScreenBackground({
   imagePosition?: 'center' | 'top';
   /** Cover-artwork opacity (0–1); < 1 makes the background artwork subtler over the base. Default 1. */
   imageOpacity?: number;
+  /**
+   * Paper's cover-artwork opacity, when it differs.
+   *
+   * ⚠ NEEDED BECAUSE RECOLOURING CANNOT RESCUE A PLATE DRAWN AT 37%. Legacy renders its mountains at
+   * `imageOpacity={0.375}` — on near-black that is plenty, because a faint bronze ridgeline against
+   * black still reads. Against cream there is far less contrast to spend, and the same 37% left the
+   * range looking washed out and too far back. The pictorial plates therefore carry MORE presence in
+   * Paper, not less, which is the opposite of the instinct for a light theme.
+   *
+   * Omit it and Paper uses `imageOpacity` unchanged, which is right for every texture plate.
+   */
+  imageOpacityPaper?: number;
   /** Per-screen darkening overlay; `null`/omitted → none (the atmospheric screens carry no dark scrim). */
   overlay?: ScreenOverlay | null;
   /** Screen-level bronze radial-glows layered over the base + overlay. */
@@ -112,7 +125,12 @@ export function ScreenBackground({
         />
       ) : null}
       {image != null ? (
-        <Image source={image} style={[StyleSheet.absoluteFill, { opacity: imageOpacity }]} contentFit="cover" contentPosition={imagePosition} />
+        <Image
+          source={image}
+          style={[StyleSheet.absoluteFill, { opacity: IS_PAPER ? imageOpacityPaper ?? imageOpacity : imageOpacity }]}
+          contentFit="cover"
+          contentPosition={imagePosition}
+        />
       ) : null}
       {overlay ? <Overlay overlay={overlay} /> : null}
       {allRadials.length ? <ScreenRadials radials={allRadials} /> : null}
