@@ -1,7 +1,7 @@
 # Forge Legacy — Status Archive, August 2026
 
 **Type:** Historical record, split out of `Forge-Legacy-Master-Status.md`
-**Covers:** the **52** Recently-Completed entries below the 15 most recent, as of 2026-08-24
+**Covers:** the **53** Recently-Completed entries below the 15 most recent, as of 2026-08-24
 
 > ⚠ This line read **43 … as of 2026-08-22** while 51 entries were already filed, and the dashboard's
 > own pointer one file over read **47**. Two hand-maintained counts of the same countable thing, both
@@ -27,6 +27,26 @@
 > **Read this file when the dashboard does not explain something.** It is the same content, one level back.
 
 ---
+
+### 0. ⛔ The App Store would have rejected this build, and no launch document said so — Guideline 1.2 (2026-08-19, Moderation — **MIGRATION `0171` APPLIED AND VERIFIED**, client code is OTA-safe, ⏳ NOT DEPLOYED)
+
+**Found while writing the age-rating section of the store listing, which is the only reason anyone looked.** Guideline 1.2 requires an app carrying user-generated content to have **four** things: filtering, reporting **with timely responses**, the ability to **block** abusive users, and published contact info. Forge had the fourth (`/support`, 08-18) and, in the entire binary, **one** report control — `squad-settings.tsx:688`, a toast reading *"Reporting a squad is coming soon."* No report on a post. **No block.** `grep "create table.*(block|report)"` across all 170 migrations returned nothing.
+
+⚠ **"IT IS ONLY A PRIVATE SQUAD" DOES NOT EXEMPT IT** — Discover and request-to-join mean a stranger can enter a squad and post into a feed an athlete reads. ⚠ **AND THE "COMING SOON" TOAST WAS WORSE THAN NO BUTTON**: it demonstrated, inside the shipped app, that the need was known and unmet. A reviewer who tapped it would have found the finding for us.
+
+**Why it was missed for months:** the closest prior record is `project_communities_architecture`'s open gap, *"no platform-level moderation escalation"* — filed against **Communities**, a subsystem that is deferred and unbuilt, so it read as a future problem. **Squads shipped and brought the same gap with them.**
+
+**Built:** `athlete_blocks` + symmetric `is_blocked()` · `content_reports` with an open/actioned/dismissed status · `moderation_blocklist` + a `profiles` trigger · `admin_reports()` / `admin_resolve_report()` · `domain/moderation/` (pure, 11 tests) · `data/moderation-live.ts` · one `ReportSheet` reused by every UGC surface · ⋯ Report + Block on the athlete profile · the report flag on a post · **`/blocked` in Settings → Privacy & Alerts** · a Reports panel in `/admin`.
+
+⚠ **THE ENFORCEMENT IS ENTIRELY SERVER-SIDE, AND THE TWO FEEDS NEEDED DIFFERENT TOOLS.** `squad_feed()` is `security invoker` ⇒ RLS reaches it, so four **`AS RESTRICTIVE`** policies cover it and every direct read — restrictive policies are **ANDed** with existing ones, so they filter everything without touching a single policy written across a dozen migrations. `friends_feed()` is `security definer` ⇒ **RLS does not apply**, so it carries **four explicit `is_blocked` predicates**, transformed from 0113's text rather than retyped (`notification_events_for` lost shipped features to a from-memory rebuild four separate times). Four and not one: the post, the comment count, the reaction count and the **reactor names** — filtering the comment list but not its count renders "3 comments" above two, and a blocked athlete's name would otherwise still appear under *"Acknowledged by"*. `verify-0171.sql` asserts **both** counts are 4.
+
+⚠ **NOTHING IS FILTERED CLIENT-SIDE, DELIBERATELY.** Client filtering only hides content from the person doing the filtering; the blocked athlete's app would carry on rendering everything. That is a mute, not a block, and it is the half of the pair that cannot detect the problem.
+
+**One correction to this session's own claim:** it was reported that squad owners could not remove a member and that this pass built it. **Wrong — `0046` shipped it as an RLS DELETE policy and `squad/[id].tsx:275` has been calling it all along.** The redundant RPC was removed rather than shipped; a second function doing what a working policy already does is the "two answers to one question" failure `lib/billing.ts` names.
+
+**Owed, and written into the migration so neither can pass as done:** the **slur/profanity list is not seeded** — the mechanism is complete and enforced, the list holds impersonation patterns only (9 rows), and real language needs deliberate authoring rather than a guess inside a migration; until then requirement 1 rests on operator takedown. And **blocked athletes still appear in competition standings** — judged deliberately, since standings are a scoreboard of numbers rather than authored content and removing a row would misstate the result for everyone else.
+
+tsc 0 · **2,644 tests green** (11 new, incl. two asserting the copy never promises what `0171` cannot enforce) · lint at baseline — ⚠ it went to **2 errors** mid-pass because a `useEffect` reset trips react-compiler's sync-`setState` rule; fixed by clearing state on successful send instead. `0171` applied and verified 2026-08-19 (all booleans true, both enforcement counts **4**, 9 blocklist patterns). **This unblocks the App Store age rating and §10.**
 
 ### 0. ⭐ Referrals finally have the one fact they were missing — and the migration's own self-check found a live privilege escalation (2026-08-19, Phase E 4.4 — **MIGRATION `0170` APPLIED AND VERIFIED**, client code is OTA-safe)
 
