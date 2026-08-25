@@ -7,6 +7,8 @@
  */
 
 import { toCanonicalLb, type UnitSystem } from '../settings/units.ts';
+import { CARDIO_ACTIVITIES, deriveName } from './conditioning.ts';
+import { groupLabel } from './session-label.ts';
 import type { ActiveSession, SessionExercise } from './types.ts';
 
 /**
@@ -179,14 +181,73 @@ export const FREESTYLE_NAME = 'Freestyle Workout';
  *
  * Not retroactive. Rows already saved keep the name they were given; W-17 and the activity detail screen
  * both let the athlete change it.
+ *
+ * ══ 2026-08-25 — "IT SHOULDN'T BE NAMED OUTDOOR WALK BASED OFF OF WHAT THEY DID FIRST" ══
+ *
+ * PO: *"When doing a workout, if they do cardio first it shouldn't be named 'outdoor walk' just based
+ * off of what they did first. It should generate a name based off of what they did that day fully."*
+ *
+ * ⚠ THE BUG WAS IN THE FIRST LINE, AND IT READ AS CORRECT. `workoutName !== FREESTYLE_NAME` means "the
+ * athlete named this, leave it alone" — but a session begun from Home's cardio chooser is named
+ * `deriveName(activity, modality)` at the door, before it contains anything, by nobody. That is a
+ * PLACEHOLDER wearing a real name's clothes, so the guard let it through, the session kept it, and an
+ * hour of lifting after a ten-minute walk saved as "Outdoor Walk".
+ *
+ * So the question the guard is really asking is *"did a human choose this?"* — and the honest test is
+ * whether the name is one of the app's own. `isDerivedCardioName` enumerates exactly what
+ * `deriveName` can produce across every activity and modality (ten strings), which keeps this
+ * defensible: an athlete who TYPES "Outdoor Walk" gets it re-derived, and that is the one accepted cost.
+ * The alternative — a `namedByAthlete` flag — is a new field on a shape already persisted in every
+ * athlete's AsyncStorage, and absent would have to read as "chosen", which is wrong for every session
+ * already in flight.
+ *
+ * ⚠ THE `recorded.length !== 1` RULE IS GONE, AND THAT WAS THE OTHER HALF. It existed so "a walk plus
+ * squats stays freestyle", on the reasoning that "Treadmill Walk" would name the smaller half — right
+ * about the problem, wrong that the placeholder was the better answer. There is a third option, which
+ * is to name the session after what it actually was.
+ *
+ * ⚠ CARDIO NAMES THE SESSION ONLY WHEN IT *IS* THE SESSION — PO's call, of two offered. A walk with
+ * lifting after it is "Chest & Back", not "Chest & Back + Walk": the muscle groups are what the athlete
+ * looks for in a list of past workouts, and appending every bout makes the names long in exchange for a
+ * fact the session detail already shows.
  */
-export function sessionWorkoutName(session: ActiveSession): string {
-  if (session.workoutName !== FREESTYLE_NAME) return session.workoutName;
+export function sessionWorkoutName(session: ActiveSession, musclesOf?: MusclesOf): string {
+  if (session.workoutName !== FREESTYLE_NAME && !isDerivedCardioName(session.workoutName)) {
+    return session.workoutName;
+  }
   const recorded = recordedExercises(session);
-  if (recorded.length !== 1) return session.workoutName;
-  const only = recorded[0];
-  return only.kind === 'cardio' && only.name ? only.name : session.workoutName;
+  if (recorded.length === 0) return session.workoutName;
+
+  /* One block and nothing else: the bout IS the session, so its own name is the best one there is —
+     "Treadmill Walk" beats "Full Body" for a session that contains one walk. */
+  const strength = recorded.filter((ex) => ex.kind !== 'cardio');
+  if (strength.length === 0) {
+    const only = recorded[0];
+    return only.kind === 'cardio' && only.name ? only.name : session.workoutName;
+  }
+
+  /* Anything with lifting in it is named for the lifting. `musclesOf` is injected rather than imported
+     because the catalogue lives behind the picker's data module, which this file must not pull in — it
+     is loaded by `node --test`. No resolver, or a catalogue that knows nothing about these movements,
+     leaves the name exactly as it was rather than inventing one. */
+  const label = musclesOf ? groupLabel(strength.map(musclesOf)) : '';
+  return label || session.workoutName;
 }
+
+/** Muscle display names for one exercise — `PickerItem.muscles`, primary first. */
+export type MusclesOf = (ex: SessionExercise) => readonly string[] | undefined;
+
+/**
+ * Every string `deriveName` can return — the app's own words for a bout, never an athlete's choice.
+ *
+ * ⚠ BUILT FROM `deriveName` ITSELF rather than typed out, so a new activity or a renamed one cannot
+ * leave this list behind still claiming to be exhaustive.
+ */
+const DERIVED_CARDIO_NAMES: ReadonlySet<string> = new Set(
+  CARDIO_ACTIVITIES.flatMap((a) => [deriveName(a.key, 'outdoor'), deriveName(a.key, 'indoor')]),
+);
+
+const isDerivedCardioName = (name: string): boolean => DERIVED_CARDIO_NAMES.has(name.trim());
 
 /**
  * A session whose weights are canonical POUNDS, whatever the athlete typed them in.

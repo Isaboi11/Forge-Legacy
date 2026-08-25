@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { itemByKey } from '@/domain/exercise-picker/data';
 import { sessionActivityType } from './conditioning';
 import { detectPRs, doneSetCount, PR_MAX_REPS, sessionVolume, type DetectedPR } from './metrics';
 import { buildAppendExercises, buildSaveExercises, buildSubstitutions, canonicalizeWeights, sessionDurationSec, sessionWorkoutName } from './save-core';
@@ -118,8 +119,11 @@ export async function saveWorkout(
   const { data, error } = await supabase.rpc('save_workout', {
     /* Derived for the same reason `p_activity_type` below is: a freestyle session that turned out to be
        one treadmill walk was filed under the literal "Freestyle Workout". See `sessionWorkoutName` —
-       it only ever replaces that placeholder, never a name the athlete chose. */
-    p_workout_name: sessionWorkoutName(session),
+       it only ever replaces a name the APP wrote (the placeholder, or a cardio name stamped at the
+       door), never one the athlete chose.
+       ⚠ THE RESOLVER IS INJECTED HERE AND NOT IMPORTED THERE: `save-core` is loaded by `node --test`,
+       which cannot resolve `@/`, and the catalogue sits behind the picker's data module. */
+    p_workout_name: sessionWorkoutName(session, (ex) => (ex.catalogKey ? itemByKey(ex.catalogKey)?.muscles : undefined)),
     // Derived, not taken on trust: every construction site hard-codes 'strength', which stopped being
     // true when a run could be the whole session.
     p_activity_type: sessionActivityType(session.exercises, session.activityType),

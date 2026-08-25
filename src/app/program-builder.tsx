@@ -73,6 +73,7 @@ import { daySectionsSummary, templateRowsToDay, type DaySections } from '@/domai
 import { STRUCTURED_DEVELOPMENT_MIN_WEEKS } from '@/domain/rank/thresholds';
 import { fetchWeekTemplate, fetchWeekTemplates, saveWeekTemplate, weekSummary } from '@/data/week-templates-live';
 import { defaultAudiences, filterStarters, starterMeta } from '@/domain/workout/starter-templates';
+import { groupLabel } from '@/domain/workout/session-label';
 import { useProfile } from '@/lib/profile';
 import type { Sex } from '@/domain/profile/schema';
 import { ScreenTour } from '@/components/tour/ScreenTour';
@@ -173,30 +174,15 @@ const SECTION_META: { key: BuilderSection; label: string; addLabel: string; req:
   { key: 'cooldown', label: 'Cool-down', addLabel: 'cool-down', req: 'Optional', empty: 'No cool-down yet' },
 ];
 
-/** Muscle → coarse group, for the day-row subtitle ("Chest & Arms · 6 exercises"). */
-const MUSCLE_GROUP: Record<string, string> = {
-  Chest: 'Chest', 'Upper Chest': 'Chest',
-  Back: 'Back', Lats: 'Back',
-  Shoulders: 'Shoulders', 'Side Delts': 'Shoulders', 'Rear Delts': 'Shoulders',
-  Biceps: 'Arms', Triceps: 'Arms', Forearms: 'Arms',
-  Quads: 'Legs', Glutes: 'Legs', Hamstrings: 'Legs',
-  Abs: 'Core', Core: 'Core',
-};
-
-function inferLabel(items: ProgramExercise[]): string {
-  const count = new Map<string, number>();
-  for (const it of items) {
-    for (const m of it.muscles ?? []) {
-      const g = MUSCLE_GROUP[m];
-      if (g) count.set(g, (count.get(g) ?? 0) + 1);
-    }
-  }
-  const groups = [...count.entries()].sort((a, b) => b[1] - a[1]).map(([g]) => g);
-  if (groups.length === 0) return '';
-  if (groups.length === 1) return groups[0];
-  if (groups.length === 2) return `${groups[0]} & ${groups[1]}`;
-  return 'Full Body';
-}
+/**
+ * The day-row subtitle ("Chest & Arms · 6 exercises").
+ *
+ * ⚠ THE RULE MOVED TO `domain/workout/session-label`, IT DID NOT CHANGE HERE. A finished session that
+ * the athlete never named is now saved under the same label (see `sessionWorkoutName`), and one rule
+ * answering two questions from two copies is how the builder's subtitle and the logger's saved name
+ * would come to disagree about what a Chest & Back day is called. This is the adapter, not the rule.
+ */
+const inferLabel = (items: ProgramExercise[]): string => groupLabel(items.map((it) => it.muscles));
 
 const dayName = (day: ProgramDay) => (day.name.trim() ? day.name : `Day ${day.letter || '?'}`);
 /** Fit a name into a button. Display only — never what a screen reader is handed. */

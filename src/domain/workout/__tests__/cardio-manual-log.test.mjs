@@ -212,15 +212,67 @@ test('a name the athlete chose is never touched', () => {
   assert.equal(sessionDurationSec(s, after(28 * 60)), 20 * 60);
 });
 
-test('a walk PLUS a lift stays freestyle — and keeps the wall clock', () => {
-  // "Treadmill Walk" would name the session after the smaller half of it. And the lift writes no bout,
-  // so crediting only what was typed would discard every minute spent lifting.
+test('a walk PLUS a lift is named for the LIFTING — and keeps the wall clock', () => {
+  /*
+   * ⚠ THIS TEST ASSERTED THE OPPOSITE UNTIL 2026-08-25, and it was the shipped behaviour rather than an
+   * oversight: it read *"a walk PLUS a lift stays freestyle"*, reasoning that "Treadmill Walk" would
+   * name the session after the smaller half of it. Right about that, wrong that the placeholder was the
+   * better answer — PO: *"It should generate a name based off of what they did that day fully."*
+   *
+   * The lift still writes no bout, so the wall-clock half of the original test stands unchanged.
+   */
   const s = freestyle([
     typed(20 * 60),
-    { ...lift([{ setIndex: 0, weight: 95, targetReps: 5, actualReps: 5, done: true }]), position: 1 },
+    { ...lift([{ setIndex: 0, weight: 95, targetReps: 5, actualReps: 5, done: true }]), catalogKey: 'k-bench', position: 1 },
   ]);
-  assert.equal(sessionWorkoutName(s), FREESTYLE_NAME);
+  // One lift, Chest primary — "Chest", not "Chest & Arms". See `session-label`: assistance work does
+  // not get to name anything.
+  assert.equal(sessionWorkoutName(s, () => ['Chest', 'Triceps']), 'Chest');
   assert.equal(sessionDurationSec(s, after(50 * 60)), 50 * 60);
+});
+
+test('KIM · a session NAMED at the door by its first bout is renamed for the whole day', () => {
+  /*
+   * PO: *"if they do cardio first it shouldn't be named 'outdoor walk' just based off of what they did
+   * first."* Home's cardio chooser stamps `deriveName(activity, modality)` before the session contains
+   * anything, so the old `!== FREESTYLE_NAME` guard read it as a name the athlete had chosen and left
+   * an hour of lifting filed under a ten-minute walk.
+   */
+  const s = {
+    ...freestyle([
+      typed(10 * 60),
+      { ...lift([{ setIndex: 0, weight: 185, targetReps: 5, actualReps: 5, done: true }]), catalogKey: 'k-row', position: 1 },
+    ]),
+    workoutName: 'Outdoor Walk',
+  };
+  assert.equal(sessionWorkoutName(s, () => ['Lats']), 'Back');
+});
+
+test('…but a bout that IS the whole session still keeps its own name', () => {
+  const s = { ...freestyle([typed(20 * 60)]), workoutName: 'Outdoor Walk' };
+  assert.equal(sessionWorkoutName(s, () => []), 'Treadmill Walk', 'the toggle-derived name, not the door one');
+});
+
+test('a name the athlete TYPED survives, even beside lifting', () => {
+  const s = {
+    ...freestyle([
+      typed(10 * 60),
+      { ...lift([{ setIndex: 0, weight: 185, targetReps: 5, actualReps: 5, done: true }]), catalogKey: 'k-row', position: 1 },
+    ]),
+    workoutName: 'Leg day with Kim',
+  };
+  assert.equal(sessionWorkoutName(s, () => ['Lats']), 'Leg day with Kim');
+});
+
+test('a catalogue that knows nothing about the movements leaves the name alone', () => {
+  // ⚠ THE SAFE DIRECTION. A custom exercise has no catalogue key and therefore no muscles; inventing
+  // "Full Body" from nothing would be worse than the placeholder it replaced.
+  const s = {
+    ...freestyle([{ ...lift([{ setIndex: 0, weight: 95, targetReps: 5, actualReps: 5, done: true }]), position: 0 }]),
+    workoutName: 'Outdoor Walk',
+  };
+  assert.equal(sessionWorkoutName(s, () => undefined), 'Outdoor Walk');
+  assert.equal(sessionWorkoutName(s), 'Outdoor Walk', 'and with no resolver at all');
 });
 
 test('one TRACKED bout puts the wall clock back in charge of the whole session', () => {
@@ -253,7 +305,12 @@ test('an un-ended bout names nothing and times nothing', () => {
 
 test('saveWorkout sends the derived name, not the raw one', () => {
   const src = readFileSync(path.join(here, '../save.ts'), 'utf8');
-  assert.match(src, /p_workout_name:\s*sessionWorkoutName\(session\)/);
+  /* ⚠ THE SECOND ARGUMENT IS THE POINT, NOT AN ACCESSORY. `sessionWorkoutName` cannot import the
+     catalogue — this module is loaded by `node --test`, which cannot resolve `@/` — so the muscle
+     resolver has to be injected HERE. Called with one argument it still works and silently stops being
+     able to name anything that contains lifting, which is the failure this guards. */
+  assert.match(src, /p_workout_name:\s*sessionWorkoutName\(\s*session\s*,/);
+  assert.match(src, /itemByKey\(ex\.catalogKey\)\?\.muscles/);
   // continueWorkout must NOT: it appends to a row that already has a name.
   assert.doesNotMatch(src, /p_workout_name:\s*session\.workoutName/);
 });
