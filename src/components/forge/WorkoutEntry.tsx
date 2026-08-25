@@ -125,7 +125,7 @@ export function WorkoutEntry({
 
             `alt=""` + `aria-hidden` + `pointerEvents: none` (§12) — decorative, never announced.
           */}
-          <Image source={source} style={styles.art} contentFit="cover" contentPosition="top center" accessible={false} />
+          <Image tintColor={flColor.artworkTint ?? undefined} source={source} style={styles.art} contentFit="cover" contentPosition="top center" accessible={false} />
         </View>
       ) : null}
 

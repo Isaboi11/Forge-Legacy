@@ -12,6 +12,7 @@ import { flColor, flRadius } from '@/constants/foundation';
 import { fetchAppPrefs, saveAppPrefs } from '@/data/settings-live';
 import { APP_PREFS_DEFAULTS, EXPERIENCE_TOGGLES, type AppPrefs, type ExperienceKey } from '@/domain/settings/preferences';
 import { INTENSITY_LEVELS, type IntensityLevel } from '@/domain/coach/rulebook/intensity';
+import { applyThemeAndReload, THEME_OPTIONS, type ThemeName } from '@/constants/theme-choice';
 import { previewSquat, type UnitSystem } from '@/domain/settings/units';
 import { useAppPrefs } from '@/lib/settings';
 import { useToast } from '@/hooks/useCeremony';
@@ -88,6 +89,29 @@ export default function PreferencesScreen() {
   const setToggle = (key: ExperienceKey, on: boolean) => commit({ ...prefs, [key]: on });
   const setIntensity = (coachIntensity: IntensityLevel) => commit({ ...prefs, coachIntensity });
 
+  /**
+   * ⚠ THIS ONE DOES NOT USE `commit`, AND THE DIFFERENCE MATTERS.
+   *
+   * Every other row here is optimistic: move the control, write in the background, roll back on
+   * failure. That is right for a value the app re-reads on the next render. The theme is not one —
+   * it is baked into 277 module-scope stylesheets at import time, so the screen CANNOT show the new
+   * palette until the JS restarts, and an optimistic control would sit there looking switched while
+   * nothing around it changed.
+   *
+   * So it saves FIRST, and only restarts once the save is known to have landed. A restart into a
+   * theme the server rejected would flip straight back on the next launch with no explanation.
+   */
+  const setTheme = (theme: ThemeName) => {
+    if (theme === prefs.theme) return;
+    setOverride((o) => ({ ...o, theme }));
+    void saveAppPrefs({ ...prefs, theme })
+      .then(() => applyThemeAndReload(theme))
+      .catch(() => {
+        setOverride((o) => ({ ...o, theme: prefs.theme }));
+        showToast('Couldn’t save that — check your connection and try again.');
+      });
+  };
+
   const back = () => (router.canGoBack() ? router.back() : router.replace('/account-settings'));
 
   return (
@@ -135,6 +159,41 @@ export default function PreferencesScreen() {
               <Text style={styles.previewValue}>
                 Best squat <Text style={styles.previewMono}>{previewSquat(prefs.units)}</Text>
               </Text>
+            </View>
+          </View>
+
+          {/* appearance — the palette the app launches in (DSA1). Under Display because it is the
+              same kind of setting as Units: one choice that every other screen reads. */}
+          <Text style={styles.sectionLabel}>Appearance</Text>
+          <View style={styles.card}>
+            <View style={styles.unitsHead}>
+              <View style={styles.iconTile}>
+                <ForgeSymbol name="spark" size={19} color={flColor.bronze300} />
+              </View>
+              <View style={styles.rowText}>
+                <Text style={styles.rowLabel}>Theme</Text>
+                <Text style={styles.rowHint}>Forge restarts to change theme — it takes a moment.</Text>
+              </View>
+            </View>
+            <View style={styles.levels}>
+              {THEME_OPTIONS.map((t, i) => {
+                const on = prefs.theme === t.id;
+                return (
+                  <Pressable
+                    key={t.id}
+                    onPress={() => setTheme(t.id)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: on }}
+                    accessibilityLabel={`${t.label} — ${t.hint}`}
+                    style={[styles.level, i > 0 && styles.rowBorder, on && styles.levelOn]}
+                  >
+                    <View style={styles.rowText}>
+                      <Text style={[styles.rowLabel, on && styles.levelLabelOn]}>{t.label}</Text>
+                      <Text style={styles.rowHint}>{t.hint}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 

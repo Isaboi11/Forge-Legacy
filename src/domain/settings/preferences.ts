@@ -9,6 +9,7 @@
  */
 
 import { DEFAULT_UNITS, isUnitSystem, type UnitSystem } from './units.ts';
+import { DEFAULT_THEME, isThemeName, type ThemeName } from '../../constants/theme-choice-shared.ts';
 /* ⚠ RELATIVE AND EXTENSIONED, NOT `@/`. `DEFAULT_INTENSITY` and `INTENSITY_LEVELS` are RUNTIME values
    and `node --test` loads this file directly, where the alias does not resolve. The `SymbolName` import
    below survives on `@/` only because it is type-only and stripped before anything tries. */
@@ -48,6 +49,19 @@ export interface AppPrefs {
    * See `domain/coach/rulebook/intensity.ts` for what each level actually changes.
    */
   coachIntensity: IntensityLevel;
+  /**
+   * Which palette the app resolves at launch — `forge` (dark) or `paper` (light).
+   *
+   * ⚠ NOT AN `EXPERIENCE_TOGGLE`, for the same reason `coachIntensity` is not: it is a choice between
+   *   named options rather than a boolean, and `ecosystem.test.mjs` asserts exactly which toggles are
+   *   `live`. Adding a non-boolean there would break the honest accounting that list exists for.
+   *
+   * ⚠ APPLIED AT LAUNCH, NOT ON CHANGE. The app's 277 stylesheets are built at module scope and freeze
+   *   their colours when first imported, so switching reloads the JS — see `constants/theme-choice.ts`.
+   *   Server-backed like `units` rather than device-local, so an athlete who chose Paper does not get
+   *   dark again on a new phone with no idea why.
+   */
+  theme: ThemeName;
 }
 
 export const APP_PREFS_DEFAULTS: AppPrefs = {
@@ -57,6 +71,7 @@ export const APP_PREFS_DEFAULTS: AppPrefs = {
   reduceMotion: false,
   analyticsOptOut: false,
   coachIntensity: DEFAULT_INTENSITY,
+  theme: DEFAULT_THEME,
 };
 
 export type ExperienceKey = 'haptics' | 'sound' | 'reduceMotion';
@@ -92,6 +107,7 @@ export function sanitizePrefs(raw: unknown): AppPrefs {
     if (typeof r.coachIntensity === 'string' && (INTENSITY_LEVELS as readonly string[]).includes(r.coachIntensity)) {
       out.coachIntensity = r.coachIntensity as IntensityLevel;
     }
+    if (isThemeName(r.theme)) out.theme = r.theme;
   }
   return out;
 }

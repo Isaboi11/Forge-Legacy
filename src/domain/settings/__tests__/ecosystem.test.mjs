@@ -196,6 +196,10 @@ test('app prefs default to imperial, haptics/sound on, reduce-motion off, analyt
     // The coach's manner, not a capability. `steady` is what the app has always done — a stored blob
     // written before this field existed lands here, so nobody's coach changes volume on an update.
     coachIntensity: 'steady',
+    // ⚠ FORGE, AND THIS IS A LAUNCH DECISION RATHER THAN A PLACEHOLDER. Twenty testers are on build 6;
+    // defaulting to Paper would re-theme the app under all of them for a preference none expressed.
+    // It is also what absence means — every athlete's stored blob predates this field.
+    theme: 'forge',
   });
 });
 
@@ -210,9 +214,20 @@ test('exactly the toggles with a real consumer today are marked live', () => {
 
 test('sanitizePrefs coerces each field and survives a malformed blob', () => {
   const p = sanitizePrefs({ units: 'metric', haptics: false, sound: 'loud', reduceMotion: true });
-  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady' });
+  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge' });
   assert.deepEqual(sanitizePrefs('nope'), APP_PREFS_DEFAULTS);
   assert.equal(sanitizePrefs({ units: 'stones' }).units, 'imperial', 'an unknown system falls back');
+});
+
+test('a stored theme is validated, not trusted — and absence means Forge', () => {
+  // The value reaches `foundation.ts` at module init and decides the palette for the whole session.
+  // An unrecognised string there would resolve to Forge anyway, so it is dropped here where the
+  // default is stated once — the same reasoning as `coachIntensity`.
+  assert.equal(sanitizePrefs({ theme: 'paper' }).theme, 'paper');
+  assert.equal(sanitizePrefs({ theme: 'forge' }).theme, 'forge');
+  assert.equal(sanitizePrefs({ theme: 'sepia' }).theme, 'forge', 'an unknown theme falls back');
+  assert.equal(sanitizePrefs({ theme: 42 }).theme, 'forge', 'a non-string falls back');
+  assert.equal(sanitizePrefs({}).theme, 'forge', 'absence is Forge — every existing blob predates this field');
 });
 
 test('an opt-out survives every shape sanitizePrefs is handed', () => {

@@ -3,7 +3,8 @@ import { Animated, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
-import { flGradient } from '@/constants/foundation';
+import { flGradient, IS_PAPER } from '@/constants/foundation';
+import { paperScrim } from '@/constants/paper-scrim';
 import { svgStop } from '@/lib/svg-color';
 
 /**
@@ -15,7 +16,24 @@ import { svgStop } from '@/lib/svg-color';
  * **scrim that fades IN** on scroll (the `.dc` darkens the artwork rather than dissolving it away).
  *
  * Absolutely positioned + `pointerEvents="none"` so it sits behind content and never intercepts taps.
+ *
+ * ══ THIS FILE IS WHERE PAPER MODE HAPPENS FOR ALL 205 CALL SITES ══
+ *
+ * Every caller passes a hardcoded DARKENING scrim — `overlay={{ flat: 'rgba(5,5,5,0.30)' }}` and its
+ * seventeen cousins, transcribed one screen at a time from the `.dc` set. Re-authoring all 205 for a
+ * second theme would be 205 chances to get one wrong, and the next screen added would start dark
+ * again. So the inversion happens HERE, once, and the call sites are untouched.
+ *
+ * ⚠ THE ALPHA IS PRESERVED AND ONLY THE DIRECTION FLIPS. Every overlay in the app was measured before
+ *   this was written: all 18 distinct values are a near-black (`rgba(5,5,5,…)`, `rgba(6,7,8,…)`,
+ *   `rgba(8,6,5,…)`, `rgba(0,0,0,…)`) at an alpha from 0.15 to 0.72. That alpha does not mean
+ *   "how dark" — it means **how much of the plate is suppressed**, which is a composition decision the
+ *   screen's author made and which holds in either theme. Rescaling it would quietly re-art-direct
+ *   every screen; swapping the three colour channels does not. (It also lands almost exactly on the
+ *   design: the repo's Home passes 0.15, and `Forge Home - Paper.dc.html` uses 0.16.)
  */
+
+const themeScrim = (color: string) => (IS_PAPER ? paperScrim(color) : color);
 
 /** Per-screen darkening overlay over the artwork — flat single-opacity, or a vertical stop list. */
 export type ScreenOverlay =
@@ -36,12 +54,23 @@ export interface ScreenRadial {
   stop?: number;
 }
 
-/** The `--fl-bg-atmospheric` cool-blue apex radial that sits over the steel gradient (part of the base). */
-const ATMO_RADIAL: ScreenRadial = { cx: '50%', cy: '-8%', rx: '130%', ry: '85%', color: 'rgba(88,124,160,0.06)', stop: 0.48 };
+/**
+ * The `--fl-bg-atmospheric` apex radial that sits over the base gradient.
+ *
+ * Same geometry in both themes — the design's Paper `--fl-bg-atmospheric` keeps `130% 85% at 50% -8%`
+ * fading out by 48% and changes only the colour. Forge's is a cool-blue haze on near-black; Paper's is
+ * the white apex that makes the page read as lit from above rather than as flat card stock.
+ */
+const ATMO_RADIAL: ScreenRadial = IS_PAPER
+  ? { cx: '50%', cy: '-8%', rx: '130%', ry: '85%', color: 'rgba(255,255,255,0.75)', stop: 0.48 }
+  : { cx: '50%', cy: '-8%', rx: '130%', ry: '85%', color: 'rgba(88,124,160,0.06)', stop: 0.48 };
+
+/** Canvas behind the plate. Forge's near-black; Paper's `--fl-base`. */
+const DEFAULT_BASE = IS_PAPER ? '#F4F0E6' : '#050505';
 
 export function ScreenBackground({
   image,
-  base = '#050505',
+  base = DEFAULT_BASE,
   imagePosition = 'center',
   imageOpacity = 1,
   overlay,
@@ -72,7 +101,7 @@ export function ScreenBackground({
     scrimFade && scrollY ? scrollY.interpolate({ inputRange: [0, 220], outputRange: [0, 0.52], extrapolate: 'clamp' }) : 0;
 
   return (
-    <View style={[styles.base, { backgroundColor: base }]} pointerEvents="none">
+    <View style={[styles.base, { backgroundColor: themeScrim(base) }]} pointerEvents="none">
       {atmospheric ? (
         <LinearGradient
           colors={flGradient.bgAtmospheric.colors}
@@ -87,15 +116,22 @@ export function ScreenBackground({
       ) : null}
       {overlay ? <Overlay overlay={overlay} /> : null}
       {allRadials.length ? <ScreenRadials radials={allRadials} /> : null}
-      {scrimFade ? <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#000', opacity: scrimOpacity }]} /> : null}
+      {/* Legacy's scroll scrim. It fades the artwork toward the PAGE, which is black in Forge and
+          cream in Paper — the intent ("make the content legible as it scrolls over the artwork") is
+          the same, and only the direction of the fade changes. */}
+      {scrimFade ? (
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { backgroundColor: IS_PAPER ? '#F4EFE3' : '#000', opacity: scrimOpacity }]}
+        />
+      ) : null}
     </View>
   );
 }
 
 function Overlay({ overlay }: { overlay: ScreenOverlay }) {
-  if ('flat' in overlay) return <View style={[StyleSheet.absoluteFill, { backgroundColor: overlay.flat }]} />;
+  if ('flat' in overlay) return <View style={[StyleSheet.absoluteFill, { backgroundColor: themeScrim(overlay.flat) }]} />;
   // Runtime values always carry >= 2 stops; expo-linear-gradient's prop type wants a non-empty tuple.
-  const colors = overlay.colors as readonly [string, string, ...string[]];
+  const colors = overlay.colors.map(themeScrim) as unknown as readonly [string, string, ...string[]];
   const locations = overlay.locations as readonly [number, number, ...number[]];
   return <LinearGradient colors={colors} locations={locations} style={StyleSheet.absoluteFill} />;
 }

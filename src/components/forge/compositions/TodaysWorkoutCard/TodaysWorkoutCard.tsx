@@ -14,6 +14,7 @@ import React from 'react'
 import { Image } from 'expo-image'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
+import { HeroSurface } from '@/components/forge/HeroSurface'
 import { flColor, flFont, flGradient, flRadius, flShadow, flType } from '@/constants/foundation'
 import type { ResolvedArtwork } from '@/domain/home-artwork/types'
 import { resolveArtworkSource } from '@/domain/home-artwork/artwork-source'
@@ -78,6 +79,10 @@ export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCou
 
   return (
     <View style={styles.card}>
+      {/* The hero tier. Paper only — in Forge this is a null and the card is unchanged. Sits UNDER the
+          warm wash so the wash reads as a tint on the hero rather than replacing it. */}
+      <HeroSurface />
+
       {/* faint warm wash */}
       <LinearGradient
         pointerEvents="none"
@@ -93,7 +98,7 @@ export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCou
           with no panel, edge line, fade, blend, or crop — and it's uniform for every asset shape. */}
       {artSource != null ? (
         <View pointerEvents="none" style={styles.artLayer}>
-          <Image source={artSource} style={styles.art} contentFit="contain" contentPosition="top right" />
+          <Image tintColor={flColor.artworkTint ?? undefined} source={artSource} style={styles.art} contentFit="contain" contentPosition="top right" />
         </View>
       ) : null}
 

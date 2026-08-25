@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    backgroundColor: 'rgba(13, 13, 15, 0.92)',
+    backgroundColor: flColor.surfaceNav,
     borderTopWidth: 1,
     borderTopColor: flColor.charcoal600,
     paddingTop: 10,
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     borderRadius: flRadius.pill,
     backgroundColor: flColor.bronze400,
     borderWidth: 1.5,
-    borderColor: 'rgba(13, 13, 15, 0.92)', // the bar's own fill, so the badge reads as lifted off the icon
+    borderColor: flColor.surfaceNav, // the bar's own fill, so the badge reads as lifted off the icon
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     lineHeight: 12,
-    color: '#1A1206',
+    color: flColor.onBronze,
   },
   iconWrapEmphasized: {
     width: 46,
