@@ -76,6 +76,8 @@ export const flColor = {
   surfaceNav: 'rgba(250,247,240,0.97)',
   /** ⚠ White, per the PO. Legible only because `bronzeSolid` is a step darker — see the Forge twin. */
   onBronze: '#FFFFFF',
+  /** ⚠ Same as Forge — a photo is not a theme surface. See the Forge twin. */
+  onMedia: '#F7F5F1',
   /** `--fl-bronze-600`. White on it measures 4.90:1; on `bronze400` it would be 3.87:1. */
   bronzeSolid: '#8C6B3C',
   /** The lighter menu/popover scrim. `--fl-overlay-dark` is the design's value and suits it exactly. */
@@ -93,8 +95,21 @@ export const flColor = {
   /** ⚠ DARKENS. Forge's hover wash is white-on-black; the same gesture on paper must remove light. */
   hoverWash: 'rgba(35,31,26,0.035)',
   statusOnline: '#2F7D50',
-  /** See the Forge twin — repaints the figure from its alpha so it reads as engraved, not smudged. */
-  artworkTint: '#B08F5F',
+  /**
+   * See the Forge twin — repaints the figure from its alpha so it reads as engraved, not smudged.
+   *
+   * ⚠ MATCHED TO FORGE'S PRESENCE, NOT CHOSEN. PO: *"how toned back is the artwork on the hero card in
+   *   the dark app? Apply that same amount."* Measured across 8 real assets composited on their real
+   *   cards: Forge's artwork sits at **dL\* 0.37** — a whisper. The first Paper value (`#B08F5F`) was
+   *   at **1.49**, four times more present, which is why it read as a drawing rather than a watermark.
+   *   `#EADFD0` lands at **0.39**.
+   *
+   * ⚠ MEASURED IN CIE L\*, NOT RAW LUMINANCE, and the distinction changes the answer. Matching raw
+   *   luminance across a near-black card and a near-white one gives `#EFE7D9` — genuinely invisible —
+   *   because the eye's sensitivity is not linear in luminance. Perceptual lightness is what "the same
+   *   amount of toned back" means to a person looking at two screens.
+   */
+  artworkTint: '#EADFD0',
   paperGrain:
     'repeating-linear-gradient(94deg, rgba(122,104,78,0.022) 0 1px, rgba(255,255,255,0) 1px 3px), repeating-linear-gradient(4deg, rgba(122,104,78,0.016) 0 1px, rgba(255,255,255,0) 1px 4px)',
   paperVignette:

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import type { GestureResponderHandlers } from 'react-native';
+import { Animated, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -18,6 +19,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useProfile } from '@/lib/profile';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { useSheetDrag } from '@/hooks/useSheetDrag';
 
 /**
  * Share Configuration (SH-1) — built to `Forge Share Configuration.dc.html`, scoped to the `transformation`
@@ -138,18 +140,20 @@ export default function ShareConfigRoute() {
   const usePoses = entryTemplate === 'single' ? (singlePose ? [singlePose] : []) : allPoses.filter((_, i) => !excluded.includes(i));
   const shots: PoseShot[] = usePoses.map((p) => ({ label: p.label, photo: { url: entry!.photos[p.key]! } }));
   const photo = isCompare ? allPairs[0]?.now.url ?? null : shots[0]?.photo.url ?? null;
+  const drag = useSheetDrag({ onClose: () => router.back() });
+
 
   const missing = isCompare ? allPairs.length === 0 : !!data && !entry;
   if (missing) {
     return (
       <View style={styles.root}>
         <Pressable style={styles.scrim} onPress={() => router.back()} />
-        <View style={styles.sheet}>
-          <Handle />
+        <Animated.View onLayout={drag.onLayout} style={[styles.sheet, drag.style]}>
+          <Handle pan={drag.panHandlers} />
           <View style={styles.missingWrap}>
             <Text style={styles.missingText}>This isn’t available to share.</Text>
           </View>
-        </View>
+        </Animated.View>
       </View>
     );
   }
@@ -379,8 +383,8 @@ export default function ShareConfigRoute() {
       {/* Off-screen rasteriser for Save image. react-native-svg can only snapshot a MOUNTED Svg, so the
           card has to live in this tree before it can become a PNG — see share-card-host. */}
       <ShareCardHost />
-      <View style={styles.sheet}>
-        <Handle />
+      <Animated.View onLayout={drag.onLayout} style={[styles.sheet, drag.style]}>
+        <Handle pan={drag.panHandlers} />
         <View style={styles.header}>
           <Text style={styles.title}>Share Transformation</Text>
           <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Close" style={styles.closeBtn}>
@@ -529,7 +533,7 @@ export default function ShareConfigRoute() {
             <Text style={styles.ctaText}>{sharing ? 'Sharing…' : destVerb[dest]}</Text>
           </Pressable>
         </View>
-      </View>
+      </Animated.View>
 
       {/* ⚠ THE ROW TAPS NO LONGER POST. This was a list of buttons: tapping a name shared to it and shut
           the modal, so two squads meant walking the whole screen twice. It is a checkbox list with a
@@ -557,9 +561,10 @@ export default function ShareConfigRoute() {
   );
 }
 
-function Handle() {
+function Handle({ pan }: { pan?: GestureResponderHandlers }) {
   return (
-    <View style={styles.handleWrap}>
+    // The pan is spread onto the ROW, not the 5px bar — a bar that thin is a picture, not a target.
+    <View style={styles.handleWrap} {...(pan ?? {})}>
       <View style={styles.handle} />
     </View>
   );
@@ -652,6 +657,7 @@ const styles = StyleSheet.create({
   scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(4,5,7,0.6)' },
   sheet: { maxHeight: '95%', backgroundColor: '#111214', borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderBottomWidth: 0, borderColor: flColor.charcoal500, boxShadow: '0 -30px 70px rgba(0,0,0,0.6)' },
 
+  /** ~22px of grabbable height around the drawn bar — see `useSheetDrag`. */
   handleWrap: { alignItems: 'center', paddingTop: 10, paddingBottom: 2 },
   handle: { width: 44, height: 5, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal500 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },

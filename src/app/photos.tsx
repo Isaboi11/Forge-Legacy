@@ -854,7 +854,7 @@ const styles = StyleSheet.create({
   thumbGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10, marginBottom: 2 },
   thumb: { width: '23%', aspectRatio: 3 / 4, borderRadius: flRadius.xs, overflow: 'hidden', borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: '#0b0a09' },
   thumbCap: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 4, paddingVertical: 3 },
-  thumbCapText: { fontSize: 8, fontWeight: '600', textAlign: 'center', color: flColor.gray400 },
+  thumbCapText: { fontSize: 8, fontWeight: '600', textAlign: 'center', color: flColor.onMedia },
 
   // ── viewer ──
   viewer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 80, backgroundColor: '#050505', flexDirection: 'column' },

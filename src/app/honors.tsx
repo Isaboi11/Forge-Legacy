@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
@@ -10,6 +10,7 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { useSheetDrag } from '@/hooks/useSheetDrag';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { useTour } from '@/hooks/useTour';
@@ -218,11 +219,15 @@ function HonorTile({
 
 /** L-11 Honor Detail Sheet — a bottom sheet over the hub. */
 function HonorDetailSheet({ honor, onClose, onShare }: { honor: HubHonor; onClose: () => void; onShare: () => void }) {
+  const drag = useSheetDrag({ onClose });
   return (
     <View style={StyleSheet.absoluteFill}>
       <Pressable style={styles.sheetScrim} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
-      <View style={styles.sheet} accessibilityViewIsModal>
-        <View style={styles.sheetHandle} />
+      <Animated.View onLayout={drag.onLayout} style={[styles.sheet, drag.style]} accessibilityViewIsModal>
+        {/* The grabber grabs — see `useSheetDrag`. */}
+        <View style={styles.sheetHandleRow} {...drag.panHandlers}>
+          <View style={styles.sheetHandle} />
+        </View>
         <View style={styles.sheetHead}>
           <HonorMedallion glyph={honor.glyph} size={96} />
           <Text style={styles.sheetEyebrow}>{honor.categoryName}</Text>
@@ -260,7 +265,7 @@ function HonorDetailSheet({ honor, onClose, onShare }: { honor: HubHonor; onClos
           </Svg>
           <Text style={styles.shareText}>Share Honor</Text>
         </Pressable>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -336,6 +341,8 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorderSubtle,
     boxShadow: flShadow.ambient,
   },
+  /** ~22px of grabbable height around the 4px bar the design draws — see `useSheetDrag`. */
+  sheetHandleRow: { alignItems: 'center', paddingTop: 4, paddingBottom: 8 },
   sheetHandle: { width: 38, height: 4, borderRadius: 999, backgroundColor: flColor.charcoal600, alignSelf: 'center', marginBottom: 22 },
   sheetHead: { alignItems: 'center', gap: 8 },
   sheetEyebrow: {

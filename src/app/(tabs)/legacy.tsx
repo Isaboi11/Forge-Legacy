@@ -898,7 +898,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     lineHeight: 17,
-    color: flColor.cream100,
+    color: flColor.onMedia,
   },
 
   // my story

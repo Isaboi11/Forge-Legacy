@@ -245,8 +245,8 @@ const styles = StyleSheet.create({
   poseChipText: { fontWeight: '700', textTransform: 'uppercase', color: flColor.gray400 },
 
   footerRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  athlete: { fontFamily: flFont.display, fontWeight: '700', letterSpacing: -0.2, color: flColor.cream100 },
-  meta: { color: flColor.gray600 },
+  athlete: { fontFamily: flFont.display, fontWeight: '700', letterSpacing: -0.2, color: flColor.onMedia },
+  meta: { color: flColor.onMedia },
   chapter: { fontWeight: '700', textTransform: 'uppercase', color: flColor.bronze400 },
 
   slide: { position: 'relative', overflow: 'hidden' },

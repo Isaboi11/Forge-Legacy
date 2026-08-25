@@ -300,6 +300,6 @@ const styles = StyleSheet.create({
   crownWindow: { position: 'absolute', left: 0, right: 0, top: 14, height: 96, overflow: 'hidden', opacity: 0.95 },
 
   labelBlock: { position: 'absolute', left: 9, right: 9, bottom: 9, gap: 3 },
-  labelLine: { fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', color: flColor.cream100 },
+  labelLine: { fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', color: flColor.onMedia },
   countLine: { fontSize: 10, fontWeight: '600', color: flColor.bronze400 },
 });

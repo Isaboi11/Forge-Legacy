@@ -9,6 +9,7 @@
 
 import React, { useCallback, useRef, useState } from 'react'
 import {
+  Animated,
   Dimensions,
   Modal,
   Pressable,
@@ -20,6 +21,7 @@ import { Feather } from '@expo/vector-icons'
 import { color } from '@/constants/tokens'
 import { NAV } from './_navigationTokens'
 import type { ForgeOverflowMenuProps, MenuItem, MenuItemVariant } from './types'
+import { useSheetDrag } from '@/hooks/useSheetDrag'
 
 export function ForgeOverflowMenu({
   items,
@@ -43,6 +45,7 @@ export function ForgeOverflowMenu({
   }, [placement])
 
   const closeMenu = useCallback(() => setVisible(false), [])
+  const drag = useSheetDrag({ onClose: closeMenu })
 
   const handleItem = useCallback((item: MenuItem) => {
     if (item.variant === 'disabled') return
@@ -87,11 +90,13 @@ export function ForgeOverflowMenu({
           statusBarTranslucent
         >
           <Pressable style={styles.sheetBackdrop} onPress={closeMenu} accessibilityLabel="Close menu" />
-          <View style={styles.sheet}>
-            {/* Handle */}
-            <View style={styles.sheetHandle} />
+          <Animated.View onLayout={drag.onLayout} style={[styles.sheet, drag.style]}>
+            {/* The grabber grabs — see `useSheetDrag`. */}
+            <View style={styles.sheetHandleRow} {...drag.panHandlers}>
+              <View style={styles.sheetHandle} />
+            </View>
             {_renderItems(items, handleItem, true)}
-          </View>
+          </Animated.View>
         </Modal>
       )}
     </>
@@ -282,6 +287,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 12,
   },
+  sheetHandleRow: { alignItems: 'center', paddingTop: 4, paddingBottom: 8 },
   sheetHandle: {
     width: NAV.HANDLE_W,
     height: NAV.HANDLE_H,

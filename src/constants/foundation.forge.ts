@@ -76,6 +76,20 @@ export const flColor = {
    */
   onBronze: '#FFFFFF',
   /**
+   * Text and glyphs laid over MEDIA — a photo or a video frame, under a dark scrim.
+   *
+   * ⚠ THE SAME VALUE IN BOTH THEMES, and for the same reason as `onBronze`: the ground does not change
+   *   with the theme. A photo is a photo, and the scrim over it stays dark in Paper precisely BECAUSE
+   *   the photo is not a theme surface — so anything written on it has to stay light in Paper too.
+   *
+   * ⚠ THIS IS THE ROLE-TOKEN FLIP FOR THE THIRD TIME, and it is the most damaging of the three. These
+   *   titles were `cream100`, which is near-white in Forge and DARK INK in Paper. Dark ink on a 0.92
+   *   black scrim is invisible: the Accomplishment and Pinned Legacy cards rendered as blank dark
+   *   rectangles, which the PO reported as *"not showing any picture"* — the picture was there, its
+   *   caption had simply disappeared into the scrim above it.
+   */
+  onMedia: '#F7F5F1',
+  /**
    * The SOLID bronze fill under white lettering — selected segments, chips, badges, count pills.
    *
    * Distinct from `bronze400`, which stays the accent for borders, icons and text ON a dark or cream

@@ -7,12 +7,32 @@
  * Detail, filters, confirmations, Set Input, action menus, Share
  * Configuration. Slides up from the bottom; tap-outside dismiss is allowed
  * by default.
+ *
+ * ══ THE GRABBER NOW GRABS ══
+ *
+ * PO, 2026-08-25: *"all the places where it pulls a page up and it shows it as if you can drag it down
+ * but none of them drag down."* This component draws a grabber at the top of every sheet and had no
+ * gesture behind it — and **49 files use it**, so that was 49 screens making a promise the app did not
+ * keep. A drag handle is not decoration; it is the standard signal that a surface is dismissible by
+ * dragging, and drawing one without wiring it is the same defect class as a button that only fires a
+ * "coming soon" toast.
+ *
+ * ⚠ THE PAN IS ON THE HANDLE, NOT THE SHEET, and that is deliberate rather than lazy. This file's own
+ * history is a gesture conflict: a backdrop `Pressable` wrapping the body once ate the drag that should
+ * have scrolled a long sheet (see the note on the backdrop below). A responder on the whole sheet would
+ * do it again — `onMoveShouldSetPanResponder` on a vertical drag cannot tell "dismiss the sheet" from
+ * "scroll the list", and the scroller is the one that loses. Scoped to the grab area, the two gestures
+ * can never contend: the body scrolls exactly as it did, and the handle does the thing it depicts.
+ *
+ * The gesture itself lives in `useSheetDrag`, shared with the five sheets that roll their own Modal,
+ * so every sheet in the app dismisses at the same distance and the same fling.
  */
 
 import React from 'react'
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Animated, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { flColor, flRadius, flShadow } from '@/constants/foundation'
+import { useSheetDrag } from '@/hooks/useSheetDrag'
 
 export interface BottomSheetProps {
   open: boolean
@@ -47,6 +67,8 @@ export interface BottomSheetProps {
 export function BottomSheet({ open, onClose, dismissible = true, title, showHandle = true, scroll = false, children, footer, onDismiss }: BottomSheetProps) {
   const insets = useSafeAreaInsets()
   const { height: windowHeight } = useWindowDimensions()
+
+  const drag = useSheetDrag({ onClose, dismissible })
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose} onDismiss={onDismiss}>
@@ -89,9 +111,13 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
           onPress={dismissible ? onClose : undefined}
           focusable={false}
         />
-        <View style={[styles.sheet, { paddingBottom: 22 + insets.bottom }]}>
+        <Animated.View
+          onLayout={drag.onLayout}
+          style={[styles.sheet, { paddingBottom: 22 + insets.bottom }, drag.style]}
+        >
           {showHandle ? (
-            <View style={styles.handleRow}>
+            // The pan lives here, on the grab area — see the note at the top of the file.
+            <View style={styles.handleRow} {...drag.panHandlers}>
               <View style={styles.handle} />
             </View>
           ) : null}
@@ -120,7 +146,7 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
           )}
 
           {footer ? <View style={styles.footer}>{footer}</View> : null}
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   )
@@ -153,6 +179,9 @@ const styles = StyleSheet.create({
   handleRow: {
     alignItems: 'center',
     paddingTop: 10,
+    // ⚠ A 4px bar is not a touch target. The row is padded so the GRAB area is ~22px tall, which is
+    // what makes the gesture findable — the drawn handle stays the size the design specifies.
+    paddingBottom: 8,
   },
   handle: {
     width: 38,

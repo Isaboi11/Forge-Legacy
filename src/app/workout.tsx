@@ -29,6 +29,7 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { useSheetDrag } from '@/hooks/useSheetDrag';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useAppPrefs, useCoachIntensity, useSoundEnabled, useUnits } from '@/lib/settings';
 import { loadContextFor } from '@/domain/program/percent-max';
@@ -621,6 +622,8 @@ export default function WorkoutScreen() {
   const taggedPartners = session?.partnerIds ?? [];
   const [playlistSheetOpen, setPlaylistSheetOpen] = useState(false);
   const [partnerSheetOpen, setPartnerSheetOpen] = useState(false);
+  const invitePan = useSheetDrag({ onClose: () => setInvitePickerOpen(false) });
+  const partnerPan = useSheetDrag({ onClose: () => setPartnerSheetOpen(false) });
   const [invitePickerOpen, setInvitePickerOpen] = useState(false);
   /* Holt, on this screen. Its own flag rather than a face of the ⋮ sheet — the two answer different
      questions and neither should close the other (see `SessionCoachSheet`). */
@@ -4286,8 +4289,11 @@ export default function WorkoutScreen() {
       {invitePickerOpen ? (
         <View style={styles.pickerWrap}>
           <Pressable style={styles.pickerBackdrop} onPress={() => setInvitePickerOpen(false)} accessibilityLabel="Close" />
-          <View style={[styles.picker, styles.partnerSheet]}>
-            <View style={styles.grabHandle} />
+          <Animated.View onLayout={invitePan.onLayout} style={[styles.picker, styles.partnerSheet, invitePan.style]}>
+            {/* The grabber grabs — see `useSheetDrag`. */}
+            <View style={styles.grabHandleRow} {...invitePan.panHandlers}>
+              <View style={styles.grabHandle} />
+            </View>
             <View style={styles.partnerHeader}>
               <Text style={styles.partnerHeaderTitle}>Invite to join</Text>
               <Text style={styles.partnerCount}>{ex.name}</Text>
@@ -4317,7 +4323,7 @@ export default function WorkoutScreen() {
             <Button variant="secondary" fullWidth onPress={() => setInvitePickerOpen(false)} accessibilityLabel="Done">
               Done
             </Button>
-          </View>
+          </Animated.View>
         </View>
       ) : null}
 
@@ -4325,8 +4331,11 @@ export default function WorkoutScreen() {
       {partnerSheetOpen ? (
         <View style={styles.pickerWrap}>
           <Pressable style={styles.pickerBackdrop} onPress={() => setPartnerSheetOpen(false)} accessibilityLabel="Close" />
-          <View style={[styles.picker, styles.partnerSheet]}>
-            <View style={styles.grabHandle} />
+          <Animated.View onLayout={partnerPan.onLayout} style={[styles.picker, styles.partnerSheet, partnerPan.style]}>
+            {/* The grabber grabs — see `useSheetDrag`. */}
+            <View style={styles.grabHandleRow} {...partnerPan.panHandlers}>
+              <View style={styles.grabHandle} />
+            </View>
             <View style={styles.partnerHeader}>
               <Text style={styles.partnerHeaderTitle}>Trained with</Text>
               <Text style={styles.partnerCount}>{taggedPartners.length} of 3</Text>
@@ -4361,7 +4370,7 @@ export default function WorkoutScreen() {
             <Button variant="primary" fullWidth onPress={() => setPartnerSheetOpen(false)} accessibilityLabel="Done">
               {taggedPartners.length ? `Done · ${taggedPartners.length} tagged` : 'Done'}
             </Button>
-          </View>
+          </Animated.View>
         </View>
       ) : null}
 
@@ -5315,6 +5324,8 @@ const styles = StyleSheet.create({
 
   // partner sheet (W-20)
   partnerSheet: { maxHeight: '82%', paddingTop: 8 },
+  /** ~22px of grabbable height around the drawn bar — see `useSheetDrag`. */
+  grabHandleRow: { alignSelf: 'stretch', alignItems: 'center', paddingTop: 4, paddingBottom: 8 },
   grabHandle: { alignSelf: 'center', width: 40, height: 5, borderRadius: 99, backgroundColor: flColor.charcoal500, marginBottom: 8 },
   partnerHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 },
   partnerHeaderTitle: { fontFamily: flFont.display, fontSize: 21, fontWeight: '600', color: flColor.cream100 },

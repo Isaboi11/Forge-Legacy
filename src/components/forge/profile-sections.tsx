@@ -529,7 +529,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   accBody: { gap: 6 },
-  accTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', letterSpacing: -0.2, lineHeight: 21, color: flColor.cream100 },
+  accTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', letterSpacing: -0.2, lineHeight: 21, color: flColor.onMedia },
   accSub: { fontSize: 11, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze300 },
 
   // honors
