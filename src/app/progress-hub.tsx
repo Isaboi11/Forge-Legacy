@@ -15,6 +15,7 @@ import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
+import { rankIdentity } from '@/domain/rank/identity';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
 import { fetchProgressHub, type MetricSeries } from '@/data/progress-hub-live';
 import { currentLabel } from '@/domain/progress/lift-series';
@@ -36,14 +37,22 @@ import { useUnits } from '@/lib/settings';
  * Transformation gallery (`/transformation`).
  */
 
-const LADDER: { key: RankFamily; name: string; statement: string }[] = [
-  { key: 'foundation', name: 'Foundation', statement: "I've started." },
-  { key: 'builder', name: 'Builder', statement: "I'm building habits." },
-  { key: 'craftsman', name: 'Craftsman', statement: 'I know how to train.' },
-  { key: 'architect', name: 'Architect', statement: "I'm intentionally shaping my development." },
-  { key: 'established', name: 'Established', statement: 'What I built outlives me.' },
-  { key: 'legend', name: 'Legend', statement: 'My journey has become a meaningful story.' },
-  { key: 'legacy', name: 'Legacy', statement: 'I repeatedly become the person I intend to become.' },
+/**
+ * ⚠ THE STATEMENTS MOVED TO `domain/rank/identity.ts`; ONE OF THEM WAS ALSO WRONG.
+ *
+ * Six of these were the locked RSA §2.2 sentences. Established read *"What I built outlives me"*, and
+ * the locked text is *"I've built something real."* — a different claim rather than a rewording: one is
+ * about what survives you, the other about what you have done. It was corrected on the way to the shared
+ * module, which the rank-up ceremony and Rank Progression now read from too.
+ */
+const LADDER: { key: RankFamily; name: string }[] = [
+  { key: 'foundation', name: 'Foundation' },
+  { key: 'builder', name: 'Builder' },
+  { key: 'craftsman', name: 'Craftsman' },
+  { key: 'architect', name: 'Architect' },
+  { key: 'established', name: 'Established' },
+  { key: 'legend', name: 'Legend' },
+  { key: 'legacy', name: 'Legacy' },
 ];
 const ORDER = LADDER.map((l) => l.key);
 
@@ -103,7 +112,7 @@ export default function ProgressHubScreen() {
               <Text style={styles.heroRank}>
                 {curDef.name} · {ROMAN[data.rankSubTier]}
               </Text>
-              <Text style={styles.heroStatement}>{curDef.statement}</Text>
+              <Text style={styles.heroStatement}>{rankIdentity(curDef.key)}</Text>
             </View>
           </View>
 
@@ -299,7 +308,7 @@ function Fact({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Rung({ def, state, subTier, sex }: { def: { key: RankFamily; name: string; statement: string }; state: 'earned' | 'current' | 'locked'; subTier: RankLevel; sex?: 'male' | 'female' | 'unspecified' }) {
+function Rung({ def, state, subTier, sex }: { def: { key: RankFamily; name: string }; state: 'earned' | 'current' | 'locked'; subTier: RankLevel; sex?: 'male' | 'female' | 'unspecified' }) {
   return (
     <View style={[styles.rung, state === 'current' && styles.rungCurrent, state === 'locked' && styles.rungLocked]}>
       <View style={styles.rungNode}>
@@ -323,7 +332,7 @@ function Rung({ def, state, subTier, sex }: { def: { key: RankFamily; name: stri
           ) : null}
         </View>
         <Text style={[state === 'current' ? styles.rungStmtCurrent : styles.rungStmt]} numberOfLines={2}>
-          {state === 'locked' ? 'Sealed until earned' : def.statement}
+          {state === 'locked' ? 'Sealed until earned' : rankIdentity(def.key)}
         </Text>
       </View>
     </View>

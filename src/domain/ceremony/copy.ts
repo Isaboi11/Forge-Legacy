@@ -13,6 +13,7 @@
 
 import type { CeremonyEvent } from './types';
 import type { RankTier } from '../rank-artwork/resolver';
+import { rankIdentity } from '../rank/identity.ts';
 
 export interface CeremonyCopy {
   eyebrow?: string;
@@ -40,13 +41,30 @@ function isFinalRank(rank: RankTier): boolean {
 export function ceremonyCopy(event: CeremonyEvent): CeremonyCopy {
   switch (event.kind) {
     case 'rankUp':
-      // M-1 §6.2 (standard) / §6.5 (final rank) — locked ceremony copy.
+      /*
+       * M-1 §6.2 (standard) / §6.5 (final rank) — locked ceremony copy.
+       *
+       * ══ THE RANK NOW SAYS WHAT IT MEANS ══
+       *
+       * PO: *"it should give the description we came up with for each."* Every rank-up said the same
+       * sentence — *"Earned through every session. Welcome to what you've become."* — so the card that
+       * announces reaching Architect was word-for-word the card that announced reaching Builder, and the
+       * one thing the athlete wanted to know (what does this rank mean?) was the one thing it withheld.
+       *
+       * ⚠ THE SENTENCE ALREADY EXISTED AND WAS LOCKED. `Rank-System-Architecture.md` §2.2 defines an
+       * identity statement per family — *"not marketing copy… self-descriptions the athlete should be
+       * able to say honestly when they reach the rank"* — which is precisely a ceremony line. Two other
+       * screens were already showing it (and disagreeing about it); see `domain/rank/identity.ts`.
+       *
+       * ⚠ THE LOCKED GENERIC LINE IS KEPT AS THE FALLBACK, not deleted: M-1 §6.2 is a locked clause, and
+       * it remains the right words for a family this build has no statement for.
+       */
       return {
         eyebrow: 'Rank Ascended',
         title: rankTierLabel(event.rank),
         body: isFinalRank(event.rank)
           ? 'Your legacy has been forged.'
-          : 'Earned through every session. Welcome to what you’ve become.',
+          : rankIdentity(event.rank.family) || 'Earned through every session. Welcome to what you’ve become.',
         primary: 'Continue',
         secondary: 'Share this advancement',
       };

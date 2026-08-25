@@ -9,6 +9,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
+import { rankIdentity } from '@/domain/rank/identity';
 import { buildRankSignals, fetchStoredRank } from '@/data/rank-live';
 import { allMet, familyStandards, subTierStandards, type StandardRow } from '@/domain/rank/standards';
 import type { PromotableFamily } from '@/domain/rank/thresholds';
@@ -39,14 +40,23 @@ import { useQuery } from '@/lib/useQuery';
 const ROMAN = ['', 'I', 'II', 'III', 'IV'] as const;
 const TIERS: RankLevel[] = [1, 2, 3, 4];
 
-const FAMILIES: { key: RankFamily; index: string; name: string; essence: string }[] = [
-  { key: 'foundation', index: '01', name: 'Foundation', essence: 'The beginning of every legacy.' },
-  { key: 'builder', index: '02', name: 'Builder', essence: 'The habit takes hold.' },
-  { key: 'craftsman', index: '03', name: 'Craftsman', essence: 'Skill sharpened by repetition.' },
-  { key: 'architect', index: '04', name: 'Architect', essence: 'You design the work now.' },
-  { key: 'established', index: '05', name: 'Established', essence: 'What you built outlives you.' },
-  { key: 'legend', index: '06', name: 'Legend', essence: 'Among the few who endured.' },
-  { key: 'legacy', index: '07', name: 'Legacy', essence: 'Timeless, complete, beyond the self.' },
+/**
+ * ⚠ THE `essence` LINES WERE REMOVED HERE, NOT LOST — and they were never a locked set.
+ *
+ * This screen carried its own seven sentences ("The beginning of every legacy", "The habit takes hold"),
+ * `progress-hub` carried a second set, and `Rank-System-Architecture.md` §2.2 locks a THIRD — the one
+ * that is actually authoritative. Three answers to "what does this rank mean", and the ceremony showed
+ * none of them. The locked identity statement is now the single description, from
+ * `domain/rank/identity.ts`, shown here, on the Progress Hub and on the rank-up card alike.
+ */
+const FAMILIES: { key: RankFamily; index: string; name: string }[] = [
+  { key: 'foundation', index: '01', name: 'Foundation' },
+  { key: 'builder', index: '02', name: 'Builder' },
+  { key: 'craftsman', index: '03', name: 'Craftsman' },
+  { key: 'architect', index: '04', name: 'Architect' },
+  { key: 'established', index: '05', name: 'Established' },
+  { key: 'legend', index: '06', name: 'Legend' },
+  { key: 'legacy', index: '07', name: 'Legacy' },
 ];
 
 const ORDER: RankFamily[] = FAMILIES.map((f) => f.key);
@@ -90,12 +100,32 @@ export default function RankProgressionScreen() {
                   <Text style={styles.rankIndex}>{f.index}</Text>
                   <Text style={styles.rankName}>{f.name}</Text>
                   <View style={styles.rankUnderline} />
-                  <Text style={styles.rankEssence}>{f.essence}</Text>
+                  {/* The rank's own words — RSA §2.2, and the same sentence the rank-up card now shows.
+                      Quoted because they are first-person self-descriptions, not captions about you. */}
+                  <Text style={styles.rankEssence}>“{rankIdentity(f.key)}”</Text>
                   {state === 'current' ? <Text style={styles.rankHere}>You are here</Text> : null}
                 </View>
                 <View style={styles.tierRow}>
                   {TIERS.map((t) => (
-                    <BadgeTile key={t} family={f.key} tier={t} sex={profile?.sex} isCurrent={state === 'current' && current.subTier === t} />
+                    <BadgeTile
+                      key={t}
+                      family={f.key}
+                      tier={t}
+                      sex={profile?.sex}
+                      isCurrent={state === 'current' && current.subTier === t}
+                      /*
+                       * ⚠ EVERY SUB-RANK YOU HAVE EARNED, NOT JUST THE ONE YOU ARE ON. PO: *"The rank
+                       * progress should show all ranks including sub ranks that I've earned."* Every
+                       * tile rendered identically except the current one, so the three Foundation badges
+                       * an athlete had actually earned looked exactly like the twenty-one they had not —
+                       * the screen showed the ladder and never the climb.
+                       *
+                       * Derived, never stored: rank is monotonic (`refreshRank` never decreases it), so
+                       * a past family is earned entire and the current family is earned up to its
+                       * sub-tier. Nothing to persist, and nothing that can fall out of step with it.
+                       */
+                      isEarned={state === 'past' || (state === 'current' && t <= current.subTier)}
+                    />
                   ))}
                 </View>
 
@@ -183,14 +213,35 @@ function Requirement({ row }: { row: StandardRow }) {
   );
 }
 
-function BadgeTile({ family, tier, sex, isCurrent }: { family: RankFamily; tier: RankLevel; sex?: 'male' | 'female' | 'unspecified'; isCurrent: boolean }) {
+function BadgeTile({
+  family,
+  tier,
+  sex,
+  isCurrent,
+  isEarned,
+}: {
+  family: RankFamily;
+  tier: RankLevel;
+  sex?: 'male' | 'female' | 'unspecified';
+  isCurrent: boolean;
+  isEarned: boolean;
+}) {
   const art = resolveRankBadge({ family, level: tier, sex });
   return (
     <View style={styles.tile}>
-      <View style={[styles.tileArt, isCurrent && styles.tileArtCurrent]}>
+      {/*
+        THREE STATES, AND THE MIDDLE ONE IS THE NEW ONE: not yet earned (dimmed), earned (full strength),
+        and the one you are standing on (earned, plus the bronze ring).
+
+        ⚠ DIMMED, NOT HIDDEN OR SILHOUETTED. The unearned badges are the point of the screen — they are
+        what you are climbing toward — so they stay legible; they simply stop competing with what you
+        have actually done. Opacity rather than a greyscale filter because the art is bronze on
+        transparent and a desaturated version reads as a broken image rather than a locked one.
+      */}
+      <View style={[styles.tileArt, isCurrent && styles.tileArtCurrent, !isEarned && styles.tileArtLocked]}>
         {art != null ? <Image source={art} style={styles.badgeImg} resizeMode="contain" /> : <RankSeal family={family} level={tier} size={52} />}
       </View>
-      <Text style={[styles.tierLabel, isCurrent && styles.tierLabelCurrent]}>{ROMAN[tier]}</Text>
+      <Text style={[styles.tierLabel, isEarned && styles.tierLabelEarned, isCurrent && styles.tierLabelCurrent]}>{ROMAN[tier]}</Text>
     </View>
   );
 }
@@ -242,7 +293,13 @@ const styles = StyleSheet.create({
   tileArt: { width: '100%', aspectRatio: 0.82, borderRadius: flRadius.md, alignItems: 'center', justifyContent: 'center' },
   tileArtCurrent: { borderWidth: 1.5, borderColor: flColor.bronze400, backgroundColor: 'rgba(186, 134, 84,0.08)', boxShadow: '0 0 18px rgba(186, 134, 84,0.35)' },
   badgeImg: { width: '92%', height: '92%' },
+  /* An unearned badge is still the thing you are climbing toward, so it stays readable — it just stops
+     competing with the ones you have. See `BadgeTile`. */
+  tileArtLocked: { opacity: 0.3 },
   tierLabel: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1.4, color: '#6C5A41' },
+  /* Earned reads in cream — plain "you have this". Bronze stays reserved for the one you are on, so the
+     current tier is still findable at a glance inside a row of four you have already cleared. */
+  tierLabelEarned: { color: flColor.cream100 },
   tierLabelCurrent: { color: flColor.bronze300 },
 
   note: { fontFamily: flFont.sans, fontSize: 12, lineHeight: 19, color: '#5F5648', textAlign: 'center', marginTop: 40 },

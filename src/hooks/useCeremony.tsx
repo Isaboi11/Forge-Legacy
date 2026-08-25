@@ -14,6 +14,7 @@
  */
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { Image } from 'react-native'
 import { useRouter } from 'expo-router'
 
 import { markHonorsCelebrated } from '@/data/honors-live'
@@ -29,6 +30,8 @@ import { mergeCeremonies } from '@/domain/ceremony/queue'
 import { ceremonyDetails } from '@/domain/ceremony/details'
 import { ceremonyCopy, rankTierLabel } from '@/domain/ceremony/copy'
 import { RankSeal } from '@/components/forge/RankSeal'
+import { resolveRankBadge } from '@/domain/rank-artwork/badge-art'
+import type { Sex } from '@/domain/profile/schema'
 import { useShareSheet } from '@/hooks/useShareSheet'
 import { useProfile } from '@/lib/profile'
 import type { ShareKind } from '@/domain/share/content'
@@ -60,10 +63,35 @@ const ToastContext = createContext<ToastContextValue | null>(null)
 
 const ARTWORK_SIZE = 104
 
-/** The ceremony's Insignia: real rank badge for rank-ups, graceful placeholder otherwise. */
-function ceremonyArtwork(event: CeremonyEvent): React.ReactNode {
+/**
+ * The ceremony's Insignia: the REAL rank badge for rank-ups, graceful placeholder otherwise.
+ *
+ * ══ IT SAID "REAL RANK BADGE" AND DREW THE FALLBACK ══
+ *
+ * PO: *"The achievement cards that pop up when I earn a rank isn't the correct artwork. It should be the
+ * same artwork as the badges in the top right corner of the legacy page."*
+ *
+ * Exactly right, and the code claimed otherwise in two places: this function's own header, and
+ * `RankUpCeremony`'s — *"the only ceremony whose artwork is REAL (the imported rank badge)"*. Both were
+ * true when written. `badge-art.ts` later landed alpha-clean cutouts for all seven families and says so
+ * — *"Every family now resolves to real art, so the vector `RankSeal` is only a defensive fallback"* —
+ * the Legacy page and Rank Progression were moved onto `resolveRankBadge`, and the ceremony was not. So
+ * the one screen whose entire job is to present the badge showed the geometric stand-in for it.
+ *
+ * `RankSeal` stays as the null arm, which is what `resolveRankBadge` documents it for.
+ *
+ * ⚠ SEX MATTERS FOR EXACTLY ONE FAMILY. `established` has -m and -f cutouts; every other family is
+ * neutral. Without it a woman reaching Established would be handed the male badge at her own ceremony
+ * while the Legacy page behind it showed hers — the same inconsistency this fix exists to remove.
+ */
+function ceremonyArtwork(event: CeremonyEvent, sex?: Sex): React.ReactNode {
   if (event.kind === 'rankUp') {
-    return <RankSeal family={event.rank.family} level={event.rank.level} size={ARTWORK_SIZE} />
+    const art = resolveRankBadge({ family: event.rank.family, level: event.rank.level, sex })
+    return art != null ? (
+      <Image source={art} style={{ width: ARTWORK_SIZE, height: ARTWORK_SIZE }} resizeMode="contain" />
+    ) : (
+      <RankSeal family={event.rank.family} level={event.rank.level} size={ARTWORK_SIZE} />
+    )
   }
   if (event.kind === 'honorEarned') {
     const initials = event.honorName
@@ -259,7 +287,7 @@ export function CeremonyProvider({ children }: { children: React.ReactNode }) {
               eyebrow={copy.eyebrow}
               title={copy.title}
               subtitle={copy.subtitle}
-              artwork={ceremonyArtwork(current)}
+              artwork={ceremonyArtwork(current, profile?.sex)}
               /* M-4 §4's context rows — Started / Graduated / Workouts / Duration. Empty for every other
                  kind: a rank or an honor is a statement, not a record card. */
               details={ceremonyDetails(current)}
