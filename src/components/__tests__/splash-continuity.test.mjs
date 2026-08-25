@@ -61,8 +61,10 @@ test('the JS splash is painted in the native splash’s own colour', () => {
   const native = splashBackground();
   assert.match(native ?? '', /^#[0-9a-fA-F]{6}$/, `splash backgroundColor is not a hex colour: ${native}`);
 
-  const declared = /SPLASH_BACKGROUND\s*=\s*'(#[0-9a-fA-F]{6})'/.exec(splashSrc)?.[1];
-  assert.ok(declared, 'forge-splash.tsx no longer exports a SPLASH_BACKGROUND literal');
+  // The FORGE value is the one that has to match app.json: the native splash is build config, so the
+  // hand-off it guards only exists on native, and native resolves to Forge (see theme-choice.ts).
+  const declared = /SPLASH_BACKGROUND_FORGE\s*=\s*'(#[0-9a-fA-F]{6})'/.exec(splashSrc)?.[1];
+  assert.ok(declared, 'forge-splash.tsx no longer exports a SPLASH_BACKGROUND_FORGE literal');
 
   assert.equal(
     declared.toUpperCase(),
@@ -86,9 +88,17 @@ test('the splash fill is the declared constant, not a second hard-coded literal'
     ['forge-splash.tsx', splashSrc],
     ['animated-icon.tsx', overlaySrc],
   ]) {
+    // ⚠ TWO colours are legitimate here now, not one: the splash follows the theme, so Forge's ground
+    // (which must equal app.json — asserted above) and Paper's are both expected. A THIRD is still the
+    // defect this catches, and that is what keeps the guard meaningful rather than merely widened.
+    const allowed = new Set(
+      [splashBackground(), /SPLASH_BACKGROUND_PAPER\s*=\s*'(#[0-9a-fA-F]{6})'/.exec(splashSrc)?.[1]]
+        .filter(Boolean)
+        .map((h) => h.toUpperCase()),
+    );
     const hexes = stripComments(src).match(/#[0-9a-fA-F]{6}/g) ?? [];
-    const unique = [...new Set(hexes.map((h) => h.toUpperCase()))].filter((h) => h !== splashBackground().toUpperCase());
-    assert.deepEqual(unique, [], `${name} carries a colour that is not the splash background: ${unique.join(', ')}`);
+    const unique = [...new Set(hexes.map((h) => h.toUpperCase()))].filter((h) => !allowed.has(h));
+    assert.deepEqual(unique, [], `${name} carries a colour that is neither splash ground: ${unique.join(', ')}`);
   }
 });
 
@@ -149,4 +159,24 @@ test('both launch holds render the splash, and neither spins', () => {
 test('no Expo-template branding survives in the splash path', () => {
   assert.doesNotMatch(overlaySrc, /expo-logo|logo-glow|AnimatedIcon/, 'Expo template code is back');
   assert.doesNotMatch(overlaySrc, /experimental_backgroundImage/, 'unsupported style property');
+});
+
+test('the Paper splash exists, is light, and cannot reach the native hand-off', () => {
+  // Loading should be the theme the athlete chose. On web there is no native splash to disagree with;
+  // on native the hand-off is preserved because the theme is pinned to Forge there.
+  const paper = /SPLASH_BACKGROUND_PAPER\s*=\s*'(#[0-9a-fA-F]{6})'/.exec(splashSrc)?.[1];
+  assert.ok(paper, 'forge-splash.tsx must declare SPLASH_BACKGROUND_PAPER');
+
+  const lum = (hex) => {
+    const n = parseInt(hex.slice(1), 16);
+    return 0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255);
+  };
+  assert.ok(lum(paper) > 200, `the Paper splash must be light, got ${paper}`);
+
+  // And the rendered value must still be the switch, not one branch hardcoded back in.
+  assert.match(
+    splashSrc,
+    /SPLASH_BACKGROUND\s*=\s*IS_PAPER\s*\?\s*SPLASH_BACKGROUND_PAPER\s*:\s*SPLASH_BACKGROUND_FORGE/,
+    'SPLASH_BACKGROUND must select between the two, or one theme loads on the other one’s ground',
+  );
 });

@@ -43,6 +43,7 @@ import { useUnits } from '@/lib/settings';
 import { callerModalGone, useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { textHalo } from '@/constants/washes';
 
 /**
  * Squad Detail (S-2) — built to `Squad Detail.dc.html`, scoped to what Squad Core can back with real data.
@@ -1425,11 +1426,11 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     lineHeight: 35,
     color: flColor.cream100,
-    textShadowColor: 'rgba(0,0,0,0.75)',
+    textShadowColor: textHalo(0.75),
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 14,
   },
-  tagline: { fontSize: 14, lineHeight: 20, color: flColor.gray400, marginTop: 8, textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 },
+  tagline: { fontSize: 14, lineHeight: 20, color: flColor.gray400, marginTop: 8, textShadowColor: textHalo(0.6), textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 },
   crest: {
     width: 92,
     height: 92,

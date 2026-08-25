@@ -1,4 +1,5 @@
 import { Dimensions, Image, StyleSheet, View } from 'react-native';
+import { IS_PAPER } from '@/constants/foundation';
 
 const CARVED_LOGO = require('@/assets/welcome-logo-carved.png');
 
@@ -29,14 +30,29 @@ const CARVED_LOGO = require('@/assets/welcome-logo-carved.png');
  */
 
 /**
- * Must equal `expo.plugins['expo-splash-screen'].backgroundColor` in `app.json`.
+ * The Forge value must equal `expo.plugins['expo-splash-screen'].backgroundColor` in `app.json`.
  *
  * Not imported from there: this runs in the render path and `app.json` is build config, so
  * `splash-continuity.test.mjs` asserts the equality instead of the bundle carrying a JSON read to prove
  * it. In any colour but the splash's own, this component IS the flash it exists to prevent — which is
  * how `#208AEF` (Expo blue) once shipped to TestFlight.
  */
-export const SPLASH_BACKGROUND = '#0E0E12';
+export const SPLASH_BACKGROUND_FORGE = '#0E0E12';
+
+/**
+ * Paper's canvas (`--fl-charcoal-900`), so loading is the theme the athlete chose rather than a dark
+ * frame in front of a light app.
+ *
+ * ⚠ THE NATIVE SPLASH CANNOT FOLLOW THIS AND DOES NOT NEED TO. `app.json`'s splash colour is BUILD
+ *   config — one value for every athlete on that binary — so on native there is a hand-off that has to
+ *   match, and it matches because native resolves to Forge (see `theme-choice.ts`). On WEB there is no
+ *   native splash to hand off from: the browser paints `+html.tsx` and then React mounts, so a Paper
+ *   splash there has nothing to disagree with. `splash-continuity.test.mjs` holds that reasoning as an
+ *   assertion rather than a comment.
+ */
+export const SPLASH_BACKGROUND_PAPER = '#F6F2E8';
+
+export const SPLASH_BACKGROUND = IS_PAPER ? SPLASH_BACKGROUND_PAPER : SPLASH_BACKGROUND_FORGE;
 
 /**
  * `imageWidth` from the same `expo-splash-screen` plugin entry, and the source PNG's own aspect ratio

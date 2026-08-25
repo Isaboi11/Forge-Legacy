@@ -60,3 +60,20 @@ export function bronzeWash(alpha: number): string {
 function round(a: number): number {
   return Math.round(a * 10000) / 10000;
 }
+
+/**
+ * The halo behind text that sits directly on background ARTWORK.
+ *
+ * ⚠ THIS IS THE ONE THE PO CALLED A *"weird smear"*, and the cause is the same role-token flip that
+ *   made the Workouts toggle go dark: these titles are `cream100`/`gray400` — light ink on Forge, DARK
+ *   ink on Paper — and their halo was hardcoded near-black. Light text with a dark halo reads as a
+ *   glow; DARK text with a dark halo reads as a smudge.
+ *
+ * ⚠ NOT EVERY `textShadow` IN THE APP BELONGS HERE, and swapping them all would be the wrong fix. A
+ *   dark halo is still correct under WHITE lettering on a bronze button, and under text laid over a
+ *   PHOTO, because neither of those grounds changes with the theme. Only text whose own colour flips —
+ *   text over the background plate — needs its halo to flip with it.
+ */
+export function textHalo(alpha: number): string {
+  return IS_PAPER ? `rgba(255,252,246,${round(alpha)})` : `rgba(0,0,0,${round(alpha)})`;
+}

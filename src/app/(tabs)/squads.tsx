@@ -22,6 +22,7 @@ import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { textHalo } from '@/constants/washes';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 
 /**
@@ -382,10 +383,16 @@ function PeopleGlyph({ size = 15, color = flColor.gray600 }: { size?: number; co
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  barTitle: { fontSize: 32, fontWeight: '700', letterSpacing: -0.4, color: flColor.cream100, textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 14 },
+  barTitle: { fontSize: 32, fontWeight: '700', letterSpacing: -0.4, color: flColor.cream100, textShadowColor: textHalo(0.6), textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 14 },
   headerBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round },
 
-  scroll: { paddingHorizontal: 16, paddingTop: 2, paddingBottom: 30 },
+  /**
+   * ⚠ WAS `paddingTop: 2` — the first squad card sat flush against the AppBar with no breathing room,
+   * in BOTH themes (PO, 2026-08-25). Every other tab already leaves a gap: Workouts 12, Legacy 14,
+   * Home 8 under its title block. 14 matches Legacy, which is the closest screen in shape — a titled
+   * bar over a stack of cards.
+   */
+  scroll: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 30 },
   stack: { gap: 16 },
   cardStack: { gap: 16 },
   sectionHeaderPad: { paddingHorizontal: 4, marginTop: 4 },

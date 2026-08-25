@@ -52,12 +52,50 @@ def resolve_ffmpeg():
 
 FFMPEG = resolve_ffmpeg()
 
-# ---- app tokens (foundation.ts bronze: #BA8654 / #C99767, hue ~30 deg) ----
-BRONZE_H   = 21          # PIL hue of the app's saturated bronze (~30 deg)
-S_MUL      = 0.80        # keep most of the source saturation -> prominent, not pale
-S_FLOOR    = 110         # floor so even low-sat reds read as bronze
-S_CAP      = 150         # cap so it stays bronze, not garish orange
-V_LIFT     = 1.12        # lift brightness of the recolored muscle ("glow")
+# ---- app tokens: the target-muscle bronze, PER THEME ----
+#
+# ⚠ TWO PROFILES, BECAUSE THE ANIMATIONS SHIP TWICE. Forge's muscle is a bright bronze that GLOWS
+#   against a near-black card; Paper's is the dense antique brass of the Start Workout button, which is
+#   a mid-value colour on cream. Rendering one set for both themes cannot work: the Forge value at
+#   #A57C54 reads as hot orange on ivory, and the Paper value reads as mud on black.
+#
+# ⚠ PAPER'S V IS A CUT, NOT A LIFT — that is the whole difference and it is easy to get backwards.
+#   Forge multiplies brightness by 1.12 to make the muscle glow. Paper's target `#836A3E` has V=131,
+#   a MID value: a glowing muscle on paper looks like a highlighter. 0.86 was not chosen, it was
+#   solved for — measured across 12 real source frames, it lands the mean muscle at **#82693E**
+#   against a target of **#836A3E**, a total error of 2 across all three channels.
+#
+# Select with FL_THEME=paper (default: forge).
+THEMES = {
+    "forge": dict(
+        BRONZE_H=21,      # PIL hue of the app's saturated bronze (~30 deg) — #BA8654 / #C99767
+        S_MUL=0.80,       # keep most of the source saturation -> prominent, not pale
+        S_FLOOR=110,      # floor so even low-sat reds read as bronze
+        S_CAP=150,        # cap so it stays bronze, not garish orange
+        V_MUL=1.12,       # LIFT brightness of the recolored muscle ("glow" against near-black)
+        WARM_TINT=(1.05, 0.995, 0.88),
+    ),
+    "paper": dict(
+        BRONZE_H=27,      # PIL hue of --fl-bronze-fill's mid stop, #836A3E
+        S_MUL=0.85,
+        S_FLOOR=125,
+        S_CAP=145,        # the button's own S is 134; this brackets it
+        V_MUL=0.86,       # solved against 12 real frames -> #82693E vs #836A3E
+        # Neutral greys go toward the PAPER canvas rather than the forged-dark ivory.
+        WARM_TINT=(1.02, 1.00, 0.96),
+    ),
+}
+
+FL_THEME = os.environ.get("FL_THEME", "forge").strip().lower()
+if FL_THEME not in THEMES:
+    raise SystemExit(f"FL_THEME must be one of {sorted(THEMES)}, got {FL_THEME!r}")
+
+_T = THEMES[FL_THEME]
+BRONZE_H = _T["BRONZE_H"]
+S_MUL = _T["S_MUL"]
+S_FLOOR = _T["S_FLOOR"]
+S_CAP = _T["S_CAP"]
+V_LIFT = _T["V_MUL"]
 
 # ---- output ----
 WORK_H     = 720         # output height (px); asset shows in a ~132dp slot
@@ -83,7 +121,7 @@ MIN_FG_PX     = 40       # drop isolated foreground specks smaller than this
 ERODE_PX      = 1        # pull the silhouette in to kill the white fringe
 FEATHER       = 0.8      # gaussian sigma for edge anti-alias
 
-WARM_TINT  = np.array([1.05, 0.995, 0.88], np.float32)
+WARM_TINT  = np.array(_T["WARM_TINT"], np.float32)   # per-theme; see THEMES above
 
 
 def warm_grade(rgb):
