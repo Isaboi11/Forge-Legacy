@@ -80,6 +80,10 @@ export const flColor = {
    *   only one with a name.
    */
   overlayScrim: 'rgba(5,5,5,0.45)',
+  /** Error/destructive text on a surface. Was `#E4A099` inline in the coach sheet. */
+  dangerText: '#E4A099',
+  dangerBorder: 'rgba(196,86,72,0.45)',
+  dangerBg: 'rgba(196,86,72,0.08)',
   /** Row/card press + hover wash. Paper needs a DARKENING wash where this one lightens. */
   hoverWash: 'rgba(255, 255, 255, 0.04)',
   /** "Live now" presence dot. Was `greenMuted` at every call site; Paper needs a darker green. */
@@ -170,6 +174,18 @@ export const flGradient = {
     locations: [0, 1],
     ...VERTICAL,
   },
+  /** Bottom-sheet ground — a step above a modal, because a sheet sits over a live screen. */
+  surfaceSheet: {
+    colors: ['#232329', '#1E1E23'],
+    locations: [0, 1],
+    ...VERTICAL,
+  },
+  /** A raised panel INSIDE a sheet (the coach's cards, the option rows). */
+  surfaceSheetRaised: {
+    colors: ['#1F2024', flColor.charcoal700],
+    locations: [0, 1],
+    ...VERTICAL,
+  },
   /** Ceremony + modal ground. */
   surfaceModal: {
     colors: ['#1F1F28', '#18181F'],
@@ -239,6 +255,10 @@ export const flShadow = {
   cardLead: '0 0 22px -8px rgba(181,138,97,0.34), inset 0 1px 0 rgba(219,184,151,0.16)',
   /** `--fl-shadow-float` — popovers and menus that hover over the page rather than sitting in it. */
   float: '0 12px 30px rgba(0,0,0,0.5)',
+  /** A bottom sheet's lift off the screen behind it, plus its top rim. */
+  sheet: '0 -18px 44px rgba(0,0,0,0.7), inset 0 1px 0 rgba(198,156,100,0.22)',
+  /** The live/online dot's halo. Distinct from `presenceDotGlow` — a different green, historically. */
+  statusOnlineGlow: '0 0 6px rgba(90,158,104,0.55)',
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────

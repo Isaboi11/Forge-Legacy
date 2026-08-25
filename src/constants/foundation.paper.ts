@@ -78,6 +78,16 @@ export const flColor = {
   onBronze: '#1A1206',
   /** The lighter menu/popover scrim. `--fl-overlay-dark` is the design's value and suits it exactly. */
   overlayScrim: 'rgba(35,31,26,0.42)',
+  /**
+   * Error text, darkened from `--fl-red-muted` (#A6402F).
+   *
+   * ⚠ #A6402F itself measures 5.98:1 on the card and would have passed — this goes further because
+   *   error copy is the one place an athlete is being asked to act on bad news, and it also has to
+   *   hold up on the RECESSED surface, which is a step darker than the card.
+   */
+  dangerText: '#8E3626',
+  dangerBorder: 'rgba(166,64,47,0.45)',
+  dangerBg: 'rgba(166,64,47,0.08)',
   /** ⚠ DARKENS. Forge's hover wash is white-on-black; the same gesture on paper must remove light. */
   hoverWash: 'rgba(35,31,26,0.035)',
   statusOnline: '#2F7D50',
@@ -136,6 +146,18 @@ export const flGradient = {
   surfaceElevated: {
     colors: ['#FFFFFF', '#FBF9F3', '#F6F2E8'],
     locations: [0, 0.35, 1],
+    ...VERTICAL,
+  },
+  /** Bottom-sheet ground — the cleanest white end of the ladder, since a sheet is the top layer. */
+  surfaceSheet: {
+    colors: ['#FFFFFF', '#F8F5ED'],
+    locations: [0, 1],
+    ...VERTICAL,
+  },
+  /** A raised panel INSIDE a sheet — a step DOWN from the sheet, or it would out-rank its own host. */
+  surfaceSheetRaised: {
+    colors: ['#FBF8F0', '#F4F0E6'],
+    locations: [0, 1],
     ...VERTICAL,
   },
   /** `--fl-surface-modal`. */
@@ -211,6 +233,10 @@ export const flShadow = {
   cardLead: '0 0 20px rgba(164,122,61,0.12), inset 0 1px 0 rgba(255,255,255,0.92)',
   /** `--fl-shadow-float`, verbatim. */
   float: '0 4px 10px rgba(70,58,42,0.08), 0 20px 44px -18px rgba(70,58,42,0.30)',
+  /** `--fl-shadow-modal` plus a white top rim — a sheet edge on paper is a highlight, not a glow. */
+  sheet: '0 -4px 8px rgba(70,58,42,0.08), 0 -28px 64px -20px rgba(70,58,42,0.38), inset 0 1px 0 rgba(255,255,255,0.9)',
+  /** `--fl-status-online-glow`. */
+  statusOnlineGlow: '0 0 6px rgba(47,125,80,0.35)',
 } as const satisfies FlShadow;
 
 // ─────────────────────────────────────────────────────────────────────────────

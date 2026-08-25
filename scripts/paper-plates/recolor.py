@@ -71,6 +71,16 @@ BG = ROOT / "assets" / "backgrounds"
 CREAM = np.array([0xF4, 0xEF, 0xE3], dtype=np.float32)
 BRONZE = np.array([0x94, 0x68, 0x38], dtype=np.float32)
 
+#: How much of the cream→bronze ramp a plate is allowed to travel, overall.
+#:
+#: ⚠ PO CALL, 2026-08-25: *"the background is too prominent, I would make it 50% more subtle."*
+#: At 1.0 the veining carried real weight and competed with the cards sitting on it. Halving the mix
+#: keeps every bit of the texture — the grain, the veins, their shape and their position are all
+#: unchanged — and simply lets less bronze into it, so the plate reads as paper STOCK rather than as an
+#: image. This is the honest lever for "more subtle": raising GAMMA instead would have crushed the
+#: midtones and lost detail rather than volume.
+STRENGTH = 0.5
+
 GAMMA = 2.0
 #: Inverted plates need a much harder gamma — see the note on `INVERT` in the header. In
 #: `hero-mountains` the peaks AND most of the sky are dark, so simply flipping the ramp bronzes 81% of
@@ -112,6 +122,7 @@ def recolor(src: Path, dst: Path, invert: bool = False) -> None:
         t = (1.0 - t) ** INVERT_GAMMA
     else:
         t = t**GAMMA
+    t = t * STRENGTH
     out = CREAM + (BRONZE - CREAM) * t[..., None]
 
     res = Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), "RGB")

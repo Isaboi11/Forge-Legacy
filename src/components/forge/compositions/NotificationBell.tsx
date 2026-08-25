@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     borderRadius: flRadius.pill,
     backgroundColor: flColor.bronze400,
     borderWidth: 1.5,
-    borderColor: 'rgba(13, 13, 15, 0.92)', // the bar's own fill, so the badge reads as lifted off the glyph
+    borderColor: flColor.surfaceNav, // the bar's own fill, so the badge reads as lifted off the glyph
     alignItems: 'center',
     justifyContent: 'center',
     boxShadow: flShadow.glowSubtle,

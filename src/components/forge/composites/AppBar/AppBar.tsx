@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   opaque: {
-    backgroundColor: 'rgba(13, 13, 15, 0.92)',
+    backgroundColor: flColor.surfaceNav,
     borderBottomWidth: 1,
     borderBottomColor: flColor.charcoal600,
   },

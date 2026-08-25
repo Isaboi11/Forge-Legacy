@@ -190,3 +190,21 @@ test('the primary CTA fill is the dense antique brass, not the dark theme’s fo
   assert.ok(Math.max(...ls) - Math.min(...ls) < 25, 'the Paper CTA must stay in a narrow luminosity range');
   assert.ok(!flGradient.bronzeFill.colors.includes('#2E2314'), 'that is the dark fill');
 });
+
+test('the Paper bronze-wash gain is the design’s own ratio, not a taste call', () => {
+  // `washes.ts` boosts bronze alphas on paper because there is less contrast room between bronze and
+  // cream than between bronze and near-black. The multiplier is not chosen — it is --fl-bronze-tint's
+  // own Forge:Paper ratio, and if the design ever re-tunes that token this must move with it.
+  //
+  // Read as TEXT rather than imported: `washes.ts` pulls in `foundation.ts`, which imports the
+  // platform-forked `theme-choice` extensionless, and node cannot resolve that.
+  const src = readFileSync(join(HERE, '..', 'washes.ts'), 'utf8');
+  const m = /PAPER_BRONZE_GAIN\s*=\s*([\d.]+)/.exec(src);
+  assert.ok(m, 'PAPER_BRONZE_GAIN not found — did the constant get renamed?');
+
+  const paperTint = Number(/rgba\(164,122,61,([\d.]+)\)/.exec(V['--fl-bronze-tint'])[1]);
+  const forgeTint = 0.05; // foundation.forge.ts bronzeTint — rgba(181, 138, 97, 0.05)
+  const designRatio = paperTint / forgeTint;
+
+  assert.equal(Number(m[1]), Math.round(designRatio * 10) / 10, `gain should track --fl-bronze-tint (${designRatio})`);
+});

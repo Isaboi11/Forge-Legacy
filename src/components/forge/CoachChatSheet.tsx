@@ -21,6 +21,8 @@ import Svg, { Path, Rect } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { bronzeWash, wash } from '@/constants/washes';
+import { paperScrim } from '@/constants/paper-scrim';
 import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { HoltMark } from '@/components/forge/HoltMark';
@@ -1501,7 +1503,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
           over the header and would otherwise eat the taps.
         */}
         <LinearGradient
-          colors={['rgba(198,156,100,0.055)', 'rgba(198,156,100,0.022)', 'rgba(198,156,100,0)']}
+          colors={[bronzeWash(0.055), bronzeWash(0.022), bronzeWash(0)]}
           locations={[0, 0.4, 0.76]}
           start={{ x: 0.14, y: 0 }}
           end={{ x: 0.6, y: 1 }}
@@ -1769,10 +1771,10 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
  * screen instead of a panel raised above it, and no shadow or border could rescue that — the material
  * was simply wrong.
  */
-const SHEET_SURFACE = ['#232329', '#1E1E23'] as const;
+const SHEET_SURFACE = flGradient.surfaceSheet.colors;
 
 /** `--fl-surface-elevated`. The card sits above the sheet, not level with it. */
-const SURFACE_ELEVATED = ['#1F2024', flColor.charcoal700] as const;
+const SURFACE_ELEVATED = flGradient.surfaceSheetRaised.colors;
 
 /* ────────────────────────────────────────────────────────────────────────────────────────────────── */
 
@@ -1940,14 +1942,14 @@ function ConversationDivider() {
   return (
     <View style={styles.dividerRow}>
       <LinearGradient
-        colors={['rgba(181,138,97,0)', 'rgba(181,138,97,0.28)']}
+        colors={[bronzeWash(0), bronzeWash(0.28)]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={styles.dividerRule}
       />
       <Text style={styles.dividerLabel}>CONVERSATION</Text>
       <LinearGradient
-        colors={['rgba(181,138,97,0.28)', 'rgba(181,138,97,0)']}
+        colors={[bronzeWash(0.28), bronzeWash(0)]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={styles.dividerRule}
@@ -3426,7 +3428,7 @@ function VolumeRibbon({ weeks, caption }: { weeks: number[]; caption: string }) 
 
 const styles = StyleSheet.create({
   wrap: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, justifyContent: 'flex-end', zIndex: 60 },
-  backdrop: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(3,5,7,0.66)' },
+  backdrop: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: paperScrim('rgba(3,5,7,0.66)') },
   /* ⚠ A TOP INSET, NOT A MAX HEIGHT. PROMPT §2.4: 64px from the top "so a sliver of the app is always
      visible above it — this is the whole point." A percentage height looks similar on one device and
      wrong on every other. The geometry lives on the wrapper so the rise can transform it.
@@ -3443,7 +3445,7 @@ const styles = StyleSheet.create({
     // ⚠ BRONZE, not charcoal. The lit top edge is what makes it read as raised metal.
     borderColor: flColor.bronzeBorderSubtle,
     // The inset warm highlight along the top edge is half of what makes it read as raised metal.
-    boxShadow: '0 -18px 44px rgba(0,0,0,0.7), inset 0 1px 0 rgba(198,156,100,0.22)',
+    boxShadow: flShadow.sheet,
   },
   /* §1 — the only atmospheric layer on the surface, and it stops dead at 300px. */
   warmWash: { position: 'absolute', left: 0, right: 0, top: 0, height: 300 },
@@ -3457,7 +3459,7 @@ const styles = StyleSheet.create({
   headerStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   headerStatus: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2.2, color: flColor.gray600 },
   /* The only green on this surface, and it is a liveness indicator rather than a palette colour. */
-  headerDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#5A9E68', boxShadow: '0 0 6px rgba(90,158,104,0.55)' },
+  headerDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: flColor.statusOnline, boxShadow: flShadow.statusOnlineGlow },
   headerAction: { alignItems: 'center', gap: 5 },
   headerActionPad: { paddingLeft: 12 },
   headerActionLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 1.4, color: flColor.gray600 },
@@ -3479,7 +3481,7 @@ const styles = StyleSheet.create({
   },
   menuRow: { paddingHorizontal: 15, paddingVertical: 13 },
   menuRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
-  menuRowPressed: { backgroundColor: 'rgba(198,156,100,0.06)' },
+  menuRowPressed: { backgroundColor: bronzeWash(0.06) },
   menuText: { fontSize: 14, color: flColor.cream100 },
 
   /* ⚠ **`flexGrow: 0` PUT THE COMPOSER AT THE TOP OF THE SCREEN.** The list sized itself to its
@@ -3509,13 +3511,13 @@ const styles = StyleSheet.create({
   homeCard: { flex: 1, minWidth: 0, paddingHorizontal: 12, paddingTop: 13, paddingBottom: 11, borderRadius: 14, gap: 9 },
   /* BUILD is the primary and the only card that carries a shadow — it is what Holt is for. */
   homeCardPrimary: {
-    backgroundColor: 'rgba(198,156,100,0.045)',
+    backgroundColor: bronzeWash(0.045),
     borderWidth: 1,
     borderColor: flColor.bronzeBorderSubtle,
     boxShadow: flShadow.trainTogetherCard,
   },
-  homeCardPlain: { backgroundColor: 'rgba(255,255,255,0.028)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' },
-  homeCardPressed: { backgroundColor: 'rgba(198,156,100,0.08)', borderColor: flColor.bronzeBorderSubtle },
+  homeCardPlain: { backgroundColor: wash(0.028), borderWidth: 1, borderColor: wash(0.07) },
+  homeCardPressed: { backgroundColor: bronzeWash(0.08), borderColor: flColor.bronzeBorderSubtle },
   homeTag: { fontSize: 8.5, fontWeight: '700', letterSpacing: 1.8, color: flColor.bronze400 },
   homeCardTitle: { fontSize: 13.5, fontWeight: '600', lineHeight: 17.5, color: flColor.cream100 },
   homeCardSub: { fontSize: 11, lineHeight: 15.5, color: flColor.gray600 },
@@ -3535,7 +3537,7 @@ const styles = StyleSheet.create({
     borderTopColor: flColor.charcoal600,
   },
   homeRowLast: { borderBottomWidth: 1, borderBottomColor: flColor.charcoal600 },
-  homeRowPressed: { backgroundColor: 'rgba(198,156,100,0.055)' },
+  homeRowPressed: { backgroundColor: bronzeWash(0.055) },
   homeGlyph: {
     width: 26,
     height: 26,
@@ -3566,9 +3568,9 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
     borderBottomLeftRadius: 14,
     // ⚠ Bronze-TINTED, never bronze-filled — it must not compete with a primary button.
-    backgroundColor: 'rgba(186, 146, 92, 0.10)',
+    backgroundColor: bronzeWash(0.10),
     borderWidth: 1,
-    borderColor: 'rgba(186, 146, 92, 0.28)',
+    borderColor: bronzeWash(0.28),
   },
   meText: { fontSize: 14.5, lineHeight: 20, color: flColor.cream100 },
   meMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -3595,7 +3597,7 @@ const styles = StyleSheet.create({
      reason is the rule above everything else on this surface: bronze is the ACCENT. When every option
      is already bronze-edged, choosing one has nowhere left to go — the selected state had no contrast
      to gain, so the whole indicator system was invisible. */
-  ctlOn: { borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(186,146,92,0.13)' },
+  ctlOn: { borderColor: flColor.bronzeBorder, backgroundColor: bronzeWash(0.13) },
   ctlTextOn: { fontWeight: '600' },
 
   // multi — collects taps, then a deliberate Build.
@@ -3615,8 +3617,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.075)',
-    backgroundColor: 'rgba(255,255,255,0.032)',
+    borderColor: wash(0.075),
+    backgroundColor: wash(0.032),
   },
   /* ⚠ `flex: 1; minWidth: 0` with one line and an ellipsis. §6: a fixed-height control must never wrap,
      because the text then spills out of a box that cannot grow. */
@@ -3632,8 +3634,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.075)',
-    backgroundColor: 'rgba(255,255,255,0.032)',
+    borderColor: wash(0.075),
+    backgroundColor: wash(0.032),
   },
   segText: { fontSize: 13, color: flColor.cream100 },
   segTextOn: { fontWeight: '600', color: flColor.bronze300 },
@@ -3648,16 +3650,16 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.075)',
-    backgroundColor: 'rgba(255,255,255,0.032)',
+    borderColor: wash(0.075),
+    backgroundColor: wash(0.032),
   },
   optCardText: { flex: 1, minWidth: 0, gap: 4 },
   optCardTitle: { fontSize: 14.5, fontWeight: '500', color: flColor.cream100 },
   optCardSub: { fontSize: 12, lineHeight: 17.5, color: flColor.gray600 },
   /* ⚠ ROUND = PICK ONE, SQUARE = PICK MANY. The indicator's shape carries the rule (§6). */
-  optDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center' },
-  optSquare: { width: 17, height: 17, borderRadius: 5, borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center' },
-  optDotOn: { borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(186,146,92,0.18)' },
+  optDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: wash(0.16), alignItems: 'center', justifyContent: 'center' },
+  optSquare: { width: 17, height: 17, borderRadius: 5, borderWidth: 1, borderColor: wash(0.16), alignItems: 'center', justifyContent: 'center' },
+  optDotOn: { borderColor: flColor.bronzeBorder, backgroundColor: bronzeWash(0.18) },
 
   // grid — places and kit. Taller than a chip because the names are longer.
   gridWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -3671,8 +3673,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.075)',
-    backgroundColor: 'rgba(255,255,255,0.032)',
+    borderColor: wash(0.075),
+    backgroundColor: wash(0.032),
   },
   gridText: { flex: 1, minWidth: 0, fontSize: 13, lineHeight: 18, color: flColor.cream100 },
 
@@ -3685,8 +3687,8 @@ const styles = StyleSheet.create({
     minHeight: 52,
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.075)',
-    backgroundColor: 'rgba(255,255,255,0.032)',
+    borderColor: wash(0.075),
+    backgroundColor: wash(0.032),
   },
   importText: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
 
@@ -3730,10 +3732,10 @@ const styles = StyleSheet.create({
   rail: { height: 3, borderRadius: 2, backgroundColor: flColor.charcoal700, overflow: 'hidden' },
   railFill: { height: 3, borderRadius: 2, backgroundColor: flColor.bronze400 },
 
-  error: { borderRadius: flRadius.md, borderWidth: 1, borderColor: 'rgba(196,86,72,0.45)', backgroundColor: 'rgba(196,86,72,0.08)', padding: 13, gap: 3 },
-  errorTitle: { fontSize: 14.5, fontWeight: '600', color: '#E4A099' },
+  error: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.dangerBorder, backgroundColor: flColor.dangerBg, padding: 13, gap: 3 },
+  errorTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.dangerText },
   errorSub: { fontSize: 13, lineHeight: 19, color: flColor.gray400 },
-  errorAction: { marginTop: 6, fontSize: 13.5, fontWeight: '700', color: '#E4A099' },
+  errorAction: { marginTop: 6, fontSize: 13.5, fontWeight: '700', color: flColor.dangerText },
 
   /* ── shared card language ───────────────────────────────────────────────────────────────────── */
   kickerBronze: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronze400 },
@@ -3748,7 +3750,7 @@ const styles = StyleSheet.create({
   /* The rows band — a bronze marker in a fixed column, then what that week actually is. */
   markerList: {},
   markerRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
-  markerRowPressed: { backgroundColor: 'rgba(198,156,100,0.06)' },
+  markerRowPressed: { backgroundColor: bronzeWash(0.06) },
   marker: { width: 34, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronze400 },
   markerText: { flex: 1, minWidth: 0, fontSize: 14, color: flColor.cream100 },
   /* The sessions inside a week. Indented to the marker column so they read as belonging to the row
@@ -3774,9 +3776,9 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     borderTopWidth: 1,
     borderTopColor: flColor.charcoal600,
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    backgroundColor: wash(0.02),
   },
-  previewRowPressed: { backgroundColor: 'rgba(198,156,100,0.06)' },
+  previewRowPressed: { backgroundColor: bronzeWash(0.06) },
   previewRowText: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   artifactActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   previewWrap: { flex: 1 },
@@ -3854,7 +3856,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorderSubtle,
     padding: 16,
     gap: 12,
-    boxShadow: 'inset 0 1px 0 rgba(198,156,100,0.16)',
+    boxShadow: `inset 0 1px 0 ${bronzeWash(0.16)}`,
   },
   pickHead: { gap: 3 },
   pickTitle: { fontFamily: flFont.display, fontSize: 21, color: flColor.cream100 },
@@ -3885,7 +3887,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorderSubtle,
     padding: 16,
     gap: 12,
-    boxShadow: 'inset 0 1px 0 rgba(198,156,100,0.16)',
+    boxShadow: `inset 0 1px 0 ${bronzeWash(0.16)}`,
   },
   refusalHead: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', gap: 10 },
   refusalTitle: { fontFamily: flFont.display, fontSize: 21, color: flColor.cream100 },
@@ -3969,7 +3971,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 9,
-    backgroundColor: 'rgba(186,146,92,0.07)',
+    backgroundColor: bronzeWash(0.07),
     borderBottomWidth: 1,
     /* ⚠ DASHED, and this is the whole point of the strip. §11.1.2: "The dashed edge is the signal that
        this object is provisional; every other card in the app uses a solid edge." I had it solid, which
@@ -4020,7 +4022,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     outlineWidth: 0,
   },
-  inputTyping: { borderColor: flColor.bronzeBorder, boxShadow: '0 0 0 3px rgba(186,146,92,0.07)' },
+  inputTyping: { borderColor: flColor.bronzeBorder, boxShadow: `0 0 0 3px ${bronzeWash(0.07)}` },
   sendWrap: { width: 44, height: 44 },
   sendOff: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.charcoal600 },
   /* The only large bronze fill the system permits, and this is a sanctioned use of it (§17.4). */
