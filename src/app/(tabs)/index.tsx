@@ -66,7 +66,7 @@ import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgramById } from '@/domain/training/active-program';
 import { resolveRecommendationId } from '@/domain/onboarding/recommend-core';
 import { catalogCanRecommend } from '@/domain/onboarding/recommend';
-import { CARDIO_ACTIVITIES, CARDIO_DEFAULTS, deriveName, type CardioActivity } from '@/domain/workout/conditioning';
+import { CARDIO_ACTIVITIES, CARDIO_DEFAULTS, OUTDOOR_CAPABLE, deriveName, type CardioActivity, type Modality } from '@/domain/workout/conditioning';
 import { loadSession, resumeSummary } from '@/domain/workout/autosave';
 import { composeHome, isHomeReady, selectHomePrograms, HOME_READY_CEILING_MS } from '@/domain/home/composition';
 import { ForgeSplash } from '@/components/forge-splash';
@@ -393,6 +393,26 @@ export default function HomeScreen() {
    * to a bench press.
    */
   const [elseView, setElseView] = useState<'root' | 'cardio'>('root');
+  /**
+   * WHICH ACTIVITY IS WAITING ON AN OUTDOOR/INDOOR ANSWER — null when nothing is.
+   *
+   * ══ "KIMJOVI DID A TREADMILL WALK BUT IT LOGGED AS AN OUTDOOR WALK" ══
+   *
+   * It was not a bug in the save; it was a default nobody was asked about. This sheet listed seven
+   * activities and started each on `CARDIO_DEFAULTS[activity].modality` — outdoors for a walk — with the
+   * only correction being a segmented toggle on the card, one screen later. Don't notice it and the app
+   * has already decided: the name says Outdoor Walk, the card offers GPS instead of a clock, and the
+   * saved bout agrees with all of it. Nothing looked wrong at any point.
+   *
+   * PO: *"I think ask at the door when you get to that exercise or choose that exercise."*
+   *
+   * ⚠ ONLY WHERE THERE IS A CHOICE. Run, walk and ride are the three `OUTDOOR_CAPABLE` activities; a
+   * rower, an elliptical, a pool swim and a stair climber have exactly one honest answer, and asking
+   * would be a step that cannot be got wrong — which is a step that should not exist. Those still start
+   * on one tap. The same gate the card's own toggle uses, so the two cannot disagree about what is
+   * askable.
+   */
+  const [cardioAsk, setCardioAsk] = useState<CardioActivity | null>(null);
   const router = useRouter();
   const { startWorkout } = useWorkoutSession();
   const { requestPrompt, markAnnounced, requestTour } = useTour();
@@ -745,6 +765,7 @@ export default function HomeScreen() {
   const closeElse = () => {
     setElseOpen(false);
     setElseView('root');
+    setCardioAsk(null);
   };
 
   /**
@@ -795,16 +816,22 @@ export default function HomeScreen() {
    * different controls, different ways to finish, and different places the numbers ended up. A run is
    * a run whether it's the whole workout or the last leg of one, and it is the same card either way.
    */
-  const startCardio = async (activity: CardioActivity) => {
+  /**
+   * Tapping an activity. Where the answer is genuinely open, this ASKS; where it is not, it starts.
+   *
+   * ⚠ THE DEFAULT USED TO BE THE ANSWER. This read `CARDIO_DEFAULTS[activity].modality` and went, on the
+   * reasoning that "the toggle lives on the card, where it belongs — the athlete decides on the day".
+   * The toggle does belong there and still is there; what was wrong is that a silent guess stood in
+   * until it was touched, and a tester's treadmill walk was filed as an outdoor one because nothing ever
+   * put the question. See `cardioAsk`.
+   */
+  const pickCardio = (activity: CardioActivity) => {
+    if (OUTDOOR_CAPABLE[activity]) return setCardioAsk(activity);
+    return void startCardio(activity, CARDIO_DEFAULTS[activity].modality);
+  };
+
+  const startCardio = async (activity: CardioActivity, modality: Modality) => {
     closeElse();
-    /*
-     * The modality is the activity's own default, not a choice forced at the door.
-     *
-     * Run, walk and ride open outdoors; the machines open indoors, because indoors is the only place a
-     * rower exists. Either way the toggle lives on the card, where it belongs — the athlete decides on
-     * the day, and for a machine `OUTDOOR_CAPABLE` means the toggle never appears at all.
-     */
-    const modality = CARDIO_DEFAULTS[activity].modality;
     await writeWorkoutLaunch({ conditioning: { activity, modality } });
     startWorkout(deriveName(activity, modality), []);
     router.push('/workout');
@@ -1494,7 +1521,7 @@ export default function HomeScreen() {
       <BottomSheet
         open={elseOpen}
         onClose={closeElse}
-        title={elseView === 'root' ? 'What are you training?' : 'Cardio'}
+        title={elseView === 'root' ? 'What are you training?' : cardioAsk ? 'Where?' : 'Cardio'}
         scroll
       >
         <View style={styles.elseList}>
@@ -1522,25 +1549,55 @@ export default function HomeScreen() {
           ) : (
             <>
               <Pressable
-                onPress={() => setElseView('root')}
+                /* One step back, not all the way out: from the modality question to the activity list,
+                   and only then to the root. Sending a mis-tap on "Walk" back to the top would make the
+                   question feel like a dead end rather than a step. */
+                onPress={() => (cardioAsk ? setCardioAsk(null) : setElseView('root'))}
                 accessibilityRole="button"
-                accessibilityLabel="Back to what are you training"
+                accessibilityLabel={cardioAsk ? 'Back to the cardio list' : 'Back to what are you training'}
                 style={({ pressed }) => [styles.elseBack, pressed ? styles.pathPressed : null]}
               >
                 <Text style={styles.elseBackLabel}>← Back</Text>
               </Pressable>
-              {CARDIO_ACTIVITIES.map((a) => (
-                <Pressable
-                  key={a.key}
-                  onPress={() => void startCardio(a.key)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${a.name} — ${a.sub}`}
-                  style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
-                >
-                  <Text style={styles.pathCardTitle}>{a.name}</Text>
-                  <Text style={styles.pathCardSub}>{a.sub}</Text>
-                </Pressable>
-              ))}
+              {/*
+                ══ THE MODALITY QUESTION, ASKED WHERE THE ACTIVITY IS CHOSEN ══
+
+                Replaces the activity list rather than sitting under it: one question on screen at a
+                time, and the Back row above already leads out of it. Two options only, because there
+                are only two — no "remember this", which would be a preference invented on a tester
+                report rather than asked for.
+              */}
+              {cardioAsk ? (
+                (['outdoor', 'indoor'] as Modality[]).map((m) => (
+                  <Pressable
+                    key={m}
+                    onPress={() => void startCardio(cardioAsk, m)}
+                    accessibilityRole="button"
+                    accessibilityLabel={deriveName(cardioAsk, m)}
+                    style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
+                  >
+                    <Text style={styles.pathCardTitle}>{deriveName(cardioAsk, m)}</Text>
+                    {/* Says what the CARD will do, which is the part the athlete cannot see yet and the
+                        part that actually differs: one measures by GPS, the other hands you a clock. */}
+                    <Text style={styles.pathCardSub}>
+                      {m === 'outdoor' ? 'Measured by GPS as you go' : 'You enter the distance and time'}
+                    </Text>
+                  </Pressable>
+                ))
+              ) : (
+                CARDIO_ACTIVITIES.map((a) => (
+                  <Pressable
+                    key={a.key}
+                    onPress={() => pickCardio(a.key)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${a.name} — ${a.sub}`}
+                    style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
+                  >
+                    <Text style={styles.pathCardTitle}>{a.name}</Text>
+                    <Text style={styles.pathCardSub}>{a.sub}</Text>
+                  </Pressable>
+                ))
+              )}
             </>
           )}
         </View>
