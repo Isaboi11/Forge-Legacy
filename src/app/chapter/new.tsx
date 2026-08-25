@@ -9,6 +9,7 @@ import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { paperScrim } from '@/constants/paper-scrim';
 import { createChapter } from '@/data/chapter-detail-live';
 import { saveGoal } from '@/data/goals-live';
 import { CHAPTER_SUGGESTIONS, CHAPTER_TITLE_MAX, isValidChapterTitle, sanitizeChapterTitle } from '@/domain/legacy/chapter-name';
@@ -307,7 +308,7 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   chipTextOn: { color: flColor.bronze300 },
 
-  footer: { paddingHorizontal: 24, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: 'rgba(6,7,8,0.6)' },
+  footer: { paddingHorizontal: 24, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: paperScrim('rgba(6,7,8,0.6)') },
   ctaInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
   ctaText: { fontFamily: flFont.sans, fontSize: 15, fontWeight: '600', color: '#F7F5F1' },
   tertiary: { alignItems: 'center', paddingVertical: 14, marginTop: 4 },

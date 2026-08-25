@@ -16,6 +16,7 @@ import { ACTIVITY_KEYS, LIFT_KEYS, SCOPE_OF, createChallenge, isGainType, metric
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { paperScrim } from '@/constants/paper-scrim';
 
 /**
  * Create Challenge (C-2) — built to `Forge Create Challenge.dc.html`.
@@ -659,7 +660,7 @@ export default function CreateChallengeScreen() {
         </BottomSheet>
 
         {/* ── Commit ── */}
-        <LinearGradient colors={['rgba(9,9,9,0.4)', 'rgba(9,9,9,0.72)']} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={[styles.commitBar, { paddingBottom: 16 + insets.bottom }]}>
+        <LinearGradient colors={[paperScrim('rgba(9,9,9,0.4)'), paperScrim('rgba(9,9,9,0.72)')]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={[styles.commitBar, { paddingBottom: 16 + insets.bottom }]}>
           <Pressable onPress={onCreate} disabled={!canCreate} accessibilityRole="button" accessibilityState={{ disabled: !canCreate }} accessibilityLabel="Create challenge">
             {canCreate ? (
               <View style={[styles.commitBtn, styles.commitBtnOn]}>

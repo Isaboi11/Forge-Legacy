@@ -38,10 +38,30 @@ import { useVideoPlayer, VideoView } from 'expo-video';
  * Still worth doing eventually: extracting the frame once at UPLOAD time and storing it in
  * `pins.poster_url` (0005 reserved the column). That would make the preview free to render everywhere
  * including the web, instead of costing a decode per card.
+ *
+ * ══ A PHOTO IS CROPPED; A VIDEO FRAME IS NOT ══
+ *
+ * PO, 2026-08-25: *"the videos need to be centralized and not zoomed in that much."*
+ *
+ * Everything here used to be `cover`, and for a PHOTO that is right — a photo was framed by the person
+ * who took it, so filling the tile and losing the edges keeps their composition. A VIDEO's first frame
+ * was never composed for a tile at all: it is whatever the sensor was pointing at, usually portrait,
+ * and `cover` in a landscape tile centre-crops it to a strip. That is how a squat rack becomes a
+ * picture of a ceiling.
+ *
+ * ⚠ THE SAME DEFECT WAS ALREADY FIXED ONE SCREEN OVER and this was the other half of it.
+ * `accomplishments.tsx` hit it at `height: 220` and moved its player to `contain` for exactly this
+ * reason, with the reasoning written above its component — but the two THUMBNAIL surfaces that feed
+ * into it (the Legacy hub's Accomplishments row and Pinned Legacy) both come through here and were
+ * left on `cover`. Letterboxing a keepsake is not a compromise; showing a fraction of it is.
  */
+
+/** A video frame was never composed for this tile — show all of it. A photo was, so fill the tile. */
+const VIDEO_FIT = 'contain' as const;
+const PHOTO_FIT = 'cover' as const;
 export function MediaThumb({ url, kind }: { url: string; kind: 'image' | 'video' | null | undefined }) {
   if (kind === 'video') return <VideoThumb url={url} />;
-  return <Image source={{ uri: url }} style={StyleSheet.absoluteFill} contentFit="cover" />;
+  return <Image source={{ uri: url }} style={StyleSheet.absoluteFill} contentFit={PHOTO_FIT} />;
 }
 
 /**
@@ -73,6 +93,7 @@ function VideoThumb({ url }: { url: string }) {
     };
   }, [player]);
 
-  if (poster) return <Image source={poster} style={StyleSheet.absoluteFill} contentFit="cover" />;
-  return <VideoView player={player} style={StyleSheet.absoluteFill} nativeControls={false} contentFit="cover" />;
+  // Both paths take the video fit: the poster IS a video frame, so it crops exactly as badly.
+  if (poster) return <Image source={poster} style={StyleSheet.absoluteFill} contentFit={VIDEO_FIT} />;
+  return <VideoView player={player} style={StyleSheet.absoluteFill} nativeControls={false} contentFit={VIDEO_FIT} />;
 }

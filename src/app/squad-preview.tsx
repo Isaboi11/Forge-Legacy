@@ -29,6 +29,7 @@ import {
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { paperScrim } from '@/constants/paper-scrim';
 
 /**
  * Squad Preview — what a non-member sees before deciding to join. Built to `Squad Preview.dc.html`,
@@ -359,7 +360,7 @@ export default function SquadPreviewScreen() {
 
       {/* ── Commit bar ── */}
       <TourAnchor id="preview-request">
-      <LinearGradient colors={['rgba(9,9,9,0.55)', 'rgba(9,9,9,0.86)']} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={[styles.commitBar, { paddingBottom: 16 + insets.bottom }]}>
+      <LinearGradient colors={[paperScrim('rgba(9,9,9,0.55)'), paperScrim('rgba(9,9,9,0.86)')]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={[styles.commitBar, { paddingBottom: 16 + insets.bottom }]}>
         <Pressable
           onPress={commit.onPress}
           disabled={busy}

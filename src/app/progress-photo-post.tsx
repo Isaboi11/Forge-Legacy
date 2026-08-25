@@ -30,6 +30,7 @@ import { useProfile } from '@/lib/profile';
 import { useToast } from '@/hooks/useCeremony';
 import { ProgressCardHost } from '@/lib/progress-card-host';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { paperScrim } from '@/constants/paper-scrim';
 
 /**
  * Progress Photo Post — built to `Progress Photo Post.dc.html` (`design_handoff_progress_photo_post`).
@@ -690,7 +691,7 @@ const styles = StyleSheet.create({
   caption: { minHeight: 68, backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.charcoal600, borderRadius: flRadius.md, paddingHorizontal: 13, paddingVertical: 12, fontSize: 14, lineHeight: 21, color: flColor.cream100 },
   captionNote: { marginTop: 8, marginHorizontal: 2, fontSize: 10.5, lineHeight: 16, color: flColor.gray600 },
 
-  footer: { gap: 11, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: 'rgba(6,7,8,0.75)' },
+  footer: { gap: 11, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: paperScrim('rgba(6,7,8,0.75)') },
   sendRow: { flexDirection: 'row', gap: 8 },
   sendTile: { flex: 1, alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 4, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   sendBusy: { height: 19 },

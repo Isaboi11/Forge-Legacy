@@ -16,6 +16,7 @@ import { useUnits } from '@/lib/settings';
 import { errorMessage } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { paperScrim } from '@/constants/paper-scrim';
 
 /**
  * Log a Run — a lightweight distance-activity logger (Part 1 of auto-tracking goals). Records a run/walk/
@@ -178,7 +179,7 @@ export default function LogActivityScreen() {
         </ScrollView>
 
         {/* Commit bar */}
-        <LinearGradient colors={['rgba(9,9,9,0.4)', 'rgba(9,9,9,0.72)']} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={[styles.commitBar, { paddingBottom: 16 + insets.bottom }]}>
+        <LinearGradient colors={[paperScrim('rgba(9,9,9,0.4)'), paperScrim('rgba(9,9,9,0.72)')]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={[styles.commitBar, { paddingBottom: 16 + insets.bottom }]}>
           <Pressable onPress={onSave} disabled={!canSave || busy} accessibilityRole="button" accessibilityState={{ disabled: !canSave || busy }} accessibilityLabel="Save activity">
             {canSave ? (
               <LinearGradient colors={flGradient.bronzeFill.colors} locations={flGradient.bronzeFill.locations} start={flGradient.bronzeFill.start} end={flGradient.bronzeFill.end} style={[styles.commitBtn, styles.commitBtnOn]}>

@@ -9,6 +9,7 @@ import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { paperScrim } from '@/constants/paper-scrim';
 import { fetchChapterDetail, saveReflection, sealChapter } from '@/data/chapter-detail-live';
 import { isAchieved, isQuantifiable, progressLabel } from '@/domain/goals/goals';
 import { usePersist } from '@/hooks/usePersist';
@@ -394,7 +395,7 @@ const styles = StyleSheet.create({
   lockedText: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 17.5, lineHeight: 29, color: flColor.gray400 },
   lockedMeta: { fontFamily: flFont.sans, fontSize: 11, color: flColor.gray600, marginTop: 18, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
 
-  footer: { paddingHorizontal: 24, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: 'rgba(6,7,8,0.6)' },
+  footer: { paddingHorizontal: 24, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: paperScrim('rgba(6,7,8,0.6)') },
   permanence: { fontFamily: flFont.sans, fontSize: 11, lineHeight: 16, color: flColor.gray600, textAlign: 'center', marginBottom: 11 },
   tertiary: { alignItems: 'center', paddingVertical: 10, marginTop: 6 },
   tertiaryText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.gray400 },

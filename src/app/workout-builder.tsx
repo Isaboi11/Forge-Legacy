@@ -11,6 +11,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { paperScrim } from '@/constants/paper-scrim';
 import { fetchTemplateDetail, saveTemplate, type TemplateExercise } from '@/data/templates-live';
 import { savePlannedWorkout } from '@/data/planned-workout-live';
 import type { ProgramExercise } from '@/data/programs-live';
@@ -388,7 +389,7 @@ export default function WorkoutBuilderScreen() {
         })}
       </ScrollView>
 
-      <LinearGradient colors={['rgba(6,7,8,0.35)', 'rgba(6,7,8,0.82)']} style={[styles.footer, { paddingBottom: barBottom }]}>
+      <LinearGradient colors={[paperScrim('rgba(6,7,8,0.35)'), paperScrim('rgba(6,7,8,0.82)')]} style={[styles.footer, { paddingBottom: barBottom }]}>
         <Button variant="primary" fullWidth disabled={!canSave || saving} onPress={() => void save(true)} accessibilityLabel="Save and start this workout">
           {saving ? 'Saving…' : 'Save & Start'}
         </Button>

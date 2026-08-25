@@ -13,6 +13,7 @@ import { fetchSquad, transferSquadOwnership } from '@/data/squad-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { paperScrim } from '@/constants/paper-scrim';
 
 /**
  * Transfer Ownership — built to `Squad Transfer Ownership.dc.html`, wired to real data. Owner picks another
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
   radioOn: { borderColor: flColor.bronze400, boxShadow: flShadow.glowSubtle },
   radioDot: { width: 11, height: 11, borderRadius: flRadius.round, backgroundColor: flColor.bronze300 },
 
-  commitBar: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: 'rgba(9,9,9,0.6)' },
+  commitBar: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: paperScrim('rgba(9,9,9,0.6)') },
   commit: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1 },
   commitOn: { borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A', boxShadow: flShadow.glowSubtle },
   commitOff: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },

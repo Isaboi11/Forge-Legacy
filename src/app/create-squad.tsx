@@ -17,6 +17,7 @@ import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { paperScrim } from '@/constants/paper-scrim';
 
 /**
  * Create Squad — the first squad WRITE path. Built to `Create Squad.dc.html`.
@@ -232,7 +233,7 @@ export default function CreateSquadScreen() {
         </ScrollView>
 
         {/* ── Commit bar ── */}
-        <LinearGradient colors={['rgba(9,9,9,0.4)', 'rgba(9,9,9,0.72)']} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={[styles.commitBar, { paddingBottom: 16 + insets.bottom }]}>
+        <LinearGradient colors={[paperScrim('rgba(9,9,9,0.4)'), paperScrim('rgba(9,9,9,0.72)')]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={[styles.commitBar, { paddingBottom: 16 + insets.bottom }]}>
           <Pressable onPress={onCreate} disabled={!nameOk || busy} accessibilityRole="button" accessibilityState={{ disabled: !nameOk || busy }} accessibilityLabel="Create squad">
             {nameOk ? (
               <LinearGradient colors={flGradient.bronzeFill.colors} locations={flGradient.bronzeFill.locations} start={flGradient.bronzeFill.start} end={flGradient.bronzeFill.end} style={[styles.commitBtn, styles.commitBtnOn]}>
