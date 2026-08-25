@@ -1,6 +1,9 @@
-import { usePathname } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { flColor } from '@/constants/foundation';
 
 import { hasMetHolt } from '@/lib/coach-thread';
 import { useCoachDoor } from '@/hooks/useCoachDoor';
@@ -10,6 +13,10 @@ import { useTour } from '@/hooks/useTour';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { CoachChatSheet } from '@/components/forge/CoachChatSheet';
 import { CoachSays } from '@/components/forge/CoachSays';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { Button } from '@/components/forge/composites/Button';
+import { chooseNudge, type NudgeDef } from '@/domain/coach/nudges';
+import { fetchNudgeHistory, fetchNudgeSignals, markNudge } from '@/data/nudge-live';
 
 /**
  * The four surfaces the coach belongs on, and nowhere else.
@@ -128,6 +135,47 @@ export function CoachBubble() {
    */
   const [met, setMet] = useState<boolean | null>(null);
 
+  /**
+   * ══ THE EXPLORATION NUDGE — Holt inviting them into a corner of the app they have not opened ══
+   *
+   * PO: *"Coach holt should invite people to do things they haven't in the app once in a while… Subtly
+   * help them explore the app to get more buy in… When he says something and they click on him he
+   * should help them get to that thing."*
+   *
+   * ⚠ THE CADENCE LIVES IN `domain/coach/nudges.ts`, NOT HERE. Everything this component does is ask
+   * once per arrival and render the answer; the rules that make it not-a-nag are pure and tested.
+   *
+   * ⚠ IT RANKS BELOW BOTH EXISTING LINES. The introduction wins (a note from Holt only makes sense once
+   * you know there is a Holt) and an abandoned draft wins after that, because that is something the
+   * athlete already started. An invitation is the least urgent thing he has to say.
+   *
+   * ⚠ AND IT NEVER RUNS MID-WORKOUT — `if (session) return null` below already covers it, which is why
+   * this hook can be unconditional. The coin during a session carries the progression call and the plan
+   * cue; an invitation to try progress photos in that slot would displace the sentence the athlete is
+   * standing at a rack waiting for.
+   */
+  /* ⚠ THE LINE IS RESOLVED HERE, WITH THE SIGNALS, NOT AT RENDER. Several lines interpolate a count
+     ("You've earned 4 honors"), and keeping the signals alive purely to format a string later would be a
+     second copy of state that can go stale against the nudge it belongs to. */
+  const [nudge, setNudge] = useState<{ def: NudgeDef; line: string } | null>(null);
+  const [nudgeOpen, setNudgeOpen] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!HOME_SURFACES.has(pathname)) return;
+    let alive = true;
+    void (async () => {
+      const [signals, history] = await Promise.all([fetchNudgeSignals(), fetchNudgeHistory()]);
+      /* Null signals means 0179 has not been applied, or the read failed. Either way: say nothing. */
+      if (!alive || !signals) return;
+      const chosen = chooseNudge(signals, history, Date.now());
+      setNudge(chosen ? { def: chosen, line: chosen.line(signals) } : null);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [pathname]);
+
   /*
    * RE-READ ON ARRIVAL, not once on mount. `usePathname` already re-renders this component on every
    * navigation — it is what the allow-list below is built on — so keying the read to it costs one small
@@ -169,6 +217,16 @@ export function CoachBubble() {
    * for and is all this side is entitled to claim.
    */
   const openCoach = () => {
+    /*
+     * ⚠ THE TAP ANSWERS WHATEVER HE ACTUALLY SAID. If the line on screen is an invitation, opening the
+     * generic chat sheet would be the coach ignoring his own sentence — the PO asked for the opposite:
+     * *"have him prompt your way there."* The introduction and the draft teaser still open the sheet.
+     */
+    if (!introducing && !teaser && nudge) {
+      setNudgeOpen(true);
+      void markNudge(nudge.def.id, 'shown');
+      return;
+    }
     setMet(true);
     /* THE TAP IS THE ANSWER, so the line is spent by it. Leaving it up meant closing the sheet and being
        told the same thing again by the coach you had just been talking to — which is the definition of
@@ -186,7 +244,10 @@ export function CoachBubble() {
    * builder only makes sense once you know there is a Holt. Everyone sees this exactly once.
    */
   const introducing = met === false;
-  const line = introducing ? 'I build the training. Tap me for a program or a session.' : teaser;
+  /* Introduction, then the draft they already started, then an invitation. See `nudge` above. */
+  const line = introducing
+    ? 'I build the training. Tap me for a program or a session.'
+    : (teaser ?? nudge?.line ?? null);
   const insets = useSafeAreaInsets();
   const { session } = useWorkoutSession();
   const { current: ceremony } = useCeremony();
@@ -206,14 +267,71 @@ export function CoachBubble() {
   if (open) return <CoachChatSheet onClose={closeCoach} intent={intent} />;
 
   return (
-    /* Placement is the caller's: 18px above the tab bar, 20 from the right edge (PROMPT §3.1). The
-       Active Workout mounts the same component at its own height, above its action bar. */
-    <CoachSays
+    <>
+      {/*
+        ══ THE INVITATION, AND THE WAY THERE ══
+
+        PO: *"if he says 'I see you haven't done progress pictures yet. Want to do those?' then have him
+        prompt your way there."* One line, one destination, one way to decline — no wizard.
+
+        ⚠ "NOT NOW" IS A DISMISSAL AND CLOSING IS NOT. Tapping Not now records a refusal, and two of
+        those end the invitation forever; swiping the sheet away or tapping the backdrop is somebody who
+        opened it by accident, and counting that as a no would retire nudges nobody ever read. The
+        distinction only exists because `markNudge` is called from the button and not from `onClose`.
+      */}
+      {nudge ? (
+        <BottomSheet open={nudgeOpen} onClose={() => setNudgeOpen(false)} title="Coach Holt">
+          <Text style={styles.nudgeLine}>{nudge.line}</Text>
+          <View style={styles.nudgeActions}>
+            <Button
+              variant="primary"
+              fullWidth
+              onPress={() => {
+                const def = nudge.def;
+                setNudgeOpen(false);
+                setNudge(null); // spent — he does not say it again on the way back
+                /* ⚠ `used` RETIRES IT PERMANENTLY, and it is written on ACCEPTANCE rather than on the
+                   feature actually being used. Following him there is the athlete answering the
+                   question; whether they finish is their business, and asking again because they backed
+                   out of the camera would be the nag the cadence exists to prevent. */
+                void markNudge(def.id, 'used');
+                router.push(def.route as never);
+              }}
+              accessibilityLabel="Show me"
+            >
+              Show me
+            </Button>
+            <Button
+              variant="text"
+              fullWidth
+              onPress={() => {
+                const def = nudge.def;
+                setNudgeOpen(false);
+                setNudge(null);
+                void markNudge(def.id, 'dismissed');
+              }}
+              accessibilityLabel="Not now"
+            >
+              Not now
+            </Button>
+          </View>
+        </BottomSheet>
+      ) : null}
+
+      {/* Placement is the caller’s: 18px above the tab bar, 20 from the right edge (PROMPT §3.1). The
+          Active Workout mounts the same component at its own height, above its action bar. */}
+      <CoachSays
       line={line}
       named={introducing}
       onPress={openCoach}
       openLabel="Open Coach Holt"
       style={{ bottom: 96 + insets.bottom, right: 20 }}
     />
+    </>
   );
 }
+
+const styles = StyleSheet.create({
+  nudgeLine: { fontSize: 16, lineHeight: 23, color: flColor.cream100 },
+  nudgeActions: { gap: 8, marginTop: 18 },
+});
