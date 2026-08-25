@@ -1,7 +1,7 @@
 # Forge Legacy — Status Archive, August 2026
 
 **Type:** Historical record, split out of `Forge-Legacy-Master-Status.md`
-**Covers:** the **53** Recently-Completed entries below the 15 most recent, as of 2026-08-24
+**Covers:** the **54** Recently-Completed entries below the 15 most recent, as of 2026-08-24
 
 > ⚠ This line read **43 … as of 2026-08-22** while 51 entries were already filed, and the dashboard's
 > own pointer one file over read **47**. Two hand-maintained counts of the same countable thing, both
@@ -27,6 +27,24 @@
 > **Read this file when the dashboard does not explain something.** It is the same content, one level back.
 
 ---
+
+### 0. ⭐ The store listing has its screenshots — and the crop is what made four of the eight shippable (2026-08-19, App Store listing — no code, no migration, not an OTA)
+
+**Eight framed screenshots at 6.9" (1320 × 2868), which is the only size Apple needs** — it takes one set and scales the rest itself. Shot on an iPhone 16 Pro Max, whose native resolution **is** an accepted 6.9" size, so nothing was scaled or resampled. Raws in `…/OneDrive/ForgeLegacy-AppStore/raw`, framed finals in `…/final/01–08.png`, uploaded in numeric order. **`Docs/App-Store-Listing-Copy.md` §8 is now the record** for running order, captions and rationale.
+
+**The order follows §5's pillars, and 01–03 carry the pitch because Apple shows only the first three in search results:** 01 active workout *"Log a set in under two seconds."* · 02 a Holt-built 12-week block *"Coach Holt builds the program."* · 03 a sealed chapter *"Seal a chapter. It's permanent."* · 04 Home *"Pick up where you left off."* · 05 rank *"Earned once. Yours for good."* · 06 squad feed *"A few real people. No audience."* · 07 competition standings *"Compete with people who know you."* · 08 exercise detail *"Every movement, demonstrated."*
+
+**⚠ THE CROP IS NOT COSMETIC — IT IS WHAT MAKES FOUR OF THE EIGHT SHIPPABLE.** Every frame is cut below the status bar, which removes a **third-party media-player pill sitting in the Dynamic Island** on four of the captures, and on 02 the pinned **Delete Program** button — red, the most eye-catching thing in the lower half of the frame, and **impossible to scroll away because that footer is fixed**. Cropping a real capture onto a caption band is the art direction the launch docs always meant; the landing page's HTML phone mocks are still never the screenshot.
+
+**⚠ 06 AND 07 ARE THE REVIEWER DEMO ACCOUNT BY DECISION, NOT BY CONVENIENCE.** The PO's own circle is empty — Home renders *"Nothing from your circle yet."* — and real testers' names and handles in a store screenshot are public forever and would need each person's consent. `supabase/seed/reviewer-seed.mjs` builds *Iron Circle* with a second member, posts from both authors and a two-entrant competition: content that is ours to publish.
+
+**⛔ OWED — RESHOOT 05 (RANK).** It reads *"I've started."*, `LIFETIME 5` and *"0 of the path walked"*, which makes it the one frame that argues against the pillar it illustrates. The account simply has no rank history yet and will by launch. The same weakness, smaller, sits on 01 (`LAST —` / `BEST —`, a lift with no history) and 02 (`Workout 0 of 72`).
+
+**✅ CLOSED SAME PASS — §5 DOES NOT OVERCLAIM, AND A LOAD-BEARING CODE COMMENT WAS LYING.** The description's feature list promises *"demonstration loops and coaching cues"*, and `src/app/exercise/[id].tsx`'s header flatly denied it: *"today none of the 556 generated records are approved, so Why-it-matters / How-to / Cues / Mistakes are absent for every exercise."* **The PO confirmed on-device that all four sections render**, and counting the store settles it — `domain/exercise-coaching/content/coaching_content.json` holds **797 records: 735 Published, 62 Needs Review**, which is what this board's Content row has said all along. The serving gate (`toCoachingView`, Published-only) never changed; the comment was written before the publish pass and never revisited. ⚠ **The listing line now rests on that gate** — a mass un-publish would make the App Store description false, so the comment says so. **The claim stands, unedited.**
+
+**✅ SUBTITLE CHOSEN THE SAME DAY — option A, `Workout log & strength tracker`.** 30/30 characters, so **any later edit is a rewrite, not a tweak**. It buys maximum search reach and says nothing distinctive, which is the right trade for an app with no awareness: the *name* carries the brand and the description carries the soul. ⚠ **§2 and §4 are coupled** — the keyword list was written assuming A, which is why `workout`, `log`, `strength` and `tracker` are absent from it, and changing the subtitle without rewriting the keywords in the same pass either duplicates indexed terms or drops terms nothing else covers. Both sections now say so. **Nothing in the listing copy is still owed by the PO.**
+
+**Files:** `Docs/App-Store-Listing-Copy.md` §2 + §8 · `Docs/Launch-Checklist-Free-And-Premium.md` §10.5 (still `[~]` — the app icon and the age rating remain, and the age rating stays blocked until the Guideline 1.2 client half reaches testers) · `Docs/GO-LIVE.md` row 4 · `src/app/exercise/[id].tsx` · this board.
 
 ### 0. ⛔ The App Store would have rejected this build, and no launch document said so — Guideline 1.2 (2026-08-19, Moderation — **MIGRATION `0171` APPLIED AND VERIFIED**, client code is OTA-safe, ⏳ NOT DEPLOYED)
 
