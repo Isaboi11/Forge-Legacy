@@ -173,7 +173,7 @@ An athlete with exceptional training volume but no consistency does not advance.
 
 **Family promotion** (e.g., Builder → Craftsman): Requires all applicable requirement types from Section 5.2. Triggers M-1 Rank Up ceremony.
 
-**Sub-tier promotion** (e.g., Foundation I → Foundation II): Requires category evidence appropriate to the sub-tier level. Does NOT trigger M-1 ceremony. Sub-tier advancement surfacing is **TBD-2** (see Section 22).
+**Sub-tier promotion** (e.g., Foundation I → Foundation II): Requires category evidence appropriate to the sub-tier level. ⚠ **AMENDED by `Amendments/Rank-System-Architecture-Amendment-002-Sub-Tier-Ceremony.md` (LOCKED, 2026-08-25): sub-tier promotion DOES trigger the M-1 ceremony.** This clause previously read "Does NOT trigger M-1 ceremony", and the shipped code has always done the opposite — see the amendment §4. **TBD-2 is resolved** by the same amendment: M-1 is the surface, alongside the Progress Hub's Rank Journey.
 
 ---
 
@@ -427,9 +427,15 @@ Sub-tiers are NOT separate identities. Foundation · I and Foundation · IV shar
 
 ### 13.2 Sub-Tier Ceremony
 
-There is no ceremony for sub-tier advancement. M-1 fires only on family-level promotions (Foundation → Builder, Builder → Craftsman, etc.).
+⚠ **AMENDED — `Amendments/Rank-System-Architecture-Amendment-002-Sub-Tier-Ceremony.md` (LOCKED, 2026-08-25).**
 
-Sub-tier advancement surfacing: **TBD-2** (see Section 22). The most likely surfaces are P-2 Progress Hub Rank Journey Preview and What's Next section, consistent with the Guided Transparency principle (Section 17). This must be specified before P-2 implementation.
+**M-1 fires on every promotion, family-level and sub-tier alike** — all 28 steps of the ladder. PO decision, 2026-08-25.
+
+> This section previously read: *"There is no ceremony for sub-tier advancement. M-1 fires only on family-level promotions."* That was never what shipped — `useEarnedMoments` has always enqueued on either kind — so the DOCUMENT was the stale half. The amendment is written so a future reader does not delete that branch as a defect.
+
+**TBD-2 is resolved.** The surfaces are M-1 itself and the P-2 Progress Hub Rank Journey, which shows every earned sub-tier badge at full strength — both of the surfaces this section originally named as "most likely". §22's `C-3: Sub-tier advancement surfacing` is no longer a gap.
+
+⚠ **§13.1 IS UNTOUCHED.** Sub-tiers remain *not separate identities*: the ceremony shows the FAMILY's identity statement (§2.2), so Foundation II and Foundation IV both say "I've started." Per-sub-tier identity statements must not be authored — see the amendment §3.
 
 ### 13.3 Sub-Tier Thresholds
 
@@ -915,4 +921,5 @@ Numeric thresholds, signal definitions, per-type improvement metrics, rank data 
 
 | Amendment | Date | Description |
 |-----------|------|-------------|
+| Amendment 002 | 2026-08-25 | RSA-A2-D1 locked — **M-1 fires on every promotion, sub-tiers included** (all 28 steps). §13.2's "no ceremony for sub-tier advancement" amended; **TBD-2 resolved** (M-1 + the Progress Hub Rank Journey are the surfaces) and §22's C-3 closed. No code changed — the shipped behaviour was always this, and the document was the stale half. §13.1 (sub-tiers are not separate identities) untouched. |
 | Amendment 001 | June 2026 | R-D46 (Import History Treatment) locked. Imported history receives partial credit and contextual recognition; prestige ranks (Architect and above) require Forge-native confirmation. FC-3 resolved. TBD-9 removed. Section 8.3 added. |

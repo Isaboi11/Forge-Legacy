@@ -874,6 +874,21 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > raised there rather than returning a zero. **Do not repeat this shape of sanity check in a paste bundle.**
 > ⚠ **`fingerprint:compare` STILL NEEDS `--build-id` IN NON-INTERACTIVE MODE** — bare `--non-interactive`
 > exits 1 with "Insufficent arguments", which reads exactly like a failed comparison.
+> ✅ **`0177` APPLIED 2026-08-25, AFTER the deploy** — `fn_exists: true`, **`guard_present: true`**, which is
+> the assertion that matters: it reads `pg_get_functiondef` on the LIVE function rather than the file, so
+> the consent check is genuinely in the database. ⭐ **AND THE HOLE WAS NEVER USED** —
+> `requests_approved_historically: 0` across 4 squads and 16 memberships, so every membership that exists
+> was somebody adding themselves. No client change was needed: `approveSquadJoinRequest` already surfaces
+> an unrecognised `ok:false` as a plain failure, and `squad_pending_requests` only ever hands the screen
+> ids that are already `pending`.
+> ⭐ **RSA AMENDMENT 002 — the rank card fires on EVERY rank and sub-rank, all 28 steps** (PO, 2026-08-25:
+> *"Yes I want the card to fire off on every rank and subrank"*). ⚠ **NO CODE CHANGED, AND THAT IS WHY THE
+> AMENDMENT EXISTS.** `useEarnedMoments` has always enqueued on `promotedFamily || promotedSubTier`, while
+> RSA §13.2 said *"There is no ceremony for sub-tier advancement"* — the DOCUMENT was the stale half, and a
+> future reader finding that clause would have deleted the branch as a defect. §13.2 and §5 now carry the
+> amendment pointer, **TBD-2 is resolved** (M-1 + the Progress Hub Rank Journey are the surfaces) and §22's
+> C-3 is closed. ⚠ **§13.1 stays locked** — sub-tiers are not separate identities, so the card shows the
+> FAMILY's §2.2 statement and per-sub-tier statements must never be authored.
 > ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
 > Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
 
