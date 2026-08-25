@@ -575,7 +575,14 @@ function PinnedCard({ pin, onPress }: { pin: Pin; onPress: () => void }) {
       <View style={styles.pinKind}>
         <Text style={styles.pinKindText}>{pin.kind}</Text>
       </View>
-      <Text style={styles.pinTitle} numberOfLines={2}>
+      {/*
+        ⚠ THE TITLE HAS TWO GROUNDS AND THEREFORE TWO COLOURS. Over MEDIA it sits on a 0.92 black scrim,
+        which stays dark in Paper because a photo is not a theme surface — so it must be light. With NO
+        media it sits on the themed card, which is near-black in Forge and CREAM in Paper — so it must
+        be the theme's own ink. In Forge both grounds are dark and one value covered both, which is why
+        a single `cream100` was correct for as long as there was only one theme.
+      */}
+      <Text style={[styles.pinTitle, { color: media ? flColor.onMedia : flColor.cream100 }]} numberOfLines={2}>
         {pin.title}
       </Text>
     </Pressable>

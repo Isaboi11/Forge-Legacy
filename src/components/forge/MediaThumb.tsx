@@ -39,26 +39,38 @@ import { useVideoPlayer, VideoView } from 'expo-video';
  * `pins.poster_url` (0005 reserved the column). That would make the preview free to render everywhere
  * including the web, instead of costing a decode per card.
  *
- * ══ A PHOTO IS CROPPED; A VIDEO FRAME IS NOT ══
+ * ══ WHY THE WEB SHOWED A CEILING, AND WHY `contain` WAS THE WRONG FIX FOR IT ══
  *
- * PO, 2026-08-25: *"the videos need to be centralized and not zoomed in that much."*
+ * PO, first report: *"the videos need to be centralized and not zoomed in that much"* — the tiles were
+ * showing a crop of a gym ceiling instead of the lift. That was answered by moving video to `contain`,
+ * and it was answering the wrong question: the tiles were not badly cropped, they were showing THE
+ * WRONG FRAME, and `contain` merely showed more of the wrong frame.
  *
- * Everything here used to be `cover`, and for a PHOTO that is right — a photo was framed by the person
- * who took it, so filling the tile and losing the edges keeps their composition. A VIDEO's first frame
- * was never composed for a tile at all: it is whatever the sensor was pointing at, usually portrait,
- * and `cover` in a landscape tile centre-crops it to a strip. That is how a squat rack becomes a
- * picture of a ceiling.
+ * ⚠ THE REAL VARIABLE WAS THE PLATFORM, NOT THE FIT. Side-by-side screenshots of the same account
+ *   settled it: the native app draws a proper thumbnail, the web preview draws a ceiling or a blank
+ *   grey box. Native calls `generateThumbnailsAsync(0.1)` and gets a real frame. Web cannot — the
+ *   player throws there — so it falls back to a paused `<video>`, and a `<video>` paints **frame 0**.
+ *   Frame 0 of a phone clip is the sensor still settling while the phone is being set down: the
+ *   ceiling. And if the element has not buffered at all it paints nothing, which is the grey tile.
  *
- * ⚠ THE SAME DEFECT WAS ALREADY FIXED ONE SCREEN OVER and this was the other half of it.
- * `accomplishments.tsx` hit it at `height: 220` and moved its player to `contain` for exactly this
- * reason, with the reasoning written above its component — but the two THUMBNAIL surfaces that feed
- * into it (the Legacy hub's Accomplishments row and Pinned Legacy) both come through here and were
- * left on `cover`. Letterboxing a keepsake is not a compromise; showing a fraction of it is.
+ * So the fit goes back to `cover` on both — full-bleed, which is what the native app does and what the
+ * PO pointed at as the target — and the WEB path now seeks to the same 0.1s the native path samples.
+ * One frame, one composition, both platforms.
  */
 
-/** A video frame was never composed for this tile — show all of it. A photo was, so fill the tile. */
-const VIDEO_FIT = 'contain' as const;
+/** Both fill the tile. The native app does, and it is the look the PO asked to match. */
+const VIDEO_FIT = 'cover' as const;
 const PHOTO_FIT = 'cover' as const;
+
+/**
+ * Where both platforms sample the poster frame.
+ *
+ * A tenth of a second in, not zero: the very first frame of a phone clip is often the sensor still
+ * settling, and some encoders put a black frame there. Native passes this to
+ * `generateThumbnailsAsync`; web seeks the element to it. They must stay the same number or the two
+ * platforms show two different pictures of the same keepsake.
+ */
+const POSTER_AT = 0.1;
 export function MediaThumb({ url, kind }: { url: string; kind: 'image' | 'video' | null | undefined }) {
   if (kind === 'video') return <VideoThumb url={url} />;
   return <Image source={{ uri: url }} style={StyleSheet.absoluteFill} contentFit={PHOTO_FIT} />;
@@ -72,16 +84,28 @@ function VideoThumb({ url }: { url: string }) {
   const player = useVideoPlayer(url, (p) => {
     p.loop = false;
     p.muted = true; // a strip of silent frames; nothing here should ever make noise
+    /*
+     * ⚠ THE SEEK HAPPENS HERE, IN THE CONSTRUCTOR, AND NOT IN AN EFFECT — the react-compiler lint
+     * forbids mutating a value returned from a hook (`react-hooks/immutability`) and says so with the
+     * fix attached: "consider moving the modification into the hook where the value is constructed."
+     * This callback IS that place, and expo-video queues the seek until the source has metadata, so it
+     * survives being asked before the video is ready.
+     *
+     * On WEB this is what makes the tile paint at all: the `<video>` fallback below shows frame 0 —
+     * the ceiling, as a phone is set down — or nothing until it buffers. Assigning a time forces the
+     * decode and lands on the same frame the native path samples.
+     */
+    p.currentTime = POSTER_AT;
   });
   const [poster, setPoster] = useState<ImageSource | null>(null);
 
   useEffect(() => {
-    if (Platform.OS === 'web') return; // the web player throws; the VideoView fallback covers it
+    // Web cannot generate a thumbnail — `generateThumbnailsAsync` throws there. Its poster comes from
+    // the constructor's seek above, which is what makes the `<video>` fallback paint a real frame.
+    if (Platform.OS === 'web') return;
     let live = true;
-    // A tenth of a second in, not zero: the very first frame of a phone clip is often the sensor still
-    // settling, and some encoders put a black frame there.
     player
-      .generateThumbnailsAsync(0.1, { maxWidth: 640 })
+      .generateThumbnailsAsync(POSTER_AT, { maxWidth: 640 })
       .then((frames) => {
         if (live && frames[0]) setPoster(frames[0] as unknown as ImageSource);
       })

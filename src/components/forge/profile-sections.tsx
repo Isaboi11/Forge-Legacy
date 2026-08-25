@@ -277,7 +277,9 @@ export function AccomplishmentCard({ item, onPress }: { item: Accomplishment; on
         ) : null}
       </View>
       <View style={s.accBody}>
-        <Text style={s.accTitle}>{item.text}</Text>
+        {/* Two grounds, two colours — see the same note on `PinnedCard`. An accomplishment with no
+            media sits on the themed card, which is cream in Paper; white on it is invisible. */}
+        <Text style={[s.accTitle, item.mediaUrl ? null : { color: flColor.cream100 }]}>{item.text}</Text>
         <Text style={s.accSub}>{item.monthYear}</Text>
       </View>
     </Pressable>
