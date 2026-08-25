@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode, useMemo } from 'react';
+import { useCallback, useEffect, useState, type ReactNode, useMemo } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,6 +12,7 @@ import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { Image } from 'expo-image';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { ensurePinPoster } from '@/data/pin-poster';
 import { useProfile } from '@/lib/profile';
 import type { Sex } from '@/domain/profile/schema';
 import { type RankFamily, type RankLevel } from '@/domain/rank-artwork/resolver';
@@ -542,7 +543,25 @@ function LegacyError({ onRetry }: { onRetry: () => void }) {
  * tapping one opens the fullscreen player. Faithful to the .dc — not restyled.
  */
 function PinnedCard({ pin, onPress }: { pin: Pin; onPress: () => void }) {
-  const media = pin.posterUrl ?? pin.mediaUrl;
+  /*
+   * ⚠ A VIDEO PIN EARNS ITS STILL FRAME THE FIRST TIME IT IS SEEN ON A PHONE. `pins.poster_url` has
+   * been reserved since `0005` and never written, so a video pin falls back to its raw `.mp4` — which
+   * the native app can draw and a BROWSER ON iOS cannot, because iOS refuses to fetch video data
+   * without a user gesture. Extracting the frame once, here, and saving it means every surface after
+   * this renders a plain image. See `ensurePinPoster`; it is a no-op on web and silent on failure.
+   */
+  const [poster, setPoster] = useState<string | undefined>(pin.posterUrl);
+  useEffect(() => {
+    let live = true;
+    void ensurePinPoster({ id: pin.id, mediaUrl: pin.mediaUrl, posterUrl: poster, isVideo: pin.isVideo }).then((url) => {
+      if (live && url) setPoster(url);
+    });
+    return () => {
+      live = false;
+    };
+  }, [pin.id, pin.mediaUrl, pin.isVideo, poster]);
+
+  const media = poster ?? pin.mediaUrl;
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open ${pin.title}`} style={styles.pinCard}>
       {media ? (
@@ -550,7 +569,7 @@ function PinnedCard({ pin, onPress }: { pin: Pin; onPress: () => void }) {
           {/* A pin with no `posterUrl` falls through to its raw media, and for a video that is an `.mp4`
               that `<Image>` renders as an empty box. `MediaThumb` branches on the kind instead — the
               same defect the accomplishment card shipped with, waiting here for the first video pin. */}
-          <MediaThumb url={media} kind={pin.posterUrl ? 'image' : pin.isVideo ? 'video' : 'image'} />
+          <MediaThumb url={media} kind={poster ? 'image' : pin.isVideo ? 'video' : 'image'} />
           <LinearGradient
             pointerEvents="none"
             colors={['rgba(8,11,14,0.5)', 'rgba(8,11,14,0)', 'rgba(8,11,14,0)', 'rgba(8,11,14,0.92)']}
