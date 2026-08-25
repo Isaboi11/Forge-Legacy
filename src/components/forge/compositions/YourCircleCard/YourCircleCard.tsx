@@ -114,7 +114,7 @@ export function YourCircleCard({ liveUsers, friendActivity, hasCircle = true, on
       />
       <View style={[styles.card, live ? styles.cardLive : null]}>
         {live ? (
-          <View style={styles.liveBlock}>
+          <View style={[styles.liveBlock, friendActivity ? null : styles.liveBlockLast]}>
             <View style={styles.liveHeader}>
               <View style={styles.liveDot} />
               <Text style={styles.liveLabel}>Live Now</Text>
@@ -214,14 +214,36 @@ const styles = StyleSheet.create({
   cardLive: {
     borderColor: flColor.bronzeBorder,
   },
+  /*
+   * ══ A ROUNDED RECTANGLE INSIDE A ROUNDED RECTANGLE ══
+   *
+   * The live session used to sit in its own bordered, filled, rounded box inside the card's own
+   * bordered, filled, rounded box — container → label → content → container, which is the pattern that
+   * makes a hand-built screen read as a component library. PO: *"eliminate some of the internal
+   * boxing… differentiate the live workout through lighting rather than another complete rounded
+   * rectangle inside the rounded rectangle."*
+   *
+   * ⚠ NOTHING IS LOST BY REMOVING IT. What says "someone is training right now" is the green presence
+   * dot, the LIVE NOW label, the pulsing ring on the avatar and the Join button — four signals, none of
+   * which was the border. The card's own edge already warms to bronze (`cardLive`) when this block is
+   * present, which is the lighting the box was standing in for.
+   *
+   * What remains is a rule, and only where there is something below to separate from.
+   */
   liveBlock: {
     gap: 12,
-    padding: 14,
+    paddingBottom: 16,
     marginBottom: 16,
-    borderRadius: flRadius.lg,
-    backgroundColor: flColor.charcoal800,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
+    borderBottomWidth: 1,
+    /* The SAME hairline the footer draws, not a new one — two rules inside one card that disagree is
+       the kind of detail that reads as unfinished without anyone naming why. */
+    borderBottomColor: flColor.bronzeBorderSubtle,
+  },
+  /* Last thing in the card — the footer draws its own rule, so a second one would double up. */
+  liveBlockLast: {
+    paddingBottom: 0,
+    marginBottom: 0,
+    borderBottomWidth: 0,
   },
   liveHeader: {
     flexDirection: 'row',

@@ -1390,18 +1390,36 @@ export default function HomeScreen() {
             />
           ) : null}
 
-          {/* A program is an OPTION, not a prerequisite — so it is one quiet line under the screen's real
-              content, not a card competing with it. `/workouts` already holds both doors (Build a Program
-              and Discover), so this is one tap to either rather than two cards for one decision. */}
+          {/* A program is an OPTION, not a prerequisite — so it is not a card competing with the screen's
+              real content. `/workouts` already holds both doors (Build a Program and Discover), so this is
+              one tap to either rather than two cards for one decision.
+
+              ══ AND IT IS THE JOINT, NOT A BUTTON ══
+
+              It used to be a centred 12.5sp line of bold sans, which read as a footnote to Mission rather
+              than as the door it is. It now runs EDGE TO EDGE — past the content padding, on two neutral
+              hairlines — so it separates the athlete's own material above (chapter, today, objective) from
+              other people below (circle, train together). PO: *"a connective editorial element."*
+
+              ⚠ FULL-BLEED IS THE WHOLE DEVICE. `marginHorizontal: -18` cancels `content`'s padding, and
+              the padding is added back inside, so the rules reach the screen edge while the contents stay
+              on the same left margin as everything else. Losing that makes it another boxed row.
+
+              ⚠ THE HAIRLINES ARE NEUTRAL ON PURPOSE. Bronze is Home's "do this now" signal and it was
+              already edging nine separate things; a band that merely offers something does not get it.
+              Holt's own mark carries the warmth here. */}
           {composition.showQuietProgramLink ? (
             <Pressable
               onPress={() => openCoach('build')}
               accessibilityRole="button"
               accessibilityLabel="Ask Coach Holt to build you a program"
-              hitSlop={8}
-              style={styles.pathQuiet}
+              style={({ pressed }) => [styles.holtBand, pressed ? styles.holtBandPressed : null]}
             >
-              <Text style={styles.pathQuietText}>Want a plan? Holt will build you one →</Text>
+              <HoltMark size={44} />
+              <Text style={styles.holtBandText}>Want a plan? Holt will build you one.</Text>
+              <View style={styles.holtBandChevron}>
+                <ChevronRightIcon size={15} color={flColor.gray400} />
+              </View>
             </Pressable>
           ) : null}
 
@@ -1666,6 +1684,39 @@ const styles = StyleSheet.create({
   pathCardTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100 },
   pathCardSub: { marginTop: 5, fontSize: 13, lineHeight: 18.5, color: flColor.gray600 },
   pathQuiet: { alignSelf: 'center', marginTop: 6, paddingVertical: 8 },
+  /* The connective band. `-18` cancels `content.paddingHorizontal` so the rules run to the screen edge;
+     the same 18 is paid back inside so the mark lines up with every other left margin on Home. */
+  holtBand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginHorizontal: -18,
+    paddingHorizontal: 18,
+    paddingVertical: 15,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: flColor.charcoal700,
+  },
+  holtBandPressed: { opacity: 0.82 },
+  /* Set in the display face, because this is a sentence Holt says rather than a control label. */
+  holtBandText: {
+    flex: 1,
+    minWidth: 0,
+    fontFamily: flFont.display,
+    fontSize: 16,
+    lineHeight: 22,
+    color: flColor.bronze400,
+  },
+  holtBandChevron: {
+    flexShrink: 0,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   /* Lifted from gray600 — a real exit that some athletes genuinely want should be readable, not a
      watermark. Named plainly too: "library" is a word this app has never taught anybody. */
   pathQuietText: { fontSize: 12.5, fontWeight: '700', letterSpacing: 0.6, color: flColor.bronze400 },
