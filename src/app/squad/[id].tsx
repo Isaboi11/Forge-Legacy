@@ -501,6 +501,21 @@ export default function SquadDetailRoute() {
 
           <View style={styles.heroDivider} />
 
+          {/* CHECK-INS — ephemeral video stories (latest per member, <24h) */}
+          <TourAnchor id="squad-checkins" style={styles.checkinsSection}>
+            <View style={styles.checkinHead}>
+              <Text style={styles.feedLabel}>Check-ins</Text>
+              <Text style={styles.checkinDate}>Video · disappears in 24h</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.checkinStrip}>
+              {iHaveActive ? null : <CheckinCta onPress={() => void startCheckin()} uploading={uploadingCheckin} pct={checkinPct} />}
+              {checkinPeople.map((m) => (
+                <CheckinDisc key={m.id} member={m} watched={m.watched || watchedIds.has(m.id)} onPress={() => openCheckin(m)} />
+              ))}
+            </ScrollView>
+            {iHaveActive || checkinPeople.length ? null : <Text style={styles.checkinEmpty}>Be the first — post a quick video and let the squad see your effort.</Text>}
+          </TourAnchor>
+
           {/* CURRENT GOAL */}
           {squad.goalTarget != null ? (
             <TourAnchor id="squad-goal">
@@ -662,62 +677,8 @@ export default function SquadDetailRoute() {
           </Pressable>
         ) : null}
 
-        {/* COMPETITIONS (C-1) — the way in when nothing is running. With a live competition the card's
-            own "View All" is the entry, which is why the design has no such row: it assumes a squad
-            always has a season going. This is that assumption's missing branch. */}
-        {liveChallenge ? null : (
-          <TourAnchor id="squad-competitions">
-          <Pressable
-            onPress={() => router.push({ pathname: '/competitions', params: { id: squad.id } })}
-            accessibilityRole="button"
-            accessibilityLabel="Competitions"
-            style={({ pressed }) => [styles.recordsRow, pressed ? styles.recordsRowPressed : null]}
-          >
-            <View style={styles.recordsIcon}>
-              <SwordsIcon />
-            </View>
-            <View style={styles.recordsBody}>
-              <Text style={styles.recordsTitle}>Competitions</Text>
-              <Text style={styles.recordsSub}>Start one, or see what this squad has won.</Text>
-            </View>
-            <ChevronRight />
-          </Pressable>
-          </TourAnchor>
-        )}
 
-        {/* SQUAD RECORDS — content, not administration, so it gets a visible home rather than a menu row. */}
-        <TourAnchor id="squad-records">
-        <Pressable
-          onPress={() => router.push({ pathname: '/squad-records', params: { id: squad.id } })}
-          accessibilityRole="button"
-          accessibilityLabel="Squad records"
-          style={({ pressed }) => [styles.recordsRow, pressed ? styles.recordsRowPressed : null]}
-        >
-          <View style={styles.recordsIcon}>
-            <BookIcon />
-          </View>
-          <View style={styles.recordsBody}>
-            <Text style={styles.recordsTitle}>Squad Records</Text>
-            <Text style={styles.recordsSub}>The best this squad has ever posted.</Text>
-          </View>
-          <ChevronRight />
-        </Pressable>
-        </TourAnchor>
 
-        {/* CHECK-INS — ephemeral video stories (latest per member, <24h) */}
-        <TourAnchor id="squad-checkins" style={styles.checkinsSection}>
-          <View style={styles.checkinHead}>
-            <Text style={styles.feedLabel}>Check-ins</Text>
-            <Text style={styles.checkinDate}>Video · disappears in 24h</Text>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.checkinStrip}>
-            {iHaveActive ? null : <CheckinCta onPress={() => void startCheckin()} uploading={uploadingCheckin} pct={checkinPct} />}
-            {checkinPeople.map((m) => (
-              <CheckinDisc key={m.id} member={m} watched={m.watched || watchedIds.has(m.id)} onPress={() => openCheckin(m)} />
-            ))}
-          </ScrollView>
-          {iHaveActive || checkinPeople.length ? null : <Text style={styles.checkinEmpty}>Be the first — post a quick video and let the squad see your effort.</Text>}
-        </TourAnchor>
 
         {/* SQUAD FEED */}
         <TourAnchor id="squad-feed" style={styles.feedSection}>
@@ -773,6 +734,50 @@ export default function SquadDetailRoute() {
             </View>
           )}
         </TourAnchor>
+
+        {/*
+          SECONDARY DESTINATIONS — Competitions and Squad Records, side by side and below the feed.
+
+          ⚠ PO, 2026-08-25: they *"currently have almost the same visual weight as Current Goal. That's
+          too much."* Both were full-width rows with an icon, a title AND a subtitle, stacked directly
+          under the goal — so a squad's two most STATIC surfaces outranked everything happening in it,
+          and pushed the feed off the first screen. They are doors to history; they get a pair of tiles.
+
+          The Competitions tile still hides itself when a competition is live: the live card above owns
+          that entry, which is the branch the original comment here describes.
+        */}
+        <View style={styles.secondaryRow}>
+          {liveChallenge ? null : (
+            <TourAnchor id="squad-competitions" style={styles.secondaryFlex}>
+              <Pressable
+                onPress={() => router.push({ pathname: '/competitions', params: { id: squad.id } })}
+                accessibilityRole="button"
+                accessibilityLabel="Competitions"
+                style={({ pressed }) => [styles.secondaryTile, pressed ? styles.recordsRowPressed : null]}
+              >
+                <View style={styles.recordsIcon}>
+                  <SwordsIcon />
+                </View>
+                <Text style={styles.secondaryTitle}>Competitions</Text>
+                <ChevronRight />
+              </Pressable>
+            </TourAnchor>
+          )}
+          <TourAnchor id="squad-records" style={styles.secondaryFlex}>
+            <Pressable
+              onPress={() => router.push({ pathname: '/squad-records', params: { id: squad.id } })}
+              accessibilityRole="button"
+              accessibilityLabel="Squad records"
+              style={({ pressed }) => [styles.secondaryTile, pressed ? styles.recordsRowPressed : null]}
+            >
+              <View style={styles.recordsIcon}>
+                <BookIcon />
+              </View>
+              <Text style={styles.secondaryTitle}>Squad Records</Text>
+              <ChevronRight />
+            </Pressable>
+          </TourAnchor>
+        </View>
       </ScrollView>
 
       <ScreenTour screenKey="squad-detail" ready={view === 'detail'} />
@@ -1503,6 +1508,41 @@ const styles = StyleSheet.create({
   confirmActions: { gap: 10, marginTop: 22 },
 
   // today's check-ins
+  /**
+   * The two secondary destinations, side by side under the feed.
+   *
+   * ⚠ SMALLER ON PURPOSE, not merely moved. As full-width rows with a title AND a subtitle they read at
+   * the same weight as Current Goal — two static surfaces outranking everything live in the squad. The
+   * subtitle is dropped and the pair shares one line, which is what buys the feed its place on the
+   * first screen.
+   */
+  secondaryRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 22,
+  },
+  /** Each tile takes an equal half — and the whole width when a live competition hides the other. */
+  secondaryFlex: { flex: 1 },
+  secondaryTile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    paddingHorizontal: 12,
+    paddingVertical: 13,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal800,
+    boxShadow: flShadow.card,
+  },
+  secondaryTitle: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+    color: flColor.cream100,
+  },
   recordsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1532,7 +1572,12 @@ const styles = StyleSheet.create({
   recordsTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   recordsSub: { fontSize: 11.5, color: flColor.gray600 },
 
-  checkinsSection: { paddingHorizontal: 20, marginTop: 12 },
+  /**
+   * ⚠ NO HORIZONTAL PADDING OF ITS OWN ANY MORE — the rail moved INSIDE the hero card, which already
+   * pads 20. It carried its own 20 as a page-level section and would now be inset 40, half a check-in
+   * disc narrower than everything above it.
+   */
+  checkinsSection: { marginTop: 14, marginBottom: 2 },
   checkinHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 },
   checkinDate: { fontSize: 11.5, color: flColor.gray600 },
   checkinStrip: { gap: 6, paddingBottom: 4, paddingRight: 8 },
