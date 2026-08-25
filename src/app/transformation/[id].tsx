@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -289,9 +290,13 @@ function VideoBlock({ uri }: { uri: string }) {
   return <VideoView player={player} style={styles.heroVideo} nativeControls contentFit="contain" />;
 }
 
+/* ⚠ NO SAFE-AREA INSET — see the note on `transformation-compare`'s TopBar. All three Transformation
+   screens hand-roll this bar and all three put it under the Dynamic Island. Same fix, same numbers as
+   the shared `AppBar`. */
 function TopBar({ onBack, onOverflow }: { onBack: () => void; onOverflow?: () => void }) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.topBar}>
+    <View style={[styles.topBar, { height: 56 + insets.top, paddingTop: insets.top }]}>
       <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" style={styles.topBtn} hitSlop={6}>
         <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
           <Path d="M15 5l-7 7 7 7" />

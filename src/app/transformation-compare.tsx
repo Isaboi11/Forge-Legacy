@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AlignEditor } from '@/components/forge/AlignEditor';
 import { BeforeAfterSlider, type PhotoTransform } from '@/components/forge/BeforeAfterSlider';
@@ -197,9 +198,23 @@ export default function TransformationCompareRoute() {
   );
 }
 
+/*
+ * ⚠ THIS BAR HAD NO SAFE-AREA INSET, AND THAT IS WHY THERE WAS NO WAY OUT OF THIS SCREEN.
+ *
+ * PO: *"When I went into my transformation photos and comparing there was no back button so I couldn't
+ * get out of it."* The button was always here — `topBar` is 56pt tall and started at y=0, so on a phone
+ * with a Dynamic Island the entire bar, chevron included, sat UNDERNEATH the island: invisible, and no
+ * tap could reach it. The screen was a dead end on exactly the hardware the testers hold.
+ *
+ * ⚠ ALL THREE TRANSFORMATION SCREENS HAD IT, and nothing else in the app did. They are the only screens
+ * that hand-roll a `TopBar` instead of using the shared `AppBar`, which has done `8 + insets.top` since
+ * it was written — so the fault was not a missed edge case but a component built beside the one that
+ * already solved this. Matching `AppBar`'s value rather than inventing a third number.
+ */
 function TopBar({ onBack }: { onBack: () => void }) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.topBar}>
+    <View style={[styles.topBar, { height: 56 + insets.top, paddingTop: insets.top }]}>
       <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" style={styles.topBtn} hitSlop={6}>
         <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
           <Path d="M15 5l-7 7 7 7" />

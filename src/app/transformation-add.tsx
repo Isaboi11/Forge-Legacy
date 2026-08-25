@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   addTransformationEntry,
@@ -314,9 +315,13 @@ export default function TransformationAddRoute() {
   );
 }
 
+/* ⚠ NO SAFE-AREA INSET — see the note on `transformation-compare`'s TopBar. All three Transformation
+   screens hand-roll this bar and all three put it under the Dynamic Island, which on Compare left the
+   athlete with no way out at all. Same fix, same numbers as the shared `AppBar`. */
 function TopBar({ title, onClose }: { title: string; onClose: () => void }) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.topBar}>
+    <View style={[styles.topBar, { height: 56 + insets.top, paddingTop: insets.top }]}>
       <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cancel" style={styles.topBtn} hitSlop={6}>
         <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
           <Path d="M6 6l12 12M18 6L6 18" />
