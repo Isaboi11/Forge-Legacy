@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 
-import { flColor, flRadius, flShadow } from '@/constants/foundation';
+import { flColor, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { BUBBLE_SHADOW, BUBBLE_SIZE, HoltMark } from '@/components/forge/HoltMark';
 
 /**
@@ -83,7 +83,13 @@ export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, 
           accessibilityLabel={`Coach Holt — ${said}`}
           style={[styles.bubble, named && styles.bubbleNamed]}
         >
-          <LinearGradient colors={SURFACE_ELEVATED} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.bubbleInner}>
+          <LinearGradient
+            colors={SURFACE_ELEVATED}
+            locations={flGradient.surfaceSheetRaised.locations}
+            start={flGradient.surfaceSheetRaised.start}
+            end={flGradient.surfaceSheetRaised.end}
+            style={styles.bubbleInner}
+          >
             {/*
               ⚠ **THE EYEBROW, ALWAYS, NOT A NAME ON THE FIRST LINE ONLY** (Coach Holt Chat v2 §5).
               The chat marks every one of his turns `HOLT` in bronze at 9.5/700/2.4, and that is now
@@ -147,7 +153,22 @@ export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, 
 }
 
 /** `--fl-surface-elevated`, the same material the chat's artifact card is cut from. */
-const SURFACE_ELEVATED = ['#1F2024', flColor.charcoal700] as const;
+/**
+ * ⚠ THIS WAS A HARDCODED NEAR-BLACK AND IT DID NOT SWITCH THEMES.
+ *
+ * PO, 2026-08-25: *"in light mode the chat bubble from holt that comped up is a weird black color."*
+ * It read `['#1F2024', flColor.charcoal700]` — the second stop is a token and became cream on Alabaster,
+ * the first was a literal and stayed near-black. So the bubble rendered a dark-to-cream gradient on a
+ * paper screen: not a colour anybody chose, just half a swap.
+ *
+ * ⚠ THE PAIR ALREADY EXISTED AS A TOKEN. `flGradient.surfaceSheetRaised` is literally
+ * `['#1F2024', flColor.charcoal700]` in Forge — the exact two stops this hand-rolled — and carries a
+ * proper light equivalent in `foundation.paper.ts`. The bubble was a copy of a token rather than a use
+ * of one, which is the whole reason it could fall out of step with the theme.
+ *
+ * Forge is unchanged to the byte: same two stops, same order, same vertical direction.
+ */
+const SURFACE_ELEVATED = flGradient.surfaceSheetRaised.colors;
 
 const styles = StyleSheet.create({
   /* ⚠ 12, MATCHING THE CHAT'S HOLT ROW GAP (v2 §5). It was 10 — near enough to look like a mistake

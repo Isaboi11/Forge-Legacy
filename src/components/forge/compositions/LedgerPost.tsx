@@ -533,7 +533,26 @@ function ChevronGlyph() {
 const styles = StyleSheet.create({
   /* ⚠ NO HORIZONTAL PADDING ON THE WRAPPER. The 18px gutter is applied to each inner block instead,
      which is the only way media can run to the screen edge without fighting a parent's inset. */
-  post: { paddingTop: 22, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  /*
+   * ══ RHYTHM, AND A SEPARATOR YOU CAN ACTUALLY SEE ══
+   *
+   * PO design review, 2026-08-25: *"There's a lot of uninterrupted parchment… It becomes visually flat
+   * during scrolling."* Two causes, and neither was a missing separator — there has been one here all
+   * along:
+   *
+   *   1. It was drawn in `charcoal700`, which the palettes label "elevated / sheet". In Forge both it
+   *      and the divider token are dark and either reads as a line; in Alabaster it is a light SURFACE
+   *      and measures 1.04:1 against the page. The rule was there and invisible. `charcoal600` is the
+   *      palette's own "border / divider" and takes it to 1.62:1.
+   *   2. The padding was asymmetric — 22 above, 14 below — so every post sat closer to the rule beneath
+   *      it than the one above, which reads as posts running together rather than as a list of them.
+   *
+   * ⚠ SPACING AND THE TOKEN ONLY. The review also proposed stronger type labels and selective card
+   * surfaces; those are held back deliberately. Four changes at once for one "too flat" complaint
+   * over-corrects, and stronger labels pull against the quieting asked for everywhere else. If it still
+   * reads flat with a rule you can see and room to breathe, that is the moment to add more — not before.
+   */
+  post: { paddingTop: 26, paddingBottom: 24, borderBottomWidth: 1, borderBottomColor: flColor.charcoal600 },
   postAlt: { backgroundColor: 'rgba(255,255,255,0.012)' },
 
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: LEDGER_GUTTER },

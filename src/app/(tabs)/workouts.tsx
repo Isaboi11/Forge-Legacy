@@ -10,14 +10,15 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { Pill } from '@/components/forge/composites/Pill';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
-import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { flColor, flFont, flGradient, flRadius, flShadow, flText } from '@/constants/foundation';
+import { editorialRule, surfaceEditorial } from '@/constants/surfaces';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useCoachDoor } from '@/hooks/useCoachDoor';
 import { getPrograms } from '@/domain/training/active-program';
 import { fetchMyPrograms, type SavedProgram } from '@/data/programs-live';
 import { fetchProgramSessions } from '@/data/programs-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
-import { dayLabel, isSealed, nextOpenSlot, sessionsPerWeek, shelvePrograms, viewForState } from '@/domain/program/progress-core';
+import { dayLabel, isSealed, nextOpenSlot, sessionsPerWeek, shelvePrograms, totalSessions, viewForState } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { StartStrengthSheet } from '@/components/forge/compositions/StartStrengthSheet';
 import { useQuery } from '@/lib/useQuery';
@@ -286,20 +287,73 @@ export default function WorkoutsScreen() {
         {tab === 'mine' ? (
           <View style={styles.stack}>
             {/* ACTIVE — the anchor */}
+            {/*
+              ══ THE ANCHOR IS EDITORIAL, IN BOTH STATES ══
+
+              PO design review, 2026-08-25: *"Legacy has composition. Home has hierarchy. Workouts
+              currently has components."* Right, and this section is where it shows — it is called the
+              anchor in this file and it was drawn as one more bordered rectangle above a stack of them.
+
+              ⚠ THE PO'S SKETCH FIXED ONLY THE EMPTY STATE, AND THAT WOULD HAVE MADE IT WORSE. It
+              proposed the `NO ACTIVE PROGRAM / Forge Your Next Legacy` treatment — but that state
+              disappears the moment somebody starts a program, and the slot fell back to a
+              `SavedProgramRow`, the same component as every row beneath it. The screen would have read
+              as composed when you had nothing and componentised as soon as you were using it: the
+              anchor at its strongest for the athlete with the least invested.
+
+              So both states are editorial. With a program, THAT is the anchor — its name in the display
+              face, where you are in it, what is next. Without one, the invitation. Neither is a card,
+              because neither is a thing you act inside: you act inside the rows below.
+
+              ⚠ AND IT IS NOT A SECOND COPY OF HOME. Home answers *what do I train now* and owns the
+              start button. This answers *what am I following* — the program as an object, with its
+              shape and its progress. Same subject, different question.
+
+              Layout and form, so it lands on BOTH themes (Design System §2.0).
+            */}
             <TourAnchor id="workouts-active">
               <SectionHeader label="Active" />
-              <View style={styles.sectionBody}>
+              <View style={[styles.sectionBody, styles.anchor]}>
                 {myActive ? (
-                  <SavedProgramRow
-                    program={myActive}
+                  <Pressable
                     onPress={() => router.push({ pathname: '/program/[id]', params: { id: myActive.id } })}
-                  />
+                    accessibilityRole="button"
+                    accessibilityLabel={`${myActive.name} — open your active program`}
+                    style={({ pressed }) => [styles.anchorBody, pressed ? styles.anchorPressed : null]}
+                  >
+                    <Text style={styles.anchorKicker}>Following</Text>
+                    <Text style={styles.anchorTitle}>{myActive.name}</Text>
+                    <Text style={styles.anchorMeta}>
+                      {sessionsPerWeek(myActive.structure)}× a week · {totalSessions(myActive.structure)} sessions
+                    </Text>
+                  </Pressable>
                 ) : (
-                  <View style={styles.emptyCard}>
-                    <Text style={styles.emptyTitle}>Forge Your Next Legacy</Text>
-                    <Text style={styles.emptySub}>Build your own below, or find one in Discover.</Text>
+                  <View style={styles.anchorBody}>
+                    <Text style={styles.anchorKicker}>No active program</Text>
+                    <Text style={styles.anchorTitle}>Forge Your Next Legacy</Text>
+                    <Text style={styles.anchorMeta}>Build your own program, or find one built for your goals.</Text>
+                    <View style={styles.anchorActions}>
+                      <Pressable
+                        onPress={() => router.push('/program-builder')}
+                        accessibilityRole="button"
+                        accessibilityLabel="Build a program"
+                        style={({ pressed }) => [styles.anchorCta, pressed ? styles.anchorPressed : null]}
+                      >
+                        <Text style={styles.anchorCtaText}>Build a Program</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => setTab('discover')}
+                        accessibilityRole="button"
+                        accessibilityLabel="Discover programs"
+                        style={({ pressed }) => [styles.anchorCtaQuiet, pressed ? styles.anchorPressed : null]}
+                      >
+                        <Text style={styles.anchorCtaQuietText}>Discover</Text>
+                      </Pressable>
+                    </View>
                   </View>
                 )}
+                {/* The divider IS the container — `editorialRule`, one weight everywhere. */}
+                <View style={styles.anchorRule} />
               </View>
             </TourAnchor>
 
@@ -958,24 +1012,45 @@ const styles = StyleSheet.create({
   heroNext: { flex: 1, fontSize: 12.5, color: flColor.bronze400 },
 
   // empty state
-  emptyCard: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: flColor.bronzeBorder,
-    borderRadius: flRadius.xl,
-    paddingVertical: 30,
-    paddingHorizontal: 22,
-    alignItems: 'center',
-    backgroundColor: flColor.bronzeTint,
+  /* ── THE ANCHOR (editorial surface — see `constants/surfaces.ts`) ────────────────────────────────
+     No container: type, spacing and one rule. The `.dc`'s composition rather than another card. */
+  anchor: { gap: 18 },
+  anchorBody: { ...surfaceEditorial },
+  anchorPressed: { opacity: 0.86 },
+  anchorKicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.8,
+    textTransform: 'uppercase',
+    color: flText.bronzeLabel,
   },
-  emptyTitle: {
+  /* The display face at hero scale — this is the one typographic moment on the screen, and the whole
+     point of the change. Everything below it stays in the sans. */
+  anchorTitle: {
     fontFamily: flFont.display,
-    fontSize: 22,
+    fontSize: 30,
+    lineHeight: 34,
     fontWeight: '600',
-    letterSpacing: -0.2,
+    letterSpacing: -0.5,
     color: flColor.cream100,
   },
-  emptySub: { marginTop: 7, fontSize: 13.5, color: flColor.gray400 },
+  anchorMeta: { fontSize: 13.5, lineHeight: 19, color: flColor.gray400 },
+  anchorActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  anchorCta: {
+    paddingVertical: 11,
+    paddingHorizontal: 18,
+    borderRadius: flRadius.md,
+    backgroundColor: flColor.bronzeSolid,
+  },
+  anchorCtaText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, color: flColor.onBronze },
+  anchorCtaQuiet: { paddingVertical: 11, paddingHorizontal: 18, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600 },
+  anchorCtaQuietText: { fontSize: 13, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray400 },
+  anchorRule: { ...editorialRule },
+
+  /* ⚠ `emptyCard`, `emptyTitle` and `emptySub` were DELETED here, not orphaned. They dressed the dashed
+     bronze box the editorial anchor above replaced, and a style with no consumer reads as a thing the
+     screen still draws — which is exactly how somebody rebuilds a container that was removed on purpose.
+     The anchor is `anchorBody` and it has no container by design. */
 
   // library / build rows
   libRow: {
