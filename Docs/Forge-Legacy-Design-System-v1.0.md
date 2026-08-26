@@ -26,6 +26,39 @@ It is not a fitness tracker. It is a permanent record of what you built. The vis
 
 ## §2 — Color System
 
+### 2.0 ⭐ THE TWO-THEME RULE — which side of the app a change lands on
+
+**LOCKED — PO, 2026-08-25.** Forge Legacy ships two themes: **Forge** (dark) and **Alabaster** (light,
+`foundation.paper.ts`). Every visual change has to answer one question before it is made — *does this
+belong to one theme or to both?* — and the answer is not a judgement call:
+
+| What is changing | Applies to |
+|---|---|
+| **Layout** — position, order, spacing, hierarchy, what sits where | **BOTH themes** |
+| **Shape or form** — geometry, radii, structure, what a screen is composed of, adding or removing an element | **BOTH themes** |
+| **Colour** — palette, fill, texture strength, contrast, opacity, border weight *as a colour decision* | **ONE theme**, 99% of the time |
+
+> PO: *"If we are changing layout it changes on both the light and dark side. If we are adding or
+> changing shape or form of the screen it's for both. If it's color specific then it'll 99% of the time
+> be either for light or dark."*
+
+**Why it is worth stating.** The two palettes live in sibling files and a change made while looking at
+one theme is physically easy to make in one file. That is correct for a colour and a silent defect for
+anything else: a layout fix applied to Alabaster only leaves Forge with the bug the PO reported, and
+nobody finds out until somebody switches themes. The rule turns "which file do I edit" from an instinct
+into a check.
+
+**The 1%.** A colour change crosses over when it is not really about colour — a token that encodes
+*state* rather than appearance (a semantic good/warning/critical), or a contrast fix that is a legibility
+requirement in both themes. State it explicitly when you take that exception; the default is one side.
+
+⚠ **THE COMPILER ENFORCES THE HALF IT CAN.** `foundation.forge.ts` exports the shape types both palettes
+must satisfy, so adding a colour to one file and not the other is a build error. Nothing enforces the
+other direction — a layout edit made in a themed component is invisible to the type system — which is
+exactly why this rule is written down rather than left to the tokens.
+
+---
+
 ### 2.1 Implementation
 
 All colors are defined in `src/constants/tokens.ts` under the `color` export. Do not use raw hex values in screens or components — reference named tokens only.
