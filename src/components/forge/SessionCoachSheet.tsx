@@ -3,7 +3,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { Image } from 'expo-image';
 
-import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { themeScrim } from '@/constants/theme-scrim';
 import { HoltMark } from '@/components/forge/HoltMark';
 import { INTENSITY_LEVELS, type IntensityLevel } from '@/domain/coach/rulebook/intensity';
 import type { IntensityProposal } from '@/domain/coach/intensity-learning';
@@ -640,9 +641,28 @@ function Chip({
   );
 }
 
+/** The backdrop's Forge value, named so the gate below can hand back the identical string. */
+const SCRIM = 'rgba(3,5,7,0.66)';
+
 const styles = StyleSheet.create({
   wrap: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, justifyContent: 'flex-end', zIndex: 60 },
-  backdrop: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(3,5,7,0.66)' },
+  /*
+   * ⚠ THE SAME `rgba(3,5,7,0.66)` `CoachChatSheet` USES, NOW PUT THROUGH THE FLIP. Holt's in-session
+   *   sheet hand-rolled the literal and never lightened it, so he dropped a near-black curtain over a
+   *   cream app while his chat sheet — the same coach, one tap away — lightened correctly.
+   *
+   * ⚠ `themeScrim`, NOT `paperScrim`. The pure function has no idea which palette is live and flips
+   *   any near-black rgba to cream in EITHER theme — which is what 14 screens were doing. The themed
+   *   wrapper hands Forge its string back untouched. See `@/constants/theme-scrim`.
+   */
+  backdrop: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: themeScrim(SCRIM),
+  },
   /* `CoachChatSheet`'s shell exactly — 24px corners (wider than the token, on purpose), a BRONZE top
      border and the inset warm highlight, which together are what make it read as raised metal rather
      than as a grey panel. `maxHeight` rather than Home's `top: 64` inset: see the header. */
@@ -653,7 +673,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     borderTopWidth: 1,
     borderColor: flColor.bronzeBorderSubtle,
-    boxShadow: '0 -18px 44px rgba(0,0,0,0.7), inset 0 1px 0 rgba(198,156,100,0.22)',
+    /* ⚠ WAS A COPY OF `flShadow.sheet`, NOT A USE OF IT — the literal here is Forge's token to the
+       byte, which is exactly why it could fall out of step: Paper's `sheet` is a warm lift with a white
+       top rim, and this one stayed a black one. Same defect `CoachSays`' bubble gradient had. */
+    boxShadow: flShadow.sheet,
   },
   grabWrap: { alignItems: 'center', paddingTop: 9, paddingBottom: 4 },
   grab: { width: 38, height: 4, borderRadius: 2, backgroundColor: flColor.charcoal500 },
