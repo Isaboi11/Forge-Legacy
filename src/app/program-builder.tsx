@@ -30,7 +30,7 @@ import { EquipIcon, equipmentLabel } from '@/components/forge/EquipIcon';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { paperScrim } from '@/constants/paper-scrim';
+import { themeScrim } from '@/constants/theme-scrim';
 import { claimInitiativeHonor } from '@/data/honors-live';
 import {
   createProgram,
@@ -2317,7 +2317,7 @@ function SetupView({
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </Animated.ScrollView>
 
-      <LinearGradient colors={[paperScrim('rgba(6,7,8,0.35)'), paperScrim('rgba(6,7,8,0.82)')]} style={styles.footer}>
+      <LinearGradient colors={[themeScrim('rgba(6,7,8,0.35)'), themeScrim('rgba(6,7,8,0.82)')]} style={styles.footer}>
         <TourAnchor id="builder-save">
           {!valid ? (
             <View style={styles.checks}>
@@ -2491,7 +2491,7 @@ function WeekDaysView({
         <UseSavedWeekRow onPress={onUseSavedWeek} />
       </Animated.ScrollView>
 
-      <LinearGradient colors={[paperScrim('rgba(6,7,8,0.35)'), paperScrim('rgba(6,7,8,0.82)')]} style={styles.footer}>
+      <LinearGradient colors={[themeScrim('rgba(6,7,8,0.35)'), themeScrim('rgba(6,7,8,0.82)')]} style={styles.footer}>
         <Button variant="primary" fullWidth onPress={onAdvance} accessibilityLabel="Save and continue">
           Save &amp; continue
         </Button>
@@ -2721,7 +2721,7 @@ function DayBuilder({
         the difference is only where you land: still building, or back at the overview. `Save workout` keeps
         its name because it is the athlete's own word for it.
       */}
-      <LinearGradient colors={[paperScrim('rgba(6,7,8,0.35)'), paperScrim('rgba(6,7,8,0.82)')]} style={styles.footer}>
+      <LinearGradient colors={[themeScrim('rgba(6,7,8,0.35)'), themeScrim('rgba(6,7,8,0.82)')]} style={styles.footer}>
         {nextLabel ? (
           <>
             <Button

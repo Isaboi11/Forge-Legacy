@@ -4,7 +4,8 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { flGradient, IS_PAPER } from '@/constants/foundation';
-import { paperScrim, paperTextureOpacity, type PaperTexture } from '@/constants/paper-scrim';
+import { paperTextureOpacity, type PaperTexture } from '@/constants/paper-scrim';
+import { themeScrim } from '@/constants/theme-scrim';
 import { svgStop } from '@/lib/svg-color';
 
 /**
@@ -33,7 +34,9 @@ import { svgStop } from '@/lib/svg-color';
  *   design: the repo's Home passes 0.15, and `Forge Home - Paper.dc.html` uses 0.16.)
  */
 
-const themeScrim = (color: string) => (IS_PAPER ? paperScrim(color) : color);
+/* ⚠ `themeScrim` WAS DEFINED HERE, PRIVATELY, AND THAT IS WHY 14 OTHER SCREENS SHIPPED WITHOUT THE
+   GATE — it was the right one-liner in a place nobody else could import it from. It now lives in
+   `@/constants/theme-scrim`; this file is a consumer like everything else. */
 
 /** Per-screen darkening overlay over the artwork — flat single-opacity, or a vertical stop list. */
 export type ScreenOverlay =

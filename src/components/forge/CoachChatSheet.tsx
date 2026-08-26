@@ -22,7 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { bronzeWash, wash } from '@/constants/washes';
-import { paperScrim } from '@/constants/paper-scrim';
+import { themeScrim } from '@/constants/theme-scrim';
 import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { HoltMark } from '@/components/forge/HoltMark';
@@ -3428,7 +3428,7 @@ function VolumeRibbon({ weeks, caption }: { weeks: number[]; caption: string }) 
 
 const styles = StyleSheet.create({
   wrap: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, justifyContent: 'flex-end', zIndex: 60 },
-  backdrop: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: paperScrim('rgba(3,5,7,0.66)') },
+  backdrop: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: themeScrim('rgba(3,5,7,0.66)') },
   /* ⚠ A TOP INSET, NOT A MAX HEIGHT. PROMPT §2.4: 64px from the top "so a sliver of the app is always
      visible above it — this is the whole point." A percentage height looks similar on one device and
      wrong on every other. The geometry lives on the wrapper so the rise can transform it.

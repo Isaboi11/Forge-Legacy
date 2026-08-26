@@ -14,7 +14,7 @@ import { deleteTransformationEntry, fetchTransformationEntries, filledPoses, typ
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { paperScrim } from '@/constants/paper-scrim';
+import { themeScrim } from '@/constants/theme-scrim';
 
 /**
  * Transformation Entry Detail — built to `Forge Transformation Entry Detail.dc.html`, wired to real data.
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   sibBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 6 },
   sibText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
 
-  footer: { flexDirection: 'row', gap: 10, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 16, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: paperScrim('rgba(6,7,8,0.6)') },
+  footer: { flexDirection: 'row', gap: 10, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 16, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: themeScrim('rgba(6,7,8,0.6)') },
   compareBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A', boxShadow: flShadow.card },
   compareText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.5, color: '#F7F5F1' },
   shareBtn: { width: 66, alignItems: 'center', justifyContent: 'center', paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
