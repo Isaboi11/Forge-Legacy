@@ -44,7 +44,19 @@ const fileUrl = (p) => {
   return m ? `file:///${m[1]}/${enc(m[2])}` : `file:///${enc(norm.replace(/^\//, ''))}`;
 };
 
-for (const r of rows) for (const c of r.candidates) c.url = fileUrl(c.path);
+/*
+ * ⚠ SERVED THROUGH `/clip`, NOT `file://` — AND THAT IS NOT A PREFERENCE.
+ *
+ * The page is now opened from `http://localhost` (`serve_review.mjs`), and a document on http may not
+ * load `file://` subresources: every browser refuses it. The moment this stopped being a file on disk,
+ * the clips had to come through the same origin. `fileUrl` is kept below because it is still the right
+ * answer if anyone opens the built HTML directly, and because getting the drive-letter encoding right
+ * cost a rebuild to discover.
+ */
+for (const r of rows) for (const c of r.candidates) {
+  c.url = '/clip?p=' + encodeURIComponent(c.path);
+  c.fileUrl = fileUrl(c.path);
+}
 
 const counts = ['likely', 'review', 'weak', 'none'].reduce((a, t) => {
   a[t] = rows.filter((r) => r.confidence === t).length;
@@ -110,6 +122,7 @@ kbd{font:inherit;font-size:.74rem;border:1px solid var(--rule);border-radius:4px
   <button class="pill" data-tier="none" aria-pressed="false">Nothing found ${counts.none}</button>
   <button class="pill" id="hidedone" aria-pressed="false">Hide decided</button>
   <span class="count" id="count"></span>
+  <span class="count" id="sync" style="margin-left:0"></span>
   <button class="act primary" id="export">Download decisions</button>
 </header>
 
@@ -122,7 +135,36 @@ const KEY = 'fl-missing-anim-decisions-v1';
 let decisions = {};
 try { decisions = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { decisions = {}; }
 
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(decisions)); } catch (e) {} };
+/*
+ * Every click goes to the server AND to localStorage.
+ *
+ * ⚠ NO BACKTICKS ANYWHERE BELOW THIS LINE — everything from here to the closing tag lives inside a
+ * template literal in the builder, so one backtick ends the string and Node starts parsing the page's
+ * JavaScript as its own. That is exactly how this file failed to build the first time.
+ *
+ * ⚠ THE SERVER IS THE HAND-OFF AND localStorage IS THE SAFETY NET, not the other way round. The
+ * picks are only useful once they are a file on disk that can be read from the repo; but if the server
+ * is stopped mid-session, the browser copy means nothing is lost and the next successful POST sends the
+ * whole object rather than a diff, so it catches up on its own.
+ *
+ * The whole object goes every time on purpose — a decisions file that is always complete cannot drift
+ * from what is on screen, and at ~900 rows it is a few tens of KB.
+ */
+const save = () => {
+  try { localStorage.setItem(KEY, JSON.stringify(decisions)); } catch (e) {}
+  fetch('/decisions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(decisions),
+  })
+    .then((r) => r.json())
+    .then((j) => setSync('saved ' + j.n + ' to disk'))
+    .catch(() => setSync('offline — kept in this browser only'));
+};
+function setSync(msg) {
+  const el = document.getElementById('sync');
+  if (el) el.textContent = msg;
+}
 const keyOf = (r) => r.sex + '::' + r.id;
 
 let sex = 'all', tier = 'all', hideDone = false;
@@ -213,6 +255,25 @@ document.getElementById('export').addEventListener('click', () => {
   a.download = 'animation-picks.json';
   a.click();
 });
+
+/*
+ * ⚠ THE SERVER'S COPY WINS ON LOAD. Two browsers, or a browser reopened after the file was read from
+ * the repo, would otherwise disagree with the file everything downstream reads. localStorage is only
+ * the fallback for when the server is not running.
+ */
+fetch('/decisions')
+  .then((r) => r.json())
+  .then((server) => {
+    if (server && Object.keys(server).length) {
+      decisions = server;
+      try { localStorage.setItem(KEY, JSON.stringify(decisions)); } catch (e) {}
+      setSync('loaded ' + Object.keys(server).length + ' from disk');
+    } else {
+      setSync('ready');
+    }
+    render();
+  })
+  .catch(() => { setSync('offline — browser copy only'); render(); });
 
 render();
 </script>
