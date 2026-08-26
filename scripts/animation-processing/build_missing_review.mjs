@@ -84,9 +84,30 @@ button.act{font:inherit;font-weight:600;cursor:pointer;border-radius:8px;padding
   border:1px solid var(--rule);background:var(--panel2);color:var(--ink)}
 button.act.primary{background:var(--bronze);border-color:var(--lift);color:#181008}
 button.act:disabled{opacity:.4;cursor:default}
+/* Distinguished from the other two answers, but deliberately NOT styled as destructive — nothing is
+   destroyed. It is the strongest of three triage answers, so it gets the same warm edge the card takes. */
+button.act.drop{border-color:#5a3f39;color:#d8b3a6}
+button.act.drop:hover{border-color:#8a5a4e}
 main{max-width:1180px;margin:0 auto;padding:1.2rem}
 .ex{background:var(--panel);border:1px solid var(--rule);border-radius:12px;margin:0 0 1.1rem;overflow:hidden}
 .ex.done{opacity:.5}
+/* ⚠ AN APPROXIMATE ROW IS DECIDED BUT NOT FADED. '.done' dims a finished card to get it out of the
+   way, which is right when there is nothing left to read — but this one carries a note you are still
+   writing and will want to re-read. Decided for the counter and the Hide-decided filter, legible on
+   screen, and marked with a bronze edge so it is findable at a glance among the exact picks. */
+.ex.approx{opacity:1;border-color:var(--lift);box-shadow:inset 3px 0 0 var(--lift)}
+/* ⚠ A DROPPED CARD HIDES ITS CANDIDATES, it does not just dim them. "Not needed" is the one
+   answer that makes the clips irrelevant rather than merely chosen-between, and 904 rows is far too
+   many to keep scrolling past six videos you have already ruled out. The header stays, so the row is
+   still findable and still one Clear away from coming back. */
+.ex.dropped{opacity:.62;border-color:#4a3330;box-shadow:inset 3px 0 0 #8a5a4e}
+.ex.dropped .cands,.ex.dropped .none{display:none}
+.note{display:block;width:100%;margin:.55rem 0 0;background:var(--panel2);color:inherit;font:inherit;
+  font-size:.82rem;line-height:1.45;border:1px solid var(--rule);border-radius:8px;padding:.5rem .6rem;
+  resize:vertical;min-height:2.6rem}
+.note:focus{outline:none;border-color:var(--lift)}
+.notewrap{padding:0 1.1rem 1rem}
+.notelab{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
 .exhead{display:flex;gap:.8rem;align-items:baseline;padding:.9rem 1.1rem;flex-wrap:wrap}
 .exname{font-size:1.05rem;font-weight:600}
 .meta{color:var(--faint);font-size:.8rem}
@@ -180,8 +201,20 @@ function render() {
   const list = document.getElementById('list');
   const rows = visible();
   const decided = ROWS.filter((r) => decisions[keyOf(r)]).length;
+  /* Counted apart from 'decided' on purpose: these are rows that will never be animated, and that is a
+     number worth being able to read off the header rather than reconstructing from the file later. */
+  const dropped = ROWS.filter((r) => { const d = decisions[keyOf(r)]; return d && d.dropped; }).length;
+  /* ⚠ SURFACED IN THE HEADER, not left to be discovered by scrolling. An approximate pick with an
+     empty note counts as decided everywhere else, so without this it is invisible outstanding work —
+     and it is the one kind of row that cannot be used downstream as it stands. */
+  const unexplained = ROWS.filter((r) => {
+    const d = decisions[keyOf(r)];
+    return d && d.approximate && !(d.note && d.note.trim());
+  }).length;
   document.getElementById('count').textContent =
-    rows.length + ' shown · ' + decided + ' of ' + ROWS.length + ' decided';
+    rows.length + ' shown · ' + decided + ' of ' + ROWS.length + ' decided' +
+    (unexplained ? ' · ' + unexplained + ' close, note still needed' : '') +
+    (dropped ? ' · ' + dropped + ' not needed' : '');
 
   list.innerHTML = '';
   /* ⚠ CAPPED AT 120 ROWS. Each card mounts up to six <video> elements off an external drive; rendering
@@ -189,7 +222,9 @@ function render() {
   for (const r of rows.slice(0, 120)) {
     const k = keyOf(r), d = decisions[k];
     const el = document.createElement('section');
-    el.className = 'ex' + (d ? ' done' : '');
+    /* 'done' still applies so the counter and Hide-decided treat it as answered; 'approx' undoes the
+       dimming, because this card is still being read. See the stylesheet. */
+    el.className = 'ex' + (d ? (d.dropped ? ' done dropped' : d.approximate ? ' done approx' : ' done') : '');
     el.innerHTML =
       '<div class="exhead"><span class="exname">' + esc(r.name) + '</span>' +
       '<span class="tier ' + r.confidence + '">' + r.sex + ' · ' + r.confidence + '</span>' +
@@ -205,9 +240,21 @@ function render() {
         : '<div class="none">No clip in the library covers this name. Likely genuinely absent — most of these are field or cardio movements the 3D library never rendered.</div>') +
       '<div class="foot">' +
         '<button class="act" data-act="none">No good match</button>' +
+        '<button class="act" data-act="close">Close — needs a note</button>' +
+        '<button class="act drop" data-act="drop">Not needed</button>' +
         '<button class="act" data-act="clear">Clear</button>' +
-        '<span class="status">' + (d ? (d.path ? '✓ chosen: ' + esc(d.path.split(/[\\\\/]/).pop()) : '✗ marked none') : '') + '</span>' +
-      '</div>';
+        '<span class="status">' + statusOf(d) + '</span>' +
+      '</div>' +
+      /*
+       * ⚠ THE NOTE IS ONLY DRAWN ONCE THE ROW IS MARKED APPROXIMATE. A textarea under every one of the
+       * 120 rendered cards would be 120 empty boxes inviting a note nobody needs, and the whole point
+       * of the third button is that "close" is a deliberate answer rather than a blank to fill in.
+       */
+      (d && (d.approximate || d.dropped)
+        ? '<div class="notewrap"><label class="notelab" for="n-' + esc(k) + '">' + (d.dropped ? 'Why it is not needed — optional' : 'What is different about it') + '</label>' +
+          '<textarea class="note" id="n-' + esc(k) + '" rows="2" placeholder="' + (d.dropped ? 'e.g. duplicate of the barbell version' : 'e.g. bench press shown — the board sets your depth') + '">' +
+          esc(d.note || '') + '</textarea></div>'
+        : '');
 
     el.querySelectorAll('.cand').forEach((b) => {
       const c = r.candidates[+b.dataset.i];
@@ -215,10 +262,67 @@ function render() {
       /* Load on hover, not on mount — see the 120 cap above. */
       b.addEventListener('mouseenter', () => { if (!v.src || v.preload === 'none') { v.preload = 'auto'; v.load(); } v.play().catch(() => {}); });
       b.addEventListener('mouseleave', () => v.pause());
-      b.addEventListener('click', () => { decisions[k] = { id: r.id, sex: r.sex, path: c.path, name: c.name }; save(); render(); });
+      /* ⚠ CHANGING THE CLIP KEEPS 'approximate' AND THE NOTE. Picking a different candidate on a row
+         already marked close is almost always "that one is the better stand-in", not "it is exact now"
+         — and silently dropping a note the moment you compare two clips would lose the sentence you
+         had just written. 'Clear' is how you say exact, and it is one button away. */
+      b.addEventListener('click', () => {
+        const prev = decisions[k] || {};
+        decisions[k] = { id: r.id, sex: r.sex, path: c.path, name: c.name };
+        if (prev.approximate) { decisions[k].approximate = true; decisions[k].note = prev.note || ''; }
+        save(); render();
+      });
     });
     el.querySelector('[data-act="none"]').addEventListener('click', () => { decisions[k] = { id: r.id, sex: r.sex, path: null }; save(); render(); });
+    /*
+     * ⚠ CLOSE REQUIRES A CLIP, AND SAYS SO RATHER THAN DOING NOTHING. "Close" means "this one, but it
+     * is not exact", so there has to be a 'this one'. Pressed on an undecided row it used to be a
+     * no-op, which reads as a broken button — the status line now names the missing step instead.
+     */
+    el.querySelector('[data-act="close"]').addEventListener('click', () => {
+      const cur = decisions[k];
+      if (!cur || !cur.path) {
+        el.querySelector('.status').textContent = 'pick the closest clip first, then mark it close';
+        return;
+      }
+      cur.approximate = true;
+      if (cur.note == null) cur.note = '';
+      save(); render();
+      const box = document.getElementById('n-' + k);
+      if (box) { box.focus(); box.setSelectionRange(box.value.length, box.value.length); }
+    });
+    /*
+     * ⚠ 'NOT NEEDED' IS NOT 'NO GOOD MATCH', and conflating them is the whole reason this button
+     * exists. Both write path:null, so both are equally inert downstream — but "none" means the clip
+     * library failed and this movement is still OWED an animation, while 'dropped' means the movement
+     * does not warrant one at all. Without the flag those two answers are the same row in
+     * 'decisions.json', and the next person to build a work-list re-offers every exercise the PO has
+     * already ruled out.
+     *
+     * ⛔ IT DELETES NOTHING FROM THE CATALOGUE. 'exercises.json' is append/annotate-only, and this
+     * page "processes nothing, uploads nothing and edits nothing" by design. A drop is a recorded
+     * opinion about ANIMATION SCOPE; retiring the exercise itself is a separate decision somewhere else.
+     *
+     * The note carries over from a previous answer rather than being thrown away — same reasoning as
+     * the candidate-click handler above.
+     */
+    el.querySelector('[data-act="drop"]').addEventListener('click', () => {
+      const prev = decisions[k] || {};
+      decisions[k] = { id: r.id, sex: r.sex, path: null, dropped: true, note: prev.note || '' };
+      save(); render();
+    });
     el.querySelector('[data-act="clear"]').addEventListener('click', () => { delete decisions[k]; save(); render(); });
+    /*
+     * ⚠ SAVED ON 'input', WITHOUT A 'render()'. Re-rendering on every keystroke would tear the textarea
+     * out from under the cursor. The status line above it therefore goes stale while you type and is
+     * corrected on blur, which is the right trade: the file on disk is always current, and the only
+     * thing that lags is a label restating what you can already see in the box.
+     */
+    const noteBox = el.querySelector('.note');
+    if (noteBox) {
+      noteBox.addEventListener('input', () => { decisions[k].note = noteBox.value; save(); });
+      noteBox.addEventListener('blur', () => render());
+    }
     list.appendChild(el);
   }
   if (rows.length > 120) {
@@ -231,6 +335,27 @@ function render() {
 }
 
 function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+/**
+ * What the row says it has decided — four states, not three.
+ *
+ * ⚠ AN APPROXIMATE PICK WITH NO NOTE YET IS CALLED OUT, because the note IS the decision. A clip
+ * marked close and left unexplained is worse than no pick at all: it looks answered to the counter and
+ * to Hide-decided, and whoever reads 'decisions.json' later has a stand-in with nothing saying what is
+ * wrong with it. Naming it here is what stops it disappearing into the done pile.
+ */
+function statusOf(d) {
+  if (!d) return '';
+  if (d.dropped) return d.note && d.note.trim()
+    ? '— not needed — ' + esc(d.note.trim())
+    : '— not needed';
+  if (!d.path) return '✗ marked none';
+  const file = esc(d.path.split(/[\\\\/]/).pop());
+  if (!d.approximate) return '✓ chosen: ' + file;
+  return d.note && d.note.trim()
+    ? '≈ close: ' + file + ' — ' + esc(d.note.trim())
+    : '≈ close: ' + file + ' — <strong>note still needed</strong>';
+}
 
 document.querySelectorAll('[data-sex]').forEach((b) => b.addEventListener('click', () => {
   sex = b.dataset.sex;
