@@ -38,8 +38,28 @@ const OUT = path.join(HERE, 'out');
 const PAGE = path.join(OUT, 'missing-animations-review.html');
 const PICKS = path.join(OUT, 'decisions.json');
 
-/** Everything `/clip` is allowed to read, and nothing else. */
-const LIBRARY_ROOT = path.resolve('F:\\Forge Legacy Animations');
+/**
+ * Everything `/clip` is allowed to read, and nothing else.
+ *
+ * ⚠ FOUND, NOT HARD-CODED. This read `F:\Forge Legacy Animations` literally — the letter the drive
+ * usually gets, and not one Windows promises: plug it in behind another removable volume and it comes
+ * back as G:. The failure mode was the bad kind. The page still loads, all 904 rows are there, and
+ * every one of the 866 with candidates shows a dead player — which reads as a broken tool rather than
+ * as a drive on a different letter.
+ *
+ * `deliver_alabaster.py` already scans for the folder this way; this is the same rule on the other half
+ * of the pipeline. F first, because it almost always is and a hit on the first try costs nothing.
+ */
+function animRoot() {
+  for (const L of 'FGHIJKLMNOPQRSTUVWXYZABCDE') {
+    const p = path.resolve(L + ':\\Forge Legacy Animations');
+    if (fs.existsSync(p)) return p;
+  }
+  // Nothing mounted. Return the usual letter so the startup warning below can name a real path.
+  return path.resolve('F:\\Forge Legacy Animations');
+}
+
+const LIBRARY_ROOT = animRoot();
 
 const port = Number(process.argv[2] || 4173);
 
@@ -79,9 +99,26 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'GET' && url.pathname === '/clip') {
     const p = url.searchParams.get('p') || '';
-    const abs = path.resolve(p);
-    // ⚠ BOTH CHECKS MATTER. The prefix test alone would pass `F:\Forge Legacy AnimationsEvil\x.mp4`,
-    // so the separator is required; the extension test stops it being a general file reader.
+    /*
+     * ⚠ RE-ROOT BEFORE RESOLVING. `missing.json` bakes ABSOLUTE paths carrying whatever letter the
+     * drive had when `find_missing.py` ran — every candidate in it today begins `F:\`. So finding the
+     * drive is only half the job: a G: mount would still be asked for F: files, and the fix would look
+     * like it had changed nothing. Rewriting the letter also means the list never has to be
+     * regenerated just because a volume came back differently.
+     */
+    /*
+     * ⚠ THE LOOKAHEAD IS LOAD-BEARING, AND IT WAS FOUND BY TESTING RATHER THAN BY READING. Written as
+     * `…Animations[\\/]?` this matched the PREFIX of `F:\Forge Legacy AnimationsEvil\x.mp4`, left
+     * `Evil\x.mp4`, and joined it back INTO the root — turning the one path the comment below says must
+     * be refused into an allowed one. The rewrite has to match a whole path SEGMENT, so it either ends
+     * there or a separator follows.
+     */
+    const REROOT = /^[A-Za-z]:[\\/]Forge Legacy Animations(?=[\\/]|$)[\\/]?/;
+    const abs = path.resolve(REROOT.test(p) ? path.join(LIBRARY_ROOT, p.replace(REROOT, '')) : p);
+    // ⚠ BOTH CHECKS MATTER, AND THEY RUN ON THE RE-ROOTED PATH — the rewrite above only ever moves a
+    // path INTO `LIBRARY_ROOT`, so it cannot be used to escape one. The prefix test alone would pass
+    // `…\Forge Legacy AnimationsEvil\x.mp4`, so the separator is required; the extension test stops
+    // this being a general file reader.
     const inside = abs === LIBRARY_ROOT || abs.startsWith(LIBRARY_ROOT + path.sep);
     if (!inside || path.extname(abs).toLowerCase() !== '.mp4') return send(res, 403, 'refused');
     if (!fs.existsSync(abs)) return send(res, 404, 'no such clip');
