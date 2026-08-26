@@ -59,6 +59,20 @@ interface EntitlementState {
   refetch: () => void;
 }
 
+/**
+ * The last entitlement that read successfully, per athlete.
+ *
+ * ⚠ MODULE SCOPE, NOT A REF, AND NOT STATE. It is written inside the fetcher — which runs in an effect —
+ * and never touched during render: `react-compiler` errors on "Cannot access refs during render", and a
+ * `useState` mirror would be a second copy of an answer `useQuery` already holds. Keeping it out of the
+ * component sidesteps both.
+ *
+ * ⚠ KEYED BY athlete id, which is the whole safety of it: one athlete's entitlement can never be read
+ * for another. A stale entry is only ever reachable by the same id signing back in, and only as the
+ * fallback when a live read has failed — which is the correct answer in that moment anyway.
+ */
+const LAST_GOOD = new Map<string, EntitlementSnapshot>();
+
 const EntitlementContext = createContext<EntitlementState | undefined>(undefined);
 
 export function EntitlementProvider({ children }: { children: React.ReactNode }) {
@@ -66,13 +80,64 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
   const uid = session?.user.id ?? null;
 
   const { data, loading, refetch } = useQuery<EntitlementSnapshot | null>(
-    async () => (uid ? fetchEntitlement() : null),
+    async () => {
+      if (!uid) return null;
+      try {
+        const snap = await fetchEntitlement();
+        if (snap) LAST_GOOD.set(uid, snap);
+        return snap;
+      } catch (e) {
+        /* A refresh that fails leaves the previous answer standing. Only a read that has NEVER
+           succeeded for this athlete is allowed to surface as `unknown`. */
+        const prev = LAST_GOOD.get(uid);
+        if (prev) return prev;
+        throw e;
+      }
+    },
     [uid],
   );
 
+
+  /**
+   * ══ ⚠ AN ENTITLEMENT THAT READ ONCE MUST NOT EVAPORATE ON A LATER FAILURE ══
+   *
+   * PO: *"I just didn't see him for the second half of my freestyle workout today. Resting or not."*
+   *
+   * In-workout Holt is hidden by `!inWorkoutHolt.ok`, and `ok` is `outcome === 'allowed'` — so an
+   * `unknown` entitlement hides him exactly as a blocked one does. Two ordinary things collapse the
+   * snapshot to null and produce `unknown`:
+   *
+   *   · `useQuery` sets `data: null` on ANY rejection, so one failed read is indistinguishable from
+   *     never having read;
+   *   · the fetcher resolves `null` whenever `uid` is momentarily absent, which a token refresh can do
+   *     without anything being wrong.
+   *
+   * Nothing then retries — the query re-runs only when `uid` changes — so Holt vanished mid-session and
+   * stayed gone, with no message, no retry, and no way to tell it from a downgrade. That is the shape
+   * the PO reported: there for the first half, absent for the second, regardless of resting.
+   *
+   * ⚠ AND THE GATE IS CURRENTLY PROTECTING NOTHING. `0145` ships `entitlement_config.default_tier` as
+   * `'PREMIUM'` and says so in its header: *"NOTHING GATES YET, AND THAT IS THE POINT."* Until Phase F
+   * flips it, the only thing this gate can do is take a feature away from somebody entitled to it
+   * because a network read hiccuped.
+   *
+   * So the last GOOD snapshot is held per athlete, in `LAST_GOOD` above, and the fetcher falls back to
+   * it when a refresh fails. Only a read that has NEVER succeeded for this athlete still surfaces as
+   * `unknown`.
+   *
+   * ⚠ SIGNING OUT DOES NOT CLEAR THE MAP, AND THAT IS DELIBERATE RATHER THAN AN OVERSIGHT. It is keyed
+   * by athlete id, so one athlete's entitlement can never be read for another; a stale entry is only
+   * reachable by the same id signing back in, and only as the fallback when a live read has failed —
+   * which is the right answer in that moment. Clearing it would buy nothing and would put this back to
+   * failing closed on the first offline launch after a sign-out.
+   *
+   * ⚠ THIS DOES NOT WEAKEN THE BOUNDARY. Per the header: the client decides what to DRAW; Postgres
+   * decides what is allowed. A cached tier cannot authorise anything — `programs_cap_guard()` and its
+   * siblings refuse an over-cap write whatever this file believes.
+   */
   const value = useMemo<EntitlementState>(
     () => ({
-      snapshot: data ?? null,
+      snapshot: data,
       status: loading ? 'loading' : data ? 'ready' : 'unknown',
       refetch,
     }),
