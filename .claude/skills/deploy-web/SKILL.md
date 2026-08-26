@@ -56,13 +56,22 @@ Clean `dist` first. A stale `dist` deploys yesterday's bundle over today's work.
 Read the hash the export produced, then read the hash the world is serving:
 
 ```powershell
-(Get-Content dist/index.html -Raw | Select-String -Pattern 'entry-[a-f0-9]+\.js' -AllMatches).Matches.Value | Select-Object -Unique
+$pat = '(entry|index)-[a-f0-9]+\.js'
+$built = (Get-Content dist/index.html -Raw | Select-String -Pattern $pat -AllMatches).Matches.Value | Select-Object -Unique
+if (-not $built) { throw "no bundle name found in dist/index.html - the check would pass on nothing" }
 $r = Invoke-WebRequest -Uri "https://forgelegacy.expo.app" -UseBasicParsing -TimeoutSec 45
-"$($r.StatusCode)  $([regex]::Match($r.Content,'entry-[a-f0-9]+\.js').Value)"
+$live = [regex]::Match($r.Content, $pat).Value
+"$($r.StatusCode)  built=$built  live=$live  $(if ($built -eq $live) {'MATCH'} else {'MISMATCH'})"
 ```
 
-It is deployed only when the production alias returns **200** and its `entry-<hash>.js`
-**equals** the one in `dist/index.html`.
+It is deployed only when the production alias returns **200** and its bundle hash **equals** the one
+in `dist/index.html`.
+
+⚠ **THE BUNDLE IS NOT ALWAYS CALLED `entry-`.** It is named after the entry FILE, so since
+`package.json` → `main` became `./index.js` (the theme boot gate) it emits **`index-<hash>.js`**. A
+check hardcoded to `entry-` found nothing on both sides, compared empty to empty, and printed a
+confident MATCH for a deploy it had not looked at. **Any comparison that can pass on two empty values
+is not a check** — hence the `throw` above when the built name is missing.
 
 ⚠ The alias can 404 or serve the previous hash for a few seconds after a successful deploy.
 Re-check before concluding anything. A `deploy` command that printed success is not evidence.
@@ -78,7 +87,7 @@ npx --yes eas-cli@latest update --channel production --environment production --
 
 ## 5. Record it
 
-Put the deployed `entry-<hash>` and the date in `Forge-Legacy-Master-Status.md`. That hash is
+Put the deployed bundle hash (`entry-` or `index-`, whichever the export emitted) and the date in `Forge-Legacy-Master-Status.md`. That hash is
 the only way a later session can tell whether a device is holding grandfathered state.
 
 ## What does not count as verified
@@ -87,5 +96,6 @@ the only way a later session can tell whether a device is holding grandfathered 
 - "It worked on my phone" — the device may hold a pre-existing install. Date the binary first.
 - Green tests on web. Anything rendered **outside the navigator** has no providers and can
   crash on launch with every gate green.
+- A grep that returned nothing on both sides. See the warning above.
 - A URL with a `--hash` in it. Those are throwaway deploys with their own origin, so they wipe
   `localStorage`. **Only ever hand the PO `https://forgelegacy.expo.app`.**
