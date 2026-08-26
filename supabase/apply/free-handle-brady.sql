@@ -114,8 +114,15 @@ begin
       delete from public.squads where id = v_squad.id;
       raise notice '  squad % dissolved (no other members)', v_squad.id;
     else
-      update public.squads set owner_id = v_heir where id = v_squad.id;
-      update public.squad_members set role = 'owner' where squad_id = v_squad.id and user_id = v_heir;
+      -- ⚠ DEMOTE THEN PROMOTE, IN THAT ORDER. `squad_one_owner` (0029) is a partial unique index on
+      -- `squad_members(squad_id) where role = 'owner'`, so promoting the heir while the departing owner
+      -- still holds the role raises a unique violation — the whole block rolls back and frees nothing.
+      -- This script promoted first, and would have failed on any squad `brady` owns that still has
+      -- another member in it. `delete_my_account()` (0148) and `transfer_squad_ownership` (0047) both
+      -- state the rule; this is now the same three statements in the same order.
+      update public.squad_members set role = 'member' where squad_id = v_squad.id and user_id = v_id;
+      update public.squad_members set role = 'owner'  where squad_id = v_squad.id and user_id = v_heir;
+      update public.squads        set owner_id = v_heir where id = v_squad.id;
       raise notice '  squad % handed to %', v_squad.id, v_heir;
     end if;
   end loop;
