@@ -18,7 +18,7 @@
 > 7. Update **Last Updated** and the **Dashboard** on every edit.
 
 **Type:** Living Project Dashboard + Documentation Completion Audit
-**Last Updated:** 2026-08-26 (**⭐ ALABASTER'S LAST FROZEN GROUNDS — AND A HOUSEKEEPING LINE THAT HAD STRANDED EVERY OTA.** Four PO reports in one sitting, all the same shape: **a hard-coded GROUND under role tokens that flipped correctly**, which the compiler cannot see because a frozen ground is not a missing token, it is a present literal. ⭐ **The disabled FINISH WORKOUT button** — PO: *"it's showing that I can't click it, but it should be a better color than that still"* — was Forge's near-black slab, so the one button that could NOT be pressed was the highest-contrast object in the footer, out-ranking ADD EXERCISE, which could; Paper now draws a **recessed plate** at 1.23:1 with a label measured to match Forge's presence (3.67 vs 3.70). ⭐ **Coach Holt** was a bronze relief struck on a near-black field (median luminance 11/255) inside a black ring — a hole punched in the cream page — and is **restruck in `bronzeMetallic`'s own metal** by a versioned script, after four candidate ramps were rendered at the real 52px and compared. ⭐ **The cardio block** kept `#0D1116` while its title flipped to dark ink, so *"Outdoor Run"* was invisible — and it was never running-specific, every cardio activity draws it. ⚠ **A DARK-THEME REGRESSION NOBODY HAD SEEN because only the light theme was being reviewed**: `paperScrim` is a pure function that cannot know the theme, its gate lived privately in ONE file, and **fifteen call sites across fourteen screens** were painting a cream commit bar over Forge's near-black. ⭐ **The map now draws the whole run** — from the finished track still in memory, **without touching D-RTE-1**: nothing extra is persisted, the front door still never reaches the database. ⛔ **AND THE PUBLISH FOUND TWO DELIVERY DEFECTS.** `fingerprint:compare` refused the OTA — this morning's animation-tooling commit added three lines to `.gitignore`, which `@expo/fingerprint` hashes, moving the runtime off every tester's build; **the third time a housekeeping file has stranded the phone**. And a 22.3.0 deploy **landed an empty worker and printed success** — 404 for twelve minutes with a payload verified healthy beforehand, so **a good payload is necessary and not sufficient**; the runbook now carries the probe that tells propagation from an empty worker. ✅ **WEB DEPLOYED** `index-4d3adbd886e3bc5a38a9ced52c38dac1`, verified against production by fetching the live bundle and finding all eight new strings · ✅ **OTA PUBLISHED** to runtime `411fd2b6…`, build 6's own fingerprint · **2,858 tests pass**, every Forge value asserted byte-identical.)
+**Last Updated:** 2026-08-26 (**⭐ THE COIN'S RIM STOPPED FLOATING, AND HOLT STOPPED REPEATING HIMSELF TO AN EMPTY HISTORY.** Two unrelated PO reports, both worse than reported. ⭐ **The "sliver outside the outline" is SHADING, not an edge** — measured outward from the coin's fitted centre there is a **dark bevel trench at R 153–157, median luminance 4 of 255**, between the field and the rim; where the light catches it the rim reads as part of the coin, where it does not the rim's highlight floats free. **A crop was tried first and did nothing, because there is no stray geometry to crop.** The trench is filled and the rim redrawn as one flat ring. ⭐ **Alabaster had collapsed the figure into the field at 1.58:1 where Forge sits at 3.89:1** — the same day's earlier ramp improved it but never measured it; the new ramp lands **4.08:1** and the disc gains presence on cream (**5.6:1, up from 4.9**) rather than punching a hole. ⚠ **The light end stops at warm ivory on purpose**: near-white scores better and renders the coach in PEWTER. ⚠ **NOTHING WAS REDRAWN** — eight vector reconstructions of the folded arms were rendered at 52/36/24 and all lost to the master's own artwork. **Home's lead mark 54 → 44**, which was the largest Holt in the app while its own comment called it low visual weight. ⭐ **AND THE NUDGE WAS SPENT ON THE TAP, NOT THE READ** — a line that was read and not tapped left no trace, and the effect keys on `pathname` across FOUR home surfaces, so switching tabs re-asked it. ⚠ **The half that is not obvious: it starved the whole catalogue.** `honors` is eligible whenever `honors > 0` — forever — and sits third in a strict order, so `program`, `templates`, `progress`, `squads` and `metrics` were **unreachable**, not used up. ⛔ **NOT VERIFIED: whether the writes land at all** — `markNudge` swallows every failure, so a missing grant on `coach_nudge_state` would look identical from the client; owed to the next pass. ✅ **WEB DEPLOYED** `index-3fefea43a5f60eadb8d1d4e555d3abfc`, alias 200 and hash-matched on the first probe, both marks fetched by their content-hashed URLs · ✅ **OTA PUBLISHED** to runtime `411fd2b6…`, build 6's own fingerprint · tsc 0 · nudge domain 12/12 plus 4 new. Prior entry follows.) (**⭐ ALABASTER'S LAST FROZEN GROUNDS — AND A HOUSEKEEPING LINE THAT HAD STRANDED EVERY OTA.** Four PO reports in one sitting, all the same shape: **a hard-coded GROUND under role tokens that flipped correctly**, which the compiler cannot see because a frozen ground is not a missing token, it is a present literal. ⭐ **The disabled FINISH WORKOUT button** — PO: *"it's showing that I can't click it, but it should be a better color than that still"* — was Forge's near-black slab, so the one button that could NOT be pressed was the highest-contrast object in the footer, out-ranking ADD EXERCISE, which could; Paper now draws a **recessed plate** at 1.23:1 with a label measured to match Forge's presence (3.67 vs 3.70). ⭐ **Coach Holt** was a bronze relief struck on a near-black field (median luminance 11/255) inside a black ring — a hole punched in the cream page — and is **restruck in `bronzeMetallic`'s own metal** by a versioned script, after four candidate ramps were rendered at the real 52px and compared. ⭐ **The cardio block** kept `#0D1116` while its title flipped to dark ink, so *"Outdoor Run"* was invisible — and it was never running-specific, every cardio activity draws it. ⚠ **A DARK-THEME REGRESSION NOBODY HAD SEEN because only the light theme was being reviewed**: `paperScrim` is a pure function that cannot know the theme, its gate lived privately in ONE file, and **fifteen call sites across fourteen screens** were painting a cream commit bar over Forge's near-black. ⭐ **The map now draws the whole run** — from the finished track still in memory, **without touching D-RTE-1**: nothing extra is persisted, the front door still never reaches the database. ⛔ **AND THE PUBLISH FOUND TWO DELIVERY DEFECTS.** `fingerprint:compare` refused the OTA — this morning's animation-tooling commit added three lines to `.gitignore`, which `@expo/fingerprint` hashes, moving the runtime off every tester's build; **the third time a housekeeping file has stranded the phone**. And a 22.3.0 deploy **landed an empty worker and printed success** — 404 for twelve minutes with a payload verified healthy beforehand, so **a good payload is necessary and not sufficient**; the runbook now carries the probe that tells propagation from an empty worker. ✅ **WEB DEPLOYED** `index-4d3adbd886e3bc5a38a9ced52c38dac1`, verified against production by fetching the live bundle and finding all eight new strings · ✅ **OTA PUBLISHED** to runtime `411fd2b6…`, build 6's own fingerprint · **2,858 tests pass**, every Forge value asserted byte-identical.)
 **Audit Basis:** Live repository scan, 2026-08-01. `git ls-files` (430 TS/TSX · 40 `*.test.mjs` · 257 `Docs/**/*.md` · 97 migrations), `git ls-files src/app` (72 screens, excl. layouts + `+html`), `git rev-list --count` (210), `node --test` (508 pass / 0 fail), `npx tsc --noEmit` (0), `npx eslint src` (1 pre-existing error + 13 warnings), `npx expo export --platform web` (clean, 11.11 MB entry), `wc -l` (87,450 LOC). Data-layer contract checked mechanically across 53 RPC names · 61 call sites · 434 select columns · 119 write payloads · 35 tables for RLS · 52 `SECURITY DEFINER` functions. Prior basis 2026-07-15 (227 TS/TSX · 33,229 LOC · 176 tests) retained in the Change Log.
 
 ---
@@ -39,7 +39,7 @@
 | **Current Phase** | **Post-audit hardening.** 72 screens on a live Supabase backend (97 migrations), 508 tests, live at forgelegacy.expo.app. The 2026-08-01 audit found the build materially healthier than this board claimed — and one class of defect it did not: values displayed from columns nothing writes |
 | **Current Focus** | **Coach Holt is the product; the catalogue is a shelf.** Closed 2026-08-11/12: the shared-workout program credit and partner symmetry, the Log-Set double tap, coach intensity + the mid-set nudge, the coin as the single coaching surface, tutorial phasing (23 steps → 11 on day one) with the first tour telemetry, the weekly review, swap/intensity capture, sharing discoverability, and every athlete back on imperial. **Next: the avoidance surface** — CL-D3 makes a visible, reversible list a PRECONDITION of `assemble()` reading the signals now being captured, so Holt records swaps and avoidances and is forbidden to use them until it exists |
 | **Biggest Blocker** | **⚠ REFRAMED 2026-08-09 by PO decision: "we don’t need that many programs now that we have Coach Holt." The 24-program catalogue target is no longer the blocker it was.** Holt builds a program for any goal, room, session length and limitation, plus five race distances — so nobody is waiting on authored content to get a block. Authored catalogue programs remain valuable as *curated, named* work with Forge’s voice on them, and the locked roster still stands, but the COUNT stops being the critical path. The next real gap is the AI layer (the Edge Function that lets Holt read a sentence), which is what the paid tier is actually selling. Historical note: **Programs content — 7 of 24 authored** (Body Recomposition Foundation added 2026-08-06; Wave 2 of the Stage-2 plan is otherwise untouched). The old entry here ("the Social backend") has been wrong for weeks: Squads, Friends, Squad Detail and the feed are all Supabase-backed. Secondary: 0 of 797 exercises have media |
-| **Last Updated** | 2026-08-25 (✅ **ALABASTER SHIPPED — web `index-a2457608…` + iOS OTA `01a03b5e-3ea4-76be…` on build 6's runtime, fingerprint an exact match before publishing and the manifest serving the new id after; pushed to `origin/feat/route-map` at `b312a43`.** The app has a second theme. ⚠ **The V1 architecture still forbids it on paper — CLA-D12 / §5.6 / §567 — and the authorising amendment is NOT written.** ⭐ The mechanism is a RELOAD, not a live toggle: 277 module-scope stylesheets freeze their colours on first require, so `foundation.ts` became a selector and all 184 consumers compiled untouched, with **all 77 dark tokens byte-identical**. ⚠ **One bug found five times — a ROLE token flipping under something**: `cream100` means "primary text" and is near-white in Forge, dark ink in Alabaster, so it went invisible on a bronze button, on a media scrim, and over artwork. ⛔ **Two defects the theme only revealed, neither of them a theme bug**: the 72 artwork PNGs were never actually cut out (luminance used directly as alpha), and `pins.poster_url` has existed since `0005` with nothing ever writing it. ⭐ The phone needed a BOOT GATE — AsyncStorage is a promise, so `main` now points at `src/boot.tsx`; the fingerprint was checked BEFORE writing it. ⏳ **~1,130 raw colour literals in 178 files still do not follow the theme**, the promised lint rule is unwritten, and the exercise animations need drive `F:`. Gates: tsc 0 · **2,849/2,849** · lint at baseline. Prior entry follows.) (✅ **DEPLOYED — web `entry-9df51193…` + iOS OTA `01a035ce-ddd5-7c6f…` on build 6's runtime, both verified against the live host rather than against the deploy's own output.** ✅ **`0177` APPLIED AND VERIFIED** — the squad-consent hole is closed, proven in both directions by re-running the probe and the full two-account harness. **Holt can answer "I don't know which of these to choose" — and he answers it off the shelf, not by replacing the question.** The PO asked for a subtle link on the program catalogue and then, offered the choice between wiring it to the existing build flow or teaching Holt to recommend from the catalogue, said ***"I say build both."*** Both shipped: a quiet row under Discover's family chips, and a new pure `domain/coach/recommend.ts` that ranks the 16 shipped definitions and **refuses** rather than naming its least-bad row — every endurance goal, because there is not one Running program on the shelf, plus a match floor. Every card names what it got WRONG at the same weight as what it got right, and the limitations question is never asked because a fixed catalogue program cannot honour the answer. Three defects found and fixed on the way, one of them a **TypeError** on the coldest path (a brand-new athlete whose first tap is "Run a race" has no remembered level). Gates: tsc 0 · **2,785 tests green** (+19) · lint at baseline. ⏳ **NOT DEPLOYED and the card has never been rendered on any surface.** Prior entry follows.) (**Holt's mid-workout sheet gets a hierarchy — and his recommended weight is now takeable in one tap.** ⛔ Correction: the earlier claim that a "Use 50 lb" button would be a no-op was wrong — `suggestedWeight` only ever reached the athlete as a placeholder, so his advice had to be typed. Second pass adds the exercise-family artwork, `50 LB × 8`, `SWAP MOVEMENT`, `CHANGE THE PLAN`. Every function was a pill at the same visual level, so the coach's recommendation read like "Move past this". Now a statement card, pills only where a small closed set fits, and borderless rows elsewhere. ⚠ Designed on paper first, which caught two defects in the plan: a primary button that would have applied the weight already on the bar, and a "too easy" number *below* the stated weight. ✅ **Web + OTA deployed and verified** (`entry-83c2c18d…`, seven new strings confirmed live · iOS `01a02cd3…` on build 6). ⏳ Visual — not device-confirmed. Prior entry follows.) (**Ten finished fixes had never been committed.** A whole pass — the multi-injury chat, the weight-loss lifting split, the Transformation reminder that wrote a key nothing read, mid-session suggestions, and six active-workout fixes — sat green in the working tree and invisible on both surfaces. ⚠ The tell was `git status`, never empty. One real gap found: the rest-timer migration would have switched every athlete who enabled the timer back to OFF and had no test; now a pure model with 11, proven by mutation. ✅ **Web + OTA deployed and verified** (`entry-88b79f30…`, seven new strings confirmed in the live bundle · iOS `01a02ba4…` on build 6's runtime, manifest served it). ⏳ Five of the ten are UI-only and untestable here. Prior entry follows.) (**The "frozen app" was three controls that silently did nothing.** Onboarding had no way out — no sign-out, no account switch, `Back` hidden on step one — so anyone who stopped partway was returned there forever; **3 of the first 28 accounts**. Plus the squad photo and Replace check-in, both the Friends-feed picker defect one screen over. ✅ **Web + OTA deployed and verified** (`entry-78230c2c…` · iOS `01a02293…` on build 6's runtime). ⏳ **`0174` still not applied and `program-photo-read` not deployed — the photo-import button is live and dead until both.**) |
+| **Last Updated** | 2026-08-26 (✅ **COACH HOLT'S COIN — rim rebuilt, Alabaster re-measured, and the repeating nudge fixed. Web `index-3fefea43…` + iOS OTA `01a03fd3-3e7f-7e7c…` on build 6's runtime, fingerprint matched before publishing; pushed to `origin/feat/route-map` at `453d769`.** The medallion's "sliver outside the outline" was its own 3D bevel trench, not stray geometry — filled, and the rim redrawn flat. Alabaster's figure-to-field separation goes **1.58 → 4.08:1** (Forge 3.89 → 6.48) while the disc GAINS presence on cream. Nothing redrawn; the pristine artwork moved to `coach-holt-mark.master.png` and `holt-mark-paper.py` is superseded because both shipped files are now generated output. Holt's nudge recorded `shown` on the TAP rather than the READ, so it repeated on every tab switch **and made every lower-priority invitation unreachable**. ⛔ Unverified: whether `coach_nudge_state` writes land at all. ⏳ `site/README.md`'s `coach-mark.webp` not regenerated. Prior entry follows.) (✅ **ALABASTER SHIPPED — web `index-a2457608…` + iOS OTA `01a03b5e-3ea4-76be…` on build 6's runtime, fingerprint an exact match before publishing and the manifest serving the new id after; pushed to `origin/feat/route-map` at `b312a43`.** The app has a second theme. ⚠ **The V1 architecture still forbids it on paper — CLA-D12 / §5.6 / §567 — and the authorising amendment is NOT written.** ⭐ The mechanism is a RELOAD, not a live toggle: 277 module-scope stylesheets freeze their colours on first require, so `foundation.ts` became a selector and all 184 consumers compiled untouched, with **all 77 dark tokens byte-identical**. ⚠ **One bug found five times — a ROLE token flipping under something**: `cream100` means "primary text" and is near-white in Forge, dark ink in Alabaster, so it went invisible on a bronze button, on a media scrim, and over artwork. ⛔ **Two defects the theme only revealed, neither of them a theme bug**: the 72 artwork PNGs were never actually cut out (luminance used directly as alpha), and `pins.poster_url` has existed since `0005` with nothing ever writing it. ⭐ The phone needed a BOOT GATE — AsyncStorage is a promise, so `main` now points at `src/boot.tsx`; the fingerprint was checked BEFORE writing it. ⏳ **~1,130 raw colour literals in 178 files still do not follow the theme**, the promised lint rule is unwritten, and the exercise animations need drive `F:`. Gates: tsc 0 · **2,849/2,849** · lint at baseline. Prior entry follows.) (✅ **DEPLOYED — web `entry-9df51193…` + iOS OTA `01a035ce-ddd5-7c6f…` on build 6's runtime, both verified against the live host rather than against the deploy's own output.** ✅ **`0177` APPLIED AND VERIFIED** — the squad-consent hole is closed, proven in both directions by re-running the probe and the full two-account harness. **Holt can answer "I don't know which of these to choose" — and he answers it off the shelf, not by replacing the question.** The PO asked for a subtle link on the program catalogue and then, offered the choice between wiring it to the existing build flow or teaching Holt to recommend from the catalogue, said ***"I say build both."*** Both shipped: a quiet row under Discover's family chips, and a new pure `domain/coach/recommend.ts` that ranks the 16 shipped definitions and **refuses** rather than naming its least-bad row — every endurance goal, because there is not one Running program on the shelf, plus a match floor. Every card names what it got WRONG at the same weight as what it got right, and the limitations question is never asked because a fixed catalogue program cannot honour the answer. Three defects found and fixed on the way, one of them a **TypeError** on the coldest path (a brand-new athlete whose first tap is "Run a race" has no remembered level). Gates: tsc 0 · **2,785 tests green** (+19) · lint at baseline. ⏳ **NOT DEPLOYED and the card has never been rendered on any surface.** Prior entry follows.) (**Holt's mid-workout sheet gets a hierarchy — and his recommended weight is now takeable in one tap.** ⛔ Correction: the earlier claim that a "Use 50 lb" button would be a no-op was wrong — `suggestedWeight` only ever reached the athlete as a placeholder, so his advice had to be typed. Second pass adds the exercise-family artwork, `50 LB × 8`, `SWAP MOVEMENT`, `CHANGE THE PLAN`. Every function was a pill at the same visual level, so the coach's recommendation read like "Move past this". Now a statement card, pills only where a small closed set fits, and borderless rows elsewhere. ⚠ Designed on paper first, which caught two defects in the plan: a primary button that would have applied the weight already on the bar, and a "too easy" number *below* the stated weight. ✅ **Web + OTA deployed and verified** (`entry-83c2c18d…`, seven new strings confirmed live · iOS `01a02cd3…` on build 6). ⏳ Visual — not device-confirmed. Prior entry follows.) (**Ten finished fixes had never been committed.** A whole pass — the multi-injury chat, the weight-loss lifting split, the Transformation reminder that wrote a key nothing read, mid-session suggestions, and six active-workout fixes — sat green in the working tree and invisible on both surfaces. ⚠ The tell was `git status`, never empty. One real gap found: the rest-timer migration would have switched every athlete who enabled the timer back to OFF and had no test; now a pure model with 11, proven by mutation. ✅ **Web + OTA deployed and verified** (`entry-88b79f30…`, seven new strings confirmed in the live bundle · iOS `01a02ba4…` on build 6's runtime, manifest served it). ⏳ Five of the ten are UI-only and untestable here. Prior entry follows.) (**The "frozen app" was three controls that silently did nothing.** Onboarding had no way out — no sign-out, no account switch, `Back` hidden on step one — so anyone who stopped partway was returned there forever; **3 of the first 28 accounts**. Plus the squad photo and Replace check-in, both the Friends-feed picker defect one screen over. ✅ **Web + OTA deployed and verified** (`entry-78230c2c…` · iOS `01a02293…` on build 6's runtime). ⏳ **`0174` still not applied and `program-photo-read` not deployed — the photo-import button is live and dead until both.**) |
 
 > **30-second read:** Forge Legacy is a fully-architected fitness-legacy app (257 docs, ~208 mentioning LOCKED) with **a real, backend-wired product** live at forgelegacy.expo.app: **72 screens, 71 of them reading real Supabase data**, over **97 migrations (0001–0098, all applied)** with RLS on all 35 tables. 430 TS/TSX · 87,450 LOC · **508 `node --test` green** · tsc 0 · lint at baseline. *(Two readings that were stale for weeks and are now corrected: the social pillar is NOT placeholder — Squads, Squad Detail, Friends, the feed and Athlete Profile are all live; and this app is Supabase, not the Firebase the design doc ratifies.)* **Content is the critical path now, not plumbing:** exercise coaching is 735 of 797 published (92%) and honors are real data (139 awardable rows), but **programs are 7 of 24** and **exercise media is 0 of 797**. **Open, deliberately deferred** (reasons in Current Sprint): `chapters.workout_count` is a stored counter that is correct only until a delete-workout path ships; ~~`rank-progression` is built but orphaned~~ (**false — corrected 2026-08-02**: the Progress Hub links to it); the dead `chapters.honor_count` column awaits a change that already touches onboarding. **A standing lesson from the 2026-08-01 audit, worth keeping in view: a value that is only ever its default is worse than an absent one — absent renders nothing, a stale default renders a confident, specific, false claim about the athlete.** **The Backend/Data-Model architecture is now LOCKED** (`Backend-Data-Model-Architecture-v1.0.1` — Firebase stack, 12 runtime services, all entity schemas canonical). **Global Search is now also LOCKED** (`Global-Search-Architecture-v1.0.md` — Catalog Search/Discovery Search category split, Never-Searchable list, Performance Firewall-extended ranking/display rules, full reconciliation with both Backend §14 and `Community-Discovery-and-Search-v1.0`). The project can begin implementation as soon as the remaining Freeze rows resolve (Rest Timer, Component Library). **Rank is now ✅ Complete** — all 16 TBDs resolved/closed; RSA, RCM, Calibration Decisions, M-1, P-1, P-2 all LOCKED. Content authoring (programs/exercises) is also early (~12%). **New this session:** the Homepage Principles system is now fully architected and LOCKED — a quiet, rotating "digital inscription" of original Forge Legacy principles and reflection questions on Home (H-1), governed by `Homepage-Principles-Architecture-v1.0` with its canonical content in `Homepage-Principles-Library-v1.0`; the architecture states no fixed entry count so it cannot go stale as the library changes. **Also new this session:** the Communities subsystem (the fourth relationship pillar — Legacy/Friends/Squads/**Communities**) is now fully architected and LOCKED, with `Community-System-Architecture-v1.0`, `Community-Feed-Specification-v1.0`, `Community-Discovery-and-Search-v1.0`, `Community-Roles-and-Moderation-v1.0`, and a complete downstream reconciliation across Social, Challenge, Honor, Notification, Monetization, and Navigation architecture. **Also new this session:** the Squad System Architecture is LOCKED — Goals, Missions, daily Check-ins, a shared Streak, Momentum, a Weekly Summary, a Squad Feed, Honors integration (new `SQUAD` catalog category), inline Competition standings, and Analytics, all scoped to Squad-internal surfaces only. This **deliberately lifts the Performance Firewall for Squad surfaces alone** — Friends Feed, Communities, and Calendar keep the original no-comparison Firewall unchanged — superseding `Squad-Architecture-Amendment-001`/`002` and WSR-001's bounded Check-ins model for those surfaces. **Also new this session:** Exercise Library Phase 4 (Media Architecture & Standards) is LOCKED — new governing doc `Exercise-Media-Architecture-v1.0.md` adds `muscleTargetImageUrl` as a new "Exercise Anatomy" schema group and defines production standards for all 5 media/anatomy fields, including mandatory consistency rules for looping animations (neutral-stance start/end) and muscle target images (fixed model/pose/camera template). This is standards and schema only — media production itself remains entirely unstarted for all 195 exercises. **Also new this session:** the Exercise Library's 5 flagged naming-duplicate pairs are fully resolved (Phase 5) — one canonical V1 name locked per pair (Box Step-Up, Back Squat, Front Plank, Barbell Romanian Deadlift, Barbell Bench Press), catalog reduced from 200 to 195 exercises (44 anchors, down from 45), and a new `Exercise-Naming-Standard-v1.0.md` locks the naming principles and an immutability-after-publication governance rule for future authoring. **Also new this session:** the Honors System Final V1 Architecture is LOCKED — reconciled two previously-parallel, never-merged catalog lineages (the locked 82-type catalog and six unmerged Expansion Pass documents) into one coherent system, merged Endurance/Consistency/Prestige, and added a new Hidden category, reaching **167 honor types across 13 categories**; two brand-new Strength honor families (Sex-Specific Milestones, Relative Strength Milestones — 24 types) were designed in full and then deferred to V2 by PO decision before final lock; also discovered and fixed significant pre-existing staleness in `Honors-Spec-L10.md` (still showing the original 7 categories from before this project's own prior Competition/Communities/Squad work). Architecture and schema only — the full L-11 descriptive-content catalog pass remains a separate, future task.
 
@@ -895,6 +895,83 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
 > Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
 
+### 0. ⭐ The coin's rim stopped floating, and Holt stopped repeating himself to an empty history (2026-08-26, Coach Holt medallion / CoachBubble nudges — **no migration**, ✅ **WEB DEPLOYED** `index-3fefea43a5f60eadb8d1d4e555d3abfc` · ✅ **OTA PUBLISHED TO BUILD 6** iOS `01a03fd3-3e7f-7e7c-a06e-f9f86336286e`)
+
+Two PO reports in one sitting, unrelated to each other and both worse than reported.
+
+**⭐ THE SLIVER IS SHADING, NOT AN EDGE.** PO: *"I don't know if I like the 3d look of it. The sliver on
+the right side that's outside of the outline."* Measured outward from the coin's fitted centre
+(192.5, 207.0 in master pixels): field and figure to R 152, then a **dark ring at R 153–157, median
+luminance 4 of 255**, then the rim at R 159–173, then nothing. That trench is the 3D disc's own bevel and
+it runs the whole way round — where the light catches it, lower-left, it fills with bronze and the rim
+reads as part of the coin; where it does not, upper-right, it stays black and the rim's highlight floats
+free as a crescent. **A crop was tried first and did nothing, because there is no stray geometry to
+crop.** The trench is filled with the field's own colour and the rim redrawn as one flat ring lit from a
+single direction, butted against the field with a 1 px seam.
+
+**⭐ AND ALABASTER HAD COLLAPSED THE FIGURE INTO THE FIELD** — the light-mode complaint from earlier the
+same day, which the ramp in **Recently Completed #1** improved but did not measure. Relief against field,
+inside the coin:
+
+| | shipped | now |
+|---|---|---|
+| Forge | 3.89 : 1 | **6.48 : 1** |
+| Alabaster | **1.58 : 1** | **4.08 : 1** |
+
+The old ramp squeezed the whole medallion into luminance 95–158. `#745730 → #F7E9D0` lands Paper on
+Forge's separation, and the disc measures **5.6:1 against the cream page, up from 4.9** — it gained
+presence rather than punching a hole. ⚠ **The light end stops at warm ivory on purpose**: near-white
+scores *better* on separation and renders the coach in **pewter**, which `holt-mark-paper.py` had already
+recorded once and which was confirmed again by rendering it.
+
+⚠ **NOTHING WAS REDRAWN.** Same coach, same folded arms, same bubble — only the ring around him is new.
+Eight vector reconstructions of the folded arms were drawn and rendered at 52/36/24 first and all were
+worse than the original (chevron, slash, lectern, nameplate); the master's own artwork wins.
+
+**⚠ THE PRISTINE ARTWORK MOVED to `coach-holt-mark.master.png`.** Both shipped files are now generated
+output, so `holt-mark-paper.py`'s *"the Forge master, never written"* premise had quietly become false —
+it would re-ramp a ramp. Superseded by `scripts/artwork/holt-mark.py` (both variants, one master) and its
+entry point now hard-exits. ⏳ **`site/README.md` derives the landing page's `coach-mark.webp` from the
+Forge file and has NOT been regenerated.**
+
+**Home's lead mark 54 → 44.** It was the largest Holt in the app — bigger than the floating coin that is
+his actual tap target — while its own comment called it low visual weight, and closing the artwork's 9%
+dead margin made the same number read a tenth larger again. The ladder is now hierarchy rather than
+drift: **52** floating coin · **44** lead card · **40** chat gutter · **34** session sheet. 52 was already
+correct and stays; it simply now draws a coin that fills its box instead of one inset by 9%.
+
+**⭐ AND THE NUDGE WAS SPENT ON THE TAP, NOT THE READ.** PO: *"coach holt as prompted me the same prompt
+about honors about three times now… why it's repeating even after I clicked on it, and why other things
+haven't come up (is it because I've used everything?)"* `CoachBubble` rendered the invitation on every
+arrival at a home surface but only wrote `shown` from `openCoach` — so a line that was **read and not
+tapped left no trace**. The effect keys on `pathname` and there are **four** home surfaces, so switching
+tabs re-asked the same question.
+
+⚠ **AND IT STARVED THE REST OF THE CATALOGUE**, which is the half that is not obvious and is the answer to
+the second question. `honors` is eligible whenever `honors > 0` — **forever, once earned** — and it sits
+third in a strictly ordered list. An un-retired nudge at the head is not merely repetitive: **nothing
+below it is ever reachable.** `program`, `templates`, `progress`, `squads` and `metrics` were all waiting
+behind one row that was never written. **Nothing had been "used up".** The write moves to the display and
+is guarded by every suppression that follows it — a session, a ceremony, the tour, or a route off the four
+home surfaces — because a nudge recorded while invisible is one the athlete never got, spent.
+
+⛔ **NOT VERIFIED — whether the writes are landing at all.** `markNudge` is best-effort by design and
+swallows every failure, so a missing grant or an RLS refusal on `coach_nudge_state` would look **identical
+to this bug** from the client. `0179` grants `execute` on `coach_nudge_signals()` but nothing on the table,
+relying on Supabase default privileges as every other table migration here does. If `coach_nudge_state` is
+empty for an athlete who has tapped through a nudge, there is a second defect and this fix will not hold.
+Query recorded in the session; **owed to the next pass.**
+
+Gates: tsc **0** · lint at baseline · nudge domain **12/12** still green (the cadence was always right —
+the caller was not doing its part) plus **4 new** in `nudge-repeat.test.mjs` holding both halves.
+✅ **Verified against the live host**, not the deploy's own output: alias 200 with a matching bundle hash
+on the first probe, and both marks fetched by their content-hashed URLs (`c0c05900d3…`, `d1676d3e77…`) —
+the filenames *are* the md5 of the files in the repo, so the served bytes are provably the new artwork.
+`fingerprint:compare --build-id 078d2838…` matched build 6 exactly before publishing, and the OTA went out
+on runtime `411fd2b6…`. Commit `453d769` on `origin/feat/route-map`.
+⏳ Not yet confirmed on a device.
+
+
 ### 0. ⭐ Alabaster's last frozen grounds — four surfaces kept Forge's colours under Paper's ink, and a housekeeping line had stranded every OTA (2026-08-26, Design System / Button / Coach Holt / Cardio Block / 14 screens — **no migration**, ✅ **WEB DEPLOYED** `index-4d3adbd886e3bc5a38a9ced52c38dac1` · ✅ **OTA PUBLISHED TO BUILD 6** iOS `01a03e67-50f5-7e57-8bdb-174baa84b6b2`)
 
 **A correction pass on the light theme, from four PO reports in one sitting.** Every defect was the same
@@ -1479,267 +1556,9 @@ on the FIRST failed hash comparison, not after several polls.**
 Exercise · Order · Length) is a **new screen**, and several of those targets have no mid-session entry
 point yet. It stays a row that opens the Exercise Picker, as before.
 
-### 0. ⭐ Ten fixes that were built, tested and never shipped — a whole pass sat uncommitted in the working tree (2026-08-22, Coach Holt + Active Workout + Transformation — no migration, ✅ WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6)
-
-**PO: *"I don't know if some updates went through that we talked about. Or they didn't work."*** They
-had not gone through, and the work was not at fault: **ten fixes were complete, typechecked and green in
-the working tree, and none of them had ever been committed.** A `dist/` export from 08-21 14:34 held the
-new code, so the pass had reached the point of building a bundle and then stopped before publishing it.
-The live preview was still serving `entry-98d15789…` from the previous pass.
-
-⚠ **THIS IS THE FAILURE MODE THE DEPLOY RITUAL EXISTS TO CATCH, ARRIVING FROM THE OTHER SIDE.** The
-standing rule is *the tree must be clean before a publish, because `expo export` bundles the working
-tree.* The inverse went unwatched: **a clean publish record with a dirty tree behind it.** Ten finished
-features were invisible to the only two surfaces anybody tests, and nothing in the repo said so —
-`Forge-Legacy-Master-Status.md` recorded none of them, so the dashboard was not wrong so much as silent.
-The tell was available and cheap: `git status --porcelain` was never empty.
-
-**What the ten were.** ⭐ **Holt's chat could only hear one injury.** `limits` advanced on the first tap,
-so a shoulder and a knee were a choice between two true things and whichever was tapped second was
-discarded. ⚠ **Everything downstream had always taken a list** — `/coach`'s wizard, `AskHoltSheet`,
-`assemble()`'s union of excluded patterns, `constraints.ts`'s de-duplication — **only the chat could not
-say it**, and it is the question that feeds `rulebook/limitations.ts`, the file that calls itself the
-closest thing in the app to health guidance. ⭐ **"Lose weight" pointed at `CONDITIONING_SPLITS`**, so it
-prescribed a full-body day at *every* frequency — six days a week of Full Body A/B/C — which said in
-effect that someone losing weight is not really lifting. `WEIGHT_LOSS_SPLITS` is the hypertrophy week
-with the conditioning finisher kept on top, **derived from `MUSCLE_SPLITS` rather than copied** so the
-two cannot drift; two days stays full body. ⚠ **The DOSE did not move** — `GOAL_CATEGORY.weight_loss` is
-still `CONDITIONING` (12–24 sets vs hypertrophy's 18–30): shape and dose are separate levers and only
-one was wrong. The cue and the rationale both narrated the old table and were rewritten with it.
-⭐ **The Transformation capture reminder was a switch that did nothing** — it wrote
-`forge.xform.remind` to AsyncStorage and **nothing in the app read that key**, for months, with the row
-cheerfully reading "On · monthly". ⚠ **`progress_photo` needed its own arm in `destinationFor` or the
-tap would have "worked", wrongly**: the catch-all carries no `squadId` and lands on `/inbox`, a screen
-that can never hold a local notification because it writes no feed row. ⭐ **Holt now names movements
-mid-session** instead of opening the Picker cold at the top of a 721-row catalogue — swaps from the
-authored 5,678-edge graph, adds from the gap in what today has actually trained, applied in one tap.
-⭐ **A replaced exercise kept the old animation** (`expo-image` holds decoded frames until something
-forces a repaint; the player is now keyed on the url) **and a 404 from the first lift poisoned the
-second** (the `failed` boolean became a `failedUrl`). ⭐ **A rest timer you start yourself**, ⭐ **an X
-to close what Holt says** (keyed on the TEXT, because `coachLine` is derived and not fired, so a boolean
-would need something to clear it), ⭐ **swipe between exercises**, ⭐ **Add Set / Remove Set that stop
-reflowing**, and ⭐ **no Add button in a templated workout** (`templated` is stored, not derived — a
-Forge starter stamps neither `programId` nor `templateId`).
-
-⚠ **ONE REAL GAP FOUND IN THE SWEEP, AND IT WAS THE MOST DANGEROUS LINE IN THE BATCH.**
-`rest-timer-pref.ts` migrates the old `forge_rest_timer_on_v1` boolean onto the new three-mode key.
-**Get it backwards and every athlete who ever enabled the rest timer comes back from the update switched
-OFF** — a preference destroyed by the feature meant to extend it, silently, on a screen nobody
-re-checks. It had no test, and could not have had a useful one: the module imports AsyncStorage, which
-`node --test` cannot load, so a test beside it could only have read the source as text and **a regex
-cannot tell `=== '1'` from `!== '1'`**. Split into `rest-timer-pref-model.ts` — the same pure-half
-pattern as `weekly-review-seen-model.ts` — and given **11 tests that run the decision**. ⚠ **The guard
-was proven, not assumed**: with the migration removed the suite fails **2 tests**, and passes with it
-restored. It also pins the two storage key strings, because renaming one compiles cleanly, reads as a
-tidy-up, and orphans every stored preference.
-
-**Committed as five commits, not ten.** `workout.tsx` carries six of the fixes and `SessionCoachSheet`'s
-new props are required, so a ten-way split would have produced **commits that do not compile** — worse
-than fewer commits, because it breaks `git bisect` for everyone later. `61852f6` · `b9fa16f` · `76e38fa`
-· `63ec758` · `bed4126` on `feat/route-map`.
-
-**Gate:** `tsc --noEmit` **0** · **2,751/2,751 tests pass** (2,740 before, +11 new) · lint **exactly at
-baseline** — 1 error, 13 warnings, and the error is the pre-existing `use-color-scheme.web.ts`, none
-from this batch. No TODOs, no `console.log`, no stashes, nothing outside `src/`, no migration owed.
-
-✅ **DEPLOYED AND VERIFIED ON BOTH SURFACES.** Web `entry-88b79f300684d3bf0735ad0b51481cc9.js` —
-`forgelegacy.expo.app` returned **200 twice** with a matching hash, and ⭐ **the live bundle was then
-downloaded and searched for seven strings only this batch's code contains** (`multi_limits`, `Build
-around these`, `forge_rest_timer_mode_v1`, `forge_rest_timer_on_v1`, `progress_photo`, `Remove Set`,
-`Close what Coach Holt said`) — **all seven PRESENT**. iOS OTA `01a02ba4-5991-74d9-9dee-3dcc040d5f93`
-on runtime `411fd2b68cbe11016f037dd7881b3fe813a1e148`; `fingerprint:compare --build-id 078d2838…`
-reported an **exact match with build 6 before publishing**, and the manifest endpoint was then queried
-as an iOS client on that runtime and **returned the new update id** — deliverable, not merely published.
-(Android also published — runtime `a8afa07c…`, update `01a02ba4-5991-7328-97d5-34f8d570354e`. No Android
-build exists, so it reaches nobody; recorded only so the id is not mistaken for the iOS one.)
-
-⏳ **Not yet confirmed on a device.** Five of the ten are UI-only — the pager, the bubble X, the set
-pills, the templated Add button, the swap animation — and **no test in this repo can see them**. They
-are wired correctly and that is a different claim from "the swipe feels smooth".
-
-### 0. ⭐ A button that failed on every tap is hidden, and the promise in the copy went with it (2026-08-21, Program Import — no migration, ✅ WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6)
-
-**The "Or read a screenshot" control in the program builder was live and failed on EVERY tap**, and had
-been since the photo-import pass shipped on 08-20. It needs two things that are deliberately not in
-place: `0174` (the credit weight for `photo_import`) is unapplied, and the `program-photo-read` Edge
-Function is undeployed, because **`GO-LIVE.md` rules out AI spend before full release** — a standing
-decision, not an oversight. `coach_ai_spend_credits` raises `22023` on an unknown action **by design**,
-so it failed *closed* at the meter, which is the right direction. The athlete still tapped a button that
-never worked.
-
-⚠ **THIS IS THE GUIDELINE 1.2 LESSON, APPLIED BEFORE IT COST US A SECOND TIME.** The last submission
-blocker found in this repo (08-19) was a button whose only behaviour was a toast reading *"Reporting a
-squad is coming soon"*, and the finding recorded then was that **the toast is WORSE than no button** — it
-proves inside the binary that the need was known and unmet. A control that always fails, on a screen a
-reviewer will certainly open, is the same shape. **PO decision 2026-08-21: hide it until it works.**
-
-⭐ **NOTHING WAS DELETED.** One flag, `PHOTO_IMPORT_ENABLED`, gates it, and the feature's code is
-untouched beneath. To re-enable: apply `pending-0174.sql`, deploy `program-photo-read`, flip the flag —
-and the flag's own comment names both preconditions so nobody flips it blind.
-
-⚠ **THE COPY IS GATED ON THE SAME FLAG, AND THAT IS THE HALF THAT GETS FORGOTTEN.** Hiding the button
-while leaving the paragraph that promises *"Only have a screenshot? Read it in below"* is **the same
-defect written in prose** — except the prose version renders fine, raises nothing, and points at a
-control that is not there. Two new source guards hold them together: one asserts both halves sit inside
-a `PHOTO_IMPORT_ENABLED` gate, the other asserts the flag comment still names `0174` and the Edge
-Function.
-
-⚠ **BOTH GUARDS WERE PROVEN AGAINST KNOWN-BAD INPUT, NOT ASSUMED.** Run against mutated copies of the
-source: un-gating the hint alone fails (`gates=1`), removing both gates fails (`gates=0`), the real file
-passes. A guard that has never been shown to fail is not yet a guard.
-
-**Files:** `src/app/program-builder.tsx` (the flag + two gates) ·
-`src/app/__tests__/program-photo-wiring.test.mjs` (+2).
-
-**Gates:** tsc **0** · **2,713 / 2,713 green** · lint **at baseline** (1 error + 13 warnings).
-
-✅ **DEPLOYED AND VERIFIED 2026-08-21.** Web `entry-98d15789d79404e69d58070f172c39c1.js` —
-`forgelegacy.expo.app` **200 twice** with a matching hash. iOS OTA **`01a0253b-5e8e-7f73-bab9-554a6d9f3b5a`**,
-group `1b1e41c6-cbe2-4a5b-9a6e-9034912575fd`, commit `5338956`, on build 6's runtime with
-`fingerprint:compare` an **exact match** before publishing.
-
-⭐ **AND THE PROOF IS STRONGER THAN "HIDDEN".** The live bundle was searched for both strings — `Or read
-a screenshot` and `Read it in below` — and **neither is present at all**. Because the flag is a `const`
-`false`, the bundler eliminated the branches outright, so the control is not merely unrendered on device;
-it is not in the binary.
-
-⚠ **`0175` WAS CHECKED AT THE SAME TIME AND IS *NOT* THE EMERGENCY IT LOOKED LIKE.** The live-edit
-client guard (`liveEditViolation`, `lockedCells`) **is** in the deployed bundle, so a normal athlete
-cannot shrink a running program through the UI. What `0175` adds is the DATABASE backstop the
-Program-Fork spec calls for — defence in depth with one layer missing, not an open hole. Apply it, but
-it does not gate anything.
-
-### 0. ⭐ We stop guessing what broke — every error now arrives with the exact path that led to it (2026-08-21, Diagnostics — **MIGRATION `0176` APPLIED AND VERIFIED**; ✅ WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6)
-
-**PO:** *"sometimes we're guessing at what the error is … catch the exact path they're going in instead of
-having to ask them, but we capture on the back end and are able to fix it right away."*
-
-**The guessing is on this board, one entry down.** The "app is frozen" week was **diagnosed wrong twice**
-— a missing `profiles` row, then an RLS block — before the survivor turned out to be the last line of
-`routeFor`. Throughout, **TestFlight showed `Crashes: –`**, because nothing crashed. That is the finding
-that shaped this build:
-
-> ⚠ **This app's characteristic failure is NOT a native crash.** Apple already reports those. It is a JS
-> fault, or a control that silently no-ops, on a device nobody can attach a debugger to, described
-> second-hand by an athlete with no reason to know what a stack trace is.
-
-⚠ **THE INFORMATION WAS ALREADY IN OUR HANDS AND WE WERE THROWING IT AWAY.** `ScreenBoundary` has caught
-every screen-level throw since it was written and printed it to `console.error` — a console that, on a
-tester's phone, nobody will ever read. Its own copy asks the athlete to *"send us the line below — it is
-the part we cannot see from here."* That is now done automatically, with the trail attached, before they
-finish reading the sentence.
-
-**What ships:**
-- **`0176_client_errors.sql`** — `client_errors` (nullable `user_id`, breadcrumbs `jsonb`, `update_id`),
-  `client_error_status` (triage keyed by BUG), `report_client_error()`, three `admin_*` read models, and a
-  90-day prune matching `app_events`.
-- **`domain/diagnostics/breadcrumb-core.ts`** — pure, **18 tests**, owns the redaction rules and the
-  fingerprint.
-- **`lib/diagnostics.ts`** — the reporter. **`lib/app-session.ts`** — the session id, lifted out of
-  `analytics.ts` so both tables carry the same one.
-- Both boundaries now report; `lib/supabase.ts` leaves a `net` crumb on every failed request; every
-  existing `track()` call is now also a breadcrumb, at **no call-site cost**.
-- **`/admin` § Errors** — grouped by bug, tap to open the trail. **`Docs/Error-Reporting.md`** governs.
-
-**⭐ THE TRAIL IS THE PRODUCT.** The frozen-app week would have read
-`· sign_in_submitted → /onboarding · onboarding_continue → /onboarding ×214` and ended in a minute.
-⚠ **Consecutive repeats COLLAPSE**, and that is load-bearing rather than cosmetic: without it a render
-loop fills the 40-crumb window with the symptom in milliseconds and pushes the cause out, so every report
-of the worst bug class would arrive with its evidence already overwritten.
-
-**⭐ AND IT ANSWERS "DID MY FIX WORK".** `app_version` is `1.0.0` on **every OTA ever published over build
-6**, so it cannot. `update_id` names the exact bundle. Triage status is keyed by fingerprint and
-**deliberately does not reset** when a fixed bug recurs — which is what lets the dashboard say
-*"marked FIXED on the 19th, **4 since**"*, the one sentence a self-resetting status can never produce.
-
-⚠ **RANKED BY ATHLETES AFFECTED, NOT OCCURRENCES.** 200 crashes from one tester is a bad afternoon; 12
-across 12 people is a release blocker. Sorting by volume gets that backwards.
-
-⚠ **`report_client_error` IS GRANTED TO `anon`, AND IT IS THE ONLY SUCH FUNCTION IN THE SCHEMA.** Deliberate:
-the worst outage this project has shipped was a **launch crash** (`CoachBubble`, no `SafeAreaProvider`),
-which happens before a session exists — a report requiring `auth.uid()` would have thrown away the one
-worth having. `user_id` comes from `auth.uid()` inside the function and is never a parameter. Two rate
-limits (30/hour per session, **5000/hour globally**, because `session_id` is client-minted and the anon key
-is public by design) are what make it safe. **It will appear in the anon audit. Do not "fix" it.**
-
-⚠ **THE OPT-OUT IS SPLIT, BY DESIGN.** "Help improve Forge" off drops the **trail** — a route trail *is*
-usage, and collecting one anyway under a different table name is the back door `props-core.ts` exists to
-close. It keeps the **fault**: what broke, where, on which build, because that is a defect in our software
-rather than a record of their behaviour.
-
-⚠ **AND THE PRIVACY TEXT IS A GATE ON THE MIGRATION, NOT A FOLLOW-UP** (P6-A1-D8). The "Diagnostics"
-section is written into **both** surfaces in this same commit — `Docs/Legal/Privacy-Policy.md` § 2 and
-`site/privacy.html` § 2. **`site/` is a separate Cloudflare deploy; writing it is not publishing it.**
-The policy's "what we do not collect" list also now says **no third-party crash reporting** — ⛔ that
-sentence must be edited *before* Sentry ships, not after.
-
-**Gates:** `tsc --noEmit` **0** · **2,711 tests, ALL 2,711 GREEN** (18 new) · `eslint src`
-**at baseline, 1 error + 13 warnings** · `expo export --platform web` clean, and all four new RPC names
-verified **present in the LIVE bundle**, not merely the built one.
-
-⚠ **TWO GATE DEFECTS WERE FOUND ON THE WAY OUT AND BOTH ARE CLOSED HERE — THIS ENTRY PREVIOUSLY
-RECORDED BOTH AS ACCEPTABLE.** It read *“2,710 green, the one failure is pre-existing”* and *“32 warnings,
-none new”*. The first was true and still worth fixing; the second was **wrong** — 19 of those 32 warnings
-were new, and the documented baseline is 13.
-
-- **`podium/[id].tsx`** — two `<Stop stopColor={tint.from}>` carried no `stopOpacity`, failing
-  `svg-gradient-stops`. All six `TINT` values are hex literals, so this was the **benign** case the
-  test's own comment describes, not a device defect. Fixed by declaring `stopOpacity={1}`.
-- **`_layout.tsx`** — `startDiagnostics()` / `installErrorSink()` sat mid-file **above 19 imports**,
-  believing that armed them sooner. ⚠ **It does not.** Babel hoists every `require` above an
-  interleaved statement, so those imports were already evaluated before the calls ran either way —
-  verified against `@babel/plugin-transform-modules-commonjs` rather than assumed. Moved below the
-  imports: byte-identical runtime behaviour, 19 fewer warnings. **The placement was load-bearing in the
-  comment and inert in the bundle.**
-
-✅ **APPLIED AND DEPLOYED 2026-08-21, IN THE ONE ORDER THAT WAS EVER MANDATORY.**
-
-1. **The disclosure went first.** `site/privacy.html` published to Cloudflare and **verified from
-   outside** — `forgelegacy.app/privacy` returns 200 and now contains *“Diagnostics — when something
-   goes wrong”* and the *“Help improve Forge”* paragraph. The upload manifest reported **1 file
-   changed, `/privacy.html`** (24 unchanged), which is how we know nothing else on the marketing site
-   went live with it; `/_exported-bundle.html` still 404s. P6-A1-D8 satisfied: disclosure BEFORE
-   collection, not alongside it.
-2. **`0176` applied by the PO**, self-check green. Verified by data, not by the ledger:
-   `prune_job 1 · writer 1 · tbl 1` — so the 90-day retention the privacy page now promises **in
-   writing** is actually scheduled (`forge-client-errors-prune`, 04:50 daily).
-3. **Web** — `entry-bdff3f47b329cabe112a0ba181b27dd1.js`, `forgelegacy.expo.app` **200 twice** with a
-   matching hash, and the live bundle was searched for four strings only this pass contains
-   (`report_client_error`, `admin_client_errors`, `admin_client_error_detail`,
-   `admin_client_error_set_status`) — **all four FOUND**.
-4. **OTA** — `fingerprint:compare --build-id 078d2838…` returned **an exact match** to build 6
-   (`411fd2b68cbe11016f037dd7881b3fe813a1e148`) *before* publishing, so this update actually reaches
-   testers rather than reporting success and reaching nobody. iOS update **`01a02529-ebcd-7548-84de-d2f4da7a7f9a`**,
-   group `e3f4cb79-2695-43ba-9a72-c21818c56e07`, commit `ff7fee9`.
-
-⭐ **THAT iOS UPDATE ID IS THE FIRST VALUE THIS FEATURE WILL EVER REPORT**, and it is the whole reason
-`update_id` is a column: `app_version` reads `1.0.0` on every OTA over build 6, so it is the only field
-that can answer *“did my fix work”*. Anything arriving from an earlier `update_id` is a device that has
-not picked up the update yet, **not** a fix that failed.
-
-⚠ There was **no ordering hazard between the two code halves** — `errors-live.ts` disables itself on
-`PGRST202`, so shipping the client first would have been harmless and reporting simply off. The privacy
-publish was the only real gate, and it was honoured.
-
-⚠ **`admin_client_errors` returning `ever_any: null` is an HONEST-ZERO GUARD THAT READS BACKWARDS FROM
-FEEDBACK'S.** Zero errors is what we want *and* exactly what a broken reporter looks like. Once this is
-deployed, **"nothing has ever been reported" is the bug**, not the good news.
-
-**Stage 2 is Sentry, and it is blocked on the next NATIVE build** — `@sentry/react-native` carries a native
-module and cannot ride an `eas update`, which is the whole reason this stage exists. Fold it into the
-RevenueCat/paywall build. It adds native crashes and source-mapped stacks; it also changes
-`Docs/App-Store-Privacy-Labels.md` (Crash + Performance Data under Diagnostics — still no ATT prompt).
-**They are complements, not a migration:** keep this stage for the trail, which is under a privacy rule we
-control and joins to `app_events`.
-
-**⏳ ER-D5 left OPEN and stated rather than quietly shipped:** `ScreenBoundary` wraps only **2 of 77
-screens**. The global handler catches the rest, so nothing goes *unreported* — but the other 75 get no
-recovery UI, and a throw during render still blanks the screen instead of naming itself. Widening it is a
-separate pass.
-
 ### Older entries — `Docs/Status-Archive-2026-08.md`
 
-The **57** entries before this point moved there on 2026-08-18, 2026-08-19, 2026-08-20, 2026-08-22, 2026-08-24 (five times) 2026-08-25 and 2026-08-26, **verbatim**. Nothing was deleted or
+The **60** entries before this point moved there on 2026-08-18, 2026-08-19, 2026-08-20, 2026-08-22, 2026-08-24 (five times) 2026-08-25 and 2026-08-26 (twice), **verbatim**. Nothing was deleted or
 summarised.
 
 This section had grown to 48 entries and 4,378 lines — **81% of a dashboard `AGENTS.md` requires every

@@ -4872,3 +4872,261 @@ Newest first. Never delete — trim only when over ~20.
 25. **Challenge System** — private opt-in squad ranked competition; 4 LOCKED amendments.
 
 ---
+
+### 0. ⭐ Ten fixes that were built, tested and never shipped — a whole pass sat uncommitted in the working tree (2026-08-22, Coach Holt + Active Workout + Transformation — no migration, ✅ WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6)
+
+**PO: *"I don't know if some updates went through that we talked about. Or they didn't work."*** They
+had not gone through, and the work was not at fault: **ten fixes were complete, typechecked and green in
+the working tree, and none of them had ever been committed.** A `dist/` export from 08-21 14:34 held the
+new code, so the pass had reached the point of building a bundle and then stopped before publishing it.
+The live preview was still serving `entry-98d15789…` from the previous pass.
+
+⚠ **THIS IS THE FAILURE MODE THE DEPLOY RITUAL EXISTS TO CATCH, ARRIVING FROM THE OTHER SIDE.** The
+standing rule is *the tree must be clean before a publish, because `expo export` bundles the working
+tree.* The inverse went unwatched: **a clean publish record with a dirty tree behind it.** Ten finished
+features were invisible to the only two surfaces anybody tests, and nothing in the repo said so —
+`Forge-Legacy-Master-Status.md` recorded none of them, so the dashboard was not wrong so much as silent.
+The tell was available and cheap: `git status --porcelain` was never empty.
+
+**What the ten were.** ⭐ **Holt's chat could only hear one injury.** `limits` advanced on the first tap,
+so a shoulder and a knee were a choice between two true things and whichever was tapped second was
+discarded. ⚠ **Everything downstream had always taken a list** — `/coach`'s wizard, `AskHoltSheet`,
+`assemble()`'s union of excluded patterns, `constraints.ts`'s de-duplication — **only the chat could not
+say it**, and it is the question that feeds `rulebook/limitations.ts`, the file that calls itself the
+closest thing in the app to health guidance. ⭐ **"Lose weight" pointed at `CONDITIONING_SPLITS`**, so it
+prescribed a full-body day at *every* frequency — six days a week of Full Body A/B/C — which said in
+effect that someone losing weight is not really lifting. `WEIGHT_LOSS_SPLITS` is the hypertrophy week
+with the conditioning finisher kept on top, **derived from `MUSCLE_SPLITS` rather than copied** so the
+two cannot drift; two days stays full body. ⚠ **The DOSE did not move** — `GOAL_CATEGORY.weight_loss` is
+still `CONDITIONING` (12–24 sets vs hypertrophy's 18–30): shape and dose are separate levers and only
+one was wrong. The cue and the rationale both narrated the old table and were rewritten with it.
+⭐ **The Transformation capture reminder was a switch that did nothing** — it wrote
+`forge.xform.remind` to AsyncStorage and **nothing in the app read that key**, for months, with the row
+cheerfully reading "On · monthly". ⚠ **`progress_photo` needed its own arm in `destinationFor` or the
+tap would have "worked", wrongly**: the catch-all carries no `squadId` and lands on `/inbox`, a screen
+that can never hold a local notification because it writes no feed row. ⭐ **Holt now names movements
+mid-session** instead of opening the Picker cold at the top of a 721-row catalogue — swaps from the
+authored 5,678-edge graph, adds from the gap in what today has actually trained, applied in one tap.
+⭐ **A replaced exercise kept the old animation** (`expo-image` holds decoded frames until something
+forces a repaint; the player is now keyed on the url) **and a 404 from the first lift poisoned the
+second** (the `failed` boolean became a `failedUrl`). ⭐ **A rest timer you start yourself**, ⭐ **an X
+to close what Holt says** (keyed on the TEXT, because `coachLine` is derived and not fired, so a boolean
+would need something to clear it), ⭐ **swipe between exercises**, ⭐ **Add Set / Remove Set that stop
+reflowing**, and ⭐ **no Add button in a templated workout** (`templated` is stored, not derived — a
+Forge starter stamps neither `programId` nor `templateId`).
+
+⚠ **ONE REAL GAP FOUND IN THE SWEEP, AND IT WAS THE MOST DANGEROUS LINE IN THE BATCH.**
+`rest-timer-pref.ts` migrates the old `forge_rest_timer_on_v1` boolean onto the new three-mode key.
+**Get it backwards and every athlete who ever enabled the rest timer comes back from the update switched
+OFF** — a preference destroyed by the feature meant to extend it, silently, on a screen nobody
+re-checks. It had no test, and could not have had a useful one: the module imports AsyncStorage, which
+`node --test` cannot load, so a test beside it could only have read the source as text and **a regex
+cannot tell `=== '1'` from `!== '1'`**. Split into `rest-timer-pref-model.ts` — the same pure-half
+pattern as `weekly-review-seen-model.ts` — and given **11 tests that run the decision**. ⚠ **The guard
+was proven, not assumed**: with the migration removed the suite fails **2 tests**, and passes with it
+restored. It also pins the two storage key strings, because renaming one compiles cleanly, reads as a
+tidy-up, and orphans every stored preference.
+
+**Committed as five commits, not ten.** `workout.tsx` carries six of the fixes and `SessionCoachSheet`'s
+new props are required, so a ten-way split would have produced **commits that do not compile** — worse
+than fewer commits, because it breaks `git bisect` for everyone later. `61852f6` · `b9fa16f` · `76e38fa`
+· `63ec758` · `bed4126` on `feat/route-map`.
+
+**Gate:** `tsc --noEmit` **0** · **2,751/2,751 tests pass** (2,740 before, +11 new) · lint **exactly at
+baseline** — 1 error, 13 warnings, and the error is the pre-existing `use-color-scheme.web.ts`, none
+from this batch. No TODOs, no `console.log`, no stashes, nothing outside `src/`, no migration owed.
+
+✅ **DEPLOYED AND VERIFIED ON BOTH SURFACES.** Web `entry-88b79f300684d3bf0735ad0b51481cc9.js` —
+`forgelegacy.expo.app` returned **200 twice** with a matching hash, and ⭐ **the live bundle was then
+downloaded and searched for seven strings only this batch's code contains** (`multi_limits`, `Build
+around these`, `forge_rest_timer_mode_v1`, `forge_rest_timer_on_v1`, `progress_photo`, `Remove Set`,
+`Close what Coach Holt said`) — **all seven PRESENT**. iOS OTA `01a02ba4-5991-74d9-9dee-3dcc040d5f93`
+on runtime `411fd2b68cbe11016f037dd7881b3fe813a1e148`; `fingerprint:compare --build-id 078d2838…`
+reported an **exact match with build 6 before publishing**, and the manifest endpoint was then queried
+as an iOS client on that runtime and **returned the new update id** — deliverable, not merely published.
+(Android also published — runtime `a8afa07c…`, update `01a02ba4-5991-7328-97d5-34f8d570354e`. No Android
+build exists, so it reaches nobody; recorded only so the id is not mistaken for the iOS one.)
+
+⏳ **Not yet confirmed on a device.** Five of the ten are UI-only — the pager, the bubble X, the set
+pills, the templated Add button, the swap animation — and **no test in this repo can see them**. They
+are wired correctly and that is a different claim from "the swipe feels smooth".
+
+### 0. ⭐ A button that failed on every tap is hidden, and the promise in the copy went with it (2026-08-21, Program Import — no migration, ✅ WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6)
+
+**The "Or read a screenshot" control in the program builder was live and failed on EVERY tap**, and had
+been since the photo-import pass shipped on 08-20. It needs two things that are deliberately not in
+place: `0174` (the credit weight for `photo_import`) is unapplied, and the `program-photo-read` Edge
+Function is undeployed, because **`GO-LIVE.md` rules out AI spend before full release** — a standing
+decision, not an oversight. `coach_ai_spend_credits` raises `22023` on an unknown action **by design**,
+so it failed *closed* at the meter, which is the right direction. The athlete still tapped a button that
+never worked.
+
+⚠ **THIS IS THE GUIDELINE 1.2 LESSON, APPLIED BEFORE IT COST US A SECOND TIME.** The last submission
+blocker found in this repo (08-19) was a button whose only behaviour was a toast reading *"Reporting a
+squad is coming soon"*, and the finding recorded then was that **the toast is WORSE than no button** — it
+proves inside the binary that the need was known and unmet. A control that always fails, on a screen a
+reviewer will certainly open, is the same shape. **PO decision 2026-08-21: hide it until it works.**
+
+⭐ **NOTHING WAS DELETED.** One flag, `PHOTO_IMPORT_ENABLED`, gates it, and the feature's code is
+untouched beneath. To re-enable: apply `pending-0174.sql`, deploy `program-photo-read`, flip the flag —
+and the flag's own comment names both preconditions so nobody flips it blind.
+
+⚠ **THE COPY IS GATED ON THE SAME FLAG, AND THAT IS THE HALF THAT GETS FORGOTTEN.** Hiding the button
+while leaving the paragraph that promises *"Only have a screenshot? Read it in below"* is **the same
+defect written in prose** — except the prose version renders fine, raises nothing, and points at a
+control that is not there. Two new source guards hold them together: one asserts both halves sit inside
+a `PHOTO_IMPORT_ENABLED` gate, the other asserts the flag comment still names `0174` and the Edge
+Function.
+
+⚠ **BOTH GUARDS WERE PROVEN AGAINST KNOWN-BAD INPUT, NOT ASSUMED.** Run against mutated copies of the
+source: un-gating the hint alone fails (`gates=1`), removing both gates fails (`gates=0`), the real file
+passes. A guard that has never been shown to fail is not yet a guard.
+
+**Files:** `src/app/program-builder.tsx` (the flag + two gates) ·
+`src/app/__tests__/program-photo-wiring.test.mjs` (+2).
+
+**Gates:** tsc **0** · **2,713 / 2,713 green** · lint **at baseline** (1 error + 13 warnings).
+
+✅ **DEPLOYED AND VERIFIED 2026-08-21.** Web `entry-98d15789d79404e69d58070f172c39c1.js` —
+`forgelegacy.expo.app` **200 twice** with a matching hash. iOS OTA **`01a0253b-5e8e-7f73-bab9-554a6d9f3b5a`**,
+group `1b1e41c6-cbe2-4a5b-9a6e-9034912575fd`, commit `5338956`, on build 6's runtime with
+`fingerprint:compare` an **exact match** before publishing.
+
+⭐ **AND THE PROOF IS STRONGER THAN "HIDDEN".** The live bundle was searched for both strings — `Or read
+a screenshot` and `Read it in below` — and **neither is present at all**. Because the flag is a `const`
+`false`, the bundler eliminated the branches outright, so the control is not merely unrendered on device;
+it is not in the binary.
+
+⚠ **`0175` WAS CHECKED AT THE SAME TIME AND IS *NOT* THE EMERGENCY IT LOOKED LIKE.** The live-edit
+client guard (`liveEditViolation`, `lockedCells`) **is** in the deployed bundle, so a normal athlete
+cannot shrink a running program through the UI. What `0175` adds is the DATABASE backstop the
+Program-Fork spec calls for — defence in depth with one layer missing, not an open hole. Apply it, but
+it does not gate anything.
+
+### 0. ⭐ We stop guessing what broke — every error now arrives with the exact path that led to it (2026-08-21, Diagnostics — **MIGRATION `0176` APPLIED AND VERIFIED**; ✅ WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6)
+
+**PO:** *"sometimes we're guessing at what the error is … catch the exact path they're going in instead of
+having to ask them, but we capture on the back end and are able to fix it right away."*
+
+**The guessing is on this board, one entry down.** The "app is frozen" week was **diagnosed wrong twice**
+— a missing `profiles` row, then an RLS block — before the survivor turned out to be the last line of
+`routeFor`. Throughout, **TestFlight showed `Crashes: –`**, because nothing crashed. That is the finding
+that shaped this build:
+
+> ⚠ **This app's characteristic failure is NOT a native crash.** Apple already reports those. It is a JS
+> fault, or a control that silently no-ops, on a device nobody can attach a debugger to, described
+> second-hand by an athlete with no reason to know what a stack trace is.
+
+⚠ **THE INFORMATION WAS ALREADY IN OUR HANDS AND WE WERE THROWING IT AWAY.** `ScreenBoundary` has caught
+every screen-level throw since it was written and printed it to `console.error` — a console that, on a
+tester's phone, nobody will ever read. Its own copy asks the athlete to *"send us the line below — it is
+the part we cannot see from here."* That is now done automatically, with the trail attached, before they
+finish reading the sentence.
+
+**What ships:**
+- **`0176_client_errors.sql`** — `client_errors` (nullable `user_id`, breadcrumbs `jsonb`, `update_id`),
+  `client_error_status` (triage keyed by BUG), `report_client_error()`, three `admin_*` read models, and a
+  90-day prune matching `app_events`.
+- **`domain/diagnostics/breadcrumb-core.ts`** — pure, **18 tests**, owns the redaction rules and the
+  fingerprint.
+- **`lib/diagnostics.ts`** — the reporter. **`lib/app-session.ts`** — the session id, lifted out of
+  `analytics.ts` so both tables carry the same one.
+- Both boundaries now report; `lib/supabase.ts` leaves a `net` crumb on every failed request; every
+  existing `track()` call is now also a breadcrumb, at **no call-site cost**.
+- **`/admin` § Errors** — grouped by bug, tap to open the trail. **`Docs/Error-Reporting.md`** governs.
+
+**⭐ THE TRAIL IS THE PRODUCT.** The frozen-app week would have read
+`· sign_in_submitted → /onboarding · onboarding_continue → /onboarding ×214` and ended in a minute.
+⚠ **Consecutive repeats COLLAPSE**, and that is load-bearing rather than cosmetic: without it a render
+loop fills the 40-crumb window with the symptom in milliseconds and pushes the cause out, so every report
+of the worst bug class would arrive with its evidence already overwritten.
+
+**⭐ AND IT ANSWERS "DID MY FIX WORK".** `app_version` is `1.0.0` on **every OTA ever published over build
+6**, so it cannot. `update_id` names the exact bundle. Triage status is keyed by fingerprint and
+**deliberately does not reset** when a fixed bug recurs — which is what lets the dashboard say
+*"marked FIXED on the 19th, **4 since**"*, the one sentence a self-resetting status can never produce.
+
+⚠ **RANKED BY ATHLETES AFFECTED, NOT OCCURRENCES.** 200 crashes from one tester is a bad afternoon; 12
+across 12 people is a release blocker. Sorting by volume gets that backwards.
+
+⚠ **`report_client_error` IS GRANTED TO `anon`, AND IT IS THE ONLY SUCH FUNCTION IN THE SCHEMA.** Deliberate:
+the worst outage this project has shipped was a **launch crash** (`CoachBubble`, no `SafeAreaProvider`),
+which happens before a session exists — a report requiring `auth.uid()` would have thrown away the one
+worth having. `user_id` comes from `auth.uid()` inside the function and is never a parameter. Two rate
+limits (30/hour per session, **5000/hour globally**, because `session_id` is client-minted and the anon key
+is public by design) are what make it safe. **It will appear in the anon audit. Do not "fix" it.**
+
+⚠ **THE OPT-OUT IS SPLIT, BY DESIGN.** "Help improve Forge" off drops the **trail** — a route trail *is*
+usage, and collecting one anyway under a different table name is the back door `props-core.ts` exists to
+close. It keeps the **fault**: what broke, where, on which build, because that is a defect in our software
+rather than a record of their behaviour.
+
+⚠ **AND THE PRIVACY TEXT IS A GATE ON THE MIGRATION, NOT A FOLLOW-UP** (P6-A1-D8). The "Diagnostics"
+section is written into **both** surfaces in this same commit — `Docs/Legal/Privacy-Policy.md` § 2 and
+`site/privacy.html` § 2. **`site/` is a separate Cloudflare deploy; writing it is not publishing it.**
+The policy's "what we do not collect" list also now says **no third-party crash reporting** — ⛔ that
+sentence must be edited *before* Sentry ships, not after.
+
+**Gates:** `tsc --noEmit` **0** · **2,711 tests, ALL 2,711 GREEN** (18 new) · `eslint src`
+**at baseline, 1 error + 13 warnings** · `expo export --platform web` clean, and all four new RPC names
+verified **present in the LIVE bundle**, not merely the built one.
+
+⚠ **TWO GATE DEFECTS WERE FOUND ON THE WAY OUT AND BOTH ARE CLOSED HERE — THIS ENTRY PREVIOUSLY
+RECORDED BOTH AS ACCEPTABLE.** It read *“2,710 green, the one failure is pre-existing”* and *“32 warnings,
+none new”*. The first was true and still worth fixing; the second was **wrong** — 19 of those 32 warnings
+were new, and the documented baseline is 13.
+
+- **`podium/[id].tsx`** — two `<Stop stopColor={tint.from}>` carried no `stopOpacity`, failing
+  `svg-gradient-stops`. All six `TINT` values are hex literals, so this was the **benign** case the
+  test's own comment describes, not a device defect. Fixed by declaring `stopOpacity={1}`.
+- **`_layout.tsx`** — `startDiagnostics()` / `installErrorSink()` sat mid-file **above 19 imports**,
+  believing that armed them sooner. ⚠ **It does not.** Babel hoists every `require` above an
+  interleaved statement, so those imports were already evaluated before the calls ran either way —
+  verified against `@babel/plugin-transform-modules-commonjs` rather than assumed. Moved below the
+  imports: byte-identical runtime behaviour, 19 fewer warnings. **The placement was load-bearing in the
+  comment and inert in the bundle.**
+
+✅ **APPLIED AND DEPLOYED 2026-08-21, IN THE ONE ORDER THAT WAS EVER MANDATORY.**
+
+1. **The disclosure went first.** `site/privacy.html` published to Cloudflare and **verified from
+   outside** — `forgelegacy.app/privacy` returns 200 and now contains *“Diagnostics — when something
+   goes wrong”* and the *“Help improve Forge”* paragraph. The upload manifest reported **1 file
+   changed, `/privacy.html`** (24 unchanged), which is how we know nothing else on the marketing site
+   went live with it; `/_exported-bundle.html` still 404s. P6-A1-D8 satisfied: disclosure BEFORE
+   collection, not alongside it.
+2. **`0176` applied by the PO**, self-check green. Verified by data, not by the ledger:
+   `prune_job 1 · writer 1 · tbl 1` — so the 90-day retention the privacy page now promises **in
+   writing** is actually scheduled (`forge-client-errors-prune`, 04:50 daily).
+3. **Web** — `entry-bdff3f47b329cabe112a0ba181b27dd1.js`, `forgelegacy.expo.app` **200 twice** with a
+   matching hash, and the live bundle was searched for four strings only this pass contains
+   (`report_client_error`, `admin_client_errors`, `admin_client_error_detail`,
+   `admin_client_error_set_status`) — **all four FOUND**.
+4. **OTA** — `fingerprint:compare --build-id 078d2838…` returned **an exact match** to build 6
+   (`411fd2b68cbe11016f037dd7881b3fe813a1e148`) *before* publishing, so this update actually reaches
+   testers rather than reporting success and reaching nobody. iOS update **`01a02529-ebcd-7548-84de-d2f4da7a7f9a`**,
+   group `e3f4cb79-2695-43ba-9a72-c21818c56e07`, commit `ff7fee9`.
+
+⭐ **THAT iOS UPDATE ID IS THE FIRST VALUE THIS FEATURE WILL EVER REPORT**, and it is the whole reason
+`update_id` is a column: `app_version` reads `1.0.0` on every OTA over build 6, so it is the only field
+that can answer *“did my fix work”*. Anything arriving from an earlier `update_id` is a device that has
+not picked up the update yet, **not** a fix that failed.
+
+⚠ There was **no ordering hazard between the two code halves** — `errors-live.ts` disables itself on
+`PGRST202`, so shipping the client first would have been harmless and reporting simply off. The privacy
+publish was the only real gate, and it was honoured.
+
+⚠ **`admin_client_errors` returning `ever_any: null` is an HONEST-ZERO GUARD THAT READS BACKWARDS FROM
+FEEDBACK'S.** Zero errors is what we want *and* exactly what a broken reporter looks like. Once this is
+deployed, **"nothing has ever been reported" is the bug**, not the good news.
+
+**Stage 2 is Sentry, and it is blocked on the next NATIVE build** — `@sentry/react-native` carries a native
+module and cannot ride an `eas update`, which is the whole reason this stage exists. Fold it into the
+RevenueCat/paywall build. It adds native crashes and source-mapped stacks; it also changes
+`Docs/App-Store-Privacy-Labels.md` (Crash + Performance Data under Diagnostics — still no ATT prompt).
+**They are complements, not a migration:** keep this stage for the trail, which is under a privacy rule we
+control and joins to `app_events`.
+
+**⏳ ER-D5 left OPEN and stated rather than quietly shipped:** `ScreenBoundary` wraps only **2 of 77
+screens**. The global handler catches the rest, so nothing goes *unreported* — but the other 75 get no
+recovery UI, and a throw during render still blanks the screen instead of naming itself. Widening it is a
+separate pass.
