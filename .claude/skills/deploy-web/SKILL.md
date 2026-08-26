@@ -17,6 +17,39 @@ If a change must be testable on both, you run both.
 
 The PO tests the **web preview**. Deploy at the end of every pass.
 
+## ⛔ PIN THE CLI TO `22.3.0`. DO NOT USE `@latest`.
+
+**`eas-cli@22.4.0` uploads nothing and reports success.** Published 2026-08-24; found 2026-08-25 after
+the web preview 404'd for hours across three deploys, each of which printed
+`√ Promoted deployment to production`.
+
+Proof, on an identical `dist`:
+
+| version | `deploy --dry-run` payload | `assets.json` |
+|---|---|---|
+| 22.4.0 | **295 bytes** | `{}` — zero files |
+| 22.3.0 | 20,236 bytes | 61,777 bytes of real entries |
+
+Every URL 404s, including the deployment's own, with *"The worker has no matching route handler for
+this path"* — because the worker has no files at all. **Nothing in the CLI's output distinguishes this
+from a good deploy.**
+
+⚠ Verify the payload before believing a deploy that you cannot immediately load:
+
+```
+npx --yes eas-cli@22.3.0 deploy --export-dir dist --dry-run --non-interactive
+tar -xzOf deploy.tar.gz assets.json | head -c 200
+```
+
+`{}` means the upload is empty. Delete `deploy.tar.gz` afterwards — it dirties the tree and the publish
+guard will block you.
+
+⚠ **AND THE ALIAS CAN TAKE OVER FOUR MINUTES.** A good 22.3.0 deploy 404'd for ~4 minutes before going
+live. The runbook used to say ~10s and then ~2 minutes; both were too short, and impatience here is what
+caused the earlier "took prod down in between" incident. **Wait, re-check, and do not re-deploy.**
+
+---
+
 ## 0. The tree must be clean — this is not optional
 
 `expo export` bundles the **working tree**, not `HEAD`. Uncommitted edits ship;
@@ -32,7 +65,7 @@ if you see that block, commit, don't work around it.
 ## 1. Fingerprint check (before an OTA, always)
 
 ```
-npx --yes eas-cli@latest fingerprint:compare --non-interactive
+npx --yes eas-cli@22.3.0 fingerprint:compare --non-interactive
 ```
 
 If the fingerprint **changed**, the installed binary cannot accept the OTA. `eas update` will
@@ -46,7 +79,7 @@ Native config, new native modules, and SDK bumps all change it. JS-only changes 
 ```
 Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue
 npx expo export --platform web
-npx --yes eas-cli@latest deploy --prod --export-dir dist --non-interactive
+npx --yes eas-cli@22.3.0 deploy --prod --export-dir dist --non-interactive
 ```
 
 Clean `dist` first. A stale `dist` deploys yesterday's bundle over today's work.
@@ -82,7 +115,7 @@ only the new code contains.
 ## 4. OTA to the phone
 
 ```
-npx --yes eas-cli@latest update --channel production --environment production --message "<what changed, in the PO's words>" --non-interactive
+npx --yes eas-cli@22.3.0 update --channel production --environment production --message "<what changed, in the PO's words>" --non-interactive
 ```
 
 ## 5. Record it
