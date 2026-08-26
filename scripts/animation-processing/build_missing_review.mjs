@@ -33,6 +33,21 @@ if (!inPath || !outPath) {
 
 const rows = JSON.parse(fs.readFileSync(inPath, 'utf8'));
 
+/*
+ * RECOMMENDATIONS - optional, and deliberately a SEPARATE file from 'decisions.json'.
+ *
+ * A recommendation is not a decision. It is a proposed clip plus the reasoning for it, and it does
+ * nothing until the reviewer presses Accept, at which point it becomes an ordinary decision
+ * indistinguishable from a hand-made one. Keeping the two files apart is what makes that true: the
+ * downstream pipeline reads decisions and never sees a proposal, and re-running the recommender
+ * cannot overwrite an answer a human already gave.
+ *
+ * If the file is absent the page is exactly what it was before.
+ */
+const recPath = inPath.replace(/[^\\/]+$/, 'recommendations.json');
+const RECS = fs.existsSync(recPath) ? JSON.parse(fs.readFileSync(recPath, 'utf8')) : {};
+const recCount = Object.keys(RECS).length;
+
 /** `F:\a b\c.mp4` → `file:///F:/a%20b/c.mp4`. Spaces, parentheses and `#` all appear in these names. */
 const fileUrl = (p) => {
   const norm = p.replace(/\\/g, '/');
@@ -102,6 +117,16 @@ main{max-width:1180px;margin:0 auto;padding:1.2rem}
    still findable and still one Clear away from coming back. */
 .ex.dropped{opacity:.62;border-color:#4a3330;box-shadow:inset 3px 0 0 #8a5a4e}
 .ex.dropped .cands,.ex.dropped .none{display:none}
+.rec{margin:0 1.1rem .9rem;padding:.7rem .85rem;border:1px dashed var(--rule);border-radius:9px;background:var(--panel2)}
+.rec.low{border-color:#7a5a3a}
+.recline{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.4rem}
+.recbadge{font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;padding:.16rem .45rem;
+  border-radius:5px;background:var(--lift);color:#181008;font-weight:700}
+.recbadge.low{background:#7a5a3a;color:#f3e3d2}
+.recpick{font-size:.84rem}
+.recwhy{font-size:.78rem;line-height:1.5;color:var(--faint);margin:.35rem 0 .55rem}
+.recnote{font-size:.78rem;line-height:1.5;margin:.35rem 0 .55rem}
+.recoff{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--lift)}
 .note{display:block;width:100%;margin:.55rem 0 0;background:var(--panel2);color:inherit;font:inherit;
   font-size:.82rem;line-height:1.45;border:1px solid var(--rule);border-radius:8px;padding:.5rem .6rem;
   resize:vertical;min-height:2.6rem}
@@ -142,6 +167,7 @@ kbd{font:inherit;font-size:.74rem;border:1px solid var(--rule);border-radius:4px
   <button class="pill" data-tier="weak" aria-pressed="false">Weak ${counts.weak}</button>
   <button class="pill" data-tier="none" aria-pressed="false">Nothing found ${counts.none}</button>
   <button class="pill" id="hidedone" aria-pressed="false">Hide decided</button>
+  ${recCount ? `<button class="pill" id="onlyrec" aria-pressed="false">Recommended ${recCount}</button>` : ""}
   <span class="count" id="count"></span>
   <span class="count" id="sync" style="margin-left:0"></span>
   <button class="act primary" id="export">Download decisions</button>
@@ -149,9 +175,11 @@ kbd{font:inherit;font-size:.74rem;border:1px solid var(--rule);border-radius:4px
 
 <main id="list"></main>
 
+<script id="recs" type="application/json">${JSON.stringify(RECS).replace(/</g, "\\u003c")}</script>
 <script id="data" type="application/json">${JSON.stringify(rows).replace(/</g, '\\u003c')}</script>
 <script>
 const ROWS = JSON.parse(document.getElementById('data').textContent);
+const RECS = JSON.parse(document.getElementById('recs').textContent);
 const KEY = 'fl-missing-anim-decisions-v1';
 let decisions = {};
 try { decisions = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { decisions = {}; }
@@ -188,13 +216,14 @@ function setSync(msg) {
 }
 const keyOf = (r) => r.sex + '::' + r.id;
 
-let sex = 'all', tier = 'all', hideDone = false;
+let sex = 'all', tier = 'all', hideDone = false, onlyRec = false;
 
 function visible() {
   return ROWS.filter((r) =>
     (sex === 'all' || r.sex === sex) &&
     (tier === 'all' || r.confidence === tier) &&
-    (!hideDone || !decisions[keyOf(r)]));
+    (!hideDone || !decisions[keyOf(r)]) &&
+    (!onlyRec || RECS[keyOf(r)]));
 }
 
 function render() {
@@ -204,6 +233,7 @@ function render() {
   /* Counted apart from 'decided' on purpose: these are rows that will never be animated, and that is a
      number worth being able to read off the header rather than reconstructing from the file later. */
   const dropped = ROWS.filter((r) => { const d = decisions[keyOf(r)]; return d && d.dropped; }).length;
+  const pendingRec = ROWS.filter((r) => RECS[keyOf(r)] && !decisions[keyOf(r)]).length;
   /* ⚠ SURFACED IN THE HEADER, not left to be discovered by scrolling. An approximate pick with an
      empty note counts as decided everywhere else, so without this it is invisible outstanding work —
      and it is the one kind of row that cannot be used downstream as it stands. */
@@ -214,7 +244,8 @@ function render() {
   document.getElementById('count').textContent =
     rows.length + ' shown · ' + decided + ' of ' + ROWS.length + ' decided' +
     (unexplained ? ' · ' + unexplained + ' close, note still needed' : '') +
-    (dropped ? ' · ' + dropped + ' not needed' : '');
+    (dropped ? ' · ' + dropped + ' not needed' : '') +
+    (pendingRec ? ' · ' + pendingRec + ' recommended' : '');
 
   list.innerHTML = '';
   /* ⚠ CAPPED AT 120 ROWS. Each card mounts up to six <video> elements off an external drive; rendering
@@ -255,6 +286,32 @@ function render() {
           '<textarea class="note" id="n-' + esc(k) + '" rows="2" placeholder="' + (d.dropped ? 'e.g. duplicate of the barbell version' : 'e.g. bench press shown — the board sets your depth') + '">' +
           esc(d.note || '') + '</textarea></div>'
         : '');
+
+    /* The proposal, above the answers it is proposing. */
+    const rec = decisions[k] ? null : RECS[k];
+    if (rec) {
+      const low = rec.confidence === 'low';
+      const what = rec.none
+        ? 'No good match'
+        : esc(rec.name) + ' - ' + (rec.approximate ? 'close' : 'exact');
+      const panel = document.createElement('div');
+      panel.className = 'rec' + (low ? ' low' : '');
+      panel.innerHTML =
+        '<div class="recline"><span class="recbadge' + (low ? ' low' : '') + '">recommended - ' + esc(rec.confidence) + '</span>' +
+        '<span class="recpick">' + what + '</span>' +
+        (rec.offlist ? '<span class="recoff">not among the candidates below</span>' : '') + '</div>' +
+        (rec.note ? '<div class="recnote">Note it would write: ' + esc(rec.note) + '</div>' : '') +
+        '<div class="recwhy">' + esc(rec.why) + '</div>' +
+        '<button class="act primary" data-act="accept">Accept</button>';
+      panel.querySelector('[data-act="accept"]').addEventListener('click', () => {
+        decisions[k] = rec.none
+          ? { id: r.id, sex: r.sex, path: null }
+          : { id: r.id, sex: r.sex, path: rec.path, name: rec.name,
+              ...(rec.approximate ? { approximate: true, note: rec.note || '' } : {}) };
+        save(); render();
+      });
+      el.insertBefore(panel, el.querySelector('.foot'));
+    }
 
     el.querySelectorAll('.cand').forEach((b) => {
       const c = r.candidates[+b.dataset.i];
@@ -370,6 +427,12 @@ document.querySelectorAll('[data-tier]').forEach((b) => b.addEventListener('clic
 document.getElementById('hidedone').addEventListener('click', (e) => {
   hideDone = !hideDone;
   e.target.setAttribute('aria-pressed', String(hideDone));
+  render();
+});
+const onlyRecBtn = document.getElementById('onlyrec');
+if (onlyRecBtn) onlyRecBtn.addEventListener('click', (e) => {
+  onlyRec = !onlyRec;
+  e.target.setAttribute('aria-pressed', String(onlyRec));
   render();
 });
 document.getElementById('export').addEventListener('click', () => {
