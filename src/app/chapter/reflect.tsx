@@ -144,7 +144,7 @@ export default function ChapterReflectionScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(5,5,5,0.42)' }} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(5,5,5,0.42)' }} />
 
       {/* app bar — a back/cancel only on the POST path (matches the .dc). On the sealing path the screen IS
           the commitment: the only ways forward both seal (write + "Seal Chapter", or "Skip for now"). */}
@@ -274,7 +274,7 @@ export default function ChapterReflectionScreen() {
         */}
       {saved ? (
         <View style={[StyleSheet.absoluteFill, styles.savedWrap]}>
-          <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.3} overlay={{ flat: 'rgba(5,5,5,0.72)' }} />
+          <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.3} overlay={{ flat: 'rgba(5,5,5,0.72)' }} />
           <ScrollView contentContainerStyle={[styles.sealedScroll, { paddingTop: insets.top + 28, paddingBottom: 190 + insets.bottom }]} showsVerticalScrollIndicator={false}>
             <View style={styles.savedMark}>
               <Glyph d={CHECK} size={26} color={flColor.onBronze} width={2.4} />

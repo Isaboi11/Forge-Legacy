@@ -109,7 +109,7 @@ export default function AccomplishmentsScreen() {
   if (loading) {
     return (
       <View style={styles.root}>
-        <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
+        <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
         <AppBar title="Accomplishments" onBack={() => router.back()} />
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
@@ -156,7 +156,7 @@ export default function AccomplishmentsScreen() {
   // ── L-12 · list ──
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
       <AppBar
         title="Accomplishments"
         onBack={() => router.back()}
@@ -294,7 +294,7 @@ function AccomplishmentDetail({
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
       <AppBar title="" onBack={onBack} actions={<Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel="Edit" hitSlop={8} style={styles.addBtn}><Text style={styles.editLink}>Edit</Text></Pressable>} />
 
       <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
@@ -483,7 +483,7 @@ function AccomplishmentForm({
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
       <AppBar title={existing ? 'Edit Accomplishment' : 'New Accomplishment'} onClose={onCancel} />
 
       <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">

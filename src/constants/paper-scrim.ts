@@ -52,3 +52,45 @@ export function paperScrim(color: string): string {
   const alpha = m[4] === undefined ? 1 : Number(m[4]);
   return `rgba(${PAPER_SCRIM_RGB},${alpha})`;
 }
+
+/**
+ * ══ TWO TEXTURE LEVELS, AND ONLY ALABASTER HAS THEM ══
+ *
+ * PO design review, 2026-08-25: *"Across all six screens, I'm noticing the texture before I think I
+ * should… on utility-heavy screens like Workouts and the Squad feed, the same texture density competes
+ * with the information."* And, crucially: *"Not zero. Forge should never become sterile white. Just
+ * enough reduction that the content becomes the visual texture."*
+ *
+ * ⚠ WHY THIS IS A PAPER-ONLY PROBLEM, WHICH IS NOT OBVIOUS. Every functional screen draws its texture
+ * plate at full opacity under a near-black scrim. In Forge the scrim SWALLOWS the grain. `paperScrim`
+ * flips that scrim to cream — preserving its alpha exactly, which is right — but cream suppresses far
+ * less of what is underneath than near-black does, so the identical plate at the identical opacity
+ * reads much louder on paper. Nothing was made noisier; the thing that was hiding it stopped.
+ *
+ * That makes this a COLOUR change under Design System §2.0, so it lands on ONE theme. Forge does not
+ * call this function at all.
+ *
+ * ⚠ 0.62 IS THE MIDDLE OF THE RANGE THE PO NAMED (*"probably 30–40% less texture"*), not a number
+ * chosen by eye — and it is a MULTIPLIER rather than a replacement so that a screen which already
+ * chose a deliberate opacity keeps its own art direction, scaled. A flat value would have overwritten
+ * Legacy's 0.375 and every other considered choice with one number.
+ */
+export const FUNCTIONAL_TEXTURE_SCALE = 0.62;
+
+export type PaperTexture = 'atmospheric' | 'functional';
+
+/**
+ * The artwork opacity Alabaster should draw a plate at.
+ *
+ * ⚠ AN EXPLICIT `imageOpacityPaper` ALWAYS WINS. Legacy sets 0.7 on purpose — its mountains need MORE
+ * presence on cream, not less — and a level must never silently overrule a value an author reached for
+ * deliberately. The level is the default, not the authority.
+ */
+export function paperTextureOpacity(
+  level: PaperTexture,
+  imageOpacity: number,
+  imageOpacityPaper?: number,
+): number {
+  if (imageOpacityPaper !== undefined) return imageOpacityPaper;
+  return level === 'atmospheric' ? imageOpacity : imageOpacity * FUNCTIONAL_TEXTURE_SCALE;
+}

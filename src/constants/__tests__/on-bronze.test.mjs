@@ -90,3 +90,56 @@ test('bronze400 stays the ACCENT, unchanged — it is not the chip fill', () => 
   assert.equal(forge.flColor.bronze400, '#BA8654');
   assert.equal(paper.flColor.bronze400, '#A47A3D');
 });
+
+// ── THE BRONZE YOU WRITE WITH (PO design review, 2026-08-25) ─────────────────────────────────────────
+
+test('⚠ small bronze TEXT clears AA on its own ground, in both themes', () => {
+  /*
+   * PO: *"Some of the smaller bronze typography gets a little close to the background, particularly
+   * small uppercase labels and secondary actions."* Correct, and measurable: Alabaster's labels were
+   * `bronze400` #A47A3D on #F4F0E6 — **3.40:1**, under the 4.5 bar for text this size.
+   *
+   * The ground is the theme's own `base`, which is the WORST case a label sits on; every card tier is
+   * lighter in Paper and darker in Forge, so clearing base clears the rest.
+   */
+  for (const [name, t] of THEMES) {
+    const r = contrast(t.flText.bronzeLabel, t.flColor.base);
+    assert.ok(r >= AA_SMALL, `${name}: bronzeLabel on base is ${r.toFixed(2)}:1, needs ${AA_SMALL}`);
+  }
+});
+
+test('the fix is a legibility change, NOT a visible recolour', () => {
+  /*
+   * PO: *"You'd barely perceive the color difference, but readability would improve."* Held to
+   * literally — `bronzeInk` is one percent of lightness off `bronze600` at the identical hue. If a
+   * future edit drifts it toward a different colour, this fails.
+   */
+  const hue = (hex) => {
+    const h = hex.replace('#', '');
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    if (d === 0) return 0;
+    const deg = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return ((deg * 60) + 360) % 360;
+  };
+  const drift = Math.abs(hue(paper.flColor.bronzeInk) - hue(paper.flColor.bronze600));
+  assert.ok(drift < 2, `bronzeInk drifted ${drift.toFixed(1)}° from bronze600 — it must be the same bronze, only deeper`);
+});
+
+test('⚠ ORNAMENT KEEPS THE BRIGHTER BRONZE — the deepening is for text only', () => {
+  /*
+   * PO: *"I'd keep the brighter bronze for borders, icons and ornamental elements."* A 3.4:1 border is
+   * fine where a 3.4:1 word is not, and pulling icons down with the text would flatten the accent the
+   * whole light theme is built on.
+   */
+  for (const [name, t] of THEMES) {
+    assert.equal(t.flIcon.bronze, t.flColor.bronze400, `${name}: icons must stay on bronze400`);
+  }
+  assert.notEqual(paper.flText.bronzeLabel, paper.flIcon.bronze, 'paper text and paper icons must differ');
+});
+
+test('Forge is unchanged to the byte by this', () => {
+  // The legibility problem is Alabaster's alone; the token exists in Forge for shape, not for effect.
+  assert.equal(forge.flColor.bronzeInk, forge.flColor.bronze400);
+  assert.equal(forge.flText.bronzeLabel, forge.flColor.bronze400);
+});

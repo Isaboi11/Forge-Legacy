@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { flGradient, IS_PAPER } from '@/constants/foundation';
-import { paperScrim } from '@/constants/paper-scrim';
+import { paperScrim, paperTextureOpacity, type PaperTexture } from '@/constants/paper-scrim';
 import { svgStop } from '@/lib/svg-color';
 
 /**
@@ -74,6 +74,7 @@ export function ScreenBackground({
   imagePosition = 'center',
   imageOpacity = 1,
   imageOpacityPaper,
+  paperTexture = 'functional',
   overlay,
   radials,
   atmospheric = false,
@@ -99,6 +100,24 @@ export function ScreenBackground({
    * Omit it and Paper uses `imageOpacity` unchanged, which is right for every texture plate.
    */
   imageOpacityPaper?: number;
+  /**
+   * ══ HOW LOUD THE TEXTURE IS ALLOWED TO BE — ALABASTER ONLY ══
+   *
+   * PO design review: the same plate that reads as atmosphere on the Chapter hero and Legacy competes
+   * with the information on Workouts and the Squad feed. Two levels, and the DEFAULT is the quiet one
+   * because most screens in the app are functional:
+   *
+   *   · `'functional'` (default) — lists, feeds, forms, builders, settings. Texture scaled to 62%.
+   *   · `'atmospheric'`          — Chapter headers, Legacy, ceremonies, major empty states, special
+   *                                achievements. Full strength, exactly as today.
+   *
+   * ⚠ FORGE IGNORES THIS ENTIRELY. It is a colour decision and lands on one theme (Design System §2.0)
+   * — see `paperTextureOpacity` for why the problem only exists on paper in the first place.
+   *
+   * ⚠ AND AN EXPLICIT `imageOpacityPaper` STILL WINS, so Legacy's deliberate 0.7 is untouched by the
+   * default. The level sets a floor of judgement, it does not overrule one.
+   */
+  paperTexture?: PaperTexture;
   /** Per-screen darkening overlay; `null`/omitted → none (the atmospheric screens carry no dark scrim). */
   overlay?: ScreenOverlay | null;
   /** Screen-level bronze radial-glows layered over the base + overlay. */
@@ -127,7 +146,10 @@ export function ScreenBackground({
       {image != null ? (
         <Image
           source={image}
-          style={[StyleSheet.absoluteFill, { opacity: IS_PAPER ? imageOpacityPaper ?? imageOpacity : imageOpacity }]}
+          style={[
+            StyleSheet.absoluteFill,
+            { opacity: IS_PAPER ? paperTextureOpacity(paperTexture, imageOpacity, imageOpacityPaper) : imageOpacity },
+          ]}
           contentFit="cover"
           contentPosition={imagePosition}
         />

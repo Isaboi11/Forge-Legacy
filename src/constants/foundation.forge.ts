@@ -37,6 +37,16 @@ export const flColor = {
   bronze300: '#C99767',
   bronze400: '#BA8654',
   bronze600: '#765B44',
+  /**
+   * The bronze for small TEXT. Design System §2.0: the token exists in both themes (structure), the
+   * VALUE differs per theme (colour).
+   *
+   * ⚠ IDENTICAL TO `bronze400` HERE, AND THAT IS THE CORRECT VALUE RATHER THAN A PLACEHOLDER. Forge
+   * writes bronze on near-black, where #BA8654 measures far above the bar; the legibility problem this
+   * token solves is Alabaster's alone. Forge's rendering is unchanged to the byte — see the paper
+   * palette for the measurements.
+   */
+  bronzeInk: '#BA8654',
   bronzeDark: '#543D2C',
 
   greenMuted: '#5A9E68',
@@ -139,7 +149,7 @@ export const flText = {
   primary: flColor.cream100,
   secondary: flColor.gray400,
   tertiary: flColor.gray600,
-  bronzeLabel: flColor.bronze400,
+  bronzeLabel: flColor.bronzeInk,
 } as const;
 
 export const flIcon = {

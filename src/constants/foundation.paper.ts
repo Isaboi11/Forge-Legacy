@@ -46,6 +46,30 @@ export const flColor = {
   bronze300: '#BD9257',
   bronze400: '#A47A3D',
   bronze600: '#8C6B3C',
+  /**
+   * ══ THE BRONZE YOU WRITE WITH, AS OPPOSED TO THE ONE YOU DRAW WITH ══
+   *
+   * PO design review, 2026-08-25: *"Some of the smaller bronze typography gets a little close to the
+   * background, particularly small uppercase labels and secondary actions… I'd keep the brighter bronze
+   * for borders, icons and ornamental elements, and use a slightly deeper brown-bronze for small text.
+   * You'd barely perceive the color difference, but readability would improve."*
+   *
+   * Measured rather than eyeballed, against Alabaster's `base` (#F4F0E6):
+   *   · `bronze300` #BD9257 — 2.49:1
+   *   · `bronze400` #A47A3D — 3.40:1   ← what every small label used, and under the 4.5 bar
+   *   · `bronze600` #8C6B3C — 4.31:1   ← better, still short
+   *   · `bronzeInk`  #88683A — **4.51:1** on base, 4.84:1 on a lifted ivory card
+   *
+   * ⚠ IT IS ONE PERCENT OF LIGHTNESS OFF `bronze600`, AT THE IDENTICAL HUE (35.2°) AND SATURATION.
+   * That is what makes the PO's "barely perceive the difference" literally true while clearing WCAG AA
+   * for normal text — small uppercase labels are bold and tracked, but at 10px they are not "large
+   * text" by any reading of the spec, so 3.0 was never the bar they had to clear.
+   *
+   * ⚠ FOR TEXT ONLY. `flIcon.bronze` and every border token stay on `bronze400` deliberately — the PO
+   * asked for the brighter bronze to keep the ornament, and a 3.4:1 border is fine where a 3.4:1 word
+   * is not.
+   */
+  bronzeInk: '#88683A',
   bronzeDark: '#5C4726',
 
   greenMuted: '#3E7A4C',
@@ -120,7 +144,7 @@ export const flText = {
   primary: flColor.cream100,
   secondary: flColor.gray400,
   tertiary: flColor.gray600,
-  bronzeLabel: flColor.bronze400,
+  bronzeLabel: flColor.bronzeInk,
 } as const satisfies FlText;
 
 export const flIcon = {

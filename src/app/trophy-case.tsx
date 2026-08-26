@@ -202,7 +202,7 @@ export default function TrophyCaseScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
 
       {/* Identity and the tally never scroll away — the case is titled by whose it is. */}
       <View style={styles.header}>
@@ -427,7 +427,7 @@ function PodiumChip({ finish: f, onPress }: { finish: TrophyFinish; onPress: () 
 function Shell({ children, onBack }: { children: ReactNode; onBack: () => void }) {
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
       <AppBar title="Trophy Case" onBack={onBack} />
       <View style={styles.center}>{children}</View>
     </View>

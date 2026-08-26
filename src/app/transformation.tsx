@@ -128,7 +128,7 @@ export default function TransformationRoute() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
       <AppBar
         title="Transformation"
         onBack={() => router.back()}

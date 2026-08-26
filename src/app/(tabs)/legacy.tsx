@@ -218,7 +218,7 @@ export default function LegacyScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} imageOpacityPaper={0.7} overlay={{ flat: 'rgba(5,5,5,0.30)' }} scrimFade scrollY={scrollY} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.375} imageOpacityPaper={0.7} overlay={{ flat: 'rgba(5,5,5,0.30)' }} scrimFade scrollY={scrollY} />
 
       <AppBar
         title="Legacy"
@@ -518,7 +518,7 @@ function LegacyShell({
   const router = useRouter();
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.375} imageOpacityPaper={0.7} overlay={{ flat: 'rgba(5,5,5,0.30)' }} scrimFade scrollY={scrollY} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.375} imageOpacityPaper={0.7} overlay={{ flat: 'rgba(5,5,5,0.30)' }} scrimFade scrollY={scrollY} />
       <AppBar title="Legacy" avatar={<Avatar name={avatarName} src={avatarSrc} size="appBar" />} onAvatar={() => router.push('/account-settings')} />
       <View style={styles.statusWrap}>{children}</View>
     </View>

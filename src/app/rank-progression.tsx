@@ -74,7 +74,7 @@ export default function RankProgressionScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.28} overlay={{ flat: 'rgba(8,6,5,0.62)' }} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.28} overlay={{ flat: 'rgba(8,6,5,0.62)' }} />
       <AppBar title="Rank Progression" onBack={() => router.back()} />
 
       {!current ? (

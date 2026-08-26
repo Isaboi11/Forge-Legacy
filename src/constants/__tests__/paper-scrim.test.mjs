@@ -14,7 +14,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { paperScrim, DARK_SCRIM_MAX_CHANNEL, PAPER_SCRIM_RGB } from '../paper-scrim.ts';
+import { paperScrim, DARK_SCRIM_MAX_CHANNEL, PAPER_SCRIM_RGB, paperTextureOpacity, FUNCTIONAL_TEXTURE_SCALE } from '../paper-scrim.ts';
 
 /** Every darkening overlay in the app, verbatim. */
 const REAL_OVERLAYS = [
@@ -108,4 +108,40 @@ test('malformed or unrecognised input is returned rather than mangled', () => {
   // A 3-channel rgb() with no alpha IS a darkening scrim and should still flip, opaque.
   assert.equal(paperScrim('rgb(5,5,5)'), `rgba(${PAPER_SCRIM_RGB},1)`);
   assert.equal(paperScrim('not a colour'), 'not a colour');
+});
+
+// ── TWO TEXTURE LEVELS (PO design review, 2026-08-25) ────────────────────────────────────────────────
+
+test('a functional surface is quieter than an atmospheric one, by the amount the PO asked for', () => {
+  // "probably 30-40% less texture" — 0.62 is the middle, and it must stay inside that range.
+  const cut = 1 - FUNCTIONAL_TEXTURE_SCALE;
+  assert.ok(cut >= 0.3 && cut <= 0.4, `reduction is ${Math.round(cut * 100)}%, outside the 30-40% the PO named`);
+});
+
+test('⚠ NOT ZERO — Forge never becomes sterile white', () => {
+  // PO: "Not zero. Forge should never become sterile white." A future tweak toward 0 fails here.
+  assert.ok(FUNCTIONAL_TEXTURE_SCALE > 0.5, 'the texture must still be visibly present');
+  assert.ok(paperTextureOpacity('functional', 1) > 0.5);
+});
+
+test('it SCALES a considered opacity rather than replacing it', () => {
+  /* Legacy draws at 0.375 on purpose. A flat value would have overwritten that and every other
+     deliberate choice in the app with one number; a multiplier keeps the art direction. */
+  assert.equal(paperTextureOpacity('atmospheric', 0.375), 0.375);
+  assert.ok(paperTextureOpacity('functional', 0.375) < 0.375);
+  assert.ok(paperTextureOpacity('functional', 1) > paperTextureOpacity('functional', 0.375));
+});
+
+test('⚠ an explicit imageOpacityPaper always wins — a level is a default, not an authority', () => {
+  // Legacy's 0.7: its mountains need MORE presence on cream. Neither level may overrule that.
+  assert.equal(paperTextureOpacity('functional', 0.375, 0.7), 0.7);
+  assert.equal(paperTextureOpacity('atmospheric', 0.375, 0.7), 0.7);
+  // …including an explicit zero, which is a real choice and not "unset".
+  assert.equal(paperTextureOpacity('functional', 1, 0), 0);
+});
+
+test('the default level is the quiet one', () => {
+  /* Most screens in the app are lists, feeds, forms and builders. If the default were 'atmospheric'
+     the PO's complaint would persist everywhere nobody remembered to opt in. */
+  assert.equal(paperTextureOpacity('functional', 1), paperTextureOpacity(undefined ?? 'functional', 1));
 });
