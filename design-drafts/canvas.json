@@ -1,0 +1,25 @@
+{
+  "artboards": [
+    { "file": "CurrentState.dc.html", "x": 0, "y": 0, "w": 900, "h": 900, "title": "Where it stands today" },
+    { "file": "Main.dc.html", "x": 1000, "y": 0, "w": 1200, "h": 980, "title": "The architecture decision" },
+    { "file": "StickyNav.dc.html", "x": 0, "y": 1120, "w": 1440, "h": 760, "title": "Sticky nav — three states" },
+    { "file": "MotionSpec.dc.html", "x": 1560, "y": 1120, "w": 1100, "h": 1020, "title": "Motion spec" }
+  ],
+  "annotations": [
+    {
+      "id": "answer-nav",
+      "x": 1000,
+      "y": -170,
+      "w": 620,
+      "text": "Your question: tabs and pages instead of one long scroll?\n\nShort answer — pages yes, tabs no, and keep the scroll.\n\nThe scroll isn't what's hurting you. The sequence IS the pitch. What's hurting you is that there are only 4 addresses and no way to click anything."
+    },
+    {
+      "id": "answer-motion",
+      "x": 1560,
+      "y": 950,
+      "w": 520,
+      "text": "Your question: can we do animations, is it worth it?\n\nYou already do — there's a working reveal engine in index.html with reduced-motion guards and a noscript fallback.\n\nWorth it in three places. Not worth it in the five the Dribbble genre is built on."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

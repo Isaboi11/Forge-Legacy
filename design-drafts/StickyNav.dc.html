@@ -1,0 +1,120 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&display=swap">
+  <style>
+    body { margin: 0; background: #05080A; }
+    a { color: #CDA063; } a:hover { color: #BF8F4F; }
+    .fl-disp { font-family: "Playfair Display", Georgia, "Times New Roman", serif; }
+    .fl-sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .navlink { font-size: 13.5px; color: #9E9890; text-decoration: none; padding: 6px 2px; position: relative; }
+    .navlink:hover { color: #F0EDE8; }
+    .statelabel { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #666060; font-weight: 600; }
+    .cta {
+      font-size: 13px; font-weight: 600; color: #F0EDE8; text-decoration: none;
+      padding: 9px 18px; border-radius: 999px;
+      background: linear-gradient(180deg, #8A6A3E 0%, #573F24 6%, #3D2F1A 26%, #2E2314 50%);
+      border: 1px solid rgba(174,136,86,0.55);
+      box-shadow: inset 0 1px 0 rgba(222,190,148,0.42);
+      white-space: nowrap;
+    }
+  </style>
+</helmet>
+
+<div class="fl-sans" style="width: 1440px; min-height: 760px; background: #05080A; color: #F0EDE8; padding: 44px 56px; box-sizing: border-box; display: flex; flex-direction: column; gap: 30px;">
+
+  <div style="display: flex; flex-direction: column; gap: 9px;">
+    <div style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #7A6040; font-weight: 600;">Sticky nav &mdash; three states</div>
+    <h2 class="fl-disp" style="margin: 0; font-size: 38px; font-weight: 600; line-height: 1.08; letter-spacing: -0.01em;">Five anchors, one action, no dropdowns.</h2>
+    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #9E9890; max-width: 78ch;">Eleven <code style="font-size:13.5px; color:#CDA063;">h2</code> sections collapse to five anchors &mdash; a dropdown for a five-item menu is furniture, not navigation. The bar is transparent over the hero, earns its surface on scroll, and marks where you are once you are inside the argument.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 11px;">
+    <div class="statelabel">State 01 &mdash; at the top, over the hero</div>
+    <div style="border-radius: 12px; overflow: hidden; background: linear-gradient(160deg, #100B04 0%, #05080A 62%);">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: 20px 28px;">
+        <span class="fl-disp" style="font-size: 20px; font-weight: 600; letter-spacing: 0.01em; color: #F0EDE8;">Forge Legacy</span>
+        <div style="display: flex; align-items: center; gap: 26px;">
+          <a href="#chapters" class="navlink">Chapters</a>
+          <a href="#rank" class="navlink">Rank</a>
+          <a href="#coach" class="navlink">Coach</a>
+          <a href="#squad" class="navlink">Squad</a>
+          <a href="#never" class="navlink">Never</a>
+        </div>
+        <a href="#get" class="cta">Get the app</a>
+      </div>
+      <div style="padding: 8px 28px 30px; display: flex; flex-direction: column; gap: 7px;">
+        <div class="fl-disp" style="font-size: 30px; font-weight: 600; color: #F0EDE8; line-height: 1.1;">Build your story. Forge your Legacy.</div>
+        <div style="font-size: 13.5px; color: #666060;">Track your training. Keep the story of what it built.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 11px;">
+    <div class="statelabel">State 02 &mdash; scrolled: surface, hairline, condensed</div>
+    <div style="border-radius: 12px; overflow: hidden; background: #0C1013;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: 13px 28px; background: rgba(13,13,15,0.92); border-bottom: 1px solid #1A1A1E;">
+        <span class="fl-disp" style="font-size: 17px; font-weight: 600; color: #F0EDE8;">Forge Legacy</span>
+        <div style="display: flex; align-items: center; gap: 26px;">
+          <a href="#chapters" class="navlink">Chapters</a>
+          <a href="#rank" class="navlink">Rank</a>
+          <a href="#coach" class="navlink">Coach</a>
+          <a href="#squad" class="navlink">Squad</a>
+          <a href="#never" class="navlink">Never</a>
+        </div>
+        <a href="#get" class="cta" style="padding: 7px 16px; font-size: 12.5px;">Get the app</a>
+      </div>
+      <div style="padding: 20px 28px 24px; color: #666060; font-size: 13px; line-height: 1.6;">Bar height drops <strong style="color:#9E9890; font-weight:600;">62px &rarr; 48px</strong> and the wordmark <strong style="color:#9E9890; font-weight:600;">20px &rarr; 17px</strong> over 240ms on <code style="font-size:12.5px; color:#CDA063;">cubic-bezier(0.16, 1, 0.3, 1)</code> &mdash; your existing <code style="font-size:12.5px; color:#CDA063;">--fl-ease-out</code>. Background is <code style="font-size:12.5px; color:#CDA063;">--fl-surface-nav</code> with a 12px backdrop blur.</div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 24px; align-items: stretch;">
+
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 11px;">
+      <div class="statelabel">State 03 &mdash; inside a section</div>
+      <div style="border-radius: 12px; overflow: hidden; background: #0C1013; flex: 1;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 13px 24px; background: rgba(13,13,15,0.92); border-bottom: 1px solid #1A1A1E;">
+          <span class="fl-disp" style="font-size: 17px; font-weight: 600; color: #F0EDE8;">Forge Legacy</span>
+          <div style="display: flex; align-items: center; gap: 20px;">
+            <a href="#chapters" class="navlink">Chapters</a>
+            <a href="#rank" class="navlink" style="color: #F0EDE8;">Rank<span style="position:absolute; left:0; right:0; bottom:-2px; height:1.5px; background:#BF8F4F; border-radius:999px;"></span></a>
+            <a href="#coach" class="navlink">Coach</a>
+            <a href="#squad" class="navlink">Squad</a>
+            <a href="#never" class="navlink">Never</a>
+          </div>
+          <a href="#get" class="cta" style="padding: 7px 16px; font-size: 12.5px;">Get the app</a>
+        </div>
+        <div style="padding: 18px 24px 22px; color: #666060; font-size: 13px; line-height: 1.6;">A <strong style="color:#9E9890; font-weight:600;">1.5px bronze rule</strong> under the live section &mdash; no pill, no fill, no bronze box. The same <code style="font-size:12.5px; color:#CDA063;">IntersectionObserver</code> sweep you already run sets it; no new dependency.</div>
+      </div>
+    </div>
+
+    <div style="width: 380px; display: flex; flex-direction: column; gap: 11px;">
+      <div class="statelabel">Under 720px</div>
+      <div style="border-radius: 12px; overflow: hidden; background: #0C1013; flex: 1;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: rgba(13,13,15,0.92);">
+          <span class="fl-disp" style="font-size: 16px; font-weight: 600; color: #F0EDE8;">Forge Legacy</span>
+          <a href="#get" class="cta" style="padding: 8px 14px; font-size: 12px;">Get the app</a>
+        </div>
+        <div style="display: flex; gap: 8px; padding: 9px 16px 11px; overflow-x: auto; background: rgba(13,13,15,0.92); border-bottom: 1px solid #1A1A1E;">
+          <span style="font-size: 12px; color: #F0EDE8; background: #24242A; padding: 5px 12px; border-radius: 999px; white-space: nowrap;">Chapters</span>
+          <span style="font-size: 12px; color: #9E9890; padding: 5px 12px; border-radius: 999px; white-space: nowrap;">Rank</span>
+          <span style="font-size: 12px; color: #9E9890; padding: 5px 12px; border-radius: 999px; white-space: nowrap;">Coach</span>
+          <span style="font-size: 12px; color: #9E9890; padding: 5px 12px; border-radius: 999px; white-space: nowrap;">Squad</span>
+          <span style="font-size: 12px; color: #9E9890; padding: 5px 12px; border-radius: 999px; white-space: nowrap;">Never</span>
+        </div>
+        <div style="padding: 16px; color: #666060; font-size: 12.5px; line-height: 1.6;">No hamburger. Five anchors fit a scrolling chip row, and a menu that hides five items behind a tap is worse than the row it replaces. Chips are <strong style="color:#9E9890; font-weight:600;">44px</strong> tall including padding.</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

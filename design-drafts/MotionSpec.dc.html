@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&display=swap">
+  <style>
+    body { margin: 0; background: #05080A; }
+    a { color: #CDA063; } a:hover { color: #BF8F4F; }
+    .fl-disp { font-family: "Playfair Display", Georgia, "Times New Roman", serif; }
+    .fl-sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .row { display: grid; grid-template-columns: 20px minmax(0,1fr); gap: 12px; align-items: start; padding: 11px 0; border-bottom: 1px solid #1A1A1E; }
+    .row:last-child { border-bottom: none; }
+    .rowtitle { font-size: 14px; font-weight: 600; color: #F0EDE8; line-height: 1.35; }
+    .rowbody { font-size: 12.5px; line-height: 1.55; color: #9E9890; margin-top: 2px; }
+
+    /* Live demo: the rank fill. Slow, single-direction, no overshoot. */
+    .rankfill { height: 100%; background: linear-gradient(90deg, #574029 0%, #7A6040 45%, #BF8F4F 100%); border-radius: 999px; width: 8%; animation: rankgrow 7s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+    @keyframes rankgrow { 0% { width: 8%; } 62% { width: 74%; } 100% { width: 74%; } }
+    .glow { animation: breathe 6s ease-in-out infinite; }
+    @keyframes breathe { 0%, 100% { opacity: 0.30; } 50% { opacity: 0.62; } }
+    @media (prefers-reduced-motion: reduce) {
+      .rankfill { animation: none; width: 74%; }
+      .glow { animation: none; opacity: 0.45; }
+    }
+  </style>
+</helmet>
+
+<div class="fl-sans" style="width: 1100px; min-height: 1020px; background: #05080A; color: #F0EDE8; padding: 44px 48px; box-sizing: border-box; display: flex; flex-direction: column; gap: 26px;">
+
+  <div style="display: flex; flex-direction: column; gap: 9px;">
+    <div style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #7A6040; font-weight: 600;">Motion &mdash; can we, and should we</div>
+    <h2 class="fl-disp" style="margin: 0; font-size: 38px; font-weight: 600; line-height: 1.08; letter-spacing: -0.01em; max-width: 24ch;">You already can. The question is which parts deserve it.</h2>
+    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #9E9890; max-width: 76ch;">A site that promises <em style="font-style:normal; color:#F0EDE8;">&ldquo;nothing posts on its own&rdquo;</em> and <em style="font-style:normal; color:#F0EDE8;">&ldquo;we won't guilt you into training&rdquo;</em> cannot move like a slot machine without contradicting itself. Motion here should read as weight and inevitability &mdash; slow, few, one-directional. That is a brand position, not a budget limit.</p>
+  </div>
+
+  <div style="background: linear-gradient(180deg, #181A1C 0%, #131517 100%); border-radius: 12px; padding: 16px 20px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); display: flex; align-items: center; gap: 28px; flex-wrap: wrap;">
+    <div style="display: flex; flex-direction: column; gap: 3px;">
+      <span style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8FB295; font-weight: 700;">Already shipped</span>
+      <span style="font-size: 13px; color: #9E9890; line-height: 1.5;">An IntersectionObserver reveal engine with staggered beats, a <code style="font-size:12px; color:#CDA063;">noscript</code> fallback, and paused decorative loops.</span>
+    </div>
+    <div style="display: flex; gap: 22px; margin-left: auto;">
+      <div style="display: flex; flex-direction: column;"><span style="font-size: 19px; font-weight: 700; color: #F0EDE8; font-variant-numeric: tabular-nums;">12</span><span style="font-size: 10.5px; color: #666060;">keyframes</span></div>
+      <div style="display: flex; flex-direction: column;"><span style="font-size: 19px; font-weight: 700; color: #F0EDE8; font-variant-numeric: tabular-nums;">98</span><span style="font-size: 10.5px; color: #666060;">transitions</span></div>
+      <div style="display: flex; flex-direction: column;"><span style="font-size: 19px; font-weight: 700; color: #F0EDE8; font-variant-numeric: tabular-nums;">5</span><span style="font-size: 10.5px; color: #666060;">reduced-motion guards</span></div>
+      <div style="display: flex; flex-direction: column;"><span style="font-size: 19px; font-weight: 700; color: #8FB295; font-variant-numeric: tabular-nums;">0</span><span style="font-size: 10.5px; color: #666060;">new libraries needed</span></div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: start;">
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5A9E68" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"></path></svg>
+        <span style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #8FB295; font-weight: 700;">Earns it &mdash; three places</span>
+      </div>
+      <div style="background: linear-gradient(180deg, #05080A 0%, #0C0C0E 100%); border-radius: 12px; padding: 6px 18px 14px;">
+        <div class="row"><span class="fl-disp" style="font-size:15px; color:#7A6040; font-weight:600;">1</span><div><div class="rowtitle">The seal</div><div class="rowbody">Closing a chapter is one-way and heavy. It is the only irreversible act in the product, and the one moment where a slow, deliberate transition <em style="font-style:normal; color:#F0EDE8;">is</em> the message. Already built as a multi-beat scene.</div></div></div>
+        <div class="row"><span class="fl-disp" style="font-size:15px; color:#7A6040; font-weight:600;">2</span><div><div class="rowtitle">The rank ladder</div><div class="rowbody">Rank is measured in years and never goes down. A fill that advances slowly and never retreats says that better than the sentence does.</div></div></div>
+        <div class="row"><span class="fl-disp" style="font-size:15px; color:#7A6040; font-weight:600;">3</span><div><div class="rowtitle">The forge glow</div><div class="rowbody">Ambient, not triggered &mdash; a slow breath behind the hero. Already wired via <code style="font-size:11.5px; color:#CDA063;">data-settle</code> at 0.55 opacity.</div></div></div>
+      </div>
+
+      <div style="background: linear-gradient(180deg, #181A1C 0%, #131517 100%); border-radius: 12px; padding: 18px 20px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); display: flex; flex-direction: column; gap: 13px;">
+        <span style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #666060; font-weight: 600;">Live &mdash; the rank fill</span>
+        <div style="display: flex; flex-direction: column; gap: 7px;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <span class="fl-disp" style="font-size: 17px; font-weight: 600; color: #F0EDE8;">Craftsman</span>
+            <span style="font-size: 11.5px; color: #666060;">4 yrs 2 mo</span>
+          </div>
+          <div style="height: 8px; background: #1A1A1E; border-radius: 999px; overflow: hidden;"><div class="rankfill"></div></div>
+          <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: #574029; letter-spacing: 0.04em;">
+            <span>Foundation</span><span>Builder</span><span style="color:#BF8F4F;">Craftsman</span><span>Architect</span><span>Legacy</span>
+          </div>
+        </div>
+        <div style="font-size: 12px; line-height: 1.55; color: #666060; padding-top: 3px; border-top: 1px solid #24242A;">7s, <code style="font-size:11.5px; color:#CDA063;">--fl-ease-out</code>, no overshoot, no reverse. The soft-spring easing is wrong here &mdash; a bounce implies rank can fall back.</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#BF8F4F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18"></path><path d="M6 6l12 12"></path></svg>
+        <span style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #BF8F4F; font-weight: 700;">Doesn't &mdash; skip these</span>
+      </div>
+      <div style="background: linear-gradient(180deg, #05080A 0%, #0C0C0E 100%); border-radius: 12px; padding: 6px 18px 14px;">
+        <div class="row"><span style="color:#574029; font-size:14px; line-height:1.4;">&times;</span><div><div class="rowtitle">Scroll hijacking &amp; horizontal takeovers</div><div class="rowbody">The signature move of the Dribbble concept genre. It steals the one control the reader has, and your page is a long read &mdash; the worst possible candidate.</div></div></div>
+        <div class="row"><span style="color:#574029; font-size:14px; line-height:1.4;">&times;</span><div><div class="rowtitle">Magnetic buttons &amp; cursor followers</div><div class="rowbody">Desktop-only flourish that does nothing on the iPhone you are actually selling.</div></div></div>
+        <div class="row"><span style="color:#574029; font-size:14px; line-height:1.4;">&times;</span><div><div class="rowtitle">Blanket parallax</div><div class="rowbody">Fine on one hero layer. Applied to every section it turns a considered page into a showreel and costs you LCP on the 174&#8239;KB you currently serve in 173&#8239;ms.</div></div></div>
+        <div class="row"><span style="color:#574029; font-size:14px; line-height:1.4;">&times;</span><div><div class="rowtitle">Count-up stat tickers</div><div class="rowbody">You have no user count to count up to yet, and a spinning number is the exact engagement-theatre the &ldquo;four things we'll never do&rdquo; section argues against.</div></div></div>
+        <div class="row"><span style="color:#574029; font-size:14px; line-height:1.4;">&times;</span><div><div class="rowtitle">Page-load curtain</div><div class="rowbody">A deliberate delay in front of the fastest site in the comparison set. You would be spending your best measured number on a wipe.</div></div></div>
+      </div>
+
+      <div style="background: linear-gradient(180deg, #181A1C 0%, #131517 100%); border-radius: 12px; padding: 18px 20px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); display: flex; flex-direction: column; gap: 9px;">
+        <span style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #666060; font-weight: 600;">How to add it &mdash; no JS</span>
+        <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #9E9890;">Scroll-linked motion is now pure CSS. <code style="font-size:12px; color:#CDA063;">animation-timeline: view()</code> ties an animation to an element entering the viewport with no observer and no library, and silently does nothing where unsupported &mdash; your existing engine stays the floor.</p>
+        <div style="background: #0C1013; border-radius: 8px; padding: 11px 13px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; line-height: 1.65; color: #9E9890; overflow-x: auto;"><span style="color:#666060;">/* progressive enhancement */</span><br><span style="color:#CDA063;">.rank-fill</span> {<br>&nbsp;&nbsp;animation: rankgrow <span style="color:#F0EDE8;">1</span> linear;<br>&nbsp;&nbsp;animation-timeline: <span style="color:#F0EDE8;">view()</span>;<br>&nbsp;&nbsp;animation-range: entry <span style="color:#F0EDE8;">20%</span> cover <span style="color:#F0EDE8;">55%</span>;<br>}</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="background: linear-gradient(180deg, #05080A 0%, #0C0C0E 100%); border-radius: 12px; padding: 16px 20px; display: flex; align-items: flex-start; gap: 13px;">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#BF8F4F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex: none; margin-top: 1px;" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5"></path><path d="M12 16.5v.01"></path></svg>
+    <p style="margin: 0; font-size: 13.5px; line-height: 1.6; color: #9E9890;"><strong style="color:#F0EDE8; font-weight:600;">Verdict on the car-rental reference:</strong> worth it for one thing only &mdash; the confidence to let a single element carry a long, slow, unhurried move. Take that. Leave the scroll-jacking, the cursor tricks and the loader. Your page already animates; adding three deliberate moments is an afternoon, and adding thirty would cost you the restraint the copy is selling.</p>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
