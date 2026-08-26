@@ -1,5 +1,5 @@
 import { usePathname, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -224,7 +224,9 @@ export function CoachBubble() {
      */
     if (!introducing && !teaser && nudge) {
       setNudgeOpen(true);
-      void markNudge(nudge.def.id, 'shown');
+      /* ⚠ NO `shown` WRITE HERE ANY MORE. The display records it (see the effect below), and writing it
+         again on the tap would re-stamp `shown_at` later than the moment he actually said it, pushing
+         the seven-day gap out every time somebody opens the sheet to read the line properly. */
       return;
     }
     setMet(true);
@@ -252,6 +254,44 @@ export function CoachBubble() {
   const { session } = useWorkoutSession();
   const { current: ceremony } = useCeremony();
   const { status: tourStatus } = useTour();
+
+  /**
+   * ⚠ THE DISPLAY IS WHAT COUNTS AS "SHOWN" — NOT THE TAP.
+   *
+   * PO, 2026-08-26: *"coach holt as prompted me the same prompt about honors about three times now… why
+   * it's repeating even after I clicked on it, and why other things haven't come up."*
+   *
+   * `shown` used to be written from `openCoach`, so a line the athlete READ and did not tap left no
+   * trace at all. The effect above re-runs on every arrival at a home surface — and there are four of
+   * them, so switching tabs re-asked the question — and `chooseNudge` was handed an empty history each
+   * time and picked the same invitation again.
+   *
+   * ⚠ IT ALSO STARVED THE REST OF THE CATALOGUE, which is the half that is not obvious. `honors` is
+   * eligible whenever `honors > 0`, which is forever once earned, and it sits third in a strictly
+   * ordered list. An un-retired nudge at the head is not merely repetitive: nothing below it is ever
+   * reachable. The answer to *"is it because I've used everything?"* is no — `program`, `templates`,
+   * `progress`, `squads` and `metrics` were all waiting behind one row that was never written.
+   *
+   * `src/domain/coach/__tests__/nudge-repeat.test.mjs` holds both halves.
+   *
+   * ⚠ GUARDED BY EVERY SUPPRESSION BELOW. The early returns after this hook mean the coin is not on
+   * screen during a session, a ceremony, the tour, or off the four home surfaces — and a nudge recorded
+   * while invisible is one the athlete never got, spent. Hooks cannot run after a conditional return,
+   * so the conditions are repeated here rather than the effect moved.
+   *
+   * ⚠ THE REF IS PER-NUDGE, NOT A BOOLEAN. It keys on the id so a genuinely different invitation later
+   * in the same mount still records its own display.
+   */
+  const recordedShown = useRef<string | null>(null);
+  const nudgeOnScreen =
+    Boolean(nudge) && !introducing && !teaser &&
+    !session && !ceremony && tourStatus !== 'running' && HOME_SURFACES.has(pathname);
+  useEffect(() => {
+    if (!nudgeOnScreen || !nudge) return;
+    if (recordedShown.current === nudge.def.id) return;
+    recordedShown.current = nudge.def.id;
+    void markNudge(nudge.def.id, 'shown');
+  }, [nudgeOnScreen, nudge]);
 
   if (session) return null;
   if (ceremony) return null;
