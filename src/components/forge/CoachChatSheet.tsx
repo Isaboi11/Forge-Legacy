@@ -91,6 +91,7 @@ import { canDoExercise } from '@/domain/home-gym/equipment';
 import { fetchActiveProgram } from '@/data/programs-live';
 import { fetchHomeGym } from '@/data/home-gym-live';
 import { clearThread, hasMetHolt, loadThread, rememberMetHolt, saveThread } from '@/lib/coach-thread';
+import { clearsOnUnmount, type Exit } from '@/domain/coach/thread-lifecycle';
 import { forgetExperience, loadExperience, rememberExperience } from '@/lib/coach-memory';
 import {
   createProgram,
@@ -203,21 +204,40 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
   }, [rise]);
 
   /**
+   * The conversation is over, and how it ended — read by the save effect and the unmount cleanup, both
+   * far below. A ref rather than state because it must take effect on the SAME tick as the close: a
+   * `setState` would not be visible to a `say()` that resolves two ticks later, which is exactly the
+   * write this exists to stop.
+   *
+   * ⚠ DECLARED ABOVE ITS READERS, for the reason already written against `busy` further down — a hook
+   * cannot close over a `const` declared below it, and this project's react-compiler lint rejects the
+   * attempt outright rather than letting it become a stale closure. It was declared with the other state
+   * first and `collapse` and `handOff`, both of which sit up here, errored on it.
+   */
+  const ending = useRef<Exit | null>(null);
+
+  /**
    * Closing him ends the conversation. Opening him again starts a new one.
    *
    * §15.2's rolling thread meant every visit resumed mid-sentence — days later, still holding a question
    * about a session already trained. A coach you walked away from should not pick up where you left off
    * as though you never left; the athlete's own framing was that closing it should restart it.
    *
-   * ⚠ ONLY ON A DELIBERATE CLOSE — the X and the drag, both of which land here. The `onClose()` calls on
-   * the Builder hand-off paths deliberately do NOT clear: §15.3 keeps the thread across leaving FOR the
-   * builder, because that is one errand inside a single conversation, not the end of it.
+   * ⚠ THE DEFAULT IS NOW "CLEARS", AND THE HAND-OFF IS THE EXCEPTION — it used to be the other way round
+   * and that is what left the report open. This covers the three deliberate closes (the X, the scrim and
+   * the drag); every OTHER way the sheet can vanish — a session, a ceremony, the tour, or the route
+   * leaving the four home surfaces — is caught by the unmount cleanup further down. Only `handOff`
+   * survives, which is §15.3: leaving FOR the builder is one errand inside a single conversation.
    *
    * Clears the conversation, not the athlete: `clearThread` drops only the thread's own key, so the
    * remembered skill level and having met him both survive. He greets you next time; he does not
    * re-introduce himself, and he does not ask how long you have been training all over again.
    */
   const collapse = useCallback(() => {
+    /* ⚠ `clearThread` DOES BOTH HALVES. It deletes the thread AND closes the write gate in
+       `thread-lifecycle`, so a `say()` still in flight cannot put the conversation back. The gate lives
+       there rather than in a ref here because `collapse` is handed to `PanResponder.create`, which runs
+       during render, and react-compiler rejects a ref reaching render at all. */
     void clearThread();
     Animated.timing(rise, {
       toValue: 0,
@@ -226,6 +246,19 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
       useNativeDriver: true,
     }).start(() => onClose());
   }, [rise, onClose]);
+
+  /**
+   * Leave for another screen WITHOUT ending the conversation — §15.3.
+   *
+   * ⚠ THIS IS THE ONLY EXIT THAT KEEPS THE THREAD, and it has to be explicit now that the unmount
+   * cleanup clears by default. Every one of these is a hand-off: the Program Builder, a chip's `goTo`,
+   * "Change the one I have". Holt writes the outcome back into the conversation that produced it when
+   * the athlete comes back, which is the entire reason the thread survives leaving the app at all.
+   */
+  const handOff = useCallback(() => {
+    ending.current = 'hand-off';
+    onClose();
+  }, [onClose]);
 
   /* `useState(() => ...)` not `useRef(...).current` — the panHandlers are read during render, and
      react-compiler rejects reading a ref there. Created once either way. */
@@ -441,9 +474,43 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     };
   }, [profileLoading, firstName]);
 
+  /**
+   * ⚠ **NOTHING WRITES AFTER THE CONVERSATION HAS BEEN ENDED.**
+   *
+   * PO, 2026-08-26: *"with coach holt if I close him then the conversation should delete and restart."*
+   * `collapse` had cleared the thread since 2026-08-11 and it still came back, because clearing storage
+   * does not stop this effect. Half a dozen paths `say()` AFTER an `await pause(…)` — `advance`, the
+   * opener chips, the guard — and the intro beats land on a `setTimeout` of up to 1400 ms. The exit
+   * animation is 200 ms. Close him while any of those is in flight and the turn lands on a sheet that is
+   * still mounted, `thread` changes, and this effect writes the conversation straight back over the
+   * `removeItem` that just deleted it.
+   *
+   * ⚠ THE GUARD IS INSIDE `saveThread`, NOT HERE. It has to hold for every writer, and putting it in the
+   * effect would leave it true only for the one that happens to be looking. `clearThread` closes the
+   * gate as it deletes, so the two can never drift apart. See `domain/coach/thread-lifecycle.ts`.
+   */
   useEffect(() => {
     void saveThread(thread);
   }, [thread]);
+
+  /**
+   * ⚠ **AND CLOSING IS NOT ONLY THE X.** `collapse` covers the three deliberate closes — the X, the
+   * scrim and the drag — but the sheet is rendered by `CoachBubble`, which returns `null` the moment a
+   * session, a ceremony or the tour starts, or the route leaves the four home surfaces. Every one of
+   * those unmounts the conversation without going anywhere near `collapse`, and `open` stays true in the
+   * door, so the next time the bubble is allowed to render he reopens holding a conversation the athlete
+   * had walked away from. That is the same "picked up mid-sentence" complaint the 2026-08-11 fix was for.
+   *
+   * ⚠ EXCEPT A HAND-OFF, which is §15.3 and the whole reason the thread persists at all: leaving FOR the
+   * Program Builder is one errand inside a single conversation, not the end of it. Those paths go through
+   * `handOff` and are the only ones that survive.
+   */
+  useEffect(
+    () => () => {
+      if (clearsOnUnmount(ending.current)) void clearThread();
+    },
+    [],
+  );
 
   /* ── the turn cycle ────────────────────────────────────────────────────────────────────────────── */
 
@@ -1013,7 +1080,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
   const tapChip = (chip: Chip) => {
     if (chip.label === 'Change the one I have') {
       say({ kind: 'me', text: chip.label });
-      onClose();
+      handOff();
       router.push('/(tabs)/workouts');
       return;
     }
@@ -1060,7 +1127,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
       say({ kind: 'me', text: chip.label });
       say({ kind: 'holt', text: pick('import_later') });
       void setStartChoice('freestyle');
-      setTimeout(onClose, 900);
+      setTimeout(handOff, 900);
       return;
     }
 
@@ -1117,7 +1184,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     /* The only chips that leave. `goTo` is a route string the sheet pushes — nothing about training. */
     if (chip.goTo) {
       say({ kind: 'me', text: chip.label });
-      onClose();
+      handOff();
       router.push(chip.goTo as Parameters<typeof router.push>[0]);
       return;
     }
@@ -1320,7 +1387,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
   const blocks = layOut(thread);
 
   const openBuilder = () => {
-    onClose();
+    handOff();
     /*
      * ⚠ PUSH, NOT REPLACE — and this was a dead back button (PO, 2026-08-09).
      *
@@ -1351,7 +1418,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
    * saved as exactly that and never implies a warm-up it does not contain.
    */
   const leaveFor = (route: string) => {
-    onClose();
+    handOff();
     router.push(route as Parameters<typeof router.push>[0]);
   };
 
@@ -1548,7 +1615,8 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
           >
             <Path d="M12 5v14M5 12h14" />
           </HeaderAction>
-          {/* §4.9 — it collapses to the bubble; it does not clear the conversation. */}
+          {/* §4.9 — it collapses to the bubble, and it DOES end the conversation. The comment here used
+              to say the opposite; it had been wrong since 2026-08-11, when closing started clearing. */}
           <HeaderAction label="CLOSE" onPress={collapse} accessibilityLabel="Close" pad>
             <Path d="M6 6l12 12M18 6L6 18" />
           </HeaderAction>
@@ -1620,7 +1688,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
                 rebuild();
                 return;
               }
-              onClose();
+              handOff();
               router.push(built?.kind === 'day' ? '/workout-builder' : '/program-builder');
             }}
           />

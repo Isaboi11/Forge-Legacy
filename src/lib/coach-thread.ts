@@ -1,6 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { Turn } from '@/domain/coach/chat-core';
+/* ⚠ RELATIVE AND WITH THE EXTENSION, NOT `@/`. The `@/` alias above it is a TYPE import and is erased;
+   this one is a runtime import, and `node --test` cannot resolve the alias — `intro.test.mjs` reaches
+   this file through the chat core and died with ERR_MODULE_NOT_FOUND the moment this was written as
+   `@/domain/...`. Every runtime cross-import in `src/domain` is written this way for the same reason. */
+import { allowWrites, mayPersist, stopWrites } from '../domain/coach/thread-lifecycle.ts';
 
 /**
  * The conversation, kept between visits.
@@ -51,6 +56,8 @@ const MAX_TURNS = 100;
 export const isConversation = (turns: Turn[]): boolean => turns.some((t) => t.kind === 'me');
 
 export async function loadThread(): Promise<Turn[] | null> {
+  /* A sheet is opening and asking for the thread — whatever ended the last conversation is spent. */
+  allowWrites();
   try {
     const raw = await AsyncStorage.getItem(KEY);
     if (!raw) return null;
@@ -65,6 +72,10 @@ export async function loadThread(): Promise<Turn[] | null> {
 
 export async function saveThread(turns: Turn[]): Promise<void> {
   try {
+    /* ⚠ A CLEARED CONVERSATION STAYS CLEARED. `clearThread` closes this gate, so a `say()` that resolves
+       after the athlete closed him cannot write the thread back — which is what made "closing him"
+       appear not to work at all, even though the `removeItem` had always run. */
+    if (!mayPersist()) return;
     /* Nothing to keep until the athlete has said something — and writing a half-arrived introduction is
        what caused the bug above. `loadThread` would ignore it now anyway; not writing it keeps the
        stored thread honest rather than relying on the reader to disbelieve it. */
@@ -80,6 +91,9 @@ export async function saveThread(turns: Turn[]): Promise<void> {
 }
 
 export async function clearThread(): Promise<void> {
+  /* ⚠ BEFORE THE AWAIT, AND OUTSIDE THE `try`. Deleting is the easy half; the flag is what makes it
+     stick, and it must be set even if storage itself throws. */
+  stopWrites();
   try {
     await AsyncStorage.removeItem(KEY);
   } catch {
