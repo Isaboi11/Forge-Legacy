@@ -143,6 +143,69 @@ export const flColor = {
    */
   paperGrain: null as string | null,
   paperVignette: null as string | null,
+
+  // ── A CONTROL THAT CANNOT BE PRESSED ───────────────────────────────────────────
+  /**
+   * The rim and the label of a DISABLED filled button.
+   *
+   * ⚠ TRANSCRIBED FROM `Button.tsx`, NOT CHOSEN. They were hard-coded literals inside the composite —
+   *   the only hard-coded colours left in it — which made the disabled primary the one button in the
+   *   app that did not switch themes. Forge's half is byte-identical to what shipped; the whole change
+   *   is that Paper now has an answer. See `flGradient.bronzeFillDisabled` for the fill.
+   */
+  disabledBorder: 'rgba(150, 140, 122, 0.22)',
+  disabledLabel: 'rgba(240,237,232,0.42)',
+
+  // ── THE DESTRUCTIVE PLATE ──────────────────────────────────────────────────────────
+  /**
+   * Delete forever, leave squad, discard the draft — `Button`'s `destructive` variant, across 16 call
+   * sites.
+   *
+   * ⚠ TRANSCRIBED FROM `Button.tsx`, NOT CHOSEN, exactly like the disabled pair above. These were the
+   *   last four hard-coded colours in the composite library: a near-black maroon fill with two red rims
+   *   and a faint red label, which is a cold dangerous plate on Forge and a black slab on Alabaster.
+   *   Forge's half is byte-identical to what shipped.
+   *
+   * The ENABLED label is not here on purpose — it already reads `flColor.redMuted`, which is a token
+   * and was already correct in both palettes.
+   */
+  destructiveFill: '#171111',
+  destructiveBorder: 'rgba(150, 74, 66, 0.72)',
+  destructiveBorderDisabled: 'rgba(120, 74, 70, 0.30)',
+  destructiveLabelDisabled: 'rgba(190, 90, 76, 0.34)',
+
+  /**
+   * The other two disabled labels — `Button`'s `secondary` and `text` roles. Same transcription, same
+   * reason: both were pale-on-dark literals, and both are the wrong way round on cream.
+   */
+  secondaryLabelDisabled: 'rgba(240,237,232,0.34)',
+  textLabelDisabled: 'rgba(219, 170, 104, 0.4)',
+
+  // ── THE CARDIO BLOCK ─────────────────────────────────────────────────────────────
+  /**
+   * `CardioBlockCard`'s own grounds — the card, the instrument band across its top, and the plate the
+   * hand-drawn route placeholder is painted on.
+   *
+   * ⚠ TRANSCRIBED FROM `CardioBlockCard.tsx`, NOT CHOSEN. Every one was a literal, and the card was the
+   *   clearest case in the app of the failure the two-theme rule exists to catch: the GROUND was frozen
+   *   near-black while every colour ON it — `cream100`, `gray600`, `surfaceRecessed`, `bronze400` — is a
+   *   role token that flipped correctly. On Alabaster that painted Paper's dark ink title onto a black
+   *   card, so “Outdoor Run” was invisible while the segmented control beside it was cream.
+   *
+   * ⚠ THE BLUE CAST IS REAL AND IS KEPT. These are cooler than `charcoal800`/`charcoal900` — #0D1116
+   *   against #131517 — because the band reads as an instrument panel rather than as a card surface.
+   *   Reusing the charcoal ramp would have been tidier and would have changed the dark theme.
+   */
+  cardioCard: '#0D1116',
+  cardioBandOutdoor: '#080C10',
+  cardioBandIndoor: '#0A0E13',
+  /** The route placeholder's radial: bright core, dark edge. Also the colour of its bottom scrim. */
+  cardioBandCore: '#131A20',
+  cardioBandEdge: '#080C10',
+  /** The drawn map grid under the placeholder trace — no tiles, no imagery. */
+  cardioGrid: 'rgba(191,143,79,0.045)',
+  /** An unfilled progress track — the groove `goalFill` runs along. */
+  progressTrack: 'rgba(255,255,255,0.06)',
 } as const;
 
 export const flText = {
@@ -247,6 +310,18 @@ export const flGradient = {
     locations: [0, 0.06, 0.26, 0.5, 0.72, 0.92, 0.97, 1],
     ...VERTICAL,
   },
+  /**
+   * The same button with nothing behind it — a dead plate: no bronze, no sheen, no glow.
+   *
+   * ⚠ THE VALUES ARE `Button.tsx`'S OLD `DISABLED_FILL_COLORS` VERBATIM, so Forge renders exactly what
+   *   it rendered before. It is a gradient rather than a flat fill only because the component feeds one
+   *   `LinearGradient` for all three states; two near-identical stops are the honest way to say “flat”
+   *   without branching the element.
+   */
+  bronzeFillDisabled: {
+    colors: ['#1C1E22', '#15171B'],
+    ...VERTICAL,
+  },
   /** Faint warm wash inside the Mission Card, fading out by ~42% down the card. */
   missionCardWash: {
     colors: ['rgba(198,154,110,0.07)', 'rgba(198,154,110,0)'],
@@ -296,6 +371,15 @@ export const flShadow = {
   sheet: '0 -18px 44px rgba(0,0,0,0.7), inset 0 1px 0 rgba(198,156,100,0.22)',
   /** The live/online dot's halo. Distinct from `presenceDotGlow` — a different green, historically. */
   statusOnlineGlow: '0 0 6px rgba(90,158,104,0.55)',
+  /**
+   * Coach Holt's floating medallion — the rim that separates the coin from whatever it hovers over,
+   * its badge glow, and the float shadow, in that order.
+   *
+   * ⚠ TRANSCRIBED FROM `HoltMark.tsx`'S OLD `BUBBLE_SHADOW`, so Forge is unchanged to the byte. It was
+   *   a template literal in that file with two black `rgba(0,0,0,…)` terms baked in, which is fine over
+   *   near-black and is dirt on cream. Paper states its own.
+   */
+  coachMarkFloat: '0 0 0 1px rgba(0,0,0,0.5), 0 0 16px rgba(181, 138, 97, 0.28), 0 12px 28px rgba(0,0,0,0.4)',
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────

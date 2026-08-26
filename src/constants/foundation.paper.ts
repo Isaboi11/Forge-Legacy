@@ -138,6 +138,103 @@ export const flColor = {
     'repeating-linear-gradient(94deg, rgba(122,104,78,0.022) 0 1px, rgba(255,255,255,0) 1px 3px), repeating-linear-gradient(4deg, rgba(122,104,78,0.016) 0 1px, rgba(255,255,255,0) 1px 4px)',
   paperVignette:
     'radial-gradient(120% 78% at 50% -12%, rgba(255,252,246,0.95) 0%, rgba(255,252,246,0) 52%), radial-gradient(105% 82% at 50% 112%, rgba(122,100,66,0.10) 0%, rgba(122,100,66,0) 58%), radial-gradient(78% 100% at -8% 50%, rgba(122,100,66,0.07) 0%, rgba(122,100,66,0) 46%), radial-gradient(78% 100% at 108% 50%, rgba(122,100,66,0.07) 0%, rgba(122,100,66,0) 46%)',
+
+  // ── A CONTROL THAT CANNOT BE PRESSED ───────────────────────────────────────────
+  /**
+   * ⚠ THE RIM IS WARM, NEVER GREY. Forge's `rgba(150,140,122,0.22)` is a cool ash edge that only works
+   *   because it sits on near-black; the same value on cream is a smudge. `rgba(122,104,78,…)` is the
+   *   warm hairline the rest of this file already draws with — `borderInset` and `paperGrain` both
+   *   use it — at the weight of a hairline rather than a border, because the plate below it is doing
+   *   the work of saying “not a button”.
+   */
+  disabledBorder: 'rgba(122,104,78,0.28)',
+  /**
+   * The label on a dead plate, and the one value here that is MEASURED rather than picked.
+   *
+   * Forge's disabled label composites to `#737373` on its own fill — **3.67:1**. Matching that ratio
+   * rather than matching the alpha is the whole point: a 42%-opacity cream on cream is invisible, and
+   * an inert control has to stay READABLE while looking untouchable. `#756D60` on the plate below
+   * measures **3.70:1**, so the button says the same thing with the same force in both themes.
+   *
+   * ⚠ DELIBERATELY BELOW 4.5:1. WCAG 1.4.3 exempts inactive controls, and a disabled label that met
+   *   the text bar would out-shout the enabled secondary sitting next to it.
+   */
+  disabledLabel: '#756D60',
+
+  // ── THE DESTRUCTIVE PLATE ──────────────────────────────────────────────────────────
+  /**
+   * ⚠ DANGER ON PAPER IS A WASH, NOT A DARK PLATE. Forge fills the destructive button with `#171111` —
+   *   near-black with a red cast — because on that ground “dangerous” reads as *cold*. Cream has no such
+   *   move: the same fill is simply the blackest object on the page, and it made Delete Forever the most
+   *   eye-catching control in every sheet it appears in.
+   *
+   * ⚠ IT IS THIS FILE'S OWN `dangerBg` MADE OPAQUE, not a new colour. `rgba(166,64,47,0.08)` composited
+   *   over the sheet ground (`#FBF9F3`) is `#F4EAE3`; this is that, a hair warmer. Measured: **1.14:1**
+   *   against the sheet — a tint you notice only next to the plain surface beside it — while
+   *   `redMuted` on it still measures **5.16:1**, so the word DELETE clears AA on its own plate.
+   */
+  destructiveFill: '#F5E8E3',
+  /** `dangerBorder`'s value — the rim carries the warning that the fill no longer shouts. */
+  destructiveBorder: 'rgba(166,64,47,0.45)',
+  destructiveBorderDisabled: 'rgba(166,64,47,0.18)',
+  /**
+   * ⚠ THE ONE PLACE PAPER DOES NOT MATCH FORGE'S PRESENCE, AND IT IS DELIBERATE. Forge's disabled
+   *   destructive label composites to `#502A25` on its own fill — **1.51:1**, which is not faint, it is
+   *   invisible. Reproducing that ratio on cream gives roughly `#E0CCC5`: a button with no legible text
+   *   at all. **2.75:1** keeps the word readable while leaving it clearly out of reach, which is the
+   *   same job the primary's disabled label does at 3.70.
+   */
+  destructiveLabelDisabled: '#B2827A',
+
+  /**
+   * The other two disabled labels — `Button`'s `secondary` and `text` roles, both MEASURED against
+   * Forge rather than picked, the way `disabledLabel` was.
+   *
+   *   · secondary — Forge composites to `#5E5E5E` on `charcoal800`: **2.82:1**. `#9C9488` on Paper's
+   *     `charcoal800` (#F9F6EF) measures **2.78**.
+   *   · text — Forge composites to `#5F4E35` on the canvas: **2.39:1**. `#B49B72` on Paper's canvas
+   *     (#F6F2E8) measures **2.39**, the same number.
+   *
+   * ⚠ BOTH SIT BELOW THE PRIMARY'S 3.70 ON PURPOSE, in both themes. A greyed-out “View all →” should be
+   *   quieter than a greyed-out FINISH WORKOUT; the ranking Forge chose is preserved, not flattened.
+   */
+  secondaryLabelDisabled: '#9C9488',
+  textLabelDisabled: '#B49B72',
+
+  // ── THE CARDIO BLOCK ─────────────────────────────────────────────────────────────
+  /**
+   * ⚠ THE CARD JOINS THE CARD FAMILY; THE BAND BECOMES A RECESS. That is the whole translation, and it
+   *   is the one the rest of this file already makes everywhere else.
+   *
+   * Forge draws the cardio block as a near-black slab with an even darker instrument band across its
+   * top — the band is BELOW the card, cut into it. Paper cannot say “below” by going darker than the
+   * page in absolute terms, but it says it the same way every other recess in this file does: the card
+   * sits a step above the canvas in warm ivory, and the band sits on `surfaceRecessed`.
+   *
+   * ⚠ `cardioBandOutdoor` IS `surfaceRecessed` EXACTLY (#E7E0D0), not a value chosen to look like it.
+   *   The band is a recess; there is already a token for what a recess is worth on paper. Indoor stays
+   *   one step lighter than outdoor, preserving the ordering Forge chose (#0A0E13 over #080C10) rather
+   *   than inventing a new relationship between the two.
+   */
+  cardioCard: '#FBF8F1',
+  cardioBandOutdoor: '#E7E0D0',
+  cardioBandIndoor: '#EBE5D6',
+  /**
+   * The placeholder radial. Sense preserved: Forge's core is LIGHTER than its edge, so Paper's is too —
+   * a soft bloom at the top of the plate rather than an inverted one.
+   */
+  cardioBandCore: '#F1ECE0',
+  cardioBandEdge: '#E7E0D0',
+  /**
+   * ⚠ STRONGER THAN FORGE'S, AND IT HAS TO BE. Forge draws the grid at `rgba(191,143,79,0.045)` — a
+   *   4.5% bronze line, which is legible because it sits on near-black. The identical value on a cream
+   *   plate is nothing at all: the placeholder would lose its map grid entirely and read as a blank
+   *   rectangle with a dashed squiggle. `rgba(122,104,78,0.10)` is this file's warm hairline ink at the
+   *   weight that survives the ground it is on.
+   */
+  cardioGrid: 'rgba(122,104,78,0.10)',
+  /** ⚠ DARKENS. Forge's groove is a white wash on black; the same groove on paper must remove light. */
+  progressTrack: 'rgba(35,31,26,0.09)',
 } as const satisfies FlColor;
 
 export const flText = {
@@ -231,6 +328,25 @@ export const flGradient = {
     locations: [0, 0.5, 1],
     ...VERTICAL,
   },
+  /**
+   * A DEAD PLATE, NOT A DARK ONE — and this is the fix the PO asked for.
+   *
+   * PO, looking at Active Workout in Alabaster with no set logged yet: *“that color I gave you for the
+   * finish workout is because I hadn’t completed any set. So it’s showing that I can’t click it, but it
+   * should be a better color than that still.”* The state was right and the colour was Forge's: a
+   * near-black slab, which on a cream page is the LOUDEST thing in the footer. The one button you
+   * cannot press was out-ranking the one you can.
+   *
+   * ⚠ IT GOES DOWN INTO THE PAGE, NOT UP OFF IT. The top stop is `surfaceRecessed` exactly — the same
+   *   value a cut-in recess uses — and it settles one step darker. Measured against the action bar's
+   *   own `charcoal900` (#F6F2E8) it is **1.23:1**: present enough to read as a control, far too flat
+   *   to read as an offer. `Button.tsx` drops `flShadow.buttonPrimary` when disabled, so there is no
+   *   lift under it either; a recess with a drop shadow is a contradiction.
+   */
+  bronzeFillDisabled: {
+    colors: ['#E7E0D0', '#DED6C4'],
+    ...VERTICAL,
+  },
   /** `--fl-card-hero-wash` — the faint bronze wash over the hero card. */
   missionCardWash: {
     colors: ['rgba(164,122,61,0.05)', 'rgba(164,122,61,0)'],
@@ -278,6 +394,22 @@ export const flShadow = {
   sheet: '0 -4px 8px rgba(70,58,42,0.08), 0 -28px 64px -20px rgba(70,58,42,0.38), inset 0 1px 0 rgba(255,255,255,0.9)',
   /** `--fl-status-online-glow`. */
   statusOnlineGlow: '0 0 6px rgba(47,125,80,0.35)',
+  /**
+   * Coach Holt's floating medallion.
+   *
+   * ⚠ THE RIM STOPS BEING A RING. Forge separates the coin from the screen with a hard black one
+   *   (`0 0 0 1px rgba(0,0,0,0.5)`), which is the right instinct on near-black — a dark rim reads as the
+   *   shadowed edge of a raised object. On cream the identical ring reads as a hole cut in the page, and
+   *   it is the first thing the eye lands on. It is also no longer needed: the Paper mark is struck in
+   *   bronze (see `HoltMark`), so the coin separates itself from the page by being metal. What is left
+   *   is a warm hairline at the weight of the coin's own shadowed edge — enough to keep the circle crisp
+   *   against the antialiasing, not enough to outline it.
+   *
+   * ⚠ AND THE FLOAT IS WARM, per this file's rule — `rgba(70,58,42,…)`, never black. The glow term is
+   *   `glowBadge` unchanged; it was already themed and already correct.
+   */
+  coachMarkFloat:
+    '0 0 0 1px rgba(70,58,42,0.16), 0 0 16px rgba(164,122,61,0.20), 0 10px 24px -10px rgba(70,58,42,0.34)',
 } as const satisfies FlShadow;
 
 // ─────────────────────────────────────────────────────────────────────────────
