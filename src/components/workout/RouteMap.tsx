@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import MapView, { Polyline, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 
-import { flColor } from '@/constants/foundation';
+import { IS_PAPER, flColor } from '@/constants/foundation';
 import { regionFor, type LatLng } from '@/domain/run/route-region';
 
 /**
@@ -58,10 +58,12 @@ export interface RouteMapProps {
   onPress?: () => void;
   /** Draw start/end pins. Off inline — at 140px they cover the route they mark. */
   showEnds?: boolean;
+  /** Whether `points` is the whole run rather than the stored, trimmed shape. Changes what the pins say. */
+  whole?: boolean;
   testID?: string;
 }
 
-export function RouteMap({ points, height, interactive = false, onPress, showEnds = false, testID }: RouteMapProps) {
+export function RouteMap({ points, height, interactive = false, onPress, showEnds = false, whole = false, testID }: RouteMapProps) {
   const ref = useRef<MapView | null>(null);
   const region = regionFor(points);
 
@@ -98,8 +100,13 @@ export function RouteMap({ points, height, interactive = false, onPress, showEnd
         rotateEnabled={interactive}
         pitchEnabled={interactive}
         toolbarEnabled={false}
-        /* The app is dark everywhere; a bright map inside it reads as a hole punched in the screen. */
-        userInterfaceStyle="dark"
+        /*
+         * ⚠ THIS SAID “the app is dark everywhere” AND PINNED `"dark"`. That stopped being true when
+         * Alabaster shipped: a dark Apple Maps tile set inside a cream card is the same hole punched in
+         * the screen, just the other way round. Apple renders the light tile set for `"light"`, so the
+         * map matches the app in both themes instead of matching one of them.
+         */
+        userInterfaceStyle={IS_PAPER ? 'light' : 'dark'}
         showsUserLocation={false}
         showsMyLocationButton={false}
         showsCompass={interactive}
@@ -122,8 +129,18 @@ export function RouteMap({ points, height, interactive = false, onPress, showEnd
               labels say so, because a pin reading "Start" on a point 200 m into the run is a small lie
               told confidently, and the caption alone is easy to miss.
             */}
-            <Marker coordinate={points[0]} title="Route begins here" description="The first 200 m are trimmed for privacy" pinColor={flColor.bronze400} />
-            <Marker coordinate={points[points.length - 1]} title="Route ends here" description="The last 200 m are trimmed for privacy" pinColor={flColor.bronze300} />
+            <Marker
+              coordinate={points[0]}
+              title={whole ? 'Start' : 'Route begins here'}
+              description={whole ? undefined : 'The first 200 m are trimmed for privacy'}
+              pinColor={flColor.bronze400}
+            />
+            <Marker
+              coordinate={points[points.length - 1]}
+              title={whole ? 'Finish' : 'Route ends here'}
+              description={whole ? undefined : 'The last 200 m are trimmed for privacy'}
+              pinColor={flColor.bronze300}
+            />
           </>
         ) : null}
       </MapView>

@@ -62,7 +62,7 @@ import {
   type UnitSystem,
 } from '@/domain/run/run-core';
 import { MIN_MAPPABLE_MI, routeForStorage } from '@/domain/run/route-privacy';
-import { storedRouteToLatLng } from '@/domain/run/route-region';
+import { storedRouteToLatLng, trackToLatLng } from '@/domain/run/route-region';
 import { RouteMap } from './RouteMap';
 import { RouteSheet } from './RouteSheet';
 import type { SessionExercise } from '@/domain/workout/types';
@@ -505,7 +505,36 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
    * anyway. The shape while you run is a progress indicator; the map afterwards is the artefact.
    */
   const storedRoute = traced ? storedRouteToLatLng(result?.route) : [];
-  const hasMap = storedRoute.length > 1;
+  /**
+   * ══ THE WHOLE RUN, WHILE THE APP STILL HAS IT ══
+   *
+   * PO, 2026-08-26: *“I want the whole run on the map. The whole cutting off part of the run I don't
+   * want that.”*
+   *
+   * ⚠ THIS DOES NOT TOUCH D-RTE-1, AND IT MUST NOT. The stored polyline is trimmed 200 m at each end
+   *   BEFORE it is written (`route-privacy.ts`), which is the condition under which
+   *   `Route-And-Elevation-Persistence-Amendment-001.md` lifted the outright ban on keeping route data
+   *   at all. Nothing here changes what reaches the database — the front door is still never persisted.
+   *
+   * What changes is that the card stops throwing away something it already has. `useRunTracker.stop()`
+   * commits the finished track and leaves it standing, so for as long as this card is mounted after a
+   * tracked bout, `tracker.track` IS the whole run, untrimmed, in memory. Drawing the stored shape
+   * instead was showing the athlete less than the app was holding, for no privacy gain: the amendment's
+   * distinction is that *“a display-time rule protects the athlete from the screen; a write-time rule
+   * protects them from the system”*, and it chose the write-time one precisely so the screen would not
+   * have to lie.
+   *
+   * ⚠ IT IS THIS SESSION ONLY, AND THAT LIMIT IS DATA, NOT POLICY. Re-open the same workout tomorrow and
+   *   `tracker.track` is empty, because the ends were never written down — the map falls back to the
+   *   stored shape and says so. Making history whole too would mean storing the front door, which is a
+   *   different decision and belongs to the PO, not to this file.
+   */
+  const fullRoute = traced && result?.source === 'tracked' ? trackToLatLng(tracker.track) : [];
+  /* Only ever an UPGRADE of a map that was going to be drawn anyway. A bout too short to store a route
+     keeps its “too short to map” answer rather than quietly gaining a map of the athlete's street. */
+  const wholeRun = storedRoute.length > 1 && fullRoute.length > 1;
+  const mapRoute = wholeRun ? fullRoute : storedRoute;
+  const hasMap = mapRoute.length > 1;
   /**
    * Saved, outdoors, GPS measured it — and it is STILL too short to hold a route.
    *
@@ -638,7 +667,8 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
         <RouteSheet
           visible={mapOpen}
           onClose={() => setMapOpen(false)}
-          points={storedRoute}
+          points={mapRoute}
+          whole={wholeRun}
           summary={`${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)}`}
         />
       ) : null}
@@ -692,26 +722,30 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
           <>
             {/* A logged run gets tiles and streets; everything else keeps the traced band. */}
             {hasMap ? (
-              <RouteMap points={storedRoute} height={BAND_H} onPress={() => setMapOpen(true)} testID="cardio-route-map" />
+              <RouteMap points={mapRoute} height={BAND_H} onPress={() => setMapOpen(true)} testID="cardio-route-map" />
             ) : (
             <Svg width="100%" height={BAND_H} viewBox="0 0 372 126" pointerEvents="none">
               <Defs>
                 <RadialGradient id="cbg" cx="50%" cy="12%" r="130%">
-                  <Stop offset="0" stopColor="#131A20" />
-                  <Stop offset="1" stopColor="#080C10" />
+                  {/* ⚠ `stopOpacity={1}` IS REQUIRED, NOT NOISE — `svg-gradient-stops.test.mjs` makes any
+                      computed `stopColor` state its alpha, because `react-native-svg` silently drops the
+                      alpha out of an rgba string and paints the stop solid on device. Both tokens are
+                      opaque hex in both palettes, so 1 is the honest declaration rather than a guess. */}
+                  <Stop offset="0" stopColor={flColor.cardioBandCore} stopOpacity={1} />
+                  <Stop offset="1" stopColor={flColor.cardioBandEdge} stopOpacity={1} />
                 </RadialGradient>
                 <LinearGradient id="cscrim" x1="0" y1="1" x2="0" y2="0">
-                  <Stop offset="0" stopColor="#080C10" stopOpacity={0.9} />
-                  <Stop offset="1" stopColor="#080C10" stopOpacity={0} />
+                  <Stop offset="0" stopColor={flColor.cardioBandEdge} stopOpacity={0.9} />
+                  <Stop offset="1" stopColor={flColor.cardioBandEdge} stopOpacity={0} />
                 </LinearGradient>
               </Defs>
               <Rect x={0} y={0} width={372} height={126} fill="url(#cbg)" />
               {/* A faint bronze map grid, drawn rather than tiled — no map library, no imagery. */}
               {Array.from({ length: 5 }, (_, i) => (
-                <Rect key={`h${i}`} x={0} y={i * 30} width={372} height={1} fill="rgba(191,143,79,0.045)" />
+                <Rect key={`h${i}`} x={0} y={i * 30} width={372} height={1} fill={flColor.cardioGrid} />
               ))}
               {Array.from({ length: 13 }, (_, i) => (
-                <Rect key={`v${i}`} x={i * 30} y={0} width={1} height={126} fill="rgba(191,143,79,0.045)" />
+                <Rect key={`v${i}`} x={i * 30} y={0} width={1} height={126} fill={flColor.cardioGrid} />
               ))}
               {/* THE ROUTE IS THE REAL ONE or it is visibly not a route at all.
                   With fixes in hand, this is the athlete's own trace, drawn from the track. With none,
@@ -812,7 +846,9 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                        that the line is short at both ends on purpose. Without one it stays the numbers —
                        unless the REASON there is no map is the trim, which has to be said outright. */
                     hasMap
-                    ? `${d1(result?.distanceMi)} ${dU} · tap the map · ends trimmed for privacy`
+                    ? wholeRun
+                      ? `${d1(result?.distanceMi)} ${dU} · tap the map`
+                      : `${d1(result?.distanceMi)} ${dU} · tap the map · ends trimmed for privacy`
                     : tooShortToMap
                       ? `${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)} · too short to map`
                       : `${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)}`
@@ -1422,7 +1458,7 @@ const styles = StyleSheet.create({
   cueText: { fontFamily: flFont.sans, fontSize: 9.5, letterSpacing: 1.3, color: flColor.bronze400 },
   cueTextOn: { color: flColor.greenMuted },
   /* The distance goal, along the foot of the band. */
-  goalTrack: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, backgroundColor: 'rgba(255,255,255,0.06)' },
+  goalTrack: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, backgroundColor: flColor.progressTrack },
   goalFill: { height: 3, backgroundColor: flColor.bronze400 },
   goalFillMet: { backgroundColor: flColor.greenMuted },
   /**
@@ -1431,11 +1467,24 @@ const styles = StyleSheet.create({
    * content while the parent never overflows, putting the clipped region out of reach rather than merely
    * below the fold. The strength cards don't expose this because they don't clip.
    */
-  card: { flexGrow: 0, flexShrink: 0, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: '#0D1116', overflow: 'hidden', boxShadow: flShadow.card },
+  /*
+   * ⚠ THE GROUND WAS THE ONLY THING HERE THAT DID NOT SWITCH THEMES, AND IT BROKE THE WHOLE CARD.
+   *
+   * PO, 2026-08-26: *“This is supposed to be the light version for running, but I'm sure is all the
+   * cardio.”* Right on both counts — nothing about this is running-specific, every cardio activity
+   * draws this card.
+   *
+   * `backgroundColor: '#0D1116'` was a literal while every colour painted ON it is a role token. So on
+   * Alabaster the card kept Forge's near-black slab and then wrote Paper's DARK INK title onto it:
+   * “Outdoor Run” disappeared into the ground, the sub-line went muddy, and the segmented control and
+   * stat tile — both correctly cream — sat inside a black box. The two-theme rule's exact failure mode,
+   * and the compiler cannot see it: a frozen ground is not a missing token, it is a present literal.
+   */
+  card: { flexGrow: 0, flexShrink: 0, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.cardioCard, overflow: 'hidden', boxShadow: flShadow.card },
 
   band: { height: BAND_H, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700, position: 'relative', justifyContent: 'center' },
-  bandOutdoor: { backgroundColor: '#080C10' },
-  bandIndoor: { backgroundColor: '#0A0E13' },
+  bandOutdoor: { backgroundColor: flColor.cardioBandOutdoor },
+  bandIndoor: { backgroundColor: flColor.cardioBandIndoor },
   belt: { position: 'absolute', top: -28, left: 0, right: 0, bottom: -28 },
   beltLine: { position: 'absolute', left: 0, right: 0, height: 2, backgroundColor: 'rgba(191,143,79,0.085)' },
   bandCentre: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: 7 },

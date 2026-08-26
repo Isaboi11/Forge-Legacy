@@ -1,7 +1,7 @@
 import { Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { flColor, flFont } from '@/constants/foundation';
-import { ROUTE_TRIM_NOTE, type LatLng } from '@/domain/run/route-region';
+import { ROUTE_TRIM_NOTE, WHOLE_RUN_NOTE, type LatLng } from '@/domain/run/route-region';
 import { RouteMap } from './RouteMap';
 
 /**
@@ -25,9 +25,18 @@ interface Props {
   points: readonly LatLng[];
   /** "3.01 mi · 31:07" — the numbers, restated over the shape they came from. */
   summary?: string;
+  /**
+   * Whether `points` is the ENTIRE run rather than the stored, trimmed shape.
+   *
+   * ⚠ IT GATES §8.7'S REQUIRED SENTENCE, so it has to be right. The note exists because a line shorter
+   *   than the distance beside it reads as lost miles; printing it over a line that is NOT short would
+   *   be the same defect pointed the other way — telling the athlete their map is incomplete when they
+   *   are looking at all of it. Defaults false: a caller that says nothing gets the cautious sentence.
+   */
+  whole?: boolean;
 }
 
-export function RouteSheet({ visible, onClose, points, summary }: Props) {
+export function RouteSheet({ visible, onClose, points, summary, whole = false }: Props) {
   const { height } = useWindowDimensions();
 
   return (
@@ -43,7 +52,7 @@ export function RouteSheet({ visible, onClose, points, summary }: Props) {
         </View>
 
         {/* Full bleed minus the chrome. `interactive` turns on every gesture at once — see RouteMap. */}
-        <RouteMap points={points} height={height - 168} interactive showEnds testID="route-sheet-map" />
+        <RouteMap points={points} height={height - 168} interactive showEnds whole={whole} testID="route-sheet-map" />
 
         <View style={styles.footer}>
           {summary ? <Text style={styles.summary}>{summary}</Text> : null}
@@ -53,7 +62,7 @@ export function RouteSheet({ visible, onClose, points, summary }: Props) {
             An athlete comparing this against their distance would otherwise reasonably conclude the app
             had lost their miles, which is the exact complaint this whole piece of work started from.
           */}
-          <Text style={styles.note}>{ROUTE_TRIM_NOTE}</Text>
+          <Text style={styles.note}>{whole ? WHOLE_RUN_NOTE : ROUTE_TRIM_NOTE}</Text>
         </View>
       </View>
     </Modal>

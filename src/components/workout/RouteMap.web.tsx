@@ -53,21 +53,24 @@ export function RouteMap({ points, height, interactive = false, onPress, testID 
     >
       <Svg width="100%" height={height} viewBox={`0 0 ${W} ${H}`} pointerEvents="none">
         <Defs>
+          {/* ⚠ THE SAME PLATE `CardioBlockCard` DRAWS, AND NOW THE SAME TOKENS. Both were literal
+              copies of each other, so both were frozen near-black on Alabaster. */}
           <RadialGradient id="rmbg" cx="50%" cy="12%" r="130%">
-            <Stop offset="0" stopColor="#131A20" />
-            <Stop offset="1" stopColor="#080C10" />
+            {/* ⚠ See the twin in `CardioBlockCard` — a computed `stopColor` must state its opacity. */}
+            <Stop offset="0" stopColor={flColor.cardioBandCore} stopOpacity={1} />
+            <Stop offset="1" stopColor={flColor.cardioBandEdge} stopOpacity={1} />
           </RadialGradient>
           <LinearGradient id="rmscrim" x1="0" y1="1" x2="0" y2="0">
-            <Stop offset="0" stopColor="#080C10" stopOpacity={0.9} />
-            <Stop offset="1" stopColor="#080C10" stopOpacity={0} />
+            <Stop offset="0" stopColor={flColor.cardioBandEdge} stopOpacity={0.9} />
+            <Stop offset="1" stopColor={flColor.cardioBandEdge} stopOpacity={0} />
           </LinearGradient>
         </Defs>
         <Rect x={0} y={0} width={W} height={H} fill="url(#rmbg)" />
         {Array.from({ length: 5 }, (_, i) => (
-          <Rect key={`h${i}`} x={0} y={i * 30} width={W} height={1} fill="rgba(191,143,79,0.045)" />
+          <Rect key={`h${i}`} x={0} y={i * 30} width={W} height={1} fill={flColor.cardioGrid} />
         ))}
         {Array.from({ length: 13 }, (_, i) => (
-          <Rect key={`v${i}`} x={i * 30} y={0} width={1} height={H} fill="rgba(191,143,79,0.045)" />
+          <Rect key={`v${i}`} x={i * 30} y={0} width={1} height={H} fill={flColor.cardioGrid} />
         ))}
         <Path d={d} fill="none" stroke={flColor.bronze300} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" opacity={0.95} />
         <Circle cx={pts[0].x} cy={pts[0].y} r={5} fill={flColor.bronze300} stroke={flColor.bronze400} strokeWidth={2} opacity={0.9} />

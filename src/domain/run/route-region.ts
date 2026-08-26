@@ -87,3 +87,14 @@ export const storedRouteToLatLng = (encoded: string | null | undefined): LatLng[
  * which is precisely the complaint that started this whole piece of work.
  */
 export const ROUTE_TRIM_NOTE = 'Start and finish are trimmed for privacy — your distance is the full run.';
+
+/**
+ * What the athlete is told when the line IS the whole run.
+ *
+ * ⚠ THE PAIR IS THE POINT. §8.7 requires the app never to imply the map is complete when it is not;
+ * the same honesty obliges the opposite sentence when it is. Right after a tracked bout the card draws
+ * from `tracker.track`, which was never trimmed because it was never stored — see `CardioBlockCard`.
+ * The trimmed shape is still the only thing that reaches the database, and it is what every later
+ * viewing of this run gets, which is why both sentences exist rather than one replacing the other.
+ */
+export const WHOLE_RUN_NOTE = 'The whole run — start to finish. Saved routes trim their ends for privacy.';
