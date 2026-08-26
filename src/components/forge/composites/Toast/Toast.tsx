@@ -10,7 +10,7 @@
  */
 
 import React, { useEffect } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { Modal, Platform, StyleSheet, Text, View } from 'react-native'
 import { flColor, flRadius, flShadow } from '@/constants/foundation'
 
 export interface ToastProps {
@@ -31,14 +31,49 @@ export function Toast({ open, message, icon, onDismiss, durationMs = 3000 }: Toa
   if (!open) return null
 
   return (
-    <View pointerEvents="box-none" style={styles.wrap}>
-      <View style={styles.pill} accessibilityLiveRegion="polite" accessibilityRole="alert">
-        {icon ? <View style={styles.icon}>{icon}</View> : null}
-        <Text style={styles.message} numberOfLines={2}>
-          {message}
-        </Text>
+    /*
+      ══ ⚠ THE TOAST LIVES IN ITS OWN WINDOW, OR IT IS INVISIBLE EXACTLY WHEN IT MATTERS ══
+
+      PO: *"When sending a workout or anything to the squad or to friends there's no indication that it
+      was actually sent... I should be able to know that it sent and posted."*
+
+      The confirmation was there the whole time. `squad-composer` toasts "Posted to your squad",
+      `ShareSessionSheet` toasts its summary, `progress-photo-post` and `share-config` both toast — and
+      NONE of them could be seen, because every one of those flows finishes from inside a `BottomSheet`,
+      and `BottomSheet` is a native `Modal`. Its own header says it: *"A `Modal` is its own UIWindow."*
+      The provider renders this component `position: absolute` in the ordinary view tree, which is
+      underneath that window. So the app announced every post to a layer nobody was looking at.
+
+      Wrapping it in a `Modal` of its own puts it in the topmost window, above any sheet that is still
+      open or still animating out. One change fixes every caller rather than making eight of them
+      remember to delay their own toast until after a close animation.
+
+      ⚠ `transparent` AND `pointerEvents="box-none"` TOGETHER, AND BOTH MATTER. Without `transparent`
+      the toast would paint an opaque page over the app; without `box-none` its full-screen wrapper
+      would swallow every touch for three seconds — turning a confirmation into a freeze, which is worse
+      than the silence it replaces.
+
+      ⚠ `animationType="none"`. The pill is a transient mark, not a surface being presented; a slide
+      would read as another sheet arriving on top of the one you just used.
+    */
+    <Modal
+      visible
+      transparent
+      animationType="none"
+      statusBarTranslucent={Platform.OS === 'android'}
+      // Nothing to do — it dismisses on its own timer. Supplied because Android's back button
+      // otherwise has no handler on a visible Modal.
+      onRequestClose={onDismiss}
+    >
+      <View pointerEvents="box-none" style={styles.wrap}>
+        <View style={styles.pill} accessibilityLiveRegion="polite" accessibilityRole="alert">
+          {icon ? <View style={styles.icon}>{icon}</View> : null}
+          <Text style={styles.message} numberOfLines={2}>
+            {message}
+          </Text>
+        </View>
       </View>
-    </View>
+    </Modal>
   )
 }
 

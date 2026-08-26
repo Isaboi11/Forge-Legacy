@@ -41,12 +41,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Avatar } from '@/components/forge/composites/Avatar';
+import { AckGlyph } from '@/components/forge/AckGlyph';
+import { ACK_LABEL, fmtDuration, type AckKind, type WorkoutSummary } from '@/data/squad-feed-live';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { displayWeight, type UnitSystem } from '@/domain/settings/units';
 import { SERVICE_LABEL, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { artLabel } from '@/domain/workout/playlist-art';
 import { usePlaylistArt } from '@/lib/usePlaylistArt';
-import { fmtDuration, type WorkoutSummary } from '@/data/squad-feed-live';
 
 /** The 18px gutter every non-media block sits on. Media ignores it — see `bleed`. */
 export const LEDGER_GUTTER = 18;
@@ -101,6 +102,13 @@ export interface LedgerPostProps {
    */
   bleed?: number;
   acknowledged: boolean;
+  /**
+   * WHICH acknowledgement this athlete left, so the row can draw it (SOC-A4-D3).
+   *
+   * Meaningless unless `acknowledged`; absent reads as `respect`, which is what every acknowledgement
+   * written before 0178 was and what a plain tap still writes.
+   */
+  ackKind?: AckKind;
   acknowledgeCount: number;
   commentCount: number;
   /** The almost-invisible surface shift on every other row. Remove it the moment it reads as banding. */
@@ -159,6 +167,7 @@ export function LedgerPost({
   attribution = null,
   bleed = 0,
   acknowledged,
+  ackKind,
   acknowledgeCount,
   commentCount,
   alt = false,
@@ -271,8 +280,12 @@ export function LedgerPost({
           accessibilityHint={onLongAcknowledge ? 'Press and hold to change how' : undefined}
           style={styles.action}
         >
-          <FlameGlyph on={acknowledged} />
-          <Text style={[styles.actionLabel, acknowledged ? styles.actionLabelOn : null]}>Acknowledge</Text>
+          {/* ⚠ THE MARK NAMES THE KIND, and the label follows it. The row used to draw a flame whatever
+              the athlete had chosen, so four kinds were writable and only one was ever legible. */}
+          <AckGlyph kind={acknowledged ? ackKind ?? 'respect' : 'respect'} on={acknowledged} />
+          <Text style={[styles.actionLabel, acknowledged ? styles.actionLabelOn : null]}>
+            {acknowledged ? ACK_LABEL[ackKind ?? 'respect'] : 'Acknowledge'}
+          </Text>
           {acknowledgeCount > 0 ? (
             <Text style={[styles.actionCount, acknowledged ? styles.actionLabelOn : null]}>{acknowledgeCount}</Text>
           ) : null}
@@ -493,13 +506,9 @@ function MarkerGlyph({ kind }: { kind: LedgerMarker }) {
     </Svg>
   );
 }
-function FlameGlyph({ on }: { on: boolean }) {
-  return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={on ? flColor.bronze300 : flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />
-    </Svg>
-  );
-}
+/* ⚠ `FlameGlyph` WAS DELETED HERE, NOT ORPHANED. It drew the one mark this row had when every
+   acknowledgement looked the same; the flame now lives in `AckGlyph` as the `respect` case, beside the
+   other three. Leaving it behind would read as a second, competing flame for somebody to reach for. */
 function CommentGlyph() {
   return (
     <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">

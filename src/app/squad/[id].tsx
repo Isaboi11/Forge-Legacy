@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -9,6 +9,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
+import { AckGlyph } from '@/components/forge/AckGlyph';
 import { ScreenBackground } from '@/components/screen-background';
 import { CalendarField } from '@/components/forge/composites/CalendarField';
 import { ScreenTour } from '@/components/tour/ScreenTour';
@@ -26,6 +27,11 @@ import {
   detailFor,
   ensureWeeklyRecap,
   fetchSquadFeed,
+  fetchMyReactionKinds,
+  setSquadReactionKind,
+  ACK_KINDS,
+  ACK_LABEL,
+  type AckKind,
   isProgressCard,
   leadFor,
   recapSummaryLine,
@@ -122,6 +128,10 @@ export default function SquadDetailRoute() {
 
   const [feedLimit, setFeedLimit] = useState(5);
   const [reactMap, setReactMap] = useState<Record<string, { on: boolean; n: number }>>({});
+  /** Which acknowledgement I left on each post — read for the whole feed in one query. */
+  const [kindMap, setKindMap] = useState<Record<string, AckKind>>({});
+  /** The post whose kind chooser is open. PO: the four kinds must be reachable ON THE FEED. */
+  const [ackFor, setAckFor] = useState<string | null>(null);
   // SQ-D8: no scheduler exists, so the first athlete to open the feed in a new week generates that
   // week's recap. Awaited before the read so it lands in this page rather than the next one.
   const { data: feedData, refetch: refetchFeed } = useQuery(async () => {
@@ -175,8 +185,31 @@ export default function SquadDetailRoute() {
       refetchFeed();
       refetchCheckins();
       setReactMap({}); // let fresh server truth win each time the screen regains focus
+      setKindMap({});
     }, [refetch, refetchFeed, refetchCheckins]),
   );
+
+  /*
+   * Which acknowledgement I left on each visible post — one query for the page.
+   *
+   * ⚠ IT SITS HERE, WITH THE OTHER HOOKS, AND NOT BESIDE `feedPosts` WHERE IT READS MORE NATURALLY.
+   * There is an early return between the two, so declaring it down there made this a CONDITIONAL hook —
+   * React would have thrown "rendered fewer hooks than expected" the first time the screen went from
+   * loading to loaded. Derived from `feedData` directly for the same reason.
+   *
+   * Absent from the map reads as `respect`, so a feed whose kinds fail to load still draws correctly.
+   */
+  const feedIds = (feedData ?? []).map((p) => p.id).join(',');
+  useEffect(() => {
+    if (!feedIds) return;
+    let alive = true;
+    void fetchMyReactionKinds(feedIds.split(',')).then((m) => {
+      if (alive) setKindMap((prev) => ({ ...m, ...prev }));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [feedIds]);
 
   const squad = data?.squad;
   const members = data?.members ?? [];
@@ -317,6 +350,7 @@ export default function SquadDetailRoute() {
   const goalValid = Number(goalTargetText) >= 1 && windowOk;
   const windowError = windowOk ? null : 'The end date has to come after the start.';
   const feedPosts = feedData ?? [];
+
   const canLoadMore = feedPosts.length === feedLimit;
   const checkinPeople = checkinsData?.members ?? [];
   const iHaveActive = checkinsData?.iHaveActive ?? false;
@@ -437,6 +471,33 @@ export default function SquadDetailRoute() {
     const next = !reacted;
     setReactMap((m) => ({ ...m, [p.id]: { on: next, n: Math.max(0, count + (next ? 1 : -1)) } }));
     toggleSquadReaction(p.id, reacted).catch(() => setReactMap((m) => ({ ...m, [p.id]: { on: reacted, n: count } })));
+  };
+
+  /**
+   * Pick a kind straight from the feed row.
+   *
+   * PO: *"When trying to acknowledge in different ways on the squad feed I can only click and hold for
+   * the different options after clicking on the post. I should be able to do it right on the feed page."*
+   * The row has accepted an `onLongAcknowledge` since it was written; the feed simply never passed one,
+   * so the gesture was dead here and worked one screen deeper.
+   *
+   * Acknowledges if they had not yet — choosing "Support" on a post you have not acknowledged is
+   * obviously an acknowledgement, and making them tap first would be a riddle.
+   */
+  const onPickKind = (postId: string, kind: AckKind) => {
+    setAckFor(null);
+    const p = feedPosts.find((x) => x.id === postId);
+    if (!p) return;
+    const wasReacted = reactMap[postId]?.on ?? p.iReacted;
+    const count = reactMap[postId]?.n ?? p.respectCount;
+    const prev = kindMap[postId];
+    setKindMap((m) => ({ ...m, [postId]: kind }));
+    if (!wasReacted) setReactMap((m) => ({ ...m, [postId]: { on: true, n: count + 1 } }));
+    setSquadReactionKind(postId, kind).catch(() => {
+      setKindMap((m) => ({ ...m, [postId]: prev ?? 'respect' }));
+      if (!wasReacted) setReactMap((m) => ({ ...m, [postId]: { on: wasReacted, n: count } }));
+      showToast('Couldn’t save that.');
+    });
   };
 
   const doDelete = () => {
@@ -719,6 +780,8 @@ export default function SquadDetailRoute() {
                   onComments={() => openPost(p.id)}
                   onAuthor={() => router.push({ pathname: '/athlete/[id]', params: { id: p.authorId } })}
                   onReact={() => onReactCard(p)}
+                  ackKind={kindMap[p.id]}
+                  onLongReact={() => setAckFor(p.id)}
                 />
               ))}
               {canLoadMore ? (
@@ -783,6 +846,38 @@ export default function SquadDetailRoute() {
       <ScreenTour screenKey="squad-detail" ready={view === 'detail'} />
 
       {/* OPTIONS SHEET */}
+      {/*
+        ══ THE FOUR KINDS, ON THE FEED ══
+
+        PO: *"I should be able to do it right on the feed page."* Hold the Acknowledge control on any row
+        and this opens; a plain tap still writes `respect` (SOC-A4-D3: *"a tap acknowledges rather than
+        opening a chooser"*).
+
+        Each kind carries its own mark rather than four flames in four colours — at 17pt an icon is a
+        silhouette, and bronze-on-bronze is not a distinction. See `AckGlyph`.
+      */}
+      <BottomSheet open={ackFor != null} onClose={() => setAckFor(null)} title="Acknowledge">
+        <View style={{ gap: 8 }}>
+          {ACK_KINDS.map((k) => {
+            const on = ackFor != null && kindMap[ackFor] === k && (reactMap[ackFor]?.on ?? feedPosts.find((p) => p.id === ackFor)?.iReacted);
+            return (
+              <Pressable
+                key={k}
+                onPress={() => ackFor && onPickKind(ackFor, k)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: !!on }}
+                accessibilityLabel={ACK_LABEL[k]}
+                style={({ pressed }) => [styles.ackRow, on ? styles.ackRowOn : null, pressed ? styles.ackRowPressed : null]}
+              >
+                <AckGlyph kind={k} on={!!on} size={19} />
+                <Text style={[styles.ackRowText, on ? styles.ackRowTextOn : null]}>{ACK_LABEL[k]}</Text>
+                {on ? <Text style={styles.ackRowMark}>Yours</Text> : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      </BottomSheet>
+
       <BottomSheet open={optionsOpen} onClose={() => setOptionsOpen(false)}>
         <View style={styles.optionsList}>
           <OptionRow icon={<GearIcon />} label="Squad Settings" onPress={() => { setOptionsOpen(false); router.push({ pathname: '/squad-settings', params: { id: squad.id } }); }} />
@@ -1102,10 +1197,12 @@ function FeedCard({
   alt,
   reacted,
   respect,
+  ackKind,
   onOpen,
   onComments,
   onAuthor,
   onReact,
+  onLongReact,
 }: {
   post: SquadFeedPost;
   units: ReturnType<typeof useUnits>['units'];
@@ -1113,10 +1210,13 @@ function FeedCard({
   alt: boolean;
   reacted: boolean;
   respect: number;
+  ackKind?: AckKind;
   onOpen: () => void;
   onComments: () => void;
   onAuthor: () => void;
   onReact: () => void;
+  /** Press and hold the acknowledge control — opens the four kinds (SOC-A4-D3). */
+  onLongReact: () => void;
 }) {
   const summary = post.type === 'recap' ? post.workoutSummary : null;
 
@@ -1185,11 +1285,13 @@ function FeedCard({
       bleed={20}
       alt={alt}
       acknowledged={reacted}
+      ackKind={ackKind}
       acknowledgeCount={respect}
       commentCount={post.commentCount}
       onAuthor={onAuthor}
       onOpen={onOpen}
       onAcknowledge={onReact}
+      onLongAcknowledge={onLongReact}
       onComments={onComments}
     />
   );
@@ -1651,6 +1753,23 @@ const styles = StyleSheet.create({
   compGapText: { flexShrink: 1, fontSize: 10.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze400 },
   compEnds: { flexShrink: 0, fontSize: 10.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
   hallRow: { position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 12, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
+  ackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal900,
+  },
+  ackRowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  ackRowPressed: { opacity: 0.75 },
+  ackRowText: { flex: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  ackRowTextOn: { color: flColor.bronze300 },
+  ackRowMark: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
+
   hallCrest: { width: 40, height: 40, flexShrink: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: flRadius.md },
   newPostBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A', boxShadow: flShadow.glowSubtle },
   newPostText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },

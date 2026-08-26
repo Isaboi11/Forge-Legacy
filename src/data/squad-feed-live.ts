@@ -658,6 +658,35 @@ export async function toggleSquadReaction(postId: string, reacted: boolean): Pro
 }
 
 /**
+ * Which acknowledgement I left on each of these posts.
+ *
+ * ⚠ ONE QUERY FOR THE WHOLE FEED, and read here rather than added to `squad_feed`. That RPC returns
+ * `i_reacted` and is shared with other surfaces; widening its OUT columns forces a drop-and-recreate,
+ * and rebuilding a function body from an older copy is the documented way this schema has silently lost
+ * features three times (0088, 0092, 0106). One extra RLS-scoped read is the cheaper correctness.
+ *
+ * Absent from the map reads as `respect` — what every acknowledgement written before 0178 was.
+ */
+export async function fetchMyReactionKinds(postIds: readonly string[]): Promise<Record<string, AckKind>> {
+  if (!postIds.length) return {};
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return {};
+  const { data, error } = await supabase
+    .from('squad_post_reactions')
+    .select('post_id, kind')
+    .eq('user_id', user.id)
+    .in('post_id', postIds as string[]);
+  if (error || !data) return {};
+  const out: Record<string, AckKind> = {};
+  for (const r of data as { post_id: string; kind: string | null }[]) {
+    out[r.post_id] = ((r.kind ?? 'respect') as AckKind);
+  }
+  return out;
+}
+
+/**
  * Acknowledge with a specific kind — the press-and-hold path (SOC-A4-D3, 0178).
  *
  * ⚠ UPSERT, NOT INSERT. The primary key is `(post_id, user_id)`, so an athlete who has already
