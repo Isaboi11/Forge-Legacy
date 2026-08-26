@@ -1432,7 +1432,21 @@ export default function HomeScreen() {
               accessibilityLabel="Ask Coach Holt to build you a program"
               style={({ pressed }) => [styles.holtBand, pressed ? styles.holtBandPressed : null]}
             >
-              <HoltMark size={44} />
+              {/*
+                ⚠ NO HOLT MARK HERE — THERE WAS ONE, AND IT MADE TWO HOLTS ON ONE SCREEN.
+
+                PO design review, 2026-08-25: *"Holt is starting to appear too many times… Because
+                they're physically close together on this screen, I'm effectively seeing two Holts."*
+                The floating coin is persistent and sits a few inches below this band, so the row read
+                as `Holt avatar → Holt recommendation → Holt floating avatar`.
+
+                The floating coin is the one that stays — it is the app's single "Holt is here" object
+                and it is on every surface. This band keeps the sentence and the chevron, which is all
+                it ever needed: the words already say whose offer it is.
+
+                ⚠ FORM, NOT COLOUR — so it lands on BOTH themes (Design System §2.0). Nothing here is
+                theme-conditional.
+              */}
               <Text style={styles.holtBandText}>Want a plan? Holt will build you one.</Text>
               <View style={styles.holtBandChevron}>
                 <ChevronRightIcon size={15} color={flColor.gray400} />
