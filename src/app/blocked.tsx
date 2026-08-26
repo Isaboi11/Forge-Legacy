@@ -61,7 +61,7 @@ export default function BlockedRoute() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.55)' }} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.55)' }} />
       <AppBar title="Blocked People" onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>

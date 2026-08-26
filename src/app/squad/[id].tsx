@@ -911,17 +911,35 @@ export default function SquadDetailRoute() {
 }
 
 function DetailBg() {
-  // `imageOpacity` rather than a heavier top overlay: this artwork is near-black everywhere except its
-  // golden mountain band, so dimming the whole image toward the base lands almost entirely on the
-  // mountains — the slate texture below has almost no luminance to lose. Taken down 25% twice
-  // (1 → 0.75 → 0.5625) on review; the peaks should read as atmosphere, not as a photograph.
+  /*
+   * `imageOpacity` rather than a heavier top overlay: this artwork is near-black everywhere except its
+   * golden mountain band, so dimming the whole image toward the base lands almost entirely on the
+   * mountains — the slate texture below has almost no luminance to lose.
+   *
+   * ⚠ IT WAS TAKEN DOWN 25% TWICE ON AN EARLIER REVIEW (1 → 0.75 → 0.5625), AND THAT WENT TOO FAR.
+   * PO, 2026-08-25: *"you should be able to see the mountains."* The old note said the peaks should
+   * read as atmosphere rather than as a photograph — right in principle, and at 0.5625 under a scrim
+   * that also darkens to 38% they stopped reading at all. Atmosphere you cannot see is just a dark
+   * screen. Reversing one of the two cuts and easing the scrim; the second cut stays reversed
+   * deliberately rather than going back to the full-strength plate.
+   *
+   * ⚠ AND `paperTexture="atmospheric"` IS LOAD-BEARING HERE — IT IS FIXING A REGRESSION I INTRODUCED.
+   * The texture pass earlier today defaults every screen to `functional`, which multiplies Alabaster's
+   * artwork to 62%. That is right for a list or a form and wrong for this: a squad's crest header is an
+   * identity moment, the same class of thing as Legacy. Left on the default, Paper would have rendered
+   * these mountains at 0.78 × 0.62 ≈ 0.48 — dimmer than the value the PO is already calling too dark.
+   *
+   * The opacity lift is not theme-conditional, so it lands on BOTH themes (Design System §2.0); the
+   * `paperTexture` level is the colour half and only Alabaster reads it.
+   */
   return (
     <ScreenBackground
       image={SCREEN_BG.squadDetail}
       imagePosition="top"
-      imageOpacity={0.5625}
+      imageOpacity={0.78}
+      paperTexture="atmospheric"
       atmospheric
-      overlay={{ colors: ['rgba(5,5,5,0.12)', 'rgba(5,5,5,0.26)', 'rgba(5,5,5,0.38)'], locations: [0, 0.38, 1] }}
+      overlay={{ colors: ['rgba(5,5,5,0.06)', 'rgba(5,5,5,0.18)', 'rgba(5,5,5,0.30)'], locations: [0, 0.38, 1] }}
       radials={[BG_RADIAL.squadTop, BG_RADIAL.squadBottom]}
     />
   );

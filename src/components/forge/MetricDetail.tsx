@@ -82,7 +82,7 @@ export function MetricDetail({ metric, onClose }: { metric: MetricSeries; onClos
 
   return (
     <View style={[StyleSheet.absoluteFill, styles.root]}>
-      <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.24} overlay={{ flat: 'rgba(5,5,5,0.62)' }} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.24} overlay={{ flat: 'rgba(5,5,5,0.62)' }} />
 
       <View style={[styles.bar, { paddingTop: insets.top + 6 }]}>
         <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Back" style={styles.barBtn} hitSlop={8}>

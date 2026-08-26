@@ -205,7 +205,7 @@ export default function AthleteProfileScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       {/* The plate that dissolves the artwork as you read — the design's `p · 0.52`. */}
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.plate, { opacity: p.interpolate({ inputRange: [0, 1], outputRange: [0, 0.52] }) }]} />
 
@@ -687,7 +687,7 @@ function InertAction({ glyph, label }: { glyph: ReactNode; label: string }) {
 function Shell({ onBack, children }: { onBack: () => void; children: ReactNode }) {
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="" onBack={onBack} />
       <View style={styles.center}>{children}</View>
     </View>

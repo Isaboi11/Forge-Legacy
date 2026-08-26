@@ -70,6 +70,13 @@ export function paperScrim(color: string): string {
  * That makes this a COLOUR change under Design System §2.0, so it lands on ONE theme. Forge does not
  * call this function at all.
  *
+ * ⚠ IT IS FOR *TEXTURE* PLATES, NOT FOR ARTWORK, AND DEFAULTING EVERY SCREEN TO `functional` GOT THAT
+ * WRONG ON TEN OF THEM. The complaint was about `slate` / `slate2` / `bg2` — grain that competes with
+ * information. `legacyMountains`, `legacy`, `squadDetail` and `squadsHub` are pictorial: dimming those
+ * is not quieting a surface, it is hiding the picture. PO, on the squad header: *"you should be able to
+ * see the mountains."* Every caller drawing a pictorial plate is now marked `atmospheric`, with ONE
+ * deliberate exception — `admin.tsx`, the operator dashboard, which is genuinely a working surface.
+ *
  * ⚠ 0.62 IS THE MIDDLE OF THE RANGE THE PO NAMED (*"probably 30–40% less texture"*), not a number
  * chosen by eye — and it is a MULTIPLIER rather than a replacement so that a screen which already
  * chose a deliberate opacity keeps its own art direction, scaled. A flat value would have overwritten

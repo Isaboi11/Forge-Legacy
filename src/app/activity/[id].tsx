@@ -112,7 +112,7 @@ export default function ActivityDetailScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.3)' }} />
+      <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.3)' }} />
       {/*
         ⚠ SHARE LIVES HERE NOW, ONE TAP FROM RECENT ACTIVITY.
         PO: *"when I go into recent activity I have to go two pages deep to get to the hidden share
