@@ -234,9 +234,21 @@ function ProgramPathChooser({
             <Text style={styles.pathCardTitle}>Build it with me</Text>
             <Text style={styles.pathCardSub}>Coach Holt asks what you&apos;re after, then writes the block around it.</Text>
           </View>
-          {/* Low visual weight on purpose — it is a signature, not an illustration. */}
+          {/*
+            Low visual weight on purpose — it is a signature, not an illustration.
+
+            ⚠ 44, NOT 54. It was 54, which made this the LARGEST Holt in the app — bigger than the
+            floating coin that is his actual tap target — while its own comment called it low weight.
+            The 2026-08-26 artwork pass closed the medallion's 9% dead margin so the coin now fills its
+            frame, which made the same number read about a tenth larger again: at 54 the mark stood as
+            tall as the title and sub-line together and pushed the sub into a different wrap.
+
+            The ladder is now hierarchy rather than drift — 52 floating coin · 44 here · 40 chat gutter
+            · 34 session sheet header. Below 44 the row regains enough width that the sub-line reflows,
+            so this is also the smallest it can be without moving the copy.
+          */}
           <View style={styles.leadMark}>
-            <HoltMark size={54} />
+            <HoltMark size={44} />
           </View>
           <ChevronRightIcon size={18} color={flColor.bronze400} />
         </View>

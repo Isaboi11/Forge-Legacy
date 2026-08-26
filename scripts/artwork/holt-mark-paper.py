@@ -1,5 +1,21 @@
 #!/usr/bin/env python3
 """
+⛔ SUPERSEDED 2026-08-26 — DO NOT RUN. Use `scripts/artwork/holt-mark.py` instead.
+
+   Its premise no longer holds. This script reads `coach-holt-mark.png` as "the Forge master,
+   never written" — but that file is now GENERATED OUTPUT, so running this re-ramps an already
+   ramped image and regresses the Paper variant. The pristine artwork moved to
+   `coach-holt-mark.master.png`.
+
+   Two defects were fixed after this script was written, both measured rather than eyeballed:
+     · the ramp below squeezed the coin to 1.58:1 relief-against-field, where Forge sits at
+       3.89:1 — the light variant read as mush. The replacement lands 4.08:1.
+     · the coin's 3D bevel left a dark trench at R 153-157 whose unlit side made the rim's
+       highlight float free of the body on the upper right (the PO's "sliver").
+
+   Kept only for the ramp reasoning in the header below, which is still correct and is carried
+   forward in the replacement: neutral-ended ramps come out PEWTER.
+
 Strike Coach Holt's medallion in Alabaster's metal.
 
     python scripts/artwork/holt-mark-paper.py
@@ -112,4 +128,11 @@ def main() -> int:
 
 
 if __name__ == '__main__':
+    sys.exit(
+        'SUPERSEDED: run scripts/artwork/holt-mark.py instead.\n'
+        'This script would read a generated file as its master and re-ramp it.'
+    )
+
+
+def _retired_main():
     raise SystemExit(main())
