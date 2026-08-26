@@ -18,9 +18,30 @@
 import React, { useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import { flColor, flGradient, flRadius, flShadow } from '@/constants/foundation'
+import { flColor, flGradient, flRadius, flShadow, type FlGradientStops } from '@/constants/foundation'
 
-const DISABLED_FILL_COLORS = ['#1C1E22', '#15171B'] as const
+/*
+ * ⚠ `DISABLED_FILL_COLORS` LIVED HERE AND IT WAS THE ONLY THING IN THIS FILE THAT DID NOT SWITCH THEMES.
+ *
+ * PO, on Active Workout in Alabaster before the first set is logged: *“that color I gave you for the
+ * finish workout is because I hadn’t completed any set. So it’s showing that I can’t click it, but it
+ * should be a better color than that still.”*
+ *
+ * `['#1C1E22', '#15171B']` is Forge's dead-metal charcoal, and it was a literal rather than a token —
+ * so on a cream page the disabled primary rendered a near-black slab with a 42%-cream label on it. Two
+ * failures at once: it was the highest-contrast object in the footer, so the button that could NOT be
+ * pressed out-ranked ADD EXERCISE, which could; and its label was pale-on-dark in a theme where every
+ * other label is dark-on-pale.
+ *
+ * The three values are now `flGradient.bronzeFillDisabled`, `flColor.disabledBorder` and
+ * `flColor.disabledLabel`, stated in BOTH palettes. Forge's are transcribed from these literals to the
+ * byte, so the dark theme renders exactly what it rendered before; Paper's are a recessed plate, which
+ * is what “cannot be pressed” looks like on paper.
+ *
+ * The `destructive` variant's four literals went the same way, one pass later: `destructiveFill`,
+ * `destructiveBorder`, `destructiveBorderDisabled` and `destructiveLabelDisabled`. Nothing in this file
+ * names a colour any more.
+ */
 
 export type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'text' | 'icon'
 
@@ -67,6 +88,18 @@ export function Button({
 
   if (variant === 'primary' || variant === 'destructive') {
     const isPrimary = variant === 'primary'
+    /* One stop list for all three states, so `locations`/`start`/`end` travel with the colours instead
+       of being read off `bronzeFill` while the colours came from somewhere else — which is how the
+       disabled fill ended up hard-coded in the first place.
+
+       Annotated because `as const` gives each list its own literal type and the disabled one has no
+       `locations`, so the bare union has no common member to read. `FlGradientStops` is exactly the
+       shape both palettes are already checked against. */
+    const fill: FlGradientStops = disabled
+      ? flGradient.bronzeFillDisabled
+      : pressed
+      ? flGradient.bronzeFillPressed
+      : flGradient.bronzeFill
     return (
       <Pressable
         accessibilityRole="button"
@@ -80,24 +113,24 @@ export function Button({
       >
         {isPrimary ? (
           <LinearGradient
-            colors={disabled ? DISABLED_FILL_COLORS : (pressed ? flGradient.bronzeFillPressed.colors : flGradient.bronzeFill.colors)}
-            locations={disabled ? undefined : flGradient.bronzeFill.locations}
-            start={flGradient.bronzeFill.start}
-            end={flGradient.bronzeFill.end}
+            colors={fill.colors}
+            locations={fill.locations}
+            start={fill.start}
+            end={fill.end}
             style={[
               styles.base,
               styles.filled,
               lg && styles.filledLg,
               fullWidth && styles.fullWidth,
               {
-                borderColor: disabled ? 'rgba(150, 140, 122, 0.22)' : flColor.bronzeBorder,
+                borderColor: disabled ? flColor.disabledBorder : flColor.bronzeBorder,
                 boxShadow: disabled ? undefined : flShadow.buttonPrimary,
               },
             ]}
           >
             {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
             {hasLabel ? (
-              <Text style={[styles.filledLabel, lg && styles.filledLabelLg, { color: disabled ? 'rgba(240,237,232,0.42)' : flColor.onBronze }]}>{children}</Text>
+              <Text style={[styles.filledLabel, lg && styles.filledLabelLg, { color: disabled ? flColor.disabledLabel : flColor.onBronze }]}>{children}</Text>
             ) : null}
             {trailingIcon ? <View style={styles.iconWrap}>{trailingIcon}</View> : null}
           </LinearGradient>
@@ -108,14 +141,14 @@ export function Button({
               styles.filled,
               fullWidth && styles.fullWidth,
               {
-                backgroundColor: '#171111',
-                borderColor: disabled ? 'rgba(120, 74, 70, 0.30)' : 'rgba(150, 74, 66, 0.72)',
+                backgroundColor: flColor.destructiveFill,
+                borderColor: disabled ? flColor.destructiveBorderDisabled : flColor.destructiveBorder,
               },
             ]}
           >
             {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
             {hasLabel ? (
-              <Text style={[styles.filledLabel, { color: disabled ? 'rgba(190, 90, 76, 0.34)' : flColor.redMuted }]}>{children}</Text>
+              <Text style={[styles.filledLabel, { color: disabled ? flColor.destructiveLabelDisabled : flColor.redMuted }]}>{children}</Text>
             ) : null}
             {trailingIcon ? <View style={styles.iconWrap}>{trailingIcon}</View> : null}
           </View>
@@ -145,7 +178,7 @@ export function Button({
       >
         {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
         {hasLabel ? (
-          <Text style={[styles.secondaryLabel, { color: disabled ? 'rgba(240,237,232,0.34)' : flColor.cream100 }]}>{children}</Text>
+          <Text style={[styles.secondaryLabel, { color: disabled ? flColor.secondaryLabelDisabled : flColor.cream100 }]}>{children}</Text>
         ) : null}
         {trailingIcon ? <View style={styles.iconWrap}>{trailingIcon}</View> : null}
       </Pressable>
@@ -177,7 +210,7 @@ export function Button({
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} disabled={disabled} onPress={onPress} style={styles.textBtn}>
       {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
-      {hasLabel ? <Text style={[styles.textLabel, { color: disabled ? 'rgba(219, 170, 104, 0.4)' : flColor.bronze400 }]}>{children}</Text> : null}
+      {hasLabel ? <Text style={[styles.textLabel, { color: disabled ? flColor.textLabelDisabled : flColor.bronze400 }]}>{children}</Text> : null}
       {trailingIcon ? <View style={styles.iconWrap}>{trailingIcon}</View> : null}
     </Pressable>
   )
