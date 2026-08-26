@@ -1,7 +1,7 @@
 # Forge Legacy — Status Archive, August 2026
 
 **Type:** Historical record, split out of `Forge-Legacy-Master-Status.md`
-**Covers:** the **56** Recently-Completed entries below the 15 most recent, as of 2026-08-25
+**Covers:** the **58** Recently-Completed entries below the 15 most recent, as of 2026-08-26
 
 > ⚠ This line read **43 … as of 2026-08-22** while 51 entries were already filed, and the dashboard's
 > own pointer one file over read **47**. Two hand-maintained counts of the same countable thing, both
@@ -27,6 +27,119 @@
 > **Read this file when the dashboard does not explain something.** It is the same content, one level back.
 
 ---
+
+### 0. ⭐ "The app is frozen" — nothing was frozen, three separate controls silently did nothing (2026-08-20, Onboarding + Squads — no migration, ✅ WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6)
+
+**Reported by testers as *"it's just freezing and will only let them sign in and nothing else."*** No
+crash, no error, and TestFlight showed **Crashes: –** for build 6 — because nothing was crashing. Three
+different controls did nothing at all when tapped, which is the one failure mode that leaves no evidence
+anywhere and reads, to the person holding the phone, as an app that has died.
+
+**⚠ THE BIG ONE: ONBOARDING WAS A ONE-WAY DOOR.** `routeFor` sends every signed-in athlete with a null
+`onboarded_at` to onboarding, and onboarding is the ONLY thing that ever clears it. The screen had **no
+sign-out, no account switch and no exit of any kind** — `Back` only walks between steps and is hidden on
+the first one. So anyone who stopped partway was returned to the same screen on every launch, forever.
+**Three of the first 28 accounts were in that state.** The reporting tester held two accounts
+(`brady@qest4.com`, onboarded 8/5; `bradypgalloway@gmail.com`, created 8/17, never finished) and had
+signed into the wrong one — he was not stuck on a bug in onboarding, he was stuck because leaving was
+impossible. `ProgressHeader` gains `onExit`, **shown on every step including the first**, behind a
+confirm that says nothing has been saved yet — because nothing has: `complete_onboarding` writes the
+profile, Chapter I and `onboarded_at` in one transaction at the very end.
+
+**⚠ AND THE CONFIRM IS A SHEET, NOT `Alert.alert`, WHICH IS INERT ON RN-WEB.** The deployed preview is
+the surface the athletes actually test on; an alert would have done nothing on the exact surface the fix
+was written for. The guard for it had to strip comments before scanning — the code that fixes the bug has
+to name the forbidden pattern to explain it, and `svg-gradient-stops.test.mjs` was born failing for
+precisely that reason.
+
+**THE OTHER TWO ARE THE FRIENDS-FEED PICKER DEFECT, ONE SCREEN OVER.** iOS refuses to present a view
+controller while another is on screen and drops it **silently**. The squad photo sits inside the Edit
+Identity sheet; Replace on the check-in viewer launched the camera in the same tick it closed the viewer
+`Modal`. ⚠ **`sheetGone()` only ever guarded the chooser `useMediaPicker` OWNS** — its header says as
+much — and knew nothing about a **caller that is itself a modal**. `callerModalGone()` is that missing
+half, living in the one file that owns `ImagePicker` so no screen can forget it. Both are **native-only**,
+so the web deploy does nothing for them and the OTA is what actually delivers the fix.
+
+**⚠ THE DIAGNOSIS WAS WRONG TWICE BEFORE IT WAS RIGHT, AND BOTH DEAD ENDS ARE WORTH KEEPING.** First
+theory: a missing `profiles` row leaves `loading` true forever (`profile.tsx:34`) and holds the splash —
+disproved by one query, every account has a row. Second: the read is blocked by RLS — disproved by
+`fetchSelfProfile` using `.single()`, which *errors* on zero rows rather than returning null. The
+survivor was the boring last line of `routeFor`: `return state.onboardedAt ? 'app' : 'onboarding'`.
+
+**Deployed and verified.** Web: `entry-78230c2c5d4c5e8643a66690ae119925.js` — `forgelegacy.expo.app`
+returned **200** with a matching hash, and the live bundle was searched for five strings only this pass's
+code contains (`Sign out and use a different account`, `nothing has been saved yet`, `Keep setting up`,
+`Or read a screenshot`, `Reading your screenshot`). All PRESENT. **OTA published to `production`, iOS
+update `01a02293-6306-73d4-9b51-265a9ef7703b`, runtime `411fd2b68cbe11016f037dd7881b3fe813a1e148`** —
+`fingerprint:compare --build-id 078d2838…` matched **build 6 exactly** BEFORE publishing, and the manifest
+endpoint was then queried as an iOS client on that runtime and returned the new update id. **Deliverable,
+not merely published.** ⏳ Not yet confirmed on a device.
+
+**Gates:** tsc **0** · **2,692 of 2,693 tests** (13 new here; the one failure is the pre-existing podium
+`<Stop>` gradient guard, a false positive on opaque hex colours, untouched by this pass) · eslint **1
+error + 13 warnings = the pre-existing baseline, nothing added**.
+
+**⚠ THIS DEPLOY ALSO SHIPPED THE PHOTO-IMPORT CLIENT HALF**, whose wiring was already committed in
+`2af5618`. The "Or read a screenshot" button is now live and **fails on every tap** until `0174` is
+pasted and `program-photo-read` is deployed — an Edge Function does not ride an OTA. It fails closed with
+an honest outage message, but it is visible to testers today.
+
+**Files:** `src/components/onboarding/kit.tsx` (`onExit`) · `src/app/onboarding.tsx` (confirm sheet + `signOut`) · `src/lib/useMediaPicker.tsx` (`callerModalGone`) · `src/app/squad-settings.tsx` · `src/app/squad/[id].tsx` · `src/app/__tests__/onboarding-escape.test.mjs` (9) · `src/lib/__tests__/media-picker-dismiss.test.mjs` (+4) · this board.
+
+
+### 0. ⭐ Import a program by photographing it — and the model is not allowed to read a program, only characters (2026-08-20, Import / Coach AI — **MIGRATION `0174` AUTHORED, NOT APPLIED**; Edge Function **NOT DEPLOYED**; client code is OTA-safe)
+
+**`Architecture-Amendment-001-Import.md` §5 named this in June and deferred it** — *"Image Import:
+screenshots of training tables from other apps, photos of printed programs. Requires OCR or vision model
+parsing. Post-MVP."* It is built, and the interesting part is the shape it had to take to be buildable at
+all, because the same document's §4.3 is **LOCKED** and says the opposite: *"Import First, Automate Later.
+The MVP focuses on reliable parsing of structured formats. **No AI interpretation. No inference.**"*
+
+**THE RESOLUTION IS THAT THE MODEL NEVER READS A PROGRAM.** It transcribes the pixels to tab-separated
+rows and stops. `parseProgramTable()` — the same thousand lines that already read a paste — does every bit
+of the interpreting: which column is which, what a scheme means, which numbers were assumed. The transcript
+lands in the paste box, goes through the same preview, gets the same − / + corrections. **A photographed
+table and a pasted one are identical code from that line onward**, which is what puts this inside §4.3
+rather than around it. It is the split `coach-interpret` already runs on: *"Holt does not write programs.
+He calls a machine that does."*
+
+**⚠ THE GUARD IS ONE LINE AND IT IS THE WHOLE FEATURE: A KEPT LINE MUST CONTAIN A TAB.**
+`domain/program/photo-transcript.ts` runs AFTER the model answers and drops everything else — the same
+shape as the acuity override in `coach-interpret`. It matters because the app **cannot enforce what is in
+front of the camera**. The guarantee is therefore not that the model will decline to describe a person; it
+is that **the function has no channel that carries a sentence**, so it cannot. Prose, a caption, an
+assessment of a body: none contain a tab, none come back. Verified in both directions, 17 tests.
+
+**⚠ AND THE KNOWN-GOOD HALF CAUGHT THE REAL BUG, NOT THE KNOWN-BAD HALF.** The first header gate required
+an exercise-name column. That rejects **the entire endurance case** — a triathlon plan's header is
+`Week · Day · Session`, with no movement column anywhere, and `import-session-text.ts` exists precisely to
+read it. A filter that only proves it blocks prose has proved half of nothing. The rule is now *two
+distinct training-vocabulary words*, which takes `Week+Day+Session` and still refuses `Name · Email · Phone`.
+
+**⚠ LIBRARY ONLY, NO CAMERA, AND THAT IS A DECISION RATHER THAN AN OMISSION.** Decision Queue #22 lists the
+age floor (16+ vs 18+) as **open** and says it must be set *"before any photo-AI feature ships — the one
+item in the plan that could produce serious consequences rather than a fine."* The app is rated **13+**.
+That gate is about images of PEOPLE; reading a screenshot of a table is not that, and it stays not-that by
+never opening a camera. `pickImageFromLibrary()` carries a ⛔ against being "upgraded" later.
+
+**⚠ METERED, NOT CHARGED — and the honest description of it is that sentence, not "free".** PO chose this
+over free-and-unmetered once the locked pricing architecture surfaced: photo reads already had a priced
+slot (3 credits, capability A4). This is its own action, **`photo_import` at 2 credits**, because
+`photo_read` is a model reasoning about a body at ~$0.075 and this is a transcription at roughly half — a
+ledger that cannot tell two capabilities apart cannot price either. `metering_only` is already `true`
+(0144's default), so spend is recorded and never refused: the plan's uncapped metered-tester posture, and
+the reason metering could not be retrofitted later. **Real cost ≈ $0.035 a read.**
+
+**⚠ NONE OF THE THREE COMPLETION TESTS ARE MET YET.** SQL not applied · code not deployed · nobody has seen
+it work. `coach_ai_spend_credits` **raises `22023` on an unknown action by design**, so until `0174` runs
+every photo import fails at the meter before a model is called — inert, not broken, and failing closed.
+**And the Edge Function has to be deployed separately from any OTA**: this project has no linked Supabase
+CLI, `eas update` does not carry it, and `program-photo-read` cannot answer until someone deploys it.
+⚠ **`coach-interpret` may be in the same state** — it is in the tree and the board still calls the AI layer
+"the next real gap"; that was not verified this pass and should be before either is called live.
+
+**Files:** `src/domain/program/photo-transcript.ts` (new, the guard) · `supabase/functions/program-photo-read/index.ts` (new) · `src/data/program-photo-live.ts` (new) · `src/lib/useMediaPicker.tsx` (`pickImageFromLibrary`) · `src/app/program-builder.tsx` (a third way to fill the paste box) · `supabase/migrations/0174_coach_ai_photo_import.sql` + `supabase/apply/pending-0174.sql` · 29 new tests (17 guard + 12 wiring source-guard).
+
 
 ### 0. ⭐ The podium reveal was spoiling its own ending — the champion’s name never actually wiped on (2026-08-20, Podium Reveal / C-3.5 — no migration, ✅ WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6)
 
