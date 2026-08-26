@@ -48,6 +48,30 @@ guard will block you.
 live. The runbook used to say ~10s and then ~2 minutes; both were too short, and impatience here is what
 caused the earlier "took prod down in between" incident. **Wait, re-check, and do not re-deploy.**
 
+### ⚠ — BUT 22.3.0 CAN ALSO LAND AN EMPTY WORKER, AND THERE IS A TEST THAT TELLS THEM APART
+
+2026-08-26: a 22.3.0 deploy printed `√ Promoted deployment to production` and served **404 for twelve
+minutes** — well past the four-minute window above — on the alias, on the deployment's own URL, and on a
+direct asset path. Its `--dry-run` payload had been checked immediately before and was **healthy**:
+20,102 bytes with real `assets.json` entries, not the 295-byte `{}` of the 22.4.0 bug. So a good payload
+is necessary and NOT sufficient; the upload itself can still land nothing.
+
+**The distinguishing test is the deployment's OWN url**, which the deploy prints (or `--json` returns as
+`.url`, e.g. `https://forgelegacy--0rjfpnlqyu.expo.app`):
+
+| deployment URL | production alias | meaning |
+|---|---|---|
+| 200 | 404 | **Propagation.** Wait, re-check, do not re-deploy. |
+| 404 | 404 | **Empty worker.** Waiting will never fix it — re-deploy. |
+
+The alias lags; a deployment's own URL does not. Nothing is at risk in the second case because production
+is already broken, which is the answer to "don't re-deploy": that rule protects a *working* alias, not a
+dead one.
+
+The re-deploy of the identical `dist` was live and hash-matched on the **first** probe. No cause was
+found on the client side — same CLI, same tarball, same tree — so treat it as a server-side swallow and
+keep the probe above as the check.
+
 ---
 
 ## 0. The tree must be clean — this is not optional
