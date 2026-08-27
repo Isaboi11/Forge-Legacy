@@ -1,76 +1,36 @@
 /**
- * Turning a measured track into something safe to keep.
+ * Turning a measured track into what the database keeps.
  *
  * Pure — no React, no Supabase — so `node --test` can load it and so there is exactly ONE place that
  * decides what a stored route contains.
  *
- * ══ ⚠ THE TRIM IS THE REASON THIS FILE EXISTS ══
+ * ══ ⚠ THE TRIM THIS FILE EXISTED FOR IS RESCINDED ══
  *
- * `Endurance-Statistics-Architecture-Amendment-001.md` §9 forbade storing route data at all, on the
- * strength of `External-Activity-Import-Architecture-Evaluation.md` §3: route geometry is a materially
- * higher privacy surface than anything else this app keeps, because **a run begins and ends at the
- * athlete's front door**. `Route-And-Elevation-Persistence-Amendment-001.md` lifts that prohibition on
- * one condition, D-RTE-1, and this is where that condition is met.
+ * Until 2026-08-26 this module removed the first and last 200 m of travel before encoding — D-RTE-1,
+ * the condition under which `Route-And-Elevation-Persistence-Amendment-001.md` lifted the ban on
+ * storing route data at all, because a run begins and ends at the athlete's front door.
  *
- * The first and last `TRIM_M` metres of TRAVEL are removed BEFORE the route is encoded. Not hidden at
- * read time — removed. A route stored whole and masked in the UI still has the front door in the
- * database, recoverable by any bug, any export, any breach, any future feature that forgets. A
- * display-time rule protects the athlete from the screen; a write-time rule protects them from the
- * system, and only one of those is worth having.
+ * `Route-Sharing-Amendment-001.md` D-RS-1 rescinds it, by PO veto: *"we veto the 200m remove. Take
+ * this out completely."* The full track, endpoints included, is stored — and since the same amendment
+ * approves sharing routes onto posts (D-RS-2), the risk that the trim carried is now carried by
+ * CONSENT instead: including the map on a post is opt-in, per post, default off (D-RS-3). The
+ * engineering recommendation to keep the trim is recorded in that amendment's Section 2, alongside the
+ * PO's decision. Neither is repeated here; this header just tells you which one governs.
  *
- * Everything the athlete SEES is computed from the untrimmed track — distance, pace, duration, climb.
- * The trim costs the map its ends and costs the numbers nothing.
+ * The filename stays. Renaming it would touch six importers and the database's own column comments to
+ * commemorate a rule that no longer exists — the name is where the history is, and this header is what
+ * it means now.
+ *
+ * ⚠ ROUTES STORED BEFORE THIS CHANGE ARE TRIMMED FOREVER. The 400 m never reached the database, so an
+ * old run's map is 400 m short of its numbers and nothing can recover it. `route-region.ts` and every
+ * drawing surface must keep treating "the route is shorter than the distance" as normal data.
  */
 
 /* ⚠ The `.ts` is required, not stylistic. A runtime import of a sibling domain module must carry the
    extension or `node --test` cannot resolve it — the same rule that keeps `@/` type-only down here. */
 import { haversineMi, totalGainM, hasClimbData, type TrackPoint } from './run-core.ts';
 
-/**
- * Metres removed from each end.
- *
- * 200 m is the established default for this mitigation (Strava's privacy-zone radius is ⅛ mile ≈ 201 m).
- * It is far larger than any fix this app accepts — `ACCURACY_FLOOR_M` is 65 m — so it cannot be defeated
- * by a lucky reading, and it is enough that a trimmed endpoint names a neighbourhood rather than a
- * building.
- *
- * ⚠ NOT CONFIGURABLE, DELIBERATELY (D-RTE-2). An off switch would make the safe path opt-in, and the
- * default would end up doing the protecting for exactly the people least likely to find the setting.
- */
-export const TRIM_M = 200;
-
 const M_PER_MI = 1609.344;
-const TRIM_MI = TRIM_M / M_PER_MI;
-
-/**
- * The shortest bout that can carry a stored route at all — the two trims meeting in the middle.
- *
- * Below this there IS no middle: every point on a shorter bout is within `TRIM_M` of one end or the
- * other, which is precisely the thing that must not be kept. So nothing is stored, and no map is drawn.
- *
- * ⚠ EXPORTED SO THE CARD CAN SAY SO. A saved outdoor run that shows no map and gives no reason reads as
- * a broken map — a tester walked to the end of the street, got 0.22 mi, and asked what had happened to
- * it. The threshold is right; the silence was the bug. Any real run clears this in its first minute.
- */
-export const MIN_MAPPABLE_MI = TRIM_MI * 2;
-
-/**
- * Drop the first and last `TRIM_M` metres of travel.
- *
- * Measured along the cumulative `mi` the track already carries, not as a radius from the start: an
- * out-and-back that passes its own doorstep in the middle is not the case this guards, and a radius
- * would carve a hole out of the middle of a route while leaving the ends of a long loop intact.
- *
- * Returns fewer than two points when there is not enough run left to be a shape, and the caller stores
- * nothing at all. A bout under ~400 m has no storable route, which is correct rather than unfortunate:
- * at that length the trim and the route are the same thing.
- */
-export function trimEnds(track: readonly TrackPoint[]): TrackPoint[] {
-  if (track.length < 2) return [];
-  const total = track[track.length - 1].mi;
-  if (total <= MIN_MAPPABLE_MI) return [];
-  return track.filter((p) => p.mi >= TRIM_MI && p.mi <= total - TRIM_MI);
-}
 
 // ── the polyline ────────────────────────────────────────────────────────────
 
@@ -145,25 +105,24 @@ export function decodePolyline(encoded: string): { lat: number; lon: number }[] 
 // ── what the save path calls ────────────────────────────────────────────────
 
 export interface StoredRoute {
-  /** The trimmed, encoded shape — or null when there is nothing safe or meaningful to keep. */
+  /** The encoded shape of the whole bout — or null when there is nothing meaningful to keep. */
   route: string | null;
   /** Total climb in whole metres, or null when the device never reported a usable altitude. */
   climbM: number | null;
 }
 
 /**
- * The ONE function the save path calls. Trim, then encode, in that order and never separately.
+ * The ONE function the save path calls.
  *
- * Exported as a single step on purpose: a caller that could reach `encodePolyline` with an untrimmed
- * track is a caller that will eventually do it. The privacy rule holds because there is no path to a
- * stored route that does not pass through this line.
+ * Still exported as a single step, and still the only path to a stored route, for the same reason as
+ * before the rescission: whatever the storage rule is — a trim yesterday, none today, anything a future
+ * amendment decides — it holds because every caller has to come through this line. A second writer is
+ * how a rule silently forks.
  *
  * ⚠ `outdoor` is the caller's assertion that this bout was GPS-tracked outdoors. A treadmill bout has
  * no route to store however many points happen to be lying around in the tracker's state.
  */
 export function routeForStorage(track: readonly TrackPoint[], outdoor: boolean): StoredRoute {
-  // Climb comes from the FULL track. It is a scalar, it carries no location, and trimming it would
-  // quietly under-report the hill the athlete actually climbed.
   // `readonly` in, mutable out: these two only read, but they predate this file and are typed on the
   // array `useRunTracker` actually holds. Widening their signatures would touch the live path for a
   // caller's convenience, which is the wrong direction to pay the cost in.
@@ -171,23 +130,11 @@ export function routeForStorage(track: readonly TrackPoint[], outdoor: boolean):
   const climbM = outdoor && hasClimbData(full) ? Math.round(totalGainM(full)) : null;
   if (!outdoor) return { route: null, climbM: null };
 
-  const kept = trimEnds(track);
-  if (kept.length < 2) return { route: null, climbM };
-  return { route: encodePolyline(kept), climbM };
-}
-
-/**
- * How much of the run the stored map is NOT showing, in miles — so a route surface can say so.
- *
- * The athlete is told that the map omits the start and end of their run. An app that silently drew a
- * shorter route than the one that was run would be lying by omission about the one thing the number
- * beside it claims to describe.
- */
-export function trimmedAwayMi(track: readonly TrackPoint[]): number {
-  if (track.length < 2) return 0;
-  const kept = trimEnds(track);
-  if (kept.length < 2) return track[track.length - 1].mi;
-  return track[track.length - 1].mi - (kept[kept.length - 1].mi - kept[0].mi);
+  // Two fixes is the floor for a shape at all — one point is a dot, zero is nothing. There is no
+  // distance floor any more: MIN_MAPPABLE_MI was the two 200 m trims meeting in the middle, and it
+  // went with them (D-RS-1). A walk to the end of the street now stores the walk.
+  if (track.length < 2) return { route: null, climbM };
+  return { route: encodePolyline(track), climbM };
 }
 
 /** Straight-line distance in metres between two points — for tests and for the map's own bounds. */

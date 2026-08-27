@@ -1,11 +1,12 @@
 /**
- * route-privacy.test.mjs — the trim, and the encoding it feeds.
+ * route-privacy.test.mjs — the encoding, and the storage rule as it stands after the rescission.
  *
- * ⚠ THE TRIM IS A PRIVACY CONTROL, NOT A FORMATTING CHOICE. `Endurance-Statistics-Architecture-
- * Amendment-001.md` §9 forbade storing routes at all until a dedicated review; the review lifted that on
- * the single condition that the athlete's start and end never reach the database. So the assertions
- * below are about what is ABSENT from the output, which is the awkward kind to write and the only kind
- * that means anything here.
+ * ⚠ THIS SUITE USED TO PROVE THE TRIM. Until `Route-Sharing-Amendment-001` D-RS-1 (2026-08-26, PO:
+ * *"we veto the 200m remove. Take this out completely"*) the assertions here were about what was
+ * ABSENT from the output — the athlete's start and end never reaching the database. Those assertions
+ * are now INVERTED, deliberately and on the record: the stored route must begin where the run began
+ * and end where it ended. A regression that quietly reintroduces trimming fails this suite exactly as
+ * loudly as removing the trim used to.
  *
  * Run:  node --test src/domain/run/__tests__/route-privacy.test.mjs
  */
@@ -13,15 +14,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-  TRIM_M,
-  decodePolyline,
-  encodePolyline,
-  metresBetween,
-  routeForStorage,
-  trimEnds,
-  trimmedAwayMi,
-} from '../route-privacy.ts';
+import { decodePolyline, encodePolyline, metresBetween, routeForStorage } from '../route-privacy.ts';
 import { acceptFix } from '../run-core.ts';
 
 const MI_PER_DEG_LAT = 69.0546;
@@ -78,104 +71,60 @@ test('the encoding contains no digit, comma or quote — the shape 0162’s cons
   // The column refuses raw coordinates. If the encoder ever emitted one of these the save would be
   // rejected by the database, which is a far worse way to find out than here.
   const encoded = encodePolyline(runOf(3).map((p) => ({ lat: p.lat, lon: p.lon })));
-  assert.doesNotMatch(encoded, /[0-9",]/, `encoded route contained a forbidden character: ${encoded.slice(0, 40)}`);
+  assert.ok(encoded.length > 0);
+  assert.doesNotMatch(encoded, /[0-9",]/);
 });
 
-// ── ⚠ the trim ──────────────────────────────────────────────────────────────
+// ── the storage rule after D-RS-1 ───────────────────────────────────────────
 
-test('⚠ the stored route does not begin where the run began', () => {
-  const track = runOf(3);
-  const { route } = routeForStorage(track, true);
-  const stored = decodePolyline(route);
-  const startedAt = { lat: track[0].lat, lon: track[0].lon };
-  const away = metresBetween(startedAt, stored[0]);
-  assert.ok(away >= TRIM_M * 0.9, `the stored route starts ${Math.round(away)} m from home — it must be at least ${TRIM_M}`);
+test('⚠ the stored route begins where the run began — the rescission, held', () => {
+  const t = runOf(3);
+  const { route } = routeForStorage(t, true);
+  assert.ok(route, 'a 3-mile outdoor run stores a route');
+  const pts = decodePolyline(route);
+  assert.ok(metresBetween(HOME, pts[0]) < 20, `first stored point is ${metresBetween(HOME, pts[0])} m from the start`);
 });
 
-test('⚠ nor does it end where the run ended', () => {
-  const track = runOf(3);
-  const stored = decodePolyline(routeForStorage(track, true).route);
-  const finishedAt = { lat: track[track.length - 1].lat, lon: track[track.length - 1].lon };
-  const away = metresBetween(finishedAt, stored[stored.length - 1]);
-  assert.ok(away >= TRIM_M * 0.9, `the stored route ends ${Math.round(away)} m from the finish — it must be at least ${TRIM_M}`);
+test('⚠ …and ends where it ended', () => {
+  const t = runOf(3);
+  const finish = { lat: t[t.length - 1].lat, lon: t[t.length - 1].lon };
+  const { route } = routeForStorage(t, true);
+  const pts = decodePolyline(route);
+  const last = pts[pts.length - 1];
+  assert.ok(metresBetween(finish, last) < 20, `last stored point is ${metresBetween(finish, last)} m from the finish`);
 });
 
-test('⚠ no point of the stored route is within the trim of either doorstep', () => {
-  // The strong version: not just the endpoints, but EVERY stored point. A route that dipped back inside
-  // the trimmed zone would put the front door back in the database by another door.
-  const track = runOf(3);
-  const stored = decodePolyline(routeForStorage(track, true).route);
-  const home = { lat: track[0].lat, lon: track[0].lon };
-  const finish = { lat: track[track.length - 1].lat, lon: track[track.length - 1].lon };
-  for (const p of stored) {
-    assert.ok(metresBetween(home, p) >= TRIM_M * 0.9, 'a stored point sits inside the start zone');
-    assert.ok(metresBetween(finish, p) >= TRIM_M * 0.9, 'a stored point sits inside the finish zone');
-  }
+test('⚠ the whole track survives — point for point, not just the ends', () => {
+  const t = runOf(2);
+  const { route } = routeForStorage(t, true);
+  const pts = decodePolyline(route);
+  assert.equal(pts.length, t.length, 'no point was dropped between the tracker and the row');
 });
 
-test('a run too short to survive the trim stores no route at all', () => {
-  // Under ~400 m there is nothing left once both ends go, and a stub is worse than nothing.
-  for (const miles of [0.05, 0.1, 0.2]) {
-    const { route } = routeForStorage(runOf(miles), true);
-    assert.equal(route, null, `${miles} mi should store no route`);
-  }
+test('a short outdoor bout stores its shape too — MIN_MAPPABLE went with the trim', () => {
+  // Under D-RTE-1 a bout below ~400 m had no storable middle. The tester who walked to the end of the
+  // street and asked where the map went now gets the walk.
+  const t = runOf(0.22);
+  const { route } = routeForStorage(t, true);
+  assert.ok(route, 'a 0.22 mi tracked outdoor bout stores a route');
+  assert.ok(decodePolyline(route).length >= 2);
 });
 
-test('a long run keeps the middle, and keeps most of it', () => {
-  const track = runOf(5);
-  const kept = trimEnds(track);
-  const keptMi = kept[kept.length - 1].mi - kept[0].mi;
-  // 5 miles less 400 m of trim is ~4.75. A trim that ate much more would mean the filter is wrong.
-  assert.ok(Math.abs(keptMi - (5 - (TRIM_M * 2) / 1609.344)) < 0.1, `kept ${keptMi} mi of 5`);
+test('one fix is a dot, not a shape — nothing is stored', () => {
+  const t = runOf(0);
+  assert.ok(t.length <= 1, `expected at most one accepted fix, got ${t.length}`);
+  const { route } = routeForStorage(t, true);
+  assert.equal(route, null);
 });
 
 test('an indoor bout stores neither a route nor a climb, whatever is lying in the tracker', () => {
-  // The card instantiates the tracker for every activity; a treadmill run has no route to keep, and
-  // "there happen to be points in state" is not the same question as "was this outdoors".
   const { route, climbM } = routeForStorage(runOf(3), false);
   assert.equal(route, null);
   assert.equal(climbM, null);
 });
 
-// ── the climb ───────────────────────────────────────────────────────────────
-
-test('climb is measured on the FULL track, not the trimmed one', () => {
-  // Trimming is a privacy control on geometry. Applying it to the climb would quietly under-report the
-  // hill the athlete actually ran up.
-  let track = [];
-  for (let i = 0; i <= 60; i++) {
-    track = acceptFix(
-      track,
-      {
-        lat: HOME.lat + (i * 0.01) / MI_PER_DEG_LAT,
-        lon: HOME.lon,
-        accuracy: 5,
-        at: at0 + i * 6000,
-        alt: 1400 + i * 5, // a steady 5 m a fix — 300 m of climb over the whole run
-        altAccuracy: 4,
-      },
-      'run',
-    ).track;
-  }
-  const { climbM } = routeForStorage(track, true);
-  assert.ok(climbM > 250, `the full climb should survive the trim, got ${climbM}`);
-});
-
-test('a device that never reported altitude stores null, not zero', () => {
-  // "We could not tell" is not "it was flat" — the same distinction hasClimbData draws on the card.
+test('a device that never reported altitude stores null climb, not zero', () => {
+  // runOf() never sets altitude, so hasClimbData is false — "we could not tell" must not become "flat".
   const { climbM } = routeForStorage(runOf(3), true);
   assert.equal(climbM, null);
-});
-
-// ── what the athlete is told ────────────────────────────────────────────────
-
-test('trimmedAwayMi reports roughly the two trims, so the surface can say so', () => {
-  const away = trimmedAwayMi(runOf(3));
-  const expected = (TRIM_M * 2) / 1609.344;
-  assert.ok(Math.abs(away - expected) < 0.05, `expected ~${expected.toFixed(2)} mi withheld, got ${away.toFixed(2)}`);
-});
-
-test('trimmedAwayMi on a run too short to store reports the whole thing', () => {
-  const track = runOf(0.1);
-  assert.equal(trimmedAwayMi(track), track[track.length - 1].mi);
 });

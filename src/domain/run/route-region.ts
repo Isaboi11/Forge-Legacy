@@ -71,30 +71,24 @@ export const trackToLatLng = (track: readonly TrackPoint[]): LatLng[] =>
 /**
  * A stored route — what the map draws afterwards.
  *
- * ⚠ THIS IS THE TRIMMED SHAPE, and every surface built on it inherits that. The first and last 200 m
- * were removed before the polyline was ever written (D-RTE-1), so the line drawn from it genuinely does
- * not reach either end of the run. `ROUTE_TRIM_NOTE` is the sentence that has to appear beside it.
+ * ⚠ WHOLE FOR NEW SAVES, TRIMMED FOREVER FOR OLD ONES. Runs saved while D-RTE-1 governed (0162 →
+ * 2026-08-26) had their first and last 200 m removed before writing, and that data never existed in
+ * the database to recover. `Route-Sharing-Amendment-001` D-RS-1 rescinded the trim, so everything
+ * saved since stores the full track. Nothing marks which era a row is from — a drawing surface must
+ * treat "the line stops short of the distance" as normal data, which `ROUTE_STORED_NOTE` words for.
  */
 export const storedRouteToLatLng = (encoded: string | null | undefined): LatLng[] =>
   encoded ? decodePolyline(encoded).map((p) => ({ latitude: p.lat, longitude: p.lon })) : [];
 
 /**
- * What the athlete is told, wherever a stored route is drawn.
+ * What the athlete is told beside a STORED route.
  *
- * Required by `Route-And-Elevation-Persistence-Amendment-001.md` §8.7. A map that quietly draws less
- * than the run it claims to describe would be lying by omission about the one thing the distance beside
- * it asserts — and the athlete would reasonably read the short line as the app having lost their miles,
- * which is precisely the complaint that started this whole piece of work.
+ * ⚠ IT CAN NO LONGER PROMISE COMPLETENESS IN EITHER DIRECTION. A run saved after the rescission is
+ * whole; one saved before it is short 200 m at each end, permanently, with nothing on the row saying
+ * which is which. "As it was saved" is the sentence that is true of both — it explains an old map
+ * stopping short of the door without accusing a new one of hiding anything.
  */
-export const ROUTE_TRIM_NOTE = 'Start and finish are trimmed for privacy — your distance is the full run.';
+export const ROUTE_STORED_NOTE = 'Your route as it was saved.';
 
-/**
- * What the athlete is told when the line IS the whole run.
- *
- * ⚠ THE PAIR IS THE POINT. §8.7 requires the app never to imply the map is complete when it is not;
- * the same honesty obliges the opposite sentence when it is. Right after a tracked bout the card draws
- * from `tracker.track`, which was never trimmed because it was never stored — see `CardioBlockCard`.
- * The trimmed shape is still the only thing that reaches the database, and it is what every later
- * viewing of this run gets, which is why both sentences exist rather than one replacing the other.
- */
-export const WHOLE_RUN_NOTE = 'The whole run — start to finish. Saved routes trim their ends for privacy.';
+/** What the athlete is told when the line is provably the whole run — drawn from the live track. */
+export const WHOLE_RUN_NOTE = 'The whole run — start to finish.';

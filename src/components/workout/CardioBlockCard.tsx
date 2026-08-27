@@ -61,7 +61,7 @@ import {
   type ActivityKind,
   type UnitSystem,
 } from '@/domain/run/run-core';
-import { MIN_MAPPABLE_MI, routeForStorage } from '@/domain/run/route-privacy';
+import { routeForStorage } from '@/domain/run/route-privacy';
 import { storedRouteToLatLng, trackToLatLng } from '@/domain/run/route-region';
 import { RouteMap } from './RouteMap';
 import { RouteSheet } from './RouteSheet';
@@ -149,10 +149,12 @@ interface Props {
     /** Whether the distance was MEASURED or typed. A tracked run must never be filed as a claim. */
     source: 'tracked' | 'manual';
     /**
-     * The bout's route as a TRIMMED encoded polyline, and its climb in metres (0162).
+     * The bout's route as an encoded polyline of the WHOLE track, and its climb in metres (0162).
      *
-     * Both null unless GPS actually measured an outdoor bout. The trim happens in `routeForStorage`
-     * and nowhere else — see `route-privacy.ts` — so no caller can hand up an untrimmed route.
+     * Both null unless GPS actually measured an outdoor bout. Untrimmed since
+     * `Route-Sharing-Amendment-001` D-RS-1 rescinded the 200 m endpoint trim by PO veto;
+     * `routeForStorage` is still the only path to a stored route, so the rule — whatever it is —
+     * cannot fork.
      */
     route: string | null;
     climbM: number | null;
@@ -506,48 +508,30 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
    */
   const storedRoute = traced ? storedRouteToLatLng(result?.route) : [];
   /**
-   * ══ THE WHOLE RUN, WHILE THE APP STILL HAS IT ══
+   * ══ THE WHOLE RUN — FROM MEMORY THIS SESSION, FROM STORAGE EVER AFTER ══
    *
-   * PO, 2026-08-26: *“I want the whole run on the map. The whole cutting off part of the run I don't
-   * want that.”*
+   * This block used to be the workaround: PO, 2026-08-26 — *“I want the whole run on the map. The
+   * whole cutting off part of the run I don't want that”* — honoured by drawing `tracker.track` from
+   * memory while D-RTE-1 still trimmed what reached the database. Later the same day the PO vetoed the
+   * trim itself (*“Take this out completely”* — `Route-Sharing-Amendment-001` D-RS-1), and the comment
+   * this replaces, which said making history whole *“belongs to the PO, not to this file”*, got its
+   * answer.
    *
-   * ⚠ THIS DOES NOT TOUCH D-RTE-1, AND IT MUST NOT. The stored polyline is trimmed 200 m at each end
-   *   BEFORE it is written (`route-privacy.ts`), which is the condition under which
-   *   `Route-And-Elevation-Persistence-Amendment-001.md` lifted the outright ban on keeping route data
-   *   at all. Nothing here changes what reaches the database — the front door is still never persisted.
-   *
-   * What changes is that the card stops throwing away something it already has. `useRunTracker.stop()`
-   * commits the finished track and leaves it standing, so for as long as this card is mounted after a
-   * tracked bout, `tracker.track` IS the whole run, untrimmed, in memory. Drawing the stored shape
-   * instead was showing the athlete less than the app was holding, for no privacy gain: the amendment's
-   * distinction is that *“a display-time rule protects the athlete from the screen; a write-time rule
-   * protects them from the system”*, and it chose the write-time one precisely so the screen would not
-   * have to lie.
-   *
-   * ⚠ IT IS THIS SESSION ONLY, AND THAT LIMIT IS DATA, NOT POLICY. Re-open the same workout tomorrow and
-   *   `tracker.track` is empty, because the ends were never written down — the map falls back to the
-   *   stored shape and says so. Making history whole too would mean storing the front door, which is a
-   *   different decision and belongs to the PO, not to this file.
+   * The in-memory preference SURVIVES the rescission, for a smaller reason than it was built for:
+   * a bout saved under the old trim, re-opened in the same mount, still draws fuller from memory than
+   * from its trimmed row — and for new saves the two shapes are identical, so preferring memory costs
+   * nothing and never will.
    */
   const fullRoute = traced && result?.source === 'tracked' ? trackToLatLng(tracker.track) : [];
-  /* Only ever an UPGRADE of a map that was going to be drawn anyway. A bout too short to store a route
-     keeps its “too short to map” answer rather than quietly gaining a map of the athlete's street. */
+  /* Only ever an UPGRADE of a map that was going to be drawn anyway. `whole` doubles as the caption
+     switch: from memory the line is provably the entire run; from storage it is "as saved", which for
+     pre-rescission rows genuinely is 400 m short. See ROUTE_STORED_NOTE. */
   const wholeRun = storedRoute.length > 1 && fullRoute.length > 1;
   const mapRoute = wholeRun ? fullRoute : storedRoute;
   const hasMap = mapRoute.length > 1;
   /**
    * Saved, outdoors, GPS measured it — and it is STILL too short to hold a route.
-   *
-   * ⚠ SAY THIS RATHER THAN NOTHING. The 200 m trimmed off each end is the whole bout when the bout is
-   * under `MIN_MAPPABLE_MI`, so there is nothing left to store and no map appears. That is correct (see
-   * `route-privacy.ts`) and it was completely silent: a tester walked to the end of the street, saved
-   * 0.22 mi, got the dashed sketch back and reasonably concluded the map was broken.
-   *
-   * Only for a TRACKED bout. Saying "too short to map" about a hand-typed distance would imply the app
-   * had tried to measure one.
    */
-  const tooShortToMap =
-    traced && !hasMap && result?.source === 'tracked' && (result?.distanceMi ?? 0) < MIN_MAPPABLE_MI;
   const [mapOpen, setMapOpen] = useState(false);
 
   const note = signalNote(tracker.phase === 'paused', tracker.weakSignal, tracker.accuracyM, tracker.gps);
@@ -842,16 +826,14 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
                   ? `${d1(targetMi)} ${dU} target reached · keep going if you like`
                   : note
                 : traced
-                  ? /* With a map on screen the caption earns its space by saying what the map cannot:
-                       that the line is short at both ends on purpose. Without one it stays the numbers —
-                       unless the REASON there is no map is the trim, which has to be said outright. */
+                  ? /* Two captions retired with the endpoint trim (Route-Sharing-Amendment-001
+                       D-RS-1): the privacy note on the drawn line, and the short-bout explanation for
+                       a withheld map. The stored map IS the run now, so the caption is just the
+                       numbers and the affordance — and route-persistence.test.mjs asserts neither
+                       phrase survives in this file. */
                     hasMap
-                    ? wholeRun
-                      ? `${d1(result?.distanceMi)} ${dU} · tap the map`
-                      : `${d1(result?.distanceMi)} ${dU} · tap the map · ends trimmed for privacy`
-                    : tooShortToMap
-                      ? `${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)} · too short to map`
-                      : `${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)}`
+                    ? `${d1(result?.distanceMi)} ${dU} · tap the map`
+                    : `${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)}`
                   : loggedIndoors
                     ? 'Logged on a treadmill · no route'
                     : 'Your route traces as you run'}

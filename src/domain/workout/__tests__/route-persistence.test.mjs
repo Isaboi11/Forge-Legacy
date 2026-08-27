@@ -1,9 +1,10 @@
 /**
- * route-persistence.test.mjs — the route survives the trip to the save payload, and arrives trimmed.
+ * route-persistence.test.mjs — the route survives the trip to the save payload, whole.
  *
- * `route-privacy.test.mjs` proves the trim itself. This proves the OTHER half, which is the half that
- * historically breaks here: that the value reaches `save_workout`'s jsonb at all, under the key the
- * migration reads, and that nothing between the card and the column quietly derives a distance from it.
+ * `route-privacy.test.mjs` proves the storage rule (untrimmed since `Route-Sharing-Amendment-001`
+ * D-RS-1). This proves the OTHER half, which is the half that historically breaks here: that the value
+ * reaches `save_workout`'s jsonb at all, under the key the migration reads, and that nothing between
+ * the card and the column quietly derives a distance from it.
  *
  * ⚠ 0162 READS `route` AND `climb_m`. A rename on either side of that boundary is silent — the save
  * succeeds, the column stays null, and the map is empty for a reason no error mentions. That is exactly
@@ -16,7 +17,7 @@ import { readFileSync } from 'node:fs';
 
 import { buildSaveExercises } from '../save-core.ts';
 import { acceptFix } from '../../run/run-core.ts';
-import { routeForStorage, decodePolyline, metresBetween, TRIM_M, MIN_MAPPABLE_MI } from '../../run/route-privacy.ts';
+import { routeForStorage, decodePolyline, metresBetween } from '../../run/route-privacy.ts';
 
 const MI_PER_DEG_LAT = 69.0546;
 const at0 = 1_700_000_000_000;
@@ -88,29 +89,30 @@ test('a set that predates the field sends null rather than undefined', () => {
 
 // ── ⚠ what must NOT happen ──────────────────────────────────────────────────
 
-test('⚠ the stored route is still trimmed at the far end of the save path', () => {
-  // The end-to-end version: build a real track, put it through the real save builder, decode what would
-  // reach the column, and check the athlete's doorstep is not in it. Every layer in between is covered.
+test('⚠ the WHOLE route reaches the far end of the save path — D-RS-1, held end to end', () => {
+  // The end-to-end inverse of the assertion that held D-RTE-1: build a real track, put it through the
+  // real save builder, decode what would reach the column, and check both doorsteps ARE in it. A layer
+  // that quietly reintroduces trimming — a stale import, a revived branch — fails here, not in prod.
   const t = track3mi();
   const { route, climbM } = routeForStorage(t, true);
   const s = firstSet(runSession({ route, climbM }));
   const stored = decodePolyline(s.route);
   const home = { lat: t[0].lat, lon: t[0].lon };
   const finish = { lat: t[t.length - 1].lat, lon: t[t.length - 1].lon };
-  for (const p of stored) {
-    assert.ok(metresBetween(home, p) >= TRIM_M * 0.9, 'the start of the run reached the save payload');
-    assert.ok(metresBetween(finish, p) >= TRIM_M * 0.9, 'the end of the run reached the save payload');
-  }
+  assert.ok(metresBetween(home, stored[0]) < 20, 'the start of the run must reach the save payload');
+  assert.ok(metresBetween(finish, stored[stored.length - 1]) < 20, 'the end of the run must reach the save payload');
+  assert.equal(stored.length, t.length, 'every point of the track survives to the column');
 });
 
-test('⚠ distance is the measured mileage, NOT anything derived from the trimmed route', () => {
-  // The route is short by two trims. If any layer ever recomputes distance from it — for tidiness, for
-  // consistency, for any reason — every run in the app silently loses 400 m, and `workouts.distance` is
-  // what mileage goals (0035), honors (0078), challenges (0061) and squad totals (0107) all read.
+test('⚠ distance is the measured mileage, NOT anything derived from the route', () => {
+  // Every run saved before the rescission has a route 400 m short of its mileage, forever. If any layer
+  // ever recomputes distance from the polyline — for tidiness, for consistency — those runs all shrink,
+  // and `workouts.distance` is what mileage goals (0035), honors (0078), challenges (0061) and squad
+  // totals (0107) all read. Measured distance and drawn shape stay independent in both directions.
   const t = track3mi();
   const { route, climbM } = routeForStorage(t, true);
   const s = firstSet(runSession({ route, climbM, distanceMi: 3.01 }));
-  assert.equal(s.distance, 3.01, 'the distance must be the one measured on the untrimmed track');
+  assert.equal(s.distance, 3.01, 'the distance must be the measured one, never the polyline’s');
   assert.equal(s.distance_unit, 'mi');
 
   const storedLen = decodePolyline(s.route).length;
@@ -128,8 +130,8 @@ test('climb rides along as metres, and null stays null rather than becoming zero
 
 test('⚠ what the encoder emits satisfies 0162’s CHECK constraint', () => {
   // The column refuses digits, commas and quotes — the marks of raw coordinates arriving because
-  // somebody skipped the encoder, and therefore almost certainly the trim. If the encoder ever emitted
-  // one, every outdoor save would start failing at the database with no clue pointing back here.
+  // somebody skipped the encoder. If the encoder ever emitted one, every outdoor save would start
+  // failing at the database with no clue pointing back here.
   const { route } = routeForStorage(track3mi(), true);
   assert.doesNotMatch(route, /[0-9",]/);
   assert.ok(route.length >= 2 && route.length <= 65536);
@@ -137,16 +139,13 @@ test('⚠ what the encoder emits satisfies 0162’s CHECK constraint', () => {
   assert.match(route, /^[\x3f-\x7e]+$/, 'every byte must sit in the printable polyline range 63–126');
 });
 
-// ── the bout too short to have a route, and the sentence that admits it ──────
+// ── the short bout, after the floor went with the trim ──────────────────────
 
 /*
- * ══ ⚠ A CORRECT REFUSAL THAT SAID NOTHING READ AS A BROKEN MAP ══
- *
- * A tester walked to the end of the street, saved 0.22 mi, got the dashed placeholder back and asked what
- * had happened to the Apple map. Nothing had: 200 m off each end of a 354 m walk is the whole walk, so
- * there was no route to store and none to draw. The threshold is the privacy control working. The silence
- * was the defect — and it is the kind nobody can debug from the screen, because a missing map and a
- * withheld map look identical.
+ * The tester who walked to the end of the street (0.22 mi) and asked where the map went was the
+ * MIN_MAPPABLE_MI story: 200 m off each end of a 354 m walk was the whole walk, and the card grew a
+ * "too short to map" caption to say so. Both the floor and the caption retired with the trim
+ * (D-RS-1) — the walk now stores the walk, so there is nothing to explain.
  */
 
 /** A straight-line bout of `mi` miles, built through the real accept path. */
@@ -158,16 +157,14 @@ const trackMi = (mi) => {
   return t;
 };
 
-test('⚠ a bout under MIN_MAPPABLE_MI stores no route at all — the two trims meet in the middle', () => {
-  assert.ok(MIN_MAPPABLE_MI > 0.24 && MIN_MAPPABLE_MI < 0.25, `the threshold moved to ${MIN_MAPPABLE_MI} mi`);
-  // Below it, every point is within TRIM_M of one end or the other, which is the thing being protected.
-  assert.equal(routeForStorage(trackMi(0.22), true).route, null, 'a 354 m walk stored a shape made entirely of doorstep');
-  // And a bout comfortably over it still keeps its middle, so this is a floor and not an off switch.
-  assert.ok(routeForStorage(trackMi(1), true).route, 'a one-mile run lost its route to the floor');
+test('⚠ the street-length walk stores its route now — the floor went with the trim', () => {
+  assert.ok(routeForStorage(trackMi(0.22), true).route, 'a 354 m tracked outdoor bout stores its shape');
+  assert.ok(routeForStorage(trackMi(1), true).route, 'and a mile obviously still does');
 });
 
-test('⚠ and the card SAYS "too short to map" rather than showing a sketch and no reason', () => {
+test('⚠ the card no longer carries the retired captions', () => {
   const CARD = readFileSync(new URL('../../../components/workout/CardioBlockCard.tsx', import.meta.url), 'utf8');
-  assert.match(CARD, /MIN_MAPPABLE_MI/, 'the card can no longer tell a withheld route from a missing one');
-  assert.match(CARD, /too short to map/, 'a saved outdoor run with no map explains itself to nobody again');
+  assert.doesNotMatch(CARD, /MIN_MAPPABLE_MI/, 'the floor is gone; a reference to it is a revival waiting to happen');
+  assert.doesNotMatch(CARD, /too short to map/, 'a caption explaining a refusal that no longer exists');
+  assert.doesNotMatch(CARD, /ends trimmed for privacy/, 'the trim caption must not outlive the trim');
 });

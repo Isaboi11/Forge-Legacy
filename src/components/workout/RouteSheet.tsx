@@ -1,7 +1,7 @@
 import { Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { flColor, flFont } from '@/constants/foundation';
-import { ROUTE_TRIM_NOTE, WHOLE_RUN_NOTE, type LatLng } from '@/domain/run/route-region';
+import { ROUTE_STORED_NOTE, WHOLE_RUN_NOTE, type LatLng } from '@/domain/run/route-region';
 import { RouteMap } from './RouteMap';
 
 /**
@@ -62,7 +62,7 @@ export function RouteSheet({ visible, onClose, points, summary, whole = false }:
             An athlete comparing this against their distance would otherwise reasonably conclude the app
             had lost their miles, which is the exact complaint this whole piece of work started from.
           */}
-          <Text style={styles.note}>{whole ? WHOLE_RUN_NOTE : ROUTE_TRIM_NOTE}</Text>
+          <Text style={styles.note}>{whole ? WHOLE_RUN_NOTE : ROUTE_STORED_NOTE}</Text>
         </View>
       </View>
     </Modal>

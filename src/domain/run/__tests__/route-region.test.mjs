@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import {
   MIN_DELTA_DEG,
   REGION_PADDING,
-  ROUTE_TRIM_NOTE,
+  ROUTE_STORED_NOTE,
   regionFor,
   storedRouteToLatLng,
   trackToLatLng,
@@ -107,21 +107,22 @@ test('a stored route decodes back into something the map can frame', () => {
   assert.ok(Math.abs(r.latitude - HOME.lat) < 0.1, `framed at ${r.latitude}, run was at ${HOME.lat}`);
 });
 
-test('trackToLatLng and storedRouteToLatLng agree on shape, not on length', () => {
-  // The stored one is SHORT by two trims. Both must still frame to roughly the same place — if they
-  // did not, one of them would be drawing a different run.
+test('trackToLatLng and storedRouteToLatLng frame the SAME run identically now', () => {
+  // Under the trim the stored shape spanned less than the live one. Since D-RS-1 they are the same
+  // points, so the two framings must agree exactly — a divergence means one path is still trimming.
   const track = runOf(3);
   const live = regionFor(trackToLatLng(track));
   const stored = regionFor(storedRouteToLatLng(routeForStorage(track, true).route));
-  assert.ok(Math.abs(live.latitude - stored.latitude) < 0.01, 'the two framings disagree about where the run was');
-  assert.ok(stored.latitudeDelta < live.latitudeDelta, 'the stored route is trimmed, so it spans less');
+  assert.ok(Math.abs(live.latitude - stored.latitude) < 0.001, 'the two framings disagree about where the run was');
+  assert.ok(Math.abs(live.latitudeDelta - stored.latitudeDelta) < 0.001, 'the stored route no longer spans less than the run');
 });
 
-test('⚠ the trim is disclosed wherever a stored route is drawn', () => {
-  // Amendment §8.7. A map that quietly draws less than the run it describes reads as lost miles — the
-  // exact complaint that started this work.
-  assert.match(ROUTE_TRIM_NOTE, /trim/i);
-  assert.match(ROUTE_TRIM_NOTE, /distance is the full run/i, 'it must say the NUMBER is unaffected');
+test('⚠ the stored-route caption promises nothing it cannot know', () => {
+  // Post-rescission a stored route is whole for new saves and short 400 m for old ones, with nothing
+  // on the row saying which. The caption must therefore neither claim completeness nor claim a trim —
+  // "as it was saved" is the sentence true of both eras. See ROUTE_STORED_NOTE's header.
+  assert.match(ROUTE_STORED_NOTE, /saved/i);
+  assert.doesNotMatch(ROUTE_STORED_NOTE, /trim|privacy/i, 'it must not describe a rule that no longer runs');
 });
 
 test('an encoded route round-trips through the map helper unchanged', () => {

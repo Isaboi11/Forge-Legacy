@@ -414,13 +414,13 @@ export function buildSaveExercises(session: ActiveSession) {
               /*
                * The shape of the bout, and the hill in it (0162).
                *
-               * ⚠ ALREADY TRIMMED BY THE TIME IT REACHES HERE. `routeForStorage` removes the first and
-               * last 200 m before encoding — see `route-privacy.ts` and D-RTE-1 — and this layer must
-               * never be the place that decides, or a second writer would eventually skip it. Null for
-               * an indoor bout, an untracked one, and a run too short to have a middle.
+               * ⚠ THE WHOLE TRACK, since `Route-Sharing-Amendment-001` D-RS-1 rescinded the endpoint
+               * trim — and `routeForStorage` is still the only writer, so whatever the storage rule is,
+               * this layer is never the place that decides it. Null for an indoor bout and an untracked
+               * one.
                *
-               * ⚠ AND IT IS NEVER A SOURCE OF DISTANCE. `distance` above comes from the UNtrimmed
-               * track; deriving mileage from this polyline would shorten every run by 400 m.
+               * ⚠ AND IT IS NEVER A SOURCE OF DISTANCE. `distance` above is the measured mileage;
+               * routes saved under the old trim are 400 m short of it forever.
                */
               route: s.route ?? null,
               climb_m: s.climbM ?? null,
