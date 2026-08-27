@@ -44,7 +44,19 @@
 
     --fl-cream-100:     #F0EDE8;
     --fl-gray-400:      #9E9890;
-    --fl-gray-600:      #666060;
+    /* ⚠ WAS #666060, WHICH FAILED WCAG AA ON EVERY SURFACE THIS PAGE RENDERS IT ON.
+       Measured, not estimated — #666060 against the four grounds tertiary text actually sits on:
+       surface-card top #181A1C 2.83:1 · surface-card bottom #131517 2.97:1 · charcoal-900 3.10:1 ·
+       charcoal-700 2.94:1. All nine usages are 11–14.5px, so none is "large text" and all require
+       4.5:1. Two pairs sat below even the 3.0 floor for non-text.
+       #888282 is the first step that clears 4.5:1 on ALL FOUR (worst case 4.60:1 on charcoal-700),
+       keeping the +6 red offset that made the original a warm grey rather than a neutral one.
+       ⚠ Its ONLY consumer is --fl-text-tertiary, which is why the primitive moves rather than a new
+       role token being added. Re-measure if anything else starts reading it.
+       ⚠ THE SAME VALUE IS STILL WRONG IN THE APP — `foundation.forge.ts` has gray600:'#666060' as
+       both text.tertiary and inactive. Not changed here; that is a .dc-governed token touching 277
+       stylesheets and is the PO's call. */
+    --fl-gray-600:      #888282;
 
     --fl-bronze-300:    #CDA063;
     --fl-bronze-400:    #BF8F4F;
