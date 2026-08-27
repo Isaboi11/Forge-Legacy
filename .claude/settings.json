@@ -74,7 +74,38 @@
       }
     ]
   },
+  "extraKnownMarketplaces": {
+    "designer-skills": {
+      "source": {
+        "source": "github",
+        "repo": "Owl-Listener/designer-skills"
+      }
+    },
+    "codeswithroh": {
+      "source": {
+        "source": "github",
+        "repo": "codeswithroh/tastemaker"
+      }
+    },
+    "interfaces": {
+      "source": {
+        "source": "github",
+        "repo": "jakubkrehel/skills"
+      }
+    }
+  },
   "enabledPlugins": {
-    "expo@claude-plugins-official": true
+    "expo@claude-plugins-official": true,
+    "interfaces@interfaces": true,
+    "tastemaker@codeswithroh": true,
+    "ui-design@designer-skills": true,
+    "interaction-design@designer-skills": true,
+    "design-systems@designer-skills": true,
+    "visual-critique@designer-skills": true,
+    "ux-strategy@designer-skills": true,
+    "prototyping-testing@designer-skills": true,
+    "design-research@designer-skills": false,
+    "design-ops@designer-skills": false,
+    "designer-toolkit@designer-skills": false
   }
 }

@@ -206,10 +206,15 @@ test('app prefs default to imperial, haptics/sound on, reduce-motion off, analyt
 test('exactly the toggles with a real consumer today are marked live', () => {
   const live = EXPERIENCE_TOGGLES.filter((t) => t.live).map((t) => t.key);
   // SOUND became real when the rest timer got its ding (`lib/ding`, gated by `useSoundEnabled`) — it
-  // fires on web and native alike. HAPTICS is still an intent with nothing behind it: the app has no
-  // haptics layer, and the single vibration in the codebase is web-only. Marking it live would be the
-  // settings screen claiming a capability the app does not have.
-  assert.deepEqual(live, ['sound', 'reduceMotion'], 'haptics still has no consumer — do not claim it fires');
+  // fires on web and native alike. HAPTICS became real with `lib/haptics` + `useHaptics`: the set-log
+  // path in `workout.tsx` fires `light` from inside `completeSet` (so every route into a completed set
+  // gets it, not just the check) and `success` on a PR. `useHaptics` returns pre-gated callables, so a
+  // caller cannot forget the `if` and leak a tap the athlete switched off.
+  //
+  // ⚠ LIVE MEANS "A CONSUMER READS THE PREF", NOT "IT FIRES ON EVERY BUILD". `expo-haptics` is a
+  //   native module, so a build made before it was added has no engine behind the toggle. That is a
+  //   build-fingerprint fact, not a claim this list makes — see the note in `preferences.ts`.
+  assert.deepEqual(live, ['haptics', 'sound', 'reduceMotion'], 'every toggle here must have a real consumer');
 });
 
 test('sanitizePrefs coerces each field and survives a malformed blob', () => {

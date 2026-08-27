@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
 
   // card
   card: { position: 'relative', overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, boxShadow: flShadow.card },
-  cardPressed: { transform: [{ scale: 0.992 }], borderColor: flColor.bronzeBorder },
+  cardPressed: { transform: [{ scale: 0.96 }], borderColor: flColor.bronzeBorder },
   cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 13, paddingHorizontal: 15, paddingTop: 15 },
   crest: {
     width: 52,
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
   actionBtn: { position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 11, borderRadius: flRadius.md, borderWidth: 1 },
   actionBtnBronze: { borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
   actionBtnDone: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
-  actionBtnPressed: { transform: [{ scale: 0.99 }], opacity: 0.9 },
+  actionBtnPressed: { transform: [{ scale: 0.96 }], opacity: 0.9 },
   actionBtnBusy: { opacity: 0.6 },
   actionLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.onBronze },
   actionLabelDone: { color: flColor.gray400 },

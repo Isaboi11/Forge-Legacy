@@ -65,7 +65,7 @@ export function IconButton({
   }
   const handlePressOut = () => {
     setPressed(false)
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 2 }).start()
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 0 }).start()
   }
 
   let bgColors: readonly [string, string, string] = BTN.ICON_GLOW_COLORS

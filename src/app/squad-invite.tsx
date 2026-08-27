@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
   tile: { flex: 1, alignItems: 'center', gap: 11, paddingVertical: 18, paddingHorizontal: 8, borderRadius: flRadius.lg, borderWidth: 1 },
   tilePrimary: { backgroundColor: '#17120B', borderColor: flColor.bronzeBorder, boxShadow: `${flShadow.borderInset}, ${flShadow.card}` },
   tileSecondary: { backgroundColor: flColor.charcoal800, borderColor: flColor.bronzeBorderSubtle, boxShadow: flShadow.card },
-  tilePressed: { transform: [{ scale: 0.97 }] },
+  tilePressed: { transform: [{ scale: 0.96 }] },
   tileDisabled: { opacity: 0.4 },
   tileIcon: { width: 44, height: 44, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   tileIconPrimary: { backgroundColor: '#3D2F1A', borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },

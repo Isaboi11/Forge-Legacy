@@ -850,7 +850,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal800,
     boxShadow: flShadow.card,
   },
-  pickerRowPressed: { transform: [{ scale: 0.995 }], opacity: 0.9 },
+  pickerRowPressed: { transform: [{ scale: 0.96 }], opacity: 0.9 },
   pickerIcon: {
     width: 40,
     height: 40,

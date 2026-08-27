@@ -1676,7 +1676,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal800,
     boxShadow: flShadow.card,
   },
-  recordsRowPressed: { transform: [{ scale: 0.99 }], borderColor: flColor.bronzeBorder },
+  recordsRowPressed: { transform: [{ scale: 0.96 }], borderColor: flColor.bronzeBorder },
   recordsIcon: {
     width: 38,
     height: 38,

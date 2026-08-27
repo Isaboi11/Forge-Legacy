@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
   },
   rowNew: { borderColor: flColor.bronzeBorder },
   rowPlain: { borderColor: flColor.charcoal600 },
-  rowPressed: { transform: [{ scale: 0.99 }] },
+  rowPressed: { transform: [{ scale: 0.96 }] },
 
   iconTile: {
     width: 40,

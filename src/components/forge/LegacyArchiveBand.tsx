@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     boxShadow: `${flShadow.borderInset}, ${flShadow.card}`,
   },
   /* Scale, not an opacity flash — the tile is imagery, and dimming it reads as a load state. */
-  pressedScale: { transform: [{ scale: 0.975 }] },
+  pressedScale: { transform: [{ scale: 0.96 }] },
   pressedFlat: { opacity: 0.9 },
 
   diptych: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, flexDirection: 'row' },

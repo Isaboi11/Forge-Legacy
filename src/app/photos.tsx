@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal800,
     boxShadow: flShadow.card,
   },
-  cardPressed: { transform: [{ scale: 0.985 }], borderColor: flColor.bronzeBorder },
+  cardPressed: { transform: [{ scale: 0.96 }], borderColor: flColor.bronzeBorder },
 
   cover: { width: '100%', aspectRatio: 5 / 4, backgroundColor: '#0b0a09' },
   coverDim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(6,7,9,0.3)' },

@@ -60,7 +60,7 @@ export function PrimaryButton({
   }
   const handlePressOut = () => {
     setPressed(false)
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 2 }).start()
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 0 }).start()
   }
 
   // Effective gradient

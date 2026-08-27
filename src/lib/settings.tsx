@@ -1,6 +1,8 @@
-import React, { createContext, useCallback, useContext, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
 import { setAnalyticsEnabled } from './analytics';
 import { useAuth } from './auth';
+/* Resolves `haptics.ts` on native and `haptics.web.ts` on web — same three calls either way. */
+import { tapLight, tapMedium, tapSuccess } from './haptics';
 import { useQuery } from './useQuery';
 import { fetchAppPrefs } from '@/data/settings-live';
 import { APP_PREFS_DEFAULTS, type AppPrefs } from '@/domain/settings/preferences';
@@ -91,6 +93,32 @@ export function useReduceMotion(): boolean {
 export function useSoundEnabled(): boolean {
   return useAppPrefs().prefs.sound;
 }
+
+/**
+ * The haptics the athlete is allowed to feel — already gated, so a caller never checks the pref.
+ *
+ * ⚠ RETURNS CALLABLES, NOT A BOOLEAN, and that is the difference from `useSoundEnabled`. The ding has
+ *   one trigger in one file; haptics has a trigger on every set, every PR and every commit, and a
+ *   boolean would have meant `if (haptics) tapLight()` repeated at each one — thirty chances to
+ *   forget the `if`, and a toggle that leaks on any line that does. Handing back a no-op when the
+ *   athlete turned it off makes the gate impossible to skip.
+ *
+ * ⚠ REDUCE MOTION DOES NOT SUPPRESS THESE. It is a motion setting, and a haptic is not motion — for
+ *   an athlete who reduces animation precisely because they cannot watch the screen mid-set, the tap
+ *   in the hand is the confirmation that is left. Only the Haptics toggle silences it.
+ */
+export function useHaptics(): { light: () => void; medium: () => void; success: () => void } {
+  const on = useAppPrefs().prefs.haptics;
+  return useMemo(
+    () =>
+      on
+        ? { light: tapLight, medium: tapMedium, success: tapSuccess }
+        : { light: noop, medium: noop, success: noop },
+    [on],
+  );
+}
+
+function noop(): void {}
 
 /**
  * How hard Holt pushes. Feeds `profileFor(level, experience)` — see `domain/coach/rulebook/intensity`.

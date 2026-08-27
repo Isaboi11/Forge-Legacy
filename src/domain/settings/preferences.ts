@@ -3,9 +3,15 @@
  * `Forge Preferences.dc.html`.
  *
  * Units is real and drives every weight display through `units.ts`. Reduce Motion is real and gates
- * animation through `useReduceMotion`. SOUND IS NOW REAL TOO — it gates the rest-timer ding through
- * `useSoundEnabled` + `lib/ding`, on web and native alike. Haptics is still a recorded intent: the app
- * has no haptics layer, and the one vibration in it is web-only.
+ * animation through `useReduceMotion`. SOUND IS REAL — it gates the rest-timer ding through
+ * `useSoundEnabled` + `lib/ding`, on web and native alike. HAPTICS IS NOW REAL TOO: `useHaptics`
+ * returns pre-gated callables backed by `lib/haptics` (`expo-haptics` on native, `navigator.vibrate`
+ * on web), so all four toggles on this screen now do something.
+ *
+ * ⚠ HAPTICS NEEDS A NATIVE BUILD, NOT AN OTA. `expo-haptics` is a native module, so it changes the
+ *   runtime fingerprint — an `eas update` cannot deliver it and the toggle will keep doing nothing on
+ *   any build made before 2026-08-26. The web preview vibrates on Chrome/Android only; Safari has
+ *   never implemented `navigator.vibrate`, so a silent web preview is expected, not a bug.
  */
 
 import { DEFAULT_UNITS, isUnitSystem, type UnitSystem } from './units.ts';
@@ -86,7 +92,7 @@ export interface ExperienceToggle {
 }
 
 export const EXPERIENCE_TOGGLES: ExperienceToggle[] = [
-  { key: 'haptics', label: 'Haptics', desc: 'Subtle taps confirm actions and PRs', icon: 'haptics', live: false },
+  { key: 'haptics', label: 'Haptics', desc: 'Subtle taps confirm actions and PRs', icon: 'haptics', live: true },
   { key: 'sound', label: 'Sound Effects', desc: 'A small ding when your rest timer runs out', icon: 'sound', live: true },
   { key: 'reduceMotion', label: 'Reduce Motion', desc: 'Simplifies animations across Forge', icon: 'motion', live: true },
 ];

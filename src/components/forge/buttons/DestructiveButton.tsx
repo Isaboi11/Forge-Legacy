@@ -60,7 +60,7 @@ export function DestructiveButton({
   }
   const handlePressOut = () => {
     setPressed(false)
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 2 }).start()
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 0 }).start()
   }
 
   let bgColors: readonly [string, string] = BTN.DESTRUCTIVE_GRAD_COLORS

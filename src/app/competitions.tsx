@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeMetalBorder,
     boxShadow: `${flShadow.bronzeMetalTopRim}, ${flShadow.card}`,
   },
-  createBtnPressed: { opacity: 0.9, transform: [{ scale: 0.99 }] },
+  createBtnPressed: { opacity: 0.9, transform: [{ scale: 0.96 }] },
   createLabel: { fontSize: 15, fontWeight: '700', color: flColor.onBronze, textShadowColor: 'rgba(8,5,2,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
 
   // chips
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
   btnBusy: { opacity: 0.6 },
 
   // active
-  activeCardPressed: { opacity: 0.9, transform: [{ scale: 0.995 }] },
+  activeCardPressed: { opacity: 0.9, transform: [{ scale: 0.96 }] },
   activeCard: {
     position: 'relative',
     overflow: 'hidden',

@@ -958,7 +958,7 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.card,
   },
   typeCardLocked: { borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed, opacity: 0.72, boxShadow: 'none' },
-  typeCardPressed: { transform: [{ scale: 0.98 }], borderColor: flColor.bronzeBorder },
+  typeCardPressed: { transform: [{ scale: 0.96 }], borderColor: flColor.bronzeBorder },
   typeIcon: {
     width: 38,
     height: 38,

@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
 
   tileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 11 },
   tile: { flexBasis: '48%', maxWidth: '48%', minWidth: 0, alignItems: 'center', overflow: 'hidden', borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, boxShadow: `${flShadow.borderInset}, ${flShadow.card}`, paddingTop: 18, paddingHorizontal: 12, paddingBottom: 15 },
-  tilePressed: { opacity: 0.9, transform: [{ scale: 0.97 }] },
+  tilePressed: { opacity: 0.9, transform: [{ scale: 0.96 }] },
   emblem: { width: 54, height: 54, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: flRadius.round, borderWidth: 1 },
   tileName: { marginTop: 12, fontFamily: flFont.display, fontSize: 14.5, fontWeight: '600', letterSpacing: -0.1, lineHeight: 17.4, textAlign: 'center', color: flColor.cream100 },
   tileTier: { marginTop: 7, fontSize: 9, fontWeight: '700', letterSpacing: 1.2, textAlign: 'center' },

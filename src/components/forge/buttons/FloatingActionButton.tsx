@@ -64,7 +64,7 @@ export function FloatingActionButton({
   }
   const handlePressOut = () => {
     setPressed(false)
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 3 }).start()
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 0 }).start()
   }
 
   const gradColors = success

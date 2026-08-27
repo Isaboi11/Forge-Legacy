@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
   declinePressed: { opacity: 0.8, backgroundColor: flColor.charcoal800 },
   declineLabel: { fontSize: 13, fontWeight: '600', color: flColor.gray600 },
   approveBtn: { flex: 1.7, position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 11, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
-  approvePressed: { transform: [{ scale: 0.98 }], opacity: 0.9 },
+  approvePressed: { transform: [{ scale: 0.96 }], opacity: 0.9 },
   approveLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.onBronze },
   btnBusy: { opacity: 0.6 },
 

@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
   commitBtn: { position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1 },
   commitBtnFilled: { borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
   commitBtnDone: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
-  commitBtnPressed: { transform: [{ scale: 0.99 }], opacity: 0.9 },
+  commitBtnPressed: { transform: [{ scale: 0.96 }], opacity: 0.9 },
   commitBtnBusy: { opacity: 0.6 },
   commitLabel: { fontSize: 15, fontWeight: '600', color: flColor.onBronze },
   commitLabelDone: { color: flColor.gray400 },

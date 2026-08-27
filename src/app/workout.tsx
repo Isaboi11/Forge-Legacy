@@ -31,7 +31,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useSheetDrag } from '@/hooks/useSheetDrag';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
-import { useAppPrefs, useCoachIntensity, useSoundEnabled, useUnits } from '@/lib/settings';
+import { useAppPrefs, useCoachIntensity, useHaptics, useSoundEnabled, useUnits } from '@/lib/settings';
 import { loadContextFor } from '@/domain/program/percent-max';
 import { displayWeight, unitLabel, weightInExact } from '@/domain/settings/units';
 import { playRestDing, primeDing } from '@/lib/ding';
@@ -332,6 +332,7 @@ export default function WorkoutScreen() {
    * longer one, because the coin below reads the same value. Both move together now.
    */
   const barBottom = useBarBottom();
+  const haptics = useHaptics();
   const soundOn = useSoundEnabled();
   const [phase, setPhase] = useState<Phase>('loading');
   const [sheet, setSheet] = useState<SetSheet | null>(null);
@@ -1259,6 +1260,10 @@ export default function WorkoutScreen() {
       durationSec: set.targetSec != null ? set.durationSec ?? set.targetSec : set.durationSec,
     }));
     setSession(ns);
+    /* The confirmation that does not need eyes. Fired here rather than in the button's `onPress` so
+       that every path into a completed set gets it — the check, the hold timer's `logHold`, and the
+       auto-complete in `commitSheet` — instead of only the one the thumb happened to take. */
+    haptics.light();
     const ex = ns.exercises[ei];
     const done = ex.sets[si];
 
@@ -1294,6 +1299,9 @@ export default function WorkoutScreen() {
         const w = done.weight;
         const r = done.actualReps;
         setPrShown((p) => ({ ...p, [ei]: true }));
+        /* A PR should not feel like logging set three — `success` is iOS's two-beat pattern, and the
+           set that earned it has already fired `light` a beat earlier. */
+        haptics.success();
         setPrPrompt({ name: ex.name, perf: `${w} ${unitLabel(units)} × ${r}`, key: ex.catalogKey ?? null });
       }
     }
@@ -2767,7 +2775,7 @@ export default function WorkoutScreen() {
               accessibilityRole="button"
               accessibilityLabel="Add a photo or video"
               hitSlop={8}
-              style={styles.overflowBtn}
+              style={({ pressed }) => [styles.overflowBtn, pressed && styles.ctlPressed]}
             >
               <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                 <Path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.2-2h8.2l1.2 2h2.2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z" />
@@ -2775,7 +2783,7 @@ export default function WorkoutScreen() {
               </Svg>
               {(memories ?? []).length > 0 ? <View style={styles.memoryBadge} /> : null}
             </Pressable>
-          <Pressable ref={optionsRef} onPress={() => setOptionsOpen(true)} accessibilityRole="button" accessibilityLabel="Workout options" hitSlop={8} style={styles.overflowBtn}>
+          <Pressable ref={optionsRef} onPress={() => setOptionsOpen(true)} accessibilityRole="button" accessibilityLabel="Workout options" hitSlop={8} style={({ pressed }) => [styles.overflowBtn, pressed && styles.ctlPressed]}>
             <Svg width={20} height={20} viewBox="0 0 24 24" fill={flColor.gray400}>
               <Path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
             </Svg>
@@ -2794,18 +2802,18 @@ export default function WorkoutScreen() {
             <View style={styles.restActiveChip}>
               <RestRing value={restTotal - restRemaining} max={restTotal} size={26} stroke={3} />
               <Text style={styles.restActiveTime}>{fmtMMSS(restRemaining)}</Text>
-              <Pressable onPress={() => restAdjust(-15)} accessibilityRole="button" accessibilityLabel="Subtract 15 seconds" hitSlop={6} style={styles.restMiniBtn}>
+              <Pressable onPress={() => restAdjust(-15)} accessibilityRole="button" accessibilityLabel="Subtract 15 seconds" hitSlop={6} style={({ pressed }) => [styles.restMiniBtn, pressed && styles.ctlPressed]}>
                 <Text style={styles.restMiniText}>−15</Text>
               </Pressable>
-              <Pressable onPress={restPauseToggle} accessibilityRole="button" accessibilityLabel={restPaused ? 'Resume rest' : 'Pause rest'} hitSlop={6} style={styles.restMiniRound}>
+              <Pressable onPress={restPauseToggle} accessibilityRole="button" accessibilityLabel={restPaused ? 'Resume rest' : 'Pause rest'} hitSlop={6} style={({ pressed }) => [styles.restMiniRound, pressed && styles.ctlPressed]}>
                 <Svg width={13} height={13} viewBox="0 0 24 24" fill={flColor.bronze300}>
                   {restPaused ? <Path d="M8 5v14l11-7z" /> : <Path d="M6 5h4v14H6zM14 5h4v14h-4z" />}
                 </Svg>
               </Pressable>
-              <Pressable onPress={() => restAdjust(15)} accessibilityRole="button" accessibilityLabel="Add 15 seconds" hitSlop={6} style={styles.restMiniBtn}>
+              <Pressable onPress={() => restAdjust(15)} accessibilityRole="button" accessibilityLabel="Add 15 seconds" hitSlop={6} style={({ pressed }) => [styles.restMiniBtn, pressed && styles.ctlPressed]}>
                 <Text style={styles.restMiniText}>+15</Text>
               </Pressable>
-              <Pressable onPress={restSkip} accessibilityRole="button" accessibilityLabel="Skip rest" hitSlop={6} style={styles.restMiniBtn}>
+              <Pressable onPress={restSkip} accessibilityRole="button" accessibilityLabel="Skip rest" hitSlop={6} style={({ pressed }) => [styles.restMiniBtn, pressed && styles.ctlPressed]}>
                 <Svg width={14} height={14} viewBox="0 0 24 24" fill={flColor.gray400}>
                   <Path d="M5 5l9 7-9 7zM17 5h2v14h-2z" />
                 </Svg>
@@ -2830,7 +2838,7 @@ export default function WorkoutScreen() {
             */
             <View style={[styles.restChip, restEnabled ? styles.restChipOn : null]}>
               {restMode === 'manual' ? (
-                <Pressable onPress={startRest} accessibilityRole="button" accessibilityLabel="Start rest now" hitSlop={10} style={styles.restStart}>
+                <Pressable onPress={startRest} accessibilityRole="button" accessibilityLabel="Start rest now" hitSlop={10} style={({ pressed }) => [styles.restStart, pressed && styles.ctlPressed]}>
                   <Svg width={12} height={12} viewBox="0 0 24 24" fill={flColor.bronze300}>
                     <Path d="M7 4l12 8-12 8z" />
                   </Svg>
@@ -3045,7 +3053,7 @@ export default function WorkoutScreen() {
                         </View>
                       );
                     })}
-                    <Pressable onPress={addSupersetRound} accessibilityRole="button" accessibilityLabel="Add a round" style={styles.ssAddRound}>
+                    <Pressable onPress={addSupersetRound} accessibilityRole="button" accessibilityLabel="Add a round" style={({ pressed }) => [styles.ssAddRound, pressed && styles.ctlPressed]}>
                       <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round">
                         <Path d="M12 5v14M5 12h14" />
                       </Svg>
@@ -3091,12 +3099,12 @@ export default function WorkoutScreen() {
                       <View style={styles.heroTitleRow}>
                         <Text style={styles.heroName}>{ex.name}</Text>
                         <View style={styles.heroActionsTop}>
-                          <Pressable onPress={() => setFavorite((v) => !v)} accessibilityRole="button" accessibilityLabel="Save exercise" hitSlop={6} style={styles.heroIconBtn}>
+                          <Pressable onPress={() => setFavorite((v) => !v)} accessibilityRole="button" accessibilityLabel="Save exercise" hitSlop={6} style={({ pressed }) => [styles.heroIconBtn, pressed && styles.ctlPressed]}>
                             <Svg width={19} height={19} viewBox="0 0 24 24" fill={favorite ? flColor.bronze300 : 'none'} stroke={favorite ? flColor.bronze300 : flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
                               <Path d="M6 4h12v17l-6-4-6 4z" />
                             </Svg>
                           </Pressable>
-                          <Pressable onPress={() => setHero(true)} accessibilityRole="button" accessibilityLabel="Collapse exercise details" hitSlop={6} style={styles.heroIconBtn}>
+                          <Pressable onPress={() => setHero(true)} accessibilityRole="button" accessibilityLabel="Collapse exercise details" hitSlop={6} style={({ pressed }) => [styles.heroIconBtn, pressed && styles.ctlPressed]}>
                             <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                               <Path d="M18 15l-6-6-6 6" />
                             </Svg>
@@ -3214,7 +3222,7 @@ export default function WorkoutScreen() {
                   </View>
                 </TourAnchor>
               ) : (
-                <Pressable onPress={() => setHero(false)} accessibilityRole="button" accessibilityLabel="Expand exercise details" style={styles.heroStrip}>
+                <Pressable onPress={() => setHero(false)} accessibilityRole="button" accessibilityLabel="Expand exercise details" style={({ pressed }) => [styles.heroStrip, pressed && styles.ctlPressed]}>
                   <View style={styles.heroStripThumb}>
                     <Svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" opacity={0.16}>
                       <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
@@ -3323,7 +3331,7 @@ export default function WorkoutScreen() {
                             <Text style={styles.targetLoad}>{set.targetWeight} {unitLabel(units)}</Text>
                           ) : null}
                         </View>
-                        <Pressable style={[styles.cWeight, styles.weightBtn]} onPress={() => openSheet(exIdx, si, 'weight')} accessibilityRole="button" accessibilityLabel={`Edit weight, set ${si + 1}`}>
+                        <Pressable style={({ pressed }) => [styles.cWeight, styles.weightBtn, pressed && styles.cellBtnPressed]} onPress={() => openSheet(exIdx, si, 'weight')} accessibilityRole="button" accessibilityLabel={`Edit weight, set ${si + 1}`}>
                           {popCell(si, 'weight', <Text style={[styles.weightText, { color: valColor }]}>{weightText(set)}</Text>)}
                           <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" opacity={0.85}>
                             <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
@@ -3335,13 +3343,13 @@ export default function WorkoutScreen() {
                         <View style={[styles.cActual, styles.actualCell]}>
                           {isDone ? (
                             <>
-                              <Pressable style={styles.actualBtn} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Edit actual reps, set ${si + 1}`}>
+                              <Pressable style={({ pressed }) => [styles.actualBtn, pressed && styles.cellBtnPressed]} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Edit actual reps, set ${si + 1}`}>
                                 {popCell(si, 'reps', <Text style={styles.actualDone}>{actualText(set)}</Text>)}
                                 <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" opacity={0.8}>
                                   <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
                                 </Svg>
                               </Pressable>
-                              <Pressable onPress={() => uncompleteSet(exIdx, si)} accessibilityRole="button" accessibilityLabel={`Mark set ${si + 1} incomplete`} style={styles.checkDoneBtn}>
+                              <Pressable onPress={() => uncompleteSet(exIdx, si)} accessibilityRole="button" accessibilityLabel={`Mark set ${si + 1} incomplete`} style={({ pressed }) => [styles.checkDoneBtn, pressed && styles.checkDoneBtnPressed]}>
                                 <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.greenMuted} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
                                   <Path d="M20 6L9 17l-5-5" />
                                 </Svg>
@@ -3363,13 +3371,13 @@ export default function WorkoutScreen() {
                               />
                             ) : (
                             <>
-                              <Pressable style={[styles.actualBtn, styles.actualBtnCurrent]} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Edit actual reps, set ${si + 1}`}>
+                              <Pressable style={({ pressed }) => [styles.actualBtn, styles.actualBtnCurrent, pressed && styles.cellBtnPressed]} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Edit actual reps, set ${si + 1}`}>
                                 {popCell(si, 'reps', <Text style={styles.actualCurrent}>{actualText(set)}</Text>)}
                                 <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
                                   <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
                                 </Svg>
                               </Pressable>
-                              <Pressable onPress={() => completeSet(exIdx, si)} accessibilityRole="button" accessibilityLabel={`Complete set ${si + 1}`} style={styles.checkCurrent}>
+                              <Pressable onPress={() => completeSet(exIdx, si)} accessibilityRole="button" accessibilityLabel={`Complete set ${si + 1}`} style={({ pressed }) => [styles.checkCurrent, pressed && styles.checkCurrentPressed]}>
                                 <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
                                   <Path d="M20 6L9 17l-5-5" />
                                 </Svg>
@@ -3380,7 +3388,7 @@ export default function WorkoutScreen() {
                             /* A pending row is tappable too — so you can put set 3's weight in before you get
                                there. It writes only: sets still resolve top-down (see `commitSheet`). */
                             <>
-                              <Pressable style={styles.actualBtn} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Pre-fill set ${si + 1}`}>
+                              <Pressable style={({ pressed }) => [styles.actualBtn, pressed && styles.cellBtnPressed]} onPress={() => openSheet(exIdx, si, 'reps')} accessibilityRole="button" accessibilityLabel={`Pre-fill set ${si + 1}`}>
                                 <Text style={styles.actualPending}>{set.actualReps != null ? String(set.actualReps) : '—'}</Text>
                               </Pressable>
                               <View style={styles.checkPending} />
@@ -3391,7 +3399,7 @@ export default function WorkoutScreen() {
                     );
                   })}
                   <TourAnchor id="workout-addset" style={styles.setBtns}>
-                    <Pressable onPress={() => addSet(exIdx)} accessibilityRole="button" accessibilityLabel="Add set" style={styles.addSet}>
+                    <Pressable onPress={() => addSet(exIdx)} accessibilityRole="button" accessibilityLabel="Add set" style={({ pressed }) => [styles.addSet, pressed && styles.ctlPressed]}>
                       <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round">
                         <Path d="M12 5v14M5 12h14" />
                       </Svg>
@@ -3476,7 +3484,7 @@ export default function WorkoutScreen() {
 
               {/* exercise nav dots */}
               <View style={styles.nav}>
-                <Pressable disabled={exIdx === 0} onPress={() => goExercise(exIdx - 1)} accessibilityLabel="Previous exercise" style={styles.navArrow}>
+                <Pressable disabled={exIdx === 0} onPress={() => goExercise(exIdx - 1)} accessibilityLabel="Previous exercise" style={({ pressed }) => [styles.navArrow, pressed && styles.ctlPressed]}>
                   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={exIdx === 0 ? flColor.charcoal500 : flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <Path d="M15 6l-6 6 6 6" />
                   </Svg>
@@ -3493,13 +3501,13 @@ export default function WorkoutScreen() {
                     );
                   })}
                 </View>
-                <Pressable disabled={isLastEx} onPress={() => goExercise(exIdx + 1)} accessibilityLabel="Next exercise" style={styles.navArrow}>
+                <Pressable disabled={isLastEx} onPress={() => goExercise(exIdx + 1)} accessibilityLabel="Next exercise" style={({ pressed }) => [styles.navArrow, pressed && styles.ctlPressed]}>
                   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={isLastEx ? flColor.charcoal500 : flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <Path d="M9 6l6 6-6 6" />
                   </Svg>
                 </Pressable>
               </View>
-              <Pressable onPress={() => setOverviewOpen(true)} accessibilityRole="button" accessibilityLabel="View full workout plan" style={styles.overviewBtn}>
+              <Pressable onPress={() => setOverviewOpen(true)} accessibilityRole="button" accessibilityLabel="View full workout plan" style={({ pressed }) => [styles.overviewBtn, pressed && styles.ctlPressed]}>
                 <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
                   <Path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
                 </Svg>
@@ -3770,15 +3778,15 @@ export default function WorkoutScreen() {
               <Text style={styles.restOverlayTime}>{fmtMMSS(restRemaining)}</Text>
             </RestRing>
             <View style={styles.restOverlayControls}>
-              <Pressable onPress={() => restAdjust(-15)} accessibilityRole="button" accessibilityLabel="Subtract 15 seconds" style={styles.restCtlBtn}>
+              <Pressable onPress={() => restAdjust(-15)} accessibilityRole="button" accessibilityLabel="Subtract 15 seconds" style={({ pressed }) => [styles.restCtlBtn, pressed && styles.ctlPressed]}>
                 <Text style={styles.restCtlText}>−15s</Text>
               </Pressable>
-              <Pressable onPress={restPauseToggle} accessibilityRole="button" accessibilityLabel={restPaused ? 'Resume rest' : 'Pause rest'} style={styles.restCtlRound}>
+              <Pressable onPress={restPauseToggle} accessibilityRole="button" accessibilityLabel={restPaused ? 'Resume rest' : 'Pause rest'} style={({ pressed }) => [styles.restCtlRound, pressed && styles.ctlPressed]}>
                 <Svg width={17} height={17} viewBox="0 0 24 24" fill={flColor.bronze300}>
                   {restPaused ? <Path d="M8 5v14l11-7z" /> : <Path d="M6 5h4v14H6zM14 5h4v14h-4z" />}
                 </Svg>
               </Pressable>
-              <Pressable onPress={() => restAdjust(15)} accessibilityRole="button" accessibilityLabel="Add 15 seconds" style={styles.restCtlBtn}>
+              <Pressable onPress={() => restAdjust(15)} accessibilityRole="button" accessibilityLabel="Add 15 seconds" style={({ pressed }) => [styles.restCtlBtn, pressed && styles.ctlPressed]}>
                 <Text style={styles.restCtlText}>+15s</Text>
               </Pressable>
             </View>
@@ -3794,13 +3802,13 @@ export default function WorkoutScreen() {
                 accessibilityRole="button"
                 accessibilityState={{ selected: restPinned }}
                 accessibilityLabel={restPinned ? 'Minimise the rest timer to the header' : 'Keep the rest timer on screen'}
-                style={styles.restSkip}
+                style={({ pressed }) => [styles.restSkip, pressed && styles.ctlPressed]}
                 hitSlop={6}
               >
                 <Text style={[styles.restSkipText, restPinned ? styles.restStayOn : null]}>{restPinned ? 'Minimise' : 'Stay'}</Text>
               </Pressable>
               <View style={styles.restFootDot} />
-              <Pressable onPress={restSkip} accessibilityRole="button" accessibilityLabel="Skip rest" style={styles.restSkip} hitSlop={6}>
+              <Pressable onPress={restSkip} accessibilityRole="button" accessibilityLabel="Skip rest" style={({ pressed }) => [styles.restSkip, pressed && styles.ctlPressed]} hitSlop={6}>
                 <Text style={styles.restSkipText}>Skip Rest</Text>
               </Pressable>
             </View>
@@ -3894,7 +3902,7 @@ export default function WorkoutScreen() {
                   {sheetEx?.per ? ` per ${sheetEx.per}` : ''}
                 </Text>
               </View>
-              <Pressable onPress={toggleWheel} accessibilityRole="button" accessibilityLabel={wheelMode ? 'Type the values' : 'Use the wheel'} style={styles.pickerToggle}>
+              <Pressable onPress={toggleWheel} accessibilityRole="button" accessibilityLabel={wheelMode ? 'Type the values' : 'Use the wheel'} style={({ pressed }) => [styles.pickerToggle, pressed && styles.ctlPressed]}>
                 <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
                   {wheelMode ? <Path d="M2 6h20v12H2zM6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" /> : <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2" />}
                 </Svg>
@@ -5059,6 +5067,19 @@ const styles = StyleSheet.create({
   checkDoneBtn: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: flColor.greenMuted, alignItems: 'center', justifyContent: 'center' },
   checkCurrent: { width: 34, height: 34, borderRadius: 17, borderWidth: 1.5, borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint, alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.glowSubtle },
   checkPending: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: flColor.charcoal500 },
+  /* ══ THE TAP HAS TO ANSWER BEFORE THE DATA DOES ══
+     Every control in this row used to sit inert until `completeSet` round-tripped. Mid-set,
+     one-handed, that gap is long enough to read as a missed tap — so the athlete taps again.
+     `scale: 0.96` is the standard press depth (0.98 and below reads as nothing at this size);
+     the colour shift is the static cue that survives Reduce Motion, because a transform is
+     never allowed to be the only confirmation. */
+  checkCurrentPressed: { transform: [{ scale: 0.96 }], backgroundColor: flColor.bronzeBorder, borderColor: flColor.bronze300 },
+  checkDoneBtnPressed: { transform: [{ scale: 0.96 }], backgroundColor: flColor.charcoal700 },
+  cellBtnPressed: { transform: [{ scale: 0.96 }], opacity: 0.82 },
+  /* The shared press depth for every other control on this screen — the rest-timer ±15/pause/skip
+     cluster, the exercise arrows, Add Set, the overflow and hero buttons. One value, so the screen
+     answers the thumb the same way everywhere instead of a third of it staying inert. */
+  ctlPressed: { transform: [{ scale: 0.96 }], opacity: 0.82 },
   setBtns: { flexDirection: 'row', gap: 8, marginTop: 2 },
   addSet: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorder, borderRadius: flRadius.md, backgroundColor: 'transparent' },
   addSetText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze400 },
