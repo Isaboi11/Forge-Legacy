@@ -45,6 +45,7 @@ import { AckGlyph } from '@/components/forge/AckGlyph';
 import { ACK_LABEL, fmtDuration, type AckKind, type WorkoutSummary } from '@/data/squad-feed-live';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { displayWeight, type UnitSystem } from '@/domain/settings/units';
+import { cardioMarkerLabel, cardioStats, liftsLabel } from '@/domain/share/recap-stats';
 import { SERVICE_LABEL, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { artLabel } from '@/domain/workout/playlist-art';
 import { usePlaylistArt } from '@/lib/usePlaylistArt';
@@ -52,7 +53,7 @@ import { usePlaylistArt } from '@/lib/usePlaylistArt';
 /** The 18px gutter every non-media block sits on. Media ignores it — see `bleed`. */
 export const LEDGER_GUTTER = 18;
 
-export type LedgerMarker = 'workout' | 'pr' | 'goal' | 'formcheck' | 'milestone' | 'announcement' | 'transformation';
+export type LedgerMarker = 'workout' | 'cardio' | 'pr' | 'goal' | 'formcheck' | 'milestone' | 'announcement' | 'transformation';
 
 export interface LedgerStat {
   value: string;
@@ -132,23 +133,47 @@ export interface LedgerPostProps {
 }
 
 /**
- * Volume · Time · Lifts, from a shared workout's snapshot.
+ * The strip the post leads with — Volume · Time · Lifts, or Distance · Pace · Time for a run.
+ *
+ * ⚠ THE SNAPSHOT DECIDES, NOT THE CARD. `summary.lead` was written when the session was shared
+ * (derived default, or the athlete's D-RS-4 choice — *"post both honestly. Be able to choose"*), so a
+ * post renders the same strip forever regardless of what this function learns later. Old posts carry
+ * neither `lead` nor `cardio` and fall through to the strength strip they have always shown.
  *
  * ⚠ VOLUME IS CONVERTED HERE, and it was not before. `RecapStrip` printed `fmtVolume(summary.volume)`
  * — canonical pounds, unlabelled — so a metric athlete read a friend's session in numbers that were not
  * their unit and were not marked as anybody else's either. The snapshot stays in pounds, as every stored
- * weight in this app does; the feed converts at the moment of drawing, like every other surface.
+ * weight in this app does; the feed converts at the moment of drawing, like every other surface. The
+ * cardio strip converts the same way — miles canonical, drawn in the viewer's unit.
  *
  * PRs are deliberately not a fourth stat: §2.6 caps the row at three, and "0 PRs" reads as a session
  * judged and found wanting when the honest statement is that this one was not about records.
  */
 export function workoutStats(summary: WorkoutSummary, units: UnitSystem): LedgerStat[] {
+  if (summary.lead === 'cardio' && summary.cardio) {
+    return cardioStats(summary.cardio, summary.durationSec, units);
+  }
   const v = displayWeight(summary.volume, units);
   return [
     { value: v.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','), label: `Volume (${v.unit})` },
     { value: fmtDuration(summary.durationSec), label: 'Time' },
-    { value: String(summary.exercises.length), label: 'Lifts' },
+    /* "1 Lift", not "1 Lifts" — and on a run the count was the run itself, which is why the cardio
+       strip above exists at all. */
+    { value: String(summary.exercises.length), label: liftsLabel(summary.exercises.length) },
   ];
+}
+
+/**
+ * The recap's type marker — the barbell for a lifting post, the running shoe for a cardio one.
+ *
+ * One derivation shared by both feeds, because the squad and friends cards drifting over which sport
+ * a post is would be worse than either being wrong. The label names the activity ("Run", "Climb") for
+ * cardio and stays "Workout" for strength, which is what it has always said.
+ */
+export function recapMarker(summary: WorkoutSummary): { kind: LedgerMarker; label: string } {
+  return summary.lead === 'cardio' && summary.cardio
+    ? { kind: 'cardio', label: cardioMarkerLabel(summary.cardio.activityType) }
+    : { kind: 'workout', label: 'Workout' };
 }
 
 export function LedgerPost({
@@ -459,6 +484,13 @@ const MARKER_PATHS: Record<LedgerMarker, ReactNode> = {
   workout: (
     <>
       <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
+    </>
+  ),
+  /* The running shoe `CardioBlockCard`'s Glyph draws for a run — copied, not approximated, so the
+     post's marker and the logger's cardio band are the same sport in the same hand. */
+  cardio: (
+    <>
+      <Path d="M3 15.6v-3c0-.5.4-.8.9-.6l3.3.8 2.6-2.9c.4-.5 1.2-.4 1.5.2l.7 1.5 6 1.7c1.2.3 2 1.1 2 2.4v.7c0 .4-.3.7-.7.7H4c-.6 0-1-.5-1-1z" />
     </>
   ),
   pr: (

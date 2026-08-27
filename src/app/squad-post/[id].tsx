@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { Fragment, useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -16,6 +16,8 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
+import { cardioStats } from '@/domain/share/recap-stats';
+import { useUnits } from '@/lib/settings';
 import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -460,20 +462,39 @@ function RecapBlock({ summary }: { summary: WorkoutSummary }) {
       ? { playlist_url: summary.playlist.url, playlist_service: summary.playlist.service, playlist_name: summary.playlist.displayName }
       : null,
   );
+  /*
+   * A cardio-lead recap opens on the run's numbers, not the iron's — the same Distance · Pace · Time
+   * the feed card and the Activity Detail show, from the same `cardioStats`, so the post, its card and
+   * the screen it opens never disagree about what the session was. "Under Iron" over a run was the
+   * detail-screen version of the "0 Volume · 1 Lifts" card this pass exists to fix.
+   */
+  const { units } = useUnits();
+  const cardioRow = summary.lead === 'cardio' && summary.cardio ? cardioStats(summary.cardio, summary.durationSec, units) : null;
   return (
     <View style={styles.recapBlock}>
       <View style={styles.recapStatRow}>
-        <RecapStat n={fmtVolume(summary.volume)} label="Volume" />
-        <View style={styles.recapStatDivider} />
-        <RecapStat n={fmtDuration(summary.durationSec)} label="Under Iron" />
-        <View style={styles.recapStatDivider} />
-        <RecapStat n={String(summary.exercises.length)} label="Exercises" />
-        {summary.prCount > 0 ? (
+        {cardioRow ? (
+          cardioRow.map((st, i) => (
+            <Fragment key={st.label}>
+              {i > 0 ? <View style={styles.recapStatDivider} /> : null}
+              <RecapStat n={st.value} label={st.label} />
+            </Fragment>
+          ))
+        ) : (
           <>
+            <RecapStat n={fmtVolume(summary.volume)} label="Volume" />
             <View style={styles.recapStatDivider} />
-            <RecapStat n={String(summary.prCount)} label={summary.prCount === 1 ? 'PR' : 'PRs'} />
+            <RecapStat n={fmtDuration(summary.durationSec)} label="Under Iron" />
+            <View style={styles.recapStatDivider} />
+            <RecapStat n={String(summary.exercises.length)} label="Exercises" />
+            {summary.prCount > 0 ? (
+              <>
+                <View style={styles.recapStatDivider} />
+                <RecapStat n={String(summary.prCount)} label={summary.prCount === 1 ? 'PR' : 'PRs'} />
+              </>
+            ) : null}
           </>
-        ) : null}
+        )}
       </View>
       {summary.exercises.length > 0 ? (
         <View style={styles.recapTable}>

@@ -93,6 +93,9 @@ export interface Completion {
   runBests: PersonalBest[];
   workoutId: string;
   workoutName: string;
+  /** The session's saved activity_type ('strength', 'running', 'stair_climber', …) — derived at save
+   *  time by `sessionActivityType`. The recap snapshot labels its cardio marker off this. */
+  activityType: string | null;
   chapterName: string | null;
   dateLabel: string | null; // "Mar 14" from saved_at
   volume: number;
@@ -624,6 +627,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
 
   return {
     workoutId,
+    activityType: (workout.activity_type as string | null) ?? null,
     note: workout.notes ?? null,
     savedAt: savedAt ?? null,
     runBests,

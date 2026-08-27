@@ -42,7 +42,7 @@ import {
   type SquadPostType,
 } from '@/data/squad-feed-live';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
-import { EndOfLedger, LedgerPost, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
+import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { useQuery } from '@/lib/useQuery';
 import { useUnits } from '@/lib/settings';
@@ -1262,8 +1262,11 @@ function FeedCard({
       /* ⚠ `&& !summary`: a recap keeps its WORKOUT marker even when it carries a photo, for the same
          reason it keeps its stats — see `LedgerPost`'s `showBody`. Without this the screen nulls the
          marker before the component ever gets to decide, and the body comes back headless. */
-      marker={hasMedia && !summary ? null : SQUAD_MARKER[post.type] ?? null}
-      title={summary ? summary.name ?? 'Workout' : post.type === 'pr' ? post.prExercise ?? 'A new best' : null}
+      /* A recap derives its marker from the snapshot — shoe for a cardio lead, barbell otherwise —
+         through the same helper the friends feed uses, so the two cards cannot drift over which sport
+         a post is. Non-recap types keep the static map. */
+      marker={summary ? recapMarker(summary) : hasMedia ? null : SQUAD_MARKER[post.type] ?? null}
+      title={summary ? summary.name ?? recapMarker(summary).label : post.type === 'pr' ? post.prExercise ?? 'A new best' : null}
       context={summary ? summary.context ?? null : post.type === 'pr' ? [post.prValue, post.prLabel].filter(Boolean).join(' · ') || null : null}
       stats={summary ? workoutStats(summary, units) : []}
       playlist={summary?.playlist ?? null}

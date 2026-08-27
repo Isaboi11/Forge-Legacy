@@ -249,7 +249,19 @@ function Body({
       {/* hero */}
       <View style={styles.hero}>
         <View style={styles.heroIcon}>
-          <EquipIcon equip={detail.exercises[0]?.equip ?? undefined} size={24} />
+          {/* A run under a dumbbell was the PO's screenshot (2026-08-26): `EquipIcon` falls back to
+              iron when the first exercise carries no equipment, which is every cardio session. The
+              shoe is CardioBlockCard's own glyph, copied — the same sport in the same hand. */}
+          {isStrength ? (
+            <EquipIcon equip={detail.exercises[0]?.equip ?? undefined} size={24} />
+          ) : (
+            <Glyph
+              d="M3 15.6v-3c0-.5.4-.8.9-.6l3.3.8 2.6-2.9c.4-.5 1.2-.4 1.5.2l.7 1.5 6 1.7c1.2.3 2 1.1 2 2.4v.7c0 .4-.3.7-.7.7H4c-.6 0-1-.5-1-1z"
+              size={24}
+              color={flColor.bronze400}
+              width={1.7}
+            />
+          )}
         </View>
         <View style={styles.heroText}>
           {/* Renaming writes `workouts.workout_name`, which RLS would refuse for a viewer — so on a

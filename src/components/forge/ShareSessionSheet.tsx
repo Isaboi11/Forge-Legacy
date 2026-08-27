@@ -8,6 +8,7 @@ import { SquadSelectList, selectedSquads } from '@/components/forge/SquadSelectL
 import { flColor, flRadius } from '@/constants/foundation';
 import { useToast } from '@/hooks/useCeremony';
 import { addSquadPost, buildWorkoutRecap, fmtVolume, type WorkoutSummary } from '@/data/squad-feed-live';
+import { cardioMarkerLabel, type RecapLead } from '@/domain/share/recap-stats';
 import { createFriendPost, type PostAudience } from '@/data/friends-feed-live';
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
 import { shareSummary, shareTargets, shareVerb } from '@/domain/share/fanout';
@@ -111,8 +112,18 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [sharing, setSharing] = useState(false);
   const [fetched, setFetched] = useState<WorkoutSummary | null>(null);
+  /**
+   * D-RS-4 — *"post both honestly. Be able to choose."* Null until the athlete taps a chip; the
+   * snapshot's own derived `lead` stands otherwise, so a pure run leads with the run and a lifting
+   * session with the iron without anyone being asked. The choice only exists for a MIXED session —
+   * one whose snapshot carries cardio AND derived a strength lead, which is the only combination
+   * where both strips are real.
+   */
+  const [leadChoice, setLeadChoice] = useState<RecapLead | null>(null);
 
   const snapshot = summary ?? fetched;
+  const mixed = snapshot?.cardio != null && snapshot.lead === 'strength';
+  const effectiveLead: RecapLead | null = leadChoice ?? snapshot?.lead ?? null;
 
   /* Both reads happen on OPEN rather than on mount: this sheet sits in a screen that may never share,
      and a squad list nobody asked for is a request nobody needed. */
@@ -163,7 +174,9 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
       type: 'recap' as const,
       body: note?.trim() ?? '',
       workoutId,
-      workoutSummary: snapshot,
+      /* The choice rides the snapshot, so the post renders the same strip forever — the feed never
+         re-derives it. On a non-mixed session this spread writes back the value already there. */
+      workoutSummary: { ...snapshot, lead: effectiveLead ?? snapshot.lead },
       media,
     };
     const run = async () => {
@@ -298,6 +311,34 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
       ) : (
         <View style={styles.body}>
           {preview ? <View style={styles.preview}>{preview}</View> : null}
+
+          {/* Only a mixed session gets the question — a pure run or a pure lift day has nothing to
+              choose, and a question with one honest answer is noise. The chips name the two strips in
+              the athlete's terms, not ours. */}
+          {mixed && snapshot?.cardio ? (
+            <View style={styles.leadBlock}>
+              <Text style={styles.group}>Lead with</Text>
+              <View style={styles.leadRow}>
+                {(['strength', 'cardio'] as const).map((k) => {
+                  const on = effectiveLead === k;
+                  const label = k === 'strength' ? 'The lifting' : `The ${cardioMarkerLabel(snapshot.cardio?.activityType ?? null).toLowerCase()}`;
+                  return (
+                    <Pressable
+                      key={k}
+                      onPress={() => setLeadChoice(k)}
+                      disabled={sharing}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: on }}
+                      accessibilityLabel={`Lead the post with ${label.toLowerCase()}`}
+                      style={[styles.leadChip, on && styles.leadChipOn]}
+                    >
+                      <Text style={[styles.leadChipText, on && styles.leadChipTextOn]}>{label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          ) : null}
 
           <Text style={styles.group}>Within Forge</Text>
           {/*
@@ -463,6 +504,16 @@ const styles = StyleSheet.create({
   preview: { alignItems: 'center', marginBottom: 6 },
 
   group: { marginTop: 6, fontSize: 10.5, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.gray600 },
+  /* The D-RS-4 chips. Bronze edge for the active one — the app's one selected-state vocabulary. */
+  leadBlock: { gap: 8 },
+  leadRow: { flexDirection: 'row', gap: 8 },
+  leadChip: {
+    flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: flRadius.md,
+    borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: 'transparent',
+  },
+  leadChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  leadChipText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray600 },
+  leadChipTextOn: { color: flColor.bronze300 },
 
   tiles: { flexDirection: 'row', gap: 9 },
   tile: {

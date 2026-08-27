@@ -8,7 +8,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
-import { EndOfLedger, LedgerPost, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
+import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
@@ -327,7 +327,7 @@ function FeedLedgerPost({
   /* PR and milestone posts keep their own marker; a plain note has no type worth announcing, and a
      label reading DISCUSSION over somebody's sentence is the decoration this redesign removes. */
   const marker: { kind: LedgerMarker; label: string } | null = summary
-    ? { kind: 'workout', label: 'Workout' }
+    ? recapMarker(summary)
     : shape === 'milestone'
       ? post.type === 'pr'
         ? { kind: 'pr', label: post.prLabel ?? 'PR' }
@@ -343,7 +343,7 @@ function FeedLedgerPost({
       marker={marker}
       /* `summary.name` is absent on every recap shared before the snapshot carried one, so the type
          stands in rather than a heading reading "null". No backfill, no version check. */
-      title={summary ? summary.name ?? 'Workout' : shape === 'milestone' ? post.prExercise ?? post.body ?? 'A milestone' : null}
+      title={summary ? summary.name ?? recapMarker(summary).label : shape === 'milestone' ? post.prExercise ?? post.body ?? 'A milestone' : null}
       context={summary ? summary.context ?? null : shape === 'milestone' ? post.prValue : null}
       stats={summary ? workoutStats(summary, units) : []}
       playlist={summary?.playlist ?? null}

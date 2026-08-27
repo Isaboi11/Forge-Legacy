@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { deriveLead, recapCardioFrom, type RecapCardio, type RecapLead } from '@/domain/share/recap-stats';
 import { extensionFor, MAX_CHECKIN_BYTES, MAX_IMAGE_BYTES, uploadToBucket, type UploadOpts } from '@/lib/storage-upload';
 import { fetchCompletion } from '@/data/workout-complete-live';
 // Type only: the snapshot arrives already validated by `fetchCompletion`, and `RecapBlock` re-validates
@@ -206,6 +207,23 @@ export interface WorkoutSummary {
   /** What they trained to, if they attached one. Optional because every post written before 0105 has no
    *  such key — an old recap reads `undefined` and simply renders no chip. */
   playlist?: WorkoutPlaylistLink | null;
+  /**
+   * The session's cardio, when it had any — distance, pace, floors, activity (2026-08-26).
+   *
+   * ⚠ OPTIONAL, ABSENT ON EVERY POST WRITTEN BEFORE TODAY — the `name`/`playlist` pattern, third time
+   * around. Without it a friend's 3-mile run rendered as "0 Volume (lb) · 32:06 Time · 1 Lifts": the
+   * card judged a run by a lifting scorecard, and the "1" was the run itself. The completion always
+   * held these numbers; the snapshot just dropped them.
+   */
+  cardio?: RecapCardio | null;
+  /**
+   * Which strip the post leads with — D-RS-4: *"post both honestly. Be able to choose."*
+   *
+   * Written by `recapSummaryFrom` as the derived default (pure cardio leads cardio, anything with
+   * strength leads strength) and overwritten by the composer when the athlete chooses. Absent on old
+   * posts, which therefore keep their strength strip exactly as they always rendered.
+   */
+  lead?: RecapLead | null;
 }
 
 export interface SquadPostTypeDef {
@@ -492,10 +510,19 @@ export async function addSquadPost(input: NewSquadPost): Promise<string> {
 interface CompletionLike {
   volume: number;
   durationSec: number;
-  exercises: { name: string; sets: number; topSet: string | null; isPR: boolean }[];
+  exercises: {
+    name: string;
+    sets: number;
+    topSet: string | null;
+    isPR: boolean;
+    /** Present on the real Completion; the recap aggregates it into `WorkoutSummary.cardio`. */
+    cardio?: { distanceMi: number | null; floors: number | null; paceSecPerMi: number | null; durationSec: number | null } | null;
+  }[];
   playlist?: WorkoutPlaylistLink | null;
   workoutName?: string | null;
   programName?: string | null;
+  /** The session's saved activity_type ('running', 'stair_climber', …) — the cardio marker's label. */
+  activityType?: string | null;
 }
 
 /** Snapshot a Completion's stats into the recap `WorkoutSummary` stored on the post. */
@@ -514,6 +541,16 @@ export function recapSummaryFrom(c: CompletionLike): WorkoutSummary {
      */
     name: name && name.toLowerCase() !== 'freestyle workout' ? name : null,
     context: c.programName?.trim() || null,
+    /*
+     * The run's half of the snapshot, and which strip leads (D-RS-4). `lead` is ALWAYS written — the
+     * derived default when nobody chose — so the card never has to re-derive it from a shape that no
+     * longer says which exercises were lifts. The composer overwrites it when the athlete picks.
+     */
+    cardio: recapCardioFrom(c.exercises, c.activityType ?? null),
+    lead: deriveLead(
+      c.exercises.some((e) => !e.cardio),
+      recapCardioFrom(c.exercises, c.activityType ?? null),
+    ),
     /*
      * WSR-001 §6.3 / Workout-Playlist-Amendment-001 §2 put the playlist on squad check-in cards.
      *
