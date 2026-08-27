@@ -6,20 +6,115 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-import { groupLabel, MUSCLE_GROUP } from '../session-label.ts';
+import { groupLabel, MUSCLE_GROUP, sessionLabel } from '../session-label.ts';
+
+/**
+ * ⚠ THE FIXTURE IS THE CATALOGUE, NOT A LIST TYPED OUT HERE — and that is the whole point.
+ *
+ * Every assertion below used to speak gym shorthand (`Quads`, `Lats`, `Abs`) that the app has never
+ * produced. `buildPickerDb` emits the raw `muscles.json` display name, so the real inputs are
+ * `Quadriceps`, `Latissimus Dorsi`, `Rectus Abdominis`. The map and the fixture shared one invented
+ * dialect, agreed with each other, and stayed green while 64% of the catalogue could not name a
+ * session. Reading the source tables is what makes that impossible to repeat.
+ */
+const SRC = fileURLToPath(new URL('../../exercise-relationships/source/', import.meta.url));
+const read = (f) => JSON.parse(readFileSync(SRC + f, 'utf8'));
+const MUSCLES = read('muscles.json');
+const LINKS = read('exercise_muscles.json');
+
+const NAME_BY_ID = new Map(MUSCLES.map((m) => [m.id, m.name]));
+/** `region: 'System'` values are descriptors, not body parts — see the note on `MUSCLE_GROUP`. */
+const ANATOMICAL = new Set(MUSCLES.filter((m) => m.region !== 'System').map((m) => m.name));
+
+test('⚠ every anatomical muscle in the catalogue can name a session', () => {
+  /*
+   * THE REGRESSION THIS EXISTS FOR. Nine of the fifteen old keys — Lats, Quads, Abs, Back, Shoulders,
+   * Side Delts, Rear Delts, Upper Chest, Core — matched no muscle at all, so a row's `Upper Back`
+   * primary contributed nothing and the PO's chest/back/treadmill session saved as "Chest".
+   */
+  const unmapped = [...ANATOMICAL].filter((n) => !MUSCLE_GROUP[n]).sort();
+  assert.deepEqual(unmapped, [], `unmapped anatomical muscles: ${unmapped.join(', ')}`);
+});
+
+test('⚠ every key in the map is a real muscle name', () => {
+  // The other direction: a key nothing produces is dead weight that reads as coverage.
+  const real = new Set(MUSCLES.map((m) => m.name));
+  const phantom = Object.keys(MUSCLE_GROUP).filter((k) => !real.has(k)).sort();
+  assert.deepEqual(phantom, [], `keys matching no muscle: ${phantom.join(', ')}`);
+});
+
+test('⚠ every exercise with an anatomical primary can contribute to a name', () => {
+  const primaryNames = new Map();
+  for (const l of LINKS) {
+    if (l.role !== 'Primary') continue;
+    const n = NAME_BY_ID.get(l.muscleId);
+    if (n && ANATOMICAL.has(n)) primaryNames.set(l.exerciseId, n);
+  }
+  const blind = [...primaryNames.entries()].filter(([, n]) => !MUSCLE_GROUP[n]);
+  assert.equal(blind.length, 0, `${blind.length} exercises cannot name a session`);
+  assert.ok(primaryNames.size > 500, 'sanity: the catalogue should be mostly anatomical');
+});
 
 test('one group is that group', () => {
-  assert.equal(groupLabel([['Quads'], ['Hamstrings'], ['Glutes']]), 'Legs');
+  assert.equal(groupLabel([['Quadriceps'], ['Hamstrings'], ['Glutes']]), 'Legs');
 });
 
 test('two groups are joined, most-worked first', () => {
-  assert.equal(groupLabel([['Chest'], ['Chest'], ['Lats']]), 'Chest & Back');
-  assert.equal(groupLabel([['Lats'], ['Lats'], ['Chest']]), 'Back & Chest');
+  assert.equal(groupLabel([['Chest'], ['Chest'], ['Latissimus Dorsi']]), 'Chest & Back');
+  assert.equal(groupLabel([['Latissimus Dorsi'], ['Latissimus Dorsi'], ['Chest']]), 'Back & Chest');
 });
 
 test('three or more is Full Body — a name, not a list', () => {
-  assert.equal(groupLabel([['Chest'], ['Lats'], ['Quads']]), 'Full Body');
+  assert.equal(groupLabel([['Chest'], ['Latissimus Dorsi'], ['Quadriceps']]), 'Full Body');
+});
+
+test('⚠ the PO’s session: a row is BACK, so this is not "Chest"', () => {
+  /*
+   * The real shapes, straight from `exercise_muscles.json`:
+   *   Dumbbell Floor Press → Chest primary
+   *   Push-Up             → Chest primary
+   *   Single-Arm DB Row   → Upper Back primary  ← the one the old map could not see
+   * plus a treadmill walk, which is cardio and does not sit in this list at all.
+   */
+  const lifts = [['Chest', 'Triceps'], ['Chest', 'Triceps'], ['Upper Back', 'Latissimus Dorsi', 'Biceps']];
+  assert.equal(groupLabel(lifts), 'Chest & Back', 'the old map returned "Chest"');
+  assert.equal(sessionLabel(lifts, { cardio: true }), 'Chest & Back + Cardio');
+});
+
+test('cardio is appended, never counted as a third group', () => {
+  /*
+   * Counting it would trip the 3+ rule and call a chest/back day with a warm-up walk "Full Body".
+   *
+   * ⚠ TWO CHEST TO ONE BACK, NOT ONE EACH. At one-each the groups genuinely tie and the alphabetical
+   * tie-break decides — "Back & Chest" — which is the documented behaviour of `groupLabel`, not a
+   * defect. Asserting the tied case here would be asserting the coin flip.
+   */
+  const lifts = [['Chest'], ['Chest'], ['Upper Back']];
+  assert.equal(sessionLabel(lifts, { cardio: true }), 'Chest & Back + Cardio');
+  assert.equal(sessionLabel(lifts, { cardio: false }), 'Chest & Back');
+  assert.equal(sessionLabel([['Quadriceps']], { cardio: true }), 'Legs + Cardio');
+});
+
+test('a session with no lifting in it is Cardio', () => {
+  assert.equal(sessionLabel([], { cardio: true }), 'Cardio');
+});
+
+test('a stretching session is Mobility, not the launch-path literal', () => {
+  // 48 movements carry `Mobility` as their primary and no anatomical muscle at all.
+  assert.equal(sessionLabel([['Mobility'], ['Mobility']]), 'Mobility');
+  assert.equal(sessionLabel([['Mobility']], { cardio: true }), 'Mobility + Cardio');
+});
+
+test('one hip-opener does not rename a squat session', () => {
+  assert.equal(sessionLabel([['Quadriceps'], ['Glutes'], ['Mobility']]), 'Legs');
+});
+
+test('sessionLabel still admits when there is nothing to say', () => {
+  assert.equal(sessionLabel([]), '');
+  assert.equal(sessionLabel([['Grip']]), '', 'a System descriptor is not a body part');
 });
 
 test('⚠ ONE bench press is "Chest" — not "Chest & Arms", and certainly not "Full Body"', () => {
@@ -34,8 +129,8 @@ test('⚠ ONE bench press is "Chest" — not "Chest & Arms", and certainly not "
    * The rule that survives is that assistance work cannot NAME anything. One exercise, one primary, one
    * group.
    */
-  assert.equal(groupLabel([['Chest', 'Triceps', 'Shoulders']]), 'Chest');
-  assert.equal(groupLabel([['Lats', 'Biceps']]), 'Back');
+  assert.equal(groupLabel([['Chest', 'Triceps', 'Front Deltoids']]), 'Chest');
+  assert.equal(groupLabel([['Latissimus Dorsi', 'Biceps']]), 'Back');
 });
 
 test('the arms show up when something is actually training them', () => {
@@ -51,12 +146,12 @@ test('the arms show up when something is actually training them', () => {
 });
 
 test('a movement cannot be outvoted by its own secondaries', () => {
-  assert.equal(groupLabel([['Chest', 'Triceps', 'Shoulders', 'Forearms']]), 'Chest');
+  assert.equal(groupLabel([['Chest', 'Triceps', 'Front Deltoids', 'Forearms']]), 'Chest');
 });
 
 test('five back movements outrank the one curl that came first', () => {
   // Order in the session must not decide the name — see the ranking note in `groupLabel`.
-  const lists = [['Biceps'], ['Lats'], ['Lats'], ['Lats'], ['Lats'], ['Lats']];
+  const lists = [['Biceps'], ['Latissimus Dorsi'], ['Latissimus Dorsi'], ['Latissimus Dorsi'], ['Latissimus Dorsi'], ['Latissimus Dorsi']];
   assert.equal(groupLabel(lists), 'Back & Arms');
 });
 
@@ -66,15 +161,15 @@ test('the same session logged in a different order gets the SAME name', () => {
    * equal weight would be named by whichever was logged first — and one athlete's "Chest & Back" would
    * be another's "Back & Chest" for an identical workout.
    */
-  const a = groupLabel([['Chest'], ['Lats']]);
-  const b = groupLabel([['Lats'], ['Chest']]);
+  const a = groupLabel([['Chest'], ['Latissimus Dorsi']]);
+  const b = groupLabel([['Latissimus Dorsi'], ['Chest']]);
   assert.equal(a, b);
 });
 
 test('nothing mappable is an empty string, never an invented name', () => {
   assert.equal(groupLabel([]), '');
   assert.equal(groupLabel([undefined, []]), '');
-  assert.equal(groupLabel([['Tibialis']]), '', 'a muscle outside the map contributes nothing');
+  assert.equal(groupLabel([['Tibialis Posterior']]), '', 'a name outside the taxonomy contributes nothing');
 });
 
 test('every value in the map is one of the five groups the label can produce', () => {

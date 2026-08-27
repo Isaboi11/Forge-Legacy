@@ -8,7 +8,7 @@
 
 import { toCanonicalLb, type UnitSystem } from '../settings/units.ts';
 import { CARDIO_ACTIVITIES, deriveName } from './conditioning.ts';
-import { groupLabel } from './session-label.ts';
+import { sessionLabel } from './session-label.ts';
 import type { ActiveSession, SessionExercise } from './types.ts';
 
 /**
@@ -226,11 +226,14 @@ export function sessionWorkoutName(session: ActiveSession, musclesOf?: MusclesOf
     return only.kind === 'cardio' && only.name ? only.name : session.workoutName;
   }
 
-  /* Anything with lifting in it is named for the lifting. `musclesOf` is injected rather than imported
-     because the catalogue lives behind the picker's data module, which this file must not pull in — it
-     is loaded by `node --test`. No resolver, or a catalogue that knows nothing about these movements,
-     leaves the name exactly as it was rather than inventing one. */
-  const label = musclesOf ? groupLabel(strength.map(musclesOf)) : '';
+  /* Anything with lifting in it is named for the lifting, PLUS the modality it was mixed with — a
+     treadmill walk in front of a chest-and-back day used to leave no trace in the name at all. See
+     `sessionLabel`. `musclesOf` is injected rather than imported because the catalogue lives behind
+     the picker's data module, which this file must not pull in — it is loaded by `node --test`. No
+     resolver, or a catalogue that knows nothing about these movements, leaves the name exactly as it
+     was rather than inventing one. */
+  const cardio = recorded.length > strength.length;
+  const label = musclesOf ? sessionLabel(strength.map(musclesOf), { cardio }) : '';
   return label || session.workoutName;
 }
 

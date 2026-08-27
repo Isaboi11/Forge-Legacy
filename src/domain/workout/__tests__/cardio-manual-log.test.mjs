@@ -225,9 +225,11 @@ test('a walk PLUS a lift is named for the LIFTING — and keeps the wall clock',
     typed(20 * 60),
     { ...lift([{ setIndex: 0, weight: 95, targetReps: 5, actualReps: 5, done: true }]), catalogKey: 'k-bench', position: 1 },
   ]);
-  // One lift, Chest primary — "Chest", not "Chest & Arms". See `session-label`: assistance work does
-  // not get to name anything.
-  assert.equal(sessionWorkoutName(s, () => ['Chest', 'Triceps']), 'Chest');
+  /* One lift, Chest primary — "Chest", not "Chest & Arms". See `session-label`: assistance work does
+     not get to name anything.
+     ⚠ `+ Cardio` because this session also carries a typed 20-minute bout. The lifting still names it;
+     the walk is no longer erased from the name. See `sessionLabel`. */
+  assert.equal(sessionWorkoutName(s, () => ['Chest', 'Triceps']), 'Chest + Cardio');
   assert.equal(sessionDurationSec(s, after(50 * 60)), 50 * 60);
 });
 
@@ -237,6 +239,11 @@ test('KIM · a session NAMED at the door by its first bout is renamed for the wh
    * first."* Home's cardio chooser stamps `deriveName(activity, modality)` before the session contains
    * anything, so the old `!== FREESTYLE_NAME` guard read it as a name the athlete had chosen and left
    * an hour of lifting filed under a ten-minute walk.
+   *
+   * ⚠ THE SECOND HALF OF THE SAME REPORT, ANSWERED LATER. Naming it for the lifting was right, but the
+   * walk then vanished from the name entirely — PO again, on a treadmill-plus-chest-and-back session
+   * saved as "Chest": *"This is not a good name for it… Even if it was strength and cardio."* The
+   * lifting still leads; the modality is appended rather than dropped. See `sessionLabel`.
    */
   const s = {
     ...freestyle([
@@ -245,7 +252,7 @@ test('KIM · a session NAMED at the door by its first bout is renamed for the wh
     ]),
     workoutName: 'Outdoor Walk',
   };
-  assert.equal(sessionWorkoutName(s, () => ['Lats']), 'Back');
+  assert.equal(sessionWorkoutName(s, () => ['Latissimus Dorsi']), 'Back + Cardio');
 });
 
 test('…but a bout that IS the whole session still keeps its own name', () => {
@@ -261,7 +268,7 @@ test('a name the athlete TYPED survives, even beside lifting', () => {
     ]),
     workoutName: 'Leg day with Kim',
   };
-  assert.equal(sessionWorkoutName(s, () => ['Lats']), 'Leg day with Kim');
+  assert.equal(sessionWorkoutName(s, () => ['Latissimus Dorsi']), 'Leg day with Kim');
 });
 
 test('a catalogue that knows nothing about the movements leaves the name alone', () => {

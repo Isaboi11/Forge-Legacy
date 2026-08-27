@@ -32,7 +32,30 @@ export const flColor = {
 
   cream100: '#F0EDE8',
   gray400: '#9E9890',
-  gray600: '#666060',
+  /**
+   * Tertiary text and inactive icons.
+   *
+   * ⚠ WAS `#666060`, WHICH FAILED WCAG AA ON EVERY FORGE GROUND. Measured, not eyeballed:
+   *   charcoal700 `2.81:1` · charcoal800 `2.97:1` · charcoal900 `3.10:1` · base `3.26:1`
+   * Normal-size text needs `4.5:1`, so it failed everywhere — and on two of those grounds it sat
+   * under the `3.0:1` floor that non-text UI needs, which is exactly what `flIcon.inactive` is.
+   *
+   * `#888282` is the first step clearing 4.5:1 on all four (worst `4.60:1` on charcoal700), keeping
+   * the `+6` red offset that makes this a warm grey rather than a neutral one.
+   *
+   * ⚠ THE COMPOUNDING IS THE REAL REASON THIS MATTERED. This token is where the app's *smallest*
+   * text lives — `rowScoreUnit` 8px, `badgeText` 8.5px, `HoldTimer.hint` 9px — so the tiniest type
+   * carried the faintest colour. 878 usages move with this line: 752 `color`, 69
+   * `placeholderTextColor`, 44 `stroke`, 5 `fill`. The five non-text uses (a 5px dot, two switch
+   * knobs, one border) only get *more* visible, so none of them regresses.
+   *
+   * ⚠ ALABASTER'S `gray600` IS A SEPARATE, UNFINISHED PROBLEM — see `foundation.paper.ts`. Its
+   * `#8B8377` measures `3.15:1`, which clears the 3.0 non-text floor but not 4.5 for text. It is not
+   * fixable on one line: the value that would reach 4.5 lands at `4.55`, within `0.08` of that
+   * theme's `gray400` (`4.63`), collapsing secondary and tertiary into one indistinguishable step.
+   * Fixing it means moving BOTH tokens — a ramp change, not a token change.
+   */
+  gray600: '#888282',
 
   bronze300: '#C99767',
   bronze400: '#BA8654',

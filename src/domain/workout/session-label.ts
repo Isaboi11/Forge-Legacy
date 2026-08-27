@@ -13,14 +13,54 @@
  * resolve the `@/` alias at runtime.
  */
 
-/** Muscle display name → coarse group. Keyed off `PickerItem.muscles`, which is display names. */
+/**
+ * Muscle display name → coarse group. Keyed off `PickerItem.muscles`, which is display names.
+ *
+ * ══ EVERY KEY HERE MUST BE A NAME FROM `muscles.json`, AND NINE OF THEM WERE NOT ══
+ *
+ * PO: *a treadmill walk, two chest presses, a row and a fifth lift — saved as **"Chest"**.*
+ *
+ * The rule was never wrong; the vocabulary was. `buildPickerDb` builds `muscles` as
+ * `muscleById.get(id).name` — the raw `muscles.json` display name, unshortened — so what actually
+ * arrives here is `Latissimus Dorsi`, `Quadriceps`, `Upper Back`, `Rectus Abdominis`. The old map was
+ * keyed on gym shorthand nobody produces: `Lats`, `Quads`, `Abs`, `Back`, `Shoulders`, `Side Delts`,
+ * `Rear Delts`, `Upper Chest`, `Core`. Nine of fifteen keys matched nothing at all, and the six that
+ * happened to line up were Chest, Biceps, Triceps, Forearms, Glutes and Hamstrings.
+ *
+ * The damage: **521 of 809 exercises (64%) could not contribute to a name.** Every quad movement
+ * (111), every ab movement (65), every upper-back movement (53), every lat (32) and every deltoid
+ * (59) was invisible. A leg day named itself after whatever glute or hamstring accessory it happened
+ * to contain; a back day named itself after the curls. The PO's session was called "Chest" because
+ * the row's primary is `Upper Back`, which this table could not see, so only the two presses counted.
+ *
+ * ⚠ THE OLD UNIT TESTS PASSED THROUGHOUT. They asserted `groupLabel([['Quads']]) === 'Legs'` — the
+ *   fixture spoke the same invented dialect as the map, so the two agreed with each other and neither
+ *   was ever checked against the catalogue. `session-label.test.mjs` now reads `muscles.json` and
+ *   `exercise_muscles.json` directly and fails if any real primary muscle is unmapped. That test, not
+ *   this comment, is what stops this returning.
+ *
+ * ⚠ SYSTEM DESCRIPTORS ARE DELIBERATELY ABSENT. `muscles.json` marks `Full Body`,
+ *   `Cardiovascular System`, `Grip`, `Mobility` and `Balance / Stability` as `region: 'System'`, and
+ *   `exercise_schema.ts` calls them "descriptors, not anatomical muscles". They are not body parts and
+ *   cannot name a body part — cardio and mobility are answered by {@link sessionLabel} instead.
+ */
 export const MUSCLE_GROUP: Record<string, string> = {
-  Chest: 'Chest', 'Upper Chest': 'Chest',
-  Back: 'Back', Lats: 'Back',
-  Shoulders: 'Shoulders', 'Side Delts': 'Shoulders', 'Rear Delts': 'Shoulders',
+  // ── Upper body ──────────────────────────────────────────────────────────
+  Chest: 'Chest',
+  'Upper Back': 'Back', 'Latissimus Dorsi': 'Back', Trapezius: 'Back',
+  /* Neck sits with the shrug-and-delt work it is trained beside; there is no "Neck" group and three
+     exercises do not earn one. */
+  'Front Deltoids': 'Shoulders', 'Lateral Deltoids': 'Shoulders', 'Rear Deltoids': 'Shoulders',
+  'Rotator Cuff': 'Shoulders', Neck: 'Shoulders',
   Biceps: 'Arms', Triceps: 'Arms', Forearms: 'Arms',
-  Quads: 'Legs', Glutes: 'Legs', Hamstrings: 'Legs',
-  Abs: 'Core', Core: 'Core',
+  // ── Core ────────────────────────────────────────────────────────────────
+  /* Erector Spinae is `region: 'Core'` in the taxonomy and is followed here rather than filed under
+     Back, so that a hyperextension does not turn an ab session into "Back & Core". */
+  'Rectus Abdominis': 'Core', Obliques: 'Core', 'Transverse Abdominis': 'Core',
+  'Erector Spinae': 'Core', 'Hip Flexors': 'Core',
+  // ── Lower body ──────────────────────────────────────────────────────────
+  Quadriceps: 'Legs', Hamstrings: 'Legs', Glutes: 'Legs',
+  Adductors: 'Legs', Abductors: 'Legs', Calves: 'Legs', 'Tibialis Anterior': 'Legs',
 };
 
 /**
@@ -69,4 +109,46 @@ export function groupLabel(muscleLists: readonly (readonly string[] | undefined)
   if (groups.length === 1) return groups[0];
   if (groups.length === 2) return `${groups[0]} & ${groups[1]}`;
   return 'Full Body';
+}
+
+/** The primary-muscle descriptor a stretching movement carries — `region: 'System'`, not a body part. */
+const MOBILITY_MUSCLE = 'Mobility';
+
+/**
+ * The whole name for a finished session — the lifting, plus the modality it was mixed with.
+ *
+ * ══ THE CARDIO USED TO VANISH ══
+ *
+ * PO: *"Someone did a treadmill first and then other workouts and it named it this."*
+ *
+ * `sessionWorkoutName` splits the session and names it after `strength` alone, which is right — you do
+ * not call a chest day "Treadmill Walk" because the walk came first. But the walk then disappeared
+ * from the name entirely, so twenty minutes of work the athlete actually did left no trace in what the
+ * session was called. A session that was both says both.
+ *
+ * `Chest & Back + Cardio` rather than treating Cardio as a third group, because a third group triggers
+ * `Full Body` — and a chest-and-back day with a warm-up walk on it is not a full-body day. Cardio is a
+ * different axis from which muscles were trained, so it is appended rather than counted.
+ *
+ * Mobility is answered here for the same reason: 48 movements carry `Mobility` as their primary and no
+ * anatomical muscle at all, so a stretching session produced `''` and fell back to the literal
+ * "Freestyle Workout". It only claims the name when nothing anatomical outranks it — one hip-opener at
+ * the end of a squat session must not rename it.
+ *
+ * Returns `''` when there is nothing honest to say, exactly as {@link groupLabel} does. The caller
+ * decides what to do with that.
+ */
+export function sessionLabel(
+  muscleLists: readonly (readonly string[] | undefined)[],
+  opts: { cardio?: boolean } = {},
+): string {
+  const label = groupLabel(muscleLists);
+  if (label) return opts.cardio ? `${label} + Cardio` : label;
+
+  /* Nothing anatomical was trained. A session of stretches is a Mobility session and should say so
+     rather than falling through to the launch-path literal. */
+  const mobility = muscleLists.some((list) => (list ?? [])[0] === MOBILITY_MUSCLE);
+  if (mobility) return opts.cardio ? 'Mobility + Cardio' : 'Mobility';
+
+  return opts.cardio ? 'Cardio' : '';
 }
