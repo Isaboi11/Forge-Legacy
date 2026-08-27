@@ -134,7 +134,7 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
       // and nothing else and rendered as a blank line under its own name.
       // `floors` (0151) is the stair climber's own measurement — omitted here and a stair bout reads back
       // in history as a bare duration, which is the state this column exists to end.
-      'id, workout_name, activity_type, started_at, duration_sec, distance, distance_unit, chapter_id, program_id, notes, workout_exercises(name, section, position, catalog_key, notes, workout_sets(set_index, weight, weight_unit, reps, duration_sec, floors))',
+      'id, workout_name, activity_type, started_at, duration_sec, distance, distance_unit, chapter_id, program_id, notes, workout_exercises(name, section, position, catalog_key, notes, workout_sets(set_index, weight, weight_unit, reps, duration_sec, floors, route, climb_m))',
     )
     .eq('id', id)
     .eq('athlete_id', user.id)
@@ -206,6 +206,15 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
   const names = new Set(exercises.map((e) => e.name));
   const mine = milestones.filter((m: string) => [...names].some((n) => m.includes(n)));
 
+  /*
+   * The stored shape and climb, when an outdoor bout carried them (0162). One session holds at most
+   * one tracked bout today, but the read does not assume it: the first set with a route wins, which
+   * is also the oldest, and a second would be drawn by nothing rather than crashing something.
+   */
+  const routed = (w.workout_exercises ?? [])
+    .flatMap((ex) => ex.workout_sets ?? [])
+    .find((st) => st.route);
+
   return {
     id: w.id,
     type,
@@ -214,6 +223,8 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
     durationSec: w.duration_sec,
     distance: w.distance,
     distanceUnit: w.distance_unit,
+    route: routed?.route ?? null,
+    climbM: routed?.climb_m ?? null,
     exercises,
     note: w.notes ?? null,
     chapterName,
@@ -303,6 +314,15 @@ async function fetchSharedActivityDetail(id: string): Promise<ActivityDetail | n
     startedAt: r.started_at,
     durationSec: r.duration_sec,
     distance: r.distance,
+    /*
+     * ⚠ DELIBERATELY NULL ON A SHARED VIEW — not an omission. D-RS-3 makes the map on a shared
+     * surface a per-post choice, default off; until that consent is plumbed through the post snapshot
+     * (the run-card composer work), a shared detail that always drew the route would hollow the
+     * opt-out into decoration. `shared_workout_detail` does not return these columns either, so a
+     * client that forgot this rule would still draw nothing.
+     */
+    route: null,
+    climbM: null,
     distanceUnit: r.distance_unit,
     exercises,
     /* ⚠ WITHHELD ON A SHARED SESSION, deliberately, and for the same reason the chapter is. A note is
@@ -358,7 +378,7 @@ type DetailRow = {
         position: number;
         catalog_key: string | null;
         notes: string | null;
-        workout_sets: { set_index: number; weight: number | null; weight_unit: string | null; reps: number | null; duration_sec: number | null; floors?: number | null }[] | null;
+        workout_sets: { set_index: number; weight: number | null; weight_unit: string | null; reps: number | null; duration_sec: number | null; floors?: number | null; route?: string | null; climb_m?: number | null }[] | null;
       }[]
     | null;
 };

@@ -24,6 +24,9 @@ import {
   type ActivityDetail,
 } from '@/domain/activity/detail-core';
 import { WORKOUT_NAME_MAX, renameWorkout } from '@/data/workout-complete-live';
+import { RouteMap } from '@/components/workout/RouteMap';
+import { RouteSheet } from '@/components/workout/RouteSheet';
+import { storedRouteToLatLng } from '@/domain/run/route-region';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useUnits } from '@/lib/settings';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
@@ -229,6 +232,19 @@ function Body({
   const sections = sectionsOf(detail);
   const tiles = statTiles(detail);
   const isStrength = detail.type === 'strength';
+  /*
+   * ══ THE STORED MAP, FINALLY READ BACK ══
+   *
+   * The amendment that stored the route (0162) closed its changelog with *"the map surface remains
+   * undesigned and unbuilt"* — every outdoor run since has written its shape and nothing ever selected
+   * it again. This is the first reader. Own sessions only: `detail.route` is deliberately null on a
+   * shared view until D-RS-3's per-post consent is plumbed (see `activity-live.ts`).
+   *
+   * Old rows are 400 m short of their distance forever (saved under the rescinded trim); RouteSheet's
+   * caption says "as it was saved" for exactly that reason.
+   */
+  const routePts = detail.route ? storedRouteToLatLng(detail.route) : [];
+  const [mapOpen, setMapOpen] = useState(false);
   const { fmt } = useUnits(); // re-express logged "225 lbs × 5" in the athlete's chosen system
   /* Somebody else's session, opened from the recap post they shared (migration 0117). The session is
      all here; what changes is that nothing on this screen may WRITE to a row that is not theirs. */
@@ -365,6 +381,25 @@ function Body({
         )
       ) : (
         <>
+          {routePts.length > 1 ? (
+            <>
+              <Text style={styles.sectionLabel}>Route</Text>
+              <Pressable
+                onPress={() => setMapOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Open the route fullscreen"
+                style={styles.routeBand}
+              >
+                <RouteMap points={routePts} height={180} testID="activity-route-map" />
+              </Pressable>
+              <RouteSheet
+                visible={mapOpen}
+                onClose={() => setMapOpen(false)}
+                points={routePts}
+                summary={summaryLine(detail)}
+              />
+            </>
+          ) : null}
           <Text style={styles.sectionLabel}>Session</Text>
           <View style={styles.tiles}>
             {tiles.map((t) => (
@@ -599,6 +634,8 @@ const styles = StyleSheet.create({
   noSets: { fontSize: 12.5, fontStyle: 'italic', color: flColor.gray600 },
 
   tiles: { flexDirection: 'row', gap: 8 },
+  /* Clipped to the app's card radius — RouteMap draws edge to edge inside it. */
+  routeBand: { borderRadius: flRadius.lg, overflow: 'hidden', marginBottom: 18 },
   tile: {
     flex: 1,
     minWidth: 0,

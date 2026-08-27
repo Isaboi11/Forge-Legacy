@@ -55,6 +55,16 @@ export interface ActivityDetail {
   durationSec: number | null;
   distance: number | null;
   distanceUnit: string | null;
+  /**
+   * The session's stored route (encoded polyline) and climb, when an outdoor bout carried them (0162).
+   *
+   * ⚠ OWN SESSIONS ONLY in this pass. The shared read path deliberately does not select them yet:
+   * D-RS-3 makes the map on a shared surface a per-post choice, and that consent is plumbed with the
+   * run-card composer work — a shared detail that always drew the map would hollow the opt-out.
+   * Null on every session saved before 0162, every indoor bout, and every shared view.
+   */
+  route: string | null;
+  climbM: number | null;
   exercises: DetailExercise[];
   /** How the session went, in the athlete's words. Distinct from the chapter-facing reflection. */
   note: string | null;
@@ -251,5 +261,15 @@ export function statTiles(d: ActivityDetail): StatTile[] {
     if (pace) tiles.push({ label: 'Avg Pace', value: pace });
   }
   tiles.push({ label: 'Duration', value: fmtDuration(d.durationSec) });
+  /*
+   * The hill, finally shown somewhere. climb_m has been WRITTEN since 0162 and displayed on no
+   * surface after the session ended — for a trail run it is the stat that distinguishes the workout.
+   * Metres canonical; the mi/km unit the session already displays picks the athlete's system, which
+   * is the same inference the rest of this function makes.
+   */
+  if (d.climbM != null && d.climbM > 0) {
+    const metric = unit === 'km';
+    tiles.push({ label: 'Climb', value: metric ? `${d.climbM} m` : `${Math.round(d.climbM * 3.28084)} ft` });
+  }
   return tiles;
 }
