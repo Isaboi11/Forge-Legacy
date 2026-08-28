@@ -24,6 +24,7 @@ const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
 const FEED = read('../squad/[id].tsx');
+const FRIENDS = read('../friends.tsx');
 const CARD = read('../../components/forge/compositions/LedgerPost.tsx');
 const COMPLETE = read('../workout-complete.tsx');
 const SHEET = read('../../components/forge/ShareSessionSheet.tsx');
@@ -39,6 +40,14 @@ test('the feed sends a tap on a video to the player, not to the workout summary'
     /onMedia=\{\s*p\.media\[0\]\?\.kind === 'video'\s*\?\s*\(\) => router\.push\(\{ pathname: '\/pin-video'/,
     'the squad feed no longer routes a video tap to /pin-video',
   );
+  // The friends feed shows the same posts and had the same handler — and for a plain video post, no
+  // handler at all. Both feeds play the clip through the one player.
+  assert.match(
+    strip(FRIENDS),
+    /onMedia=\{\s*post\.media\[0\]\?\.kind === 'video'\s*\?\s*\(\) => router\.push\(\{ pathname: '\/pin-video'/,
+    'the friends feed no longer routes a video tap to /pin-video',
+  );
+  assert.match(strip(FRIENDS), /onMedia=\{onMedia\}/, 'FeedLedgerPost no longer passes onMedia to the card');
 });
 
 test('the card gives the media band its own control when asked', () => {

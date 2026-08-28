@@ -249,6 +249,14 @@ export default function FriendsFeedScreen() {
                       onAuthor={() => router.push({ pathname: '/athlete/[id]', params: { id: post.authorId } })}
                       onComments={() => setCommentsFor(post)}
                       onWorkout={() => post.workoutId && router.push({ pathname: '/activity/[id]', params: { id: post.workoutId } })}
+                      /* The clip PLAYS — the same player the squad feed and a pinned video use. A recap's band used to
+                         open the workout summary and a plain video post's band did nothing at all, because the card
+                         only ever had a workout to open. Photos keep the card's own destination. */
+                      onMedia={
+                        post.media[0]?.kind === 'video'
+                          ? () => router.push({ pathname: '/pin-video', params: { url: post.media[0].url } })
+                          : undefined
+                      }
                     />
                   </View>
                 </TourAnchor>
@@ -310,6 +318,7 @@ function FeedLedgerPost({
   onAuthor,
   onComments,
   onWorkout,
+  onMedia,
 }: {
   post: FeedPost;
   units: ReturnType<typeof useUnits>['units'];
@@ -320,6 +329,8 @@ function FeedLedgerPost({
   onAuthor: () => void;
   onComments: () => void;
   onWorkout: () => void;
+  /** A tap on the media band — a video plays instead of the card's destination. */
+  onMedia?: () => void;
 }) {
   const shape = shapeOf(post);
   const summary = shape === 'recap' ? post.workoutSummary : null;
@@ -373,6 +384,7 @@ function FeedLedgerPost({
       commentCount={post.commentCount}
       onAuthor={onAuthor}
       onOpen={summary && post.workoutId ? onWorkout : undefined}
+      onMedia={onMedia}
       onAcknowledge={onAcknowledge}
       onLongAcknowledge={onLongAcknowledge}
       onComments={onComments}
