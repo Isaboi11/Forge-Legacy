@@ -1476,7 +1476,9 @@ export default function HomeScreen() {
                  still opens their profile. Sharing a handler would have meant tapping someone's name
                  fired a request to join their workout. */
               onAskToJoin={(a) => router.push({ pathname: '/workout-join', params: { athlete: a.userId } })}
-              onViewAthlete={(userId) => router.push({ pathname: '/athlete/[id]', params: { id: userId } })}
+              /* The live row opens the WORKOUT (0181) — what they have logged and what is planned, if they
+                 share it; the name inside still reaches the profile from that screen's own header. */
+              onViewAthlete={(userId) => router.push({ pathname: '/live-workout/[id]', params: { id: userId } })}
               onFriendActivity={() => router.push('/friends')}
               onSeeCircle={() => router.push('/friends')}
             />
@@ -1625,7 +1627,7 @@ export default function HomeScreen() {
         athletes={live}
         onAthlete={(userId) => {
           setFriendSheetOpen(false);
-          router.push({ pathname: '/athlete/[id]', params: { id: userId } });
+          router.push({ pathname: '/live-workout/[id]', params: { id: userId } });
         }}
         onAskToJoin={(a) => {
           setFriendSheetOpen(false);

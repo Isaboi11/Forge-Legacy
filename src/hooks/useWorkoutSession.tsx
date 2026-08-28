@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 import { setTrainingStatus } from '@/data/presence-live'
+import { clearLiveSession } from '@/data/live-session-live'
 import { invalidateEarnedMoments } from '@/hooks/useEarnedMoments'
 
 /** One planned lift carried into the session so the Finish log sheet knows what to record. */
@@ -71,6 +72,9 @@ export function WorkoutSessionProvider({ children }: { children: React.ReactNode
     clearStaleTimer()
     setSession(null)
     setLiveWorkoutPresence(false)
+    // The published plan-and-log (0181) goes with the presence. Finish, abandon and the stale timer all
+    // arrive here, so a row can only outlive its session by the read's own 4-hour ceiling.
+    void clearLiveSession()
   }, [clearStaleTimer])
 
   const startWorkout = useCallback(

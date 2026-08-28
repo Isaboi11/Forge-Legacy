@@ -319,12 +319,18 @@ export default function AthleteProfileScreen() {
         {/* Training right now (0086/0089). Absent means EITHER not training or not cleared — a viewer must
             not be able to tell a private athlete from a resting one. */}
         {training ? (
-          <View style={styles.liveRow}>
+          <Pressable
+            onPress={() => router.push({ pathname: '/live-workout/[id]', params: { id: athleteId } })}
+            accessibilityRole="button"
+            accessibilityLabel="View their live workout"
+            style={({ pressed }) => [styles.liveRow, pressed ? { opacity: 0.8 } : null]}
+          >
             <View style={styles.liveDot} />
             <Text style={styles.liveText}>
               Training now{training.label ? ` · ${training.label}` : ''} · {minutesTraining(training.startedAt)} min
             </Text>
-          </View>
+            <Text style={styles.liveMore}>View →</Text>
+          </Pressable>
         ) : null}
 
         {/* Trophy Case (0084). Gated on the same `stats` audience the row above is, because a competitive
@@ -801,6 +807,7 @@ const styles = StyleSheet.create({
   liveRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 22, marginHorizontal: 24, paddingHorizontal: 14, paddingVertical: 11, borderRadius: flRadius.lg, borderWidth: 1, borderColor: 'rgba(90, 158, 104, 0.34)', backgroundColor: 'rgba(90, 158, 104, 0.07)' },
   liveDot: { width: 7, height: 7, borderRadius: flRadius.round, backgroundColor: flColor.greenMuted, boxShadow: '0 0 6px rgba(90, 158, 104, 0.6)' },
   liveText: { flex: 1, fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
+  liveMore: { fontSize: 12, fontWeight: '700', color: flColor.bronze300 },
   trophyRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 22, marginHorizontal: 24, paddingHorizontal: 14, paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   trophyText: { flex: 1, fontSize: 13, fontWeight: '600', color: flColor.cream100 },
   pressed: { opacity: 0.88 },

@@ -76,6 +76,9 @@ import { useProfile } from '@/lib/profile';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/domain/workout/autosave';
+import { publishLiveSession } from '@/data/live-session-live';
+import { liveSessionSnapshot } from '@/domain/workout/live-session';
+import { fetchVisibility } from '@/data/settings-live';
 import { blockAt, breakBlock, endsSupersetRound, makeSuperset, nextInSuperset, sessionToTemplateExercises, supersetRounds } from '@/domain/workout/session-core';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
@@ -1022,6 +1025,30 @@ export default function WorkoutScreen() {
   useEffect(() => {
     if (phase === 'active' && session) void persistSession(session);
   }, [session, phase]);
+
+  /*
+   * ══ PUBLISH THE SESSION FOR WHOEVER IS ALLOWED TO WATCH (0181) ══
+   *
+   * PO: *"I see a friend working out rn I should be able to see what they've logged and have planned."*
+   * Only when this athlete has opted in (`live_session` is not private — read once, here, because the
+   * gate is the athlete's own setting and the server enforces the audience). Debounced: a set logged is
+   * one publish four seconds later, not one per keystroke in the weight sheet, and a session that is
+   * being edited furiously still lands within seconds of going quiet. The row is cleared when the
+   * session ends (`useWorkoutSession.endSession`), and the read ignores it after four hours regardless.
+   */
+  const [shareLive, setShareLive] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void fetchVisibility().then((v) => alive && setShareLive(v.live_session !== 'private'), () => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!shareLive || phase !== 'active' || !session) return;
+    const t = setTimeout(() => void publishLiveSession(liveSessionSnapshot(session)), 4000);
+    return () => clearTimeout(t);
+  }, [session, phase, shareLive]);
 
   /*
    * Read what they have already done on these lifts, once the session's lifts are known.

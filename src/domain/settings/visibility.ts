@@ -40,7 +40,8 @@ export type VisibilityKey =
   | 'photos'
   | 'accomplishments'
   | 'stats'
-  | 'training';
+  | 'training'
+  | 'live_session';
 
 export interface VisibilitySection {
   key: VisibilityKey;
@@ -67,6 +68,12 @@ export const VISIBILITY_SECTIONS: VisibilitySection[] = [
   { key: 'accomplishments', label: 'Accomplishments', desc: 'Records and milestones you’ve preserved.', def: 'everyone', icon: 'trophy' },
   { key: 'stats', label: 'Training Stats', desc: 'Volume, streaks and totals.', def: 'squads', icon: 'dumbbell' },
   { key: 'training', label: 'Live Workout Status', desc: 'That you’re training right now, while you are.', def: 'squads', icon: 'spark' },
+  /*
+   * ⚠ DEFAULT PRIVATE — AN OPT-IN, NOT AN INHERITANCE (0181). `training` promises only the fact; this
+   * is the plan and the log, with numbers, and CC-D2 / WSR-D6 forbid those on any surface the athlete
+   * did not choose. `private` is the off switch, exactly as it is for `training`.
+   */
+  { key: 'live_session', label: 'Live Workout Detail', desc: 'What you’ve logged and what’s planned, while you train. Off until you turn it on.', def: 'private', icon: 'dumbbell' },
 ];
 
 export type VisibilityMap = Record<VisibilityKey, AudienceId>;

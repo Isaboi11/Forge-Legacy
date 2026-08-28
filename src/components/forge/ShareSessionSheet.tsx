@@ -140,6 +140,15 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
    * the caller sent".
    */
   const [bodyDraft, setBodyDraft] = useState<string | null>(null);
+  /*
+   * ══ THE CONFIRMATION, WHICH STAYS UNTIL DISMISSED ══
+   *
+   * PO (2026-08-27): *"the confirmation for sharing the workout at the end. Something popping up
+   * confirming that I shared it."* A toast said it for three seconds and was gone before a thumb came
+   * back from the tap. Now a successful share turns THIS sheet into the confirmation — where it went,
+   * in one sentence, with a Done button — and it stays there until the athlete dismisses it.
+   */
+  const [sharedResult, setSharedResult] = useState<string | null>(null);
   const body = (bodyDraft ?? note ?? '').trim();
 
   const snapshot = summary ?? fetched;
@@ -250,8 +259,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
       setSquadStep(null);
       setPicked(new Set());
       setBodyDraft(null);
-      onClose();
-      showToast(shareSummary(landed, includeFriends));
+      setSharedResult(shareSummary(landed, includeFriends));
     };
     void run();
   };
@@ -330,7 +338,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
        * the count so nobody discovers how many posts they made by reading their feeds afterwards.
        */
       footer={
-        squadStep ? (
+        squadStep && !sharedResult ? (
           <Button
             variant="primary"
             fullWidth
@@ -345,7 +353,28 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
     >
       {/* A plain View, not a second ScrollView: `scroll` above already gives the sheet one, and nesting
           two on the same axis is what `BottomSheet`'s own header warns against. */}
-      {squadStep ? (
+      {sharedResult ? (
+        <View style={styles.sharedWrap} accessibilityRole="alert" accessibilityLabel={sharedResult}>
+          <View style={styles.sharedDisc}>
+            <Svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M20 6L9 17l-5-5" />
+            </Svg>
+          </View>
+          <Text style={styles.sharedTitle}>Shared</Text>
+          <Text style={styles.sharedLine}>{sharedResult}</Text>
+          <Text style={styles.sharedHint}>It’s in the feed now. Sharing again from here would post it again.</Text>
+          <Button
+            variant="primary"
+            fullWidth
+            onPress={() => {
+              setSharedResult(null);
+              onClose();
+            }}
+          >
+            Done
+          </Button>
+        </View>
+      ) : squadStep ? (
         <SquadSelectList
           squads={stepSquads}
           selected={picked}
@@ -593,6 +622,11 @@ function MoreGlyph() {
 
 const styles = StyleSheet.create({
   body: { gap: 10 },
+  sharedWrap: { alignItems: 'center', gap: 10, paddingVertical: 18 },
+  sharedDisc: { width: 56, height: 56, borderRadius: flRadius.round, borderWidth: 1.5, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  sharedTitle: { fontSize: 20, fontWeight: '700', color: flColor.cream100 },
+  sharedLine: { fontSize: 14, fontWeight: '600', color: flColor.bronze300, textAlign: 'center' },
+  sharedHint: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600, textAlign: 'center', marginBottom: 8 },
   bodyInput: { minHeight: 64, maxHeight: 140, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, color: flColor.cream100, fontSize: 14, lineHeight: 20, paddingHorizontal: 12, paddingVertical: 10, textAlignVertical: 'top' },
   already: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2, paddingVertical: 9, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   alreadyText: { flex: 1, fontSize: 12.5, fontWeight: '600', lineHeight: 17, color: flColor.bronze300 },

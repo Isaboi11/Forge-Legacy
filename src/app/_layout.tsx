@@ -261,6 +261,8 @@ function RootNavigator() {
         <Stack.Screen name="train-invite" options={{ presentation: 'fullScreenModal' }} />
         {/* The other direction (0121): asking to join a session already under way. */}
         <Stack.Screen name="workout-join" options={{ presentation: 'fullScreenModal' }} />
+        {/* View a friend's live workout (0181) — the plan and the log, behind their own opt-in. */}
+        <Stack.Screen name="live-workout/[id]" />
         <Stack.Screen name="legacy-timeline" />
         <Stack.Screen name="photos" />
         <Stack.Screen name="add-photo" options={{ presentation: 'fullScreenModal' }} />
