@@ -561,7 +561,8 @@ function GoalForm({
   const [dirPick, setDirPick] = useState<MetricDir | null>(existing && usesBaseline(existing.metricKind) ? existing.metricDir : null);
   const [modePick, setModePick] = useState<TargetMode>('target');
   /** Typed here when there is no weigh-in yet — logged as one on save, because the goal needs a start. */
-  const [startInput, setStartInput] = useState('');
+  /** The starting reading as typed. `null` = untouched — the field shows the suggestion and the goal takes it. */
+  const [startInput, setStartInput] = useState<string | null>(null);
   const { data: bodyEntries } = useQuery(fetchBodyEntries, []);
 
   const isPrimary = existing?.isPrimary ?? primary;
@@ -597,10 +598,24 @@ function GoalForm({
   /* An edit measures from the baseline the goal was SAVED with — re-anchoring it to today's reading would
      silently move the finish line and rewrite the progress already shown. */
   const storedBaseline = existing && usesBaseline(existing.metricKind) ? existing.metricStartValue : null;
-  /* A weigh-in is one number and it IS the thing this goal reads, so it can be captured here. A tape
-     measurement rides on a body entry that also requires a weight — that belongs in Progress Hub. */
-  const canCaptureStart = metricKind === 'body_weight' && storedBaseline == null && loggedReading == null;
-  const baseline = storedBaseline ?? loggedReading ?? (canCaptureStart ? parseTarget(startInput) : null);
+  /*
+   * ══ A BODY GOAL ALWAYS ASKS WHERE IT STARTS ══
+   *
+   * PO (2026-08-28): *"it looks like it's putting my 193 as the starting weight. If we put weight loss or
+   * weight gain as the goal we should have an enter starting weight on there to make sure it's tracking
+   * correctly. My starting weight was 195."* The field used to appear only when the app had NO reading
+   * to guess from; otherwise it guessed silently and the athlete could not see or correct it. Now it is
+   * always there for a body goal, prefilled with the best guess (the stored baseline, else the reading at
+   * the goal's start, else the latest) and editable. What is in the field is what the goal measures from.
+   *
+   * A typed weight is ALSO saved as today's weigh-in when there is no reading at all — a weigh-in is one
+   * number and it is the thing the goal reads. With a reading on file the field only sets the goal's
+   * start; a tape measurement rides on a body entry that also needs a weight, so it is never captured here.
+   */
+  const suggestedStart = storedBaseline ?? loggedReading;
+  const startShown = startInput ?? (suggestedStart != null ? String(suggestedStart) : '');
+  const baseline = startInput != null ? parseTarget(startInput) : suggestedStart;
+  const capturesWeighIn = metricKind === 'body_weight' && loggedReading == null && startInput != null && parseTarget(startInput) != null;
   /** "Amount to change" needs somewhere to change FROM; without a reading the absolute is the only honest form. */
   const targetMode: TargetMode = baseline != null ? modePick : 'target';
 
@@ -660,7 +675,7 @@ function GoalForm({
     unit !== (existing?.unit ?? '') ||
     metricKind !== (existing?.metricKind ?? 'manual') ||
     (metricKey ?? '') !== (existing?.metricKey ?? '') ||
-    startInput !== '' ||
+    (startInput != null && startInput !== (suggestedStart != null ? String(suggestedStart) : '')) ||
     dirPick !== (existing && usesBaseline(existing.metricKind) ? existing.metricDir : null);
   const cancel = () => {
     if (!dirty) return onCancel();
@@ -673,7 +688,7 @@ function GoalForm({
     /* A starting weight typed here is logged as a real weigh-in first — it is one, and a body goal with
        nothing to measure from tracks nothing at all. If that write fails the goal is not saved either,
        rather than left anchored to a reading that does not exist. */
-    const captured = canCaptureStart && parseTarget(startInput) != null ? addBodyEntry({ weightLb: parseTarget(startInput)! }) : Promise.resolve();
+    const captured = capturesWeighIn ? addBodyEntry({ weightLb: parseTarget(startInput!)! }) : Promise.resolve();
     captured
       .then(() =>
         saveGoal({
@@ -783,19 +798,23 @@ function GoalForm({
                   </>
                 ) : null}
 
-                {canCaptureStart ? (
+                {isBody ? (
                   <View style={styles.startRow}>
-                    <Text style={styles.startLabel}>Current weight</Text>
+                    <Text style={styles.startLabel}>{metricKind === 'body_weight' ? `Starting weight (${effectiveUnit})` : `Starting measurement (${effectiveUnit})`}</Text>
                     <TextInput
                       style={[styles.input, styles.startInput]}
-                      value={startInput}
+                      value={startShown}
                       onChangeText={(t) => setStartInput(t.replace(/[^0-9.]/g, ''))}
                       keyboardType="decimal-pad"
-                      placeholder={`e.g. 185 ${effectiveUnit}`}
+                      placeholder={`e.g. 195 ${effectiveUnit}`}
                       placeholderTextColor={flColor.gray600}
-                      accessibilityLabel="Current weight"
+                      accessibilityLabel={metricKind === 'body_weight' ? 'Starting weight' : 'Starting measurement'}
                     />
-                    <Text style={styles.startNote}>Saved as today’s weigh-in — this goal is measured from it.</Text>
+                    <Text style={styles.startNote}>
+                      {loggedReading == null && metricKind === 'body_weight'
+                        ? 'Saved as today’s weigh-in too — this goal is measured from it.'
+                        : 'This goal is measured from here. Change it if it isn’t right.'}
+                    </Text>
                   </View>
                 ) : null}
 

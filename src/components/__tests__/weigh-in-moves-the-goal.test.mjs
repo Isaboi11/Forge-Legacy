@@ -67,3 +67,14 @@ test('⚠ the Legacy card reads the goal’s direction and baseline — or a cut
 test('an existing goal switched to bodyweight measures from where it began, not from today', () => {
   assert.match(strip(GOAL_FORM), /existing\s*\?\s*startBodyReading\(bodyEntries, existing\.createdAt, bodyColumn\)\s*:\s*latestBodyReading\(bodyEntries, bodyColumn\)/, 'the form no longer anchors an edited goal at its creation');
 });
+
+test('⚠ a body goal always shows its starting reading, prefilled and editable, and saves what is in the field', () => {
+  // PO: "we should have an enter starting weight on there to make sure it's tracking correctly. My
+  // starting weight was 195." The field used to appear only when the app had nothing to guess from.
+  const f = strip(GOAL_FORM);
+  assert.match(f, /\{isBody \? \(\s*<View style=\{styles\.startRow\}>/, 'the starting field is not shown for every body goal');
+  assert.match(f, /const startShown = startInput \?\? \(suggestedStart != null \? String\(suggestedStart\) : ''\);/, 'the field is not prefilled with the suggestion');
+  assert.match(f, /const baseline = startInput != null \? parseTarget\(startInput\) : suggestedStart;/, 'the goal does not measure from what is in the field');
+  assert.match(f, /metricStartValue: isBody \? baseline : undefined,/, 'the baseline is not saved');
+  assert.doesNotMatch(f, /canCaptureStart/, 'the old only-when-no-reading gate is back');
+});
