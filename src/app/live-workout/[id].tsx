@@ -56,7 +56,11 @@ export default function LiveWorkoutScreen() {
 
   useEffect(() => {
     let alive = true;
-    void read();
+    // The first read on a timer too (0 ms): the lint rule is right that an effect must not set state on
+    // the way in, and a read that resolves a tick later is the same read.
+    const first = setTimeout(() => {
+      if (alive) void read();
+    }, 0);
     const poll = setInterval(() => {
       if (alive) void read();
     }, POLL_MS);
@@ -64,6 +68,7 @@ export default function LiveWorkoutScreen() {
     const clock = setInterval(() => alive && setTick((t) => t + 1), 30_000);
     return () => {
       alive = false;
+      clearTimeout(first);
       clearInterval(poll);
       clearInterval(clock);
     };
