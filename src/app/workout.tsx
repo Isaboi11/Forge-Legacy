@@ -1462,11 +1462,26 @@ export default function WorkoutScreen() {
       };
       return replaceExercise(s, ei, { ...ex, sets: [...ex.sets, next] });
     });
-  const removeSet = (ei: number) =>
+  /**
+   * Remove ONE set — the one whose trash was tapped, not the last one. PO: *"take out the 'remove set'
+   * button during an active workout and put a small subtle red trash can symbol on the right of the
+   * set."* The old pill only ever popped the tail, so removing set 2 of 4 meant removing 3 and 4 as well
+   * and adding two back.
+   *
+   * ⚠ RE-INDEXED AFTER THE SPLICE. `setIndex` is what `save-core` writes as `set_index`, and it matches
+   *   saved rows against fresh ones by that number (`fresh.some((f) => f.setIndex === s.set_index)`). A
+   *   hole in the sequence would save a session whose sets are numbered 1, 2, 4.
+   *
+   * The last set stays: a table with no rows is an exercise with no prescription, and the exercise has
+   * its own remove. The icon disappears at one set rather than greying out — a disabled trash beside the
+   * only set reads as "this one is stuck", which is not the message.
+   */
+  const removeSet = (ei: number, si: number) =>
     mutate((s) => {
       const ex = s.exercises[ei];
-      if (ex.sets.length <= 1) return s;
-      return replaceExercise(s, ei, { ...ex, sets: ex.sets.slice(0, -1) });
+      if (ex.sets.length <= 1 || si < 0 || si >= ex.sets.length) return s;
+      const sets = ex.sets.filter((_, i) => i !== si).map((set, i) => ({ ...set, setIndex: i }));
+      return replaceExercise(s, ei, { ...ex, sets });
     });
 
   /**
@@ -3288,6 +3303,7 @@ export default function WorkoutScreen() {
                   <Text style={[styles.h, styles.cTarget]}>Target</Text>
                   <Text style={[styles.h, styles.cWeight]}>Weight ({unitLabel(units)})</Text>
                   <Text style={[styles.h, styles.cActual]}>Actual</Text>
+                  <View style={styles.cTrash} />
                 </View>
                 <View style={styles.rows}>
                   {ex.sets.map((set, si) => {
@@ -3395,6 +3411,30 @@ export default function WorkoutScreen() {
                             </>
                           )}
                         </View>
+                        {/* The way a set leaves the table. Small and quiet on purpose — the row's
+                            business is the weight and the reps, and a red control at full weight beside
+                            every set would out-rank both. It sits in a fixed trailing column so the
+                            three data cells keep their widths, and it is absent (not greyed) when this is
+                            the only set — see `removeSet`. `hitSlop` gives the 20pt glyph a 44pt target
+                            without drawing one. */}
+                        <View style={styles.cTrash}>
+                          {ex.sets.length > 1 ? (
+                            <Pressable
+                              onPress={() => removeSet(exIdx, si)}
+                              hitSlop={12}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Remove set ${si + 1}`}
+                              style={({ pressed }) => [styles.trashBtn, pressed && styles.trashBtnPressed]}
+                            >
+                              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.redMuted} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+                                <Path d="M4 7h16" />
+                                <Path d="M9 7V5h6v2" />
+                                <Path d="M6.5 7l1 13h9l1-13" />
+                                <Path d="M10 11v6M14 11v6" />
+                              </Svg>
+                            </Pressable>
+                          ) : null}
+                        </View>
                       </View>
                     );
                   })}
@@ -3405,30 +3445,9 @@ export default function WorkoutScreen() {
                       </Svg>
                       <Text style={styles.addSetText}>Add Set</Text>
                     </Pressable>
-                    {/*
-                      ⚠ ALWAYS RENDERED, DISABLED AT ONE SET — it used to unmount, and that is what made the
-                      row reflow. PO: *"we need to change that to add set and remove set and split the pills
-                      down the middle."* Two halves that swap between full-width and half-width depending on
-                      how many sets you have left are not halves; the athlete's thumb has to find a target
-                      that moves. Both carry `flex: 1` and both stay on screen, so the pair is the same shape
-                      for the whole session.
-
-                      The label grew a noun for the same reason: "Remove" beside "Add Set" reads as removing
-                      the exercise, which is the one thing this button has never done.
-                    */}
-                    <Pressable
-                      onPress={() => removeSet(exIdx)}
-                      disabled={ex.sets.length <= 1}
-                      accessibilityRole="button"
-                      accessibilityState={{ disabled: ex.sets.length <= 1 }}
-                      accessibilityLabel="Remove last set"
-                      style={[styles.removeSet, ex.sets.length <= 1 && styles.removeSetOff]}
-                    >
-                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                        <Path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
-                      </Svg>
-                      <Text style={styles.removeSetText}>Remove Set</Text>
-                    </Pressable>
+                    {/* Full width again. This used to be one of two halves — Add Set / Remove Set, split
+                        down the middle by PO decision — until the PO moved removal onto the rows
+                        themselves, where the set being removed is the one you are looking at. */}
                   </TourAnchor>
                   {/* Says the one thing the table does not say about itself, and stops saying it the moment
                       it stops being news. Derived from the session rather than a stored "seen" flag — there
@@ -5083,15 +5102,17 @@ const styles = StyleSheet.create({
   setBtns: { flexDirection: 'row', gap: 8, marginTop: 2 },
   addSet: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorder, borderRadius: flRadius.md, backgroundColor: 'transparent' },
   addSetText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze400 },
-  /* `flex: 1` on BOTH halves, and no `paddingHorizontal` — intrinsic width is what made this one
-     narrower than the dashed Add Set beside it. `setBtns`' gap of 8 is the split down the middle. */
-  removeSet: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, minHeight: 44, borderWidth: 1, borderColor: flColor.charcoal500, borderRadius: flRadius.md },
-  removeSetOff: { opacity: 0.32 },
-  removeSetText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray400 },
+  /* The trailing column every row and the header carry, so the trash never steals width from the
+     three data cells and the headings stay over their numbers. */
+  cTrash: { width: 22, alignItems: 'flex-end', justifyContent: 'center' },
+  /* Subtle by default — the glyph is red so it needs no weight of its own; at rest it is a mark, on
+     press it is the control. The press answer is the same depth every other control here uses. */
+  trashBtn: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center', opacity: 0.5 },
+  trashBtnPressed: { transform: [{ scale: 0.96 }], opacity: 1 },
   /*
    * THE ATHLETE'S NOTE ROW — the same shape both builders use for the author's cue, on purpose: one
    * treatment for "a note lives here", whichever screen you are on. Sentence case and no uppercase
-   * tracking, unlike Add Set / Remove Set above it, because this is not part of logging a set.
+   * tracking, unlike Add Set above it, because this is not part of logging a set.
    *
    * ⚠ A STRIP, NOT A CARD, AND IT SITS AT THE SAME LEVEL AS THE TABLE. It is a direct child of the
    * scroll body (18pt gutter, 14pt gap already applied), so it carries no margin of its own and takes
