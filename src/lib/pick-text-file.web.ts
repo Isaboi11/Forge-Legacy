@@ -1,7 +1,14 @@
+import { extractPdfText } from './pdf-text';
+
 export const canPickFile = true;
 
 /**
- * Open the OS file chooser and read a .csv/.tsv/.txt as text.
+ * Open the OS file chooser and read a .csv/.tsv/.txt as text — or a PDF, read out with `pdf-text.ts`.
+ *
+ * PO: *"make sure it can import files/pdfs. If someone purchases a program it's usually a pdf."* A PDF
+ * arrives here as bytes and leaves as the same `{ text }` a spreadsheet does, so the sheet cannot tell
+ * them apart and does not need to: one parser, one preview. A scanned PDF has no text and is refused
+ * with a reason rather than handed over empty.
  *
  * An input element created and clicked imperatively, rather than a hidden one rendered into the tree:
  * React Native Web has no `<input type="file">` primitive, and reaching into the DOM once at the moment
@@ -17,7 +24,7 @@ export async function pickTextFile(): Promise<{ ok: true; text: string; name: st
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.csv,.tsv,.txt,text/csv,text/plain';
+    input.accept = '.csv,.tsv,.txt,.pdf,text/csv,text/plain,application/pdf';
     input.style.position = 'fixed';
     input.style.opacity = '0';
     input.style.pointerEvents = 'none';
@@ -33,6 +40,19 @@ export async function pickTextFile(): Promise<{ ok: true; text: string; name: st
     input.onchange = () => {
       const file = input.files?.[0];
       if (!file) return done({ ok: false, reason: '' }); // dismissed
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+      if (isPdf) {
+        file
+          .arrayBuffer()
+          .then((buf) => extractPdfText(new Uint8Array(buf)))
+          .then((text) =>
+            text.trim()
+              ? done({ ok: true, text, name: file.name })
+              : done({ ok: false, reason: 'That PDF has no text to read — it’s probably a scan. Paste the rows instead.' }),
+          )
+          .catch(() => done({ ok: false, reason: 'Couldn’t read that PDF. If it opens elsewhere, try pasting its rows instead.' }));
+        return;
+      }
       file
         .text()
         .then((text) => done({ ok: true, text, name: file.name }))

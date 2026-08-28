@@ -312,6 +312,10 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
             Keep it one row per <Text style={styles.impHintStrong}>day</Text> instead? That works too —
             write the session out (&ldquo;75min bike Z2 + 30min upper strength&rdquo;) and we&rsquo;ll read the
             rides, runs and swims out of it. Check what we read before you {scope === 'program' ? 'create it' : 'use it'}.
+            {'\n\n'}
+            Bought a program as a <Text style={styles.impHintStrong}>PDF</Text>? Upload it below — we read
+            the text out of it into the box, where you can fix anything before previewing. A scanned PDF has
+            no text to read.
             {PHOTO_IMPORT_ENABLED ? (
               <>
               {'\n\n'}
@@ -341,14 +345,16 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
           <Pressable
             onPress={() => void onPickFile()}
             accessibilityRole="button"
-            accessibilityLabel="Upload a CSV file"
+            accessibilityLabel="Upload a file — a spreadsheet or a PDF"
             style={({ pressed }) => [styles.impFileBtn, pressed ? styles.impPressed : null]}
           >
             <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
               <Path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
               <Path d="M14 3v6h6" />
             </Svg>
-            <Text style={styles.impFileText}>Or upload a .csv file</Text>
+            {/* "PDF" is in the label because that is what a purchased program arrives as — PO, 2026-08-27.
+                The PDF's text goes into the box above like any paste; see `pick-text-file.web.ts`. */}
+            <Text style={styles.impFileText}>Or upload a file — .csv or PDF</Text>
           </Pressable>
           {/* ⚠ LIBRARY ONLY, AND THAT IS A DECISION — see `pickImageFromLibrary`. The label says
               "screenshot" rather than "photo" because that is both the real use case and the honest
