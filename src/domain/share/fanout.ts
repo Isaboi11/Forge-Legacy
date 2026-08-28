@@ -81,3 +81,43 @@ export function shareVerb(squadCount: number, includeFriends: boolean): string {
   if (!includeFriends) return squadCount === 1 ? 'Share to Squad' : `Share to ${squads}`
   return `Share with Friends and ${squads}`
 }
+
+/**
+ * ══ WHAT HAS ALREADY BEEN SHARED ══
+ *
+ * PO (2026-08-27): *"I clicked share to squad and friends after my workout from the share card and it's
+ * still not showing me that I shared it in any way. I just need something that says that I actually
+ * shared it or else people will double post."*
+ *
+ * The record already exists — every share is a `squad_posts` row carrying `author_id` + `workout_id`
+ * (`fetchWorkoutShares`). These two functions turn those rows into what a screen can say and what a
+ * tile can refuse. Pure, so `share-state.test.mjs` can hold the rules without a database.
+ */
+export interface PriorShare {
+  audience: ShareAudience
+  squadId: string | null
+}
+
+export interface ShareState {
+  /** A FRIENDS or BOTH post exists — the friends feed already carries this session. */
+  friends: boolean
+  /** Squads that already carry a post of this session. */
+  squadIds: string[]
+}
+
+export function shareState(prior: readonly PriorShare[]): ShareState {
+  const squadIds = [...new Set(prior.map((p) => p.squadId).filter((id): id is string => !!id))]
+  return { friends: prior.some((p) => p.audience !== 'SQUAD'), squadIds }
+}
+
+/**
+ * "Shared to Da Bois" / "Shared with your friends and Da Bois" — or null when nothing has been. A squad
+ * that has since been left still counts (its post is still there); it is named by number.
+ */
+export function sharedLine(state: ShareState, squads: readonly { id: string; name: string }[]): string | null {
+  const names = squads.filter((s) => state.squadIds.includes(s.id)).map((s) => s.name)
+  const unnamed = state.squadIds.length - names.length
+  if (unnamed > 0) names.push(unnamed === 1 ? '1 other squad' : `${unnamed} other squads`)
+  if (!state.friends && !names.length) return null
+  return shareSummary(names, state.friends)
+}

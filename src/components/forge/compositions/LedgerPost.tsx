@@ -41,6 +41,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Avatar } from '@/components/forge/composites/Avatar';
+import { MediaThumb } from '@/components/forge/MediaThumb';
 import { AckGlyph } from '@/components/forge/AckGlyph';
 import { ACK_LABEL, fmtDuration, type AckKind, type WorkoutSummary } from '@/data/squad-feed-live';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
@@ -117,6 +118,13 @@ export interface LedgerPostProps {
   busy?: boolean;
   onAuthor?: () => void;
   onOpen?: () => void;
+  /**
+   * A tap on the media band itself. Given, the band is its own control — a video PLAYS rather than
+   * opening the post — and `onOpen` keeps the rest of the card. PO: *"I clicked the video but it just
+   * showed me the workout summary and not the video."* S-2 §17.4: "Tapping the video plays it inline or
+   * opens a lightweight player."
+   */
+  onMedia?: () => void;
   onAcknowledge: () => void;
   /**
    * Press-and-hold on Acknowledge. The Friends feed uses it to reach the four kinds (SOC-D11) that the
@@ -199,6 +207,7 @@ export function LedgerPost({
   busy = false,
   onAuthor,
   onOpen,
+  onMedia,
   onAcknowledge,
   onLongAcknowledge,
   onComments,
@@ -257,7 +266,13 @@ export function LedgerPost({
         {customMedia ? (
           <View style={[styles.customBand, { marginHorizontal: -bleed }]}>{customMedia}</View>
         ) : hasMedia ? (
-          <MediaBand media={media} bleed={bleed} />
+          onMedia ? (
+            <Pressable onPress={onMedia} accessibilityRole="button" accessibilityLabel={media[0]?.kind === 'video' ? 'Play video' : 'Open media'}>
+              <MediaBand media={media} bleed={bleed} />
+            </Pressable>
+          ) : (
+            <MediaBand media={media} bleed={bleed} />
+          )
         ) : null}
 
         {showBody && marker ? (
@@ -341,7 +356,10 @@ function MediaBand({ media, bleed }: { media: LedgerMediaItem[]; bleed: number }
   const [w, setW] = useState(0);
   const [idx, setIdx] = useState(0);
   const isVideo = media[0].kind === 'video';
-  const ratio = isVideo ? 16 / 9 : 4 / 5;
+  /* One band shape for photos and video. A 16:9 letterbox for a phone clip put a small disc in a wide
+     black field and read as "not centered" (PO, 2026-08-27); a portrait frame in a 4:5 band is the same
+     crop the archive and the profile strip already use. */
+  const ratio = 4 / 5;
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (w <= 0) return;
@@ -354,14 +372,18 @@ function MediaBand({ media, bleed }: { media: LedgerMediaItem[]; bleed: number }
       onLayout={(e) => setW(e.nativeEvent.layout.width)}
     >
       {isVideo ? (
-        /* No poster frame exists — the row stores the clip's URL and nothing else, and `expo-image`
-           cannot draw a frame out of an mp4. A dark tile with a play disc is what is actually known;
-           an <Image> pointed at a video renders as a broken box. */
-        <View style={styles.videoTile}>
-          <View style={styles.playDisc}>
-            <PlayGlyph />
+        /* A real first frame, the way the archive and the profile strip draw one (`MediaThumb`: a
+           generated thumbnail on native, a seeked paused <video> on web). The disc is an overlay centred
+           on the band, not a child of a flat tile — the tile used to be a black rectangle with a comment
+           claiming no frame could exist. */
+        <>
+          <MediaThumb url={media[0].url} kind="video" />
+          <View pointerEvents="none" style={styles.playOverlay}>
+            <View style={styles.playDisc}>
+              <PlayGlyph />
+            </View>
           </View>
-        </View>
+        </>
       ) : media.length === 1 ? (
         <Image source={{ uri: media[0].url }} style={StyleSheet.absoluteFill} contentFit="cover" />
       ) : (
@@ -607,7 +629,7 @@ const styles = StyleSheet.create({
 
   band: { position: 'relative', width: 'auto', marginTop: 14, overflow: 'hidden', backgroundColor: flColor.charcoal800 },
   customBand: { marginTop: 14, overflow: 'hidden' },
-  videoTile: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0E1216' },
+  playOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   playDisc: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, backgroundColor: 'rgba(0,0,0,0.45)', borderWidth: 1, borderColor: flColor.bronzeBorder },
   counter: { position: 'absolute', right: 12, bottom: 12, paddingHorizontal: 9, paddingVertical: 4, borderRadius: flRadius.pill, backgroundColor: 'rgba(6,7,9,0.62)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.09)' },
   counterText: { fontSize: 11, fontWeight: '600', color: flColor.cream100 },

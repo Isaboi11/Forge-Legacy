@@ -7,11 +7,11 @@ import { Button } from '@/components/forge/composites/Button';
 import { SquadSelectList, selectedSquads } from '@/components/forge/SquadSelectList';
 import { flColor, flRadius } from '@/constants/foundation';
 import { useToast } from '@/hooks/useCeremony';
-import { addSquadPost, buildWorkoutRecap, fmtVolume, type WorkoutSummary } from '@/data/squad-feed-live';
+import { addSquadPost, buildWorkoutRecap, fetchWorkoutShares, fmtVolume, type WorkoutSummary } from '@/data/squad-feed-live';
 import { cardioMarkerLabel, type RecapLead } from '@/domain/share/recap-stats';
 import { createFriendPost, type PostAudience } from '@/data/friends-feed-live';
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
-import { shareSummary, shareTargets, shareVerb } from '@/domain/share/fanout';
+import { sharedLine, shareState, shareSummary, shareTargets, shareVerb, type PriorShare } from '@/domain/share/fanout';
 
 /**
  * WHERE A SESSION GOES — one sheet, every destination, wherever it is opened from.
@@ -102,9 +102,15 @@ export interface ShareSessionSheetProps {
    * whatever happens to be to hand. No preview, no preview block — never a placeholder.
    */
   preview?: ReactNode;
+  /**
+   * Every post this session now has, after a share lands — the caller's chance to say "Shared" on its
+   * own screen. PO: *"I just need something that says that I actually shared it or else people will
+   * double post."*
+   */
+  onShared?: (prior: PriorShare[]) => void;
 }
 
-export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summary, note, media = [], preview }: ShareSessionSheetProps) {
+export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summary, note, media = [], preview, onShared }: ShareSessionSheetProps) {
   const { showToast } = useToast();
   const [mySquads, setMySquads] = useState<SquadSummary[] | null>(null);
   const [squadStep, setSquadStep] = useState<PostAudience | null>(null);
@@ -120,6 +126,8 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
    * where both strips are real.
    */
   const [leadChoice, setLeadChoice] = useState<RecapLead | null>(null);
+  /** Posts this session already has. `null` until read; the tiles treat that as "nothing yet". */
+  const [prior, setPrior] = useState<PriorShare[] | null>(null);
 
   const snapshot = summary ?? fetched;
   const mixed = snapshot?.cardio != null && snapshot.lead === 'strength';
@@ -131,6 +139,8 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
     if (!open) return;
     let alive = true;
     if (!mySquads) void fetchMySquads().then((s) => alive && setMySquads(s), () => alive && setMySquads([]));
+    // The "already shared" record, read where the squads are. Never rejects — see `fetchWorkoutShares`.
+    if (prior == null) void fetchWorkoutShares(workoutId).then((p) => alive && setPrior(p));
     if (!summary && !fetched) {
       void buildWorkoutRecap(workoutId).then((r) => {
         if (alive && r) setFetched(r.summary);
@@ -139,11 +149,24 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
     return () => {
       alive = false;
     };
-  }, [open, workoutId, summary, fetched, mySquads]);
+  }, [open, workoutId, summary, fetched, mySquads, prior]);
 
   const hasSquad = (mySquads ?? []).length > 0;
   /** Whether the tiles should promise a CHOICE — with one squad there is nothing to pick between. */
   const manySquads = (mySquads ?? []).length > 1;
+
+  /*
+   * ══ WHAT IS ALREADY POSTED DECIDES WHAT THE TILES OFFER ══
+   *
+   * A squad that already has this session is not offered again; friends who already have it are not
+   * either. The tiles stay VISIBLE with the reason (a missing option teaches nothing), and the line
+   * above them says where the session already is. Re-sharing to a squad that does not have it yet is
+   * legitimate and stays open — that is the one case a flat "already shared" lock would get wrong.
+   */
+  const state = shareState(prior ?? []);
+  const unshared = (mySquads ?? []).filter((s) => !state.squadIds.includes(s.id));
+  const allSquadsShared = hasSquad && unshared.length === 0;
+  const already = sharedLine(state, mySquads ?? []);
 
   /**
    * Send it — to every squad chosen, and to friends if they were.
@@ -181,6 +204,14 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
     };
     const run = async () => {
       const landed: string[] = [];
+      /* What actually got inserted — recorded per target, so a failure halfway still marks the posts that
+         exist and the tiles cannot offer them a second time. */
+      const done: PriorShare[] = [];
+      const record = () => {
+        const next = [...(prior ?? []), ...done];
+        setPrior(next);
+        onShared?.(next);
+      };
       try {
         for (const t of targets) {
           if (t.audience === 'SQUAD' && t.squadId) {
@@ -188,10 +219,12 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
           } else {
             await createFriendPost({ ...recap, audience: t.audience, squadId: t.squadId });
           }
+          done.push({ audience: t.audience, squadId: t.squadId });
           const name = squads.find((s) => s.id === t.squadId)?.name;
           if (name) landed.push(name);
         }
       } catch (e) {
+        record();
         setSharing(false);
         // Anything already inserted STAYS inserted, so the message says what got through rather than
         // implying the whole share failed and inviting a second, duplicating attempt.
@@ -199,6 +232,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
         showToast(`${e instanceof Error ? e.message : 'Couldn’t share that.'}${done}`);
         return;
       }
+      record();
       setSharing(false);
       setSquadStep(null);
       setPicked(new Set());
@@ -210,14 +244,15 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
 
   const choose = (audience: PostAudience) => {
     if (audience === 'FRIENDS') return post('FRIENDS', []);
-    const squads = mySquads ?? [];
+    // Only the squads that do not have it yet — the ones that do are not a choice.
+    const squads = unshared;
     // One squad is not a choice. More than one is, and it is a choice of ANY of them.
     if (squads.length === 1) return post(audience, squads);
     setPicked(new Set());
     setSquadStep(audience);
   };
 
-  const stepSquads = mySquads ?? [];
+  const stepSquads = unshared;
   const stepPicked = selectedSquads(stepSquads, picked);
 
   const sentence = () => {
@@ -303,9 +338,12 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
           onChange={setPicked}
           disabled={sharing}
           hint={
-            squadStep === 'BOTH'
+            (squadStep === 'BOTH'
               ? 'One post to your friends, and one to each squad you pick.'
-              : 'One post to each squad you pick.'
+              : 'One post to each squad you pick.') +
+            (state.squadIds.length
+              ? ` ${state.squadIds.length === 1 ? 'One squad already has it and isn’t listed.' : `${state.squadIds.length} squads already have it and aren’t listed.`}`
+              : '')
           }
         />
       ) : (
@@ -340,6 +378,17 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
             </View>
           ) : null}
 
+          {/* Where the session already is. The durable half of the answer to "did that work?" — the
+              toast is the other half and it is gone in three seconds. */}
+          {already ? (
+            <View style={styles.already} accessibilityRole="text" accessibilityLabel={already}>
+              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M20 6L9 17l-5-5" />
+              </Svg>
+              <Text style={styles.alreadyText}>{already}</Text>
+            </View>
+          ) : null}
+
           <Text style={styles.group}>Within Forge</Text>
           {/*
             ⚠ THREE TILES, NOT TWO. The handoff draws Friends and Squads; "Friends & Squad" is a THIRD
@@ -353,22 +402,38 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
               icon={<FriendsGlyph />}
               label="Friends"
               onPress={() => choose('FRIENDS')}
-              disabled={sharing || !snapshot}
-              hint="Everyone you're connected to"
+              disabled={sharing || !snapshot || state.friends}
+              hint={state.friends ? 'Already shared with your friends' : "Everyone you're connected to"}
             />
             <Tile
               icon={<SquadGlyph />}
               label="Squads"
               onPress={() => choose('SQUAD')}
-              disabled={sharing || !hasSquad || !snapshot}
-              hint={!hasSquad ? 'You’re not in a squad yet' : manySquads ? 'Any of the squads you train with' : 'Just the people you train with'}
+              disabled={sharing || !hasSquad || !snapshot || allSquadsShared}
+              hint={
+                !hasSquad
+                  ? 'You’re not in a squad yet'
+                  : allSquadsShared
+                    ? manySquads ? 'Already shared with your squads' : 'Already shared with your squad'
+                    : state.squadIds.length
+                      ? `${unshared.length} squad${unshared.length === 1 ? '' : 's'} left to share with`
+                      : manySquads ? 'Any of the squads you train with' : 'Just the people you train with'
+              }
             />
             <Tile
               icon={<BothGlyph />}
               label="Both"
               onPress={() => choose('BOTH')}
-              disabled={sharing || !hasSquad || !snapshot}
-              hint={!hasSquad ? 'Needs a squad' : manySquads ? 'Friends, and any squads you pick' : 'One post, both audiences'}
+              disabled={sharing || !hasSquad || !snapshot || state.friends || allSquadsShared}
+              hint={
+                !hasSquad
+                  ? 'Needs a squad'
+                  : state.friends
+                    ? 'Friends already have it — use Squads'
+                    : allSquadsShared
+                      ? 'Your squads already have it — use Friends'
+                      : manySquads ? 'Friends, and any squads you pick' : 'One post, both audiences'
+              }
             />
           </View>
           {!hasSquad ? (
@@ -501,6 +566,8 @@ function MoreGlyph() {
 
 const styles = StyleSheet.create({
   body: { gap: 10 },
+  already: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2, paddingVertical: 9, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  alreadyText: { flex: 1, fontSize: 12.5, fontWeight: '600', lineHeight: 17, color: flColor.bronze300 },
   preview: { alignItems: 'center', marginBottom: 6 },
 
   group: { marginTop: 6, fontSize: 10.5, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.gray600 },

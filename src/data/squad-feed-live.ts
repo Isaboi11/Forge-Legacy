@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import type { PriorShare } from '@/domain/share/fanout';
 import { deriveLead, recapCardioFrom, type RecapCardio, type RecapLead } from '@/domain/share/recap-stats';
 import { extensionFor, MAX_CHECKIN_BYTES, MAX_IMAGE_BYTES, uploadToBucket, type UploadOpts } from '@/lib/storage-upload';
 import { fetchCompletion } from '@/data/workout-complete-live';
@@ -503,6 +504,34 @@ export async function addSquadPost(input: NewSquadPost): Promise<string> {
   const { data, error } = await supabase.from('squad_posts').insert(row).select('id').single();
   if (error) throw error;
   return (data as { id: string }).id;
+}
+
+/**
+ * Every post the signed-in athlete has made OF this workout — the "already shared" record. Both writers
+ * (`addSquadPost` and `createFriendPost`) land in `squad_posts` with `author_id` + `workout_id`, and the
+ * SELECT policy's first branch is `author_id = auth.uid()`, so the rows are readable without a new RPC.
+ * Never throws: an unreadable list is "nothing shared yet", and the share tiles stay usable.
+ */
+export async function fetchWorkoutShares(workoutId: string): Promise<PriorShare[]> {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('squad_posts')
+      .select('audience, squad_id')
+      .eq('author_id', user.id)
+      .eq('workout_id', workoutId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return ((data ?? []) as { audience: string | null; squad_id: string | null }[]).map((r) => ({
+      audience: r.audience === 'FRIENDS' || r.audience === 'BOTH' ? r.audience : 'SQUAD',
+      squadId: r.squad_id,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 // ── Workout-backed posts (Recap snapshots real workout stats; composer picks from recent activity) ──

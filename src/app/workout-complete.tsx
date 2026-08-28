@@ -22,10 +22,11 @@ import { withinContinueWindow } from '@/domain/workout/save';
 import { PlaylistSheet } from '@/components/forge/composites/Playlist';
 import { playlistLabel, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { distanceLabel, fmtClock, fmtPace, toDistance, toPace, type UnitSystem } from '@/domain/run/run-core';
-import { recapSummaryFrom } from '@/data/squad-feed-live';
+import { recapSummaryFrom, fetchWorkoutShares } from '@/data/squad-feed-live';
 import { fetchTodaysChapterPhotos, type ChapterPhoto } from '@/data/photos-live';
 import { fetchRecentPlaylists } from '@/data/playlists-live';
 import { ShareSessionSheet } from '@/components/forge/ShareSessionSheet';
+import type { PriorShare } from '@/domain/share/fanout';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
@@ -203,6 +204,21 @@ export default function WorkoutComplete() {
   const [note, setNote] = useState('');
   const [reflectionEdit, setReflectionEdit] = useState<string | undefined>(undefined);
   const [savingNote, setSavingNote] = useState(false);
+  /*
+   * Posts this session already has — read on arrival, kept current by the sheet. PO: *"it's still not
+   * showing me that I shared it in any way … or else people will double post."* The toast said so for
+   * three seconds; this is what says so when they come back to the screen.
+   */
+  const [shares, setShares] = useState<PriorShare[] | null>(null);
+  const workoutIdForShares = data?.workoutId ?? null;
+  useEffect(() => {
+    if (!workoutIdForShares) return;
+    let alive = true;
+    void fetchWorkoutShares(workoutIdForShares).then((p) => alive && setShares(p));
+    return () => {
+      alive = false;
+    };
+  }, [workoutIdForShares]);
   const reflection = (reflectionEdit !== undefined ? reflectionEdit : (data?.reflection ?? '')).trim();
 
   /*
@@ -230,6 +246,11 @@ export default function WorkoutComplete() {
   /* What Share sends. `is_video` decides the kind, because the archive takes both and a video posted as
      an image renders a dead grey frame. */
   const sharePhotos = addedPhotos.map((p) => ({ url: p.url, kind: p.isVideo ? ('video' as const) : ('image' as const) }));
+  /* The line typed under a photo or video on `/add-photo` — "A line about it". It reached the archive and
+     never the post: `sharePhotos` carried the URL and dropped the caption, so PO: *"I put a comment when I
+     was creating the post after the workout and it's not showing the comment."* It is the post's body
+     when no reflection was sealed; a sealed reflection still wins, being the more deliberate of the two. */
+  const mediaCaption = addedPhotos.map((p) => p.caption?.trim() ?? '').find(Boolean) ?? '';
   useFocusEffect(
     useCallback(() => {
       let alive = true;
@@ -682,8 +703,9 @@ export default function WorkoutComplete() {
        * snapshot and nothing else — `body: ''` and `media: []` were hardcoded in the sheet — so the note
        * and the photo an athlete had just added were, from the feed's point of view, never made.
        */
-      note={reflection || null}
+      note={reflection || mediaCaption || null}
       media={sharePhotos}
+      onShared={setShares}
       preview={shareCard}
     />
   );
@@ -896,9 +918,21 @@ export default function WorkoutComplete() {
 
             {/* The only filled button on this screen. */}
             <View style={styles.capShare}>
-              <Button variant="primary" fullWidth onPress={() => setSheet('share')} accessibilityLabel="Share your workout">
-                Share your workout
+              <Button
+                variant="primary"
+                fullWidth
+                onPress={() => setSheet('share')}
+                accessibilityLabel={shares?.length ? 'Shared — share again' : 'Share your workout'}
+              >
+                {shares?.length ? 'Shared ✓ · Share again' : 'Share your workout'}
               </Button>
+              {/* Still tappable after a share: posting to a squad that does not have it yet is legitimate,
+                  and the sheet refuses the ones that do. The line says what a second tap means. */}
+              {shares?.length ? (
+                <Text style={styles.sharedNote}>
+                  {shares.length === 1 ? 'This session is posted.' : `This session is posted ${shares.length} times.`} Sharing again adds another post.
+                </Text>
+              ) : null}
             </View>
 
             {/* Two bare text buttons, never full-width ones. The weight difference is the whole hierarchy:
@@ -1587,6 +1621,7 @@ const styles = StyleSheet.create({
   capRowLabel: { flex: 1, fontFamily: flFont.sans, fontSize: 14, color: flColor.gray400 },
   capRowLabelFilled: { color: flColor.cream100 },
   capShare: { width: '100%', maxWidth: 322, marginTop: 22 },
+  sharedNote: { marginTop: 8, textAlign: 'center', fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
   capExits: { marginTop: 10, gap: 6, alignItems: 'center' },
   capExitBtn: { minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
   capExit: { fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.gray400 },

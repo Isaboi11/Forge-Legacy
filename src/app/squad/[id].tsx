@@ -778,6 +778,14 @@ export default function SquadDetailRoute() {
                         : openPost(p.id)
                   }
                   onComments={() => openPost(p.id)}
+                  /* The clip PLAYS. The card's one handler above sent a tap on the video to the workout
+                     summary — what the PO reported — and the band now opens the same full-screen player a
+                     pinned video uses. Photos keep the card's own destination. */
+                  onMedia={
+                    p.media[0]?.kind === 'video'
+                      ? () => router.push({ pathname: '/pin-video', params: { url: p.media[0].url } })
+                      : undefined
+                  }
                   onAuthor={() => router.push({ pathname: '/athlete/[id]', params: { id: p.authorId } })}
                   onReact={() => onReactCard(p)}
                   ackKind={kindMap[p.id]}
@@ -1199,6 +1207,7 @@ function FeedCard({
   respect,
   ackKind,
   onOpen,
+  onMedia,
   onComments,
   onAuthor,
   onReact,
@@ -1217,6 +1226,8 @@ function FeedCard({
   onReact: () => void;
   /** Press and hold the acknowledge control — opens the four kinds (SOC-A4-D3). */
   onLongReact: () => void;
+  /** A tap on the media band — a video plays instead of opening the card's destination. */
+  onMedia?: () => void;
 }) {
   const summary = post.type === 'recap' ? post.workoutSummary : null;
 
@@ -1293,6 +1304,7 @@ function FeedCard({
       commentCount={post.commentCount}
       onAuthor={onAuthor}
       onOpen={onOpen}
+      onMedia={onMedia}
       onAcknowledge={onReact}
       onLongAcknowledge={onLongReact}
       onComments={onComments}
