@@ -147,6 +147,11 @@ test('a file that is not a PDF rejects — the caller shows the reason, nothing 
 test('⚠ babel strips import.meta and metro empties @napi-rs/canvas — the config carries both', () => {
   const babel = readFileSync(join(ROOT, 'babel.config.js'), 'utf8');
   assert.match(babel, /MetaProperty\(path\)/, 'babel.config.js no longer strips import.meta');
+  // Build 8 (2026-08-28) died in hermesc on pdf.js's `await import(this.workerSrc)` — a dynamic import
+  // with a VARIABLE specifier, which Metro passes through and Hermes cannot parse. The web bundle never
+  // runs hermesc, so only `npx expo export --platform ios` shows it; this keeps the guard in place.
+  assert.match(babel, /t\.isImport\(path\.node\.callee\)/, 'babel.config.js no longer neutralises non-literal dynamic import()');
+  assert.match(babel, /ImportExpression\(path\)/, 'the ImportExpression form of dynamic import() is no longer covered');
   assert.match(babel, /presets:\s*\['babel-preset-expo'\]/, 'the Expo preset must stay — this file replaced the implicit default');
   const metro = readFileSync(join(ROOT, 'metro.config.js'), 'utf8');
   assert.match(metro, /moduleName === '@napi-rs\/canvas'/, 'metro.config.js no longer empties @napi-rs/canvas');
