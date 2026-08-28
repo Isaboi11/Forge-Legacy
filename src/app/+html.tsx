@@ -42,25 +42,37 @@ export default function Root({ children }: PropsWithChildren) {
           resolves from, so the two cannot disagree. Everything is inside a try/catch because
           `localStorage` THROWS rather than returning null in a private window or with site data
           blocked — an unhandled throw here would take the page down before the app ever loads.
+
+          ⚠ IT STAMPS `data-theme`; THE STYLESHEET BELOW DOES THE PAINTING. The first version set the
+          colour on `<html>` and ALSO gave `<body>` an inline dark background "for when scripts are
+          blocked" — and `ScrollViewStyleReset` sets `body{height:100%}`, so that inline dark body
+          covered the whole viewport and painted OVER the Paper `<html>` for the entire bundle download
+          and font load. PO: *"when it's the white version the splash screen is black first then it goes
+          to the white."* A body has no business carrying a colour of its own here: the ground is one
+          rule, keyed on the attribute, and the no-script fallback is the rule's default.
         */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{
   var p = localStorage.getItem('fl_theme_v1') === 'paper';
-  var bg = p ? '#F6F2E8' : '#0E0E12';
-  document.documentElement.style.backgroundColor = bg;
   document.documentElement.setAttribute('data-theme', p ? 'paper' : 'forge');
   var m = document.querySelector('meta[name="theme-color"]');
-  if (m) m.setAttribute('content', bg);
+  if (m) m.setAttribute('content', p ? '#F6F2E8' : '#0E0E12');
 }catch(e){}})();`,
+          }}
+        />
+        {/* The two values are the splash grounds in `forge-splash.tsx` (`SPLASH_BACKGROUND_FORGE` /
+            `SPLASH_BACKGROUND_PAPER`); `splash-continuity.test.mjs` holds them equal. `body` and
+            `#root` are left transparent ON PURPOSE — see the note above. */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `html{background-color:#0E0E12}html[data-theme="paper"]{background-color:#F6F2E8}`,
           }}
         />
 
         <ScrollViewStyleReset />
       </head>
-      {/* The inline script above sets the real colour; this is the value the prerender ships with, and
-          it only shows if scripts are blocked entirely. */}
-      <body style={{ backgroundColor: '#0E0E12' }}>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }

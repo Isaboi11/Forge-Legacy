@@ -80,13 +80,23 @@ installErrorSink();
  */
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     PlayfairDisplay_500Medium,
     PlayfairDisplay_600SemiBold,
   });
 
-  if (!fontsLoaded) {
-    return null;
+  /*
+   * The splash, not `null`, while the fonts load. `null` here is a frame of the ROOT VIEW — nothing of
+   * ours — between the boot gate's hold and the boot hold below, on every cold launch; with the pillars
+   * on both sides of it, an empty frame in the middle is a blink. `ForgeSplash` needs no font, no
+   * provider and no router, which is what makes it safe to render this early (see its own note).
+   *
+   * And a font that FAILS to load opens the app instead of holding forever (Launch-Audit P0-27): the
+   * error used to be discarded and the app rendered `null` for good. The system serif stands in for
+   * Playfair; a blank screen stands in for nothing.
+   */
+  if (!fontsLoaded && !fontError) {
+    return <ForgeSplash />;
   }
 
   return (

@@ -7,6 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "forgelegacy",
     "userInterfaceStyle": "automatic",
+    "backgroundColor": "#0E0E12",
     "ios": {
       "bundleIdentifier": "com.qest4.forgelegacy",
       "buildNumber": "7",
@@ -52,8 +53,8 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#0E0E12",
-          "image": "./assets/welcome-logo-carved.png",
-          "imageWidth": 104,
+          "image": "./assets/splash-logo.png",
+          "imageWidth": 150,
           "resizeMode": "contain"
         }
       ],

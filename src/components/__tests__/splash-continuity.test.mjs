@@ -38,6 +38,9 @@ const overlaySrc = readFileSync(join(HERE, '..', 'animated-icon.tsx'), 'utf8');
 const splashSrc = readFileSync(join(HERE, '..', 'forge-splash.tsx'), 'utf8');
 const layoutSrc = readFileSync(join(ROOT, 'src', 'app', '_layout.tsx'), 'utf8');
 const homeSrc = readFileSync(join(ROOT, 'src', 'app', '(tabs)', 'index.tsx'), 'utf8');
+const geometrySrc = readFileSync(join(HERE, '..', 'splash-geometry.ts'), 'utf8');
+const bootSrc = readFileSync(join(ROOT, 'src', 'boot.tsx'), 'utf8');
+const htmlSrc = readFileSync(join(ROOT, 'src', 'app', '+html.tsx'), 'utf8');
 
 /** The `expo-splash-screen` plugin entry — what the OS paints before any JS runs. */
 function splashPlugin() {
@@ -107,23 +110,126 @@ test('the splash fill is the declared constant, not a second hard-coded literal'
  * pillars, JS drew a flat rectangle, and the pillars vanished for 600ms on every launch. Both values
  * have to agree with `app.json` or the hand-off is visible.
  */
-test('the JS splash draws the same artwork, at the same width, as the native one', () => {
+test('the JS splash draws the same artwork, in the same box, as the native one', () => {
   const { image, imageWidth } = splashPlugin();
   assert.ok(image, 'the expo-splash-screen plugin no longer declares an image');
 
+  // The artwork is declared ONCE, in splash-geometry.ts, and both the splash and the boot gate draw it.
   const asset = image.replace(/^\.\/assets\//, '');
   assert.match(
-    splashSrc,
+    geometrySrc,
     new RegExp(`require\\('@/assets/${asset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'\\)`),
-    `ForgeSplash must render the native splash's own image (${image}), or the hand-off swaps pictures`,
+    `splash-geometry.ts must export the native splash's own image (${image}), or the hand-off swaps pictures`,
   );
+  for (const [name, src] of [
+    ['forge-splash.tsx', splashSrc],
+    ['boot.tsx', bootSrc],
+  ]) {
+    assert.match(src, /source=\{SPLASH_LOGO\}/, `${name} no longer draws SPLASH_LOGO`);
+    assert.match(src, /width:\s*SPLASH_LOGO_BOX,\s*height:\s*SPLASH_LOGO_BOX/, `${name} no longer lays the mark out in the plugin's square box`);
+    assert.match(src, /top:\s*SPLASH_LOGO_TOP/, `${name} no longer centres the mark on the window`);
+    assert.match(src, /resizeMode="contain"/, `${name} must contain-fit the mark, as the storyboard's scaleAspectFit does`);
+  }
 
-  const declaredWidth = Number(/LOGO_WIDTH\s*=\s*(\d+)/.exec(splashSrc)?.[1]);
+  // ⚠ THE BOX, NOT THE WIDTH. `imageWidth` is the side of the SQUARE the plugin rasterises the image
+  // into (`withIosSplashAssets.js`: `width: size, height: size`); the mark is aspect-fitted inside it.
+  // The previous assertion held the MARK's width equal to it, which is how the OS came to show a
+  // 104-wide crop while JS showed a 104-wide mark: two sizes, both "matching".
+  const declaredBox = Number(/SPLASH_LOGO_BOX\s*=\s*(\d+)/.exec(geometrySrc)?.[1]);
   assert.equal(
-    declaredWidth,
+    declaredBox,
     imageWidth,
-    'ForgeSplash draws the mark at a different width from the native splash, so it jumps size at hand-off',
+    'SPLASH_LOGO_BOX must equal app.json imageWidth — it is the plugin’s square box, and the mark jumps size at hand-off otherwise',
   );
+});
+
+/**
+ * ══ THE SPLASH ASSET MUST BE SQUARE ══
+ *
+ * The plugin passes the source to sharp as `resize(imageWidth, imageWidth)` with NO `fit`, and sharp's
+ * default is `cover`: a non-square source is CROPPED to its centre square. The 308 × 452 carved mark
+ * shipped as its middle 104 × 104 — top and bottom of the pillars gone — on every launch of builds 1–7.
+ * PO: "a weird two size logo". Nothing in `expo export`, tsc or the web preview can see a storyboard.
+ */
+test('the native splash asset is square, so the plugin’s square resize cannot crop it', () => {
+  const { image, imageWidth } = splashPlugin();
+  const png = readFileSync(join(ROOT, image));
+  assert.equal(png.toString('ascii', 1, 4), 'PNG', `${image} is not a PNG`);
+  const width = png.readUInt32BE(16);
+  const height = png.readUInt32BE(20);
+  assert.equal(width, height, `${image} is ${width}×${height}; the plugin resizes into a square and crops whatever does not fit`);
+  // And the 3× rasterisation must not upscale it — a soft mark on the OS side is a different picture.
+  assert.ok(imageWidth * 3 <= width, `imageWidth ${imageWidth} × 3 = ${imageWidth * 3}px exceeds the ${width}px source`);
+});
+
+/**
+ * The root view is the frame behind everything React draws — what shows when the layout returns null
+ * or a screen has no ground of its own. Unset, it is the platform's own white/black; set to the splash
+ * colour it is one more frame of the same picture.
+ */
+test('the root view behind React is the splash colour', () => {
+  assert.equal(
+    (appJson.expo?.backgroundColor ?? '').toUpperCase(),
+    splashBackground().toUpperCase(),
+    'expo.backgroundColor must equal the splash colour, or an unpainted frame is a flash of the platform',
+  );
+});
+
+/**
+ * ══ THE BOOT GATE DRAWS THE SPLASH TOO — WITHOUT A TOKEN ══
+ *
+ * `boot.tsx` renders before the theme is known and must not import the token layer (see its note), so
+ * it cannot use `ForgeSplash`. It draws the same picture from `splash-geometry.ts` on a literal colour;
+ * that literal has to be the native splash's, and the geometry module has to stay token-free, or the
+ * gate silently pins every athlete to the default theme.
+ */
+test('the boot hold is the native splash continued, and stays token-free', () => {
+  const holdColour = /hold:\s*\{[^}]*backgroundColor:\s*'(#[0-9a-fA-F]{6})'/.exec(bootSrc)?.[1];
+  assert.ok(holdColour, 'boot.tsx no longer declares a literal hold colour');
+  assert.equal(holdColour.toUpperCase(), splashBackground().toUpperCase(), 'the boot hold is not the native splash colour');
+  for (const [name, src] of [
+    ['boot.tsx', bootSrc],
+    ['splash-geometry.ts', geometrySrc],
+  ]) {
+    assert.doesNotMatch(
+      stripComments(src),
+      /@\/constants\/(foundation|tokens)|forge-splash/,
+      `${name} imports the token layer — it now evaluates the palette before the theme is known`,
+    );
+  }
+});
+
+/**
+ * ══ THE NATIVE HAND-OFF CONTINUES THE NATIVE GROUND ══
+ *
+ * The OS splash is build config and cannot follow a per-athlete theme. The overlay that covers its
+ * disappearance therefore paints the NATIVE ground and fades into the theme's own splash beneath — the
+ * difference between an Alabaster launch that dissolves and one that cuts from black to white.
+ */
+test('the hand-off overlay paints the native ground and dissolves into the theme', () => {
+  assert.match(stripComments(overlaySrc), /<ForgeSplash\s+ground="forge"\s*\/>/, 'AnimatedSplashOverlay must render ForgeSplash on the forge ground');
+  assert.match(splashSrc, /fillForge:\s*\{\s*backgroundColor:\s*SPLASH_BACKGROUND_FORGE\s*\}/, 'the forge ground must be the declared constant');
+  // A launch that cannot resolve its fonts still has to open — on the splash, not on nothing.
+  assert.match(stripComments(layoutSrc), /if\s*\(!fontsLoaded\s*&&\s*!fontError\)\s*\{\s*return\s*<ForgeSplash\s*\/>/, '_layout.tsx must hold on the splash while fonts load, and open on a font error');
+});
+
+/**
+ * ══ THE WEB GROUND IS ONE RULE, KEYED ON THE THEME ══
+ *
+ * `+html.tsx` used to give `<body>` an inline dark background; with expo-router's `body{height:100%}`
+ * that painted over the Paper `<html>` for the whole bundle download. The ground is now a stylesheet
+ * rule on `data-theme`, and the body carries no colour of its own.
+ */
+test('the web shell paints the theme ground on <html> and never on <body>', () => {
+  const noComments = stripComments(htmlSrc).replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+  assert.doesNotMatch(noComments, /<body[^>]*style=/, '+html.tsx gives <body> an inline style again — it will paint over the themed <html>');
+  const forge = splashBackground().toUpperCase();
+  const paper = (/SPLASH_BACKGROUND_PAPER\s*=\s*'(#[0-9a-fA-F]{6})'/.exec(splashSrc)?.[1] ?? '').toUpperCase();
+  const css = /html\{background-color:(#[0-9a-fA-F]{6})\}html\[data-theme="paper"\]\{background-color:(#[0-9a-fA-F]{6})\}/.exec(noComments);
+  assert.ok(css, '+html.tsx must carry the html / html[data-theme="paper"] ground rule');
+  assert.equal(css[1].toUpperCase(), forge, 'the no-script web ground must be the Forge splash colour');
+  assert.equal(css[2].toUpperCase(), paper, 'the Paper web ground must be the Paper splash colour');
+  assert.match(noComments, /setAttribute\('data-theme'/, 'the head script must stamp data-theme, or the rule above never selects');
 });
 
 /**

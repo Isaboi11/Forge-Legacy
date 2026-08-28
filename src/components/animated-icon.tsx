@@ -33,6 +33,16 @@ import { ForgeSplash } from '@/components/forge-splash';
  * content became artwork, because the pillars would have rushed in from nine times their size. A plain
  * fade is all a cover needs: what is underneath it (the boot hold, then Home's own hold) is the same
  * picture, so there is nothing for the athlete to see happen.
+ *
+ * ══ AND THEN ALABASTER MADE THE HAND-OFF VISIBLE AGAIN ══
+ *
+ * PO: *"when it's the white version the splash screen is black first then it goes to the white."* The
+ * native splash is build config — one dark frame for every athlete on the binary — so a light theme
+ * cannot be met by the OS, and the moment JS took over the ground CUT from dark to cream. This overlay
+ * now renders the splash on the NATIVE ground (`ground="forge"`) whatever the theme, and fades out
+ * over the theme's own splash beneath it: a Forge launch is unchanged (dark over dark), an Alabaster
+ * launch dissolves from the frame the OS drew to the one the athlete chose. The pillars do not move;
+ * only the ground behind them changes, and it changes over 180ms instead of in one frame.
  */
 const DURATION = 600;
 
@@ -57,7 +67,7 @@ export function AnimatedSplashOverlay() {
       })}
       style={styles.cover}
     >
-      <ForgeSplash />
+      <ForgeSplash ground="forge" />
     </Animated.View>
   );
 }

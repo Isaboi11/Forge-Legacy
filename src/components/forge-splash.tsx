@@ -1,7 +1,6 @@
-import { Dimensions, Image, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { IS_PAPER } from '@/constants/foundation';
-
-const CARVED_LOGO = require('@/assets/welcome-logo-carved.png');
+import { SPLASH_LOGO, SPLASH_LOGO_BOX, SPLASH_LOGO_TOP } from '@/components/splash-geometry';
 
 /**
  * THE ONE LOADING STATE THE APP HAS, AND IT IS THE SPLASH ITSELF.
@@ -55,31 +54,29 @@ export const SPLASH_BACKGROUND_PAPER = '#F6F2E8';
 export const SPLASH_BACKGROUND = IS_PAPER ? SPLASH_BACKGROUND_PAPER : SPLASH_BACKGROUND_FORGE;
 
 /**
- * `imageWidth` from the same `expo-splash-screen` plugin entry, and the source PNG's own aspect ratio
- * (308 × 452). Matching the width is what makes the hand-off invisible; guessing it would put a pillar
- * of one size on top of a pillar of another.
+ * The artwork and its box live in `splash-geometry.ts` — shared with the boot gate, which cannot import
+ * this file. The box is `app.json`'s `imageWidth`, and it is a SQUARE the mark is contain-fitted into,
+ * not the mark's width; drawing "104 wide" here against a plugin that thinks in squares is exactly how
+ * the launch came to show two sizes of pillar. See the note on `SPLASH_LOGO`.
  */
-const LOGO_WIDTH = 104;
-const LOGO_HEIGHT = Math.round((LOGO_WIDTH * 452) / 308);
 
-/**
- * Centred on the WINDOW, not on this component's own box — and that difference is the whole reason this
- * is computed rather than laid out with `justifyContent: 'center'`.
- *
- * The boot hold fills the screen, but Home's hold fills only the area above the tab bar. Centring each
- * one inside itself would put the pillars ~20pt higher on Home than on boot, so they would visibly JUMP
- * at the moment the tabs mounted — the exact class of stutter this component exists to remove. An
- * absolute offset from the top of the screen is the same number in both.
- *
- * Read once at module scope: the app is portrait-locked (`orientation: "portrait"`), so there is no
- * rotation for this to go stale against.
- */
-const LOGO_TOP = Math.round(Dimensions.get('window').height / 2 - LOGO_HEIGHT / 2);
+type Props = {
+  /**
+   * `theme` (default) — the ground the athlete chose. Every hold renders this.
+   *
+   * `forge` — the NATIVE splash's ground, whatever the theme. Only `AnimatedSplashOverlay` asks for it:
+   * that overlay is the continuation of what the OS was already drawing, and `app.json`'s colour is
+   * build config that cannot know a per-athlete preference. It fades out over the theme's own splash,
+   * so an Alabaster launch DISSOLVES from the dark native frame to the light app instead of cutting —
+   * which is as close as the platform allows to a splash that follows the theme.
+   */
+  ground?: 'theme' | 'forge';
+};
 
-export function ForgeSplash() {
+export function ForgeSplash({ ground = 'theme' }: Props) {
   return (
-    <View style={styles.fill}>
-      <Image source={CARVED_LOGO} style={styles.logo} resizeMode="contain" />
+    <View style={[styles.fill, ground === 'forge' && styles.fillForge]}>
+      <Image source={SPLASH_LOGO} style={styles.logo} resizeMode="contain" />
     </View>
   );
 }
@@ -89,5 +86,12 @@ const styles = StyleSheet.create({
      in place of the whole navigator) and only an overlay in the other two, where the caller supplies the
      absolute box. A component that must fill both a layout slot and an overlay fills the layout slot. */
   fill: { flex: 1, backgroundColor: SPLASH_BACKGROUND },
-  logo: { position: 'absolute', alignSelf: 'center', top: LOGO_TOP, width: LOGO_WIDTH, height: LOGO_HEIGHT },
+  fillForge: { backgroundColor: SPLASH_BACKGROUND_FORGE },
+  logo: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: SPLASH_LOGO_TOP,
+    width: SPLASH_LOGO_BOX,
+    height: SPLASH_LOGO_BOX,
+  },
 });

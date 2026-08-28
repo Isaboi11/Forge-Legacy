@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 
+import { SPLASH_LOGO, SPLASH_LOGO_BOX, SPLASH_LOGO_TOP } from '@/components/splash-geometry';
 import { __setBootTheme, loadStoredTheme, THEME_IS_SYNC } from '@/constants/theme-choice';
 
 /**
@@ -24,15 +25,17 @@ import { __setBootTheme, loadStoredTheme, THEME_IS_SYNC } from '@/constants/them
  *
  * ⚠ THIS FILE MUST NOT IMPORT A TOKEN, DIRECTLY OR THROUGH ANYTHING ELSE. It renders before the theme
  *   is known; touching `@/constants/foundation` here would evaluate the palette at exactly the moment
- *   this exists to postpone, and pin it to the default again. That is why the hold below is a bare
- *   `View` with a literal colour and not `ForgeSplash`, which is the natural thing to reach for and
- *   would silently defeat the whole mechanism.
+ *   this exists to postpone, and pin it to the default again. That is why the hold below is a `View`
+ *   with a literal colour and not `ForgeSplash`, which is the natural thing to reach for and would
+ *   silently defeat the whole mechanism. The ARTWORK it draws comes from `splash-geometry.ts`, which
+ *   imports no token either — an earlier version drew no artwork at all, and the pillars the OS had
+ *   just painted vanished for the length of the read on every cold launch.
  *
- * ⚠ THE HOLD IS THE SPLASH'S OWN COLOUR (`app.json` → `expo-splash-screen.backgroundColor`), so the
- *   frame the OS is already showing does not change while we wait. An Alabaster athlete sees this dark
- *   frame for the length of one AsyncStorage read before the app draws light — the same hand-off the
- *   native splash already makes, and it cannot be avoided: the native splash is build config and
- *   cannot know a per-athlete preference.
+ * ⚠ THE HOLD IS THE NATIVE SPLASH, CONTINUED — its colour (`app.json` → `expo-splash-screen.backgroundColor`)
+ *   and its picture — so the frame the OS is already showing does not change while we wait. An
+ *   Alabaster athlete still boots on this dark frame: the native splash is build config and cannot know
+ *   a per-athlete preference. What CAN be done is done in `AnimatedSplashOverlay`, which dissolves this
+ *   ground into the theme's own instead of cutting.
  *
  * ⚠ IT FAILS OPEN. Any throw, and the app mounts on the default theme rather than not mounting. A
  *   launch path that can hang is worse than a theme that did not apply, and this repo has shipped a
@@ -67,7 +70,13 @@ export default function Boot() {
     };
   }, []);
 
-  if (!ready) return <View style={{ flex: 1, backgroundColor: '#0E0E12' }} />;
+  if (!ready) {
+    return (
+      <View style={styles.hold}>
+        <Image source={SPLASH_LOGO} style={styles.logo} resizeMode="contain" />
+      </View>
+    );
+  }
 
   /*
    * Required HERE rather than imported at the top, and the distinction is the whole point: a top-level
@@ -78,3 +87,16 @@ export default function Boot() {
   const { App } = require('expo-router/build/qualified-entry') as { App: () => React.ReactNode };
   return <App />;
 }
+
+const styles = StyleSheet.create({
+  /* The literal is `app.json`'s splash colour — `splash-continuity.test.mjs` holds the two equal. Not
+     `SPLASH_BACKGROUND_FORGE` from `forge-splash.tsx`: that module imports the token layer. */
+  hold: { flex: 1, backgroundColor: '#0E0E12' },
+  logo: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: SPLASH_LOGO_TOP,
+    width: SPLASH_LOGO_BOX,
+    height: SPLASH_LOGO_BOX,
+  },
+});
