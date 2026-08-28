@@ -10,7 +10,7 @@
     "backgroundColor": "#0E0E12",
     "ios": {
       "bundleIdentifier": "com.qest4.forgelegacy",
-      "buildNumber": "7",
+      "buildNumber": "8",
       "config": {
         "usesNonExemptEncryption": false
       },
