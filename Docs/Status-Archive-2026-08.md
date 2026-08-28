@@ -5130,3 +5130,123 @@ control and joins to `app_events`.
 screens**. The global handler catches the rest, so nothing goes *unreported* — but the other 75 get no
 recovery UI, and a throw during render still blanks the screen instead of naming itself. Widening it is a
 separate pass.
+
+### 0. ⭐ Holt makes a call, instead of offering twelve buttons — the mid-workout sheet gets a hierarchy (2026-08-22/23, Coach Holt / W-9 — no migration, ✅ WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6)
+
+**PO: *"in active workout with coach holt it feels really busy… every function is being presented at the
+same visual level."*** That was literally true of the markup. Every group in `SessionCoachSheet` was a
+`groupLabel` over a `chipRow` of identical bronze-edged pills — seven groups, one treatment — so the
+coach's actual recommendation carried exactly the visual weight of *"Move past this"*. Nothing was
+louder than anything else, which is what made a coach read as a settings panel. ⚠ **THE FIX IS
+HIERARCHY, NOT FEWER FEATURES.** Every function the sheet had, it still has.
+
+**⚠ THE PO'S OWN PLAN WAS RIGHT ABOUT THE DIAGNOSIS AND WRONG ABOUT ITS CENTREPIECE, AND THAT IS THE
+FINDING WORTH KEEPING.** It proposed a prominent recommendation card headed by a **"Use 65 lb →"**
+button. But `currentLoad` (`/workout` 2165) is the first unlogged set's weight — **it IS the
+prescription**, so that button would have applied the weight already on the bar: a no-op as the most
+prominent control in the sheet. Worse, the mockup stated **65 lb** and offered **62.5** as *"Too
+easy"* — tapping *up* would have moved the athlete *down* — because `coachLighter`/`coachHeavier` are
+both derived from `currentLoad` while the headline showed something else. **The card ships as a
+STATEMENT with no CTA**, and the two pills read as corrections to it.
+
+**Three treatments where there was one.** ⭐ **A statement card**, one per sheet and the only
+bronze-tinted surface in it: the weight at 38pt in Playfair, the verdict over it, the evidence under it.
+⭐ **Pills, kept for the two places a small closed set is the right shape** — the weight correction and
+the intensity dial. ⭐ **Borderless rows** for everything that navigates or applies one named thing, a
+hairline and a chevron; **this is where most of the noise went** (56pt not 44, because rows stack
+against each other where chips sit in spaced pairs). The eyebrow reads `progression.action`, which
+already names which of five things the engine is doing — ⚠ **deriving it from the numbers instead would
+be a second copy of a decision that already exists**, and the two would disagree the first time the
+rulebook changed.
+
+**⚠ HOLT'S REASONING MOVES BEHIND "WHY THIS WEIGHT?" — AND THE ADAPTATION SENTENCE IS EXEMPT.** The
+routine `progression.message` restated the number the card now shows in 38pt, and reading it every
+visit was the tax the old layout charged. But **CL-D2 is locked**: *every adaptation must be explicable
+in one sentence, and the sentence must be shown.* So the A THOUGHT / EASING OFF block keeps its
+sentence visible **and moves to the TOP**, above the card — it used to render below every chip in the
+sheet, where an athlete who had just been eased down read the new number first and the reason last, if
+they scrolled. ⚠ **That block was missing from the PO's plan and from the mockup entirely.**
+
+**The balance suggestion collapses to one line** (PO: *"I like this feature. I don't like it being
+permanently exposed here"*) — the gap is named, the movements that fill it wait behind a tap.
+⚠ **THE SWAP SUGGESTIONS DID NOT MOVE A LEVEL DEEPER, ON PURPOSE** — against the plan's "everything else
+one level deeper". The value of a named alternative is applying it standing at a rack with one hand
+free; a tap spent opening a list is the tap that made the Exercise Picker the wrong answer in the first
+place. Hierarchy here is carried by **visual weight, not depth**.
+
+**⭐ Designed on paper first.** Four artboards (default · easing off · nothing-to-suggest · a treatment
+key) drawn from the real `foundation.ts` values and reviewed before a line of the component changed —
+which is how the no-op CTA and the contradictory pill were caught at zero cost.
+
+**`weight-bracket.test.mjs` (5 tests)** guards what the card now depends on: **the two corrections must
+BRACKET the stated weight.** Nothing in the codebase would have caught the mockup's defect — the card
+and the chips come from `progression.ts` through two different functions, each tested only against its
+own examples. ⚠ **Proven by mutation**: a `backOffTo` returning a heavier weight fails 4 of the 5.
+
+⚠ **A lift with no number to build a card around** — a run, a plank, a set to failure — falls back to
+Holt's line as plain text, exactly as it rendered before.
+
+**Gate:** `tsc --noEmit` **0** · **2,756/2,756** (+5) · lint **at baseline** (1 pre-existing error in
+`use-color-scheme.web.ts`, 13 warnings, none from these files).
+
+══════════════════════════════════════════════════════════════════════════════════════════════════════
+
+**SECOND PASS, 2026-08-23 — the PO sent a reference photo: *"follow the reference photo. I want it more
+lively like this. It should feel interactive and not like a spreadsheet."*** Commit `db74a77`.
+
+⛔ **AND IT CORRECTED THE PARAGRAPH ABOVE, WHICH WAS WRONG.** This entry argued a "Use 50 lb" button
+would be a no-op *"because `currentLoad` IS the prescription"*. **That is false in the case that
+matters.** `progression.suggestedWeight` is a genuinely different number, and until this pass it reached
+the athlete **only as the placeholder in the weight field** (`placeholderWeight`, rung 2) — a grey hint
+that disappears on the first keystroke and that nothing ever committed. So Holt could say *"go to 50"*
+and **the only way to take his advice was to type it.** The PO's original instinct was right and the
+argument against it was based on reading one variable and not the other. The card now states
+`suggestedWeight`, and `onUseWeight` applies it — ⚠ **passed as `null` unless it differs from what the
+sets already carry**, which is what keeps the no-op I wrongly warned about from ever rendering.
+
+⚠ **THE PILLS HAD TO BE RE-ANCHORED WITH IT.** `coachLighter`/`coachHeavier` were computed from
+`coachLoad`; with the card showing `suggestedWeight` they would have bracketed a number nobody was
+looking at — **the exact "50 stated, 47.5 offered as too easy" defect** the first pass caught on paper.
+One anchor (`coachAnchor`) now feeds the card and both corrections.
+
+**Following the reference:** `HOLT RECOMMENDS` over **`50 LB × 8`** (reps from `suggestedReps`); the
+engraved **exercise-family artwork** bleeding off the card's right edge — ⚠ **resolved through
+`manifest.ts`, never by building a filename**, because the canonical keys are underscored (`hip_hinge`)
+and the files hyphenated, so a concatenating call site would miss on exactly one family and look like a
+missing asset rather than a bug; `basis` rewritten as a sentence (*"You completed 45 lb × 8, 8, 8 last
+time."*); `Why 50 lb?` naming the number; **`SWAP MOVEMENT`** replacing the dynamic
+`swapPicks.reason` — ⚠ **reversing a decision made one commit earlier in the same file**, because
+"Instead of Alternating Dumbbell Curl" read long and robotic when the header names the exercise two
+inches above; and **`CHANGE THE PLAN`** for `ADJUST TODAY` (PO: *"sounds more like you're talking to a
+coach rather than operating workout software"*).
+
+**Three zones, expressed as enclosure:** what Holt THINKS is tinted (bronze card, green observation),
+what this EXERCISE could be is bare rows in no container, what you can do to the WORKOUT is boxed. Same
+Row component throughout — the container is what separates coaching from utilities.
+
+⚠ **ICONS ONLY WHERE THEY CARRY MEANING TEXT CANNOT** — PO: *"don't add icons beside every row… let the
+hierarchy do the work."* The reference photo showed icons on every row; the four intensity pills and the
+balance row got them (the pills are a SCALE and the glyphs climb with it), **every plain row stayed
+icon-free**. Asked rather than guessed, because the photo and the note disagreed.
+
+**Gate:** tsc **0** · **2,756/2,756** · lint at baseline.
+
+✅ **DEPLOYED AND VERIFIED ON BOTH SURFACES.** Web `entry-b7b3c042757f9afd471bacd7e884808c.js` — 200 on
+six consecutive checks, and the **live bundle searched for the new strings** (`HOLT RECOMMENDS`, `SWAP
+MOVEMENT`, `CHANGE THE PLAN`, `Balance today`, `last time.`, and 20 `exercise-families` asset paths) —
+all present. iOS OTA `01a02f8d-496e-7ac1-a68c-641d53dba67f` on runtime `411fd2b6…`,
+`fingerprint:compare` an **exact match with build 6 before publishing**, manifest endpoint then queried
+as an iOS client and **returned the new id**.
+
+⚠ **THE WEB DEPLOY TOOK THREE ATTEMPTS AND TOOK PRODUCTION DOWN IN BETWEEN.** This is the known
+empty-upload fault in `project_web_preview_deployment`, but it **did not open with a 404**: the first
+deploy reported success and prod served the **PREVIOUS hash at 200**, which reads exactly like alias
+lag. The second deploy took prod to a **full 404** (*"the worker has no matching route handler"*, every
+path including `_expo/static/*`). The third took. **The tell is the deployment-specific URL — check it
+on the FIRST failed hash comparison, not after several polls.**
+
+⏳ **Not device-confirmed.** Still a visual change **no test in this repo can see**.
+
+**⚠ OPEN — deliberately not built.** The plan's *"Something else…"* menu (Weight · Reps · Sets ·
+Exercise · Order · Length) is a **new screen**, and several of those targets have no mid-session entry
+point yet. It stays a row that opens the Exercise Picker, as before.
