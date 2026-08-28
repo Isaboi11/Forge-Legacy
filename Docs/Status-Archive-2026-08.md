@@ -5407,3 +5407,21 @@ Now a subtle row under the day list, where the PO asked for it: in `WeekDaysView
 **Gates:** tsc **0** · **2,785 tests green** · lint **at baseline**. ⚠ **NEITHER FIX HAS A TEST** — both are wiring (a focus refetch and a render path) and this suite is domain-level. Recorded rather than glossed.
 
 ✅ **WEB + OTA DEPLOYED AND VERIFIED 2026-08-24.** Web `entry-17bd86b829cbd32a073ce8149f437481.js` — 200 with a matching hash, and the served 13.4 MB bundle was searched for `Use a saved week` and `Fill this week from a week you have saved`; both **PRESENT in the live JS**. **OTA `01a035e2-f8c4-7ea0-8c2c-5154f59b4bb4`, commit `8ae07d6`, runtime `411fd2b6…`** — `fingerprint:compare` matched build 6 exactly before publishing and the manifest endpoint returned this id to an iOS client on that runtime. ⏳ **Still not looked at by a human on a device.**
+
+### 0. ⭐ The goal form now says what a goal can be — and what its number means (2026-08-24, G-3 Goal Create/Edit — **no migration**, ✅ **WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6**)
+
+**PO: *"people are getting confused on what they can put as a goal."*** The form asked for a "Goal" and offered one placeholder — `e.g. Squat 405 lb` — which reads as **the** permitted shape rather than one example of many. ⚠ **Neither the G-3 spec nor `Forge Goal Create Edit.dc.html` has ever carried an explanation under a field label**, so the omission was faithful to both and still wrong in front of a real athlete. Nothing was contradicted; a slot was added.
+
+`Field` gains an optional `hint` — one plain line between the label and the input. **Goal** names the four kinds *before* it gives examples (*a lift, a bodyweight, a distance, a habit*), then spans the range with three: *"Squat 405 lb" · "Run 100 miles" · "Train 3× a week"*. Kinds first is the point — a list of examples alone just invites pattern-matching on the examples, which is the failure that was already happening against the placeholder.
+
+⚠ **The target field explains itself in whichever form it is currently in**, because that one box holds four different things depending on state: an amount to lose or gain, a goal weight, a goal measurement, or a free number. It now also states that **leaving it blank is a choice** — a narrative goal you mark achieved yourself — which the form had only ever implied through a placeholder.
+
+The target label and its hint are computed as a **pair**. They have to agree or the number is misread; the label was previously a nested ternary inline in the JSX with nowhere to put a second string beside it.
+
+**Not touched, deliberately:** `chapter/new.tsx`'s first-goal step already explains itself (*"One goal, and it can be a number or just a sentence"*). The confusion is specific to G-3, which had no such line.
+
+⏳ **Copy and layout only — no test in this repo can see it.** tsc **0** · eslint **clean on the file** · no domain change, so no test moved. ⏳ **Still open by decision:** typing a number reveals **nine** "Track Progress" chips at once; that row is the next-largest source of stall on this screen and was left for a separate pass.
+
+✅ **WEB DEPLOYED AND VERIFIED** — `entry-0a48500ea73c7f347b2e3b1b4b97bf04.js`, prod **200**, live bundle **MD5-identical** to `dist/`, and three strings only this code contains found in the **LIVE** bundle. Commit `13b3a4c` on `feat/route-map`. **Shipped to the phone in the same OTA as the entry above** — one update carries both passes, published from `923a4ae`.
+
+⚠ **THE DEPLOY TOOK THREE COMMANDS AND TOOK PROD DOWN IN BETWEEN — BOTH KNOWN FAULTS IN ONE PASS.** The first `eas deploy --prod` was an **empty upload** (`kvfkwn5b6l` 404s *everything*, `/manifest.json` included), and promoting it took `forgelegacy.expo.app` from working to **404**. The second uploaded correctly — deployment URL 200 on the right hash — but **the production alias never moved**, despite the log printing `Promoting deployment to production ✓`. `eas deploy:alias --prod --id 5ifqglltbd` fixed it. ⚠ **CORRECTION TO THE RUNBOOK: the alias fix is NOT "effective within ~10s."** Six checks across ~60s were still 404; it came good somewhere past two minutes. **Do not re-deploy inside that window** — that is precisely what manufactures the orphaned deployments the runbook then blames on the upload.
