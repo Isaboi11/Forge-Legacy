@@ -163,3 +163,16 @@ test('the library is loaded lazily, inside the read — never at import time', (
   assert.match(src, /await import\('pdfjs-dist\/legacy\/build\/pdf\.worker\.mjs'\)/);
   assert.doesNotMatch(src.replace(/\/\*[\s\S]*?\*\//g, ''), /from '@\//, 'pdf-text.ts must not use the @/ alias — node --test cannot resolve it');
 });
+
+/**
+ * ⚠ THE NATIVE PICKER IS A NATIVE MODULE, AND BUILD 7 DOES NOT HAVE IT. `expo-document-picker` ships with
+ * build 8; an OTA can still carry this JavaScript to build 7. A top-level import would evaluate the
+ * module on launch and throw "Cannot find native module" before any screen — the launch-crash shape
+ * this repo has shipped once. It must be imported inside the tap, inside a try.
+ */
+test('⚠ the native file picker loads expo-document-picker lazily, inside the tap, inside a try', () => {
+  const src = readFileSync(join(HERE, '..', 'pick-text-file.ts'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.doesNotMatch(src, /^import .* from 'expo-document-picker'/m, 'pick-text-file.ts imports expo-document-picker at the top level');
+  assert.match(src, /try \{\s*picker = await import\('expo-document-picker'\);\s*\} catch/, 'the picker must be loaded lazily in a try');
+  assert.match(src, /extractPdfText\(bytes\)/, 'a picked PDF must go through the same reader as the web');
+});
