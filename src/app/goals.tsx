@@ -50,7 +50,7 @@ import {
   type MetricKind,
   type TargetMode,
 } from '@/domain/goals/goals';
-import { addBodyEntry, fetchBodyEntries, latestBodyReading, type BodyMeasureKey } from '@/data/body-metrics-live';
+import { addBodyEntry, fetchBodyEntries, latestBodyReading, type BodyMeasureKey, startBodyReading } from '@/data/body-metrics-live';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { useQuery } from '@/lib/useQuery';
 import { useCeremony, useToast } from '@/hooks/useCeremony';
@@ -585,7 +585,15 @@ function GoalForm({
   const isBody = usesBaseline(metricKind);
   const dirLabels = directionLabels(metricKind);
   const measureColumn: BodyMeasureKey = (metricKey as BodyMeasureKey) ?? 'waist_in';
-  const loggedReading = bodyEntries ? latestBodyReading(bodyEntries, metricKind === 'body_weight' ? 'weight' : measureColumn) : null;
+  const bodyColumn = metricKind === 'body_weight' ? ('weight' as const) : measureColumn;
+  /* A NEW goal starts its journey now, from the latest reading. An EXISTING goal being switched to a body
+     metric started when it was created — its baseline is the reading from THEN, or today's weight as the
+     start would erase the pounds already lost and draw the bar at 0% (see `startBodyReading`). */
+  const loggedReading = bodyEntries
+    ? existing
+      ? startBodyReading(bodyEntries, existing.createdAt, bodyColumn)
+      : latestBodyReading(bodyEntries, bodyColumn)
+    : null;
   /* An edit measures from the baseline the goal was SAVED with — re-anchoring it to today's reading would
      silently move the finish line and rewrite the progress already shown. */
   const storedBaseline = existing && usesBaseline(existing.metricKind) ? existing.metricStartValue : null;

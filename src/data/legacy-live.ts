@@ -87,12 +87,28 @@ interface GoalRow {
   unit: string | null;
   current: number;
   achieved_at: string | null;
+  /*
+   * ⚠ THE TWO FIELDS THE BAR CANNOT DO WITHOUT. This row used to stop at `achieved_at`, so the Legacy
+   * card computed a bodyweight goal's progress with no direction and no baseline — `current / target`,
+   * which for a cut is BACKWARDS: 193 against 190 drew a full bar and read "193 / 190 lb" (PO, 2026-08-28)
+   * while the chapter screen, which reads the full goal model, showed the same goal at 0%. One goal,
+   * two answers. Selected and mapped now, so every surface runs the same math on the same fields.
+   */
+  metric_dir: string | null;
+  metric_start_value: number | null;
 }
 
 /** A real primary goal row → the Legacy chapter card's display Goal (single-sourced via domain/goals). */
 function toDisplayGoal(g: GoalRow | undefined): LegacyGoal {
   if (!g) return { kind: 'none' };
-  const dom = { target: g.target, current: g.current, unit: g.unit, achievedAt: g.achieved_at };
+  const dom = {
+    target: g.target,
+    current: g.current,
+    unit: g.unit,
+    achievedAt: g.achieved_at,
+    metricDir: g.metric_dir === 'down' ? ('down' as const) : ('up' as const),
+    metricStartValue: g.metric_start_value ?? null,
+  };
   const achieved = isAchieved(dom);
   return isQuantifiable(dom)
     ? { kind: 'quantifiable', name: g.name, progress: progressPct(dom), achieved, valueLabel: progressLabel(dom) }
@@ -175,7 +191,7 @@ export async function fetchLegacyData(): Promise<LegacyData> {
     // nothing here: this read already runs, and already returns exactly the rows the count needs.
     supabase.from('honor_instances').select('id, honor_type, display_name, date_earned, category, chapter_id').eq('athlete_id', uid).order('date_earned', { ascending: false }),
     // Real primary goals (0025). NOT thrown on error — degrades to the fixture-free 'none' pre-migration.
-    supabase.from('goals').select('chapter_id, name, target, unit, current, achieved_at').eq('athlete_id', uid).eq('is_primary', true),
+    supabase.from('goals').select('chapter_id, name, target, unit, current, achieved_at, metric_dir, metric_start_value').eq('athlete_id', uid).eq('is_primary', true),
   ]);
   if (pe) throw pe;
   if (ce) throw ce;

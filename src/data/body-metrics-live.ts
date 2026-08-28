@@ -68,6 +68,25 @@ export function latestBodyReading(entries: readonly BodyEntry[], column: 'weight
   return null;
 }
 
+/**
+ * The reading a goal's journey starts from: the FIRST entry on or after the day the goal began, else
+ * the latest before it. `latestBodyReading` is right for a goal created today — the journey starts now —
+ * and wrong for a goal being switched to bodyweight two weeks in, where "today's weight" as the baseline
+ * erases the pounds already lost and starts the bar at 0% (PO, 2026-08-28).
+ */
+export function startBodyReading(entries: readonly BodyEntry[], sinceIso: string, column: 'weight' | BodyMeasureKey): number | null {
+  const day = sinceIso.slice(0, 10);
+  const read = (e: BodyEntry): number | null =>
+    column === 'weight' ? e.weightLb : column === 'waist_in' ? e.waist : column === 'chest_in' ? e.chest : e.arm;
+  for (const e of entries) {
+    if (e.loggedOn >= day) {
+      const v = read(e);
+      if (v != null && v > 0) return v;
+    }
+  }
+  return latestBodyReading(entries.filter((e) => e.loggedOn < day), column);
+}
+
 export async function addBodyEntry(e: { weightLb: number; waist?: number | null; chest?: number | null; arm?: number | null }): Promise<void> {
   const {
     data: { user },

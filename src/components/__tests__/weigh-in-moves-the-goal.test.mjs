@@ -25,6 +25,8 @@ const BODY = read('../forge/BodySection.tsx');
 const LEGACY = read('../../app/(tabs)/legacy.tsx');
 const HOOK = read('../../hooks/useBodyGoalSync.ts');
 const DATA = read('../../data/goals-live.ts');
+const LEGACY_DATA = read('../../data/legacy-live.ts');
+const GOAL_FORM = read('../../app/goals.tsx');
 
 test('the sheet no longer tells the athlete weight is not a goal', () => {
   assert.doesNotMatch(strip(SHEET), /no goal weight|no pressure/, 'the "no goal weight" line is back');
@@ -51,4 +53,17 @@ test('the sync is body-kind only, and a goal it achieves still gets its ceremony
   const h = strip(HOOK);
   assert.match(h, /kind: 'goalAchieved'/, 'a primary goal achieved by a weigh-in must fire M-3');
   assert.match(h, /showToast\('Goal achieved · recorded in your legacy'\)/, 'a secondary goal achieved by a weigh-in must say so');
+});
+
+test('⚠ the Legacy card reads the goal’s direction and baseline — or a cut draws a full bar', () => {
+  // 193 against a 190 target rendered as 100% on Legacy while the chapter screen said 0%: the Legacy
+  // row selected neither `metric_dir` nor `metric_start_value`, so `progressPct` fell to `current / target`.
+  const s = strip(LEGACY_DATA);
+  assert.match(s, /select\('chapter_id, name, target, unit, current, achieved_at, metric_dir, metric_start_value'\)/, 'the Legacy goal select lost the direction / baseline');
+  assert.match(s, /metricDir: g\.metric_dir === 'down' \? \('down' as const\) : \('up' as const\),/, 'the direction is not mapped');
+  assert.match(s, /metricStartValue: g\.metric_start_value \?\? null,/, 'the baseline is not mapped');
+});
+
+test('an existing goal switched to bodyweight measures from where it began, not from today', () => {
+  assert.match(strip(GOAL_FORM), /existing\s*\?\s*startBodyReading\(bodyEntries, existing\.createdAt, bodyColumn\)\s*:\s*latestBodyReading\(bodyEntries, bodyColumn\)/, 'the form no longer anchors an edited goal at its creation');
 });
