@@ -26,7 +26,11 @@ import { readFileSync } from 'node:fs';
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 
+/* The sheet moved out of the Program Builder when the template builders got it too — the photo path,
+   the flag and the gates all live here now, and this is the file the source guards read. */
+const SHEET = read('../../components/forge/ImportSpreadsheetSheet.tsx');
 const BUILDER = read('../program-builder.tsx');
+const DAY_BUILDER = read('../workout-builder.tsx');
 const FUNCTION = read('../../../supabase/functions/program-photo-read/index.ts');
 const CLIENT = read('../../data/program-photo-live.ts');
 
@@ -34,31 +38,31 @@ const CLIENT = read('../../data/program-photo-live.ts');
 // 1. THE BUTTON EXISTS AND IS WIRED
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
-test('the builder imports the photo reader', () => {
-  assert.match(BUILDER, /import \{ readProgramPhoto \} from '@\/data\/program-photo-live'/);
-  assert.match(BUILDER, /import \{ pickImageFromLibrary \} from '@\/lib\/useMediaPicker'/);
+test('the sheet imports the photo reader', () => {
+  assert.match(SHEET, /import \{ readProgramPhoto \} from '@\/data\/program-photo-live'/);
+  assert.match(SHEET, /import \{ pickImageFromLibrary \} from '@\/lib\/useMediaPicker'/);
 });
 
-test('the builder actually calls it — an import alone renders no button', () => {
-  assert.match(BUILDER, /await readProgramPhoto\(uri\)/);
-  assert.match(BUILDER, /await pickImageFromLibrary\(\)/);
+test('the sheet actually calls it — an import alone renders no button', () => {
+  assert.match(SHEET, /await readProgramPhoto\(uri\)/);
+  assert.match(SHEET, /await pickImageFromLibrary\(\)/);
 });
 
 test('a control invokes the handler', () => {
   // The gear-gap defect in reverse: a handler defined and never bound to anything that can be pressed.
-  assert.match(BUILDER, /onPress=\{\(\) => void onPickPhoto\(\)\}/);
+  assert.match(SHEET, /onPress=\{\(\) => void onPickPhoto\(\)\}/);
 });
 
 test('⚠ the transcript is fed to the SAME parser a paste goes through', () => {
   // This is the line that keeps the feature inside the locked import principle (§4.3, "No AI
   // interpretation"). If the photo path ever grows its own parse, this fails and it should.
-  assert.match(BUILDER, /setPasteText\(r\.tsv\);\s*\n\s*runParse\(r\.tsv\);/);
+  assert.match(SHEET, /setPasteText\(r\.tsv\);\s*\n\s*runParse\(r\.tsv\);/);
 });
 
-test('every failure kind the client can return is handled by the builder', () => {
+test('every failure kind the client can return is handled by the sheet', () => {
   // A `default` that swallows a new kind is how "we couldn't read that" gets shown for an outage.
   for (const kind of ['not_a_program', 'unreadable', 'too_large', 'out_of_credits']) {
-    assert.ok(BUILDER.includes(`case '${kind}':`), `builder does not handle '${kind}'`);
+    assert.ok(SHEET.includes(`case '${kind}':`), `sheet does not handle '${kind}'`);
   }
 });
 
@@ -128,7 +132,12 @@ test('⚠ the meter action matches the one migration 0174 registers', () => {
 
 test('⚠ nothing client-side holds an API key or talks to Anthropic directly', () => {
   // Expo inlines `EXPO_PUBLIC_*` into the bundle. A key committed to a repo is a key that is gone.
-  for (const [name, source] of [['program-photo-live.ts', CLIENT], ['program-builder.tsx', BUILDER]]) {
+  for (const [name, source] of [
+    ['program-photo-live.ts', CLIENT],
+    ['ImportSpreadsheetSheet.tsx', SHEET],
+    ['program-builder.tsx', BUILDER],
+    ['workout-builder.tsx', DAY_BUILDER],
+  ]) {
     assert.ok(!source.includes('ANTHROPIC_API_KEY'), `${name} references the API key`);
     assert.ok(!source.includes('api.anthropic.com'), `${name} calls Anthropic directly`);
   }
@@ -151,17 +160,17 @@ test('⚠ nothing client-side holds an API key or talks to Anthropic directly', 
  * This test does not care WHICH way the flag is set. It cares that both halves move together.
  */
 test('⚠ the photo button and the copy promising it are behind the SAME flag', () => {
-  const gates = BUILDER.match(/\{PHOTO_IMPORT_ENABLED \? \(/g) ?? [];
+  const gates = SHEET.match(/\{PHOTO_IMPORT_ENABLED \? \(/g) ?? [];
   assert.equal(gates.length, 2, 'expected exactly two gates: the hint paragraph and the button');
 
   // The promise and the control must each sit inside a gate, never loose in the tree.
-  const promise = BUILDER.indexOf('Only have a <Text');
-  const button = BUILDER.indexOf('accessibilityLabel="Read a screenshot of a program"');
+  const promise = SHEET.indexOf('Only have a <Text');
+  const button = SHEET.indexOf('accessibilityLabel="Read a screenshot of a program"');
   assert.ok(promise > 0 && button > 0, 'the hint copy and the button should both still exist in source');
 
   for (const [what, at] of [['the hint copy', promise], ['the button', button]]) {
-    const gateBefore = BUILDER.lastIndexOf('{PHOTO_IMPORT_ENABLED ? (', at);
-    const closeBefore = BUILDER.lastIndexOf(') : null}', at);
+    const gateBefore = SHEET.lastIndexOf('{PHOTO_IMPORT_ENABLED ? (', at);
+    const closeBefore = SHEET.lastIndexOf(') : null}', at);
     assert.ok(gateBefore > closeBefore, `${what} is not inside a PHOTO_IMPORT_ENABLED gate`);
   }
 });
@@ -169,9 +178,41 @@ test('⚠ the photo button and the copy promising it are behind the SAME flag', 
 test('⚠ the flag names its two preconditions, so nobody flips it blind', () => {
   // Turning this on without `0174` applied and the Edge Function deployed puts back the exact control
   // that failed on every tap. The comment is the only place that says so — keep it attached to the flag.
-  const decl = BUILDER.indexOf('const PHOTO_IMPORT_ENABLED');
+  const decl = SHEET.indexOf('const PHOTO_IMPORT_ENABLED');
   assert.ok(decl > 0, 'the flag should exist');
-  const comment = BUILDER.slice(Math.max(0, decl - 1800), decl);
+  const comment = SHEET.slice(Math.max(0, decl - 1800), decl);
   assert.match(comment, /0174/, 'the flag comment must name the migration it depends on');
   assert.match(comment, /program-photo-read/, 'the flag comment must name the Edge Function it depends on');
+});
+
+
+// ───────────────────────────────────────────────────────────────────────────────────────────
+// 6. ONE SHEET, THREE SURFACES
+// ───────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * PO, 2026-08-27: *"make sure the import feature for a workout is available in the template builder,
+ * both the day and the week."* A source guard because the failure is silent in every gate: the sheet
+ * can exist, be correct, and simply not be mounted on a screen — which is exactly how week mode went
+ * without it for three months (`{isWeek ? null : (` around the link).
+ */
+test('both builders mount the shared sheet, each with its own scope', () => {
+  assert.match(BUILDER, /<ImportSpreadsheetSheet[\s\S]*?scope=\{isWeek \? 'week' : 'program'\}/, 'the Program Builder must mount the sheet with week/program scope');
+  assert.match(DAY_BUILDER, /<ImportSpreadsheetSheet[\s\S]*?scope="day"/, 'the Workout (day template) Builder must mount the sheet with the day scope');
+  // The door, not just the sheet: a mounted sheet nobody can open is the gear-gap defect again.
+  assert.match(BUILDER, /onPress=\{onOpenImport\}/);
+  assert.match(DAY_BUILDER, /onPress=\{openImport\}[\s\S]*?accessibilityLabel="Import from a spreadsheet"/);
+});
+
+test('⚠ the Program Builder no longer hides the import link in week mode', () => {
+  assert.doesNotMatch(BUILDER, /\{isWeek \? null : \(\s*<Pressable\s+ref=\{importRef\}/, 'the week template builder lost its import link again');
+});
+
+test('the scope does the cutting, and says so', () => {
+  // A week keeps its first week; a day keeps its first day — and each says what it dropped.
+  assert.match(SHEET, /function fitToScope\(/);
+  assert.match(SHEET, /a week template holds one, so this is week 1/);
+  assert.match(SHEET, /a workout is one day, so this is/);
+  // Only a program grows by the week.
+  assert.match(SHEET, /\{scope === 'program' \? \(\s*<Pressable[\s\S]*?accessibilityLabel="Add another week"/);
 });

@@ -34,6 +34,10 @@ import {
   type CardioActivity,
 } from '@/domain/workout/conditioning';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { ImportSpreadsheetSheet } from '@/components/forge/ImportSpreadsheetSheet';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { toProgramStructure, unmatchedNames, type ParsedWeek } from '@/domain/program/import-parse';
+import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
 import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import {
@@ -118,6 +122,9 @@ export default function WorkoutBuilderScreen() {
    */
   const [noteSheet, setNoteSheet] = useState<{ section: BuilderSection; index: number } | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
+  const guard = usePremiumGate();
+  /** The spreadsheet import sheet — the Program Builder's, mounted here with the `day` scope. */
+  const [importOpen, setImportOpen] = useState(false);
 
   /*
    * Boot and the picker round-trip in one pass, on every focus — read the stored draft, absorb anything
@@ -211,6 +218,54 @@ export default function WorkoutBuilderScreen() {
     router.push({ pathname: '/exercise-picker', params: { mode: 'builder', dest: 'workout', vary: '0', week: '0', day: '0', section } });
   };
 
+  /*
+   * ── IMPORT FROM A SPREADSHEET ────────────────────────────────────────────
+   *
+   * PO: *"make sure the import feature for a workout is available in the template builder, both the day
+   * and the week."* This is the day. The sheet is the Program Builder's own (`ImportSpreadsheetSheet`),
+   * with the `day` scope: a Day column is not needed, and a multi-day paste keeps its first day and says
+   * which in the preview. Same parser, same preview, same corrections — one reader, three surfaces.
+   *
+   * Only the import cap is checked here. A template is not a program, so no program slot is spent, and
+   * nothing marks the free import used — that is spent when a PROGRAM exists from a paste (see the
+   * Program Builder), which this screen never creates.
+   */
+  const openImport = () => {
+    if (!guard('imports')) return;
+    setImportOpen(true);
+  };
+
+  /**
+   * The read becomes rows in MAIN — APPENDED, not replacing. A paste arriving over a half-built list must
+   * not throw the list away; an extra row is one tap to remove, a lost one is a rebuild. The name is
+   * filled only when the athlete has not typed one and the sheet gave a real one ("Push A", not the
+   * parser's own "Day 1"). Sets and reps go through the same clamps every other row here obeys.
+   */
+  const confirmImport = (weeks: ParsedWeek[]) => {
+    const resolveKey = (n: string) => resolveExerciseName(n)?.key;
+    const day = toProgramStructure(weeks, '', resolveKey).days[0];
+    if (!day || day.main.length === 0) return;
+    const items: ProgramExercise[] = day.main.map((x) => ({
+      ...x,
+      id: newExerciseId(),
+      sets: clampSets(x.sets),
+      reps: clampReps(x.reps),
+    }));
+    const givenName = /^day \d+$/i.test(day.name.trim()) ? '' : day.name.trim();
+    mutate((d) => ({
+      ...d,
+      name: d.name.trim() ? d.name : givenName,
+      main: [...d.main, ...items],
+    }));
+    const unmatched = unmatchedNames(weeks, resolveKey);
+    const n = items.length;
+    showToast(
+      unmatched.length
+        ? `Imported ${n} · ${unmatched.length} name${unmatched.length === 1 ? '' : 's'} weren’t in the library and kept yours`
+        : `Imported ${n} exercise${n === 1 ? '' : 's'} — review and save`,
+    );
+  };
+
   const leave = () => {
     void clearWorkoutDraft();
     if (router.canGoBack()) router.back();
@@ -299,6 +354,19 @@ export default function WorkoutBuilderScreen() {
           <Text style={styles.headMeta}>
             {total > 0 ? `${total} ${total === 1 ? 'exercise' : 'exercises'}${est > 0 ? ` · ~${est} min` : ''}` : 'Plan it here, then start it whenever you like.'}
           </Text>
+          {/* The same link, the same words and the same glyph as the Program Builder's — one door, wherever
+              a plan gets built. Under the name because that is where the Program Builder keeps it too. */}
+          <Pressable
+            onPress={openImport}
+            accessibilityRole="button"
+            accessibilityLabel="Import from a spreadsheet"
+            style={({ pressed }) => [styles.importLink, pressed ? styles.importPressed : null]}
+          >
+            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M12 3v12M8 11l4 4 4-4M4 19h16" />
+            </Svg>
+            <Text style={styles.importLinkText}>Import from a spreadsheet</Text>
+          </Pressable>
         </View>
 
         {SECTIONS.map((sec, si) => {
@@ -482,6 +550,14 @@ export default function WorkoutBuilderScreen() {
           </Button>
         </View>
       </BottomSheet>
+
+      <ImportSpreadsheetSheet
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        scope="day"
+        cta="Add to workout"
+        onConfirm={confirmImport}
+      />
 
       <ConfirmSheet
         open={confirmLeave}
@@ -788,6 +864,9 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   headMeta: { fontSize: 12, color: flColor.gray400 },
+  importLink: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 4, paddingVertical: 6, paddingHorizontal: 2, alignSelf: 'flex-start' },
+  importLinkText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
+  importPressed: { opacity: 0.65 },
 
   section: { paddingVertical: 14, gap: 10 },
 

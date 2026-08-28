@@ -12,16 +12,8 @@ import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
-import {
-  parseProgramTable,
-  summarize,
-  toProgramStructure,
-  unmatchedNames,
-  type ParsedWeek,
-} from '@/domain/program/import-parse';
-import { pickTextFile } from '@/lib/pick-text-file';
-import { pickImageFromLibrary } from '@/lib/useMediaPicker';
-import { readProgramPhoto } from '@/data/program-photo-live';
+import { toProgramStructure, unmatchedNames, type ParsedWeek } from '@/domain/program/import-parse';
+import { ImportSpreadsheetSheet } from '@/components/forge/ImportSpreadsheetSheet';
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
@@ -146,28 +138,9 @@ import {
  * DEFERRED vs the `.dc` (flagged, not faked — omitted rather than rendered inert): spreadsheet import.
  */
 
-/**
- * ⛔ PHOTO IMPORT IS HIDDEN FOR LAUNCH — A DECISION, NOT A BUG (PO, 2026-08-21).
- *
- * The feature is BUILT and its code below is untouched. What is missing is the two things it needs to
- * actually run: migration `0174` (the credit weight for `photo_import`) is not applied, and the
- * `program-photo-read` Edge Function is not deployed. `GO-LIVE.md` rules out AI spend before full
- * release, so both are deliberately still pending — which left a control that failed on EVERY tap.
- *
- * ⚠ THIS IS THE GUIDELINE 1.2 LESSON, APPLIED BEFORE IT COSTS US AGAIN. The last submission blocker
- * found in this repo was a button whose only behaviour was a toast reading "Reporting a squad is
- * coming soon" — and the finding was that the toast is WORSE than no button, because it proves inside
- * the binary that the need was known and unmet. A visible "Or read a screenshot" that always fails is
- * the same shape, on a screen a reviewer will certainly open.
- *
- * ⚠ THE HINT COPY IS GATED ON THIS TOO, AND THAT IS THE HALF THAT IS EASY TO FORGET. Hiding the
- * button while leaving the paragraph that promises "Only have a screenshot? Read it in below" is the
- * same defect written in prose — it just fails silently instead of loudly.
- *
- * TO RE-ENABLE: apply `supabase/apply/pending-0174.sql`, deploy `program-photo-read`, then flip this to
- * `true`. Nothing else. Do not flip it before both are true — that is what this constant is for.
- */
-const PHOTO_IMPORT_ENABLED = false;
+/* The import sheet — paste, file, the (hidden) screenshot reader, the preview — lives in
+   `components/forge/ImportSpreadsheetSheet.tsx` now, shared with the template builders. The
+   screenshot-reader flag and the decision behind it moved with it. */
 
 const SECTION_META: { key: BuilderSection; label: string; addLabel: string; req: string; empty: string }[] = [
   { key: 'warmup', label: 'Warm-up', addLabel: 'warm-up', req: 'Optional', empty: 'No warm-up yet' },
@@ -189,22 +162,6 @@ const dayName = (day: ProgramDay) => (day.name.trim() ? day.name : `Day ${day.le
 /** Fit a name into a button. Display only — never what a screen reader is handed. */
 const ellipsis = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
-/**
- * What a previewed cardio bout asks for — "75 min", "1200 yd", "3.0 mi · 45 min".
- *
- * Says only what was actually read. A bout the sentence gave no target for reads "Open", which is a real
- * prescription and not a gap: the sheet said go ride, and it did not say how far.
- */
-function cardioTargetText(it: { activity?: string; targetSec?: number | null; targetMi?: number | null }): string {
-  const parts: string[] = [];
-  if (it.targetMi != null) {
-    const unit = distanceUnitFor((it.activity ?? 'run') as CardioActivity, false);
-    parts.push(`${fmtDistanceIn(it.targetMi, unit)} ${unit}`);
-  }
-  if (it.targetSec != null) parts.push(fmtDuration(it.targetSec));
-  return parts.length ? parts.join(' · ') : 'Open';
-}
 
 function Glyph({ d, size = 13, color, width = 2.2 }: { d: string; size?: number; color: string; width?: number }) {
   return (
@@ -317,12 +274,6 @@ function ProgramBuilderScreen() {
    */
   const guard = usePremiumGate();
   const [importOpen, setImportOpen] = useState(false);
-  const [pasteText, setPasteText] = useState('');
-  const [importError, setImportError] = useState<string | null>(null);
-  /** A photo read is a network round-trip to a vision model — seconds, not milliseconds. It needs to say so. */
-  const [photoBusy, setPhotoBusy] = useState(false);
-  /** Non-null once a paste has parsed — the sheet flips to its preview state. */
-  const [preview, setPreview] = useState<ParsedWeek[] | null>(null);
 
   /**
    * Resolve a written name to the catalogue — the SAME call the preview renders and the import commits,
@@ -343,129 +294,10 @@ function ProgramBuilderScreen() {
    */
   const openImport = () => {
     if (!guard('imports')) return;
-    if (!guard('programs')) return;
-    setPasteText('');
-    setImportError(null);
-    setPreview(null);
-    // A read that was in flight when the sheet was closed would otherwise reopen it stuck on
-    // "Reading your screenshot…" with no request behind it.
-    setPhotoBusy(false);
+    // A week template spends a short-program slot, exactly as its Save does (0157).
+    if (!guard(isWeek ? 'short_programs' : 'programs')) return;
     setImportOpen(true);
   };
-
-  const runParse = (text: string) => {
-    const r = parseProgramTable(text);
-    if (!r.ok) {
-      setImportError(r.error);
-      setPreview(null);
-      return;
-    }
-    setImportError(null);
-    setPreview(r.weeks);
-  };
-
-  const onPickFile = async () => {
-    const r = await pickTextFile();
-    if (!r.ok) {
-      if (r.reason) setImportError(r.reason);
-      return;
-    }
-    setPasteText(r.text);
-    runParse(r.text);
-  };
-
-  /**
-   * ══ READ A PHOTO OF A PROGRAM ══
-   *
-   * `Architecture-Amendment-001-Import.md` §5 named this and deferred it — *"Image Import: screenshots
-   * of training tables … requires OCR or vision model parsing. Post-MVP."*
-   *
-   * ⚠ **AND IT LANDS AS A THIRD WAY TO FILL THE PASTE BOX, NOT AS A FOURTH IMPORT PATH.** That is the
-   * whole design. The transcript goes into `pasteText` and through `runParse` — the same parser, the
-   * same preview, the same − / + corrections, the same "grey text is the sentence we read it from".
-   * An athlete who photographs a table and one who pastes it are, from this line onward, in identical
-   * code. That is what keeps the feature inside §4.3's locked *"No AI interpretation. No inference."*
-   *
-   * Setting `pasteText` is not cosmetic either: if the transcription is imperfect the athlete is
-   * looking at editable text they can fix and re-preview, rather than a wrong result and a dead end.
-   */
-  const onPickPhoto = async () => {
-    const uri = await pickImageFromLibrary();
-    if (!uri) return; // Cancelled. Not an error, and it must not leave one on screen.
-
-    setImportError(null);
-    setPhotoBusy(true);
-    try {
-      const r = await readProgramPhoto(uri);
-      // ⚠ THREE FAILURES THAT FEEL IDENTICAL AND ARE NOT. Brief §6: an outage must be visibly different
-      // from a verdict. "We couldn't read that" when the request never left the building tells somebody
-      // their program is unreadable, and they will go and retake a photograph that was always fine.
-      switch (r.kind) {
-        case 'ok':
-          setPasteText(r.tsv);
-          runParse(r.tsv);
-          break;
-        case 'not_a_program':
-          setImportError('That doesn’t look like a training program. Try a photo of the table itself.');
-          break;
-        case 'unreadable':
-          setImportError('Couldn’t read a table out of that photo. A straighter, closer shot usually does it.');
-          break;
-        case 'too_large':
-          setImportError('That image is too big to read. Try a screenshot rather than a full-size photo.');
-          break;
-        case 'out_of_credits':
-          setImportError('You’re out of Coach AI credits for this month.');
-          break;
-        default:
-          setImportError('Couldn’t reach us to read that photo. Check your connection and try again.');
-      }
-    } finally {
-      // In a `finally` because every branch above needs it and the one that forgot would strand the
-      // sheet in its loading state with no way back.
-      setPhotoBusy(false);
-    }
-  };
-
-  /** Adjust a parsed set/rep count before creating. The design's − / + on every preview row. */
-  const bumpPreview = (wi: number, di: number, ii: number, field: 'sets' | 'reps', delta: number) =>
-    setPreview((cur) =>
-      !cur
-        ? cur
-        : cur.map((w, a) =>
-            a !== wi
-              ? w
-              : {
-                  ...w,
-                  days: w.days.map((d, b) =>
-                    b !== di
-                      ? d
-                      : {
-                          ...d,
-                          items: d.items.map((it, c) =>
-                            c !== ii
-                              ? it
-                              : {
-                                  ...it,
-                                  [field]: Math.max(1, Math.min(field === 'sets' ? 20 : 100, it[field] + delta)),
-                                  // Adjusting a value makes it authored, not assumed — the flag stops
-                                  // claiming the sheet was silent once the athlete has spoken.
-                                  [field === 'sets' ? 'setsAssumed' : 'repsAssumed']: false,
-                                },
-                          ),
-                        },
-                  ),
-                },
-          ),
-    );
-
-  /** "Add another week" — copies the last week forward, which is how a block is usually extended. */
-  const addPreviewWeek = () =>
-    setPreview((cur) => {
-      if (!cur?.length) return cur;
-      const last = cur[cur.length - 1];
-      return [...cur, { index: last.index + 1, days: last.days.map((d) => ({ ...d, items: d.items.map((i) => ({ ...i })) })) }];
-    });
 
   /**
    * Replace the draft with what was imported.
@@ -474,9 +306,9 @@ function ProgramBuilderScreen() {
    * "Create program", and the create still happens where it always did, on Save. So an import that reads
    * wrong is one Back away from being fixed, not a program row to go and delete.
    */
-  const confirmImport = () => {
-    if (!preview?.length) return;
-    const imported = toProgramStructure(preview, draft?.name?.trim() || 'Imported Program', (n) => resolveName(n)?.key);
+  const confirmImport = (weeks: ParsedWeek[]) => {
+    if (!weeks.length) return;
+    const imported = toProgramStructure(weeks, draft?.name?.trim() || 'Imported Program', (n) => resolveName(n)?.key);
 
     /*
      * FIT WHAT WAS PASTED INTO WHAT THE BUILDER CAN HOLD — and say so when it does not fit.
@@ -497,21 +329,23 @@ function ProgramBuilderScreen() {
         main: d.main.map((x) => ({ ...x, sets: clampSets(x.sets), reps: clampReps(x.reps) })),
       }));
 
-    const weeks = clampWeeks(imported.weeks);
+    // A WEEK TEMPLATE IS ONE WEEK. The sheet has already cut the read to one (`scope="week"`) and said
+    // so in its preview; this is the same rule written where the draft is built, so the two cannot drift.
+    const weekCount = isWeek ? 1 : clampWeeks(imported.weeks);
     // ⚠ THIS USED TO FIRE THE OTHER WAY. With a floor of 4, a single-week paste was silently stretched
     // to 4 and the toast said so. The floor is 1 (PA2-D1), so a one-week paste now imports as one week
     // and says nothing — the stretch was the bug, and the note explaining it was the apology.
     // Only the CEILING can still move a number, so the copy has to name that direction instead.
-    const clamped = weeks !== imported.weeks;
+    const clamped = !isWeek && weekCount !== imported.weeks;
 
     mutate((d) => ({
       ...d,
       name: d.name?.trim() ? d.name : imported.name,
-      weeks,
+      weeks: weekCount,
       daysPerWeek: clampDays(days.length),
-      vary: imported.vary,
+      vary: isWeek ? false : imported.vary,
       days: fit(days),
-      weekPlans: imported.weekPlans ? imported.weekPlans.map((w) => ({ days: fit(w.days.slice(0, DAYS_MAX)) })) : null,
+      weekPlans: !isWeek && imported.weekPlans ? imported.weekPlans.map((w) => ({ days: fit(w.days.slice(0, DAYS_MAX)) })) : null,
       openWeek: null,
       openDay: null,
     }));
@@ -519,10 +353,10 @@ function ProgramBuilderScreen() {
     setFromImport(true);
 
     // One line, and it leads with whatever was LOST — the part an athlete needs to know about.
-    const unmatched = unmatchedNames(preview, (n) => resolveName(n)?.key);
+    const unmatched = unmatchedNames(weeks, (n) => resolveName(n)?.key);
     const notes: string[] = [];
     if (droppedDays.length) notes.push(`${droppedDays.length} day${droppedDays.length === 1 ? '' : 's'} over the ${DAYS_MAX}-day limit dropped (${droppedDays.join(', ')})`);
-    if (clamped) notes.push(`set to ${weeks} weeks — the longest a program can be`);
+    if (clamped) notes.push(`set to ${weekCount} weeks — the longest a program can be`);
     if (unmatched.length) notes.push(`${unmatched.length} name${unmatched.length === 1 ? '' : 's'} weren’t in the library and kept yours`);
     showToast(notes.length ? `Imported · ${notes.join(' · ')}` : 'Imported — review and save');
   };
@@ -1548,205 +1382,16 @@ function ProgramBuilderScreen() {
       </BottomSheet>
 
       {/* ── IMPORT FROM A SPREADSHEET ─────────────────────────────────────
-          One sheet, two states, per the design: paste → preview. The paste state's copy IS the parser's
-          contract, so it states exactly what is read rather than describing a format vaguely. */}
-      {/* `scroll` because an imported program is long — six days and forty-five exercises ran off the top
-          of the screen with no way back. The actions live in the FOOTER so they stay put while the
-          preview scrolls; buried under forty-five rows they may as well not exist. */}
-      <BottomSheet
+          The one sheet, shared with both template builders — see `ImportSpreadsheetSheet`. It hands back
+          the corrected read; `confirmImport` above turns it into this draft. A week template gets the
+          `week` scope, which cuts a longer paste to its first week and says so in the preview. */}
+      <ImportSpreadsheetSheet
         open={importOpen}
         onClose={() => setImportOpen(false)}
-        title="Import from spreadsheet"
-        scroll
-        footer={
-          preview == null ? undefined : (
-            <View style={styles.impActions}>
-              <View style={styles.impBackBtn}>
-                <Button variant="secondary" fullWidth onPress={() => setPreview(null)}>
-                  Back
-                </Button>
-              </View>
-              <View style={styles.impCreateBtn}>
-                <Button variant="primary" fullWidth onPress={confirmImport}>
-                  Create program
-                </Button>
-              </View>
-            </View>
-          )
-        }
-      >
-        {preview == null ? (
-          <View style={styles.impCol}>
-            <Text style={styles.impHint}>
-              Paste rows from Excel or Google Sheets. Include a header row — columns can be in any order.
-              We look for <Text style={styles.impHintStrong}>Week</Text>, <Text style={styles.impHintStrong}>Day</Text>,{' '}
-              <Text style={styles.impHintStrong}>Exercise</Text>, <Text style={styles.impHintStrong}>Sets</Text>,{' '}
-              <Text style={styles.impHintStrong}>Reps</Text>. One week or the whole program — either works.
-              {'\n\n'}
-              Keep it one row per <Text style={styles.impHintStrong}>day</Text> instead? That works too —
-              write the session out (&ldquo;75min bike Z2 + 30min upper strength&rdquo;) and we&rsquo;ll read the
-              rides, runs and swims out of it. Check what we read before you create it.
-              {PHOTO_IMPORT_ENABLED ? (
-                <>
-                {'\n\n'}
-                Only have a <Text style={styles.impHintStrong}>screenshot</Text>? Read it in below — we type
-                the table out for you and it lands in the box above, where you can fix anything we misread
-                before previewing it.
-                </>
-              ) : null}
-            </Text>
-            <TextInput
-              value={pasteText}
-              onChangeText={setPasteText}
-              multiline
-              placeholder={'Week, Day, Exercise, Sets, Reps\n1, Push A, Bench Press, 3, 8\n1, Push A, Incline DB Press, 3, 10'}
-              placeholderTextColor={flColor.gray600}
-              accessibilityLabel="Paste your spreadsheet rows"
-              style={styles.impPaste}
-            />
-            {importError ? <Text style={styles.impError}>{importError}</Text> : null}
-            <Button variant="primary" fullWidth onPress={() => runParse(pasteText)}>
-              Preview import
-            </Button>
-            <Pressable
-              onPress={() => void onPickFile()}
-              accessibilityRole="button"
-              accessibilityLabel="Upload a CSV file"
-              style={({ pressed }) => [styles.impFileBtn, pressed ? styles.impPressed : null]}
-            >
-              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
-                <Path d="M14 3v6h6" />
-              </Svg>
-              <Text style={styles.impFileText}>Or upload a .csv file</Text>
-            </Pressable>
-            {/* ⚠ LIBRARY ONLY, AND THAT IS A DECISION — see `pickImageFromLibrary`. The label says
-                "screenshot" rather than "photo" because that is both the real use case and the honest
-                description of what this opens: your camera roll, not your camera. */}
-            {PHOTO_IMPORT_ENABLED ? (
-              <Pressable
-                onPress={() => void onPickPhoto()}
-                disabled={photoBusy}
-                accessibilityRole="button"
-                accessibilityLabel="Read a screenshot of a program"
-                accessibilityState={{ disabled: photoBusy, busy: photoBusy }}
-                style={({ pressed }) => [
-                  styles.impFileBtn,
-                  pressed && !photoBusy ? styles.impPressed : null,
-                  photoBusy ? styles.impBusy : null,
-                ]}
-              >
-                <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                  <Path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <Circle cx={8.5} cy={8.5} r={1.5} />
-                  <Path d="M21 15l-5-5L5 21" />
-                </Svg>
-                <Text style={styles.impFileText}>
-                  {photoBusy ? 'Reading your screenshot…' : 'Or read a screenshot'}
-                </Text>
-              </Pressable>
-            ) : null}
-          </View>
-        ) : (
-          <View style={styles.impCol}>
-            <View style={styles.impSummary}>
-              <Text style={styles.impSummaryLabel}>Here&apos;s what we read</Text>
-              <Text style={styles.impSummaryText}>{summarize(preview)}</Text>
-            </View>
-            <Text style={styles.impNote}>
-              Tap − / + to fix any sets × reps now. Grey text is the sentence we read it from — it is kept
-              as a coaching note, so anything we couldn&rsquo;t turn into a number still reaches you. You can
-              rename, reorder and add exercises after you create the program.
-            </Text>
-
-            {preview.map((w, wi) => (
-              <View key={`w${w.index}`} style={styles.impWeekBlock}>
-                {preview.length > 1 ? (
-                  <View style={styles.impWeekHead}>
-                    <Text style={styles.impWeekLabel}>Week {w.index}</Text>
-                    <View style={styles.impWeekRule} />
-                  </View>
-                ) : null}
-                {w.days.map((d, di) => (
-                  <View key={`${w.index}-${d.letter}`} style={styles.impDayCard}>
-                    <Text style={styles.impDayName}>{d.name}</Text>
-                    <View style={styles.impItems}>
-                      {d.items.map((it, ii) => (
-                        <View key={`${it.name}-${ii}`} style={styles.impItemRow}>
-                          <View style={styles.impItemText}>
-                            <Text style={styles.impItemName} numberOfLines={1}>
-                              {it.name}
-                            </Text>
-                            {/*
-                              ══ THE SENTENCE IT CAME FROM ══
-
-                              Shown because this reader is a HEURISTIC and the preview is what makes that
-                              honest. The athlete can see that "75min bike Z2 w/ 3x8min Z3" was read as a
-                              75-minute ride, and that the interval detail it could not structure has been
-                              kept as a coaching note rather than dropped. Without this line, a confident
-                              wrong reading looks exactly like a right one.
-                            */}
-                            {it.note && it.note !== it.name ? (
-                              <Text style={styles.impItemSource} numberOfLines={2}>
-                                {it.note}
-                              </Text>
-                            ) : null}
-                            {/* WHAT THE NAME RESOLVED TO, before anything is created.
-                                A match found by the equipment convention rather than by the words is a
-                                judgement, not a fact — showing it is what makes the convention honest,
-                                and the athlete can swap the exercise in the builder afterwards. */}
-                            {(() => {
-                              // A bout is not looked up: its key is the `cardio:<activity>` convention.
-                              if (it.kind === 'cardio') return null;
-                              const hit = resolveName(it.name);
-                              if (!hit) return <Text style={styles.impItemUnmatched}>not in the library · kept as written</Text>;
-                              if (hit.name.toLowerCase() === it.name.trim().toLowerCase()) return null;
-                              return (
-                                <Text style={styles.impItemMatched} numberOfLines={1}>
-                                  {hit.byPreference ? '≈ ' : '→ '}
-                                  {hit.name}
-                                </Text>
-                              );
-                            })()}
-                          </View>
-                          {/* A bout states its TARGET. Sets × reps is not a thing a 75-minute ride has,
-                              and steppers for them would invite editing a number that does not exist. */}
-                          {it.kind === 'cardio' ? (
-                            <Text style={styles.impTarget}>{cardioTargetText(it)}</Text>
-                          ) : (
-                          <View style={styles.impSteppers}>
-                            <ImpStep label={`Fewer sets of ${it.name}`} glyph="−" onPress={() => bumpPreview(wi, di, ii, 'sets', -1)} />
-                            <Text style={[styles.impNum, it.setsAssumed ? styles.impNumAssumed : null]}>{it.sets}</Text>
-                            <ImpStep label={`More sets of ${it.name}`} glyph="+" onPress={() => bumpPreview(wi, di, ii, 'sets', 1)} />
-                            <Text style={styles.impTimes}>×</Text>
-                            <ImpStep label={`Fewer reps of ${it.name}`} glyph="−" onPress={() => bumpPreview(wi, di, ii, 'reps', -1)} />
-                            <Text style={[styles.impNum, styles.impNumWide, it.repsAssumed ? styles.impNumAssumed : null]}>{it.reps}</Text>
-                            <ImpStep label={`More reps of ${it.name}`} glyph="+" onPress={() => bumpPreview(wi, di, ii, 'reps', 1)} />
-                          </View>
-                          )}
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                ))}
-              </View>
-            ))}
-
-            <Pressable
-              onPress={addPreviewWeek}
-              accessibilityRole="button"
-              accessibilityLabel="Add another week"
-              style={({ pressed }) => [styles.impAddWeek, pressed ? styles.impPressed : null]}
-            >
-              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M12 5v14M5 12h14" />
-              </Svg>
-              <Text style={styles.impAddWeekText}>Add another week</Text>
-            </Pressable>
-
-          </View>
-        )}
-      </BottomSheet>
+        scope={isWeek ? 'week' : 'program'}
+        cta={isWeek ? 'Create week' : 'Create program'}
+        onConfirm={confirmImport}
+      />
 
       {/* ⚠ THE REPEAT CASE IS WORDED DIFFERENTLY BECAUSE IT IS DIFFERENT. Shrinking removes content now;
           switching to Repeat sets it aside and only discards it on the next Save. Titling that "Remove
@@ -1992,19 +1637,6 @@ function WeekTemplateSheet({
   );
 }
 
-function ImpStep({ glyph, label, onPress }: { glyph: string; label: string; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({ pressed }) => [styles.impStep, pressed ? styles.impPressed : null]}
-    >
-      <Text style={styles.impStepGlyph}>{glyph}</Text>
-    </Pressable>
-  );
-}
-
 function SetupView({
   draft,
   days,
@@ -2028,7 +1660,7 @@ function SetupView({
 }: {
   draft: ProgramDraft;
   days: ProgramDay[];
-  /** Authoring a week template rather than a program — hides length, structure and import (0157). */
+  /** Authoring a week template rather than a program — hides length and structure (0157); import stays, cut to one week. */
   isWeek: boolean;
   saving: boolean;
   error: string | null;
@@ -2169,10 +1801,11 @@ function SetupView({
         {/* "Import from a spreadsheet" — the design places it here, between the length controls and the
             structure choice, because importing decides both for you.
 
-            Hidden in week mode: an import decides length and per-week structure, which is precisely what
-            a week template does not have. A paste of an 8-week block would be clamped to its first week
-            with no honest way to say so. */}
-        {isWeek ? null : (
+            In week mode too, now. It used to be hidden there because "a paste of an 8-week block would
+            be clamped to its first week with no honest way to say so" — and the honest way is the sheet's
+            `week` scope, which cuts the read to one week and says which BEFORE anything is created. PO:
+            *"make sure the import feature for a workout is available in the template builder, both the
+            day and the week."* */}
         <Pressable
           ref={importRef}
           onPress={onOpenImport}
@@ -2185,7 +1818,6 @@ function SetupView({
           </Svg>
           <Text style={styles.importLinkText}>Import from a spreadsheet</Text>
         </Pressable>
-        )}
 
         {isWeek ? null : (
         <TourAnchor id="builder-structure" style={styles.structure}>
@@ -3068,60 +2700,6 @@ const styles = StyleSheet.create({
   importLinkText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
   pressed: { opacity: 0.65 },
 
-  impCol: { gap: 12, paddingTop: 2 },
-  impHint: { fontFamily: flFont.sans, fontSize: 12.5, lineHeight: 19, color: flColor.gray400 },
-  impHintStrong: { color: flColor.cream100, fontWeight: '700' },
-  impPaste: {
-    height: 148,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.charcoal600,
-    backgroundColor: flColor.surfaceRecessed,
-    color: flColor.cream100,
-    fontSize: 12,
-    lineHeight: 18,
-    padding: 12,
-    textAlignVertical: 'top',
-  },
-  impError: { fontFamily: flFont.sans, fontSize: 12, lineHeight: 17, color: flColor.redMuted },
-  impFileBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 10 },
-  impFileText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
-  impPressed: { opacity: 0.6 },
-  /** Distinct from `impPressed` — a press is momentary, this holds for the length of the round-trip. */
-  impBusy: { opacity: 0.45 },
-
-  impSummary: { padding: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
-  impSummaryLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 5 },
-  impSummaryText: { fontFamily: flFont.sans, fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
-  impNote: { fontFamily: flFont.sans, fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
-
-  impWeekBlock: { gap: 10 },
-  impWeekHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
-  impWeekLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
-  impWeekRule: { flex: 1, height: 1, backgroundColor: flColor.charcoal600 },
-
-  impDayCard: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, overflow: 'hidden' },
-  impDayName: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', color: flColor.cream100, paddingVertical: 9, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
-  impItems: { gap: 6, paddingVertical: 10, paddingHorizontal: 12 },
-  impItemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  impItemText: { flex: 1, gap: 1 },
-  impItemName: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
-  impItemMatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.bronze400 },
-  impItemUnmatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray600 },
-  impSteppers: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  impStep: { width: 22, height: 22, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.charcoal500, alignItems: 'center', justifyContent: 'center' },
-  impStepGlyph: { fontSize: 13, lineHeight: 15, color: flColor.gray400 },
-  impNum: { fontSize: 12, color: flColor.cream100, width: 16, textAlign: 'center', fontVariant: ['tabular-nums'] },
-  impNumWide: { width: 22 },
-  /* An assumed number is dimmer — the sheet did not say it, and the athlete should see which is which. */
-  impNumAssumed: { color: flColor.gray600 },
-  impTimes: { fontSize: 11, color: flColor.gray600, marginHorizontal: 1 },
-
-  impAddWeek: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 11, borderRadius: flRadius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal500 },
-  impAddWeekText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
-  impActions: { flexDirection: 'row', gap: 10 },
-  impBackBtn: { flexBasis: 96 },
-  impCreateBtn: { flex: 1 },
 
   root: { flex: 1 },
 
