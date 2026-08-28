@@ -115,14 +115,24 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
           onLayout={drag.onLayout}
           style={[styles.sheet, { paddingBottom: 22 + insets.bottom }, drag.style]}
         >
-          {showHandle ? (
-            // The pan lives here, on the grab area — see the note at the top of the file.
-            <View style={styles.handleRow} {...drag.panHandlers}>
-              <View style={styles.handle} />
+          {/*
+            The pan lives here, on the grab area — the handle AND the title, as one target. PO, 2026-08-28,
+            three days after the gesture shipped: *"the only way to get out right now is with the x. This is
+            happening everywhere."* A 22px strip above the title is findable if you know it is there and
+            invisible if you do not; the title row underneath it is the thing a thumb actually lands on.
+            Nothing below the title is claimed, so the body scrolls exactly as before. `hitSlop` widens the
+            strip on sheets with no title.
+          */}
+          {showHandle || title ? (
+            <View style={styles.grabArea} hitSlop={{ top: 12, bottom: 8, left: 0, right: 0 }} {...drag.panHandlers}>
+              {showHandle ? (
+                <View style={styles.handleRow}>
+                  <View style={styles.handle} />
+                </View>
+              ) : null}
+              {title ? <Text style={styles.title}>{title}</Text> : null}
             </View>
           ) : null}
-
-          {title ? <Text style={styles.title}>{title}</Text> : null}
 
           {scroll ? (
             <ScrollView
@@ -176,6 +186,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: flRadius.xl,
     boxShadow: flShadow.ambient,
   },
+  /** The whole grab target — handle plus title. Its children keep their own spacing. */
+  grabArea: { alignSelf: 'stretch' },
   handleRow: {
     alignItems: 'center',
     paddingTop: 10,

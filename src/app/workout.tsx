@@ -3617,7 +3617,8 @@ export default function WorkoutScreen() {
             through it, and a permanent Add sitting under the thumb invites editing a prescription by
             accident.
 
-            Nothing is lost — ⋯ still carries "Add an exercise", and so does Holt's sheet. With one
+            Nothing is lost — Holt's sheet carries "Add a movement" (the ⋯ menu no longer does; it
+            keeps to the session, Holt keeps the plan). With one
             child, `primaryWrap`'s `flex: 1.15` fills the row on its own; no style change is needed to
             make the primary full-width.
           */}
@@ -4231,28 +4232,17 @@ export default function WorkoutScreen() {
                 sub={ex.note ? ex.note : `How ${ex.name} is feeling today`}
                 icon={<><Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><Path d="M14 2v6h6M8 13h8M8 17h5" /></>}
               />
-              <OptionRow onPress={openAdd} tint title="Add an exercise" sub="Pick another movement for this session" icon={<Path d="M12 5v14M5 12h14" />} />
-                      <OptionRow onPress={openSwap} title="Swap this exercise" sub="Pick a different movement" icon={<Path d="M4 7h13l-3-3M20 17H7l3 3" />} />
-              {/* Pairing is a decision made ON THE DAY — "I'll do these back to back" — so it lives
-                  here rather than only in the builder. Joining extends the block you are already in
-                  instead of starting a rival one beside it. */}
-              {isSuperset ? (
-                <OptionRow
-                  onPress={breakSuperset}
-                  title="Break the superset"
-                  sub="Log these as ordinary exercises again"
-                  icon={<Path d="M9 7H6a5 5 0 0 0 0 10h3M15 7h3a5 5 0 0 1 0 10h-3M4 4l16 16" />}
-                />
-              ) : null}
-              {!isLastEx ? (
-                <OptionRow
-                  onPress={supersetWithNext}
-                  title={isSuperset ? 'Add the next exercise to it' : 'Superset with next exercise'}
-                  sub={`Alternate with ${session.exercises[exIdx + 1].name} — one rest, at the end of the round`}
-                  icon={<Path d="M9 7H6a5 5 0 0 0 0 10h3M15 7h3a5 5 0 0 1 0 10h-3M8 12h8" />}
-                />
-              ) : null}
-              <OptionRow onPress={skipExercise} title="Skip this exercise" sub="Move on to the next one" icon={<Path d="M5 5l9 7-9 7zM18 5v14" />} />
+              {/*
+                ══ WHAT IS NOT HERE, AND WHY ══
+
+                Add an exercise · Swap · Superset with next · Break the superset · Skip used to sit here
+                as five rows. Holt's sheet carries every one of them under CHANGE THE PLAN — "Add a
+                movement", "Something else…", "Short on time", "Stop pairing these", "Move past this" —
+                and the PO's instruction was plain: *"things that we should just have coach holt have.
+                Let's make sure we're not repeating and we keep it simple."* So this menu is the things
+                about the SESSION (its name, your note, who is here, the music, ending it) and Holt is
+                the things about the PLAN. The handlers still exist; Holt calls them.
+              */}
               {/*
                 ⚠ THIS WAS ONE ROW CALLED "Invite training partner", SUB-TITLED "They'll do this workout
                 too" — AND IT SENT NOTHING. It opened the tagging sheet, which credits somebody already

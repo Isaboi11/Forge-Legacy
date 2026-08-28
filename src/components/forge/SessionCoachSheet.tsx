@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { Image } from 'expo-image';
 
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { themeScrim } from '@/constants/theme-scrim';
 import { HoltMark } from '@/components/forge/HoltMark';
+import { useSheetDrag } from '@/hooks/useSheetDrag';
 import { INTENSITY_LEVELS, type IntensityLevel } from '@/domain/coach/rulebook/intensity';
 import type { IntensityProposal } from '@/domain/coach/intensity-learning';
 import type { SuggestionGroup } from '@/domain/coach/session-suggest';
@@ -222,10 +223,25 @@ export function SessionCoachSheet({
      is no card to build, and Holt's line falls back to plain text at the left margin, as it was. */
   const hasCard = weight != null;
 
+  /*
+   * ══ THE GRABBER GRABS HERE TOO ══
+   *
+   * PO (2026-08-28): *"The line at the top in the middle is an indicator that you can drag that page
+   * down and gone. But the only way to get out right now is with the x."* This sheet drew the handle
+   * and had no gesture behind it — the shared `BottomSheet` composite got one on 2026-08-25 and this
+   * one, which rolls its own overlay, was missed. Same hook, same distance, same fling.
+   *
+   * ⚠ THE PAN COVERS THE GRABBER AND THE WHOLE HEADER (mark, name, status) — a 4px bar is a picture,
+   *   not a target. The close × inside it still works: a responder only claims a MOVE, never a tap.
+   *   The body below is a ScrollView and stays out of it, for the reason `useSheetDrag` gives.
+   */
+  const drag = useSheetDrag({ onClose });
+
   return (
     <View style={styles.wrap}>
       <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close" />
-      <View style={styles.sheet}>
+      <Animated.View onLayout={drag.onLayout} style={[styles.sheet, drag.style]}>
+        <View {...drag.panHandlers}>
         <View style={styles.grabWrap}>
           <View style={styles.grab} />
         </View>
@@ -247,6 +263,7 @@ export function SessionCoachSheet({
               <Path d="M6 6l12 12M18 6L6 18" />
             </Svg>
           </Pressable>
+        </View>
         </View>
 
         <ScrollView style={styles.thread} contentContainerStyle={styles.threadInner} showsVerticalScrollIndicator={false}>
@@ -541,7 +558,7 @@ export function SessionCoachSheet({
             </View>
           </View>
         </ScrollView>
-      </View>
+      </Animated.View>
     </View>
   );
 }
