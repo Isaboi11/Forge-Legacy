@@ -302,6 +302,20 @@ export async function syncAutoGoals(goals: Goal[]): Promise<{ changed: boolean; 
 }
 
 /** Mark a narrative goal achieved (or, rarely, an under-target one the athlete calls done). */
+/**
+ * The body-kind goals of the active chapter, synced now. See `useBodyGoalSync` for why this exists:
+ * a weigh-in changed nothing on the Legacy tab until somebody opened the Goals screen, because that
+ * screen was the only caller of `syncAutoGoals`. Only weight and measurement goals — one `goal_metric_value`
+ * call each — so a weigh-in never pays for the cumulative kinds it cannot have changed.
+ */
+export async function syncBodyGoals(): Promise<{ changed: boolean; achieved: Goal[]; chapterName: string | null }> {
+  const { goals, chapterName } = await fetchActiveChapterGoals();
+  const body = goals.filter((g) => usesBaseline(g.metricKind) && isAutoTracked(g) && g.achievedAt == null && g.target != null);
+  if (body.length === 0) return { changed: false, achieved: [], chapterName };
+  const res = await syncAutoGoals(body);
+  return { ...res, chapterName };
+}
+
 export async function markAchieved(goalId: string): Promise<{ goal: Goal; newlyAchieved: boolean }> {
   const id = await uid();
   if (!id) throw new Error('Not signed in');

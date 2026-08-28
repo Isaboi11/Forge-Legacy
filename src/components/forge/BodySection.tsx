@@ -8,6 +8,7 @@ import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { fetchBodyEntries } from '@/data/body-metrics-live';
 import { displayWeight } from '@/domain/settings/units';
+import { useBodyGoalSync } from '@/hooks/useBodyGoalSync';
 import { useBodyPrefs } from '@/lib/body-metrics';
 import { useUnits } from '@/lib/settings';
 import { useQuery } from '@/lib/useQuery';
@@ -32,6 +33,7 @@ export function BodySection() {
   const { data: entries, refetch } = useQuery(fetchBodyEntries, []);
   const { enabled, showTrend, loaded, setEnabled, setShowTrend } = useBodyPrefs();
   const { units, load } = useUnits();
+  const syncBodyGoals = useBodyGoalSync();
   const [logOpen, setLogOpen] = useState(false);
   const [sel, setSel] = useState<number | null>(null);
 
@@ -56,7 +58,11 @@ export function BodySection() {
   }
 
   const list = entries ?? [];
-  const logSheet = <LogWeightSheet key={logOpen ? 'log-open' : 'log-closed'} open={logOpen} onClose={() => setLogOpen(false)} onSaved={refetch} units={units} />;
+  const logSheet = <LogWeightSheet key={logOpen ? 'log-open' : 'log-closed'} open={logOpen} onClose={() => setLogOpen(false)} onSaved={() => {
+    refetch();
+    // The weight goal moves with the weigh-in, not the next time Goals is opened — see `useBodyGoalSync`.
+    void syncBodyGoals();
+  }} units={units} />;
 
   // ── on but empty ──
   if (list.length === 0) {

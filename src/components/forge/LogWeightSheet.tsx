@@ -62,8 +62,16 @@ export function LogWeightSheet({ open, onClose, onSaved, units }: { open: boolea
     });
   };
 
-  const field = (label: string, value: string, set: (v: string) => void, placeholder: string, key: string) => (
-    <View style={styles.fieldWrap}>
+  /*
+   * ⚠ `grow` IS ONLY FOR THE THREE-UP MEASUREMENT ROW. The wrapper used to carry `flex: 1` for every
+   * field, including the bodyweight one that sits alone in a column — and on iOS a `flex: 1` child of a
+   * column with no definite height resolves to a ZERO-height box. The well collapsed, its border landed
+   * on top of the placeholder, and "+ Add measurements" rendered through the input (PO screenshot,
+   * 2026-08-28). The web preview lays it out differently, which is how it shipped. A column field takes
+   * its content height; only siblings in a row share one.
+   */
+  const field = (label: string, value: string, set: (v: string) => void, placeholder: string, key: string, grow = false) => (
+    <View style={[styles.fieldWrap, grow ? styles.fieldGrow : null]}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <View style={[styles.well, { borderColor: focus === key ? flColor.bronze400 : flColor.charcoal500, boxShadow: focus === key ? `${WELL_INSET}, ${flShadow.glowSubtle}` : WELL_INSET }]}>
         <TextInput
@@ -84,7 +92,9 @@ export function LogWeightSheet({ open, onClose, onSaved, units }: { open: boolea
   return (
     <BottomSheet open={open} onClose={onClose} title="Log Weight" footer={<Button variant="primary" fullWidth disabled={!valid || busy} onPress={save}>Save weigh-in</Button>}>
       <View style={styles.wrap}>
-        <Text style={styles.help}>A quiet record — no goal weight, no pressure.</Text>
+        {/* No "no goal weight, no pressure" line here any more — PO, 2026-08-28: *"take off the goal part
+            cause some people it is a goal."* A bodyweight goal is a real goal kind, and this weigh-in is
+            what moves it (`useBodyGoalSync`). The sheet says nothing about how the athlete should feel. */}
         {field(`Bodyweight (${unitLabel})`, weight, setWeight, 'e.g. 199', 'w')}
 
         {!showMeasures ? (
@@ -93,9 +103,9 @@ export function LogWeightSheet({ open, onClose, onSaved, units }: { open: boolea
           </Pressable>
         ) : (
           <View style={styles.measureGrid}>
-            {field('Waist (in)', waist, setWaist, 'in', 'wa')}
-            {field('Chest (in)', chest, setChest, 'in', 'ch')}
-            {field('Arms (in)', arm, setArm, 'in', 'ar')}
+            {field('Waist (in)', waist, setWaist, 'in', 'wa', true)}
+            {field('Chest (in)', chest, setChest, 'in', 'ch', true)}
+            {field('Arms (in)', arm, setArm, 'in', 'ar', true)}
           </View>
         )}
       </View>
@@ -105,8 +115,8 @@ export function LogWeightSheet({ open, onClose, onSaved, units }: { open: boolea
 
 const styles = StyleSheet.create({
   wrap: { gap: 14 },
-  help: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 20, color: flColor.gray400 },
-  fieldWrap: { gap: 7, flex: 1 },
+  fieldWrap: { gap: 7 },
+  fieldGrow: { flex: 1 },
   fieldLabel: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray400 },
   well: { borderRadius: flRadius.lg, borderWidth: 1, backgroundColor: flColor.surfaceRecessed, paddingHorizontal: 14 },
   input: { height: 46, fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },

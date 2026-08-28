@@ -19,6 +19,7 @@ import { type RankFamily, type RankLevel } from '@/domain/rank-artwork/resolver'
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import { RankSeal } from '@/components/forge/RankSeal';
 import { fetchLegacyData } from '@/data/legacy-live';
+import { useBodyGoalSync } from '@/hooks/useBodyGoalSync';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 import { fetchAccomplishments } from '@/data/accomplishments-live';
 import { fetchLegacyArchive } from '@/data/legacy-archive-live';
@@ -187,17 +188,22 @@ export default function LegacyScreen() {
    * travels. Legacy keeps its own read below so the badge reflects a promotion the moment one lands.
    */
   useEarnedMoments({ onRankChanged: refetch });
+  const syncBodyGoals = useBodyGoalSync();
 
   useFocusEffect(
     useCallback(() => {
       // The displayed record, refreshed on every focus regardless of whether the (throttled) evaluation
       // above ran — returning from a just-logged workout has to show it.
       refetch();
+      // The chapter card's bodyweight goal reads a STORED number that only the Goals screen used to
+      // refresh. Sync it here too, and redraw if it moved — a weigh-in logged on the Progress Hub
+      // should be visible on the way back to Legacy (PO, 2026-08-28).
+      void syncBodyGoals().then((changed) => changed && refetch());
       // The archive band too. It was fetched once at mount and never again, so adding a photo — or an
       // entry, or finishing a competition — and walking back to Legacy showed the band exactly as it was
       // when the tab first loaded: an empty Photos tile next to a gallery that now had photos in it.
       refetchArchive();
-    }, [refetch, refetchArchive]),
+    }, [refetch, refetchArchive, syncBodyGoals]),
   );
 
   // (The honor-celebrated acknowledgement moved to CeremonyProvider — it has to sit with the single
