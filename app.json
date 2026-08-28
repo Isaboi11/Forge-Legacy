@@ -19,7 +19,8 @@
           "location"
         ],
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Forge Legacy keeps measuring your run while your phone is locked or in your pocket, so the distance, pace and climb are the whole session rather than the part you were looking at. It is only read during a session you started, and the route is never shared."
-      }
+      },
+      "appleTeamId": "G722GV8H8C"
     },
     "android": {
       "package": "com.qest4.forgelegacy",
@@ -83,7 +84,8 @@
       "expo-asset",
       "expo-image",
       "expo-web-browser",
-      "react-native-compressor"
+      "react-native-compressor",
+      "@bacons/apple-targets"
     ],
     "experiments": {
       "typedRoutes": true,
