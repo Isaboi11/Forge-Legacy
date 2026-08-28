@@ -5275,3 +5275,117 @@ point yet. It stays a row that opens the Exercise Picker, as before.
 **Cleanup honesty.** Teardown deletes the squad, competitions, invites and both logged workouts, then restores `chapters.workout_count` and removes the honors `evaluate_honors` awarded during the run (`first_challenge_won`, `first_challenge_joined`, `origin_first_week`) — **neither of which reverses when a workout row is deleted**. It then re-reads for its own leftovers rather than trusting its own writes. Residual: **Sam Torres has no active chapter** (pre-existing, not caused here) so his counter could not be restored, and the six stranded competitions above.
 
 **Gates:** no product code changed — `node --check` on all three new scripts; `reviewer-verify.mjs` green on all 13 reviewer surfaces after the run.
+
+### 0. ⭐ "I don't know which of these to choose" — Holt can finally answer it, off the shelf he did not write (2026-08-24, Coach Holt / W-2 Discover — **no migration**, ✅ **WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6**, ⏳ never rendered for a human)
+
+**PO:** *"should we have a button in the program that says (and it would be a subtle button) don't know
+which to choose? Let us help"* — then, offered the choice between shipping the link against the existing
+build flow or teaching Holt to recommend from the catalogue: ***"I say build both."*** Both are built.
+
+**The gap was real and it was one-directional.** Home already carried this door — the lead card of the
+first-program block is Coach Holt — but only for an athlete with NO program. The moment somebody was
+stood in Discover comparing fourteen named programs, the help disappeared, and the only thing on that
+screen that could help was a door OUT of it: *let me write you a different one*. That replaces the
+athlete's question rather than answering it, and the shelf is real, authored, locked work.
+
+**A — the link.** A row under the family chips on Discover: *"Not sure which one? Ask Coach Holt."* No
+border, no fill, no icon — subtle was the ask and it is also correct, since a card there would compete
+with the programs it is offering to help choose between. It opens the coach that already exists
+(`openCoach('recommend')`), **not a second picker**: Home's own note records the decision this would
+otherwise undo, that "Build it with me" and "Help me find one" were collapsed because they were two
+doors to the same room.
+
+**B — Holt reads the shelf.** New pure domain module `domain/coach/recommend.ts`. Ranks the 16 shipped
+definitions on a goal→family table (primary and secondary), an editorial theme bonus, sessions-per-week,
+and room. Returns ONE recommendation and at most one runner-up, because the athlete's problem was too
+many options and a ranked list of fourteen is the same problem in a new order.
+
+⚠ **THE PART THAT MATTERS IS THAT IT REFUSES.** There is **not one Running program on the shelf** —
+`ProgramFamily` carries the value and nothing populates it — so a scorer with no floor answers "Run a
+marathon" with a six-day barbell block, confidently, because it was the least-bad row in the table. Every
+endurance goal refuses on the goal alone, before a single program is scored, and `MATCH_FLOOR` refuses
+again when nothing clears a defensible stretch. Same rule `rulebook/endurance.ts` already keeps: **refuse
+rather than guess.** A refusal is never a dead end — it hands over to the thing that CAN help.
+
+⚠ **AND EVERY CARD NAMES WHAT IT GOT WRONG.** A shelf program is FIXED: it cannot drop a movement for a
+bad shoulder, cannot become four days because that is the athlete's week, cannot move down a rung. Each
+of those is rendered at the same size and line height as the reasons — shrinking a caveat is how it
+becomes small print, and a recommendation that quietly swallows a mismatch is the app asserting a fit it
+did not achieve. **The limitations question is never asked**, deliberately: `constraints.ts` already
+refused that shape once for the absent `wrists` flag — *"a checkbox that changes nothing is worse than an
+absent one"* — so the limit is stated instead, and doubles as the honest reason to have him write one.
+
+**Three defects found while building it, each fixed:**
+
+1. ⚠ **A CRASH ON THE COLDEST PATH.** `askShelf` short-circuits an endurance goal without asking about
+   level, so it reports READY with `experience` unset — and the first cut read `merged.experience!.lifting`
+   straight off it. Fine for a returning athlete, whose level is remembered; a **TypeError** for a brand-new
+   one whose very first tap is "Run a race". Now defaulted, with the defaults provably unreachable, and a
+   test that walks the questionnaire from cold to prove the premise still holds.
+2. **A full-gym athlete was recommended a no-equipment program** on an id tie-break. Trainable, and still
+   the wrong answer — they had just said which room they were stood in. Room alignment now breaks ties.
+3. **Holt would recommend the program you are already four weeks into**, since `recommend.ts` is pure and
+   knows nothing about what the athlete owns. The active program comes off the shelf at the boundary.
+
+**The rung penalty is asymmetric, and that is the safety property.** A program below the athlete is
+unexciting; one above them is a block they cannot finish, and for a beginner one they can get hurt in.
+Beginner→Advanced is vetoed outright. The visible consequence: a **beginner who wants to build muscle
+gets Strength Foundation I, not Muscle Building Intermediate** — every Muscle Building program on the
+shelf is Intermediate and one of them literally reads *"Arrive ready for the block periodization of
+Muscle Building Advanced"*.
+
+**Also:** a sixth opener and a **third Coach Home row** — a delta from `Coach Holt Chat v2.dc.html` §3
+(three cards, two rows), recorded rather than slipped in. The test one file over states the principle it
+would otherwise violate: *"A missing one is a capability with no way to reach it from Home."* A door
+reachable from exactly one screen is the same defect the Discover link was added to fix, one level up.
+That test asserted "all five" by count, which meant the sixth door could only be added by editing the
+guard; it now asserts the invariant that was always the real one — that the two sets are equal.
+
+**Files:** `src/domain/coach/recommend.ts` (new) · `src/domain/coach/__tests__/recommend.test.mjs` (new,
+19 tests) · `src/domain/coach/chat-core.ts` (`ChatMode`, `askShelf`, `PickCard`/`pickCardFor`, the
+`pick` opener + Home row, `Chip.startsBuild`) · `src/components/forge/CoachChatSheet.tsx` (`pick` mode,
+`PickCardView`, the `reading` status, the shelf glyph) · `src/hooks/useCoachDoor.tsx` (`recommend`
+intent) · `src/app/(tabs)/workouts.tsx` (the link) · `chat-core.test.mjs` + `voice.test.mjs` (opener
+tests).
+
+**Gates:** tsc **0** · **2,785 tests green** (+19) · lint **at baseline** (1 pre-existing error, 13
+warnings, unchanged). ⚠ **The 19 new tests run against the REAL 16 programs read off disk**, not a
+fixture — a hand-written shelf would let the scorer be graded against programs invented to flatter it,
+and would go stale the day somebody authors a seventeenth.
+
+✅ **WEB + OTA DEPLOYED AND VERIFIED 2026-08-24.** Web `entry-9df51193f361711c72f48b85601def94.js` — `forgelegacy.expo.app` returned **200** twice with a matching hash, and the live bundle was fetched (13.4 MB) and searched for five strings only this pass contains: `Not sure which one?` · `FROM THE FORGE SHELF` · `Use a saved week` · `Which one should I pick?` · `Two sizes: a day, or a week`. **All PRESENT in the served JS**, not merely in `dist`. **OTA published to `production`, commit `b6f4b54`, iOS update `01a035ce-ddd5-7c6f-98fc-bb4e51816f5a`, runtime `411fd2b68cbe11016f037dd7881b3fe813a1e148`** — `fingerprint:compare --build-id 078d2838…` matched **build 6 exactly** BEFORE publishing, and the manifest endpoint was then queried as an iOS client on that runtime and **returned this update id**. Deliverable, not merely published. (Android also published — runtime `a8afa07c…`, update `01a035ce-ddd5-718a-8622-e5de3595ae17`. No Android build exists, so it reaches nobody; recorded only so the id is not mistaken for the iOS one.) ⏳ **Still not confirmed on a device, and the card has never been looked at by a human on any surface** — every check above is a string search, which proves the code shipped and says nothing about whether it looks right.
+
+⚠ **One pre-existing hazard noticed and NOT fixed, because it is not this pass's:** `openCoach` during a
+live workout sets the flag while `CoachBubble` returns null, so nothing opens and the sheet may appear
+later. Home's three existing doors have it identically.
+
+
+### 0. ⭐ A saved week can be dropped into a program week — and two builder defects the walkthrough found on the way (2026-08-24, Program Builder / Templates / Tour — **no migration**, ✅ **WEB DEPLOYED + ✅ OTA DELIVERABLE ON BUILD 6** — same publish as the entry above, `entry-9df51193…` · iOS `01a035ce-ddd5-7c6f…`)
+
+**Method:** a walkthrough review of all three builders before a line was changed — every screen, route, sheet and draft-model function read end to end, written up in `Docs/Builder-UX-Review-2026-08-24.md`. The PO answered its three open questions the same day and all three were built. **The review keeps its original wording on purpose**: it is the record of why each change was made, with the fix named beside each finding.
+
+**⭐ THE FEATURE: WEEK TEMPLATES COMPOSE NOW.** A day template could fill a program day; a week template could only ever be run on its own, which made the two libraries read as different KINDS of thing when they are the same idea at two sizes. The Week sheet's "Use a saved week" closes that. It is `weekTemplateIntoWeek` + `weekFit` in `program-draft-model.ts`, a `WeekTemplateSheet` chooser, and a confirmation.
+
+**⚠ IT REPLACES THE WEEK, AND THERE IS NO APPEND — that is not a shortcut, it is the honest shape.** `templateIntoDay` offers append because a day can genuinely be built from two shapes stacked together. A week cannot: appending would have to mean "add days to the end", and the end is fixed by `daysPerWeek`. So the only question worth asking is what the replacement COSTS.
+
+**⚠ AND THAT COST IS ARITHMETIC, SO IT IS COMPUTED AND STATED RATHER THAN DESCRIBED.** `weekFit()` returns `{ taken, dropped, emptied }` and it surfaces **twice**: on every row of the chooser (*"fits exactly"* · *"2 days won't fit"* · *"leaves 1 day empty"*), so a choice BETWEEN saved weeks can be made before tapping one — and again in the confirmation, as a sentence carrying its reason: *"This week has 5 days and your program trains 3 — only the first 3 come in."* A bare "2 days won't fit" reads as a bug in the import rather than as two day counts that were authored independently and are under no obligation to agree.
+
+**⚠ POSITION OWNS THE LETTER, THE TEMPLATE OWNS EVERYTHING ELSE.** Slot 0 stays `A` however the template named it, because `lockedCells` and the schedule both address days BY POSITION. The day NAME travels — "Push" is content, not an address.
+
+**⚠ A SHORTER WEEK EMPTIES THE DAYS IT DOES NOT REACH.** A 3-day template into a 4-day program leaves day D blank rather than keeping what was there. Keeping it produces a hybrid week nobody authored, with no visible seam — the worse of the two failures and the one found weeks later.
+
+**⚠ IT DELIBERATELY DOES NOT CHANGE `daysPerWeek` TO MAKE A TEMPLATE FIT.** That value governs every week in the program, so importing one week would silently restructure all of them. The confirmation names the mismatch and leaves the decision with the athlete.
+
+**⚠ PA2-D8 IS NOT CONTRADICTED, AND THIS WAS CHECKED BEFORE BUILDING.** `Program-Architecture-Amendment-002` argues a week template is a thing you RE-RUN — "the same week, run four times, is four honest records" — and `Week-Template-Detail-Spec-W29` never mentions composition. So the absence was a decision, not an oversight, and it was put to the PO as one. It is now **also** a building block; the two models do not conflict and `Start This Week` is untouched.
+
+**⛔ DEFECT 1 — CUSTOMIZE → REPEAT WAS SILENT DATA LOSS, AND IT WAS THE ONE STRUCTURAL CONTROL THAT NEVER ASKED.** Shrinking the week count has confirmed since the first build (*"Weeks N–M will be removed… This can't be undone"*). Flipping to "Repeat the same week" did not — and it costs more. `setRepeatMode` only sets `vary: false`, so eight built weeks merely VANISH FROM THE SCREEN; then `draftToStructure` writes `weekPlans: d.vary ? … : null`, so the next Save makes it permanent, and the draft is cleared after save so there is no undo. Hidden-then-silently-discarded is the worst combination: nothing looks destructive at the moment the athlete chooses it. `requestRepeat` now confirms when any week PAST THE FIRST holds work — past the first, because week 1 is what the repeating template would be built from anyway. ⚠ **The sheet is worded differently for this case and titled differently** (*"Use one repeating week?"* / **Switch**, not *"Remove content?"* / **Remove**): shrinking removes content NOW, this sets it aside and only discards on Save, and titling it as a removal would be a threat the app does not carry out.
+
+**⛔ DEFECT 2 — THE TEMPLATES WALKTHROUGH WAS ARGUING AGAINST A SHIPPED FEATURE.** Step `tp-new` read *"New ones come from training. **There's no blank template to fill in.**"* — while its anchor, `templates-new`, wraps the two buttons that build one from blank. True when templates could only be CAPTURED (0091); false since W-25 shipped the Free Workout Builder, and never revisited. A walkthrough that talks the athlete out of the control it is spotlighting is worse than no walkthrough. **It survived because copy is not typechecked and nothing fails when a feature outgrows its own tour** — the maintenance gap, not a coverage gap. Both steps rewritten; the second now names both sizes and the new week-into-program move.
+
+**⚠ THREE OF THE REVIEW'S FIRST FOUR "PROBLEMS" WERE THE REVIEW'S OWN, AND THE WRITE-UP SAYS SO.** `request_squad_join`-style false alarms are cheap to publish and expensive to act on. (a) The `workout_join_request` notification is correctly gated on the host actually training. (b) `pb-details` describing a weeks control in week mode is real but minor. (c) The `display: none` program CTA is deliberate. Only the two above were defects.
+
+**Deliberately NOT done, and recorded so absence reads as decision:** the `week-builder` tour key (week mode still inherits the program tour, whose first step describes a length control that is not there); an entry point for Repeat mode (`weekTemplateIntoWeek` already handles it — the Week sheet is simply unreachable outside Customize); a template picker in the standalone Workout Builder; and the `display: none` CTA, left as found.
+
+**Gates:** `tsc --noEmit` — **0 errors in any file this pass touched** ⚠ (2 errors exist in `CoachChatSheet.tsx`, which is being edited concurrently in the working tree by another session and was never touched here) · `eslint` clean on all three changed files · **2782/2782 tests pass**, including **10 new ones** covering the day-count seam in both directions, letter preservation, re-idding, double application, clamping, Repeat mode and the no-op cases. ⚠ One earlier full run showed a single transient failure — a source-scanning test read `CoachChatSheet.tsx` mid-save; it passes on a quiet tree.
+
+**⏳ NOT DEPLOYED. ⚠ AND THE TREE IS NOT CLEAN** — `workout.tsx` and `CoachChatSheet.tsx` carry uncommitted work from another session. A tree-wide publish ships every undeployed client half in the tree, so check `git status --porcelain` before publishing this.
