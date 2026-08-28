@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Linking, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -128,6 +128,19 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
   const [leadChoice, setLeadChoice] = useState<RecapLead | null>(null);
   /** Posts this session already has. `null` until read; the tiles treat that as "nothing yet". */
   const [prior, setPrior] = useState<PriorShare[] | null>(null);
+  /*
+   * ══ THE POST'S OWN WORDS, TYPED WHERE THE POST IS MADE ══
+   *
+   * PO (2026-08-27, twice): *"I put a comment when I was creating the post after the workout and it's not
+   * showing the comment."* The sheet had no comment box — the body came from the completion screen's
+   * `note` prop, which was whichever of three boxes (the sealed reflection, the archive caption under a
+   * video, an unsealed draft) happened to survive the trip. Now the sentence that posts is the one on
+   * THIS sheet, in a box the athlete can see and edit at the moment of sharing. It is seeded from the
+   * caller's `note` and only replaces it once the athlete has typed; `null` means "untouched — use what
+   * the caller sent".
+   */
+  const [bodyDraft, setBodyDraft] = useState<string | null>(null);
+  const body = (bodyDraft ?? note ?? '').trim();
 
   const snapshot = summary ?? fetched;
   const mixed = snapshot?.cardio != null && snapshot.lead === 'strength';
@@ -195,7 +208,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
      */
     const recap = {
       type: 'recap' as const,
-      body: note?.trim() ?? '',
+      body,
       workoutId,
       /* The choice rides the snapshot, so the post renders the same strip forever — the feed never
          re-derives it. On a non-mixed session this spread writes back the value already there. */
@@ -236,6 +249,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
       setSharing(false);
       setSquadStep(null);
       setPicked(new Set());
+      setBodyDraft(null);
       onClose();
       showToast(shareSummary(landed, includeFriends));
     };
@@ -349,6 +363,19 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
       ) : (
         <View style={styles.body}>
           {preview ? <View style={styles.preview}>{preview}</View> : null}
+
+          {/* What the post says, in the athlete's words. Optional; the recap stands on its own without it. */}
+          <TextInput
+            value={bodyDraft ?? note ?? ''}
+            onChangeText={setBodyDraft}
+            multiline
+            editable={!sharing}
+            placeholder="Say something about it (optional)"
+            placeholderTextColor={flColor.gray600}
+            maxLength={600}
+            accessibilityLabel="A comment for the post"
+            style={styles.bodyInput}
+          />
 
           {/* Only a mixed session gets the question — a pure run or a pure lift day has nothing to
               choose, and a question with one honest answer is noise. The chips name the two strips in
@@ -566,6 +593,7 @@ function MoreGlyph() {
 
 const styles = StyleSheet.create({
   body: { gap: 10 },
+  bodyInput: { minHeight: 64, maxHeight: 140, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, color: flColor.cream100, fontSize: 14, lineHeight: 20, paddingHorizontal: 12, paddingVertical: 10, textAlignVertical: 'top' },
   already: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2, paddingVertical: 9, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   alreadyText: { flex: 1, fontSize: 12.5, fontWeight: '600', lineHeight: 17, color: flColor.bronze300 },
   preview: { alignItems: 'center', marginBottom: 6 },

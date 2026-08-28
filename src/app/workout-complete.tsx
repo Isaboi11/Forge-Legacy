@@ -703,7 +703,9 @@ export default function WorkoutComplete() {
        * snapshot and nothing else — `body: ''` and `media: []` were hardcoded in the sheet — so the note
        * and the photo an athlete had just added were, from the feed's point of view, never made.
        */
-      note={reflection || mediaCaption || null}
+      /* A sealed reflection, else the caption under the video, else a note typed and never sealed — the
+         sheet shows whichever it gets in an editable box, so nothing typed is lost on the way to the post. */
+      note={reflection || mediaCaption || note.trim() || null}
       media={sharePhotos}
       onShared={setShares}
       preview={shareCard}

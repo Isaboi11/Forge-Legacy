@@ -79,7 +79,8 @@ test('the photos it sends are the ones added HERE, identified rather than counte
 test('⚠ the share sheet no longer hardcodes an empty body and no media', () => {
   assert.doesNotMatch(SHEET, /body:\s*''/, 'a hardcoded empty body drops the athlete’s note on the floor');
   assert.doesNotMatch(SHEET, /media:\s*\[\]/, 'a hardcoded empty media array drops the photo on the floor');
-  assert.match(SHEET, /body:\s*note\?\.trim\(\)/, 'the post body is not built from the note prop');
+  // The body is the sheet's own box, seeded from the note prop — see `post-share-wiring.test.mjs`.
+  assert.match(SHEET, /const body = \(bodyDraft \?\? note \?\? ''\)\.trim\(\);/, 'the post body is not built from the note prop');
   assert.match(SHEET, /\bmedia,/, 'the media prop is not forwarded onto the post');
 });
 

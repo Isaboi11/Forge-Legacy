@@ -64,7 +64,16 @@ test('the card gives the media band its own control when asked', () => {
 test('⚠ the line typed under a photo or video becomes the post body when no reflection was sealed', () => {
   const src = strip(COMPLETE);
   assert.match(src, /const mediaCaption = addedPhotos\.map\(\(p\) => p\.caption\?\.trim\(\) \?\? ''\)\.find\(Boolean\) \?\? '';/);
-  assert.match(src, /note=\{reflection \|\| mediaCaption \|\| null\}/, 'the share sheet no longer receives the media caption');
+  assert.match(src, /note=\{reflection \|\| mediaCaption \|\| note\.trim\(\) \|\| null\}/, 'the share sheet no longer receives the caption / unsealed note');
+});
+
+test('⚠ the sentence that posts is the one on the share sheet, in a box the athlete can see', () => {
+  // Second report of the same defect after the first fix: the body must not depend on which of three
+  // upstream boxes survived — it is typed (or confirmed) where the post is made.
+  const src = strip(SHEET);
+  assert.match(src, /const body = \(bodyDraft \?\? note \?\? ''\)\.trim\(\);/, 'the sheet no longer derives the body from its own box');
+  assert.match(src, /type: 'recap' as const,\s*body,/, 'the recap must post the body from the sheet');
+  assert.match(src, /accessibilityLabel="A comment for the post"/, 'the comment box is gone');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
