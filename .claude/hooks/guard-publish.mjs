@@ -12,6 +12,31 @@ import { execFileSync } from 'node:child_process';
 
 const PROJECT_DIR = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 
+/**
+ * ⚠ THE TREE THAT SHIPS IS THE ONE THE COMMAND RUNS IN, AND IT IS NOT ALWAYS THIS REPO.
+ *
+ * An OTA to an older build is published from a git WORKTREE — a separate checkout based before the
+ * native change that moved the fingerprint (see the OTA runbook). The export there bundles THAT tree,
+ * so reading this repo's status was wrong in BOTH directions: on 2026-08-31 it blocked a clean
+ * worktree publish because a parallel session had edits here, and it would equally have waved through
+ * a genuinely dirty worktree whenever this checkout happened to be clean — which is the failure the
+ * guard exists to prevent, passed silently.
+ *
+ * So if the command changes directory before publishing, that is the tree to inspect.
+ */
+const targetDir = (raw) => {
+  const m = [...raw.matchAll(/(?:^|&&|;|\|)\s*cd\s+(?:"([^"]+)"|'([^']+)'|([^\s;&|]+))/g)].pop();
+  const dir = m ? (m[1] ?? m[2] ?? m[3]) : null;
+  if (!dir) return PROJECT_DIR;
+  try {
+    execFileSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: dir, encoding: 'utf8', windowsHide: true });
+    return dir;
+  } catch {
+    // Not a checkout, or gone. Fall back to this repo rather than skipping the check entirely.
+    return PROJECT_DIR;
+  }
+};
+
 const read = () =>
   new Promise((resolve) => {
     let raw = '';
@@ -57,10 +82,12 @@ if (!isPublish) process.exit(0);
 
 if (process.env.FL_ALLOW_DIRTY_PUBLISH === '1') process.exit(0);
 
+const inspecting = targetDir(command);
+
 let dirty = '';
 try {
   dirty = execFileSync('git', ['status', '--porcelain'], {
-    cwd: PROJECT_DIR,
+    cwd: inspecting,
     encoding: 'utf8',
     windowsHide: true,
   }).trim();
@@ -75,7 +102,7 @@ const shown = files.slice(0, 20).join('\n');
 const more = files.length > 20 ? `\n  ... and ${files.length - 20} more` : '';
 
 process.stderr.write(
-  `BLOCKED: publishing from a dirty working tree.\n\n` +
+  `BLOCKED: publishing from a dirty working tree — ${inspecting}\n\n` +
     `\`expo export\` bundles the working tree, not HEAD — these ${files.length} change(s) would ` +
     `ship with the build:\n\n${shown}${more}\n\n` +
     `Commit (or stash) first, then publish. If this is a deliberate throwaway deploy, set ` +
