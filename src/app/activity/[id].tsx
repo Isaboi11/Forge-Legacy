@@ -27,6 +27,7 @@ import { WORKOUT_NAME_MAX, renameWorkout } from '@/data/workout-complete-live';
 import { RouteMap } from '@/components/workout/RouteMap';
 import { RouteSheet } from '@/components/workout/RouteSheet';
 import { storedRouteToLatLng } from '@/domain/run/route-region';
+import { isCardioKey } from '@/domain/workout/conditioning';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useUnits } from '@/lib/settings';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
@@ -60,6 +61,10 @@ function Glyph({ d, size = 16, color, width = 1.8 }: { d: string; size?: number;
 }
 
 const TROPHY = 'M7 4h10v3a5 5 0 0 1-10 0zM7 5H4v1a3 3 0 0 0 3 3M17 5h3v1a3 3 0 0 1-3 3M9 15h6M12 12v3M8 21h8';
+
+/* CardioBlockCard's own shoe. It was inlined in the hero to stop a run wearing a dumbbell; the
+   exercise rows below needed the same glyph for the same reason, so it is named once. */
+const SHOE = 'M3 15.6v-3c0-.5.4-.8.9-.6l3.3.8 2.6-2.9c.4-.5 1.2-.4 1.5.2l.7 1.5 6 1.7c1.2.3 2 1.1 2 2.4v.7c0 .4-.3.7-.7.7H4c-.6 0-1-.5-1-1z';
 
 export default function ActivityDetailScreen() {
   const router = useRouter();
@@ -237,8 +242,10 @@ function Body({
    *
    * The amendment that stored the route (0162) closed its changelog with *"the map surface remains
    * undesigned and unbuilt"* — every outdoor run since has written its shape and nothing ever selected
-   * it again. This is the first reader. Own sessions only: `detail.route` is deliberately null on a
-   * shared view until D-RS-3's per-post consent is plumbed (see `activity-live.ts`).
+   * it again. This is the first reader. It draws whatever `detail.route` holds and asks no questions
+   * about whose session it is: on a shared view the answer already went through D-RS-3's per-post
+   * consent inside `shared_workout_detail` (migration 0183), so a route that arrives here is one its
+   * author chose to send.
    *
    * Old rows are 400 m short of their distance forever (saved under the rescinded trim); RouteSheet's
    * caption says "as it was saved" for exactly that reason.
@@ -272,7 +279,7 @@ function Body({
             <EquipIcon equip={detail.exercises[0]?.equip ?? undefined} size={24} />
           ) : (
             <Glyph
-              d="M3 15.6v-3c0-.5.4-.8.9-.6l3.3.8 2.6-2.9c.4-.5 1.2-.4 1.5.2l.7 1.5 6 1.7c1.2.3 2 1.1 2 2.4v.7c0 .4-.3.7-.7.7H4c-.6 0-1-.5-1-1z"
+              d={SHOE}
               size={24}
               color={flColor.bronze400}
               width={1.7}
@@ -327,6 +334,40 @@ function Body({
         </View>
       ) : null}
 
+      {/*
+        ══ THE ROUTE, WHATEVER ELSE WAS IN THE SESSION ══
+
+        This used to sit inside the non-strength branch below, and that is the whole bug. A session is
+        filed as its cardio type ONLY when it is entirely that one kind of cardio — `sessionActivityType`
+        says so on purpose: *"a leg day with a cool-down walk is a strength workout"*. So a lifting
+        session that also carried a tracked run saved as `type: 'strength'`, took the exercise branch,
+        and the route it had stored was drawn by nothing. The read never had this problem — the polyline
+        is found by scanning every set in the session for one, regardless of type (`activity-live.ts`).
+        The only thing gating the map was where this block sat.
+
+        Above the body in both cases: on a run it is what the session IS, and on a mixed day it is the
+        part you came back to look at — the sets are already listed by name.
+      */}
+      {routePts.length > 1 ? (
+        <>
+          <Text style={styles.sectionLabel}>Route</Text>
+          <Pressable
+            onPress={() => setMapOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Open the route fullscreen"
+            style={styles.routeBand}
+          >
+            <RouteMap points={routePts} height={180} testID="activity-route-map" />
+          </Pressable>
+          <RouteSheet
+            visible={mapOpen}
+            onClose={() => setMapOpen(false)}
+            points={routePts}
+            summary={summaryLine(detail)}
+          />
+        </>
+      ) : null}
+
       {/* body — strength breakdown, or stat tiles */}
       {isStrength ? (
         sections.length ? (
@@ -335,44 +376,73 @@ function Body({
             {sections.map((sec) => (
               <View key={sec.key} style={styles.section}>
                 <Text style={styles.sectionSub}>{sec.label}</Text>
-                {sec.exercises.map((ex, i) => (
-                  <View key={`${ex.name}-${i}`} style={styles.exCard}>
-                    <Pressable
-                      onPress={() => onOpenExercise(ex.catalogKey ?? ex.name)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`${ex.name} — exercise detail`}
-                      style={styles.exHead}
-                    >
-                      <View style={styles.exIcon}>
-                        <ExercisePoster exerciseId={ex.catalogKey} radius={18} fallback={<EquipIcon equip={ex.equip ?? undefined} size={19} />} />
-                      </View>
-                      <Text style={styles.exName} numberOfLines={1}>
-                        {ex.name}
-                      </Text>
-                      <Glyph d="M9 6l6 6-6 6" size={16} color={flColor.gray600} width={2} />
-                    </Pressable>
-                    {ex.sets.length ? (
-                      <View style={styles.setList}>
-                        {ex.sets.map((s) => {
-                          const line = fmt(setLine(s));
-                          return (
-                            <View key={s.setIndex} style={styles.setRow}>
-                              <Text style={styles.setIndex}>{s.setIndex + 1}</Text>
-                              <Text style={styles.setValue}>{line || '—'}</Text>
-                            </View>
-                          );
-                        })}
-                      </View>
-                    ) : (
-                      <Text style={styles.noSets}>No sets logged</Text>
-                    )}
-                    {ex.note ? (
-                      <View style={styles.exNote}>
-                        <Text style={styles.exNoteText}>{ex.note}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                ))}
+                {sec.exercises.map((ex, i) => {
+                  /*
+                   * ⚠ A CARDIO BOUT IS NOT A CATALOGUE ENTRY, AND THIS ROW USED TO INSIST IT WAS.
+                   *
+                   * A conditioning block carries a `cardio:<activity>` marker as its `catalogKey`
+                   * (`cardioKey`) — deliberately NOT an `exercises.json` id, because a run is not three
+                   * sets of eight. Handing that straight to Exercise Detail produced the PO's screenshot
+                   * (2026-08-31): *"Exercise not found — 'cardio:run' isn't in the catalog."* Tapping the
+                   * run inside a lifting session led to a dead end that named its own internal key.
+                   *
+                   * So the row now opens what the tap was reaching for: the map. When there is no stored
+                   * route — an indoor bout, or one the GPS never got two fixes for — there is nothing
+                   * behind the row, and it stops being a control rather than becoming one that fails.
+                   */
+                  const cardio = isCardioKey(ex.catalogKey);
+                  const opensMap = cardio && routePts.length > 1;
+                  const tappable = !cardio || opensMap;
+                  return (
+                    <View key={`${ex.name}-${i}`} style={styles.exCard}>
+                      <Pressable
+                        onPress={opensMap ? () => setMapOpen(true) : cardio ? undefined : () => onOpenExercise(ex.catalogKey ?? ex.name)}
+                        disabled={!tappable}
+                        accessibilityRole={tappable ? 'button' : undefined}
+                        accessibilityLabel={
+                          opensMap ? `${ex.name} — open the route map` : tappable ? `${ex.name} — exercise detail` : ex.name
+                        }
+                        style={styles.exHead}
+                      >
+                        <View style={styles.exIcon}>
+                          {/* The same shoe the hero wears, for the same reason: `equipmentForCatalogKey`
+                              has no answer for a cardio key, so the iron fallback put a dumbbell on a run. */}
+                          {cardio ? (
+                            <Glyph d={SHOE} size={19} color={flColor.bronze400} width={1.7} />
+                          ) : (
+                            <ExercisePoster exerciseId={ex.catalogKey} radius={18} fallback={<EquipIcon equip={ex.equip ?? undefined} size={19} />} />
+                          )}
+                        </View>
+                        <Text style={styles.exName} numberOfLines={1}>
+                          {ex.name}
+                        </Text>
+                        {/* No chevron on a row that goes nowhere — the arrow is the promise this row
+                            was breaking. */}
+                        {tappable ? <Glyph d="M9 6l6 6-6 6" size={16} color={flColor.gray600} width={2} /> : null}
+                      </Pressable>
+                      {ex.sets.length ? (
+                        <View style={styles.setList}>
+                          {ex.sets.map((s) => {
+                            const line = fmt(setLine(s));
+                            return (
+                              <View key={s.setIndex} style={styles.setRow}>
+                                <Text style={styles.setIndex}>{s.setIndex + 1}</Text>
+                                <Text style={styles.setValue}>{line || '—'}</Text>
+                              </View>
+                            );
+                          })}
+                        </View>
+                      ) : (
+                        <Text style={styles.noSets}>No sets logged</Text>
+                      )}
+                      {ex.note ? (
+                        <View style={styles.exNote}>
+                          <Text style={styles.exNoteText}>{ex.note}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })}
               </View>
             ))}
           </>
@@ -381,25 +451,6 @@ function Body({
         )
       ) : (
         <>
-          {routePts.length > 1 ? (
-            <>
-              <Text style={styles.sectionLabel}>Route</Text>
-              <Pressable
-                onPress={() => setMapOpen(true)}
-                accessibilityRole="button"
-                accessibilityLabel="Open the route fullscreen"
-                style={styles.routeBand}
-              >
-                <RouteMap points={routePts} height={180} testID="activity-route-map" />
-              </Pressable>
-              <RouteSheet
-                visible={mapOpen}
-                onClose={() => setMapOpen(false)}
-                points={routePts}
-                summary={summaryLine(detail)}
-              />
-            </>
-          ) : null}
           <Text style={styles.sectionLabel}>Session</Text>
           <View style={styles.tiles}>
             {tiles.map((t) => (
