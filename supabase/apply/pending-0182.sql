@@ -63,6 +63,70 @@
 -- §1 — THE TABLES, GUARDS AND RPCs  (verbatim from 0182_trainer_core.sql)
 -- ══════════════════════════════════════════════════════════════════════════
 
+-- Forge Legacy — 0182: a coach is somebody an athlete let in
+--
+-- ══ WHAT THIS OPENS ══
+--
+-- Phase B of `Docs/Forge-Coach-Architecture-v1.0.md`. Forge Coach is a CRM for a HUMAN personal
+-- trainer with paying clients. **It is not Coach Holt** — Holt is the in-app AI, and it already owns
+-- `/coach`, `athlete_entitlement.coach_ai`, migrations 0138/0143/0144 and `src/domain/coach/**`.
+-- FC-D2: every identifier for the human-coaching product is `trainer_*`. Cheap now, unfixable later.
+--
+-- This migration builds ONLY the relationship: who holds a coach seat, and which athletes have let
+-- one in. It reads nobody's training data. The coach-side data RPCs come later and every one of them
+-- calls `trainer_client_guard()` below as its first statement.
+--
+-- ══ CONSENT, NOT PRIVILEGE ══
+--
+-- FC-D4. `Squads-Hub-Wireframe-Spec-S1.md` §10.3 says the Performance Firewall is "not overridden for
+-- premium users, coaches, or squad admins", and Squad Amendment 001 says "Consent, not privilege, is
+-- the gate." A coach reading one named athlete's lifts, weight and photos is the deepest Firewall
+-- breach in the product, so it is modelled as a clearance the ATHLETE grants and can withdraw — never
+-- as a capability the coach holds. That way §10.3 stands unamended.
+--
+-- Concretely: the trainer INVITES, the athlete ACCEPTS, and either may end it. A `trainer_clients` row
+-- with `status = 'active'` is the only thing that will ever unlock a coach read.
+--
+-- ══ WHY THE TRAINER REGISTRY HAS NO POLICIES ══
+--
+-- Same argument as `app_admins` in 0129, for the same reason. `0001_spine.sql` makes `profiles`
+-- world-readable and 0114's header records that any holder of the anon key can page the whole of it.
+-- The list of who holds a privileged seat must never become joinable to that. RLS enabled with zero
+-- policies is deny-by-default for anon and authenticated alike.
+--
+-- A client never needs to read `trainers`. An athlete learns who coaches her from her own
+-- `trainer_clients` row joined to the world-readable `profiles` — which is exactly as much as she
+-- should know, and nothing about anybody else's coach.
+--
+-- ══ WHY `trainer_client_guard()` TAKES AN ARGUMENT AND `is_trainer()` DOES NOT ══
+--
+-- 0129's header is emphatic that `is_app_admin(uuid)` must not exist, because 0120 proved a definer
+-- function taking an arbitrary uuid will hand out somebody else's rows. `is_trainer()` follows that
+-- rule exactly: zero-argument, answers only about the caller.
+--
+-- `trainer_client_guard(uuid)` takes an athlete id and is still safe, because it is the OPPOSITE
+-- shape: it returns no data at all. It raises unless the CALLER is that athlete's active coach. The
+-- only fact it can leak is whether you coach somebody — which you already know. It is the argument
+-- that makes it useful: every future coach-data RPC is `select trainer_client_guard(p_athlete);` on
+-- line one, so "did a function forget the check" stays a one-line grep.
+--
+-- ══ ONE COACH AT A TIME ══
+--
+-- FC-D6, forced by `Program-Architecture-Amendment-001`: "Program Strip shows exactly one Active
+-- program… no pluralizing of active programs — only one is ever shown." Two coaches assigning blocks
+-- either breaks that rule or leaves one coach writing into a program the client cannot run.
+-- Enforced by a PARTIAL unique index on `athlete_id where status = 'active'` — so she may hold several
+-- open invitations and pick one, and a past relationship never blocks a future one.
+--
+-- ══ A LAPSED SEAT SUSPENDS, IT DOES NOT DESTROY ══
+--
+-- FC-D15. `trainers.status = 'suspended'` fails `is_trainer()` and therefore every coach read, while
+-- leaving `trainer_clients` completely untouched. Non-payment must never look like a client revoking.
+-- FC-D18 keeps billing out of the product for v1, so seats are granted and suspended by hand in the
+-- SQL editor — see the bootstrap block at the foot of this file.
+--
+-- Idempotent. Depends on 0001 (profiles). RUN AFTER 0181.
+
 -- ── The seat register ────────────────────────────────────────────────────────
 create table if not exists public.trainers (
   user_id    uuid primary key references public.profiles (id) on delete cascade,
