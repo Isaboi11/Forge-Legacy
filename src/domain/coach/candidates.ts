@@ -32,6 +32,7 @@ import type { Experience, Limitation } from './constraints.ts';
 import { isCoherent } from './rulebook/coherence.ts';
 import { preferenceRank } from './rulebook/preferences.ts';
 import { learnedRank, type LearnedPreferences } from './learned-preference.ts';
+import { leastRecent, type RecentWork } from './recent-work.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE POOL
@@ -153,6 +154,16 @@ export interface CandidateContext {
    * existed, which is the behaviour every athlete who has never swapped anything should get.
    */
   learned?: LearnedPreferences;
+  /**
+   * What this athlete has trained in the last few sessions — the variety signal (`recent-work.ts`).
+   *
+   * ⚠ PASSED IN, NEVER FETCHED, exactly like `learned` above and for the same reason.
+   *
+   * ⚠ AND IT ONLY REORDERS A SHORTLIST THE RULEBOOK ALREADY APPROVED. It can never remove an exercise,
+   * shrink a pattern, or make a slot unfillable — see `fillSlot`. Absent means "no history", which
+   * reproduces the ranking exactly as it behaved before variety existed.
+   */
+  recent?: RecentWork;
 }
 
 const DIFFICULTY_ORDER = { Beginner: 0, Intermediate: 1, Advanced: 2 } as const;
@@ -306,11 +317,81 @@ export function fillSlot(
   const passes: boolean[] = canStretch(ctx.experience) ? [false, true] : [false];
   for (let i = 0; i < ladder.length; i++) {
     for (const stretch of passes) {
-      const found = candidatesFor(ladder[i], pool, ctx, stretch)[0];
+      const found = pickWithVariety(candidatesFor(ladder[i], pool, ctx, stretch), ladder[i], ctx);
       if (found) return { exercise: found, pattern: ladder[i], relaxed: i > 0, stretched: stretch };
     }
   }
   return null;
+}
+
+/**
+ * How many of the ranked candidates count as "the shortlist a coach would accept for this slot".
+ *
+ * Three. `PATTERN_PREFERENCES` lists five or six per pattern running best-first ACROSS equipment tiers,
+ * and `candidatesFor` has already dropped everything the athlete cannot do — so the survivors are that
+ * pattern's named movements in the rulebook's own order, and the top three of those are alternatives a
+ * coach would actually write. Reaching further down starts trading a barbell bench for a floor press to
+ * avoid a repeat, which is variety bought at the cost of the session.
+ */
+const SHORTLIST = 3;
+
+/**
+ * The one place variety enters the engine: take the ranking's shortlist, prefer what was trained least
+ * recently, and change nothing else.
+ *
+ * ══ ⚠ ONLY MOVEMENTS THE RULEBOOK NAMES MAY ROTATE ══
+ *
+ * This is the whole safety of the feature. `preferenceRank` returns a finite rank for an exercise
+ * `PATTERN_PREFERENCES` lists and `Infinity` for everything else; `learnedRank` returns a negative one
+ * for something this athlete has repeatedly chosen. Both are judgements about what belongs in the slot.
+ * Everything else sorts behind them on difficulty, then muscle breadth, then ALPHABETICALLY — and
+ * rotating into that tail is exactly the failure `rulebook/preferences.ts` was written to end: a strength
+ * block opening with an *Alternating Dumbbell Bench Press* and hinging on a *Band Good Morning*, because
+ * those words sort early. Variety must not reintroduce it. So the shortlist stops at the first unnamed
+ * candidate, and a pattern with only one named answer does not rotate at all — it returns that answer,
+ * every time, exactly as it did before.
+ *
+ * ══ IT CAN ONLY REORDER ══
+ *
+ * Every return value here is an element of `ranked`, which `candidatesFor` already filtered for
+ * equipment, limitations, coherence and difficulty. Nothing is added, nothing is removed, and a slot that
+ * could be filled before can still be filled. With no history — a new athlete, or a read that failed —
+ * every staleness is `Infinity`, ties go to the ranking, and `ranked[0]` comes back untouched.
+ */
+export function promoteLeastRecent(
+  pattern: string,
+  ranked: readonly CatalogExercise[],
+  ctx: CandidateContext,
+): readonly CatalogExercise[] {
+  if (ranked.length < 2 || !ctx.recent) return ranked;
+
+  const named: CatalogExercise[] = [];
+  for (const ex of ranked) {
+    const isLearned = ctx.learned ? learnedRank(ctx.learned, pattern, ex.key) != null : false;
+    // The named ones are always the LEADING run: learned ranks are negative and listed ranks are finite,
+    // so both sort ahead of every `Infinity`. Breaking on the first unnamed candidate is therefore the
+    // same set as filtering, and says out loud that the tail is off limits.
+    if (!isLearned && preferenceRank(pattern, ex.key) === Infinity) break;
+    named.push(ex);
+    if (named.length === SHORTLIST) break;
+  }
+
+  // One named answer (or none) is not a choice. Leave the ranking exactly as it is.
+  if (named.length < 2) return ranked;
+  const pick = leastRecent(named, (ex) => ex.key, ctx.recent);
+  if (!pick || pick === ranked[0]) return ranked;
+  /* The rest keep their order. Only the head moves, so everything downstream that walks deeper into the
+     list — `selectForFocus` filling a thin day — still sees the rulebook's sequence behind it. */
+  return [pick, ...ranked.filter((ex) => ex !== pick)];
+}
+
+/** `promoteLeastRecent`, for the caller that only wants the winner. */
+function pickWithVariety(
+  ranked: readonly CatalogExercise[],
+  pattern: string,
+  ctx: CandidateContext,
+): CatalogExercise | null {
+  return promoteLeastRecent(pattern, ranked, ctx)[0] ?? null;
 }
 
 /**
@@ -353,6 +434,8 @@ export function contextFrom(opts: {
   used?: ReadonlySet<string>;
   /** What this athlete keeps choosing instead — resolved by the CALLER, never fetched here. */
   learned?: LearnedPreferences;
+  /** What they trained in the last few sessions — resolved by the CALLER. See `recent-work.ts`. */
+  recent?: RecentWork;
 }): CandidateContext {
   const excludePatterns = new Set<string>();
   const excludeKeys = new Set<string>(opts.excludeExercises ?? []);
@@ -369,6 +452,7 @@ export function contextFrom(opts: {
   for (const k of excludeKeys) keepKeys.delete(k);
   return {
     learned: opts.learned,
+    recent: opts.recent,
     owned: opts.owned,
     canDo: opts.canDo,
     experience: opts.experience,

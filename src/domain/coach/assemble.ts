@@ -398,6 +398,7 @@ export function assemble(
        a program built with it is the same shape as one built without — just filled with the movements
        they actually do. Absent for anybody who has never swapped, which is most people. */
     learned: c.learned,
+    recent: c.recent,
   });
 
   /*

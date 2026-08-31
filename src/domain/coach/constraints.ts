@@ -24,6 +24,7 @@
 
 /** Goals served by a strength/conditioning skeleton — no race, no mileage, no date. */
 import type { LearnedPreferences } from './learned-preference.ts';
+import type { RecentWork } from './recent-work.ts';
 
 export type StrengthGoal = 'strength' | 'muscle' | 'weight_loss' | 'conditioning' | 'mobility' | 'health';
 
@@ -293,6 +294,11 @@ export interface CoachConstraints {
    * Absent means "no opinion", and the engine then behaves exactly as it did before this existed.
    */
   learned?: LearnedPreferences;
+  /**
+   * What this athlete trained in the last few sessions, so two identical wizard answers stop producing
+   * two identical programs (`recent-work.ts`). Resolved by the caller; absent means "no history".
+   */
+  recent?: RecentWork;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────

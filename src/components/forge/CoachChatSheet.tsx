@@ -86,6 +86,7 @@ import { rationaleFor } from '@/domain/coach/rulebook/rationale';
 import { buildDayWorkout, whyThin } from '@/domain/coach/day';
 import { itemByKey, PICKER_DB } from '@/domain/exercise-picker/data';
 import { fetchLearnedPreferences } from '@/data/learned-preference-live';
+import { fetchRecentWork } from '@/data/recent-work-live';
 import { appliedSentence } from '@/domain/coach/learned-preference';
 import { canDoExercise } from '@/domain/home-gym/equipment';
 import { fetchActiveProgram } from '@/data/programs-live';
@@ -635,7 +636,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
         const c = completeFor(merged, mode_);
         /* Resolved at the boundary and handed down — see the note on the same call in `coach.tsx`. The
            chat and the wizard must build the same program from the same answers, so both paths get it. */
-        const learned = await fetchLearnedPreferences();
+        const [learned, recent] = await Promise.all([fetchLearnedPreferences(), fetchRecentWork()]);
 
         if (mode_ === 'day') {
           const dayReq = {
@@ -651,6 +652,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
             ownedEquipment: c.ownedEquipment,
             limitations: c.limitations,
             learned,
+            recent,
           };
           const r = buildDayWorkout(dayReq, PICKER_DB, canDoExercise);
           setBusy(null);
@@ -688,7 +690,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
           return;
         }
 
-        const res = assemble({ ...c, learned }, PICKER_DB, canDoExercise);
+        const res = assemble({ ...c, learned, recent }, PICKER_DB, canDoExercise);
         setBusy(null);
 
         if (!res.ok) {

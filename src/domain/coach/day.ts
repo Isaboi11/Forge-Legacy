@@ -53,8 +53,9 @@ import {
 import { skeletonFor } from './rulebook/skeletons.ts';
 import { preferenceRank } from './rulebook/preferences.ts';
 import type { LearnedPreferences } from './learned-preference.ts';
+import type { RecentWork } from './recent-work.ts';
 import { bandFor, type PasCategory } from './rulebook/volume.ts';
-import { fillSlot } from './candidates.ts';
+import { fillSlot, promoteLeastRecent } from './candidates.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // WHAT ARE YOU TRAINING?
@@ -180,6 +181,8 @@ export interface DayRequest {
   category?: PasCategory;
   /** What this athlete keeps choosing — resolved by the caller. See `learned-preference.ts`. */
   learned?: LearnedPreferences;
+  /** What they trained in the last few sessions — resolved by the caller. See `recent-work.ts`. */
+  recent?: RecentWork;
 }
 
 export interface DayResult {
@@ -356,6 +359,7 @@ export function buildDayWorkout(
     // Same map the program assembler gets — a single day and a twelve-week block should not disagree
     // about which row of a movement pattern this athlete actually does.
     learned: req.learned,
+    recent: req.recent,
   });
 
   const missing: string[] = [];
@@ -480,6 +484,23 @@ export function buildDayWorkout(
      * work budgeted around it. A whole day of it is different — `parts` is empty, there is nothing to
      * reserve against, and the rotation is already all cardio.
      */
+    /*
+     * ══ ⭐ VARIETY, AND IT HAPPENS HERE RATHER THAN IN THE SORT ABOVE ══
+     *
+     * PO, 2026-08-31: *"It has made me the same workout over and over again if I choose the same
+     * options… my last few back and bicep workouts."* This is the path that answered them — a body-parts
+     * ask does NOT go through `fillSlot`, it collects and sorts its own candidates right here, so the
+     * rotation has to be applied to both fillers or the reported case stays broken.
+     *
+     * ⚠ AFTER `ordered`, NEVER BEFORE. Which PATTERN leads is decided by `bestRank`, which reads
+     * `list[0].key` — a pattern earns the lead by holding the canonical movement for it (Horizontal Push
+     * holds the bench press at rank 0, Carry holds nothing, so Carry goes last). Rotating before that is
+     * computed would let a day lose its lead pattern because its best exercise was trained on Tuesday,
+     * which reorders the whole session to avoid one repeat. The pattern order is coaching; only which
+     * exercise expresses each one may move.
+     */
+    for (const [pattern, list] of ordered) ordered.set(pattern, [...promoteLeastRecent(pattern, list, ctx)]);
+
     const wantsFinisher = req.focus.cardio === true && req.focus.parts.length > 0;
     const finisher = wantsFinisher ? (ordered.get(CARDIO_PATTERN) ?? [])[0] : undefined;
     if (wantsFinisher) ordered.delete(CARDIO_PATTERN);

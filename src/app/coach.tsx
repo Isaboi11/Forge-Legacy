@@ -42,6 +42,7 @@ import {
   type SplitStyle,
 } from '@/domain/coach/rulebook/skeletons';
 import { fetchLearnedPreferences } from '@/data/learned-preference-live';
+import { fetchRecentWork } from '@/data/recent-work-live';
 import { appliedSentence, type LearnedPreferences } from '@/domain/coach/learned-preference';
 import { scheduleSlots } from '@/domain/program/progress-core';
 import type { ProgramStructure } from '@/data/programs-live';
@@ -322,7 +323,11 @@ export default function CoachScreen() {
          plain map at the boundary, and `assemble()` stays a pure function of its arguments. Resolves to
          `{}` for anybody who has never swapped, which is most people, and `{}` builds what it built
          before any of this existed. */
-      const learned = await fetchLearnedPreferences();
+      /* And what they trained in the last three sessions, so identical answers stop producing an
+         identical program (PO, 2026-08-31). Same contract as `learned`: resolved here, passed down,
+         and it degrades to "no history", which builds exactly what it built before. In parallel —
+         neither read depends on the other and a program build should not wait twice. */
+      const [learned, recent] = await Promise.all([fetchLearnedPreferences(), fetchRecentWork()]);
       if (mode === 'program') {
         const res = assemble(
           {
@@ -345,6 +350,7 @@ export default function CoachScreen() {
             recentRaceMi: resultMi,
             recentRaceSec: parseTime(resultTime),
             learned,
+            recent,
           },
           PICKER_DB,
           canDoExercise,
@@ -395,6 +401,7 @@ export default function CoachScreen() {
             ownedEquipment: owned,
             limitations,
             learned,
+            recent,
           },
           PICKER_DB,
           canDoExercise,
