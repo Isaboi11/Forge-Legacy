@@ -1,6 +1,7 @@
 # Forge Coach — Architecture v1.0
 
-**Status:** SCOPE DECISION MADE — 2026-08-31. Build not started.
+**Status:** SCOPE DECISION MADE — 2026-08-31. **FC-D1 – FC-D20 decided; FC-D21 – FC-D22 open and non-blocking.**
+Build not started. Nothing blocks Phase B.
 **Supersedes nothing.** Closes the PRD gate on "Coach / Trainer Accounts".
 **Governs:** the coach-facing CRM (a separate web app) and the coached-client level inside the Expo app.
 **Companion:** the integration assessment approved 2026-08-15 (`~/.claude/plans/i-want-to-make-greedy-sunrise.md`),
@@ -20,7 +21,8 @@ different user. The codebase cannot express that distinction today, because `/co
 
 `Forge-Legacy-Master-PRD.md` lists Coach / Trainer Accounts under *Future Roadmap — Not Scheduled*, gated by
 *"None should be designed or built without a separate, documented scope decision."* **This document is that
-decision.** It closes Master Status Decision Queue row 23 in part; §7 lists what remains open.
+decision.** It closes Master Status Decision Queue row 23; §7 lists the two non-blocking questions that
+remain.
 
 ### 1.1 The one-line shape of the problem
 
@@ -123,10 +125,54 @@ client exhaust a lifetime cap of 3 within three months, using slots she did not 
 in the coach's write path.
 
 **FC-D12 — MA3 requires an amendment.** FC-D9, FC-D10 and FC-D11 each modify a locked monetization decision
-(MA3-D8 photos, MA3-D10 received programs, and the cap model generally). They are recorded here but are not
-effective until a Monetization Architecture amendment carries them. Per **MA3-D16**, no cap value may exist as
-a hardcoded constant in `src/` — the coached level is a row in `entitlement_config` plus a Postgres gate, and
-that is a convenience rather than an obstacle.
+(MA3-D8 photos, MA3-D10 received programs, and the cap model generally). **That amendment is now authored:**
+`Docs/Amendments/Monetization-Architecture-Amendment-005-Coached-Client-Level.md` (MA5-D1 – MA5-D7), which
+carries FC-D9/D10/D11 into effect and **closes FC-D12**. Its central finding sharpens FC-D10 from a
+preference into a requirement: the coached level **raises no cap and instead removes rows from the count**,
+because uncapping is evaluated live and would snap back to 75 the moment a seat lapsed, leaving the client
+over a limit she was invited to exceed. Per **MA3-D16** no cap value is a constant in `src/`; MA5 in fact
+changes no number at all.
+
+### Program authoring
+
+> **FC-D19 and FC-D20 were taken on recommendation on 2026-08-31, not by explicit PO ruling.** Both choose
+> the option that *preserves* existing architecture rather than reversing it, which is why they were safe to
+> take. Either can be reversed in one line; nothing downstream has been built against them yet.
+
+**FC-D19 — Loading is percent-native. There is no absolute-weight field.** The coach prescribes a percentage
+and the client sees a weight. `load` is a documented refusal, not a gap — `programs-live.ts:118-133`,
+*"This is the one load field in the model, and it is deliberately NOT an absolute weight"* — and loading
+resolves as `percentOfMax` / `percentScheme` / `percentOf` against the athlete's `lift_maxes`. The design's
+headline override, *"Week 8 bench load drop to 195 with a pause note"*, is expressed as a percentage that
+renders as 195 lb for that client. This costs nothing, reverses no decision, and is arguably better
+coaching: a percentage travels correctly when the client's max moves, and an absolute number does not.
+
+Rejected: adding `loadLb?` to `ExercisePrescription` (reverses a deliberate architectural decision for
+display convenience) and an absolute-only coach layer (makes coach programs and app programs render loads
+differently, which is a permanent seam in the one screen both products share).
+
+⚠ **Verify before building on it:** `restSec` and `substitution` exist on the type but are **dead** —
+`adopt-core.ts` copies neither, `ProgramExercise` has neither, and `grep '\.substitution'` returns zero
+non-test readers. The design shows both prominently.
+
+**FC-D20 — Overrides are applied through `edit-ops.ts`, and stored separately as an intent log.**
+
+There is no override primitive in this codebase: every program edit is a full `structure` jsonb overwrite
+via `updateProgram()` (`programs-live.ts:383`), instances are pure copies, and non-propagation is explicit
+in `0115` — *"their copy is theirs from the moment they take it."* The design's key
+`'W<week>|<workoutCode>|<exerciseName>'` cannot address anything reliably: `code` is discarded at adoption
+and re-lettered by position (`adopt-core.ts:143`), `ProgramDay` has no id, and keying by exercise name
+breaks under the substitution feature the design itself wants.
+
+So the coach's edits go through the path Holt already proves — ops (`swapExercise`, `setPrescription`,
+`setCardioTarget`, `rebuildDay`) mutating in memory, `commit()` returning a whole new `ProgramStructure`,
+one `updateProgram` — **addressed by `(weekIndex, dayIndex, rowIndex)` + `catalogKey`, never by name or
+letter.** The coach's overrides are additionally stored as an audit/intent log, which the UI needs
+regardless for its "was 200 lb" trace and its "Save 3 changes" counter.
+
+⚠ Two consequences to plan for: the first materialising edit flips `vary: false → true` and multiplies the
+stored structure by the week count; and the `dayIndex` coordinate divergence in §6.1 must be fixed first,
+because this decision makes `dayIndex` load-bearing for a second product.
 
 ### Coach Holt in the presence of a human coach
 
@@ -238,10 +284,12 @@ Both are worth fixing whether or not Forge Coach ships.
 
 ## Section 7 — Still open
 
+**FC-D19 (load model) and FC-D20 (override model) were closed on 2026-08-31** and now sit in §2 under
+*Program authoring*, taken on recommendation rather than by explicit PO ruling — see the note there. Neither
+of the two below blocks a build.
+
 | ID | Question | Notes |
 |---|---|---|
-| **FC-D19** | **The load model.** | ⛔ Blocks the override system. `load` is a documented refusal, not a gap — `programs-live.ts:118-133`, *"deliberately NOT an absolute weight"*; loading is `percentOfMax` only, while the design's override headline is a bench drop to 195 lb. **(a) percent-native — recommended**, costs nothing and is arguably better coaching; **(b)** add `loadLb?` to `ExercisePrescription`, which reverses a deliberate decision; **(c)** absolute-only in the coach layer, which makes coach and app programs render loads differently. ⚠ Verify first that `restSec` and `substitution` are dead — they exist on the type but `adopt-core.ts` copies neither. |
-| **FC-D20** | **The override model.** | ⛔ Every program edit today is a full `structure` jsonb overwrite; there is no patch, diff or override primitive, and non-propagation is explicit in `0115` (*"their copy is theirs from the moment they take it"*). The design's `W<week>\|<code>\|<exercise>` key addresses nothing — `code` is discarded at adoption and re-lettered by position, there is no day or exercise id, and keying by name breaks under substitution. **Recommendation: apply through `edit-ops.ts` the way Holt already does**, storing the coach's overrides as an audit/intent log (which "was 200 lb" and "Save 3 changes" need anyway), addressed by `(weekIndex, dayIndex, rowIndex)` + `catalogKey`. Note the first materialising edit flips `vary: false → true` and multiplies the stored structure by the week count. |
 | **FC-D21** | **Does the client see the coaching log's Followed / Partly / Not judgement?** | The coach's private note is explicitly private in the design. The adherence judgement is a rating of her, and the design does not say which side of the glass it sits on. |
 | **FC-D22** | **Is the client told when a reply was drafted by assist?** | Raised by FC-D13. |
 
@@ -266,4 +314,5 @@ Both are worth fixing whether or not Forge Coach ships.
 
 | Version | Date | Change |
 |---|---|---|
-| v1.0 | 2026-08-31 | Initial. Closes the PRD scope gate and Master Status Decision Queue row 23 in part. Records FC-D1–D18 decided; FC-D19–D22 open. The coached-client level decided in full: coach pays a per-seat fee (FC-D7), the level is not Premium (FC-D8), it opens photos + trainer-built programs + Compare and nothing else (FC-D9), coached content never counts against the free counter (FC-D10), one coach at a time (FC-D6), Holt changes audience (FC-D13), and revocation keeps the words while everything else goes dark (FC-D14). |
+| v1.1 | 2026-08-31 | Closed **FC-D19 (loading is percent-native)** and **FC-D20 (overrides apply through `edit-ops.ts`, addressed by `(weekIndex, dayIndex, rowIndex)` + `catalogKey`)**, both on recommendation rather than explicit PO ruling and both choosing the option that preserves existing architecture — flagged as such in §2 and reversible in one line. Closed **FC-D12**: `Monetization-Architecture-Amendment-005-Coached-Client-Level.md` is authored and carries FC-D9/D10/D11. **Nothing now blocks Phase B.** |
+| v1.0 | 2026-08-31 | Initial. Closes the PRD scope gate and Master Status Decision Queue row 23. Records FC-D1–D18 decided; FC-D19–D22 open. The coached-client level decided in full: coach pays a per-seat fee (FC-D7), the level is not Premium (FC-D8), it opens photos + trainer-built programs + Compare and nothing else (FC-D9), coached content never counts against the free counter (FC-D10), one coach at a time (FC-D6), Holt changes audience (FC-D13), and revocation keeps the words while everything else goes dark (FC-D14). |
