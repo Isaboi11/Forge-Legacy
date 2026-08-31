@@ -7,9 +7,21 @@ import type { PhotoTransform } from '@/components/forge/BeforeAfterSlider';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 
 /**
- * Align editor — pan + zoom one photo at a time (the other shows as a dim onion-skin reference + center
- * guides) so the body lines up across a before/after. Transforms are fractions of the frame (`tx`/`ty`) + a
- * `scale`, so they render identically at any size. Drag via the View responder props (no ref-in-render).
+ * Align editor — pan + zoom one photo at a time against the other, held still underneath as an onion-skin
+ * reference, so the body lines up across a before/after. Transforms are fractions of the frame (`tx`/`ty`)
+ * + a `scale`, so they render identically at any size. Drag via the View responder props (no
+ * ref-in-render).
+ *
+ * ══ ⚠ WHICH LAYER IS TRANSLUCENT — THIS WAS BACKWARDS, AND IT MADE THE SCREEN USELESS ══
+ *
+ * PO, 2026-08-31: *"When doing a line up for comparisons it was hard to see the other photo to line it up
+ * with."* It was not hard, it was impossible. The reference photo was drawn at `opacity: 0.4` UNDERNEATH
+ * the photo being moved, which was drawn at full opacity — and both are `contentFit="cover"` filling the
+ * same frame, so the opaque one covered the faint one completely. There was never a second body on screen
+ * to line anything up against; the athlete was aligning one photo to a pair of crosshairs.
+ *
+ * Onion-skinning works the other way round: the layer you are MOVING is the translucent one, and the
+ * reference stays solid beneath it so you can see both bodies at once and slide one onto the other.
  */
 
 const IDENTITY: PhotoTransform = { tx: 0, ty: 0, scale: 1 };
@@ -78,7 +90,9 @@ export function AlignEditor({
           </Pressable>
         </View>
 
-        <Text style={styles.hint}>Drag to move the {sel} photo, zoom below, and line the body up with the guide.</Text>
+        <Text style={styles.hint}>
+          Drag the {sel} photo — it&apos;s the see-through one — until the body sits on top of the other.
+        </Text>
 
         <View style={styles.frameWrap}>
           <View
@@ -90,17 +104,23 @@ export function AlignEditor({
             onResponderRelease={() => setLast(null)}
             style={styles.frame}
           >
-            {sel === 'after' ? (
-              <>
-                <Image source={{ uri: before }} style={[styles.img, styles.dim, styleFor(bt, w, h)]} contentFit="cover" pointerEvents="none" />
-                <Image source={{ uri: after }} style={[styles.img, styleFor(at, w, h)]} contentFit="cover" pointerEvents="none" />
-              </>
-            ) : (
-              <>
-                <Image source={{ uri: after }} style={[styles.img, styles.dim, styleFor(at, w, h)]} contentFit="cover" pointerEvents="none" />
-                <Image source={{ uri: before }} style={[styles.img, styleFor(bt, w, h)]} contentFit="cover" pointerEvents="none" />
-              </>
-            )}
+            {/*
+              Reference FIRST and solid, the photo being dragged SECOND and translucent. Written as one
+              pair rather than two mirrored branches so the two selections cannot drift over which layer
+              is which — that drift is the bug this replaced.
+            */}
+            <Image
+              source={{ uri: sel === 'after' ? before : after }}
+              style={[styles.img, styleFor(sel === 'after' ? bt : at, w, h)]}
+              contentFit="cover"
+              pointerEvents="none"
+            />
+            <Image
+              source={{ uri: sel === 'after' ? after : before }}
+              style={[styles.img, styles.moving, styleFor(selT, w, h)]}
+              contentFit="cover"
+              pointerEvents="none"
+            />
             {/* center guides */}
             <View style={styles.guideV} pointerEvents="none" />
             <View style={styles.guideH} pointerEvents="none" />
@@ -177,7 +197,10 @@ const styles = StyleSheet.create({
   frameWrap: { alignItems: 'center' },
   frame: { width: '82%', maxWidth: 280, aspectRatio: 3 / 4, borderRadius: flRadius.lg, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, position: 'relative' },
   img: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
-  dim: { opacity: 0.4 },
+  /* ⚠ THE LAYER BEING MOVED, NOT THE REFERENCE. High enough to judge where the body actually is, low
+     enough to see the solid photo underneath it — at 0.4 the moving photo was a ghost you could not
+     position, and at 0.8 it hid the thing it is being lined up against. */
+  moving: { opacity: 0.55 },
   guideV: { position: 'absolute', top: 0, bottom: 0, left: '50%', width: 1, marginLeft: -0.5, backgroundColor: 'rgba(247,245,241,0.35)' },
   guideH: { position: 'absolute', left: 0, right: 0, top: '50%', height: 1, marginTop: -0.5, backgroundColor: 'rgba(247,245,241,0.35)' },
 

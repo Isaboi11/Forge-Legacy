@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+/* ⚠ ALIASED, BECAUSE `Animated` IS ALREADY TAKEN in this file by React Native's own legacy API — the
+   milestone card's pop-in uses it. Reanimated's `Animated.View` is a different component that
+   understands `useAnimatedStyle`; importing it under its usual name here would silently shadow the
+   other one and break that animation, or vice versa. `ProgressCompare` is the only Reanimated user. */
+import Reanimated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -424,43 +429,81 @@ function ReactionPicker({ current, onPick }: { current: Reaction | null; onPick:
   );
 }
 
-/** Before/after with a draggable divider — position tracked as a fraction of the laid-out width. */
+/**
+ * Before/after with a draggable divider — the friends feed's own comparison card.
+ *
+ * ══ ⚠ THE SECOND SLIDER, AND IT WAS THE SLOW ONE ══
+ *
+ * PO, 2026-08-31: *"The slider is not smooth."* `BeforeAfterSlider` had already been through this and was
+ * fixed; this one had not, because it is a separate implementation living on a different feed. It did
+ * everything the first one was taught not to: a `useState` percentage written from `onPanResponderMove`,
+ * so every touch event re-rendered both `Image`s; `width: '<pct>%'` and `left: '<pct>%'`, so every frame
+ * was a LAYOUT pass; and an unconditional responder claim, so a thumb starting on the photo could not
+ * scroll the feed.
+ *
+ * It now uses the same three techniques as `BeforeAfterSlider` — read that file's comment for the full
+ * reasoning:
+ *  · the position is a Reanimated shared value, so dragging renders nothing;
+ *  · the reveal is cut by TWO CANCELLING TRANSFORMS instead of an animated width, so there is no layout;
+ *  · the gesture is handed back when the movement is more vertical than horizontal, so the feed scrolls.
+ *
+ * Kept as its own component rather than swapped for `BeforeAfterSlider`: this card is full-bleed and
+ * graded to sit in the feed, and that component draws a bordered, rounded frame meant for a page.
+ */
 function ProgressCompare({ post }: { post: FeedPost }) {
   const before = post.media.find((m) => m.slot === 'before') ?? post.media[0];
   const after = post.media.find((m) => m.slot === 'after') ?? post.media[1];
-  const [pct, setPct] = useState(50);
   const [width, setWidth] = useState(0);
+  const x = useSharedValue(0);
+  const touched = useSharedValue(false);
+  /* A shared value for the handler, state for the render — see the same note in `BeforeAfterSlider`. The
+     responder is built once, so it must not close over a width that was 0 when it was built. */
+  const wv = useSharedValue(0);
 
-  const [responder] = useState(() =>
-    PanResponder.create({
+  const onLayout = (e: LayoutChangeEvent) => {
+    const next = e.nativeEvent.layout.width;
+    wv.value = next;
+    setWidth(next);
+    if (!touched.value) x.value = next / 2;
+  };
+  const [responder] = useState(() => {
+    const track = (e: GestureResponderEvent) => {
+      x.value = Math.max(0, Math.min(wv.value, e.nativeEvent.locationX));
+    };
+    return PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderMove: (e) => {
-        setWidth((w) => {
-          if (w > 0) {
-            const x = e.nativeEvent.locationX;
-            setPct(Math.max(2, Math.min(98, (x / w) * 100)));
-          }
-          return w;
-        });
+      onPanResponderGrant: (e) => {
+        touched.value = true;
+        track(e);
       },
-    }),
-  );
+      onPanResponderMove: track,
+      onPanResponderTerminationRequest: (_e, g) => Math.abs(g.dy) > Math.abs(g.dx),
+    });
+  });
+
+  const clipStyle = useAnimatedStyle(() => ({ transform: [{ translateX: x.value - width }] }));
+  const clipInnerStyle = useAnimatedStyle(() => ({ transform: [{ translateX: width - x.value }] }));
+  /* No `- 1` here: unlike `BeforeAfterSlider`, this divider carries `marginLeft: -1` in its own style and
+     is already centred. Subtracting again would drift it a pixel left of the touch. */
+  const dividerStyle = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
 
   if (!before || !after) return null;
 
   return (
-    <View style={styles.compare} onLayout={(e) => setWidth(e.nativeEvent.layout.width)} {...responder.panHandlers}>
+    <View style={styles.compare} onLayout={onLayout} {...responder.panHandlers}>
       <Image source={{ uri: after.url }} style={styles.compareImg} contentFit="cover" />
       {/* The before-image is clipped to the left of the divider, so dragging reveals the after. */}
-      <View style={[styles.compareClip, { width: `${pct}%` }]}>
-        <Image source={{ uri: before.url }} style={[styles.compareImg, width > 0 ? { width } : null]} contentFit="cover" />
-      </View>
-      <View style={[styles.divider, { left: `${pct}%` }]} />
+      <Reanimated.View style={[styles.compareClip, clipStyle]} pointerEvents="none">
+        <Reanimated.View style={[StyleSheet.absoluteFill, clipInnerStyle]}>
+          <Image source={{ uri: before.url }} style={[styles.compareImg, width > 0 ? { width } : null]} contentFit="cover" />
+        </Reanimated.View>
+      </Reanimated.View>
+      <Reanimated.View style={[styles.divider, dividerStyle]} pointerEvents="none" />
       {/* The same grading every other media band gets — the comparison is full-bleed now, so it has to
           be seated in the surface the same way or it reads as a photo pasted onto the feed. */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.compareGrade]} />
-      <View style={styles.compareBadge}>
+      <View style={styles.compareBadge} pointerEvents="none">
         <Text style={styles.compareBadgeText}>Progress</Text>
       </View>
     </View>
@@ -619,9 +662,16 @@ const styles = StyleSheet.create({
 
   compare: { position: 'relative', width: '100%', aspectRatio: 4 / 5, overflow: 'hidden', backgroundColor: flColor.charcoal800 },
   compareImg: { width: '100%', height: '100%' },
-  compareClip: { position: 'absolute', top: 0, bottom: 0, left: 0, overflow: 'hidden' },
+  /* ⚠ `right: 0` IS NEW AND LOAD-BEARING. This used to be sized by an inline `width: '<pct>%'` recomputed
+     every render; it is now full-width and cut by two cancelling transforms, so it must actually BE full
+     width for the maths to land the right edge on the divider. */
+  compareClip: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, overflow: 'hidden' },
   compareGrade: { boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 -70px 70px -50px rgba(6,7,9,0.85)' },
-  divider: { position: 'absolute', top: 0, bottom: 0, width: 2, marginLeft: -1, backgroundColor: flColor.bronze300 },
+  /* ⚠ `left: 0` IS NEW, for the same reason as in `BeforeAfterSlider`: a transform moves an element from
+     wherever layout already put it, so without an explicit origin the divider starts wherever it landed
+     and sits off the touch by that much. `marginLeft: -1` still does the centring — which is why the
+     animated style translates by `x` and not by `x - 1`. */
+  divider: { position: 'absolute', top: 0, bottom: 0, left: 0, width: 2, marginLeft: -1, backgroundColor: flColor.bronze300 },
   compareBadge: { position: 'absolute', top: 10, left: 10, paddingHorizontal: 8, paddingVertical: 3, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(0,0,0,0.55)' },
   compareBadgeText: { fontSize: 9, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze300 },
 

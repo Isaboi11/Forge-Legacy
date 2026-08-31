@@ -32,6 +32,7 @@ import {
   ACK_KINDS,
   ACK_LABEL,
   type AckKind,
+  asTransformationLayout,
   isProgressCard,
   leadFor,
   recapSummaryLine,
@@ -42,6 +43,7 @@ import {
   type SquadPostType,
 } from '@/data/squad-feed-live';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
+import { TransformationLayout } from '@/components/forge/TransformationLayout';
 import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { useQuery } from '@/lib/useQuery';
@@ -1256,8 +1258,24 @@ function FeedCard({
   }
 
   const card = isProgressCard(post.layout) ? post.layout : null;
-  const media = card ? [] : post.media.map((m) => ({ url: m.url, kind: m.kind }));
-  const hasMedia = !!card || media.length > 0;
+  /*
+   * ══ THE COMPARISON DRAWS ITSELF ON THE FEED, NOT ONLY INSIDE THE POST ══
+   *
+   * PO, 2026-08-31: *"I posted on the squad and the slider was not on the post unless I clicked into
+   * it."* True, and the cause was one missing branch. `squad_posts.layout` holds two different things —
+   * a Progress Photo card and a transformation composition — and this line only ever asked about the
+   * first. A transformation therefore fell through to the plain media band and rendered as flat photos,
+   * while `/squad-post/[id]` read the same column through `asTransformationLayout` and drew the real
+   * thing. One post, two answers, depending on how far you had tapped.
+   *
+   * `customMedia` already existed for exactly this — its own doc names "the before/after comparison with
+   * its draggable divider" — so nothing new is drawn here, the feed just finally asks.
+   */
+  const shaped = card ? null : asTransformationLayout(post.layout);
+  /* Both custom bands replace the standard one. Passing `post.media` as well would render the raw photos
+     underneath the composition — the same double-render the friends feed avoids for its own comparison. */
+  const media = card || shaped ? [] : post.media.map((m) => ({ url: m.url, kind: m.kind }));
+  const hasMedia = !!card || !!shaped || media.length > 0;
   /* §3.7: a progress post gets the photo treatment and a form check the video treatment — which they
      already do, because the media itself says which it is. What changes is that the stand-in sentence
      stops being the post: above an image it is attribution, and it is not rendered at all without one. */
@@ -1293,7 +1311,7 @@ function FeedCard({
          stand-ins it exists to suppress. */
       caption={post.type === 'discussion' || summary ? post.body : detail || null}
       media={media}
-      customMedia={card ? <FeedProgressCard card={card} /> : undefined}
+      customMedia={card ? <FeedProgressCard card={card} /> : shaped ? <TransformationLayout data={shaped} compact /> : undefined}
       attribution={attribution}
       /* Past the section's own 20px inset, so an image reaches the card edge like the handoff asks. */
       bleed={20}

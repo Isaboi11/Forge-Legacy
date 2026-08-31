@@ -18,8 +18,9 @@ import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
 import { cardioStats } from '@/domain/share/recap-stats';
 import { useUnits } from '@/lib/settings';
-import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
+import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, deleteSquadPost, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, renameSquadPost, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useKeyboardInset } from '@/lib/useKeyboardInset';
 import { useToast } from '@/hooks/useCeremony';
@@ -56,6 +57,20 @@ export default function SquadPostRoute() {
   /** Measured, so a progress card fills the column it is in rather than assuming the screen's width. */
   const [cardW, setCardW] = useState(0);
   const [reportOpen, setReportOpen] = useState(false);
+  /*
+   * ══ YOUR OWN POST: NAME IT, OR TAKE IT DOWN (PO, 2026-08-31) ══
+   *
+   * `nameEdit` is the three-state idiom Activity Detail's rename uses: `undefined` = untouched, so the
+   * fetched title stands; `null` = deliberately cleared. Without it a rename would not show until the
+   * screen refetched, and the athlete would have to trust that it worked.
+   */
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameDraft, setRenameDraft] = useState('');
+  const [nameEdit, setNameEdit] = useState<string | null | undefined>(undefined);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [working, setWorking] = useState(false);
+  const primeKeyboard = useKeyboardPrimer();
   /* Only to decide whether the Report control is offered — reporting your own post is operator noise. */
   const { session } = useAuth();
   const myId = session?.user?.id ?? null;
@@ -67,6 +82,53 @@ export default function SquadPostRoute() {
   );
 
   const post = data?.post;
+  /* Renaming only makes sense on a post whose art carries a name — a comparison or a capture. A recap is
+     titled by the session it snapshotted, and a discussion is its own words. */
+  const shaped = post ? asTransformationLayout(post.layout) : null;
+  const mine = !!post && !!myId && post.authorId === myId;
+  const shapedTitle = nameEdit !== undefined ? nameEdit : shaped?.title ?? null;
+
+  const openRename = () => {
+    /* ⚠ FIRST, AND SYNCHRONOUSLY — the field below lives inside a `<Modal>`, so it does not exist yet and
+       its `autoFocus` fires one commit from now, outside this gesture. On iOS Safari that focuses the
+       field and shows no keyboard. Same rule as every other sheet with an input; `KeyboardPrimer` and
+       `native-only-imports.test.mjs` both exist to keep it. */
+    primeKeyboard();
+    setMenuOpen(false);
+    setRenameDraft(shapedTitle ?? '');
+    setRenameOpen(true);
+  };
+
+  const commitRename = async () => {
+    if (working || !post) return;
+    setWorking(true);
+    try {
+      /* The STORED value, not the draft — 0184 trims and caps at 80, so echoing what was typed would
+         show a name the database did not keep. */
+      setNameEdit(await renameSquadPost(post.id, renameDraft));
+      setRenameOpen(false);
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const commitDelete = async () => {
+    if (working || !post) return;
+    setWorking(true);
+    try {
+      await deleteSquadPost(post.id);
+      setConfirmDelete(false);
+      showToast('Post deleted.');
+      /* Back, not a refetch: the row is gone and this screen is addressed by its id, so staying would
+         render the "post not found" state over something the athlete just chose to remove. */
+      router.back();
+    } catch (e) {
+      showToast(errorMessage(e));
+      setWorking(false);
+    }
+  };
 
   const onReact = () => {
     if (!post) return;
@@ -181,7 +243,19 @@ export default function SquadPostRoute() {
         title="Post"
         onBack={() => router.back()}
         actions={
-          post.authorId && post.authorId !== myId ? (
+          mine ? (
+            /* Your own post gets the manage menu where a stranger's gets the flag — one slot, and the two
+               are mutually exclusive: you cannot report yourself and you cannot delete somebody else's. */
+            <Pressable
+              onPress={() => setMenuOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Manage this post"
+              hitSlop={10}
+              style={styles.reportBtn}
+            >
+              <MoreGlyph />
+            </Pressable>
+          ) : post.authorId ? (
             <Pressable
               onPress={() => setReportOpen(true)}
               accessibilityRole="button"
@@ -262,6 +336,61 @@ export default function SquadPostRoute() {
         </Pressable>
       </BottomSheet>
 
+      {/* ══ MANAGE YOUR OWN POST ══ */}
+      <BottomSheet open={menuOpen} onClose={() => setMenuOpen(false)} title="This post">
+        {/* Naming is offered only where there is art to name. On a recap the title belongs to the
+            session, and renaming the POST would put a second, competing name on the same thing. */}
+        {shaped ? (
+          <Pressable onPress={openRename} accessibilityRole="button" style={styles.menuRow}>
+            <Text style={styles.menuText}>{shapedTitle ? 'Rename this post' : 'Name this post'}</Text>
+          </Pressable>
+        ) : null}
+        <Pressable
+          onPress={() => {
+            setMenuOpen(false);
+            setConfirmDelete(true);
+          }}
+          accessibilityRole="button"
+          style={styles.menuRow}
+        >
+          <Text style={[styles.menuText, styles.menuDanger]}>Delete this post</Text>
+        </Pressable>
+      </BottomSheet>
+
+      <BottomSheet open={renameOpen} onClose={() => setRenameOpen(false)} title={shapedTitle ? 'Rename this post' : 'Name this post'}>
+        <TextInput
+          value={renameDraft}
+          onChangeText={setRenameDraft}
+          editable={!working}
+          autoFocus
+          maxLength={80}
+          placeholder="Six months in"
+          placeholderTextColor={flColor.gray600}
+          accessibilityLabel="A name for this post"
+          style={styles.renameInput}
+        />
+        {/* Says what blanking it does, because "Save" on an empty field otherwise looks like a no-op. */}
+        <Text style={styles.renameHint}>Leave it empty to remove the name.</Text>
+        <Pressable onPress={() => void commitRename()} disabled={working} accessibilityRole="button" style={[styles.menuRow, styles.menuPrimary]}>
+          <Text style={[styles.menuText, styles.menuPrimaryText]}>{working ? 'Saving…' : 'Save'}</Text>
+        </Pressable>
+      </BottomSheet>
+
+      {/* ⚠ A SEPARATE, EXPLICIT CONFIRMATION. Deleting takes the comments and acknowledgements with it —
+          the row cascades — and there is no undo anywhere in this app. */}
+      <BottomSheet open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete this post?">
+        <Text style={styles.confirmBody}>
+          It comes off the feed for everyone, along with its comments. Your photos stay in your own
+          archive — only the post goes.
+        </Text>
+        <Pressable onPress={() => void commitDelete()} disabled={working} accessibilityRole="button" style={[styles.menuRow, styles.menuDangerRow]}>
+          <Text style={[styles.menuText, styles.menuDanger]}>{working ? 'Deleting…' : 'Delete'}</Text>
+        </Pressable>
+        <Pressable onPress={() => setConfirmDelete(false)} disabled={working} accessibilityRole="button" style={styles.menuRow}>
+          <Text style={styles.menuText}>Keep it</Text>
+        </Pressable>
+      </BottomSheet>
+
       <ReportSheet
         open={reportOpen}
         onClose={() => setReportOpen(false)}
@@ -336,9 +465,11 @@ export default function SquadPostRoute() {
             <View style={styles.sliderWrap} onLayout={(e) => setCardW(e.nativeEvent.layout.width)}>
               {cardW > 0 ? <ProgressPostCard card={post.layout} width={cardW} /> : null}
             </View>
-          ) : post.type === 'transformation' && asTransformationLayout(post.layout) ? (
+          ) : post.type === 'transformation' && shaped ? (
             <View style={styles.sliderWrap}>
-              <TransformationLayout data={asTransformationLayout(post.layout)!} />
+              {/* `shapedTitle`, not `shaped.title` — so a rename made on this screen shows at once rather
+                  than waiting for a refetch that only happens on the next focus. */}
+              <TransformationLayout data={{ ...shaped, title: shapedTitle }} />
             </View>
           ) : post.type === 'transformation' && post.media.length >= 2 && post.media[0].kind === 'image' && post.media[1].kind === 'image' ? (
             <View style={styles.sliderWrap}>
@@ -602,6 +733,14 @@ function SendIcon({ active }: { active: boolean }) {
 }
 
 /** The Report affordance in the app bar. A flag reads as "report" without a label at this size. */
+function MoreGlyph() {
+  return (
+    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2.4} strokeLinecap="round">
+      <Path d="M12 5h.01M12 12h.01M12 19h.01" />
+    </Svg>
+  );
+}
+
 function FlagGlyph() {
   return (
     <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -612,6 +751,28 @@ function FlagGlyph() {
 }
 
 const styles = StyleSheet.create({
+  /* ── manage-your-own-post sheets (0184) ─────────────────────────────────────────────────────────── */
+  menuRow: { paddingVertical: 14, alignItems: 'center', borderRadius: flRadius.md },
+  menuText: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  menuPrimary: { backgroundColor: flColor.bronze400, marginTop: 6 },
+  menuPrimaryText: { color: flColor.onBronze },
+  /* Destructive, and coloured as such in BOTH themes — `dangerText`/`dangerBorder`/`dangerBg` are role
+     tokens defined in `foundation.forge` and `foundation.paper` alike, so this reads as a warm red on
+     cream and a cold one on charcoal rather than one literal that is wrong on one of them. */
+  menuDangerRow: { borderWidth: 1, borderColor: flColor.dangerBorder, backgroundColor: flColor.dangerBg },
+  menuDanger: { color: flColor.dangerText },
+  renameInput: {
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    borderRadius: flRadius.md,
+    paddingHorizontal: 13,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: flColor.cream100,
+    backgroundColor: flColor.surfaceRecessed,
+  },
+  renameHint: { marginTop: 8, fontSize: 11.5, color: flColor.gray600 },
+  confirmBody: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400, marginBottom: 6 },
   reportBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   root: { flex: 1 },
   flex: { flex: 1 },
