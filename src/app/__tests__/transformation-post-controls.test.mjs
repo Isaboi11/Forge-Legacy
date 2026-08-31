@@ -34,11 +34,11 @@ const SQUAD = strip(read('../squad/[id].tsx'));
 const LAYOUT = strip(read('../../components/forge/TransformationLayout.tsx'));
 const DETAIL = strip(read('../squad-post/[id].tsx'));
 const DATA = strip(read('../../data/squad-feed-live.ts'));
-const SQL = read('../../../supabase/migrations/0184_rename_squad_post.sql');
-/* 0184 header quotes the for-update policy it deliberately does NOT add, so a naive
+const SQL = read('../../../supabase/migrations/0186_rename_squad_post.sql');
+/* 0186 header quotes the for-update policy it deliberately does NOT add, so a naive
    search finds the explanation rather than a real policy. Comments stripped. */
 const SQL_CODE = SQL.replace(/^[ ]*--.*$/gm, '');
-const BUNDLE = read('../../../supabase/apply/pending-0184.sql');
+const BUNDLE = read('../../../supabase/apply/pending-0186.sql');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. you can see the photo you are lining up against
@@ -122,16 +122,16 @@ test('the drag reads its width from a shared value, not a ref', () => {
 
 test('the name rides the layout, so no read path had to change', () => {
   assert.match(DATA, /title\?: string \| null;/, 'TransformationLayoutData lost its title');
-  assert.match(SQL, /jsonb_set\(coalesce\(p\.layout, '\{\}'::jsonb\), '\{title\}'/, '0184 no longer writes the title into layout');
-  assert.doesNotMatch(SQL, /alter table public\.squad_posts add column/, '0184 adds a column — the feed RPCs would have to be rebuilt');
+  assert.match(SQL, /jsonb_set\(coalesce\(p\.layout, '\{\}'::jsonb\), '\{title\}'/, '0186 no longer writes the title into layout');
+  assert.doesNotMatch(SQL, /alter table public\.squad_posts add column/, '0186 adds a column — the feed RPCs would have to be rebuilt');
 });
 
 test('⚠ renaming is author-only, and buys no other write access', () => {
   assert.match(SQL, /and p\.author_id = v_uid;/, 'the authorship check is gone — a definer function exempts its caller from RLS');
   assert.match(SQL, /get diagnostics v_rows = row_count/, 'a rename that matched no row would succeed silently');
   // The reason the RPC exists at all.
-  assert.doesNotMatch(SQL_CODE, /for update/i, '0184 adds an UPDATE policy — an author could then rewrite type, audience or the snapshot');
-  assert.match(BUNDLE, /raise exception '0184: an UPDATE policy exists on squad_posts/, 'the bundle no longer checks that no UPDATE policy appeared');
+  assert.doesNotMatch(SQL_CODE, /for update/i, '0186 adds an UPDATE policy — an author could then rewrite type, audience or the snapshot');
+  assert.match(BUNDLE, /raise exception '0186: an UPDATE policy exists on squad_posts/, 'the bundle no longer checks that no UPDATE policy appeared');
 });
 
 test('a blank name clears it rather than storing an empty one', () => {

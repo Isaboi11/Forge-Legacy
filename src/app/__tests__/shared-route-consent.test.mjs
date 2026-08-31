@@ -10,7 +10,7 @@
  * endpoint trim, considered it, and vetoed it completely, so a shared route now runs door to door. The
  * consent is the only mitigation left standing. It is worth more than a comment.
  *
- * `node --test` cannot reach a database, so the SQL guards read migration 0183's text. That is enough to
+ * `node --test` cannot reach a database, so the SQL guards read migration 0185's text. That is enough to
  * catch the two ways this breaks in a rebuild: the gate being dropped, and the route being returned
  * outside it.
  *
@@ -27,8 +27,8 @@ const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$
 const SHEET = strip(read('../../components/forge/ShareSessionSheet.tsx'));
 const FEED = strip(read('../../data/squad-feed-live.ts'));
 const LIVE = strip(read('../../data/activity-live.ts'));
-const SQL = read('../../../supabase/migrations/0183_shared_route_consent.sql');
-const BUNDLE = read('../../../supabase/apply/pending-0183.sql');
+const SQL = read('../../../supabase/migrations/0185_shared_route_consent.sql');
+const BUNDLE = read('../../../supabase/apply/pending-0185.sql');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // the composer — where the choice is made
@@ -78,7 +78,7 @@ test('⚠ the route is returned only inside the consent gate', () => {
   // The one place the polyline is selected must sit under `if v_share_route then`.
   const gate = SQL.indexOf('if v_share_route then');
   const select = SQL.indexOf('select ws.route, ws.climb_m');
-  assert.ok(gate > 0, '0183 no longer gates on v_share_route');
+  assert.ok(gate > 0, '0185 no longer gates on v_share_route');
   assert.ok(select > gate, 'the route is selected before the consent is checked');
   assert.match(SQL, /coalesce\(p\.workout_summary ->> 'shareRoute', 'false'\) = 'true'/, 'the consent key changed');
 });
@@ -87,7 +87,7 @@ test('a post that never ticked the box reads as "no" without a backfill', () => 
   // `->>` on a missing key is NULL; coalesce makes that false. This is what "nothing shares
   // retroactively" is actually made of.
   assert.match(SQL, /coalesce\(p\.workout_summary ->> 'shareRoute', 'false'\)/, 'an absent key no longer defaults to false');
-  assert.doesNotMatch(SQL, /update public\.squad_posts/, '0183 writes to posts — it must only read');
+  assert.doesNotMatch(SQL, /update public\.squad_posts/, '0185 writes to posts — it must only read');
 });
 
 test('⚠ the goal-contribution door never opens the map', () => {
@@ -98,13 +98,13 @@ test('⚠ the goal-contribution door never opens the map', () => {
   assert.doesNotMatch(consent, /squad_members|squad_goal_window_end/, 'the goal door leaked into the consent gate');
 });
 
-test('⚠ 0183 restores the set duration_sec that 0134 deleted', () => {
+test('⚠ 0185 restores the set duration_sec that 0134 deleted', () => {
   // 0127 added it, 0134 rebuilt from 0117 and lost it, and every shared hold has read blank since.
-  assert.match(SQL, /'duration_sec', ws\.duration_sec/, '0183 drops the set-level duration_sec again');
+  assert.match(SQL, /'duration_sec', ws\.duration_sec/, '0185 drops the set-level duration_sec again');
 });
 
 test('the paste bundle asserts what it claims to have done', () => {
-  assert.match(BUNDLE, /raise exception '0183 DID NOT FULLY APPLY/, 'the bundle no longer raises on a partial apply');
+  assert.match(BUNDLE, /raise exception '0185 DID NOT FULLY APPLY/, 'the bundle no longer raises on a partial apply');
   for (const probe of ['shareRoute', 'v_share_route', 'v_route', 'v_climb_m', 'ws.duration_sec']) {
     assert.ok(BUNDLE.includes(`position('${probe}' in src)`), `the bundle stopped checking for ${probe}`);
   }
@@ -119,7 +119,7 @@ test('the paste bundle asserts what it claims to have done', () => {
 test('the shared read renders what it is given, and decides nothing', () => {
   assert.match(LIVE, /route: r\.route \?\? null,/, 'the shared read no longer carries the route the RPC returned');
   assert.match(LIVE, /climbM: r\.climb_m \?\? null,/, 'the shared read no longer carries the climb');
-  // A database without 0183 returns neither key, which reads undefined and draws nothing. The client
+  // A database without 0185 returns neither key, which reads undefined and draws nothing. The client
   // must never be the thing that decides a viewer may see a route.
   assert.doesNotMatch(LIVE, /shareRoute/, 'the client is making the consent decision instead of the database');
 });

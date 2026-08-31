@@ -244,7 +244,7 @@ function Body({
    * undesigned and unbuilt"* — every outdoor run since has written its shape and nothing ever selected
    * it again. This is the first reader. It draws whatever `detail.route` holds and asks no questions
    * about whose session it is: on a shared view the answer already went through D-RS-3's per-post
-   * consent inside `shared_workout_detail` (migration 0183), so a route that arrives here is one its
+   * consent inside `shared_workout_detail` (migration 0185), so a route that arrives here is one its
    * author chose to send.
    *
    * Old rows are 400 m short of their distance forever (saved under the rescinded trim); RouteSheet's

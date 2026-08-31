@@ -134,12 +134,12 @@ export interface TransformationLayoutData {
    */
   shots?: PoseShot[];
   /**
-   * What the athlete called this post (0184).
+   * What the athlete called this post (0186).
    *
    * ⚠ IN THE LAYOUT RATHER THAN IN A COLUMN, on purpose — `squad_feed()` and the post-detail read are
    * both `returns table (...)`, which `create or replace` cannot widen, so a `title` column would mean
    * dropping and rebuilding two heavily-edited functions to carry a string. This blob is already
-   * returned by every read path. See migration 0184.
+   * returned by every read path. See migration 0186.
    *
    * Optional, and absent means untitled — every post written before today. Written and cleared ONLY by
    * `renameSquadPost`, never by the composer's snapshot, so a rename cannot be undone by a re-read.
@@ -781,7 +781,7 @@ export async function addSquadComment(postId: string, body: string): Promise<voi
 /**
  * Name or rename a post — PO, 2026-08-31: *"Let me be able to name/rename the post for transformation."*
  *
- * Goes through `rename_squad_post` (0184) rather than an UPDATE, because `squad_posts` deliberately has
+ * Goes through `rename_squad_post` (0186) rather than an UPDATE, because `squad_posts` deliberately has
  * no UPDATE policy: an author renaming their post must not also gain the ability to rewrite its type,
  * audience, squad, workout link or snapshot after other people have seen and acknowledged it. The
  * function writes one key of one column and checks authorship itself.

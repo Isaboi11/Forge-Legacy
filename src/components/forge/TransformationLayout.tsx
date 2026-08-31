@@ -18,7 +18,7 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
  */
 export function TransformationLayout({ data, compact = false }: { data: TransformationLayoutData; compact?: boolean }) {
   /*
-   * The athlete's own name for this post (0184), above the art it names.
+   * The athlete's own name for this post (0186), above the art it names.
    *
    * ⚠ WRAPPED HERE RATHER THAN PASSED TO `LedgerPost`'s `title` — that slot is deliberately suppressed on
    * any post carrying `customMedia` (the card renders no marker, no title and no stat row when the art

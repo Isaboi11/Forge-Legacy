@@ -255,7 +255,7 @@ interface SharedRow {
   playlist_service: string | null;
   playlist_name: string | null;
   /* Returned by `shared_workout_detail` ONLY when a post this viewer can see was composed with the map
-     included (D-RS-3, migration 0183). Null on every post that did not tick it, on every session with
+     included (D-RS-3, migration 0185). Null on every post that did not tick it, on every session with
      no stored shape, and on the goal-contribution door, which has no post and therefore no consent. */
   route: string | null;
   climb_m: number | null;
@@ -323,12 +323,12 @@ async function fetchSharedActivityDetail(id: string): Promise<ActivityDetail | n
      * ══ THE MAP, WHEN ITS AUTHOR SAID SO (D-RS-3) ══
      *
      * This was hardcoded null while the consent did not exist, with a comment saying so — the honest
-     * answer at the time, and it meant the feature D-RS-2 approved was never built. Migration 0183
+     * answer at the time, and it meant the feature D-RS-2 approved was never built. Migration 0185
      * builds the gate: the RPC returns these two ONLY when a post this viewer can actually see was
      * composed with `shareRoute` ticked.
      *
      * ⚠ THE DECISION IS STILL NOT MADE HERE, and that is the point. The client cannot grant itself the
-     * route by forgetting a rule — a database that has not applied 0183 returns neither key, and this
+     * route by forgetting a rule — a database that has not applied 0185 returns neither key, and this
      * reads undefined and draws nothing. Consent is enforced where the data is, not where it is shown.
      */
     route: r.route ?? null,

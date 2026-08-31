@@ -103,7 +103,7 @@ export default function SquadPostRoute() {
     if (working || !post) return;
     setWorking(true);
     try {
-      /* The STORED value, not the draft — 0184 trims and caps at 80, so echoing what was typed would
+      /* The STORED value, not the draft — 0186 trims and caps at 80, so echoing what was typed would
          show a name the database did not keep. */
       setNameEdit(await renameSquadPost(post.id, renameDraft));
       setRenameOpen(false);
@@ -751,7 +751,7 @@ function FlagGlyph() {
 }
 
 const styles = StyleSheet.create({
-  /* ── manage-your-own-post sheets (0184) ─────────────────────────────────────────────────────────── */
+  /* ── manage-your-own-post sheets (0186) ─────────────────────────────────────────────────────────── */
   menuRow: { paddingVertical: 14, alignItems: 'center', borderRadius: flRadius.md },
   menuText: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   menuPrimary: { backgroundColor: flColor.bronze400, marginTop: 6 },

@@ -59,7 +59,7 @@ export interface ActivityDetail {
    * The session's stored route (encoded polyline) and climb, when an outdoor bout carried them (0162).
    *
    * ⚠ ON A SHARED SESSION THIS IS THE AUTHOR'S CHOICE, NOT A DEFAULT. D-RS-3 makes the map on a shared
-   * surface a per-post choice; migration 0183 enforces it in `shared_workout_detail`, which returns the
+   * surface a per-post choice; migration 0185 enforces it in `shared_workout_detail`, which returns the
    * route only when a post the viewer can see was composed with `shareRoute` ticked. The client never
    * decides — it renders what it is given.
    * Null on every session saved before 0162, every indoor bout, every post that did not tick the map,
