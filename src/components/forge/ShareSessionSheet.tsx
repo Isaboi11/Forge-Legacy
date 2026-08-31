@@ -126,6 +126,20 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
    * where both strips are real.
    */
   const [leadChoice, setLeadChoice] = useState<RecapLead | null>(null);
+  /**
+   * ══ D-RS-3 — THE MAP IS A PER-POST CHOICE, AND IT STARTS OFF ══
+   *
+   * `useState(false)` is the whole mitigation, so it is worth saying why it may never become anything
+   * else. Route-Sharing-Amendment-001 §2 records that the PO was advised to keep the 200 m endpoint
+   * trim, considered it, and **vetoed it completely** — a shared route now shows exactly where a run
+   * began, which is usually a front door. §4 names consent as *"the one mitigation left standing"* and
+   * says in terms that it **must not become a global 'always include' preference without a further
+   * amendment**, "because a sticky default is how a choice made once in enthusiasm becomes an address
+   * published weekly".
+   *
+   * So: no remembered last answer, no profile setting, no pre-tick. Every post asks again.
+   */
+  const [shareRoute, setShareRoute] = useState(false);
   /** Posts this session already has. `null` until read; the tiles treat that as "nothing yet". */
   const [prior, setPrior] = useState<PriorShare[] | null>(null);
   /*
@@ -153,6 +167,9 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
 
   const snapshot = summary ?? fetched;
   const mixed = snapshot?.cardio != null && snapshot.lead === 'strength';
+  /* Only a session that actually stored a shape may be asked. An indoor bout, a manually logged run, or
+     anything saved before 0162 has no map to include, and offering the tick would be offering nothing. */
+  const canShareRoute = snapshot?.hasRoute === true;
   const effectiveLead: RecapLead | null = leadChoice ?? snapshot?.lead ?? null;
 
   /* Both reads happen on OPEN rather than on mount: this sheet sits in a screen that may never share,
@@ -221,7 +238,11 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
       workoutId,
       /* The choice rides the snapshot, so the post renders the same strip forever — the feed never
          re-derives it. On a non-mixed session this spread writes back the value already there. */
-      workoutSummary: { ...snapshot, lead: effectiveLead ?? snapshot.lead },
+      /* `shareRoute` rides the snapshot exactly as `lead` does, and for the same reason: the post keeps
+         what was chosen when it was written. `shared_workout_detail` reads this key and nothing else —
+         a session's stored route is never enough on its own. Forced to a real boolean rather than
+         passed through, so the key is always present and always means what it says. */
+      workoutSummary: { ...snapshot, lead: effectiveLead ?? snapshot.lead, shareRoute: canShareRoute && shareRoute },
       media,
     };
     const run = async () => {
@@ -259,6 +280,9 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
       setSquadStep(null);
       setPicked(new Set());
       setBodyDraft(null);
+      /* Same rule as `close`, and this is the case that matters most: having posted to a squad WITH the
+         map, the next destination must ask again rather than inherit the answer. */
+      setShareRoute(false);
       setSharedResult(shareSummary(landed, includeFriends));
     };
     void run();
@@ -311,6 +335,11 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
   const close = () => {
     setSquadStep(null);
     setPicked(new Set());
+    /* ⚠ THE TICK DIES WITH THE SHEET (D-RS-3). This component is not unmounted between opens, so a
+       `shareRoute` left standing would be a remembered answer — precisely the sticky default §4 forbids.
+       Reset here rather than in an effect: `react-hooks/set-state-in-effect` is an ERROR in this repo,
+       and a close is an event, which is where state changes belong anyway. */
+    setShareRoute(false);
     onClose();
   };
 
@@ -431,6 +460,37 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
                   );
                 })}
               </View>
+            </View>
+          ) : null}
+
+          {/* ⚠ ASKED ONLY WHEN THERE IS A MAP TO ASK ABOUT, and phrased as what it does rather than as a
+              setting. The sub-line is not decoration: the endpoint trim was rescinded (D-RS-1), so the
+              shape now runs door to door, and somebody deciding whether to post it is entitled to know
+              that before they tick it rather than after. */}
+          {canShareRoute ? (
+            <View style={styles.leadBlock}>
+              <Text style={styles.group}>Your route</Text>
+              <Pressable
+                onPress={() => setShareRoute((v) => !v)}
+                disabled={sharing}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: shareRoute, disabled: sharing }}
+                accessibilityLabel="Include the map of your route on this post"
+                accessibilityHint="The route is shown exactly as it was recorded, including where you started and finished"
+                style={[styles.mapRow, shareRoute && styles.mapRowOn]}
+              >
+                <View style={[styles.mapBox, shareRoute && styles.mapBoxOn]}>
+                  {shareRoute ? (
+                    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.charcoal900} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
+                      <Path d="M20 6L9 17l-5-5" />
+                    </Svg>
+                  ) : null}
+                </View>
+                <View style={styles.mapText}>
+                  <Text style={[styles.mapLabel, shareRoute && styles.mapLabelOn]}>Include the map</Text>
+                  <Text style={styles.mapSub}>Shows where you ran, start and finish included.</Text>
+                </View>
+              </Pressable>
             </View>
           ) : null}
 
@@ -643,6 +703,22 @@ const styles = StyleSheet.create({
   leadChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
   leadChipText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray600 },
   leadChipTextOn: { color: flColor.bronze300 },
+
+  /* Same border language as the lead chips — this is another per-post choice, not a settings row. */
+  mapRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 11, paddingHorizontal: 12,
+    borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle,
+  },
+  mapRowOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  mapBox: {
+    width: 20, height: 20, borderRadius: 5, borderWidth: 1.5,
+    borderColor: flColor.bronzeBorderSubtle, alignItems: 'center', justifyContent: 'center',
+  },
+  mapBoxOn: { borderColor: flColor.bronze300, backgroundColor: flColor.bronze300 },
+  mapText: { flex: 1, minWidth: 0, gap: 2 },
+  mapLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
+  mapLabelOn: { color: flColor.bronze300 },
+  mapSub: { fontSize: 11.5, color: flColor.gray600 },
 
   tiles: { flexDirection: 'row', gap: 9 },
   tile: {

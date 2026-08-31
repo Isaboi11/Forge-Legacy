@@ -133,6 +133,18 @@ export interface TransformationLayoutData {
    * post written before this existed, which reads correctly as "a comparison, or a plain photo".
    */
   shots?: PoseShot[];
+  /**
+   * What the athlete called this post (0184).
+   *
+   * ⚠ IN THE LAYOUT RATHER THAN IN A COLUMN, on purpose — `squad_feed()` and the post-detail read are
+   * both `returns table (...)`, which `create or replace` cannot widen, so a `title` column would mean
+   * dropping and rebuilding two heavily-edited functions to carry a string. This blob is already
+   * returned by every read path. See migration 0184.
+   *
+   * Optional, and absent means untitled — every post written before today. Written and cleared ONLY by
+   * `renameSquadPost`, never by the composer's snapshot, so a rename cannot be undone by a re-read.
+   */
+  title?: string | null;
 }
 
 // ── Progress Photo Post card ──
@@ -225,6 +237,28 @@ export interface WorkoutSummary {
    * posts, which therefore keep their strength strip exactly as they always rendered.
    */
   lead?: RecapLead | null;
+  /**
+   * ══ THE MAP, AND WHETHER THIS POST CARRIES IT (D-RS-3) ══
+   *
+   * `hasRoute` — the session stored a shape at all. Only the composer reads it, to decide whether the
+   * map is even offerable; a session with no route must not be asked a question it cannot answer.
+   *
+   * `shareRoute` — the athlete ticked it WHILE COMPOSING THIS POST. Route-Sharing-Amendment-001 §4:
+   * *"The map goes on a post only when the athlete includes it while composing that post. Nothing
+   * shares retroactively."*
+   *
+   * ⚠ BOTH OPTIONAL, AND ABSENT IS THE ANSWER "NO" — the `name`/`playlist`/`cardio` pattern, fourth
+   * time around. Every post written before today has neither key, so `shared_workout_detail` reads
+   * `coalesce(... ->> 'shareRoute', 'false')` and withholds the route. Nothing had to be backfilled,
+   * and no old post silently gained a map.
+   *
+   * ⚠ AND IT MUST NEVER BECOME A STICKY PREFERENCE. §4 again, on this exact field: *"it must not
+   * become a global 'always include' preference without a further amendment, because a sticky default
+   * is how a choice made once in enthusiasm becomes an address published weekly."* The composer
+   * therefore starts it OFF on every post, and does not remember the last answer.
+   */
+  hasRoute?: boolean;
+  shareRoute?: boolean;
 }
 
 export interface SquadPostTypeDef {
@@ -552,6 +586,8 @@ interface CompletionLike {
   programName?: string | null;
   /** The session's saved activity_type ('running', 'stair_climber', …) — the cardio marker's label. */
   activityType?: string | null;
+  /** Whether the session stored a route. Resolved by the caller — `recapSummaryFrom` stays pure. */
+  hasRoute?: boolean;
 }
 
 /** Snapshot a Completion's stats into the recap `WorkoutSummary` stored on the post. */
@@ -591,14 +627,48 @@ export function recapSummaryFrom(c: CompletionLike): WorkoutSummary {
      * the client: this value is about to become a tap target for somebody other than its author.
      */
     playlist: c.playlist ?? null,
+    /*
+     * Whether a map COULD be offered. `shareRoute` is deliberately not set here: the default is off and
+     * only the composer may turn it on, which is what makes it a per-post choice rather than a property
+     * of the session.
+     */
+    hasRoute: c.hasRoute ?? false,
   };
+}
+
+/**
+ * Did this session store a route?
+ *
+ * ⚠ ITS OWN READ, and small on purpose. `fetchCompletion` does not select `workout_sets.route` and
+ * teaching it to would widen the completion for every caller in order to answer one composer's
+ * question. This asks only whether a shape EXISTS — never for the polyline itself, which the composer
+ * has no use for and which the athlete has not yet agreed to share with anyone.
+ *
+ * Fails to `false`, never throws: a share sheet must still open when this read does not answer. The
+ * honest consequence of a failure is that the map is not offered on that attempt, which is the same
+ * as the answer "no" and errs toward not sharing.
+ */
+export async function workoutHasRoute(workoutId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('workout_exercises')
+      .select('workout_sets(route)')
+      .eq('workout_id', workoutId);
+    if (error) return false;
+    const rows = (data ?? []) as unknown as { workout_sets: { route: string | null }[] | null }[];
+    return rows.some((r) => (r.workout_sets ?? []).some((st) => !!st.route));
+  } catch {
+    return false;
+  }
 }
 
 /** Build a recap snapshot for a completed workout (reuses the W-17 completion read). Null if it's gone. */
 export async function buildWorkoutRecap(workoutId: string): Promise<{ workoutName: string; summary: WorkoutSummary } | null> {
   try {
-    const c = await fetchCompletion(workoutId);
-    return { workoutName: c.workoutName, summary: recapSummaryFrom(c) };
+    /* In parallel, and the route question is allowed to lose: `workoutHasRoute` resolves false rather
+       than rejecting, so a recap never fails to build because the map could not be asked about. */
+    const [c, hasRoute] = await Promise.all([fetchCompletion(workoutId), workoutHasRoute(workoutId)]);
+    return { workoutName: c.workoutName, summary: recapSummaryFrom({ ...c, hasRoute }) };
   } catch {
     return null;
   }
@@ -708,6 +778,43 @@ export async function addSquadComment(postId: string, body: string): Promise<voi
  * A plain tap still means `respect` — SOC-A4-D3: *"a tap acknowledges rather than opening a chooser"*.
  * Press-and-hold picks a kind, which goes through `setSquadReactionKind` below.
  */
+/**
+ * Name or rename a post — PO, 2026-08-31: *"Let me be able to name/rename the post for transformation."*
+ *
+ * Goes through `rename_squad_post` (0184) rather than an UPDATE, because `squad_posts` deliberately has
+ * no UPDATE policy: an author renaming their post must not also gain the ability to rewrite its type,
+ * audience, squad, workout link or snapshot after other people have seen and acknowledged it. The
+ * function writes one key of one column and checks authorship itself.
+ *
+ * Returns the stored title — trimmed and capped at 80 by the database, so the caller renders what was
+ * actually kept rather than what was typed. Blank clears the name.
+ */
+export async function renameSquadPost(postId: string, title: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('rename_squad_post', { p_post_id: postId, p_title: title });
+  if (error) throw error;
+  return (data as string | null) ?? null;
+}
+
+/**
+ * Delete a post — PO, 2026-08-31: *"Let me be able to delete a post."*
+ *
+ * ⚠ NO MIGRATION NEEDED, AND THAT IS WORTH SAYING OUT LOUD. `squad_posts_delete` has existed since 0041
+ * — *author OR squad owner* — and comments and reactions cascade off the row. The rule was written on
+ * day one; nothing in the app ever called it. This is the call.
+ *
+ * The policy is the authority, so no ownership check is repeated here: a delete the athlete is not
+ * entitled to matches no row and removes nothing, rather than being refused by a client that might have
+ * a stale idea of who owns what.
+ *
+ * ⚠ THE PHOTOS ARE NOT DELETED. They live in storage under the athlete's own transformation archive and
+ * are referenced by the entry the post was composed FROM — removing them here would delete the record
+ * along with the announcement of it. Sharing a photo and keeping a photo are different decisions.
+ */
+export async function deleteSquadPost(postId: string): Promise<void> {
+  const { error } = await supabase.from('squad_posts').delete().eq('id', postId);
+  if (error) throw error;
+}
+
 export async function toggleSquadReaction(postId: string, reacted: boolean): Promise<boolean> {
   const {
     data: { user },

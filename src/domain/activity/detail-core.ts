@@ -58,10 +58,12 @@ export interface ActivityDetail {
   /**
    * The session's stored route (encoded polyline) and climb, when an outdoor bout carried them (0162).
    *
-   * ⚠ OWN SESSIONS ONLY in this pass. The shared read path deliberately does not select them yet:
-   * D-RS-3 makes the map on a shared surface a per-post choice, and that consent is plumbed with the
-   * run-card composer work — a shared detail that always drew the map would hollow the opt-out.
-   * Null on every session saved before 0162, every indoor bout, and every shared view.
+   * ⚠ ON A SHARED SESSION THIS IS THE AUTHOR'S CHOICE, NOT A DEFAULT. D-RS-3 makes the map on a shared
+   * surface a per-post choice; migration 0183 enforces it in `shared_workout_detail`, which returns the
+   * route only when a post the viewer can see was composed with `shareRoute` ticked. The client never
+   * decides — it renders what it is given.
+   * Null on every session saved before 0162, every indoor bout, every post that did not tick the map,
+   * and every session reached through the goal-contribution door, which has no post to have ticked.
    */
   route: string | null;
   climbM: number | null;

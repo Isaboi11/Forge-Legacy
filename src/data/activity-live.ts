@@ -254,6 +254,11 @@ interface SharedRow {
   playlist_url: string | null;
   playlist_service: string | null;
   playlist_name: string | null;
+  /* Returned by `shared_workout_detail` ONLY when a post this viewer can see was composed with the map
+     included (D-RS-3, migration 0183). Null on every post that did not tick it, on every session with
+     no stored shape, and on the goal-contribution door, which has no post and therefore no consent. */
+  route: string | null;
+  climb_m: number | null;
   note: string | null;
   exercises: {
     name: string;
@@ -315,14 +320,19 @@ async function fetchSharedActivityDetail(id: string): Promise<ActivityDetail | n
     durationSec: r.duration_sec,
     distance: r.distance,
     /*
-     * ⚠ DELIBERATELY NULL ON A SHARED VIEW — not an omission. D-RS-3 makes the map on a shared
-     * surface a per-post choice, default off; until that consent is plumbed through the post snapshot
-     * (the run-card composer work), a shared detail that always drew the route would hollow the
-     * opt-out into decoration. `shared_workout_detail` does not return these columns either, so a
-     * client that forgot this rule would still draw nothing.
+     * ══ THE MAP, WHEN ITS AUTHOR SAID SO (D-RS-3) ══
+     *
+     * This was hardcoded null while the consent did not exist, with a comment saying so — the honest
+     * answer at the time, and it meant the feature D-RS-2 approved was never built. Migration 0183
+     * builds the gate: the RPC returns these two ONLY when a post this viewer can actually see was
+     * composed with `shareRoute` ticked.
+     *
+     * ⚠ THE DECISION IS STILL NOT MADE HERE, and that is the point. The client cannot grant itself the
+     * route by forgetting a rule — a database that has not applied 0183 returns neither key, and this
+     * reads undefined and draws nothing. Consent is enforced where the data is, not where it is shown.
      */
-    route: null,
-    climbM: null,
+    route: r.route ?? null,
+    climbM: r.climb_m ?? null,
     distanceUnit: r.distance_unit,
     exercises,
     /* ⚠ WITHHELD ON A SHARED SESSION, deliberately, and for the same reason the chapter is. A note is
