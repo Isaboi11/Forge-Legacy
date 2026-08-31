@@ -1,9 +1,9 @@
 # Monetization Architecture Amendment 005 — What a Coach Asked For Is Not What You Spent
-## Forge Legacy | Version 1.0 — August 2026
+## Forge Legacy | Version 1.1 — August 2026
 
 **Amendment ID:** Monetization-Architecture-Amendment-005
 **Status:** 🔒 LOCKED
-**Date:** 2026-08-31
+**Date:** 2026-08-31 (v1.1 same day)
 **Amends:** `Monetization-Architecture-Amendment-003-Add-On-Tier-And-Launch-Limits.md` §5 (cap table,
 MA3-D8 photos), §5.2 (MA3-D10 received programs), §5.1 (Transformation Compare as *"the paid moment"*),
 §9 (decision register)
@@ -120,6 +120,8 @@ converted.
 ⚠ Note Compare is **not gated in code today** — `PaidFeature` in `src/lib/entitlement.tsx` has exactly one
 member, `'weekly_review'`. This is a decision taken before a retrofit rather than after one.
 
+**It ends when the coaching does** (FC-D23). Compare is a benefit of the service, not a property of the account: her photos stay hers, uncounted and permanently readable (MA5-D2), while the side-by-side view returns to Premium. That is also the product's best conversion moment — §5.1 of MA3 says Compare is worth most *"precisely when a year of entries exists"*, and a departing coached client is the athlete who reliably has one. ⚠ **When Compare is gated, the M-7 copy must never imply her photos are locked.** She sees every photo, forever; only the comparison is paid. Blur that and `Never Charge For History` is broken in perception even though it was honoured in fact.
+
 ### MA5-D7 — Nothing else moves
 
 The coached level opens photos, trainer-built programs and Transformation Compare. **Every other cap and
@@ -190,6 +192,7 @@ Per `Docs/Forge-Coach-Architecture-v1.0.md` §8, each of these is proven against
 
 | Version | Date | Change |
 |---|---|---|
+| v1.1 | 2026-08-31 | MA5-D6 extended: Compare **ends with the coaching relationship** (FC-D23), with the guard rail that gating it must never imply her photos are locked. |
 | v1.0 | 2026-08-31 | Initial. Carries FC-D9/D10/D11 into effect, closing FC-D12. Establishes the `trainer_client` flag on the `coach_ai` shape (MA5-D1) and rules that the coached level **raises no cap and instead removes rows from the count** (MA5-D2) — because uncapping reverses on lapse and would re-cap a client at 75 holding 190 photos. Excludes coached photos from `athlete_live_counts()` and from the 1000 abuse guard (MA5-D3); exempts coach-assigned programs from `programs_cap_guard()` **before** the increment, since `programs_created` is monotonic and cannot be walked back (MA5-D4); requires provenance to be a column stamped at creation rather than a live join on `trainer_clients` (MA5-D5); frees Transformation Compare for coached clients, amending MA3 §5.1 (MA5-D6); and states explicitly that nothing else moves (MA5-D7). Every number in MA3 §5 is left as it stands. Carries PO decisions taken 2026-08-31. |
 
 ---

@@ -1,6 +1,6 @@
 # Forge Coach — Architecture v1.0
 
-**Status:** SCOPE DECISION MADE — 2026-08-31. **FC-D1 – FC-D20 decided; FC-D21 – FC-D22 open and non-blocking.**
+**Status:** SCOPE DECISION MADE — 2026-08-31. **FC-D1 – FC-D20 and FC-D23 decided; FC-D21 – FC-D22 open and non-blocking.**
 Build not started. Nothing blocks Phase B.
 **Supersedes nothing.** Closes the PRD gate on "Coach / Trainer Accounts".
 **Governs:** the coach-facing CRM (a separate web app) and the coached-client level inside the Expo app.
@@ -174,6 +174,48 @@ regardless for its "was 200 lb" trace and its "Save 3 changes" counter.
 stored structure by the week count; and the `dayIndex` coordinate divergence in §6.1 must be fixed first,
 because this decision makes `dayIndex` load-bearing for a second product.
 
+**FC-D23 — Transformation Compare ends with the coaching relationship.** MA5-D6 gives Compare to a coached
+client. It is a benefit of the service, and it stops when the service stops.
+
+> Taken on recommendation on 2026-08-31, not by explicit PO ruling. Reversible in one line.
+
+The line it rests on is the one MA3 already draws: **her photos are history and are hers forever; Compare is a
+tool.** FC-D10 guarantees she keeps every photo, uncounted, permanently. Being unable to place two of them
+side by side is the loss of a feature, not the loss of a record.
+
+It is also the product's most honest upgrade moment, and it needs no dark pattern. MA3 §5.1 already says
+Compare *"is at its most valuable precisely when a year of entries exists"* — and a departing coached client
+is the one athlete who reliably **has** that year. She keeps everything; she simply wants the tool to look at
+it with.
+
+⚠ **The guard rail that makes this safe.** Compare is **not gated in code today** — `PaidFeature` has one
+member, `'weekly_review'` — so nothing is being taken from anyone at present; this is a forward rule for
+whenever Compare is gated. When it is, **the app must never imply her photos are locked.** She sees every
+photo, at full size, forever. Only the side-by-side view is Premium. If that distinction does not survive
+into the M-7 copy, this decision will read as *"they took my history"*, and `Never Charge For History` will
+have been broken in perception even though it was honoured in fact.
+
+### What a coached client would still pay for
+
+Context for FC-D23, and the answer to "does Premium still have anything to sell her?" — **yes, and it is
+everything that is hers rather than her coach's.**
+
+| | Free | Premium |
+|---|---|---|
+| **Squads** | 1 | 5 |
+| **Programs she builds herself** | 3 lifetime | 500 (an abuse guard, not a tier line) |
+| **Videos** | 5 persistent | 100 |
+| **Day templates** | 5 | unlimited |
+| **Spreadsheet imports** | 1 lifetime | unlimited |
+
+**Squads is the substantive one** — her social life in the app is untouched by coaching, so she is capped at
+one squad while her friends sit in three. **Her own programs is the quiet one**: her coach's blocks are free
+and uncounted (MA5-D4), but building her own deload or accessory day spends from three lifetime slots, and a
+coached athlete is likelier than most to want to.
+
+**Holt is unsellable to her** by FC-D13, and correctly so — paying for AI programming while paying a human
+coach is not a proposition.
+
 ### Coach Holt in the presence of a human coach
 
 **FC-D13 — Holt changes audience rather than disappearing.**
@@ -314,5 +356,6 @@ of the two below blocks a build.
 
 | Version | Date | Change |
 |---|---|---|
+| v1.2 | 2026-08-31 | Added **FC-D23 — Transformation Compare ends with the coaching relationship**, on recommendation and reversible: her photos are history and hers forever, Compare is a tool and a benefit of the service. Carries the guard rail that the app must never imply her photos are locked — only the side-by-side view is Premium — or `Never Charge For History` breaks in perception. Added *What a coached client would still pay for*: squads (1 → 5) and her own programs (3 lifetime) are the real remaining Premium propositions; Holt is unsellable to her by FC-D13. |
 | v1.1 | 2026-08-31 | Closed **FC-D19 (loading is percent-native)** and **FC-D20 (overrides apply through `edit-ops.ts`, addressed by `(weekIndex, dayIndex, rowIndex)` + `catalogKey`)**, both on recommendation rather than explicit PO ruling and both choosing the option that preserves existing architecture — flagged as such in §2 and reversible in one line. Closed **FC-D12**: `Monetization-Architecture-Amendment-005-Coached-Client-Level.md` is authored and carries FC-D9/D10/D11. **Nothing now blocks Phase B.** |
 | v1.0 | 2026-08-31 | Initial. Closes the PRD scope gate and Master Status Decision Queue row 23. Records FC-D1–D18 decided; FC-D19–D22 open. The coached-client level decided in full: coach pays a per-seat fee (FC-D7), the level is not Premium (FC-D8), it opens photos + trainer-built programs + Compare and nothing else (FC-D9), coached content never counts against the free counter (FC-D10), one coach at a time (FC-D6), Holt changes audience (FC-D13), and revocation keeps the words while everything else goes dark (FC-D14). |
