@@ -592,24 +592,69 @@ function AccomplishmentForm({
  *    shows the clip, letterboxed, which is what a keepsake wants.
  * 3. **Nothing escalated on play.** The ask was that it expand *automatically*, so pressing play now
  *    calls `enterFullscreen()` — the athlete's intent was already unambiguous at that point.
+ *
+ * ══ ⚠ AND THEN (3) BUILT A DOOR THAT ONLY OPENED WHEN THE VIDEO WAS STOPPED ══
+ *
+ * PO, 2026-09-01: *"when I click on a video in my accomplishment it has to be paused for me to leave
+ * it, but I want to be able to leave it at any time."* Exactly right, and the escalation above is why.
+ *
+ * **The guard was inverted, and its own comment says what it was meant to do.** It read
+ * *"guarded on `isPlaying` so returning from fullscreen — which fires the event again on resume — does
+ * not immediately shove it back in"*, and then the condition was `if (isPlaying) enterFullscreen()`.
+ * On the way OUT of fullscreen the clip is still playing, so `isPlaying` is **true**, so the listener
+ * fired and put the athlete straight back in. The guard did nothing for the one case it was written for.
+ *
+ * That is precisely the reported behaviour: **pause first and the exit works** (`isPlaying` is false, so
+ * nothing re-escalates); **leave while it is playing and you are pulled back**, which reads as a screen
+ * you cannot get out of.
+ *
+ * ⭐ **THE FIX IS A LATCH, NOT A BETTER CONDITION.** "Expand when they press play" is a thing that
+ * should happen ONCE — it is an interpretation of intent at the moment the athlete starts the clip, not
+ * a rule about where video belongs. Any condition evaluated on every `playingChange` can be re-entered;
+ * a latch cannot. After the first escalation the native expand button is the way back in, which is the
+ * control the athlete already knows.
+ *
+ * ⚠ `onFullscreenExit` LATCHES IT TOO, and that is not redundant. The athlete can reach fullscreen
+ * without passing through our listener at all — by tapping the native expand button before pressing
+ * play. Latching on the way out closes that path as well, whichever way they got in.
  */
 function AccomplishmentVideo({ url }: { url: string }) {
   const player = useVideoPlayer(url, (p) => {
     p.loop = false;
   });
   const viewRef = useRef<VideoView>(null);
+  /**
+   * Has this clip already been taken to fullscreen once? Never read during render — only inside the
+   * listener and the callback below, which is what keeps it out of `react-hooks/refs`.
+   */
+  const escalated = useRef(false);
 
   useEffect(() => {
+    // A new clip is a new decision; the same one is not.
+    escalated.current = false;
     // `playingChange` rather than a press handler: the play control is inside the native control bar,
-    // which the JS side cannot attach to. Guarded on `isPlaying` so returning from fullscreen (which
-    // fires the event again on resume) does not immediately shove it back in.
+    // which the JS side cannot attach to.
     const sub = player.addListener('playingChange', ({ isPlaying }) => {
-      if (isPlaying) void viewRef.current?.enterFullscreen().catch(() => {});
+      if (!isPlaying || escalated.current) return;
+      escalated.current = true;
+      void viewRef.current?.enterFullscreen().catch(() => {});
     });
     return () => sub.remove();
   }, [player]);
 
-  return <VideoView ref={viewRef} player={player} style={styles.mediaPreview} nativeControls contentFit="contain" fullscreenOptions={{ enable: true }} />;
+  return (
+    <VideoView
+      ref={viewRef}
+      player={player}
+      style={styles.mediaPreview}
+      nativeControls
+      contentFit="contain"
+      fullscreenOptions={{ enable: true }}
+      onFullscreenExit={() => {
+        escalated.current = true;
+      }}
+    />
+  );
 }
 
 function Field({ label, counter, children }: { label: string; counter?: string; children: React.ReactNode }) {
