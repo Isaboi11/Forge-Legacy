@@ -214,6 +214,32 @@ test('the hand-off overlay paints the native ground and dissolves into the theme
 });
 
 /**
+ * ⭐ AN ALABASTER LAUNCH REACHES ITS OWN GROUND IN THE FIRST FIFTH, NOT THE LAST THIRD.
+ *
+ * PO, 2026-09-01: *"when I am on the light mode and the app opens up it opens the dark splash screen
+ * first and then turns to light mode."* The dissolve existed and ran LAST — the dark ground was held
+ * at full opacity for 70% of the 600ms cover and only then faded off the athlete's cream splash. The
+ * dark sheet is its own layer now and dissolves near the START, so everything after ~270ms is already
+ * the right colour.
+ */
+test('⭐ the dark ground dissolves at the START of the hand-off, not the end', () => {
+  const code = stripComments(overlaySrc);
+  const start = Number(/const DISSOLVE_START = (\d+)/.exec(code)?.[1]);
+  const end = Number(/const DISSOLVE_END = (\d+)/.exec(code)?.[1]);
+  assert.ok(Number.isFinite(start) && Number.isFinite(end), 'the overlay must declare DISSOLVE_START / DISSOLVE_END');
+  assert.ok(start > 0, 'the dissolve must not begin at zero — the OS splash may still be on top of ours, and running it behind that puts the cut back');
+  assert.ok(end < 50, `the ground must reach the theme in the first half of the cover, got ${end}%`);
+  assert.ok(end > start, 'the dissolve must actually have a duration');
+
+  // The theme's own splash has to be UNDERNEATH the dark sheet, or there is nothing to dissolve into.
+  const floor = code.indexOf('<ForgeSplash />');
+  const sheet = code.indexOf('<ForgeSplash ground="forge" />');
+  assert.ok(floor !== -1, 'the overlay no longer renders the theme splash as its floor');
+  assert.ok(sheet !== -1 && floor < sheet, 'the native dark ground must be drawn ON TOP of the theme ground');
+  assert.match(code, /IS_PAPER \?/, 'a Forge launch must still render one layer — stacking two identical dark splashes is pure cost on the default theme');
+});
+
+/**
  * ══ THE WEB GROUND IS ONE RULE, KEYED ON THE THEME ══
  *
  * `+html.tsx` used to give `<body>` an inline dark background; with expo-router's `body{height:100%}`

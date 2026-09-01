@@ -3,7 +3,7 @@ import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import Svg, { Path } from 'react-native-svg';
 
-import { useCompareDrag } from '@/hooks/useCompareDrag';
+import { COMPARE_TOUCH_STYLE, useCompareDrag } from '@/hooks/useCompareDrag';
 import { flColor, flRadius } from '@/constants/foundation';
 
 /**
@@ -67,7 +67,7 @@ export function BeforeAfterSlider({ before, after, beforeLabel, afterLabel, befo
     <View
       onLayout={onLayout}
       {...panHandlers}
-      style={styles.container}
+      style={[styles.container, COMPARE_TOUCH_STYLE]}
       accessibilityRole="adjustable"
       accessibilityLabel="Before and after slider — drag to compare"
     >
@@ -123,11 +123,18 @@ const styles = StyleSheet.create({
      element from wherever it already is. Without an explicit origin the two would start at whatever the
      layout gave them and the divider would sit off the touch by that amount. */
   divider: { position: 'absolute', top: 0, bottom: 0, left: 0, width: 2, backgroundColor: 'rgba(247,245,241,0.92)' },
+  /* ⚠ AT THE FOOT, NOT THE MIDDLE. PO: *"the actual slider circle that's in the middle should be at
+     the bottom."* Dead centre is where a handle looks balanced and where a thumb is least likely to
+     already be — it sits over the middle of the photograph, which is the part of a progress shot people
+     are actually trying to see, and reaching it means covering the comparison with your hand. At the
+     bottom edge it is under the thumb's resting position and out of the picture.
+
+     `bottom`, not another `top: '%'` — a percentage against a parent whose height comes from
+     `aspectRatio` is the RN trap that resolves to nothing. */
   handle: {
     position: 'absolute',
-    top: '50%',
+    bottom: 10,
     left: 0,
-    marginTop: -17,
     width: 34,
     height: 34,
     borderRadius: 17,

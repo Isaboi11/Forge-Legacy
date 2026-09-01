@@ -17,7 +17,7 @@ import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker }
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
-import { useCompareDrag } from '@/hooks/useCompareDrag';
+import { COMPARE_TOUCH_STYLE, useCompareDrag } from '@/hooks/useCompareDrag';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { BG_RADIAL } from '@/constants/backgrounds';
 import {
@@ -469,7 +469,7 @@ function ProgressCompare({ post }: { post: FeedPost }) {
   if (!before || !after) return null;
 
   return (
-    <View style={styles.compare} onLayout={onLayout} {...panHandlers}>
+    <View style={[styles.compare, COMPARE_TOUCH_STYLE]} onLayout={onLayout} {...panHandlers}>
       <Image source={{ uri: after.url }} style={styles.compareImg} contentFit="cover" />
       {/* The before-image is clipped to the left of the divider, so dragging reveals the after. */}
       <Reanimated.View style={[styles.compareClip, clipStyle]} pointerEvents="none">
