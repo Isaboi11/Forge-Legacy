@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -37,6 +37,17 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  * reproduced. Add / Edit / Compare / Entry Detail are their own routes.
  */
 
+/** The gap between cards on a chapter's shelf, and half of the pitch a flick snaps to. */
+const CARD_GAP = 14;
+/**
+ * How much of the NEXT card is left showing at the right edge.
+ *
+ * ⚠ IT IS NOT DECORATION. A carousel whose cards are exactly the content width looks identical to a
+ * static card until you happen to drag it — the peek is the only thing on screen that says there is
+ * more to the side. `snapToInterval` still lands each card flush against the left gutter.
+ */
+const CARD_PEEK = 26;
+
 const FREQ_LABEL: Record<RemindFreq, string> = { weekly: 'weekly', biweekly: 'every two weeks', monthly: 'monthly' };
 const FREQ_OPTS: [RemindFreq, string][] = [
   ['weekly', 'Weekly'],
@@ -47,6 +58,11 @@ const FREQ_OPTS: [RemindFreq, string][] = [
 export default function TransformationRoute() {
   const persist = usePersist();
   const router = useRouter();
+  /* The card is measured from the window rather than from `onLayout`: the shelf has to know its pitch
+     on the FIRST frame or the initial snap offset is computed against a width of zero. `scroll`'s 18pt
+     gutter is on both sides. */
+  const { width: winW } = useWindowDimensions();
+  const cardW = Math.max(220, winW - 18 * 2 - CARD_PEEK);
   const { showToast } = useToast();
   const { data, refetch } = useQuery(fetchTransformationEntries, []);
   const { data: remind, refetch: refetchRemind } = useQuery(getRemind, []);
@@ -207,17 +223,47 @@ export default function TransformationRoute() {
                       <Text style={styles.chapterSub}>{sub}</Text>
                     </View>
                   </View>
-                  <View style={styles.cardStack}>
+                  {/*
+                    ⭐ A CHAPTER'S ENTRIES ARE A SHELF, NOT A STACK.
+
+                    PO: *"I see my three different entries, I should be able to carousel scroll on those
+                    cards quickly."* They were a vertical `cardStack`, so moving between two entries in
+                    the same chapter meant scrolling the whole page past a full-height card each time —
+                    and comparing them by eye meant scrolling back. A chapter is a small, bounded set of
+                    moments in one period; flicking sideways through it is the gesture that matches.
+
+                    ⚠ SNAPPED, NOT FREE-SCROLLING. `snapToInterval` on the card pitch with
+                    `decelerationRate="fast"` means a flick lands on a card rather than between two —
+                    which is the difference between a carousel and a horizontally scrolling div.
+
+                    ⚠ AND THE CARD'S OWN POSE STRIP HAD TO STOP SCROLLING SIDEWAYS FOR THIS TO EXIST.
+                    It was a horizontal `ScrollView` inside what is now a horizontal `ScrollView` — two
+                    scrollers on one axis, where the inner one silently eats every drag that begins on a
+                    photograph, which is most of the card. This app has already spent two passes on
+                    exactly that class of defect in the comparison slider; building a third one
+                    deliberately is not a trade. The poses are a fixed 3-column grid now — see
+                    `EntryCard` — so the whole card is a drag target and nothing competes.
+                  */}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    decelerationRate="fast"
+                    snapToInterval={cardW + CARD_GAP}
+                    snapToAlignment="start"
+                    disableIntervalMomentum
+                    contentContainerStyle={styles.cardShelf}
+                  >
                     {es.map((e) => (
-                      <EntryCard
-                        key={e.id}
-                        entry={e}
-                        isNewest={e.id === newestId}
-                        onOpen={() => router.push({ pathname: '/transformation/[id]', params: { id: e.id } })}
-                        onLongPress={() => setActionEntry(e)}
-                      />
+                      <View key={e.id} style={{ width: cardW }}>
+                        <EntryCard
+                          entry={e}
+                          isNewest={e.id === newestId}
+                          onOpen={() => router.push({ pathname: '/transformation/[id]', params: { id: e.id } })}
+                          onLongPress={() => setActionEntry(e)}
+                        />
+                      </View>
                     ))}
-                  </View>
+                  </ScrollView>
                 </View>
               );
             })}
@@ -333,14 +379,22 @@ function EntryCard({ entry, isNewest, onOpen, onLongPress }: { entry: Transforma
         </View>
       ) : null}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.poseStrip}>
+      {/*
+        ⚠ A GRID, NOT A HORIZONTAL SCROLLER — see the note at the carousel that contains this card. Six
+        poses across a card that is itself a carousel page cannot be a second horizontal scroller, and
+        shrinking them to fit one row would have made each pose a 45pt stamp. Three columns over two
+        rows gives every pose more room than the strip did AND leaves the card a single drag target.
+        `flexBasis: '31%'` rather than a computed width: the card's width comes from the shelf, and a
+        percentage follows it without this component needing to know what it is.
+      */}
+      <View style={styles.poseGrid}>
         {XFORM_POSES.map((p) => (
-          <View key={p.key} style={styles.poseSlotWrap}>
+          <View key={p.key} style={styles.poseCell}>
             <View style={styles.poseSlot}>{entry.photos[p.key] ? <Image source={{ uri: entry.photos[p.key] }} style={styles.poseSlotImage} contentFit="cover" /> : <CameraGlyph />}</View>
-            <Text style={styles.poseSlotLabel}>{p.label}</Text>
+            <Text style={styles.poseSlotLabel} numberOfLines={1}>{p.label}</Text>
           </View>
         ))}
-      </ScrollView>
+      </View>
 
       {entry.caption ? (
         <View style={styles.captionWrap}>
@@ -468,7 +522,9 @@ const styles = StyleSheet.create({
   chapterHeadText: { flex: 1, minWidth: 0, gap: 3 },
   chapterName: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', letterSpacing: -0.1, color: flColor.cream100, lineHeight: 18 },
   chapterSub: { fontSize: 10.5, fontWeight: '500', letterSpacing: 0.4, color: flColor.gray600 },
-  cardStack: { gap: 14 },
+  /* The shelf's own gutter matches the page's `scroll` padding, so the first card lines up with the
+     chapter heading above it and the last one can still be flicked fully into view. */
+  cardShelf: { gap: CARD_GAP, paddingRight: 4 },
 
   card: { position: 'relative', borderRadius: flRadius.xl, overflow: 'hidden', boxShadow: flShadow.borderInset },
   cardNewest: { borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800 },
@@ -490,9 +546,11 @@ const styles = StyleSheet.create({
   metaWrap: { paddingHorizontal: 15, paddingBottom: 10 },
   metaLine: { fontSize: 10.5, letterSpacing: 0.2, color: flColor.gray600 },
 
-  poseStrip: { gap: 8, paddingHorizontal: 15, paddingBottom: 14, paddingTop: 2 },
-  poseSlotWrap: { alignItems: 'center', gap: 6 },
-  poseSlot: { width: 76, height: 100, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
+  poseGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10, paddingHorizontal: 15, paddingBottom: 14, paddingTop: 2 },
+  poseCell: { flexBasis: '31.5%', alignItems: 'center', gap: 6 },
+  /* `aspectRatio`, not a fixed height — the cell's width now comes from the card, which comes from the
+     screen, so a hard 76×100 would letterbox on a wide phone and overflow on a narrow one. */
+  poseSlot: { width: '100%', aspectRatio: 3 / 4, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
   poseSlotImage: { width: '100%', height: '100%' },
   poseSlotLabel: { fontSize: 8.5, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray600 },
 

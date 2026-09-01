@@ -34,6 +34,23 @@ export default function TransformationEntryRoute() {
   const { data, loading, refetch } = useQuery(fetchTransformationEntries, []);
 
   const [sel, setSel] = useState<Sel | null>(null);
+  /**
+   * How the entry's media is laid out.
+   *
+   * PO, 2026-09-01: *"when I click on a transformation card I should be able to just view it in
+   * different ways. Like a grid style if I want too."*
+   *
+   * The screen only ever had ONE answer: a 3:4 hero with a thumbnail strip to choose what goes in it.
+   * That is the right default — a progress photo is worth looking at large — and it is the wrong thing
+   * when the question is *"what did I capture that day?"*, because answering it means tapping through
+   * six thumbnails one at a time and holding the last one in your head. `grid` puts the whole capture
+   * on screen at once. Tapping any tile drops back into `single` on that pose, so the grid is also the
+   * fastest way to reach a particular one.
+   *
+   * Not persisted: it is a way of looking at THIS entry, not a setting. Compare's own Side-by-side /
+   * Slider toggle behaves the same way, and this reuses its shape so the two read as one control.
+   */
+  const [layout, setLayout] = useState<'single' | 'grid'>('single');
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -121,29 +138,75 @@ export default function TransformationEntryRoute() {
           </View>
         ) : null}
 
+        {/* ⚠ OFFERED ONLY WHERE IT MEANS SOMETHING. A grid of one tile is the hero with extra steps, so
+            a single-pose entry keeps the layout it has and never draws a chooser that changes nothing. */}
+        {hasMedia && options.length > 1 ? (
+          <View style={styles.layoutToggle}>
+            {(['single', 'grid'] as const).map((v) => (
+              <Pressable
+                key={v}
+                onPress={() => setLayout(v)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: layout === v }}
+                accessibilityLabel={v === 'single' ? 'View one pose at a time' : 'View every pose at once'}
+                style={[styles.layoutSeg, layout === v ? styles.layoutSegOn : styles.layoutSegOff]}
+              >
+                <Text style={[styles.layoutSegText, layout === v ? styles.layoutSegTextOn : null]}>
+                  {v === 'single' ? 'One at a time' : 'Grid'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+
         {/* media viewer */}
         <View style={styles.mediaWrap}>
           {hasMedia ? (
-            <>
-              <View style={styles.hero}>
-                {activeOpt?.isVideo && entry.videoUrl ? <VideoBlock uri={entry.videoUrl} /> : active && active !== 'video' && entry.photos[active] ? <Image source={{ uri: entry.photos[active] }} style={styles.heroImage} contentFit="cover" /> : null}
+            layout === 'grid' ? (
+              /* Every pose in the capture, at once. Tapping one is the fastest way back to the hero. */
+              <View style={styles.grid}>
+                {options.map((o) => (
+                  <Pressable
+                    key={o.key}
+                    onPress={() => {
+                      setSel(o.key);
+                      setLayout('single');
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${o.label} — open large`}
+                    style={styles.gridCell}
+                  >
+                    <View style={styles.gridTile}>
+                      {o.isVideo ? <PlayGlyph size={22} /> : o.key !== 'video' && entry.photos[o.key] ? <Image source={{ uri: entry.photos[o.key] }} style={styles.gridImage} contentFit="cover" /> : null}
+                    </View>
+                    <Text style={styles.gridLabel} numberOfLines={1}>
+                      {o.label}
+                    </Text>
+                  </Pressable>
+                ))}
               </View>
-              {options.length > 1 ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbStrip}>
-                  {options.map((o) => {
-                    const on = o.key === active;
-                    return (
-                      <Pressable key={o.key} onPress={() => setSel(o.key)} accessibilityRole="button" accessibilityLabel={o.label} style={styles.thumbBtn}>
-                        <View style={[styles.thumb, { borderColor: on ? flColor.bronze400 : flColor.charcoal600 }]}>
-                          {o.isVideo ? <PlayGlyph size={16} /> : o.key !== 'video' && entry.photos[o.key] ? <Image source={{ uri: entry.photos[o.key] }} style={styles.thumbImage} contentFit="cover" /> : null}
-                        </View>
-                        <Text style={[styles.thumbLabel, on ? styles.thumbLabelOn : null]}>{o.short}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              ) : null}
-            </>
+            ) : (
+              <>
+                <View style={styles.hero}>
+                  {activeOpt?.isVideo && entry.videoUrl ? <VideoBlock uri={entry.videoUrl} /> : active && active !== 'video' && entry.photos[active] ? <Image source={{ uri: entry.photos[active] }} style={styles.heroImage} contentFit="cover" /> : null}
+                </View>
+                {options.length > 1 ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbStrip}>
+                    {options.map((o) => {
+                      const on = o.key === active;
+                      return (
+                        <Pressable key={o.key} onPress={() => setSel(o.key)} accessibilityRole="button" accessibilityLabel={o.label} style={styles.thumbBtn}>
+                          <View style={[styles.thumb, { borderColor: on ? flColor.bronze400 : flColor.charcoal600 }]}>
+                            {o.isVideo ? <PlayGlyph size={16} /> : o.key !== 'video' && entry.photos[o.key] ? <Image source={{ uri: entry.photos[o.key] }} style={styles.thumbImage} contentFit="cover" /> : null}
+                          </View>
+                          <Text style={[styles.thumbLabel, on ? styles.thumbLabelOn : null]}>{o.short}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                ) : null}
+              </>
+            )
           ) : (
             <View style={styles.noMedia}>
               <CameraGlyph />
@@ -152,7 +215,9 @@ export default function TransformationEntryRoute() {
           )}
         </View>
 
-        {activeOpt ? (
+        {/* Names what is in the hero. In the grid every tile carries its own label, so this row would be
+            saying which pose is "selected" while six of them are on screen. */}
+        {activeOpt && layout === 'single' ? (
           <View style={styles.viewRow}>
             <Text style={styles.viewLabel}>View</Text>
             <Text style={styles.viewValue}>{activeOpt.label}</Text>
@@ -355,6 +420,22 @@ const styles = StyleSheet.create({
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 11 },
   tagPill: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
   tagPillText: { fontSize: 10.5, fontWeight: '600', color: flColor.bronze400 },
+
+  /* The same segmented shape Compare uses for Side by side / Slider, so the two read as one control. */
+  layoutToggle: { flexDirection: 'row', gap: 8, marginTop: 22 },
+  layoutSeg: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: flRadius.pill, borderWidth: 1 },
+  layoutSegOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder },
+  layoutSegOff: { backgroundColor: 'transparent', borderColor: flColor.charcoal600 },
+  layoutSegText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
+  layoutSegTextOn: { color: flColor.bronze300 },
+
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14 },
+  /* Two columns. `flexBasis` rather than a measured width — the screen's gutter is the only thing that
+     decides this, and a percentage follows it without the component knowing the number. */
+  gridCell: { flexBasis: '48.5%', gap: 6 },
+  gridTile: { width: '100%', aspectRatio: 3 / 4, borderRadius: flRadius.lg, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
+  gridImage: { width: '100%', height: '100%' },
+  gridLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray400, textAlign: 'center' },
 
   mediaWrap: { marginTop: 20 },
   hero: { width: '100%', aspectRatio: 3 / 4, borderRadius: flRadius.xl, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.surfaceRecessed, boxShadow: `${flShadow.borderInset}, ${flShadow.card}` },
