@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { ForgeSplash } from '@/components/forge-splash';
+import { IS_PAPER } from '@/constants/foundation';
 
 /**
  * The hand-off from the NATIVE splash to the first painted frame.
@@ -25,26 +26,48 @@ import { ForgeSplash } from '@/components/forge-splash';
  * vanished for 600ms and came back. So the fill is now `ForgeSplash` — the splash reproduced in JS,
  * artwork and all — and this component finally does what its name says, which is nothing visible.
  *
- * The colour lives in `ForgeSplash` now, and `splash-continuity.test.mjs` still holds it equal to
- * `app.json`'s. Any colour that is not the splash's is a flash by construction.
- *
  * ⚠ NO SCALE. The keyframe used to blow the view up to `screenHeight / 90` and shrink it back — the
  * Expo template's logo-zoom, harmless while the content was a flat colour and wrong the moment the
  * content became artwork, because the pillars would have rushed in from nine times their size. A plain
  * fade is all a cover needs: what is underneath it (the boot hold, then Home's own hold) is the same
  * picture, so there is nothing for the athlete to see happen.
  *
- * ══ AND THEN ALABASTER MADE THE HAND-OFF VISIBLE AGAIN ══
+ * ══ ⚠ AND THE ALABASTER DISSOLVE WAS AT THE WRONG END OF THE ANIMATION ══
  *
- * PO: *"when it's the white version the splash screen is black first then it goes to the white."* The
- * native splash is build config — one dark frame for every athlete on the binary — so a light theme
- * cannot be met by the OS, and the moment JS took over the ground CUT from dark to cream. This overlay
- * now renders the splash on the NATIVE ground (`ground="forge"`) whatever the theme, and fades out
- * over the theme's own splash beneath it: a Forge launch is unchanged (dark over dark), an Alabaster
- * launch dissolves from the frame the OS drew to the one the athlete chose. The pillars do not move;
- * only the ground behind them changes, and it changes over 180ms instead of in one frame.
+ * PO, 2026-09-01: *"when I am on the light mode and the app opens up it opens the dark splash screen
+ * first and then turns to light mode. Should just go straight to light mode if that's what I'm in."*
+ *
+ * The dissolve was already here — and it ran LAST. This overlay painted the native dark ground at full
+ * opacity for the first **70% of 600ms** and only then faded, revealing the athlete's cream splash
+ * underneath. So an Alabaster launch spent **420ms on a dark screen that JS had already chosen not to
+ * be**, and the change, when it came, was the last thing that happened rather than the first.
+ *
+ * The layers are separated now. The theme's own splash is the FLOOR of this overlay and the native dark
+ * ground is a sheet ON TOP of it that dissolves away in the first fifth of the animation — so the ground
+ * arrives at the athlete's theme in ~270ms instead of ~600ms, and everything after that is already the
+ * right colour. The outer fade still runs at the end, over an image identical to what is beneath it.
+ *
+ * ⚠ THE HOLD BEFORE THE DISSOLVE IS NOT PADDING. The native splash auto-hides (nothing in this app calls
+ * `preventAutoHideAsync`), so for the first frames the OS may still be drawing its own dark screen on
+ * top of ours. Starting the dissolve at zero would run it BEHIND the native splash and put the cut back
+ * — visible at the moment the OS frame goes away, which is the exact defect this exists to prevent.
+ *
+ * ⚠ A FORGE LAUNCH RENDERS EXACTLY WHAT IT ALWAYS DID — one layer, no dissolve. Stacking two identical
+ * dark splashes to animate between them would be pure cost on the default theme, and `IS_PAPER` is safe
+ * to read here: this renders inside `_layout`, long after the boot gate resolved the theme. (It is the
+ * boot gate itself that must not touch a token — see `src/boot.tsx`.)
+ *
+ * ⛔ WHAT THIS STILL CANNOT DO: the OS splash frame itself. `app.json`'s `backgroundColor` is BUILD
+ * config — one value for every athlete on the binary — so the very first frame of a cold launch is dark
+ * whatever the theme, and no OTA can change it. Closing that needs a new build AND would follow the
+ * SYSTEM appearance rather than the in-app choice, so an Alabaster athlete running iOS in dark mode
+ * would still get a dark frame. This is as close as the platform allows without a binary.
  */
 const DURATION = 600;
+
+/** When the native ground starts and finishes dissolving, as a share of `DURATION`. */
+const DISSOLVE_START = 15; // ~90ms — long enough for the OS splash to be gone
+const DISSOLVE_END = 45; // ~270ms — the ground is the athlete's theme from here on
 
 export function AnimatedSplashOverlay() {
   const [visible, setVisible] = useState(true);
@@ -54,6 +77,14 @@ export function AnimatedSplashOverlay() {
   const splashKeyframe = new Keyframe({
     0: { opacity: 1 },
     70: { opacity: 1 },
+    100: { opacity: 0 },
+  });
+
+  /** The native dark ground, on top of the theme's, gone by the time anyone can read the screen. */
+  const groundKeyframe = new Keyframe({
+    0: { opacity: 1 },
+    [DISSOLVE_START]: { opacity: 1 },
+    [DISSOLVE_END]: { opacity: 0 },
     100: { opacity: 0 },
   });
 
@@ -67,7 +98,19 @@ export function AnimatedSplashOverlay() {
       })}
       style={styles.cover}
     >
-      <ForgeSplash ground="forge" />
+      {IS_PAPER ? (
+        <>
+          {/* The floor: the splash the athlete actually chose. Everything above it is the hand-off. */}
+          <View style={StyleSheet.absoluteFill}>
+            <ForgeSplash />
+          </View>
+          <Animated.View entering={groundKeyframe.duration(DURATION)} style={StyleSheet.absoluteFill}>
+            <ForgeSplash ground="forge" />
+          </Animated.View>
+        </>
+      ) : (
+        <ForgeSplash ground="forge" />
+      )}
     </Animated.View>
   );
 }

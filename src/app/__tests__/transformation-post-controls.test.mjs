@@ -111,20 +111,54 @@ for (const [name, src] of [
  * The drag itself. Every rule here is a defect that was reported at least once.
  */
 test('⚠ the divider is NOT moved when a finger merely lands on it', () => {
-  // The report: scrolling past a comparison re-cut it. `track` used to run from `onPanResponderGrant`,
-  // so every thumb on its way somewhere else moved the picture. A tap still places the divider — on
-  // RELEASE, once the touch has proved it was a tap.
+  // The report: scrolling past a comparison re-cut it, because `track` ran from `onPanResponderGrant`.
+  // The responder is not even CLAIMED on touch-down now — see the next test for why that had to change.
+  assert.match(DRAG, /onStartShouldSetPanResponder: \(\) => false/, 'the drag claims the touch on touch-down again');
   assert.doesNotMatch(DRAG, /onPanResponderGrant: \([\s\S]{0,200}?put\(/, 'the divider moves on touch-down again');
-  assert.match(DRAG, /onPanResponderRelease: [\s\S]{0,300}?put\(e\.nativeEvent\.locationX\)/, 'a tap no longer places the divider');
 });
 
-test('⚠ the axis is decided ONCE and then held for the whole gesture', () => {
-  // The report: a drag that curved downward at the end stopped dead under a moving finger. The old
-  // termination request re-evaluated `|dy| > |dx|` on cumulative travel every time it was asked, so the
-  // scroller could take a stroke that was already under way.
-  assert.match(DRAG, /if \(axis\.value === 1\) return false;/, 'a horizontal drag can be taken away mid-stroke again');
-  assert.match(DRAG, /if \(axis\.value === 2\) return true;/, 'a vertical scroll is no longer handed over at once');
-  assert.match(DRAG, /axis\.value = adx >= ady \? 1 : 2;/, 'the axis is no longer latched');
+test('⭐ THE PAGE STAYS STILL WHILE YOU DRAG — claimed on MOVE, and only when horizontal', () => {
+  // PO: *"when we're sliding the screen should just stay in place."* `onShouldBlockNativeResponder` is
+  // asked ONCE, at grant — so it cannot consult an axis decided later. Claiming on touch-down forced a
+  // choice between blocking the scroller for every touch and never blocking it. Claiming on the first
+  // unambiguously horizontal move means the answer is already known and can be an unconditional yes.
+  assert.match(DRAG, /onShouldBlockNativeResponder: \(\) => true/, 'the native scroller runs under the drag again');
+  assert.match(
+    DRAG,
+    /onMoveShouldSetPanResponder: [\s\S]{0,200}?Math\.abs\(g\.dx\) >= AXIS_SLOP && Math\.abs\(g\.dx\) > Math\.abs\(g\.dy\)/,
+    'the drag claims vertical or ambiguous movement again — that is a comparison you cannot scroll past',
+  );
+});
+
+test('⚠ WEB SCROLLS IN THE BROWSER, where blocking the native responder means nothing', () => {
+  // The page is scrolled off the main thread by the compositor and will keep going under a JS drag.
+  // `pan-y` gives the browser the vertical axis and keeps the horizontal one, matching the responder.
+  assert.match(DRAG, /touchAction: 'pan-y'/, 'the web comparison lets the browser scroll the page while dragging');
+  assert.doesNotMatch(DRAG, /touchAction: 'none'/, "'none' makes the comparison a dead zone you cannot scroll past");
+  for (const [name, src] of [['BeforeAfterSlider', SLIDER], ['the friends feed comparison', FRIENDS]]) {
+    assert.match(src, /COMPARE_TOUCH_STYLE/, `${name} does not apply the touch-action style`);
+  }
+});
+
+test('⭐ the grab handle sits at the FOOT of the frame, not over the middle of the photo', () => {
+  // PO: *"the actual slider circle that's in the middle should be at the bottom."* Dead centre puts the
+  // handle over the part of a progress shot people are trying to see, and reaching it means covering the
+  // comparison with your hand.
+  const handle = SLIDER.slice(SLIDER.indexOf('  handle: {'));
+  const block = handle.slice(0, handle.indexOf('},'));
+  assert.match(block, /bottom: \d+/, 'the handle is no longer anchored to the bottom of the frame');
+  assert.doesNotMatch(block, /top: '50%'/, 'the handle is centred over the photograph again');
+  // ⚠ A percentage against a parent whose height comes from `aspectRatio` is the RN trap that
+  // resolves to no constraint at all. `bottom` is a real edge.
+  assert.doesNotMatch(block, /marginTop: -/, 'the centring offset is back, and it will fight `bottom`');
+});
+
+test('⚠ a horizontal drag is never handed back mid-stroke', () => {
+  // The report: a drag that curved downward at the end stopped dead under a moving finger, because the
+  // termination request re-evaluated `|dy| > |dx|` on CUMULATIVE travel every time the scroller asked.
+  // The responder is now granted only to a drag that has already proved itself horizontal, so there is
+  // nothing left to negotiate and the answer is a flat no.
+  assert.match(DRAG, /onPanResponderTerminationRequest: \(\) => false/, 'a horizontal drag can be taken away mid-stroke again');
 });
 
 test('the drag still never re-renders, and its responder is built once', () => {
