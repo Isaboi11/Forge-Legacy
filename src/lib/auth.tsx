@@ -6,6 +6,7 @@ import { isDeviceHandover, shouldRecordAthlete } from '@/domain/auth/device-hand
 import { syncAthletePresence } from '@/data/honors-live';
 import { flushPendingReferral } from '@/data/referral-live';
 import { stopAnalytics } from './analytics';
+import { clearSignedMedia } from './signed-media';
 
 /**
  * Auth session — the real identity the app runs on (Phase 1). `session.user.id` is `auth.uid()`,
@@ -153,6 +154,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // the session is gone the queued rows have nobody to belong to and are dropped. Awaited but
     // best-effort: `stopAnalytics` cannot throw, so it can never block signing out.
     await stopAnalytics();
+    // Signed photo URLs are per-object, not per-user, so a signature minted for this account has
+    // no business surviving into the next one on a shared device. In-memory only; nothing to await.
+    clearSignedMedia();
     await supabase.auth.signOut();
   };
 

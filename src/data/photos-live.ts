@@ -1,3 +1,4 @@
+import { signMedia } from '@/lib/signed-media';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -88,6 +89,20 @@ const toPhoto = (r: Record<string, unknown>): ChapterPhoto => ({
   event: (r.event as string) ?? null,
 });
 
+/**
+ * ⛔ EVERY READ OF A CHAPTER PHOTO URL GOES THROUGH HERE.
+ *
+ * `chapter-photos` is private as of 0187, so a stored URL is an identifier and not something a
+ * component can render. These three fetchers are the archive's only exits — `photo_albums()`,
+ * `chapter_album()` and today's strip — which is why signing lives in this file and not in the five
+ * screens that draw the results. `signMedia` never throws and returns the original on any failure, so
+ * a missed signature is a photo that loads the old way, never a blank tile. See `lib/signed-media`.
+ */
+const signPhotos = async <T extends { url: string }>(rows: T[]): Promise<T[]> => {
+  const signed = await signMedia(rows.map((r) => r.url));
+  return rows.map((r, i) => ({ ...r, url: signed[i] ?? r.url }));
+};
+
 const MISSING = 'The photo archive isn’t available yet — migration 0085 hasn’t been applied.';
 
 export async function fetchPhotoAlbums(): Promise<PhotoAlbums> {
@@ -97,7 +112,13 @@ export async function fetchPhotoAlbums(): Promise<PhotoAlbums> {
     throw error;
   }
   const d = (data ?? {}) as { total?: number; albums?: Record<string, unknown>[] };
-  return { total: Number(d.total ?? 0), albums: (d.albums ?? []).map(toAlbum) };
+  const albums = (d.albums ?? []).map(toAlbum);
+  // A cover is a chapter photo like any other, and the gallery is nothing but covers.
+  const covers = await signMedia(albums.map((a) => a.coverUrl));
+  return {
+    total: Number(d.total ?? 0),
+    albums: albums.map((a, i) => ({ ...a, coverUrl: covers[i] ?? a.coverUrl })),
+  };
 }
 
 export async function fetchAlbum(chapterId: string): Promise<AlbumDetail | null> {
@@ -117,7 +138,7 @@ export async function fetchAlbum(chapterId: string): Promise<AlbumDetail | null>
     isActive: !!d.is_active,
     sealed: !!d.sealed,
     weeks: Number(d.weeks ?? 1),
-    photos: ((d.photos ?? []) as Record<string, unknown>[]).map(toPhoto),
+    photos: await signPhotos(((d.photos ?? []) as Record<string, unknown>[]).map(toPhoto)),
   };
 }
 
@@ -224,7 +245,7 @@ export async function fetchTodaysChapterPhotos(): Promise<ChapterPhoto[]> {
     .eq('athlete_id', user.id)
     .eq('taken_on', today)
     .order('created_at', { ascending: false });
-  return ((data ?? []) as Record<string, unknown>[]).map((r) => ({ ...toPhoto(r), event: null }));
+  return signPhotos(((data ?? []) as Record<string, unknown>[]).map((r) => ({ ...toPhoto(r), event: null })));
 }
 
 // ── Presentation ─────────────────────────────────────────────────────────────
