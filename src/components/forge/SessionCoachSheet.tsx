@@ -109,6 +109,8 @@ export function SessionCoachSheet({
   onBreakSuperset,
   onAdd,
   onSkip,
+  onRemove,
+  canRemove,
   swapPicks,
   addPicks,
   onPick,
@@ -182,6 +184,14 @@ export function SessionCoachSheet({
   onBreakSuperset: () => void;
   onAdd: () => void;
   onSkip: () => void;
+  /**
+   * Take this exercise OUT of the session — not the same thing as `onSkip`, and the difference is the
+   * whole reason it is a second row. Skipping leaves the lift in the plan and in the record; removing
+   * says today's session does not contain it. The screen owns the guards and the confirmation.
+   */
+  onRemove: () => void;
+  /** False when this is the last exercise standing — an empty session has no way out. */
+  canRemove: boolean;
   /**
    * What Holt would put here instead — the authored relationship graph, filtered to the catalogue the
    * athlete can actually reach. Null when he has nothing worth naming.
@@ -531,7 +541,20 @@ export function SessionCoachSheet({
                 <Row label="Short on time" sub={`Pair with ${supersetWithName}`} onPress={run(onSuperset)} />
               ) : null}
               <Row label="Add a movement" onPress={run(onAdd)} />
-              <Row label="Move past this" last onPress={run(onSkip)} />
+              {/* `last` follows whichever of the two actually ends the box — the hairline would otherwise
+                  double the enclosure's own border on a session with one exercise left. */}
+              <Row label="Move past this" sub="Keep it in the session, come back to it" last={!canRemove} onPress={run(onSkip)} />
+              {/*
+                ⚠ TWO ROWS THAT SOUND ALIKE AND ARE NOT, so both now say which is which. "Move past this"
+                leaves the lift in the plan and in the finished record — the honest note that it was
+                prescribed and not reached. "Take it out" says the session does not contain it. Sitting
+                unlabelled next to each other, the pair was the kind of choice you get wrong once and
+                cannot undo, so each carries the consequence in its sub-line.
+
+                Hidden rather than disabled on the last exercise: a greyed row invites a tap and answers
+                with a refusal. See `canRemove` at the call site.
+              */}
+              {canRemove ? <Row label="Take it out" sub="Remove it from today’s session" last onPress={run(onRemove)} /> : null}
             </View>
           </View>
 

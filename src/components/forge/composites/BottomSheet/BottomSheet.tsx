@@ -33,6 +33,7 @@ import { Animated, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView,
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { flColor, flRadius, flShadow } from '@/constants/foundation'
 import { useSheetDrag } from '@/hooks/useSheetDrag'
+import { useKeyboardInset } from '@/lib/useKeyboardInset'
 
 export interface BottomSheetProps {
   open: boolean
@@ -69,6 +70,33 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
   const { height: windowHeight } = useWindowDimensions()
 
   const drag = useSheetDrag({ onClose, dismissible })
+
+  /**
+   * ══ THE TWO PLACES `KeyboardAvoidingView` DOES NOTHING, AND A FOOTER FIELD SITS IN BOTH ══
+   *
+   * PO, 2026-09-01: *"commenting on a post is difficult… the keyboard covers it."*
+   *
+   * The KAV below handles exactly one case — a NON-scrolling sheet on iOS. It leaves two holes:
+   *
+   * · **Web.** `KeyboardAvoidingView` is a no-op in react-native-web (it renders a plain View), and web
+   *   is the surface the PO actually tests from. Every sheet with a field has been typing blind there.
+   * · **A scrolling sheet.** It is deliberately switched off — see the long note below — and
+   *   `automaticallyAdjustKeyboardInsets` covers for it INSIDE the scroller. A `footer` is outside the
+   *   scroller, so a pinned composer got nothing at all.
+   *
+   * `useKeyboardInset` is the app's one answer to both: it reads the real keyboard height on native and
+   * `visualViewport` on web, and — unlike KAV — it is not confused by a `Modal` being its own UIWindow.
+   * Lifting the sheet by it puts the whole surface, footer included, above the keyboard.
+   *
+   * ⚠ ANDROID GETS NOTHING, in either branch. `adjustResize` already shortens the window, and adding to
+   * it would double-count exactly as the KAV note warns.
+   *
+   * ⚠ AND WHEN WE LIFT, `automaticallyAdjustKeyboardInsets` MUST COME OFF. The sheet has moved clear of
+   * the keyboard, so a second correction inside the scroller would scroll the body out from under the
+   * athlete by the keyboard's height a second time.
+   */
+  const keyboardInset = useKeyboardInset()
+  const lift = Platform.OS === 'android' ? 0 : Platform.OS === 'web' || scroll ? keyboardInset : 0
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose} onDismiss={onDismiss}>
@@ -113,7 +141,11 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
         />
         <Animated.View
           onLayout={drag.onLayout}
-          style={[styles.sheet, { paddingBottom: 22 + insets.bottom }, drag.style]}
+          /* ⚠ THE CAP HAS TO GROW BY THE SAME AMOUNT. `maxHeight: '88%'` measures the WHOLE sheet, and
+             the lift is padding underneath the keyboard that nobody can see — leaving the cap alone
+             would spend a third of the allowance on empty space and squeeze the body that much. What
+             stays capped at 88% is the part still on screen. */
+          style={[styles.sheet, { paddingBottom: 22 + insets.bottom + lift, maxHeight: windowHeight * 0.88 + lift }, drag.style]}
         >
           {/*
             The pan lives here, on the grab area — the handle AND the title, as one target. PO, 2026-08-28,
@@ -147,7 +179,7 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
               contentContainerStyle={styles.content}
               showsVerticalScrollIndicator
               keyboardShouldPersistTaps="handled"
-              automaticallyAdjustKeyboardInsets
+              automaticallyAdjustKeyboardInsets={lift === 0}
             >
               {children}
             </ScrollView>

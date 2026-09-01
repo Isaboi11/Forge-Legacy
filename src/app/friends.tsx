@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 /* ⚠ ALIASED, BECAUSE `Animated` IS ALREADY TAKEN in this file by React Native's own legacy API — the
    milestone card's pop-in uses it. Reanimated's `Animated.View` is a different component that
    understands `useAnimatedStyle`; importing it under its usual name here would silently shadow the
    other one and break that animation, or vice versa. `ProgressCompare` is the only Reanimated user. */
-import Reanimated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -17,6 +17,7 @@ import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker }
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useCompareDrag } from '@/hooks/useCompareDrag';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { BG_RADIAL } from '@/constants/backgrounds';
 import {
@@ -445,42 +446,19 @@ function ReactionPicker({ current, onPick }: { current: Reaction | null; onPick:
  * reasoning:
  *  · the position is a Reanimated shared value, so dragging renders nothing;
  *  · the reveal is cut by TWO CANCELLING TRANSFORMS instead of an animated width, so there is no layout;
- *  · the gesture is handed back when the movement is more vertical than horizontal, so the feed scrolls.
+ *  · and the GESTURE is `useCompareDrag`, the same one the page-sized slider uses.
  *
- * Kept as its own component rather than swapped for `BeforeAfterSlider`: this card is full-bleed and
+ * ⚠ THE GESTURE IS SHARED NOW, AND THAT IS THE POINT OF THE HOOK. This component existed as a copy, so
+ * when the drag was fixed the first time only one of the two got the fix, and the PO reported the same
+ * defect again a fortnight later on the other. There is one drag in the app; only the CHROME differs.
+ *
+ * Still its own component rather than swapped for `BeforeAfterSlider`: this card is full-bleed and
  * graded to sit in the feed, and that component draws a bordered, rounded frame meant for a page.
  */
 function ProgressCompare({ post }: { post: FeedPost }) {
   const before = post.media.find((m) => m.slot === 'before') ?? post.media[0];
   const after = post.media.find((m) => m.slot === 'after') ?? post.media[1];
-  const [width, setWidth] = useState(0);
-  const x = useSharedValue(0);
-  const touched = useSharedValue(false);
-  /* A shared value for the handler, state for the render — see the same note in `BeforeAfterSlider`. The
-     responder is built once, so it must not close over a width that was 0 when it was built. */
-  const wv = useSharedValue(0);
-
-  const onLayout = (e: LayoutChangeEvent) => {
-    const next = e.nativeEvent.layout.width;
-    wv.value = next;
-    setWidth(next);
-    if (!touched.value) x.value = next / 2;
-  };
-  const [responder] = useState(() => {
-    const track = (e: GestureResponderEvent) => {
-      x.value = Math.max(0, Math.min(wv.value, e.nativeEvent.locationX));
-    };
-    return PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e) => {
-        touched.value = true;
-        track(e);
-      },
-      onPanResponderMove: track,
-      onPanResponderTerminationRequest: (_e, g) => Math.abs(g.dy) > Math.abs(g.dx),
-    });
-  });
+  const { x, width, onLayout, panHandlers } = useCompareDrag();
 
   const clipStyle = useAnimatedStyle(() => ({ transform: [{ translateX: x.value - width }] }));
   const clipInnerStyle = useAnimatedStyle(() => ({ transform: [{ translateX: width - x.value }] }));
@@ -491,7 +469,7 @@ function ProgressCompare({ post }: { post: FeedPost }) {
   if (!before || !after) return null;
 
   return (
-    <View style={styles.compare} onLayout={onLayout} {...responder.panHandlers}>
+    <View style={styles.compare} onLayout={onLayout} {...panHandlers}>
       <Image source={{ uri: after.url }} style={styles.compareImg} contentFit="cover" />
       {/* The before-image is clipped to the left of the divider, so dragging reveals the after. */}
       <Reanimated.View style={[styles.compareClip, clipStyle]} pointerEvents="none">
@@ -556,25 +534,30 @@ function CommentsSheet({ post, onClose, onChanged }: { post: FeedPost | null; on
     );
   };
 
+  /**
+   * ══ THE FIELD WAS THE LAST THING IN THE LIST, WHICH IS WHY NOBODY COULD FIND IT ══
+   *
+   * PO, 2026-09-01: *"commenting on a post is difficult. The comment bar is super hard to find so it
+   * needs to be higher, and then the keyboard covers it."* Both halves were the same mistake.
+   *
+   * The composer used to be the last child of the sheet's BODY, underneath every comment — and the sheet
+   * was opened without `scroll`, so the body did not scroll either. On a post with a real thread the
+   * field was pushed past the sheet's 88% cap and simply clipped: not merely hard to find, unreachable.
+   * On an empty one it was findable and still wrong, because "where do I type" should never depend on
+   * how many people have already answered.
+   *
+   * It is a `footer` now — BottomSheet pins that outside the scroller, so it holds its place at the foot
+   * of the sheet whether there are no comments or forty — and the thread above it scrolls. The keyboard
+   * half is fixed one level down, in `BottomSheet` itself: a pinned footer is exactly the case its
+   * `KeyboardAvoidingView` never covered. See the note there.
+   */
   return (
-    <BottomSheet open={post != null} onClose={onClose} title="Comments">
-      <View style={styles.comments}>
-        {comments === null ? (
-          <ActivityIndicator color={flColor.bronze400} style={styles.uploading} />
-        ) : comments.length === 0 ? (
-          <Text style={styles.note}>No comments yet.</Text>
-        ) : (
-          comments.map((c) => (
-            <View key={c.id} style={styles.comment}>
-              <Avatar src={c.authorAvatarUrl ?? undefined} name={c.authorName} size={28} />
-              <View style={styles.commentBody}>
-                <Text style={styles.commentName}>{c.isMine ? 'You' : c.authorName}</Text>
-                <Text style={styles.commentText}>{c.body}</Text>
-              </View>
-            </View>
-          ))
-        )}
-
+    <BottomSheet
+      open={post != null}
+      onClose={onClose}
+      title="Comments"
+      scroll
+      footer={
         <View style={styles.commentInputRow}>
           <TextInput
             value={draft}
@@ -596,6 +579,24 @@ function CommentsSheet({ post, onClose, onChanged }: { post: FeedPost | null; on
             <Text style={[styles.sendLabel, draft.trim() ? styles.sendLabelOn : null]}>Send</Text>
           </Pressable>
         </View>
+      }
+    >
+      <View style={styles.comments}>
+        {comments === null ? (
+          <ActivityIndicator color={flColor.bronze400} style={styles.uploading} />
+        ) : comments.length === 0 ? (
+          <Text style={styles.note}>No comments yet. Say the first thing.</Text>
+        ) : (
+          comments.map((c) => (
+            <View key={c.id} style={styles.comment}>
+              <Avatar src={c.authorAvatarUrl ?? undefined} name={c.authorName} size={28} />
+              <View style={styles.commentBody}>
+                <Text style={styles.commentName}>{c.isMine ? 'You' : c.authorName}</Text>
+                <Text style={styles.commentText}>{c.body}</Text>
+              </View>
+            </View>
+          ))
+        )}
       </View>
     </BottomSheet>
   );
@@ -691,7 +692,8 @@ const styles = StyleSheet.create({
   commentBody: { flex: 1, minWidth: 0 },
   commentName: { fontSize: 12, fontWeight: '600', color: flColor.cream100 },
   commentText: { marginTop: 2, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
-  commentInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  /* No `marginTop` — it is the sheet's pinned footer now, and the footer supplies its own padding. */
+  commentInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   commentInput: { flex: 1, minWidth: 0, height: 42, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 13.5, color: flColor.cream100 },
   sendBtn: { paddingHorizontal: 15, paddingVertical: 11, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
   sendBtnOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },

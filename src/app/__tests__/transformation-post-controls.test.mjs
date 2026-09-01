@@ -29,6 +29,7 @@ const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$
 
 const ALIGN = strip(read('../../components/forge/AlignEditor.tsx'));
 const SLIDER = strip(read('../../components/forge/BeforeAfterSlider.tsx'));
+const DRAG = strip(read('../../hooks/useCompareDrag.ts'));
 const FRIENDS = strip(read('../friends.tsx'));
 const SQUAD = strip(read('../squad/[id].tsx'));
 const LAYOUT = strip(read('../../components/forge/TransformationLayout.tsx'));
@@ -91,29 +92,58 @@ for (const [name, src] of [
     assert.match(src, /clipInnerStyle = useAnimatedStyle\(\(\) => \(\{ transform: \[\{ translateX: w(idth)? - x\.value/, `${name} lost the cancelling inner transform`);
   });
 
-  test(`${name} hands the gesture back so the feed can scroll`, () => {
-    assert.match(
-      src,
-      /onPanResponderTerminationRequest: \(_e, g\) => Math\.abs\(g\.dy\) > Math\.abs\(g\.dx\)/,
-      `${name} claims every touch — it is a dead zone in a scrolling feed`,
-    );
-  });
-
-  test(`${name} never re-renders while dragging`, () => {
-    // The position must not be React state, and the responder must be built once.
-    assert.match(src, /const x = useSharedValue\(0\)/, `${name} no longer keeps the divider in a shared value`);
+  /**
+   * ⚠ ROUND THREE MOVED THE GESTURE OUT OF BOTH FILES. PO, 2026-09-01: *"the swipe picture comparison is
+   * finicky."* The physics guarded above were fine; who owned the TOUCH was not, and the fix is one
+   * shared `useCompareDrag` rather than the same repair made twice in two files — which is exactly how
+   * round two came to find a second slider that had never been fixed at all.
+   *
+   * So these two now assert the copy is GONE. What the drag must do is guarded once, below.
+   */
+  test(`${name} uses the one shared drag, not a copy of it`, () => {
+    assert.match(src, /useCompareDrag\(\)/, `${name} no longer uses the shared drag`);
+    assert.doesNotMatch(src, /PanResponder\.create\(/, `${name} has grown its own responder again — that is how the two drifted apart`);
     assert.doesNotMatch(src, /setPct\(/, `${name} writes a percentage to state on every touch event`);
-    assert.match(src, /useState\(\(\) => \{[\s\S]{0,400}?PanResponder\.create\(/, `${name} rebuilds its PanResponder`);
   });
 }
+
+/**
+ * The drag itself. Every rule here is a defect that was reported at least once.
+ */
+test('⚠ the divider is NOT moved when a finger merely lands on it', () => {
+  // The report: scrolling past a comparison re-cut it. `track` used to run from `onPanResponderGrant`,
+  // so every thumb on its way somewhere else moved the picture. A tap still places the divider — on
+  // RELEASE, once the touch has proved it was a tap.
+  assert.doesNotMatch(DRAG, /onPanResponderGrant: \([\s\S]{0,200}?put\(/, 'the divider moves on touch-down again');
+  assert.match(DRAG, /onPanResponderRelease: [\s\S]{0,300}?put\(e\.nativeEvent\.locationX\)/, 'a tap no longer places the divider');
+});
+
+test('⚠ the axis is decided ONCE and then held for the whole gesture', () => {
+  // The report: a drag that curved downward at the end stopped dead under a moving finger. The old
+  // termination request re-evaluated `|dy| > |dx|` on cumulative travel every time it was asked, so the
+  // scroller could take a stroke that was already under way.
+  assert.match(DRAG, /if \(axis\.value === 1\) return false;/, 'a horizontal drag can be taken away mid-stroke again');
+  assert.match(DRAG, /if \(axis\.value === 2\) return true;/, 'a vertical scroll is no longer handed over at once');
+  assert.match(DRAG, /axis\.value = adx >= ady \? 1 : 2;/, 'the axis is no longer latched');
+});
+
+test('the drag still never re-renders, and its responder is built once', () => {
+  assert.match(DRAG, /const x = useSharedValue\(0\)/, 'the divider is no longer a shared value');
+  assert.match(DRAG, /useState\(\(\) => \{[\s\S]{0,400}?PanResponder\.create\(/, 'the PanResponder is rebuilt every render');
+});
 
 test('the drag reads its width from a shared value, not a ref', () => {
   // `react-hooks/refs` counts a `useState` initializer as render, so a ref here is a lint ERROR in this
   // repo. A shared value is stable, readable from a handler, and already present.
-  for (const [name, src] of [['slider', SLIDER], ['friends', FRIENDS]]) {
-    assert.match(src, /x\.value = Math\.max\(0, Math\.min\(wv\.value, e\.nativeEvent\.locationX\)\)/, `${name} reads its width from something else`);
-    assert.doesNotMatch(src, /wRef\.current/, `${name} is back on a ref`);
-  }
+  assert.match(DRAG, /Math\.max\(0, Math\.min\(wv\.value, px\)\)/, 'the drag reads its width from something else');
+  assert.doesNotMatch(DRAG, /wRef\.current/, 'the drag is back on a ref');
+});
+
+test('⚠ tracking is in PAGE space, so dragging past the frame still follows the finger', () => {
+  // `locationX` is relative to whatever is under the touch, which changes the moment the finger leaves
+  // the photo. The frame's origin is measured once on grant and the drag reads `gestureState.moveX`.
+  assert.match(DRAG, /originX\.value = e\.nativeEvent\.pageX - e\.nativeEvent\.locationX/, 'the frame origin is no longer measured on grant');
+  assert.match(DRAG, /put\(g\.moveX - originX\.value\)/, 'the drag is back on a target-relative coordinate');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

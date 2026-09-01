@@ -6,6 +6,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -1125,7 +1126,32 @@ function CheckinCta({ onPress, uploading, pct }: { onPress: () => void; uploadin
   );
 }
 
+/**
+ * ══ THE WAY OUT OF A CHECK-IN WAS A GHOST ══
+ *
+ * PO: *"It's not obvious how to leave a check-in on a squad check-in. There isn't an obvious x to get
+ * out of it."* There WAS an ✕ — and three separate things conspired to make it unfindable:
+ *
+ * **1. It was drawn in the notch.** `paddingTop` was a hardcoded `54`, and this is the only overlay in
+ * the app that does not read `useSafeAreaInsets`. On a Dynamic Island phone the island occupies down to
+ * ~59pt, so the top of a 38pt disc starting at 54 sat *behind* it. The same class of defect as the
+ * Transformation TopBar three screens over — see the note there — and the same fix.
+ *
+ * **2. It was a white glyph on 12% white, over video.** Over a bright clip that is a contrast ratio of
+ * roughly nothing. A control that has to survive arbitrary footage underneath it needs its OWN ground,
+ * not a tint of whatever is behind.
+ *
+ * **3. There was no backdrop left to tap.** `viewerVideo` is `100% × 100%`, so the "tap outside to
+ * close" Pressable was covered edge to edge by the video — and the video carries `nativeControls`, so a
+ * tap on it toggles AVPlayer's chrome instead of dismissing. Every escape the component offered was
+ * either hidden, invisible, or unreachable.
+ *
+ * So: real safe-area padding, a scrim behind the top bar so the chrome is legible over any frame, and
+ * the close is now a LABELLED PILL — the same shape as "Post a new check-in" at the foot, which nobody
+ * has ever failed to find. A word beats a glyph when the glyph has to compete with a video.
+ */
 function CheckinViewer({ checkin, onClose, onReplace }: { checkin: SquadCheckin; onClose: () => void; onReplace?: () => void }) {
+  const insets = useSafeAreaInsets();
   const player = useVideoPlayer(checkin.videoUrl, (p) => {
     p.loop = false;
     p.play();
@@ -1137,19 +1163,39 @@ function CheckinViewer({ checkin, onClose, onReplace }: { checkin: SquadCheckin;
         <View style={styles.viewerStage} pointerEvents="box-none">
           <VideoView player={player} style={styles.viewerVideo} contentFit="contain" nativeControls />
         </View>
-        <View style={styles.viewerTop} pointerEvents="box-none">
+        {/* The scrim is its own layer and takes no touches — the chrome above it stays tappable, and the
+            video below it stays scrubbable. Without it the name and the time vanish over pale footage
+            exactly as the close did. */}
+        <LinearGradient
+          colors={['rgba(0,0,0,0.85)', 'rgba(0,0,0,0)']}
+          style={[styles.viewerScrim, { height: 132 + insets.top }]}
+          pointerEvents="none"
+        />
+        <View style={[styles.viewerTop, { paddingTop: 10 + insets.top }]} pointerEvents="box-none">
           <View style={styles.viewerWho}>
             <Text style={styles.viewerName} numberOfLines={1}>
               {checkin.isSelf ? 'Your check-in' : checkin.name}
             </Text>
             <Text style={styles.viewerTime}>{timeAgo(checkin.createdAt)}</Text>
           </View>
-          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} style={styles.viewerClose}>
-            <CloseX />
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close check-in"
+            hitSlop={12}
+            style={({ pressed }) => [styles.viewerClose, pressed ? styles.viewerClosePressed : null]}
+          >
+            <CloseX size={16} />
+            <Text style={styles.viewerCloseText}>Close</Text>
           </Pressable>
         </View>
+        {/* ⚠ NO SECOND CLOSE DOWN HERE, AND THAT IS A DECISION. The foot of this screen already belongs
+            to the video: `nativeControls` draws AVPlayer's scrubber across it, and "Post a new check-in"
+            is the one thing worth putting on top of that. A second Close stacked in the same band would
+            be a third control fighting for the same 60pt — the fix for "I can't find the way out" is one
+            unmissable exit, not two competing ones. */}
         {onReplace ? (
-          <View style={styles.viewerBottom} pointerEvents="box-none">
+          <View style={[styles.viewerBottom, { paddingBottom: 26 + insets.bottom }]} pointerEvents="box-none">
             <Pressable onPress={onReplace} accessibilityRole="button" accessibilityLabel="Post a new check-in" style={styles.viewerReplace}>
               <VideoPlusGlyph />
               <Text style={styles.viewerReplaceText}>Post a new check-in</Text>
@@ -1554,9 +1600,9 @@ function VideoPlusGlyph() {
     </Svg>
   );
 }
-function CloseX() {
+function CloseX({ size = 22 }: { size?: number }) {
   return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M6 6l12 12M18 6L6 18" />
     </Svg>
   );
@@ -1755,12 +1801,18 @@ const styles = StyleSheet.create({
   viewerBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   viewerStage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   viewerVideo: { width: '100%', height: '100%' },
-  viewerTop: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 54, paddingBottom: 16, paddingHorizontal: 18 },
+  viewerScrim: { position: 'absolute', top: 0, left: 0, right: 0 },
+  /* `paddingTop` is supplied by the component from `insets.top` — see the note on `CheckinViewer`. */
+  viewerTop: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 16, paddingHorizontal: 18 },
   viewerWho: { flex: 1, minWidth: 0 },
   viewerName: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.cream100 },
-  viewerTime: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
-  viewerClose: { width: 38, height: 38, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' },
-  viewerBottom: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingBottom: 40, paddingHorizontal: 20 },
+  viewerTime: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  /* ⚠ ITS OWN GROUND, NOT A TINT. `rgba(255,255,255,0.12)` over video is whatever the video is; this is
+     opaque enough to read on a white gym wall and bronze-edged so it belongs to the app. */
+  viewerClose: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 38, paddingHorizontal: 14, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(12,10,8,0.92)' },
+  viewerClosePressed: { opacity: 0.7 },
+  viewerCloseText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, color: flColor.cream100 },
+  viewerBottom: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingHorizontal: 20 },
   viewerReplace: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 12, paddingHorizontal: 22, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(23,16,9,0.85)' },
   viewerReplaceText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
 

@@ -1,5 +1,6 @@
-import { Fragment, useCallback, useState } from 'react';
+import { Fragment, useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -42,10 +43,13 @@ export default function SquadPostRoute() {
   const postId = String(id ?? '');
   const { data, loading, error, refetch } = useQuery(() => fetchSquadPost(postId), [postId]);
   const { showToast } = useToast();
+  const insets = useSafeAreaInsets();
 
   // Optimistic reaction override (event-handler writes only — base values come from `data`).
   const [reactOverride, setReactOverride] = useState<{ on: boolean; n: number } | null>(null);
   const keyboardInset = useKeyboardInset();
+  /** The composer's field, so the comment count above can put the cursor in it. See `jumpToComposer`. */
+  const composerRef = useRef<TextInput>(null);
   /** The press-and-hold kind chooser (SOC-A4-D3). */
   const [ackOpen, setAckOpen] = useState(false);
   /** Optimistic kind, so the label under the flame changes on tap rather than after the refetch. */
@@ -518,10 +522,23 @@ export default function SquadPostRoute() {
               {/* The kind, named, once there is one — a flame alone cannot say which of four it was. */}
               {reacted ? <Text style={styles.engKind}>{ACK_LABEL[myKind]}</Text> : null}
             </Pressable>
-            <View style={styles.engItem}>
+            {/*
+              ⚠ THIS WAS A `View`. The flame beside it has always been a control, and the comment count
+              sat next to it looking identical and doing nothing — so the one affordance on the screen
+              that says "comments" was inert, and finding the composer meant scrolling the whole post to
+              the bottom and hunting for a dark bar on a dark screen. It is the door now: tap it and the
+              cursor is in the field, keyboard up, ready.
+            */}
+            <Pressable
+              onPress={() => composerRef.current?.focus()}
+              accessibilityRole="button"
+              accessibilityLabel={comments.length === 1 ? 'Add a comment, 1 comment' : `Add a comment, ${comments.length} comments`}
+              style={styles.engItem}
+              hitSlop={8}
+            >
               <CommentGlyph />
               <Text style={styles.engText}>{comments.length}</Text>
-            </View>
+            </Pressable>
           </View>
         </View>
 
@@ -551,13 +568,27 @@ export default function SquadPostRoute() {
 
         ⚠ ADDED TO `paddingBottom`, NOT REPLACING IT. The 16pt at the foot is the composer's own
         breathing room and is what it sits on when no keyboard is up.
+
+        ══ AND IT WAS STANDING ON THE HOME INDICATOR ══
+
+        PO, 2026-09-01: *"the comment bar is super hard to find so it needs to be higher."* With no
+        keyboard up the bar's `paddingBottom` was a flat 16, and this screen never read
+        `useSafeAreaInsets` — so on every phone with a home indicator the bottom 34pt of the bar was
+        inside the system's own gesture strip. The field looked like it was falling off the screen, an
+        upward swipe near it went to the app switcher instead of the input, and the whole control read as
+        chrome rather than something to type in.
+
+        `insets.bottom` when the keyboard is down, `keyboardInset` when it is up — never both. iOS
+        reports `endCoordinates.height` from the bottom of the SCREEN, so it already contains the
+        indicator's space; adding the inset on top would leave a 34pt gap under a raised keyboard.
       */}
-      <View style={[styles.composer, keyboardInset > 0 && { paddingBottom: 16 + keyboardInset }]}>
+      <View style={[styles.composer, { paddingBottom: 16 + (keyboardInset > 0 ? keyboardInset : insets.bottom) }]}>
         <TextInput
+          ref={composerRef}
           value={commentText}
           onChangeText={setCommentText}
           placeholder="Add a comment…"
-          placeholderTextColor={flColor.gray600}
+          placeholderTextColor={flColor.gray400}
           style={styles.composerInput}
           multiline
           maxLength={1000}
@@ -890,24 +921,27 @@ const styles = StyleSheet.create({
   editSaveOff: { backgroundColor: flColor.charcoal600 },
   editSaveText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.6, color: flColor.cream100 },
 
+  /* ⚠ A BRONZE HAIRLINE, NOT A CHARCOAL ONE, and the input is lifted off the bar rather than sunk into
+     it. The whole control was charcoal-on-near-black at the foot of a near-black screen: it read as the
+     edge of the page. Bronze is what this app uses to say "this is yours to act on", and one hairline is
+     enough — see the cards-are-for-acting-inside rule. `paddingBottom` comes from the component. */
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 10,
     paddingHorizontal: 14,
     paddingTop: 10,
-    paddingBottom: 16,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal700,
-    backgroundColor: 'rgba(9,9,11,0.92)',
+    borderTopColor: flColor.bronzeBorderSubtle,
+    backgroundColor: 'rgba(9,9,11,0.96)',
   },
   composerInput: {
     flex: 1,
-    minHeight: 42,
+    minHeight: 44,
     maxHeight: 120,
-    backgroundColor: flColor.charcoal900,
+    backgroundColor: flColor.charcoal800,
     borderWidth: 1,
-    borderColor: flColor.charcoal600,
+    borderColor: flColor.charcoal500,
     borderRadius: flRadius.lg,
     paddingHorizontal: 14,
     paddingVertical: 10,

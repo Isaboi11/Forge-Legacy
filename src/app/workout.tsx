@@ -78,7 +78,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/domain/workout/autosave';
 import { publishLiveSession } from '@/data/live-session-live';
 import { liveSessionSnapshot } from '@/domain/workout/live-session';
-import { blockAt, breakBlock, endsSupersetRound, makeSuperset, nextInSuperset, sessionToTemplateExercises, supersetRounds } from '@/domain/workout/session-core';
+import { blockAt, breakBlock, endsSupersetRound, indexAfterRemoval, makeSuperset, nextInSuperset, nextPosition, removeExerciseAt, sessionToTemplateExercises, supersetRounds } from '@/domain/workout/session-core';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
 import { continueWorkout, fetchLastNotes, saveWorkout, type LastNote } from '@/domain/workout/save';
@@ -407,6 +407,14 @@ export default function WorkoutScreen() {
   const keyboardInset = useKeyboardInset();
   const [wheelMode, setWheelMode] = useState(false); // typing is the default; the saved pref loads on mount
   const [endConfirmOpen, setEndConfirmOpen] = useState(false);
+  /**
+   * Which exercise the athlete has asked to take OUT, while the confirmation is up. Null = nobody.
+   *
+   * ⚠ AN INDEX ON THE SESSION, not the exercise itself. Removal is destructive and the confirm names
+   * what is being lost, so it has to read the CURRENT row — holding a copy would let an autosave land
+   * between the ask and the answer and delete something the sheet was not describing.
+   */
+  const [removeAsk, setRemoveAsk] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [heroPref, setHeroPref] = useState<Record<number, 'expanded' | 'collapsed'>>({});
   const [autoCollapsed, setAutoCollapsed] = useState<Record<number, boolean>>({});
@@ -1178,7 +1186,12 @@ export default function WorkoutScreen() {
         const cur = sessionRef.current;
         if (!cur) return;
         if (inbox.kind === 'add') {
-          const base = cur.exercises.length;
+          /* ⚠ WHERE IT LANDS AND WHAT IT IS CALLED ARE TWO DIFFERENT NUMBERS NOW. `base` used to be
+             `exercises.length` and stood in for both — correct only while no exercise has ever been
+             removed, because removal punches a hole in the position sequence and leaves the length
+             pointing at a position that is already taken. `at` is the array index (where the block
+             starts, where the athlete is sent); `nextPosition` is the save join key. See its note. */
+          const at = cur.exercises.length;
           /* A superset declared in the Picker is the SAME block the ⋮ menu builds — `makeSuperset`
              already takes N ≥ 2 and derives the round count from the longest member, so grouping
              three at once needs no grouping logic of its own. Appended contiguously, which is what
@@ -1189,8 +1202,9 @@ export default function WorkoutScreen() {
           // session — two calls would still queue correctly, but a later edit could reorder them.
           setSession((s) => {
             if (!s) return s;
-            const appended = [...s.exercises, ...inbox.items.map((p, i) => pickedToExercise(p, base + i))];
-            return { ...s, exercises: asSuperset ? makeSuperset(appended, base, inbox.items.length, gid) : appended, exerciseIndex: base };
+            const pos = nextPosition(s.exercises);
+            const appended = [...s.exercises, ...inbox.items.map((p, i) => pickedToExercise(p, pos + i))];
+            return { ...s, exercises: asSuperset ? makeSuperset(appended, at, inbox.items.length, gid) : appended, exerciseIndex: at };
           });
           /* NOTHING IS ASKED HERE. This used to queue a goal panel per added lift — see `goalOpen` for
              why that came out. The added exercise arrives ready to train, and its goal is one tap away
@@ -2223,7 +2237,10 @@ export default function WorkoutScreen() {
     /* Appended and NAVIGATED TO. Adding a movement you then have to go and find is half an action —
        the Picker's own add path does the same thing when it drains its inbox. */
     mutate((s) => {
-      const next = [...s.exercises, pickedToExercise(picked, s.exercises.length)];
+      /* ⚠ `nextPosition`, NOT `s.exercises.length` — the same trap the Picker's add path carries a note
+         about. A session an exercise has been removed from has holes in its position sequence, and its
+         length is a position that already belongs to something. */
+      const next = [...s.exercises, pickedToExercise(picked, nextPosition(s.exercises))];
       return { ...s, exercises: next, exerciseIndex: next.length - 1 };
     });
     showToast(`Added ${name}`);
@@ -2374,6 +2391,7 @@ export default function WorkoutScreen() {
     optionsOpen ||
     overviewOpen ||
     endConfirmOpen ||
+    removeAsk != null ||
     wNameOpen ||
     noteOpen != null ||
     ssOpen != null ||
@@ -2646,6 +2664,7 @@ export default function WorkoutScreen() {
     optionsOpen ||
     overviewOpen ||
     endConfirmOpen ||
+    removeAsk != null ||
     wNameOpen ||
     noteOpen != null ||
     ssOpen != null ||
@@ -2774,6 +2793,72 @@ export default function WorkoutScreen() {
     setOptionsOpen(false);
     if (blockedByBout()) return;
     goExercise(exIdx + 1);
+  };
+
+  /**
+   * ══ TAKE AN EXERCISE OUT OF THE SESSION ══
+   *
+   * PO, 2026-09-01: *"Exercises during an active workout should be able to be removed from the workout.
+   * If an exercise is a warm up and it is removed, nothing moves into that warm-up spot."*
+   *
+   * ⚠ THIS IS NOT "Move past this". Skipping leaves the lift in the plan — drawn in the pager, drawn in
+   * the Overview, and written to `workout_exercises` at Finish as *"this was part of the session and I
+   * did not get to it"* (see `recordedExercises`). That is the honest record for a lift you ran out of
+   * time for. It is the wrong record for a lift you have decided today does not contain, and until now
+   * the second thing could not be said at all.
+   *
+   * ⚠ NOTHING IS PROMOTED INTO THE GAP — the PO's own line, and the rule is enforced (and tested) in
+   * `removeExerciseAt`. Sections are a property of each exercise, not a set of slots waiting to be
+   * filled.
+   *
+   * ── The three guards, and why each one is here ──
+   *
+   * **A running bout closes this like every other exit.** `blockedByBout` — an athlete mid-treadmill
+   * has a clock running that only the card's own end-and-log button can stop.
+   *
+   * **The last exercise standing cannot go.** An empty session renders nothing: no pager page, no
+   * card, no primary button, and `hasLoggedSet` is false so even "End workout" is disabled. That is a
+   * screen with no way out, and it would arrive from a menu row that reads like housekeeping. "End
+   * workout" is the control for a session you no longer want, and it is two rows away.
+   *
+   * **Logged work is confirmed first.** Removing a lift you have already put four sets into throws
+   * those sets away — they are in memory only until Finish, so there is nothing to undo them from. An
+   * untouched exercise is removed on the tap: confirming that would be a tax on the ordinary case,
+   * which is looking at a warm-up you were never going to do and taking it off.
+   */
+  const askRemove = (idx: number) => {
+    if (blockedByBout()) return;
+    const target = session.exercises[idx];
+    if (!target) return;
+    if (session.exercises.length <= 1) {
+      showToast('That’s the only exercise left — end the workout instead.');
+      return;
+    }
+    if (target.sets.some((s) => s.done)) {
+      setRemoveAsk(idx);
+      return;
+    }
+    doRemove(idx);
+  };
+
+  const doRemove = (idx: number) => {
+    const name = session.exercises[idx]?.name ?? 'That exercise';
+    /* Removing something ABOVE you must not advance the workout, and removing the one you are ON has to
+       land somewhere real. `indexAfterRemoval` is that arithmetic, with its own tests. */
+    mutate((s) => {
+      const next = removeExerciseAt(s.exercises, idx);
+      return { ...s, exercises: next, exerciseIndex: indexAfterRemoval(next.length, idx, s.exerciseIndex ?? 0) };
+    });
+    /* ⚠ INDEX-KEYED STATE HAS TO GO WITH IT. `goalOpen`, `noteOpen` and `ssOpen` all name an exercise by
+       its POSITION IN THE ARRAY, and every index at or after the removed one has just shifted by one. A
+       goal panel left open would reopen on whatever slid into the slot. Closed rather than re-mapped:
+       these are all things the athlete opened by hand a moment ago, and none of them survives being
+       reattached to a different lift. Rest ends for the same reason `goExercise` ends it. */
+    setGoalOpen(null);
+    setNoteOpen(null);
+    setSsOpen(null);
+    restSkip();
+    showToast(`${name} removed`);
   };
   /**
    * ⋮ → End workout — ASK FIRST.
@@ -3840,6 +3925,15 @@ export default function WorkoutScreen() {
           onBreakSuperset={breakSuperset}
           onAdd={openAdd}
           onSkip={skipExercise}
+          /* ⚠ THE SHEET CLOSES ITSELF ON EVERY ROW (`run()` in `SessionCoachSheet`), so the confirm this
+             may open is mounted at screen level rather than inside the sheet — a `ConfirmSheet` declared
+             under a sheet that is unmounting never renders. Same rule `overlay-branch.test.mjs` guards
+             on the completion screen. */
+          onRemove={() => askRemove(exIdx)}
+          /* Named here rather than derived in the sheet: the sheet does not know whether removal is the
+             last exercise in the session, and a row that opens a toast saying "you can't" is a row that
+             should not have been drawn. */
+          canRemove={session.exercises.length > 1}
         />
       ) : null}
 
@@ -4133,6 +4227,37 @@ export default function WorkoutScreen() {
         onConfirm={confirmEnd}
       />
 
+      {/*
+        REMOVE AN EXERCISE THAT HAS LOGGED WORK IN IT — see `askRemove`. Only reached when at least one
+        set is done: an untouched exercise goes on the tap, because confirming that would tax the case
+        this feature exists for (a warm-up you were never going to do).
+
+        ⚠ THE BODY COUNTS THE SETS. What is being lost is the only fact that decides the answer, and the
+        sets live in memory until Finish — there is nothing to undo this from. Same reasoning as the end
+        confirmation above, which states the same cost in the same shape.
+
+        ⚠ MOUNTED AT SCREEN LEVEL, not inside Holt's sheet or the Overview. Both close on the row that
+        opens this, and a confirmation declared inside an unmounting overlay never renders — the defect
+        `overlay-branch.test.mjs` exists to catch.
+      */}
+      <ConfirmSheet
+        open={removeAsk != null}
+        onClose={() => setRemoveAsk(null)}
+        headline={`Take ${removeAsk != null ? session.exercises[removeAsk]?.name ?? 'this exercise' : 'this exercise'} out?`}
+        body={(() => {
+          const target = removeAsk != null ? session.exercises[removeAsk] : null;
+          const logged = target ? target.sets.filter((s) => s.done).length : 0;
+          return `You’ve logged ${logged} ${logged === 1 ? 'set' : 'sets'} on it. Removing it takes them out of this session — they won’t be saved. To keep the work and move on instead, use “Move past this”.`;
+        })()}
+        confirmLabel="Remove it"
+        cancelLabel="Keep it"
+        onConfirm={() => {
+          const at = removeAsk;
+          setRemoveAsk(null);
+          if (at != null) doRemove(at);
+        }}
+      />
+
       {/* rest-duration picker — minutes : seconds dual wheel */}
       {durationPicker ? (
         <View style={styles.pickerWrap}>
@@ -4180,27 +4305,60 @@ export default function WorkoutScreen() {
                 const w = e.sets[0]?.weight;
                 const tint = isCur ? flColor.bronze400 : eDone ? flColor.greenMuted : status === 'Skipped' ? flColor.emberFlame : flColor.gray600;
                 return (
-                  <Pressable
-                    key={i}
-                    onPress={() => {
-                      setOverviewOpen(false);
-                      goExercise(i);
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${e.name}, ${status}`}
-                    style={[styles.ovRow, isCur && styles.ovRowCurrent]}
-                  >
-                    <View style={[styles.ovStatusDot, { backgroundColor: tint }]} />
-                    <View style={styles.ovRowText}>
-                      <Text style={styles.ovRowName} numberOfLines={1}>{e.name}</Text>
-                      <Text style={styles.ovRowSub}>
-                        {status} · {done}/{total} sets{w != null ? ` · ${w} ${unitLabel(units)}` : ''}
-                      </Text>
-                    </View>
-                    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <Path d="M9 6l6 6-6 6" />
-                    </Svg>
-                  </Pressable>
+                  <View key={i} style={[styles.ovRow, isCur && styles.ovRowCurrent]}>
+                    <Pressable
+                      onPress={() => {
+                        setOverviewOpen(false);
+                        goExercise(i);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${e.name}, ${status}`}
+                      style={styles.ovRowMain}
+                    >
+                      <View style={[styles.ovStatusDot, { backgroundColor: tint }]} />
+                      <View style={styles.ovRowText}>
+                        <Text style={styles.ovRowName} numberOfLines={1}>{e.name}</Text>
+                        <Text style={styles.ovRowSub}>
+                          {status} · {done}/{total} sets{w != null ? ` · ${w} ${unitLabel(units)}` : ''}
+                        </Text>
+                      </View>
+                      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <Path d="M9 6l6 6-6 6" />
+                      </Svg>
+                    </Pressable>
+                    {/*
+                      ══ THE SECOND WAY TO TAKE AN EXERCISE OUT, AND THE ONE THAT SCALES ══
+
+                      Holt's "Take it out" removes the lift you are STANDING ON. This screen is the whole
+                      plan at once, which is where you actually notice that today has three warm-ups you
+                      are not going to do — and walking to each one to delete it is the workout the
+                      feature was meant to save you from.
+
+                      ⚠ ITS OWN `Pressable`, SIBLING TO THE ROW, NOT NESTED INSIDE IT. A pressable inside
+                      a pressable claims the touch through the responder system on web and the row stops
+                      jumping — the same nesting fault the `BottomSheet` backdrop note describes. So the
+                      row is a plain `View` now and holds two targets side by side.
+
+                      ⚠ ALSO ENTITLEMENT-FREE, which Holt's row is not (`holt_in_workout`). This is the
+                      path that is always there.
+                    */}
+                    {session.exercises.length > 1 ? (
+                      <Pressable
+                        onPress={() => {
+                          setOverviewOpen(false);
+                          askRemove(i);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${e.name} from this workout`}
+                        hitSlop={10}
+                        style={({ pressed }) => [styles.ovRemove, pressed && styles.ctlPressed]}
+                      >
+                        <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <Path d="M18 6L6 18M6 6l12 12" />
+                        </Svg>
+                      </Pressable>
+                    ) : null}
+                  </View>
                 );
               })}
             </ScrollView>
@@ -5352,7 +5510,12 @@ const styles = StyleSheet.create({
   overviewSheet: { maxHeight: '82%' },
   overviewList: { marginHorizontal: -4 },
   overviewListContent: { gap: 6, paddingHorizontal: 4, paddingBottom: 4 },
-  ovRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.charcoal800 },
+  /* The row is the FRAME now; its two targets sit inside it. The vertical padding moved to `ovRowMain`
+     so the jump-to target keeps the full 44pt height it always had. */
+  ovRow: { flexDirection: 'row', alignItems: 'center', paddingLeft: 12, paddingRight: 4, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.charcoal800 },
+  ovRowMain: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  /* 44 × 44 — a 16pt glyph is not a touch target, and this one sits a thumb's width from "jump to it". */
+  ovRemove: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   ovRowCurrent: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   ovStatusDot: { width: 9, height: 9, borderRadius: 5 },
   ovRowText: { flex: 1, minWidth: 0, gap: 2 },

@@ -258,3 +258,79 @@ export function breakBlock(exercises: readonly SessionExercise[], index: number)
     return rest;
   });
 }
+
+/**
+ * ══ TAKING AN EXERCISE OUT OF A SESSION THAT IS ALREADY UNDER WAY ══
+ *
+ * PO, 2026-09-01: *"Exercises during an active workout should be able to be removed from the workout.
+ * If an exercise is a warm up and it is removed, nothing moves into that warmup spot."*
+ *
+ * The session could ADD (Picker, Holt), SWAP (Picker, Holt) and SKIP — and skipping is not removing.
+ * A skipped exercise is still in the plan, still drawn in the pager and the Overview, and still written
+ * to `workout_exercises` at Finish as *"this was part of the session and I did not get to it"* (see
+ * `recordedExercises`). That is the right record for a lift you ran out of time for, and the wrong one
+ * for a lift you decided today does not contain. There was no way to say the second thing.
+ *
+ * ⚠ NOTHING IS PROMOTED INTO THE GAP, and that is the PO's line quoted verbatim above rather than an
+ * omission. The section is a PROPERTY of each exercise, not a set of numbered slots — pull the one
+ * warm-up out of a session and the warm-up section is simply not part of that session any more. The
+ * alternative (reach into `main` and promote the first lift) would silently rewrite what the athlete is
+ * about to do, and would be indistinguishable, in the record, from a plan that prescribed it.
+ *
+ * ⚠ `position` IS NOT RENUMBERED. It is the JOIN KEY between `session.exercises` and the rows
+ * `save_workout` writes — `buildSubstitutions` and `buildAppendExercises` both key on it, and a
+ * continued session (0125) matches against rows that ALREADY EXIST in the database. Closing the gap
+ * would re-point every one of those. A hole in the sequence costs nothing: nothing counts positions,
+ * and ordering by them is unaffected.
+ *
+ * ⚠ A BLOCK LEFT WITH ONE MEMBER IS NOT A BLOCK. Remove one half of a superset and the survivor would
+ * otherwise keep `groupId`/`groupKind`/`groupRounds` and go on being drawn as a pairing with nothing to
+ * pair with — a merged card containing one exercise, alternating with itself. It is dissolved back into
+ * an ordinary exercise, exactly as "Stop pairing these" would leave it. Logged sets are untouched.
+ */
+export function removeExerciseAt(exercises: readonly SessionExercise[], index: number): SessionExercise[] {
+  if (index < 0 || index >= exercises.length) return exercises.slice();
+  const gone = exercises[index];
+  const next = exercises.filter((_, i) => i !== index);
+  const gid = gone.groupId;
+  if (!gid) return next;
+  /* The survivors of the block this exercise belonged to, found by adjacency on the NEW list — the same
+     rule `blockAt` walks, so the two can never disagree about where a block ends. */
+  const survivorIdx = next.findIndex((e) => e.groupId === gid);
+  if (survivorIdx === -1) return next;
+  const block = blockAt(next, survivorIdx);
+  if (!block || block.count >= 2) return next;
+  return breakBlock(next, survivorIdx);
+}
+
+/**
+ * Where the athlete stands once `removed` is gone, given where they were.
+ *
+ * Removing the exercise you are LOOKING AT has to land somewhere, and "the next one" is the answer
+ * everywhere except at the end of the session, where there is no next one and the previous is what the
+ * athlete can see. Removing one ABOVE you shifts you up by one so the screen does not change under you —
+ * without that, deleting a warm-up from the Overview would silently advance the workout by one exercise.
+ *
+ * Returns an index that is always inside `[0, remaining - 1]`, so the caller never has to clamp again.
+ */
+export function indexAfterRemoval(remaining: number, removed: number, current: number): number {
+  if (remaining <= 0) return 0;
+  const want = removed < current ? current - 1 : current;
+  return Math.max(0, Math.min(remaining - 1, want));
+}
+
+/**
+ * The next free `position` for an exercise appended to this session.
+ *
+ * ⚠ `exercises.length` IS NOT IT, AND STOPPED BEING IT THE DAY REMOVAL SHIPPED. Both add paths used the
+ * array length, which is correct only while the list has never had a hole punched in it. Remove the
+ * second of four exercises and the list is length 3 with positions [0, 2, 3] — so the next add would be
+ * stamped `position: 3`, a DUPLICATE of the last exercise. `buildSubstitutions` keys on position, so two
+ * rows sharing one would attribute a substitution to the wrong lift; `buildAppendExercises` keys on it
+ * too, so a continued session would append sets to the wrong exercise. Silent in both cases.
+ */
+export function nextPosition(exercises: readonly SessionExercise[]): number {
+  let max = -1;
+  for (const e of exercises) if (typeof e.position === 'number' && e.position > max) max = e.position;
+  return max + 1;
+}

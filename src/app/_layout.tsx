@@ -233,7 +233,23 @@ function RootNavigator() {
       <Stack.Protected guard={route === 'app'}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="post/[id]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
-        <Stack.Screen name="squad/[id]" />
+        {/*
+          ⚠ NO EDGE SWIPE HERE, AND IT IS THE COMPARISON CARDS THAT DECIDE IT.
+
+          PO, 2026-09-01, on the before/after slider: *"I don't know if it's because the whole swipe back
+          to home is a function which we don't really need since we have back buttons."* Right diagnosis.
+          The squad feed draws comparison cards FULL-BLEED, so the left edge of a draggable divider is
+          also the left edge of the screen — and iOS's back-swipe recogniser owns the first ~20pt of that
+          edge unconditionally. A drag begun on the "before" side of the picture navigated away instead
+          of revealing it, and no amount of work inside the gesture (see `useCompareDrag`) can win against
+          a recogniser that sits above the whole view hierarchy.
+
+          Scoped to this screen rather than turned off app-wide: every other comparison surface is already
+          a modal presentation, which has no back-swipe, and taking a system gesture off all forty routes
+          on the strength of one screen's conflict is a bigger decision than this fix. `AppBar`'s back
+          button is the way out here, as it is everywhere.
+        */}
+        <Stack.Screen name="squad/[id]" options={{ gestureEnabled: false }} />
         <Stack.Screen name="squad/[id]/goal" />
         <Stack.Screen name="squad-settings" />
         <Stack.Screen name="squad-invite" />
