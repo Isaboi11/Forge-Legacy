@@ -15,8 +15,24 @@ import { supabase } from '@/lib/supabase';
 
 const MISSING_FN = 'PGRST202';
 
-export async function registerPushToken(token: string, platform: 'ios' | 'android'): Promise<boolean> {
-  const { error } = await supabase.rpc('push_register_token', { p_token: token, p_platform: platform });
+/**
+ * `deviceId` is what stops one phone getting the same notification several times (0187). The server
+ * retires this athlete's OTHER live tokens carrying the same device id, because a device is handed a new
+ * Expo token whenever its installation changes and the old row stayed live under them forever.
+ *
+ * ⚠ OMITTED RATHER THAN GUESSED WHEN IT IS UNKNOWN. `p_device_id` is optional on purpose and null retires
+ * nothing: "I cannot say which device I am" must never be read as "retire the ones that can".
+ */
+export async function registerPushToken(
+  token: string,
+  platform: 'ios' | 'android',
+  deviceId?: string | null,
+): Promise<boolean> {
+  const { error } = await supabase.rpc('push_register_token', {
+    p_token: token,
+    p_platform: platform,
+    p_device_id: deviceId ?? null,
+  });
   if (error) {
     if ((error as { code?: string }).code !== MISSING_FN) {
       console.warn('[push] token registration failed', error.message);

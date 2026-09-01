@@ -304,6 +304,29 @@ export default function WorkoutScreen() {
     }, [refetchMemories]),
   );
   const { session: liveSession, startWorkout, finishWorkout, abandonWorkout } = useWorkoutSession();
+  /**
+   * ⚠ THIS SESSION IS OVER AND MUST NOT BE RE-ANNOUNCED. Latched by the three ways out below.
+   *
+   * The presence effect further down derives "I am training" from a session EXISTING, which is exactly
+   * right on mount and exactly wrong the instant the athlete finishes or walks away: `finishWorkout()`
+   * clears the provider's session while this screen's own `session` state is still set, so the effect
+   * would see "logger has a session, provider does not" and re-announce the workout that just ended.
+   * That is a second "started training" push to the whole squad and a Live Now row that outlives the
+   * workout by four hours.
+   *
+   * A ref rather than state: it must be true for the effect running in the SAME commit as the end, and a
+   * setState would not be. No reset, because all three exits navigate away — the next visit is a new
+   * mount with a fresh ref. Read only inside the effect; react-compiler errors on `ref.current` in render.
+   */
+  const endedRef = useRef(false);
+  const endSession = useCallback(() => {
+    endedRef.current = true;
+    finishWorkout();
+  }, [finishWorkout]);
+  const leaveSession = useCallback(() => {
+    endedRef.current = true;
+    abandonWorkout();
+  }, [abandonWorkout]);
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [resumable, setResumable] = useState<ActiveSession | null>(null);
   /** When the resume prompt was raised — the clock its "38 min" is measured against. See the setter. */
@@ -692,7 +715,11 @@ export default function WorkoutScreen() {
     const name = session?.workoutName;
     // Nothing to announce, or the provider already knows (the athlete came through a screen that did
     // call `startWorkout`). Re-announcing would reset `startedAt` and lose the time it really began.
-    if (!name || liveSession) return;
+    //
+    // ⚠ `endedRef` is the THIRD case and the one that was missing: the session is over. Finishing clears
+    // the provider while `session` here is still set, which reads identically to "arrived from a screen
+    // that forgot to announce" — and answering it the same way re-announced a workout that had ended.
+    if (!name || liveSession || endedRef.current) return;
     let alive = true;
     /*
      * Deferred by a microtask, not called inline. Synchronising React state to an external system is
@@ -1769,7 +1796,7 @@ export default function WorkoutScreen() {
          only place a workout becomes one. A no-op until the count has been seeded from the server, so it
          can never invent a "1" for a veteran on a new phone. */
       void bumpWorkoutsLogged();
-      finishWorkout();
+      endSession();
       router.replace({ pathname: '/workout-complete', params: { id: workoutId } });
     } catch (e) {
       setError(errorMessage(e));
@@ -1786,11 +1813,12 @@ export default function WorkoutScreen() {
    * started a workout and backed out stayed lit as training to everyone who could see them — until the
    * four-hour staleness window expired them.
    *
-   * `abandonWorkout` ends the presence broadcast and the in-memory session. It does NOT clear the autosave,
-   * so the work is still there to resume, which is the whole point of leaving this way.
+   * `leaveSession` ends the presence broadcast and the in-memory session, and latches `endedRef` so the
+   * presence effect cannot re-announce the workout on the way out. It does NOT clear the autosave, so the
+   * work is still there to resume, which is the whole point of leaving this way.
    */
   const onLeave = () => {
-    abandonWorkout();
+    leaveSession();
     router.replace('/(tabs)');
   };
   /**
@@ -2005,7 +2033,7 @@ export default function WorkoutScreen() {
           onDismiss={async () => {
             // "Not today" discards outright — so BOTH facts end: the autosave and the presence.
             await clearSession();
-            abandonWorkout();
+            leaveSession();
             router.replace('/(tabs)');
           }}
         />

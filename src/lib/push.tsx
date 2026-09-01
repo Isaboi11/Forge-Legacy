@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { registerPushToken } from '@/data/push-live';
 import { destinationFor, type NotificationTarget } from '@/domain/notifications/destination';
 import { useAuth } from '@/lib/auth';
+import { getDeviceId } from '@/lib/device-id';
 import { useProfile } from '@/lib/profile';
 import { routeFor } from '@/lib/route-for';
 
@@ -145,7 +146,12 @@ export function PushProvider({ children }: { children: React.ReactNode }) {
     void (async () => {
       const token = await ensurePushToken();
       if (cancelled || !token) return;
-      await registerPushToken(token, Platform.OS === 'android' ? 'android' : 'ios');
+      /* Which phone this is (0187). Fetched alongside the token rather than inside `registerPushToken`,
+         so the data layer stays a thin RPC call and the storage read happens once here. A null is passed
+         through untouched — the server then retires nothing, which is the pre-0187 behaviour. */
+      const deviceId = await getDeviceId();
+      if (cancelled) return;
+      await registerPushToken(token, Platform.OS === 'android' ? 'android' : 'ios', deviceId);
     })();
 
     return () => {

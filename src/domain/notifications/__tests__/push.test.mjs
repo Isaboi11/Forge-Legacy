@@ -74,6 +74,13 @@ const SQL_0159 = readFileSync(resolve(ROOT, 'supabase/migrations/0159_training_b
 const SQL_0163 = readFileSync(resolve(ROOT, 'supabase/migrations/0163_competition_invite_and_standings.sql'), 'utf8');
 // 0164 is the newest definition of the union, `push_enqueue_for`, and BOTH preference functions.
 const SQL = readFileSync(resolve(ROOT, 'supabase/migrations/0164_challenge_joined_and_invite_push.sql'), 'utf8');
+/*
+ * 0187 owns the newest `push_register_token` and the newest `set_training_status` (0086's until now).
+ * It is the duplicate-notification fix and touches neither the union nor the sender, so `SQL` stays
+ * 0164's.
+ */
+const SQL_0187 = readFileSync(resolve(ROOT, 'supabase/migrations/0187_one_notification_per_start.sql'), 'utf8');
+
 const SQL_PREFS = SQL;
 
 /** Every migration paired with the bundle that gets pasted into the dashboard. */
@@ -93,6 +100,7 @@ const BUNDLES = [
   ['0159_training_briefing', 'pending-0159', SQL_0159],
   ['0163_competition_invite_and_standings', 'pending-0163', SQL_0163],
   ['0164_challenge_joined_and_invite_push', 'pending-0164', SQL],
+  ['0187_one_notification_per_start', 'pending-0187', SQL_0187],
 ];
 
 /**
@@ -835,4 +843,93 @@ test('the parameterised union and the sender internals are revoked from PUBLIC',
     /revoke execute on function public\.notification_events_for\(uuid\) from authenticated/,
     'revoking from `authenticated` leaves the PUBLIC grant in place',
   );
+});
+
+// ── 0187 · one notification per start, and one device per device ──────────────
+//
+// Both defects delivered the SAME symptom — a squad-mate starting a workout arriving several times —
+// from opposite ends of the pipe, and nothing between them was wrong. These pin each fix to the property
+// that makes it one, not to the shape of the SQL.
+
+/**
+ * The token string is not a device. A device is handed a NEW Expo token whenever its installation changes
+ * underneath it, and the row holding the old string stayed live under the same athlete forever — so
+ * `push_drain`, which sends one message per live token, sent every notification once per stale row.
+ */
+test('registering a token retires the same device\u2019s older ones, and only that device\u2019s', () => {
+  const body = fnBody('push_register_token', SQL_0187);
+
+  assert.match(body, /t\.device_id = v_device/, 'the retirement must be keyed on the DEVICE');
+  assert.match(body, /t\.user_id = auth\.uid\(\)/, 'it may only ever touch the caller\u2019s own rows');
+  assert.match(body, /t\.token <> p_token/, 'the token just registered must survive its own registration');
+  assert.match(body, /t\.disabled_at is null/, 'already-retired rows are left where they are');
+
+  /*
+   * ⚠ THE NULL GUARD IS THE WHOLE SAFETY OF THIS. Without it, every build installed on the day 0187 is
+   * applied — none of which sends a device id — would retire its own athlete's other tokens on launch,
+   * and a two-device athlete would have the phone and the tablet silencing each other in turn.
+   */
+  const retire = body.slice(body.indexOf('update public.push_tokens t'));
+  assert.ok(
+    /if v_device is not null then[\s\S]*update public\.push_tokens t/.test(body),
+    'the retirement must be inside an `if v_device is not null` guard — a null must retire NOTHING',
+  );
+  assert.ok(retire.length > 0, 'the retirement statement is missing entirely');
+
+  // An older build re-registering a token must not erase an identity a newer one already recorded.
+  assert.match(body, /device_id\s+= coalesce\(excluded\.device_id, push_tokens\.device_id\)/);
+});
+
+/**
+ * `create or replace` cannot change an argument list. A bare create would have left the two-argument
+ * signature callable beside the three, with PostgREST choosing between them by whichever named arguments
+ * a client happened to send — half the devices still registering with no identity, invisibly.
+ */
+test('the two-argument push_register_token is dropped, not left beside the three', () => {
+  assert.match(SQL_0187, /drop function if exists public\.push_register_token\(text, text\);/);
+  assert.match(SQL_0187, /create or replace function public\.push_register_token\(\s*p_token\s+text,\s*p_platform\s+text default 'ios',\s*p_device_id text default null\s*\)/);
+  // A new signature carries none of the old one's grants.
+  assert.match(SQL_0187, /grant execute on function public\.push_register_token\(text, text, text\) to authenticated;/);
+});
+
+/**
+ * `profiles.training_since` IS the outbox event key (`user_id, kind, event_at, subject`), so re-stamping
+ * it during one workout produced a genuinely new event that the unique index was right not to collapse.
+ * The client re-announces on purpose — the session lives in React state and does not survive the app
+ * being killed — so the schema has to be the one that knows a repeated statement is one fact.
+ */
+test('an active session keeps the stamp it already has, so a start is announced once', () => {
+  const body = fnBody('set_training_status', SQL_0187);
+
+  assert.match(body, /when not p_active then null/, 'a finish must still clear the column outright');
+  assert.match(
+    body,
+    /profiles\.training_since is not null\s*and profiles\.training_since > now\(\) - interval '4 hours'\s*then profiles\.training_since/,
+    'a re-announcement inside the presence window must KEEP the original stamp',
+  );
+  assert.match(body, /else now\(\)/, 'past the window, or after a finish, a start is news again');
+
+  /*
+   * ⚠ QUALIFIED ON THE RIGHT-HAND SIDE. This schema has already lost a function to 42702 on a bare
+   * column name (0163, `tz`), and an UPDATE ... SET whose expression references its own target is
+   * exactly the shape that raises it.
+   */
+  assert.doesNotMatch(
+    body,
+    /then\s+training_since\b/,
+    'the column must be qualified as `profiles.training_since` on the right-hand side',
+  );
+
+  // The stamp says WHEN this session began and must not move; the label says WHAT they are doing now.
+  assert.match(body, /training_label = case when p_active then nullif\(btrim\(coalesce\(p_label, ''\)\), ''\)/);
+});
+
+/**
+ * The four hours are not a number this migration chose. Every reader of `training_since` already ignores
+ * it past that point — `training_now()`, branch 9 and branch 15 of the union — so a hold that used any
+ * other window would either re-announce inside a live session or go silent on a genuinely new one.
+ */
+test('the hold window is the presence ceiling the readers already use', () => {
+  assert.match(fnBody('set_training_status', SQL_0187), /interval '4 hours'/);
+  assert.match(branchOf(fnBody('notification_events_for'), 'squad_training_started'), /interval '4 hours'/);
 });
