@@ -52,3 +52,11 @@ legacy-design-test.zip
 /Programs/
 /design_reference/
 /ds-bundle/
+
+# `site/` is the LANDING SITE — a different surface with a different deploy (`npx wrangler deploy` from
+# `site/`), and `scripts/` is the tooling that generates its pages and processes animation stills. Neither
+# is imported anywhere in `src/` (verified by grep), so both were pure upload weight on every native build.
+# Anchored, like everything above: an unanchored `site/` would match any directory of that name at any
+# depth on the builder's case-insensitive filesystem, which is the trap `/Programs/` is here to remember.
+/site/
+/scripts/
