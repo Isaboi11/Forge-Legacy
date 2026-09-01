@@ -112,22 +112,35 @@ for (const [name, src] of [
  */
 test('⚠ the divider is NOT moved when a finger merely lands on it', () => {
   // The report: scrolling past a comparison re-cut it, because `track` ran from `onPanResponderGrant`.
-  // The responder is not even CLAIMED on touch-down now — see the next test for why that had to change.
-  assert.match(DRAG, /onStartShouldSetPanResponder: \(\) => false/, 'the drag claims the touch on touch-down again');
+  // The touch is still CLAIMED on down (see below) — it is the DRAWING that waits.
   assert.doesNotMatch(DRAG, /onPanResponderGrant: \([\s\S]{0,200}?put\(/, 'the divider moves on touch-down again');
+  assert.match(DRAG, /onPanResponderRelease: [\s\S]{0,300}?put\(e\.nativeEvent\.locationX\)/, 'a tap no longer places the divider');
 });
 
-test('⭐ THE PAGE STAYS STILL WHILE YOU DRAG — claimed on MOVE, and only when horizontal', () => {
-  // PO: *"when we're sliding the screen should just stay in place."* `onShouldBlockNativeResponder` is
-  // asked ONCE, at grant — so it cannot consult an axis decided later. Claiming on touch-down forced a
-  // choice between blocking the scroller for every touch and never blocking it. Claiming on the first
-  // unambiguously horizontal move means the answer is already known and can be an unconditional yes.
-  assert.match(DRAG, /onShouldBlockNativeResponder: \(\) => true/, 'the native scroller runs under the drag again');
-  assert.match(
+test('⭐ THE TOUCH IS CLAIMED ON TOUCH-DOWN — the feed stops sliding without it', () => {
+  // PO: *"the sliding doesn't work on the feed."* A round that moved the claim to the first horizontal
+  // MOVE broke it: a comparison in the feed sits inside a vertical scroller and a ledger card's own
+  // press targets, and this view only reliably wins the gesture by claiming on down, where it is the
+  // deepest node on the path.
+  //
+  // ⚠ AND THE MOVE-CLAIM WAS PREDICATED ON STALE DATA BESIDES: `_updateGestureStateOnMove` is called
+  // from `onMoveShouldSetResponderCapture` and `onResponderMove`, NOT from the bubble-phase
+  // `onMoveShouldSetResponder` — so `g.dx` there is whatever the capture pass last left behind.
+  assert.match(DRAG, /onStartShouldSetPanResponder: \(\) => true/, 'the drag no longer claims the touch on touch-down — the feed will stop sliding');
+  assert.doesNotMatch(
     DRAG,
-    /onMoveShouldSetPanResponder: [\s\S]{0,200}?Math\.abs\(g\.dx\) >= AXIS_SLOP && Math\.abs\(g\.dx\) > Math\.abs\(g\.dy\)/,
-    'the drag claims vertical or ambiguous movement again — that is a comparison you cannot scroll past',
+    /onMoveShouldSetPanResponder: [\s\S]{0,200}?Math\.abs\(g\.dx\) >= AXIS_SLOP/,
+    'the move-predicated claim is back, and it reads a gestureState the bubble phase does not refresh',
   );
+});
+
+test('⚠ `onShouldBlockNativeResponder` DEFAULTS TO TRUE — do not "fix" the page by setting it', () => {
+  // PanResponder.js, onResponderGrant:
+  //   return config.onShouldBlockNativeResponder == null ? true : config.onShouldBlockNativeResponder(...)
+  // Setting it to `true` is a no-op that reads like a fix. A whole round was spent restructuring the
+  // claim around that misreading, and the restructure is what broke the feed. What actually holds the
+  // page still on web is `touch-action`, below; on native it was never not held.
+  assert.doesNotMatch(DRAG, /onShouldBlockNativeResponder/, 'setting this changes nothing — it already defaults to true, and believing otherwise cost the feed a round');
 });
 
 test('⚠ WEB SCROLLS IN THE BROWSER, where blocking the native responder means nothing', () => {
@@ -153,12 +166,15 @@ test('⭐ the grab handle sits at the FOOT of the frame, not over the middle of 
   assert.doesNotMatch(block, /marginTop: -/, 'the centring offset is back, and it will fight `bottom`');
 });
 
-test('⚠ a horizontal drag is never handed back mid-stroke', () => {
+test('⚠ the axis is decided ONCE and then held for the whole gesture', () => {
   // The report: a drag that curved downward at the end stopped dead under a moving finger, because the
   // termination request re-evaluated `|dy| > |dx|` on CUMULATIVE travel every time the scroller asked.
-  // The responder is now granted only to a drag that has already proved itself horizontal, so there is
-  // nothing left to negotiate and the answer is a flat no.
-  assert.match(DRAG, /onPanResponderTerminationRequest: \(\) => false/, 'a horizontal drag can be taken away mid-stroke again');
+  //
+  // ⚠ THE VERTICAL ARM IS NOT OPTIONAL. `onResponderGrant` blocks the native scroller by default, so
+  // this is the only thing that hands it back — without it a comparison is a dead zone in the feed.
+  assert.match(DRAG, /if \(axis\.value === 1\) return false;/, 'a horizontal drag can be taken away mid-stroke again');
+  assert.match(DRAG, /if \(axis\.value === 2\) return true;/, 'a vertical scroll is never handed back — the feed cannot be scrolled past a comparison');
+  assert.match(DRAG, /axis\.value = adx >= ady \? 1 : 2;/, 'the axis is no longer latched');
 });
 
 test('the drag still never re-renders, and its responder is built once', () => {
