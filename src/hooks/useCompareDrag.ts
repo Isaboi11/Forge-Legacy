@@ -5,77 +5,76 @@ import { useSharedValue, type SharedValue } from 'react-native-reanimated';
 /**
  * The drag behind every before/after comparison in the app.
  *
- * ══ ⚠ ROUND FOUR: THE PAGE MOVED WHILE THE THUMB DID ══
+ * ══ ⚠ ROUND FIVE: THE FEED STOPPED SLIDING, AND I BROKE IT CHASING A NO-OP ══
  *
- * PO, 2026-09-01: *"when we're sliding the screen should just stay in place."*
+ * PO, 2026-09-01: *"the slider on the comparison went to the bottom like we wanted on the post, but now
+ * the sliding doesn't work on the feed."*
  *
- * Round three (below) stopped the divider being yanked by a passing thumb and stopped the drag being
- * handed to the scroller mid-stroke. It did NOT stop the scroller from ALSO moving: `PanResponder`
- * defaults `onShouldBlockNativeResponder` to false, so a native `ScrollView` — and, on web, the
- * browser's own touch scrolling — kept running underneath a drag the JS responder had already claimed.
- * The divider tracked the finger correctly and the whole page slid up behind it.
+ * Round four moved the responder claim from touch-DOWN to the first horizontal MOVE, on the reasoning
+ * that `onShouldBlockNativeResponder` is only asked at grant and so could not consult an axis decided
+ * later. The premise was right. The conclusion was wrong, because of one line in
+ * `PanResponder.js`'s `onResponderGrant`:
  *
- * ⚠ AND THE FIX IS *WHEN* WE CLAIM, NOT JUST WHAT WE RETURN. `onShouldBlockNativeResponder` is asked
- * ONCE, at the moment the responder is granted — so it cannot consult an axis that has not been decided
- * yet. Claiming on touch-DOWN (which is what round three did, to keep tap-to-place) therefore forced a
- * choice between "block the scroller for every touch that lands on a photo" and "never block it at all".
- * Neither is right.
+ *     return config.onShouldBlockNativeResponder == null ? true : config.onShouldBlockNativeResponder(...)
  *
- * So the responder is claimed on MOVE, and only once the movement is unambiguously horizontal. By then
- * the answer is known, blocking is correct, and it holds for the rest of the gesture:
+ * ⚠ **IT DEFAULTS TO `true`.** Not false. Every version of this drag has always blocked the native
+ * scroller from the moment it was granted — so round four's `onShouldBlockNativeResponder: () => true`
+ * changed nothing at all, and the only thing that actually changed was giving up the touch-down claim.
+ * That is what the PO is reporting: a comparison in the FEED sits inside a vertical scroller and a
+ * ledger card's own press targets, and without the down-claim the drag never reliably became ours.
  *
- *  · a vertical drag never claims at all → the page scrolls exactly as if the comparison were a photo;
- *  · a horizontal drag claims and blocks → the picture moves and the page does not.
+ * ⚠ AND `gestureState` IS NOT FRESH IN THE BUBBLE PHASE. `_updateGestureStateOnMove` is called from
+ * `onMoveShouldSetResponderCapture` and from `onResponderMove` — **not** from the bubble-phase
+ * `onMoveShouldSetResponder` this app was deciding in. Predicating the claim on `g.dx` there is reading
+ * whatever the capture pass happened to leave behind, guarded by `_accountsForMovesUpTo`. A claim that
+ * depends on that is a claim that works on one screen and not the next, which is exactly what shipped.
  *
- * ⚠ TAP-TO-PLACE IS GONE WITH IT, deliberately. Placing the divider by tapping needed the touch-down
- * claim that costs the above, and the handle — now at the FOOT of the frame, where a thumb already is —
- * is the affordance the design draws. A convenience nobody asked for is not worth a page that moves
- * while you drag, which is a defect that was reported.
+ * So the claim is back on touch-down, where it has worked on every surface, and it costs nothing: the
+ * native scroller was already being blocked at grant either way.
  *
- * ══ ROUND THREE, KEPT: THE THREE THINGS THAT MADE IT "FINICKY" ══
+ * ══ WHAT ACTUALLY KEEPS THE PAGE STILL, THEN ══
  *
- * PO: *"The swipe picture comparison is finicky… no matter how many slides."* Rounds one and two (see
- * `BeforeAfterSlider`) made the MOVEMENT cheap — a shared value instead of state, two cancelling
- * transforms instead of an animated width. Neither touched ownership of the touch, which is what
- * "finicky" actually described:
+ * PO, earlier the same day: *"when we're sliding the screen should just stay in place."* On NATIVE that
+ * was already true (see the default above). On **web** it never was and no responder decision could make
+ * it: react-native-web has no native responder to block, and the page is scrolled by the browser's own
+ * compositor, off the main thread. `touch-action` is the only thing that speaks to it — see
+ * `COMPARE_TOUCH_STYLE`. That is the fix that mattered, and it is kept.
  *
- * **1. It moved the divider the instant a finger landed.** With a slider per pose on Compare, scrolling
- * the page re-cut every comparison it passed under. Nothing is drawn until the drag is real.
+ * ══ ROUND THREE, KEPT IN FULL: THE THREE THINGS THAT MADE IT "FINICKY" ══
+ *
+ * **1. It moved the divider the instant a finger landed.** `track` ran from `onPanResponderGrant`, so a
+ * thumb on its way past re-cut every comparison it crossed — and on Compare, where there is a slider per
+ * pose, scrolling the page re-cut all of them. Nothing is drawn until the drag proves itself horizontal;
+ * a TAP still places the divider, on release.
  *
  * **2. It re-decided the axis on every frame.** `onPanResponderTerminationRequest` returned
  * `|dy| > |dx|` against CUMULATIVE travel, evaluated fresh each time the scroller asked — so a
  * horizontal drag that curved downward at the end was handed away mid-stroke and stopped dead under a
- * finger that was still moving. Now the responder is only ever granted to a horizontal drag, and it is
- * never given back.
+ * finger that was still moving. The axis is latched once and held.
  *
  * **3. It tracked `locationX`, which is relative to whatever is under the finger.** Drag past the edge
  * of the frame and the coordinate silently changed origin. The frame's left edge is measured once on
- * grant (`pageX - locationX` is page space) and the drag reads `gestureState.moveX`, which is page space
- * too — so the divider follows the finger inside the photo, past its edge, or off the side of the screen.
+ * grant (`pageX - locationX` is page space) and the drag reads `gestureState.moveX`, page space too.
  *
  * ⚠ RESPONDER PROPS, NOT `GestureDetector`: `react-native-gesture-handler` needs a
  * `GestureHandlerRootView` at the app root and this app has none.
  */
 
 /**
- * How far a touch must travel horizontally before it counts as a drag.
+ * How far a touch must travel before the gesture commits to an axis.
  *
- * Under this the gesture is still ambiguous and belongs to whatever is scrolling. Much smaller and
- * finger noise steals the page; much larger and the first part of a real drag is dropped on the floor.
+ * Under this, the touch is still undecided and might be a tap. Much smaller and finger noise decides
+ * the axis; much larger and the first part of a real drag is dropped on the floor.
  */
 const AXIS_SLOP = 5;
 
 /**
- * ⚠ WEB SCROLLS IN THE BROWSER, WHERE `onShouldBlockNativeResponder` MEANS NOTHING.
+ * ⚠ WEB SCROLLS IN THE BROWSER, WHERE NO RESPONDER DECISION REACHES IT.
  *
- * react-native-web has no native responder to block — the page is scrolled by the browser's own
- * compositor, off the main thread, and it will keep scrolling under a JS drag no matter what the
- * responder system decides. `touch-action` is the only thing that speaks to it.
- *
- * `pan-y` says: vertical panning is yours, horizontal is mine. That is precisely the split the
- * responder above implements, so the two agree — a vertical drag scrolls the page natively and never
- * reaches us, and a horizontal one is ours with the page held still. `none` would have worked for the
- * drag and made the comparison a dead zone you cannot scroll past, which is the bug round three fixed.
+ * `pan-y` says: vertical panning is yours, horizontal is mine. That is precisely the split the responder
+ * below implements, so the two agree — a vertical drag scrolls the page and a horizontal one moves the
+ * divider with the page held still. `none` would have worked for the drag and made the comparison a dead
+ * zone you cannot scroll past, which is the bug round three existed to fix.
  */
 export const COMPARE_TOUCH_STYLE: ViewStyle | null =
   Platform.OS === 'web' ? ({ touchAction: 'pan-y' } as unknown as ViewStyle) : null;
@@ -102,6 +101,8 @@ export function useCompareDrag(): CompareDrag {
   const originX = useSharedValue(0);
   /** Has the athlete positioned this divider themselves? A resize must not yank one that they have. */
   const touched = useSharedValue(false);
+  /** 0 = undecided, 1 = horizontal (ours), 2 = vertical (the scroller's). Reset on every release. */
+  const axis = useSharedValue(0);
 
   const onLayout = (e: LayoutChangeEvent) => {
     const next = e.nativeEvent.layout.width;
@@ -118,27 +119,54 @@ export function useCompareDrag(): CompareDrag {
       x.value = Math.max(0, Math.min(wv.value, px));
     };
     return PanResponder.create({
-      /* ⚠ NOT ON TOUCH-DOWN. See the note above: claiming here is what forced the all-or-nothing choice
-         about blocking the scroller, and it is what let a passing thumb move the picture. */
-      onStartShouldSetPanResponder: () => false,
-      /* Claimed the moment the movement is unambiguously sideways, and not before. A vertical or
-         still-ambiguous touch is left to whatever is scrolling. */
-      onMoveShouldSetPanResponder: (_e: GestureResponderEvent, g: PanResponderGestureState) =>
-        Math.abs(g.dx) >= AXIS_SLOP && Math.abs(g.dx) > Math.abs(g.dy),
-      /* ⚠ THE LINE THAT KEEPS THE PAGE STILL. Asked once, at grant — and by then the gesture has already
-         proved it is horizontal, so the answer can be an unconditional yes. */
-      onShouldBlockNativeResponder: () => true,
+      /* ⚠ ON TOUCH-DOWN, AND IT HAS TO BE. This view is deeper than the feed's scroller and than the
+         ledger card's own press targets, so claiming here is what makes the drag reliably ours on every
+         surface — see round five above. Nothing is DRAWN on down; that is `onPanResponderGrant`'s job
+         and it deliberately does not do it. */
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (e: GestureResponderEvent) => {
+        axis.value = 0;
         // The frame's left edge in page coordinates, measured once. `moveX` below is page space.
         originX.value = e.nativeEvent.pageX - e.nativeEvent.locationX;
       },
       onPanResponderMove: (_e: GestureResponderEvent, g: PanResponderGestureState) => {
+        if (axis.value === 0) {
+          const adx = Math.abs(g.dx);
+          const ady = Math.abs(g.dy);
+          if (Math.max(adx, ady) < AXIS_SLOP) return; // still a tap as far as anyone knows
+          axis.value = adx >= ady ? 1 : 2;
+        }
+        if (axis.value !== 1) return; // the scroller owns this one
         put(g.moveX - originX.value);
       },
-      /* Granted only to a horizontal drag, so there is nothing left to negotiate: it is ours until the
-         finger lifts. This is what stops a stroke that curves downward being handed to the scroller
-         halfway through and stopping dead. */
-      onPanResponderTerminationRequest: () => false,
+      /**
+       * A touch that never committed to an axis was a TAP — place the divider where it landed.
+       *
+       * ⚠ ON RELEASE, NOT ON GRANT. Placing on grant meant every thumb that came down on a comparison
+       * moved it, including the ones on their way somewhere else.
+       */
+      onPanResponderRelease: (e: GestureResponderEvent, g: PanResponderGestureState) => {
+        if (axis.value === 0 && Math.max(Math.abs(g.dx), Math.abs(g.dy)) < AXIS_SLOP) put(e.nativeEvent.locationX);
+        axis.value = 0;
+      },
+      onPanResponderTerminate: () => {
+        axis.value = 0;
+      },
+      /**
+       * ⚠ THE LINE THAT DECIDES WHETHER THE PAGE SCROLLS OR THE PICTURE MOVES — and it must answer the
+       * SAME way for the whole gesture. Once horizontal, the drag is ours until the finger lifts; once
+       * vertical, it is the scroller's and we never take it back. Only an undecided touch is negotiable,
+       * and there a plainly-vertical intent wins so that scrolling past a comparison just scrolls.
+       *
+       * This is also what releases the native scroller, which `onResponderGrant` blocked by default the
+       * moment the touch landed. Without it a comparison is a dead zone in the middle of the feed.
+       */
+      onPanResponderTerminationRequest: (_e: GestureResponderEvent, g: PanResponderGestureState) => {
+        if (axis.value === 1) return false;
+        if (axis.value === 2) return true;
+        return Math.abs(g.dy) > Math.abs(g.dx);
+      },
     });
   });
 
