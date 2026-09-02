@@ -105,6 +105,9 @@ import { getWheelInput, setWheelInput } from '@/lib/set-input-pref';
 import { useKeyboardInset } from '@/lib/useKeyboardInset';
 import { clearExerciseInbox, readExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
 import type { ActiveSession, SessionExercise, SessionSet } from '@/domain/workout/types';
+import { registerWatchCommands } from '@/domain/workout/watch-commands';
+import { projectWatchState } from '@/domain/workout/watch-projection';
+import { pushWatchState, subscribeWatchCommands } from '@/lib/watch-bridge';
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -1298,6 +1301,13 @@ export default function WorkoutScreen() {
     setDurationPicker(false);
   };
 
+  /* Hoisted above `completeSet`, which calls it. It was declared ~250 lines BELOW its first use, and
+     React Compiler rejects the component for it ("Cannot access variable before it is declared") as
+     soon as that region becomes compilable. Nothing here depends on component state — `itemByKey` and
+     `itemByName` are module imports — so the declaration simply belongs before the callers. */
+  const patternOf = (e: { catalogKey?: string | null; name: string }): string =>
+    (e.catalogKey ? itemByKey(e.catalogKey)?.pattern : undefined) ?? itemByName(e.name)?.pattern ?? '';
+
   /**
    * Mark a set logged.
    *
@@ -1460,6 +1470,80 @@ export default function WorkoutScreen() {
       if (restMode === 'auto' && !holdRest) startRest();
     }
   };
+
+  /* ═══════════════════════════════════════════════════════════════════════════════════════════════
+   * THE WRIST
+   *
+   * `Docs/Apple-Watch-Companion-Build-Plan.md` §3. This screen is the only thing that knows what set
+   * the athlete is on, and all of it is `useState` in this component — so nothing outside could ever
+   * say "that set is done". These three effects are the seam, and they are a REGISTRATION, not a
+   * state-management rewrite: the screen keeps every piece of state it has and lends four functions out
+   * while it is mounted.
+   *
+   * ⚠ NOTHING BELOW DOES ANYTHING ON A BUILD WITHOUT THE NATIVE MODULE, WHICH IS EVERY BUILD TODAY.
+   * `watch-bridge.ts` resolves `ForgeWatchBridge` optionally and no-ops when it is absent, and on web
+   * it resolves `watch-bridge.web.ts`, which is a no-op by construction. So this is live code on a dead
+   * wire until `modules/watch-bridge/` ships — deliberately, so the wire is the only thing left to
+   * build and this screen never has to be opened for it again.
+   * ═══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+  /**
+   * The handlers, refreshed every render.
+   *
+   * ⚠ A PORT CAPTURED ONCE AT MOUNT WOULD LOG AGAINST A STALE SESSION. `completeSet` and the rest
+   * controls close over state that changes on every set and every tick, so registering them once would
+   * mean the wrist writing into the session as it was when the screen mounted. Same latest-ref shape as
+   * the focus drain below, and for the same reason.
+   */
+  const watchLive = useRef<{
+    session: ActiveSession | null;
+    completeSet: (ei: number, si: number) => void;
+    restSkip: () => void;
+    restAdjust: (delta: number) => void;
+    restPauseToggle: () => void;
+  } | null>(null);
+  useEffect(() => {
+    watchLive.current = { session, completeSet, restSkip, restAdjust, restPauseToggle };
+  });
+
+  /* Registered ONCE. Every guard — no session, unknown index, a set already logged, an absurd rest
+     delta — is in `watch-commands.ts`, where it is unit-tested; by the time a call reaches this screen
+     it has already been checked. Returning the unregister directly is what makes the cleanup correct. */
+  useEffect(
+    () =>
+      registerWatchCommands({
+        session: () => watchLive.current?.session ?? null,
+        setDone: (ei, si) => watchLive.current?.completeSet(ei, si),
+        restSkip: () => watchLive.current?.restSkip(),
+        restAdjust: (delta) => watchLive.current?.restAdjust(delta),
+        restToggle: () => watchLive.current?.restPauseToggle(),
+      }),
+    [],
+  );
+
+  /* The other direction: commands arriving from the wrist. A no-op until the native module exists. */
+  useEffect(() => subscribeWatchCommands(), []);
+
+  /**
+   * What the wrist is shown.
+   *
+   * ⚠ `now` ONLY MOVES WHILE A REST OR AN AMRAP IS RUNNING (see the two tickers above), so this does
+   * not recompute on a timer for most of a session — and `pushWatchState` drops a byte-identical
+   * payload anyway, because the projection is a pure function of what went into it.
+   */
+  const watchState = useMemo(
+    () =>
+      projectWatchState({
+        session,
+        units,
+        rest: { endsAt: restEndsAt, paused: restPaused, pausedRemaining, totalSec: restTotal },
+        now,
+      }),
+    [session, units, restEndsAt, restPaused, pausedRemaining, restTotal, now],
+  );
+  useEffect(() => {
+    pushWatchState(watchState);
+  }, [watchState]);
   /**
    * They answered. Write the new weight into every set of this exercise still to come, and hand the
    * sentence to the same coin the nudge uses.
@@ -1572,9 +1656,6 @@ export default function WorkoutScreen() {
    * halved it for an advanced lifter, and the PO got "2.5 lb" offered on a barbell back squat. The
    * catalogue knows that lift perfectly well; nothing had asked it by name.
    */
-  const patternOf = (e: { catalogKey?: string | null; name: string }): string =>
-    (e.catalogKey ? itemByKey(e.catalogKey)?.pattern : undefined) ?? itemByName(e.name)?.pattern ?? '';
-
   const progressions = useMemo(() => {
     const out = new Map<number, Progression>();
     if (!session || !liftHistory) return out;
