@@ -1,0 +1,1230 @@
+<title>Forge Legacy on the Wrist</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap">
+
+<style>
+  /* ─────────────────────────────────────────────────────────────────────────
+     PAGE CHROME — theme-aware. This is the spec sheet, not the device.
+     Light default is a warm technical paper; dark is a workshop ground.
+     ───────────────────────────────────────────────────────────────────────── */
+  :root {
+    --paper:        #F2F0EC;
+    --paper-raised: #FBFAF8;
+    --ink:          #191713;
+    --ink-soft:     #55504A;
+    --ink-faint:    #8A847C;
+    --rule:         #DCD7CE;
+    --rule-fine:    #E8E4DC;
+    --mark:         #7A5C36;
+    --mark-wash:    rgba(122, 92, 54, 0.09);
+    --ok:           #3F7A4C;
+    --wait:         #8A6A2F;
+
+    /* ══ ARTBOARD TOKENS — FORGE (dark), the default ══
+       Transcribed from src/constants/foundation.forge.ts, which is what the app
+       actually renders. NOT from src/constants/tokens.ts — that file's palette is
+       stale and diverges on the bronze and the whole charcoal ramp. */
+    --forge-ground:   #0C1013;  /* charcoal900 — app canvas */
+    --forge-surface:  #131517;  /* charcoal800 — card surface */
+    --forge-track:    #24242A;  /* charcoal600 — border / divider / track */
+    --forge-cream:    #F0EDE8;  /* cream100 — primary text */
+    --forge-gray:     #9E9890;  /* gray400 — secondary text */
+    --forge-faint:    #888282;  /* gray600 — tertiary (raised from #666060 for WCAG AA) */
+    --forge-bronze:   #BA8654;  /* bronze400 — ornament: rings, icons, borders */
+    --forge-label:    #BA8654;  /* bronzeInk — small bronze TEXT (same value in Forge) */
+    --forge-high:     #C99767;  /* bronze300 — pressed / highlight */
+    --forge-muted:    #765B44;  /* bronze600 */
+    --forge-solid:    #765B44;  /* bronzeSolid — filled primary action */
+    --forge-onbronze: #FFFFFF;  /* onBronze — text on a solid bronze fill */
+
+    --case:      #2A2A30;
+    --case-edge: #45454E;
+
+    --sans: -apple-system, "SF Pro Text", "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
+    --serif-display: "Playfair Display", "Iowan Old Style", Georgia, serif;
+    --serif-device: ui-serif, "New York", Georgia, "Times New Roman", serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+
+  /* ══ ARTBOARD TOKENS — ALABASTER (light) ══
+     From src/constants/foundation.paper.ts. Token names are ROLES, not colours:
+     `cream100` is primary text and is the darkest value here, by design. */
+  :root[data-board="paper"] {
+    --forge-ground:   #F6F2E8;
+    --forge-surface:  #F9F6EF;
+    --forge-track:    #CDBD9F;
+    --forge-cream:    #28231D;
+    --forge-gray:     #6E6860;
+    --forge-faint:    #8B8377;
+    --forge-bronze:   #A47A3D;  /* ornament only — 3.40:1, fine for a ring, not for a word */
+    --forge-label:    #88683A;  /* bronzeInk — the bronze you WRITE with. 4.51:1 */
+    --forge-high:     #BD9257;
+    --forge-muted:    #8C6B3C;
+    --forge-solid:    #8C6B3C;
+    --forge-onbronze: #FFFFFF;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:        #0B0B0E;
+      --paper-raised: #141419;
+      --ink:          #EDE9E3;
+      --ink-soft:     #A29C93;
+      --ink-faint:    #6E6860;
+      --rule:         #26262E;
+      --rule-fine:    #1C1C23;
+      --mark:         #BA8654;
+      --mark-wash:    rgba(186, 134, 84, 0.11);
+      --ok:           #5A9E68;
+      --wait:         #BA8654;
+      --case:         #1A1A1F;
+      --case-edge:    #33333B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:        #0B0B0E;
+    --paper-raised: #141419;
+    --ink:          #EDE9E3;
+    --ink-soft:     #A29C93;
+    --ink-faint:    #6E6860;
+    --rule:         #26262E;
+    --rule-fine:    #1C1C23;
+    --mark:         #BA8654;
+    --mark-wash:    rgba(186, 134, 84, 0.11);
+    --ok:           #5A9E68;
+    --wait:         #BA8654;
+    --case:         #1A1A1F;
+    --case-edge:    #33333B;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .sheet {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: clamp(28px, 5vw, 72px) clamp(20px, 4vw, 48px) 96px;
+  }
+
+  /* ── Masthead ─────────────────────────────────────────────────────────── */
+  .masthead { border-bottom: 2px solid var(--ink); padding-bottom: 22px; }
+
+  .eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--mark);
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline;
+  }
+  .eyebrow .sep { color: var(--ink-faint); font-weight: 400; letter-spacing: 0; }
+
+  h1 {
+    font-family: var(--serif-display);
+    font-weight: 500;
+    font-size: clamp(34px, 6vw, 58px);
+    line-height: 1.04;
+    letter-spacing: -0.015em;
+    margin: 14px 0 0;
+    text-wrap: balance;
+  }
+  .standfirst {
+    margin: 16px 0 0;
+    max-width: 62ch;
+    font-size: 17px;
+    color: var(--ink-soft);
+  }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 0;
+    margin-top: 26px; border-top: 1px solid var(--rule-fine);
+  }
+  .fact {
+    padding: 12px 22px 12px 0; margin-right: 22px;
+    border-right: 1px solid var(--rule-fine);
+  }
+  .fact:last-child { border-right: 0; margin-right: 0; }
+  .fact dt {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--ink-faint); margin: 0;
+  }
+  .fact dd {
+    margin: 3px 0 0; font-size: 14px; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Artboard theme switch ────────────────────────────────────────────── */
+  .switchrow {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    margin-top: 22px;
+  }
+  .switchrow > p {
+    margin: 0; font-size: 13px; color: var(--ink-faint); max-width: 46ch;
+  }
+  .themeswitch {
+    display: inline-flex; padding: 3px; gap: 3px;
+    border: 1px solid var(--rule); border-radius: 4px; background: var(--paper-raised);
+  }
+  .themeswitch button {
+    font-family: var(--sans);
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 8px 16px; border: 0; border-radius: 2px; cursor: pointer;
+    background: transparent; color: var(--ink-faint);
+  }
+  .themeswitch button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  .themeswitch button:focus-visible { outline: 2px solid var(--mark); outline-offset: 2px; }
+
+  /* ── Section headings ─────────────────────────────────────────────────── */
+  .section { margin-top: 68px; }
+  .section > h2 {
+    font-family: var(--serif-display);
+    font-weight: 500; font-size: 27px; letter-spacing: -0.01em;
+    margin: 0 0 6px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .section > .lede {
+    margin: 14px 0 0; max-width: 68ch; color: var(--ink-soft); font-size: 15.5px;
+  }
+
+  /* ── Artboard rows ────────────────────────────────────────────────────── */
+  .state { display: flex; gap: clamp(24px, 4vw, 52px); margin-top: 46px; align-items: flex-start; }
+  @media (max-width: 860px) { .state { flex-direction: column; } }
+
+  .stage { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+  .caption {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .notes { flex: 1 1 auto; min-width: 0; padding-top: 2px; }
+
+  .notes h3 {
+    font-family: var(--serif-display);
+    font-size: 24px; font-weight: 500; margin: 0; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .chip {
+    font-family: var(--sans);
+    font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 3px; white-space: nowrap;
+  }
+  .chip.built { color: var(--ok); border: 1px solid currentColor; }
+  .chip.todo  { color: var(--wait); border: 1px solid currentColor; }
+
+  .notes > p { margin: 12px 0 0; max-width: 60ch; color: var(--ink-soft); font-size: 15px; }
+
+  .spec { margin: 20px 0 0; border-top: 1px solid var(--rule-fine); }
+  .spec div {
+    display: grid; grid-template-columns: 128px 1fr; gap: 4px 20px;
+    padding: 11px 0; border-bottom: 1px solid var(--rule-fine);
+    font-size: 14px;
+  }
+  @media (max-width: 560px) { .spec div { grid-template-columns: 1fr; } }
+  .spec dt {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink-faint); padding-top: 3px;
+  }
+  .spec dd { margin: 0; color: var(--ink-soft); }
+  .spec dd strong { color: var(--ink); font-weight: 600; }
+
+  code {
+    font-family: var(--mono); font-size: 0.87em;
+    background: var(--mark-wash); color: var(--mark);
+    padding: 1px 5px; border-radius: 3px;
+  }
+
+  /* ── Watch device ─────────────────────────────────────────────────────── */
+  .watch {
+    position: relative;
+    width: 424px; height: 512px;
+    padding: 14px;
+    border-radius: 82px;
+    background: linear-gradient(150deg, var(--case-edge), var(--case) 42%, var(--case) 74%, var(--case-edge));
+    box-shadow: 0 18px 42px -18px rgba(0,0,0,.55), 0 2px 5px rgba(0,0,0,.28);
+    flex: 0 0 auto;
+  }
+  /* Digital Crown + side button, so the artboards read as a right-wrist-forward device */
+  .watch::before, .watch::after {
+    content: ""; position: absolute; left: 100%;
+    background: linear-gradient(90deg, var(--case-edge), var(--case));
+    border-radius: 0 3px 3px 0;
+  }
+  .watch::before { top: 148px; width: 7px; height: 62px; }
+  .watch::after  { top: 236px; width: 5px; height: 78px; opacity: .8; }
+
+  .screen {
+    width: 396px; height: 484px;
+    border-radius: 70px;
+    background: var(--forge-ground);
+    color: var(--forge-cream);
+    overflow: hidden;
+    position: relative;
+    display: flex; flex-direction: column;
+    padding: 30px 26px 26px;
+    font-family: var(--sans);
+    line-height: 1.3;
+  }
+
+  @media (max-width: 480px) {
+    .watch { transform: scale(.82); transform-origin: top center; margin-bottom: -92px; }
+  }
+
+  /* watchOS status clock */
+  .clock {
+    position: absolute; top: 20px; right: 46px;
+    font-size: 21px; font-weight: 600; color: var(--forge-label);
+    font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+  }
+
+  /* Device-side type roles */
+  .w-label {
+    font-size: 19px; font-weight: 600; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--forge-label);
+  }
+  .w-serif {
+    font-family: var(--serif-device);
+    font-size: 30px; line-height: 1.24; color: var(--forge-cream);
+  }
+  .w-foot { font-size: 19px; color: var(--forge-gray); }
+  .w-name {
+    font-size: 34px; font-weight: 600; line-height: 1.1;
+    letter-spacing: -0.02em; color: var(--forge-cream);
+  }
+  .w-target {
+    font-size: 42px; font-weight: 600; letter-spacing: -0.02em;
+    color: var(--forge-cream); font-variant-numeric: tabular-nums;
+  }
+  .w-target .unit { font-size: 26px; font-weight: 500; color: var(--forge-gray); }
+
+  .w-btn {
+    margin-top: auto;
+    display: flex; align-items: center; justify-content: center;
+    height: 88px; border-radius: 44px;
+    background: var(--forge-solid); color: var(--forge-onbronze);
+    font-size: 26px; font-weight: 600; letter-spacing: -0.01em;
+  }
+  .w-btn.ghost {
+    background: transparent; border: 2px solid var(--forge-track);
+    color: var(--forge-faint); font-weight: 500;
+  }
+
+  .w-rowbtns { display: flex; gap: 10px; margin-top: auto; }
+  .w-rowbtns span {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    height: 74px; border-radius: 37px;
+    background: var(--forge-surface); border: 1px solid var(--forge-track);
+    color: var(--forge-cream); font-size: 22px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .w-rowbtns span.wide { flex: 1.25; color: var(--forge-label); }
+
+  .ring-wrap { position: relative; display: grid; place-items: center; margin: 4px 0 10px; }
+  .ring-wrap svg { display: block; transform: rotate(-90deg); }
+  .ring-read { position: absolute; text-align: center; }
+  .ring-read .t {
+    font-size: 62px; font-weight: 600; letter-spacing: -0.03em;
+    color: var(--forge-cream); font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .ring-read .u {
+    font-size: 16px; font-weight: 600; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--forge-label); margin-top: 8px;
+  }
+
+  /* What is coming — the block the review asked for. Every rest, not only supersets. */
+  .w-nextblock { text-align: center; margin-top: 14px; }
+  .w-nextblock .k {
+    font-size: 15px; font-weight: 600; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--forge-faint);
+  }
+  .w-nextblock .n {
+    font-size: 25px; font-weight: 600; color: var(--forge-cream);
+    margin-top: 5px; letter-spacing: -0.01em; line-height: 1.15;
+  }
+  .w-nextblock .t {
+    font-size: 25px; font-weight: 600; color: var(--forge-label);
+    margin-top: 3px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+  }
+  .w-nextblock .t .unit { font-size: 18px; font-weight: 500; color: var(--forge-gray); }
+
+  /* Transient beats — never a screen you have to dismiss */
+  .beat { align-items: center; justify-content: center; text-align: center; gap: 20px; }
+  .stamp {
+    width: 132px; height: 132px; border-radius: 50%;
+    border: 3px solid var(--forge-bronze);
+    display: grid; place-items: center;
+  }
+  .stamp svg { display: block; }
+  .beat .headline {
+    font-size: 30px; font-weight: 600; color: var(--forge-cream); letter-spacing: -0.02em;
+  }
+  .beat .sub { font-size: 20px; color: var(--forge-gray); }
+  .beat .sub b { color: var(--forge-label); font-weight: 600; }
+
+  .w-stat { display: flex; gap: 26px; margin-top: 18px; }
+  .w-stat > div > .k {
+    font-size: 15px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--forge-faint);
+  }
+  .w-stat > div > .v {
+    font-size: 34px; font-weight: 600; color: var(--forge-cream);
+    font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+  }
+
+  .w-progress { display: flex; gap: 5px; margin-top: 16px; }
+  .w-progress i {
+    height: 5px; flex: 1; border-radius: 3px; background: var(--forge-track);
+  }
+  .w-progress i.on { background: var(--forge-bronze); }
+  .w-progress i.now { background: var(--forge-high); }
+
+  /* Scoped overrides so a board can pin its theme regardless of the switch */
+  .force-forge {
+    --forge-ground:#0C1013; --forge-surface:#131517; --forge-track:#24242A;
+    --forge-cream:#F0EDE8; --forge-gray:#9E9890; --forge-faint:#888282;
+    --forge-bronze:#BA8654; --forge-label:#BA8654; --forge-high:#C99767;
+    --forge-muted:#765B44; --forge-solid:#765B44; --forge-onbronze:#FFFFFF;
+  }
+  .force-paper {
+    --forge-ground:#F6F2E8; --forge-surface:#F9F6EF; --forge-track:#CDBD9F;
+    --forge-cream:#28231D; --forge-gray:#6E6860; --forge-faint:#8B8377;
+    --forge-bronze:#A47A3D; --forge-label:#88683A; --forge-high:#BD9257;
+    --forge-muted:#8C6B3C; --forge-solid:#8C6B3C; --forge-onbronze:#FFFFFF;
+  }
+
+  .compare {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(424px, 1fr));
+    gap: 40px 32px; margin-top: 38px;
+  }
+  @media (max-width: 500px) { .compare { grid-template-columns: 1fr; } }
+
+  /* ── Flow ─────────────────────────────────────────────────────────────── */
+  .flow {
+    margin-top: 28px; padding: 24px; border: 1px solid var(--rule);
+    border-radius: 4px; background: var(--paper-raised);
+    overflow-x: auto;
+  }
+  .flow svg { display: block; min-width: 640px; width: 100%; height: auto; }
+
+  /* ── Tables ───────────────────────────────────────────────────────────── */
+  .tablewrap { overflow-x: auto; margin-top: 26px; }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14.5px; }
+  th, td { text-align: left; padding: 12px 16px 12px 0; border-bottom: 1px solid var(--rule-fine); vertical-align: top; }
+  th {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-faint); border-bottom: 1px solid var(--rule);
+  }
+  td { color: var(--ink-soft); }
+  td:first-child { color: var(--ink); font-weight: 500; white-space: nowrap; }
+  td.swatchcell { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+  .swatch {
+    width: 22px; height: 22px; border-radius: 3px; flex: 0 0 auto;
+    border: 1px solid var(--rule);
+  }
+
+  /* ── Two-column list ──────────────────────────────────────────────────── */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 44px; margin-top: 26px; }
+  @media (max-width: 720px) { .cols { grid-template-columns: 1fr; } }
+  .cols section > h3 {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-faint); margin: 0 0 4px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .cols ul { list-style: none; padding: 0; margin: 0; }
+  .cols li {
+    padding: 11px 0 11px 22px; border-bottom: 1px solid var(--rule-fine);
+    font-size: 14.5px; color: var(--ink-soft); position: relative;
+  }
+  .cols li::before {
+    content: ""; position: absolute; left: 2px; top: 19px;
+    width: 8px; height: 1px; background: var(--ink-faint);
+  }
+  .cols li b { color: var(--ink); font-weight: 600; }
+  .cols section.out li::before { width: 8px; height: 8px; top: 16px; border-radius: 0; background: none; border: 1px solid var(--ink-faint); transform: rotate(45deg); }
+
+  footer {
+    margin-top: 76px; padding-top: 20px; border-top: 2px solid var(--ink);
+    font-size: 13px; color: var(--ink-faint); display: flex; flex-wrap: wrap; gap: 6px 20px;
+  }
+  footer code { background: none; color: var(--ink-soft); padding: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="sheet">
+
+  <header class="masthead">
+    <p class="eyebrow">
+      Design spec <span class="sep">/</span> Apple Watch companion V1
+      <span class="sep">/</span> 45 mm — 396 × 484 pt <span class="sep">/</span> Forge + Alabaster
+    </p>
+    <h1>Forge Legacy on the Wrist</h1>
+    <p class="standfirst">
+      Four states and two beats, one enum, two themes. The watch is a <strong>remote for the phone</strong>, not
+      a second logger — it shows the set you are on, takes one tap to finish it, and runs the rest
+      countdown where you can feel it. Every number on these artboards is a projection of state the
+      phone already holds.
+    </p>
+    <dl class="facts">
+      <div class="fact"><dt>Revision</dt><dd>3 — palette corrected</dd></div>
+      <div class="fact"><dt>Governing plan</dt><dd>Watch Companion §1</dd></div>
+      <div class="fact"><dt>Phase 1</dt><dd>Shipped — build 8</dd></div>
+      <div class="fact"><dt>Phases 2–3</dt><dd>Not built</dd></div>
+      <div class="fact"><dt>Min watchOS</dt><dd>10.0</dd></div>
+      <div class="fact"><dt>Framework</dt><dd>SwiftUI</dd></div>
+    </dl>
+
+    <div class="switchrow">
+      <div class="themeswitch" role="group" aria-label="Artboard theme">
+        <button type="button" data-board-set="forge" aria-pressed="true">Forge</button>
+        <button type="button" data-board-set="paper" aria-pressed="false">Alabaster</button>
+      </div>
+      <p>Switches every artboard below. The page around them follows your system theme independently.</p>
+    </div>
+  </header>
+
+  <!-- ══ IDLE ══════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <h2>The four states</h2>
+    <p class="lede">
+      One <code>WatchState</code> enum drives all four. The phone pushes state; the watch renders it
+      and sends back three commands. Nothing on the wrist has its own copy of the truth.
+    </p>
+    <p class="lede" style="margin-top:10px;">
+      <strong>The prose beside each artboard is annotation and never reaches the device.</strong>
+      What ships is only what is inside the case: a label, a name, a number, a bar row, a button.
+      If a sentence here cannot be traced to a pixel on the left, it is a note to the person building
+      it — not copy.
+    </p>
+
+    <div class="state">
+      <div class="stage">
+        <div class="watch">
+          <div class="screen" style="justify-content:center; align-items:center; text-align:center; gap:14px;">
+            <div class="clock">10:41</div>
+            <div class="w-label">Forge Legacy</div>
+            <div class="w-serif">Start a workout<br>on your phone</div>
+            <div class="w-foot">Your session will appear here.</div>
+          </div>
+        </div>
+        <p class="caption">01 — Idle</p>
+      </div>
+
+      <div class="notes">
+        <h3>Idle <span class="chip built">On the wrist now</span></h3>
+        <p>
+          The honest screen. The watch cannot start a session in V1, so the only thing worth saying
+          is where to start one. This is the state a reviewer sees, which is why it has to look
+          finished rather than empty.
+        </p>
+        <dl class="spec">
+          <div><dt>Shown when</dt><dd>No active session on the phone — or the phone is unreachable at launch</dd></div>
+          <div><dt>Also covers</dt><dd>A <strong>cardio-only session</strong>. V1 is strength-only and says so by staying here, rather than showing a broken Active screen</dd></div>
+          <div><dt>Type</dt><dd>System serif at 30 pt for the sentence; bronze all-caps wordmark above it</dd></div>
+          <div><dt>Copy</dt><dd>Revised in review — <strong>"Your session will appear here."</strong> replaces "It will show up here." Names the thing rather than gesturing at it</dd></div>
+          <div><dt>Built</dt><dd>Ships inside build 8 — <code>IdleView.swift</code>. ⚠ The wrist currently shows the <strong>old line</strong>; Swift copy is native, so the fix rides build 9 with Phase 3</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <!-- ══ ACTIVE ══════════════════════════════════════════════════════════ -->
+    <div class="state">
+      <div class="stage">
+        <div class="watch">
+          <div class="screen">
+            <div class="clock">10:52</div>
+            <div class="w-label" style="margin-bottom:16px;">Set 3 of 5</div>
+            <div class="w-name">Barbell<br>Bench Press</div>
+            <div class="w-target" style="margin-top:18px;">185 <span class="unit">lb</span> × 8</div>
+            <div class="w-progress">
+              <i class="on"></i><i class="on"></i><i class="now"></i><i></i><i></i>
+            </div>
+            <div class="w-btn" style="margin-top:26px;">Set done</div>
+          </div>
+        </div>
+        <p class="caption">02 — Active</p>
+      </div>
+
+      <div class="notes">
+        <h3>Active <span class="chip todo">Phase 3</span></h3>
+        <p>
+          One target, one button. The set counter leads because it is the thing you look down to
+          check mid-set; the exercise name confirms it. The bar row under the target is the set
+          you are on within the exercise — earned bronze behind you, track ahead.
+        </p>
+        <dl class="spec">
+          <div><dt>Exercise</dt><dd><code>exercises[i].name</code> — two lines, then truncate. Never abbreviate a lift name</dd></div>
+          <div><dt>Target</dt><dd>The phone sends the <strong>display string</strong> from <code>displayWeight()</code> + <code>unitLabel</code>. The watch never converts units</dd></div>
+          <div><dt>Set done</dt><dd>Sends <code>setDone{exerciseIndex, setIndex}</code>. The phone logs the planned weight and reps, starts rest, and replies with the resulting state</dd></div>
+          <div><dt>Double tap</dt><dd>The phone <strong>ignores a setDone for a set already done</strong> and replies with state. Exactly one set is logged</dd></div>
+          <div><dt>Unreachable</dt><dd>Button reads <strong>Phone not reachable</strong> and does nothing. It never queues a log it cannot verify — a set that lands twice is worse than a tap you repeat</dd></div>
+          <div><dt>The unit stays</dt><dd>Review proposed <code>185 × 8</code>. <strong>Held at <code>185 lb × 8</code></strong> — the unit is set-and-forget on the phone, so the wrist is the one place a kg/lb mix-up would go unnoticed until it is under a bar. It is already the quietest thing on the screen: grey, and two-thirds the size of the number</dd></div>
+          <div><dt>The name stays whole</dt><dd>Review proposed <code>Bench Press</code>. <strong>Held at the catalogue name</strong> — "Barbell" and "Dumbbell" are not padding, they are which implement to pick up, and this app has 700+ exercises where that prefix is the only difference between two of them</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <!-- ══ REST ════════════════════════════════════════════════════════════ -->
+    <div class="state">
+      <div class="stage">
+        <div class="watch">
+          <div class="screen" style="padding-top:26px;">
+            <div class="clock">10:53</div>
+            <div class="w-label" style="text-align:center;">Rest</div>
+            <div class="ring-wrap" style="margin:2px 0 0;">
+              <svg width="216" height="216" viewBox="0 0 216 216" aria-hidden="true">
+                <circle cx="108" cy="108" r="101" fill="none"
+                        stroke="var(--forge-track)" stroke-width="14"></circle>
+                <circle cx="108" cy="108" r="101" fill="none"
+                        stroke="var(--forge-bronze)" stroke-width="14" stroke-linecap="round"
+                        stroke-dasharray="634.6" stroke-dashoffset="253.8"></circle>
+              </svg>
+              <div class="ring-read">
+                <div class="t" style="font-size:54px;">1:12</div>
+                <div class="u" style="font-size:14px; margin-top:6px;">of 2:00</div>
+              </div>
+            </div>
+            <div class="w-nextblock">
+              <div class="k">Next</div>
+              <div class="n">Barbell Bench Press</div>
+              <div class="t">185 <span class="unit">lb</span> × 8</div>
+            </div>
+            <div class="w-rowbtns">
+              <span>−15</span><span class="wide">Skip</span><span>+15</span>
+            </div>
+          </div>
+        </div>
+        <p class="caption">03 — Rest</p>
+      </div>
+
+      <div class="notes">
+        <h3>Rest <span class="chip todo">Phase 3</span></h3>
+        <p>
+          The one screen that earns the watch on its own. The ring is the whole reason not to pull
+          the phone out of your pocket between sets, and the haptic is the reason not to watch the
+          ring.
+        </p>
+        <dl class="spec">
+          <div><dt>Countdown</dt><dd>Computed from <code>restEndsAt</code> (epoch ms) against the <strong>watch's own clock</strong> — no ticking messages, so it keeps counting out of Bluetooth range</dd></div>
+          <div><dt>Ring</dt><dd>Bronze on the charcoal track, sweeping down. Reduce Motion gets a <strong>static arc</strong>, per the existing rest-timer accessibility rule</dd></div>
+          <div><dt>At zero</dt><dd><code>WKInterfaceDevice.play(.notification)</code> — the wrist tap fires independently of the phone's ding, so neither one waits on the other</dd></div>
+          <div><dt>Controls</dt><dd><code>restAdjust(−15)</code> · <code>restSkip()</code> · <code>restAdjust(+15)</code>. The Digital Crown also adjusts in 15 s steps</dd></div>
+          <div><dt>NEXT</dt><dd><strong>Revised in review.</strong> Was a superset-only "next: Row" line. It now carries the <strong>upcoming exercise and its target on every rest</strong> — the thing you are about to walk back and do. Scope addition beyond plan §1, and worth it: it turns rest from a countdown into a briefing</dd></div>
+          <div><dt>Supersets</dt><dd>Handled by the same block. On a superset the NEXT exercise simply differs from the one you just finished — no special case, no second layout</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <!-- ══ FINISHED ════════════════════════════════════════════════════════ -->
+    <div class="state">
+      <div class="stage">
+        <div class="watch">
+          <div class="screen" style="justify-content:center;">
+            <div class="clock">11:38</div>
+            <div class="w-label">Session complete</div>
+            <div class="w-serif" style="margin-top:10px;">Push Day A</div>
+            <div class="w-stat">
+              <div><div class="k">Time</div><div class="v">46:12</div></div>
+              <div><div class="k">Sets</div><div class="v">18</div></div>
+            </div>
+            <div class="w-btn ghost" style="margin-top:34px; height:74px; font-size:22px;">
+              Finish on your phone
+            </div>
+          </div>
+        </div>
+        <p class="caption">04 — Finished</p>
+      </div>
+
+      <div class="notes">
+        <h3>Finished <span class="chip todo">Phase 3</span></h3>
+        <p>
+          A receipt, not a ceremony. Sealing a session stays on the phone — that moment has weight
+          and a 45 mm screen is the wrong place to spend it. The wrist confirms the work and hands
+          you back.
+        </p>
+        <dl class="spec">
+          <div><dt>Shown when</dt><dd>Every set is done, or the athlete ended the session on the phone</dd></div>
+          <div><dt>Numbers</dt><dd>Elapsed from <code>startedAt</code>; set count from the session projection. Both already exist</dd></div>
+          <div><dt>The button</dt><dd>Deliberately inert — a <strong>label, not an action</strong>. Styled as a ghost so it never invites a tap that cannot work</dd></div>
+          <div><dt>Falls back</dt><dd>To Idle within seconds if the phone app is killed</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BEATS ═════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <h2>The moments between</h2>
+    <p class="lede">
+      The review asked for <em>Set Complete</em> and <em>Exercise Complete</em> in the flow. Neither
+      should be a state. A state is something you land on and have to leave — and mid-workout, a
+      screen you must dismiss costs a tap you did not agree to. Both are <strong>beats</strong>:
+      one plays and passes on its own, the other is a header change on a screen you were already
+      looking at.
+    </p>
+
+    <div class="state">
+      <div class="stage">
+        <div class="watch">
+          <div class="screen beat">
+            <div class="clock">10:52</div>
+            <div class="stamp">
+              <svg width="62" height="62" viewBox="0 0 62 62" aria-hidden="true">
+                <path d="M16 32 L27 43 L46 20" fill="none" stroke="var(--forge-bronze)"
+                      stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </div>
+            <div class="headline">Set 3 logged</div>
+            <div class="sub">185 lb × 8</div>
+          </div>
+        </div>
+        <p class="caption">Beat A — Set logged</p>
+      </div>
+
+      <div class="notes">
+        <h3>Set logged <span class="chip todo">Phase 3</span></h3>
+        <p>
+          Roughly 600 ms between the tap and the rest ring. It exists for one reason: to close the
+          loop on a tap you made without looking, so you know it landed before you walk away from
+          the bar.
+        </p>
+        <dl class="spec">
+          <div><dt>Trigger</dt><dd>The phone's <strong>reply</strong> to <code>setDone</code> — never the tap itself. What you see confirms what was written, not what was sent</dd></div>
+          <div><dt>Unreachable</dt><dd>The beat <strong>does not play</strong>. You get the Active screen with "Phone not reachable" instead. Silence is the honest answer</dd></div>
+          <div><dt>Haptic</dt><dd>A single light tap on entry, distinct from the rest-zero notification</dd></div>
+          <div><dt>Reduce Motion</dt><dd>The mark appears without the stamp scale. Duration unchanged</dd></div>
+          <div><dt>Dismissable</dt><dd>No. It passes on its own — and a tap during it falls through to Rest, never blocks</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="state">
+      <div class="stage">
+        <div class="watch">
+          <div class="screen" style="padding-top:26px;">
+            <div class="clock">11:04</div>
+            <div class="w-label" style="text-align:center; font-size:15px;">Bench Press done</div>
+            <div class="ring-wrap" style="margin:2px 0 0;">
+              <svg width="216" height="216" viewBox="0 0 216 216" aria-hidden="true">
+                <circle cx="108" cy="108" r="101" fill="none"
+                        stroke="var(--forge-track)" stroke-width="14"></circle>
+                <circle cx="108" cy="108" r="101" fill="none"
+                        stroke="var(--forge-bronze)" stroke-width="14" stroke-linecap="round"
+                        stroke-dasharray="634.6" stroke-dashoffset="102.2"></circle>
+              </svg>
+              <div class="ring-read">
+                <div class="t" style="font-size:54px;">2:31</div>
+                <div class="u" style="font-size:14px; margin-top:6px;">of 3:00</div>
+              </div>
+            </div>
+            <div class="w-nextblock">
+              <div class="k" style="color:var(--forge-label);">Next exercise</div>
+              <div class="n">Incline Dumbbell Press</div>
+              <div class="t">60 <span class="unit">lb</span> × 10</div>
+            </div>
+            <div class="w-rowbtns">
+              <span>−15</span><span class="wide">Skip</span><span>+15</span>
+            </div>
+          </div>
+        </div>
+        <p class="caption">Beat B — Exercise complete</p>
+      </div>
+
+      <div class="notes">
+        <h3>Exercise complete <span class="chip todo">Phase 3</span></h3>
+        <p>
+          Not a screen — the <strong>Rest screen wearing a different header</strong>. When the set you
+          just finished was the last of its exercise, "Rest" becomes the name of what you finished,
+          and NEXT is promoted to bronze because it now means <em>move</em>, not <em>repeat</em>.
+        </p>
+        <dl class="spec">
+          <div><dt>Why not a state</dt><dd>Because the athlete's job is identical either way: wait, then do the next thing. A separate screen would add a dismissal to a moment that has none</dd></div>
+          <div><dt>Header</dt><dd>The finished exercise's name, sentence case at 15 pt so a long lift name still fits on one line</dd></div>
+          <div><dt>NEXT label</dt><dd>Bronze and reads <strong>Next exercise</strong>. On an ordinary rest it is grey and reads <strong>Next</strong> — the colour is the whole signal</dd></div>
+          <div><dt>Last exercise</dt><dd>There is no next, so this beat does not fire. The final Set done goes straight to Finished</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ FLOW ══════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <h2>How the four connect</h2>
+    <p class="lede">
+      The watch never moves itself between states. Every transition below is the phone pushing a new
+      projection — which is what makes an unreachable phone a <em>display</em> problem instead of a
+      data problem.
+    </p>
+
+    <div class="flow">
+      <svg viewBox="0 0 780 230" role="img" aria-label="Flow: Idle to Active; Active through the Set logged beat to Rest; Rest back to Active for the next set, or on to Finished after the last set; Finished returns to Idle.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-faint)"></path>
+          </marker>
+        </defs>
+
+        <g font-family="-apple-system, system-ui, sans-serif" font-size="13" font-weight="600">
+          <g>
+            <rect x="8" y="80" width="104" height="52" rx="4" fill="none" stroke="var(--ink-faint)"></rect>
+            <text x="60" y="111" fill="var(--ink)" text-anchor="middle">Idle</text>
+          </g>
+          <g>
+            <rect x="168" y="80" width="116" height="52" rx="4" fill="none" stroke="var(--mark)" stroke-width="2"></rect>
+            <text x="226" y="111" fill="var(--ink)" text-anchor="middle">Active</text>
+          </g>
+          <g>
+            <rect x="336" y="80" width="104" height="52" rx="4" fill="none" stroke="var(--ink-faint)" stroke-dasharray="4 4"></rect>
+            <text x="388" y="105" fill="var(--ink-soft)" text-anchor="middle" font-size="12">Set logged</text>
+            <text x="388" y="121" fill="var(--ink-faint)" text-anchor="middle" font-size="10" font-weight="400">600 ms</text>
+          </g>
+          <g>
+            <rect x="492" y="80" width="104" height="52" rx="4" fill="none" stroke="var(--mark)" stroke-width="2"></rect>
+            <text x="544" y="111" fill="var(--ink)" text-anchor="middle">Rest</text>
+          </g>
+          <g>
+            <rect x="648" y="80" width="116" height="52" rx="4" fill="none" stroke="var(--ink-faint)"></rect>
+            <text x="706" y="111" fill="var(--ink)" text-anchor="middle">Finished</text>
+          </g>
+        </g>
+
+        <g stroke="var(--ink-faint)" fill="none" marker-end="url(#ar)">
+          <path d="M116 106 H162"></path>
+          <path d="M288 106 H330"></path>
+          <path d="M444 106 H486"></path>
+          <path d="M600 106 H642"></path>
+          <path d="M544 136 V172 H226 V136"></path>
+          <path d="M706 76 V44 H60 V76"></path>
+        </g>
+
+        <g font-family="-apple-system, system-ui, sans-serif" font-size="10.5" fill="var(--ink-faint)" letter-spacing=".06em">
+          <text x="139" y="100" text-anchor="middle">start</text>
+          <text x="309" y="100" text-anchor="middle">tap</text>
+          <text x="465" y="100" text-anchor="middle">reply</text>
+          <text x="621" y="100" text-anchor="middle">last set</text>
+          <text x="385" y="166" text-anchor="middle">rest over / skip — next set</text>
+          <text x="383" y="36" text-anchor="middle">session ended on the phone, or the app was killed</text>
+        </g>
+
+        <g font-family="-apple-system, system-ui, sans-serif" font-size="10" fill="var(--mark)" letter-spacing=".04em">
+          <text x="544" y="200" text-anchor="middle">Rest wears the "exercise done" header when that set was the exercise's last</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ══ FAILURE ═══════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <h2>What it does when things go wrong</h2>
+    <p class="lede">
+      This is the part that decides whether the watch gets worn twice. Each row is a Phase 4 vetting
+      item — the PO ticks it on a real session, on a dated binary.
+    </p>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Situation</th><th>What the wrist does</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Phone locked in a pocket</td>
+            <td>Nothing changes. WatchConnectivity does not need the phone awake or the app foregrounded — the tap still logs.</td>
+          </tr>
+          <tr>
+            <td>Out of range mid-rest</td>
+            <td>The ring keeps counting, because it counts against <code>restEndsAt</code> and the local clock. Buttons read <strong>Phone not reachable</strong>. On return, one state push resyncs and nothing double-logs.</td>
+          </tr>
+          <tr>
+            <td>Phone app killed</td>
+            <td>Falls to Idle within seconds. Resuming on the phone re-pushes and the wrist catches up.</td>
+          </tr>
+          <tr>
+            <td>Set done tapped twice</td>
+            <td>Exactly one set logged. The command carries its <code>setIndex</code> and the phone's handler is idempotent on it.</td>
+          </tr>
+          <tr>
+            <td>Watch rebooted mid-session</td>
+            <td>Reopens to the correct set — the phone's application context is latest-wins and survives the restart.</td>
+          </tr>
+          <tr>
+            <td>Units switched to kg mid-session</td>
+            <td>The next state push carries kg. The watch is never the thing that converts.</td>
+          </tr>
+          <tr>
+            <td>Clocks disagree</td>
+            <td>The ring tolerates ±2 s. The phone's ding stays authoritative for sound; the wrist haptic is independent.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ TOKENS ════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <h2>Tokens on the wrist</h2>
+    <p class="lede">
+      <strong>Corrected in revision 3.</strong> The first two revisions drew from
+      <code>src/constants/tokens.ts</code>, which is stale — the app has not rendered that palette in
+      months. The live values are in <code>foundation.forge.ts</code> and
+      <code>foundation.paper.ts</code>, transcribed from the Claude Design project, and they differ
+      on the bronze, the entire charcoal ramp, and the tertiary grey.
+    </p>
+    <p class="lede" style="margin-top:10px;">
+      <strong>And the watch gets both themes.</strong> The build plan said Forge-only on the grounds
+      that a watch is always OLED black. That was wrong on this project's own rule — layout is both
+      themes, colour is one — and an Alabaster athlete glancing at a black wrist is the seam showing.
+      Use the switch at the top of the page.
+    </p>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Role</th><th>Forge</th><th>Alabaster</th><th>Used for</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="swatchcell"><span class="swatch" style="background:#0C1013"></span>Ground</td>
+            <td><code>#0C1013</code></td>
+            <td class="swatchcell"><span class="swatch" style="background:#F6F2E8"></span><code>#F6F2E8</code></td>
+            <td>Every screen. <code>charcoal900</code> in both — the name is a role, not a colour.</td>
+          </tr>
+          <tr>
+            <td class="swatchcell"><span class="swatch" style="background:#F0EDE8"></span>Primary text</td>
+            <td><code>#F0EDE8</code></td>
+            <td class="swatchcell"><span class="swatch" style="background:#28231D"></span><code>#28231D</code></td>
+            <td>Lift name, target, timer. <code>cream100</code> — the darkest value in the light theme, deliberately.</td>
+          </tr>
+          <tr>
+            <td class="swatchcell"><span class="swatch" style="background:#BA8654"></span>Bronze — ornament</td>
+            <td><code>#BA8654</code></td>
+            <td class="swatchcell"><span class="swatch" style="background:#A47A3D"></span><code>#A47A3D</code></td>
+            <td>Ring fill, set bars, the stamp mark. <strong>Not for words</strong> — 3.40:1 on Alabaster.</td>
+          </tr>
+          <tr>
+            <td class="swatchcell"><span class="swatch" style="background:#88683A"></span>Bronze — text</td>
+            <td><code>#BA8654</code></td>
+            <td class="swatchcell"><span class="swatch" style="background:#88683A"></span><code>#88683A</code></td>
+            <td><code>bronzeInk</code>. Every small caps label — SET 3 OF 5, REST, NEXT, the clock. 4.51:1 on paper.</td>
+          </tr>
+          <tr>
+            <td class="swatchcell"><span class="swatch" style="background:#765B44"></span>Bronze — solid</td>
+            <td><code>#765B44</code></td>
+            <td class="swatchcell"><span class="swatch" style="background:#8C6B3C"></span><code>#8C6B3C</code></td>
+            <td>The Set done fill, with <code>#FFFFFF</code> on it in both themes.</td>
+          </tr>
+          <tr>
+            <td class="swatchcell"><span class="swatch" style="background:#24242A"></span>Track / border</td>
+            <td><code>#24242A</code></td>
+            <td class="swatchcell"><span class="swatch" style="background:#CDBD9F"></span><code>#CDBD9F</code></td>
+            <td>Ring track, unfilled set bars, control outlines.</td>
+          </tr>
+          <tr>
+            <td class="swatchcell"><span class="swatch" style="background:#9E9890"></span>Secondary text</td>
+            <td><code>#9E9890</code></td>
+            <td class="swatchcell"><span class="swatch" style="background:#6E6860"></span><code>#6E6860</code></td>
+            <td>The unit beside the weight; the Idle footnote.</td>
+          </tr>
+          <tr>
+            <td class="swatchcell"><span class="swatch" style="background:#888282"></span>Tertiary text</td>
+            <td><code>#888282</code></td>
+            <td class="swatchcell"><span class="swatch" style="background:#8B8377"></span><code>#8B8377</code></td>
+            <td>The NEXT label on an ordinary rest. ⚠ Alabaster’s value is a known unfinished problem — 3.15:1, and not fixable on one line.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="lede" style="margin-top:24px;">
+      <strong>What this means for the shipped target.</strong> <code>expo-target.config.js</code>
+      currently declares three colour sets against the stale palette — <code>$accent #C8A97E</code>,
+      <code>ForgeGround #0E0E12</code>, <code>ForgeMuted #765B44</code>. Two of the three are wrong,
+      and there is no track, no cream and no per-theme pair. That is a Phase 3 change, and it is
+      larger than a find-and-replace: watchOS resolves light and dark from a single colour set with
+      two appearances, so each of the eight rows above becomes one set with two values.
+    </p>
+    <p class="lede" style="margin-top:10px;">
+      ⚠ Separately, and outside this spec: <strong>13 places in <code>src/</code> still hardcode
+      <code>#C8A97E</code></strong> — card shadows, the toggle track, a focus glow, two difficulty
+      scales. Those are drawing the old bronze in the shipped app today.
+    </p>
+  </div>
+
+  <!-- ══ BOTH THEMES ═══════════════════════════════════════════════════════ -->
+  <div class="section">
+    <h2>Both themes, side by side</h2>
+    <p class="lede">
+      The two screens you actually stare at, pinned to a theme each so they can be judged against
+      one another rather than from memory. The switch at the top of the page moves every other
+      artboard; these four stay put.
+    </p>
+    <p class="lede" style="margin-top:10px;">
+      <strong>One thing to decide with your eyes, not the tokens.</strong> Alabaster is correct by
+      the system and it is the right default for an athlete who chose the light app — but a cream
+      field at arm&rsquo;s length under gym lighting is a different proposition from a cream card
+      held at reading distance, and on an always-on display it is the difference between a dim glow
+      and a lit panel on your wrist between sets. If it reads worse to you here, the honest answer
+      may be that the watch follows the app&rsquo;s theme <em>except</em> during a live session.
+      Say which and I will write it into the spec.
+    </p>
+
+    <div class="compare">
+      <div class="stage">
+        <div class="watch force-forge">
+          <div class="screen">
+            <div class="clock">10:52</div>
+            <div class="w-label" style="margin-bottom:16px;">Set 3 of 5</div>
+            <div class="w-name">Barbell<br>Bench Press</div>
+            <div class="w-target" style="margin-top:18px;">185 <span class="unit">lb</span> &times; 8</div>
+            <div class="w-progress">
+              <i class="on"></i><i class="on"></i><i class="now"></i><i></i><i></i>
+            </div>
+            <div class="w-btn" style="margin-top:26px;">Set done</div>
+          </div>
+        </div>
+        <p class="caption">Active &mdash; Forge</p>
+      </div>
+      <div class="stage">
+        <div class="watch force-paper">
+          <div class="screen">
+            <div class="clock">10:52</div>
+            <div class="w-label" style="margin-bottom:16px;">Set 3 of 5</div>
+            <div class="w-name">Barbell<br>Bench Press</div>
+            <div class="w-target" style="margin-top:18px;">185 <span class="unit">lb</span> &times; 8</div>
+            <div class="w-progress">
+              <i class="on"></i><i class="on"></i><i class="now"></i><i></i><i></i>
+            </div>
+            <div class="w-btn" style="margin-top:26px;">Set done</div>
+          </div>
+        </div>
+        <p class="caption">Active &mdash; Alabaster</p>
+      </div>
+      <div class="stage">
+        <div class="watch force-forge">
+          <div class="screen" style="padding-top:26px;">
+            <div class="clock">10:53</div>
+            <div class="w-label" style="text-align:center;">Rest</div>
+            <div class="ring-wrap" style="margin:2px 0 0;">
+              <svg width="216" height="216" viewBox="0 0 216 216" aria-hidden="true">
+                <circle cx="108" cy="108" r="101" fill="none"
+                        stroke="var(--forge-track)" stroke-width="14"></circle>
+                <circle cx="108" cy="108" r="101" fill="none"
+                        stroke="var(--forge-bronze)" stroke-width="14" stroke-linecap="round"
+                        stroke-dasharray="634.6" stroke-dashoffset="253.8"></circle>
+              </svg>
+              <div class="ring-read">
+                <div class="t" style="font-size:54px;">1:12</div>
+                <div class="u" style="font-size:14px; margin-top:6px;">of 2:00</div>
+              </div>
+            </div>
+            <div class="w-nextblock">
+              <div class="k">Next</div>
+              <div class="n">Barbell Bench Press</div>
+              <div class="t">185 <span class="unit">lb</span> &times; 8</div>
+            </div>
+            <div class="w-rowbtns">
+              <span>&minus;15</span><span class="wide">Skip</span><span>+15</span>
+            </div>
+          </div>
+        </div>
+        <p class="caption">Rest &mdash; Forge</p>
+      </div>
+      <div class="stage">
+        <div class="watch force-paper">
+          <div class="screen" style="padding-top:26px;">
+            <div class="clock">10:53</div>
+            <div class="w-label" style="text-align:center;">Rest</div>
+            <div class="ring-wrap" style="margin:2px 0 0;">
+              <svg width="216" height="216" viewBox="0 0 216 216" aria-hidden="true">
+                <circle cx="108" cy="108" r="101" fill="none"
+                        stroke="var(--forge-track)" stroke-width="14"></circle>
+                <circle cx="108" cy="108" r="101" fill="none"
+                        stroke="var(--forge-bronze)" stroke-width="14" stroke-linecap="round"
+                        stroke-dasharray="634.6" stroke-dashoffset="253.8"></circle>
+              </svg>
+              <div class="ring-read">
+                <div class="t" style="font-size:54px;">1:12</div>
+                <div class="u" style="font-size:14px; margin-top:6px;">of 2:00</div>
+              </div>
+            </div>
+            <div class="w-nextblock">
+              <div class="k">Next</div>
+              <div class="n">Barbell Bench Press</div>
+              <div class="t">185 <span class="unit">lb</span> &times; 8</div>
+            </div>
+            <div class="w-rowbtns">
+              <span>&minus;15</span><span class="wide">Skip</span><span>+15</span>
+            </div>
+          </div>
+        </div>
+        <p class="caption">Rest &mdash; Alabaster</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BOUNDARY ══════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <h2>The line around V1</h2>
+    <div class="cols">
+      <section>
+        <h3>On the wrist</h3>
+        <ul>
+          <li><b>Current set and target</b>, in the athlete's own units</li>
+          <li><b>Set done</b> — the phone logs it, the watch asks</li>
+          <li><b>Rest countdown</b> with a haptic at zero</li>
+          <li><b>±15 s and Skip</b>, by button or Digital Crown</li>
+          <li><b>What is next, with its target</b>, on every rest — supersets included</li>
+          <li><b>A logged-set beat</b> that confirms the tap landed</li>
+          <li><b>Idle and Finished</b> screens that look finished</li>
+        </ul>
+      </section>
+      <section class="out">
+        <h3>Deliberately not</h3>
+        <ul>
+          <li><b>Starting a workout</b> from the watch — needs the whole session builder</li>
+          <li><b>Editing weight or reps</b> on the wrist — the phone is a foot away</li>
+          <li><b>Heart rate or HealthKit</b> — a separate route entirely</li>
+          <li><b>GPS runs</b> from the watch — the phone stays the runner</li>
+          <li><b>A watch-face complication</b> — cheap to add in V2, once the app exists</li>
+          <li><b>Android and Wear OS</b></li>
+        </ul>
+      </section>
+    </div>
+    <p class="lede" style="margin-top:26px;">
+      Everything on the left is a projection of state the phone already holds, plus three commands
+      it already handles. Everything on the right needs new domain logic on a device we cannot
+      compile locally. That is the whole reason the line sits where it does.
+    </p>
+    <p class="lede" style="margin-top:14px;">
+      The review named the principle better than the plan did, so it belongs here:
+      <strong>the phone is the workspace, the watch is the instrument.</strong> Browsing,
+      configuring, editing, analysing and everything social stay on the phone. The wrist answers
+      five questions — what am I doing, what weight and reps, what set am I on, how long have I
+      rested, what is next — and takes one answer back: done. Any future feature that does not fit
+      one of those six lines is a phone feature that happens to be near your wrist.
+    </p>
+  </div>
+
+  <!-- ══ REVISIONS ═════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <h2>What changed, and why</h2>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Rev</th><th>Change</th><th>Raised as</th><th>Disposition</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>3</td>
+            <td>The bronze is wrong</td>
+            <td>"Are you sure this is the right bronze? I don't think it is."</td>
+            <td><strong>Correct, and worse than a shade.</strong> I had drawn from <code>src/constants/tokens.ts</code>, which the app stopped rendering months ago. Live bronze is <code>#BA8654</code>, not <code>#C8A97E</code> &mdash; warmer and a full step deeper. The ground and the whole charcoal ramp were stale too</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>The button was inverted</td>
+            <td>Found while checking the bronze</td>
+            <td><strong>Fixed.</strong> I had a bright bronze fill with dark text. The system says <code>bronzeSolid</code> with <strong>white</strong> on it &mdash; and both themes agree on the white, deliberately</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Ornament vs writing bronze</td>
+            <td>Found while checking the bronze</td>
+            <td><strong>Adopted.</strong> Your own 2026-08-25 note: keep the bright bronze for rings and borders, use a deeper one for small text. Every caps label on the wrist now uses <code>bronzeInk</code></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Alabaster on the wrist</td>
+            <td>"Be sure to make the light version too"</td>
+            <td><strong>Built.</strong> The plan had said Forge-only because a watch is always OLED black. That contradicted this project's own rule &mdash; layout is both themes, colour is one. Switch at the top; side-by-side section above</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Idle copy</td>
+            <td>"It will show up here." reads generic</td>
+            <td><strong>Taken.</strong> Now "Your session will appear here." Rides build 9 — the wrist still shows the old line today</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Rest carries NEXT</td>
+            <td>Show the upcoming exercise and its target during rest</td>
+            <td><strong>Taken, and widened.</strong> Was superset-only; now on every rest. The best note in the review — it turns a countdown into a briefing</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Set logged beat</td>
+            <td>Add a "Set Complete" step to the flow</td>
+            <td><strong>Taken as a beat, not a state.</strong> 600 ms, fires on the phone's reply, cannot be dismissed because it never has to be</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Exercise complete</td>
+            <td>Add an "Exercise Complete" step to the flow</td>
+            <td><strong>Taken as a header change on Rest.</strong> The athlete's job is identical either way — wait, then do the next thing. A separate screen would only add a dismissal</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Drop the unit</td>
+            <td><code>185 × 8</code> instead of <code>185 lb × 8</code></td>
+            <td><strong>Declined.</strong> The wrist is the one surface where a kg/lb mix-up reaches a loaded bar unnoticed</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Shorten the lift name</td>
+            <td><code>Bench Press</code> instead of <code>Barbell Bench Press</code></td>
+            <td><strong>Declined.</strong> The implement prefix is the only difference between two catalogue entries more often than not</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Prose in the UI</td>
+            <td>Keep the watch ruthlessly focused, not documentary</td>
+            <td><strong>Already true — clarified.</strong> The prose is annotation beside the artboards; it was never on the device. Said so explicitly at the top of the states section</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    <span>Forge Legacy — Apple Watch Companion V1</span>
+    <span>Revision 3 — palette corrected, both themes</span>
+    <span>Artboards at 45 mm, 396 × 484 pt</span>
+    <span>Source: <code>Docs/Apple-Watch-Companion-Build-Plan.md</code> §1</span>
+    <span>Tokens: <code>foundation.forge.ts</code> · <code>foundation.paper.ts</code></span>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btns = document.querySelectorAll("[data-board-set]");
+    function apply(which) {
+      if (which === "paper") { root.setAttribute("data-board", "paper"); }
+      else { root.removeAttribute("data-board"); }
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].setAttribute("aria-pressed",
+          String(btns[i].getAttribute("data-board-set") === which));
+      }
+      try { localStorage.setItem("fl-watch-board", which); } catch (e) {}
+    }
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener("click", function () {
+        apply(this.getAttribute("data-board-set"));
+      });
+    }
+    var saved = null;
+    try { saved = localStorage.getItem("fl-watch-board"); } catch (e) {}
+    if (saved === "paper") { apply("paper"); }
+  })();
+</script>
