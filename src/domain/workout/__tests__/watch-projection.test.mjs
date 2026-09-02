@@ -33,7 +33,7 @@ const session = (o = {}) => ({
 
 const noRest = { endsAt: null, paused: false, pausedRemaining: null, totalSec: 120 };
 const project = (o = {}) =>
-  projectWatchState({ session: session(), units: 'imperial', rest: noRest, now: T0, ...o });
+  projectWatchState({ session: session(), units: 'imperial', theme: 'forge', rest: noRest, now: T0, ...o });
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -202,6 +202,20 @@ test('Finished counts only strength sets, and survives an unparseable start time
 
   const bad = session({ exercises: [done], startedAt: 'not a date' });
   assert.equal(project({ session: bad }).elapsedSec, 0);
+});
+
+test('the theme travels in every phase, because watchOS has no light mode to inherit', () => {
+  /* There is no user-facing light appearance on watchOS — `ColorScheme` there is always `.dark` — so an
+     asset-catalogue colour set with a light variant never resolves. Alabaster can only be SENT. */
+  const allDone = session({ exercises: [ex({ sets: [set({ done: true })] })] });
+  const resting = { endsAt: T0 + 30_000, paused: false, pausedRemaining: null, totalSec: 120 };
+
+  for (const theme of ['forge', 'paper']) {
+    assert.equal(project({ session: null, theme }).theme, theme, 'idle, no session');
+    assert.equal(project({ theme }).theme, theme, 'active');
+    assert.equal(project({ theme, rest: resting }).theme, theme, 'rest');
+    assert.equal(project({ session: allDone, theme }).theme, theme, 'finished');
+  }
 });
 
 test('the state is versioned, because two builds will talk to each other', () => {

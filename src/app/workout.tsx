@@ -108,6 +108,7 @@ import type { ActiveSession, SessionExercise, SessionSet } from '@/domain/workou
 import { registerWatchCommands } from '@/domain/workout/watch-commands';
 import { projectWatchState } from '@/domain/workout/watch-projection';
 import { pushWatchState, subscribeWatchCommands } from '@/lib/watch-bridge';
+import { activeTheme } from '@/constants/theme-choice';
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -1536,6 +1537,10 @@ export default function WorkoutScreen() {
       projectWatchState({
         session,
         units,
+        /* The wrist cannot inherit Alabaster — watchOS has no light appearance — so the app's own
+           choice is mirrored across. `activeTheme()` is the boot value and does not change without a
+           reload, which is exactly the app's own theme contract. */
+        theme: activeTheme(),
         rest: { endsAt: restEndsAt, paused: restPaused, pausedRemaining, totalSec: restTotal },
         now,
       }),

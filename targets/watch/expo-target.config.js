@@ -30,13 +30,19 @@ module.exports = (config) => ({
   // circle itself. Same source as the phone icon so the two never drift.
   icon: '../../assets/images/icon.png',
 
-  // Colour sets the SwiftUI code reads by name. `$accent` also becomes the target's global accent.
-  // Values are the Forge dark tokens from src/constants/tokens.ts — the watch is always OLED-black,
-  // so Alabaster does not apply here.
+  // ⚠ THE PALETTE LIVES IN `Theme.swift` NOW, NOT HERE. watchOS has no user-facing light mode — SwiftUI's
+  // `ColorScheme` on a watch is always `.dark` — so a colour set with a light appearance can never
+  // resolve, and Alabaster cannot be inherited the way it is on the phone. The phone SENDS `theme` in
+  // every `WatchState` push and `Palette` selects from it. Both themes are drawn in
+  // `design-drafts/ForgeWatchCompanion.dc.html`.
+  //
+  // What remains here is the one colour the SYSTEM uses rather than our views: `$accent` becomes the
+  // target's global tint (focus rings, the crown indicator, system controls).
+  //
+  // ⚠ CORRECTED. This was `#C8A97E`, from `src/constants/tokens.ts` — a palette the app stopped
+  // rendering months ago. The live bronze is `foundation.forge.ts`'s `bronze400`.
   colors: {
-    $accent: '#C8A97E', // bronze400 — PRIMARY accent
-    ForgeGround: '#0E0E12', // charcoal900 — primary app background
-    ForgeMuted: '#765B44', // bronze600 — progress track / muted accent
+    $accent: '#BA8654', // bronze400 — PRIMARY accent
   },
 
   entitlements: {

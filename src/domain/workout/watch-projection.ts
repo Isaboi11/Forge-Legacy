@@ -29,10 +29,23 @@ import type { ActiveSession, SessionExercise, SessionSet } from './types.ts';
 /** Which of the four artboards the wrist is drawing. */
 export type WatchPhase = 'idle' | 'active' | 'rest' | 'finished';
 
+/**
+ * Which palette the wrist paints in — the app's own theme, mirrored.
+ *
+ * ⚠ IT HAS TO TRAVEL, BECAUSE watchOS HAS NO LIGHT MODE TO ASK. There is no user-facing light
+ * appearance on watchOS and `ColorScheme` there is always `.dark`, so an asset-catalogue colour set
+ * with a light variant would never resolve to it — the standard iOS way of doing this simply has no
+ * effect on a wrist. Alabaster therefore cannot be inherited; it can only be sent. Same two names the
+ * app uses (`theme-choice-shared.ts`), so nothing has to be translated at either end.
+ */
+export type WatchTheme = 'forge' | 'paper';
+
 export interface WatchState {
   /** Protocol version. Bump only for a change Swift cannot read past. */
   v: 1;
   phase: WatchPhase;
+  /** Present in every phase, including Idle — the wrist has to paint something before a session exists. */
+  theme: WatchTheme;
 
   /** Session name — Finished shows it; the others have no room for it. */
   workoutName?: string;
@@ -99,6 +112,8 @@ export interface WatchRestState {
 export interface WatchProjectionInput {
   session: ActiveSession | null;
   units: UnitSystem;
+  /** Passed in rather than read: `theme-choice.ts` reaches AsyncStorage, and this file runs under `node --test`. */
+  theme: WatchTheme;
   rest: WatchRestState;
   /** Injected rather than read, so every test is deterministic and no clock is consulted twice. */
   now: number;
@@ -191,8 +206,8 @@ const perLabelFor = (e: SessionExercise): string | undefined => (e.per ? `per ${
 /** How many of an exercise's sets are done. */
 const doneCount = (e: SessionExercise): number => e.sets.filter((st) => st.done).length;
 
-function idle(s: ActiveSession | null): WatchState {
-  return s ? { v: 1, phase: 'idle', workoutName: s.workoutName } : { v: 1, phase: 'idle' };
+function idle(s: ActiveSession | null, theme: WatchTheme): WatchState {
+  return s ? { v: 1, phase: 'idle', theme, workoutName: s.workoutName } : { v: 1, phase: 'idle', theme };
 }
 
 /**
@@ -206,11 +221,11 @@ function idle(s: ActiveSession | null): WatchState {
  *   4. Otherwise → Active.
  */
 export function projectWatchState(input: WatchProjectionInput): WatchState {
-  const { session, units, rest, now } = input;
-  if (!session) return idle(null);
+  const { session, units, theme, rest, now } = input;
+  if (!session) return idle(null, theme);
 
   const hasStrength = session.exercises.some((e) => isStrength(e) && e.sets.length > 0);
-  if (!hasStrength) return idle(session);
+  if (!hasStrength) return idle(session, theme);
 
   const cursor = currentCursor(session);
 
@@ -220,11 +235,12 @@ export function projectWatchState(input: WatchProjectionInput): WatchState {
     for (const e of session.exercises) if (isStrength(e)) totalSets += doneCount(e);
     const started = Date.parse(session.startedAt);
     const elapsedSec = Number.isFinite(started) ? Math.max(0, Math.round((now - started) / 1000)) : 0;
-    return { v: 1, phase: 'finished', workoutName: session.workoutName, elapsedSec, totalSets };
+    return { v: 1, phase: 'finished', theme, workoutName: session.workoutName, elapsedSec, totalSets };
   }
 
   const common = {
     v: 1 as const,
+    theme,
     workoutName: session.workoutName,
     exercise: cursor.exercise.name,
     setLabel: `Set ${cursor.setIndex + 1} of ${cursor.exercise.sets.length}`,
