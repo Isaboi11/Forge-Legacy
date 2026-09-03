@@ -28,11 +28,34 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { IS_PAPER } from '@/constants/foundation';
 
 /** The `sex` enum on `profiles` (0001). `unspecified` is the default and the most common value. */
 export type AthleteSex = 'male' | 'female' | 'unspecified';
 
 const BUCKET = 'exercise-media';
+
+/**
+ * Which theme's render to ask for.
+ *
+ *     <sex>/<id>.webp              Forge — saturated bronze, brightness LIFTED to glow on near-black
+ *     paper/<sex>/<id>.webp        Alabaster — #836A3E, brightness CUT so it does not read as highlighter
+ *
+ * ⚠ A THEME IS NOT A TINT YOU CAN APPLY AT THE EDGE. These are separate renders from the source MP4
+ * because the Forge pass is LOSSY — it clamps saturation into [110,150] and lifts V by 1.12, which
+ * clips at 255 differently on every clip. Re-grading the Forge object was tried and landed within 2
+ * channel values on one clip and 29 on the next, so no filter here could stand in for the second
+ * render. See scripts/animation-processing/deliver_alabaster.py.
+ *
+ * ⚠ AND THE PREFIX IS ONLY SAFE BECAUSE THE OBJECTS ARE THERE. Nothing below asks whether a file
+ * exists — that is the derive-don't-ask contract this whole file is built on — so pointing at
+ * `paper/` before the upload had run would have turned every Alabaster demo into an empty frame
+ * with no error to explain it. All 1,134 slots were uploaded and spot-checked live first.
+ *
+ * `ACTIVE_THEME` resolves once at bundle load (Alabaster is reload-not-toggle), so this is a
+ * constant, not a per-render branch.
+ */
+const THEME_PREFIX = IS_PAPER ? 'paper/' : '';
 
 /**
  * Which variant to show.
@@ -54,7 +77,7 @@ export function demoVariant(sex: AthleteSex | null | undefined): 'male' | 'femal
 export function exerciseDemoUrl(exerciseId: string | null | undefined, sex: AthleteSex | null | undefined): string | null {
   const id = (exerciseId ?? '').trim();
   if (!id) return null;
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(`${demoVariant(sex)}/${id}.webp`);
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(`${THEME_PREFIX}${demoVariant(sex)}/${id}.webp`);
   return data.publicUrl || null;
 }
 
@@ -73,6 +96,8 @@ export function exerciseDemoUrl(exerciseId: string | null | undefined, sex: Athl
 export function exercisePosterUrl(exerciseId: string | null | undefined, sex: AthleteSex | null | undefined): string | null {
   const id = (exerciseId ?? '').trim();
   if (!id) return null;
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(`poster/${demoVariant(sex)}/${id}.webp`);
+  // ⚠ `poster/` OUTSIDE, theme INSIDE — `poster/paper/male/x.webp`, not `paper/poster/...`.
+  // That is the layout the uploader writes; reversing the two 404s every still in Alabaster.
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(`poster/${THEME_PREFIX}${demoVariant(sex)}/${id}.webp`);
   return data.publicUrl || null;
 }
