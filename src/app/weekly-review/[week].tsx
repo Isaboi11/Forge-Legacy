@@ -130,8 +130,16 @@ export default function WeeklyReviewScreen() {
             <View style={styles.hero}>
               <Text style={styles.heroEyebrow}>{hero.eyebrow}</Text>
               <Text style={styles.heroTitle}>{hero.title}</Text>
-              {hero.weight != null ? (
-                <Text style={styles.heroLoad}>{load(hero.weight, hero.reps)}</Text>
+              {/* ⚠ THE DAY IS THE DIFFERENCE BETWEEN A MEMORY AND A STATISTIC. "Wednesday — Back Squat,
+                  225 × 5" is a thing you can picture; the same words without the day are a record. It is
+                  optional because reviews are FROZEN and weeks written before 0191 do not carry one. */}
+              {hero.weight != null || hero.durationSec != null || hero.day ? (
+                <Text style={styles.heroLoad}>
+                  {[hero.day,
+                    hero.weight != null ? load(hero.weight, hero.reps) : null,
+                    hero.durationSec != null ? fmtDuration(hero.durationSec) : null,
+                  ].filter(Boolean).join(' · ')}
+                </Text>
               ) : null}
             </View>
           ) : null}
@@ -146,6 +154,40 @@ export default function WeeklyReviewScreen() {
               <Stat value={fmtDuration(d.duration_sec)} label="Under iron" />
             </View>
           </View>
+
+          {/*
+            ⚠ THE DAYS THAT HAPPENED, NEVER SEVEN SLOTS WITH THREE FILLED.
+            Three of seven IS a ring however it is styled, and §0 of the design brief bars rings, meters
+            and grades outright. A list of what you did carries no denominator and cannot be read as a
+            score. Absent on any week written before 0191 — reviews are frozen and are never rewritten.
+          */}
+          {d.sessions && d.sessions.length > 0 ? (
+            <Section label="This week">
+              {d.sessions.map((sn, i) => (
+                <Row
+                  key={`${sn.day}-${sn.name}-${i}`}
+                  left={sn.day ? `${sn.day} · ${sn.name}` : sn.name}
+                  right={sn.duration_sec ? fmtDuration(sn.duration_sec) : ''}
+                  divider={i > 0}
+                />
+              ))}
+            </Section>
+          ) : null}
+
+          {/*
+            ⚠ A FIRST IS A FACT, WHICH IS WHY §0 DOES NOT REACH IT. It is not a comparison between
+            windows — no prior week is loaded and nothing is better or worse. It is the same kind of
+            statement a PR is, and unlike a PR it is available on an ORDINARY week, which is the whole
+            problem this pass exists to solve. PO chose EVER over chapter-scoped: a lift done two years
+            ago returning is not a first, and calling it one makes the word softer every time.
+          */}
+          {d.first_time && d.first_time.length > 0 ? (
+            <Section label={d.first_time.length === 1 ? 'First time' : 'First times'}>
+              {d.first_time.map((f, i) => (
+                <Row key={`${f.exercise}-${i}`} left={f.exercise} right="" divider={i > 0} />
+              ))}
+            </Section>
+          ) : null}
 
           {/* ⚠ HEAVIEST IS A ROW, NOT A HERO. It is the fallback fact — the thing Holt names only when
               there is no honor and no PR — so it is on almost every week and is the most ordinary line

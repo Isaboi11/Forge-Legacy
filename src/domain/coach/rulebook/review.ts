@@ -41,7 +41,20 @@ export interface WeeklyReviewData {
   duration_sec: number;
   prs: readonly { exercise: string; value: number | null }[];
   honors: readonly { honor: string }[];
-  top_lift: { name: string; weight: number | null; reps: number | null } | null;
+  top_lift: { name: string; weight: number | null; reps: number | null; day?: string | null } | null;
+
+  /*
+   * ⚠ EVERY FIELD BELOW IS OPTIONAL, AND NOT OUT OF CAUTION — REVIEWS ARE FROZEN.
+   *
+   * `ensure_weekly_review()` returns a stored row untouched once written, and 0191 does not backfill.
+   * So every review generated before 0191 carries the original seven fields and will carry them
+   * forever. A reader that assumes `sessions` exists renders an empty section, or crashes, on every
+   * week the athlete has already read. `?` here is the type system stating a fact about history.
+   */
+  sessions?: readonly { name: string; day: string; duration_sec: number | null }[];
+  /** Exercises performed for the first time EVER — capped at 6, and empty on an athlete's first week. */
+  first_time?: readonly { exercise: string }[];
+  longest_session?: { name: string; day: string; duration_sec: number | null } | null;
 }
 
 /**
@@ -73,19 +86,27 @@ export interface WeeklyReviewData {
  * The screen then opens on the stats as it always did; a headline that says "you trained" is a headline
  * that says nothing while occupying the space of something that did.
  */
-export type HeroKind = 'honor' | 'pr' | 'lift';
+export type HeroKind = 'honor' | 'pr' | 'lift' | 'session';
 
 export interface WeekHero {
   kind: HeroKind;
   /** The uppercase eyebrow above it — what KIND of thing this is. */
   eyebrow: string;
-  /** The thing itself. An exercise name, an honor name. */
+  /** The thing itself. An exercise name, an honor name, a session name. */
   title: string;
   /** The load, when there is one. Formatted by the caller, which owns units. */
   weight: number | null;
   reps: number | null;
   /** True when this hero is the ONLY member of its section, so the section below can be dropped. */
   solo: boolean;
+  /*
+   * ⚠ OPTIONAL BECAUSE HISTORY IS. `top_lift.day` arrived with 0191 and reviews are frozen, so a week
+   * generated before it has a heaviest lift and no idea which day it happened on. "Wednesday — Back
+   * Squat" is the version worth reading; "Back Squat" is what an older week can honestly offer.
+   */
+  day?: string | null;
+  /** Only the session hero carries one. */
+  durationSec?: number | null;
 }
 
 export function weekHero(d: WeeklyReviewData): WeekHero | null {
@@ -102,7 +123,20 @@ export function weekHero(d: WeeklyReviewData): WeekHero | null {
      type on the screen. It stays in its row below. */
   if (d.top_lift && d.top_lift.weight != null) {
     return { kind: 'lift', eyebrow: 'Heaviest', title: d.top_lift.name,
-             weight: d.top_lift.weight, reps: d.top_lift.reps, solo: true };
+             weight: d.top_lift.weight, reps: d.top_lift.reps, solo: true,
+             day: d.top_lift.day ?? null };
+  }
+  /*
+   * ⚠ THE CARDIO-ONLY WEEK, WHICH USED TO GET NOTHING. No honor, no PR, no loaded set — so every branch
+   * above declines and the screen opened on four totals, one of which was legitimately `0 lb`. The long
+   * session is frequently that week's actual story, and it is a real event with a real day.
+   * Still null when 0191 has not run for this athlete's week: an OLD review carries no `longest_session`,
+   * and inventing a headline from `workouts: 3` would be a sentence that says nothing.
+   */
+  if (d.longest_session && (d.longest_session.duration_sec ?? 0) > 0) {
+    return { kind: 'session', eyebrow: 'Longest session', title: d.longest_session.name,
+             weight: null, reps: null, solo: true, day: d.longest_session.day ?? null,
+             durationSec: d.longest_session.duration_sec ?? null };
   }
   return null;
 }
@@ -157,6 +191,9 @@ const fill = (line: string, tokens: Record<string, string | number>): string =>
 export function reviewNote(d: WeeklyReviewData, choose?: Chooser): string {
   const shape = shapeOf(d);
   const parts: string[] = [];
+  /* ⚠ ABSENT ON EVERY REVIEW WRITTEN BEFORE 0191, and they are never rewritten. `?? []` is not defensive
+     padding — it is the only correct reading of a frozen snapshot that predates the field. */
+  const firsts = d.first_time ?? [];
 
   parts.push(fill(pickFrom(`wr:open:${shape}`, OPENER[shape], choose ?? rand), { n: d.workouts, d: d.days_trained }));
 
@@ -167,18 +204,89 @@ export function reviewNote(d: WeeklyReviewData, choose?: Chooser): string {
     parts.push(fill(pickFrom('wr:pr1', PR_ONE, choose ?? rand), { lift: d.prs[0].exercise }));
   } else if (d.prs.length > 1) {
     parts.push(fill(pickFrom('wr:prN', PR_MANY, choose ?? rand), { n: d.prs.length }));
+  } else if (firsts.length === 1) {
+    parts.push(fill(pickFrom('wr:first1', FIRST_ONE, choose ?? rand), { lift: firsts[0].exercise }));
+  } else if (firsts.length > 1) {
+    parts.push(fill(pickFrom('wr:firstN', FIRST_MANY, choose ?? rand), { n: firsts.length }));
   } else if (d.top_lift?.weight != null && d.top_lift.weight > 0) {
     parts.push(fill(pickFrom('wr:top', TOP_LINE, choose ?? rand), { lift: d.top_lift.name, weight: `${d.top_lift.weight} lb` }));
   }
 
-  parts.push(pickFrom(`wr:close:${shape}`, CLOSE[shape], choose ?? rand));
+  /*
+   * ══ WHAT THE WEEK SETS UP — approved by the PO, 2026-09-03 ══
+   *
+   * §0 bars comparison and permits *"what it sets up"*, and that clause had never been used. The line
+   * the PO approved, in one sentence: **he may say what the week makes possible, never how it measured
+   * up.** So "that squat is asking for more" is in; "your best week this month" is not.
+   *
+   * ⚠ IT REPLACES THE CLOSE RATHER THAN JOINING IT. The brief specifies 2–3 sentences; opener + fact +
+   * sets-up + close is four, and the forward line lands hardest when it is the last thing read.
+   *
+   * ⚠ IT IS EARNED, NOT DEFAULT. A week with no first, no PR and no loaded lift gets the ordinary close.
+   * "Next week starts from here" is true of every week ever and is therefore worth nothing.
+   *
+   * ⛔ AND IT NAMES NO NUMBER. The PO's own example was *"that squat is asking for 235"*, and 235 is a
+   * PROGRESSION DECISION — it belongs to `progression.ts`, which is what actually prescribes the next
+   * session. A copy table inventing its own target would tell an athlete a number the app then does not
+   * give them, which is worse than saying no number at all.
+   */
+  const setsUp = setsUpLine(d, firsts, choose ?? rand);
+  parts.push(setsUp ?? pickFrom(`wr:close:${shape}`, CLOSE[shape], choose ?? rand));
   return parts.join(' ');
 }
+
+function setsUpLine(d: WeeklyReviewData, firsts: readonly { exercise: string }[], choose: Chooser): string | null {
+  if (firsts.length > 0) return fill(pickFrom('wr:up:first', SETS_UP_FIRST, choose), { lift: firsts[0].exercise });
+  if (d.prs.length > 0) return fill(pickFrom('wr:up:pr', SETS_UP_PR, choose), { lift: d.prs[0].exercise });
+  if (d.top_lift?.weight != null && d.top_lift.weight > 0) {
+    return fill(pickFrom('wr:up:top', SETS_UP_LIFT, choose), { lift: d.top_lift.name });
+  }
+  return null;
+}
+
+/*
+ * A FIRST IS THE LINE AN ORDINARY WEEK CAN ACTUALLY EARN. PRs are rare; firsts are common, because
+ * people try new movements constantly — which is exactly why they belong in a coach's mouth on the week
+ * that has nothing else in it. Ranked below a PR and above the heaviest lift: doing something you have
+ * never done is a bigger event than lifting the most you lifted that week.
+ */
+const FIRST_ONE: readonly string[] = [
+  'You did your first {lift}.',
+  'First {lift} in the book.',
+  'New movement this week — {lift}.',
+];
+
+const FIRST_MANY: readonly string[] = [
+  '{n} movements you had never done before.',
+  'You tried {n} new things this week.',
+  '{n} firsts in there.',
+];
+
+/* ⚠ FORWARD, NEVER BACKWARD. Each of these says what is now possible. None of them ranks the week,
+   compares it to another, or names a number the progression engine has not chosen. */
+const SETS_UP_FIRST: readonly string[] = [
+  'That is a movement you have now — see what it does with a few weeks on it.',
+  '{lift} is in your training now. Give it room to develop.',
+  'Something new went into the training this week. Keep it there.',
+];
+
+const SETS_UP_PR: readonly string[] = [
+  'That is the floor now. Build on it.',
+  'The {lift} has more in it. You found where it starts.',
+  'You know what that lift can do now. Take it from there.',
+];
+
+const SETS_UP_LIFT: readonly string[] = [
+  'There is more in that {lift} when you come back to it.',
+  'The {lift} is ready for more next time.',
+  'That is a solid place to start the {lift} next time.',
+];
 
 const rand: Chooser = (n) => Math.floor(Math.random() * n);
 
 /** Every table, for the tests that walk them. */
-export const REVIEW_LINES = { OPENER, CLOSE, HONOR_LINE, PR_ONE, PR_MANY, TOP_LINE };
+export const REVIEW_LINES = { OPENER, CLOSE, HONOR_LINE, PR_ONE, PR_MANY, TOP_LINE,
+  FIRST_ONE, FIRST_MANY, SETS_UP_FIRST, SETS_UP_PR, SETS_UP_LIFT };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WHICH WEEK IT WAS
