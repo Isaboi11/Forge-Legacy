@@ -1,4 +1,19 @@
--- Forge Legacy — 0188: the testing posture — squad training alerts on, every profile public
+-- Forge Legacy — 0189: the testing posture — squad training alerts on, every profile public
+--
+-- ⚠⚠ THIS WAS WRITTEN AS 0188 AND RENUMBERED. 0188 WAS ALREADY TAKEN. ⚠⚠
+--
+-- `0188_private_chapter_photos.sql` exists on the branch `ota/build8-js` (commit `fd09f99`) with its
+-- own `pending-0188.sql`, and that branch is ONE COMMIT AHEAD OF MAIN — the photo-privacy feature and
+-- its migration have never been merged. Main could not see it, so this file was numbered 0188 too, and
+-- for a while two different migrations both said "PASTE THIS WHOLE FILE and run it once".
+--
+-- Renumbered rather than the other one because THIS one is unapplied and that one probably is not:
+-- `ota/build8-js` is an OTA branch, so its code has been shipped to a device, which means its bundle
+-- was very likely pasted as well. Moving the applied one would have been the dangerous direction.
+--
+-- ⚠ THE LEDGER STILL HAS A HOLE. `0184` does not exist on main either. Do not read the tail of
+-- `ls supabase/migrations` as proof a number is free — a number can be taken on a branch that main
+-- cannot see, which is exactly how this happened. `0152` was used twice for the same reason.
 --
 -- PO: *"set everyone's notifications on for all of the squad working out, and then have everyone be
 -- public for right now until they say otherwise. It's all testing so that should be the norm up front,
@@ -90,7 +105,7 @@ update public.squad_members
  where notify_finish is distinct from true;
 
 comment on column public.squads.training_alerts is
-  'Whether this squad announces its members starting and finishing sessions (0153). The leader''s switch, and the outer gate: a member''s own notify_start/notify_finish do nothing while this is false. ⚠ DEFAULT FLIPPED TO TRUE BY 0188 FOR THE TESTING PHASE — 0153''s default was false so that no squad predating it became noisy without its leader saying so. Restore the false default before a public launch.';
+  'Whether this squad announces its members starting and finishing sessions (0153). The leader''s switch, and the outer gate: a member''s own notify_start/notify_finish do nothing while this is false. ⚠ DEFAULT FLIPPED TO TRUE BY 0189 FOR THE TESTING PHASE — 0153''s default was false so that no squad predating it became noisy without its leader saying so. Restore the false default before a public launch.';
 
 
 -- ══════════════════════════════════════════════════════════════════════════════
@@ -168,4 +183,4 @@ alter table public.profiles alter column visibility set default '{
 }'::jsonb;
 
 comment on column public.profiles.visibility is
-  'Per-section profile audience (see src/domain/settings/visibility.ts). ⚠ 0188 SET EVERY SECTION TO "everyone" AND GAVE THE COLUMN AN ALL-PUBLIC DEFAULT FOR THE TESTING PHASE. The code still carries the shipping defaults (training=squads, live_session=private, photos/transformation=friends) and they are the ones to restore before a public launch. null no longer occurs on a new row.';
+  'Per-section profile audience (see src/domain/settings/visibility.ts). ⚠ 0189 SET EVERY SECTION TO "everyone" AND GAVE THE COLUMN AN ALL-PUBLIC DEFAULT FOR THE TESTING PHASE. The code still carries the shipping defaults (training=squads, live_session=private, photos/transformation=friends) and they are the ones to restore before a public launch. null no longer occurs on a new row.';

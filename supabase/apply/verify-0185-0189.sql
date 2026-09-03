@@ -1,13 +1,13 @@
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
--- VERIFY 0185 · 0186 · 0187 · 0188 — which of the four are actually applied?
+-- VERIFY 0185 · 0186 · 0187 · 0189 — which of the four are actually applied?
 --
 -- Read-only. Nothing here writes. Paste the whole file, run it, send back the rows.
 --
 -- ══ WHY THIS EXISTS ══
 --
 -- PO: no push when a squad-mate starts a workout, and a squad-mate who IS training does not appear on
--- Live Now / Your Circle. `0188`'s own header documents both symptoms and says they are the shipped
--- defaults rather than defects — but `0188` also says "0185 and 0186 are still awaiting paste", which
+-- Live Now / Your Circle. `0189`'s own header documents both symptoms and says they are the shipped
+-- defaults rather than defects — but `0189` also says "0185 and 0186 are still awaiting paste", which
 -- means the tail of the ledger was queued and left. Nothing in the repo records what the DATABASE has.
 --
 -- ⚠ ONE QUERY, ON PURPOSE. The Supabase SQL editor shows only the LAST statement's output, so a
@@ -46,7 +46,7 @@ with probe as (
     (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'public' and p.proname = 'push_register_token')                         as s_0187,
 
-    -- 0188 — the two squad gates and the profile audience, as COLUMN DEFAULTS (what new rows get)
+    -- 0189 — the two squad gates and the profile audience, as COLUMN DEFAULTS (what new rows get)
     -- and as DATA (what existing rows have). Both halves matter: the defaults decide the future, the
     -- backfill decides whether Brady and Rachelle are covered today.
     (select count(*) from information_schema.columns
@@ -87,7 +87,7 @@ verdicts as (
     from probe
   union all
   -- ⚠ THE ONE THAT ANSWERS THE PO'S QUESTION.
-  select 4, '0188  testing defaults open',
+  select 4, '0189  testing defaults open',
          case when d_alerts > 0 and d_start > 0 and d_vis > 0
                    and squads_off = 0 and members_off = 0 and profiles_not_open = 0 then 'APPLIED'
               when d_alerts > 0 or d_start > 0 or d_vis > 0
@@ -103,7 +103,7 @@ verdicts as (
 
 -- Who the database currently thinks is training. If this is empty while somebody IS mid-workout, the
 -- cause is NOT settings — their client never called `set_training_status(true)`, which no migration
--- can fix. 0188 says these two symptoms do not share one cause; this row is how you tell them apart.
+-- can fix. 0189 says these two symptoms do not share one cause; this row is how you tell them apart.
 training as (
   select 99 as ord, 'NOW  who the DB thinks is training' as migration,
          case when count(*) > 0 then 'SOMEBODY IS' else 'NOBODY IS' end as verdict,

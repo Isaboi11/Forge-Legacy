@@ -56,7 +56,7 @@ export interface VisibilitySection {
  *
  * ⚠⚠ THESE DEFAULTS ARE CURRENTLY OVERRIDDEN IN THE DATABASE AND ARE NOT WHAT A TESTER SEES. ⚠⚠
  *
- * Migration `0188_testing_defaults_open` set every section on every profile to `everyone` and gave
+ * Migration `0189_testing_defaults_open` set every section on every profile to `everyone` and gave
  * `profiles.visibility` an all-public column default, at the PO's request, for the duration of the
  * testing phase. These values were deliberately left standing because they are the LOCKED P-6 answers
  * and the ones to restore before a public launch — but do not read this array as a description of live

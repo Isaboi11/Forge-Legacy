@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
--- PENDING — 0188: the testing posture — squad training alerts on, every profile public
+-- PENDING — 0189: the testing posture — squad training alerts on, every profile public
 --
 -- PASTE THIS WHOLE FILE into the Supabase SQL editor and run it once.
 -- Safe to run twice: every write is a guarded default or a `where`-narrowed update that matches
@@ -53,7 +53,7 @@
 --
 -- ══ WHAT THIS FILE DOES ══
 --
--- §1  eleven statements, carried VERBATIM from `supabase/migrations/0188_testing_defaults_open.sql`
+-- §1  eleven statements, carried VERBATIM from `supabase/migrations/0189_testing_defaults_open.sql`
 --     (11 of 11 present — checked by parsing both files and diffing the statements, not by eye)
 -- §2  raises if any default, any backfill or the trigger-safety precondition did not take
 -- §3  ONE query reporting what landed AND why Rachelle was invisible. Read-only.
@@ -75,7 +75,7 @@
 --
 -- ══ PREDICTED §3 OUTPUT — read the real output against this ══
 --
---   Row 1  '0188 applied?' → YES. If it says NO, §2 would already have raised; a NO here means a
+--   Row 1  '0189 applied?' → YES. If it says NO, §2 would already have raised; a NO here means a
 --          statement was edited out of the paste.
 --   Rows 2–5  every squad, every membership and every profile at the open setting, holdouts = 0.
 --   Row 10+  THE LIVE ROSTER. Expect 0 rows if nobody is mid-session — that is not a failure.
@@ -112,7 +112,7 @@ update public.squad_members
  where notify_finish is distinct from true;
 
 comment on column public.squads.training_alerts is
-  'Whether this squad announces its members starting and finishing sessions (0153). The leader''s switch, and the outer gate: a member''s own notify_start/notify_finish do nothing while this is false. ⚠ DEFAULT FLIPPED TO TRUE BY 0188 FOR THE TESTING PHASE — 0153''s default was false so that no squad predating it became noisy without its leader saying so. Restore the false default before a public launch.';
+  'Whether this squad announces its members starting and finishing sessions (0153). The leader''s switch, and the outer gate: a member''s own notify_start/notify_finish do nothing while this is false. ⚠ DEFAULT FLIPPED TO TRUE BY 0189 FOR THE TESTING PHASE — 0153''s default was false so that no squad predating it became noisy without its leader saying so. Restore the false default before a public launch.';
 
 -- ── B · the global training-alert preference, for anyone who turned it off ───
 
@@ -160,7 +160,7 @@ alter table public.profiles alter column visibility set default '{
 }'::jsonb;
 
 comment on column public.profiles.visibility is
-  'Per-section profile audience (see src/domain/settings/visibility.ts). ⚠ 0188 SET EVERY SECTION TO "everyone" AND GAVE THE COLUMN AN ALL-PUBLIC DEFAULT FOR THE TESTING PHASE. The code still carries the shipping defaults (training=squads, live_session=private, photos/transformation=friends) and they are the ones to restore before a public launch. null no longer occurs on a new row.';
+  'Per-section profile audience (see src/domain/settings/visibility.ts). ⚠ 0189 SET EVERY SECTION TO "everyone" AND GAVE THE COLUMN AN ALL-PUBLIC DEFAULT FOR THE TESTING PHASE. The code still carries the shipping defaults (training=squads, live_session=private, photos/transformation=friends) and they are the ones to restore before a public launch. null no longer occurs on a new row.';
 
 
 -- ═════════════════════════════════════════════════════════════════════════════
@@ -178,44 +178,44 @@ begin
   select column_default into v_d from information_schema.columns
    where table_schema = 'public' and table_name = 'squads' and column_name = 'training_alerts';
   if v_d is distinct from 'true' then
-    raise exception '0188: squads.training_alerts default is % — expected true', coalesce(v_d, '<null>');
+    raise exception '0189: squads.training_alerts default is % — expected true', coalesce(v_d, '<null>');
   end if;
 
   select column_default into v_d from information_schema.columns
    where table_schema = 'public' and table_name = 'squad_members' and column_name = 'notify_start';
   if v_d is distinct from 'true' then
-    raise exception '0188: squad_members.notify_start default is % — expected true', coalesce(v_d, '<null>');
+    raise exception '0189: squad_members.notify_start default is % — expected true', coalesce(v_d, '<null>');
   end if;
 
   select column_default into v_d from information_schema.columns
    where table_schema = 'public' and table_name = 'squad_members' and column_name = 'notify_finish';
   if v_d is distinct from 'true' then
-    raise exception '0188: squad_members.notify_finish default is % — expected true', coalesce(v_d, '<null>');
+    raise exception '0189: squad_members.notify_finish default is % — expected true', coalesce(v_d, '<null>');
   end if;
 
   select column_default into v_d from information_schema.columns
    where table_schema = 'public' and table_name = 'profiles' and column_name = 'visibility';
   if v_d is null or v_d not like '%live_session%' or v_d not like '%everyone%' then
-    raise exception '0188: profiles.visibility has no all-public default — got %', coalesce(v_d, '<null>');
+    raise exception '0189: profiles.visibility has no all-public default — got %', coalesce(v_d, '<null>');
   end if;
 
   -- ── the backfills, counted rather than assumed ──
   select count(*) into v_n from public.squads where training_alerts is distinct from true;
-  if v_n > 0 then raise exception '0188: % squads still have training_alerts off', v_n; end if;
+  if v_n > 0 then raise exception '0189: % squads still have training_alerts off', v_n; end if;
 
   select count(*) into v_n from public.squad_members
    where notify_start is distinct from true or notify_finish is distinct from true;
-  if v_n > 0 then raise exception '0188: % squad memberships are still silent', v_n; end if;
+  if v_n > 0 then raise exception '0189: % squad memberships are still silent', v_n; end if;
 
   select count(*) into v_n from public.profiles
    where coalesce(visibility ->> 'training', '') <> 'everyone'
       or coalesce(visibility ->> 'live_session', '') <> 'everyone';
-  if v_n > 0 then raise exception '0188: % profiles are not fully public', v_n; end if;
+  if v_n > 0 then raise exception '0189: % profiles are not fully public', v_n; end if;
 
   select count(*) into v_n from public.profiles
    where jsonb_typeof(profiles.notif_prefs -> 'squad_training') = 'boolean'
      and (profiles.notif_prefs ->> 'squad_training')::boolean = false;
-  if v_n > 0 then raise exception '0188: % athletes still have squad_training push off', v_n; end if;
+  if v_n > 0 then raise exception '0189: % athletes still have squad_training push off', v_n; end if;
 
   -- ── the safety precondition, re-checked rather than trusted ──
   --
@@ -228,7 +228,7 @@ begin
       join pg_class c on c.oid = t.tgrelid
      where c.relname = 'profiles' and t.tgname = 'push_training_started' and not t.tgisinternal
   ) then
-    raise exception '0188: the push_training_started trigger is missing — 0153 was reverted';
+    raise exception '0189: the push_training_started trigger is missing — 0153 was reverted';
   end if;
 
   if not exists (
@@ -237,7 +237,7 @@ begin
      where c.relname = 'profiles' and t.tgname = 'push_training_started'
        and pg_get_triggerdef(t.oid) like '%UPDATE OF training_since%'
   ) then
-    raise exception '0188: push_training_started is no longer column-narrowed — a visibility write can now fan out';
+    raise exception '0189: push_training_started is no longer column-narrowed — a visibility write can now fan out';
   end if;
 end $$;
 
@@ -262,7 +262,7 @@ rach as (
    where p.name ilike '%rachelle%' or p.handle ilike '%rachelle%'
 )
 
-select 1 as ord, '0188 applied?' as question,
+select 1 as ord, '0189 applied?' as question,
        case when s.sq_def = 'true' and s.sm_def = 'true' and s.pr_def like '%live_session%'
             then 'YES — all three column defaults are open, and §2 did not raise'
             else 'NO — squads=' || coalesce(s.sq_def, '<null>') ||
