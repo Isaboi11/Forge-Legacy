@@ -516,7 +516,21 @@ export default function HomeScreen() {
   const { data: challengeHub, settled: challengeSettled } = useQuery(fetchChallengeHub, []);
   /* Who from the circle is mid-workout (0086). Squad-mates outrank friends, and each athlete's own
      `visibility.training` audience decides whether they appear at all — "Only me" is the off switch. */
-  const { data: trainingNow, settled: trainingNowSettled } = useQuery(fetchTrainingNow, []);
+  /*
+   * ⚠ PRESENCE IS THE ONE READ ON THIS SCREEN THAT GOES STALE WHILE YOU WATCH IT.
+   *
+   * PO: *"It sent me a notification for her, but she's not showing up in the your circle card."*
+   * Both were true. The push is enqueued server-side the instant she starts; this card had read
+   * `training_now()` ONCE, at mount, and had no way to ask again — `refetch` was not even destructured,
+   * and the focus effect below refetched five other queries and not this one. So Home could only ever
+   * show people who were ALREADY training when the app cold-started, and every notification after that
+   * pointed at a card that disagreed with it.
+   *
+   * Every other query here answers a question about the athlete's own state, which only changes when
+   * they do something — a focus refetch is enough. This one answers a question about OTHER PEOPLE,
+   * which changes while the screen sits open and nobody touches anything. It needs a clock.
+   */
+  const { data: trainingNow, refetch: refetchTrainingNow, settled: trainingNowSettled } = useQuery(fetchTrainingNow, []);
   const live = useMemo(() => trainingNow ?? [], [trainingNow]);
   /* Whether they have anyone at all, which an empty feed cannot tell us — "nobody posted" and "nobody to
      post" look identical from the posts alone, and they want opposite advice. */
@@ -552,7 +566,28 @@ export default function HomeScreen() {
       refetchIntake();
       refetchBuiltDone(); // a workout just finished → advance the card to the next session
       refetchPlanned(); // built one for later, or just trained the one that was waiting
-    }, [refetchAwaiting, refetchPrograms, refetchIntake, refetchBuiltDone, refetchPlanned]),
+      refetchTrainingNow(); // somebody may have started while you were on another tab
+    }, [refetchAwaiting, refetchPrograms, refetchIntake, refetchBuiltDone, refetchPlanned, refetchTrainingNow]),
+  );
+
+  /*
+   * ⚠ AND A CLOCK, BECAUSE NOBODY TOUCHES ANYTHING WHILE THEY WAIT FOR A FRIEND TO START.
+   *
+   * A focus refetch alone still leaves the common case broken: Home is open, the notification arrives,
+   * the athlete looks at the card — no navigation happened, so nothing refetched. Presence is the only
+   * thing on this screen that changes without the athlete acting.
+   *
+   * ⚠ ONLY WHILE FOCUSED. `useFocusEffect`'s cleanup clears the interval, so a backgrounded Home does
+   * not poll — the timer belongs to the screen being LOOKED AT, not to the app being alive.
+   *
+   * 60s against a 4-hour read ceiling: a session is visible for hours, so the cost of being a minute
+   * late is small and the cost of polling harder is paid by every athlete on every phone all day.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      const id = setInterval(refetchTrainingNow, 60_000);
+      return () => clearInterval(id);
+    }, [refetchTrainingNow]),
   );
 
   // The program that anchors Home's "Today's Workout" + "Current Program" slots. Precedence:
