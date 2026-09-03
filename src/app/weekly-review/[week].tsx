@@ -10,7 +10,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { BUBBLE_SIZE, HoltMark } from '@/components/forge/HoltMark';
 import { fmtDuration } from '@/data/squad-feed-live';
-import { formatWeekRange } from '@/domain/coach/rulebook/review';
+import { formatWeekRange, weekHero } from '@/domain/coach/rulebook/review';
 import { displayWeight } from '@/domain/settings/units';
 import { fetchWeeklyReview, type WeeklyReview } from '@/data/weekly-review-live';
 import { useEntitlement } from '@/lib/entitlement';
@@ -68,6 +68,9 @@ export default function WeeklyReviewScreen() {
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
   const d = review?.data;
   const volume = d ? displayWeight(d.volume_lb, units) : null;
+  /* The week's headline: the rarest thing that happened. See `weekHero` for why the heaviest lift is
+     allowed to lead a week that had nothing scarcer, and only such a week. */
+  const hero = d ? weekHero(d) : null;
 
   return (
     <View style={styles.root}>
@@ -115,6 +118,24 @@ export default function WeeklyReviewScreen() {
             </View>
           </View>
 
+          {/*
+            ⚠ THE HEADLINE IS THE RAREST THING, WHICH IS WHY IT CAN INCLUDE THE HEAVIEST LIFT.
+            The note below Heaviest is right that promoting it unconditionally would rank the week's most
+            COMMON event above its rarest. `weekHero` orders honor → PR → lift, so it never displaces
+            something scarcer — it only leads a week that had nothing scarcer. That is precisely the
+            ordinary week (3 sessions, no PR, no honor) which until now opened with four totals and
+            nothing a person could remember. Null on a cardio-only week; the stats lead, as before.
+          */}
+          {hero ? (
+            <View style={styles.hero}>
+              <Text style={styles.heroEyebrow}>{hero.eyebrow}</Text>
+              <Text style={styles.heroTitle}>{hero.title}</Text>
+              {hero.weight != null ? (
+                <Text style={styles.heroLoad}>{load(hero.weight, hero.reps)}</Text>
+              ) : null}
+            </View>
+          ) : null}
+
           <View style={styles.grid}>
             <View style={styles.gridRow}>
               <Stat value={String(d.workouts)} label={d.workouts === 1 ? 'Session' : 'Sessions'} />
@@ -130,13 +151,17 @@ export default function WeeklyReviewScreen() {
               there is no honor and no PR — so it is on almost every week and is the most ordinary line
               here. Giving it the largest figure on the screen would rank the week's most common event
               above its rarest. */}
-          {d.top_lift?.weight != null ? (
+          {d.top_lift?.weight != null && hero?.kind !== 'lift' ? (
             <Section label="Heaviest">
               <Row left={d.top_lift.name} right={load(d.top_lift.weight, d.top_lift.reps)} />
             </Section>
           ) : null}
 
-          {d.prs.length > 0 ? (
+          {/* ⚠ DROPPED ONLY WHEN THE HEADLINE IS THE WHOLE SECTION. One PR is already stated above in
+              the largest type on the screen, so repeating it four inches lower is the same fact twice.
+              Two or more and the section returns, because the headline named ONE of them and the rest
+              are still owed. Same rule for honors. */}
+          {d.prs.length > 0 && !(hero?.kind === 'pr' && hero.solo) ? (
             <Section label={d.prs.length === 1 ? 'Personal record' : 'Personal records'}>
               {d.prs.map((pr, i) => (
                 <Row key={`${pr.exercise}-${i}`} left={pr.exercise} right={pr.value != null ? load(pr.value) : ''} divider={i > 0} />
@@ -144,7 +169,7 @@ export default function WeeklyReviewScreen() {
             </Section>
           ) : null}
 
-          {d.honors.length > 0 ? (
+          {d.honors.length > 0 && !(hero?.kind === 'honor' && hero.solo) ? (
             <Section label={d.honors.length === 1 ? 'Honor' : 'Honors'}>
               {d.honors.map((h, i) => (
                 /* The same medal-in-a-box the squad recap gives an honor in a list. ⚠ Not a medallion:
@@ -225,6 +250,16 @@ const styles = StyleSheet.create({
   /* Two rows of two rather than one row of four: at 390pt a quarter-width column cannot hold "5:38:22"
      at this size without shrinking the figures to the point of being labels themselves. The four stay
      equal, which is the part that matters. The divider is the container through a 1px gap. */
+  /* THE HEADLINE. Display face, because this is the one line on the screen that is a NAME rather than
+     a measurement — the same reason the app bar and hero names use it and Holt's paragraph does not.
+     No card and no border: it is not a thing you act inside of, it is the sentence the page opens with.
+     (See `feedback_cards_are_for_acting_inside` — bronze is not a border colour.) */
+  hero: { paddingTop: 4, paddingBottom: 20, gap: 4 },
+  heroEyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronze300 },
+  heroTitle: { fontFamily: flFont.display, fontSize: 27, lineHeight: 32, fontWeight: '600', color: flColor.cream100 },
+  /* Tabular, because it sits directly under a name and a load that shifts width as it renders reads as
+     a layout bug on a screen nobody is interacting with. */
+  heroLoad: { fontSize: 16, color: flColor.gray400, fontVariant: ['tabular-nums'] },
   grid: {
     marginTop: 22,
     gap: 1,
