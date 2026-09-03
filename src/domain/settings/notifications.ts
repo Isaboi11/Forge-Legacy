@@ -66,7 +66,15 @@ export interface NotifSection {
   toggles: NotifToggle[];
 }
 
-/** Squad activity is ambient and stays off; a request is aimed at you, so it stays on (P-5 §3.2). */
+/**
+ * Squad activity is ambient and stays off; a request is aimed at you, so it stays on (P-5 §3.2).
+ *
+ * ⚠ `squad_training` below is not the gate that was actually shut. It already defaults ON here and in
+ * `push_pref_default()`, and a squad-mate's start still reached nobody, because the two gates that
+ * decide it live on the SQUAD: `squads.training_alerts` (the leader's) and `squad_members.notify_start`
+ * (the recipient's, per squad), both default FALSE since 0153. `0188_testing_defaults_open` turned all
+ * three on for every existing row and flipped those two column defaults for the testing phase.
+ */
 export const NOTIF_SECTIONS: NotifSection[] = [
   {
     key: 'squad',

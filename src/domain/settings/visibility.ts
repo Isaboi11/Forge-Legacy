@@ -54,6 +54,15 @@ export interface VisibilitySection {
 /**
  * The controllable sections, with the design's defaults, copy and per-row symbol (verbatim).
  *
+ * ⚠⚠ THESE DEFAULTS ARE CURRENTLY OVERRIDDEN IN THE DATABASE AND ARE NOT WHAT A TESTER SEES. ⚠⚠
+ *
+ * Migration `0188_testing_defaults_open` set every section on every profile to `everyone` and gave
+ * `profiles.visibility` an all-public column default, at the PO's request, for the duration of the
+ * testing phase. These values were deliberately left standing because they are the LOCKED P-6 answers
+ * and the ones to restore before a public launch — but do not read this array as a description of live
+ * behaviour, and do not "fix" a discrepancy between it and the database by editing here. `live_session`
+ * in particular reads `private` below and is `everyone` in production right now.
+ *
  * `training` is the one addition (0086). Live presence needed an off switch, and it did not need a new
  * privacy concept to get one — it is a section like any other, on the same audience ladder, and setting
  * it to "Only me" is how an athlete stops broadcasting that they are mid-workout. Default `squads`: the
