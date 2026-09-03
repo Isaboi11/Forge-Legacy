@@ -1,9 +1,17 @@
 -- Forge Legacy — 0190: the app has not been able to say anybody is training since 0187
 --
 -- PO: *"Rachelle Altamirano is currently working out but she's not showing up in the your circle card
--- as active."* — and `verify-0185-0189.sql` answered it: **last announced 322 hours ago.** Not a
--- settings problem, not a stale ceiling. Her phone has been unable to announce for thirteen days, and
--- so has every other phone.
+-- as active."* — and `verify-0185-0189.sql` gave the thread to pull: her `training_since` was **322
+-- hours old**. Not a settings problem; 0189 had already opened every gate.
+--
+-- ⚠ BUT 322 HOURS IS NOT "TIME SINCE SHE LAST ANNOUNCED", AND I READ IT THAT WAY AT FIRST.
+-- `training_since` is set to NULL when a workout ENDS, so a finished session leaves no trace at all and
+-- `max(training_since)` surfaces only the oldest session that was never ended. The 2026-08-21 stamp is
+-- one of those ghosts, already invisible to the app because every reader ignores anything past four
+-- hours. 0187 was authored 2026-09-01 — ELEVEN DAYS LATER — so it cannot have caused that date.
+--
+-- What 0187 DOES account for is the report itself: a workout on 2026-09-02 that wrote NOTHING, which
+-- is why an eleven-day-old ghost was still the newest value in the table.
 --
 -- ══ ⛔ THIS IS 0161'S BUG, ON A SECOND FUNCTION ══
 --
@@ -23,7 +31,7 @@
 --           then profiles.training_since
 --
 -- Reading a column inside an expression requires SELECT on it. The caller does not have it. So every
--- call has raised **42501** since 0187 landed — and `presence-live.ts` catches and discards the error
+-- call has raised **42501** since 0187 was APPLIED — and `presence-live.ts` catches and discards it
 -- ON PURPOSE, because presence must never block starting a workout:
 --
 --     try { await supabase.rpc('set_training_status', …) } catch { /* … */ }
@@ -52,7 +60,7 @@
 -- the ACL entry with an empty grantee is the PUBLIC one and revoking `anon` alone reports success and
 -- changes nothing. Cheap insurance against the 0153 hole.
 --
--- ⛔ IT SENDS NOTHING RETROACTIVELY. Thirteen days of unannounced sessions stay unannounced. The next
+-- ⛔ IT SENDS NOTHING RETROACTIVELY. Every session missed while this was broken stays unannounced. The next
 -- workout started after this lands is the first one anybody hears about.
 --
 -- Idempotent. Depends on 0086 (the column), 0149 (the revoke), 0187 (the body this restores verbatim).
@@ -99,6 +107,6 @@ revoke all on function public.set_training_status(boolean, text) from anon;
 grant execute on function public.set_training_status(boolean, text) to authenticated;
 
 comment on function public.set_training_status(boolean, text) is
-  'Announce that the caller started or ended a workout. Writes profiles.training_since/training_label for auth.uid() only. ⚠ SECURITY DEFINER SINCE 0190 AND IT MUST STAY THAT WAY: 0187 made the body READ training_since (to keep one stamp per session) and 0149 revoked authenticated''s SELECT on that column, so as an invoker every call raised 42501 and the client swallowed it — nobody could announce for thirteen days. Same shape as the 0161 fix. Definer is safe because the function takes no athlete argument, writes only where id = auth.uid(), and returns void.';
+  'Announce that the caller started or ended a workout. Writes profiles.training_since/training_label for auth.uid() only. ⚠ SECURITY DEFINER SINCE 0190 AND IT MUST STAY THAT WAY: 0187 made the body READ training_since (to keep one stamp per session) and 0149 revoked authenticated''s SELECT on that column, so as an invoker every call raised 42501 and the client swallowed it — nobody could announce once it was applied. Same shape as the 0161 fix. Definer is safe because the function takes no athlete argument, writes only where id = auth.uid(), and returns void.';
 
 commit;

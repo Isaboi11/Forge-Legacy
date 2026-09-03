@@ -5,16 +5,24 @@
 --
 -- ══ WHAT IT FIXES ══
 --
--- `verify-0185-0189.sql` reported Rachelle's last announcement as **322 hours ago**. Every settings gate
+-- `verify-0185-0189.sql` reported Rachelle's `training_since` as **322 hours old**. Every settings gate
 -- is now open (0189) and she still could not appear, because the two symptoms never shared a cause:
 --
 --   · THE NOTIFICATION was gated off by two switches that default false. 0189 opened them.
---   · THE ANNOUNCEMENT ITSELF has been raising 42501 on every phone since 0187 landed.
+--   · THE ANNOUNCEMENT ITSELF has raised 42501 on every phone since 0187 was APPLIED (2026-09-01+).
+--
+-- ⚠ CORRECTION: THE 322 HOURS IS NOT "TIME SINCE THE LAST ANNOUNCEMENT", and 0187 did not cause it.
+-- `training_since` is set to NULL when a workout ENDS, so a finished session leaves no trace and
+-- `max(training_since)` only ever surfaces the oldest session that was never ended. The 2026-08-21
+-- stamp is one such ghost — invisible in the app anyway, because every reader ignores anything past
+-- four hours. 0187 was authored 2026-09-01, ELEVEN DAYS AFTER that stamp, so it cannot explain it.
+-- What 0187 DOES explain is the symptom that prompted this: a workout started on 2026-09-02 that
+-- wrote nothing at all, leaving the Aug-21 ghost as the newest value in the table.
 --
 -- `set_training_status` is SECURITY INVOKER, so it runs as `authenticated`. 0086 only ASSIGNED the
 -- column; 0187 made the body READ it, to keep one stamp per session; and 0149 had already revoked
 -- `authenticated`'s SELECT on `profiles.training_since`, deliberately. Reading a column in an expression
--- requires SELECT on it. So the call has failed for everyone, for thirteen days — silently, because
+-- requires SELECT on it. So the call has failed for everyone since 0187 was applied — silently, because
 -- `presence-live.ts` catches and discards the error on purpose so presence can never block a workout.
 --
 -- ⛔ THIS IS 0161'S BUG ON A SECOND FUNCTION. That one fixed `squads_set_invite_code()` — an invoker
@@ -33,7 +41,7 @@
 -- definer, `authenticated` may execute it, and the column is still hidden — the last one being the proof
 -- that an invoker version could not possibly work.
 --
--- ⛔ IT SENDS NOTHING RETROACTIVELY. Thirteen days of unannounced sessions stay unannounced. The first
+-- ⛔ IT SENDS NOTHING RETROACTIVELY. Every session missed while this was broken stays unannounced. The first
 -- workout STARTED AFTER this lands is the first one anybody hears about.
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
 
@@ -79,7 +87,7 @@ revoke all on function public.set_training_status(boolean, text) from anon;
 grant execute on function public.set_training_status(boolean, text) to authenticated;
 
 comment on function public.set_training_status(boolean, text) is
-  'Announce that the caller started or ended a workout. Writes profiles.training_since/training_label for auth.uid() only. ⚠ SECURITY DEFINER SINCE 0190 AND IT MUST STAY THAT WAY: 0187 made the body READ training_since (to keep one stamp per session) and 0149 revoked authenticated''s SELECT on that column, so as an invoker every call raised 42501 and the client swallowed it — nobody could announce for thirteen days. Same shape as the 0161 fix. Definer is safe because the function takes no athlete argument, writes only where id = auth.uid(), and returns void.';
+  'Announce that the caller started or ended a workout. Writes profiles.training_since/training_label for auth.uid() only. ⚠ SECURITY DEFINER SINCE 0190 AND IT MUST STAY THAT WAY: 0187 made the body READ training_since (to keep one stamp per session) and 0149 revoked authenticated''s SELECT on that column, so as an invoker every call raised 42501 and the client swallowed it — nobody could announce once it was applied. Same shape as the 0161 fix. Definer is safe because the function takes no athlete argument, writes only where id = auth.uid(), and returns void.';
 
 -- ═════════════════════════════════════════════════════════════════════════════
 -- §2 · THE ASSERTION — refuse to commit a no-op
@@ -135,7 +143,7 @@ commit;
 --     column_still_hidden        true   ← the reason definer is REQUIRED. If this ever reads false,
 --                                         somebody re-granted a column 0149 hid on purpose.
 --     announcing_now             0      ← nobody is mid-workout at this instant. NOT a failure.
---     announced_last_24h         0      ← thirteen days of silence; this is the number to re-read
+--     announced_last_24h         0      ← still 0; this is the number to re-read
 --                                         AFTER somebody trains. It becoming ≥ 1 is the whole proof.
 
 select
