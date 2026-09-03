@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#08090C; color:#EFE9E0; font-family:'Playfair Display',Georgia,serif; -webkit-font-smoothing:antialiased; }
+  .fn-sans { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+  a { color:#CDA063; }
+  a:hover { color:#E4C88E; }
+</style>
+</helmet>
+<div style="min-height:100vh; background:radial-gradient(120% 44% at 50% -4%, rgba(191,143,79,0.09) 0%, rgba(191,143,79,0) 44%), #08090C; padding:60px 40px 90px; display:flex; flex-direction:column; align-items:center;">
+
+  <!-- ══ MASTHEAD ══ -->
+  <header style="display:flex; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:1240px;">
+    <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:5px; text-transform:uppercase; color:#8A6B41; margin-bottom:16px;"><a href="Forge Artwork Reference.dc.html" style="color:#8A6B41; text-decoration:none;">Master Artwork Reference</a> · Artwork Sheet</span>
+    <h1 style="margin:0; font-size:52px; font-weight:700; letter-spacing:8px; text-indent:8px; background:linear-gradient(180deg,#EFD3A0,#93693B); -webkit-background-clip:text; background-clip:text; color:transparent;">FORGE ARTWORK</h1>
+    <div style="display:flex; align-items:center; gap:16px; width:min(560px,82%); margin:24px 0 14px;">
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(191,143,79,0.7));"></span>
+      <span style="width:8px; height:8px; flex:none; transform:rotate(45deg); border:1px solid #BF8F4F;"></span>
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.7),transparent);"></span>
+    </div>
+    <span class="fn-sans" style="font-size:13px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#B08A55;">Every finalized illustration · one unified series · {{ totalLabel }}</span>
+    <p class="fn-sans" style="max-width:720px; margin:20px 0 0; font-size:13.5px; line-height:1.75; color:#9A938A;">All approved Forge artwork on one sheet, grouped by collection. Every figure is the same hand — charcoal engraving, single rim light, immense negative space. The toggle swaps the whole sheet between the male and female sets; users see the set matching their selected sex.</p>
+
+    <!-- sex toggle -->
+    <div class="fn-sans" style="display:inline-flex; margin-top:28px; padding:4px; border-radius:var(--fl-radius-pill); border:1px solid #241B10; background:#0A0805; gap:4px;">
+      <button onClick="{{ selectMale }}" style="{{ maleBtn }}">Male</button>
+      <button onClick="{{ selectFemale }}" style="{{ femaleBtn }}">Female</button>
+    </div>
+    <span class="fn-sans" style="margin-top:12px; font-size:10.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:#5F5648;">Currently viewing · {{ setLabel }} · poses shared across both sets</span>
+  </header>
+
+  <!-- ══ COLLECTIONS ══ -->
+  <sc-for list="{{ collections }}" as="col" hint-placeholder-count="2">
+    <section style="width:100%; max-width:1240px; margin-top:72px;">
+      <div style="display:flex; align-items:baseline; gap:16px; margin-bottom:26px;">
+        <span style="font-family:var(--fl-font-display); font-size:30px; font-weight:700; line-height:1; color:#8A6B41;">{{ col.num }}</span>
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <a href="{{ col.link }}" style="font-size:25px; font-weight:600; letter-spacing:0.3px; color:#E4C88E; text-decoration:none;">{{ col.name }}</a>
+          <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:#6C5A41;">{{ col.meta }}</span>
+        </div>
+      </div>
+      <div style="width:100%; display:grid; grid-template-columns:repeat({{ col.cols }},1fr); gap:16px;">
+        <sc-for list="{{ col.items }}" as="s" hint-placeholder-count="8">
+          <figure style="margin:0; border-radius:var(--fl-radius-xl); background:linear-gradient(180deg,#141416 0%,#0B0B0D 100%); border:1px solid #17171B; overflow:hidden; box-shadow:0 12px 30px -24px rgba(0,0,0,0.8);">
+            <div style="position:relative; width:100%; aspect-ratio:{{ col.aspect }}; background:#0A0A0C;">
+              <img src="{{ s.src }}" alt="{{ s.name }} figure" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; object-position:center bottom;">
+            </div>
+            <figcaption class="fn-sans" style="display:flex; align-items:center; justify-content:center; gap:10px; padding:16px 10px 20px; background:#0A0A0C;">
+              <span style="width:16px; height:1px; background:rgba(150,148,146,0.28);"></span>
+              <span style="font-size:11px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#7C7A78;">{{ s.name }}</span>
+              <span style="width:16px; height:1px; background:rgba(150,148,146,0.28);"></span>
+            </figcaption>
+          </figure>
+        </sc-for>
+      </div>
+    </section>
+  </sc-for>
+
+  <p class="fn-sans" style="max-width:820px; text-align:center; margin:74px 0 0; font-size:12px; line-height:1.85; color:#5F5648;">Assets: <span style="color:#7C7469;">assets/artwork/{collection}/{male|female}/{name}.png</span> · charcoal monochrome, black field, selected at runtime by the athlete's chosen sex. Each collection has its own recorded specification — open a collection title or the <a href="Forge Artwork Reference.dc.html" style="color:#8A6B41;">Master Reference</a>. New collections are appended here as they are finalized.</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { sex: 'male' };
+
+  renderVals() {
+    var self = this;
+    var sex = this.state.sex || 'male';
+
+    var COLLECTIONS = [
+      {
+        num: '01', name: 'Training Splits', link: 'Forge Training Splits Collection.dc.html',
+        dir: 'training-splits', cols: 4, aspect: '300/470',
+        names: ['Push', 'Pull', 'Legs', 'Upper', 'Lower', 'Full Body', 'Core', 'Conditioning'],
+      },
+      {
+        num: '02', name: 'Workout Modalities', link: 'Forge Workout Modalities Collection.dc.html',
+        dir: 'workout-modalities', cols: 6, aspect: '300/470',
+        names: ['Strength', 'Running', 'Walking', 'Sprinting', 'Cycling', 'Swimming', 'Rowing', 'Mobility', 'Stretching', 'Yoga', 'Recovery'],
+      },
+      {
+        num: '03', name: 'Program Themes', link: 'Forge Artwork Reference.dc.html',
+        dir: 'program-themes', cols: 4, aspect: '300/470',
+        names: ['Powerbuilding', 'Bodybuilding', 'Strength', 'Athletic Performance', 'Beginner', 'Hypertrophy', 'Cutting', 'Offseason'],
+      },
+      {
+        num: '04', name: 'Exercise Families', link: 'Forge Artwork Reference.dc.html',
+        dir: 'exercise-families', cols: 3, aspect: '440/303',
+        names: ['Pressing', 'Pulling', 'Squatting', 'Hip Hinge', 'Carry', 'Rotation', 'Isolation', 'Machines', 'Bodyweight'],
+      },
+      {
+        num: '05', name: 'Legacy', link: 'Forge Artwork Reference.dc.html',
+        dir: 'legacy', cols: 4, aspect: '300/470', shared: true,
+        names: ['Statues', 'Anvils', 'Hammers', 'Broken Chains', 'Torches', 'Ancient Pillars', 'Forged Armor', 'Laurels'],
+      },
+      {
+        num: '06', name: 'Honors', link: 'Forge Artwork Reference.dc.html',
+        dir: 'honors', cols: 4, aspect: '300/470', shared: true,
+        excludeFemale: ['Strength', 'Endurance', 'Transformation', 'Community'],
+        names: ['Consistency', 'Strength', 'Endurance', 'Leadership', 'Transformation', 'Completion', 'Community', 'Milestones'],
+      },
+    ];
+
+    var total = 0;
+    var collections = COLLECTIONS.map(function (c) {
+      var base = c.shared ? 'assets/artwork/' + c.dir + '/' : 'assets/artwork/' + c.dir + '/' + sex + '/';
+      var names = c.names;
+      if (sex === 'female' && c.excludeFemale) {
+        names = names.filter(function (n) { return c.excludeFemale.indexOf(n) === -1; });
+      }
+      total += names.length;
+      return {
+        num: c.num, name: c.name, link: c.link, cols: c.cols, aspect: c.aspect,
+        meta: names.length + (c.shared ? ' marks' : ' figures · male + female'),
+        items: names.map(function (n) {
+          return { name: n, src: base + n.toLowerCase().replace(/ /g, '-') + '.png' };
+        }),
+      };
+    });
+
+    var activeBtn = {
+      padding: '9px 30px', borderRadius: '999px', border: '1px solid rgba(191,143,79,0.35)',
+      background: 'rgba(191,143,79,0.09)', color: '#E4C88E', fontSize: '11px', fontWeight: '700',
+      letterSpacing: '2.5px', textTransform: 'uppercase', cursor: 'pointer',
+      fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif',
+    };
+    var idleBtn = Object.assign({}, activeBtn, { border: '1px solid transparent', background: 'transparent', color: '#6C5A41' });
+
+    return {
+      collections: collections,
+      totalLabel: total + ' figures × 2 sets',
+      setLabel: sex === 'female' ? 'Female set' : 'Male set',
+      maleBtn: sex === 'male' ? activeBtn : idleBtn,
+      femaleBtn: sex === 'female' ? activeBtn : idleBtn,
+      selectMale: function () { self.setState({ sex: 'male' }); },
+      selectFemale: function () { self.setState({ sex: 'female' }); },
+    };
+  }
+}
+</script>
+</body>
+</html>

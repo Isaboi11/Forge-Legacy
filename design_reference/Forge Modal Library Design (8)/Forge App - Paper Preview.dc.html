@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-symbols.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#EDE9E1; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .pv-scroll::-webkit-scrollbar { width:0; height:0; }
+  .pv-scroll { scrollbar-width: none; }
+  @keyframes pvIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; transition-duration:0.001ms !important; } }
+</style>
+<style id="fl-theme-paper">
+:root{
+  --fl-base:#F4F0E6; --fl-charcoal-900:#F6F2E8; --fl-charcoal-800:#F9F6EF;
+  --fl-charcoal-700:#F1EBDD; --fl-charcoal-600:#CDBD9F; --fl-charcoal-500:#B9A98A;
+  --fl-cream-100:#28231D; --fl-gray-400:#6E6860; --fl-gray-600:#8B8377;
+  --fl-bronze-400:#A47A3D; --fl-bronze-300:#BD9257; --fl-bronze-600:#8C6B3C; --fl-bronze-dark:#5C4726;
+  --fl-inner-highlight:rgba(255,255,255,0.92); --fl-inner-highlight-md:rgba(255,255,255,1);
+  --fl-border-inset:inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(122,104,78,0.07), 0 1px 2px rgba(70,58,42,0.05), 0 4px 12px -6px rgba(70,58,42,0.16);
+  --fl-border-inset-strong:inset 0 1px 0 rgba(255,255,255,1), inset 0 -1px 0 rgba(122,104,78,0.10), 0 2px 4px rgba(70,58,42,0.06), 0 10px 24px -10px rgba(70,58,42,0.22);
+  --fl-overlay-dark:rgba(35,31,26,0.42); --fl-hover-wash:rgba(35,31,26,0.035);
+  --fl-bg-atmospheric:radial-gradient(130% 85% at 50% -8%, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0) 48%), linear-gradient(180deg,#F8F5EC 0%, var(--fl-charcoal-900) 44%, var(--fl-base) 100%);
+  --fl-bg-smoke:radial-gradient(55% 45% at 18% 6%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 60%), radial-gradient(70% 60% at 50% 110%, rgba(120,104,80,0.07) 0%, rgba(120,104,80,0) 60%);
+  --fl-surface-card:linear-gradient(179deg,#FDFBF5 0%,#F8F5ED 40%,#F2EEE2 100%);
+  --fl-surface-elevated:linear-gradient(179deg,#FFFFFF 0%,#FBF9F3 35%,#F6F2E8 100%);
+  --fl-surface-hero:linear-gradient(180deg,#FEFCF7 0%,#F8F3EA 45%,#F3EDDD 100%);
+  --fl-surface-recessed:linear-gradient(180deg,#E7E0D0 0%,#EFE9DC 62%,#F1ECE0 100%);
+  --fl-surface-panel:#F6F2E8;
+  --fl-surface-modal:linear-gradient(180deg,#FFFFFF 0%,#F9F6EF 100%);
+  --fl-surface-nav:rgba(250,247,240,0.97);
+  --fl-bronze-border:rgba(164,122,61,0.52); --fl-bronze-border-subtle:rgba(164,122,61,0.26);
+  --fl-bronze-tint:rgba(164,122,61,0.085); --fl-bronze-glow-a:rgba(164,122,61,0.08);
+  --fl-bronze-glow-ring:0 0 24px 2px rgba(164,122,61,0.16);
+  --fl-glow-subtle:0 0 20px rgba(164,122,61,0.12); --fl-glow-badge:0 0 16px rgba(164,122,61,0.20);
+  --fl-glow-ember:radial-gradient(circle, rgba(164,122,61,0.16) 0%, rgba(164,122,61,0) 70%);
+  --fl-glow-focus:drop-shadow(0 0 8px rgba(164,122,61,0.4));
+  --fl-shadow-card:0 1px 2px rgba(70,58,42,0.07), 0 5px 14px -8px rgba(70,58,42,0.20);
+  --fl-shadow-elevated:0 2px 4px rgba(70,58,42,0.07), 0 12px 28px -12px rgba(70,58,42,0.28);
+  --fl-shadow-modal:0 4px 8px rgba(70,58,42,0.08), 0 28px 64px -20px rgba(70,58,42,0.38);
+  --fl-shadow-image:0 2px 5px rgba(70,58,42,0.10), 0 14px 32px -14px rgba(70,58,42,0.30);
+  --fl-shadow-ambient:0 30px 80px -30px rgba(70,58,42,0.34), 0 4px 12px rgba(70,58,42,0.06);
+  --fl-shadow-float:0 4px 10px rgba(70,58,42,0.08), 0 20px 44px -18px rgba(70,58,42,0.30);
+  --fl-card-hero-wash:linear-gradient(180deg, rgba(164,122,61,0.05) 0%, rgba(164,122,61,0) 42%);
+  --fl-shadow-card-hero:inset 0 1px 0 rgba(255,255,255,0.9),0 10px 26px -20px rgba(70,58,42,0.35);
+  --fl-shadow-card-soft:inset 0 1px 0 rgba(255,255,255,0.8),0 8px 20px -18px rgba(70,58,42,0.28);
+  --fl-status-online:#2F7D50; --fl-status-online-glow:0 0 6px rgba(47,125,80,0.35);
+  --fl-green-muted:#3E7A4C; --fl-red-muted:#A6402F; --fl-blue-muted:#3C6D92;
+  --fl-icon-container-bg:#EFEBE0; --fl-icon-inactive:#8B8377;
+  --fl-bronze-fill:linear-gradient(180deg,#8C7245 0%,#836A3E 50%,#785F37 100%);
+  --fl-bronze-fill-hover:linear-gradient(180deg,#9A7F52 0%,#907548 50%,#846A3E 100%);
+  --fl-bronze-metal-border:rgba(107,86,52,0.48); --fl-bronze-metal-border-hover:rgba(107,86,52,0.58);
+  --fl-bronze-metal-top-rim:inset 0 1px 0 rgba(255,250,240,0.28); --fl-bronze-metal-bottom-rim:inset 0 -1px 1px rgba(60,46,26,0.18);
+  --fl-paper-grain:repeating-linear-gradient(94deg, rgba(122,104,78,0.022) 0 1px, rgba(255,255,255,0) 1px 3px), repeating-linear-gradient(4deg, rgba(122,104,78,0.016) 0 1px, rgba(255,255,255,0) 1px 4px);
+  --fl-paper-vignette:radial-gradient(120% 78% at 50% -12%, rgba(255,252,246,0.95) 0%, rgba(255,252,246,0) 52%), radial-gradient(105% 82% at 50% 112%, rgba(122,100,66,0.10) 0%, rgba(122,100,66,0) 58%), radial-gradient(78% 100% at -8% 50%, rgba(122,100,66,0.07) 0%, rgba(122,100,66,0) 46%), radial-gradient(78% 100% at 108% 50%, rgba(122,100,66,0.07) 0%, rgba(122,100,66,0) 46%);
+}
+</style>
+</helmet>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#F4F1EA"></rect><g fill="#8A6431"><rect x="45.5" y="30" width="9" height="30"></rect><path d="M32 42l8-5v23h-8z"></path><path d="M68 42l-8-5v23h8z"></path><rect x="28" y="62" width="44" height="3.5"></rect><rect x="23" y="67.5" width="54" height="3.5"></rect></g></svg></template>
+
+<div style="min-height:100vh; background:var(--fl-bg-atmospheric); padding:44px 24px 72px; display:flex; flex-direction:column; align-items:center; gap:30px;">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex; align-items:center; justify-content:center; min-height:60vh;">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206;"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"></path><path d="M7.6 7.1L9.6 5.8V15H7.6Z"></path><path d="M16.4 7.1L14.4 5.8V15H16.4Z"></path><path d="M6.8 15.4H17.2V16.2H6.8Z"></path><path d="M5.6 16.6H18.4V17.4H5.6Z"></path><path d="M4.4 17.8H19.6V18.6H4.4Z"></path></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+  <div style="display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center;">
+    <span style="font-size:11px; font-weight:700; letter-spacing:2.2px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Exploration</span>
+    <h1 style="margin:0; font-family:var(--fl-font-display); font-size:26px; font-weight:600; color:var(--fl-text-primary);">Forge Legacy — Paper Mode</h1>
+    <p style="margin:2px 0 0; font-size:13px; color:var(--fl-text-secondary); max-width:520px;">Home, Active Workout and Squads restyled in the Check-in Review's light paper palette — same layouts and components, new material.</p>
+  </div>
+
+  <div style="display:flex; gap:26px; flex-wrap:wrap; justify-content:center; align-items:flex-start;">
+
+    <!-- ══════════════════ PHONE 1 — HOME ══════════════════ -->
+    <div data-screen-label="Home" style="width:404px; flex:none; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-500); background:var(--fl-paper-grain), var(--fl-paper-vignette), linear-gradient(rgba(247,243,234,0.14), rgba(247,243,234,0.28) 55%, rgba(247,243,234,0.52)), url('assets/forge-slate-paper.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="{{ homeLogo }}" actions="{{ friendsEntry }}" avatar="{{ avatarEl }}" on-avatar="{{ noop }}" hint-size="100%,56px"></x-import>
+
+      <div class="pv-scroll" style="flex:1; min-height:0; overflow-y:auto;">
+
+        <div style="padding:16px 26px 8px; display:flex; flex-direction:column; gap:9px;">
+          <span style="font-size:12px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--fl-text-secondary);">Chapter Six</span>
+          <h1 style="margin:0; font-family:var(--fl-font-display); font-size:38px; line-height:0.98; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-text-primary);">The Reckoning</h1>
+          <div style="display:flex; align-items:center; gap:14px; max-width:300px;">
+            <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-border) 0%, transparent 100%);"></span>
+            <span style="width:7px; height:7px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary);"></span>
+            <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-border) 0%, transparent 100%);"></span>
+          </div>
+          <span style="font-size:15px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-secondary);">Week 6 &nbsp;·&nbsp; Day 2</span>
+          <div style="display:flex; gap:14px; padding-top:2px;">
+            <span style="width:2px; flex:none; background:linear-gradient(180deg, var(--fl-bronze-primary), transparent);"></span>
+            <span style="font-family:var(--fl-font-display); font-style:italic; font-size:17px; line-height:1.4; font-weight:500; color:var(--fl-bronze-bright); max-width:236px;">You are not counting workouts. You are becoming someone.</span>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:20px; padding:2px 18px 40px;">
+
+          <!-- Today's Workout hero -->
+          <div style="position:relative; background:var(--fl-card-hero-wash), var(--fl-surface-hero); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); padding:20px 22px; box-shadow:var(--fl-shadow-card-hero); display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; align-items:flex-start; gap:16px;">
+              <span style="width:52px; height:52px; flex:none; margin-top:6px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); box-shadow:var(--fl-glow-subtle); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg></span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px;">
+                <span style="font-size:10.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Today's Workout</span>
+                <span style="font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.3px; line-height:1.02;">Push Day A</span>
+                <span style="font-size:14px; color:var(--fl-text-secondary);">Chest, Shoulders, Triceps</span>
+              </div>
+            </div>
+            <div style="height:1px; background:var(--fl-bronze-border-subtle); max-width:150px;"></div>
+            <span style="display:flex; align-items:center; gap:9px; font-size:12px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-secondary);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-icon-bronze)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M9 3.5h6v2H9zM9 11h6M9 15h4"></path></svg>6 Exercises</span>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ noop }}" hint-size="100%,52px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" style="margin-right:8px; vertical-align:-3px; stroke:currentColor;"><path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z"></path></svg>Start Workout</x-import>
+          </div>
+
+          <!-- Program | Mission -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div style="background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-xl); padding:18px 16px; box-shadow:var(--fl-shadow-card-soft); display:flex; flex-direction:column; gap:11px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Current Program</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+              </div>
+              <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px;">Powerbuilding II</span>
+              <div style="display:flex; flex-direction:column; gap:8px; margin-top:3px;">
+                <div style="display:flex; align-items:baseline; gap:5px;">
+                  <span style="font-family:var(--fl-font-display); font-size:26px; font-weight:600; line-height:0.9;">12</span>
+                  <span style="font-size:14px; font-weight:500; color:var(--fl-text-secondary);">/ 32</span>
+                  <span style="margin-left:auto; font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">Workouts</span>
+                </div>
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="12" max="32" hint-size="100%,8px"></x-import>
+              </div>
+            </div>
+            <div style="background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-xl); padding:18px 16px; box-shadow:var(--fl-shadow-card-soft); display:flex; flex-direction:column; gap:12px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Mission</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+              </div>
+              <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; line-height:1.15;">Bench 225 × 1</span>
+              <span style="font-size:12.5px; color:var(--fl-text-secondary);">Your long-term objective</span>
+              <div style="height:1px; background:var(--fl-bronze-border-subtle); margin:2px 0;"></div>
+              <span style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--fl-text-secondary);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-icon-bronze)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>2 goals remaining</span>
+            </div>
+          </div>
+
+          <!-- Train Together -->
+          <div>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Your Circle" hint-size="100%,20px"></x-import>
+            <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); box-shadow:var(--fl-shadow-card-soft); padding:16px; display:flex; flex-direction:column;">
+              <div style="display:flex; flex-direction:column; gap:12px; padding:14px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border-subtle);">
+                <div style="display:flex; align-items:center; gap:9px;">
+                  <span style="width:8px; height:8px; flex:none; border-radius:50%; background:var(--fl-status-online); box-shadow:var(--fl-status-online-glow);"></span>
+                  <span style="font-size:10.5px; font-weight:600; letter-spacing:1.7px; text-transform:uppercase; color:var(--fl-bronze-primary);">Live Now</span>
+                  <span style="margin-left:auto; font-size:12px; font-weight:500; color:var(--fl-text-secondary);">+2 training now</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:13px; min-height:40px;">
+                  <div style="display:flex; align-items:center; gap:13px; flex:1; min-width:0;">
+                    <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Avatar" name="Marcus Vale" size="listRow" hint-size="40px,40px"></x-import>
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                      <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; line-height:1.05; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Marcus Vale</span>
+                      <span style="font-size:12.5px; color:var(--fl-text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Pull Day A · Live for 4 min</span>
+                    </div>
+                  </div>
+                  <span style="flex:none; display:inline-flex; align-items:center; justify-content:center; padding:9px 18px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); color:var(--fl-bronze-primary); font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase;">Join</span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:flex-start; gap:13px; margin:16px -8px 0; padding:8px; border-radius:var(--fl-radius-lg);">
+                <span style="position:relative; flex:none; width:40px; height:40px;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Avatar" name="Diego Cruz" size="listRow" hint-size="40px,40px"></x-import>
+                </span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:7px;">
+                  <span style="font-size:15px; font-weight:600; letter-spacing:-0.1px; line-height:1.1;">Diego Cruz</span>
+                  <span style="font-size:15px; font-style:italic; line-height:1.55; color:var(--fl-text-primary); opacity:0.9;">"Six months ago I couldn't do one pull-up. Just got five."</span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:7px; margin:16px -16px -16px; padding:14px 16px; background:var(--fl-surface-recessed); border-top:1px solid var(--fl-bronze-border-subtle); border-bottom-left-radius:var(--fl-radius-xl); border-bottom-right-radius:var(--fl-radius-xl); color:var(--fl-text-secondary);">
+                <span style="font-size:13px; font-weight:600; letter-spacing:0.2px;">See your circle</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg>
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+              <div style="flex:1.25; display:flex; align-items:center; justify-content:center; gap:9px; padding:12px 13px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint);">
+                <span style="display:inline-flex; color:var(--fl-bronze-primary);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5L18 17.5M19 4.5L6 17.5M12.7 15.8L16.3 12.2M7.7 12.2L11.3 15.8"></path></svg></span>
+                <span style="flex:none; font-size:13px; font-weight:700; letter-spacing:0.3px; color:var(--fl-bronze-primary);">Challenge</span>
+              </div>
+              <div style="flex:1; display:flex; align-items:center; gap:9px; padding:12px 13px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card);">
+                <span style="display:inline-flex; color:var(--fl-icon-bronze);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v6a6 6 0 0 0 12 0V4M12 16v4M8.5 20h7"></path></svg></span>
+                <span style="flex:1; min-width:0; font-size:13px; font-weight:600; color:var(--fl-text-secondary);">Competitions</span>
+                <span style="flex:none; display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:10px; font-weight:800; color:var(--fl-bronze-primary);">2</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.TabBar" items="{{ tabItems }}" active-id="home" on-change="{{ noop }}" hint-size="100%,74px"></x-import>
+    </div>
+
+    <!-- ══════════════════ PHONE 2 — ACTIVE WORKOUT ══════════════════ -->
+    <div data-screen-label="Active Workout" style="width:404px; flex:none; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-500); background:var(--fl-paper-grain), var(--fl-paper-vignette), linear-gradient(rgba(247,243,234,0.16), rgba(247,243,234,0.3) 55%, rgba(247,243,234,0.56)), url('assets/forge-slate2-paper.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Push Day A" on-back="{{ noop }}" hint-size="100%,56px"></x-import>
+
+      <div style="flex:none; padding:14px 18px 16px; border-bottom:1px solid var(--fl-charcoal-700); display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <span style="font-size:12px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-secondary);"><span style="color:var(--fl-bronze-primary);">3</span> / 8 Done</span>
+          <div style="display:flex; align-items:center; gap:8px; padding:6px 8px 6px 11px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-elevated);">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-icon-bronze)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 2.4"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 1.5M9 2h6"></path></svg>
+            <span style="display:flex; flex-direction:column; line-height:1.25;">
+              <span style="font-size:8px; font-weight:600; letter-spacing:0.9px; text-transform:uppercase; color:var(--fl-text-tertiary);">Rest Timer</span>
+              <span style="font-size:12px; font-weight:700; letter-spacing:0.6px; color:var(--fl-text-primary);">90s</span>
+            </span>
+            <span style="width:34px; height:20px; flex:none; border-radius:999px; background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:flex-end; padding:2px;"><span style="width:14px; height:14px; border-radius:50%; background:var(--fl-bronze-primary);"></span></span>
+          </div>
+        </div>
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="3" max="8" height="6" hint-size="100%,6px"></x-import>
+      </div>
+
+      <div class="pv-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:14px 18px 16px; display:flex; flex-direction:column; gap:14px;">
+
+        <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); padding:16px; box-shadow:var(--fl-shadow-card-hero);">
+          <div style="display:flex; gap:16px;">
+            <div style="width:132px; flex:none; align-self:stretch; position:relative; border-radius:var(--fl-radius-lg); overflow:hidden; background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); min-height:172px; display:flex; align-items:center; justify-content:center;">
+              <svg width="74" height="74" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.22;"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg>
+            </div>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:10px;">
+              <span style="font-family:var(--fl-font-display); font-size:23px; font-weight:600; letter-spacing:-0.3px; line-height:1.08;">Barbell Bench Press</span>
+              <div style="display:flex; align-items:center; gap:8px; color:var(--fl-text-secondary);">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="miter"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg>
+                <span style="font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase;">Barbell</span>
+              </div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" size="sm" hint-size="auto,24px">Compound</x-import>
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" size="sm" tone="muted" hint-size="auto,24px">Chest</x-import>
+              </div>
+              <div style="margin-top:auto; padding-top:4px;">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" on-click="{{ noop }}" hint-size="auto,32px">How To</x-import>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; margin-top:14px; padding-top:14px; border-top:1px solid var(--fl-charcoal-700);">
+            <div style="display:flex; flex-direction:column; gap:2px; padding-right:12px;">
+              <span style="font-size:9px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">Last</span>
+              <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600;">185 × 6</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:3px; padding:0 12px; border-left:1px solid var(--fl-charcoal-700); border-right:1px solid var(--fl-charcoal-700);">
+              <span style="font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Goal</span>
+              <span style="font-family:var(--fl-font-display); font-size:21px; font-weight:700; letter-spacing:-0.3px; color:var(--fl-bronze-primary);">195 × 6</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:2px; padding-left:12px;">
+              <span style="font-size:9px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">Best</span>
+              <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600;">205 × 4</span>
+            </div>
+          </div>
+          <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--fl-charcoal-700);">
+            <span style="display:flex; align-items:center; gap:6px; font-size:9px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:10px;">Memories</span>
+            <div style="display:flex; gap:8px;">
+              <span style="width:60px; height:60px; flex:none; border-radius:var(--fl-radius-md); border:1px dashed var(--fl-bronze-border); background:var(--fl-bronze-tint); color:var(--fl-bronze-primary); display:flex; align-items:center; justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"></rect><circle cx="12" cy="13" r="3"></circle><path d="M8 6l1.4-2h5.2L16 6"></path><path d="M12 11.5v3M10.5 13h3" stroke-width="1.4"></path></svg></span>
+              <span style="width:60px; height:60px; flex:none; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed);"></span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:12px; background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-xl); padding:9px 12px; box-shadow:var(--fl-shadow-card-soft);">
+          <span style="width:46px; height:46px; flex:none; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); display:flex; align-items:center; justify-content:center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg></span>
+          <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+            <span style="font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">Up Next</span>
+            <span style="font-family:var(--fl-font-display); font-size:16.5px; font-weight:600; letter-spacing:-0.2px;">Incline Dumbbell Press</span>
+          </span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+        </div>
+
+      </div>
+
+      <div style="flex:none; padding:14px 18px calc(env(safe-area-inset-bottom, 0px) + 14px); border-top:1px solid var(--fl-charcoal-700); background:var(--fl-surface-panel); display:flex; gap:10px;">
+        <div style="flex:1;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" full-width="{{ true }}" on-click="{{ noop }}" hint-size="100%,50px">Skip</x-import></div>
+        <div style="flex:2;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ noop }}" hint-size="100%,50px">Log Set</x-import></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ PHONE 3 — SQUADS ══════════════════ -->
+    <div data-screen-label="Squads" style="width:404px; flex:none; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-500); background:var(--fl-paper-grain), var(--fl-paper-vignette), linear-gradient(rgba(247,243,234,0.12), rgba(247,243,234,0.26) 40%, rgba(247,243,234,0.6)), url('assets/squads-hub-bg-paper.png') top center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+      <div class="pv-scroll" style="flex:1; min-height:0; overflow-y:auto;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:24px 20px 12px 24px;">
+          <span style="font-family:var(--fl-font-display); font-size:30px; font-weight:700; letter-spacing:-0.4px; color:var(--fl-text-primary);">Squads</span>
+          <div style="display:flex; align-items:center; gap:4px;">
+            <span style="width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; color:var(--fl-bronze-primary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M16 16l4.5 4.5"></path></svg></span>
+            <span style="width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; color:var(--fl-bronze-primary);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+          </div>
+        </div>
+
+        <div style="padding:4px 16px 26px; display:flex; flex-direction:column; gap:16px;">
+          <div style="padding:0 4px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Favorites" hint-size="100%,18px"></x-import>
+          </div>
+
+          <sc-for list="{{ squads }}" as="sq" hint-placeholder-count="3">
+            <div style="position:relative; background:{{ sq.cardBg }}; border:{{ sq.cardBorder }}; border-radius:var(--fl-radius-lg); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); padding:18px 18px 17px; display:flex; flex-direction:column; gap:16px;">
+              <div style="display:flex; align-items:flex-start; gap:15px;">
+                <div style="width:66px; height:66px; flex:none; position:relative; border-radius:var(--fl-radius-round); overflow:hidden; background:linear-gradient(152deg, #EFE7D8 0%, #E1D6C0 100%); border:1.5px solid var(--fl-bronze-primary); box-shadow:0 0 0 1px rgba(138,100,49,0.18), inset 0 1px 0 rgba(255,255,255,0.6);">
+                  <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-dark);">{{ sq.crestEl }}</div>
+                </div>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; padding-top:1px;">
+                  <sc-if value="{{ sq.owned }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size:9.5px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Your Squad</span>
+                  </sc-if>
+                  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+                    <span style="font-size:21px; font-weight:700; line-height:1.16; letter-spacing:-0.3px; color:var(--fl-text-primary);">{{ sq.name }}</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-top:3px;"><path d="M9 5l7 7-7 7"></path></svg>
+                  </div>
+                  <span style="font-family:var(--fl-font-display); font-style:italic; font-size:14px; line-height:1.3; color:var(--fl-bronze-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ sq.motto }}</span>
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:9px;">
+                    <div style="display:flex; align-items:center; padding-left:8px;">
+                      <sc-for list="{{ sq.avatars }}" as="a" hint-placeholder-count="4">
+                        <span style="width:28px; height:28px; margin-left:-8px; border-radius:var(--fl-radius-round); background:{{ a.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:0 0 0 2px var(--fl-surface-card);"></span>
+                      </sc-for>
+                    </div>
+                    <span style="display:inline-flex; align-items:center; gap:6px; flex:none; white-space:nowrap; color:var(--fl-text-secondary);">
+                      <span style="font-size:12.5px;">{{ sq.memberLabel }}</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div style="height:1px; background:linear-gradient(90deg, transparent, var(--fl-bronze-border-subtle) 20%, var(--fl-bronze-border-subtle) 80%, transparent);"></div>
+              <div style="display:flex; align-items:center; gap:18px; padding:3px 0 2px;">
+                <div style="flex:none; display:flex; flex-direction:column; gap:5px; min-width:56px;">
+                  <span style="font-size:22px; font-weight:700; line-height:1; letter-spacing:0.2px;"><span style="color:{{ sq.numColor }};">{{ sq.trainedStr }}</span><span style="color:var(--fl-text-tertiary); font-weight:600;"> / {{ sq.totalStr }}</span></span>
+                  <span style="font-size:11.5px; color:var(--fl-text-secondary); letter-spacing:0.2px;">trained today</span>
+                </div>
+                <div style="flex:1; display:flex; align-items:center; gap:6px;">
+                  <sc-for list="{{ sq.segments }}" as="seg" hint-placeholder-count="5">
+                    <span style="flex:1; height:6px; border-radius:3px; background:{{ seg.bg }};"></span>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+
+          <div style="margin-top:8px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ noop }}" hint-size="100%,58px">Create a Squad</x-import>
+          </div>
+        </div>
+      </div>
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.TabBar" items="{{ tabItems }}" active-id="squads" on-change="{{ noop }}" hint-size="100%,74px"></x-import>
+    </div>
+
+  </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { ready: false };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) this.setState({ ready: true });
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) return { ready: false, notReady: true };
+    const React_ = React;
+    const h = React.createElement;
+    const NS = window.ForgeLegacyVisualFoundation_5368b2;
+    const FS = window.ForgeSymbols;
+    const Avatar = NS.Avatar;
+    const noop = () => {};
+
+    const forgeMark = h('svg', { width: 19, height: 28, viewBox: '16 0 68 102', style: { flex: 'none', display: 'block' }, 'aria-hidden': true },
+      h('defs', null, h('linearGradient', { id: 'pvForgeMarkGrad', x1: '0', y1: '0', x2: '0', y2: '1' },
+        h('stop', { offset: '0%', stopColor: '#DCB57A' }), h('stop', { offset: '52%', stopColor: '#BF8F4F' }), h('stop', { offset: '100%', stopColor: '#835F32' }))),
+      h('g', { fill: 'url(#pvForgeMarkGrad)' },
+        h('polygon', { points: '43,6 57,6 57,96 43,96' }),
+        h('polygon', { points: '23,42 37,27 37,96 23,96' }),
+        h('polygon', { points: '63,27 77,42 77,96 63,96' })));
+
+    const homeLogo = h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '8px' } },
+      forgeMark, h('span', { style: { fontFamily: 'var(--fl-font-display)', fontSize: '16px', fontWeight: 600, letterSpacing: '-0.2px', color: 'var(--fl-text-primary)' } }, 'Forge Legacy'));
+
+    const friendsEntry = h('span', { style: { position: 'relative', width: '40px', height: '40px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fl-icon-bronze)' } },
+      h('svg', { width: 23, height: 23, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' },
+        h('circle', { cx: 7.5, cy: 8, r: 2.7 }), h('circle', { cx: 16.5, cy: 8, r: 2.7 }),
+        h('path', { d: 'M3 19a4.5 4.5 0 0 1 9 0' }), h('path', { d: 'M12 19a4.5 4.5 0 0 1 9 0' })),
+      h('span', { style: { position: 'absolute', top: '4px', right: '4px', minWidth: '15px', height: '15px', padding: '0 4px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--fl-radius-round)', background: 'var(--fl-bronze-metallic)', color: '#1A1206', fontSize: '9px', fontWeight: 800, border: '1.5px solid var(--fl-charcoal-900)' } }, '2'));
+
+    const avatarEl = Avatar ? h(Avatar, { name: 'Ada Ridge', size: 'appBar' }) : null;
+
+    const navIcon = (id) => FS.create(React_, id, { size: 22, strokeWidth: 2 });
+    const legacyIcon = h('span', { style: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '32px', borderRadius: 'var(--fl-radius-md)', background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border)', color: 'var(--fl-bronze-primary)' } }, navIcon('legacy'));
+    const tabItems = [
+      { id: 'home', label: 'Home', icon: navIcon('home') },
+      { id: 'workouts', label: 'Workouts', icon: navIcon('workouts') },
+      { id: 'legacy', label: 'Legacy', icon: legacyIcon },
+      { id: 'squads', label: 'Squads', icon: navIcon('squads') },
+      { id: 'community', label: 'Community', icon: navIcon('explore') },
+    ];
+
+    const ic = (id) => FS.create(React_, id, { size: 30, strokeWidth: 1.5 });
+    const segFill = 'linear-gradient(180deg, var(--fl-bronze-bright), var(--fl-bronze-primary))';
+    const segEmpty = 'rgba(122,104,78,0.14)';
+    const TINTS = ['linear-gradient(160deg,#D9CBAE,#B9A67F)', 'linear-gradient(160deg,#CBBCA0,#A79876)', 'linear-gradient(160deg,#E1D2B4,#C4AE85)', 'linear-gradient(160deg,#D2C3A3,#AE9A76)'];
+
+    const makeSquad = (name, motto, members, trained, owned, crest) => {
+      const shown = Math.min(4, members);
+      const avatars = Array.from({ length: shown }).map((_, i) => ({ key: name + i, tint: TINTS[i % TINTS.length] }));
+      const segments = Array.from({ length: members }).map((_, i) => ({ key: name + 's' + i, bg: i < trained ? segFill : segEmpty }));
+      return {
+        key: name, name, motto, owned: !!owned, crestEl: ic(crest),
+        avatars, memberLabel: members === 1 ? '1 member' : members + ' members',
+        trainedStr: String(trained), totalStr: String(members),
+        numColor: trained > 0 ? 'var(--fl-bronze-primary)' : 'var(--fl-text-tertiary)',
+        segments,
+        cardBg: owned ? 'linear-gradient(180deg, rgba(191,143,79,0.08) 0%, rgba(191,143,79,0) 42%), var(--fl-surface-card)' : 'var(--fl-surface-card)',
+        cardBorder: owned ? '1px solid rgba(138,100,49,0.5)' : '1px solid var(--fl-charcoal-600)',
+      };
+    };
+
+    const squads = [
+      makeSquad('Iron Vigil', 'Hold the line, every dawn.', 5, 3, true, 'swords'),
+      makeSquad('Dawn Patrol', 'First light, before the world wakes.', 6, 6, false, 'mountain'),
+      makeSquad('The Proving', 'Earn it. Every rep. Every day.', 4, 0, false, 'shield'),
+    ];
+
+    return { ready: true, notReady: false, noop, homeLogo, friendsEntry, avatarEl, tabItems, squads };
+  }
+}
+
+</script>
+</body>
+</html>

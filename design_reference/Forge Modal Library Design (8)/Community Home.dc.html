@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-communities.js"></script>
+  <script src="forge-community-posts.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<script src="forge-coach.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  image-slot::part(ring) { border-color: var(--fl-bronze-border); }
+  image-slot::part(empty) { color: var(--fl-text-tertiary); font-size: 10px; }
+  image-slot::part(frame) { background: rgba(191,143,79,0.05); }
+  @keyframes chRise { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+  @keyframes chFade { from { opacity:0; } to { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Communities" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.15), rgba(5,5,5,0.15)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <!-- ═══ SCROLL AREA (texture calmed below the banner) ═══ -->
+    <div class="fl-scroll" onScroll="{{ onScroll }}" style="flex:1; min-height:0; overflow-y:auto; background:linear-gradient(180deg, rgba(5,5,5,0) 0px, rgba(5,5,5,0) 132px, rgba(5,5,5,0.42) 250px, rgba(5,5,5,0.42) 100%);">
+
+      <!-- ═══ BANNER (fully custom per community; texture strong here) ═══ -->
+      <div style="position:relative; height:158px; flex:none; overflow:hidden;">
+        <div id="ch-banner-img" style="position:absolute; inset:0; will-change:transform; transform-origin:center top;">
+          <image-slot id="community-banner" shape="rect" placeholder="Community banner" style="position:absolute; inset:0; width:100%; height:100%; overflow:hidden;"></image-slot>
+        </div>
+        <div style="position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg, rgba(5,5,5,0.5) 0%, rgba(5,5,5,0.15) 40%, rgba(5,5,5,0.72) 100%);"></div>
+        <div style="position:absolute; top:14px; right:14px; display:flex; gap:9px;">
+          <button type="button" onClick="{{ openDiscover }}" aria-label="Discover communities" style="width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.5); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(6px); color:var(--fl-text-primary); cursor:pointer;">{{ discoverIcon }}</button>
+          <button type="button" onClick="{{ openNotifs }}" aria-label="Notifications" style="position:relative; width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.5); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(6px); color:var(--fl-text-primary); cursor:pointer;">{{ bellIcon }}<span style="position:absolute; top:8px; right:9px; width:7px; height:7px; border-radius:var(--fl-radius-round); background:var(--fl-bronze-bright); box-shadow:0 0 0 2px rgba(10,10,10,0.6);"></span></button>
+          <button type="button" onClick="{{ openOverflow }}" aria-label="Community options" style="width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.5); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(6px); color:var(--fl-text-primary); cursor:pointer;">{{ overflowIcon }}</button>
+        </div>
+      </div>
+
+      <!-- ═══ UNIFIED IDENTITY BLOCK ═══ -->
+      <div data-coach="cm-intro" style="position:relative; padding:0 20px;">
+        <div style="display:flex; align-items:flex-end; gap:13px; margin-top:-32px;">
+          <div style="position:relative; width:80px; height:80px; flex:none; border-radius:var(--fl-radius-round); box-shadow:0 0 0 2.5px var(--fl-bronze-primary), 0 10px 22px rgba(0,0,0,0.7);">
+            <sc-if value="{{ crestHasPhoto }}" hint-placeholder-val="{{ true }}">
+              <image-slot id="community-crest" shape="circle" placeholder="Crest" style="position:absolute; inset:0; width:100%; height:100%; border-radius:var(--fl-radius-round); overflow:hidden;"></image-slot>
+            </sc-if>
+            <sc-if value="{{ crestHasGlyph }}" hint-placeholder-val="{{ false }}">
+              <span style="position:absolute; inset:0; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 50% 34%, rgba(191,143,79,0.24), transparent 72%), var(--fl-charcoal-900); color:var(--fl-bronze-bright);">{{ crestGlyph }}</span>
+            </sc-if>
+            <span style="position:absolute; right:-3px; bottom:-3px; width:23px; height:23px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-surface-modal); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright); box-shadow:var(--fl-shadow-card);">{{ cameraIcon }}</span>
+          </div>
+          <div style="flex:1; min-width:0; padding-bottom:4px;">
+            <button type="button" onClick="{{ openSwitcher }}" style="display:inline-flex; align-items:center; gap:9px; background:rgba(10,10,10,0.34); border:1px solid var(--fl-charcoal-600); padding:5px 7px 5px 13px; border-radius:var(--fl-radius-pill); cursor:pointer; max-width:100%; backdrop-filter:blur(4px); transition:background 160ms ease, border-color 160ms ease;" style-active="background:rgba(10,10,10,0.55); border-color:var(--fl-bronze-border);">
+              <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:600; letter-spacing:-0.3px; color:var(--fl-text-primary); text-shadow:0 2px 10px rgba(0,0,0,0.5); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ communityName }}</span>
+              <span style="flex:none; width:23px; height:23px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright);">{{ chevronDown }}</span>
+            </button>
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:7px;">
+              <sc-for list="{{ categories }}" as="c" hint-placeholder-count="2">
+                <span style="display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); font-size:11px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-secondary);"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ c.icon }}</span>{{ c.label }}</span>
+              </sc-for>
+            </div>
+            <button type="button" onClick="{{ openMembers }}" style="display:inline-flex; align-items:center; gap:6px; background:transparent; border:none; padding:0; margin-top:7px; cursor:pointer;">
+              <span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ membersIcon }}</span>
+              <span style="font-size:12.5px; font-weight:600; color:var(--fl-text-secondary);">{{ memberCount }} Members</span>
+              <span style="display:inline-flex; color:var(--fl-text-tertiary);">{{ chevronRight }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- tagline -->
+        <span style="display:block; font-size:13.5px; line-height:1.5; color:var(--fl-text-secondary); margin-top:11px;">{{ tagline }}</span>
+
+        <!-- community metadata -->
+        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px 9px; margin-top:10px;">
+          <sc-for list="{{ metaItems }}" as="m" hint-placeholder-count="3">
+            <span style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--fl-text-tertiary);"><span style="display:inline-flex; color:{{ m.iconColor }};">{{ m.icon }}</span>{{ m.label }}</span>
+          </sc-for>
+        </div>
+
+        <!-- action buttons (secondary — reduced weight) -->
+        <div style="display:flex; gap:8px; margin-top:13px;">
+          <sc-for list="{{ actions }}" as="ac" hint-placeholder-count="4">
+            <button type="button" onClick="{{ ac.action }}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 4px; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700); cursor:pointer; transition:border-color 160ms ease, background 160ms ease;" style-active="border-color:var(--fl-bronze-border); background:var(--fl-charcoal-800);">
+              <span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ ac.icon }}</span>
+              <span style="font-size:10px; font-weight:600; color:var(--fl-text-tertiary);">{{ ac.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ═══ SEGMENTED TABS ═══ -->
+      <div data-coach="cm-tabs" style="padding:16px 20px 4px;">
+        <div style="display:flex; gap:4px; background:var(--fl-charcoal-800); border-radius:var(--fl-radius-pill); padding:3px;">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+            <button type="button" onClick="{{ t.select }}" style="{{ t.style }}"><span style="display:inline-flex;">{{ t.icon }}</span>{{ t.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ═══ FEED ═══ -->
+      <sc-if value="{{ isFeed }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:12px 20px 24px;">
+
+          <!-- composer -->
+          <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+            <button type="button" onClick="{{ openComposer }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:13px 15px; background:transparent; border:none; cursor:pointer; text-align:left;">
+              <span style="width:36px; height:36px; flex:none; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 44% 34%, #453322, #1a140e); border:1px solid var(--fl-bronze-border-subtle);"></span>
+              <span style="flex:1; min-width:0; font-size:13.5px; color:var(--fl-text-tertiary);">What's on your mind?</span>
+            </button>
+            <div style="display:flex; border-top:1px solid var(--fl-charcoal-700);">
+              <sc-for list="{{ shortcuts }}" as="s" hint-placeholder-count="5">
+                <button type="button" onClick="{{ s.action }}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; padding:11px 2px; background:transparent; border:none; border-left:{{ s.divider }}; cursor:pointer; transition:background 140ms ease;" style-active="background:var(--fl-charcoal-800);">
+                  <span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ s.icon }}</span>
+                  <span style="font-size:10px; font-weight:600; color:var(--fl-text-tertiary);">{{ s.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- pinned announcement -->
+          <div style="margin-top:14px; position:relative; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border); background:linear-gradient(180deg, rgba(38,29,18,0.5), rgba(15,13,10,0.4)), var(--fl-surface-card); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+            <div style="display:flex; align-items:center; gap:7px; padding:6px 15px; border-bottom:1px solid var(--fl-bronze-border-subtle); background:rgba(191,143,79,0.06);">
+              <span style="display:inline-flex; color:var(--fl-bronze-bright);">{{ pinIcon }}</span>
+              <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Pinned · Announcement</span>
+            </div>
+            <div style="padding:13px 15px 13px;">
+              <div style="display:flex; align-items:center; gap:11px;">
+                <span style="width:38px; height:38px; flex:none; border-radius:var(--fl-radius-round); background:{{ pinned.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+                <div style="flex:1; min-width:0;">
+                  <div style="display:flex; align-items:center; gap:7px;">
+                    <span style="font-size:14px; font-weight:500; color:var(--fl-text-primary);">{{ pinned.author }}</span>
+                    <span style="{{ pinned.roleStyle }}">{{ pinned.roleIcon }}{{ pinned.roleLabel }}</span>
+                  </div>
+                  <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ pinned.time }}</span>
+                </div>
+              </div>
+              <span style="display:block; font-size:14px; line-height:1.5; color:var(--fl-text-secondary); margin-top:11px;">{{ pinned.body }}</span>
+              <div style="display:flex; align-items:center; gap:18px; margin-top:12px;">
+                <button type="button" onClick="{{ pinned.onRespect }}" style="{{ pinned.respectStyle }}"><span style="display:inline-flex;">{{ pinned.respectIcon }}</span>{{ pinned.respectCount }}</button>
+                <button type="button" onClick="{{ pinned.onComment }}" style="display:inline-flex; align-items:center; gap:7px; background:transparent; border:none; padding:0; cursor:pointer; color:var(--fl-text-tertiary); font-size:12.5px; font-weight:600;"><span style="display:inline-flex;">{{ commentIcon }}</span>{{ pinned.comments }}</button>
+                <button type="button" onClick="{{ pinned.onSave }}" aria-label="Save" style="display:inline-flex; align-items:center; background:transparent; border:none; padding:0; cursor:pointer; color:{{ pinned.saveColor }};"><span style="display:inline-flex;">{{ pinned.saveIcon }}</span></button>
+                <button type="button" onClick="{{ pinned.onShare }}" aria-label="Share" style="margin-left:auto; display:inline-flex; align-items:center; background:transparent; border:none; padding:0; cursor:pointer; color:var(--fl-text-tertiary);"><span style="display:inline-flex;">{{ shareIcon }}</span></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- posts -->
+          <sc-for list="{{ posts }}" as="p" hint-placeholder-count="4">
+            <div style="margin-top:12px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:12px 14px; animation:chRise 380ms var(--fl-ease-out) both; transition:transform 130ms var(--fl-ease-out), border-color 160ms ease;" style-active="transform:scale(0.994); border-color:var(--fl-bronze-border-subtle);">
+
+              <!-- header -->
+              <div style="display:flex; align-items:center; gap:11px;">
+                <span style="position:relative; width:40px; height:40px; flex:none;">
+                  <span style="position:absolute; inset:0; border-radius:var(--fl-radius-round); background:{{ p.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+                  <sc-if value="{{ p.online }}" hint-placeholder-val="{{ false }}">
+                    <span style="position:absolute; right:-1px; bottom:-1px; width:11px; height:11px; border-radius:var(--fl-radius-round); background:#6E8E74; border:2px solid var(--fl-surface-card);"></span>
+                  </sc-if>
+                </span>
+                <div style="flex:1; min-width:0;">
+                  <div style="display:flex; align-items:center; gap:7px;">
+                    <span style="font-size:14px; font-weight:500; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ p.author }}</span>
+                    <sc-if value="{{ p.hasRole }}" hint-placeholder-val="{{ false }}">
+                      <span style="{{ p.roleStyle }}">{{ p.roleIcon }}{{ p.roleLabel }}</span>
+                    </sc-if>
+                  </div>
+                  <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ p.time }}</span>
+                </div>
+                <sc-if value="{{ p.hasType }}" hint-placeholder-val="{{ false }}">
+                  <span style="flex:none; font-size:9px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ p.typeLabel }}</span>
+                </sc-if>
+              </div>
+
+              <!-- body -->
+              <sc-if value="{{ p.hasBody }}" hint-placeholder-val="{{ true }}">
+                <span onClick="{{ p.onOpen }}" style="display:block; font-size:14px; line-height:1.5; color:var(--fl-text-primary); margin-top:10px; cursor:pointer;">{{ p.body }}</span>
+              </sc-if>
+
+              <!-- EVENT CARD -->
+              <sc-if value="{{ p.hasEvent }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:12px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border-subtle); background:radial-gradient(130% 100% at 12% 0%, rgba(191,143,79,0.08), transparent 60%), var(--fl-surface-recessed); overflow:hidden;">
+                  <div style="display:flex; align-items:center; gap:13px; padding:13px 14px;">
+                    <span style="width:48px; height:52px; flex:none; display:inline-flex; flex-direction:column; align-items:center; justify-content:center; border-radius:var(--fl-radius-sm); background:var(--fl-charcoal-900); border:1px solid var(--fl-bronze-border);"><span style="font-size:9px; font-weight:700; letter-spacing:1px; color:var(--fl-bronze-bright); text-transform:uppercase;">{{ p.evMonth }}</span><span style="font-family:var(--fl-font-display); font-size:22px; font-weight:700; color:var(--fl-text-primary); line-height:1;">{{ p.evDay }}</span></span>
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                      <span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ p.evTitle }}</span>
+                      <span style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--fl-text-secondary);"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ clockIcon }}</span>{{ p.evWhen }}</span>
+                      <div style="display:flex; align-items:center; gap:8px; margin-top:3px;">
+                        <div style="display:flex; align-items:center;">
+                          <sc-for list="{{ p.evAvatars }}" as="a" hint-placeholder-count="5">
+                            <span style="width:20px; height:20px; flex:none; border-radius:var(--fl-radius-round); background:{{ a.tint }}; border:1.5px solid var(--fl-surface-recessed); margin-left:{{ a.ml }};"></span>
+                          </sc-for>
+                        </div>
+                        <span style="font-size:11px; font-weight:600; color:var(--fl-text-tertiary);">{{ p.evGoing }} going</span>
+                      </div>
+                    </div>
+                    <button type="button" onClick="{{ p.onRsvp }}" style="{{ p.rsvpStyle }}">{{ p.rsvpLabel }}</button>
+                  </div>
+                </div>
+              </sc-if>
+
+              <!-- FORM CHECK (video-first) -->
+              <sc-if value="{{ p.hasVideo }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:12px; position:relative; height:196px; border-radius:var(--fl-radius-md); overflow:hidden; border:1px solid var(--fl-charcoal-700);">
+                  <image-slot id="{{ p.mediaId }}" shape="rect" placeholder="Video" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                  <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; background:linear-gradient(180deg, rgba(5,5,5,0.1), rgba(5,5,5,0.35));">
+                    <span style="width:54px; height:54px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.55); border:1px solid rgba(255,255,255,0.25); backdrop-filter:blur(3px); color:#fff;">{{ playIcon }}</span>
+                  </div>
+                  <span style="position:absolute; top:11px; left:11px; display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.6); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(4px); font-size:10px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; color:var(--fl-bronze-bright);"><span style="display:inline-flex;">{{ videoTagIcon }}</span>Video · {{ p.videoDur }}</span>
+                </div>
+              </sc-if>
+
+              <!-- SHARED PROGRAM (coach distributes programming; program still lives in Workouts) -->
+              <sc-if value="{{ p.hasProgram }}" hint-placeholder-val="{{ false }}">
+                <button type="button" onClick="{{ p.onOpenProgram }}" style="width:100%; text-align:left; margin-top:12px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:radial-gradient(130% 110% at 12% 0%, rgba(191,143,79,0.1), transparent 58%), var(--fl-surface-recessed); box-shadow:var(--fl-shadow-card); overflow:hidden; cursor:pointer; transition:border-color 160ms ease;" style-active="border-color:var(--fl-bronze-bright);">
+                  <div style="display:flex; align-items:center; gap:7px; padding:8px 14px; border-bottom:1px solid var(--fl-bronze-border-subtle); background:rgba(191,143,79,0.05);">
+                    <span style="display:inline-flex; color:var(--fl-bronze-bright);">{{ p.programKindIcon }}</span>
+                    <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ p.programKindLabel }}</span>
+                    <sc-if value="{{ p.hasPrice }}" hint-placeholder-val="{{ false }}">
+                      <span style="margin-left:auto; display:inline-flex; align-items:center; padding:2px 9px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:10.5px; font-weight:700; letter-spacing:0.3px; color:var(--fl-bronze-bright);">{{ p.price }}</span>
+                    </sc-if>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:13px; padding:13px 14px;">
+                    <span style="width:46px; height:46px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:radial-gradient(circle at 50% 32%, rgba(191,143,79,0.22), transparent 72%), var(--fl-charcoal-900); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright); box-shadow:var(--fl-glow-subtle);">{{ p.programIcon }}</span>
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                      <span style="font-family:var(--fl-font-display); font-size:15.5px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ p.programTitle }}</span>
+                      <span style="font-size:12px; color:var(--fl-text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ p.programMeta }}</span>
+                    </div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:12px; padding:0 14px 13px;">
+                    <span onClick="{{ p.onSaveProgram }}" role="button" style="{{ p.programSaveStyle }}"><span style="display:inline-flex;">{{ p.programSaveIcon }}</span>{{ p.programSaveLabel }}</span>
+                    <span style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--fl-text-tertiary);"><span style="display:inline-flex;">{{ p.programFootIcon }}</span>{{ p.programFootNote }}</span>
+                  </div>
+                </button>
+              </sc-if>
+
+              <!-- ACHIEVEMENT PLATE (member-shared PR) -->
+              <sc-if value="{{ p.hasPlate }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:12px; position:relative; height:210px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); overflow:hidden; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle at 50% 42%, rgba(191,143,79,0.32), rgba(23,17,11,0.96) 68%), var(--fl-surface-recessed);">
+                  <div style="position:absolute; inset:0; opacity:0.5; background:radial-gradient(circle at 50% 42%, transparent 34%, rgba(0,0,0,0.5) 72%);"></div>
+                  <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
+                    <span style="font-family:var(--fl-font-display); font-size:72px; font-weight:700; letter-spacing:1px; color:var(--fl-bronze-bright); line-height:1; text-shadow:0 3px 26px rgba(191,143,79,0.55), 0 1px 0 rgba(0,0,0,0.5);">{{ p.plateValue }}</span>
+                    <span style="margin-top:8px; font-family:var(--fl-font-display); font-size:17px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-primary);">{{ p.plateExercise }}</span>
+                    <span style="margin-top:9px; font-size:10px; font-weight:600; letter-spacing:2.5px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ p.plateLabel }}</span>
+                  </div>
+                </div>
+              </sc-if>
+
+              <!-- COMMUNITY MILESTONE (progress + avatar row, no reactions) -->
+              <sc-if value="{{ p.hasMilestone }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; align-items:center; margin-top:13px;">
+                  <sc-for list="{{ p.mileAvatars }}" as="a" hint-placeholder-count="7">
+                    <span style="width:30px; height:30px; flex:none; border-radius:var(--fl-radius-round); background:{{ a.tint }}; border:2px solid var(--fl-surface-card); margin-left:{{ a.ml }}; box-shadow:inset 0 1px 2px rgba(0,0,0,0.5);"></span>
+                  </sc-for>
+                </div>
+                <div style="margin-top:13px; height:8px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);">
+                  <div style="width:{{ p.milePct }}; height:100%; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div>
+                </div>
+                <span style="display:block; font-size:11.5px; font-weight:600; letter-spacing:0.3px; color:var(--fl-text-tertiary); margin-top:8px;">{{ p.mileCount }}</span>
+              </sc-if>
+
+              <!-- engagement row (hidden on milestone) -->
+              <sc-if value="{{ p.hasEngagement }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex; align-items:center; gap:18px; margin-top:12px;">
+                  <button type="button" onClick="{{ p.onRespect }}" style="{{ p.respectStyle }}"><span style="display:inline-flex;">{{ p.respectIcon }}</span>{{ p.respectCount }}</button>
+                  <button type="button" onClick="{{ p.onComment }}" style="display:inline-flex; align-items:center; gap:7px; background:transparent; border:none; padding:0; cursor:pointer; color:var(--fl-text-tertiary); font-size:12.5px; font-weight:600;"><span style="display:inline-flex;">{{ commentIcon }}</span>{{ p.comments }}</button>
+                  <button type="button" onClick="{{ p.onSave }}" aria-label="Save" style="display:inline-flex; align-items:center; background:transparent; border:none; padding:0; cursor:pointer; color:{{ p.saveColor }};"><span style="display:inline-flex;">{{ p.saveIcon }}</span></button>
+                  <button type="button" onClick="{{ p.onShare }}" aria-label="Share" style="margin-left:auto; display:inline-flex; align-items:center; background:transparent; border:none; padding:0; cursor:pointer; color:var(--fl-text-tertiary);"><span style="display:inline-flex;">{{ shareIcon }}</span></button>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+
+          <!-- ═══ ACTIVE CHALLENGES (Firewall-safe: entry strip, no standings) ═══ -->
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin:24px 4px 12px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Active Challenges</span>
+            <button type="button" onClick="{{ viewAllChallenges }}" style="background:transparent; border:none; padding:0; cursor:pointer; font-size:12px; font-weight:600; color:var(--fl-bronze-bright);">View all</button>
+          </div>
+          <sc-for list="{{ challenges }}" as="c" hint-placeholder-count="1">
+            <button type="button" onClick="{{ c.action }}" style="width:100%; margin-bottom:10px; display:block; text-align:left; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:14px 15px; cursor:pointer; transition:border-color 160ms ease;" style-active="border-color:var(--fl-bronze-border);">
+              <div style="display:flex; align-items:center; gap:13px;">
+                <span style="width:46px; height:46px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:radial-gradient(circle at 50% 32%, rgba(191,143,79,0.2), transparent 72%), var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright); box-shadow:var(--fl-glow-subtle);">{{ c.icon }}</span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                  <span style="font-family:var(--fl-font-display); font-size:15.5px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ c.title }}</span>
+                  <span style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--fl-text-tertiary);"><span style="display:inline-flex;">{{ clockIcon }}</span>{{ c.left }} · {{ c.participants }} participants</span>
+                </div>
+              </div>
+              <div style="margin-top:12px; height:6px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden;">
+                <div style="width:{{ c.pct }}; height:100%; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic);"></div>
+              </div>
+            </button>
+          </sc-for>
+
+          <!-- ═══ TOP CONTRIBUTORS (contribution recognition, not performance) ═══ -->
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin:24px 4px 12px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Top Contributors</span>
+            <span style="font-size:11px; color:var(--fl-text-tertiary);">This Month</span>
+          </div>
+          <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+            <sc-for list="{{ contributors }}" as="ct" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; gap:12px; padding:12px 15px; border-top:{{ ct.divider }};">
+                <span style="width:18px; flex:none; text-align:center; font-family:var(--fl-font-display); font-size:15px; font-weight:700; color:{{ ct.rankColor }};">{{ ct.rank }}</span>
+                <span style="width:34px; height:34px; flex:none; border-radius:var(--fl-radius-round); background:{{ ct.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                  <div style="display:flex; align-items:center; gap:7px;">
+                    <span style="font-size:14px; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ ct.name }}</span>
+                    <sc-if value="{{ ct.hasRole }}" hint-placeholder-val="{{ false }}">
+                      <span style="{{ ct.roleStyle }}">{{ ct.roleIcon }}{{ ct.roleLabel }}</span>
+                    </sc-if>
+                  </div>
+                  <sc-if value="{{ ct.hasDistinction }}" hint-placeholder-val="{{ false }}">
+                    <span style="display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; letter-spacing:0.2px; color:var(--fl-bronze-primary);"><span style="display:inline-flex;">{{ ct.distinctionIcon }}</span>{{ ct.distinction }}</span>
+                  </sc-if>
+                </div>
+                <span style="flex:none; display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--fl-bronze-bright);"><span style="display:inline-flex;">{{ ct.flameIcon }}</span>{{ ct.respect }}</span>
+              </div>
+            </sc-for>
+            <button type="button" onClick="{{ viewLeaderboard }}" style="width:100%; padding:13px; background:transparent; border:none; border-top:1px solid var(--fl-charcoal-700); cursor:pointer; font-size:13px; font-weight:600; color:var(--fl-bronze-bright);">View Leaderboard</button>
+          </div>
+
+        </div>
+      </sc-if>
+
+      <!-- ═══ EVENTS ═══ -->
+      <sc-if value="{{ isEvents }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:14px 20px 24px;">
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:2px 4px 12px;">Upcoming</span>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <sc-for list="{{ events }}" as="e" hint-placeholder-count="3">
+              <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:15px; animation:chRise 380ms var(--fl-ease-out) both;">
+                <div style="display:flex; align-items:flex-start; gap:13px;">
+                  <span style="width:52px; height:56px; flex:none; display:inline-flex; flex-direction:column; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:var(--fl-charcoal-900); border:1px solid var(--fl-bronze-border);"><span style="font-size:9.5px; font-weight:700; letter-spacing:1px; color:var(--fl-bronze-bright); text-transform:uppercase;">{{ e.month }}</span><span style="font-family:var(--fl-font-display); font-size:23px; font-weight:700; color:var(--fl-text-primary); line-height:1;">{{ e.day }}</span></span>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                    <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ e.title }}</span>
+                    <span style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--fl-text-secondary);"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ clockIcon }}</span>{{ e.when }}</span>
+                    <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ e.going }} going · hosted by {{ e.host }}</span>
+                  </div>
+                </div>
+                <div style="display:flex; gap:9px; margin-top:13px;">
+                  <button type="button" onClick="{{ e.onGoing }}" style="{{ e.goingStyle }}">{{ e.goingLabel }}</button>
+                  <button type="button" onClick="{{ e.onInterested }}" style="{{ e.interestedStyle }}">Interested</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ═══ COMPETITIONS (Firewall-safe) ═══ -->
+      <sc-if value="{{ isComps }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:14px 20px 24px;">
+          <div style="display:flex; align-items:flex-start; gap:10px; padding:12px 14px; margin-bottom:14px; background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700); border-radius:var(--fl-radius-lg);">
+            <span style="flex:none; display:inline-flex; margin-top:1px; color:var(--fl-icon-bronze);">{{ shieldIcon }}</span>
+            <span style="flex:1; min-width:0; font-size:12px; line-height:1.5; color:var(--fl-text-secondary);">Challenges are shared community goals — everyone works toward the same target. Any per-member standings stay inside the challenge, never in the feed.</span>
+          </div>
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:2px 4px 12px;">Community Challenges</span>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <sc-for list="{{ comps }}" as="c" hint-placeholder-count="2">
+              <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:15px; animation:chRise 380ms var(--fl-ease-out) both;">
+                <div style="display:flex; align-items:flex-start; gap:13px;">
+                  <span style="width:46px; height:46px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:radial-gradient(circle at 50% 32%, rgba(191,143,79,0.2), transparent 72%), var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright); box-shadow:var(--fl-glow-subtle);">{{ c.icon }}</span>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                    <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ c.title }}</span>
+                    <span style="font-size:12px; color:var(--fl-text-secondary);">{{ c.type }}</span>
+                    <span style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--fl-text-tertiary);"><span style="display:inline-flex;">{{ clockIcon }}</span>{{ c.window }} · {{ c.competing }} participating</span>
+                  </div>
+                  <span style="{{ c.tagStyle }}">{{ c.tagLabel }}</span>
+                </div>
+                <button type="button" onClick="{{ c.action }}" style="{{ c.btnStyle }}"><span style="display:inline-flex;">{{ c.btnIcon }}</span>{{ c.btnLabel }}</button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ═══ ABOUT ═══ -->
+      <sc-if value="{{ isAbout }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:14px 20px 24px;">
+          <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:15px;">
+            <span style="display:block; font-size:13.5px; line-height:1.6; color:var(--fl-text-secondary);">{{ about }}</span>
+          </div>
+          <div style="display:flex; margin-top:14px; background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+            <sc-for list="{{ aboutStats }}" as="s" hint-placeholder-count="3">
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:15px 6px; border-left:{{ s.divider }};">
+                <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:700; color:var(--fl-text-primary); line-height:1;">{{ s.value }}</span>
+                <span style="font-size:9.5px; font-weight:600; letter-spacing:0.7px; text-transform:uppercase; color:var(--fl-text-bronze-label); text-align:center;">{{ s.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:22px 4px 12px;">Leadership</span>
+          <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+            <sc-for list="{{ leaders }}" as="l" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; gap:13px; padding:12px 14px; border-top:{{ l.divider }};">
+                <span style="width:40px; height:40px; flex:none; border-radius:var(--fl-radius-round); background:{{ l.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                  <span style="font-size:14.5px; color:var(--fl-text-primary);">{{ l.name }}</span>
+                  <span style="font-size:12px; color:var(--fl-text-tertiary);">{{ l.sub }}</span>
+                </div>
+                <span style="{{ l.roleStyle }}">{{ l.roleIcon }}{{ l.roleLabel }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:22px 4px 12px;">Honors You Can Earn Here</span>
+          <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+            <sc-for list="{{ honors }}" as="ho" hint-placeholder-count="5">
+              <div style="display:flex; align-items:center; gap:13px; padding:12px 14px; border-top:{{ ho.divider }}; opacity:{{ ho.opacity }};">
+                <span style="width:38px; height:38px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:{{ ho.bg }}; border:1px solid {{ ho.border }}; color:{{ ho.iconColor }};">{{ ho.icon }}</span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                  <span style="font-size:14px; font-weight:500; color:var(--fl-text-primary);">{{ ho.name }}</span>
+                  <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ ho.desc }}</span>
+                </div>
+                <sc-if value="{{ ho.earned }}" hint-placeholder-val="{{ false }}">
+                  <span style="flex:none; display:inline-flex; color:#8FB295;">{{ checkIcon }}</span>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:22px;">
+            <button type="button" onClick="{{ reportCommunity }}" style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:13px; border-radius:var(--fl-radius-md); background:transparent; border:1px solid var(--fl-charcoal-600); color:var(--fl-text-secondary); font-size:13.5px; font-weight:600; cursor:pointer;">Report Community</button>
+            <button type="button" onClick="{{ leaveCommunity }}" style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:13px; border-radius:var(--fl-radius-md); background:transparent; border:1px solid var(--fl-charcoal-600); color:var(--fl-red-muted); font-size:13.5px; font-weight:600; cursor:pointer;">Leave Community</button>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <!-- ═══ BOTTOM TAB BAR (5 tabs — Communities active) ═══ -->
+    <div style="flex:none; position:relative; z-index:6; display:flex; padding:8px 8px calc(8px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(9,9,9,0.86), rgba(6,6,6,0.96)); backdrop-filter:blur(8px);">
+      <sc-for list="{{ navTabs }}" as="n" hint-placeholder-count="5">
+        <button type="button" onClick="{{ n.action }}" aria-label="{{ n.label }}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:5px 2px; background:transparent; border:none; cursor:pointer; color:{{ n.color }};">
+          <span style="display:inline-flex;">{{ n.icon }}</span>
+          <span style="font-size:9.5px; font-weight:600; letter-spacing:0.2px;">{{ n.label }}</span>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- ═══ COMMUNITY SWITCHER SHEET ═══ -->
+  <sc-if value="{{ switcherOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSwitcher }}" style="position:absolute; inset:0; z-index:1200; background:var(--fl-overlay-dark); backdrop-filter:blur(2px); animation:chFade 180ms ease both;"></div>
+    <div style="position:absolute; left:0; right:0; bottom:0; z-index:1210; border-top-left-radius:var(--fl-radius-xl); border-top-right-radius:var(--fl-radius-xl); border:1px solid var(--fl-charcoal-500); border-bottom:none; background:var(--fl-surface-modal); box-shadow:var(--fl-shadow-float); padding:8px 20px calc(18px + env(safe-area-inset-bottom)); animation:chRise 260ms var(--fl-ease-out); transform:{{ sheetTransform }}; transition:{{ sheetTransition }};">
+      <div onPointerDown="{{ onDragDown }}" onPointerMove="{{ onDragMove }}" onPointerUp="{{ onDragUp }}" onPointerCancel="{{ onDragUp }}" style="margin:0 -20px; padding:6px 0 14px; touch-action:none; cursor:grab;"><div style="width:40px; height:5px; border-radius:3px; background:var(--fl-charcoal-500); margin:0 auto;"></div></div>
+      <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:2px 2px 12px;">Your Communities</span>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <sc-for list="{{ myCommunities }}" as="c" hint-placeholder-count="3">
+          <button type="button" onClick="{{ c.select }}" style="{{ c.rowStyle }}" style-active="transform:scale(0.994);">
+            <span style="position:relative; width:44px; height:44px; flex:none; border-radius:var(--fl-radius-round); box-shadow:{{ c.ringShadow }};">
+              <span style="position:absolute; inset:0; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:{{ c.tint }}; color:var(--fl-bronze-bright);">{{ c.crest }}</span>
+              <sc-if value="{{ c.unread }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute; right:-1px; top:-1px; min-width:9px; height:9px; border-radius:var(--fl-radius-round); background:var(--fl-bronze-bright); border:2px solid var(--fl-surface-modal);"></span>
+              </sc-if>
+            </span>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; text-align:left;">
+              <span style="font-family:var(--fl-font-display); font-size:15.5px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ c.name }}</span>
+              <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ c.meta }}</span>
+            </div>
+            <sc-if value="{{ c.current }}" hint-placeholder-val="{{ false }}">
+              <span style="flex:none; display:inline-flex; color:var(--fl-bronze-bright);">{{ checkIcon }}</span>
+            </sc-if>
+          </button>
+        </sc-for>
+      </div>
+      <button type="button" onClick="{{ switcherDiscover }}" style="width:100%; margin-top:12px; display:flex; align-items:center; gap:13px; padding:13px 12px; border-radius:var(--fl-radius-md); background:transparent; border:1px dashed var(--fl-charcoal-500); cursor:pointer; text-align:left; transition:border-color 160ms ease;" style-active="border-color:var(--fl-bronze-border);">
+        <span style="width:44px; height:44px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); color:var(--fl-bronze-bright);">{{ discoverIcon }}</span>
+        <span style="flex:1; min-width:0; font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Discover Communities</span>
+        <span style="flex:none; display:inline-flex; color:var(--fl-text-tertiary);">{{ chevronRight }}</span>
+      </button>
+    </div>
+  </sc-if>
+
+  <!-- ═══ OVERFLOW / NOTIF SHEET ═══ -->
+  <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" style="position:absolute; inset:0; z-index:1200; background:var(--fl-overlay-dark); backdrop-filter:blur(2px); animation:chFade 180ms ease both;"></div>
+    <div style="position:absolute; left:0; right:0; bottom:0; z-index:1210; border-top-left-radius:var(--fl-radius-xl); border-top-right-radius:var(--fl-radius-xl); border:1px solid var(--fl-charcoal-500); border-bottom:none; background:var(--fl-surface-modal); box-shadow:var(--fl-shadow-float); padding:8px 20px calc(22px + env(safe-area-inset-bottom)); animation:chRise 260ms var(--fl-ease-out); transform:{{ sheetTransform }}; transition:{{ sheetTransition }};">
+      <div onPointerDown="{{ onDragDown }}" onPointerMove="{{ onDragMove }}" onPointerUp="{{ onDragUp }}" onPointerCancel="{{ onDragUp }}" style="margin:0 -20px; padding:6px 0 14px; touch-action:none; cursor:grab;"><div style="width:40px; height:5px; border-radius:3px; background:var(--fl-charcoal-500); margin:0 auto;"></div></div>
+      <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:2px 2px 10px;">Notifications</span>
+      <div style="display:flex; gap:5px; background:var(--fl-charcoal-800); border-radius:var(--fl-radius-pill); padding:3px;">
+        <sc-for list="{{ notifOptions }}" as="o" hint-placeholder-count="3">
+          <button type="button" onClick="{{ o.select }}" style="{{ o.style }}">{{ o.label }}</button>
+        </sc-for>
+      </div>
+      <span style="display:block; font-size:11.5px; line-height:1.5; color:var(--fl-text-tertiary); margin:10px 2px 4px;">{{ notifHint }}</span>
+      <div style="height:1px; background:var(--fl-charcoal-700); margin:16px 0;"></div>
+      <sc-if value="{{ canEditCommunity }}" hint-placeholder-val="{{ false }}">
+        <button type="button" onClick="{{ editCommunity }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:13px 4px; background:transparent; border:none; cursor:pointer; text-align:left;"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ editIcon }}</span><span style="font-size:14.5px; color:var(--fl-text-primary);">Edit Community</span></button>
+      </sc-if>
+      <button type="button" onClick="{{ inviteToCommunity }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:13px 4px; background:transparent; border:none; cursor:pointer; text-align:left;"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ inviteIcon }}</span><span style="font-size:14.5px; color:var(--fl-text-primary);">Invite to Community</span></button>
+      <button type="button" onClick="{{ reportCommunity }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:13px 4px; background:transparent; border:none; border-top:1px solid var(--fl-charcoal-700); cursor:pointer; text-align:left;"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ reportIcon }}</span><span style="font-size:14.5px; color:var(--fl-text-primary);">Report Community</span></button>
+      <button type="button" onClick="{{ leaveCommunity }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:13px 4px; background:transparent; border:none; border-top:1px solid var(--fl-charcoal-700); cursor:pointer; text-align:left;"><span style="display:inline-flex; color:var(--fl-red-muted);">{{ leaveIcon }}</span><span style="font-size:14.5px; color:var(--fl-red-muted);">Leave Community</span></button>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:92px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:chRise 260ms var(--fl-ease-out);">
+      <span style="display:inline-flex; color:{{ toastIconColor }}; flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+
+  <!-- Forged grain -->
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;communityName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Iron Collective&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Content&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, toastMsg: null, tab: 'feed', respected: {}, saved: {}, savedProgram: {}, rsvp: {}, joinedComps: {}, sheetOpen: false, switcherOpen: false, activeCommunity: 'ironcollective', notifPref: 'all', dragY: 0 };
+
+  _dragDown(e) { this._ds = e.clientY; this._dragging = true; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {} }
+  _dragMove(e) { if (!this._dragging) return; const dy = e.clientY - this._ds; if (dy > 0) this.setState({ dragY: dy }); }
+  _dragUp() { if (!this._dragging) return; this._dragging = false; const dy = this.state.dragY; this.setState({ dragY: 0 }); if (dy > 80) this.setState({ switcherOpen: false, sheetOpen: false }); }
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs && window.ForgeCommunityPosts && window.ForgeCommunities) {
+        try { if (!window.ForgeCommunities.activeId()) window.ForgeCommunities.setActive('ironcollective'); } catch (e) {}
+        this.setState({ ready: true }); this._startCoach();
+        try { var jp = localStorage.getItem('forge.justPosted'); if (jp) { localStorage.removeItem('forge.justPosted'); this._toast('Posted to the community', 'positive'); } } catch (e) {}
+      }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+
+  _startCoach() {
+    if (!window.ForgeCoach) return;
+    window.ForgeCoach.start({
+      page: 'community',
+      steps: [
+        { target: '[data-coach="cm-intro"]', radius: 16, title: 'Communities', body: 'Communities are larger, open groups built around a shared interest \u2014 a gym, a training style, a city. Bigger than a squad, and anyone can join.' },
+        { target: '[data-coach="cm-tabs"]', radius: 22, title: 'Find your way around', body: 'Switch between the community\u2019s feed, events, and challenges here. Tap the community name up top to jump between the ones you\u2019ve joined.' },
+      ],
+    });
+  }
+
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); }
+
+  _toast(msg, tone) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastTone: tone || 'bronze' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2400); }
+
+  _tint(seed) {
+    const T = [
+      'radial-gradient(circle at 42% 32%, #4a3826, #1c1510)',
+      'radial-gradient(circle at 45% 35%, #34302a, #17130f)',
+      'radial-gradient(circle at 40% 30%, #40301f, #17120c)',
+      'radial-gradient(circle at 48% 38%, #2d2822, #141210)',
+      'radial-gradient(circle at 44% 34%, #453322, #1a140e)',
+      'radial-gradient(circle at 41% 33%, #3a2c1c, #191309)',
+      'radial-gradient(circle at 46% 36%, #2b2620, #131210)',
+    ];
+    return T[seed % T.length];
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const S = this.state;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.9 });
+    const sv = (d, size, sw, fill) => h('svg', { width: size || 18, height: size || 18, viewBox: '0 0 24 24', fill: fill || 'none', stroke: fill ? 'none' : 'currentColor', strokeWidth: sw || 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(d) ? d : [d]).map((p, i) => h('path', { key: i, d: p })));
+    const wrap = (el) => h('span', { style: { display: 'inline-flex' } }, el);
+    const flameIc = (sw, sz) => FS.create(React, 'flame', { size: sz || 16, strokeWidth: sw || 1.9 });
+
+    // ── glyphs ──
+    const chevronDown = wrap(sv('M6 9l6 6 6-6', 16, 2));
+    const chevronRight = wrap(sv('M9 5l7 7-7 7', 13, 2));
+    const bell = wrap(ic('bell', 19, 1.9));
+    const camera = wrap(sv(['M4 8h3l1.5-2h7L17 8h3v11H4z', 'M12 16.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6z'], 13, 1.7));
+    const overflow = wrap(h('svg', { width: 19, height: 19, viewBox: '0 0 24 24', fill: 'currentColor' }, h('circle', { cx: 12, cy: 5, r: 1.7 }), h('circle', { cx: 12, cy: 12, r: 1.7 }), h('circle', { cx: 12, cy: 19, r: 1.7 })));
+    const comment = wrap(sv('M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4 19.5l1.3-4A7.5 7.5 0 1 1 20 11.5z', 16, 1.9));
+    const shareG = wrap(ic('share', 15, 1.9));
+    const bookmark = (on) => wrap(sv('M6 4h12v16l-6-4-6 4z', 16, 1.9, on ? 'currentColor' : null));
+    const savesG = wrap(sv(['M6 4h12v16l-6-4-6 4z'], 13, 1.8));
+    const pin = wrap(h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M9 3h6l-1 6 3 2.5V14h-4v6l-1 1-1-1v-6H6v-2.5L9 9z' })));
+    const membersG = wrap(h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 7, r: 2.3 }), h('circle', { cx: 6, cy: 10, r: 2 }), h('circle', { cx: 18, cy: 10, r: 2 }), h('path', { d: 'M8.6 17.5a3.5 3.5 0 0 1 6.8 0' }), h('path', { d: 'M2.8 17a3 3 0 0 1 4.4-2.4' }), h('path', { d: 'M21.2 17a3 3 0 0 0-4.4-2.4' })));
+    const clock = wrap(ic('clock', 13, 1.9));
+    const shield = wrap(ic('shield', 15, 1.9));
+    const check = wrap(sv('M5 12.5l4 4 10-10', 15, 2.3));
+    const play = h('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M8 5.5v13l11-6.5z' }));
+    const videoTag = sv(['M4 7h11v10H4z', 'M15 10l5-3v10l-5-3z'], 11, 1.9);
+    const crown = (sz) => h('svg', { width: sz || 11, height: sz || 11, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z' }));
+
+    // composer / action glyphs
+    const gPhoto = wrap(sv(['M4 5h16v14H4z', 'M4 16l4.5-4.5 3.5 3.5 3-3 5 5', 'M8.5 10a1.3 1.3 0 1 0 0-2.6 1.3 1.3 0 0 0 0 2.6z'], 18, 1.8));
+    const gVideo = wrap(sv(['M3.5 7h11v10h-11z', 'M14.5 10.2l6-3.2v10l-6-3.2z'], 18, 1.8));
+    const gWorkout = wrap(ic('dumbbell', 18, 1.9));
+    const gTrophy = wrap(sv(['M7 5h10v3a5 5 0 0 1-10 0z', 'M7 6H4v1.5a3.5 3.5 0 0 0 3.5 3.5', 'M17 6h3v1.5A3.5 3.5 0 0 1 16.5 11', 'M9.5 14h5', 'M12 11v3', 'M8.5 18.5h7'], 18, 1.8));
+    const gCalendar = wrap(sv(['M4 6h16v14H4z', 'M4 10h16', 'M8.5 3.5v4', 'M15.5 3.5v4'], 18, 1.8));
+    const gInvite = wrap(sv(['M9 11a3.4 3.4 0 1 0 0-6.8A3.4 3.4 0 0 0 9 11z', 'M2.8 19a6.2 6.2 0 0 1 12.4 0', 'M18 8v6', 'M15 11h6'], 17, 1.8));
+    const gShareBtn = wrap(ic('share', 17, 1.8));
+    const gRules = wrap(sv(['M6 4h11a1.6 1.6 0 0 1 1.6 1.6V20H7.6A1.6 1.6 0 0 0 6 21.6z', 'M6 4v17.6', 'M9.5 8.5h6', 'M9.5 12h6'], 17, 1.8));
+    const gMore = wrap(sv(['M4 12h5', 'M15 12h5', 'M12 4l2.4 5.2L20 10l-4 3.6L17 20l-5-2.8L7 20l1-6.4L4 10l5.6-.8z'], 17, 1.7));
+    const gGlobe = sv(['M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17z', 'M3.5 12h17', 'M12 3.5c2.4 2.3 3.7 5.3 3.7 8.5S14.4 18.2 12 20.5c-2.4-2.3-3.7-5.3-3.7-8.5S9.6 5.8 12 3.5z'], 13, 1.8);
+    const gSpark = sv(['M12 4l2.2 5.6L20 12l-5.8 2.4L12 20l-2.2-5.6L4 12l5.8-2.4z'], 13, 1.8);
+
+    // ── role badge ──
+    const roleBadge = (kind) => {
+      const base = { flex: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 7px', borderRadius: 'var(--fl-radius-pill)', fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' };
+      if (kind === 'owner') return { style: Object.assign({}, base, { background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border)', color: 'var(--fl-bronze-bright)' }), icon: wrap(crown(9)), label: 'Owner' };
+      if (kind === 'mod') return { style: Object.assign({}, base, { background: 'rgba(191,143,79,0.08)', border: '1px solid var(--fl-bronze-border-subtle)', color: 'var(--fl-bronze-primary)' }), icon: wrap(ic('shield', 9, 2)), label: 'Mod' };
+      return null;
+    };
+
+    // ── respect + save builders ──
+    const respectBtn = (id, base) => {
+      const on = !!S.respected[id];
+      const style = { display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', color: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', fontSize: '12.5px', fontWeight: 600, transition: 'color 160ms ease' };
+      return { respectStyle: style, respectIcon: wrap(flameIc(on ? 2.2 : 1.9)), respectCount: base + (on ? 1 : 0), onRespect: () => this.setState(st => ({ respected: Object.assign({}, st.respected, { [id]: !st.respected[id] }) })) };
+    };
+    const saveBtn = (id) => {
+      const on = !!S.saved[id];
+      return { saveColor: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', saveIcon: bookmark(on), onSave: () => { const nx = !S.saved[id]; this.setState(st => ({ saved: Object.assign({}, st.saved, { [id]: nx }) })); this._toast(nx ? 'Saved to your bookmarks' : 'Removed from bookmarks', 'bronze'); } };
+    };
+    const avatarRow = (n, seed, size, overlap) => Array.from({ length: n }).map((_, i) => ({ key: i, tint: this._tint(seed + i * 3), ml: i === 0 ? '0' : ('-' + (overlap || 8) + 'px') }));
+
+    // ── identity ──
+    const _cid = (window.ForgeCommunities && window.ForgeCommunities.activeId()) || 'ironcollective';
+    const _comm = (window.ForgeCommunities && window.ForgeCommunities.get(_cid)) || {};
+    const _created = !!_comm.created;
+    const communityName = _comm.name ? _comm.name : (this.props.communityName ?? 'Iron Collective');
+    const categories = _created
+      ? [{ key: 'cat', label: _comm.category || 'Community', icon: wrap(ic('barbell', 12, 1.9)) }]
+      : [
+      { key: 'pl', label: 'Powerlifting', icon: wrap(ic('barbell', 12, 1.9)) },
+      { key: 'st', label: 'Strength', icon: wrap(flameIc(1.9, 12)) },
+    ];
+    const memberCount = _created ? String(_comm.members || 1) : '2,412';
+    const tagline = _created ? (_comm.tagline || '') : 'Built on discipline. Driven by purpose. Stronger together.';
+    // Community metadata — replaces the online-members row with information that helps a member understand the community.
+    const metaItems = [
+      { key: 'privacy', icon: wrap(gGlobe), iconColor: 'var(--fl-icon-bronze)', label: _created ? (_comm.join === 'private' ? 'Private' : 'Public') : 'Public' },
+      { key: 'since', icon: wrap(clock2()), iconColor: 'var(--fl-icon-bronze)', label: 'Est. 2024' },
+      { key: 'events', icon: wrap(gCalendarSmall2()), iconColor: 'var(--fl-icon-bronze)', label: '6 events this month' },
+      { key: 'activity', icon: wrap(gSpark), iconColor: 'var(--fl-bronze-primary)', label: 'Highly active' },
+    ];
+    function clock2() { return h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 12, r: 8.5 }), h('path', { d: 'M12 7.5v5l3.2 2' })); }
+    function gCalendarSmall2() { return h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M4 6h16v14H4z' }), h('path', { d: 'M4 10h16' }), h('path', { d: 'M8.5 3.5v4' }), h('path', { d: 'M15.5 3.5v4' })); }
+    const actions = [
+      { key: 'invite', label: 'Invite', icon: gInvite, action: () => this._toast('Invite to community', 'bronze') },
+      { key: 'share', label: 'Share', icon: gShareBtn, action: () => this._toast('Share community', 'bronze') },
+      { key: 'rules', label: 'Rules', icon: gRules, action: () => this._toast('Community rules', 'bronze') },
+      { key: 'more', label: 'More', icon: gMore, action: () => this.setState({ sheetOpen: true }) },
+    ];
+
+    // ── tabs ──
+    const TABS = [['feed', 'Feed', wrap(flameIc(1.9, 13))], ['events', 'Events', gCalendarSmall()], ['comps', 'Challenges', wrap(sv(['M6 4v6a6 6 0 0 0 12 0V4', 'M12 16v4', 'M8.5 20h7'], 13, 1.8))], ['about', 'About', wrap(sv(['M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17z', 'M12 11v5', 'M12 7.6h.01'], 13, 1.8))]];
+    function gCalendarSmall() { return wrap(sv(['M4 6h16v14H4z', 'M4 10h16', 'M8.5 3.5v4', 'M15.5 3.5v4'], 13, 1.8)); }
+    const tabStyle = (active) => ({ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '8px 0', borderRadius: 'var(--fl-radius-pill)', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: active ? '#1A1206' : 'var(--fl-text-secondary)', background: active ? 'var(--fl-bronze-metallic)' : 'transparent', boxShadow: active ? '0 1px 8px rgba(191,143,79,0.4), inset 0 1px 0 rgba(255,255,255,0.15)' : 'none', transition: 'background 200ms var(--fl-ease-out), color 200ms var(--fl-ease-out), box-shadow 200ms var(--fl-ease-out)' });
+    const tabs = TABS.map(([id, label, icon]) => ({ key: id, label, icon, style: tabStyle(S.tab === id), select: () => this.setState({ tab: id }) }));
+
+    // ── composer shortcuts ──
+    const gTraining = wrap(ic('dumbbell', 18, 1.9));
+    // "Training" opens a picker: a single workout, a full Forge program, or a link to an external/paid program.
+    const SHORTCUTS = [['Photo', gPhoto, 'photo'], ['Video', gVideo, 'video'], ['Training', gTraining, 'training'], ['Achievement', gTrophy, 'achievement'], ['Event', gCalendar, 'event']];
+    const shortcutType = { photo: 'photo', video: 'formcheck', achievement: 'achievement', event: 'event' };
+    const shortcuts = SHORTCUTS.map(([label, icon, id], i) => ({ key: label, label, icon, divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)', action: () => { try { localStorage.setItem('forge.community', 'ironcollective'); if (shortcutType[id]) localStorage.setItem('forge.compose.type', shortcutType[id]); else localStorage.removeItem('forge.compose.type'); } catch (e) {} window.location.href = 'Community%20Composer.dc.html'; } }));
+
+    // ── pinned ──
+    const ownerRole = roleBadge('owner');
+    const pr = respectBtn('pinned', 41), psv = saveBtn('pinned');
+    const pinned = {
+      author: 'Coach Halden', tint: this._tint(9), time: '2d ago',
+      roleStyle: ownerRole.style, roleIcon: ownerRole.icon, roleLabel: ownerRole.label,
+      body: 'October focus: consistency over intensity. Post one honest training note this week — a win, a miss, a lesson. This is how the Collective gets stronger together.',
+      comments: 34, respectStyle: pr.respectStyle, respectIcon: pr.respectIcon, respectCount: pr.respectCount, onRespect: pr.onRespect,
+      saveColor: psv.saveColor, saveIcon: psv.saveIcon, onSave: psv.onSave,
+      onComment: () => this._toast('Comments open here', 'bronze'), onShare: () => this._toast('Share to your squad or friends', 'bronze'),
+    };
+
+    // ── posts (high-signal: discussion, event, form check, member PR, community milestone) ──
+    const cid = _cid;
+    const idMap = { p_disc: 'ic_disc', p_ev: 'ic_ev', p_fc: 'ic_fc', p_pr: 'ic_pr', p_prog: 'ic_prog', p_progext: 'ic_progext' };
+    const openPost = (id) => { const sid = idMap[id] || id; try { localStorage.setItem('forge.postOrigin', 'community'); localStorage.setItem('forge.community', cid); localStorage.setItem('forge.post', sid); } catch (e) {} window.location.href = 'Post%20Detail.dc.html'; };
+    const mkText = (o) => {
+      const r = respectBtn(o.id, o.respect), s2 = saveBtn(o.id), role = o.role ? roleBadge(o.role) : null;
+      return {
+        key: o.id, author: o.author, tint: this._tint(o.author.length + o.id.length), time: o.time, online: !!o.online,
+        hasRole: !!role, roleStyle: role ? role.style : null, roleIcon: role ? role.icon : null, roleLabel: role ? role.label : '',
+        hasType: !!o.typeLabel, typeLabel: o.typeLabel || '', hasBody: true, body: o.body,
+        hasEvent: false, hasVideo: false, hasProgram: false, hasPlate: false, hasMilestone: false, hasEngagement: true,
+        comments: o.comments, respectStyle: r.respectStyle, respectIcon: r.respectIcon, respectCount: r.respectCount, onRespect: r.onRespect,
+        saveColor: s2.saveColor, saveIcon: s2.saveIcon, onSave: s2.onSave,
+        onOpen: () => openPost(o.id),
+        onComment: () => openPost(o.id), onShare: () => this._toast('Share to your squad or friends', 'bronze'),
+      };
+    };
+
+    const evRsvpOn = S.rsvp['e1'] === 'going';
+    const p_event = Object.assign(mkText({ id: 'p_ev', author: 'Coach Halden', role: 'owner', time: '1d ago', typeLabel: 'Event', body: 'Doors open early this Saturday — bring a friend who’s never lifted with a crew before.', respect: 30, comments: 5 }), {
+      hasEvent: true, evMonth: 'OCT', evDay: '12', evTitle: 'Saturday Community Lift', evWhen: 'Sat · 9:00 AM', evGoing: 128 + (evRsvpOn ? 1 : 0),
+      evAvatars: avatarRow(4, 20, 20, 7),
+      rsvpStyle: evRsvpOn
+        ? { flex: 'none', padding: '9px 16px', borderRadius: 'var(--fl-radius-md)', border: '1px solid var(--fl-charcoal-600)', background: 'var(--fl-charcoal-800)', color: 'var(--fl-text-secondary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }
+        : { flex: 'none', padding: '9px 18px', borderRadius: 'var(--fl-radius-md)', border: '1px solid var(--fl-bronze-border)', background: 'var(--fl-bronze-fill)', color: 'var(--fl-bronze-bright)', fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px', cursor: 'pointer', boxShadow: 'var(--fl-glow-subtle)' },
+      rsvpLabel: evRsvpOn ? 'Going' : 'RSVP',
+      onRsvp: () => this.setState(st => ({ rsvp: Object.assign({}, st.rsvp, { e1: st.rsvp['e1'] === 'going' ? null : 'going' }) })),
+    });
+
+    const p_form = Object.assign(mkText({ id: 'p_fc', author: 'Theo Brandt', time: '2d ago', typeLabel: 'Form Check', body: 'Third set at 180kg. Does my hip rise look early to anyone? Honest eyes welcome.', respect: 33, comments: 14 }), {
+      hasVideo: true, mediaId: 'ch-form-1', videoDur: '0:27',
+    });
+
+    const p_pr = Object.assign(mkText({ id: 'p_pr', author: 'Jasmine Rae', online: true, time: '5h ago', typeLabel: 'Achievement', body: 'Hit a new PR today. 405 for a single. All glory to the process.', respect: 52, comments: 23 }), {
+      hasPlate: true, plateValue: '405 lb', plateExercise: 'Bench Press', plateLabel: 'New Personal Record',
+    });
+
+    const p_disc = mkText({ id: 'p_disc', author: 'Marcus Vale', role: 'mod', time: '4h ago', typeLabel: 'Discussion', body: 'Bracing cue that finally clicked for my athletes: breathe into your belt 360°, not just the front. Try it on your next heavy set and report back.', respect: 28, comments: 12 });
+
+    // Coach shares programming — the program still lives in Workouts; the post just surfaces it (attach-to-post, not a workout feed).
+    const progSaved = !!S.savedProgram['prog-oct'];
+    const p_program = Object.assign(mkText({ id: 'p_prog', author: 'Coach Halden', role: 'owner', time: '6h ago', typeLabel: 'Coaching', body: 'Sharing the block a lot of you asked for. 8 weeks, upper/lower, built to add to your bench and squat without frying you. Save it and run it when your current program wraps.', respect: 64, comments: 19 }), {
+      hasProgram: true,
+      programKindIcon: wrap(sv(['M4 5.5h13a1.5 1.5 0 0 1 1.5 1.5v11.5H6a2 2 0 0 0-2 2z', 'M4 5.5v14', 'M8 9.5h7', 'M8 13h7'], 13, 1.8)),
+      programKindLabel: 'Forge Program', hasPrice: false, price: '',
+      programIcon: wrap(ic('dumbbell', 22, 1.7)),
+      programTitle: 'October Strength Block',
+      programMeta: '8 weeks · Upper / Lower · 4 days/wk',
+      programFootIcon: savesG, programFootNote: (214 + (progSaved ? 1 : 0)) + ' saved',
+      programSaveLabel: progSaved ? 'Saved to Upcoming' : 'Save to Upcoming',
+      programSaveIcon: wrap(progSaved ? sv('M5 12.5l4 4 10-10', 14, 2.3) : sv('M12 5v14M5 12h14', 14, 2.2)),
+      programSaveStyle: progSaved
+        ? { display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 14px', borderRadius: 'var(--fl-radius-md)', border: '1px solid var(--fl-charcoal-600)', background: 'var(--fl-charcoal-800)', color: 'var(--fl-text-secondary)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }
+        : { display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 15px', borderRadius: 'var(--fl-radius-md)', border: '1px solid var(--fl-bronze-border)', background: 'var(--fl-bronze-fill)', color: 'var(--fl-bronze-bright)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--fl-glow-subtle)' },
+      onOpenProgram: () => this._toast('Opens Program Detail (W-3)', 'bronze'),
+      onSaveProgram: (e) => { if (e && e.stopPropagation) e.stopPropagation(); const nx = !S.savedProgram['prog-oct']; this.setState(st => ({ savedProgram: Object.assign({}, st.savedProgram, { 'prog-oct': nx }) })); this._toast(nx ? 'Saved to Upcoming Programs' : 'Removed from Upcoming', nx ? 'positive' : 'bronze'); },
+    });
+
+    // External / paid program — a coach links their own paid program; buyers import it into Forge Legacy after purchase.
+    const extIcon = wrap(sv(['M14 5h5v5', 'M19 5l-8 8', 'M12 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19h11a1.5 1.5 0 0 0 1.5-1.5V13'], 14, 1.9));
+    const dlIcon = wrap(sv(['M12 4v10', 'M8 11l4 4 4-4', 'M5.5 19h13'], 13, 1.9));
+    const p_program_ext = Object.assign(mkText({ id: 'p_progext', author: 'Elena Ruiz', role: 'mod', time: '1d ago', typeLabel: 'Coaching', body: 'My full 12-week hypertrophy program is live. It’s the same spreadsheet my in-person clients run — buy once, then import it straight into Forge Legacy and track every session here.', respect: 88, comments: 41 }), {
+      hasProgram: true,
+      programKindIcon: extIcon,
+      programKindLabel: 'Paid Program', hasPrice: true, price: '$29',
+      programIcon: wrap(ic('dumbbell', 22, 1.7)),
+      programTitle: 'Hypertrophy Foundations',
+      programMeta: '12 weeks · Push/Pull/Legs · imports to Forge',
+      programFootIcon: dlIcon, programFootNote: 'Imports into Forge Legacy',
+      programSaveLabel: 'Get Program', programSaveIcon: extIcon,
+      programSaveStyle: { display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 15px', borderRadius: 'var(--fl-radius-md)', border: '1px solid var(--fl-bronze-border)', background: 'var(--fl-bronze-fill)', color: 'var(--fl-bronze-bright)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--fl-glow-subtle)' },
+      onOpenProgram: () => this._toast('Opens creator’s page · imports to Forge after purchase', 'bronze'),
+      onSaveProgram: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this._toast('Opens creator’s page · imports to Forge after purchase', 'bronze'); },
+    });
+
+    // Newly authored posts (from the composer) ride on top of the seeded feed.
+    const mkStorePost = (o) => {
+      const v = mkText({ id: o.id, author: o.author, role: o.role || undefined, time: o.time, typeLabel: (window.ForgeCommunityPosts.type(o.type) || {}).label, body: o.body || '', respect: o.respect || 0, comments: (o.comments || []).length });
+      v.onOpen = () => openPost(o.id);
+      if (o.type === 'achievement' && o.achievement) { v.hasPlate = true; v.plateValue = o.achievement.value; v.plateExercise = o.achievement.exercise; v.plateLabel = o.achievement.label || 'New Personal Record'; v.hasBody = !!o.body; }
+      else if (o.type === 'formcheck') { v.hasVideo = true; v.mediaId = 'home-' + o.id; v.videoDur = (o.media && o.media.dur) || '0:20'; }
+      return v;
+    };
+    const storeNew = (window.ForgeCommunityPosts.list(cid) || []).filter(p => String(p.id).indexOf('new_') === 0).map(mkStorePost);
+    const posts = storeNew.concat([p_disc, p_program, p_event, p_program_ext, p_form, p_pr]);
+
+    // ── active challenges (feed strip) ──
+    const CHALL = [{ id: 'ch1', title: 'Deadlift Challenge', left: '3 days left', participants: 125, pct: '68%' }];
+    const challenges = CHALL.map(c => ({
+      key: c.id, icon: wrap(ic('dumbbell', 22, 1.7)), title: c.title, left: c.left, participants: c.participants, pct: c.pct,
+      action: () => this._toast('Standings open inside the challenge', 'bronze'),
+    }));
+
+    // ── top contributors (contribution recognition, not performance standings) ──
+    // Community-specific distinctions (earned honors) shown subtly beneath the name.
+    const distGlyph = { Mentor: () => ic('laurel', 12, 1.8), 'Community Builder': () => ic('shield', 12, 1.9), 'Event Organizer': () => gCalendarSmall2() };
+    const CONTRIB = [
+      { rank: 1, name: 'Marcus Vale', role: 'mod', respect: 734, distinction: 'Mentor' },
+      { rank: 2, name: 'Jasmine Rae', role: null, respect: 612, distinction: 'Community Builder' },
+      { rank: 3, name: 'Alex Morgan', role: null, respect: 521, distinction: null },
+    ];
+    const contributors = CONTRIB.map((c, i) => {
+      const role = c.role ? roleBadge(c.role) : null;
+      const dg = c.distinction && distGlyph[c.distinction] ? distGlyph[c.distinction]() : null;
+      return {
+        key: c.name, rank: c.rank, rankColor: c.rank === 1 ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)',
+        tint: this._tint(c.name.length + i), name: c.name,
+        hasRole: !!role, roleStyle: role ? role.style : null, roleIcon: role ? role.icon : null, roleLabel: role ? role.label : '',
+        hasDistinction: !!c.distinction, distinction: c.distinction || '', distinctionIcon: dg ? wrap(dg) : null,
+        flameIcon: wrap(flameIc(1.9, 14)), respect: c.respect, divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)',
+      };
+    });
+
+    // ── events tab ──
+    const evStyle = (on) => on
+      ? { flex: 1, padding: '10px', borderRadius: 'var(--fl-radius-md)', border: '1px solid var(--fl-charcoal-600)', background: 'var(--fl-charcoal-800)', color: 'var(--fl-text-secondary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }
+      : { flex: 1, padding: '10px', borderRadius: 'var(--fl-radius-md)', border: '1px solid var(--fl-bronze-border)', background: 'var(--fl-bronze-fill)', color: 'var(--fl-bronze-bright)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--fl-glow-subtle)' };
+    const intStyle = (on) => ({ flex: 1, padding: '10px', borderRadius: 'var(--fl-radius-md)', border: '1px solid ' + (on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: on ? 'var(--fl-bronze-tint)' : 'transparent', color: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' });
+    const EVENTS = [
+      { id: 'e1', month: 'OCT', day: '12', title: 'Saturday Community Lift-Off', when: 'Sat · 9:00 AM · Main Floor', going: 128, host: 'Coach Halden' },
+      { id: 'e2', month: 'OCT', day: '15', title: 'Deadlift Technique AMA', when: 'Tue · 7:00 PM · Live', going: 64, host: 'Marcus Vale' },
+      { id: 'e3', month: 'OCT', day: '26', title: 'Monthly PR Meet', when: 'Sat · 10:00 AM · Platform', going: 41, host: 'Iron Collective' },
+    ];
+    const events = EVENTS.map(e => {
+      const st = S.rsvp[e.id];
+      return { key: e.id, month: e.month, day: e.day, title: e.title, when: e.when, going: e.going + (st === 'going' ? 1 : 0), host: e.host,
+        goingStyle: evStyle(st === 'going'), goingLabel: st === 'going' ? 'Going ✓' : 'Going', interestedStyle: intStyle(st === 'interested'),
+        onGoing: () => this.setState(s2 => ({ rsvp: Object.assign({}, s2.rsvp, { [e.id]: s2.rsvp[e.id] === 'going' ? null : 'going' }) })),
+        onInterested: () => this.setState(s2 => ({ rsvp: Object.assign({}, s2.rsvp, { [e.id]: s2.rsvp[e.id] === 'interested' ? null : 'interested' }) })),
+      };
+    });
+
+    // ── competitions tab ──
+    const COMPS = [
+      { id: 'c1', icon: 'swords', title: 'October Volume Push', type: 'Collective volume goal', window: 'Ends in 8 days', competing: 340, state: 'active' },
+      { id: 'c2', icon: 'target', title: '100-Rep Squat Challenge', type: 'Shared rep goal', window: 'Enrollment open', competing: 96, state: 'open' },
+    ];
+    const comps = COMPS.map(c => {
+      const joined = !!S.joinedComps[c.id]; const isOpen = c.state === 'open';
+      const tagBase = { flex: 'none', display: 'inline-flex', alignItems: 'center', padding: '4px 10px', borderRadius: 'var(--fl-radius-pill)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.4px', textTransform: 'uppercase' };
+      const tagStyle = isOpen ? Object.assign({}, tagBase, { background: 'rgba(110,142,116,0.13)', border: '1px solid rgba(110,142,116,0.34)', color: '#8FB295' }) : Object.assign({}, tagBase, { background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border-subtle)', color: 'var(--fl-bronze-bright)' });
+      let btnStyle, btnLabel, btnIcon, action;
+      const bBase = { width: '100%', marginTop: '13px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: 'var(--fl-radius-md)', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' };
+      if (joined) { btnStyle = Object.assign({}, bBase, { border: '1px solid var(--fl-charcoal-600)', background: 'var(--fl-charcoal-800)', color: 'var(--fl-text-secondary)' }); btnLabel = 'View Challenge'; btnIcon = wrap(sv('M9 5l7 7-7 7', 15, 1.9)); action = () => this._toast('Standings open inside the challenge', 'bronze'); }
+      else if (isOpen) { btnStyle = Object.assign({}, bBase, { border: '1px solid var(--fl-bronze-border)', background: 'var(--fl-bronze-fill)', color: 'var(--fl-bronze-bright)', boxShadow: 'var(--fl-glow-subtle)' }); btnLabel = 'Join Challenge'; btnIcon = wrap(sv('M12 5v14M5 12h14', 15, 2.2)); action = () => { this.setState(st => ({ joinedComps: Object.assign({}, st.joinedComps, { [c.id]: true }) })); this._toast('Joined ' + c.title, 'positive'); }; }
+      else { btnStyle = Object.assign({}, bBase, { border: '1px solid var(--fl-bronze-border)', background: 'transparent', color: 'var(--fl-bronze-bright)' }); btnLabel = 'View Challenge'; btnIcon = wrap(sv('M9 5l7 7-7 7', 15, 1.9)); action = () => this._toast('Standings open inside the challenge', 'bronze'); }
+      return { key: c.id, icon: wrap(ic(c.icon, 22, 1.8)), title: c.title, type: c.type, window: c.window, competing: c.competing, tagStyle, tagLabel: isOpen ? 'Open' : 'Active', btnStyle, btnLabel, btnIcon, action };
+    });
+
+    // ── about tab ──
+    const about = 'The Iron Collective is a strength-first community for lifters who value the long game. Share training notes, ask honest questions, join community competitions, and show up for each other — on the platform and off it.';
+    const aboutStats = [
+      { key: 's1', value: '2,412', label: 'Members', divider: 'none' },
+      { key: 's2', value: '180', label: 'Posts / Week', divider: '1px solid var(--fl-charcoal-700)' },
+      { key: 's3', value: '2 yr', label: 'Founded', divider: '1px solid var(--fl-charcoal-700)' },
+    ];
+    const LEADERS = [ { name: 'Coach Halden', sub: 'Founder · Powerlifting', role: 'owner' }, { name: 'Marcus Vale', sub: 'Moderator · Strength', role: 'mod' }, { name: 'Elena Ruiz', sub: 'Moderator · Programming', role: 'mod' } ];
+    const leaders = LEADERS.map((l, i) => { const role = roleBadge(l.role); return { key: l.name, name: l.name, sub: l.sub, tint: this._tint(l.name.length + i), divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)', roleStyle: role.style, roleIcon: role.icon, roleLabel: role.label }; });
+    const HONORS = [
+      { name: 'First Community Joined', desc: 'Join your first community', icon: 'friend', earned: true },
+      { name: 'Community Builder', desc: 'Post 25 times in a community', icon: 'shield', earned: false },
+      { name: 'Helpful Contributor', desc: 'Earn respect on 50 replies', icon: 'heart', earned: false },
+      { name: 'Mentor', desc: 'Answer 20 member questions', icon: 'laurel', earned: false },
+      { name: 'Event Organizer', desc: 'Host a community event', icon: 'calendar', earned: false },
+    ];
+    const honors = HONORS.map((ho, i) => ({ key: ho.name, name: ho.name, desc: ho.desc, earned: ho.earned, icon: wrap(ic(ho.icon, 18, 1.8)), bg: ho.earned ? 'radial-gradient(circle at 50% 34%, rgba(191,143,79,0.22), transparent 72%)' : 'var(--fl-charcoal-800)', border: ho.earned ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)', iconColor: ho.earned ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', opacity: ho.earned ? 1 : 0.62, divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)' }));
+
+    // ── bottom nav ──
+    const communityGlyph = (active) => h('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: active ? 2.1 : 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 7, r: 2.4 }), h('circle', { cx: 5.5, cy: 10.5, r: 2.1 }), h('circle', { cx: 18.5, cy: 10.5, r: 2.1 }), h('path', { d: 'M8.4 17.5a3.6 3.6 0 0 1 7.2 0' }), h('path', { d: 'M2.4 17.5a3.2 3.2 0 0 1 4.8-2.6' }), h('path', { d: 'M21.6 17.5a3.2 3.2 0 0 0-4.8-2.6' }));
+    const NAV = [
+      { id: 'home', label: 'Home', icon: 'home', go: () => { window.location.href = 'Forge%20Home.dc.html'; } },
+      { id: 'workouts', label: 'Workouts', icon: 'workouts', go: () => { window.location.href = 'Forge%20Programs%20Catalog.dc.html'; } },
+      { id: 'legacy', label: 'Legacy', icon: 'legacy', go: () => { window.location.href = 'Forge%20Legacy.dc.html'; } },
+      { id: 'squads', label: 'Squads', icon: 'squads', go: () => { window.location.href = 'Squads%20Hub.dc.html'; } },
+      { id: 'communities', label: 'Communities', icon: null, active: true, go: () => {} },
+    ];
+    const navTabs = NAV.map(n => ({ key: n.id, label: n.label, color: n.active ? 'var(--fl-bronze-bright)' : 'var(--fl-icon-inactive)', icon: wrap(n.id === 'communities' ? communityGlyph(true) : FS.create(React, n.icon, { size: 22, strokeWidth: 1.9 })), action: n.go }));
+
+    // ── notif sheet ──
+    const NOTIF = [['all', 'All posts'], ['announce', 'Announcements'], ['off', 'Off']];
+    const notifStyle = (active) => ({ flex: 1, padding: '8px 0', borderRadius: 'var(--fl-radius-pill)', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: active ? '#1A1206' : 'var(--fl-text-secondary)', background: active ? 'var(--fl-bronze-metallic)' : 'transparent', transition: 'background 160ms ease, color 160ms ease' });
+    const notifOptions = NOTIF.map(([id, label]) => ({ key: id, label, style: notifStyle(S.notifPref === id), select: () => this.setState({ notifPref: id }) }));
+    const notifHint = S.notifPref === 'all' ? 'You’ll be notified about new posts and announcements from this community.' : S.notifPref === 'announce' ? 'Only owner and moderator announcements will notify you.' : 'This community won’t send you notifications. It still appears in your feed.';
+
+    // ── community switcher (the communities you belong to) ──
+    const MINE = [
+      { id: 'ironcollective', name: 'Iron Collective', crest: 'dumbbell', members: '2,412', unread: false },
+      { id: 'endurance', name: 'Endurance Nation', crest: 'shoe', members: '3,180', unread: true },
+      { id: 'weightroom', name: 'The Weightroom', crest: 'medal', members: '2,050', unread: false },
+    ];
+    const swRowBase = { width: '100%', display: 'flex', alignItems: 'center', gap: '13px', padding: '10px 12px', borderRadius: 'var(--fl-radius-md)', cursor: 'pointer', transition: 'transform 120ms var(--fl-ease-out), background 160ms ease, border-color 160ms ease' };
+    const myCommunities = MINE.map(c => {
+      const isCur = c.id === S.activeCommunity;
+      return {
+        key: c.id, name: c.name, meta: c.members + ' members', unread: c.unread, current: isCur,
+        crest: wrap(ic(c.crest, 22, 1.6)), tint: this._tint(c.name.length + 3),
+        ringShadow: isCur ? '0 0 0 2px var(--fl-bronze-primary), var(--fl-glow-subtle)' : '0 0 0 1px var(--fl-charcoal-600)',
+        rowStyle: Object.assign({}, swRowBase, isCur
+          ? { background: 'linear-gradient(180deg, rgba(38,29,18,0.5), rgba(15,13,10,0.35))', border: '1px solid var(--fl-bronze-border)' }
+          : { background: 'var(--fl-surface-card)', border: '1px solid var(--fl-charcoal-700)' }),
+        select: () => { if (isCur) { this.setState({ switcherOpen: false }); return; } this.setState({ activeCommunity: c.id, switcherOpen: false }); this._toast('Switched to ' + c.name, 'bronze'); },
+      };
+    });
+
+    const toastColor = S.toastTone === 'positive' ? '#6E8E74' : 'var(--fl-icon-bronze)';
+
+    return {
+      ready: true, notReady: false,
+      chevronDown, chevronRight, bellIcon: bell, overflowIcon: overflow, cameraIcon: camera, membersIcon: membersG,
+      commentIcon: comment, shareIcon: shareG, pinIcon: pin, clockIcon: clock, shieldIcon: shield, checkIcon: check, playIcon: wrap(play), videoTagIcon: wrap(videoTag), savesIcon: savesG,
+      communityName, categories, memberCount, tagline, metaItems, actions,
+      crestHasPhoto: !_created, crestHasGlyph: _created, crestGlyph: ic(_comm.crest || 'dumbbell', 38, 1.6),
+      tabs, isFeed: S.tab === 'feed', isEvents: S.tab === 'events', isComps: S.tab === 'comps', isAbout: S.tab === 'about',
+      onDragDown: (e) => this._dragDown(e), onDragMove: (e) => this._dragMove(e), onDragUp: () => this._dragUp(),
+      sheetTransform: 'translateY(' + (S.dragY || 0) + 'px)',
+      sheetTransition: this._dragging ? 'none' : 'transform 240ms var(--fl-ease-out)',
+      switcherOpen: S.switcherOpen, closeSwitcher: () => this.setState({ switcherOpen: false }),
+      openSwitcher: () => this.setState({ switcherOpen: true }),
+      myCommunities: myCommunities,
+      switcherDiscover: () => { window.location.href = 'Discover%20Communities.dc.html'; },
+      openMembers: () => this._toast('Member directory', 'bronze'),
+      openComposer: () => { try { localStorage.setItem('forge.community', cid); } catch (e) {} window.location.href = 'Community%20Composer.dc.html'; },
+      shortcuts, pinned, posts, challenges, contributors, events, comps,
+      viewAllChallenges: () => this.setState({ tab: 'comps' }),
+      viewLeaderboard: () => this._toast('Contributor leaderboard', 'bronze'),
+      about, aboutStats, leaders, honors, navTabs,
+      onScroll: (e) => {
+        const st = e.target.scrollTop;
+        const b = this._bannerEl || (this._bannerEl = e.target.querySelector('#ch-banner-img'));
+        if (b) { const clamped = Math.min(st, 260); b.style.transform = 'translateY(' + (clamped * 0.4) + 'px) scale(' + (1 + clamped * 0.0006) + ')'; }
+      },
+      discoverIcon: wrap(sv(['M10.5 16.5a6 6 0 1 0 0-12 6 6 0 0 0 0 12z', 'M15 15l5 5'], 19, 1.9)),
+      openDiscover: () => { window.location.href = 'Discover%20Communities.dc.html'; },
+      openNotifs: () => this.setState({ sheetOpen: true }), openOverflow: () => this.setState({ sheetOpen: true }),
+      sheetOpen: S.sheetOpen, closeSheet: () => this.setState({ sheetOpen: false }), notifOptions, notifHint,
+      inviteIcon: wrap(ic('invite', 18, 1.9)), reportIcon: wrap(sv(['M5 21V4', 'M5 5h11l-1.6 3.2L16 12H5'], 18, 1.9)), leaveIcon: wrap(sv(['M15 4H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7', 'M10 12h10', 'M17 9l3 3-3 3'], 18, 1.9)),
+      inviteToCommunity: () => { this.setState({ sheetOpen: false }); this._toast('Invite to community', 'bronze'); },
+      canEditCommunity: _created, editIcon: wrap(sv('M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z', 18, 1.8)),
+      editCommunity: () => { this.setState({ sheetOpen: false }); window.location.href = 'Edit%20Community.dc.html'; },
+      reportCommunity: () => { this.setState({ sheetOpen: false }); this._toast('Report submitted to moderators', 'bronze'); },
+      leaveCommunity: () => { this.setState({ sheetOpen: false }); this._toast('You left ' + communityName, 'bronze'); },
+      toastOpen: !!S.toastMsg, toastMsg: S.toastMsg || '', toastIcon: communityGlyph(false), toastIconColor: toastColor,
+    };
+  }
+}
+</script>
+</body>
+</html>

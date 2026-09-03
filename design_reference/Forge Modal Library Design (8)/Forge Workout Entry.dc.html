@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background:#07090C; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    a { color: var(--fl-bronze-primary); text-decoration: none; }
+    a:hover { color: var(--fl-bronze-bright); }
+  </style>
+</helmet>
+
+<div style="padding:52px 60px 90px; min-height:100vh;">
+
+  <div style="max-width:900px; margin:0 0 26px;">
+    <span style="font-size:12px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--fl-bronze-primary);">Forge Legacy · Workout entry</span>
+    <h1 style="margin:12px 0 10px; font-family:var(--fl-font-display); font-size:40px; font-weight:700; letter-spacing:0.3px;">Entering training, not confirming a dialog</h1>
+    <p style="margin:0 0 22px; max-width:700px; font-size:15px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">The bordered box is gone. The workout identity sits directly on the stone, artwork carries the top half, and bronze is spent on one thing — the CTA. Freestyle and Resume share the shell and nothing else.</p>
+
+    <div style="display:flex; gap:7px; flex-wrap:wrap;">
+      <sc-for list="{{ modeChips }}" as="ch" hint-placeholder-count="2">
+        <span role="button" tabindex="0" onClick="{{ ch.onTap }}" style="padding:8px 16px; border-radius:var(--fl-radius-pill); border:1px solid {{ ch.border }}; background:{{ ch.bg }}; color:{{ ch.ink }}; font-size:12.5px; font-weight:600; white-space:nowrap; cursor:pointer; transition:all 150ms var(--fl-ease-out);">{{ ch.label }}</span>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:40px; align-items:flex-start; flex-wrap:wrap;">
+
+    <div data-screen-label="Workout entry" style="width:404px; height:868px; flex:none; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.15), rgba(5,5,5,0.15)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden;">
+
+      <!-- artwork, embossed into the stone -->
+      <img src="assets/workout-push.png" alt="" aria-hidden="true" style="position:absolute; top:-6px; left:50%; transform:translateX(-50%); height:438px; width:auto; opacity:0.72; mix-blend-mode:screen; -webkit-mask-image:linear-gradient(180deg, transparent 0%, #000 14%, #000 58%, rgba(0,0,0,0.5) 80%, transparent 96%); mask-image:linear-gradient(180deg, transparent 0%, #000 14%, #000 58%, rgba(0,0,0,0.5) 80%, transparent 96%); pointer-events:none; z-index:0;">
+
+      <div style="position:absolute; inset:0; z-index:1; display:flex; flex-direction:column;">
+
+        <div style="height:44px; flex:none; display:flex; align-items:flex-end; justify-content:space-between; padding:0 22px 6px; font-size:12.5px; font-weight:600; color:var(--fl-text-primary);">
+          <span>6:01</span>
+          <span style="letter-spacing:1px;">▮▮▮</span>
+        </div>
+
+        <div style="flex:1; min-height:0;"></div>
+
+        <!-- composition -->
+        <div style="flex:none; display:flex; flex-direction:column; align-items:center; padding:0 22px 46px;">
+
+          <!-- eyebrow with rules -->
+          <div style="display:flex; align-items:center; gap:14px; width:100%; max-width:300px;">
+            <span style="flex:1; height:1px; background:linear-gradient(90deg, rgba(186,146,92,0) 0%, rgba(186,146,92,0.45) 100%);"></span>
+            <span style="font-size:12px; font-weight:700; letter-spacing:4.6px; white-space:nowrap; color:var(--fl-bronze-primary);">{{ eyebrow }}</span>
+            <span style="flex:1; height:1px; background:linear-gradient(90deg, rgba(186,146,92,0.45) 0%, rgba(186,146,92,0) 100%);"></span>
+          </div>
+
+          <h2 style="margin:18px 0 0; width:100%; font-family:var(--fl-font-display); font-size:{{ titleSize }}; font-weight:600; line-height:1.06; letter-spacing:0.3px; text-align:center; color:var(--fl-text-primary);">{{ title }}</h2>
+
+          <!-- diamond divider -->
+          <div style="display:flex; align-items:center; gap:10px; width:100%; max-width:236px; margin-top:20px;">
+            <span style="flex:1; height:1px; background:linear-gradient(90deg, rgba(186,146,92,0) 0%, rgba(186,146,92,0.38) 100%);"></span>
+            <span style="width:6px; height:6px; flex:none; transform:rotate(45deg); background:var(--fl-bronze-primary); opacity:0.85;"></span>
+            <span style="flex:1; height:1px; background:linear-gradient(90deg, rgba(186,146,92,0.38) 0%, rgba(186,146,92,0) 100%);"></span>
+          </div>
+
+          <p style="margin:20px 0 0; width:100%; font-size:16px; line-height:1.62; text-align:center; color:var(--fl-text-secondary);">{{ line1 }}<br>{{ line2 }}</p>
+
+          <!-- CTA -->
+          <div role="button" tabindex="0" style="margin-top:40px; width:100%; height:64px; display:flex; align-items:center; justify-content:center; gap:16px; border-radius:14px; background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-glow-forge); cursor:pointer; transition:filter 160ms var(--fl-ease-out);" style-hover="filter:brightness(1.08);">
+            <sc-if value="{{ showPlus }}" hint-placeholder-val="{{ true }}">
+              <span style="width:26px; height:26px; flex:none; color:var(--fl-bronze-bright);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 4v16M4 12h16"></path></svg></span>
+            </sc-if>
+            <span style="font-size:17px; font-weight:700; letter-spacing:2.4px; color:var(--fl-text-primary);">{{ cta }}</span>
+          </div>
+
+          <span role="button" tabindex="0" style="margin-top:30px; font-size:15px; color:#8A817A; cursor:pointer; transition:color 150ms var(--fl-ease-out);" style-hover="color:var(--fl-text-secondary);">{{ dismiss }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- notes -->
+    <div style="width:330px; flex:none; display:flex; flex-direction:column; gap:20px; padding-top:6px;">
+      <div style="display:flex; flex-direction:column; gap:9px;">
+        <span style="font-size:10.5px; font-weight:700; letter-spacing:2.4px; color:var(--fl-bronze-primary);">{{ noteKicker }}</span>
+        <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:600; line-height:1.25;">{{ noteTitle }}</span>
+        <p style="margin:0; font-size:14px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">{{ noteBody }}</p>
+      </div>
+
+      <div style="height:1px; background:var(--fl-charcoal-600);"></div>
+
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <span style="font-size:10.5px; font-weight:700; letter-spacing:2.4px; color:var(--fl-text-tertiary);">THE COMPOSITION</span>
+        <div style="display:flex; flex-direction:column; gap:12px; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary);">
+          <div style="display:flex; gap:10px;"><span style="flex:none; color:var(--fl-bronze-primary); font-weight:700;">01</span><span>Artwork occupies the top ~50%, screen-blended at 0.72 — the same grading as the home hero card — and masked top and bottom so it dissolves into the stone.</span></div>
+          <div style="display:flex; gap:10px;"><span style="flex:none; color:var(--fl-bronze-primary); font-weight:700;">02</span><span>Eyebrow, title, diamond, copy — one centered vertical column, bottom-anchored so the CTA sits in the thumb zone. The relief figure is the only artwork; no decorative glyph competes with it.</span></div>
+          <div style="display:flex; gap:10px;"><span style="flex:none; color:var(--fl-bronze-primary); font-weight:700;">03</span><span>The CTA is the only bronze fill and the only thing at 64px. Everything above it is type on stone.</span></div>
+          <div style="display:flex; gap:10px;"><span style="flex:none; color:var(--fl-bronze-primary); font-weight:700;">04</span><span>The dismiss is warm gray, unbordered, and smaller. Two paths, one weight each.</span></div>
+          <div style="display:flex; gap:10px;"><span style="flex:none; color:var(--fl-bronze-primary); font-weight:700;">05</span><span>Nothing closes the foot of the screen. The stone runs out below the dismiss, so the composition ends on the CTA.</span></div>
+        </div>
+      </div>
+
+      <div style="height:1px; background:var(--fl-charcoal-600);"></div>
+
+      <p style="margin:0; font-size:13px; line-height:1.6; color:var(--fl-text-tertiary); text-wrap:pretty;">Artwork is the home hero card's day/workout asset (<code style="font-size:12px; color:var(--fl-bronze-primary);">assets/workout-push.png</code>) for now — swap in dedicated relief art when it exists.</p>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:840,&quot;height&quot;:1010}}">
+const MODES = {
+  freestyle: {
+    label: 'Freestyle', eyebrow: 'FREESTYLE', title: 'Freestyle Workout', titleSize: '34px',
+    line1: "Build today\u2019s session as you go.", line2: 'Add exercises as you train.',
+    cta: 'ADD EXERCISE', plus: true, dismiss: 'Not today',
+    kicker: 'ENTRY STATE', noteTitle: 'Nothing planned is not an empty state',
+    body: 'Freestyle is a beginning, so the composition is all invitation: one restrained pair of lines and a CTA that names the next action rather than confirming this one. The plus does the explaining.'
+  },
+  resume: {
+    label: 'Resume', eyebrow: 'WORKOUT IN PROGRESS', title: 'Push Day', titleSize: '38px',
+    line1: '4 exercises · 11 sets · 38 min', line2: 'Last: Incline Dumbbell Press',
+    cta: 'RESUME WORKOUT', plus: false, dismiss: 'End workout',
+    kicker: 'CONTINUATION STATE', noteTitle: 'The shell is shared, the content is not',
+    body: 'Resume names the session, so the title carries a real workout and the second line is session state instead of instruction. No plus — nothing is being added. The dismiss is destructive in meaning, so it stays quiet rather than turning red.'
+  }
+};
+
+class Component extends DCLogic {
+  state = { mode: 'freestyle' };
+
+  renderVals() {
+    const key = this.state.mode;
+    const m = MODES[key];
+    return {
+      modeChips: Object.keys(MODES).map(k => ({
+        label: MODES[k].label,
+        onTap: () => this.setState({ mode: k }),
+        bg: k === key ? 'rgba(186,146,92,0.12)' : 'var(--fl-charcoal-800)',
+        border: k === key ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+        ink: k === key ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)'
+      })),
+      eyebrow: m.eyebrow,
+      title: m.title,
+      titleSize: m.titleSize,
+      line1: m.line1,
+      line2: m.line2,
+      cta: m.cta,
+      showPlus: m.plus,
+      dismiss: m.dismiss,
+      noteKicker: m.kicker,
+      noteTitle: m.noteTitle,
+      noteBody: m.body
+    };
+  }
+}
+
+</script>
+</body>
+</html>

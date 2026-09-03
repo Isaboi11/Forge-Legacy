@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-programs.js"></script>
+  <script>
+    (function () {
+      var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+      function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+      if (window.React && window.ReactDOM) { inject(); return; }
+      var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+    })();
+  </script>
+  <script src="forge-symbols.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    a { color: var(--fl-bronze-bright); text-decoration: none; }
+    a:hover { color: var(--fl-bronze-primary); }
+    .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+    .fl-scroll { scrollbar-width: none; }
+    @keyframes pbRise { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; } }
+  </style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="Program Builder" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(6,7,8,0.3), rgba(6,7,8,0.3)), #060708 url('assets/forge-bg-2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <!-- ════════ SETUP (W-4): details + structure + (day list | week list) ════════ -->
+      <sc-if value="{{ setupView }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:none; position:relative; z-index:10;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="{{ builderTitle }}" on-close="{{ onCancel }}" hint-size="100%,56px"></x-import>
+        </div>
+
+        <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:10px 20px 24px; animation:pbRise 400ms var(--fl-ease-out, ease-out) both;">
+          <sc-if value="{{ isEditing }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:center; gap:9px; margin-bottom:14px; padding:11px 13px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-bronze-tint);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-bright)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
+              <span style="font-size:12.5px; font-weight:600; color:var(--fl-bronze-primary);">{{ editContext }}</span>
+            </div>
+          </sc-if>
+          <div style="border-radius:var(--fl-radius-xl); border:var(--fl-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); padding:15px 16px 18px; margin-bottom:16px;">
+            <div style="padding:0 2px 12px;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Program details" hint-size="100%,20px"></x-import></div>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.InputField" label="Program name" placeholder="e.g. Winter Powerbuilding" value="{{ name }}" max-length="40" show-count="{{ true }}" on-change="{{ onName }}" hint-size="100%,74px"></x-import>
+            <div style="margin-top:16px;">
+              <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:8px;">Length</span>
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed);">
+                <button type="button" onClick="{{ onWeeksDown }}" aria-label="Fewer weeks" style="width:34px; height:34px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); font-size:19px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;">−</button>
+                <span style="font-size:13px; color:var(--fl-text-secondary);"><span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; color:var(--fl-text-primary);">{{ weeksValue }}</span> weeks</span>
+                <button type="button" onClick="{{ onWeeksUp }}" aria-label="More weeks" style="width:34px; height:34px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); font-size:19px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+              </div>
+              <span style="display:block; margin-top:7px; font-size:11px; color:var(--fl-text-tertiary);">4–52 weeks — supports multi-month blocks</span>
+            </div>
+            <div style="margin-top:16px;">
+              <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:8px;">Training days / week</span>
+              <div style="display:flex; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); overflow:hidden; background:var(--fl-surface-recessed);">
+                <sc-for list="{{ dayChips }}" as="c" hint-placeholder-count="5">
+                  <button type="button" onClick="{{ c.onTap }}" style="flex:1; padding:10px 0; background:{{ c.segBg }}; color:{{ c.segInk }}; border:none; border-left:{{ c.segDiv }}; font-family:var(--fl-font-display); font-size:15px; font-weight:600; cursor:pointer;">{{ c.n }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" onClick="{{ onOpenImport }}" style="display:inline-flex; align-items:center; gap:7px; margin-bottom:22px; padding:6px 2px; background:transparent; border:none; cursor:pointer; color:var(--fl-text-tertiary); font-size:12.5px; font-weight:600;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4M4 19h16"></path></svg>Import from a spreadsheet</button>
+
+          <div style="padding:0 2px 10px;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Program structure" hint-size="100%,20px"></x-import></div>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:24px;">
+            <button type="button" onClick="{{ onRepeat }}" style="width:100%; display:flex; align-items:flex-start; gap:12px; padding:14px 15px; border-radius:var(--fl-radius-lg); border:1px solid {{ repeatBorder }}; background:{{ repeatBg }}; cursor:pointer; text-align:left;">
+              <span style="flex:none; margin-top:1px; width:18px; height:18px; border-radius:50%; border:2px solid {{ repeatDot }}; display:flex; align-items:center; justify-content:center;"><sc-if value="{{ structRepeat }}" hint-placeholder-val="{{ true }}"><span style="width:8px; height:8px; border-radius:50%; background:var(--fl-bronze-bright);"></span></sc-if></span>
+              <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Repeat the same week</span><span style="font-size:12px; color:var(--fl-text-tertiary); line-height:1.4;">Build one week and repeat it for the whole program.</span></span>
+            </button>
+            <button type="button" onClick="{{ onVary }}" style="width:100%; display:flex; align-items:flex-start; gap:12px; padding:14px 15px; border-radius:var(--fl-radius-lg); border:1px solid {{ varyBorder }}; background:{{ varyBg }}; cursor:pointer; text-align:left;">
+              <span style="flex:none; margin-top:1px; width:18px; height:18px; border-radius:50%; border:2px solid {{ varyDot }}; display:flex; align-items:center; justify-content:center;"><sc-if value="{{ structVary }}" hint-placeholder-val="{{ false }}"><span style="width:8px; height:8px; border-radius:50%; background:var(--fl-bronze-bright);"></span></sc-if></span>
+              <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Customize each week</span><span style="font-size:12px; color:var(--fl-text-tertiary); line-height:1.4;">Build every week individually — copy a week forward and tweak.</span></span>
+            </button>
+          </div>
+
+          <sc-if value="{{ showProgress }}" hint-placeholder-val="{{ false }}">
+            <button type="button" onClick="{{ onOpenJump }}" style="width:100%; text-align:left; background:transparent; border:none; padding:0; margin-bottom:20px; cursor:pointer; display:block;">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;"><span style="font-size:10px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Program progress</span><span style="font-size:11px; color:var(--fl-bronze-primary);">{{ progressLabel }} ›</span></div>
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="{{ progVal }}" max="{{ progMax }}" hint-size="100%,10px"></x-import>
+            </button>
+          </sc-if>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="{{ listHeader }}" hint-size="auto,20px"></x-import>
+            <span style="font-size:11px; color:var(--fl-text-tertiary);">{{ setupSummary }}</span>
+          </div>
+
+          <!-- repeat mode: the single weekly split -->
+          <sc-if value="{{ structRepeat }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <sc-for list="{{ dayRows }}" as="d" hint-placeholder-count="4">
+                <div style="display:flex; align-items:stretch; border-radius:var(--fl-radius-lg); border:1px solid {{ d.border }}; background:var(--fl-surface-card); box-shadow:var(--fl-border-inset); overflow:hidden;">
+                  <button type="button" onClick="{{ d.onOpen }}" style="flex:1; min-width:0; display:flex; align-items:center; gap:13px; padding:13px 8px 13px 14px; background:transparent; border:none; cursor:pointer; text-align:left;">
+                    <span style="flex:none; width:34px; height:34px; border-radius:var(--fl-radius-sm); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:14px; font-weight:700; color:var(--fl-bronze-bright);">{{ d.letter }}</span>
+                    <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">{{ d.name }}</span><span style="font-size:12px; color:{{ d.subColor }};">{{ d.subtitle }}</span></span>
+                    <sc-if value="{{ d.done }}" hint-placeholder-val="{{ false }}"><span style="flex:none; width:22px; height:22px; border-radius:50%; background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span></sc-if>
+                  </button>
+                  <button type="button" onClick="{{ d.onMenu }}" aria-label="Day options" style="flex:none; width:44px; border:none; border-left:1px solid var(--fl-charcoal-700); background:transparent; color:var(--fl-text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="19" r="1.6"></circle></svg></button>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- customize mode: the week list -->
+          <sc-if value="{{ structVary }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <sc-for list="{{ weekRows }}" as="w" hint-placeholder-count="4">
+                <div style="display:flex; align-items:stretch; border-radius:var(--fl-radius-lg); border:1px solid {{ w.border }}; background:var(--fl-surface-card); box-shadow:var(--fl-border-inset); overflow:hidden;">
+                  <button type="button" onClick="{{ w.onOpen }}" style="flex:1; min-width:0; display:flex; align-items:center; gap:13px; padding:13px 8px 13px 14px; background:transparent; border:none; cursor:pointer; text-align:left;">
+                    <span style="flex:none; width:38px; height:34px; border-radius:var(--fl-radius-sm); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:13px; font-weight:700; color:var(--fl-bronze-bright);">{{ w.num }}</span>
+                    <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">{{ w.label }}</span><span style="font-size:12px; color:{{ w.subColor }};">{{ w.subtitle }}</span></span>
+                    <sc-if value="{{ w.built }}" hint-placeholder-val="{{ false }}"><span style="flex:none; width:22px; height:22px; border-radius:50%; background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span></sc-if>
+                    <sc-if value="{{ w.notBuilt }}" hint-placeholder-val="{{ true }}"><span style="flex:none; width:22px; height:22px; border-radius:50%; border:1.5px solid var(--fl-charcoal-500);"></span></sc-if>
+                  </button>
+                  <button type="button" onClick="{{ w.onMenu }}" aria-label="Week options" style="flex:none; width:44px; border:none; border-left:1px solid var(--fl-charcoal-700); background:transparent; color:var(--fl-text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="19" r="1.6"></circle></svg></button>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="flex:none; padding:12px 18px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(6,7,8,0.35), rgba(6,7,8,0.82)); position:relative; z-index:5;">
+          <sc-if value="{{ saveDisabled }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; flex-direction:column; gap:7px; margin-bottom:12px;">
+              <sc-for list="{{ checks }}" as="ck" hint-placeholder-count="2">
+                <span style="display:flex; align-items:center; gap:8px; font-size:12px; color:{{ ck.ink }};">{{ ck.mark }}{{ ck.label }}</span>
+              </sc-for>
+            </div>
+          </sc-if>
+          <button type="button" onClick="{{ onSave }}" disabled="{{ saveDisabled }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:9px; padding:15px; border-radius:var(--fl-radius-md); border:1px solid {{ saveBorder }}; background:{{ saveBg }}; color:{{ saveColor }}; font-size:14px; font-weight:700; letter-spacing:0.5px; cursor:{{ saveCursor }}; box-shadow:{{ saveShadow }}; text-shadow:0 1px 1px rgba(8,5,2,0.5);">{{ saveLabel }}</button>
+        </div>
+
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ dayMenuOpen }}" on-close="{{ closeDayMenu }}" title="{{ dayMenuTitle }}" hint-size="1px,1px">
+          <div style="display:flex; flex-direction:column; gap:16px; padding-top:2px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.InputField" label="Workout name" value="{{ dayMenuName }}" max-length="30" on-change="{{ onDayMenuRename }}" hint-size="100%,74px"></x-import>
+            <sc-if value="{{ hasDupTargets }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:10px;">Duplicate exercises to</span>
+              <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                <sc-for list="{{ dupTargets }}" as="t" hint-placeholder-count="3">
+                  <button type="button" onClick="{{ t.onTap }}" style="padding:9px 15px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); color:var(--fl-text-primary); font-size:13px; font-weight:600; cursor:pointer;">{{ t.name }}</button>
+                </sc-for>
+              </div>
+            </div>
+            </sc-if>
+            <button type="button" onClick="{{ onClearDay }}" style="width:100%; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-red-metal-border); background:rgba(190,90,76,0.12); color:var(--fl-red-muted); font-size:14px; font-weight:600; cursor:pointer;">Clear all exercises</button>
+          </div>
+        </x-import>
+
+      </sc-if>
+
+      <!-- ════════ WEEK DAY-LIST (customize mode) ════════ -->
+      <sc-if value="{{ weekDaysView }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:none; position:relative; z-index:10;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="{{ weekTitle }}" on-back="{{ onCloseWeek }}" actions="{{ jumpBtn }}" hint-size="100%,56px"></x-import>
+        </div>
+        <div style="flex:none; padding:6px 20px 12px; position:relative; z-index:5;">
+          <button type="button" onClick="{{ onOpenJump }}" style="width:100%; text-align:left; background:transparent; border:none; padding:0; cursor:pointer; display:block;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:7px;"><span style="font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Program progress</span><span style="font-size:11px; color:var(--fl-bronze-primary);">{{ progressLabel }} ›</span></div>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="{{ progVal }}" max="{{ progMax }}" hint-size="100%,8px"></x-import>
+          </button>
+        </div>
+        <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:10px 20px 24px; animation:pbRise 360ms var(--fl-ease-out, ease-out) both;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Workouts" hint-size="auto,20px"></x-import>
+            <span style="font-size:11px; color:var(--fl-text-tertiary);">{{ setupSummary }}</span>
+          </div>
+          <sc-if value="{{ showWeekPrompt }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-bottom:14px; padding:15px 16px; border-radius:var(--fl-radius-lg); border:1px dashed var(--fl-bronze-border); background:var(--fl-bronze-tint);">
+              <span style="display:block; font-size:13px; line-height:1.5; color:var(--fl-text-secondary); margin-bottom:12px;">This week is empty. Copy a week you've already built, or start from scratch.</span>
+              <div style="display:flex; gap:8px;">
+                <button type="button" onClick="{{ onCopyAnother }}" style="flex:1; padding:11px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-metal-border); background:var(--fl-bronze-fill); color:#F7F5F1; font-size:12.5px; font-weight:700; letter-spacing:0.3px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim);">Copy another week</button>
+                <button type="button" onClick="{{ onStartBuilding }}" style="flex:1; padding:11px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:12.5px; font-weight:600; cursor:pointer;">Start building</button>
+              </div>
+            </div>
+          </sc-if>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <sc-for list="{{ dayRows }}" as="d" hint-placeholder-count="4">
+              <div style="display:flex; align-items:stretch; border-radius:var(--fl-radius-lg); border:1px solid {{ d.border }}; background:var(--fl-surface-card); box-shadow:var(--fl-border-inset); overflow:hidden;">
+                <button type="button" onClick="{{ d.onOpen }}" style="flex:1; min-width:0; display:flex; align-items:center; gap:13px; padding:13px 8px 13px 14px; background:transparent; border:none; cursor:pointer; text-align:left;">
+                  <span style="flex:none; width:34px; height:34px; border-radius:var(--fl-radius-sm); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:14px; font-weight:700; color:var(--fl-bronze-bright);">{{ d.letter }}</span>
+                  <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">{{ d.name }}</span><span style="font-size:12px; color:{{ d.subColor }};">{{ d.subtitle }}</span></span>
+                  <sc-if value="{{ d.done }}" hint-placeholder-val="{{ false }}"><span style="flex:none; width:22px; height:22px; border-radius:50%; background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span></sc-if>
+                </button>
+                <button type="button" onClick="{{ d.onMenu }}" aria-label="Day options" style="flex:none; width:44px; border:none; border-left:1px solid var(--fl-charcoal-700); background:transparent; color:var(--fl-text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="19" r="1.6"></circle></svg></button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="flex:none; padding:14px 18px calc(16px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(6,7,8,0.35), rgba(6,7,8,0.82)); position:relative; z-index:5;">
+          <button type="button" onClick="{{ onAdvanceWeek }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:9px; padding:15px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-metal-border); background:var(--fl-bronze-fill); color:#F7F5F1; font-size:14px; font-weight:700; letter-spacing:0.5px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">Save &amp; continue</button>
+        </div>
+
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ dayMenuOpen }}" on-close="{{ closeDayMenu }}" title="{{ dayMenuTitle }}" hint-size="1px,1px">
+          <div style="display:flex; flex-direction:column; gap:16px; padding-top:2px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.InputField" label="Workout name" value="{{ dayMenuName }}" max-length="30" on-change="{{ onDayMenuRename }}" hint-size="100%,74px"></x-import>
+            <sc-if value="{{ hasDupTargets }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:10px;">Duplicate exercises to</span>
+              <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                <sc-for list="{{ dupTargets }}" as="t" hint-placeholder-count="3">
+                  <button type="button" onClick="{{ t.onTap }}" style="padding:9px 15px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); color:var(--fl-text-primary); font-size:13px; font-weight:600; cursor:pointer;">{{ t.name }}</button>
+                </sc-for>
+              </div>
+            </div>
+            </sc-if>
+            <button type="button" onClick="{{ onClearDay }}" style="width:100%; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-red-metal-border); background:rgba(190,90,76,0.12); color:var(--fl-red-muted); font-size:14px; font-weight:600; cursor:pointer;">Clear all exercises</button>
+          </div>
+        </x-import>
+      </sc-if>
+
+      <!-- ════════ DAY BUILDER (W-24) ════════ -->
+      <sc-if value="{{ dayView }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:none; position:relative; z-index:10;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="{{ dayTitle }}" on-back="{{ onCloseDay }}" hint-size="100%,56px"></x-import>
+        </div>
+
+        <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:8px 18px 26px; animation:pbRise 360ms var(--fl-ease-out, ease-out) both;">
+          <div style="margin-bottom:18px; padding:0 2px;">
+            <sc-if value="{{ hasWeekContext }}" hint-placeholder-val="{{ false }}"><span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:9px;">{{ weekContext }}</span></sc-if>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.InputField" label="Workout name" placeholder="Workout name" value="{{ dayName }}" max-length="30" on-change="{{ onDayName }}" hint-size="100%,74px"></x-import>
+            <sc-if value="{{ hasDaySummary }}" hint-placeholder-val="{{ false }}"><span style="display:block; margin-top:9px; font-size:12px; color:var(--fl-bronze-primary);">{{ daySummaryLine }}</span></sc-if>
+          </div>
+
+          <sc-for list="{{ sections }}" as="sec" hint-placeholder-count="3">
+            <div style="{{ sec.wrap }}">
+              <div style="display:flex; align-items:baseline; gap:9px; padding:0 2px 10px;">
+                <span style="font-size:{{ sec.labelSize }}; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:{{ sec.labelColor }};">{{ sec.label }}</span>
+                <span style="font-size:9px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ sec.req }}</span>
+                <span style="flex:1;"></span>
+                <span style="font-size:10px; font-weight:600; color:var(--fl-text-tertiary);">{{ sec.count }}</span>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <sc-if value="{{ sec.empty }}" hint-placeholder-val="{{ true }}"><span style="display:block; padding:0 2px 2px; font-size:12.5px; color:var(--fl-text-tertiary);">{{ sec.emptyLabel }}</span></sc-if>
+                <sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="0">
+                  <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset); overflow:hidden;">
+                    <div style="display:flex; align-items:center; gap:11px; padding:12px 13px;">
+                      <span style="flex:none; width:36px; height:36px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ it.icon }}</span>
+                      <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ it.name }}</span><span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ it.equip }}</span></span>
+                      <span style="display:flex; align-items:center; gap:4px;">
+                        <button type="button" onClick="{{ it.onUp }}" aria-label="Move up" disabled="{{ it.upOff }}" style="width:26px; height:26px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-600); background:transparent; color:{{ it.upColor }}; cursor:{{ it.upCursor }}; display:flex; align-items:center; justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"></path></svg></button>
+                        <button type="button" onClick="{{ it.onDown }}" aria-label="Move down" disabled="{{ it.downOff }}" style="width:26px; height:26px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-600); background:transparent; color:{{ it.downColor }}; cursor:{{ it.downCursor }}; display:flex; align-items:center; justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+                        <button type="button" onClick="{{ it.onRemove }}" aria-label="Remove exercise" style="width:26px; height:26px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-red-muted); cursor:pointer; display:flex; align-items:center; justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M9 7V5h6v2M8 7l1 13h6l1-13"></path></svg></button>
+                      </span>
+                    </div>
+                    <sc-if value="{{ it.isCardio }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex; border-top:1px solid var(--fl-charcoal-700);">
+                        <button type="button" onClick="{{ it.onModOut }}" style="flex:1; padding:8px 0; border:none; background:{{ it.modOutBg }}; color:{{ it.modOutInk }}; font-size:11.5px; font-weight:600; letter-spacing:0.3px; cursor:pointer;">{{ it.modOutLabel }}</button>
+                        <button type="button" onClick="{{ it.onModIn }}" style="flex:1; padding:8px 0; border:none; border-left:1px solid var(--fl-charcoal-700); background:{{ it.modInBg }}; color:{{ it.modInInk }}; font-size:11.5px; font-weight:600; letter-spacing:0.3px; cursor:pointer;">{{ it.modInLabel }}</button>
+                      </div>
+                    </sc-if>
+                    <div style="display:flex; border-top:1px solid var(--fl-charcoal-700);">
+                      <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:10px; padding:9px 0; border-right:1px solid var(--fl-charcoal-700);">
+                        <button type="button" onClick="{{ it.onADown }}" aria-label="{{ it.aDownA11y }}" style="width:26px; height:26px; flex:none; border-radius:50%; border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); cursor:pointer; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">−</button>
+                        <span style="min-width:62px; text-align:center; font-size:12.5px; color:var(--fl-text-secondary);"><span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:{{ it.aInk }};">{{ it.aVal }}</span> {{ it.aUnit }}</span>
+                        <button type="button" onClick="{{ it.onAUp }}" aria-label="{{ it.aUpA11y }}" style="width:26px; height:26px; flex:none; border-radius:50%; border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); cursor:pointer; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">+</button>
+                      </div>
+                      <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:10px; padding:9px 0;">
+                        <button type="button" onClick="{{ it.onBDown }}" aria-label="{{ it.bDownA11y }}" style="width:26px; height:26px; flex:none; border-radius:50%; border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); cursor:pointer; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">−</button>
+                        <span style="min-width:62px; text-align:center; font-size:12.5px; color:var(--fl-text-secondary);"><span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:{{ it.bInk }};">{{ it.bVal }}</span> {{ it.bUnit }}</span>
+                        <button type="button" onClick="{{ it.onBUp }}" aria-label="{{ it.bUpA11y }}" style="width:26px; height:26px; flex:none; border-radius:50%; border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); cursor:pointer; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">+</button>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+
+                <div style="display:flex; gap:8px;">
+                  <button type="button" onClick="{{ sec.onAdd }}" style="flex:1; min-width:0; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px; border-radius:var(--fl-radius-md); border:1px dashed var(--fl-bronze-border); background:var(--fl-bronze-tint); color:var(--fl-bronze-bright); font-size:12.5px; font-weight:600; letter-spacing:0.3px; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>Add {{ sec.addLabel }}</button>
+                  <button type="button" onClick="{{ sec.onAddCardio }}" aria-label="Add a cardio block" style="flex:none; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 14px; border-radius:var(--fl-radius-md); border:1px dashed var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); font-size:12.5px; font-weight:600; letter-spacing:0.3px; cursor:pointer;">{{ cardioAddIcon }}Cardio</button>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="flex:none; padding:14px 18px calc(16px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(6,7,8,0.35), rgba(6,7,8,0.82)); position:relative; z-index:5;">
+          <button type="button" onClick="{{ onCloseDay }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:9px; padding:15px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-metal-border); background:var(--fl-bronze-fill); color:#F7F5F1; font-size:14px; font-weight:700; letter-spacing:0.5px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">Save Workout</button>
+          <sc-if value="{{ hasNextDay }}" hint-placeholder-val="{{ false }}">
+            <button type="button" onClick="{{ onNextDay }}" style="width:100%; margin-top:9px; padding:10px; background:transparent; border:none; cursor:pointer; font-size:12.5px; font-weight:600; letter-spacing:0.3px; color:var(--fl-bronze-bright); display:flex; align-items:center; justify-content:center; gap:6px;">{{ nextDayLabel }}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></button>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ cardioSheetOpen }}" on-close="{{ closeCardioSheet }}" title="Add a cardio block" hint-size="1px,1px">
+        <div style="display:flex; flex-direction:column; gap:8px; padding-top:2px;">
+          <span style="font-size:12.5px; line-height:1.5; color:var(--fl-text-tertiary); margin-bottom:2px;">Set the distance and pace on the card. Leave either one open and the athlete decides.</span>
+          <sc-for list="{{ cardioChoices }}" as="ch" hint-placeholder-count="3">
+            <button type="button" onClick="{{ ch.onTap }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:14px 15px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); cursor:pointer; text-align:left;">
+              <span style="flex:none; width:36px; height:36px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ ch.icon }}</span>
+              <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ ch.name }}</span>
+                <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ ch.sub }}</span>
+              </span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+            </button>
+          </sc-for>
+        </div>
+      </x-import>
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ weekSheetOpen }}" on-close="{{ closeWeekSheet }}" title="{{ weekSheetTitle }}" hint-size="1px,1px">
+        <div style="display:flex; flex-direction:column; gap:14px; padding-top:2px;">
+          <span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary);">{{ weekSheetPrompt }}</span>
+          <sc-if value="{{ wsHasSources }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:10px;">Copy from</span>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <sc-for list="{{ wsSources }}" as="s" hint-placeholder-count="2"><button type="button" onClick="{{ s.onTap }}" style="padding:9px 15px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); color:var(--fl-text-primary); font-size:13px; font-weight:600; cursor:pointer;">{{ s.label }}</button></sc-for>
+            </div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ weekSheetEntering }}" hint-placeholder-val="{{ true }}">
+            <button type="button" onClick="{{ onWeekStartEmpty }}" style="width:100%; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); color:var(--fl-text-primary); font-size:14px; font-weight:600; cursor:pointer;">Start empty</button>
+          </sc-if>
+          <sc-if value="{{ weekSheetMenu }}" hint-placeholder-val="{{ false }}">
+            <button type="button" onClick="{{ onWeekClear }}" style="width:100%; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-red-metal-border); background:rgba(190,90,76,0.12); color:var(--fl-red-muted); font-size:14px; font-weight:600; cursor:pointer;">Clear week</button>
+          </sc-if>
+        </div>
+      </x-import>
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ jumpOpen }}" on-close="{{ onCloseJump }}" title="Jump to week" hint-size="1px,1px">
+        <div class="fl-scroll" style="display:flex; flex-direction:column; gap:4px; max-height:420px; overflow-y:auto; padding-top:2px;">
+          <sc-for list="{{ jumpWeeks }}" as="j" hint-placeholder-count="4">
+            <button type="button" onClick="{{ j.onTap }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:var(--fl-radius-md); border:none; background:{{ j.rowBg }}; cursor:pointer; text-align:left;">
+              <sc-if value="{{ j.done }}" hint-placeholder-val="{{ false }}"><span style="flex:none; width:20px; height:20px; border-radius:50%; background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span></sc-if>
+              <sc-if value="{{ j.curOnly }}" hint-placeholder-val="{{ false }}"><span style="flex:none; width:20px; height:20px; border-radius:50%; border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center;"><span style="width:8px; height:8px; border-radius:50%; background:var(--fl-bronze-bright);"></span></span></sc-if>
+              <sc-if value="{{ j.todo }}" hint-placeholder-val="{{ true }}"><span style="flex:none; width:20px; height:20px; border-radius:50%; border:1.5px solid var(--fl-charcoal-500);"></span></sc-if>
+              <span style="flex:1; font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ j.label }}</span>
+              <span style="font-size:10px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:{{ j.statusColor }};">{{ j.status }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </x-import>
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ importOpen }}" on-close="{{ closeImport }}" title="Import from spreadsheet" hint-size="1px,1px">
+        <div style="display:flex; flex-direction:column; gap:12px; padding-top:2px;">
+          <sc-if value="{{ pasteOn }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ pasteWeekHint }}" hint-placeholder-val="{{ false }}"><div style="padding:10px 12px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-bronze-tint); font-size:12.5px; font-weight:600; color:var(--fl-bronze-primary);">{{ pasteWeekHint }}</div></sc-if>
+          <span style="font-size:12.5px; line-height:1.55; color:var(--fl-text-secondary);">Paste rows from Excel or Google Sheets. Include a header row — columns can be in any order. We look for <b style="color:var(--fl-text-primary);">Week</b>, <b style="color:var(--fl-text-primary);">Day</b>, <b style="color:var(--fl-text-primary);">Exercise</b>, <b style="color:var(--fl-text-primary);">Sets</b>, <b style="color:var(--fl-text-primary);">Reps</b>. One week or the whole program — either works.</span>
+          <textarea ref="{{ setImportEl }}" placeholder="Week, Day, Exercise, Sets, Reps&#10;1, Push A, Bench Press, 3, 8&#10;1, Push A, Incline DB Press, 3, 10" style="width:100%; height:148px; resize:none; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-family:var(--fl-font-mono); font-size:12px; line-height:1.5; padding:12px; outline:none;"></textarea>
+          <sc-if value="{{ importError }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px; line-height:1.4; color:var(--fl-red-muted);">{{ importError }}</span></sc-if>
+          <button type="button" onClick="{{ onImport }}" style="width:100%; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-metal-border); background:var(--fl-bronze-fill); color:#F7F5F1; font-size:14px; font-weight:700; letter-spacing:0.5px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">Preview import</button>
+          <input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" ref="{{ setFileInput }}" onChange="{{ onFilePicked }}" style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;" />
+          <button type="button" onClick="{{ onPickFile }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px; background:transparent; border:none; cursor:pointer; color:var(--fl-text-tertiary); font-size:12.5px; font-weight:600;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6"></path></svg>Or upload a .csv file</button>
+          </sc-if>
+
+          <sc-if value="{{ previewOn }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:12px 13px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-bronze-tint);">
+              <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-bronze-primary); margin-bottom:5px;">Here's what we read</span>
+              <span style="font-size:13.5px; font-weight:600; color:var(--fl-text-primary);">{{ pvSummary }}</span>
+            </div>
+            <span style="font-size:11.5px; line-height:1.45; color:var(--fl-text-tertiary);">Tap − / + to fix any sets × reps now. You can also rename, reorder, and add exercises after you create the program.</span>
+            <div style="display:flex; flex-direction:column; gap:10px; margin:0 -2px; padding:0 2px;">
+              <sc-for list="{{ pvDays }}" as="d" hint-placeholder-count="2">
+                <sc-if value="{{ d.weekHead }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; align-items:center; gap:10px; margin:8px 2px 2px;">
+                    <span style="font-size:10px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-primary);">{{ d.weekHead }}</span>
+                    <span style="flex:1; height:1px; background:var(--fl-charcoal-600);"></span>
+                  </div>
+                </sc-if>
+                <div style="flex:none; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); overflow:hidden;">
+                  <div style="padding:9px 12px; border-bottom:1px solid var(--fl-charcoal-700); font-size:13px; font-weight:700; color:var(--fl-text-primary);">{{ d.name }}</div>
+                  <div style="display:flex; flex-direction:column; gap:9px; padding:10px 12px;">
+                    <sc-for list="{{ d.secs }}" as="s" hint-placeholder-count="1">
+                      <div>
+                        <span style="display:block; font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:6px;">{{ s.label }}</span>
+                        <div style="display:flex; flex-direction:column; gap:4px;">
+                          <sc-for list="{{ s.items }}" as="it" hint-placeholder-count="2">
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                              <span style="font-size:12.5px; color:var(--fl-text-secondary); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ it.name }}</span>
+                              <div style="flex:none; display:flex; align-items:center; gap:2px;">
+                                <button type="button" onClick="{{ it.decSets }}" style="width:22px; height:22px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); font-size:14px; line-height:1; cursor:pointer;">−</button>
+                                <span style="font-family:var(--fl-font-mono); font-size:12px; color:var(--fl-text-primary); width:14px; text-align:center;">{{ it.sets }}</span>
+                                <button type="button" onClick="{{ it.incSets }}" style="width:22px; height:22px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); font-size:13px; line-height:1; cursor:pointer;">+</button>
+                                <span style="font-size:11px; color:var(--fl-text-tertiary); margin:0 1px;">×</span>
+                                <button type="button" onClick="{{ it.decReps }}" style="width:22px; height:22px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); font-size:14px; line-height:1; cursor:pointer;">−</button>
+                                <span style="font-family:var(--fl-font-mono); font-size:12px; color:var(--fl-text-primary); width:20px; text-align:center;">{{ it.reps }}</span>
+                                <button type="button" onClick="{{ it.incReps }}" style="width:22px; height:22px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); font-size:13px; line-height:1; cursor:pointer;">+</button>
+                              </div>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <button type="button" onClick="{{ onAddWeek }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:7px; padding:11px; border-radius:var(--fl-radius-md); border:1px dashed var(--fl-charcoal-500); background:transparent; color:var(--fl-bronze-bright); font-size:13px; font-weight:600; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>Add another week</button>
+            <div style="display:flex; gap:10px;">
+              <button type="button" onClick="{{ backToPaste }}" style="flex:none; padding:14px 18px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer;">Back</button>
+              <button type="button" onClick="{{ confirmImport }}" style="flex:1; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-metal-border); background:var(--fl-bronze-fill); color:#F7F5F1; font-size:14px; font-weight:700; letter-spacing:0.5px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">Create program</button>
+            </div>
+          </sc-if>
+        </div>
+      </x-import>
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ resizeOpen }}" on-close="{{ cancelResize }}" title="Remove content?" hint-size="1px,1px">
+        <div style="display:flex; flex-direction:column; gap:16px; padding-top:2px;">
+          <span style="font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary);">{{ resizeMsg }}</span>
+          <div style="display:flex; gap:10px;">
+            <button type="button" onClick="{{ cancelResize }}" style="flex:1; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer;">Cancel</button>
+            <button type="button" onClick="{{ confirmResize }}" style="flex:1; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-red-metal-border); background:rgba(190,90,76,0.14); color:var(--fl-red-muted); font-size:14px; font-weight:700; cursor:pointer;">Remove</button>
+          </div>
+        </div>
+      </x-import>
+
+      <div aria-hidden="true" style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { ready: false, draft: null, dayMenu: null, weekSheet: null, jumpOpen: false, hidePrompt: false, pendingResize: null, importOpen: false, importError: '', importPreview: null, importWeeks: [] };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      if (r && ns) { this._boot(); this.setState({ ready: true }); }
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  _KEY() { return 'forge_program_draft_v1'; }
+  _INBOX() { return 'forge_builder_inbox_v1'; }
+  _newDraft() { return { name: '', weeks: 8, daysPerWeek: 4, vary: false, openWeek: null, openDay: null, days: this._makeDays(4, []), weekPlans: null, _mode: 'new', _editId: null, _srcId: null }; }
+  _makeDays(n, existing) {
+    const L = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const out = [];
+    for (let i = 0; i < n; i++) out.push(existing[i] || { letter: L[i], name: '', warmup: [], main: [], cooldown: [] });
+    return out;
+  }
+  // active day array: the open week's days in "customize" mode, else the repeating template
+  _days(d) { return (d.vary && d.weekPlans && d.openWeek != null && d.weekPlans[d.openWeek]) ? d.weekPlans[d.openWeek].days : d.days; }
+  _cloneDays(days) {
+    const cx = (arr) => arr.map((x) => Object.assign({}, x, { id: 'x' + Date.now() + Math.round(Math.random() * 1e6) }));
+    return days.map((day) => ({ letter: day.letter, name: day.name, warmup: cx(day.warmup), main: cx(day.main), cooldown: cx(day.cooldown) }));
+  }
+  _weekBuilt(w) { return !!(w && w.days.some((dd) => dd.warmup.length || dd.main.length || dd.cooldown.length)); }
+  // per-week plans sized to weeks × daysPerWeek; new weeks start EMPTY (seeded on demand via Copy)
+  _ensureWeeks(d) {
+    if (!d.weekPlans) d.weekPlans = [];
+    while (d.weekPlans.length < d.weeks) d.weekPlans.push({ days: this._makeDays(d.daysPerWeek, []) });
+    d.weekPlans.length = d.weeks;
+    d.weekPlans.forEach((w) => { w.days = this._makeDays(d.daysPerWeek, w.days); });
+    if (d.openWeek != null && d.openWeek >= d.weeks) d.openWeek = null;
+  }
+  _params() {
+    const out = {};
+    const parse = (s) => { (s || '').replace(/^[?#]/, '').split('&').forEach((kv) => { if (!kv) return; const p = kv.split('='); out[decodeURIComponent(p[0])] = decodeURIComponent(p[1] || ''); }); };
+    try { parse(window.location.search); parse(window.location.hash); } catch (e) {}
+    return out;
+  }
+  _isDraftShape(o) { return !!(o && typeof o.daysPerWeek === 'number' && (Array.isArray(o.days) || Array.isArray(o.weekPlans))); }
+  _findSource(id) {
+    try {
+      const raw = localStorage.getItem('forge_created_programs_v1');
+      const list = raw ? JSON.parse(raw) : [];
+      const found = list.filter((pr) => pr && pr.id === id)[0];
+      if (found) return { kind: 'created', program: found };
+    } catch (e) {}
+    const FP = (typeof window !== 'undefined') ? window.ForgePrograms : null;
+    const p = (FP && FP.byId) ? FP.byId(id) : null;
+    if (p) return { kind: 'forge', program: p };
+    return null;
+  }
+  _familyEx(family) {
+    const M = {
+      'Strength': [['Back Squat', 4, 5], ['Bench Press', 4, 6], ['Deadlift', 3, 5], ['Barbell Row', 3, 8]],
+      'Muscle Building': [['Incline DB Press', 4, 10], ['Cable Row', 4, 12], ['Lateral Raise', 3, 15], ['Barbell Curl', 3, 12]],
+      'Running': [['Warm-up Jog', 1, 10], ['Main Effort', 1, 20], ['Cooldown', 1, 8]],
+      'Conditioning': [['Row Intervals', 6, 5], ['Kettlebell Swing', 4, 20], ['Burpees', 3, 15]],
+      'Full Body & Home': [['Goblet Squat', 3, 12], ['Push-up', 3, 15], ['Dumbbell Row', 3, 12], ['Plank', 3, 45]],
+      'Mobility': [['Hip Flow', 1, 5], ['Spine Mobility', 1, 5], ['Breathing', 1, 3]],
+    };
+    return M[family] || M['Strength'];
+  }
+  _reidDraft(draft) {
+    const rid = (arr) => (arr || []).forEach((x) => { x.id = 'x' + Date.now() + Math.round(Math.random() * 1e6); });
+    (draft.days || []).forEach((d) => { rid(d.warmup); rid(d.main); rid(d.cooldown); });
+    (draft.weekPlans || []).forEach((w) => (w.days || []).forEach((d) => { rid(d.warmup); rid(d.main); rid(d.cooldown); }));
+  }
+  _hydrateFrom(p, forDup) {
+    // A program saved by this builder is already in draft shape — load it directly.
+    if (this._isDraftShape(p)) {
+      let draft;
+      try { draft = JSON.parse(JSON.stringify(p)); } catch (e) { draft = this._newDraft(); }
+      draft._mode = null; draft._editId = null; draft._srcId = null;
+      if (forDup) { draft.name = (p.name || 'Program') + ' (Copy)'; this._reidDraft(draft); }
+      return draft;
+    }
+    // A catalog / planned program carries no exercise tree — synthesize an editable week
+    // from its schedule + family staples so there is real content to fork.
+    const draft = this._newDraft();
+    draft.name = forDup ? ((p.name || 'Program') + ' (Copy)') : (p.name || '');
+    draft.weeks = Math.max(4, Math.min(52, p.durationWeeks || 8));
+    const sched = (p.schedule && p.schedule.length) ? p.schedule : [{ name: '', focus: '' }];
+    const dpw = Math.max(2, Math.min(6, p.workoutsPerWeek || sched.length || 3));
+    draft.daysPerWeek = dpw;
+    draft.vary = false;
+    const L = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const exs = this._familyEx(p.family);
+    const mk = (name, sets, reps, k) => ({ id: 'h' + Date.now() + Math.round(Math.random() * 1e6) + k, name: name, equip: '', muscles: [], type: '', sets: sets, reps: reps });
+    const built = [];
+    for (let i = 0; i < dpw; i++) {
+      const s = sched[i % sched.length];
+      built.push({ letter: L[i], name: s.name || '', warmup: [], main: exs.map((e, k) => mk(e[0], e[1], e[2], i * 10 + k)), cooldown: [] });
+    }
+    draft.days = this._makeDays(dpw, built);
+    return draft;
+  }
+  _boot() {
+    const params = this._params();
+    const o = params.o || '';
+    let hasInbox = false;
+    try { hasInbox = !!localStorage.getItem(this._INBOX()); } catch (e) {}
+
+    let draft = null;
+    try { const raw = localStorage.getItem(this._KEY()); if (raw) draft = JSON.parse(raw); } catch (e) {}
+
+    const wantEdit = (o === 'edit' || o === 'dup') && params.id;
+    if (wantEdit && !hasInbox) {
+      const mode = o === 'edit' ? 'edit' : 'dup';
+      const sameSession = draft && draft._mode === mode && draft._srcId === params.id;
+      if (!sameSession) {
+        const src = this._findSource(params.id);
+        if (src) {
+          draft = this._hydrateFrom(src.program, mode === 'dup');
+          draft._mode = mode;
+          draft._srcId = params.id;
+          draft._editId = mode === 'edit' ? params.id : null;
+        }
+      }
+    } else if (!hasInbox && o !== 'builder') {
+      // a fresh "build your own" entry — don't inherit a stale edit/dup session
+      if (draft && draft._mode && draft._mode !== 'new') draft = null;
+    }
+    if (!draft) draft = this._newDraft();
+    const _L = ['A', 'B', 'C', 'D', 'E', 'F'];
+    (draft.days || []).forEach((day, i) => { if (!day.letter) day.letter = _L[i] || String(i + 1); if (/^Day [A-E]$/.test(day.name || '')) day.name = ''; });
+    if (draft.vary) this._ensureWeeks(draft);
+    // absorb an exercise handed back by the picker (add mode) into the right week/day/section
+    try {
+      const raw = localStorage.getItem(this._INBOX());
+      if (raw) {
+        const inbox = JSON.parse(raw);
+        localStorage.removeItem(this._INBOX());
+        let arr = draft.days;
+        if (inbox && inbox.vary) { draft.vary = true; this._ensureWeeks(draft); draft.openWeek = inbox.week || 0; arr = (draft.weekPlans[draft.openWeek] || {}).days || draft.days; }
+        if (inbox && arr && arr[inbox.day] && arr[inbox.day][inbox.section]) {
+          const sec = inbox.section;
+          const dSets = sec === 'main' ? 3 : (sec === 'warmup' ? 2 : 1);       // Main defaults to 3 × 10
+          const dReps = sec === 'cooldown' ? 30 : (sec === 'warmup' ? 12 : 10);
+          const list = (inbox.items && inbox.items.length) ? inbox.items : [{ name: inbox.name, equip: inbox.equip, muscles: inbox.muscles, type: inbox.type }];
+          list.forEach((it, k) => arr[inbox.day][sec].push({
+            id: 'x' + Date.now() + Math.round(Math.random() * 1e6) + k,
+            name: it.name, equip: it.equip, muscles: it.muscles || [], type: it.type || '',
+            sets: dSets, reps: dReps,
+          }));
+          draft.openDay = inbox.day;
+        }
+      }
+    } catch (e) {}
+    this._draft = draft;
+    this._save();
+  }
+  _save() { try { localStorage.setItem(this._KEY(), JSON.stringify(this._draft)); } catch (e) {} this.setState({ draft: this._draft }); }
+  _mutate(fn) { fn(this._draft); this._save(); }
+
+  _val(e) { return (e && e.target && typeof e.target.value === 'string') ? e.target.value : e; }   // DS InputField passes the event
+  onName = (e) => { const v = this._val(e); this._mutate((d) => { d.name = v; }); };
+  _applyResize(kind, n) {
+    this._mutate((d) => {
+      if (kind === 'weeks') { d.weeks = n; if (d.vary) this._ensureWeeks(d); }
+      else { d.daysPerWeek = n; d.days = this._makeDays(n, d.days); if (d.vary) this._ensureWeeks(d); }
+    });
+  }
+  _weeksLoseContent(n) { const d = this._draft; return d.vary && (d.weekPlans || []).slice(n).some((w) => this._weekBuilt(w)); }
+  _daysLoseContent(n) {
+    const d = this._draft; const hc = (day) => day.warmup.length || day.main.length || day.cooldown.length;
+    if (d.vary) return (d.weekPlans || []).some((w) => w.days.slice(n).some(hc));
+    return d.days.slice(n).some(hc);
+  }
+  setWeeks = (n) => {
+    n = Math.max(4, Math.min(52, n));
+    if (n === this._draft.weeks) return;
+    if (n < this._draft.weeks && this._weeksLoseContent(n)) { this.setState({ pendingResize: { kind: 'weeks', to: n, msg: 'Weeks ' + (n + 1) + '–' + this._draft.weeks + ' will be removed, along with any workouts built in them. This can\u2019t be undone.' } }); return; }
+    this._applyResize('weeks', n);
+  };
+  setDays = (n) => {
+    if (n === this._draft.daysPerWeek) return;
+    if (n < this._draft.daysPerWeek && this._daysLoseContent(n)) { const L = ['A', 'B', 'C', 'D', 'E', 'F']; this.setState({ pendingResize: { kind: 'days', to: n, msg: 'Day ' + (L[n] || (n + 1)) + ' onward will be removed from every week, along with their exercises. This can\u2019t be undone.' } }); return; }
+    this._applyResize('days', n);
+  };
+  confirmResize = () => { const p = this.state.pendingResize; if (p) this._applyResize(p.kind, p.to); this.setState({ pendingResize: null }); };
+  cancelResize = () => this.setState({ pendingResize: null });
+
+  // ── Spreadsheet import (paste from Excel / Sheets; header words matched in any order) ──
+  openImport = () => this.setState({ importOpen: true, importError: '', importPreview: null, importWeeks: [] });
+  closeImport = () => this.setState({ importOpen: false, importPreview: null, importError: '', importWeeks: [] });
+  _dayCount = (dd) => dd.warmup.length + dd.main.length + dd.cooldown.length;
+  _weeksFromBuilt(b) { return b.vary ? b.weekPlans.map((w) => w.days) : [b.days]; }
+  addAnotherWeek = () => {
+    const cur = this.state.importPreview; if (!cur) return;
+    this.setState({ importWeeks: this.state.importWeeks.concat(this._weeksFromBuilt(cur)), importPreview: null, importError: '' });
+  };
+  confirmImport = () => {
+    const cur = this.state.importPreview;
+    let weeks = this.state.importWeeks.slice();
+    if (cur) weeks = weeks.concat(this._weeksFromBuilt(cur));
+    if (!weeks.length) { this.setState({ importOpen: false, importPreview: null, importWeeks: [] }); return; }
+    const dpw = Math.max(2, Math.min(6, Math.max.apply(null, weeks.map((ds) => Math.max(1, ds.filter((d) => this._dayCount(d) > 0).length)))));
+    const draft = this._newDraft(); draft.name = ''; draft.daysPerWeek = dpw;
+    if (weeks.length > 1) {
+      draft.vary = true; draft.weeks = Math.min(52, weeks.length); draft.openWeek = null; draft.openDay = null;
+      draft.weekPlans = weeks.slice(0, 52).map((ds) => ({ days: this._makeDays(dpw, ds) }));
+    } else {
+      draft.vary = false; draft.openWeek = null; draft.openDay = null; draft.days = this._makeDays(dpw, weeks[0]);
+    }
+    this._draft = draft; this._save();
+    this.setState({ importOpen: false, importPreview: null, importWeeks: [], importError: '' });
+  };
+  backToPaste = () => this.setState({ importPreview: null });
+  _editSR = (m, field, delta) => {
+    const hi = field === 'sets' ? 12 : 60;
+    m[field] = Math.max(1, Math.min(hi, (m[field] || 1) + delta));
+    this.forceUpdate();
+  };
+  _importPreviewVals() {
+    const ip = this.state.importPreview;
+    const acc = this.state.importWeeks.length;
+    if (!ip) return { previewOn: false, pasteOn: true, pvSummary: '', pvDays: [], confirmImport: this.confirmImport, backToPaste: this.backToPaste, onAddWeek: this.addAnotherWeek, pasteWeekHint: acc ? ('Week ' + (acc + 1) + ' \u2014 paste the next week, or create the program now.') : '', accWeeks: acc };
+    const cnt = this._dayCount;
+    const secLabel = { warmup: 'Warm-up', main: 'Main', cooldown: 'Cool-down' };
+    const mkDay = (dd, i, weekHead) => ({
+      weekHead: weekHead || '',
+      name: dd.name || ('Day ' + (dd.letter || String.fromCharCode(65 + i))),
+      secs: ['warmup', 'main', 'cooldown'].filter((k) => dd[k].length).map((k) => ({
+        label: secLabel[k] + '  ·  ' + dd[k].length,
+        items: dd[k].map((m) => ({
+          name: m.name, sets: m.sets, reps: m.reps,
+          decSets: () => this._editSR(m, 'sets', -1), incSets: () => this._editSR(m, 'sets', 1),
+          decReps: () => this._editSR(m, 'reps', -1), incReps: () => this._editSR(m, 'reps', 1),
+        })),
+      })),
+    });
+    const weekArrays = ip.vary ? ip.weekPlans.map((w) => w.days) : [ip.days];
+    let usedTotalDays = 0, totalAll = 0;
+    const pvDays = [];
+    weekArrays.forEach((days, wi) => {
+      const used = days.filter((dd) => cnt(dd) > 0);
+      used.forEach((dd, i) => { pvDays.push(mkDay(dd, i, (ip.vary && i === 0) ? ('Week ' + (wi + 1)) : '')); });
+      usedTotalDays += used.length;
+      totalAll += days.reduce((b, dd) => b + cnt(dd), 0);
+    });
+    const daysPerWk = ip.vary ? Math.max.apply(null, weekArrays.map((days) => days.filter((dd) => cnt(dd) > 0).length)) : usedTotalDays;
+    const wkLabel = acc ? ('Week ' + (acc + 1)) : (ip.vary ? (ip.weeks + ' custom weeks') : '1 week imported');
+    const summary = wkLabel + '  \u00b7  ' + daysPerWk + (daysPerWk === 1 ? ' day' : ' days') + '  \u00b7  ' + totalAll + ' exercises';
+    return { previewOn: true, pasteOn: false, pvSummary: summary, pvDays: pvDays, confirmImport: this.confirmImport, backToPaste: this.backToPaste, onAddWeek: this.addAnotherWeek, pasteWeekHint: '', accWeeks: acc };
+  }
+  setImportEl = (el) => { this._importEl = el; };
+  doImport = () => {
+    const built = this._buildFromImport(this._importEl ? this._importEl.value : '');
+    if (!built) { this.setState({ importError: "Couldn't read any exercises. Include a header row (Week, Day, Exercise, Sets, Reps) and at least one exercise." }); return; }
+    this.setState({ importPreview: built, importError: '' });
+  };
+  setFileInput = (el) => { this._fileInput = el; };
+  pickFile = () => { if (this._fileInput) this._fileInput.click(); };   // opens Files / Drive / iCloud on phone
+  onFilePicked = (e) => {
+    const f = e.target && e.target.files && e.target.files[0]; if (!f) return;
+    const rdr = new FileReader();
+    rdr.onload = () => {
+      const built = this._buildFromImport(String(rdr.result || ''));
+      if (!built) { this.setState({ importError: "Couldn't read that file. Make sure it's a CSV with columns like Week, Day, Exercise, Sets, Reps." }); return; }
+      this.setState({ importPreview: built, importError: '' });
+    };
+    rdr.readAsText(f); e.target.value = '';
+  };
+  _buildFromImport(text) {
+    const lines = String(text || '').split(/\r?\n/).filter((l) => l.trim());
+    if (!lines.length) return null;
+    const delim = lines[0].indexOf('\t') >= 0 ? '\t' : ',';
+    const splitLine = (line) => {
+      if (delim !== ',') return line.split(delim).map((c) => c.trim());
+      const out = []; let cur = '', q = false;                 // quote-aware split for CSV exports ("a, b" stays one field)
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (q) { if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+        else if (ch === '"') q = true;
+        else if (ch === ',') { out.push(cur); cur = ''; }
+        else cur += ch;
+      }
+      out.push(cur);
+      return out.map((c) => c.trim());
+    };
+    const rows = lines.map(splitLine);
+    const cell = (r, i) => (i >= 0 ? (r[i] || '').trim() : '');
+    const parseSR = (s) => { const m = String(s || '').match(/(\d+)\s*[x×]\s*(\d+)/i); return m ? { sets: +m[1], reps: +m[2] } : null; };
+    const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+    const firstRep = (v) => { const m = String(v || '').match(/(\d+)/); return m ? +m[1] : 0; };
+    const dayRe = /^(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tues?|wed|thur?s?|fri|sat|sun|day\s*\d+|day\s+[a-z]\b)/i;
+    const weekRe = /^(week|wk)\s*\d+/i;
+    const bucket = (t) => (/warm.?up|mobility|activation|primer|prep|explosive/i.test(t) ? 'warmup' : (/cool.?down|conditioning|cardio|zone\s*2|stretch|recovery|finisher/i.test(t) ? 'cooldown' : 'main'));
+
+    // locate the real columnar header row: score rows by header keywords, requiring a SHORT exercise-column cell
+    // (so a prose title like "Phase 1 — Hypertrophy & Movement Foundation" is never mistaken for the header)
+    const exWord = /exercise|movement|workout|lift/;
+    const kwWord = /exercise|movement|workout|lift|section|phase|block|set|rep|intensity|tempo|rpe|load|weight|rest|\bday\b|week/;
+    let hdrIdx = -1, hdrScore = 0;
+    for (let i = 0; i < Math.min(rows.length, 14); i++) {
+      const cells = rows[i].map((c) => (c || '').trim().toLowerCase());
+      const hasEx = cells.some((c) => c && c.length <= 20 && exWord.test(c));
+      if (!hasEx) continue;
+      const score = cells.filter((c) => c && c.length <= 20 && kwWord.test(c)).length;
+      if (score > hdrScore) { hdrScore = score; hdrIdx = i; }
+    }
+
+    const parsed = [];
+
+    // ── Layout A: days as COLUMNS — only when there is NO columnar exercise header ──
+    let dHdr = -1, dCols = [];
+    if (hdrIdx < 0) {
+      for (let i = 0; i < Math.min(rows.length, 6); i++) {
+        const hits = []; let nonEmpty = 0;
+        rows[i].forEach((c, ci) => { const v = (c || '').trim(); if (v) nonEmpty++; if (dayRe.test(v)) hits.push({ col: ci, name: v }); });
+        if (hits.length >= 2 && hits.length >= nonEmpty - 1) { dHdr = i; dCols = hits; break; }   // weekday names must dominate the row
+      }
+    }
+    if (dHdr >= 0) {
+      const dset = {}; dCols.forEach((d) => { dset[d.col] = 1; });
+      let labelCol = 0; while (dset[labelCol]) labelCol++;      // exercise/section names live in the first non-day column
+      let curSec = 'main';
+      for (let i = dHdr + 1; i < rows.length; i++) {
+        const r = rows[i]; const label = cell(r, labelCol);
+        const hasDayVal = dCols.some((d) => cell(r, d.col));
+        if (!label && !hasDayVal) continue;
+        if (label && !hasDayVal) { if (dayRe.test(label) || weekRe.test(label)) continue; curSec = bucket(label); continue; }   // section / circuit header
+        if (!label) continue;
+        dCols.forEach((d, di) => {
+          const next = dCols[di + 1] ? dCols[di + 1].col : 1e9;
+          let reps = 0;
+          for (let c = d.col; c < next; c++) { const v = cell(r, c); if (v && firstRep(v)) { reps = firstRep(v); break; } }
+          if (reps > 0) parsed.push({ week: '1', day: d.name, section: curSec, name: label, sets: 3, reps: clamp(reps, 1, 60) });
+        });
+      }
+    }
+
+    // ── Layout B: ROWS (columnar table, day-header sections, combined Sets×Reps) ──
+    if (!parsed.length) {
+      let map = { week: -1, day: -1, section: -1, ex: -1, sr: -1, sets: -1, reps: -1 };
+      let start = 0;
+      if (hdrIdx >= 0) {
+        const head = rows[hdrIdx].map((c) => c.toLowerCase());
+        head.forEach((c, i) => {
+          if (map.week < 0 && /week/.test(c)) map.week = i;
+          else if (map.day < 0 && /\bday\b/.test(c)) map.day = i;
+          else if (map.section < 0 && /section|phase|block|part/.test(c)) map.section = i;
+          else if (map.ex < 0 && /exercise|workout|movement|lift/.test(c)) map.ex = i;
+          else if (map.sr < 0 && /set/.test(c) && /rep/.test(c)) map.sr = i;         // combined "Sets × Reps"
+          else if (map.sets < 0 && /set/.test(c)) map.sets = i;
+          else if (map.reps < 0 && /rep/.test(c)) map.reps = i;
+        });
+        start = hdrIdx + 1;
+      } else {
+        const multiCol = rows.filter((r) => r.filter((c) => c && c.trim()).length >= 3).length;   // only assume a columnar table when rows really have ≥3 columns
+        if (multiCol >= Math.max(2, Math.floor(rows.length * 0.4))) map = { week: 0, day: 1, section: -1, ex: 2, sr: -1, sets: 3, reps: 4 };
+      }
+      if (map.ex >= 0) {
+      let curWeek = '', curDay = '', curSection = 'main';
+      for (let i = start; i < rows.length; i++) {
+        const r = rows[i];
+        if (cell(r, map.week)) curWeek = cell(r, map.week);   // forward-fill explicit Week/Day columns
+        if (cell(r, map.day)) curDay = cell(r, map.day);
+        const ex = cell(r, map.ex);
+        if (!ex) {                                            // no exercise → header / label row
+          let label = cell(r, map.section);
+          if (!label) { const f = r.find((c) => c && c.trim()); label = f ? f.trim() : ''; }
+          if (!label) continue;
+          if (weekRe.test(label)) { curWeek = label; continue; }
+          if (dayRe.test(label)) { curDay = label; curSection = 'main'; continue; }   // new day resets section
+          curSection = bucket(label); continue;               // sub-section header (warm-up / strength / conditioning…)
+        }
+        let sets, reps;
+        if (map.sr >= 0) { const sr = parseSR(cell(r, map.sr)); sets = sr ? sr.sets : 1; reps = sr ? sr.reps : 1; }
+        else {
+          let s = cell(r, map.sets), rp = cell(r, map.reps);
+          if (!rp && /[x×]/i.test(s)) { const sr = parseSR(s); if (sr) { s = sr.sets; rp = sr.reps; } }
+          sets = parseInt(s, 10) || 3; reps = parseInt(rp, 10) || 10;
+        }
+        parsed.push({ week: curWeek || '1', day: curDay || 'Day A', section: curSection, name: ex, sets: clamp(sets, 1, 8), reps: clamp(reps, 1, 60) });
+      }
+      }
+    }
+    // ── Layout C: single-column list from a PDF / notes paste ──
+    // day-name lines start a day; "Category: Exercise (notes)" lines are exercises; FOCUS: / REST DAY skipped
+    if (!parsed.length) {
+      const wd = /^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i;
+      const titleCase = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+      let curDay = '', curWk = 1; const seenDays = {};
+      for (let li = 0; li < lines.length; li++) {
+        let line = lines[li].trim();
+        if (!line) continue;
+        const dm = line.match(wd);
+        if (dm) {
+          if (/rest\s*day/i.test(line)) { curDay = ''; continue; }   // skip rest days entirely
+          curDay = titleCase(dm[0]);
+          if (seenDays[curDay]) { curWk++; for (const k in seenDays) delete seenDays[k]; }   // a weekday repeats → next week
+          seenDays[curDay] = 1;
+          const rest = line.slice(dm[0].length).replace(/^[\s—–:.\-]+/, '').trim();
+          if (!(rest && rest.indexOf(':') > 0)) continue;            // pure day header
+          line = rest;                                               // exercise trails on the same line
+        }
+        if (!curDay) continue;
+        if (!/[a-z]/.test(line)) continue;                           // ALL-CAPS line = TARGET/FOCUS header or wrapped continuation → skip
+        const ci = line.indexOf(':');
+        let cat = '', name;
+        if (ci > 0 && ci <= 16 && line.slice(ci + 1).trim()) {       // "Category: Exercise" form
+          cat = line.slice(0, ci).trim();
+          if (/^(focus|target|goal|notes?|day|week)$/i.test(cat)) continue;   // metadata label, not a category
+          name = line.slice(ci + 1);
+        } else { name = line; }                                      // bare exercise name (no colon)
+        name = name.replace(/\s+[—–]\s+.*$/, '').trim();             // drop trailing "— note"
+        if (!name) continue;
+        parsed.push({ week: String(curWk), day: curDay, section: bucket(cat), name: name, sets: 3, reps: 10 });
+      }
+    }
+    if (!parsed.length) return null;
+
+    const weekKeys = []; const weekMap = {};
+    parsed.forEach((p) => { if (!weekMap[p.week]) { weekMap[p.week] = []; weekKeys.push(p.week); } weekMap[p.week].push(p); });
+    const L = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const generic = (s) => /^(day\s*)?[a-f]$|^\d+$/i.test((s || '').trim());
+    const niceName = (dk) => { if (generic(dk)) return ''; const parts = String(dk).split(/\s*[—–:]\s*|\s+-\s+/); return (parts.length > 1 ? parts.slice(1).join(' — ') : parts[0]).trim().slice(0, 30); };
+    let uid = 0;
+    const mk = (arr) => arr.map((e) => ({ id: 'imp' + Date.now() + '_' + (uid++), name: e.name, equip: '', muscles: [], type: '', sets: e.sets, reps: e.reps }));
+    const buildDays = (list) => {
+      const dayKeys = []; const dayMap = {};
+      list.forEach((p) => { if (!dayMap[p.day]) { dayMap[p.day] = []; dayKeys.push(p.day); } dayMap[p.day].push(p); });
+      return dayKeys.slice(0, 6).map((dk, idx) => {
+        const items = dayMap[dk];
+        return { letter: L[idx] || String(idx + 1), name: niceName(dk),
+          warmup: mk(items.filter((e) => e.section === 'warmup')),
+          main: mk(items.filter((e) => e.section === 'main')),
+          cooldown: mk(items.filter((e) => e.section === 'cooldown')) };
+      });
+    };
+    const daysPerWeek = Math.max(2, Math.min(6, Math.max.apply(null, weekKeys.map((w) => (new Set(weekMap[w].map((p) => p.day))).size))));
+    const draft = this._newDraft();
+    draft.name = ''; draft.daysPerWeek = daysPerWeek;
+    if (weekKeys.length > 1) {
+      draft.vary = true; draft.weeks = Math.min(52, weekKeys.length); draft.openWeek = null; draft.openDay = null;
+      draft.weekPlans = weekKeys.slice(0, 52).map((wk) => ({ days: this._makeDays(daysPerWeek, buildDays(weekMap[wk])) }));
+    } else {
+      draft.vary = false; draft.openDay = null; draft.openWeek = null;
+      draft.days = this._makeDays(daysPerWeek, buildDays(weekMap[weekKeys[0]]));
+    }
+    return draft;
+  }
+  setRepeat = () => this._mutate((d) => { d.vary = false; d.openWeek = null; d.openDay = null; });
+  setVary = () => this._mutate((d) => { d.vary = true; d.openDay = null; this._ensureWeeks(d); d.openWeek = 0; });
+
+  _weekComplete(w) { return !!(w && w.days.some((dd) => dd.main.length > 0)); }
+  _anyOtherBuilt(i) { const d = this._draft; return (d.weekPlans || []).some((w, k) => k !== i && this._weekBuilt(w)); }
+
+  openWeek = (i) => { this._mutate((dd) => { dd.openWeek = i; dd.openDay = null; }); this.setState({ hidePrompt: false }); };
+  openCopyFrom = () => { this.setState({ weekSheet: { i: this._draft.openWeek, entering: true } }); };
+  startBuilding = () => this.setState({ hidePrompt: true });
+  closeWeek = () => this._mutate((d) => { d.openWeek = null; d.openDay = null; });
+  advanceWeek = () => {
+    const d = this._draft;
+    let next = -1;
+    for (let i = d.openWeek + 1; i < d.weeks; i++) { if (!this._weekComplete(d.weekPlans[i])) { next = i; break; } }
+    if (next === -1) for (let i = 0; i < d.weeks; i++) { if (!this._weekComplete(d.weekPlans[i])) { next = i; break; } }
+    if (next === -1) this._mutate((dd) => { dd.openWeek = null; dd.openDay = null; });   // all weeks built → review
+    else this.openWeek(next);
+  };
+  // unified week sheet: seed when entering an empty week, or an overflow menu on a week row
+  openWeekMenu = (i) => this.setState({ weekSheet: { i: i, entering: false } });
+  closeWeekSheet = () => this.setState({ weekSheet: null });
+  weekCopyFrom = (src) => {
+    const ws = this.state.weekSheet; if (!ws) return; const i = ws.i;
+    this._mutate((d) => { d.weekPlans[i] = { days: this._cloneDays(d.weekPlans[src].days) }; });
+    this.setState({ weekSheet: null, hidePrompt: true });
+  };
+  weekStartEmpty = () => this.setState({ weekSheet: null, hidePrompt: true });   // dismiss the copy prompt, build from empty
+  weekClear = () => { const ws = this.state.weekSheet; if (!ws) return; const i = ws.i; this._mutate((d) => { d.weekPlans[i] = { days: this._makeDays(d.daysPerWeek, []) }; }); this.setState({ weekSheet: null }); };
+  openJump = () => this.setState({ jumpOpen: true });
+  closeJump = () => this.setState({ jumpOpen: false });
+  jumpTo = (i) => { this.setState({ jumpOpen: false }); this.openWeek(i); };
+
+  openDay = (i) => this._mutate((d) => { d.openDay = i; });
+  closeDay = () => this._mutate((d) => { d.openDay = null; });
+  onDayName = (e) => { const v = this._val(e); this._mutate((d) => { if (d.openDay != null) this._days(d)[d.openDay].name = v; }); };
+  advanceDay = () => this._mutate((d) => { const arr = this._days(d); const n = d.openDay + 1; d.openDay = (n < arr.length) ? n : null; });
+
+  openDayMenu = (i) => this.setState({ dayMenu: i });
+  closeDayMenu = () => this.setState({ dayMenu: null });
+  renameDay = (i, v) => this._mutate((d) => { this._days(d)[i].name = v; });
+  clearDay = (i) => { this._mutate((d) => { const a = this._days(d); a[i].warmup = []; a[i].main = []; a[i].cooldown = []; }); this.setState({ dayMenu: null }); };
+  duplicateTo = (src, tgt) => {
+    const clone = (arr) => arr.map((x) => Object.assign({}, x, { id: 'x' + Date.now() + Math.round(Math.random() * 1e5) }));
+    this._mutate((d) => { const a = this._days(d); const s = a[src]; a[tgt].warmup = clone(s.warmup); a[tgt].main = clone(s.main); a[tgt].cooldown = clone(s.cooldown); });
+    this.setState({ dayMenu: null });
+  };
+
+  // ── Cardio blocks ──
+  // A run/walk/ride authored into a day. It carries a distance and a pace target, either
+  // of which may be null — null means the program prescribed nothing and the athlete decides.
+  CARDIO_DEFAULTS = {
+    run:  { activity: 'run',  name: 'Outdoor Run',  equip: 'Road', modality: 'outdoor', targetMi: 3,  targetPaceSec: 495 },
+    walk: { activity: 'walk', name: 'Outdoor Walk', equip: 'Road', modality: 'outdoor', targetMi: 2,  targetPaceSec: 1050 },
+    bike: { activity: 'bike', name: 'Outdoor Ride', equip: 'Road', modality: 'outdoor', targetMi: 10, targetSpdMph: 17 },
+  };
+  openCardioSheet = (section) => this.setState({ cardioSheet: section });
+  closeCardioSheet = () => this.setState({ cardioSheet: null });
+  addCardio = (activity) => {
+    const section = this.state.cardioSheet;
+    if (!section) return;
+    const base = this.CARDIO_DEFAULTS[activity] || this.CARDIO_DEFAULTS.run;
+    this.setState({ cardioSheet: null });
+    this._mutate((d) => { this._days(d)[d.openDay][section].push(Object.assign({ kind: 'cardio' }, base)); });
+  };
+  setCardioModality = (section, idx, m) => this._mutate((d) => {
+    const it = this._days(d)[d.openDay][section][idx];
+    if (it.modality === m) return;
+    const V = { run: 'Run', walk: 'Walk', bike: 'Ride' }[it.activity] || 'Run';
+    const indoor = it.activity === 'bike';
+    it.modality = m;
+    it.name = m === 'indoor' ? (indoor ? 'Indoor Ride' : ('Treadmill ' + V)) : ('Outdoor ' + V);
+    it.equip = m === 'indoor' ? (indoor ? 'Trainer' : 'Treadmill') : 'Road';
+  });
+  // Stepping below the low end of the range clears the target rather than clamping.
+  // "Open" is the bottom of the scale, not a separate switch.
+  bumpDist = (section, idx, delta) => this._mutate((d) => {
+    const it = this._days(d)[d.openDay][section][idx];
+    const MIN = 0.5, MAX = 26.2, STEP = 0.5;
+    if (it.targetMi == null) { if (delta > 0) it.targetMi = MIN; return; }
+    const next = Math.round((it.targetMi + delta * STEP) * 10) / 10;
+    it.targetMi = next < MIN ? null : Math.min(MAX, next);
+  });
+  bumpEffort = (section, idx, delta) => this._mutate((d) => {
+    const it = this._days(d)[d.openDay][section][idx];
+    if (it.activity === 'bike') {
+      const MIN = 6, MAX = 30, STEP = 0.5;
+      if (it.targetSpdMph == null) { if (delta > 0) it.targetSpdMph = 17; return; }
+      const n = Math.round((it.targetSpdMph + delta * STEP) * 10) / 10;
+      it.targetSpdMph = n < MIN ? null : Math.min(MAX, n);
+      return;
+    }
+    const MIN = 300, MAX = 1200, STEP = 5;
+    if (it.targetPaceSec == null) { if (delta > 0) it.targetPaceSec = 495; return; }
+    const n = it.targetPaceSec + delta * STEP;
+    it.targetPaceSec = n < MIN ? null : Math.min(MAX, n);
+  });
+
+  addExercise = (section) => {
+    const d = this._draft;
+    this._save(); // persist before leaving so the round-trip is lossless
+    window.location.href = 'Forge%20Exercise%20Picker.dc.html#o=builder&vary=' + (d.vary ? 1 : 0) + '&week=' + (d.openWeek || 0) + '&day=' + d.openDay + '&section=' + section;
+  };
+  removeEx = (section, idx) => this._mutate((d) => { this._days(d)[d.openDay][section].splice(idx, 1); });
+  moveEx = (section, idx, dir) => this._mutate((d) => {
+    const arr = this._days(d)[d.openDay][section]; const j = idx + dir;
+    if (j < 0 || j >= arr.length) return;
+    const t = arr[idx]; arr[idx] = arr[j]; arr[j] = t;
+  });
+  bumpSets = (section, idx, delta) => this._mutate((d) => { const it = this._days(d)[d.openDay][section][idx]; it.sets = Math.max(1, Math.min(8, it.sets + delta)); });
+  bumpReps = (section, idx, delta) => this._mutate((d) => { const it = this._days(d)[d.openDay][section][idx]; it.reps = Math.max(1, Math.min(60, it.reps + delta)); });
+
+  onCancel = () => { try { localStorage.removeItem(this._KEY()); } catch (e) {} window.location.href = 'Forge%20Programs%20Catalog.dc.html'; };
+  onSave = () => {
+    if (!this._isValid()) return;
+    const mode = (this._draft && this._draft._mode) || 'new';
+    const editId = this._draft && this._draft._editId;
+    let savedId = (mode === 'edit' && editId) ? editId : null;
+    try {
+      const raw = localStorage.getItem('forge_created_programs_v1');
+      let list = raw ? JSON.parse(raw) : [];
+      const clean = Object.assign({}, this._draft);
+      delete clean._mode; delete clean._editId; delete clean._srcId;
+      if (mode === 'edit' && editId) {
+        let i = -1; for (let k = 0; k < list.length; k++) { if (list[k] && list[k].id === editId) { i = k; break; } }
+        const rec = Object.assign({}, (i >= 0 ? list[i] : { id: editId, savedAt: Date.now(), state: 'future', source: 'custom' }), clean, { id: editId, updatedAt: Date.now() });
+        if (i >= 0) list[i] = rec; else list.push(rec);
+      } else {
+        savedId = 'usr-' + Date.now();
+        list.push(Object.assign({ id: savedId, savedAt: Date.now(), state: 'future', source: 'custom' }, clean));
+      }
+      localStorage.setItem('forge_created_programs_v1', JSON.stringify(list));
+      localStorage.removeItem(this._KEY());
+    } catch (e) {}
+    window.location.href = savedId ? ('Forge%20Program.dc.html#' + encodeURIComponent(savedId)) : 'Forge%20Programs%20Catalog.dc.html';
+  };
+  _isValid() {
+    const d = this._draft; if (!d) return false;
+    if (!d.name || !d.name.trim()) return false;
+    if (d.vary && d.weekPlans) return d.weekPlans.some((w) => w.days.some((day) => day.main.length > 0));
+    return d.days.some((day) => day.main.length > 0);
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true };
+    }
+    const h = React.createElement;
+    const d = this.state.draft;
+    const dn = (day) => (day.name && day.name.trim()) ? day.name : ('Day ' + (day.letter || '?'));
+
+    const EQ = {
+      Barbell: ['M6.5 9v6', 'M17.5 9v6', 'M4 10.5v3', 'M20 10.5v3', 'M6.5 12h11'],
+      Dumbbell: ['M7 8.5v7', 'M17 8.5v7', 'M4.5 10v4', 'M19.5 10v4', 'M7 12h10'],
+      Cable: ['M12 3v6', 'M8.5 9h7l-1 5a2.5 2.5 0 0 1-5 0z'],
+      Machine: ['M5 3v18', 'M5 7h9a3 3 0 0 1 0 6H9', 'M9 13v5'],
+      Bodyweight: ['M6 20c0-4.2 2.8-7 6-7s6 2.8 6 7'],
+    };
+    const eqIcon = (equip) => {
+      const paths = EQ[equip] || EQ.Barbell;
+      const kids = paths.map((p) => h('path', { key: p, d: p }));
+      if (equip === 'Bodyweight') kids.unshift(h('circle', { key: 'c', cx: 12, cy: 6, r: 2.4 }));
+      return h('svg', { width: 19, height: 19, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, kids);
+    };
+    // Cardio glyphs come from the shared symbol library, keyed off the ACTIVITY —
+    // modality is already carried by the Outdoor/Treadmill row and the block name.
+    const actIcon = (a) => {
+      const FS = window.ForgeSymbols;
+      const name = a === 'bike' ? 'bicycle' : (a === 'walk' ? 'footprints' : 'shoe');
+      return FS ? FS.create(React, name, { size: 19, strokeWidth: 1.7 }) : eqIcon('Bodyweight');
+    };
+    const MGROUP = { Chest: 'Chest', 'Upper Chest': 'Chest', Back: 'Back', Lats: 'Back', Shoulders: 'Shoulders', 'Side Delts': 'Shoulders', 'Rear Delts': 'Shoulders', Biceps: 'Arms', Triceps: 'Arms', Forearms: 'Arms', Quads: 'Legs', Glutes: 'Legs', Hamstrings: 'Legs', Abs: 'Core', Core: 'Core' };
+    const inferLabel = (items) => {
+      if (!items.length) return '';
+      const cnt = {}; items.forEach((it) => (it.muscles || []).forEach((m) => { const g = MGROUP[m]; if (g) cnt[g] = (cnt[g] || 0) + 1; }));
+      const groups = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]);
+      if (!groups.length) return '';
+      if (groups.length === 1) return groups[0];
+      if (groups.length === 2) return groups[0] + ' & ' + groups[1];
+      return 'Full Body';
+    };
+    const checkNode = (ok) => h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: ok ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', strokeWidth: 2.4, strokeLinecap: 'round', strokeLinejoin: 'round' }, ok ? h('path', { key: 'k', d: 'M20 6L9 17l-5-5' }) : h('path', { key: 'k', d: 'M18 6L6 18M6 6l12 12' }));
+
+    const seg = (n, active, onTap, idx) => ({ n: String(n), onTap, segBg: active ? 'var(--fl-bronze-tint)' : 'transparent', segInk: active ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)', segDiv: idx === 0 ? 'none' : '1px solid var(--fl-charcoal-700)' });
+    const weekChips = [4, 6, 8, 12].map((n, i) => seg(n, d.weeks === n, () => this.setWeeks(n), i));
+    const dayChips = [2, 3, 4, 5, 6].map((n, i) => seg(n, d.daysPerWeek === n, () => this.setDays(n), i));
+
+    const dayView = d.openDay != null;
+    const weekDaysView = !dayView && d.vary && d.openWeek != null;
+    const setupView = !dayView && !weekDaysView;
+    const days = this._days(d);
+
+    // day rows (repeat template, or the open week's days)
+    const dayRows = days.map((day, i) => {
+      const total = day.warmup.length + day.main.length + day.cooldown.length;
+      const built = day.main.length > 0;
+      const label = inferLabel(day.main);
+      return {
+        letter: day.letter || String(i + 1),
+        name: dn(day),
+        subtitle: total === 0 ? 'No exercises yet · Tap to build' : ((label ? label + ' · ' : '') + total + (total === 1 ? ' exercise' : ' exercises')),
+        subColor: total === 0 ? 'var(--fl-text-tertiary)' : 'var(--fl-bronze-primary)',
+        done: built,
+        border: built ? 'var(--fl-bronze-border-subtle)' : 'var(--fl-charcoal-600)',
+        onOpen: () => this.openDay(i),
+        onMenu: () => this.openDayMenu(i),
+      };
+    });
+
+    // week rows (customize mode)
+    const weekRows = (d.vary && d.weekPlans ? d.weekPlans : []).map((w, i) => {
+      const tot = w.days.reduce((a, dd) => a + dd.warmup.length + dd.main.length + dd.cooldown.length, 0);
+      const built = w.days.some((dd) => dd.main.length > 0);
+      return {
+        num: String(i + 1), label: 'Week ' + (i + 1),
+        subtitle: tot === 0 ? 'Empty' : (tot + (tot === 1 ? ' exercise' : ' exercises')),
+        subColor: tot === 0 ? 'var(--fl-text-tertiary)' : 'var(--fl-bronze-primary)',
+        built: built,
+        notBuilt: !built,
+        border: built ? 'var(--fl-bronze-border-subtle)' : 'var(--fl-charcoal-600)',
+        onOpen: () => this.openWeek(i),
+        onMenu: () => this.openWeekMenu(i),
+      };
+    });
+    const completedWeeks = (d.weekPlans || []).filter((w) => this._weekComplete(w)).length;
+    const jumpWeeks = (d.weekPlans || []).map((w, i) => {
+      const done = this._weekComplete(w); const cur = i === d.openWeek;
+      return { label: 'Week ' + (i + 1), status: cur ? 'Current' : (done ? 'Built' : 'Not started'), statusColor: cur ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', done: done, curOnly: cur && !done, todo: !done && !cur, rowBg: cur ? 'var(--fl-bronze-tint)' : 'transparent', onTap: () => this.jumpTo(i) };
+    });
+    const ws = this.state.weekSheet;
+    const wsSources = ws ? (d.weekPlans || []).map((w, i) => ({ i: i, label: 'Week ' + (i + 1), built: this._weekBuilt(w) })).filter((s) => s.i !== ws.i && s.built).map((s) => ({ label: s.label, onTap: () => this.weekCopyFrom(s.i) })) : [];
+
+    // summary line for the current list
+    let setupSummary;
+    if (d.vary) {
+      const totalAll = (d.weekPlans || []).reduce((a, w) => a + w.days.reduce((b, dd) => b + dd.warmup.length + dd.main.length + dd.cooldown.length, 0), 0);
+      setupSummary = d.weeks + ' weeks · ' + totalAll + (totalAll === 1 ? ' exercise' : ' exercises');
+    } else {
+      const totalEx = d.days.reduce((a, day) => a + day.warmup.length + day.main.length + day.cooldown.length, 0);
+      setupSummary = d.daysPerWeek + ' days · ' + totalEx + (totalEx === 1 ? ' exercise' : ' exercises');
+    }
+
+    const nameOk = !!(d.name && d.name.trim());
+    const mainOk = this._isValid() && nameOk ? true : (d.vary && d.weekPlans ? d.weekPlans.some((w) => w.days.some((day) => day.main.length > 0)) : d.days.some((day) => day.main.length > 0));
+    const valid = nameOk && mainOk;
+    const checks = [{ label: 'Program name', ok: nameOk }, { label: 'At least one main exercise', ok: mainOk }].map((c) => ({ label: c.label, mark: checkNode(c.ok), ink: c.ok ? 'var(--fl-text-secondary)' : 'var(--fl-text-tertiary)' }));
+
+    // day-options menu (operates on the current list's days)
+    const mIdx = this.state.dayMenu;
+    const menuDay = (mIdx != null && days[mIdx]) ? days[mIdx] : null;
+    const dupTargets = (mIdx != null) ? days.map((day, idx) => ({ idx: idx, name: dn(day) })).filter((t) => t.idx !== mIdx).map((t) => ({ name: t.name, onTap: () => this.duplicateTo(mIdx, t.idx) })) : [];
+
+    const vals = {
+      ready: true, notReady: false,
+      setupView, weekDaysView, dayView,
+      onCancel: this.onCancel,
+      builderTitle: (d._mode === 'edit') ? 'Edit Program' : (d._mode === 'dup') ? 'Duplicate Program' : 'New Program',
+      saveLabel: (d._mode === 'edit') ? 'Save Changes' : (d._mode === 'dup') ? 'Create Copy' : 'Save Program',
+      isEditing: d._mode === 'edit' || d._mode === 'dup',
+      editContext: (d._mode === 'edit') ? 'Editing your planned program' : (d._mode === 'dup') ? 'New copy — the original stays unchanged' : '',
+      name: d.name, onName: this.onName,
+      dayChips,
+      weeksValue: d.weeks,
+      onWeeksDown: () => this.setWeeks(d.weeks - 1),
+      onWeeksUp: () => this.setWeeks(d.weeks + 1),
+      resizeOpen: !!this.state.pendingResize,
+      resizeMsg: this.state.pendingResize ? this.state.pendingResize.msg : '',
+      confirmResize: this.confirmResize,
+      cancelResize: this.cancelResize,
+      onOpenImport: this.openImport,
+      importOpen: this.state.importOpen,
+      closeImport: this.closeImport,
+      setImportEl: this.setImportEl,
+      onImport: this.doImport,
+      importError: this.state.importError,
+      setFileInput: this.setFileInput,
+      onPickFile: this.pickFile,
+      onFilePicked: this.onFilePicked,
+      ...this._importPreviewVals(),
+      structRepeat: !d.vary, structVary: d.vary,
+      onRepeat: this.setRepeat, onVary: this.setVary,
+      repeatBorder: !d.vary ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+      repeatBg: !d.vary ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+      repeatDot: !d.vary ? 'var(--fl-bronze-primary)' : 'var(--fl-charcoal-500)',
+      varyBorder: d.vary ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+      varyBg: d.vary ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+      varyDot: d.vary ? 'var(--fl-bronze-primary)' : 'var(--fl-charcoal-500)',
+      listHeader: d.vary ? 'Weeks' : 'Workouts',
+      setupSummary,
+      dayRows, weekRows,
+      checks,
+      saveDisabled: !valid,
+      saveBg: valid ? 'var(--fl-bronze-fill)' : 'var(--fl-bronze-fill-disabled)',
+      saveBorder: valid ? 'var(--fl-bronze-metal-border)' : 'var(--fl-bronze-border-disabled)',
+      saveColor: valid ? '#F7F5F1' : 'var(--fl-text-tertiary)',
+      saveCursor: valid ? 'pointer' : 'default',
+      saveShadow: valid ? 'var(--fl-bronze-metal-top-rim), var(--fl-shadow-card)' : 'none',
+      onSave: this.onSave,
+      // day menu
+      dayMenuOpen: mIdx != null,
+      closeDayMenu: this.closeDayMenu,
+      dayMenuTitle: menuDay ? dn(menuDay) : '',
+      dayMenuName: menuDay ? menuDay.name : '',
+      onDayMenuRename: (e) => { const v = this._val(e); if (this.state.dayMenu != null) this.renameDay(this.state.dayMenu, v); },
+      dupTargets, hasDupTargets: dupTargets.length > 0,
+      onClearDay: () => { if (this.state.dayMenu != null) this.clearDay(this.state.dayMenu); },
+      // progress (customize mode)
+      showProgress: d.vary,
+      progVal: completedWeeks, progMax: d.weeks,
+      progressLabel: completedWeeks + ' of ' + d.weeks + ' weeks built',
+      // week day-list
+      weekTitle: (d.vary && d.openWeek != null) ? ('Week ' + (d.openWeek + 1)) : '',
+      onCloseWeek: this.closeWeek,
+      onAdvanceWeek: this.advanceWeek,
+      showWeekPrompt: weekDaysView && d.openWeek != null && !this._weekBuilt(d.weekPlans[d.openWeek]) && this._anyOtherBuilt(d.openWeek) && !this.state.hidePrompt,
+      onCopyAnother: this.openCopyFrom,
+      onStartBuilding: this.startBuilding,
+      jumpBtn: h('button', { type: 'button', 'aria-label': 'Jump to week', onClick: this.openJump, style: { width: '40px', height: '40px', border: 'none', background: 'transparent', color: 'var(--fl-text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, h('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, [h('path', { key: 1, d: 'M4 6h16M4 12h16M4 18h16' }), h('circle', { key: 2, cx: 19, cy: 18, r: 3, fill: 'var(--fl-bg-primary)' })])),
+      // jump sheet
+      jumpOpen: this.state.jumpOpen, onOpenJump: this.openJump, onCloseJump: this.closeJump, jumpWeeks: jumpWeeks,
+      // week sheet (seed / overflow)
+      weekSheetOpen: !!ws,
+      weekSheetTitle: ws ? ('Week ' + (ws.i + 1)) : '',
+      weekSheetPrompt: ws && ws.entering ? "Copy a week you've already built into this one." : 'Copy another week in, or clear this one.',
+      weekSheetEntering: ws ? ws.entering : false,
+      weekSheetMenu: ws ? !ws.entering : false,
+      wsSources: wsSources, wsHasSources: wsSources.length > 0,
+      onWeekStartEmpty: this.weekStartEmpty, onWeekClear: this.weekClear, closeWeekSheet: this.closeWeekSheet,
+    };
+
+    if (dayView) {
+      const day = days[d.openDay];
+      const dtotal = day.warmup.length + day.main.length + day.cooldown.length;
+      const est = Math.round((day.main.length * 9 + day.warmup.length * 4 + day.cooldown.length * 4) / 5) * 5;
+      const SECS = [
+        { key: 'warmup', label: 'Warm-up', addLabel: 'warm-up', req: 'Optional', emptyLabel: 'No warm-up yet', labelColor: 'var(--fl-text-tertiary)', labelSize: '10px', wrap: 'margin-bottom:20px;' },
+        { key: 'main', label: 'Main', addLabel: 'exercise', req: 'Required', emptyLabel: 'No main exercises yet', labelColor: 'var(--fl-text-bronze-label)', labelSize: '11px', wrap: 'margin-bottom:22px; padding-top:18px; border-top:1px solid var(--fl-charcoal-700);' },
+        { key: 'cooldown', label: 'Cool-down', addLabel: 'cool-down', req: 'Optional', emptyLabel: 'No cool-down yet', labelColor: 'var(--fl-text-tertiary)', labelSize: '10px', wrap: 'margin-bottom:8px; padding-top:18px; border-top:1px solid var(--fl-charcoal-700);' },
+      ];
+      vals.dayTitle = dn(day);
+      vals.dayName = day.name;
+      vals.onDayName = this.onDayName;
+      vals.onCloseDay = this.closeDay;
+      vals.hasWeekContext = d.vary && d.openWeek != null;
+      vals.weekContext = (d.vary && d.openWeek != null) ? ('Week ' + (d.openWeek + 1)) : '';
+      vals.hasDaySummary = dtotal > 0;
+      vals.daySummaryLine = dtotal + (dtotal === 1 ? ' exercise' : ' exercises') + (est > 0 ? ' \u2022 ~' + est + ' min' : '');
+      vals.hasNextDay = (d.openDay + 1) < days.length;
+      vals.onNextDay = this.advanceDay;
+      vals.nextDayLabel = ((d.openDay + 1) < days.length) ? ('Save & go to ' + dn(days[d.openDay + 1])) : '';
+      vals.sections = SECS.map((sc) => {
+        const items = day[sc.key];
+        return {
+          label: sc.label, addLabel: sc.addLabel, req: sc.req, emptyLabel: sc.emptyLabel, labelColor: sc.labelColor, labelSize: sc.labelSize, wrap: sc.wrap,
+          count: items.length ? String(items.length) : '',
+          empty: items.length === 0,
+          onAdd: () => this.addExercise(sc.key),
+          onAddCardio: () => this.openCardioSheet(sc.key),
+          items: items.map((it, idx) => {
+            const cardio = it.kind === 'cardio';
+            const bike = it.activity === 'bike';
+            const mmss = (v) => Math.floor(v / 60) + ':' + String(v % 60).padStart(2, '0');
+            const openInk = 'var(--fl-bronze-bright)', setInk = 'var(--fl-text-primary)';
+            let a, b;
+            if (cardio) {
+              a = { val: it.targetMi == null ? 'Open' : it.targetMi.toFixed(1), unit: it.targetMi == null ? '' : 'mi',
+                ink: it.targetMi == null ? openInk : setInk, down: 'Shorter distance', up: 'Longer distance',
+                onDown: () => this.bumpDist(sc.key, idx, -1), onUp: () => this.bumpDist(sc.key, idx, 1) };
+              b = bike
+                ? { val: it.targetSpdMph == null ? 'Any' : it.targetSpdMph.toFixed(1), unit: it.targetSpdMph == null ? 'speed' : 'mph',
+                    ink: it.targetSpdMph == null ? openInk : setInk, down: 'Lower target speed', up: 'Higher target speed',
+                    onDown: () => this.bumpEffort(sc.key, idx, -1), onUp: () => this.bumpEffort(sc.key, idx, 1) }
+                : { val: it.targetPaceSec == null ? 'Any' : mmss(it.targetPaceSec), unit: it.targetPaceSec == null ? 'pace' : '/mi',
+                    ink: it.targetPaceSec == null ? openInk : setInk, down: 'Faster target pace', up: 'Slower target pace',
+                    onDown: () => this.bumpEffort(sc.key, idx, -1), onUp: () => this.bumpEffort(sc.key, idx, 1) };
+            } else {
+              a = { val: String(it.sets), unit: 'sets', ink: setInk, down: 'Fewer sets', up: 'More sets',
+                onDown: () => this.bumpSets(sc.key, idx, -1), onUp: () => this.bumpSets(sc.key, idx, 1) };
+              b = { val: String(it.reps), unit: 'reps', ink: setInk, down: 'Fewer reps', up: 'More reps',
+                onDown: () => this.bumpReps(sc.key, idx, -1), onUp: () => this.bumpReps(sc.key, idx, 1) };
+            }
+            const indoorSel = it.modality === 'indoor';
+            return {
+              name: it.name, equip: it.equip, icon: cardio ? actIcon(it.activity) : eqIcon(it.equip),
+              isCardio: cardio,
+              aVal: a.val, aUnit: a.unit, aInk: a.ink, aDownA11y: a.down, aUpA11y: a.up, onADown: a.onDown, onAUp: a.onUp,
+              bVal: b.val, bUnit: b.unit, bInk: b.ink, bDownA11y: b.down, bUpA11y: b.up, onBDown: b.onDown, onBUp: b.onUp,
+              modOutLabel: 'Outdoor', modInLabel: bike ? 'Indoor' : 'Treadmill',
+              modOutBg: indoorSel ? 'transparent' : 'var(--fl-bronze-tint)',
+              modOutInk: indoorSel ? 'var(--fl-text-tertiary)' : 'var(--fl-bronze-bright)',
+              modInBg: indoorSel ? 'var(--fl-bronze-tint)' : 'transparent',
+              modInInk: indoorSel ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)',
+              onModOut: () => this.setCardioModality(sc.key, idx, 'outdoor'),
+              onModIn: () => this.setCardioModality(sc.key, idx, 'indoor'),
+              upOff: idx === 0, downOff: idx === items.length - 1,
+              upColor: idx === 0 ? 'var(--fl-charcoal-500)' : 'var(--fl-text-secondary)',
+              downColor: idx === items.length - 1 ? 'var(--fl-charcoal-500)' : 'var(--fl-text-secondary)',
+              upCursor: idx === 0 ? 'default' : 'pointer',
+              downCursor: idx === items.length - 1 ? 'default' : 'pointer',
+              onUp: () => this.moveEx(sc.key, idx, -1),
+              onDown: () => this.moveEx(sc.key, idx, 1),
+              onRemove: () => this.removeEx(sc.key, idx),
+            };
+          }),
+        };
+      });
+      vals.cardioSheetOpen = !!this.state.cardioSheet;
+      vals.cardioAddIcon = actIcon('run');
+      vals.closeCardioSheet = this.closeCardioSheet;
+      vals.cardioChoices = [
+        { name: 'Run', sub: 'Outdoor or treadmill', icon: actIcon('run'), onTap: () => this.addCardio('run') },
+        { name: 'Walk', sub: 'Easy, restorative miles', icon: actIcon('walk'), onTap: () => this.addCardio('walk') },
+        { name: 'Ride', sub: 'Outdoor or trainer', icon: actIcon('bike'), onTap: () => this.addCardio('bike') },
+      ];
+    }
+
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

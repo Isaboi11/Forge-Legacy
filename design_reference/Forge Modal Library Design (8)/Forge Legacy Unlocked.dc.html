@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-gate.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+  .fl-scroll { scrollbar-width: none; }
+  @keyframes luFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes luRise { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform:none; } }
+  @keyframes luSeal { 0% { opacity:0; transform: translateY(14px) scale(0.9); } 60% { opacity:1; } 100% { opacity:1; transform:none; } }
+  @keyframes luGlow { 0%,100% { opacity:0.55; } 50% { opacity:0.9; } }
+  @keyframes luRuneSweep { from { transform: translateY(14px); opacity:0; } to { transform:none; opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="Legacy Unlocked" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(6,7,8,0.3), rgba(6,7,8,0.3)), #060708 url('assets/forge-bg-2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <!-- ambient forge glow from above -->
+    <div aria-hidden="true" style="position:absolute; top:-12%; left:50%; transform:translateX(-50%); width:340px; height:340px; border-radius:50%; background:radial-gradient(circle, rgba(191,143,79,0.20), transparent 66%); pointer-events:none; z-index:0; animation:luGlow 5.5s ease-in-out infinite;"></div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; position:relative; z-index:1; display:flex; flex-direction:column;">
+
+      <!-- top eyebrow -->
+      <div style="padding:38px 24px 0; text-align:center; animation:luFade 900ms var(--fl-ease-out, ease-out) both;">
+        <span style="display:inline-flex; align-items:center; gap:9px; font-size:11px; font-weight:600; letter-spacing:2.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">
+          <span style="width:22px; height:1px; background:var(--fl-bronze-border);"></span>Initiative · Earned<span style="width:22px; height:1px; background:var(--fl-bronze-border);"></span>
+        </span>
+      </div>
+
+      <!-- seal -->
+      <div style="padding:26px 24px 0; display:flex; justify-content:center; animation:luSeal 1000ms var(--fl-ease-out, ease-out) both; animation-delay:180ms;">
+        <div style="position:relative; width:118px; height:118px; display:flex; align-items:center; justify-content:center;">
+          <div aria-hidden="true" style="position:absolute; inset:0; border-radius:50%; background:radial-gradient(circle, rgba(191,143,79,0.28), transparent 68%); animation:luGlow 4s ease-in-out infinite;"></div>
+          <div style="position:relative; width:100px; height:100px; border-radius:50%; background:var(--fl-bronze-metallic); box-shadow:var(--fl-border-inset-md), var(--fl-glow-badge); display:flex; align-items:center; justify-content:center;">
+            <div style="width:84px; height:84px; border-radius:50%; background:var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);">
+              <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c2.4 3.2 4.2 4.9 4.2 8.4a4.2 4.2 0 0 1-8.4 0c0-1.7.6-2.9 1.4-3.7.2 1.2 1.1 1.9 1.8 1.9C10 8.4 10.9 5.4 12 3z"></path></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- headline -->
+      <div style="padding:26px 30px 0; text-align:center; animation:luRise 950ms var(--fl-ease-out, ease-out) both; animation-delay:340ms;">
+        <h1 style="margin:0; font-family:var(--fl-font-display); font-size:34px; font-weight:600; letter-spacing:-0.6px; line-height:1.04; color:var(--fl-text-primary); text-wrap:balance;">You made your<br>first move.</h1>
+        <p style="margin:16px auto 0; max-width:300px; font-size:14px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">The hardest step is the first one — and you just took it. The <span style="color:var(--fl-bronze-bright); font-weight:600;">Initiative</span> honor is yours, and the full forge is open: ranks, chapters, honors, and standing.</p>
+      </div>
+
+      <!-- what they've earned so far -->
+      <div style="padding:28px 26px 0; animation:luRuneSweep 900ms var(--fl-ease-out, ease-out) both; animation-delay:520ms;">
+        <div style="border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-xl); background:linear-gradient(180deg, rgba(191,143,79,0.06), transparent 60%), var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); overflow:hidden;">
+          <div style="display:flex;">
+            <sc-for list="{{ stats }}" as="s" hint-placeholder-count="3">
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; padding:18px 8px; border-left:{{ s.border }};">
+                <span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ s.icon }}</span>
+                <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:700; letter-spacing:-0.3px; color:var(--fl-text-stat); line-height:1;">{{ s.value }}</span>
+                <span style="font-size:9.5px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary); text-align:center;">{{ s.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; padding:15px 18px; border-top:1px solid var(--fl-bronze-border-subtle); background:var(--fl-bronze-tint);">
+            <span style="width:9px; height:9px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary); background:var(--fl-bronze-tint);"></span>
+            <div style="flex:1; min-width:0;">
+              <span style="display:block; font-size:9.5px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Chapter I</span>
+              <span style="display:block; font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:var(--fl-text-primary); line-height:1.1; margin-top:1px;">The Foundation</span>
+            </div>
+            <span style="flex:none; font-size:11px; font-weight:600; color:var(--fl-bronze-primary);">Open</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- whats now open -->
+      <div style="padding:24px 26px 0; animation:luRuneSweep 900ms var(--fl-ease-out, ease-out) both; animation-delay:640ms;">
+        <span style="display:block; font-size:10.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary); text-align:center; margin-bottom:14px;">What's now open</span>
+        <div style="display:flex; justify-content:center; gap:22px;">
+          <sc-for list="{{ unlocks }}" as="u" hint-placeholder-count="3">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px; width:78px; text-align:center;">
+              <span style="width:44px; height:44px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ u.icon }}</span>
+              <span style="font-size:10.5px; font-weight:600; color:var(--fl-text-secondary); line-height:1.25;">{{ u.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex:1; min-height:24px;"></div>
+
+      <!-- CTA -->
+      <div style="padding:20px 24px calc(26px + env(safe-area-inset-bottom)); animation:luRise 900ms var(--fl-ease-out, ease-out) both; animation-delay:780ms;">
+        <button onClick="{{ enter }}" style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:17px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); color:#F7F5F1; font-size:15px; font-weight:700; letter-spacing:0.5px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-elevated); text-shadow:0 1px 1px rgba(8,5,2,0.5);">
+          Keep Building
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  componentDidMount() { try { if (window.ForgeGate) window.ForgeGate.consumePending(); } catch (e) {} }
+  renderVals() {
+    const h = React.createElement;
+    const ic = (paths, sw) => h('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(paths) ? paths : [paths]).map((d, i) => (d.c ? h('circle', { key: i, cx: d.c[0], cy: d.c[1], r: d.c[2] }) : h('path', { key: i, d: d }))));
+
+    const stats = [
+      { key: 's1', value: '1', label: 'Honor', border: 'none', icon: ic(['M7 4h10v3a5 5 0 0 1-10 0z', 'M8 20h8M12 12v8']) },
+      { key: 's2', value: 'I', label: 'Chapter', border: '1px solid var(--fl-bronze-border-subtle)', icon: ic(['M5 4h14v16l-7-4-7 4z']) },
+      { key: 's3', value: 'Open', label: 'Full Forge', border: '1px solid var(--fl-bronze-border-subtle)', icon: ic(['M5 11V8a4 4 0 0 1 8 0', 'M5 11h14v9H5z']) },
+    ];
+
+    const unlocks = [
+      { key: 'u1', label: 'Your Standing', icon: ic(['M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 21l-4.9 2.6.9-5.5-4-3.9 5.5-.8z']) },
+      { key: 'u2', label: 'Full Timeline', icon: ic(['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M12 7.5V12l3 2']) },
+      { key: 'u3', label: 'Squads', icon: ic([{ c: [8, 9, 2.6] }, 'M3 18a5 5 0 0 1 10 0', { c: [17, 9, 2.6] }, 'M14 18a5 5 0 0 1 7-4.3']) },
+    ];
+
+    return {
+      stats,
+      unlocks,
+      enter: () => { window.location.href = 'Forge%20Home.dc.html?new=1'; },
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .p8-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .p8-scroll { scrollbar-width: none; }
+  @keyframes p8spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; padding:52px 56px 96px; display:flex; flex-direction:column; gap:44px;">
+
+  <header style="display:flex; flex-direction:column; gap:14px; max-width:900px;">
+    <span style="font-size:11px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-primary);">P-8 · Design review</span>
+    <h1 style="margin:0; font-family:var(--fl-font-display); font-size:44px; font-weight:600; letter-spacing:-0.8px; line-height:1.05; color:var(--fl-text-primary);">Subscription</h1>
+    <p style="margin:0; font-size:14.5px; line-height:1.65; color:var(--fl-text-secondary); text-wrap:pretty; max-width:660px;">Four states, at device size. Every string is what the screen renders today. Prices show as <span style="font-family:var(--fl-font-mono); color:var(--fl-bronze-primary);">$XX.XX</span> because no price string exists in the code — the platform supplies them.</p>
+  </header>
+
+  <div style="display:flex; gap:44px; align-items:flex-start; flex-wrap:wrap;">
+
+    <!-- ══════════════════ LOADING ══════════════════ -->
+    <section data-screen-label="P-8 · Loading" style="width:390px; flex:none; display:flex; flex-direction:column; gap:18px;">
+      <div style="display:flex; flex-direction:column; gap:5px;">
+        <span style="font-size:13px; font-weight:700; letter-spacing:0.3px; color:var(--fl-text-primary);">Loading</span>
+        <span style="font-size:12px; color:var(--fl-text-tertiary);">Entitlement check in flight</span>
+      </div>
+
+      <div style="width:390px; height:844px; flex:none; position:relative; display:flex; flex-direction:column; border-radius:42px; overflow:hidden; border:1px solid var(--fl-charcoal-600); background:var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient);">
+        <div style="flex:none; height:52px; display:flex; align-items:flex-end; justify-content:space-between; padding:0 26px 8px; font-size:13px; font-weight:600; color:var(--fl-text-primary);">
+          <span>9:41</span>
+          <span style="display:flex; align-items:center; gap:6px;">
+            <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="7.5" width="2.5" height="3.5" rx="0.6"></rect><rect x="4.2" y="5.2" width="2.5" height="5.8" rx="0.6"></rect><rect x="8.4" y="2.8" width="2.5" height="8.2" rx="0.6"></rect><rect x="12.6" y="0.5" width="2.5" height="10.5" rx="0.6"></rect></svg>
+            <svg width="22" height="11" viewBox="0 0 22 11" fill="none" stroke="currentColor" strokeWidth="1.2"><rect x="0.6" y="1.4" width="17" height="8.2" rx="2.2"></rect><rect x="2.4" y="3.2" width="12" height="4.6" rx="1" fill="currentColor" stroke="none"></rect><path d="M19.4 4.2v2.6" strokeLinecap="round"></path></svg>
+          </span>
+        </div>
+
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Subscription" hint-size="100%,56px"></x-import>
+
+        <div style="flex:1; display:flex; align-items:center; justify-content:center;">
+          <span style="width:34px; height:34px; border-radius:50%; border:2px solid var(--fl-charcoal-600); border-top-color:var(--fl-bronze-primary); animation:p8spin 900ms linear infinite;"></span>
+        </div>
+      </div>
+
+      <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; flex-direction:column; gap:10px; padding-top:2px;">
+          <sc-for list="{{ notesLoading }}" as="n" hint-placeholder-count="1">
+            <p style="margin:0; font-size:12px; line-height:1.6; color:var(--fl-text-tertiary); text-wrap:pretty; padding-left:14px; border-left:1px solid var(--fl-charcoal-600);">{{ n.text }}</p>
+          </sc-for>
+        </div>
+      </sc-if>
+    </section>
+
+    <!-- ══════════════════ UNKNOWN ══════════════════ -->
+    <section data-screen-label="P-8 · Unknown" style="width:390px; flex:none; display:flex; flex-direction:column; gap:18px;">
+      <div style="display:flex; flex-direction:column; gap:5px;">
+        <span style="font-size:13px; font-weight:700; letter-spacing:0.3px; color:var(--fl-text-primary);">Unknown</span>
+        <span style="font-size:12px; color:var(--fl-text-tertiary);">Entitlement unreadable — network</span>
+      </div>
+
+      <div style="width:390px; height:844px; flex:none; position:relative; display:flex; flex-direction:column; border-radius:42px; overflow:hidden; border:1px solid var(--fl-charcoal-600); background:var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient);">
+        <div style="flex:none; height:52px; display:flex; align-items:flex-end; justify-content:space-between; padding:0 26px 8px; font-size:13px; font-weight:600; color:var(--fl-text-primary);">
+          <span>9:41</span>
+          <span style="display:flex; align-items:center; gap:6px;">
+            <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="7.5" width="2.5" height="3.5" rx="0.6"></rect><rect x="4.2" y="5.2" width="2.5" height="5.8" rx="0.6"></rect><rect x="8.4" y="2.8" width="2.5" height="8.2" rx="0.6"></rect><rect x="12.6" y="0.5" width="2.5" height="10.5" rx="0.6"></rect></svg>
+            <svg width="22" height="11" viewBox="0 0 22 11" fill="none" stroke="currentColor" strokeWidth="1.2"><rect x="0.6" y="1.4" width="17" height="8.2" rx="2.2"></rect><rect x="2.4" y="3.2" width="12" height="4.6" rx="1" fill="currentColor" stroke="none"></rect><path d="M19.4 4.2v2.6" strokeLinecap="round"></path></svg>
+          </span>
+        </div>
+
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Subscription" onBack="{{ onBack }}" onClose="{{ onClose }}" hint-size="100%,56px"></x-import>
+
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; padding:0 44px; text-align:center;">
+          <span style="width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit="8"><path d="M3 7.5c2-2 4-2 6 0s4 2 6 0 4-2 6 0"></path><path d="M3 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0"></path><path d="M3 16.5c2-2 4-2 6 0s4 2 6 0 4-2 6 0"></path></svg>
+          </span>
+          <p style="margin:0; font-size:15px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">We couldn't confirm your plan right now.</p>
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" onClick="{{ onRetry }}" hint-size="auto,46px">Try Again</x-import>
+        </div>
+      </div>
+
+      <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; flex-direction:column; gap:10px; padding-top:2px;">
+          <sc-for list="{{ notesUnknown }}" as="n" hint-placeholder-count="2">
+            <p style="margin:0; font-size:12px; line-height:1.6; color:var(--fl-text-tertiary); text-wrap:pretty; padding-left:14px; border-left:1px solid var(--fl-charcoal-600);">{{ n.text }}</p>
+          </sc-for>
+        </div>
+      </sc-if>
+    </section>
+
+    <!-- ══════════════════ FREE ══════════════════ -->
+    <section data-screen-label="P-8 · Free" style="width:390px; flex:none; display:flex; flex-direction:column; gap:18px;">
+      <div style="display:flex; flex-direction:column; gap:5px;">
+        <span style="font-size:13px; font-weight:700; letter-spacing:0.3px; color:var(--fl-text-primary);">Free</span>
+        <span style="font-size:12px; color:var(--fl-text-tertiary);">The full sales surface — scrolls</span>
+      </div>
+
+      <div style="width:390px; height:844px; flex:none; position:relative; display:flex; flex-direction:column; border-radius:42px; overflow:hidden; border:1px solid var(--fl-charcoal-600); background:var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient);">
+        <div style="flex:none; height:52px; display:flex; align-items:flex-end; justify-content:space-between; padding:0 26px 8px; font-size:13px; font-weight:600; color:var(--fl-text-primary);">
+          <span>9:41</span>
+          <span style="display:flex; align-items:center; gap:6px;">
+            <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="7.5" width="2.5" height="3.5" rx="0.6"></rect><rect x="4.2" y="5.2" width="2.5" height="5.8" rx="0.6"></rect><rect x="8.4" y="2.8" width="2.5" height="8.2" rx="0.6"></rect><rect x="12.6" y="0.5" width="2.5" height="10.5" rx="0.6"></rect></svg>
+            <svg width="22" height="11" viewBox="0 0 22 11" fill="none" stroke="currentColor" strokeWidth="1.2"><rect x="0.6" y="1.4" width="17" height="8.2" rx="2.2"></rect><rect x="2.4" y="3.2" width="12" height="4.6" rx="1" fill="currentColor" stroke="none"></rect><path d="M19.4 4.2v2.6" strokeLinecap="round"></path></svg>
+          </span>
+        </div>
+
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Subscription" onBack="{{ onBack }}" onClose="{{ onClose }}" hint-size="100%,56px"></x-import>
+
+        <div class="p8-scroll" style="flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:26px; padding:22px 20px 30px;">
+
+          <!-- hero -->
+          <div style="display:flex; flex-direction:column; align-items:center; gap:15px; text-align:center; padding:6px 4px 0;">
+            <span style="width:66px; height:66px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; background:var(--fl-bronze-metallic); color:#1A1206; box-shadow:var(--fl-glow-subtle), inset 0 1px 0 rgba(255,244,214,0.3);">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit="8"><path d="M10.9 3.2H13.1V15H10.9Z" fill="currentColor" stroke="none"></path><path d="M7.6 7.1L9.6 5.8V15H7.6Z" fill="currentColor" stroke="none"></path><path d="M16.4 7.1L14.4 5.8V15H16.4Z" fill="currentColor" stroke="none"></path><path d="M6.8 15.4H17.2V16.2H6.8Z" fill="currentColor" stroke="none"></path><path d="M5.6 16.6H18.4V17.4H5.6Z" fill="currentColor" stroke="none"></path><path d="M4.4 17.8H19.6V18.6H4.4Z" fill="currentColor" stroke="none"></path></svg>
+            </span>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.RankMarker" label="Forge Premium" icon="{{ nothing }}" size="sm" hint-size="auto,14px"></x-import>
+            <h2 style="margin:0; font-family:var(--fl-font-display); font-size:27px; font-weight:600; letter-spacing:-0.4px; line-height:1.2; color:var(--fl-text-primary); text-wrap:balance;">Everything you build, kept for life.</h2>
+            <p style="margin:0; font-size:13px; line-height:1.65; color:var(--fl-text-secondary); text-wrap:pretty; max-width:310px;">The training engine is always free. Premium is for the permanence, scale and story around it.</p>
+            <span style="display:inline-flex; align-items:center; gap:9px; margin-top:2px;">
+              <span style="font-size:11px; font-weight:600; letter-spacing:1.1px; text-transform:uppercase; color:var(--fl-text-tertiary);">Current plan</span>
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" size="sm" hint-size="auto,22px">Free</x-import>
+            </span>
+          </div>
+
+          <!-- 4.1 benefits -->
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="What Premium unlocks" hint-size="100%,16px"></x-import>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Card" padding="8px" hint-size="100%,420px">
+              <div style="display:flex; flex-direction:column;">
+                <sc-for list="{{ benefits }}" as="b" hint-placeholder-count="5">
+                  <div style="display:flex; align-items:flex-start; gap:13px; padding:14px 12px; border-radius:var(--fl-radius-lg); background:{{ b.bg }}; border:{{ b.border }};">
+                    <span style="width:38px; height:38px; flex:none; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg);">{{ b.glyph }}</span>
+                    <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                      <span style="font-size:14.5px; font-weight:600; line-height:1.35; color:var(--fl-text-primary); text-wrap:pretty;">{{ b.title }}</span>
+                      <span style="font-size:12.5px; line-height:1.55; color:var(--fl-text-tertiary); text-wrap:pretty;">{{ b.body }}</span>
+                    </span>
+                  </div>
+                </sc-for>
+              </div>
+            </x-import>
+          </div>
+
+          <!-- 4.2 at a glance -->
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="At a glance" hint-size="100%,16px"></x-import>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Card" padding="0" hint-size="100%,260px">
+              <div style="display:flex; flex-direction:column;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0; border-bottom:1px solid var(--fl-charcoal-600);">
+                  <span style="padding:12px 16px; font-size:11px; font-weight:700; letter-spacing:1.1px; text-transform:uppercase; color:var(--fl-text-tertiary);">Free</span>
+                  <span style="padding:12px 16px; font-size:11px; font-weight:700; letter-spacing:1.1px; text-transform:uppercase; color:var(--fl-bronze-primary); border-left:1px solid var(--fl-charcoal-600);">Premium</span>
+                </div>
+                <sc-for list="{{ glance }}" as="g" hint-placeholder-count="6">
+                  <div role="listitem" aria-label="{{ g.a11y }}" style="display:grid; grid-template-columns:1fr 1fr; gap:0; border-top:{{ g.rule }};">
+                    <span style="padding:13px 16px; font-size:12.5px; line-height:1.4; color:var(--fl-text-secondary); text-wrap:pretty;">{{ g.free }}</span>
+                    <span style="padding:13px 16px; font-size:12.5px; line-height:1.4; font-weight:600; color:var(--fl-text-primary); border-left:1px solid var(--fl-charcoal-600); text-wrap:pretty;">{{ g.premium }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </x-import>
+          </div>
+
+          <!-- 4.3 reassurance -->
+          <div style="display:flex; flex-direction:column; align-items:center; gap:0; padding:4px 0;">
+            <span style="width:44px; height:1px; background:var(--fl-bronze-border-subtle);"></span>
+            <p style="margin:0; padding:16px 10px; font-family:var(--fl-font-display); font-style:italic; font-size:16px; line-height:1.55; text-align:center; color:var(--fl-bronze-primary); text-wrap:balance;">Everything you've already built is yours — forever.</p>
+            <span style="width:44px; height:1px; background:var(--fl-bronze-border-subtle);"></span>
+          </div>
+
+          <!-- 4.4 usage -->
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Your usage" hint-size="100%,16px"></x-import>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Card" padding="16px" hint-size="100%,280px">
+              <div style="display:flex; flex-direction:column; gap:16px;">
+                <sc-for list="{{ usage }}" as="u" hint-placeholder-count="6">
+                  <div style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px;">
+                      <span style="font-size:13.5px; color:var(--fl-text-secondary);">{{ u.label }}</span>
+                      <span style="font-size:13.5px; font-weight:700; color:{{ u.valueColor }}; font-variant-numeric:tabular-nums;">{{ u.value }}</span>
+                    </div>
+                    <sc-if value="{{ u.hasBar }}" hint-placeholder-val="{{ false }}">
+                      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="{{ u.n }}" max="{{ u.max }}" height="4" hint-size="100%,4px"></x-import>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </x-import>
+          </div>
+
+          <!-- 4.5 picker -->
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Choose your plan" hint-size="100%,16px"></x-import>
+            <div role="radiogroup" aria-label="Choose your plan" style="display:flex; flex-direction:column; gap:10px;">
+              <sc-for list="{{ plans }}" as="p" hint-placeholder-count="4">
+                <div role="radio" aria-checked="{{ p.checked }}" aria-label="{{ p.a11y }}" tabindex="0" onClick="{{ p.onPick }}" style="display:flex; align-items:flex-start; gap:13px; min-height:64px; padding:15px 16px; cursor:pointer; border-radius:var(--fl-radius-lg); background:{{ p.bg }}; border:{{ p.border }}; box-shadow:{{ p.shadow }}; transition:border-color 200ms var(--fl-ease-out), background 200ms var(--fl-ease-out);">
+                  <span style="width:20px; height:20px; flex:none; margin-top:2px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:{{ p.dotBorder }};">
+                    <span style="width:9px; height:9px; border-radius:50%; background:{{ p.dotFill }};"></span>
+                  </span>
+                  <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px;">
+                    <span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                      <span style="font-size:15.5px; font-weight:600; color:var(--fl-text-primary);">{{ p.name }}</span>
+                      <sc-if value="{{ p.isBest }}" hint-placeholder-val="{{ false }}">
+                        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" size="sm" hint-size="auto,20px">Best value</x-import>
+                      </sc-if>
+                      <sc-if value="{{ p.hasSave }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:10px; font-weight:700; letter-spacing:0.9px; text-transform:uppercase; padding:4px 9px; border-radius:var(--fl-radius-pill); color:#1A1206; background:var(--fl-bronze-metallic);">{{ p.save }}</span>
+                      </sc-if>
+                    </span>
+                    <span style="font-size:12.5px; line-height:1.45; color:var(--fl-text-tertiary); text-wrap:pretty;">{{ p.cadence }}</span>
+                    <sc-if value="{{ p.hasSeats }}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size:11.5px; font-weight:600; letter-spacing:0.4px; color:var(--fl-bronze-primary);">{{ p.seats }}</span>
+                    </sc-if>
+                  </span>
+                  <span style="flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:4px; padding-top:1px;">
+                    <span style="font-family:var(--fl-font-mono); font-size:15px; font-weight:600; color:var(--fl-text-primary);">$XX.XX</span>
+                    <sc-if value="{{ p.hasPerMonth }}" hint-placeholder-val="{{ false }}">
+                      <span style="font-family:var(--fl-font-mono); font-size:11px; color:var(--fl-text-tertiary);">$X.XX / mo</span>
+                    </sc-if>
+                  </span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- 4.6 fineprint -->
+          <sc-if value="{{ renews }}" hint-placeholder-val="{{ true }}">
+            <p style="margin:0; font-size:11.5px; line-height:1.6; color:var(--fl-text-tertiary); text-align:center; text-wrap:pretty; padding:0 6px;">Subscriptions renew automatically until you cancel them in your App Store account.</p>
+          </sc-if>
+        </div>
+
+        <!-- 4.7 commit bar -->
+        <div style="flex:none; display:flex; flex-direction:column; gap:12px; padding:16px 20px 26px; background:var(--fl-surface-nav); border-top:1px solid var(--fl-charcoal-600); box-shadow:0 -12px 28px rgba(0,0,0,0.4);">
+          <sc-if value="{{ hasNotice }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:flex-start; gap:9px; padding:11px 13px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle);">
+              <span style="flex:1; font-size:12.5px; line-height:1.5; color:var(--fl-text-primary); text-wrap:pretty;">{{ noticeText }}</span>
+              <sc-if value="{{ noticeRetry }}" hint-placeholder-val="{{ false }}">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" onClick="{{ onRetry }}" hint-size="auto,20px">Try again</x-import>
+              </sc-if>
+            </div>
+          </sc-if>
+          <p style="margin:0; font-size:11.5px; line-height:1.55; color:var(--fl-text-tertiary); text-align:center; text-wrap:pretty;">The app and your legacy, forever. Coach AI is a separate subscription.</p>
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" disabled="{{ noPlan }}" onClick="{{ onContinue }}" hint-size="100%,50px">{{ continueLabel }}</x-import>
+          <div style="display:flex; justify-content:center;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" onClick="{{ onRestore }}" hint-size="auto,20px">Restore Purchases</x-import>
+          </div>
+        </div>
+      </div>
+
+      <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; flex-direction:column; gap:10px; padding-top:2px;">
+          <sc-for list="{{ notesFree }}" as="n" hint-placeholder-count="6">
+            <p style="margin:0; font-size:12px; line-height:1.6; color:var(--fl-text-tertiary); text-wrap:pretty; padding-left:14px; border-left:1px solid var(--fl-charcoal-600);">{{ n.text }}</p>
+          </sc-for>
+        </div>
+      </sc-if>
+    </section>
+
+    <!-- ══════════════════ PREMIUM ══════════════════ -->
+    <section data-screen-label="P-8 · Premium" style="width:390px; flex:none; display:flex; flex-direction:column; gap:18px;">
+      <div style="display:flex; flex-direction:column; gap:5px;">
+        <span style="font-size:13px; font-weight:700; letter-spacing:0.3px; color:var(--fl-text-primary);">Premium</span>
+        <span style="font-size:12px; color:var(--fl-text-tertiary);">No table, no usage review</span>
+      </div>
+
+      <div style="width:390px; height:844px; flex:none; position:relative; display:flex; flex-direction:column; border-radius:42px; overflow:hidden; border:1px solid var(--fl-charcoal-600); background:var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient);">
+        <div style="flex:none; height:52px; display:flex; align-items:flex-end; justify-content:space-between; padding:0 26px 8px; font-size:13px; font-weight:600; color:var(--fl-text-primary);">
+          <span>9:41</span>
+          <span style="display:flex; align-items:center; gap:6px;">
+            <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="7.5" width="2.5" height="3.5" rx="0.6"></rect><rect x="4.2" y="5.2" width="2.5" height="5.8" rx="0.6"></rect><rect x="8.4" y="2.8" width="2.5" height="8.2" rx="0.6"></rect><rect x="12.6" y="0.5" width="2.5" height="10.5" rx="0.6"></rect></svg>
+            <svg width="22" height="11" viewBox="0 0 22 11" fill="none" stroke="currentColor" strokeWidth="1.2"><rect x="0.6" y="1.4" width="17" height="8.2" rx="2.2"></rect><rect x="2.4" y="3.2" width="12" height="4.6" rx="1" fill="currentColor" stroke="none"></rect><path d="M19.4 4.2v2.6" strokeLinecap="round"></path></svg>
+          </span>
+        </div>
+
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Subscription" onBack="{{ onBack }}" onClose="{{ onClose }}" hint-size="100%,56px"></x-import>
+
+        <div class="p8-scroll" style="flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:26px; padding:22px 20px 30px;">
+
+          <div style="display:flex; flex-direction:column; align-items:center; gap:15px; text-align:center; padding:6px 4px 0;">
+            <span style="width:66px; height:66px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; background:var(--fl-bronze-metallic); color:#1A1206; box-shadow:var(--fl-glow-subtle), inset 0 1px 0 rgba(255,244,214,0.3);">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit="8"><path d="M10.9 3.2H13.1V15H10.9Z" fill="currentColor" stroke="none"></path><path d="M7.6 7.1L9.6 5.8V15H7.6Z" fill="currentColor" stroke="none"></path><path d="M16.4 7.1L14.4 5.8V15H16.4Z" fill="currentColor" stroke="none"></path><path d="M6.8 15.4H17.2V16.2H6.8Z" fill="currentColor" stroke="none"></path><path d="M5.6 16.6H18.4V17.4H5.6Z" fill="currentColor" stroke="none"></path><path d="M4.4 17.8H19.6V18.6H4.4Z" fill="currentColor" stroke="none"></path></svg>
+            </span>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.RankMarker" label="Forge Premium" icon="{{ nothing }}" size="sm" hint-size="auto,14px"></x-import>
+            <h2 style="margin:0; font-family:var(--fl-font-display); font-size:27px; font-weight:600; letter-spacing:-0.4px; line-height:1.2; color:var(--fl-text-primary); text-wrap:balance;">Your legacy, preserved for life.</h2>
+            <p style="margin:0; font-size:13px; line-height:1.65; color:var(--fl-text-secondary); text-wrap:pretty; max-width:310px;">The training engine is always free. Premium is for the permanence, scale and story around it.</p>
+            <span style="display:inline-flex; align-items:center; gap:9px; margin-top:2px;">
+              <span style="font-size:11px; font-weight:600; letter-spacing:1.1px; text-transform:uppercase; color:var(--fl-text-tertiary);">Current plan</span>
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" size="sm" hint-size="auto,22px">Premium</x-import>
+            </span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Your plan" hint-size="100%,16px"></x-import>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Card" variant="hero" hint-size="100%,96px">
+              <div style="display:flex; flex-direction:column; gap:7px;">
+                <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">{{ planTitle }}</span>
+                <span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary); text-wrap:pretty;">{{ planLine }}</span>
+              </div>
+            </x-import>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="What Premium unlocks" hint-size="100%,16px"></x-import>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Card" padding="8px" hint-size="100%,420px">
+              <div style="display:flex; flex-direction:column;">
+                <sc-for list="{{ benefits }}" as="b" hint-placeholder-count="5">
+                  <div style="display:flex; align-items:flex-start; gap:13px; padding:14px 12px; border-radius:var(--fl-radius-lg); background:{{ b.bg }}; border:{{ b.border }};">
+                    <span style="width:38px; height:38px; flex:none; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg);">{{ b.glyph }}</span>
+                    <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                      <span style="font-size:14.5px; font-weight:600; line-height:1.35; color:var(--fl-text-primary); text-wrap:pretty;">{{ b.title }}</span>
+                      <span style="font-size:12.5px; line-height:1.55; color:var(--fl-text-tertiary); text-wrap:pretty;">{{ b.body }}</span>
+                    </span>
+                  </div>
+                </sc-for>
+              </div>
+            </x-import>
+          </div>
+
+          <div style="display:flex; flex-direction:column; align-items:center; gap:0; padding:4px 0;">
+            <span style="width:44px; height:1px; background:var(--fl-bronze-border-subtle);"></span>
+            <p style="margin:0; padding:16px 10px; font-family:var(--fl-font-display); font-style:italic; font-size:16px; line-height:1.55; text-align:center; color:var(--fl-bronze-primary); text-wrap:balance;">Everything you've already built is yours — forever.</p>
+            <span style="width:44px; height:1px; background:var(--fl-bronze-border-subtle);"></span>
+          </div>
+        </div>
+
+        <div style="flex:none; display:flex; flex-direction:column; gap:12px; padding:16px 20px 26px; background:var(--fl-surface-nav); border-top:1px solid var(--fl-charcoal-600); box-shadow:0 -12px 28px rgba(0,0,0,0.4);">
+          <sc-if value="{{ hasNotice }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:flex-start; gap:9px; padding:11px 13px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle);">
+              <span style="flex:1; font-size:12.5px; line-height:1.5; color:var(--fl-text-primary); text-wrap:pretty;">{{ noticeText }}</span>
+            </div>
+          </sc-if>
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" onClick="{{ onManage }}" hint-size="100%,50px">Manage Subscription</x-import>
+          <div style="display:flex; justify-content:center;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" onClick="{{ onRestore }}" hint-size="auto,20px">Restore Purchases</x-import>
+          </div>
+        </div>
+      </div>
+
+      <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; flex-direction:column; gap:10px; padding-top:2px;">
+          <sc-for list="{{ notesPremium }}" as="n" hint-placeholder-count="3">
+            <p style="margin:0; font-size:12px; line-height:1.6; color:var(--fl-text-tertiary); text-wrap:pretty; padding-left:14px; border-left:1px solid var(--fl-charcoal-600);">{{ n.text }}</p>
+          </sc-for>
+        </div>
+      </sc-if>
+    </section>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Review&quot;,&quot;label&quot;:&quot;Show build constraints&quot;},&quot;entry&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Account Settings&quot;,&quot;Upsell gate&quot;],&quot;default&quot;:&quot;Account Settings&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Review&quot;,&quot;label&quot;:&quot;Entered from&quot;},&quot;selectedPlan&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Annual&quot;,&quot;Monthly&quot;,&quot;Founder&quot;,&quot;Lifetime&quot;],&quot;default&quot;:&quot;Annual&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Free state&quot;,&quot;label&quot;:&quot;Plan selected&quot;},&quot;founderSeats&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:68,&quot;min&quot;:0,&quot;max&quot;:100,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Free state&quot;,&quot;label&quot;:&quot;Founder seats left&quot;},&quot;premiumKind&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;No kind, no date (today’s default)&quot;,&quot;Founder&quot;,&quot;Lifetime&quot;,&quot;Granted&quot;,&quot;Renewing · Annual&quot;,&quot;Renewing · Monthly&quot;],&quot;default&quot;:&quot;No kind, no date (today’s default)&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Premium state&quot;,&quot;label&quot;:&quot;Plan kind&quot;},&quot;notice&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;None&quot;,&quot;Purchase succeeded&quot;,&quot;Restore succeeded&quot;,&quot;Restore found nothing&quot;,&quot;Store unavailable&quot;,&quot;Restore failed&quot;,&quot;Plans failed to load&quot;,&quot;Empty offering&quot;],&quot;default&quot;:&quot;None&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Messages&quot;,&quot;label&quot;:&quot;Inline notice&quot;}}">
+const SYM = {
+  book: '<path d="M12 6.5C10 5 7 4.5 4 5v12c3-.5 6 0 8 1.5"/><path d="M12 6.5C14 5 17 4.5 20 5v12c-3-.5-6 0-8 1.5z"/>',
+  dumbbell: '<path d="M6.5 9v6"/><path d="M17.5 9v6"/><path d="M4 10.5v3"/><path d="M20 10.5v3"/><path d="M6.5 12h11"/>',
+  squad: '<circle cx="7.5" cy="8" r="2.7"/><circle cx="16.5" cy="8" r="2.7"/><path d="M3 19.5a4.5 4.5 0 0 1 9 0"/><path d="M12 19.5a4.5 4.5 0 0 1 9 0"/>',
+  spark: '<path d="M11 3c.4 3.4 1.6 4.6 5 5-3.4.4-4.6 1.6-5 5-.4-3.4-1.6-4.6-5-5 3.4-.4 4.6-1.6 5-5z"/><path d="M18 13c.2 1.7.8 2.3 2.5 2.5-1.7.2-2.3.8-2.5 2.5-.2-1.7-.8-2.3-2.5-2.5 1.7-.2 2.3-.8 2.5-2.5z"/>',
+  medal: '<circle cx="12" cy="14.5" r="4.8"/><circle cx="12" cy="14.5" r="1.8"/><path d="M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4"/>'
+};
+
+// Benefit rows — headline + supporting sentence exactly as the screen renders them.
+const BENEFITS = [
+  { key: 'photos', sym: 'book', star: true, title: 'Unlimited photos', body: 'Every progress photo and video kept, with no ceiling to work around.' },
+  { key: 'programs', sym: 'dumbbell', title: 'Unlimited programs', body: 'Build, generate and receive as many programs as your training asks for.' },
+  { key: 'squads', sym: 'squad', title: '5 squads', body: 'Lead more than one squad at a time.' },
+  { key: 'imports', sym: 'spark', title: 'Unlimited imports', body: "Bring a coach's spreadsheet across whenever you need to." },
+  { key: 'holt', sym: 'medal', title: 'Unlimited Coach Holt programs, including in your workout', body: 'A full program for any goal, and help during the set — not just between them.' }
+];
+
+const GLANCE = [
+  { key: 'programs', free: '3 programs', premium: 'Unlimited programs' },
+  { key: 'photos', free: '75 photos', premium: 'Unlimited photos' },
+  { key: 'squads', free: '1 squad', premium: '5 squads' },
+  { key: 'imports', free: '1 lifetime import', premium: 'Unlimited imports' },
+  { key: 'holtprog', free: '1 Coach Holt program', premium: 'Unlimited Coach Holt programs' },
+  { key: 'holtdays', free: '2 Coach Holt days a month', premium: 'Unlimited Coach Holt days a month' }
+];
+
+const USAGE = [
+  { key: 'programs', label: 'Programs', value: '2 of 3', n: 2, max: 3, hasBar: true },
+  { key: 'photos', label: 'Photos', value: '38 of 75', n: 38, max: 75, hasBar: true },
+  { key: 'squads', label: 'Squads', value: '1 of 1', n: 1, max: 1, hasBar: true },
+  { key: 'import', label: 'Import', value: 'Used', hasBar: false },
+  { key: 'holtprog', label: 'Coach Holt programs', value: 'Available', hasBar: false },
+  { key: 'holtdays', label: 'Coach Holt days', value: '1 of 2', n: 1, max: 2, hasBar: true }
+];
+
+// Order is locked. Prices are never typed — the store supplies them.
+const PLANS = [
+  { key: 'Annual', name: 'Annual', cadence: 'Billed yearly', isBest: true, save: 'Save 36%', perMonth: true },
+  { key: 'Monthly', name: 'Monthly', cadence: 'Billed monthly' },
+  { key: 'Founder', name: 'Founder', cadence: 'One payment, Premium for life', seatGated: true },
+  { key: 'Lifetime', name: 'Lifetime', cadence: 'One payment, Premium for life' }
+];
+
+const NOTICES = {
+  'None': null,
+  'Purchase succeeded': { text: 'Welcome to Forge Premium.' },
+  'Restore succeeded': { text: 'Purchase restored.' },
+  'Restore found nothing': { text: 'No previous purchases found.' },
+  'Store unavailable': { text: "Purchases aren't available on this device yet." },
+  'Restore failed': { text: "Couldn't reach the store. Try again." },
+  'Plans failed to load': { text: "Plans couldn't be loaded right now.", retry: true },
+  'Empty offering': { text: "Plans aren't available on this device yet." }
+};
+
+// One entry per second-line case in §5. "No kind, no date" is today's default:
+// default_tier is PREMIUM and no purchase has happened yet.
+const KIND_DEFAULT = 'No kind, no date (today\u2019s default)';
+const PREMIUM_KINDS = {
+  [KIND_DEFAULT]: { title: 'Forge Premium', line: 'No billing on this account.' },
+  'Founder': { title: 'Forge Premium · Founder', line: 'Founder seat 47. Yours for life.' },
+  'Lifetime': { title: 'Forge Premium · Lifetime', line: 'Yours for life. Nothing renews.' },
+  'Granted': { title: 'Forge Premium', line: 'Granted. Nothing is billed to this account.' },
+  'Renewing · Annual': { title: 'Forge Premium · Annual', line: 'Renews 12 Sep 2026.' },
+  'Renewing · Monthly': { title: 'Forge Premium · Monthly', line: 'Renews 12 Sep 2026.' }
+};
+
+class Component extends DCLogic {
+  state = { plan: null };
+
+  _glyph(sym) {
+    return React.createElement('svg', {
+      width: 19, height: 19, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
+      strokeWidth: 2, strokeLinecap: 'square', strokeLinejoin: 'miter', strokeMiterlimit: 8,
+      dangerouslySetInnerHTML: { __html: SYM[sym] }
+    });
+  }
+
+  renderVals() {
+    const P = this.props;
+    const seats = P.founderSeats == null ? 68 : Number(P.founderSeats);
+    const fromGate = P.entry === 'Upsell gate';
+
+    // Founder does not render at all unless a positive seat count came back from the server.
+    const available = PLANS.filter(p => !p.seatGated || seats > 0);
+    let plan = this.state.plan || P.selectedPlan || 'Annual';
+    if (!available.some(p => p.key === plan)) plan = available.length ? available[0].key : null;
+
+    const notice = NOTICES[P.notice || 'None'];
+    const kind = PREMIUM_KINDS[P.premiumKind] || PREMIUM_KINDS[KIND_DEFAULT];
+
+    const plans = available.map(p => {
+      const on = p.key === plan;
+      const seatLine = p.seatGated ? seats + ' of 100 left' : '';
+      const a11y = [p.name, '$XX.XX', p.save ? p.save + ' compared to monthly' : '', seatLine, on ? 'selected' : '']
+        .filter(Boolean).join(', ') + '.';
+      return {
+        key: p.key, name: p.name, cadence: p.cadence,
+        isBest: !!p.isBest, hasSave: !!p.save, save: p.save || '',
+        hasSeats: !!p.seatGated, seats: seatLine,
+        hasPerMonth: !!p.perMonth, checked: on ? 'true' : 'false', a11y,
+        bg: on ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+        border: on ? '1.5px solid var(--fl-bronze-primary)' : '1px solid var(--fl-charcoal-600)',
+        shadow: on ? 'var(--fl-border-inset), var(--fl-glow-subtle)' : 'var(--fl-border-inset)',
+        dotBorder: on ? '1.5px solid var(--fl-bronze-primary)' : '1.5px solid var(--fl-charcoal-500)',
+        dotFill: on ? 'var(--fl-bronze-primary)' : 'transparent',
+        onPick: () => this.setState({ plan: p.key })
+      };
+    });
+
+    return {
+      showNotes: P.showNotes !== false,
+      nothing: null,
+      onBack: fromGate ? null : () => {},
+      onClose: fromGate ? () => {} : null,
+      onRetry: () => {}, onContinue: () => {}, onRestore: () => {}, onManage: () => {},
+
+      benefits: BENEFITS.map(b => ({
+        key: b.key, title: b.title, body: b.body, glyph: this._glyph(b.sym),
+        bg: b.star ? 'var(--fl-bronze-tint)' : 'transparent',
+        border: b.star ? '1px solid var(--fl-bronze-border-subtle)' : '1px solid transparent'
+      })),
+
+      glance: GLANCE.map((g, i) => ({
+        key: g.key, free: g.free, premium: g.premium,
+        a11y: 'Free: ' + g.free + '. Premium: ' + g.premium + '.',
+        rule: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)'
+      })),
+
+      usage: USAGE.map(u => ({
+        key: u.key, label: u.label, value: u.value, hasBar: !!u.hasBar,
+        n: u.n || 0, max: u.max || 1,
+        valueColor: u.hasBar && u.n >= u.max ? 'var(--fl-bronze-primary)' : 'var(--fl-text-primary)'
+      })),
+
+      plans,
+      noPlan: !plan,
+      continueLabel: 'Continue',
+      renews: plan === 'Annual' || plan === 'Monthly',
+
+      hasNotice: !!notice,
+      noticeText: notice ? notice.text : '',
+      noticeRetry: !!(notice && notice.retry),
+
+      planTitle: kind.title,
+      planLine: kind.line,
+
+      notesLoading: [
+        { key: 'l1', text: 'Content is withheld on purpose — every section below depends on which tier is being read.' }
+      ],
+      notesUnknown: [
+        { key: 'u1', text: 'It must not default either way. Drawing Free would show an upsell to a Premium athlete whose network dropped; drawing Premium would tell a Free athlete they had already paid.' },
+        { key: 'u2', text: 'The message string is the one piece of copy the source does not specify. This wording is a placeholder and needs a decision.' }
+      ],
+      notesFree: [
+        { key: 'f1', text: 'Squads says “5”, not “unlimited”. Premium’s squad ceiling really is 5, and a benefit row claiming something the tier cannot deliver is a false claim.' },
+        { key: 'f2', text: 'Only built features appear. Advanced analytics, Communities, premium share layouts and the Legacy export book are part of Premium’s long-term definition and none of them exist yet.' },
+        { key: 'f3', text: 'Each comparison row is one accessible element: “Free: 3 programs. Premium: Unlimited programs.” Two separate column containers would read as an unattached list.' },
+        { key: 'f4', text: 'Annual is pre-selected on every mount, never Lifetime or Founder — a pre-selected three-figure one-off charge is a dark pattern.' },
+        { key: 'f5', text: 'The Founder row does not render at all unless a positive seat count came back from the server. Set seats to 0 in Tweaks to see it delist.' },
+        { key: 'f6', text: 'Save N% is computed from two platform prices or absent. A per-month figure appears only when the store supplies one — never annual ÷ 12.' },
+        { key: 'f7', text: 'Auto-renewal fineprint renders only for annual and monthly. It is false for Lifetime and Founder, which renew nothing.' },
+        { key: 'f8', text: 'The Coach AI disclosure sits above the button in every Free state, not only when Lifetime is selected — the athlete comparing plans is the one who needs it.' },
+        { key: 'f9', text: 'Usage is informational only and never suggests deleting anything, because Never Charge For History means there is nothing to delete your way out of.' }
+      ],
+      notesPremium: [
+        { key: 'p1', text: 'No comparison table and no usage review — there is nothing left to compare against and no limit to be proximate to.' },
+        { key: 'p2', text: '“No billing on this account” is what every athlete sees today, because default_tier is PREMIUM and no purchase has happened yet.' },
+        { key: 'p3', text: 'Entitlement is re-checked whenever the app returns to the foreground, because Manage Subscription leaves the app.' }
+      ]
+    };
+  }
+}
+
+</script>
+</body>
+</html>

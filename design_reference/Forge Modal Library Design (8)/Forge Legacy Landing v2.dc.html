@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&amp;display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <style>
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin:0; background:var(--fl-charcoal-900); color:var(--fl-text-primary); font-family:var(--fl-font-sans); -webkit-font-smoothing:antialiased; }
+    a { color: var(--fl-bronze-primary); text-decoration: none; }
+    a:hover { color: var(--fl-bronze-bright); }
+    :root { --phs: 1; }
+    @media (max-width: 470px) { :root { --phs: .88; } }
+    @media (max-width: 430px) { :root { --phs: .80; } }
+    @media (max-width: 400px) { :root { --phs: .74; } }
+    @media (max-width: 370px) { :root { --phs: .68; } }
+    :focus-visible { outline:2px solid var(--fl-bronze-primary); outline-offset:2px; }
+    summary::-webkit-details-marker { display:none; }
+    @keyframes flLedger { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+    @media (min-width: 940px) { [data-flip="1"] { flex-direction: row-reverse; } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      [data-ledger] { animation: none !important; }
+    }
+  </style>
+  <noscript><style>
+    /* Animation is enhancement. With JS off, every beat sits at its end state. */
+    [data-rev], [data-beat] { opacity:1 !important; transform:none !important; max-width:none !important; }
+    [data-settle="opacity:0"] { opacity:0 !important; }
+    [data-settle="opacity:0.55"] { opacity:.55 !important; }
+    circle[data-beat] { stroke-dashoffset:64 !important; }
+  </style></noscript>
+</helmet>
+
+<div id="flp" style="background:var(--fl-charcoal-900); overflow-x:hidden;">
+
+  <!-- ═══════════════ § 1 · HERO ═══════════════ -->
+  <section style="position:relative; padding:clamp(28px,4vw,44px) clamp(20px,5vw,60px) clamp(84px,10vw,120px); overflow:hidden;">
+    <div aria-hidden="true" style="position:absolute; left:50%; top:clamp(180px,26vw,300px); width:900px; height:900px; margin-left:-450px; pointer-events:none; background:radial-gradient(closest-side, rgba(191,143,79,0.11), rgba(191,143,79,0));"></div>
+
+    <div style="position:relative; max-width:1180px; margin:0 auto;">
+      <div style="display:flex; align-items:center; gap:11px; margin-bottom:clamp(48px,7vw,92px);">
+        <img src="assets/landing/wordmark.webp" alt="" width="20" height="29" style="width:20px; height:auto; display:block;">
+        <span style="font-family:var(--fl-font-display); font-size:14px; font-weight:500; letter-spacing:2.6px; color:var(--fl-text-primary);">FORGE LEGACY</span>
+      </div>
+
+      <div style="display:flex; gap:clamp(36px,5vw,80px); flex-wrap:wrap; align-items:center;">
+        <div style="flex:1 1 460px; min-width:min(100%,300px);">
+          <span data-beat="0" style="display:block; font-size:11px; font-weight:500; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-bronze-primary); opacity:0; transition:opacity 500ms var(--fl-ease-out);">A training app built around chapters</span>
+
+          <h1 style="margin:18px 0 0; font-family:var(--fl-font-display); font-size:clamp(35px,7vw,64px); font-weight:500; line-height:1.06; letter-spacing:-0.01em; color:var(--fl-text-primary); text-wrap:balance;">
+            <sc-if value="{{ heroPromise }}" hint-placeholder-val="{{ true }}">
+              <span data-beat="120" style="display:block; opacity:0; transform:translateY(14px); transition:opacity 500ms var(--fl-ease-out), transform 500ms var(--fl-ease-out);">A permanent record</span>
+              <span data-beat="420" style="display:block; color:var(--fl-bronze-primary); opacity:0; transform:translateY(14px); transition:opacity 500ms var(--fl-ease-out), transform 500ms var(--fl-ease-out);">of what you built.</span>
+            </sc-if>
+            <sc-if value="{{ heroQuestion }}">
+              <span data-beat="120" style="display:block; opacity:0; transform:translateY(14px); transition:opacity 500ms var(--fl-ease-out), transform 500ms var(--fl-ease-out);">Ten years of training.</span>
+              <span data-beat="420" style="display:block; color:var(--fl-bronze-primary); opacity:0; transform:translateY(14px); transition:opacity 500ms var(--fl-ease-out), transform 500ms var(--fl-ease-out);">What do you have to show for it?</span>
+            </sc-if>
+          </h1>
+
+          <span data-beat="760" aria-hidden="true" style="display:block; width:min(340px,60%); height:1px; margin:clamp(24px,3vw,34px) 0 0; background:linear-gradient(90deg, var(--fl-bronze-primary), rgba(191,143,79,0)); transform:scaleX(0); transform-origin:left; transition:transform 800ms var(--fl-ease-out);"></span>
+
+          <p data-beat="900" style="margin:clamp(22px,3vw,30px) 0 0; font-size:clamp(16.5px,1.2vw,18px); line-height:1.6; color:var(--fl-text-secondary); max-width:60ch; text-wrap:pretty; opacity:0; transform:translateY(14px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">Ten years of training — what do you have to show for it? Forge Legacy is a training app built around one idea: your work should accumulate into something permanent. Not a streak. Not a dashboard you'll abandon. Chapters of your life, sealed and kept.</p>
+
+          <div data-beat="1050" style="display:flex; flex-direction:column; gap:16px; align-items:flex-start; margin-top:clamp(30px,4vw,40px); opacity:0; transform:translateY(14px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">
+            <!-- APP STORE URL — one string, three places (hero, sticky bar, § 14). Swap at launch. -->
+            <a href="#" data-analytics="cta-hero" style="display:flex; align-items:center; justify-content:center; width:min(100%,300px); height:52px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); border:1px solid var(--fl-bronze-metal-border); box-shadow:var(--fl-bronze-metal-top-rim); color:#100B04; font-size:16px; font-weight:600; letter-spacing:0.2px;">Start Chapter One</a>
+            <span style="font-size:13px; color:var(--fl-gray-400);">Free to start. On the App Store, for iPhone.</span>
+            <a href="#chapters" style="font-size:15px; border-bottom:1px solid var(--fl-bronze-border); padding-bottom:2px;">See how it works</a>
+          </div>
+
+          <div data-beat="1200" style="display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:clamp(26px,3.6vw,36px); padding-top:clamp(20px,2.8vw,26px); border-top:1px solid var(--fl-charcoal-600); opacity:0; transform:translateY(14px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">
+            <span style="display:flex; align-items:center; gap:9px; font-size:14px; color:var(--fl-text-secondary);"><span aria-hidden="true" style="flex:none; width:5px; height:5px; background:var(--fl-bronze-primary); transform:rotate(45deg);"></span>Chapters you seal and keep</span>
+            <span style="display:flex; align-items:center; gap:9px; font-size:14px; color:var(--fl-text-secondary);"><span aria-hidden="true" style="flex:none; width:5px; height:5px; background:var(--fl-bronze-primary); transform:rotate(45deg);"></span>Sets, programs and cardio, logged in seconds</span>
+            <span style="display:flex; align-items:center; gap:9px; font-size:14px; color:var(--fl-text-secondary);"><span aria-hidden="true" style="flex:none; width:5px; height:5px; background:var(--fl-bronze-primary); transform:rotate(45deg);"></span>Nothing public. No followers.</span>
+          </div>
+        </div>
+
+        <div data-beat="700" style="flex:none; width:calc(390px * var(--phs,1)); height:calc(782px * var(--phs,1)); margin:0 auto; opacity:0; transform:translateY(20px); transition:opacity 600ms var(--fl-ease-out), transform 600ms var(--fl-ease-out);">
+          <div style="position:relative; width:390px; height:782px; transform:scale(var(--phs,1)); transform-origin:top left; border-radius:40px; border:8px solid var(--fl-charcoal-500); background:var(--fl-base); box-shadow:0 8px 24px rgba(0,0,0,0.65); overflow:hidden;">
+            <img src="assets/landing/legacy-identity.jpg" alt="The Legacy screen: the athlete's rank, their standard, the active chapter with its primary goal, and pinned accomplishments." width="374" height="766" style="display:block; width:374px; height:auto;">
+            <span aria-hidden="true" style="position:absolute; left:0; right:0; top:0; height:1px; background:rgba(255,255,255,.07);"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ § 2 · THE ACHE ═══════════════ -->
+  <section style="position:relative; background:var(--fl-base); border-top:1px solid var(--fl-charcoal-600); padding:clamp(96px,14vw,168px) clamp(20px,5vw,60px); overflow:hidden;">
+    <div aria-hidden="true" style="position:absolute; inset:0; overflow:hidden; opacity:0.06; -webkit-mask-image:linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent); mask-image:linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);">
+      <div data-ledger="1" style="position:absolute; left:0; right:0; top:0; display:flex; flex-direction:column; gap:9px; font-family:var(--fl-font-mono); font-size:13px; color:var(--fl-cream-100); text-align:center; animation:flLedger 44s linear infinite;">
+        <span>Bench 185 × 5</span><span>Bench 190 × 5</span><span>Bench 185 × 5</span><span>Bench 195 × 3</span><span>Squat 265 × 5</span><span>Bench 185 × 5</span><span>Row 135 × 8</span><span>Bench 190 × 5</span><span>Squat 275 × 3</span><span>Bench 185 × 5</span><span>Press 115 × 6</span><span>Bench 195 × 5</span><span>Deadlift 315 × 3</span><span>Bench 185 × 5</span><span>Squat 265 × 5</span><span>Bench 190 × 5</span>
+        <span>Bench 185 × 5</span><span>Bench 190 × 5</span><span>Bench 185 × 5</span><span>Bench 195 × 3</span><span>Squat 265 × 5</span><span>Bench 185 × 5</span><span>Row 135 × 8</span><span>Bench 190 × 5</span><span>Squat 275 × 3</span><span>Bench 185 × 5</span><span>Press 115 × 6</span><span>Bench 195 × 5</span><span>Deadlift 315 × 3</span><span>Bench 185 × 5</span><span>Squat 265 × 5</span><span>Bench 190 × 5</span>
+      </div>
+    </div>
+
+    <div data-scene="1" style="position:relative; max-width:760px; margin:0 auto; text-align:center;">
+      <span style="display:block; font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.5px; color:var(--fl-bronze-mid);">I</span>
+      <p data-beat="0" style="margin:clamp(30px,4vw,44px) 0 0; font-family:var(--fl-font-display); font-size:clamp(26px,4vw,38px); font-weight:500; line-height:1.2; color:var(--fl-text-primary); opacity:0; transform:translateY(14px); transition:opacity 500ms var(--fl-ease-out), transform 500ms var(--fl-ease-out);">You've been training for years.</p>
+      <p data-beat="2000" style="margin:clamp(22px,3vw,32px) 0 0; font-family:var(--fl-font-display); font-size:clamp(40px,7vw,72px); font-weight:500; line-height:1; letter-spacing:-0.015em; color:var(--fl-bronze-primary); opacity:0; transform:translateY(14px); transition:opacity 500ms var(--fl-ease-out), transform 500ms var(--fl-ease-out);">Show me.</p>
+      <p data-beat="2500" style="margin:clamp(34px,5vw,52px) auto 0; max-width:60ch; font-size:clamp(16px,1.15vw,17px); line-height:1.65; color:var(--fl-text-secondary); text-wrap:pretty; opacity:0; transform:translateY(14px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">Most people can't. They can show you last Tuesday's bench press. They can't show you the five years. Not because the data was deleted — because it never meant anything. A number without a story is just a number.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ § 3 · THE REFRAME ═══════════════ -->
+  <section style="border-top:1px solid var(--fl-charcoal-600); padding:clamp(88px,12vw,140px) clamp(20px,5vw,60px);">
+    <div data-scene="1" style="max-width:760px; margin:0 auto; text-align:center;">
+      <span style="display:block; font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.5px; color:var(--fl-bronze-mid);">II</span>
+      <p data-beat="0" style="margin:clamp(30px,4vw,44px) 0 0; font-family:var(--fl-font-display); font-size:clamp(30px,4.6vw,44px); font-weight:500; line-height:1.12; color:var(--fl-bronze-primary); opacity:0; transform:translateY(14px); transition:opacity 500ms var(--fl-ease-out), transform 500ms var(--fl-ease-out);">Who am I becoming?</p>
+      <p data-beat="700" style="position:relative; display:inline-block; margin:clamp(18px,2.4vw,26px) 0 0; font-family:var(--fl-font-display); font-size:clamp(22px,3.2vw,30px); font-weight:500; line-height:1.2; color:var(--fl-text-tertiary); opacity:0; transition:opacity 400ms var(--fl-ease-out);">Not: How do I compare?
+        <span data-beat="1100" aria-hidden="true" style="position:absolute; left:-2%; right:-2%; top:52%; height:1px; background:var(--fl-gray-600); transform:scaleX(0); transform-origin:left; transition:transform 400ms var(--fl-ease-out);"></span>
+      </p>
+      <p data-beat="1700" style="margin:clamp(34px,4.6vw,50px) auto 0; max-width:56ch; font-size:13px; line-height:1.6; color:var(--fl-gray-400); opacity:0; transition:opacity 400ms var(--fl-ease-out);">The founding question. It was written in the first paragraph of the product document, before a line of code.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ § 4 · CHAPTERS ═══════════════ -->
+  <section id="chapters" style="border-top:1px solid var(--fl-charcoal-600); padding:clamp(88px,12vw,140px) clamp(20px,5vw,60px);">
+    <div style="max-width:1180px; margin:0 auto;">
+      <div style="display:flex; gap:clamp(18px,3.6vw,48px); flex-wrap:wrap;">
+        <div style="flex:0 0 auto; width:116px; display:flex; flex-direction:column; gap:7px; padding-top:9px;">
+          <span style="font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.5px; color:var(--fl-bronze-mid);">III</span>
+          <span style="font-size:11px; font-weight:500; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">The organizing unit</span>
+        </div>
+        <div style="flex:1 1 420px; min-width:min(100%,300px);">
+          <h2 data-rev="1" style="margin:0; font-family:var(--fl-font-display); font-size:clamp(28px,4.4vw,44px); font-weight:500; line-height:1.1; color:var(--fl-text-primary); max-width:20em; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">A chapter is a real season of your life.</h2>
+          <p data-rev="1" style="margin:18px 0 0; font-size:clamp(16px,1.15vw,17px); line-height:1.62; color:var(--fl-text-secondary); max-width:66ch; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">It has a beginning, a purpose, and an end. Not a week. Not a streak. A chapter — "Building Your Foundation," "Coming Back From Injury," "The Year I Got Serious." You name it. You decide when it closes.</p>
+        </div>
+      </div>
+
+      <div data-scene="1" style="display:flex; gap:clamp(30px,5vw,72px); flex-wrap:wrap; align-items:center; margin-top:clamp(48px,7vw,84px);">
+        <div style="flex:none; width:calc(390px * var(--phs,1)); height:calc(782px * var(--phs,1)); margin:0 auto;">
+          <div style="position:relative; width:390px; height:782px; transform:scale(var(--phs,1)); transform-origin:top left; border-radius:40px; border:8px solid var(--fl-charcoal-500); background:var(--fl-base); box-shadow:0 8px 24px rgba(0,0,0,0.65); overflow:hidden;">
+            <div aria-hidden="true" data-beat="1300" style="position:absolute; left:50%; top:150px; width:520px; height:520px; margin-left:-260px; background:radial-gradient(closest-side, rgba(191,143,79,0.16), rgba(191,143,79,0)); opacity:0; transition:opacity 500ms var(--fl-ease-out);"></div>
+            <div style="position:relative; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 40px; text-align:center;">
+              <span data-beat="0" style="font-family:var(--fl-font-display); font-size:15px; font-weight:500; letter-spacing:4px; text-transform:uppercase; color:var(--fl-bronze-primary); opacity:0; transform:translateY(12px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">Chapter I</span>
+              <span data-beat="400" aria-hidden="true" style="display:flex; align-items:center; gap:12px; margin:20px 0; width:180px; opacity:0; transition:opacity 200ms var(--fl-ease-out);">
+                <span style="flex:1; height:1px; background:linear-gradient(90deg, rgba(191,143,79,0), var(--fl-bronze-mid));"></span>
+                <span style="flex:none; width:6px; height:6px; background:var(--fl-bronze-primary); transform:rotate(45deg);"></span>
+                <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-mid), rgba(191,143,79,0));"></span>
+              </span>
+              <span data-beat="600" style="font-family:var(--fl-font-display); font-size:30px; font-weight:500; line-height:1.18; color:var(--fl-text-primary); opacity:0; transform:translateY(12px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">Building Your Foundation</span>
+              <span data-beat="900" style="margin-top:26px; font-size:12px; font-weight:500; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-secondary); opacity:0; transition:opacity 300ms var(--fl-ease-out);">Isa Altamirano</span>
+              <span data-beat="1100" style="margin-top:9px; font-size:12.5px; color:var(--fl-text-tertiary); opacity:0; transition:opacity 300ms var(--fl-ease-out);">Began August 3, 2026</span>
+            </div>
+            <span aria-hidden="true" style="position:absolute; left:0; right:0; top:0; height:1px; background:rgba(255,255,255,.07);"></span>
+          </div>
+        </div>
+
+        <div style="flex:1 1 400px; min-width:min(100%,300px);">
+          <p data-beat="1500" style="margin:0; font-size:clamp(16px,1.15vw,17px); line-height:1.62; color:var(--fl-text-secondary); max-width:60ch; text-wrap:pretty; opacity:0; transform:translateY(14px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">Every workout. Every honor. Every personal record. Every photo. Every goal. They don't go into a feed. They go into the chapter you're writing.</p>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:26px;">
+            <div data-beat="1900" style="display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(26px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-soft-spring);">
+              <span style="flex:none; width:7px; height:7px; border-radius:50%; background:var(--fl-bronze-primary); box-shadow:0 0 10px rgba(191,143,79,0.55);"></span>
+              <span style="flex:1; font-size:15px; color:var(--fl-text-primary);">Upper Body A — 14 sets</span>
+              <span style="font-size:12px; color:var(--fl-text-tertiary);">Workout</span>
+            </div>
+            <div data-beat="2080" style="display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(26px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-soft-spring);">
+              <span style="flex:none; width:7px; height:7px; border-radius:50%; background:var(--fl-bronze-primary); box-shadow:0 0 10px rgba(191,143,79,0.55);"></span>
+              <span style="flex:1; font-size:15px; color:var(--fl-text-primary);">Early Forge</span>
+              <span style="font-size:12px; color:var(--fl-text-tertiary);">Honor</span>
+            </div>
+            <div data-beat="2260" style="display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(26px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-soft-spring);">
+              <span style="flex:none; width:7px; height:7px; border-radius:50%; background:var(--fl-bronze-primary); box-shadow:0 0 10px rgba(191,143,79,0.55);"></span>
+              <span style="flex:1; font-size:15px; color:var(--fl-text-primary);">Bench Press 335</span>
+              <span style="font-size:12px; color:var(--fl-text-tertiary);">Record</span>
+            </div>
+            <div data-beat="2440" style="display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(26px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-soft-spring);">
+              <span style="flex:none; width:7px; height:7px; border-radius:50%; background:var(--fl-bronze-primary); box-shadow:0 0 10px rgba(191,143,79,0.55);"></span>
+              <span style="flex:1; font-size:15px; color:var(--fl-text-primary);">August progress photo</span>
+              <span style="font-size:12px; color:var(--fl-text-tertiary);">Photo</span>
+            </div>
+            <div data-beat="2620" style="display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(26px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-soft-spring);">
+              <span style="flex:none; width:7px; height:7px; border-radius:50%; background:var(--fl-bronze-primary); box-shadow:0 0 10px rgba(191,143,79,0.55);"></span>
+              <span style="flex:1; font-size:15px; color:var(--fl-text-primary);">Get to 190 lbs</span>
+              <span style="font-size:12px; color:var(--fl-text-tertiary);">Goal</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ § 5 · SEALING ═══════════════ -->
+  <section style="background:var(--fl-base); border-top:1px solid var(--fl-charcoal-600); padding:clamp(104px,15vw,180px) clamp(20px,5vw,60px);">
+    <div data-scene="1" style="max-width:1180px; margin:0 auto;">
+      <div style="display:flex; gap:clamp(18px,3.6vw,48px); flex-wrap:wrap;">
+        <div style="flex:0 0 auto; width:116px; display:flex; flex-direction:column; gap:7px; padding-top:9px;">
+          <span style="font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.5px; color:var(--fl-bronze-mid);">IV</span>
+          <span style="font-size:11px; font-weight:500; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">When a chapter ends</span>
+        </div>
+        <div style="flex:1 1 420px; min-width:min(100%,300px);">
+          <h2 data-rev="1" style="margin:0; font-family:var(--fl-font-display); font-size:clamp(34px,5.4vw,56px); font-weight:500; line-height:1.05; color:var(--fl-text-primary); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">Sealed.</h2>
+          <p data-rev="1" style="margin:18px 0 0; font-size:clamp(16px,1.15vw,17px); line-height:1.62; color:var(--fl-text-secondary); max-width:52ch; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">When a season of your life is over, you close it. You write down what it meant. Then it locks.</p>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:center; margin-top:clamp(56px,8vw,96px);">
+        <div style="flex:none; width:calc(390px * var(--phs,1)); height:calc(782px * var(--phs,1));">
+          <div style="position:relative; width:390px; height:782px; transform:scale(var(--phs,1)); transform-origin:top left; border-radius:40px; border:8px solid var(--fl-charcoal-500); background:var(--fl-base); box-shadow:0 8px 24px rgba(0,0,0,0.65); overflow:hidden;">
+
+            <div data-beat="1100" data-settle="opacity:0.55" style="position:absolute; inset:0; background:radial-gradient(closest-side at 50% 46%, rgba(191,143,79,0.22), rgba(191,143,79,0)); opacity:0; transition:opacity 500ms var(--fl-ease-out);"></div>
+
+            <!-- the app's sealing modal, copy verbatim -->
+            <div data-beat="900" data-settle="opacity:0" style="position:absolute; left:26px; right:26px; top:205px; padding:32px 26px 24px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight-md), 0 18px 48px rgba(0,0,0,0.7); text-align:center; transition:opacity 400ms var(--fl-ease-in);">
+              <span style="display:block; font-family:var(--fl-font-display); font-size:24px; font-weight:500; color:var(--fl-text-primary);">Seal Chapter I?</span>
+              <span style="display:block; margin-top:12px; font-size:14px; line-height:1.55; color:var(--fl-text-secondary);">Your goals, honors, and progress will be permanently locked.</span>
+              <span style="display:flex; align-items:center; justify-content:center; height:48px; margin-top:24px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); box-shadow:var(--fl-bronze-metal-top-rim); color:var(--fl-text-primary); font-size:15px; font-weight:600;">Seal This Chapter</span>
+              <span style="display:block; margin-top:16px; font-size:14px; color:var(--fl-text-tertiary);">Not yet</span>
+            </div>
+
+            <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+              <div data-beat="1100" style="position:relative; width:168px; height:168px; opacity:0; transform:scale(1.4); transition:opacity 500ms var(--fl-ease-out), transform 500ms var(--fl-ease-soft-spring);">
+                <span aria-hidden="true" style="position:absolute; inset:0; border-radius:50%; border:1px solid var(--fl-bronze-border);"></span>
+                <span aria-hidden="true" style="position:absolute; inset:9px; border-radius:50%; background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); box-shadow:var(--fl-bronze-metal-top-rim), 0 10px 26px rgba(0,0,0,0.6);"></span>
+                <svg viewBox="0 0 48 48" aria-hidden="true" style="position:absolute; left:50%; top:50%; width:56px; height:56px; margin:-28px 0 0 -28px; overflow:visible;">
+                  <path d="M24 6c3.4 6.2 9.6 9.4 9.6 17.2 0 6.6-4.3 11.2-9.6 11.2s-9.6-4.6-9.6-11.2C14.4 15.4 20.6 12.2 24 6z" fill="none" stroke="#CDA063" stroke-width="1.4" stroke-linejoin="round"></path>
+                  <path d="M24 17c1.8 3.2 4.4 5 4.4 8.6 0 3.1-2 5.2-4.4 5.2s-4.4-2.1-4.4-5.2c0-3.6 2.6-5.4 4.4-8.6z" fill="none" stroke="#BF8F4F" stroke-width="1.2" stroke-linejoin="round"></path>
+                  <path d="M11 39h26" fill="none" stroke="#7A6040" stroke-width="1.2"></path>
+                </svg>
+              </div>
+              <span data-beat="1800" data-settle="max-width:34ch" style="display:block; overflow:hidden; white-space:nowrap; max-width:0; margin-top:34px; font-size:12.5px; font-weight:500; letter-spacing:2.2px; text-transform:uppercase; color:var(--fl-text-secondary); transition:max-width 700ms var(--fl-ease-out);">Sealed · March 14, 2027</span>
+            </div>
+            <span aria-hidden="true" style="position:absolute; left:0; right:0; top:0; height:1px; background:rgba(255,255,255,.07);"></span>
+          </div>
+        </div>
+      </div>
+
+      <p data-beat="2500" style="margin:clamp(60px,8vw,100px) auto 0; max-width:22em; font-family:var(--fl-font-display); font-size:clamp(24px,3.6vw,34px); font-weight:500; line-height:1.25; color:var(--fl-text-primary); text-align:center; text-wrap:balance; opacity:0; transform:translateY(14px); transition:opacity 500ms var(--fl-ease-out), transform 500ms var(--fl-ease-out);">History can be added to. It cannot be rewritten.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ § 6 · THE LEGACY ═══════════════ -->
+  <section id="payoff" style="border-top:1px solid var(--fl-charcoal-600); padding:clamp(88px,12vw,140px) clamp(20px,5vw,60px);">
+    <div style="max-width:1180px; margin:0 auto;">
+      <div style="display:flex; gap:clamp(18px,3.6vw,48px); flex-wrap:wrap;">
+        <div style="flex:0 0 auto; width:116px; display:flex; flex-direction:column; gap:7px; padding-top:9px;">
+          <span style="font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.5px; color:var(--fl-bronze-mid);">V</span>
+          <span style="font-size:11px; font-weight:500; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">The ten-year payoff</span>
+        </div>
+        <div style="flex:1 1 420px; min-width:min(100%,300px);">
+          <h2 data-rev="1" style="margin:0; font-family:var(--fl-font-display); font-size:clamp(28px,4.4vw,44px); font-weight:500; line-height:1.1; color:var(--fl-text-primary); max-width:20em; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">Ten years from now, you open this.</h2>
+          <p data-rev="1" style="margin:18px 0 0; font-size:clamp(16px,1.15vw,17px); line-height:1.62; color:var(--fl-text-secondary); max-width:66ch; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">Every chapter of your athletic life. Organized. Honored. Preserved. The programs you ran, the goals you hit, the ones you didn't, the person you were in each of them.</p>
+        </div>
+      </div>
+
+      <div data-scene="1" style="display:flex; justify-content:center; margin-top:clamp(48px,7vw,84px);">
+        <div style="flex:none; width:calc(390px * var(--phs,1)); height:calc(782px * var(--phs,1));">
+          <div style="position:relative; width:390px; height:782px; transform:scale(var(--phs,1)); transform-origin:top left; border-radius:40px; border:8px solid var(--fl-charcoal-500); background:var(--fl-base); box-shadow:0 8px 24px rgba(0,0,0,0.65); overflow:hidden;">
+            <img data-beat="300" src="assets/landing/legacy-honors.jpg" alt="Accomplishments and honors from the active chapter, each with the date it was awarded." width="374" height="766" loading="lazy" decoding="async" style="display:block; width:374px; height:auto; opacity:0; transition:opacity 500ms var(--fl-ease-out);">
+            <span aria-hidden="true" style="position:absolute; left:0; right:0; top:0; height:1px; background:rgba(255,255,255,.07);"></span>
+          </div>
+        </div>
+      </div>
+
+      <p data-rev="1" style="margin:clamp(56px,8vw,96px) auto 0; max-width:20em; font-family:var(--fl-font-display); font-size:clamp(24px,3.6vw,34px); font-weight:500; line-height:1.25; color:var(--fl-bronze-primary); text-align:center; text-wrap:balance; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">You can show it to your children.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ § 7 · DIVIDER ═══════════════ -->
+  <section data-scene="1" style="background:var(--fl-base); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(26px,4vw,38px); min-height:200px; padding:clamp(48px,7vw,72px) clamp(20px,5vw,60px);">
+    <span data-beat="0" aria-hidden="true" style="width:min(560px,100%); height:1px; background:linear-gradient(90deg, rgba(191,143,79,0), var(--fl-bronze-primary), rgba(191,143,79,0)); transform:scaleX(0); transition:transform 600ms var(--fl-ease-out);"></span>
+    <p data-beat="200" style="margin:0; max-width:22em; font-family:var(--fl-font-display); font-size:clamp(22px,3.2vw,32px); font-weight:500; line-height:1.3; color:var(--fl-text-primary); text-align:center; text-wrap:balance; opacity:0; transition:opacity 500ms var(--fl-ease-out);">The tracker is the engine. The Legacy is the product.</p>
+    <span data-beat="0" aria-hidden="true" style="width:min(560px,100%); height:1px; background:linear-gradient(90deg, rgba(191,143,79,0), var(--fl-bronze-primary), rgba(191,143,79,0)); transform:scaleX(0); transition:transform 600ms var(--fl-ease-out);"></span>
+  </section>
+
+  <!-- ═══════════════ § 8 · THE ENGINE ═══════════════ -->
+  <section style="border-top:1px solid var(--fl-charcoal-600); padding:clamp(88px,12vw,140px) clamp(20px,5vw,60px) clamp(76px,10vw,110px);">
+    <div style="max-width:1180px; margin:0 auto;">
+      <div style="display:flex; gap:clamp(18px,3.6vw,48px); flex-wrap:wrap;">
+        <div style="flex:0 0 auto; width:116px; display:flex; flex-direction:column; gap:7px; padding-top:9px;">
+          <span style="font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.5px; color:var(--fl-bronze-mid);">VI</span>
+          <span style="font-size:11px; font-weight:500; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">What you actually use every day</span>
+        </div>
+        <div style="flex:1 1 420px; min-width:min(100%,300px);">
+          <h2 data-rev="1" style="margin:0; font-family:var(--fl-font-display); font-size:clamp(28px,4.4vw,44px); font-weight:500; line-height:1.1; color:var(--fl-text-primary); max-width:20em; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">None of it matters if the training app isn't good.</h2>
+          <p data-rev="1" style="margin:18px 0 0; font-size:clamp(16px,1.15vw,17px); line-height:1.62; color:var(--fl-text-secondary); max-width:66ch; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">So it's good. This is a serious training tool that happens to be building something underneath.</p>
+        </div>
+      </div>
+
+      <!-- ── Feature 1 · Logging ── -->
+      <div data-scene="1" style="display:flex; gap:clamp(30px,5vw,72px); flex-wrap:wrap; align-items:center; margin-top:clamp(56px,8vw,100px); padding-top:clamp(40px,6vw,64px); border-top:1px solid var(--fl-charcoal-700);">
+        <div style="flex:1 1 380px; min-width:min(100%,300px);">
+          <h3 data-beat="0" style="margin:0; font-family:var(--fl-font-display); font-size:clamp(24px,3.2vw,32px); font-weight:500; line-height:1.15; color:var(--fl-text-primary); text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">Log a set in under two seconds.</h3>
+          <p data-beat="120" style="margin:16px 0 0; font-size:clamp(16px,1.15vw,17px); line-height:1.62; color:var(--fl-text-secondary); max-width:60ch; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">Weight, reps, done. A rest timer that keeps running when you leave the app. Autosave — close it mid-workout, drop your phone, lose signal, and it's exactly where you left it. Personal records caught as you lift, not calculated later.</p>
+        </div>
+        <div style="flex:none; width:calc(390px * var(--phs,1)); height:calc(782px * var(--phs,1)); margin:0 auto;">
+          <div style="position:relative; width:390px; height:782px; transform:scale(var(--phs,1)); transform-origin:top left; border-radius:40px; border:8px solid var(--fl-charcoal-500); background:var(--fl-base); box-shadow:0 8px 24px rgba(0,0,0,0.65); overflow:hidden;">
+            <img data-beat="200" src="assets/landing/active-workout-2x.jpg" alt="A set being logged mid-workout: the exercise with its last and goal numbers, and the set table with two sets checked off." width="374" height="766" loading="lazy" decoding="async" style="display:block; width:374px; height:auto; opacity:0; transition:opacity 400ms var(--fl-ease-out);">
+            <div data-beat="1500" style="position:absolute; left:16px; right:16px; bottom:152px; display:flex; align-items:center; gap:13px; padding:16px; border-radius:var(--fl-radius-md); background:var(--fl-surface-elevated); border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 0 var(--fl-inner-highlight-md), 0 10px 28px rgba(0,0,0,0.55); opacity:0; transform:translateY(30px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-soft-spring);">
+              <span style="flex:none; width:8px; height:8px; border-radius:50%; background:var(--fl-bronze-primary); box-shadow:0 0 12px rgba(191,143,79,0.6);"></span>
+              <span style="flex:1; font-size:14px; line-height:1.4; color:var(--fl-text-primary);">Personal record — Bench Press 245 × 8</span>
+            </div>
+            <span aria-hidden="true" style="position:absolute; left:0; right:0; top:0; height:1px; background:rgba(255,255,255,.07);"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Feature 2 · Bring your own program ── -->
+      <div data-scene="1" data-flip="1" style="display:flex; gap:clamp(30px,5vw,72px); flex-wrap:wrap; align-items:center; margin-top:clamp(56px,8vw,100px); padding-top:clamp(40px,6vw,64px); border-top:1px solid var(--fl-charcoal-700);">
+        <div style="flex:1 1 380px; min-width:min(100%,300px);">
+          <h3 data-beat="0" style="margin:0; font-family:var(--fl-font-display); font-size:clamp(24px,3.2vw,32px); font-weight:500; line-height:1.15; color:var(--fl-text-primary); text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">Already running a program? Paste it in.</h3>
+          <p data-beat="120" style="margin:16px 0 0; font-size:clamp(16px,1.15vw,17px); line-height:1.62; color:var(--fl-text-secondary); max-width:60ch; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">Forge reads it, matches the exercises, and builds it into a real program you can run. Or build one from scratch — week by week, day by day, exercise by exercise. You don't have to adopt our programming to use this.</p>
+        </div>
+        <div style="flex:none; width:calc(390px * var(--phs,1)); height:calc(782px * var(--phs,1)); margin:0 auto;">
+          <div style="position:relative; width:390px; height:782px; transform:scale(var(--phs,1)); transform-origin:top left; border-radius:40px; border:8px solid var(--fl-charcoal-500); background:var(--fl-base); box-shadow:0 8px 24px rgba(0,0,0,0.65); overflow:hidden;">
+            <div style="position:absolute; inset:0; display:flex; flex-direction:column; padding:56px 22px 24px;">
+              <span style="font-size:11px; font-weight:500; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">Import program</span>
+              <div style="margin-top:16px; padding:16px; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); border:1px dashed var(--fl-charcoal-600); font-family:var(--fl-font-mono); font-size:12px; line-height:1.85; color:var(--fl-text-tertiary);">
+                <span style="display:block;">W1D1 bb bench 4x5 @185</span>
+                <span style="display:block;">bent row 4x8 @135</span>
+                <span style="display:block;">incline db press 3x10</span>
+                <span style="display:block;">lat pulldown 3x12</span>
+                <span style="display:block;">face pull 3x15</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px; margin:22px 2px 6px;">
+                <span style="flex:1; height:1px; background:var(--fl-charcoal-700);"></span>
+                <span style="font-size:10.5px; font-weight:500; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Matched</span>
+                <span style="flex:1; height:1px; background:var(--fl-charcoal-700);"></span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+                <div data-beat="500" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); opacity:0; transform:translateX(-18px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+                  <span style="flex:none; color:var(--fl-bronze-bright); font-size:14px;">✓</span>
+                  <span style="flex:1; font-size:14.5px; color:var(--fl-text-primary);">Barbell Bench Press</span>
+                  <span style="font-size:12px; color:var(--fl-text-tertiary);">4 × 5</span>
+                </div>
+                <div data-beat="620" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); opacity:0; transform:translateX(-18px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+                  <span style="flex:none; color:var(--fl-bronze-bright); font-size:14px;">✓</span>
+                  <span style="flex:1; font-size:14.5px; color:var(--fl-text-primary);">Barbell Bent-Over Row</span>
+                  <span style="font-size:12px; color:var(--fl-text-tertiary);">4 × 8</span>
+                </div>
+                <div data-beat="740" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); opacity:0; transform:translateX(-18px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+                  <span style="flex:none; color:var(--fl-bronze-bright); font-size:14px;">✓</span>
+                  <span style="flex:1; font-size:14.5px; color:var(--fl-text-primary);">Incline Dumbbell Press</span>
+                  <span style="font-size:12px; color:var(--fl-text-tertiary);">3 × 10</span>
+                </div>
+                <div data-beat="860" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); opacity:0; transform:translateX(-18px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+                  <span style="flex:none; color:var(--fl-bronze-bright); font-size:14px;">✓</span>
+                  <span style="flex:1; font-size:14.5px; color:var(--fl-text-primary);">Lat Pulldown</span>
+                  <span style="font-size:12px; color:var(--fl-text-tertiary);">3 × 12</span>
+                </div>
+                <div data-beat="980" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); opacity:0; transform:translateX(-18px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+                  <span style="flex:none; color:var(--fl-bronze-bright); font-size:14px;">✓</span>
+                  <span style="flex:1; font-size:14.5px; color:var(--fl-text-primary);">Cable Face Pull</span>
+                  <span style="font-size:12px; color:var(--fl-text-tertiary);">3 × 15</span>
+                </div>
+              </div>
+
+              <div data-beat="1150" style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:15px; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); opacity:0; transition:opacity 300ms var(--fl-ease-out);">
+                <span style="flex:1; font-size:13.5px; color:var(--fl-text-secondary);">5 of 5 exercises matched</span>
+                <span style="font-size:11px; font-weight:500; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-bronze-primary);">Week 1 · Day 1</span>
+              </div>
+              <span data-beat="1220" style="margin-top:12px; font-size:12.5px; line-height:1.5; color:var(--fl-text-tertiary); opacity:0; transition:opacity 300ms var(--fl-ease-out);">Weights and rep targets came across as written. Nothing to re-enter.</span>
+              <span style="flex:1;"></span>
+              <span data-beat="1300" style="display:flex; align-items:center; justify-content:center; height:50px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); box-shadow:var(--fl-bronze-metal-top-rim); color:var(--fl-text-primary); font-size:15px; font-weight:600; opacity:0; transition:opacity 300ms var(--fl-ease-out);">Build this program</span>
+            </div>
+            <span aria-hidden="true" style="position:absolute; left:0; right:0; top:0; height:1px; background:rgba(255,255,255,.07);"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Feature 3 · The people ── -->
+      <div data-scene="1" style="display:flex; gap:clamp(30px,5vw,72px); flex-wrap:wrap; align-items:center; margin-top:clamp(56px,8vw,100px); padding-top:clamp(40px,6vw,64px); border-top:1px solid var(--fl-charcoal-700);">
+        <div style="flex:1 1 380px; min-width:min(100%,300px);">
+          <h3 data-beat="0" style="margin:0; font-family:var(--fl-font-display); font-size:clamp(24px,3.2vw,32px); font-weight:500; line-height:1.15; color:var(--fl-text-primary); text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">Small. Private. The people you actually train with.</h3>
+          <p data-beat="120" style="margin:16px 0 0; font-size:clamp(16px,1.15vw,17px); line-height:1.62; color:var(--fl-text-secondary); max-width:60ch; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">A squad is a handful of people, not an audience. It surfaces what members have done — never what they have missed. No followers. No like counts. Nothing posts on its own: everything on that screen, someone chose to put there.</p>
+        </div>
+        <div data-beat="200" style="flex:none; width:calc(390px * var(--phs,1)); height:calc(782px * var(--phs,1)); margin:0 auto; opacity:0; transform:translateY(16px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">
+          <div style="position:relative; width:390px; height:782px; transform:scale(var(--phs,1)); transform-origin:top left; border-radius:40px; border:8px solid var(--fl-charcoal-500); background:var(--fl-base); box-shadow:0 8px 24px rgba(0,0,0,0.65); overflow:hidden;">
+            <img src="assets/landing/squads.jpg" alt="The squads screen: two private squads, each showing how many members trained today." width="374" height="766" loading="lazy" decoding="async" style="display:block; width:374px; height:auto;">
+            <span aria-hidden="true" style="position:absolute; left:0; right:0; top:0; height:1px; background:rgba(255,255,255,.07);"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Feature 4 · Rank ── -->
+      <div data-scene="1" data-flip="1" style="display:flex; gap:clamp(30px,5vw,72px); flex-wrap:wrap; align-items:center; margin-top:clamp(56px,8vw,100px); padding-top:clamp(40px,6vw,64px); border-top:1px solid var(--fl-charcoal-700);">
+        <div style="flex:1 1 340px; min-width:min(100%,300px);">
+          <h3 data-beat="0" style="margin:0; font-family:var(--fl-font-display); font-size:clamp(24px,3.2vw,32px); font-weight:500; line-height:1.15; color:var(--fl-text-primary); text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">Rank is not a leaderboard. It's a description of who you've become.</h3>
+          <p data-beat="120" style="margin:16px 0 0; font-size:clamp(16px,1.15vw,17px); line-height:1.62; color:var(--fl-text-secondary); max-width:60ch; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">Seven families. It measures years, not weeks — and it never goes down. Stop for a year, come back, and you are still exactly what you earned.</p>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:clamp(28px,4vw,40px);">
+            <span data-beat="5400" style="font-family:var(--fl-font-display); font-size:clamp(19px,2.4vw,24px); font-weight:500; color:var(--fl-text-primary); opacity:0; transition:opacity 400ms var(--fl-ease-out);">No XP. No points. No leaderboard.</span>
+            <span data-beat="5900" style="font-family:var(--fl-font-display); font-size:clamp(19px,2.4vw,24px); font-weight:500; color:var(--fl-text-primary); opacity:0; transition:opacity 400ms var(--fl-ease-out);">Legacy takes seven years.</span>
+            <span data-beat="6400" style="font-family:var(--fl-font-display); font-size:clamp(19px,2.4vw,24px); font-weight:500; color:var(--fl-bronze-primary); opacity:0; transition:opacity 400ms var(--fl-ease-out);">And it never goes down.</span>
+          </div>
+        </div>
+
+        <div style="flex:1 1 400px; min-width:min(100%,300px); display:flex; flex-direction:column;">
+          <div data-beat="0" style="display:flex; align-items:center; gap:16px; padding:13px 0; border-bottom:1px solid var(--fl-charcoal-700); opacity:0; transform:translateY(14px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">
+            <img src="assets/landing/badge-foundation.webp" alt="Foundation rank insignia" width="44" height="44" loading="lazy" decoding="async" style="flex:none; width:44px; height:44px; object-fit:contain; display:block;">
+            <span style="flex:none; width:104px; font-size:11px; font-weight:500; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-primary);">Foundation</span>
+            <span style="flex:1; min-width:0; font-size:15px; color:var(--fl-text-secondary); text-wrap:pretty;">I've started.</span>
+          </div>
+          <div data-beat="600" style="display:flex; align-items:center; gap:16px; padding:13px 0; border-bottom:1px solid var(--fl-charcoal-700); opacity:0; transform:translateY(14px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">
+            <img src="assets/landing/badge-builder.webp" alt="Builder rank insignia" width="44" height="44" loading="lazy" decoding="async" style="flex:none; width:44px; height:44px; object-fit:contain; display:block;">
+            <span style="flex:none; width:104px; font-size:11px; font-weight:500; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-primary);">Builder</span>
+            <span style="flex:1; min-width:0; font-size:15px; color:var(--fl-text-secondary); text-wrap:pretty;">I'm building habits.</span>
+          </div>
+          <div data-beat="1200" style="display:flex; align-items:center; gap:16px; padding:13px 0; border-bottom:1px solid var(--fl-charcoal-700); opacity:0; transform:translateY(14px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">
+            <img src="assets/landing/badge-craftsman.webp" alt="Craftsman rank insignia" width="44" height="44" loading="lazy" decoding="async" style="flex:none; width:44px; height:44px; object-fit:contain; display:block;">
+            <span style="flex:none; width:104px; font-size:11px; font-weight:500; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-primary);">Craftsman</span>
+            <span style="flex:1; min-width:0; font-size:15px; color:var(--fl-text-secondary); text-wrap:pretty;">I know how to train.</span>
+          </div>
+          <div data-beat="1800" style="display:flex; align-items:center; gap:16px; padding:13px 0; border-bottom:1px solid var(--fl-charcoal-700); opacity:0; transform:translateY(14px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">
+            <img src="assets/landing/badge-architect.webp" alt="Architect rank insignia" width="44" height="44" loading="lazy" decoding="async" style="flex:none; width:44px; height:44px; object-fit:contain; display:block;">
+            <span style="flex:none; width:104px; font-size:11px; font-weight:500; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-primary);">Architect</span>
+            <span style="flex:1; min-width:0; font-size:15px; color:var(--fl-text-secondary); text-wrap:pretty;">I'm intentionally shaping my development.</span>
+          </div>
+          <div data-beat="2400" style="display:flex; align-items:center; gap:16px; padding:13px 0; border-bottom:1px solid var(--fl-charcoal-700); opacity:0; transform:translateY(14px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">
+            <img src="assets/landing/badge-established-m.webp" alt="Established rank insignia" width="44" height="44" loading="lazy" decoding="async" style="flex:none; width:44px; height:44px; object-fit:contain; display:block;">
+            <span style="flex:none; width:104px; font-size:11px; font-weight:500; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-primary);">Established</span>
+            <span style="flex:1; min-width:0; font-size:15px; color:var(--fl-text-secondary); text-wrap:pretty;">I've built something real.</span>
+          </div>
+          <div data-beat="3400" style="display:flex; align-items:center; gap:16px; padding:15px 0; border-bottom:1px solid var(--fl-charcoal-700); opacity:0; transform:translateY(14px); transition:opacity 500ms var(--fl-ease-out), transform 500ms var(--fl-ease-out);">
+            <img src="assets/landing/badge-hall.webp" alt="Legend rank insignia" width="50" height="50" loading="lazy" decoding="async" style="flex:none; width:50px; height:50px; object-fit:contain; display:block;">
+            <span style="flex:none; width:104px; font-size:11.5px; font-weight:500; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-bright);">Legend</span>
+            <span style="flex:1; min-width:0; font-size:15.5px; color:var(--fl-text-primary); text-wrap:pretty;">My journey has become a meaningful story.</span>
+          </div>
+          <div data-beat="4600" style="display:flex; align-items:center; gap:16px; padding:17px 0; opacity:0; transform:translateY(14px); transition:opacity 600ms var(--fl-ease-out), transform 600ms var(--fl-ease-out);">
+            <img src="assets/landing/badge-legacy.webp" alt="Legacy rank insignia" width="56" height="56" loading="lazy" decoding="async" style="flex:none; width:56px; height:56px; object-fit:contain; display:block;">
+            <span style="flex:none; width:104px; font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.2px; text-transform:uppercase; color:var(--fl-bronze-bright);">Legacy</span>
+            <span style="flex:1; min-width:0; font-size:16.5px; color:var(--fl-text-primary); text-wrap:pretty;">I repeatedly become the person I intend to become.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Capability grid ── -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%,240px), 1fr)); gap:12px; margin-top:clamp(56px,8vw,96px);">
+        <div data-rev="1" style="padding:22px 20px 24px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width:24px; height:24px; color:var(--fl-bronze-primary);"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="15" r="6"></circle><path d="M8.5 3.5l2.2 5M15.5 3.5l-2.2 5"></path></g></svg>
+          <span style="display:block; margin-top:14px; font-size:18px; font-weight:600; color:var(--fl-text-primary);">Honors</span>
+          <span style="display:block; margin-top:8px; font-size:14px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Recognition you didn't ask for and can't buy. Awarded by the system when you've actually done the thing.</span>
+        </div>
+        <div data-rev="1" style="padding:22px 20px 24px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width:24px; height:24px; color:var(--fl-bronze-primary);"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"></circle><circle cx="12" cy="12" r="3.2"></circle></g></svg>
+          <span style="display:block; margin-top:14px; font-size:18px; font-weight:600; color:var(--fl-text-primary);">Goals</span>
+          <span style="display:block; margin-top:8px; font-size:14px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">One primary goal per chapter. Quantifiable or narrative. It resolves when the chapter closes.</span>
+        </div>
+        <div data-rev="1" style="padding:22px 20px 24px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width:24px; height:24px; color:var(--fl-bronze-primary);"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16"></path><path d="M7 15.5l3.6-4.8 3 3 4.4-6.2"></path></g></svg>
+          <span style="display:block; margin-top:14px; font-size:18px; font-weight:600; color:var(--fl-text-primary);">Progress</span>
+          <span style="display:block; margin-top:8px; font-size:14px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Strength over time, body metrics if you want them, and a calendar of what you actually did.</span>
+        </div>
+        <div data-rev="1" style="padding:22px 20px 24px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width:24px; height:24px; color:var(--fl-bronze-primary);"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"></rect><path d="M3.8 16l4.4-4.4 3.6 3.6 2.6-2.6 5.4 5.4"></path><circle cx="9" cy="9.2" r="1.3"></circle></g></svg>
+          <span style="display:block; margin-top:14px; font-size:18px; font-weight:600; color:var(--fl-text-primary);">Transformation gallery</span>
+          <span style="display:block; margin-top:8px; font-size:14px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Your own progress photos, grouped by chapter. Private by default. Nobody sees these but you.</span>
+        </div>
+        <div data-rev="1" style="padding:22px 20px 24px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width:24px; height:24px; color:var(--fl-bronze-primary);"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7.5v14.5H4zM12.5 5H20v14.5h-7.5z"></path></g></svg>
+          <span style="display:block; margin-top:14px; font-size:18px; font-weight:600; color:var(--fl-text-primary);">Exercise library</span>
+          <span style="display:block; margin-top:8px; font-size:14px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Coaching notes, form cues, and substitutions on every movement. Swap an exercise and it already knows the right alternative.</span>
+        </div>
+        <div data-rev="1" style="padding:22px 20px 24px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width:24px; height:24px; color:var(--fl-bronze-primary);"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v4.5a4 4 0 01-8 0z"></path><path d="M12 12.5V16M9 19.5h6"></path><path d="M8 5H5.2v1.8a3 3 0 003 3M16 5h2.8v1.8a3 3 0 01-3 3"></path></g></svg>
+          <span style="display:block; margin-top:14px; font-size:18px; font-weight:600; color:var(--fl-text-primary);">Competitions</span>
+          <span style="display:block; margin-top:8px; font-size:14px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">A real finish line inside your squad, when you want the push. Opt in, always — not joining leaves no trace.</span>
+        </div>
+        <div data-rev="1" style="padding:22px 20px 24px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width:24px; height:24px; color:var(--fl-bronze-primary);"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5h3.4l2-4.6 3.2 9 2.2-6 1.8 4.2H21"></path></g></svg>
+          <span style="display:block; margin-top:14px; font-size:18px; font-weight:600; color:var(--fl-text-primary);">Cardio &amp; conditioning</span>
+          <span style="display:block; margin-top:8px; font-size:14px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Runs, rides, rows, swims. Logged the same way, landing in the same chapter.</span>
+        </div>
+        <div data-rev="1" style="padding:22px 20px 24px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width:24px; height:24px; color:var(--fl-bronze-primary);"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.2L12 4l8 6.2V20H4z"></path><path d="M9.2 20v-5.6h5.6V20"></path></g></svg>
+          <span style="display:block; margin-top:14px; font-size:18px; font-weight:600; color:var(--fl-text-primary);">Home gym</span>
+          <span style="display:block; margin-top:8px; font-size:14px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Tell it what you own. It stops recommending exercises you can't do.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ § 9 · WHAT'S REAL TODAY (testimonial position) ═══════════════ -->
+  <section style="background:var(--fl-base); border-top:1px solid var(--fl-charcoal-600); padding:clamp(88px,12vw,140px) clamp(20px,5vw,60px);">
+    <div style="max-width:1180px; margin:0 auto;">
+      <div style="display:flex; gap:clamp(18px,3.6vw,48px); flex-wrap:wrap;">
+        <div style="flex:0 0 auto; width:116px; display:flex; flex-direction:column; gap:7px; padding-top:9px;">
+          <span style="font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.5px; color:var(--fl-bronze-mid);">VII</span>
+          <span style="font-size:11px; font-weight:500; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">What's real today</span>
+        </div>
+        <div style="flex:1 1 420px; min-width:min(100%,300px);">
+          <h2 data-rev="1" style="margin:0; font-family:var(--fl-font-display); font-size:clamp(28px,4.4vw,44px); font-weight:500; line-height:1.1; color:var(--fl-text-primary); max-width:20em; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">A working app, not a preview.</h2>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:clamp(40px,6vw,64px);">
+        <div data-rev="1" style="flex:1 1 300px; min-width:min(100%,260px); padding:24px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <span style="display:block; font-size:11px; font-weight:500; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">Live now</span>
+          <span style="display:block; margin-top:12px; font-size:15px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">Chapters, sealing, the Legacy timeline, workout logging, programs and the program importer, squads, honors, rank, progress photos, and cardio — running against a live backend.</span>
+        </div>
+        <div data-rev="1" style="flex:1 1 300px; min-width:min(100%,260px); padding:24px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <span style="display:block; font-size:11px; font-weight:500; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-gray-400);">Not yet</span>
+          <span style="display:block; margin-top:12px; font-size:15px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">Android — there are no builds, and we'd rather say so. Premium pricing, which is why everything is free right now. The App Store listing is in progress while testing continues.</span>
+        </div>
+        <div data-rev="1" style="flex:1 1 300px; min-width:min(100%,260px); padding:24px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <span style="display:block; font-size:11px; font-weight:500; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">What that means for you</span>
+          <span style="display:block; margin-top:12px; font-size:15px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">Nothing you log is demo data. The chapter you open today and the honors you earn in it are permanent. There is no reset before launch.</span>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:clamp(28px,5vw,64px); flex-wrap:wrap; align-items:center; margin-top:clamp(48px,7vw,80px);">
+        <div data-rev="1" style="flex:none; width:calc(390px * var(--phs,1)); height:calc(782px * var(--phs,1)); margin:0 auto; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <div style="position:relative; width:390px; height:782px; transform:scale(var(--phs,1)); transform-origin:top left; border-radius:40px; border:8px solid var(--fl-charcoal-500); background:var(--fl-base); box-shadow:0 8px 24px rgba(0,0,0,0.65); overflow:hidden;">
+            <img src="assets/landing/legacy-pinned.jpg" alt="Pinned accomplishments, recent honors with their dates, and the start of the transformation gallery." width="374" height="766" loading="lazy" decoding="async" style="display:block; width:374px; height:auto;">
+            <span aria-hidden="true" style="position:absolute; left:0; right:0; top:0; height:1px; background:rgba(255,255,255,.07);"></span>
+          </div>
+        </div>
+        <p data-rev="1" style="flex:1 1 320px; min-width:min(100%,280px); margin:0; max-width:44ch; font-family:var(--fl-font-display); font-size:clamp(20px,2.6vw,26px); font-weight:500; line-height:1.35; color:var(--fl-text-primary); text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">Early Forge. First Goal. Ten workouts in a chapter. Earned in August 2026, on the account every screen here comes from — and still there in ten years.</p>
+      </div>
+
+      <!-- Testimonial slots — ship OFF. Flip the `testimonials` prop to true when three real quotes exist.
+           Never fill these with invented copy. -->
+      <sc-if value="{{ showTestimonials }}">
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:clamp(40px,6vw,64px);">
+          <blockquote data-slot="t1" style="flex:1 1 300px; min-width:min(100%,260px); position:relative; margin:0; padding:24px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px dashed var(--fl-bronze-mid);">
+            <span style="position:absolute; right:14px; top:12px; font-size:9px; font-weight:600; letter-spacing:1.4px; color:var(--fl-bronze-mid);">PLACEHOLDER</span>
+            <span aria-hidden="true" style="display:block; width:32px; height:1px; background:var(--fl-bronze-primary);"></span>
+            <p style="margin:16px 0 0; font-size:17px; line-height:1.6; color:var(--fl-text-primary);">[TESTIMONIAL 1 — QUOTE, 25–40 WORDS]</p>
+            <footer style="display:flex; flex-direction:column; gap:4px; margin-top:18px;">
+              <cite style="font-style:normal; font-size:14px; color:var(--fl-text-primary);">[FIRST NAME + LAST INITIAL]</cite>
+              <span style="font-size:13px; color:var(--fl-text-tertiary);">[ONE-LINE CONTEXT]</span>
+            </footer>
+          </blockquote>
+          <blockquote data-slot="t2" style="flex:1 1 300px; min-width:min(100%,260px); position:relative; margin:0; padding:24px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px dashed var(--fl-bronze-mid);">
+            <span style="position:absolute; right:14px; top:12px; font-size:9px; font-weight:600; letter-spacing:1.4px; color:var(--fl-bronze-mid);">PLACEHOLDER</span>
+            <span aria-hidden="true" style="display:block; width:32px; height:1px; background:var(--fl-bronze-primary);"></span>
+            <p style="margin:16px 0 0; font-size:17px; line-height:1.6; color:var(--fl-text-primary);">[TESTIMONIAL 2 — QUOTE, 25–40 WORDS]</p>
+            <footer style="display:flex; flex-direction:column; gap:4px; margin-top:18px;">
+              <cite style="font-style:normal; font-size:14px; color:var(--fl-text-primary);">[FIRST NAME + LAST INITIAL]</cite>
+              <span style="font-size:13px; color:var(--fl-text-tertiary);">[ONE-LINE CONTEXT]</span>
+            </footer>
+          </blockquote>
+          <blockquote data-slot="t3" style="flex:1 1 300px; min-width:min(100%,260px); position:relative; margin:0; padding:24px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px dashed var(--fl-bronze-mid);">
+            <span style="position:absolute; right:14px; top:12px; font-size:9px; font-weight:600; letter-spacing:1.4px; color:var(--fl-bronze-mid);">PLACEHOLDER</span>
+            <span aria-hidden="true" style="display:block; width:32px; height:1px; background:var(--fl-bronze-primary);"></span>
+            <p style="margin:16px 0 0; font-size:17px; line-height:1.6; color:var(--fl-text-primary);">[TESTIMONIAL 3 — QUOTE, 25–40 WORDS]</p>
+            <footer style="display:flex; flex-direction:column; gap:4px; margin-top:18px;">
+              <cite style="font-style:normal; font-size:14px; color:var(--fl-text-primary);">[FIRST NAME + LAST INITIAL]</cite>
+              <span style="font-size:13px; color:var(--fl-text-tertiary);">[ONE-LINE CONTEXT]</span>
+            </footer>
+          </blockquote>
+        </div>
+        <p data-slot="t-feature" style="margin:clamp(36px,5vw,56px) auto 0; max-width:26em; font-family:var(--fl-font-display); font-size:clamp(20px,2.8vw,26px); font-weight:500; line-height:1.35; color:var(--fl-bronze-primary); text-align:center;">[FEATURE QUOTE — THE ONE THAT GETS READ]</p>
+      </sc-if>
+    </div>
+  </section>
+
+  <!-- ═══════════════ § 10 · THE PROMISES ═══════════════ -->
+  <section style="border-top:1px solid var(--fl-charcoal-600); padding:clamp(88px,12vw,140px) clamp(20px,5vw,60px);">
+    <div style="max-width:1180px; margin:0 auto;">
+      <div style="display:flex; gap:clamp(18px,3.6vw,48px); flex-wrap:wrap;">
+        <div style="flex:0 0 auto; width:116px; display:flex; flex-direction:column; gap:7px; padding-top:9px;">
+          <span style="font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.5px; color:var(--fl-bronze-mid);">VIII</span>
+          <span style="font-size:11px; font-weight:500; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">What we're bound by</span>
+        </div>
+        <div style="flex:1 1 420px; min-width:min(100%,300px);">
+          <h2 data-rev="1" style="margin:0; font-family:var(--fl-font-display); font-size:clamp(28px,4.4vw,44px); font-weight:500; line-height:1.1; color:var(--fl-text-primary); max-width:20em; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">Four promises, and they're in the architecture — not the marketing.</h2>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%,260px), 1fr)); gap:12px; margin-top:clamp(40px,6vw,64px);">
+        <div data-rev="1" style="padding:24px 22px 26px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <span style="display:block; font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.2px; color:var(--fl-bronze-mid);">01</span>
+          <span style="display:block; margin-top:14px; font-size:18px; font-weight:600; color:var(--fl-text-primary);">Never charge for history.</span>
+          <span style="display:block; margin-top:10px; font-size:14.5px; line-height:1.58; color:var(--fl-text-secondary); text-wrap:pretty;">Everything you log is yours. Forever. No tier locks your past, and no subscription lapse takes it away.</span>
+        </div>
+        <div data-rev="1" style="padding:24px 22px 26px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <span style="display:block; font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.2px; color:var(--fl-bronze-mid);">02</span>
+          <span style="display:block; margin-top:14px; font-size:18px; font-weight:600; color:var(--fl-text-primary);">No shame mechanics.</span>
+          <span style="display:block; margin-top:10px; font-size:14.5px; line-height:1.58; color:var(--fl-text-secondary); text-wrap:pretty;">Miss a week and the app says nothing. No "days since your last workout." No red. Empty days are simply empty.</span>
+        </div>
+        <div data-rev="1" style="padding:24px 22px 26px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <span style="display:block; font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.2px; color:var(--fl-bronze-mid);">03</span>
+          <span style="display:block; margin-top:14px; font-size:18px; font-weight:600; color:var(--fl-text-primary);">Nothing is public.</span>
+          <span style="display:block; margin-top:10px; font-size:14.5px; line-height:1.58; color:var(--fl-text-secondary); text-wrap:pretty;">No followers. No public stats. No feed a stranger can see. Your performance data doesn't leave your account unless you personally put it somewhere.</span>
+        </div>
+        <div data-rev="1" style="padding:24px 22px 26px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:inset 0 1px 0 var(--fl-inner-highlight); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <span style="display:block; font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.2px; color:var(--fl-bronze-mid);">04</span>
+          <span style="display:block; margin-top:14px; font-size:18px; font-weight:600; color:var(--fl-text-primary);">History can't be rewritten.</span>
+          <span style="display:block; margin-top:10px; font-size:14.5px; line-height:1.58; color:var(--fl-text-secondary); text-wrap:pretty;">Sealed is sealed. You can add to your legacy; you cannot revise it. That's what makes it worth having.</span>
+        </div>
+      </div>
+
+      <p data-rev="1" style="margin:clamp(28px,4vw,36px) 0 0; font-size:13px; line-height:1.6; color:var(--fl-gray-400); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">These aren't policies we could quietly change. They're constraints the app is built on.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ § 11 · YOUR FIRST TEN MINUTES ═══════════════ -->
+  <section style="background:var(--fl-base); border-top:1px solid var(--fl-charcoal-600); padding:clamp(88px,12vw,140px) clamp(20px,5vw,60px);">
+    <div style="max-width:1180px; margin:0 auto;">
+      <div style="display:flex; gap:clamp(18px,3.6vw,48px); flex-wrap:wrap;">
+        <div style="flex:0 0 auto; width:116px; display:flex; flex-direction:column; gap:7px; padding-top:9px;">
+          <span style="font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.5px; color:var(--fl-bronze-mid);">IX</span>
+          <span style="font-size:11px; font-weight:500; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">Getting in</span>
+        </div>
+        <div style="flex:1 1 420px; min-width:min(100%,300px);">
+          <h2 data-rev="1" style="margin:0; font-family:var(--fl-font-display); font-size:clamp(28px,4.4vw,44px); font-weight:500; line-height:1.1; color:var(--fl-text-primary); max-width:20em; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">No 30-question intake. No paywall. No tutorial gauntlet.</h2>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:clamp(28px,5vw,64px); flex-wrap:wrap; align-items:center; margin-top:clamp(40px,6vw,64px);">
+        <div style="flex:1 1 420px; min-width:min(100%,300px); display:flex; flex-direction:column;">
+          <div data-rev="1" style="display:flex; gap:18px; padding:18px 0; border-top:1px solid var(--fl-charcoal-700); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+            <span style="flex:none; width:28px; font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2px; color:var(--fl-bronze-mid);">I</span>
+            <span style="flex:1; font-size:16px; line-height:1.5; color:var(--fl-text-primary);">Sign up — name and a handle</span>
+          </div>
+          <div data-rev="1" style="display:flex; gap:18px; padding:18px 0; border-top:1px solid var(--fl-charcoal-700); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+            <span style="flex:none; width:28px; font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2px; color:var(--fl-bronze-mid);">II</span>
+            <span style="flex:1; font-size:16px; line-height:1.5; color:var(--fl-text-primary);">Three doors: find me a program · build my own · just train today</span>
+          </div>
+          <div data-rev="1" style="display:flex; gap:18px; padding:18px 0; border-top:1px solid var(--fl-charcoal-700); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+            <span style="flex:none; width:28px; font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2px; color:var(--fl-bronze-mid);">III</span>
+            <span style="flex:1; font-size:16px; line-height:1.5; color:var(--fl-text-primary);">Your first workout</span>
+          </div>
+          <div data-rev="1" style="display:flex; gap:18px; padding:18px 0; border-top:1px solid var(--fl-charcoal-700); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+            <span style="flex:none; width:28px; font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2px; color:var(--fl-bronze-mid);">IV</span>
+            <span style="flex:1; font-size:16px; line-height:1.5; color:var(--fl-text-primary);">Chapter I comes alive</span>
+          </div>
+          <div data-rev="1" style="display:flex; gap:18px; padding:18px 0; border-top:1px solid var(--fl-charcoal-700); border-bottom:1px solid var(--fl-charcoal-700); opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+            <span style="flex:none; width:28px; font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2px; color:var(--fl-bronze-mid);">V</span>
+            <span style="flex:1; font-size:16px; line-height:1.5; color:var(--fl-text-primary);">Your first honor</span>
+          </div>
+          <p data-rev="1" style="margin:clamp(26px,4vw,34px) 0 0; font-size:clamp(16px,1.15vw,17px); line-height:1.62; color:var(--fl-text-secondary); max-width:66ch; text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">We ask for a name and a handle. We don't collect your weight, your height, your age, or your birthday — those aren't optional fields, there's nowhere to put them.</p>
+        </div>
+
+        <div data-rev="1" style="flex:none; width:calc(390px * var(--phs,1)); height:calc(782px * var(--phs,1)); margin:0 auto; opacity:0; transform:translateY(16px); transition:opacity 300ms var(--fl-ease-out), transform 300ms var(--fl-ease-out);">
+          <div style="position:relative; width:390px; height:782px; transform:scale(var(--phs,1)); transform-origin:top left; border-radius:40px; border:8px solid var(--fl-charcoal-500); background:var(--fl-base); box-shadow:0 8px 24px rgba(0,0,0,0.65); overflow:hidden;">
+            <img src="assets/landing/goals.jpg" alt="The goals screen: the current chapter and the chapter goal set inside it." width="374" height="766" loading="lazy" decoding="async" style="display:block; width:374px; height:auto;">
+            <span aria-hidden="true" style="position:absolute; left:0; right:0; top:0; height:1px; background:rgba(255,255,255,.07);"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ § 12 · WHAT IT COSTS ═══════════════ -->
+  <section style="border-top:1px solid var(--fl-charcoal-600); padding:clamp(88px,12vw,132px) clamp(20px,5vw,60px);">
+    <div data-scene="1" style="max-width:640px; margin:0 auto; text-align:center;">
+      <span style="display:block; font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.5px; color:var(--fl-bronze-mid);">X</span>
+      <!-- PRICING STAGE 1. True until Phase F of the launch checklist; then this block and the
+           JSON-LD `offers` both become false claims. -->
+      <h2 data-beat="0" style="margin:26px 0 0; font-family:var(--fl-font-display); font-size:clamp(28px,4.4vw,44px); font-weight:500; line-height:1.12; color:var(--fl-text-primary); opacity:0; transform:translateY(16px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">Free while we're testing.</h2>
+      <p data-beat="200" style="margin:18px auto 0; max-width:56ch; font-size:clamp(16px,1.15vw,17px); line-height:1.62; color:var(--fl-text-secondary); text-wrap:pretty; opacity:0; transform:translateY(16px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">And everything you log is free forever — that one isn't a promotion, it's the first promise on the list above.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ § 13 · FAQ ═══════════════ -->
+  <section style="border-top:1px solid var(--fl-charcoal-600); padding:clamp(88px,12vw,140px) clamp(20px,5vw,60px);">
+    <div style="max-width:1180px; margin:0 auto;">
+      <div style="display:flex; gap:clamp(18px,3.6vw,48px); flex-wrap:wrap;">
+        <div style="flex:0 0 auto; width:116px; display:flex; flex-direction:column; gap:7px; padding-top:9px;">
+          <span style="font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:2.5px; color:var(--fl-bronze-mid);">XI</span>
+          <span style="font-size:11px; font-weight:500; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">The obvious questions</span>
+        </div>
+        <div style="flex:1 1 520px; min-width:min(100%,300px);">
+          <details data-analytics="faq-open" style="border-top:1px solid var(--fl-charcoal-600);">
+            <summary style="display:flex; align-items:center; gap:16px; padding:20px 0; cursor:pointer; list-style:none; font-size:17px; font-weight:600; color:var(--fl-text-primary);"><span style="flex:1;">Is my data private?</span><span aria-hidden="true" style="flex:none; color:var(--fl-bronze-primary); font-size:15px;">+</span></summary>
+            <p style="margin:0 0 22px; max-width:66ch; font-size:15.5px; line-height:1.62; color:var(--fl-text-secondary); text-wrap:pretty;">Yes, by default. Per-section visibility controls, no public profiles, and row-level security on every table in the database. Nothing about you is discoverable by a stranger.</p>
+          </details>
+          <details data-analytics="faq-open" style="border-top:1px solid var(--fl-charcoal-600);">
+            <summary style="display:flex; align-items:center; gap:16px; padding:20px 0; cursor:pointer; list-style:none; font-size:17px; font-weight:600; color:var(--fl-text-primary);"><span style="flex:1;">Which phone do I need?</span><span aria-hidden="true" style="flex:none; color:var(--fl-bronze-primary); font-size:15px;">+</span></summary>
+            <p style="margin:0 0 22px; max-width:66ch; font-size:15.5px; line-height:1.62; color:var(--fl-text-secondary); text-wrap:pretty;">iPhone. Forge Legacy is an iOS app — download it from the App Store and sign in. Android isn't ready yet, and we'd rather say so than take your email for a list.</p>
+          </details>
+          <details data-analytics="faq-open" style="border-top:1px solid var(--fl-charcoal-600);">
+            <summary style="display:flex; align-items:center; gap:16px; padding:20px 0; cursor:pointer; list-style:none; font-size:17px; font-weight:600; color:var(--fl-text-primary);"><span style="flex:1;">I already use another app.</span><span aria-hidden="true" style="flex:none; color:var(--fl-bronze-primary); font-size:15px;">+</span></summary>
+            <p style="margin:0 0 22px; max-width:66ch; font-size:15.5px; line-height:1.62; color:var(--fl-text-secondary); text-wrap:pretty;">Run both for a couple of weeks. The program builder takes your existing program today, so you're not starting over to try it.</p>
+          </details>
+          <details data-analytics="faq-open" style="border-top:1px solid var(--fl-charcoal-600);">
+            <summary style="display:flex; align-items:center; gap:16px; padding:20px 0; cursor:pointer; list-style:none; font-size:17px; font-weight:600; color:var(--fl-text-primary);"><span style="flex:1;">Does it track calories?</span><span aria-hidden="true" style="flex:none; color:var(--fl-bronze-primary); font-size:15px;">+</span></summary>
+            <p style="margin:0 0 22px; max-width:66ch; font-size:15.5px; line-height:1.62; color:var(--fl-text-secondary); text-wrap:pretty;">No, and it isn't going to. Nutrition is a different product. This one does training and what training builds.</p>
+          </details>
+          <details data-analytics="faq-open" style="border-top:1px solid var(--fl-charcoal-600);">
+            <summary style="display:flex; align-items:center; gap:16px; padding:20px 0; cursor:pointer; list-style:none; font-size:17px; font-weight:600; color:var(--fl-text-primary);"><span style="flex:1;">What if I stop for a while?</span><span aria-hidden="true" style="flex:none; color:var(--fl-bronze-primary); font-size:15px;">+</span></summary>
+            <p style="margin:0 0 22px; max-width:66ch; font-size:15.5px; line-height:1.62; color:var(--fl-text-secondary); text-wrap:pretty;">Nothing happens. Your rank doesn't fall, your chapter doesn't fail, and the app doesn't send you a guilt notification. Come back and keep going.</p>
+          </details>
+          <details data-analytics="faq-open" style="border-top:1px solid var(--fl-charcoal-600);">
+            <summary style="display:flex; align-items:center; gap:16px; padding:20px 0; cursor:pointer; list-style:none; font-size:17px; font-weight:600; color:var(--fl-text-primary);"><span style="flex:1;">Isn't "no comparison" bad for engagement?</span><span aria-hidden="true" style="flex:none; color:var(--fl-bronze-primary); font-size:15px;">+</span></summary>
+            <p style="margin:0 0 22px; max-width:66ch; font-size:15.5px; line-height:1.62; color:var(--fl-text-secondary); text-wrap:pretty;">Comparison is rented engagement. Identity is owned. We're not optimising for day-one usage; we're optimising for whether you still want this in year five.</p>
+          </details>
+          <!-- MEASURED 2026-08-14. Re-measure both numbers on publish day. -->
+          <details data-analytics="faq-open" style="border-top:1px solid var(--fl-charcoal-600); border-bottom:1px solid var(--fl-charcoal-600);">
+            <summary style="display:flex; align-items:center; gap:16px; padding:20px 0; cursor:pointer; list-style:none; font-size:17px; font-weight:600; color:var(--fl-text-primary);"><span style="flex:1;">How is it built?</span><span aria-hidden="true" style="flex:none; color:var(--fl-bronze-primary); font-size:15px;">+</span></summary>
+            <p style="margin:0 0 22px; max-width:66ch; font-size:15.5px; line-height:1.62; color:var(--fl-text-secondary); text-wrap:pretty;">161 database migrations, security policies on every table, 2,362 automated tests, and a live backend. It is a real application, not a prototype.</p>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ § 14 · FINAL CTA ═══════════════ -->
+  <section id="final" style="background:var(--fl-base); border-top:1px solid var(--fl-bronze-border-subtle); padding:clamp(96px,13vw,160px) clamp(20px,5vw,60px);">
+    <div data-scene="1" style="max-width:820px; margin:0 auto; text-align:center;">
+      <p data-beat="0" style="margin:0; font-family:var(--fl-font-display); font-size:clamp(26px,4vw,40px); font-weight:500; line-height:1.2; color:var(--fl-text-secondary); text-wrap:balance; opacity:0; transform:translateY(16px); transition:opacity 500ms var(--fl-ease-out), transform 500ms var(--fl-ease-out);">Forge Legacy is not helping you win today.</p>
+      <p data-beat="400" style="margin:14px 0 0; font-family:var(--fl-font-display); font-size:clamp(26px,4vw,40px); font-weight:500; line-height:1.2; color:var(--fl-text-primary); text-wrap:balance; opacity:0; transform:translateY(16px); transition:opacity 500ms var(--fl-ease-out), transform 500ms var(--fl-ease-out);">It's helping you become someone you're proud of ten years from now.</p>
+
+      <div data-beat="900" style="display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:clamp(40px,6vw,60px); opacity:0; transform:translateY(16px); transition:opacity 400ms var(--fl-ease-out), transform 400ms var(--fl-ease-out);">
+        <a href="#" data-analytics="cta-final" style="display:flex; align-items:center; justify-content:center; width:min(100%,320px); height:56px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); border:1px solid var(--fl-bronze-metal-border); box-shadow:var(--fl-bronze-metal-top-rim); color:#100B04; font-size:16.5px; font-weight:600; letter-spacing:0.2px;">Start Chapter One</a>
+        <span style="font-size:13px; color:var(--fl-gray-400);">Free to start. On the App Store, for iPhone.</span>
+      </div>
+
+      <div data-beat="1200" style="display:flex; flex-direction:column; align-items:center; gap:14px; margin-top:clamp(56px,8vw,88px); opacity:0; transition:opacity 500ms var(--fl-ease-out);">
+        <img src="assets/welcome-logo-carved.png" alt="Forge Legacy" width="88" height="88" loading="lazy" decoding="async" style="width:56px; height:auto; display:block; opacity:0.9;">
+        <span style="font-family:var(--fl-font-display); font-size:13px; font-weight:500; letter-spacing:3px; color:var(--fl-text-tertiary);">FORGE LEGACY</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ § 15 · FOOTER ═══════════════ -->
+  <footer style="background:var(--fl-base); border-top:1px solid var(--fl-charcoal-600); padding:26px clamp(20px,5vw,60px) 96px;">
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px 26px; max-width:1180px; margin:0 auto; font-size:13px; color:var(--fl-gray-400);">
+      <span style="font-family:var(--fl-font-display); font-size:12.5px; letter-spacing:2.4px; color:var(--fl-text-secondary);">FORGE LEGACY</span>
+      <!-- Privacy + Terms must be REAL pages at stable URLs on this domain (App Store Connect fields). -->
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <span>[CONTACT EMAIL — must be on this domain]</span>
+      <span style="flex:1;"></span>
+      <span>© 2026 Forge Legacy LLC</span>
+    </div>
+  </footer>
+
+  <!-- ═══════════════ Sticky CTA bar ═══════════════ -->
+  <sc-if value="{{ showSticky }}" hint-placeholder-val="{{ true }}">
+    <div data-sticky="1" aria-hidden="true" style="position:fixed; left:0; right:0; bottom:0; z-index:40; display:flex; align-items:center; gap:16px; height:56px; padding:0 clamp(16px,4vw,32px); background:var(--fl-surface-nav); backdrop-filter:blur(12px); border-top:1px solid var(--fl-charcoal-600); opacity:0; transform:translateY(100%); transition:opacity 250ms var(--fl-ease-out), transform 250ms var(--fl-ease-out); pointer-events:none;">
+      <span style="font-family:var(--fl-font-display); font-size:12.5px; letter-spacing:2.4px; color:var(--fl-text-primary);">FORGE LEGACY</span>
+      <span style="flex:1;"></span>
+      <a href="#" data-analytics="cta-sticky" style="display:flex; align-items:center; justify-content:center; height:38px; padding:0 22px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); border:1px solid var(--fl-bronze-metal-border); box-shadow:var(--fl-bronze-metal-top-rim); color:#100B04; font-size:14px; font-weight:600;">Start Chapter One</a>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;heroHeadline&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;promise&quot;, &quot;question&quot;], &quot;default&quot;: &quot;promise&quot;, &quot;tsType&quot;: &quot;'promise' | 'question'&quot;, &quot;section&quot;: &quot;Copy tests&quot; },
+  &quot;testimonials&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Sections&quot; },
+  &quot;stickyBar&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Sections&quot; }
+}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props;
+    const promise = p.heroHeadline !== 'question';
+    return {
+      heroQuestion: !promise,
+      heroPromise: promise,
+      showTestimonials: p.testimonials === true,
+      showSticky: p.stickyBar !== false,
+    };
+  }
+
+  componentDidMount() {
+    const root = document.getElementById('flp');
+    if (!root || root.dataset.wired) return;
+    root.dataset.wired = '1';
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // A settled element either applies its own end-state declarations
+    // (data-settle) or resolves to opacity 1 / identity transform.
+    const settle = (el) => {
+      const end = el.dataset.settle;
+      if (end) { el.style.cssText += ';' + end; return; }
+      el.style.opacity = '1';
+      el.style.transform = 'none';
+    };
+
+    const beatsIn = (el) => Array.prototype.slice.call(el.querySelectorAll('[data-beat]'));
+
+    // Scenes: multi-beat sequences that play once, on entry, in authored order.
+    const play = (scene) => {
+      if (scene.dataset.played) return;
+      scene.dataset.played = '1';
+      beatsIn(scene).forEach((el) => {
+        const d = reduce ? 0 : parseInt(el.dataset.beat, 10) || 0;
+        if (!d) { settle(el); return; }
+        setTimeout(() => settle(el), d);
+      });
+    };
+
+    // Reveals: single elements, staggered 80ms within their nearest section.
+    const stagger = new Map();
+    const reveal = (el) => {
+      if (el.dataset.revealed) return;
+      el.dataset.revealed = '1';
+      const sec = el.closest('section') || root;
+      const n = stagger.get(sec) || 0;
+      stagger.set(sec, n + 1);
+      const d = reduce ? 0 : Math.min(n, 8) * 80;
+      if (!d) { settle(el); return; }
+      setTimeout(() => settle(el), d);
+    };
+
+    // The template streams in, and a visitor can jump past a section before it
+    // exists — so settling is a repeated sweep over whatever is in the DOM now,
+    // never a one-shot registration. Anything at or above the fold settles.
+    const sweep = () => {
+      const h = window.innerHeight;
+      root.querySelectorAll('[data-rev]:not([data-revealed])').forEach((el) => {
+        if (reduce || el.getBoundingClientRect().top < h * 0.9) reveal(el);
+      });
+      root.querySelectorAll('[data-scene]:not([data-played])').forEach((el) => {
+        if (reduce || el.getBoundingClientRect().top < h * 0.85) play(el);
+      });
+    };
+    this._sweep = sweep;
+
+    const hero = root.firstElementChild;
+    if (hero) play(hero);
+    sweep();
+    window.addEventListener('scroll', sweep, { passive: true });
+    window.addEventListener('resize', sweep);
+    // Catches sections that arrive while the page is still streaming.
+    let ticks = 0;
+    const timer = setInterval(() => { sweep(); if (++ticks > 80) clearInterval(timer); }, 250);
+
+    // Sticky bar: only after the ten-year payoff, and never over the final CTA.
+    let shown = null;
+    const onScroll = () => {
+      const bar = root.querySelector('[data-sticky]');
+      const payoff = document.getElementById('payoff');
+      const final = document.getElementById('final');
+      if (!bar || !payoff || !final) return;
+      const past = payoff.getBoundingClientRect().bottom < 0;
+      const atFinal = final.getBoundingClientRect().top < window.innerHeight * 0.9;
+      const want = past && !atFinal;
+      if (want === shown) return;
+      shown = want;
+      bar.style.opacity = want ? '1' : '0';
+      bar.style.transform = want ? 'none' : 'translateY(100%)';
+      bar.style.pointerEvents = want ? 'auto' : 'none';
+      bar.setAttribute('aria-hidden', want ? 'false' : 'true');
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    onScroll();
+
+    // FAQ: the + mark flips to − on open.
+    root.querySelectorAll('details').forEach((d) => {
+      d.addEventListener('toggle', () => {
+        const mark = d.querySelector('summary span[aria-hidden]');
+        if (mark) mark.textContent = d.open ? '–' : '+';
+      });
+    });
+  }
+
+  componentDidUpdate() {
+    if (this._sweep) this._sweep();
+  }
+}
+</script>
+</body>
+</html>

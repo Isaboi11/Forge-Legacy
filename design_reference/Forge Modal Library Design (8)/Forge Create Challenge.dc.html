@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .cc-input { width:100%; font-family:var(--fl-font-sans); font-size:14.5px; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); padding:12px 13px; outline:none; transition:border-color 160ms ease; }
+  .cc-input:focus { border-color:var(--fl-bronze-border); }
+  .cc-input::placeholder { color:var(--fl-text-tertiary); }
+  .cc-num { width:74px; text-align:center; }
+  image-slot::part(ring) { border-color: var(--fl-bronze-border); }
+  image-slot::part(empty) { color: var(--fl-text-tertiary); }
+  image-slot::part(frame) { background: rgba(191,143,79,0.04); }
+  @keyframes ccRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes ccFade { from { opacity:0; } to { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Create Challenge" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.34), rgba(5,5,5,0.34)), #050505 url('assets/forge-slate2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <div style="flex:none; position:relative; z-index:5;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Create Challenge" on-back="{{ goBack }}" hint-size="100%,56px"></x-import>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:14px 20px 26px;">
+
+      <!-- ═══ LIVE PREVIEW SEAL ═══ -->
+      <div style="display:flex; flex-direction:column; align-items:center; text-align:center; animation:ccRise 400ms var(--fl-ease-out) both;">
+        <div style="{{ sealWrapStyle }}">
+          <span style="position:absolute; inset:0; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 50% 34%, #40301f, #17130f); border:1px solid var(--fl-bronze-border);"></span>
+          <span style="position:relative; z-index:1; display:inline-flex; color:var(--fl-bronze-bright);">{{ sealIcon }}</span>
+        </div>
+        <span style="display:block; font-family:var(--fl-font-display); font-weight:600; letter-spacing:-0.3px; line-height:1.14; color:{{ heroTitleColor }}; font-size:{{ heroTitleSize }}; margin-top:14px; transition:color 200ms ease, font-size 220ms var(--fl-ease-out); max-width:320px; overflow-wrap:break-word;">{{ heroTitle }}</span>
+        <sc-if value="{{ heroIntro }}" hint-placeholder-val="{{ true }}">
+          <span style="display:block; font-size:13px; line-height:1.5; color:var(--fl-text-tertiary); margin-top:9px; max-width:248px;">{{ heroSubtitle }}</span>
+        </sc-if>
+        <sc-if value="{{ hasName }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:7px; margin-top:12px; animation:ccFade 220ms ease both;">
+            <span style="display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:11.5px; font-weight:600; color:var(--fl-bronze-bright);"><span style="display:inline-flex;">{{ heroMetricIcon }}</span>{{ heroMetricLabel }}</span>
+            <span style="display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-800); border:1px solid var(--fl-charcoal-600); font-size:11.5px; font-weight:600; color:var(--fl-text-secondary);"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ heroDurIcon }}</span>{{ heroDurLabel }}</span>
+            <span style="display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-800); border:1px solid var(--fl-charcoal-600); font-size:11.5px; font-weight:600; color:var(--fl-text-secondary);"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ heroScopeIcon }}</span>{{ heroScopeLabel }}</span>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- ═══ WHAT COUNTS ═══ -->
+      <div style="margin:26px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">What Counts</span></div>
+
+      <div style="display:flex; gap:5px; background:var(--fl-charcoal-800); border-radius:var(--fl-radius-pill); padding:3px; margin-bottom:12px;">
+        <sc-for list="{{ familyTabs }}" as="t" hint-placeholder-count="2">
+          <button type="button" onClick="{{ t.select }}" style="{{ t.style }}">{{ t.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex; align-items:center; gap:7px; margin:0 2px 12px;"><span style="display:inline-flex; color:var(--fl-icon-bronze); flex:none;">{{ philosophyIcon }}</span><span style="font-size:12px; color:var(--fl-text-secondary);">{{ familyPhilosophy }}</span></div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:9px;">
+        <sc-for list="{{ metrics }}" as="m" hint-placeholder-count="4">
+          <button type="button" onClick="{{ m.select }}" style="{{ m.wrapStyle }}">
+            <span style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; min-height:34px;">
+              <span style="{{ m.iconStyle }}">{{ m.iconEl }}</span>
+              <sc-if value="{{ m.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="{{ m.badgeStyle }}">{{ m.badgeEl }}</span></sc-if>
+            </span>
+            <span style="display:flex; flex-direction:column; gap:2px;">
+              <span style="font-size:13.5px; font-weight:600; color:var(--fl-text-primary); line-height:1.2;">{{ m.title }}</span>
+              <span style="font-size:11px; color:var(--fl-text-tertiary); line-height:1.3;">{{ m.desc }}</span>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+
+      <!-- contextual sub-config -->
+      <sc-if value="{{ showLift }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:12px; animation:ccFade 200ms ease both;">
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:8px;">Which Lift</span>
+          <div style="display:flex; flex-wrap:wrap; gap:7px;">
+            <sc-for list="{{ liftChips }}" as="c" hint-placeholder-count="4">
+              <button type="button" onClick="{{ c.select }}" style="{{ c.style }}">{{ c.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showMovement }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:12px; animation:ccFade 200ms ease both;">
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:8px;">Which Movement</span>
+          <div style="display:flex; flex-wrap:wrap; gap:7px;">
+            <sc-for list="{{ movementChips }}" as="c" hint-placeholder-count="4">
+              <button type="button" onClick="{{ c.select }}" style="{{ c.style }}">{{ c.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showUnit }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:12px; animation:ccFade 200ms ease both;">
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:8px;">Name The Unit</span>
+          <input class="cc-input" type="text" value="{{ unit }}" placeholder="e.g. sauna sessions, cold plunges" maxlength="24" onInput="{{ onUnit }}">
+        </div>
+      </sc-if>
+
+      <!-- scoring explainer -->
+      <div style="margin-top:14px; display:flex; align-items:flex-start; gap:11px; background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700); border-radius:var(--fl-radius-lg); padding:13px 14px;">
+        <span style="width:30px; height:30px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright);">{{ scoreIcon }}</span>
+        <span style="flex:1; font-size:12.5px; line-height:1.5; color:var(--fl-text-secondary); padding-top:2px;">{{ scoreText }}</span>
+      </div>
+
+      <!-- ═══ DETAILS ═══ -->
+      <div style="margin:26px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Details</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:16px 15px; display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Cover Image <span style="color:var(--fl-charcoal-500); font-weight:500; letter-spacing:0.4px;">— Optional</span></span>
+          <div style="position:relative; width:100%; height:116px; border-radius:var(--fl-radius-lg); box-shadow:0 0 0 1px var(--fl-bronze-border), inset 0 1px 2px rgba(0,0,0,0.45); overflow:hidden;">
+            <image-slot id="create-challenge-cover" shape="rounded" radius="16" placeholder="+ Add Cover" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+          </div>
+          <span style="font-size:11px; line-height:1.4; color:var(--fl-text-tertiary);">Becomes the banner on the standings screen and the invitation card.</span>
+        </div>
+        <label style="display:flex; flex-direction:column; gap:7px;">
+          <span style="display:flex; align-items:baseline; justify-content:space-between;">
+            <span style="display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Challenge Name<span style="display:inline-flex; align-items:center;">{{ nameMarker }}</span></span>
+            <span style="font-size:11px; color:{{ nameCountColor }};">{{ nameCount }}</span>
+          </span>
+          <input class="cc-input" type="text" value="{{ name }}" placeholder="e.g. The Iron Ascent" maxlength="{{ nameMax }}" onInput="{{ onName }}">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:7px;">
+          <span style="display:flex; align-items:baseline; justify-content:space-between;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Challenge Message</span>
+            <span style="font-size:11px; color:{{ descCountColor }};">{{ descCount }}</span>
+          </span>
+          <textarea class="cc-input" rows="3" placeholder="Call them out. Set the tone. Lay down any ground rules." maxlength="{{ descMax }}" style="resize:none; line-height:1.45;" value="{{ description }}" onInput="{{ onDesc }}"></textarea>
+        </label>
+      </div>
+
+      <!-- ═══ DURATION ═══ -->
+      <div style="margin:26px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Duration</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:16px 15px; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; flex-wrap:wrap; gap:7px;">
+          <sc-for list="{{ durationChips }}" as="c" hint-placeholder-count="5">
+            <button type="button" onClick="{{ c.select }}" style="{{ c.style }}">{{ c.label }}<sc-if value="{{ c.hasSub }}" hint-placeholder-val="{{ false }}"><span style="opacity:0.6; font-weight:500; margin-left:2px;">{{ c.sub }}</span></sc-if></button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ showCustomDuration }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; align-items:center; gap:10px; animation:ccFade 200ms ease both;">
+            <span style="font-size:12.5px; color:var(--fl-text-secondary);">Runs for</span>
+            <input class="cc-input cc-num" type="number" min="3" max="180" value="{{ customDays }}" onInput="{{ onCustomDays }}">
+            <span style="font-size:12.5px; color:var(--fl-text-secondary);">days</span>
+          </div>
+        </sc-if>
+        <div style="height:1px; background:var(--fl-charcoal-700);"></div>
+        <div>
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:8px;">Starts</span>
+          <div style="display:flex; flex-wrap:wrap; gap:7px;">
+            <sc-for list="{{ startChips }}" as="c" hint-placeholder-count="3">
+              <button type="button" onClick="{{ c.select }}" style="{{ c.style }}">{{ c.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:9px; padding:11px 13px; border-radius:var(--fl-radius-md); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-700);">
+          <span style="display:inline-flex; color:var(--fl-bronze-bright); flex:none;">{{ runIcon }}</span>
+          <span style="font-size:12.5px; color:var(--fl-text-secondary);">{{ runLine }}</span>
+        </div>
+      </div>
+
+      <!-- ═══ WHO COMPETES ═══ -->
+      <div style="margin:26px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Who Competes</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:16px 15px; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; gap:5px; background:var(--fl-charcoal-800); border-radius:var(--fl-radius-pill); padding:3px;">
+          <sc-for list="{{ scopeTabs }}" as="t" hint-placeholder-count="3">
+            <button type="button" onClick="{{ t.select }}" style="{{ t.style }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ scopeFriends }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ hasCompeting }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; flex-direction:column; gap:9px;">
+              <span style="font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Competing <span style="color:var(--fl-bronze-bright);">{{ competingCount }}</span></span>
+              <div class="fl-scroll" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:2px;">
+                <sc-for list="{{ competing }}" as="c" hint-placeholder-count="2">
+                  <span style="{{ c.chipStyle }}">
+                    <span style="width:22px; height:22px; flex:none; border-radius:var(--fl-radius-round); background:{{ c.tint }}; border:1px solid var(--fl-bronze-border-subtle); display:inline-flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-weight:700; font-size:10px; color:var(--fl-bronze-bright);">{{ c.initials }}</span>
+                    <span style="font-size:13px; font-weight:600; color:var(--fl-text-primary);">{{ c.first }}</span>
+                    <button type="button" onClick="{{ c.remove }}" style="flex:none; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:transparent; border:none; color:var(--fl-text-tertiary); cursor:pointer; padding:0;">{{ xIconSm }}</button>
+                  </span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ hasRoster }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; flex-direction:column; gap:7px;">
+              <sc-for list="{{ roster }}" as="f" hint-placeholder-count="5">
+                <button type="button" onClick="{{ f.toggle }}" style="{{ f.rowStyle }}">
+                  <span style="position:relative; width:36px; height:36px; flex:none; border-radius:var(--fl-radius-round); background:{{ f.tint }}; border:1px solid var(--fl-bronze-border-subtle); display:inline-flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-weight:700; font-size:14px; color:var(--fl-bronze-bright);">{{ f.initials }}</span>
+                  <span style="flex:1; min-width:0; text-align:left; font-size:14px; font-weight:500; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ f.name }}</span>
+                  <span style="{{ f.indStyle }}">{{ f.indEl }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ scopeSquad }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; align-items:center; gap:12px; padding:13px; border-radius:var(--fl-radius-md); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-700);">
+            <span style="width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright);">{{ squadIcon }}</span>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ squadName }}</span>
+              <span style="font-size:11.5px; color:var(--fl-text-tertiary);">All {{ squadMembers }} members are invited to opt in.</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ scopeCommunity }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; align-items:flex-start; gap:11px; padding:13px; border-radius:var(--fl-radius-md); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-700);">
+            <span style="width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright);">{{ globeIcon }}</span>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">Open to the community</span>
+              <span style="font-size:11.5px; line-height:1.45; color:var(--fl-text-tertiary);">Anyone can discover this challenge in the feed and choose to join.</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="display:flex; align-items:flex-start; gap:8px; font-size:11.5px; line-height:1.5; color:var(--fl-text-tertiary);"><span style="display:inline-flex; flex:none; margin-top:1px; color:var(--fl-icon-bronze);">{{ optInIcon }}</span>{{ optInHint }}</div>
+      </div>
+
+      <!-- ═══ VISIBILITY ═══ -->
+      <div style="margin:26px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Visibility</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:15px;">
+        <div style="display:flex; gap:5px; background:var(--fl-charcoal-800); border-radius:var(--fl-radius-pill); padding:3px; opacity:{{ privacyOpacity }};">
+          <sc-for list="{{ privacyTabs }}" as="t" hint-placeholder-count="2">
+            <button type="button" onClick="{{ t.select }}" disabled="{{ t.disabled }}" style="{{ t.style }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+        <span style="display:flex; align-items:flex-start; gap:8px; margin-top:12px; font-size:11.5px; line-height:1.5; color:var(--fl-text-tertiary);"><span style="display:inline-flex; flex:none; margin-top:1px; color:var(--fl-icon-bronze);">{{ privacyIcon }}</span>{{ privacyHint }}</span>
+      </div>
+
+      <!-- ═══ STAKES ═══ -->
+      <div style="margin:26px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Stakes</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:16px 15px; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; align-items:flex-start; gap:13px;">
+          <span style="width:36px; height:36px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright);">{{ laurelIcon }}</span>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+            <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600; color:var(--fl-text-primary); line-height:1.1;">Legacy Stakes</span>
+            <span style="font-size:12px; line-height:1.45; color:var(--fl-text-tertiary);">Will this competition become part of everyone's Legacy?</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:5px; background:var(--fl-charcoal-800); border-radius:var(--fl-radius-pill); padding:3px;">
+          <sc-for list="{{ stakesTabs }}" as="t" hint-placeholder-count="3">
+            <button type="button" onClick="{{ t.select }}" style="{{ t.style }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ showHonor }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; align-items:center; gap:12px; padding:13px; border-radius:var(--fl-radius-md); background:linear-gradient(180deg, rgba(191,143,79,0.09), transparent), var(--fl-charcoal-900); border:1px solid var(--fl-bronze-border); animation:ccFade 200ms ease both;">
+            <span style="width:42px; height:42px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-metallic); color:#1A1206; box-shadow:var(--fl-glow-subtle);">{{ honorPreviewIcon }}</span>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-size:13.5px; font-weight:700; color:var(--fl-bronze-bright);">{{ honorTitle }}</span>
+              <span style="font-size:11.5px; line-height:1.4; color:var(--fl-text-secondary);">{{ honorDesc }}</span>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- ═══ REVIEW ═══ -->
+      <div style="margin:26px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Review</span></div>
+      <div style="position:relative; overflow:hidden; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border); background:linear-gradient(180deg, rgba(191,143,79,0.12), transparent 46%), radial-gradient(160px 96px at 50% 0%, rgba(191,143,79,0.14), transparent), var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); padding:22px 18px 16px;">
+        <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:9px; padding-bottom:16px; border-bottom:1px solid var(--fl-bronze-border-subtle);">
+          <span style="display:inline-flex; align-items:center; gap:8px; font-size:9.5px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-tertiary);"><span style="width:16px; height:1px; background:var(--fl-bronze-border);"></span><span style="display:inline-flex; color:var(--fl-bronze-bright);">{{ reviewIcon }}</span>The Challenge<span style="width:16px; height:1px; background:var(--fl-bronze-border);"></span></span>
+          <span style="font-family:var(--fl-font-display); font-size:26px; font-weight:700; letter-spacing:-0.4px; line-height:1.08; color:{{ reviewNameColor }}; text-shadow:0 1px 0 rgba(0,0,0,0.5);">{{ reviewName }}</span>
+          <span style="font-size:12px; font-weight:600; letter-spacing:0.3px; color:var(--fl-bronze-bright);">{{ reviewTagline }}</span>
+        </div>
+        <div style="display:flex; flex-direction:column; margin-top:2px;">
+          <sc-for list="{{ summaryRows }}" as="r" hint-placeholder-count="5">
+            <div style="{{ r.rowStyle }}">
+              <span style="width:24px; flex:none; display:inline-flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ r.icon }}</span>
+              <span style="flex:none; width:92px; font-size:10.5px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ r.label }}</span>
+              <span style="flex:1; text-align:right; font-size:13.5px; font-weight:600; color:{{ r.valueColor }}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ r.value }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══ COMMIT BAR ═══ -->
+    <div style="flex:none; position:relative; z-index:5; padding:14px 20px calc(16px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(9,9,9,0.4), rgba(9,9,9,0.72));">
+      <button type="button" onClick="{{ create }}" disabled="{{ commitDisabled }}" style="{{ commitStyle }}"><span style="display:inline-flex;">{{ swordsIcon }}</span>{{ commitLabel }}</button>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:96px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:ccRise 260ms var(--fl-ease-out) both;">
+      <span style="display:inline-flex; color:var(--fl-icon-bronze); flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+
+  <!-- Forged grain -->
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;launchContext&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Standalone&quot;,&quot;options&quot;:[&quot;Standalone&quot;,&quot;From Profile&quot;,&quot;From Squad&quot;,&quot;Community&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Launch context&quot;},&quot;opponentName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Marcus Vale&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Launch context&quot;},&quot;squadName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Iron Vigil&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Launch context&quot;},&quot;defaultFamily&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Total&quot;,&quot;options&quot;:[&quot;Total&quot;,&quot;Progression&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Defaults&quot;}}">
+class Component extends DCLogic {
+  state = {
+    ready: false, editing: false, toastMsg: null,
+    name: '', description: '', unit: '',
+    family: null, metric: null,
+    lift: 'Deadlift', movement: 'Pull-ups',
+    durPreset: '28', customDays: 21, startWhen: 'now',
+    scope: null, invited: [], opponentIn: null,
+    privacy: null, stakes: 'podium',
+  };
+
+  componentDidMount() {
+    try { this._ctxData = JSON.parse(localStorage.getItem('forge_challenge_ctx_v1') || 'null') || null; if (this._ctxData) localStorage.removeItem('forge_challenge_ctx_v1'); } catch (e) { this._ctxData = null; }
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+    this._onFocusIn = (e) => { const t = e.target; if (t && t.classList && t.classList.contains('cc-input')) { if (this._blurT) clearTimeout(this._blurT); if (!this.state.editing) this.setState({ editing: true }); } };
+    this._onFocusOut = (e) => { const t = e.target; if (t && t.classList && t.classList.contains('cc-input')) { if (this._blurT) clearTimeout(this._blurT); this._blurT = setTimeout(() => this.setState({ editing: false }), 140); } };
+    document.addEventListener('focusin', this._onFocusIn);
+    document.addEventListener('focusout', this._onFocusOut);
+  }
+  componentWillUnmount() { ['_t','_toastT','_navT','_blurT'].forEach(k => { if (this[k]) clearTimeout(this[k]); }); document.removeEventListener('focusin', this._onFocusIn); document.removeEventListener('focusout', this._onFocusOut); }
+
+  _toast(msg) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2600); }
+  _initials(n) { const p = n.trim().split(/\s+/); return ((p[0]||'')[0]||'') + ((p[1]||'')[0]||''); }
+  _fmt(d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const S = this.state;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.8 });
+    const svg = (paths, size, sw) => h('svg', { width: size || 15, height: size || 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(paths) ? paths : [paths]).map((p, i) => h('path', { key: i, d: p })));
+    const trendUp = (sz) => svg(['M4 15.5l4.5-4.5 3 3 6.5-7', 'M15 6.5h4v4'], sz || 18);
+    const repeat = (sz) => svg(['M4 8.5h10a4 4 0 0 1 4 4', 'M7 5.5L4 8.5l3 3', 'M20 15.5H10a4 4 0 0 1-4-4', 'M17 18.5l3-3-3-3'], sz || 18);
+    const globe = (sz) => svg(['M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z', 'M3.5 12h17', 'M12 3.5c2.4 2.3 3.7 5.3 3.7 8.5S14.4 18.2 12 20.5c-2.4-2.3-3.7-5.3-3.7-8.5S9.6 5.8 12 3.5z'], sz || 15);
+    const lock = (sz) => h('svg', { width: sz || 14, height: sz || 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 5, y: 10.5, width: 14, height: 9, rx: 2 }), h('path', { d: 'M8 10.5V8a4 4 0 0 1 8 0v2.5' }));
+    const xIcon = svg(['M6 6l12 12', 'M18 6L6 18'], 14, 2);
+    const check = (sz, sw) => svg(['M5 12.5l4 4 10-10'], sz || 13, sw || 2.4);
+    const plus = svg(['M12 5v14', 'M5 12h14'], 14, 2.2);
+    const xIconSm = svg(['M6 6l12 12', 'M18 6L6 18'], 11, 2);
+    const star = (sz) => h('svg', { width: sz || 11, height: sz || 11, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M12 3l2.5 5.2 5.7.7-4.2 3.9 1.1 5.6L12 21.6 6.9 18.4 8 12.8 3.8 8.9l5.7-.7z' }));
+
+    // ── Props / launch context ──
+    const sc = this._ctxData || {};
+    const ctx = sc.launchContext ?? this.props.launchContext ?? 'Standalone';
+    const opponentName = sc.opponentName ?? this.props.opponentName ?? 'Marcus Vale';
+    const squadName = sc.squadName ?? this.props.squadName ?? 'Iron Vigil';
+    const defaultFamily = (this.props.defaultFamily ?? 'Total') === 'Progression' ? 'progress' : 'total';
+
+    const defaultScope = ctx === 'From Squad' ? 'squad' : (ctx === 'Community' ? 'community' : 'friends');
+    const family = S.family || defaultFamily;
+    const scope = S.scope || defaultScope;
+    const hasOpponentDefault = ctx === 'From Profile';
+    const opponentIn = S.opponentIn === null ? hasOpponentDefault : S.opponentIn;
+
+    // ── Metric catalogs ──
+    const TOTAL = [
+      { id: 'workouts', icon: 'dumbbell', title: 'Workouts Logged', desc: 'Each session = 1 pt', score: 'Every workout you log inside the window counts as one point. Most sessions when time runs out takes the crown.', badge: 'rec' },
+      { id: 'volume', icon: 'barbell', title: 'Volume Moved', desc: 'Total lb lifted', score: 'Sets \u00d7 reps \u00d7 weight are summed across every logged lift. The highest total volume wins.', badge: 'pop' },
+      { id: 'distance', icon: 'shoe', title: 'Distance', desc: 'Run \u00b7 ride \u00b7 row', score: 'Every logged mile \u2014 running, cycling, rowing \u2014 adds to your total. The furthest distance wins.' },
+      { id: 'customTotal', icon: 'spark', title: 'Custom Total', desc: 'Name your unit', score: 'Track a unit you name. The highest running total when the window closes wins.' },
+    ];
+    const PROG = [
+      { id: 'pr', icon: 'trophy', title: 'Biggest PR Gain', desc: '+lb on a lift', needsLift: true, badge: 'pop' },
+      { id: 'lost', icon: 'scale', title: 'Most Weight Lost', desc: 'Largest bodyweight drop', score: 'Weigh in at the start and the finish. The largest bodyweight drop over the window wins.' },
+      { id: 'gained', icon: 'scale', title: 'Most Weight Gained', desc: 'Largest lean bulk', score: 'Weigh in at the start and the finish. The largest bodyweight gain over the window wins.' },
+      { id: 'onerm', icon: 'trendUp', title: 'Biggest 1RM Jump', desc: 'Greatest % gain', score: 'Your estimated one-rep max is measured start to finish. The greatest percentage gain wins.' },
+      { id: 'reps', icon: 'repeat', title: 'Most Reps Added', desc: 'On one movement', needsMovement: true },
+      { id: 'pace', icon: 'stopwatch', title: 'Fastest Pace Drop', desc: 'Mile-time gain', score: 'Log a starting mile time and a finishing time. The biggest improvement in pace wins.' },
+      { id: 'customProg', icon: 'spark', title: 'Custom Progression', desc: 'Start \u2192 goal', needsUnit: true, score: 'Track any start-to-finish metric you name. The largest improvement wins.' },
+    ];
+    const list = family === 'total' ? TOTAL : PROG;
+    const byId = {}; [...TOTAL, ...PROG].forEach(m => byId[m.id] = m);
+    let metricId = S.metric;
+    if (!metricId || !byId[metricId] || !list.some(m => m.id === metricId)) { metricId = list[0].id; }
+    const metric = byId[metricId];
+    const metricIcon = (id, sz) => id === 'trendUp' ? trendUp(sz) : (id === 'repeat' ? repeat(sz) : ic(id, sz, 1.7));
+
+    const selectMetric = (id) => this.setState({ metric: id });
+    const setFamily = (f) => { const nl = f === 'total' ? TOTAL : PROG; const keep = nl.some(m => m.id === metricId); this.setState({ family: f, metric: keep ? metricId : nl[0].id }); };
+
+    const familyTabs = [
+      { key: 'total', label: 'Total', f: 'total' },
+      { key: 'progress', label: 'Progression', f: 'progress' },
+    ].map(t => ({ key: t.key, label: t.label, select: () => setFamily(t.f), style: this._segStyle(family === t.f) }));
+    const familyPhilosophy = family === 'total' ? 'Highest cumulative score wins.' : 'Greatest improvement over the challenge wins.';
+    const philosophyIcon = family === 'total' ? ic('podium', 15, 1.8) : trendUp(15);
+
+    const metrics = list.map(m => {
+      const sel = m.id === metricId;
+      const wrapStyle = 'display:flex; flex-direction:column; gap:10px; text-align:left; padding:13px; border-radius:var(--fl-radius-lg); cursor:pointer; transition:border-color 160ms ease, box-shadow 160ms ease, background 160ms ease; '
+        + (sel
+          ? 'background:linear-gradient(180deg, rgba(191,143,79,0.13), rgba(191,143,79,0.02)), var(--fl-surface-card); border:1px solid var(--fl-bronze-primary); box-shadow:0 0 0 1px var(--fl-bronze-primary), 0 0 16px rgba(191,143,79,0.2), var(--fl-shadow-card);'
+          : 'background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-shadow-card);');
+      const iconStyle = 'width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); transition:all 160ms ease; '
+        + (sel ? 'background:var(--fl-bronze-metallic); color:#1A1206; box-shadow:var(--fl-glow-subtle);' : 'background:var(--fl-bronze-tint); color:var(--fl-bronze-bright); border:1px solid var(--fl-bronze-border-subtle);');
+      const badgeStyle = 'display:inline-flex; align-items:center; gap:3px; padding:3px 7px; border-radius:var(--fl-radius-pill); font-size:9px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; white-space:nowrap; '
+        + (m.badge === 'rec' ? 'background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright);' : 'background:var(--fl-charcoal-800); border:1px solid var(--fl-charcoal-600); color:var(--fl-text-secondary);');
+      const badgeEl = m.badge === 'rec' ? h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '3px' } }, star(10), 'Recommended') : (m.badge === 'pop' ? 'Popular' : null);
+      return { key: m.id, title: m.title, desc: m.desc, iconEl: metricIcon(m.icon, 19), iconStyle, hasBadge: !!m.badge, badgeStyle, badgeEl, wrapStyle, select: () => selectMetric(m.id) };
+    });
+
+    // sub-config
+    const showLift = !!metric.needsLift;
+    const showMovement = !!metric.needsMovement;
+    const showUnit = !!metric.needsUnit;
+    const liftChips = ['Deadlift', 'Back Squat', 'Bench Press', 'Overhead Press'].map(l => ({ key: l, label: l, select: () => this.setState({ lift: l }), style: this._chipStyle(S.lift === l) }));
+    const movementChips = ['Pull-ups', 'Push-ups', 'Dips', 'Chin-ups'].map(l => ({ key: l, label: l, select: () => this.setState({ movement: l }), style: this._chipStyle(S.movement === l) }));
+
+    // scoring text
+    let scoreText = metric.score;
+    if (metric.id === 'pr') scoreText = 'Log a starting number and a finishing number on your ' + S.lift + '. The largest weight added wins \u2014 e.g. 225 \u2192 275 = +50 lb.';
+    if (metric.id === 'reps') scoreText = 'Log a starting max and a finishing max on ' + S.movement + '. The most reps added over the window wins.';
+    if (metric.id === 'customTotal' || metric.id === 'customProg') { const u = S.unit.trim(); if (u) scoreText = scoreText.replace('a unit you name', '"' + u + '"').replace('any start-to-finish metric you name', '"' + u + '"'); }
+
+    // ── Duration ──
+    const DUR = [
+      { id: '7', label: '1 Week', days: 7 },
+      { id: '14', label: '2 Weeks', days: 14 },
+      { id: '28', label: '4 Weeks', days: 28 },
+      { id: '56', label: 'Season', sub: '8 wk', days: 56 },
+      { id: 'custom', label: 'Custom', days: null },
+    ];
+    const durPreset = S.durPreset;
+    const customDays = Math.max(3, Math.min(180, S.customDays || 21));
+    const durationDays = durPreset === 'custom' ? customDays : DUR.find(d => d.id === durPreset).days;
+    const durationChips = DUR.map(d => ({ key: d.id, label: d.label, hasSub: !!d.sub, sub: d.sub || '', select: () => this.setState({ durPreset: d.id }), style: this._chipStyle(durPreset === d.id) }));
+    const showCustomDuration = durPreset === 'custom';
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const startFor = (w) => { const d = new Date(today); if (w === 'tmw') d.setDate(d.getDate() + 1); else if (w === 'mon') { const add = ((8 - d.getDay()) % 7) || 7; d.setDate(d.getDate() + add); } return d; };
+    const startWhen = S.startWhen;
+    const startChips = [
+      { id: 'now', label: 'Today' }, { id: 'tmw', label: 'Tomorrow' }, { id: 'mon', label: 'Next Monday' },
+    ].map(c => ({ key: c.id, label: c.label, select: () => this.setState({ startWhen: c.id }), style: this._chipStyle(startWhen === c.id) }));
+    const start = startFor(startWhen);
+    const end = new Date(start); end.setDate(start.getDate() + durationDays);
+    const startLabel = startWhen === 'now' ? 'today' : this._fmt(start);
+    const runLine = 'Runs ' + durationDays + ' days \u00b7 starts ' + startLabel + ' \u00b7 ends ' + this._fmt(end);
+    const durLabelShort = durPreset === 'custom' ? (durationDays + ' days') : DUR.find(d => d.id === durPreset).label;
+
+    // ── Participants ──
+    const setScope = (s) => this.setState({ scope: s });
+    const scopeTabs = [
+      { key: 'squad', label: 'My Squad', s: 'squad' },
+      { key: 'friends', label: 'Friends', s: 'friends' },
+      { key: 'community', label: 'Community', s: 'community' },
+    ].map(t => ({ key: t.key, label: t.label, select: () => setScope(t.s), style: this._segStyle(scope === t.s) }));
+
+    const ROSTER = ['Dana Cole', 'Theo Brandt', 'Lena Cross', 'Priya Anand', 'Sol Vance', 'Ezra Kane'];
+    const tints = ['radial-gradient(circle at 42% 32%, #4a3826, #1c1510)', 'radial-gradient(circle at 45% 35%, #34302a, #17130f)', 'radial-gradient(circle at 40% 30%, #40301f, #17120c)', 'radial-gradient(circle at 48% 38%, #2d2822, #141210)', 'radial-gradient(circle at 44% 34%, #453322, #1a140e)', 'radial-gradient(circle at 46% 33%, #3a2f24, #16120d)'];
+    const invited = S.invited;
+    const toggleFriend = (n) => { const has = invited.includes(n); this.setState({ invited: has ? invited.filter(x => x !== n) : [...invited, n] }); };
+    const tintFor = (n) => tints[(n.charCodeAt(0) + n.length) % tints.length];
+    const firstOf = (n) => n.split(/\s+/)[0];
+    const chipBase = (opp) => 'display:inline-flex; align-items:center; gap:7px; padding:4px 8px 4px 5px; border-radius:var(--fl-radius-pill); flex:none; white-space:nowrap; '
+      + (opp ? 'background:linear-gradient(180deg, rgba(191,143,79,0.14), transparent), var(--fl-charcoal-900); border:1px solid var(--fl-bronze-border);' : 'background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600);');
+    const competing = [];
+    if (opponentIn) competing.push({ key: 'opp', first: firstOf(opponentName), initials: this._initials(opponentName).toUpperCase(), tint: tints[0], chipStyle: chipBase(true), remove: () => this.setState({ opponentIn: false }) });
+    invited.forEach((n) => competing.push({ key: n, first: firstOf(n), initials: this._initials(n).toUpperCase(), tint: tintFor(n), chipStyle: chipBase(false), remove: () => toggleFriend(n) }));
+    const rosterRowStyle = 'display:flex; align-items:center; gap:12px; padding:9px 12px; border-radius:var(--fl-radius-md); cursor:pointer; transition:border-color 150ms ease, background 150ms ease; background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-700);';
+    const rosterIndStyle = 'width:24px; height:24px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:transparent; border:1px solid var(--fl-charcoal-500); color:var(--fl-text-tertiary);';
+    const roster = ROSTER.filter(n => !invited.includes(n)).map(n => ({ key: n, name: n, initials: this._initials(n).toUpperCase(), tint: tintFor(n), rowStyle: rosterRowStyle, indStyle: rosterIndStyle, indEl: plus, toggle: () => toggleFriend(n) }));
+
+    const invitedCount = invited.length + (opponentIn ? 1 : 0);
+    let participantsOk = true;
+    if (scope === 'friends') participantsOk = invitedCount >= 1;
+
+    // ── Visibility ──
+    const communityLocked = scope === 'community';
+    const privacy = communityLocked ? 'open' : (S.privacy || 'invite');
+    const setPrivacy = (p) => { if (!communityLocked) this.setState({ privacy: p }); };
+    const privacyTabs = [
+      { key: 'invite', label: 'Invite-only', p: 'invite' },
+      { key: 'open', label: 'Open to join', p: 'open' },
+    ].map(t => ({ key: t.key, label: t.label, select: () => setPrivacy(t.p), disabled: communityLocked, style: this._segStyle(privacy === t.p) }));
+    const privacyHint = communityLocked
+      ? 'Community challenges are always open \u2014 anyone can find and join them.'
+      : (privacy === 'invite' ? 'Only people you invite can see and enter this challenge.' : 'Invitees can bring others \u2014 anyone with the link can request to join.');
+
+    // ── Stakes ──
+    const stakes = S.stakes || 'podium';
+    const stakesTabs = [
+      { key: 'none', label: 'None', p: 'none' },
+      { key: 'winner', label: 'Winner', p: 'winner' },
+      { key: 'podium', label: 'Podium', p: 'podium' },
+    ].map(t => ({ key: t.key, label: t.label, select: () => this.setState({ stakes: t.p }), style: this._segStyle(stakes === t.p) }));
+    const showHonor = stakes !== 'none';
+    const honorTitle = stakes === 'winner' ? 'Champion\u2019s Laurel' : 'Podium Honor';
+    const honorDesc = stakes === 'winner' ? 'The winner earns a permanent Forge honor engraved on their Legacy Timeline.' : 'The top three finishers each earn a Forge honor engraved on their Legacy Timeline.';
+
+    // ── Hero preview ──
+    const nameTrim = S.name.trim();
+    const editing = S.editing;
+    const sealPx = editing ? '54px' : '66px';
+    const sealWrapStyle = 'position:relative; flex:none; width:' + sealPx + '; height:' + sealPx + '; margin-top:2px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); box-shadow:0 0 0 2px var(--fl-bronze-primary), 0 6px 18px rgba(0,0,0,0.6), 0 0 16px rgba(191,143,79,0.26); transition:width 220ms var(--fl-ease-out), height 220ms var(--fl-ease-out);';
+    let heroMetricLabel = metric.title;
+    if (metric.id === 'pr') heroMetricLabel = S.lift + ' PR';
+    if (metric.id === 'reps') heroMetricLabel = S.movement;
+    if ((metric.id === 'customTotal' || metric.id === 'customProg') && S.unit.trim()) heroMetricLabel = S.unit.trim();
+    const scopeLabelMap = { squad: squadName, friends: (invitedCount > 0 ? invitedCount + (invitedCount === 1 ? ' athlete' : ' athletes') : 'Invite friends'), community: 'Community' };
+    const scopeIconMap = { squad: ic('squad', 14, 1.8), friends: ic('friend', 14, 1.8), community: globe(14) };
+
+    // ── Review summary ──
+    const rowBase = 'display:flex; align-items:center; gap:12px; padding:10px 2px;';
+    const scopeIcon16 = scope === 'squad' ? ic('squad', 16, 1.8) : (scope === 'friends' ? ic('friend', 16, 1.8) : globe(16));
+    const compValue = scope === 'community' ? 'Open to all' : (scope === 'squad' ? squadName : (invitedCount + (invitedCount === 1 ? ' competitor' : ' competitors')));
+    const stakesValue = stakes === 'none' ? 'No stake' : (stakes === 'winner' ? 'Champion honor' : 'Podium honor');
+    const startCapS = startWhen === 'now' ? 'Today' : this._fmt(start);
+    const scopeWord = scope === 'community' ? 'Community' : (scope === 'squad' ? squadName : 'Friends');
+    const reviewTagline = heroMetricLabel + '   \u00b7   ' + this._fmt(start) + ' \u2013 ' + this._fmt(end) + '   \u00b7   ' + scopeWord;
+    const rowsData = [
+      { key: 'sc', icon: metricIcon(metric.icon, 16), label: 'Scoring', value: (family === 'total' ? 'Total' : 'Progress') + ' \u00b7 ' + heroMetricLabel, valueColor: 'var(--fl-bronze-bright)' },
+      { key: 'wd', icon: ic('calendar', 16, 1.8), label: 'Window', value: durLabelShort, valueColor: 'var(--fl-text-primary)' },
+      { key: 'cp', icon: scopeIcon16, label: scope === 'community' ? 'Open To' : 'Competing', value: compValue, valueColor: 'var(--fl-text-primary)' },
+      { key: 'st', icon: ic('laurel', 16, 1.8), label: 'Stakes', value: stakesValue, valueColor: stakes === 'none' ? 'var(--fl-text-secondary)' : 'var(--fl-bronze-bright)' },
+      { key: 'sd', icon: ic('clock', 16, 1.8), label: 'Starts', value: startCapS + ' \u2013 ends ' + this._fmt(end), valueColor: 'var(--fl-text-primary)' },
+    ];
+    const summaryRows = rowsData.map((r, i) => ({ ...r, rowStyle: rowBase + (i < rowsData.length - 1 ? ' border-bottom:1px solid var(--fl-charcoal-800);' : '') }));
+
+    // ── Commit ──
+    const nameOk = nameTrim.length >= 2;
+    const configOk = showUnit ? S.unit.trim().length > 0 : true;
+    const commitEnabled = nameOk && participantsOk && configOk;
+    const commitStyle = { width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '9px', padding: '15px', borderRadius: 'var(--fl-radius-md)', fontSize: '15px', fontWeight: 600, border: '1px solid ' + (commitEnabled ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: commitEnabled ? 'var(--fl-bronze-fill)' : 'var(--fl-charcoal-800)', color: commitEnabled ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', boxShadow: commitEnabled ? 'var(--fl-glow-subtle)' : 'none', cursor: commitEnabled ? 'pointer' : 'not-allowed', opacity: commitEnabled ? 1 : 0.7, transition: 'background 180ms ease, opacity 160ms ease' };
+    let commitLabel = 'Create Challenge';
+    if (scope === 'community') commitLabel = 'Post to Community';
+    else if (hasOpponentDefault && opponentIn && invited.length === 0) commitLabel = 'Challenge ' + opponentName.split(/\s+/)[0];
+
+    const reqMark = h('span', { style: { color: 'var(--fl-bronze-primary)', fontWeight: 700, fontSize: '12px', lineHeight: 1 } }, '\u2217');
+    const okMark = svg(['M5 12.5l4 4 10-10'], 12, 2.6);
+
+    const nameLen = S.name.length; const nameMax = 34;
+    const descLen = S.description.length; const descMax = 160;
+
+    return {
+      ready: true, notReady: false,
+
+      sealWrapStyle, sealIcon: ic('swords', editing ? 24 : 28, 1.7),
+      heroTitle: nameTrim || 'Create a Challenge',
+      heroTitleColor: 'var(--fl-text-primary)',
+      heroTitleSize: editing ? '22px' : '27px',
+      hasName: !!nameTrim, heroIntro: !nameTrim, heroSubtitle: 'Choose what you\u2019re competing for, who\u2019s in, and what\u2019s at stake.',
+      heroMetricIcon: metricIcon(metric.icon, 14), heroMetricLabel,
+      heroDurIcon: ic('calendar', 14, 1.8), heroDurLabel: durLabelShort,
+      heroScopeIcon: scopeIconMap[scope], heroScopeLabel: scopeLabelMap[scope],
+
+      familyTabs, familyPhilosophy, philosophyIcon, metrics,
+      showLift, liftChips, showMovement, movementChips,
+      showUnit, unit: S.unit, onUnit: (e) => this.setState({ unit: e.target.value.slice(0, 24) }),
+      scoreIcon: ic('podium', 16, 1.8), scoreText,
+
+      name: S.name, nameMax, onName: (e) => this.setState({ name: e.target.value.slice(0, nameMax) }),
+      nameMarker: nameOk ? okMark : reqMark, nameCount: nameLen + '/' + nameMax, nameCountColor: nameLen >= nameMax - 4 ? 'var(--fl-bronze-primary)' : 'var(--fl-text-tertiary)',
+      description: S.description, descMax, onDesc: (e) => this.setState({ description: e.target.value.slice(0, descMax) }),
+      descCount: descLen + '/' + descMax, descCountColor: descLen >= descMax - 8 ? 'var(--fl-bronze-primary)' : 'var(--fl-text-tertiary)',
+
+      durationChips, showCustomDuration, customDays, onCustomDays: (e) => this.setState({ customDays: parseInt(e.target.value || '0', 10) || 0 }),
+      startChips, runIcon: ic('calendar', 15, 1.8), runLine,
+
+      scopeTabs,
+      scopeFriends: scope === 'friends', competing, hasCompeting: competing.length > 0, competingCount: String(competing.length), roster, hasRoster: roster.length > 0, xIconSm,
+      scopeSquad: scope === 'squad', squadIcon: ic('squad', 20, 1.8), squadName, squadMembers: 12,
+      scopeCommunity: scope === 'community', globeIcon: globe(20),
+      optInIcon: ic('invite', 14, 1.8), optInHint: 'Invitations go out on create \u2014 no one is entered until they accept.',
+
+      privacyTabs, privacyOpacity: communityLocked ? 0.55 : 1, privacyIcon: privacy === 'invite' ? lock(14) : globe(14), privacyHint,
+
+      laurelIcon: ic('laurel', 20, 1.8), stakesTabs, showHonor, honorPreviewIcon: ic(stakes === 'winner' ? 'trophy' : 'medal', 22, 1.8), honorTitle, honorDesc,
+      reviewIcon: metricIcon(metric.icon, 13), reviewName: nameTrim || 'Untitled Challenge', reviewNameColor: nameTrim ? 'var(--fl-text-primary)' : 'var(--fl-charcoal-500)', reviewTagline, summaryRows,
+
+      swordsIcon: ic('swords', 18, 1.9), commitDisabled: !commitEnabled, commitStyle, commitLabel,
+      create: () => {
+        if (!commitEnabled) return;
+        try {
+          const inviteIcon = (metric.icon === 'trendUp' || metric.icon === 'repeat') ? 'spark' : metric.icon;
+          const comp = invited.slice(); if (opponentIn) comp.unshift(opponentName);
+          localStorage.setItem('forge_challenge_invite_v1', JSON.stringify({
+            fromName: 'Ada Ridge', name: nameTrim, metricLabel: heroMetricLabel, metricIcon: inviteIcon,
+            family: family, startISO: start.toISOString(), days: durationDays, scope: scope, squadName: squadName,
+            competitors: comp, stakes: stakes, message: S.description.trim(),
+          }));
+        } catch (e) {}
+        this._toast('Challenge created \u00b7 invitations sent');
+        if (this._navT) clearTimeout(this._navT);
+        this._navT = setTimeout(() => { window.location.href = 'Forge%20Challenge.dc.html'; }, 1200);
+      },
+      goBack: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Forge%20Competitions.dc.html'); },
+
+      toastOpen: !!S.toastMsg, toastMsg: S.toastMsg || '', toastIcon: ic('swords', 18, 1.9),
+    };
+  }
+
+  _segStyle(active) {
+    return { flex: 1, padding: '9px 0', borderRadius: 'var(--fl-radius-pill)', border: 'none', cursor: 'pointer', fontSize: '12.5px', fontWeight: 600, color: active ? '#1A1206' : 'var(--fl-text-secondary)', background: active ? 'var(--fl-bronze-metallic)' : 'transparent', transition: 'background 160ms var(--fl-ease-out), color 160ms var(--fl-ease-out)' };
+  }
+  _chipStyle(active) {
+    return 'display:inline-flex; align-items:center; gap:5px; padding:8px 13px; border-radius:var(--fl-radius-pill); font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap; transition:background 150ms ease, border-color 150ms ease, color 150ms ease; '
+      + (active ? 'background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-primary); color:var(--fl-bronze-bright);' : 'background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); color:var(--fl-text-secondary);');
+  }
+}
+</script>
+</body>
+</html>

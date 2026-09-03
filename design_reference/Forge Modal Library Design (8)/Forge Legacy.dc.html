@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  /* Gate the DS bundle on React being present (see other Forge screens). */
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="forge-user.js"></script>
+<script src="image-slot.js"></script>
+<script src="forge-coach.js"></script>
+<script src="forge-accomplishments.js"></script>
+<script src="forge-legacy-pins.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .fl-strip::-webkit-scrollbar { height: 0; }
+  .fl-strip { scrollbar-width: none; }
+  @keyframes flRise { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform:none; } }
+  @keyframes flSealRise { 0% { opacity:0; transform: translateY(12px) scale(0.965); } 100% { opacity:1; transform:none; } }
+  @keyframes flFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes flSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="L-1 Legacy Hub" ref="{{ setFrameEl }}" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/legacy-bg.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <!-- Mountain artwork fade · darkens the atmospheric bg as the page is scrolled (driven in JS) -->
+    <div ref="{{ setArtworkFade }}" aria-hidden="true" style="position:absolute; inset:0; z-index:-1; pointer-events:none; background:#050505; opacity:0;"></div>
+
+    <!-- Loading splash (pre-mount) -->
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Legacy" serif="{{ true }}" avatar="{{ avatarEl }}" on-avatar="{{ goAccount }}" hint-size="100%,56px"></x-import>
+
+      <div class="fl-scroll" ref="{{ setScroll }}" style="flex:1; min-height:0; overflow-y:auto;">
+
+        <!-- ═══════════════ HERO · identity · creed · current chapter (no card, bg flows behind) ═══════════════ -->
+        <div ref="{{ setHero }}" style="position:relative; overflow:hidden; padding:6px 0 2px; will-change:transform, opacity;">
+          <!-- the atmospheric background flows behind the hero; a soft scrim keeps type legible -->
+          <div aria-hidden="true" style="position:absolute; inset:0; z-index:0; pointer-events:none; background:linear-gradient(180deg, rgba(8,11,14,0.5) 0%, rgba(8,11,14,0.16) 60%, transparent 100%);"></div>
+
+          <div style="position:relative; z-index:1;">
+            <!-- identity · portrait + name + a clearly legible rank badge -->
+            <div data-coach="lg-identity" style="display:flex; align-items:center; gap:14px; padding:18px 20px 2px;">
+              <div ref="{{ setPortrait }}" style="flex:none; will-change:transform;">
+                <div style="position:relative; width:90px; height:90px; animation:flSealRise 900ms var(--fl-ease-out, ease-out) both; filter:drop-shadow(0 14px 22px rgba(0,0,0,0.6));">
+                  <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;"><div style="transform:scale(0.83); transform-origin:center; display:flex;">{{ seal }}</div></div>
+                  <image-slot id="legacy-portrait" shape="circle" placeholder="Add photo" style="position:absolute; inset:4px; width:82px; height:82px;"></image-slot>
+                  <span style="position:absolute; inset:0; border-radius:50%; pointer-events:none; border:1.5px solid var(--fl-bronze-border); box-shadow:0 0 0 3px rgba(8,11,14,0.5), var(--fl-glow-badge), var(--fl-border-inset);"></span>
+                </div>
+              </div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:8px; animation:flRise 950ms var(--fl-ease-out, ease-out) both; animation-delay:140ms;">
+                <h1 style="margin:0; font-family:var(--fl-font-display); font-size:24px; font-weight:700; letter-spacing:-0.3px; line-height:1.0; color:var(--fl-text-primary);">{{ athleteName }}</h1>
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.RankMarker" label="{{ rankLabel }}" hint-size="auto,20px"></x-import>
+                <span style="font-size:11.5px; font-weight:500; letter-spacing:0.4px; color:var(--fl-text-secondary); text-wrap:pretty;">{{ identitySub }}</span>
+              </div>
+              <div data-coach="lg-progress" role="button" tabindex="0" aria-label="View your progress" onClick="{{ goProgress }}" style="flex:none; width:76px; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; filter:drop-shadow(0 6px 12px rgba(0,0,0,0.4)); transition:transform 260ms var(--fl-ease-out, ease-out);" style-hover="transform:translateY(-2px);" style-active="transform:scale(0.95);">
+                <dc-import name="FoundationBadge" tier="{{ badgeTier }}" hint-size="70px,104px"></dc-import>
+                <span style="display:inline-flex; align-items:center; gap:3px; padding:3px 9px 3px 10px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:8.5px; font-weight:700; letter-spacing:1.1px; text-transform:uppercase; color:var(--fl-bronze-bright); white-space:nowrap;">Progress<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></span>
+              </div>
+            </div>
+
+            <!-- My Standard · the athlete's creed, as typography -->
+            <sc-if value="{{ showStandard }}" hint-placeholder-val="{{ true }}">
+              <div data-coach="lg-standard" role="button" tabindex="0" aria-label="Edit my standard" onClick="{{ openStandard }}" style="position:relative; z-index:1; margin:14px 12px 4px; padding:6px 12px; cursor:pointer; border-radius:var(--fl-radius-lg); transition:background 240ms var(--fl-ease-out, ease-out);" style-hover="background:var(--fl-hover-wash);" style-active="background:var(--fl-hover-wash);">
+                <span style="display:block; font-family:var(--fl-font-display); font-size:14px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-bronze-label); padding-bottom:11px;">My Standard</span>
+                <p style="margin:0; font-family:var(--fl-font-display); font-style:italic; font-size:19px; line-height:1.5; font-weight:500; color:var(--fl-text-primary); text-wrap:pretty;">{{ myStandard }}</p>
+              </div>
+            </sc-if>
+
+            <!-- What I'm Building · current chapter, as narrative context (no CTA) -->
+            <sc-if value="{{ showHeroBuilding }}" hint-placeholder-val="{{ true }}">
+              <div style="position:relative; z-index:1; padding:36px 24px 28px;">
+                <div style="height:1px; background:var(--fl-bronze-border-subtle); margin-bottom:24px;"></div>
+
+                <sc-if value="{{ showCurrentChapter }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex; align-items:center; gap:9px;">
+                    <span style="font-size:10.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Current Chapter</span>
+                    <span style="display:inline-flex; align-items:center; gap:6px;">
+                      <span style="width:6px; height:6px; border-radius:50%; background:var(--fl-status-online); box-shadow:var(--fl-status-online-glow);"></span>
+                      <span style="font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-bright);">Active</span>
+                    </span>
+                  </div>
+                  <div role="button" tabindex="0" onClick="{{ goChapterActive }}" style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:6px 0 16px;" style-hover="opacity:0.86;">
+                    <span style="font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.4px; line-height:1.05; color:var(--fl-text-primary);">{{ acName }}</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+                  </div>
+
+                  <div style="display:flex; flex-direction:column; gap:9px;">
+                    <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Primary Goal</span>
+                    <div style="display:flex; align-items:baseline; gap:10px;">
+                      <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">{{ acGoalLabel }}</span>
+                      <span style="margin-left:auto; font-size:13px; font-weight:600; color:var(--fl-bronze-primary);">{{ acGoalValue }}</span>
+                    </div>
+                    <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="{{ acGoalDone }}" max="{{ acGoalMax }}" hint-size="100%,8px"></x-import>
+                    <span style="display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--fl-text-tertiary); padding-top:3px;">{{ icoCal }}<span>{{ acBegan }}</span></span>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ showHeroInvite }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:block; font-family:var(--fl-font-display); font-size:22px; font-weight:600; letter-spacing:-0.3px; line-height:1.15; color:var(--fl-text-primary); padding:2px 0 8px;">Between Chapters</span>
+                  <p style="margin:0 0 16px; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Your previous chapter has been preserved. The next one is waiting to be written.</p>
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ goChapterActive }}" hint-size="100%,50px">Start Next Chapter</x-import>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <!-- Brand-new athlete · first chapter -->
+            <sc-if value="{{ showNewInvite }}" hint-placeholder-val="{{ false }}">
+              <div style="position:relative; z-index:1; padding:22px 24px 24px;">
+                <div style="height:1px; background:var(--fl-bronze-border-subtle); margin-bottom:18px;"></div>
+                <span style="display:block; font-family:var(--fl-font-display); font-size:22px; font-weight:600; letter-spacing:-0.3px; line-height:1.2; color:var(--fl-text-primary); padding-bottom:10px;">Every legacy starts with a single chapter.</span>
+                <p style="margin:0 0 16px; font-size:13.5px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">The story you write here becomes the permanent record of your journey. Start your first chapter, and begin building something worth looking back on.</p>
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ goChapterActive }}" hint-size="100%,50px">Start a Chapter</x-import>
+              </div>
+            </sc-if>
+
+          </div>
+        </div>
+
+        <!-- content flow · spacing carries the story -->
+        <div style="display:flex; flex-direction:column; gap:46px; padding:32px 0 8px;">
+
+          <!-- ══ MY MUSEUM · Pinned Legacy ══ -->
+          <sc-if value="{{ showPinned }}" hint-placeholder-val="{{ true }}">
+            <div data-coach="lg-pinned">
+              <div style="padding:0 24px;">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Pinned Legacy" action="Edit" on-action="{{ openPins }}" hint-size="100%,22px"></x-import>
+              </div>
+              <div class="fl-strip" style="display:flex; gap:12px; padding:8px 24px 4px; overflow-x:auto;">
+                <sc-for list="{{ pinned }}" as="p" hint-placeholder-count="4">
+                  <div role="button" tabindex="0" onClick="{{ p.open }}" style="position:relative; width:150px; height:196px; flex:none; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); cursor:pointer;">
+                    <sc-if value="{{ p.isPhoto }}" hint-placeholder-val="{{ true }}">
+                      <image-slot id="{{ p.mediaId }}" shape="rect" placeholder="{{ p.kind }}" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                      <span aria-hidden="true" style="position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg, rgba(8,11,14,0.5) 0%, transparent 34%, transparent 50%, rgba(8,11,14,0.92) 100%);"></span>
+                      <sc-if value="{{ p.isVideo }}" hint-placeholder-val="{{ false }}">
+                        <span style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(8,11,14,0.66); border:1px solid var(--fl-bronze-border-subtle);"><svg width="14" height="14" viewBox="0 0 24 24" style="margin-left:2px;"><path d="M9 7.5l8 4.5-8 4.5z" fill="var(--fl-bronze-bright)"></path></svg></span>
+                      </sc-if>
+                    </sc-if>
+                    <sc-if value="{{ p.isEmblem }}" hint-placeholder-val="{{ false }}">
+                      <span aria-hidden="true" style="position:absolute; inset:0; background:var(--fl-surface-recessed);"></span>
+                      <span aria-hidden="true" style="position:absolute; inset:0; background:radial-gradient(70% 55% at 50% 38%, rgba(191,143,79,0.18), transparent 72%);"></span>
+                      <div style="position:absolute; top:0; left:0; right:0; bottom:46px; display:flex; align-items:center; justify-content:center;">
+                        <span style="width:66px; height:66px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--fl-bronze-metallic); box-shadow:var(--fl-border-inset), var(--fl-glow-badge);">
+                          <span style="width:55px; height:55px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--fl-surface-recessed); color:var(--fl-bronze-bright);">{{ p.glyph }}</span>
+                        </span>
+                      </div>
+                    </sc-if>
+                    <span style="position:absolute; top:9px; left:9px; z-index:2; padding:3px 8px; border-radius:var(--fl-radius-sm); font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright); background:rgba(8,11,14,0.72); border:1px solid var(--fl-bronze-border-subtle);">{{ p.kind }}</span>
+                    <span style="position:absolute; left:12px; right:12px; bottom:12px; z-index:2; font-family:var(--fl-font-display); font-size:15px; font-weight:600; letter-spacing:-0.1px; line-height:1.15; color:var(--fl-text-primary);">{{ p.title }}</span>
+                  </div>
+                </sc-for>
+                <div role="button" tabindex="0" onClick="{{ openPins }}" style="width:150px; height:196px; flex:none; border-radius:var(--fl-radius-lg); border:1px dashed var(--fl-bronze-border); background:var(--fl-bronze-tint); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; cursor:pointer;">
+                  <span style="width:38px; height:38px; border-radius:50%; border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-primary);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+                  <span style="font-size:11px; font-weight:600; letter-spacing:0.6px; color:var(--fl-bronze-primary);">Pin an item</span>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ══ THE MOMENT THAT MATTERS · Featured Legacy Moment ══ -->
+          <sc-if value="{{ showFLM }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:0 24px;">
+              <span style="display:block; font-size:10px; font-weight:600; letter-spacing:2.2px; text-transform:uppercase; color:var(--fl-text-tertiary); padding:0 2px 12px;">Featured Legacy Moment</span>
+              <div role="button" tabindex="0" onClick="{{ goChapterArchived }}" style="position:relative; overflow:hidden; background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); padding:24px; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-elevated), var(--fl-glow-subtle); display:flex; flex-direction:column; gap:15px; cursor:pointer; transition:transform 260ms var(--fl-ease-out, ease-out), box-shadow 260ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.985);">
+                <div aria-hidden="true" style="position:absolute; inset:0; z-index:0; pointer-events:none; background:radial-gradient(130% 100% at 84% 4%, rgba(191,143,79,0.14), transparent 58%);"></div>
+                <div aria-hidden="true" style="position:absolute; top:-48px; right:-42px; width:226px; height:226px; z-index:0; opacity:0.07; color:var(--fl-bronze-primary); pointer-events:none;">{{ flmMark }}</div>
+                <div style="position:relative; z-index:1; display:flex; align-items:center; gap:13px;">
+                  <span style="width:46px; height:46px; flex:none; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); box-shadow:var(--fl-glow-subtle); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ flmGlyph }}</span>
+                  <div style="min-width:0;">
+                    <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ flmKind }}</span>
+                    <span style="display:block; font-family:var(--fl-font-display); font-size:21px; font-weight:600; letter-spacing:-0.2px; line-height:1.1; color:var(--fl-text-primary); margin-top:3px;">{{ flmTitle }}</span>
+                  </div>
+                </div>
+                <div style="position:relative; z-index:1; display:flex; gap:14px; padding-top:2px;">
+                  <span style="width:2px; flex:none; background:linear-gradient(180deg, var(--fl-bronze-primary), transparent);"></span>
+                  <span style="font-family:var(--fl-font-display); font-style:italic; font-size:16px; line-height:1.5; font-weight:500; color:var(--fl-bronze-bright); text-wrap:pretty;">{{ flmExcerpt }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ══ MY STORY · Chapter History + Timeline preview ══ -->
+          <sc-if value="{{ showChapterHistory }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:0 24px; display:flex; flex-direction:column; gap:12px;">
+              <!-- expanded · most recent seal (premium card) -->
+              <div role="button" tabindex="0" onClick="{{ goChapterArchived }}" style="position:relative; overflow:hidden; background:var(--fl-surface-card); border:var(--fl-border-subtle); border-radius:var(--fl-radius-xl); padding:20px; box-shadow:var(--fl-border-inset), var(--fl-shadow-card); display:flex; flex-direction:column; gap:12px; cursor:pointer;">
+                <div style="display:flex; align-items:baseline; gap:10px;">
+                  <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:600; letter-spacing:-0.2px; line-height:1.1; color:var(--fl-text-primary);">{{ caName }}</span>
+                  <span style="margin-left:auto; display:inline-flex; align-items:center; gap:6px; flex:none; font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ icoSeal }}Sealed</span>
+                </div>
+                <span style="font-size:12px; font-weight:500; letter-spacing:0.5px; color:var(--fl-text-secondary);">{{ caRange }}</span>
+                <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--fl-text-secondary);">{{ icoCheck }}<span style="color:var(--fl-text-primary); font-weight:600;">{{ caGoal }}</span></div>
+                <div style="display:flex; gap:12px; padding:4px 0 2px;">
+                  <span style="width:2px; flex:none; background:linear-gradient(180deg, var(--fl-bronze-primary), transparent);"></span>
+                  <span style="font-family:var(--fl-font-display); font-style:italic; font-size:14.5px; line-height:1.5; color:var(--fl-bronze-bright); text-wrap:pretty;">{{ caExcerpt }}</span>
+                </div>
+                <div style="height:1px; background:var(--fl-bronze-border-subtle);"></div>
+                <span style="font-size:11px; font-weight:500; letter-spacing:0.6px; color:var(--fl-text-tertiary);">{{ caFooter }}</span>
+              </div>
+
+              <!-- older · condensed, borderless rows -->
+              <sc-for list="{{ historyCompact }}" as="c" hint-placeholder-count="1">
+                <div role="button" tabindex="0" onClick="{{ goChapterArchived }}" style="display:flex; align-items:center; gap:14px; padding:14px 6px; border-radius:var(--fl-radius-lg); cursor:pointer; transition:background 200ms var(--fl-ease-out, ease-out);" style-hover="background:var(--fl-hover-wash);">
+                  <span style="width:9px; height:9px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary); background:var(--fl-bronze-tint);"></span>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                    <span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; letter-spacing:-0.1px; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.name }}</span>
+                    <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ c.meta }}</span>
+                  </div>
+                  <span style="flex:none; font-size:11.5px; font-weight:600; color:var(--fl-bronze-primary);">{{ c.goal }}</span>
+                </div>
+              </sc-for>
+
+              <!-- timeline preview · light -->
+              <sc-if value="{{ showTimeline }}" hint-placeholder-val="{{ true }}">
+                <div style="padding-top:16px;">
+                  <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-tertiary); padding:0 2px 4px;">Recent</span>
+                  <div style="display:flex; flex-direction:column; gap:1px; padding-top:4px;">
+                    <sc-for list="{{ timelineItems }}" as="it" hint-placeholder-count="3">
+                      <div style="display:flex; align-items:center; gap:12px; padding:9px 6px;">
+                        <span style="width:30px; height:30px; flex:none; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); color:var(--fl-icon-bronze);">{{ it.glyph }}</span>
+                        <span style="flex:1; min-width:0; font-size:13.5px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ it.title }}</span>
+                        <span style="flex:none; font-size:11.5px; color:var(--fl-text-tertiary);">{{ it.date }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div role="button" tabindex="0" onClick="{{ goTimeline }}" style="display:flex; align-items:center; gap:7px; padding:12px 6px 2px; cursor:pointer;">
+                    <span style="font-size:12px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">View Full Timeline</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <!-- ══════ WHAT ENDURES ══════ -->
+          <sc-if value="{{ showEndures }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; flex-direction:column; gap:26px;">
+
+              <!-- Transformation + Photos · compact preview rows -->
+              <div style="padding:0 18px;">
+                <div data-coach="lg-transform" role="button" tabindex="0" aria-label="View your transformation" onClick="{{ goXformGallery }}" style="display:flex; align-items:center; gap:14px; padding:14px 8px; border-radius:var(--fl-radius-lg); cursor:pointer; transition:background 200ms var(--fl-ease-out, ease-out);" style-hover="background:var(--fl-hover-wash);">
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:15px; font-weight:600; color:var(--fl-text-primary);">Transformation</span>
+                    <span style="font-size:11.5px; color:var(--fl-text-tertiary);">Physique &amp; progress footage</span>
+                  </div>
+                  <span style="flex:none; font-size:12.5px; font-weight:600; color:var(--fl-bronze-primary);">{{ transformCount }} entries</span>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+                </div>
+                <div style="height:1px; background:var(--fl-bronze-border-subtle); margin:0 8px;"></div>
+                <div data-coach="lg-photos" role="button" tabindex="0" aria-label="View your photos" onClick="{{ goPhotos }}" style="display:flex; align-items:center; gap:14px; padding:14px 8px; border-radius:var(--fl-radius-lg); cursor:pointer; transition:background 200ms var(--fl-ease-out, ease-out);" style-hover="background:var(--fl-hover-wash);">
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:15px; font-weight:600; color:var(--fl-text-primary);">Photos</span>
+                    <span style="font-size:11.5px; color:var(--fl-text-tertiary);">Every chapter, one archive</span>
+                  </div>
+                  <span style="flex:none; font-size:12.5px; font-weight:600; color:var(--fl-bronze-primary);">{{ photosCount }} photos</span>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+                </div>
+                <div style="height:1px; background:var(--fl-bronze-border-subtle); margin:0 8px;"></div>
+                <div role="button" tabindex="0" aria-label="View your trophy case" onClick="{{ goTrophyCase }}" style="display:flex; align-items:center; gap:14px; padding:14px 8px; border-radius:var(--fl-radius-lg); cursor:pointer; transition:background 200ms var(--fl-ease-out, ease-out);" style-hover="background:var(--fl-hover-wash);">
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:15px; font-weight:600; color:var(--fl-text-primary);">Trophy Case</span>
+                    <span style="font-size:11.5px; color:var(--fl-text-tertiary);">Championships &amp; podium finishes</span>
+                  </div>
+                  <span style="flex:none; font-size:12.5px; font-weight:600; color:var(--fl-bronze-primary);">{{ trophyCount }} trophies</span>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+                </div>
+              </div>
+
+              <!-- Accomplishments · carousel of preserved milestones -->
+              <sc-if value="{{ showAccomplishments }}" hint-placeholder-val="{{ true }}">
+                <div>
+                  <div style="padding:0 24px;">
+                    <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Accomplishments" action="View all" on-action="{{ goAccList }}" hint-size="100%,22px"></x-import>
+                  </div>
+                  <sc-if value="{{ accEmpty }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:6px 24px 4px;">
+                      <button type="button" onClick="{{ goAccAdd }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:17px 16px; border-radius:var(--fl-radius-lg); border:1px dashed var(--fl-bronze-border); background:var(--fl-bronze-tint); cursor:pointer; text-align:left;">
+                        <span style="flex:none; width:38px; height:38px; border-radius:50%; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+                        <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Add your first accomplishment</span><span style="font-size:12px; color:var(--fl-text-tertiary);">Declare a milestone you're proud of.</span></span>
+                      </button>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ hasAcc }}" hint-placeholder-val="{{ true }}">
+                    <div class="fl-strip" style="display:flex; gap:12px; padding:8px 24px 4px; overflow-x:auto;">
+                      <sc-for list="{{ accomplishments }}" as="a" hint-placeholder-count="3">
+                        <div role="button" tabindex="0" onClick="{{ a.onOpen }}" style="position:relative; width:184px; height:252px; flex:none; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle); background:linear-gradient(160deg, var(--fl-bronze-tint), transparent 58%), var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); cursor:pointer; display:flex; flex-direction:column; justify-content:space-between; padding:16px 15px; transition:transform 240ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.97);">
+                          <sc-if value="{{ a.hasPhoto }}" hint-placeholder-val="{{ false }}">
+                            {{ a.photoBgEl }}
+                            <span aria-hidden="true" style="position:absolute; inset:0; z-index:1; background:linear-gradient(180deg, rgba(8,11,14,0.45) 0%, transparent 30%, transparent 42%, rgba(8,11,14,0.94) 100%);"></span>
+                          </sc-if>
+                          <div style="position:relative; z-index:2; display:flex; align-items:center; justify-content:space-between;">
+                            <span style="flex:none; width:34px; height:34px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z"></path></svg></span>
+                            <sc-if value="{{ a.featured }}" hint-placeholder-val="{{ false }}"><span style="flex:none; display:inline-flex; color:var(--fl-bronze-primary);"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z"></path></svg></span></sc-if>
+                          </div>
+                          <div style="position:relative; z-index:2; display:flex; flex-direction:column; gap:6px;">
+                            <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; line-height:1.14; color:var(--fl-text-primary); text-wrap:pretty;">{{ a.title }}</span>
+                            <span style="font-size:11px; font-weight:600; letter-spacing:0.3px; color:var(--fl-bronze-bright);">{{ a.sub }}</span>
+                            <sc-if value="{{ a.hasChapter }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px; color:var(--fl-text-tertiary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ a.chapterLabel }}</span></sc-if>
+                          </div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+
+              <!-- Honors · carousel of collectible badges (tap → detail sheet) -->
+              <sc-if value="{{ showHonors }}" hint-placeholder-val="{{ true }}">
+                <div data-coach="lg-honors">
+                  <div style="padding:0 24px;">
+                    <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Honors" action="View all" on-action="{{ goHonors }}" hint-size="100%,22px"></x-import>
+                  </div>
+                  <div class="fl-strip" style="display:flex; gap:18px; padding:10px 24px 6px; overflow-x:auto;">
+                    <sc-for list="{{ honors }}" as="hon" hint-placeholder-count="4">
+                      <div role="button" tabindex="0" onClick="{{ hon.onOpen }}" style="flex:none; cursor:pointer;">
+                        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Insignia" variant="honor" size="lg" artwork="{{ hon.artwork }}" label="{{ hon.label }}" sublabel="{{ hon.date }}" hint-size="96px,120px"></x-import>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <!-- Brand-new athlete · quiet potential -->
+          <sc-if value="{{ showNewClose }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:6px 24px 40px; display:flex; flex-direction:column; align-items:center; gap:15px;">
+              <div style="display:flex; align-items:center; gap:14px; width:100%; max-width:220px;">
+                <span style="flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--fl-bronze-border));"></span>
+                <span style="width:6px; height:6px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary);"></span>
+                <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-border), transparent);"></span>
+              </div>
+              <span style="font-family:var(--fl-font-display); font-style:italic; font-size:16px; line-height:1.45; text-align:center; color:var(--fl-bronze-bright); max-width:264px; text-wrap:pretty;">One day, this page will tell your story.</span>
+            </div>
+          </sc-if>
+
+          <!-- Closing inscription -->
+          <sc-if value="{{ showClosing }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:6px 24px 40px; display:flex; flex-direction:column; align-items:center; gap:15px;">
+              <div style="display:flex; align-items:center; gap:14px; width:100%; max-width:220px;">
+                <span style="flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--fl-bronze-border));"></span>
+                <span style="width:6px; height:6px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary);"></span>
+                <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-border), transparent);"></span>
+              </div>
+              <span style="font-family:var(--fl-font-display); font-style:italic; font-size:16px; line-height:1.45; text-align:center; color:var(--fl-bronze-bright); max-width:264px; text-wrap:pretty;">Memories can be added. History cannot be rewritten.</span>
+            </div>
+          </sc-if>
+
+        </div>
+
+      </div>
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.TabBar" items="{{ tabItems }}" active-id="legacy" on-change="{{ setTab }}" hint-size="100%,74px"></x-import>
+
+      <!-- L-11 · Honor Detail sheet (in-frame) -->
+      <sc-if value="{{ honorOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeHonor }}" style="position:absolute; inset:0; z-index:60; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:flFade 240ms var(--fl-ease-out, ease-out) both;">
+          <div role="dialog" aria-modal="true" onClick="{{ stopProp }}" style="width:100%; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient); animation:flSheetUp 320ms var(--fl-ease-out, ease-out) both; overflow:hidden;">
+            <div style="display:flex; justify-content:center; padding-top:10px;"><span style="width:38px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+            <div style="padding:16px 24px 26px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px;">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Insignia" variant="honor" size="lg" artwork="{{ currentHonor.artwork }}" hint-size="72px,72px"></x-import>
+              <span style="font-size:9.5px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ currentHonor.category }}</span>
+              <span style="font-family:var(--fl-font-display); font-size:25px; font-weight:600; letter-spacing:-0.3px; line-height:1.05; color:var(--fl-text-primary);">{{ currentHonor.label }}</span>
+              <span style="font-size:12px; font-weight:500; letter-spacing:0.5px; color:var(--fl-text-secondary);">Earned {{ currentHonor.date }}</span>
+              <p style="margin:6px 0 4px; font-size:14px; line-height:1.6; color:var(--fl-text-secondary); max-width:300px; text-wrap:pretty;">{{ currentHonor.desc }}</p>
+              <div style="display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-bronze-tint);">
+                <span style="color:var(--fl-icon-bronze); display:flex;">{{ icoSeal }}</span>
+                <span style="font-size:11.5px; font-weight:600; color:var(--fl-bronze-bright);">{{ currentHonor.attr }}</span>
+              </div>
+              <div style="width:100%; padding-top:8px;">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" full-width="{{ true }}" on-click="{{ shareHonor }}" hint-size="100%,48px">Share this honor</x-import>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- L-12 · My Standard editor (creed) -->
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ stdOpen }}" on-close="{{ closeStandard }}" title="My Standard" footer="{{ stdFooter }}" hint-size="1px,1px">
+        <div style="display:flex; flex-direction:column; gap:14px; padding-top:2px;">
+          <span style="font-size:13px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">The words you train by — the promise your training holds you to. Written in your own voice; it appears at the top of your Legacy.</span>
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.TextArea" value="{{ stdDraft }}" on-change="{{ onStandardChange }}" max-length="180" rows="4" placeholder="Write your standard…" hint-size="100%,160px"></x-import>
+        </div>
+      </x-import>
+
+      <!-- L-13 · Pin manager (curate the museum strip) -->
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ pinOpen }}" on-close="{{ closePins }}" title="Pin to your Legacy" footer="{{ pinFooter }}" hint-size="1px,1px">
+        <div style="display:flex; flex-direction:column; gap:2px; padding-top:2px;">
+          <span style="font-size:12.5px; line-height:1.5; color:var(--fl-text-secondary); padding:0 2px 8px; text-wrap:pretty;">Feature your proudest moments at the top of your Legacy. <span style="color:var(--fl-bronze-bright); font-weight:600;">{{ pinCountLabel }}</span></span>
+          <div class="fl-scroll" style="display:flex; flex-direction:column; gap:7px; max-height:392px; overflow-y:auto; margin:0 -4px; padding:4px;">
+            <sc-for list="{{ pinCandidates }}" as="c" hint-placeholder-count="6">
+              <button type="button" onClick="{{ c.onToggle }}" disabled="{{ c.pinDisabled }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:11px 12px; border-radius:var(--fl-radius-lg); border:1px solid {{ c.rowBorder }}; background:{{ c.rowBg }}; opacity:{{ c.rowOpacity }}; cursor:pointer; text-align:left; transition:background 200ms var(--fl-ease-out, ease-out), border-color 200ms var(--fl-ease-out, ease-out);">
+                <span style="flex:none; width:42px; height:42px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ c.pickGlyph }}</span>
+                <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                  <span style="font-size:14.5px; font-weight:600; letter-spacing:-0.1px; color:var(--fl-text-primary);">{{ c.title }}</span>
+                  <span style="font-size:11px; font-weight:500; letter-spacing:0.2px; color:var(--fl-text-tertiary);">{{ c.sub }}</span>
+                </span>
+                <sc-if value="{{ c.isPinned }}" hint-placeholder-val="{{ true }}">
+                  <span style="flex:none; width:26px; height:26px; border-radius:50%; background:var(--fl-bronze-metallic); box-shadow:var(--fl-border-inset), var(--fl-glow-badge); display:flex; align-items:center; justify-content:center; color:#1A1206;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 6.5"></path></svg></span>
+                </sc-if>
+                <sc-if value="{{ c.notPinned }}" hint-placeholder-val="{{ false }}">
+                  <span style="flex:none; width:26px; height:26px; border-radius:50%; border:1.5px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-primary);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </x-import>
+
+      <!-- Toast · transient confirmations -->
+      <div style="position:absolute; width:0; height:0; overflow:visible;">
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Toast" open="{{ toastOpen }}" message="{{ toastMsg }}" icon="{{ toastIcon }}" on-dismiss="{{ hideToast }}" hint-size="1px,1px"></x-import>
+      </div>
+
+    </sc-if>
+
+    <!-- Forged grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;rankTier&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Foundation I&quot;,&quot;Foundation II&quot;,&quot;Foundation III&quot;,&quot;Foundation IV&quot;],&quot;default&quot;:&quot;Foundation III&quot;,&quot;tsType&quot;:&quot;'Foundation I' | 'Foundation II' | 'Foundation III' | 'Foundation IV'&quot;,&quot;section&quot;:&quot;Standing&quot;,&quot;label&quot;:&quot;Current rank&quot;},&quot;athleteState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Established&quot;,&quot;Between chapters&quot;,&quot;New athlete&quot;],&quot;default&quot;:&quot;Established&quot;,&quot;tsType&quot;:&quot;'Established' | 'Between chapters' | 'New athlete'&quot;,&quot;section&quot;:&quot;Standing&quot;,&quot;label&quot;:&quot;Athlete state&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, openHonor: null, standardText: null, stdOpen: false, stdDraft: '', pinnedIds: null, pinOpen: false, toastOpen: false, toastMsg: '' };
+
+  componentDidMount() {
+    // Restore persisted creed + pins before first paint (ready gate keeps this off-screen).
+    try { const s = window.localStorage.getItem('forge.legacy.standard'); if (s != null) this.state.standardText = s; } catch (e) {}
+    try { const p = window.localStorage.getItem('forge.legacy.pins'); if (p) { const a = JSON.parse(p); if (Array.isArray(a)) this.state.pinnedIds = a; } } catch (e) {}
+    // Preview-runtime gate (see CLAUDE.md): wait for React + DS bundle + symbols.
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      const ac = typeof window !== 'undefined' && window.ForgeAccomplishments;
+      const lp = typeof window !== 'undefined' && window.ForgeLegacyPins;
+      if (r && ns && fs && ac && lp) { this.setState({ ready: true }); this._startCoach(); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+
+  _startCoach() {
+    if (!window.ForgeCoach) return;
+    window.ForgeCoach.start({
+      page: 'legacy',
+      steps: [
+        { target: '[data-coach="lg-identity"]', radius: 16, title: 'This is your Legacy', body: 'Your permanent record \u2014 the chapters you complete, the milestones you preserve, and the honors you earn. Nothing here can be undone; it\u2019s history, not a feed.' },
+        { target: '[data-coach="lg-progress"]', radius: 40, title: 'Your rank, and your progress', body: 'This badge shows your current rank. Tap it any time to open your Progress Hub \u2014 your stats, personal records, and the full rank journey you\u2019re climbing.' },
+        { target: '[data-coach="lg-standard"]', radius: 14, title: 'Your Standard', body: 'The words you train by. Tap to write your personal creed \u2014 the promise your training holds you to.' },
+        { target: '[data-coach="lg-pinned"]', radius: 16, title: 'Pin what matters', body: 'Pin your proudest moments \u2014 a record lift, a sealed chapter, an honor \u2014 so they stay front and center on your Legacy.' },
+        { target: '[data-coach="lg-honors"]', radius: 16, title: 'Your Honors', body: 'Honors are milestones you\u2019ve earned \u2014 consistency streaks, records, chapters sealed. Tap any one to read the story behind it. (They also appear at a glance in your Progress Hub.)' },
+      ],
+    });
+  }
+
+  componentDidUpdate(prev) { /* accent is handled globally by forge-theme.js + the Account Settings picker */ }
+
+  _applyTheme() {
+    const el = this.frameEl; if (!el) return;
+    const mk = (pri, bri, drk, r, g, b) => ({
+      '--fl-bronze-primary': pri, '--fl-bronze-bright': bri, '--fl-bronze-dark': drk, '--fl-bronze-muted': pri,
+      '--fl-bronze-border': 'rgba(' + r + ',' + g + ',' + b + ',0.5)',
+      '--fl-bronze-border-subtle': 'rgba(' + r + ',' + g + ',' + b + ',0.28)',
+      '--fl-bronze-tint': 'rgba(' + r + ',' + g + ',' + b + ',0.12)',
+      '--fl-bronze-metallic': 'linear-gradient(180deg, ' + bri + ', ' + pri + ' 52%, ' + drk + ')',
+      '--fl-glow-badge': '0 0 12px rgba(' + r + ',' + g + ',' + b + ',0.42)',
+      '--fl-glow-subtle': '0 0 8px rgba(' + r + ',' + g + ',' + b + ',0.18)',
+      '--fl-icon-bronze': bri, '--fl-text-bronze-label': bri,
+      '--fl-bronze-fill': 'linear-gradient(180deg, ' + drk + ', #15151b)',
+      '--fl-bronze-metal-border': 'rgba(' + r + ',' + g + ',' + b + ',0.55)',
+      '--fl-bronze-metal-top-rim': 'inset 0 1px 0 rgba(' + r + ',' + g + ',' + b + ',0.35)',
+      '--fl-icon-container-bg': 'rgba(' + r + ',' + g + ',' + b + ',0.08)',
+      '--fl-icon-container-border': 'rgba(' + r + ',' + g + ',' + b + ',0.22)',
+      '--fl-status-online-glow': '0 0 8px rgba(' + r + ',' + g + ',' + b + ',0.4)',
+    });
+    const THEMES = {
+      'Royal Purple': mk('#836C9E', '#A98FC2', '#453455', 131, 108, 158),
+      'Royal Blue': mk('#5872A0', '#8299C0', '#2D4062', 88, 114, 160),
+      'Forest Green': mk('#587C67', '#7EA087', '#2B4335', 88, 124, 103),
+      'Sapphire': mk('#3D7D96', '#69A4BB', '#234A5A', 61, 125, 150),
+      'Gunmetal': mk('#5A626C', '#888F99', '#2A2F36', 90, 98, 108),
+      'Antique Gold': mk('#A99247', '#C6B06A', '#6B5A28', 169, 146, 71),
+      'Emerald': mk('#2F7D5F', '#5AA383', '#1E4A3A', 47, 125, 95),
+      'Amber': mk('#BE7A33', '#D99E55', '#74451A', 190, 122, 51),
+      'Oxblood': mk('#8A4048', '#B06A6E', '#4A2028', 138, 64, 72),
+      'Gunmetal': mk('#5A626C', '#888F99', '#2A2F36', 90, 98, 108),
+      'Antique Gold': mk('#A99247', '#C6B06A', '#6B5A28', 169, 146, 71),
+      'Emerald': mk('#2F7D5F', '#5AA383', '#1E4A3A', 47, 125, 95),
+      'Amber': mk('#BE7A33', '#D99E55', '#74451A', 190, 122, 51),
+      'Oxblood': mk('#8A4048', '#B06A6E', '#4A2028', 138, 64, 72),
+    };
+    const KEYS = Object.keys(THEMES['Royal Purple']);
+    const accent = (this.props && this.props.accent) || 'Bronze';
+    const t = THEMES[accent];
+    KEYS.forEach((k) => { if (t && t[k]) el.style.setProperty(k, t[k]); else el.style.removeProperty(k); });
+    // Persist so every other screen picks up the same accent.
+    try { window.localStorage.setItem('forge.accent', accent); if (window.ForgeTheme) window.ForgeTheme.apply(accent); } catch (e) {}
+  }
+
+  componentWillUnmount() {
+    if (this._t) clearTimeout(this._t);
+    if (this._toastT) clearTimeout(this._toastT);
+    if (this.scrollEl && this._onScroll) this.scrollEl.removeEventListener('scroll', this._onScroll);
+  }
+
+  // Premium scroll choreography — hero dissolves, portrait shrinks, mountain artwork fades.
+  // Runs off native scroll + rAF, mutating DOM directly (never per-frame React state).
+  _saveScroll() { try { if (this.scrollEl) sessionStorage.setItem('forge_legacy_scroll', String(this.scrollEl.scrollTop)); } catch (e) {} }
+  _restoreScroll() {
+    try {
+      var y = sessionStorage.getItem('forge_legacy_scroll');
+      if (y == null) return;
+      sessionStorage.removeItem('forge_legacy_scroll');
+      var el = this.scrollEl; var to = parseFloat(y) || 0;
+      requestAnimationFrame(function () { requestAnimationFrame(function () { if (el) el.scrollTop = to; }); });
+    } catch (e) {}
+  }
+  _attachScroll() {
+    if (!this.scrollEl || this._scrollBound) return;
+    this._scrollBound = true;
+    let ticking = false;
+    this._onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const el = this.scrollEl;
+        if (!el) return;
+        const y = el.scrollTop;
+        const p = Math.min(y / 220, 1);
+        if (this.heroEl) {
+          this.heroEl.style.opacity = String(1 - p * 0.9);
+          this.heroEl.style.transform = 'translateY(' + (-y * 0.12).toFixed(1) + 'px)';
+        }
+        if (this.portraitEl) {
+          this.portraitEl.style.transform = 'scale(' + (1 - p * 0.24).toFixed(3) + ')';
+          this.portraitEl.style.transformOrigin = 'left center';
+        }
+        if (this.fadeEl) this.fadeEl.style.opacity = (p * 0.52).toFixed(3);
+      });
+    };
+    this.scrollEl.addEventListener('scroll', this._onScroll, { passive: true });
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true };
+    }
+    const h = React.createElement;
+    // Stable ref callbacks (created once) so React doesn't re-run them each render.
+    if (!this._setScroll) {
+      this._setScroll = (el) => { if (el) { this.scrollEl = el; this._attachScroll(); this._restoreScroll(); } };
+      this._setHero = (el) => { if (el) this.heroEl = el; };
+      this._setPortrait = (el) => { if (el) this.portraitEl = el; };
+      this._setArtworkFade = (el) => { if (el) this.fadeEl = el; };
+      this._setFrameEl = (el) => { if (el) { this.frameEl = el; } };
+    }
+    const FS = window.ForgeSymbols;
+    const NS = window.ForgeLegacyVisualFoundation_5368b2 || {};
+    const Avatar = NS.Avatar;
+    const ico = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.7 });
+    const FU = (window.ForgeUser ? window.ForgeUser.get() : null) || { name: 'Ada Ridge', rankFull: 'Architect \u00B7 IV', joinedLabel: 'Forging since 2023' };
+
+    // ── The Foundation rank ladder (I–IV). The seal warms with each sub-rank. ──
+    const TIERS = {
+      'Foundation I':   { name: 'Foundation', num: 'I',   sub: 'The Spark',  badge: '1', label: 'Foundation I · The Spark',   rim1: '#5A4A30', rim2: '#9A7B4C', ring: 'rgba(160,126,78,0.7)',  flame: '#9A7B4C', glow: 0.38 },
+      'Foundation II':  { name: 'Foundation', num: 'II',  sub: 'The Flame',  badge: '2', label: 'Foundation II · The Flame',   rim1: '#6A5334', rim2: '#BF8F4F', ring: 'rgba(191,143,79,0.85)', flame: '#BF8F4F', glow: 0.5 },
+      'Foundation III': { name: 'Foundation', num: 'III', sub: 'The Forge',  badge: '3', label: 'Foundation III · The Forge',  rim1: '#8A6C46', rim2: '#CDA063', ring: 'rgba(205,160,99,0.95)', flame: '#CDA063', glow: 0.72 },
+      'Foundation IV':  { name: 'Foundation', num: 'IV',  sub: 'The Hearth', badge: '4', label: 'Foundation IV · The Hearth', rim1: '#A57C4A', rim2: '#E7C98E', ring: 'rgba(231,201,142,0.98)', flame: '#E7C98E', glow: 0.9 },
+    };
+    const tier = TIERS[(this.props && this.props.rankTier)] || TIERS['Foundation III'];
+
+    // ── Forged rank seal ──
+    const flamePath = 'M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z';
+    const seal = h('svg', { width: 108, height: 108, viewBox: '0 0 140 140', role: 'img', 'aria-label': tier.name + ' ' + tier.num + ' rank seal' },
+      h('defs', null,
+        h('radialGradient', { id: 'flSealDisc', cx: '50%', cy: '34%', r: '76%' },
+          h('stop', { offset: '0%', stopColor: '#26262C' }),
+          h('stop', { offset: '46%', stopColor: '#16181B' }),
+          h('stop', { offset: '100%', stopColor: '#090B0D' })),
+        h('linearGradient', { id: 'flSealBevel', x1: '0', y1: '0', x2: '0', y2: '1' },
+          h('stop', { offset: '0%', stopColor: '#DDB578' }),
+          h('stop', { offset: '18%', stopColor: tier.rim2 }),
+          h('stop', { offset: '55%', stopColor: tier.rim1 }),
+          h('stop', { offset: '100%', stopColor: '#463526' })),
+        h('radialGradient', { id: 'flSealFlame', cx: '50%', cy: '50%', r: '50%' },
+          h('stop', { offset: '0%', stopColor: 'rgba(205,160,99,' + tier.glow + ')' }),
+          h('stop', { offset: '60%', stopColor: 'rgba(191,143,79,0.14)' }),
+          h('stop', { offset: '100%', stopColor: 'rgba(191,143,79,0)' }))),
+      h('circle', { cx: 70, cy: 70, r: 67, fill: 'none', stroke: tier.rim1, strokeWidth: 5, strokeDasharray: '1.6 3.2' }),
+      h('circle', { cx: 70, cy: 70, r: 63, fill: 'none', stroke: '#2A2016', strokeWidth: 8 }),
+      h('circle', { cx: 70, cy: 70, r: 63, fill: 'none', stroke: 'url(#flSealBevel)', strokeWidth: 6 }),
+      h('path', { d: 'M40 26 A56 56 0 0 1 100 26', fill: 'none', stroke: 'rgba(240,220,180,0.42)', strokeWidth: 2, strokeLinecap: 'round', opacity: 0.5 }),
+      h('circle', { cx: 70, cy: 70, r: 53, fill: 'url(#flSealDisc)' }),
+      h('circle', { cx: 70, cy: 70, r: 53, fill: 'none', stroke: tier.ring, strokeWidth: 1.5 }),
+      h('circle', { cx: 70, cy: 66, r: 34, fill: 'url(#flSealFlame)', style: { mixBlendMode: 'screen' } }),
+      h('g', { transform: 'translate(70,73) scale(2.4) translate(-12,-12)', fill: tier.flame }, h('path', { d: flamePath })),
+      h('circle', { cx: 70, cy: 70, r: 53, fill: 'none', stroke: 'rgba(0,0,0,0.5)', strokeWidth: 18, style: { mixBlendMode: 'multiply' } }));
+
+    // ── Chrome ──
+    const goAccount = () => { window.location.href = 'Forge%20Account%20Settings.dc.html'; };
+    const avatarEl = Avatar
+      ? h('div', { role: 'button', tabIndex: 0, 'aria-label': 'Account settings', style: { cursor: 'pointer', display: 'flex' }, onClick: goAccount }, h(Avatar, { name: FU.name, size: 'appBar' }))
+      : null;
+    const navIcon = (id) => FS.create(React, id, { size: 22, strokeWidth: 2 });
+    const legacyIcon = h('span', { style: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '32px', borderRadius: 'var(--fl-radius-md)', background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border)', boxShadow: 'var(--fl-glow-subtle)', color: 'var(--fl-bronze-bright)' } }, navIcon('legacy'));
+    const tabItems = [
+      { id: 'home', label: 'Home', icon: navIcon('home') },
+      { id: 'workouts', label: 'Workouts', icon: navIcon('workouts') },
+      { id: 'legacy', label: 'Legacy', icon: legacyIcon },
+      { id: 'squads', label: 'Squads', icon: navIcon('squads') },
+      { id: 'community', label: 'Community', icon: navIcon('explore') },
+    ];
+    const setTab = (id) => {
+      if (id === 'home') { window.location.href = 'Forge%20Home.dc.html'; return; }
+      if (id === 'workouts') { window.location.href = 'Forge%20Programs%20Catalog.dc.html'; return; }
+      if (id === 'squads') { window.location.href = 'Squads%20Hub.dc.html'; return; }
+    };
+
+    // ── Athlete state · Smart Omission ──
+    // Tenure (ForgeUser) drives depth when no explicit athleteState prop is set:
+    // a brand-new athlete lands on a near-empty Legacy (Lg-1/X-2), and a 1-year
+    // athlete shows shallower history than a 3-year veteran (Lg-3).
+    const tenure = window.ForgeUser ? window.ForgeUser.tenure() : 'y3';
+    const propState = this.props && this.props.athleteState;
+    let st = propState || 'Established';
+    if (tenure === 'new') st = 'New athlete';   // a brand-new athlete always lands on the empty Legacy (Lg-1/X-2)
+    const isNew = st === 'New athlete';
+    const isBetween = st === 'Between chapters';
+    const isEstablished = !isNew && !isBetween;
+    const depthHonors = tenure === 'y1' ? 2 : 99;
+    const depthTimeline = tenure === 'y1' ? 2 : 99;
+    const showHistoryDepth = tenure !== 'y1'; // a 1-year athlete has no prior sealed chapters yet
+
+    // ── Current chapter (narrative context inside hero) ──
+    const acName = 'The Rebuild';
+    const acGoalLabel = 'Squat 405 lb';
+    const acGoalDone = 335, acGoalMax = 405;
+    const acGoalValue = '335 / 405 lb';
+    const acBegan = 'Started Mar 4';
+
+    // ── Featured Legacy Moment ──
+    const flmGlyph = ico('chapter-seal', 23, 1.7);
+    const flmMark = ico('banner', 150, 1.2);
+
+    // ── Chapter History ──
+    const caName = 'Chapter II \u00B7 Ironborn';
+    const caRange = 'Sep 2025 \u2013 Mar 2026 \u00B7 6 months';
+    const caGoal = 'Deadlift 405 achieved';
+    const caExcerpt = 'I stopped negotiating with myself. The work just became what I did.';
+    const caFooter = '48 workouts \u00B7 4 honors \u00B7 Sealed Mar 1';
+    const historyCompact = [
+      { name: 'Chapter I \u00B7 Foundation', meta: 'May \u2013 Aug 2025 \u00B7 3 months', goal: 'First 5K \u2713' },
+    ];
+
+    // ── Timeline preview ──
+    const timelineRaw = [
+      { type: 'honor', date: 'Apr 2', title: 'Earned \u201CThe Unbroken\u201D', subtitle: '30 sessions \u00B7 no missed week' },
+      { type: 'chapter-open', date: 'Mar 4', title: 'Began Chapter III', subtitle: 'The Rebuild' },
+      { type: 'chapter-seal', date: 'Mar 1', title: 'Sealed Chapter II', subtitle: 'Ironborn \u00B7 48 workouts' },
+    ];
+    const evGlyph = { 'chapter-open': 'book', 'chapter-seal': 'flame', 'honor': 'laurel', 'rank': 'shield', 'accomplishment': 'spark' };
+    const _tl = timelineRaw.slice(0, depthTimeline);
+    const timelineItems = _tl.map((e, i) => ({
+      eventType: e.type, date: e.date, title: e.title, subtitle: e.subtitle,
+      glyph: ico(evGlyph[e.type] || 'flame', 16, 1.7),
+      first: i === 0, last: i === _tl.length - 1,
+    }));
+
+    const Button = NS.Button;
+    const showToast = (msg) => {
+      this.setState({ toastOpen: true, toastMsg: msg });
+      if (this._toastT) clearTimeout(this._toastT);
+      this._toastT = setTimeout(() => this.setState({ toastOpen: false }), 2600);
+    };
+    const toastIcon = h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M5 12.5l4.5 4.5L19 6.5' }));
+    const hideToast = () => this.setState({ toastOpen: false });
+
+    // ── My Standard · the athlete's creed (editable, persisted) ──
+    const DEFAULT_STD = 'Show up before I feel like it. Leave nothing in the tank. The person I\u2019m building doesn\u2019t negotiate with comfort.';
+    const standardText = this.state.standardText != null ? this.state.standardText : DEFAULT_STD;
+    const openStandard = () => this.setState({ stdOpen: true, stdDraft: standardText });
+    const closeStandard = () => this.setState({ stdOpen: false });
+    const onStandardChange = (e) => this.setState({ stdDraft: e.target.value });
+    const saveStandard = () => {
+      const v = (this.state.stdDraft || '').trim();
+      if (!v) return;
+      try { window.localStorage.setItem('forge.legacy.standard', v); } catch (e) {}
+      this.setState({ standardText: v, stdOpen: false });
+      showToast('Your Standard is set.');
+    };
+    const stdEmpty = !(this.state.stdDraft || '').trim();
+    const stdFooter = Button ? h('div', { style: { display: 'flex', gap: '10px' } }, [
+      h(Button, { key: 'c', variant: 'secondary', onClick: closeStandard }, 'Cancel'),
+      h(Button, { key: 's', variant: 'primary', fullWidth: true, disabled: stdEmpty, onClick: saveStandard }, 'Save Standard'),
+    ]) : null;
+
+    // ── Pinned Legacy · cross-type museum, curated via the pin sheet ──
+    const PIN_ROUTE = { Transformation: 'Forge%20Transformation.dc.html', Accomplishment: 'Forge%20Accomplishments.dc.html', Honor: 'Forge%20Honors%20Hub.dc.html', Chapter: 'Forge%20Chapter%20Detail.dc.html' };
+    const picImg = (sz) => h('svg', { width: sz, height: sz, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 3.5, y: 6, width: 17, height: 13, rx: 2 }), h('circle', { cx: 12, cy: 12.5, r: 3 }), h('path', { d: 'M8 6l1.3-2h5.4L16 6' }));
+    // Catalog data is the single source of truth (forge-legacy-pins.js); glyphs are
+    // attached here from the icon name so the same curation surfaces on Public Profile.
+    const FLP = window.ForgeLegacyPins;
+    const CATALOG = (FLP ? FLP.CATALOG : []).map((c) => Object.assign({}, c, {
+      glyph: c.icon ? ico(c.icon, 30, 1.7) : null,
+      pickGlyph: c.icon ? ico(c.icon, 22, 1.7) : picImg(22),
+    }));
+    const byId = {}; CATALOG.forEach((c) => { byId[c.id] = c; });
+    const DEFAULT_PINS = FLP ? FLP.DEFAULT_PINS : ['xf-12wo', 'ac-dl405', 'hon-unbroken'];
+    const pinnedIds = this.state.pinnedIds != null ? this.state.pinnedIds : DEFAULT_PINS;
+    const PIN_CAP = 6;
+    const pinFull = pinnedIds.length >= PIN_CAP;
+    const togglePin = (id) => {
+      const cur = pinnedIds.slice();
+      const i = cur.indexOf(id);
+      let next;
+      if (i >= 0) { next = cur.filter((x) => x !== id); }
+      else { if (cur.length >= PIN_CAP) return; next = cur.concat([id]); }
+      this._pinDirty = true;
+      if (FLP) FLP.write(next); else try { window.localStorage.setItem('forge.legacy.pins', JSON.stringify(next)); } catch (e) {}
+      this.setState({ pinnedIds: next });
+    };
+    const pinned = pinnedIds.map((id) => byId[id]).filter(Boolean).map((c) => Object.assign({}, c, {
+      open: () => { this._saveScroll(); window.location.href = PIN_ROUTE[c.kind] || 'Forge%20Legacy%20Timeline.dc.html'; },
+    }));
+    const pinCandidates = CATALOG.map((c) => {
+      const isPinned = pinnedIds.indexOf(c.id) >= 0;
+      return Object.assign({}, c, {
+        isPinned, notPinned: !isPinned,
+        pinDisabled: !isPinned && pinFull,
+        onToggle: () => togglePin(c.id),
+        rowBg: isPinned ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+        rowBorder: isPinned ? 'var(--fl-bronze-border)' : 'var(--fl-bronze-border-subtle)',
+        rowOpacity: (!isPinned && pinFull) ? 0.42 : 1,
+      });
+    });
+    const pinCountLabel = pinnedIds.length + ' of ' + PIN_CAP + ' pinned';
+    const openPins = () => this.setState({ pinOpen: true });
+    const closePins = () => {
+      this.setState({ pinOpen: false });
+      if (this._pinDirty) { this._pinDirty = false; showToast('Pinned Legacy updated.'); }
+    };
+    const pinFooter = Button ? h(Button, { variant: 'primary', fullWidth: true, onClick: closePins }, 'Done') : null;
+
+    // ── Compact previews ──
+    const transformCount = '9';
+    const photosCount = '12';
+    const icoXform = h('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 3, y: 5, width: 18, height: 14, rx: 2 }), h('path', { d: 'M10 9.5l5 2.5-5 2.5z', fill: 'currentColor', stroke: 'none' }));
+    const icoPhoto = h('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 3.5, y: 6, width: 17, height: 13, rx: 2 }), h('circle', { cx: 12, cy: 12.5, r: 3 }), h('path', { d: 'M8 6l1.3-2h5.4L16 6' }));
+
+    // ── Accomplishments · preserved milestones (carousel) ──
+    const AC = window.ForgeAccomplishments;
+    const acAll = AC.all();
+    const acFeat = AC.featured();
+    const acBase = (acFeat.length ? acFeat : acAll).slice(0, 3);
+    const fmtAc = (iso) => { try { const d = new Date(iso + 'T00:00:00'); if (isNaN(d)) return iso; return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch (e) { return iso; } };
+    const accomplishments = acBase.map((a) => {
+      const ch = a.chapterId ? AC.chapter(a.chapterId) : null;
+      return { id: a.id, title: a.name, sub: fmtAc(a.date), featured: !!a.featured, hasChapter: !!ch, chapterLabel: ch ? ch.label : '', hasPhoto: !!a.photo, photoBgEl: a.photo ? h('img', { src: a.photo, style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 } }) : null, onOpen: () => { this._saveScroll(); window.location.href = 'Forge%20Accomplishments.dc.html?id=' + encodeURIComponent(a.id); } };
+    });
+    const accEmpty = acAll.length === 0;
+
+    // ── Honors · collectible badges → detail sheet (L-11) ──
+    const HONORS = [
+      { artwork: ico('laurel', 30, 1.7), label: 'The Unbroken', date: 'Apr 2, 2026', category: 'Longevity', desc: 'Thirty sessions without a missed week. Consistency is the rarest strength \u2014 earned in the days no one applauds.', attr: 'Chapter \u00B7 The Rebuild' },
+      { artwork: ico('medal', 30, 1.7), label: 'Century', date: 'Oct 15, 2025', category: 'Training', desc: 'One hundred sessions logged. A hundred times you chose the work over the excuse.', attr: 'Chapter \u00B7 Ironborn' },
+      { artwork: ico('shield', 30, 1.7), label: 'First Iron', date: 'Aug 1, 2025', category: 'Chapters', desc: 'Your first sealed chapter. Every legacy has a beginning \u2014 this was yours.', attr: 'Chapter \u00B7 Foundation' },
+      { artwork: ico('spark', 30, 1.7), label: 'Ironwill', date: 'Sep 30, 2025', category: 'Strength', desc: 'A lift you once called impossible, made routine. Proof that the ceiling was only ever a floor you hadn\u2019t reached.', attr: 'Chapter \u00B7 Ironborn' },
+    ];
+    const openHonor = this.state.openHonor;
+    const honors = HONORS.slice(0, depthHonors).map((hn, i) => ({ artwork: hn.artwork, label: hn.label, date: hn.date.split(',')[0], onOpen: () => this.setState({ openHonor: i }) }));
+    const honorOpen = openHonor != null;
+    const currentHonor = honorOpen ? HONORS[openHonor] : {};
+
+    return {
+      ready: true,
+      notReady: false,
+      setFrameEl: this._setFrameEl,
+      setScroll: this._setScroll,
+      setHero: this._setHero,
+      setPortrait: this._setPortrait,
+      setArtworkFade: this._setArtworkFade,
+      badgeTier: tier.badge,
+      seal,
+      avatarEl,
+      goAccount,
+      tabItems,
+      setTab,
+      rankLabel: FU.rankFull,
+      athleteName: FU.name,
+      identitySub: 'Strength Athlete \u00B7 ' + FU.joinedLabel,
+
+      // Smart Omission
+      showStandard: !isNew,
+      showHeroBuilding: !isNew,
+      showCurrentChapter: isEstablished,
+      showHeroInvite: isBetween,
+      showNewInvite: isNew,
+      showPinned: !isNew,
+      showFLM: !isNew,
+      showChapterHistory: !isNew && showHistoryDepth,
+      showTimeline: !isNew,
+      showEndures: !isNew,
+      showAccomplishments: !isNew,
+      showHonors: !isNew,
+      showClosing: !isNew,
+      showNewClose: isNew,
+
+      // Hero
+      myStandard: standardText,
+      openStandard, closeStandard, onStandardChange, saveStandard,
+      stdOpen: this.state.stdOpen, stdDraft: this.state.stdDraft, stdFooter,
+      toastOpen: this.state.toastOpen, toastMsg: this.state.toastMsg, toastIcon, hideToast,
+      acName, acGoalLabel, acGoalDone, acGoalMax, acGoalValue, acBegan,
+      icoCal: h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 4, y: 5, width: 16, height: 16, rx: 2 }), h('path', { d: 'M4 9h16M8 3v4M16 3v4' })),
+
+      // FLM
+      flmGlyph, flmMark,
+      flmKind: 'Chapter Sealed',
+      flmTitle: 'Ironborn',
+      flmExcerpt: '\u201CSix months of showing up. This is the one I\u2019ll measure the next against.\u201D',
+
+      // History + timeline
+      caName, caRange, caGoal, caExcerpt, caFooter,
+      icoSeal: ico('chapter-seal', 13, 1.7),
+      icoCheck: h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'var(--fl-icon-bronze)', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M5 12.5l4.5 4.5L19 6.5' })),
+      historyCompact,
+      timelineItems,
+
+      // What endures
+      pinned,
+      pinOpen: this.state.pinOpen, openPins, closePins, pinCandidates, pinCountLabel, pinFooter,
+      transformCount, photosCount, icoXform, icoPhoto,
+      goProgress: () => { window.location.href = 'Forge%20Progress%20Hub.dc.html'; },
+      goXformGallery: () => { window.location.href = 'Forge%20Transformation.dc.html'; },
+      goPhotos: () => { window.location.href = 'Forge%20Photos%20Gallery.dc.html'; },
+      goTimeline: () => { window.location.href = 'Forge%20Legacy%20Timeline.dc.html'; },
+      goChapterActive: () => { try { window.localStorage.setItem('forge.chapter.state', 'active'); } catch (e) {} window.location.href = 'Forge%20Chapter%20Detail.dc.html'; },
+      goChapterArchived: () => { try { window.localStorage.setItem('forge.chapter.state', 'archived'); } catch (e) {} window.location.href = 'Forge%20Chapter%20Detail.dc.html'; },
+      goHonors: () => { window.location.href = 'Forge%20Honors%20Hub.dc.html'; },
+      goTrophyCase: () => { window.location.href = 'Forge%20Trophy%20Case.dc.html'; },
+      trophyCount: '9',
+      accomplishments,
+      accEmpty,
+      hasAcc: !accEmpty,
+      shareHonor: () => { const hn = HONORS[openHonor] || {}; try { localStorage.setItem('forge_share_ctx_v1', JSON.stringify({ kind: 'honor', title: hn.label, citation: hn.desc, date: hn.date, athlete: 'Ada Ridge', rank: 'Architect · IV', back: 'Forge%20Legacy.dc.html' })); } catch (e) {} window.location.href = 'Forge%20Share%20Configuration.dc.html'; },
+      goAccList: () => { this._saveScroll(); window.location.href = 'Forge%20Accomplishments.dc.html'; },
+      goAccAdd: () => { this._saveScroll(); window.location.href = 'Forge%20Accomplishments.dc.html?new=1'; },
+      honors,
+
+      // Honor detail sheet
+      honorOpen,
+      currentHonor,
+      closeHonor: () => this.setState({ openHonor: null }),
+      stopProp: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+    };
+  }
+}
+</script>
+</body>
+</html>

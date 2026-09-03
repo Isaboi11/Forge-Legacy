@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  .bs-scroll::-webkit-scrollbar { width: 8px; }
+  .bs-scroll::-webkit-scrollbar-thumb { background: var(--fl-charcoal-600); border-radius: 99px; }
+  @keyframes bsDrawerIn { from { transform: translateY(28px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes bsScrimIn { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</helmet>
+<div style="min-height:100vh; padding:44px 24px 80px; display:flex; justify-content:center;">
+  <div style="width:960px; max-width:100%;">
+
+    <!-- Masthead -->
+    <div style="padding-bottom:22px; border-bottom:1px solid var(--fl-charcoal-600);">
+      <span style="display:block; font-size:10px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-bronze-primary); margin-bottom:12px;">Forge Legacy · Build Status</span>
+      <h1 style="margin:0; font-family:var(--fl-font-display); font-size:38px; font-weight:700; line-height:1.03; color:var(--fl-text-primary);">Screen Roadmap</h1>
+      <p style="margin:11px 0 22px; font-size:14px; line-height:1.5; color:var(--fl-text-tertiary); max-width:640px;">Every screen ID from the Design Blueprint, reconciled against what's built. <span style="color:var(--fl-bronze-bright);">Tap any screen</span> for its purpose and what's left to build.</p>
+      <div style="display:flex; gap:10px;">
+        <sc-for list="{{ filterTiles }}" as="ft" hint-placeholder-count="4">
+          <div role="button" tabindex="0" aria-label="{{ ft.a11y }}" onClick="{{ ft.select }}" style="{{ ft.style }}">
+            <span style="display:block; font-family:var(--fl-font-display); font-size:30px; font-weight:700; color:{{ ft.numColor }}; line-height:1;">{{ ft.count }}</span>
+            <span style="display:block; margin-top:6px; font-size:9.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:{{ ft.labelColor }};">{{ ft.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div style="margin:22px 0 32px;">
+      <div style="height:9px; border-radius:99px; background:var(--fl-charcoal-700); overflow:hidden; display:flex;">
+        <div style="width:{{ pctBuilt }}%; background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div>
+        <div style="width:{{ pctPartial }}%; background:var(--fl-charcoal-500);"></div>
+      </div>
+      <span style="display:block; margin-top:10px; font-size:12px; color:var(--fl-text-tertiary);">{{ pctBuilt }}% of core screens built · core training loop complete (Home → Program → Build → Train → Complete → History)</span>
+    </div>
+
+    <!-- Groups -->
+    <div style="display:flex; flex-direction:column; gap:20px;">
+      <sc-for list="{{ groups }}" as="g" hint-placeholder-count="12">
+        <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:15px 18px; border-bottom:1px solid var(--fl-charcoal-700); background:var(--fl-surface-recessed);">
+            <span style="font-size:11px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-secondary);">{{ g.name }}</span>
+            <span style="font-size:11px; font-weight:600; color:var(--fl-bronze-primary);">{{ g.tally }}</span>
+          </div>
+          <div style="display:flex; flex-direction:column;">
+            <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="4">
+              <div role="button" tabindex="0" onClick="{{ r.open }}" style="{{ r.rowStyle }}" style-hover="background:var(--fl-surface-elevated);">
+                <span style="flex:none; width:64px; font-family:var(--fl-font-mono); font-size:12px; font-weight:600; color:var(--fl-text-tertiary);">{{ r.id }}</span>
+                <span style="flex:1; min-width:0; font-size:14.5px; color:{{ r.ink }}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ r.name }}</span>
+                <span style="flex:none; display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:99px; border:1px solid {{ r.chipBorder }}; background:{{ r.chipBg }};">
+                  <span style="width:6px; height:6px; border-radius:99px; background:{{ r.dot }};"></span>
+                  <span style="font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:{{ r.chipInk }};">{{ r.status }}</span>
+                </span>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <p style="margin:26px 2px 0; font-size:11.5px; line-height:1.55; color:var(--fl-text-tertiary);">Extras built beyond the core inventory (not counted above): full Squad sub-flows (Create, Invite, Join Requests, Preview, Transfer, Report), Beginner Home variants, and the Rank/Badge/Symbol/Tier-3/Modal component libraries. Recent platform passes: the Workout Templates cluster (W-25/26/27/28) with a launch-context snapshot into Active Workout; the Workouts-hub IA refactor (My Programs / Discover); and an app-wide swap of the loader/lockup mark from the “F” placeholder to the three-pillar Forge emblem; and the Settings section build-out (Root, Notifications, Preferences) plus the squad Challenges pair (Current Champions, Squad Records) — Units consolidated into Preferences and accent theming retired to protect the forged-bronze identity. Most recent: the last two Partials brought to built — Community 4-role management (Owner · Moderator · Contributor · Member) added to Edit Community as a Members roster with role change/remove, a pending Join-Requests queue, role-definition cards, and a per-post-type Posting Permissions matrix (all persisted to the shared store); and O-2 First-Time Setup design-locked as a considered divergence (the spec's separate Athlete Type / Path step was intentionally not built since it duplicates Goals and nothing consumes an archetype). With these, the core inventory has no Partials left. Prior: an app-wide back-navigation reliability pass — every screen's back guard was moved off the fragile "history length" heuristic (which dead-clicked in the reused-iframe preview) to a referrer-based check (came-from-an-app-page → history.back; otherwise route to the declared parent), applied across 55 screens / 56 handlers; verified every back fallback points to a file that exists, that direct-nav and layered screens (Onboarding steps, Program Builder, Friends Feed, Exercise Library, Photos Gallery) unwind correctly, and that Discover Communities' back now unwinds a selected category to the browse grid before leaving. Also: wired the Home "Community" tab (was a dead tab that set state but never navigated) to open the Communities pillar, and removed two orphaned/superseded files (the pre-unified onboarding and the pre-shared "Adaptive Post Detail"). Prior: an Onboarding Welcome hero design-lock — the first-run screen refined into a premium, book-cover opening: the three-pillar Forge emblem promoted to the true centerpiece (enlarged, a forged metallic gradient from bright crown to dark base, a mottled cracked-stone texture in the metal), a single restrained forge glow plus a one-time sheen that sweeps across the pillars once and rests, a broad focal light “in the stone” behind the mark, the “Build your story. Forge your legacy.” headline (supporting copy and divider removed for negative-space confidence), a taller/rounder bronze “Begin Chapter I” CTA, and a dimmed “Returning athlete? · Sign in” line. Prior: a Legacy-side cohesion pass — Accomplishments (L-12–14) with photo + “why it mattered” memory enrichment feeding the Legacy Hub and Public Profile Featured surfaces; SH-1 unified as the single share surface across every milestone type (with a before/after compare-card variant); the L-18 Transformation Entry Detail; and L-6 Chapter Reflection refined to design-lock (taller journal field, contextual Seal Chapter CTA, declarative permanence line, and a quiet post-save confirmation).</p>
+  </div>
+
+  <!-- Detail drawer (bottom sheet on phone, side panel on desktop via max-width) -->
+  <sc-if value="{{ selOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSel }}" style="position:fixed; inset:0; z-index:40; background:rgba(4,5,7,0.66); backdrop-filter:blur(2px); animation:bsScrimIn 180ms ease-out;"></div>
+    <div class="bs-scroll" style="position:fixed; left:50%; transform:translateX(-50%); bottom:0; z-index:41; width:640px; max-width:100%; max-height:90vh; overflow-y:auto; background:var(--fl-surface-panel, #12100d); border:1px solid var(--fl-charcoal-600); border-bottom:none; border-radius:24px 24px 0 0; box-shadow:0 -24px 60px rgba(0,0,0,0.5); animation:bsDrawerIn 260ms var(--fl-ease-out, ease-out); padding:14px 26px 48px;">
+      <div style="display:flex; justify-content:center; padding:6px 0 18px;"><span style="width:44px; height:5px; border-radius:99px; background:var(--fl-charcoal-500);"></span></div>
+
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <span style="font-family:var(--fl-font-mono); font-size:14px; font-weight:600; color:var(--fl-bronze-primary);">{{ selId }}</span>
+          <span style="display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:99px; border:1px solid {{ selChipBorder }}; background:{{ selChipBg }};">
+            <span style="width:6px; height:6px; border-radius:99px; background:{{ selDot }};"></span>
+            <span style="font-size:9.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:{{ selChipInk }};">{{ selStatus }}</span>
+          </span>
+        </div>
+        <button type="button" onClick="{{ closeSel }}" aria-label="Close" style="flex:none; width:40px; height:40px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+
+      <h2 style="margin:18px 0 0; font-family:var(--fl-font-display); font-size:28px; font-weight:700; line-height:1.1; color:var(--fl-text-primary);">{{ selName }}</h2>
+
+      <div style="margin:20px 0 4px; padding:16px 18px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-700); background:var(--fl-surface-recessed);">
+        <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:8px;">What it is</span>
+        <span style="font-size:14.5px; line-height:1.6; color:var(--fl-text-secondary);">{{ selBlurb }}</span>
+      </div>
+
+      <sc-if value="{{ selHasBuilt }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:22px;">
+          <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-bronze-primary); margin-bottom:11px;">Already built</span>
+          <span style="font-size:14px; line-height:1.6; color:var(--fl-text-tertiary);">{{ selBuilt }}</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ selHasTodos }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:26px;">
+          <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-bronze-primary); margin-bottom:14px;">What needs to be built</span>
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <sc-for list="{{ selTodos }}" as="t" hint-placeholder-count="3">
+              <div style="display:flex; gap:12px; align-items:flex-start;">
+                <span style="flex:none; margin-top:6px; width:7px; height:7px; border-radius:99px; background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></span>
+                <span style="font-size:14.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">{{ t.text }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ selComplete }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:24px; display:flex; align-items:center; gap:10px; padding:15px 17px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-bronze-tint);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-bright)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+          <span style="font-size:13.5px; font-weight:600; color:var(--fl-bronze-bright);">Complete — no outstanding work for V1.</span>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { selKey: null, filter: 'all' };
+
+  renderVals() {
+    const S = {
+      built:   { status: 'Built',   ink: 'var(--fl-text-primary)',   dot: 'var(--fl-bronze-bright)', chipBg: 'var(--fl-bronze-tint)',      chipBorder: 'var(--fl-bronze-metal-border)', chipInk: 'var(--fl-bronze-bright)' },
+      partial: { status: 'Partial', ink: 'var(--fl-text-secondary)', dot: 'var(--fl-text-tertiary)', chipBg: 'var(--fl-surface-recessed)', chipBorder: 'var(--fl-charcoal-500)',        chipInk: 'var(--fl-text-secondary)' },
+      todo:    { status: 'To do',   ink: 'var(--fl-text-tertiary)',  dot: 'var(--fl-charcoal-500)',  chipBg: 'transparent',               chipBorder: 'var(--fl-charcoal-700)',        chipInk: 'var(--fl-text-tertiary)' },
+    };
+    const rowBase = 'display:flex; align-items:center; gap:14px; padding:17px 18px; border-top:1px solid rgba(255,255,255,0.03); cursor:pointer; transition:background 140ms ease; min-height:60px;';
+    const list = [];
+    const r = (id, name, st, blurb, extra) => {
+      const o = Object.assign({ key: id + '|' + name, id, name, blurb: blurb || '', built: (extra && extra.built) || '', todos: (extra && extra.todos) || [] }, S[st], { _st: st, rowStyle: rowBase });
+      o.open = () => this.setState({ selKey: o.key });
+      list.push(o);
+      return o;
+    };
+
+    const rawGroups = [
+      ['Onboarding / Auth', [
+        r('O-1a–d', 'Welcome · Create · Name · Sign In', 'built',
+          'First-run entry: a hero Welcome, account creation (Apple/Google/phone/email), display name, and a returning-user Sign In.',
+          { built: 'A design-locked forged hero Welcome (three-pillar Forge emblem as centerpiece — enlarged, metallic top-to-base gradient, mottled cracked-stone texture, restrained glow + a one-time sheen that sweeps once and rests over a focal light "in the stone"; "Build your story. Forge your legacy." with confident negative space; bronze "Begin Chapter I" CTA; dimmed "Returning athlete? Sign in"), plus full auth (SSO + phone + email, create & sign-in modes), name + optional photo, and the rank-reveal ceremony. Username is now its OWN dedicated step (distinct from display name), placed right after the Name/photo/sex step: a focused "Claim your handle" screen with the debounced live availability check (green/red states, suggestion pills when taken) and a live identity preview card (avatar + name + @handle). Step order + progress reconciled — Welcome → Name → Username → Goals → Experience → Equipment → Schedule → Program → Enter; name-step Continue no longer waits on username, and the Username step gates on an available handle. Name and Username are deliberately kept as two focused steps — a considered divergence from the merged spec, chosen for one-decision-per-screen clarity and to give the handle claim its own weight.' }),
+        r('O-2a–f', 'First-Time Setup', 'built',
+          'Post-signup setup: claim a name, handle, and photo, then declare training direction, experience, equipment, and schedule to seed a starting program.',
+          { built: 'Design-locked as a considered divergence from the original spec. Flow: Welcome → Name (name · photo · sex) → Username (its own handle-claim step with live availability) → Goals → Experience → Equipment → Schedule → Recommended Program → Enter. The spec\u2019s separate "Athlete Type / Path" identity step was deliberately NOT built \u2014 it duplicates the Goals step (training direction) and nothing else in the app consumes an athlete archetype, so it would capture data nothing surfaces. Prior-accomplishments capture was likewise dropped by design. First-chapter naming lives in the in-app Begin-your-Legacy flow (O-3).' }),
+        r('O-3a/b', 'First Chapter / Goal', 'built', 'Chapter naming moved OUT of onboarding into the in-app \u201cBegin your Legacy\u201d flow (sealed Legacy tab \u2192 name first chapter \u2192 celebrate \u2192 open Legacy), which is also a first-move that opens the sealed gate. First-goal capture is deferred to Goal Hub (G-1).'),
+      ]],
+      ['Home', [
+        r('H-1', 'Home (Daily Focus)', 'built', 'The daily "what should I train today?" launchpad with the primary Workout CTA and up-to-5 present-or-absent tiers.'),
+        r('BH-1', 'Beginner Home (Sealed Gate)', 'built', 'The post-onboarding first-run gate. Workout + Browse/Build Programs are open; Legacy, Standing, Honors and Chapters stay sealed. The first initiative — complete a workout, join/create a squad, or join a community — grants the Initiative honor (forge-gate.js) and routes through the Initiative unlock ceremony into the full coached Home. A one-time welcome sheet offers a 2-way choice — "Show me around" (contextual coach-marks on) vs "I\u2019ll explore on my own" (tips off) — wired to ForgeCoach. Tapping the sealed Legacy tab opens a Begin-your-Legacy flow: explain → name your first chapter → celebrate → open Legacy (itself an initiative that opens the forge).'),
+        r('H-2', 'Your Circle (Home social card)', 'built', 'The single social touchpoint on Home — a living snapshot, not a feed. People first: a featured Live Now card (join a friend training; hidden entirely when no one is live), then one Friend-activity preview that reads like a mini-post (name + quote; the whole row opens that post in the Friends Feed via ?post=), a low-emphasis “See your circle” footer into the feed, and utilities demoted to a lighter Quick Actions row (Challenge · Competitions). Renamed from “Train Together”; separates humans from features.'),
+      ]],
+      ['Workouts / Active', [
+        r('W-8', 'Activity Type Picker', 'built',
+          'A pure router: pick one of 9 activity types to start the matching execution screen.',
+          { built: 'The universal Start entry lives on the Workouts hub \u201c+\u201d as a Start Training bottom sheet: today\u2019s program workout leads (one-tap Start into Active Workout), then \u201cOr start an activity\u201d (Strength, Run), with the seven types that lack an execution screen demoted to a quiet \u201cComing soon\u201d row \u2014 no dead ends, no banner. Strength opens its own intent step (Start Strength: From a template \u2192 Templates hub \u00b7 Build it first \u2192 Free Workout Builder \u00b7 Build as you go), Run \u2192 Active Run. A standalone Activity Type Picker page (3\u00d73 grid) is retained for scale.',
+            todos: [{text:'Run/Walk/Bike share one GPS cardio tracker (goal chooser: Set Distance stepper or Open free-track; optional target pace/effort with live on-pace cue; distance/pace/speed per type). Remaining: Swim / HIIT / Mobility / Yoga / Other.'}] }),
+        r('W-9c', 'Cardio Tracker (Run / Walk / Bike)', 'built',
+          'One parameterized GPS tracker driving all three outdoor cardio types.',
+          { built: 'Single tracker (Forge Active Run.dc.html) keyed by ?type=run|walk|bike — per-type icon, eyebrow, copy, and pace-vs-speed metrics (bike shows mph). Pre-start goal chooser: Set Distance (steppable target, per-type step/min/max) or Open (free-track, ring fills per mile). Optional target pace/effort (off by default) reveals a stepper and drives a live On pace / Ahead / Behind cue. Phone-GPS / connected-watch toggle. Live ring + mini map, pause/resume, hold-to-seal completion that logs the session to the record; back returns to the Workouts hub.' }),
+        r('W-9–16', 'Active Workout Flow', 'built',
+          'The live "what am I doing right now?" execution flow — exercise cards, Set Input sheet, rest overlay, End Workout.',
+          { built: 'Exercise cards, Set Input sheet, rest overlay, and End Workout ceremony. Freestyle "build as you go": starts from an empty Free Session, in-session Add Exercise (round-trips through the Exercise Picker in workoutadd mode and appends live), and on the last exercise the primary button becomes Add Exercise rather than a dead Next. Saving to Legacy logs the completed session — real exercises and sets — into the shared activity record (appears in W-18 / W-19).' }),
+        r('Rest', 'Rest Timer', 'built', 'The cross-cutting rest state during a workout — count-up timer with optional ProgressRing.'),
+        r('W-17', 'Workout Summary', 'built', 'The post-session "what happened, where does this go?" screen with chapter attribution and program progress.'),
+        r('W-18', 'Activity History', 'built',
+          'The complete "what have I done?" log of past sessions.',
+          { built: 'Reverse-chronological training log grouped by month, sticky month headers, and a single-select type filter (All + 9 activity types) with per-type icons/colors. Rows carry title, key stat, chapter attribution, PR and Partial markers, duration and date; empty states per filter. Now LIVE: sessions completed in the app (cardio seal, strength Save to Legacy) append to a shared, persistent log (forge-activity-log.js) and appear here at the top under the current month. Reached from the Workouts → Library entry; each row taps through to W-19 Activity Detail with the session identity (?id), and Detail\u2019s back returns here.' } ),
+        r('W-19', 'Activity Detail', 'built',
+          'A read-only historical record of one past session, with tap-through attribution.',
+          { built: 'DESIGN-LOCKED. Both variants exist — the run record (map hero, distance/pace/splits) and the primary lifting/strength variant. Lifting layout: hero (name, program identity line "Powerbuilding II · Week 6 · Day 2", PR/milestone pill, "45 min · N exercises · N sets", date, tappable "Workout #22 · Chapter III → timeline"), section-grouped exercise cards (Warm-up / Main / Cool-down, headers snugged to their cards) each with a static thumbnail + set rows (weight × reps / reps-only / "Duration · N min"), journal-style accent-bar notes, and the whole card tapping through to Exercise Detail (origin=legacy). Tap-through attribution rows: Trained With → profile, Playlist (album art) → external, Chapter → L-3/4, Program → W-3. Legacy-bg + scrim background matches the Chapter Detail record system. Museum, not editor: no analytics; animations live in instructional contexts (Exercise Detail), not here.' }),
+        r('W-20', 'Partner Selection Sheet', 'built',
+          'Post-workout partner tagging.',
+          { built: 'A "Trained With" section in the workout-complete ceremony opens a BottomSheet with Your Squad (Iron Vigil roster) + Other Athletes; tap rows to select up to 3 (a 4th shows an "Up to 3 partners" toast). Selected partners render as avatar chips in the ceremony and are written onto the logged session (partners[]) so they surface in W-18 / W-19 Activity Detail\u2019s "Trained With".' }),
+        r('S-10', 'Train Together', 'built',
+          'Shared workout: invite others, each logs their own copy, completion auto-credits training together.',
+          { built: 'A shared-session model backed by localStorage (forge_shared_session_v1 + forge_shared_invite_v1). Four entry points all funnel into one invite loop: (1) Workouts + → "Train with others" (friend multi-select → send); (2) Squad member profile → "Train With [name]"; (3) Program Detail → "Start Together"; (4) Active Workout ⋯ → "Invite to this workout". A received-invite screen (Forge Workout Invite.dc.html) shows sender + workout; Accept loads the shared workout (flagged), Decline dismisses. In Active Workout a "Training with ___" header cue shows the partners and they are auto-tagged in the completion ceremony (editable). Entry points 2 & 3 deep-link via ?train=1&with=<id>. No live set sync — each person logs independently, both are credited. Enhancements: invite picker grouped (Recently Trained With / Squad / Friends) with an optional short personal message shown on the invite; person-centric invite ("[Name] wants to train with you"); a "Training now" presence cue (no live metrics); and a "You trained with ___ · both completed [workout]" payoff in the completion ceremony. Plus a host-only in-context "___ joined your workout" toast, and a permanent shared marker ("with ___") on Activity History rows. V1 LOCKED — deliberately no realtime notifications or live-presence session (would push Forge toward a live-workout app).' }),
+      ]],
+      ['Programs / Builder', [
+        r('W-2', 'Workouts Hub (Program Browse)', 'built', 'DESIGN-LOCKED. Promoted from a Programs catalog to the top-level Workouts hub (masthead renamed Programs → Workouts). A pinned My Programs / Discover segmented control splits owned/active training from discovery. My Programs: Active hero, Planned (collapses to a compact preview at 2+, with View all), a promoted Library pair (Templates → W-26, Exercise Library → W-21), Your Programs, and Shared with You — Sealed-to-Legacy removed (completed programs live in Legacy now). Discover: Build Your Own, Family chips, Filters, Recommended Next / filtered catalog. Arriving from the Home-Gym editor lands in Discover with the filter pre-applied.'),
+        r('W-3', 'Program Detail', 'built', 'Full program review with the 5 state-dependent CTAs (Start / Save / Restart / Run Again).'),
+        r('W-4', 'Program Creation', 'built', 'Build a program from scratch — name, length, training days, per-day builder, and spreadsheet import.'),
+        r('W-5', 'Program Fork / Edit', 'built',
+          'Edit in place, or duplicate, a Future/Upcoming program.',
+          { built: 'The W-4 Program Builder now runs in three modes via URL (?o=edit|dup&id=): New (unchanged), Edit-in-place (AppBar \u201cEdit Program\u201d, bronze \u201cEditing your planned program\u201d banner, \u201cSave Changes\u201d \u2014 hydrates the whole form from the source and writes back to the same program id in forge_created_programs_v1 with updatedAt), and Duplicate (\u201cDuplicate Program\u201d / \u201cCreate Copy\u201d \u2014 loads a deep copy named \u201c\u2026 (Copy)\u201d with re-keyed exercises, saves as a new future program). Builder-created programs (already in draft shape) load directly; catalog/planned programs synthesize an editable week from their schedule + family staples so there is real content to fork. The picker add-exercise round-trip preserves the active edit/dup session. Guarded entry points live on the real W-3 Program screen (Forge Program.dc.html) CTA bar: programs you built (source:custom / saved from the builder) get Edit + Duplicate; programs you did not build (Forge catalog, shared-in) get Duplicate only \u2014 which forks a fresh editable copy.' }),
+        r('W-24', 'Workout Builder (slot)', 'built', 'Per-slot planning inside a program — Warm-up / Main / Cool-down sections with the real Exercise Picker.'),
+        r('W-25', 'Free Workout Builder', 'built', 'Build or edit a reusable WorkoutTemplate not tied to a program. Reuses the W-24 section builder verbatim (Warm-up / Main / Cool-down cards, sets×reps steppers, reorder, remove) with the real Exercise Picker in a new o=template add-mode. Requires a name + ≥1 MAIN exercise to save; guarded Save with a live checklist. Persists into the shared template library (forge-templates.js); Edit mode prefills from ?id and Save routes to the template detail. Dirty back-out shows a discard confirm.'),
+        r('W-26', 'Workout Templates Hub', 'built', 'The personal template library (Forge Workout Templates.dc.html). Cards sorted by last-used (never-used fall to the bottom by created date), each with a structure summary, muscle-group pills and a used-count badge. ▶ Start launches the session directly (records a use via ForgeTemplates.touch); card / Details tap → W-27. Header + and footer New Template open W-25; EmptyState when cleared. Reached from the Programs Catalog Your Templates entry. Seeded with Push / Pull / Leg / Full-Body Express.'),
+        r('W-27', 'Workout Template Detail', 'built', 'Manage a single saved template (reads ?id, defaults to the most-recent). Hero + summary, a 3-up usage stat row (times used / last trained / created), section-grouped structure (Warm-up / Main / Cool-down with sets×reps), and a dated session-history list with journal notes. Sticky action bar: Start (touch + launch), Edit (→ W-25 ?id), Duplicate (deep-copy → its own detail), Delete (confirm sheet → remove → hub).'),
+      ]],
+      ['Exercise Library', [
+        r('HG', 'Home Gym system', 'built', 'DESIGN-LOCKED. Shared equipment profile (forge-homegym.js) the whole app reads/edits: one saved list of owned gear (Barbell, Squat rack, Dumbbells, Kettlebells, Bench, Pull-up bar, Bands, Cable machine, Cardio machine; bodyweight always implied). Dedicated \u201cMy Home Gym\u201d editor screen (Forge Home Gym.dc.html) opened from every entry point via ?return=. Set during Onboarding (equipment step now persists to the shared model) and editable from Account Settings \u2192 My Home Gym. The Home Gym filter in the Exercise Library (W-21) shows only bodyweight + owned equipment; in the Programs Catalog it uses a lenient programFit (a program matches if nothing\u2019s missing, or one piece is missing AND you own at least one required piece \u2014 a barbell-only program never matches a dumbbell-only gym). Empty profile + tapping Home Gym opens the editor first, then auto-applies on return (?home=1). Verified end-to-end: owns Dumbbells \u2192 16/24 programs match, barbell/rack/rower-only programs excluded.'),
+        r('W-21', 'Exercise Library Hub', 'built', 'Browse/discovery front door. Search field filtering across the whole catalog (name / category / muscle / equipment); Favorites \u2192 Recently Used preview rows (star toggle live on every row) \u2192 6-category tile grid \u2192 Custom Exercises with a \u2018Create Custom Exercise\u2019 row stubbing W-28. \u2018View all\u2019 and category tiles drill into an in-screen flat list with back; rows tap \u2192 W-22 Exercise Detail. Shares the W-23 exercise catalog + row vocabulary. Filter sheet: Where you train (Gym / Home Gym / Outside, derived from equipment) + Difficulty + Equipment + Movement type, with removable active-filter chips and a live result count. Home Gym reads the athlete\u2019s own equipment profile (persisted) \u2014 an inline editor in the filter sheet lets them mark owned equipment, and Home Gym then shows only exercises they can actually do (owned equipment + bodyweight).'),
+        r('W-22', 'Exercise Detail', 'built', 'DESIGN-LOCKED. Educational destination \u2014 hero demo, muscles, why-it-matters, how-to, cues, mistakes, alternatives. Now a reusable template: reads ?ex=<key> (or the replace-flow #ex=) and populates every field from the shared forge-exercise-catalog.js (24 exercises); alternatives cross-link to their own detail. Defaults to Bench Press with no param.'),
+        r('W-23', 'Exercise Picker', 'built', 'The task-completion selection modal — filter, best-replacements, multi-select, confirm.'),
+        r('W-28', 'Create / Edit Custom Exercise', 'built', 'CRUD for user-authored custom exercises (Forge Create Custom Exercise.dc.html), persisting to the shared forge-custom-exercises.js store. Form: name (required) + single-select Category and Equipment, Movement type, multi-select Muscles worked and Environment, and free-text Notes. Create + Edit modes (reads ?id, prefills, Delete with confirm). Wired from the Exercise Library Create Custom Exercise row (now live, no longer a toast); the Library Custom Exercises section reads the store so new customs appear and tap through to Edit.'),
+      ]],
+      ['Legacy / Chapters', [
+        r('L-1', 'Legacy Hub', 'built', 'The "what have I built?" summary surface — identity strip, active chapter, history, photos, timeline teaser.'),
+        r('L-2', 'Legacy Timeline', 'built', 'The complete arc — chapter-grouped, newest-first, on one continuous rail. Chapter headers are major bronze nodes (book = active, flame = sealed) that tap through to Chapter Detail (active/archived handoff); events use the 10 canonical types (chapter open/seal, rank, honor, goal, PR, program start/graduate, accomplishment, photo). Opened from the Legacy Hub and Chapter Detail timelines.'),
+        r('L-3/4', 'Chapter Detail (Active / Archived)', 'built', 'DESIGN-LOCKED. Emotional-pacing rebuild: Active reads "I\u2019m building" — hero, dominant Primary Goal (78% + bar + View Goal), collapsed Supporting Goals, merged Programs+Progress card, Media (photos/videos, count line, fullscreen viewer, add sheet), Honors carousel, Chapter Notes, lightweight Timeline, and a ceremonial Seal (confirm → reflection). Archived reads "I remember" — Sealed hero, Outcomes "cover" card first, neutral goal/program outcomes, Reflection as centerpiece, Memories (added-after-sealing), Photos, Honors last, bookended Timeline, Add a Memory. Opened from the Legacy Hub, which hands off active vs archived.'),
+        r('L-5', 'Chapter Creation', 'built', 'The “Begin your Legacy” flow on Beginner Home: explain → name your first chapter (input + season suggestions) → celebration → opens Legacy. Grants the Initiative honor and unlocks the app.'),
+        r('L-6', 'Chapter Reflection', 'built',
+          'The closing voice of a chapter.',
+          { built: 'Forge Chapter Reflection.dc.html: full-screen post-sealing enrichment (the chapter is already sealed at M-5 — this is optional, never a gate). Read-only header (chapter name, date range · duration, neutral goal-outcome line — "achieved" or "in progress at sealing", never "failed", workouts · honors), collapsed read-only Chapter Notes for context (omitted when empty, never pre-fills), the blank reflection field as the focus, and collapsible non-inserting inspiration prompts. Two entry paths via ?path=: sealing (no back, contextual "Seal Chapter" / "Skip for now", → Legacy) and post (back chevron, "Save Reflection" / "Cancel", → Chapter Detail; once a reflection already exists this path renders a read-only parchment plaque — "This is now part of your story" — no editing). CTA enabled at ≥1 char; exit-with-text fires a discard confirm while empty Skip leaves freely. A declarative permanence line sits above the CTA, and a quiet non-ceremony confirmation ("Reflection saved. / This chapter has been sealed. / Continue") lands the moment before returning. Saves a nullable reflection record (forge_chapter_reflections_v1) keyed to the chapter.' }),
+        r('L-10', 'Honors Hub', 'built', 'DESIGN-LOCKED. Recognition surface. Header with a quiet total (‘14 Honors’); Recent strip (5 most-recent badges, tap → L-11); per-category horizontal scroll strips (badge + name + date), one SectionHeader per category with an earned count. Only earned categories render (Smart Omission — no X-of-Y, no denominators, no locked honors). Honors share their category’s badge variant. Hidden category shown normally once earned.'),
+        r('L-11', 'Honor Detail Sheet', 'built', 'DESIGN-LOCKED. Museum-plaque bottom sheet: 96pt category badge, category label, honor name (display serif), earned date, 1–3 line description, and a non-tappable attribution line (‘Earned in Chapter III · via Powerbuilding II’). Share action. Frame-scoped scrim + slide-up.'),
+        r('L-12–14', 'Accomplishments', 'built',
+          'CRUD for athlete-declared accomplishments.',
+          { built: 'Forge Accomplishments.dc.html (+ forge-accomplishments.js store). L-12 list: name-only rows, ★ prefix on Featured, most-recent-first, + to add, single-line empty state. L-13 detail: display-serif name, month-year date, \u201cFrom: [Chapter]\u201d only when chapter-set (account-level shows nothing), Featured-on-Profile toggle, Delete. L-14 add/edit (one form, two modes): required Name (60-char) + required native Date + optional Chapter picker (No Chapter default, active chapters flagged, archived after) \u2014 changing the chapter IS the move mechanism. Featured is a boolean capped at 3 with a replace-prompt sheet at the limit; delete is confirmation-gated and permanent (no archive). Freeform text only \u2014 no taxonomy, no photo, no numeric fields. demoState prop previews the empty state. Wired into the Legacy Hub (L-1): the Accomplishments section is store-driven (featured-first, capped to 3 text plaque cards) — section header/View all → L-12, each card → its L-13 detail, empty-state CTA → L-14 add; Legacy Hub scroll position is preserved across the round-trip and the preview refreshes from the store on return. Photos: optional per-accomplishment photo — attached in L-14 via file pick + client-side canvas downscale (stored as a dataURL on the record, so it travels with edits/deletes), rendered as an L-13 hero image, an L-12 row thumbnail (with a featured-star corner badge), and a full-bleed Legacy Hub card background with scrim. Optional short "Why it mattered" memory note (≤150 chars) on the record, shown as an italic serif quote on the L-13 detail. L-12 rows use a single-star treatment (filled bronze = featured, outline = not; no corner badge) with a compact leading slot; L-13 date is quieted and the chapter shows as a labeled metadata block; L-14 name field has an inline character counter. Featured top-3 also surface on the Public Profile (P-3) in self view (?self=1) — store-driven, visibility-bypassed for self, cards tap through to L-13 — so featuring behaves consistently on the Legacy Hub and the (squad-visible) profile.' }),
+        r('L-15/16', 'Photos Albums / Chapter Timeline', 'built', 'DESIGN-LOCKED. Cover resolver locked: manual (coverPhotoId) \u2192 sealed-final (role) \u2192 latest starred (isStarred) \u2192 most recent \u2192 empty state; resolver stays defensive against a stale/deleted coverPhotoId (falls through). Restructured as an Albums page (scales to years of photos). Top level: one large cover card per chapter (Active/Sealed chip, date range, \u201cN photos \u00b7 W weeks \u00b7 updated\u201d) + total counter. Tap a chapter \u2192 a month-grouped journal timeline: dated day-rows carrying chapter events (PR / chapter opened / sealed / final) and captions; same-day shots collapse into one stack (\u201c6 photos \u00b7 tap to open\u201d) that expands inline to labelled pose thumbs. Any photo \u2192 full-screen viewer with prev/next paging across the chapter, position, pose, date, caption. \u201cCompare start to now\u201d hands off to the Transformation gallery. Back steps viewer\u2192album\u2192albums.'),
+        r('L-17', 'Transformation Gallery', 'built', 'The chapter-grouped documentary archive of physical change \u2014 add-entry sheet (6 poses: front/side/back \u00d7 relaxed/flexed + arms-up), tags, reflection, and Share. Compare is now multi-pose: pick any subset of the 6 poses and it stacks a side-by-side row per pose, with the elapsed time between the two entries. Share (from a card long-press, or from Compare) renders a formatted forged keepsake card \u2014 brand lockup + chapter + pose triptych/before-after + date + reflection \u2014 and sends to Squad / Community / Message / Post, plus Save image.'),
+        r('L-18', 'Transformation Entry Detail', 'built',
+          'A documentary, reflective view of one transformation entry.',
+          { built: 'Forge Transformation Entry Detail.dc.html: media-led single-entry record — capture date as identity, chapter attribution, a hero pose viewer with a thumbnail selector across only the filled poses (video edge case handled), compact archival details (view label, freeform meta, tags), and the reflection shown in full — every optional field collapses when empty, with a not-found state for stale ids. Compare (primary) opens the existing compare flow preselected (via #compare / forge.xform.compare_with); Share (secondary) routes to SH-1 with the transformation context; overflow holds Edit + Delete (delete is confirmation-gated with accurate no-persisted-comparisons copy). Gallery card tap now opens L-18 (long-press actions retired). Edit unified the create flow into add/edit: #edit=<id> prefills date/chapter/caption/tags/meta + existing photo & video slots, saves in place via ForgeTransformation.update (same id, no duplicate, media untouched), and returns to L-18. Model gaps surfaced honestly: no structured measurements (freeform meta line), no title (date is identity), no entry number.' }),
+      ]],
+      ['Profile / Progress / Goals', [
+        r('P-1', 'Profile', 'built', 'The "who am I becoming?" identity screen — header, pinned legacy, chapter, rank, progress, honors.'),
+        r('P-2', 'Progress Hub', 'built', 'The story of growth — Overview / Timeline tabs, strength, goals, rank journey, consistency, body metrics.'),
+        r('P-3', 'Public Profile', 'built',
+          'Another athlete\u2019s viewable profile — the single destination for every person tap in the app.',
+          { built: 'Full profile (Forge Public Profile.dc.html): identity hero (rank seal, name, handle, rank marker, tier badge), a relationship-aware action bar, My Standard creed, and visibility-gated sections (Current Chapter / Chapter History / Timeline / Transformation / Photos / Accomplishments / Training Stats) plus always-on Highlights, Featured Legacy Moment, and Honors. Reads ?name / ?id / ?rel / ?squad so the header and actions reflect the tapped person: connected viewers (friend or squad-mate) get Challenge + Train With (starts the shared-workout invite), strangers get Add Friend / Follow. Now the universal profile target — taps from Home Live Now, Activity Detail \u201cTrained With\u201d, Friends Feed post authors + friends list, and Squad member rows all route here. The old limited-profile popup in Squad Detail was removed.' }),
+        r('TC', 'Trophy Case', 'built',
+          'An athlete’s championship + podium trophies from finished competitions.',
+          { built: 'DESIGN-LOCKED. Forge Trophy Case.dc.html (1a “Trophy shelf”): gold/silver/bronze medal tally in the header under a quiet “Competitive Legacy” subline; a Career Record block (Competitions, Championships, Podiums, Win Rate + best-event / longest-streak footer); a Championships grid of forged crown crests — each showing tier + “1st of N” field size, key stat + winning margin, and date; and a shelved Podium Finishes list (silver/bronze medals, “2nd/3rd Place” labels, field context). Every trophy taps through to Challenge Results (C-4). Entry points: a Trophy Case summary card on Public Profile and a Trophy Case row in Legacy → What Endures. Future (data-driven, non-structural): per-competition banner artwork; a squad-scoped view for squad-competition trophies.' }),
+        r('G-1', 'Goal Hub', 'built', 'DESIGN-LOCKED. Chapter-first hierarchy — dominant Primary Goal card (identity label + progress + program + chevron), Supporting Goals with narrative/quantifiable variants, and an archival Achieved section carrying Started·Achieved·Pursued duration + reflection excerpt. All five states (no chapter, no goals, primary in-progress, primary achieved, all-achieved). Every card taps through to G-2.'),
+        r('G-2', 'Goal Detail', 'built', 'DESIGN-LOCKED. The sole progress-update / achievement-declaration surface. 4 states (quantifiable + narrative × in-progress + achieved). Update Progress bottom sheet (numeric input, Save gated, per-entry unit snapshot, dated history rows); Mark as Achieved confirm → M-3 ceremony for primary goals, silent achieve for secondary; sealed record hides overflow, marks the top history row. Edge cases: bar caps at 100% while raw value shows, progress can decrease, 0-progress achieve valid.'),
+        r('G-3', 'Goal Create / Edit', 'built', 'DESIGN-LOCKED. Progressive-disclosure form (Create Squad shell): Goal Name (required, counter) + optional numeric Target; Unit field discloses only once a Target is set \u2014 quick-pick chips (lb/kg/reps/mi/min/\u00d7 per week) + freeform. Slot identity (Primary vs Supporting) stated from entry point, non-editable. Live type hint (tracked \u2194 narrative) + a live goal preview. Create + Edit modes (edit prefills all three, no delete). Dirty back-out shows a discard confirm (no drafts). Wired: G-1 add \u2192 create, G-2 overflow \u2192 edit. Refinement pass: uniform 4-col unit chip grid with a Custom chip that reveals the freeform field (no always-on box); smart unit ordering by goal name (endurance\u2192mi/min, lifting\u2192lb/kg, frequency\u2192\u00d7/week, calisthenics\u2192reps); "Target Value" label; counter hidden until typing; "How it will appear" preview; slot-aware placeholders. No categories/tags/dates \u2014 type stays inferred from Target.'),
+      ]],
+      ['Modals / Ceremonies', [
+        r('M-1–7', 'Ceremony Modal Library', 'built', 'The full ceremony set — Rank Up, Honor Earned, Goal Achieved, Program Graduated, Sealing, Destructive, Upsell.'),
+        r('SH-1', 'Share Configuration', 'built',
+          'Configure and send a share.',
+          { built: 'Forge Share Configuration.dc.html: a reusable share bottom sheet (dim backdrop + slide-up) with a live forged-keepsake preview — brand lockup, kind glyph, eyebrow, title, value, chapter, date, and athlete/rank footer. "Include on card" toggles (Value / Chapter / Date / Your name & rank) update the preview live; a Squad / Friends / Community / Message destination picker drives the primary "Share to [dest]" action, plus Save image and Copy link utilities (all with confirmation toasts). Configurable per share via a kind prop (accomplishment / honor / pr / chapter / rank) or a forge_share_ctx_v1 launch context. Contextual title ("Share Accomplishment"…), source-specific "Card Details" toggles per kind (e.g. PR shows Previous/New/Improvement), an optional Photo toggle when a photo exists (band swaps in for the glyph), split destinations — "Share in Forge" (Squad/Friends/Community, selectable, drives a dynamic primary "Share to/with · Post to") and "Share outside Forge" (Message / Share… system sheet / Save image / Copy link) — and a live-animating preview. Now the single share surface: Accomplishment (L-13 Share), Honor (Legacy honor sheet), and Program (Program share button) all write a forge_share_ctx_v1 context and route here, returning to source (scroll preserved) on close/share. Fields render only when the context supplies them — no dead toggles. A transformation kind adds a before/after compare card (two photos + date labels + elapsed hero); the Transformation entry & compare share actions now route into SH-1 too (reading the filled photo slots), leaving feed-post shares (social re-shares, not keepsakes) as the only bespoke share.' }),
+      ]],
+      ['Squads', [
+        r('S-1', 'Squads Hub', 'built', 'Browse my squads with presence indicators.'),
+        r('S-2', 'Squad Detail', 'built',
+          'The squad-internal hub — goal, mission, check-ins, feed, competitions, members, honors.',
+          { built: 'The Squad Feed is now store-backed: forge-squad-posts.js is a separate, training-only domain model (check-in · workout recap · PR/milestone · form check · challenge update · train-together · short discussion · captain-only announcement — deliberately no polls, public events, or program promotion). Each feed row deep-links into the shared origin-aware Post Detail as a Squad Post (squad identity, squad role, report-to-captain); a New Post button opens the Squad Composer. The weekly summary stays an ambient, non-threaded banner. Fully per-squad isolated: each squad (Iron Vigil, Dawn Patrol, …) carries its own keyed feed via an active-squad id that every entry point (Squads Hub, Preview, Competitions, Create) sets — the store requires a squadId on every read/write, so posts cannot leak between squads; the identity header and composer follow the active squad.',
+            todos: [{text:'Squad-post reactions persisted per member; challenge-update context wired from the live competition.'},{text:'Per-squad hero content (goal / mission / roster) — today the feed and identity are per-squad while the rest of the hub is still representative.'}] }),
+        r('S-3', 'Squad Management', 'built', 'Owner/member administration — edit squad, remove member, transfer ownership.'),
+        r('S-4', 'Squad Composer', 'built',
+          'Post to the squad — the narrow, training-centered counterpart to the Community composer.',
+          { built: 'Squad Composer.dc.html: two-step (pick type → compose) reading ForgeSquadPosts.TYPES. Seven member types plus a single captain/owner-gated Squad Announcement (greyed with a lock for members). Type-specific forms — PR with a live achievement preview, form check with a media slot, challenge update with a competition field — posting to the store and routing back to Squad Detail with a success toast.' }),
+      ]],
+      ['Friends', [
+        r('SOC-1', 'Friends Feed', 'built',
+          'The private, intentional-sharing feed between accepted friends — a lighter, broader counterpart to Squads. “Relationships grant interaction, not visibility”: nothing auto-posts, no public option, no follower counts or PYMK. Ledger layout (locked).',
+          { built: 'Feed with photo / video-PR / progress / opt-in milestone (honor + program) cards; audience-scoped posts (Friends / Squad / Both, never public) with a per-post audience chip; Forge reactions (Respect / Honor / Strength / Support, no emoji); tap-to-open post detail + chronological comments; composer with audience picker, opt-in achievement sharing, and the unified single-frame before/after progress editor (shared crop space, ghost-align, matched 4:5 ratio across composer → feed → full-screen so alignment holds); reactions summary; empty state. Reached from the Home header Friends icon (badge = requests) and the Your Circle card; posts publish live to the top of the feed. Now store-backed: forge-friends-posts.js holds the feed as a separate flat, personal model (no roles, no taxonomy, audience-scoped) — list / create / detail read and write the store, so posts persist and are reachable by the shared Post Detail (friend origin) without merging into the community schema.',
+            todos: [
+              {text:'Feed ranking by “most meaningful unread” (live → challenged you → transformation → honors → PR → reflection) instead of strictly newest.'},
+              {text:'Pin a post to the profile, plus archive / delete post controls.'},
+              {text:'Comment & reaction moderation — report / block (flagged as future work in the contract).'},
+              {text:'Post-type glyph on previews for every kind, and real full-resolution photo storage in production.'},
+            ] }),
+        r('SOC-2', 'Friends & Requests', 'built', 'Feed-centric relationship management: Friends list (rank + personality + relationship history like “Friends since · workouts together”), incoming Requests (accept / decline with mutual context), an Add-by-handle entry, a management overflow menu, and the milestone-sharing Settings sheet (opt-in prompts for Honors / finished programs; nothing posts on its own). Opened from the header Friends icon.'),
+      ]],
+      ['Challenges', [
+        r('C-1', 'Challenge Hub', 'built', 'The "what are we competing in?" surface — active + enrollment cards, champions preview.'),
+        r('C-2', 'Create Challenge', 'built',
+          'Start a competition.',
+          { built: 'Forge Create Challenge.dc.html: metric family tabs \u2192 metric picker (with lift / movement chips and a custom \u201cname the unit\u201d field), system-generated scoring preview (no self-authored rules), name + description, Duration presets + custom days with a live \u201cruns / starts / ends\u201d line, start timing, scope tabs (with participant roster + selected chips), privacy, and stakes. The commit bar publishes and writes a challenge invite (forge_challenge_invite_v1) that the invite screen picks up.' }),
+        r('C-3', 'Challenge Detail', 'built', 'Live challenge state with the ranked leaderboard and challenge feed.'),
+        r('C-4', 'Challenge Results', 'built',
+          'Final standings after a challenge ends.',
+          { built: 'Forge Challenge Results.dc.html: Season-closed winner hero with a settled forged crown, Champion spotlight (crowned avatar, score, margin), a bronze-framed "You Placed" result card with an Honor Earned tie-in that pushes to the Honors Hub, medal-ranked Final Standings (gold/silver/copper podium + viewer row highlight), and Start a Rematch \u2192 Forge Challenge. Back \u2192 Squad Detail.' }),
+        r('C-5', 'Hall of Champions', 'built',
+          'The squad’s permanent, year-grouped record of every finished competition.',
+          { built: 'DESIGN-LOCKED. Forge Hall of Champions.dc.html: squad identity header (“N Champions Crowned · Est.”) + year-grouped entries (sticky year headers), one card per finished competition. Each shows the type (engraved icon + label), the champion (crown + gold-ringed avatar, name, winning score/unit) on a two-line “Champion / N Competitors” field-size label, with the viewer’s own wins carrying a bronze YOU tag. Repeat winners get a quiet cumulative “N× Champion” dynasty badge (counted chronologically — history is not rewritten) and back-to-back winners read “Defending Champion”. 2nd/3rd appear subtly as small silver/bronze numbered chips on a footer strip; when the viewer places, their runner-up name brightens and carries a small You marker without competing with the winner. Every entry taps through to Challenge Results (C-4). Entry point: a flat “Hall of Champions” navigation row on Squad Detail. Future (data-driven, non-structural): real photos, live streaks, per-competition banner artwork, full season-archive tap-through.' }),
+        r('C-6', 'Squad Records', 'built',
+          'The squad\u2019s permanent, positive-only record book.',
+          { built: 'Forge Squad Records.dc.html: read-only record rows (Heaviest Lift, Biggest Single Session, Longest Streak, Most Workouts/Month, Longest Run, Most PRs/Month) each showing holder + value + date, with a tracked-records count under the title. Newly-broken records carry a NEW badge with the previous mark; tapping any record opens a history sheet \u2014 current holder, a \u201cNEW RECORD 440 \u2192 455\u201d ceremony banner, and previous holders. Back \u2192 Squad Detail.' }),
+        r('C-7', 'Current Champions', 'built',
+          'Who holds each crown right now.',
+          { built: 'Forge Current Champions.dc.html: one tile per challenge type (Most Volume, Most Workouts, Longest Streak, Max Lift, Most PRs, Most Duration), each showing the current holder + value. The most-recently-claimed title is a featured glowing bronze hero card (\u201cNew leader \u00b7 3m ago\u201d); the rest sit in a 2-col grid. A freshness indicator (\u201cUpdated 3m ago\u201d) replaces the static LIVE badge. Every card taps into a live standings sheet for that title. Back \u2192 Squad Detail.' }),
+      ]],
+      ['Communities', [
+        r('CM', 'Communities', 'built',
+          'The fourth relationship pillar — its own bottom-nav tab: feeds, discovery, roles.',
+          { built: 'Community Home (Feed / Events / Challenges tabs, composer, role badges, contributors, pinned posts), Discover Communities, and the pre-join Community Profile (identity, stats, about, rules, leadership, public activity peek / private members-only lock, adaptive Join / Request to Join / Request Sent / Go-to-Community CTA). A shared forge-communities.js store keeps Discover, Profile, and Home in sync on membership; Discover now routes non-members to the Profile and members straight to Home (fixed the old mis-route into a community you hadn\u2019t joined). Profile is DESIGN-LOCKED: per-community rules, conversion-ordered (identity \u2192 stats \u2192 about \u2192 activity preview w/ social proof \u2192 leadership \u2192 rules \u2192 sticky adaptive CTA), tappable leaders w/ founder ring, static forged banner. Post Detail + Composer built: forge-community-posts.js is the shared feed store (10 role-gated post types); Post Detail renders any post large with a threaded comment system (respect on post + comments, Top/Newest sort, one-level replies, pinned bottom composer, overflow); the full-screen Composer has a permission-gated type picker (member types vs owner/mod-only, greyed w/ \u201cOwner only\u201d) and fully type-specific forms, posting to the store; Home routes composer bar + shortcuts \u2192 Composer, post/comment taps \u2192 Post Detail, and shows new posts on top of the feed with a success toast. The Post Detail has since been generalized into one origin-aware shell (Post Detail.dc.html) shared by Communities, Squads, and Friends — it adapts title, source-context header, role badges, type label, reaction mode, and report routing per origin while each surface keeps its own store; Community Home now routes into it with origin=community. Discover now browses by category: an 11-category taxonomy (Powerlifting · Olympic · Bodybuilding · Strongman · Running · Hybrid · Functional · Cycling · Swimming · Combat · Mobility) lives in the shared store as the single source of truth, surfaced as a "Browse by category" tile grid (crest + blurb + live count) in the default state and quick-filter chips once browsing; Discover is now a view over ForgeCommunities.all() rather than a hardcoded list, so creator-made communities appear automatically. 4-role management now lives in Edit Community: a four-role model (Owner · Moderator · Contributor · Member) in the shared store, a Members roster with per-member role change + remove via an action sheet, a pending Join-Requests queue (approve promotes to member / decline removes it), role-definition cards with live counts, and a Posting Permissions matrix setting the minimum role allowed to post each of the 10 post types (persisted; the composer reads its gating from the same store).' }),
+        r('PD', 'Post Detail (shared · adaptive)', 'built',
+          'One Post Detail shell serving all three social surfaces, adapting to origin.',
+          { built: 'Post Detail.dc.html reads forge.postOrigin + source id (or an ?origin=&post= deep-link) and renders from the matching store — Community (ForgeCommunityPosts), Squad (ForgeSquadPosts), or Friend (ForgeFriendsPosts). Shared across all three: app bar, source-context header, threaded comments + one-level replies, Top / Newest sort, respect/reaction, save · share · report, and the pinned composer. Adapts per origin: title (Community / Squad / Friend Post), room-vs-relationship identity, role badges, post-type pill, reaction mode (respect count vs acknowledge), overflow + report routing (moderators / captain / Forge), and back target. Documented in Social Architecture Verification.dc.html; the three domain models are kept distinct — the community store was never generalized into a universal post store.',
+            todos: [{text:'Route Friends’ bespoke progress-compare detail through the shared shell, or keep its richer store-backed detail as today.'}] }),
+      ]],
+      ['Settings', [
+        r('P-4', 'Settings Root', 'built',
+          'The settings navigation hub, pushed onto the Profile modal stack.',
+          { built: 'Forge Settings Root.dc.html: account controls grouped top-to-bottom (Account \u2192 Privacy \u2192 Notifications \u2192 Preferences), Subscription split into its own billing group, then a standalone non-destructive Sign Out (native confirm). Legal footer \u2014 Terms of Service \u00b7 Privacy Policy open as in-app webview sheets \u2014 plus a muted version string. Back returns to the Profile / Legacy hub.' }),
+        r('P-5', 'Notifications', 'built',
+          'Control push delivery only \u2014 never hides the underlying in-app surface.',
+          { built: 'Forge Notifications.dc.html: Personal Milestones (Goal Completed \u00b7 Honor Earned \u00b7 Chapter Sealed \u00b7 Rank Up, default ON), Squad Activity (Posts & Activity \u00b7 Reactions & Mentions \u00b7 Goal & Mission Updates, default OFF), Requests (Workout Invitations \u00b7 Squad Invitations, default ON), and a non-toggleable Required Updates block (ownership transfer / deletion always fire). Toggles write instantly and persist; a boundary note clarifies these gate push only.',
+            todos: [{text:'Add the architecture\u2019s later Challenges / Friend-Requests / Communities notification sections (\u00a73.2a) \u2014 a known standing follow-up, not blocking the lock.'}] }),
+        r('P-4b', 'Preferences', 'built',
+          'How the app behaves \u2014 the single home for behavioral settings.',
+          { built: 'Forge Preferences.dc.html: Display \u2192 Units (Imperial / Metric, tied to the live ForgeUnits store with a preview line \u2014 now the ONE place units live, removed from Account), and Experience \u2192 Haptics, Sound Effects (on), Reduce Motion (off), persisted to localStorage. Deliberately small: no theme or accent controls (the forged-bronze identity stays authored, not user-customized).' }),
+        r('P-6', 'Privacy', 'built', 'Two independent toggles — Discoverability and Squad check-in visibility.'),
+        r('P-8', 'Subscription', 'built',
+          'The Forge Premium plan screen.',
+          { built: 'Forge Subscription.dc.html: Forge Premium hero, a Free/Premium status chip, three billing plans (Monthly $10 \u00b7 6 Months $55, save 8% \u00b7 Annual $100, save 17% \u2014 best value, pre-selected), a curated \u201cWhat Premium unlocks\u201d list (build without limits, preserve your Legacy, deeper insight, lead at scale, present your work), an Always-free reassurance line, and a plan-aware commit bar. Subscribing flips to a Manage state (renewal line, Manage / Restore) persisted via forge.premium. Reached from Settings Root \u2192 Subscription.',
+            todos: [{text:'Real app-store billing + receipt validation; live usage meters against free-tier limits.'}] }),
+        r('P-9', 'Account', 'built', 'Account-focused after the Settings refactor: profile summary, Onboarding (Guided Tips + replay), My Home Gym, Profile Visibility, and About. Weight Units and the Accent Color picker were removed (units \u2192 Preferences; accent theming retired to protect the brand); duplicate Notifications / Privacy & Data rows were trimmed so each destination lives in exactly one place. Still owns Export data / delete account.'),
+      ]],
+    ];
+
+    let nBuilt = 0, nPartial = 0, nTodo = 0;
+    const groups = rawGroups.map(([name, rows]) => {
+      let b = 0;
+      rows.forEach((row) => { if (row._st === 'built') { b++; nBuilt++; } else if (row._st === 'partial') nPartial++; else nTodo++; });
+      return { name, rows, tally: b + '/' + rows.length };
+    });
+
+    const total = nBuilt + nPartial + nTodo;
+    const pctBuilt = Math.round((nBuilt / total) * 100);
+    const pctPartial = Math.round((nPartial / total) * 100);
+
+    // Status filter — tap a summary tile to show only that status.
+    const filter = this.state.filter || 'all';
+    const FT = [
+      { key: 'all', label: 'All', count: total },
+      { key: 'built', label: 'Built', count: nBuilt },
+      { key: 'partial', label: 'Partial', count: nPartial },
+      { key: 'todo', label: 'To do', count: nTodo },
+    ];
+    const filterTiles = FT.map((ft) => {
+      const on = filter === ft.key;
+      return {
+        key: ft.key, label: ft.label, count: ft.count,
+        a11y: 'Show ' + ft.label + ' screens',
+        select: () => this.setState({ filter: ft.key }),
+        style: 'flex:1; text-align:center; padding:14px 8px; border-radius:var(--fl-radius-md); cursor:pointer; transition:border-color 160ms ease, background 160ms ease; border:1px solid ' + (on ? 'var(--fl-bronze-metal-border)' : 'var(--fl-charcoal-700)') + '; background:' + (on ? 'var(--fl-bronze-tint)' : 'transparent') + ';',
+        numColor: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)',
+        labelColor: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)',
+      };
+    });
+    const shownGroups = (filter === 'all') ? groups
+      : groups.map((g) => ({ name: g.name, tally: g.tally, rows: g.rows.filter((row) => row._st === filter) })).filter((g) => g.rows.length > 0);
+
+    const sel = list.find((x) => x.key === this.state.selKey) || null;
+    const selVals = sel ? {
+      selOpen: true, selId: sel.id, selName: sel.name, selStatus: sel.status, selBlurb: sel.blurb,
+      selDot: sel.dot, selChipBg: sel.chipBg, selChipBorder: sel.chipBorder, selChipInk: sel.chipInk,
+      selHasBuilt: !!sel.built, selBuilt: sel.built,
+      selHasTodos: sel.todos.length > 0, selTodos: sel.todos.map((t, i) => Object.assign({ key: i }, t)),
+      selComplete: sel._st === 'built',
+    } : { selOpen: false, selTodos: [] };
+
+    return Object.assign({ groups: shownGroups, filterTiles, nBuilt, nPartial, nTodo, pctBuilt, pctPartial, closeSel: () => this.setState({ selKey: null }) }, selVals);
+  }
+}
+</script>
+</body>
+</html>

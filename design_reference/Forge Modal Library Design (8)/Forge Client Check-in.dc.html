@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="image-slot.js"></script>
+<script src="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#050607; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .ci-scroll::-webkit-scrollbar { width:0; height:0; }
+  .ci-scroll { scrollbar-width: none; }
+  .ci-in { width:100%; font-family:var(--fl-font-sans); font-size:15px; line-height:1.5; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); padding:13px 14px; outline:none; resize:none; transition:border-color 160ms ease; }
+  .ci-in:focus { border-color:var(--fl-bronze-border); background:var(--fl-charcoal-800); }
+  .ci-in::placeholder { color:var(--fl-text-tertiary); }
+  @keyframes ciIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; transition-duration:0.001ms !important; } }
+</style>
+</helmet>
+
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#0B0F13"></rect><rect x="34" y="24" width="32" height="52" rx="6" fill="none" stroke="#BF8F4F" stroke-width="3"></rect><path d="M42 50l6 6 12-12" fill="none" stroke="#CDA063" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path></svg></template>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:28px; background:radial-gradient(circle at 50% 0%, #101418 0%, #050607 62%);">
+<div data-screen-label="Client · Check-in" style="width:402px; flex:none; height:874px; position:relative; display:flex; flex-direction:column; border-radius:42px; overflow:hidden; border:1px solid var(--fl-charcoal-600); background:linear-gradient(180deg, #0B0F13 0%, var(--fl-charcoal-900) 46%, #05080A 100%); box-shadow:var(--fl-shadow-ambient);">
+
+  <div style="flex:none; display:flex; align-items:center; padding:14px 26px 6px;">
+    <span style="flex:1; font-family:var(--fl-font-mono); font-size:13px; font-weight:600; color:var(--fl-text-primary);">9:41</span>
+    <span style="flex:none; display:flex; align-items:center; gap:5px; color:var(--fl-text-primary);">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"></rect><rect x="4.5" y="5" width="3" height="6" rx="1"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="1"></rect><rect x="13.5" y="0" width="3" height="11" rx="1"></rect></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x="0.5" y="0.5" width="19" height="10" rx="3" stroke="currentColor" opacity="0.5"></rect><rect x="2" y="2" width="14" height="7" rx="1.6" fill="currentColor"></rect><path d="M21.5 4v3a2 2 0 0 0 0-3z" fill="currentColor" opacity="0.5"></path></svg>
+    </span>
+  </div>
+
+  <div style="flex:none; display:flex; flex-direction:column; gap:13px; padding:8px 20px 14px; border-bottom:1px solid var(--fl-charcoal-700);">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span role="button" tabindex="0" onClick="{{ onBack }}" style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); color:var(--fl-text-secondary); cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></span>
+      <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+        <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; letter-spacing:-0.3px; line-height:1.1; color:var(--fl-text-primary);">{{ title }}</span>
+        <span style="font-size:11px; color:var(--fl-text-tertiary);">{{ subtitle }}</span>
+      </span>
+      <span style="flex:none; font-family:var(--fl-font-mono); font-size:11px; color:var(--fl-text-tertiary);">{{ stepLabel }}</span>
+    </div>
+    <div style="display:flex; gap:5px;">
+      <sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+        <span style="flex:1; height:3px; border-radius:2px; background:{{ s.fill }}; transition:background 200ms var(--fl-ease-out, ease-out);"></span>
+      </sc-for>
+    </div>
+  </div>
+
+  <div class="ci-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:20px 20px 22px;">
+
+    <!-- ─── PHOTOS ─── -->
+    <sc-if value="{{ isPhotos }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex; flex-direction:column; gap:16px; animation:ciIn 200ms ease-out;">
+        <span style="font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">{{ photoIntro }}</span>
+
+        <div role="button" tabindex="0" onClick="{{ onUseBatch }}" style="display:flex; flex-direction:column; gap:12px; padding:14px; border-radius:var(--fl-radius-lg); border:1px solid {{ batchBorder }}; background:{{ batchBg }}; cursor:pointer;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="width:18px; height:18px; flex:none; border-radius:50%; border:1.5px solid {{ batchDot }}; background:{{ batchDotBg }}; display:flex; align-items:center; justify-content:center; color:#1A1206;">{{ batchMark }}</span>
+            <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-size:13.5px; font-weight:600; color:var(--fl-text-primary);">{{ batchTitle }}</span>
+              <span style="font-size:11px; color:var(--fl-text-tertiary);">{{ batchSub }}</span>
+            </span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:5px;">
+            <sc-for list="{{ batchShots }}" as="b" hint-placeholder-count="6">
+              <span style="position:relative; width:100%; aspect-ratio:3/4; border-radius:5px; overflow:hidden; border:1px solid var(--fl-charcoal-600); background:linear-gradient(168deg, #3a2e22 0%, #16120e 78%); display:flex; align-items:flex-end; justify-content:center; padding-bottom:3px;">
+                <span style="font-size:6.5px; font-weight:700; line-height:1.15; letter-spacing:0.3px; text-transform:uppercase; text-align:center; color:rgba(240,238,234,0.42); text-wrap:pretty;">{{ b.short }}</span>
+              </span>
+            </sc-for>
+          </div>
+        </div>
+
+        <div role="button" tabindex="0" onClick="{{ onNewBatch }}" style="display:flex; align-items:center; gap:10px; padding:14px; border-radius:var(--fl-radius-lg); border:1px solid {{ newBorder }}; background:{{ newBg }}; cursor:pointer;">
+          <span style="width:18px; height:18px; flex:none; border-radius:50%; border:1.5px solid {{ newDot }}; background:{{ newDotBg }}; display:flex; align-items:center; justify-content:center; color:#1A1206;">{{ newMark }}</span>
+          <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+            <span style="font-size:13.5px; font-weight:600; color:var(--fl-text-primary);">Take new photos</span>
+            <span style="font-size:11px; color:var(--fl-text-tertiary);">Same six poses, same framing guides.</span>
+          </span>
+        </div>
+
+        <sc-if value="{{ showPoseGrid }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; animation:ciIn 180ms ease-out;">
+            <sc-for list="{{ poses }}" as="p" hint-placeholder-count="6">
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="position:relative; width:100%; aspect-ratio:3/4; border-radius:var(--fl-radius-md); overflow:hidden; border:1px solid {{ p.border }}; background:var(--fl-surface-recessed);">
+                  <image-slot id="{{ p.slotId }}" flat nocap shape="rect" placeholder="{{ p.short }}" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                </div>
+                <span style="font-size:9.5px; font-weight:700; letter-spacing:0.7px; text-transform:uppercase; color:var(--fl-text-tertiary); text-align:center;">{{ p.short }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <span style="font-size:11px; line-height:1.5; color:var(--fl-text-tertiary); text-wrap:pretty;">Saved to your Transformation, same as always. Only your coach sees them.</span>
+      </div>
+    </sc-if>
+
+    <!-- ─── BODY ─── -->
+    <sc-if value="{{ isBody }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:20px; animation:ciIn 200ms ease-out;">
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <span style="font-size:9.5px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Body weight</span>
+          <div style="display:flex; align-items:center; gap:11px;">
+            <input type="text" class="ci-in" inputmode="decimal" placeholder="{{ weightPlaceholder }}" value="{{ weight }}" onInput="{{ onWeight }}" style="flex:1; font-family:var(--fl-font-display); font-size:24px; font-weight:600;">
+            <span style="flex:none; font-size:13px; color:var(--fl-text-tertiary);">lb</span>
+          </div>
+          <span style="font-size:11px; color:var(--fl-text-tertiary);">{{ weightHint }}</span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:11px;">
+          <span style="font-size:9.5px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Measurements</span>
+          <sc-for list="{{ measures }}" as="m" hint-placeholder-count="5">
+            <div style="display:flex; align-items:center; gap:12px; padding:9px 0; border-top:{{ m.divider }};">
+              <span style="flex:1; font-size:14px; color:var(--fl-text-secondary);">{{ m.label }}</span>
+              <span style="flex:none; font-family:var(--fl-font-mono); font-size:11.5px; color:var(--fl-text-tertiary);">{{ m.last }}</span>
+              <input type="text" inputmode="decimal" class="ci-in" placeholder="{{ m.placeholder }}" value="{{ m.value }}" onInput="{{ m.onInput }}" style="flex:none; width:88px; padding:9px 11px; font-family:var(--fl-font-mono); font-size:14px; text-align:right;">
+            </div>
+          </sc-for>
+          <span style="font-size:11px; line-height:1.5; color:var(--fl-text-tertiary); text-wrap:pretty;">Leave any blank and last week's number carries forward.</span>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ─── THIS WEEK (coach-configured) ─── -->
+    <sc-if value="{{ isWeek }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:24px; animation:ciIn 200ms ease-out;">
+        <sc-for list="{{ metrics }}" as="m" hint-placeholder-count="4">
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <span style="display:flex; flex-direction:column; gap:3px;">
+              <span style="font-size:14px; font-weight:600; color:var(--fl-text-primary); text-wrap:pretty;">{{ m.label }}</span>
+              <span style="font-size:11.5px; color:var(--fl-text-tertiary); text-wrap:pretty;">{{ m.sub }}</span>
+            </span>
+
+            <sc-if value="{{ m.isScale }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex; gap:7px;">
+                <sc-for list="{{ m.options }}" as="o" hint-placeholder-count="5">
+                  <button type="button" onClick="{{ o.onPick }}" style="flex:1; height:44px; border-radius:var(--fl-radius-sm); border:1px solid {{ o.border }}; background:{{ o.bg }}; color:{{ o.ink }}; font-family:var(--fl-font-display); font-size:16px; font-weight:600; cursor:pointer;">{{ o.label }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ m.isChoice }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; gap:7px;">
+                <sc-for list="{{ m.options }}" as="o" hint-placeholder-count="3">
+                  <button type="button" onClick="{{ o.onPick }}" style="flex:1; min-height:44px; padding:11px 8px; border-radius:var(--fl-radius-sm); border:1px solid {{ o.border }}; background:{{ o.bg }}; color:{{ o.ink }}; font-family:var(--fl-font-sans); font-size:12.5px; font-weight:600; cursor:pointer; text-wrap:pretty;">{{ o.label }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ m.isNumber }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; align-items:center; gap:11px;">
+                <input type="text" inputmode="decimal" class="ci-in" placeholder="{{ m.placeholder }}" value="{{ m.value }}" onInput="{{ m.onInput }}" style="flex:1; font-family:var(--fl-font-mono); font-size:16px;">
+                <span style="flex:none; font-size:13px; color:var(--fl-text-tertiary);">{{ m.unit }}</span>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- ─── REFLECTION ─── -->
+    <sc-if value="{{ isReflect }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:22px; animation:ciIn 200ms ease-out;">
+        <sc-for list="{{ questions }}" as="q" hint-placeholder-count="3">
+          <div style="display:flex; flex-direction:column; gap:9px;">
+            <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600; letter-spacing:-0.2px; line-height:1.3; color:var(--fl-text-primary); text-wrap:pretty;">{{ q.text }}</span>
+            <textarea class="ci-in" rows="4" placeholder="{{ q.placeholder }}" value="{{ q.value }}" onInput="{{ q.onInput }}"></textarea>
+            <sc-if value="{{ q.optional }}" hint-placeholder-val="{{ false }}">
+              <span style="font-size:11px; color:var(--fl-text-tertiary);">Optional</span>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- ─── SUMMARY ─── -->
+    <sc-if value="{{ isSummary }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:18px; animation:ciIn 200ms ease-out;">
+        <span style="font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">{{ summaryIntro }}</span>
+
+        <sc-for list="{{ summary }}" as="s" hint-placeholder-count="4">
+          <div style="display:flex; flex-direction:column; gap:9px; padding-bottom:16px; border-bottom:1px solid var(--fl-charcoal-800);">
+            <div style="display:flex; align-items:baseline; gap:9px;">
+              <span style="flex:1; font-size:9.5px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ s.label }}</span>
+              <span role="button" tabindex="0" onClick="{{ s.onEdit }}" style="flex:none; font-size:11.5px; font-weight:600; color:var(--fl-bronze-primary); cursor:pointer;">Edit</span>
+            </div>
+            <sc-for list="{{ s.rows }}" as="r" hint-placeholder-count="3">
+              <div style="display:flex; align-items:baseline; gap:12px;">
+                <span style="flex:none; min-width:96px; font-size:12.5px; color:var(--fl-text-tertiary); text-wrap:pretty;">{{ r.k }}</span>
+                <span style="flex:1; min-width:0; font-size:13px; font-weight:{{ r.weight }}; color:{{ r.ink }}; text-wrap:pretty;">{{ r.v }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+
+        <div style="display:flex; flex-direction:column; gap:7px; padding:14px 15px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:linear-gradient(168deg, var(--fl-bronze-tint) 0%, transparent 46%), var(--fl-surface-recessed);">
+          <span style="font-size:9.5px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Where this goes</span>
+          <span style="font-size:12px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">{{ savedNote }}</span>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="flex:none; display:flex; align-items:center; gap:10px; padding:13px 20px 12px; border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(11,13,15,0.5), rgba(6,7,8,0.9));">
+    <sc-if value="{{ canGoBack }}" hint-placeholder-val="{{ false }}">
+      <button type="button" onClick="{{ onPrev }}" style="flex:none; padding:14px 18px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); color:var(--fl-text-secondary); font-family:var(--fl-font-sans); font-size:14px; font-weight:600; cursor:pointer;">Back</button>
+    </sc-if>
+    <button type="button" onClick="{{ onNext }}" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:9px; padding:15px 20px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-bronze-metal-border); background:var(--fl-bronze-fill); color:#F7F5F1; font-family:var(--fl-font-sans); font-size:14.5px; font-weight:700; letter-spacing:0.3px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">{{ nextLabel }}</button>
+  </div>
+
+  <div style="flex:none; display:flex; justify-content:center; padding:4px 0 10px;">
+    <span style="width:132px; height:5px; border-radius:3px; background:rgba(240,238,234,0.28);"></span>
+  </div>
+
+  <sc-if value="{{ done }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; inset:0; z-index:40; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:15px; padding:44px; background:rgba(5,6,7,0.94); animation:ciIn 240ms var(--fl-ease-out, ease-out) both;">
+      <span style="width:56px; height:56px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; box-shadow:var(--fl-glow-subtle);"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>
+      <span style="font-family:var(--fl-font-display); font-size:24px; font-weight:600; letter-spacing:-0.4px; color:var(--fl-text-primary); text-align:center;">Sent to Ray</span>
+      <span style="font-size:13px; line-height:1.6; color:var(--fl-text-tertiary); text-align:center; text-wrap:pretty;">{{ doneNote }}</span>
+      <button type="button" onClick="{{ onReset }}" style="margin-top:6px; padding:12px 20px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-family:var(--fl-font-sans); font-size:13px; font-weight:600; cursor:pointer;">Start over</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:120px; transform:translateX(-50%); display:flex; align-items:center; gap:9px; padding:12px 18px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-modal); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-shadow-float); animation:ciIn 200ms var(--fl-ease-out, ease-out) both; white-space:nowrap;">
+      <span style="font-size:13px; font-weight:600; color:var(--fl-text-primary);">{{ toast }}</span>
+    </div>
+  </sc-if>
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:402,&quot;height&quot;:874}}">
+// The six poses the app already captures — a check-in reuses that batch, never a new format.
+const POSES = [
+  { key: 'rf', short: 'Front' }, { key: 'rs', short: 'Side' }, { key: 'rb', short: 'Back' },
+  { key: 'ff', short: 'Front flexed' }, { key: 'su', short: 'Arms up' }, { key: 'bf', short: 'Back flexed' }
+];
+
+const MEASURES = [
+  { id: 'chest', label: 'Chest', last: '41.0"' },
+  { id: 'waist', label: 'Waist', last: '33.0"' },
+  { id: 'hips', label: 'Hips', last: '38.5"' },
+  { id: 'arm', label: 'Arm', last: '14.5"' },
+  { id: 'thigh', label: 'Thigh', last: '23.5"' }
+];
+
+// Everything below is what the coach turned on for this client.
+const METRICS = [
+  { id: 'sessions', kind: 'scale', label: 'Days you hit your plan', sub: 'Out of 4 prescribed sessions', max: 4 },
+  { id: 'water', kind: 'number', label: 'Water, daily average', sub: 'Roughly is fine', unit: 'oz', placeholder: '96' },
+  { id: 'nutrition', kind: 'choice', label: 'Nutrition this week', sub: 'How close to the plan you ate', options: ['On target', 'Close', 'Off plan'] },
+  { id: 'sleep', kind: 'number', label: 'Sleep, nightly average', sub: 'Hours', unit: 'hrs', placeholder: '7' }
+];
+
+const QUESTIONS = [
+  { id: 'feel', text: 'How did the week feel?', placeholder: 'The sessions, your energy, anything that stood out\u2026' },
+  { id: 'pain', text: 'Anything hurting?', placeholder: 'Where, when it shows up, and how bad.' },
+  { id: 'want', text: 'What do you want more of next week?', placeholder: 'Optional \u2014 but it shapes what I write.', optional: true }
+];
+
+const STEPS = ['photos', 'body', 'week', 'reflect', 'summary'];
+
+class Component extends DCLogic {
+  state = { step: 0, source: 'batch', weight: '', measures: {}, metrics: {}, answers: {}, done: false, toast: null };
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+  _toast(m) { if (this._t) clearTimeout(this._t); this.setState({ toast: m }); this._t = setTimeout(() => this.setState({ toast: null }), 2200); }
+  _go(i) { this.setState({ step: Math.max(0, Math.min(STEPS.length - 1, i)) }); }
+
+  renderVals() {
+    const h = React.createElement, S = this.state;
+    const CHECK = h('svg', { width: 11, height: 11, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M20 6L9 17l-5-5' }));
+    const step = STEPS[S.step];
+    const useBatch = S.source === 'batch';
+
+    const steps = STEPS.map((id, i) => ({ key: id,
+      fill: i <= S.step ? 'var(--fl-bronze-primary)' : 'var(--fl-charcoal-700)' }));
+
+    const pick = (bucket, id, v) => this.setState(s => ({ [bucket]: Object.assign({}, s[bucket], { [id]: v }) }));
+
+    // ── photos ──
+    // Already-shot photos are not drop targets — static thumbnails, not image-slots.
+    const batchShots = POSES.map(p => ({ key: p.key, short: p.short }));
+    const poses = POSES.map(p => ({ key: p.key, short: p.short, slotId: 'ci-new-' + p.key,
+      border: 'var(--fl-charcoal-600)' }));
+
+    // ── measurements ──
+    const measures = MEASURES.map((m, i) => ({ key: m.id, label: m.label, last: m.last,
+      placeholder: m.last.replace('"', ''), value: S.measures[m.id] || '',
+      divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-800)',
+      onInput: (e) => pick('measures', m.id, e.target.value) }));
+
+    // ── coach-configured metrics ──
+    const metrics = METRICS.map(m => {
+      const val = S.metrics[m.id];
+      const base = { key: m.id, label: m.label, sub: m.sub,
+        isScale: m.kind === 'scale', isChoice: m.kind === 'choice', isNumber: m.kind === 'number',
+        unit: m.unit || '', placeholder: m.placeholder || '', value: val || '',
+        onInput: (e) => pick('metrics', m.id, e.target.value), options: [] };
+      if (m.kind === 'scale') {
+        base.options = Array.from({ length: m.max + 1 }, (_, i) => {
+          const on = String(val) === String(i);
+          return { key: i, label: String(i), onPick: () => pick('metrics', m.id, i),
+            border: on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+            bg: on ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+            ink: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)' };
+        });
+      } else if (m.kind === 'choice') {
+        base.options = m.options.map(o => {
+          const on = val === o;
+          return { key: o, label: o, onPick: () => pick('metrics', m.id, o),
+            border: on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+            bg: on ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+            ink: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)' };
+        });
+      }
+      return base;
+    });
+
+    const questions = QUESTIONS.map(q => ({ key: q.id, text: q.text, placeholder: q.placeholder,
+      optional: !!q.optional, value: S.answers[q.id] || '',
+      onInput: (e) => pick('answers', q.id, e.target.value) }));
+
+    // ── summary ──
+    const measureRows = MEASURES.filter(m => (S.measures[m.id] || '').trim())
+      .map(m => ({ key: m.id, k: m.label, v: S.measures[m.id] + '"', weight: 500, ink: 'var(--fl-text-primary)' }));
+    const metricRows = METRICS.map(m => {
+      const v = S.metrics[m.id];
+      const filled = v !== undefined && v !== '';
+      return { key: m.id, k: m.label,
+        v: filled ? (String(v) + (m.unit ? ' ' + m.unit : '')) : 'Not answered',
+        weight: filled ? 500 : 400,
+        ink: filled ? 'var(--fl-text-primary)' : 'var(--fl-text-tertiary)' };
+    });
+    const answerRows = QUESTIONS.map(q => {
+      const v = (S.answers[q.id] || '').trim();
+      return { key: q.id, k: q.text,
+        v: v || (q.optional ? 'Skipped' : 'Not answered'),
+        weight: v ? 500 : 400,
+        ink: v ? 'var(--fl-text-primary)' : 'var(--fl-text-tertiary)' };
+    });
+    const summary = [
+      { key: 'photos', label: 'Progress photos', onEdit: () => this._go(0),
+        rows: [{ key: 'src', k: 'Six poses', v: useBatch ? 'Your Mar 6 batch' : 'New photos this week', weight: 500, ink: 'var(--fl-text-primary)' }] },
+      { key: 'body', label: 'Body', onEdit: () => this._go(1),
+        rows: [{ key: 'wt', k: 'Weight', v: S.weight ? S.weight + ' lb' : 'Not answered', weight: S.weight ? 500 : 400, ink: S.weight ? 'var(--fl-text-primary)' : 'var(--fl-text-tertiary)' }]
+          .concat(measureRows.length ? measureRows : [{ key: 'ms', k: 'Measurements', v: 'Carried forward', weight: 400, ink: 'var(--fl-text-tertiary)' }]) },
+      { key: 'week', label: 'This week', onEdit: () => this._go(2), rows: metricRows },
+      { key: 'reflect', label: 'Reflection', onEdit: () => this._go(3), rows: answerRows }
+    ];
+
+    const TITLES = {
+      photos: 'Progress photos', body: 'Weight & measurements',
+      week: 'This week', reflect: 'Reflection', summary: 'Before you send'
+    };
+    const SUBS = {
+      photos: 'Week 8 check-in · due Sunday', body: 'Week 8 check-in · due Sunday',
+      week: 'The four things Ray tracks for you', reflect: 'Three questions from Ray',
+      summary: 'Week 8 check-in · due Sunday'
+    };
+
+    return {
+      steps, stepLabel: (S.step + 1) + ' of ' + STEPS.length,
+      title: TITLES[step], subtitle: SUBS[step],
+      isPhotos: step === 'photos', isBody: step === 'body', isWeek: step === 'week',
+      isReflect: step === 'reflect', isSummary: step === 'summary',
+
+      photoIntro: 'You already shot this week\u2019s six poses on Saturday. Send that batch, or take new ones now.',
+      batchTitle: 'Use my Mar 6 batch', batchSub: 'All six poses · shot Saturday morning',
+      batchShots, poses, showPoseGrid: !useBatch,
+      onUseBatch: () => this.setState({ source: 'batch' }),
+      onNewBatch: () => this.setState({ source: 'new' }),
+      batchBorder: useBatch ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+      batchBg: useBatch ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+      batchDot: 'var(--fl-bronze-primary)',
+      batchDotBg: useBatch ? 'var(--fl-bronze-metallic)' : 'transparent',
+      batchMark: useBatch ? CHECK : '',
+      newBorder: !useBatch ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+      newBg: !useBatch ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+      newDot: !useBatch ? 'var(--fl-bronze-primary)' : 'var(--fl-charcoal-500)',
+      newDotBg: !useBatch ? 'var(--fl-bronze-metallic)' : 'transparent',
+      newMark: !useBatch ? CHECK : '',
+
+      weight: S.weight, onWeight: (e) => this.setState({ weight: e.target.value }),
+      weightPlaceholder: '183', weightHint: 'Last week you logged 185 lb.',
+      measures, metrics, questions, summary,
+
+      summaryIntro: 'This is what Ray sees. Anything you skipped stays blank rather than guessing.',
+      savedNote: 'Photos join your Transformation. Weight and measurements go to your body log. Everything else is filed under Week 8 and stays in your history.',
+
+      canGoBack: S.step > 0,
+      onPrev: () => this._go(S.step - 1),
+      nextLabel: step === 'summary' ? 'Send to Ray' : 'Continue',
+      onNext: () => {
+        if (step !== 'summary') { this._go(S.step + 1); return; }
+        if (!S.weight.trim()) { this._toast('Add your weight first'); this._go(1); return; }
+        this.setState({ done: true });
+      },
+      onBack: () => this._toast('Check-in saved as a draft'),
+
+      done: S.done,
+      doneNote: 'He usually writes back within a day. You\u2019ll see it in your thread.',
+      onReset: () => this.setState({ step: 0, done: false, weight: '', measures: {}, metrics: {}, answers: {}, source: 'batch' }),
+      toast: S.toast
+    };
+  }
+}
+
+</script>
+</body>
+</html>

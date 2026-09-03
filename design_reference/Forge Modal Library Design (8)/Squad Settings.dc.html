@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .ss-input { width:100%; font-family:var(--fl-font-sans); font-size:14.5px; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); padding:12px 13px; outline:none; }
+  .ss-input:focus { border-color:var(--fl-bronze-border); }
+  .ss-input::placeholder { color:var(--fl-text-tertiary); }
+  image-slot::part(ring) { border-color: var(--fl-bronze-border); }
+  image-slot::part(empty) { color: var(--fl-text-tertiary); }
+  image-slot::part(frame) { background: rgba(191,143,79,0.04); }
+  @keyframes ssRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes ssFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes ssSheet { from { transform: translateY(100%); } to { transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Squad Settings" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/forge-slate2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <div style="flex:none; position:relative; z-index:5;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Settings" on-back="{{ goBack }}" hint-size="100%,56px"></x-import>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:8px 20px 34px;">
+
+      <!-- ═══ SQUAD HEADER ═══ -->
+      <div style="display:flex; flex-direction:column; align-items:center; text-align:center; animation:ssRise 420ms var(--fl-ease-out) both;">
+        <div style="position:relative; width:56px; height:56px; border-radius:var(--fl-radius-round); box-shadow:0 0 0 2px var(--fl-bronze-primary), 0 5px 15px rgba(0,0,0,0.6), 0 0 12px rgba(191,143,79,0.22);">
+          <image-slot id="squad-settings-avatar" shape="circle" placeholder="Add" style="position:absolute; inset:0; width:100%; height:100%; border-radius:var(--fl-radius-round); overflow:hidden;"></image-slot>
+        </div>
+        <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary); margin-top:9px;">{{ squadName }}</span>
+        <span style="display:inline-flex; align-items:center; gap:6px; margin-top:4px; font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ createdByLine }}</span>
+      </div>
+      <div style="height:1px; background:var(--fl-charcoal-700); margin:15px 2px 0;"></div>
+
+      <!-- ═══ 1 · IDENTITY (whole card tappable → consolidated Edit flow) ═══ -->
+      <div style="margin:16px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Identity</span></div>
+      <button type="button" onClick="{{ openEditIdentity }}" style="position:relative; width:100%; text-align:left; padding:0 38px 0 0; background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden; cursor:pointer; transition:transform 120ms var(--fl-ease-out), border-color 160ms ease;" style-active="transform:scale(0.992); border-color:var(--fl-bronze-border);">
+        <sc-for list="{{ identityFields }}" as="f" hint-placeholder-count="4">
+          <div style="display:flex; flex-direction:column; gap:2px; padding:13px 15px; border-top:{{ f.divider }};">
+            <span style="font-size:10.5px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ f.label }}</span>
+            <span style="font-size:14px; color:{{ f.valueColor }}; line-height:1.4;">{{ f.value }}</span>
+          </div>
+        </sc-for>
+        <span style="position:absolute; top:14px; right:14px; color:var(--fl-icon-inactive);">{{ chevron }}</span>
+      </button>
+
+      <!-- ═══ 2 · MEMBERSHIP ═══ -->
+      <div style="margin:36px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Membership</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+        <sc-for list="{{ membershipRows }}" as="r" hint-placeholder-count="3">
+          <button type="button" onClick="{{ r.action }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:15px; background:transparent; border:none; border-top:{{ r.divider }}; cursor:pointer; text-align:left;">
+            <span style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-icon-bronze);">{{ r.icon }}</span>
+            <span style="flex:1; min-width:0; font-size:14.5px; color:var(--fl-text-primary);">{{ r.label }}</span>
+            <sc-if value="{{ r.badge }}" hint-placeholder-val="{{ false }}">
+              <span style="flex:none; min-width:22px; height:22px; padding:0 7px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); color:#1A1206; font-size:12px; font-weight:700;">{{ r.badge }}</span>
+            </sc-if>
+            <span style="flex:none; color:var(--fl-icon-inactive);">{{ chevron }}</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <!-- ═══ 3 · PRIVACY ═══ -->
+      <div style="margin:36px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Privacy</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+        <div style="padding:15px;">
+          <span style="display:block; font-size:14.5px; color:var(--fl-text-primary); margin-bottom:3px;">{{ privacyLabel }}</span>
+          <span style="display:block; font-size:11.5px; color:var(--fl-text-tertiary); line-height:1.4; margin-bottom:11px;">{{ privacyHint }}</span>
+          <div style="display:flex; gap:5px; background:var(--fl-charcoal-800); border-radius:var(--fl-radius-pill); padding:3px;">
+            <sc-for list="{{ privacyOptions }}" as="o" hint-placeholder-count="2">
+              <button type="button" onClick="{{ o.select }}" style="{{ o.style }}">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ 4 · PERMISSIONS (expandable list) ═══ -->
+      <div style="margin:20px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Permissions</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+        <sc-for list="{{ permissionRows }}" as="r" hint-placeholder-count="2">
+          <div style="padding:15px; border-top:{{ r.divider }};">
+            <span style="display:block; font-size:14.5px; color:var(--fl-text-primary); margin-bottom:3px;">{{ r.label }}</span>
+            <span style="display:block; font-size:11.5px; color:var(--fl-text-tertiary); line-height:1.4; margin-bottom:11px;">{{ r.hint }}</span>
+            <div style="display:flex; gap:5px; background:var(--fl-charcoal-800); border-radius:var(--fl-radius-pill); padding:3px;">
+              <sc-for list="{{ r.options }}" as="o" hint-placeholder-count="2">
+                <button type="button" onClick="{{ o.select }}" style="{{ o.style }}">{{ o.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- ═══ 5 · NOTIFICATIONS (master mute) ═══ -->
+      <div style="margin:36px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Notifications</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+        <!-- master -->
+        <div style="width:100%; display:flex; align-items:flex-start; gap:13px; padding:16px 15px;">
+          <span style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-icon-bronze);">{{ muteIcon }}</span>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+            <span style="font-size:14.5px; color:var(--fl-text-primary);">Mute Squad</span>
+            <span style="font-size:12px; color:var(--fl-text-tertiary); line-height:1.35;">Master switch — silences everything below.</span>
+          </div>
+          <button type="button" role="switch" aria-checked="{{ muteOn }}" onClick="{{ toggleMute }}" style="{{ muteTrack }}"><span style="{{ muteKnob }}"></span></button>
+        </div>
+        <!-- children -->
+        <sc-for list="{{ notifRows }}" as="r" hint-placeholder-count="3">
+          <div style="width:100%; display:flex; align-items:flex-start; gap:13px; padding:16px 15px; border-top:1px solid var(--fl-charcoal-700); opacity:{{ r.opacity }};">
+            <span style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-icon-bronze);">{{ r.icon }}</span>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-size:14.5px; color:var(--fl-text-primary);">{{ r.label }}</span>
+              <span style="font-size:12px; color:var(--fl-text-tertiary); line-height:1.35;">{{ r.hint }}</span>
+            </div>
+            <button type="button" role="switch" aria-checked="{{ r.on }}" onClick="{{ r.toggle }}" style="{{ r.trackStyle }}"><span style="{{ r.knobStyle }}"></span></button>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- ═══ 6 · ADVANCED ═══ -->
+      <div style="margin:36px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Advanced</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+        <!-- invite code -->
+        <div style="display:flex; align-items:flex-end; gap:13px; padding:15px;">
+          <span style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-icon-bronze);">{{ codeIcon }}</span>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Invite Code</span>
+            <span style="font-family:var(--fl-font-mono, ui-monospace, monospace); font-size:15px; font-weight:600; letter-spacing:3px; color:var(--fl-bronze-mid);">{{ inviteCode }}</span>
+          </div>
+          <button type="button" onClick="{{ copyCode }}" aria-label="Copy invite code" style="flex:none; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:var(--fl-charcoal-800); border:1px solid var(--fl-charcoal-600); color:var(--fl-icon-bronze); cursor:pointer;">{{ copyIcon }}</button>
+        </div>
+        <sc-for list="{{ advancedRows }}" as="r" hint-placeholder-count="2">
+          <button type="button" onClick="{{ r.action }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:15px; background:transparent; border:none; border-top:1px solid var(--fl-charcoal-700); cursor:pointer; text-align:left;">
+            <span style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-icon-bronze);">{{ r.icon }}</span>
+            <span style="flex:1; min-width:0; font-size:14.5px; color:var(--fl-text-primary);">{{ r.label }}</span>
+            <span style="flex:none; color:var(--fl-icon-inactive);">{{ chevron }}</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <!-- ═══ 7 · DANGER ZONE ═══ -->
+      <div style="margin:64px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-red-muted);">Danger Zone</span></div>
+      <button type="button" onClick="{{ openDelete }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:15px; background:var(--fl-surface-recessed); border:1px solid var(--fl-red-metal-border); border-radius:var(--fl-radius-lg); cursor:pointer; text-align:left;">
+        <span style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(190,90,76,0.14); color:var(--fl-red-muted);">{{ trashIcon }}</span>
+        <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+          <span style="font-size:14.5px; font-weight:600; color:var(--fl-red-muted);">Delete Squad</span>
+          <span style="font-size:12px; color:var(--fl-text-tertiary); line-height:1.35;">Permanently remove this squad for everyone.</span>
+        </div>
+        <span style="flex:none; color:var(--fl-icon-inactive);">{{ chevron }}</span>
+      </button>
+
+      <!-- footer -->
+      <div style="margin-top:26px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+        <span style="font-family:var(--fl-font-display); font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-charcoal-500);">Forge Legacy</span>
+        <span style="font-size:10px; letter-spacing:0.8px; color:var(--fl-charcoal-500);">v1.0 · Squad ID {{ inviteCode }}</span>
+      </div>
+
+    </div>
+  </sc-if>
+
+  <!-- ═══ EDIT IDENTITY SHEET ═══ -->
+  <sc-if value="{{ editOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeEdit }}" style="position:absolute; inset:0; z-index:1150; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(3px); animation:ssFade 200ms ease both;">
+      <div onClick="{{ stop }}" style="width:100%; max-height:88%; display:flex; flex-direction:column; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-shadow-float); animation:ssSheet 320ms var(--fl-ease-out) both;">
+        <div style="display:flex; justify-content:center; padding:12px 0 4px;"><span style="width:40px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 18px 14px;">
+          <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; color:var(--fl-text-primary);">Edit Identity</span>
+          <button type="button" onClick="{{ closeEdit }}" aria-label="Close" style="width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; color:var(--fl-icon-inactive); cursor:pointer;">{{ closeIcon }}</button>
+        </div>
+        <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:2px 18px 8px; display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+            <div style="position:relative; width:76px; height:76px; border-radius:var(--fl-radius-round); box-shadow:0 0 0 2px var(--fl-bronze-primary), 0 0 14px rgba(191,143,79,0.28);">
+              <image-slot id="squad-settings-edit-avatar" shape="circle" placeholder="Add" style="position:absolute; inset:0; width:100%; height:100%; border-radius:var(--fl-radius-round); overflow:hidden;"></image-slot>
+            </div>
+            <span style="font-size:12px; font-weight:600; color:var(--fl-bronze-primary);">Change Photo</span>
+          </div>
+          <sc-for list="{{ editFields }}" as="f" hint-placeholder-count="4">
+            <label style="display:flex; flex-direction:column; gap:7px;">
+              <span style="font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ f.label }}</span>
+              <input class="ss-input" type="text" value="{{ f.value }}" placeholder="{{ f.placeholder }}" onInput="{{ f.onInput }}">
+            </label>
+          </sc-for>
+          <label style="display:flex; flex-direction:column; gap:7px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Description</span>
+            <textarea class="ss-input" rows="3" placeholder="Tell athletes what this squad is about." style="resize:none; line-height:1.45;" onInput="{{ onDescInput }}">{{ descValue }}</textarea>
+          </label>
+        </div>
+        <div style="flex:none; padding:14px 18px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); display:flex; gap:10px;">
+          <button type="button" onClick="{{ closeEdit }}" style="flex:1; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:14.5px; font-weight:600; cursor:pointer;">Cancel</button>
+          <button type="button" onClick="{{ saveIdentity }}" style="flex:2; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-fill); color:var(--fl-bronze-bright); font-size:14.5px; font-weight:600; cursor:pointer; box-shadow:var(--fl-glow-subtle);">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ═══ DELETE CONFIRM (type DELETE) ═══ -->
+  <sc-if value="{{ deleteOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; inset:0; z-index:1200; display:flex; align-items:center; justify-content:center; padding:28px; background:var(--fl-overlay-dark); backdrop-filter:blur(3px); animation:ssFade 200ms ease both;">
+      <div style="width:100%; max-width:322px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-xl); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:24px; animation:ssRise 240ms var(--fl-ease-out) both;">
+        <div style="display:flex; justify-content:center; margin-bottom:14px;"><span style="width:44px; height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(190,90,76,0.14); border:1px solid var(--fl-red-metal-border); color:var(--fl-red-muted);">{{ trashIcon }}</span></div>
+        <span style="display:block; font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-text-primary); text-align:center;">Delete Iron Vigil?</span>
+        <span style="display:block; font-size:13.5px; line-height:1.5; color:var(--fl-text-secondary); text-align:center; margin-top:10px;">This permanently removes the squad, its history, and all check-ins for every member. This cannot be undone.</span>
+        <div style="margin-top:18px; display:flex; flex-direction:column; gap:7px;">
+          <span style="font-size:11.5px; color:var(--fl-text-tertiary);">Type <span style="font-weight:700; letter-spacing:1px; color:var(--fl-red-muted);">DELETE</span> to confirm</span>
+          <input class="ss-input" type="text" value="{{ deleteText }}" placeholder="DELETE" onInput="{{ onDeleteInput }}" style="text-align:center; letter-spacing:2px; text-transform:uppercase;">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
+          <button type="button" onClick="{{ doDelete }}" disabled="{{ deleteDisabled }}" style="{{ deleteBtnStyle }}">Delete Squad Forever</button>
+          <button type="button" onClick="{{ cancelDelete }}" style="width:100%; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:14.5px; font-weight:600; cursor:pointer;">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:34px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:ssRise 260ms var(--fl-ease-out) both;">
+      <span style="display:inline-flex; color:var(--fl-icon-bronze); flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = {
+    ready: false, toastMsg: null, toastIconId: 'settings',
+    // identity
+    editOpen: false,
+    name: 'Iron Vigil', motto: 'Hold the line, every dawn.', goal: 'Forge 500 workouts together', description: '',
+    draft: null,
+    // privacy / permissions
+    visibility: 'private', posting: 'everyone', invitePerm: 'owner',
+    // notifications
+    muteSquad: false, notifCheckins: true, notifCompetition: true, notifMilestones: true,
+    // delete
+    deleteOpen: false, deleteText: '',
+  };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); }
+
+  _toast(msg, iconId) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastIconId: iconId || 'settings' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2400); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const S = this.state;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.8 });
+    const svg = (d, size, sw) => h('svg', { width: size || 17, height: size || 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(d) ? d : [d]).map((p, i) => h('path', { key: i, d: p })));
+    const chevron = svg('M9 5l7 7-7 7', 17, 1.9);
+
+    const segBtn = (active) => ({ flex: 1, padding: '9px 0', borderRadius: 'var(--fl-radius-pill)', border: 'none', cursor: 'pointer', fontSize: '12.5px', fontWeight: 600, color: active ? '#1A1206' : 'var(--fl-text-secondary)', background: active ? 'var(--fl-bronze-metallic)' : 'transparent', transition: 'background 160ms var(--fl-ease-out), color 160ms var(--fl-ease-out)' });
+    const track = (on, dim) => ({ position: 'relative', flex: 'none', marginTop: '2px', width: '46px', height: '27px', borderRadius: 'var(--fl-radius-pill)', border: '1px solid ' + (on ? 'var(--fl-bronze-mid)' : 'var(--fl-charcoal-700)'), background: on ? 'linear-gradient(180deg, var(--fl-bronze-mid), var(--fl-bronze-dark))' : 'var(--fl-charcoal-900)', cursor: dim ? 'not-allowed' : 'pointer', transition: 'background 180ms ease, border-color 180ms ease', boxShadow: on ? 'inset 0 1px 0 rgba(207,160,99,0.14)' : 'inset 0 1px 3px rgba(0,0,0,0.62)' });
+    const knob = (on) => ({ position: 'absolute', top: '2px', left: on ? '21px' : '2px', width: '21px', height: '21px', borderRadius: 'var(--fl-radius-round)', background: on ? '#E4D4B8' : 'var(--fl-icon-inactive)', transition: 'left 180ms var(--fl-ease-out), background 180ms ease', boxShadow: '0 1px 3px rgba(0,0,0,0.55)' });
+    const crownGlyph = (size) => h('svg', { width: size || 15, height: size || 15, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z' }));
+
+    const div0 = 'none';
+    const divT = '1px solid var(--fl-charcoal-700)';
+
+    // 1 · Identity (summary — edited via consolidated flow)
+    const identityFields = [
+      { key: 'name', label: 'Squad Name', value: S.name, valueColor: 'var(--fl-text-primary)', icon: ic('shield', 16, 1.8), divider: div0 },
+      { key: 'motto', label: 'Motto', value: S.motto, valueColor: 'var(--fl-text-primary)', icon: ic('share', 16, 1.8), divider: divT },
+      { key: 'goal', label: 'Current Goal', value: S.goal, valueColor: 'var(--fl-text-primary)', icon: ic('target', 16, 1.8), divider: divT },
+      { key: 'desc', label: 'Description', value: S.description || 'No description yet.', valueColor: S.description ? 'var(--fl-text-primary)' : 'var(--fl-text-tertiary)', icon: ic('search', 16, 1.8), divider: divT },
+    ];
+
+    // 2 · Membership (Manage → Requests → Invite)
+    const membershipRows = [
+      { key: 'members', label: 'Manage Members', badge: null, icon: ic('squad', 17, 1.8), divider: div0, action: () => { try { window.localStorage.setItem('forge.squad.role', 'owner'); } catch (e) {} window.location.href = 'Squad%20Detail.dc.html'; } },
+      { key: 'requests', label: 'Join Requests', badge: '2', icon: ic('invite', 17, 1.8), divider: divT, action: () => { window.location.href = 'Squad%20Join%20Requests.dc.html'; } },
+      { key: 'invite', label: 'Invite Members', badge: null, icon: ic('share', 17, 1.8), divider: divT, action: () => { window.location.href = 'Squad%20Invite.dc.html'; } },
+    ];
+
+    // 3 · Privacy
+    const privacyOptions = [{ v: 'private', label: 'Private' }, { v: 'public', label: 'Public' }].map(o => ({ key: o.v, label: o.label, style: segBtn(S.visibility === o.v), select: () => this.setState({ visibility: o.v }) }));
+
+    // 4 · Permissions (expandable)
+    const mkSeg = (key, current, opts) => opts.map(o => ({ key: o.v, label: o.label, style: segBtn(current === o.v), select: () => this.setState({ [key]: o.v }) }));
+    const permissionRows = [
+      { key: 'posting', label: 'Who Can Post Check-ins', hint: 'Control who may share video check-ins to the squad.', divider: div0, options: mkSeg('posting', S.posting, [{ v: 'everyone', label: 'Everyone' }, { v: 'approved', label: 'Approved' }]) },
+      { key: 'invitePerm', label: 'Who Can Invite', hint: 'Choose who may bring new athletes into the squad.', divider: divT, options: mkSeg('invitePerm', S.invitePerm, [{ v: 'owner', label: 'Owner Only' }, { v: 'anyone', label: 'Any Member' }]) },
+    ];
+
+    // 5 · Notifications — master mute disables children
+    const muted = S.muteSquad;
+    const mkToggle = (key, label, hint, iconId) => {
+      const on = muted ? false : S[key];
+      return { key, label, hint, icon: ic(iconId, 17, 1.8), on: on, opacity: muted ? 0.4 : 1, trackStyle: track(on, muted), knobStyle: knob(on), toggle: () => { if (muted) return; this.setState(s => ({ [key]: !s[key] })); } };
+    };
+    const notifRows = [
+      mkToggle('notifCheckins', 'New Check-ins', 'When a member posts a video check-in.', 'flame'),
+      mkToggle('notifCompetition', 'Competition Updates', 'Rank changes and competition results.', 'swords'),
+      mkToggle('notifMilestones', 'Squad Milestones', 'Goal progress and mission completions.', 'target'),
+    ];
+
+    // 6 · Advanced
+    const linkGlyph = svg(['M9.5 14.5l5-5', 'M8 12l-2 2a3 3 0 0 0 4.2 4.2l2-2', 'M16 12l2-2a3 3 0 0 0-4.2-4.2l-2 2'], 17, 1.8);
+    const advancedRows = [
+      { key: 'link', label: 'Share Invite Link', icon: linkGlyph, action: () => this._toast('Share invite link', 'share') },
+      { key: 'transfer', label: 'Transfer Ownership', icon: crownGlyph(17), action: () => { window.location.href = 'Squad%20Transfer%20Ownership.dc.html'; } },
+    ];
+
+    // Edit Identity sheet fields
+    const draft = S.draft || { name: S.name, motto: S.motto, goal: S.goal, description: S.description };
+    const setDraft = (k, v) => this.setState(s => ({ draft: Object.assign({}, s.draft || { name: s.name, motto: s.motto, goal: s.goal, description: s.description }, { [k]: v }) }));
+    const editFields = [
+      { key: 'name', label: 'Squad Name', value: draft.name, placeholder: 'Squad name', onInput: (e) => setDraft('name', e.target.value) },
+      { key: 'motto', label: 'Motto', value: draft.motto, placeholder: 'A short rallying cry', onInput: (e) => setDraft('motto', e.target.value) },
+      { key: 'goal', label: 'Current Goal', value: draft.goal, placeholder: 'What the squad is working toward', onInput: (e) => setDraft('goal', e.target.value) },
+    ];
+
+    // 7 · Delete confirm
+    const canDelete = S.deleteText.trim().toUpperCase() === 'DELETE';
+    const deleteBtnStyle = { width: '100%', padding: '14px', borderRadius: 'var(--fl-radius-md)', border: '1px solid ' + (canDelete ? 'var(--fl-red-metal-border)' : 'var(--fl-charcoal-600)'), background: canDelete ? 'var(--fl-red-fill)' : 'var(--fl-charcoal-800)', color: canDelete ? '#F2E7E4' : 'var(--fl-text-tertiary)', fontSize: '14.5px', fontWeight: 600, cursor: canDelete ? 'pointer' : 'not-allowed', boxShadow: canDelete ? 'var(--fl-glow-red)' : 'none', opacity: canDelete ? 1 : 0.7 };
+
+    return {
+      ready: true, notReady: false,
+      squadName: S.name,
+      createdByLine: h(React.Fragment, null, h('span', { style: { display: 'inline-flex', color: 'var(--fl-bronze-primary)' } }, crownGlyph(12)), 'Led by You \u00b7 Owner'),
+      chevron: chevron,
+
+      identityFields: identityFields,
+      editIcon: ic('settings', 16, 1.8),
+      openEditIdentity: () => this.setState({ editOpen: true, draft: { name: S.name, motto: S.motto, goal: S.goal, description: S.description } }),
+
+      membershipRows: membershipRows,
+
+      privacyLabel: 'Squad Visibility', privacyHint: 'Private squads are invite-only and hidden from search.', privacyOptions: privacyOptions,
+      permissionRows: permissionRows,
+
+      muteIcon: ic('bell', 17, 1.8), muteOn: muted, toggleMute: () => this.setState(s => ({ muteSquad: !s.muteSquad })),
+      muteTrack: track(muted, false), muteKnob: knob(muted),
+      notifRows: notifRows,
+
+      codeIcon: svg(['M9 4H5v4', 'M15 4h4v4', 'M9 20H5v-4', 'M15 20h4v-4'], 17, 1.8), inviteCode: 'IRON-7Q2K',
+      copyIcon: svg(['M9 9h10v10H9z', 'M5 15V5h10'], 16, 1.8), copyCode: () => this._toast('Invite code copied', 'share'),
+      advancedRows: advancedRows,
+
+      trashIcon: svg(['M4 7h16', 'M9 7V5h6v2', 'M6.5 7l1 13h9l1-13', 'M10 11v6', 'M14 11v6'], 17, 1.8),
+      openDelete: () => this.setState({ deleteOpen: true, deleteText: '' }),
+
+      // edit sheet
+      editOpen: S.editOpen, closeEdit: () => this.setState({ editOpen: false, draft: null }),
+      closeIcon: svg(['M6 6l12 12', 'M18 6L6 18'], 18, 2),
+      editFields: editFields,
+      descValue: draft.description, onDescInput: (e) => setDraft('description', e.target.value),
+      saveIdentity: () => { const d = this.state.draft || draft; this.setState({ name: d.name, motto: d.motto, goal: d.goal, description: d.description, editOpen: false, draft: null }); this._toast('Identity saved', 'settings'); },
+      stop: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+
+      // delete
+      deleteOpen: S.deleteOpen, deleteText: S.deleteText, onDeleteInput: (e) => this.setState({ deleteText: e.target.value }),
+      deleteDisabled: !canDelete, deleteBtnStyle: deleteBtnStyle,
+      cancelDelete: () => this.setState({ deleteOpen: false, deleteText: '' }),
+      doDelete: () => { if (!canDelete) return; this.setState({ deleteOpen: false, deleteText: '' }); this._toast('Squad deleted', 'settings'); setTimeout(() => { window.location.href = 'Squads%20Hub.dc.html'; }, 900); },
+
+      goBack: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Squad%20Detail.dc.html'); },
+      toastOpen: !!S.toastMsg, toastMsg: S.toastMsg || '', toastIcon: ic(S.toastIconId || 'settings', 18, 1.7),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#08090C; color:#EFE9E0; font-family:'Playfair Display',Georgia,serif; -webkit-font-smoothing:antialiased; }
+  .fn-sans { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+  .fn-mono { font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace; }
+  a { color:#CDA063; }
+  a:hover { color:#E4C88E; }
+</style>
+</helmet>
+<div style="min-height:100vh; background:radial-gradient(120% 50% at 50% -6%, rgba(191,143,79,0.10) 0%, rgba(191,143,79,0) 46%), #08090C; padding:60px 40px 90px; display:flex; flex-direction:column; align-items:center;">
+
+  <!-- ══ MASTHEAD ══ -->
+  <header style="display:flex; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:1120px;">
+    <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:5px; text-transform:uppercase; color:#8A6B41; margin-bottom:16px;"><a href="Forge Artwork Reference.dc.html" style="color:#8A6B41; text-decoration:none;">Master Artwork Reference</a> · Systems · Specification</span>
+    <h1 style="margin:0; font-size:48px; font-weight:700; letter-spacing:5px; text-indent:5px; line-height:1.06; background:linear-gradient(180deg,#EFD3A0,#93693B); -webkit-background-clip:text; background-clip:text; color:transparent;">HOME WORKOUT<br>ARTWORK RESOLVER</h1>
+    <div style="display:flex; align-items:center; gap:16px; width:min(560px,82%); margin:26px 0 14px;">
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(191,143,79,0.7));"></span>
+      <span style="width:8px; height:8px; flex:none; transform:rotate(45deg); border:1px solid #BF8F4F;"></span>
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.7),transparent);"></span>
+    </div>
+    <span class="fn-sans" style="font-size:13px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#B08A55;">Deterministic · centralized · testable · reusable</span>
+    <p class="fn-sans" style="max-width:720px; margin:22px 0 0; font-size:13.5px; line-height:1.75; color:#9A938A;">The single source of truth for choosing the artwork on the Home “Today’s Workout / Start Workout” card. One resolver decides which illustration describes <em>today’s</em> workout — not merely the program — from structured data, falling back through a fixed precedence to a guaranteed neutral default. The Home card contains no classification logic; it receives only the resolved artwork object.</p>
+    <div class="fn-sans" style="display:flex; gap:10px; margin-top:24px; flex-wrap:wrap; justify-content:center;">
+      <span style="padding:7px 14px; border-radius:var(--fl-radius-pill); border:1px solid #241B10; background:#100C08; font-size:10.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#6C5A41;">Spec v1.0 · design-locked</span>
+      <span style="padding:7px 14px; border-radius:var(--fl-radius-pill); border:1px solid #241B10; background:#100C08; font-size:10.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#6C5A41;">Not yet implemented</span>
+      <span style="padding:7px 14px; border-radius:var(--fl-radius-pill); border:1px solid #241B10; background:#100C08; font-size:10.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#6C5A41;">Artwork placement deferred</span>
+    </div>
+  </header>
+
+  <!-- ══ 00 · PRINCIPLES ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:22px;">§ 00 · Principles</span>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;">
+      <sc-for list="{{ principles }}" as="p" hint-placeholder-count="6">
+        <div style="display:flex; flex-direction:column; gap:8px; padding:20px 22px; border-radius:var(--fl-radius-lg); background:#100C08; border:1px solid #1C150E;">
+          <span style="font-size:15px; font-weight:600; color:#D8CBB8;">{{ p.t }}</span>
+          <span class="fn-sans" style="font-size:11.5px; line-height:1.6; color:#7C7469;">{{ p.d }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ══ 01 · PRECEDENCE ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 01 · Resolution Precedence</span>
+    <h2 style="margin:0 0 8px; font-size:30px; font-weight:600; letter-spacing:0.3px; color:#E4C88E;">Seven rungs, top to bottom.</h2>
+    <p class="fn-sans" style="max-width:760px; margin:0 0 26px; font-size:13px; line-height:1.7; color:#8F877C;">The resolver walks the ladder in order and returns the first rung that produces a valid, registered key. Every rung fails safe: an invalid or empty result falls through to the next. The ladder always terminates at a registered neutral default, so the card can never be blank or broken.</p>
+    <div style="display:flex; flex-direction:column; gap:2px;">
+      <sc-for list="{{ precedence }}" as="r" hint-placeholder-count="7">
+        <div style="display:grid; grid-template-columns:52px 1fr 150px 96px; gap:18px; align-items:center; padding:18px 6px; border-top:1px solid #1C150E;">
+          <span style="width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); border:1px solid rgba(191,143,79,0.4); background:radial-gradient(circle at 50% 34%, rgba(191,143,79,0.16), transparent 72%); font-family:var(--fl-font-display); font-size:17px; font-weight:700; color:#CDA063;">{{ r.n }}</span>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <span style="font-size:19px; font-weight:600; color:#E4C88E;">{{ r.name }}</span>
+            <span class="fn-sans" style="font-size:12px; line-height:1.55; color:#8F877C;">{{ r.desc }}</span>
+          </div>
+          <span class="fn-mono" style="font-size:11px; color:#B0A390;">{{ r.src }}</span>
+          <span class="fn-mono" style="font-size:12px; font-weight:600; color:#BF8F4F; text-align:right;">{{ r.conf }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <p class="fn-sans" style="margin:22px 0 0; font-size:11.5px; line-height:1.65; color:#6C5A41;"><span style="color:#B08A55;">Never on this card —</span> Legacy and Honors artwork are reserved for Legacy, achievement, ceremony, and relevant empty states. The resolver must not select them for an active Start Workout card even when the assets exist.</p>
+  </section>
+
+  <!-- ══ 02 · PIPELINE DETAIL ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 02 · Rung Detail</span>
+    <h2 style="margin:0 0 26px; font-size:30px; font-weight:600; letter-spacing:0.3px; color:#E4C88E;">How each rung decides.</h2>
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <sc-for list="{{ rungs }}" as="g" hint-placeholder-count="6">
+        <div style="padding:24px 28px; border-radius:var(--fl-radius-lg); background:#100C08; border:1px solid #1C150E;">
+          <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:12px;">
+            <span class="fn-mono" style="font-size:12px; font-weight:600; color:#6C5A41;">{{ g.n }}</span>
+            <span style="font-size:18px; font-weight:600; color:#D8CBB8;">{{ g.name }}</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:9px;">
+            <sc-for list="{{ g.rules }}" as="line" hint-placeholder-count="3">
+              <div class="fn-sans" style="display:flex; gap:11px;">
+                <span style="width:5px; height:5px; flex:none; margin-top:6px; border-radius:50%; background:#574029;"></span>
+                <span style="font-size:12.5px; line-height:1.6; color:#9A938A;">{{ line }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ══ 03 · SEX VARIANT ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 03 · Sex Variant</span>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:stretch;">
+      <div style="padding:26px 30px; border-radius:var(--fl-radius-xl); background:linear-gradient(180deg, rgba(198,156,100,0.06) 0%, rgba(198,156,100,0) 50%), #100C08; border:1px solid #241B10;">
+        <h2 style="margin:0 0 12px; font-size:22px; font-weight:600; color:#E4C88E;">Resolved from saved selection only.</h2>
+        <p class="fn-sans" style="margin:0; font-size:12.5px; line-height:1.7; color:#9A938A;">The artwork set is chosen strictly from the user’s explicit saved sex. It is never inferred from name, profile photo, training behaviour, body weight, or any other attribute.</p>
+      </div>
+      <div style="padding:24px 28px; border-radius:var(--fl-radius-xl); background:#0C0906; border:1px solid #1C150E; display:flex; flex-direction:column; gap:0; justify-content:center;">
+        <sc-for list="{{ sexRules }}" as="s" hint-placeholder-count="3">
+          <div class="fn-sans" style="display:flex; align-items:baseline; gap:14px; padding:12px 0; border-top:1px solid #17110A;">
+            <span class="fn-mono" style="flex:none; width:88px; font-size:12px; font-weight:600; color:#CDA063;">{{ s.k }}</span>
+            <span style="flex:1; font-size:12.5px; line-height:1.55; color:#9A938A;">{{ s.v }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <p class="fn-sans" style="margin:18px 0 0; font-size:11.5px; line-height:1.65; color:#6C5A41;"><span style="color:#B08A55;">Temporary fallback —</span> dedicated neutral artwork does not yet exist. Until it does, a missing sex selection resolves to an explicitly registered placeholder (documented per asset), never to a random or defaulted male/female set. Replace with true neutral art when produced.</p>
+  </section>
+
+  <!-- ══ 04 · DATA CONTRACTS ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 04 · Data Contracts</span>
+    <h2 style="margin:0 0 24px; font-size:30px; font-weight:600; letter-spacing:0.3px; color:#E4C88E;">Inputs and outputs.</h2>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+      <div>
+        <span class="fn-sans" style="display:block; font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#B08A55; margin-bottom:12px;">Resolver signature</span>
+        <pre class="fn-mono" style="margin:0; padding:20px 22px; border-radius:var(--fl-radius-md); background:#050409; border:1px solid #140F09; font-size:11.5px; line-height:1.7; color:#B0A390; white-space:pre-wrap; overflow-x:auto;">{{ sigCode }}</pre>
+        <span class="fn-sans" style="display:block; font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#B08A55; margin:20px 0 12px;">Explicit override input</span>
+        <pre class="fn-mono" style="margin:0; padding:20px 22px; border-radius:var(--fl-radius-md); background:#050409; border:1px solid #140F09; font-size:11.5px; line-height:1.7; color:#B0A390; white-space:pre-wrap; overflow-x:auto;">{{ overrideCode }}</pre>
+      </div>
+      <div>
+        <span class="fn-sans" style="display:block; font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#B08A55; margin-bottom:12px;">Resolved artwork object</span>
+        <pre class="fn-mono" style="margin:0; padding:20px 22px; border-radius:var(--fl-radius-md); background:#050409; border:1px solid #140F09; font-size:11.5px; line-height:1.7; color:#B0A390; white-space:pre-wrap; overflow-x:auto;">{{ resolvedCode }}</pre>
+        <div style="margin-top:20px; display:flex; flex-direction:column; gap:0;">
+          <sc-for list="{{ resolvedFields }}" as="f" hint-placeholder-count="7">
+            <div class="fn-sans" style="display:flex; gap:12px; padding:9px 0; border-top:1px solid #17110A;">
+              <span class="fn-mono" style="flex:none; width:96px; font-size:11px; color:#CDA063;">{{ f.k }}</span>
+              <span style="flex:1; font-size:11.5px; line-height:1.5; color:#8F877C;">{{ f.v }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 05 · ASSET MANIFEST ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 05 · Asset Manifest &amp; Naming</span>
+    <h2 style="margin:0 0 20px; font-size:30px; font-weight:600; letter-spacing:0.3px; color:#E4C88E;">Registered keys, never built strings.</h2>
+    <p class="fn-sans" style="max-width:760px; margin:0 0 22px; font-size:13px; line-height:1.7; color:#8F877C;">The resolver returns a key; a registered manifest maps that key to a file. Filenames are never constructed dynamically at the call site. Every supported key must validate against the manifest before it is returned — an unregistered key is treated as a miss and falls through.</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+      <div>
+        <span class="fn-sans" style="display:block; font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#B08A55; margin-bottom:12px;">Key convention</span>
+        <pre class="fn-mono" style="margin:0; padding:20px 22px; border-radius:var(--fl-radius-md); background:#050409; border:1px solid #140F09; font-size:11.5px; line-height:1.7; color:#B0A390; white-space:pre-wrap; overflow-x:auto;">{{ keyCode }}</pre>
+      </div>
+      <div>
+        <span class="fn-sans" style="display:block; font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#B08A55; margin-bottom:12px;">Manifest entry must carry</span>
+        <div style="display:flex; flex-direction:column; gap:0;">
+          <sc-for list="{{ manifestFields }}" as="m" hint-placeholder-count="7">
+            <div class="fn-sans" style="display:flex; gap:12px; padding:10px 0; border-top:1px solid #17110A;">
+              <span class="fn-mono" style="flex:none; width:104px; font-size:11px; color:#CDA063;">{{ m.k }}</span>
+              <span style="flex:1; font-size:11.5px; line-height:1.5; color:#8F877C;">{{ m.v }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 06 · CONFIDENCE + TITLE ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:32px;">
+      <div>
+        <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:16px;">§ 06 · Confidence</span>
+        <div style="display:flex; flex-direction:column; gap:0;">
+          <sc-for list="{{ confidence }}" as="c" hint-placeholder-count="6">
+            <div class="fn-sans" style="display:flex; align-items:baseline; gap:16px; padding:13px 0; border-top:1px solid #17110A;">
+              <span class="fn-mono" style="flex:none; width:44px; font-size:14px; font-weight:600; color:#BF8F4F;">{{ c.v }}</span>
+              <span style="flex:1; font-size:12.5px; line-height:1.5; color:#9A938A;">{{ c.d }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <p class="fn-sans" style="margin:18px 0 0; font-size:11.5px; line-height:1.65; color:#6C5A41;">When two classifications are too close, choose the broader category rather than an aggressive guess: upper &gt; push, full&nbsp;body &gt; legs, conditioning &gt; running.</p>
+      </div>
+      <div>
+        <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:16px;">§ 07 · Title Normalization</span>
+        <p class="fn-sans" style="margin:0 0 14px; font-size:12px; line-height:1.6; color:#8F877C;">Fallback only. Lowercase · strip punctuation · collapse whitespace · expand common abbreviations · ignore day letters/numbers (A, B, 1, 2). No loose substring matching.</p>
+        <div style="display:flex; flex-direction:column; gap:0;">
+          <sc-for list="{{ titleEx }}" as="t" hint-placeholder-count="8">
+            <div class="fn-mono" style="display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid #17110A; font-size:11.5px;">
+              <span style="flex:1; color:#9A938A;">{{ t.in }}</span>
+              <span style="flex:none; color:#574029;">→</span>
+              <span style="flex:none; width:96px; text-align:right; color:#CDA063;">{{ t.out }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 08 · SPLIT + FAMILY INTERPRETATION ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 08 · Split Interpretation</span>
+    <div style="display:grid; grid-template-columns:150px 1fr; gap:1px; background:#1C150E; border:1px solid #1C150E; border-radius:var(--fl-radius-md); overflow:hidden;">
+      <span class="fn-sans" style="padding:11px 14px; background:#0C0906; font-size:10px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:#6C5A41;">Split</span>
+      <span class="fn-sans" style="padding:11px 14px; background:#0C0906; font-size:10px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:#6C5A41;">Interpretation</span>
+      <sc-for list="{{ splits }}" as="s" hint-placeholder-count="8">
+        <span class="fn-mono" style="padding:12px 14px; background:#0A0805; font-size:12px; font-weight:600; color:#E4C88E;">{{ s.k }}</span>
+        <span class="fn-sans" style="padding:12px 14px; background:#0A0805; font-size:12px; line-height:1.55; color:#9A938A;">{{ s.v }}</span>
+      </sc-for>
+    </div>
+    <p class="fn-sans" style="margin:16px 0 0; font-size:12px; line-height:1.65; color:#8F877C;"><span style="color:#B08A55;">Legs vs Lower —</span> use <span class="fn-mono" style="color:#CDA063;">lower</span> only when the workout or program explicitly follows an Upper/Lower structure; otherwise use <span class="fn-mono" style="color:#CDA063;">legs</span> for general lower-body sessions. They are not interchangeable.</p>
+  </section>
+
+  <section style="width:100%; max-width:1120px; margin-top:48px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 09 · Exercise-Family Dominance</span>
+    <div style="padding:22px 26px; border-radius:var(--fl-radius-lg); background:#100C08; border:1px solid #1C150E; margin-bottom:16px;">
+      <div style="display:flex; flex-direction:column; gap:9px;">
+        <sc-for list="{{ familyRules }}" as="line" hint-placeholder-count="5">
+          <div class="fn-sans" style="display:flex; gap:11px;">
+            <span style="width:5px; height:5px; flex:none; margin-top:6px; border-radius:50%; background:#574029;"></span>
+            <span style="font-size:12.5px; line-height:1.6; color:#9A938A;">{{ line }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 10 · PSEUDOCODE ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 10 · Pseudocode</span>
+    <h2 style="margin:0 0 20px; font-size:30px; font-weight:600; letter-spacing:0.3px; color:#E4C88E;">The resolver, top to bottom.</h2>
+    <pre class="fn-mono" style="margin:0; padding:26px 28px; border-radius:var(--fl-radius-lg); background:#050409; border:1px solid #140F09; font-size:12px; line-height:1.7; color:#B0A390; white-space:pre; overflow-x:auto;">{{ pseudo }}</pre>
+  </section>
+
+  <!-- ══ 11 · EDGE CASES ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 11 · Edge-Case Table</span>
+    <div style="display:grid; grid-template-columns:1fr 200px 1fr; gap:1px; background:#1C150E; border:1px solid #1C150E; border-radius:var(--fl-radius-md); overflow:hidden;">
+      <span class="fn-sans" style="padding:11px 14px; background:#0C0906; font-size:10px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:#6C5A41;">Situation</span>
+      <span class="fn-sans" style="padding:11px 14px; background:#0C0906; font-size:10px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:#6C5A41;">Resolves to</span>
+      <span class="fn-sans" style="padding:11px 14px; background:#0C0906; font-size:10px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:#6C5A41;">Why</span>
+      <sc-for list="{{ edges }}" as="e" hint-placeholder-count="12">
+        <span class="fn-sans" style="padding:12px 14px; background:#0A0805; font-size:12px; line-height:1.5; color:#C6BEB2;">{{ e.s }}</span>
+        <span class="fn-mono" style="padding:12px 14px; background:#0A0805; font-size:11.5px; color:#CDA063;">{{ e.r }}</span>
+        <span class="fn-sans" style="padding:12px 14px; background:#0A0805; font-size:11.5px; line-height:1.5; color:#8F877C;">{{ e.w }}</span>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ══ 12 · EXAMPLES ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:48px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 12 · Worked Examples</span>
+    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:2px 40px;">
+      <sc-for list="{{ examples }}" as="x" hint-placeholder-count="10">
+        <div class="fn-sans" style="display:flex; align-items:baseline; gap:14px; padding:11px 2px; border-top:1px solid #17110A;">
+          <span style="flex:1; font-size:12.5px; color:#C6BEB2;">{{ x.in }}</span>
+          <span class="fn-mono" style="flex:none; font-size:11px; color:#574029;">{{ x.coll }}</span>
+          <span class="fn-mono" style="flex:none; width:88px; text-align:right; font-size:11.5px; font-weight:600; color:#CDA063;">{{ x.out }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ══ 13 · PERFORMANCE ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 13 · Performance</span>
+    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:14px;">
+      <sc-for list="{{ perf }}" as="p" hint-placeholder-count="5">
+        <div class="fn-sans" style="display:flex; gap:11px; padding:14px 18px; border-radius:var(--fl-radius-md); background:#100C08; border:1px solid #1C150E;">
+          <span style="width:6px; height:6px; flex:none; margin-top:5px; border-radius:50%; background:#BF8F4F;"></span>
+          <span style="font-size:12.5px; line-height:1.6; color:#9A938A;">{{ p }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ══ 14 · DATA MODEL AUDIT ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:80px;">
+    <div style="display:flex; align-items:center; gap:18px; width:100%; margin-bottom:22px;">
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(191,143,79,0.5));"></span>
+      <span class="fn-sans" style="font-size:11px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:#8A6B41;">§ 14 · Current Data-Model Audit</span>
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.5),transparent);"></span>
+    </div>
+    <p class="fn-sans" style="max-width:760px; margin:0 auto 28px; text-align:center; font-size:12.5px; line-height:1.7; color:#8F877C;">Read against the live Forge mock model (<span class="fn-mono">forge-user · forge-programs · forge-templates · forge-exercise-catalog</span>). What the resolver can rely on today, what it must currently infer, and what structured metadata should be added before implementation.</p>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; align-items:start;">
+      <sc-for list="{{ audit }}" as="col" hint-placeholder-count="3">
+        <div style="padding:22px 22px 8px; border-radius:var(--fl-radius-lg); background:#100C08; border:1px solid {{ col.border }};">
+          <div style="display:flex; align-items:center; gap:9px; margin-bottom:6px;">
+            <span style="width:8px; height:8px; border-radius:50%; background:{{ col.dot }};"></span>
+            <span class="fn-sans" style="font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:{{ col.ink }};">{{ col.title }}</span>
+          </div>
+          <span class="fn-sans" style="display:block; font-size:11px; line-height:1.55; color:#7C7469; margin-bottom:8px;">{{ col.sub }}</span>
+          <sc-for list="{{ col.items }}" as="it" hint-placeholder-count="6">
+            <div style="padding:12px 0; border-top:1px solid #17110A;">
+              <span class="fn-mono" style="display:block; font-size:11px; color:#CDA063; margin-bottom:3px;">{{ it.f }}</span>
+              <span class="fn-sans" style="display:block; font-size:11px; line-height:1.5; color:#8F877C;">{{ it.n }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ══ 15 · CHECKLISTS ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:32px;">
+      <div>
+        <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:16px;">§ 15 · Implementation Checklist</span>
+        <div style="display:flex; flex-direction:column; gap:0;">
+          <sc-for list="{{ implChecklist }}" as="c" hint-placeholder-count="10">
+            <div class="fn-sans" style="display:flex; gap:12px; padding:11px 0; border-top:1px solid #17110A;">
+              <span style="flex:none; width:16px; height:16px; margin-top:1px; border-radius:4px; border:1px solid #574029; background:#0A0805;"></span>
+              <span style="flex:1; font-size:12px; line-height:1.55; color:#9A938A;">{{ c }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div>
+        <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:16px;">§ 16 · Unit-Test Matrix</span>
+        <div style="display:flex; flex-direction:column; gap:0;">
+          <sc-for list="{{ testMatrix }}" as="c" hint-placeholder-count="12">
+            <div class="fn-sans" style="display:flex; gap:12px; padding:11px 0; border-top:1px solid #17110A;">
+              <span style="flex:none; width:16px; height:16px; margin-top:1px; border-radius:4px; border:1px solid #574029; background:#0A0805;"></span>
+              <span style="flex:1; font-size:12px; line-height:1.55; color:#9A938A;">{{ c }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="fn-sans" style="max-width:820px; text-align:center; margin:72px 0 0; font-size:12px; line-height:1.85; color:#5F5648;">This resolver is documented but <span style="color:#8A6B41;">not yet implemented</span>; no artwork is placed on the Home card until it is built and tested against the matrix above. When implemented, the same workout must always resolve to the same artwork, and the workout card must never select Legacy or Honors. — Home Workout Artwork Resolver · Spec v1.0</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    var principles = [
+      { t: 'Deterministic', d: 'The same user + workout + program always resolves to the same artwork. No randomness, ever.' },
+      { t: 'Centralized', d: 'One resolver owns all classification. Screens never re-derive artwork or hold split/modality logic.' },
+      { t: 'Testable', d: 'Pure function of structured inputs. Every rung and edge case is covered by the unit matrix.' },
+      { t: 'Reusable', d: 'Returns a plain artwork object any surface can consume — Home card first, others later.' },
+      { t: 'Structured-first', d: 'Prefers structured fields over strings. Title parsing is a low-confidence fallback, not the basis.' },
+      { t: 'Fail-safe', d: 'Every rung degrades gracefully to the next and terminates at a registered neutral default.' },
+    ];
+
+    var precedence = [
+      { n: '1', name: 'Explicit override', desc: 'Editorial or program metadata supplies a valid registered artwork key.', src: 'workout.artworkOverride', conf: '1.00' },
+      { n: '2', name: 'Non-strength modality', desc: 'Primary session modality is clearly cardio/skill — run, swim, cycle, row, yoga, mobility, stretch, recovery.', src: 'workout.modality', conf: '0.95' },
+      { n: '3', name: 'Strength split', desc: 'Strength session → Training Split, resolved A→E by descending confidence (see rung detail).', src: 'split · muscles · exercises · title · program', conf: '0.95–0.70' },
+      { n: '4', name: 'Dominant exercise family', desc: 'Strength but no reliable split; one family ≥60% of working sets and +20pp over the second.', src: 'exercise composition', conf: '0.85' },
+      { n: '5', name: 'Program theme', desc: 'Workout lacks data, or an upcoming session before exercise data exists; program identity is strongest.', src: 'program.theme', conf: '0.60' },
+      { n: '6', name: 'Generic modality fallback', desc: 'Unclassified strength → modality:strength. Unclassified mixed → full_body or conditioning by composition.', src: 'session composition', conf: '0.60 / 0.00' },
+      { n: '7', name: 'Neutral default', desc: 'Registered neutral/default workout artwork. Never broken, never random.', src: 'manifest default', conf: '0.00' },
+    ];
+
+    var rungs = [
+      { n: '1', name: 'Explicit override', rules: [
+        'Accept only keys that validate against the registered manifest (collection + key + available sex variant).',
+        'A valid override short-circuits everything and returns confidence 1.00.',
+        'An invalid or unregistered override fails silently and continues down the ladder — it never throws or blanks the card.',
+        'Legacy and Honors keys are rejected here for the workout card even if otherwise valid.',
+      ] },
+      { n: '2', name: 'Non-strength modality', rules: [
+        'When the primary session modality is clearly non-strength, use the matching Workout Modality before title, theme, or family.',
+        'run→running, walk→walking, sprint→sprinting, cycle→cycling, swim→swimming, row→rowing, yoga→yoga, mobility→mobility, dedicated stretch→stretching, recovery→recovery.',
+        'conditioning covers mixed conditioning, circuits, HIIT, metcons, sled work, mixed-erg, and sessions that do not map cleanly to one modality.',
+        'Primary session modality controls: a short warm-up jog inside a lifting workout is NOT “running”.',
+      ] },
+      { n: '3', name: 'Strength split', rules: [
+        'Resolve the Training Split before Program Theme. Sources, highest to lowest confidence:',
+        'A · explicit structured workout split (0.95)   B · structured target muscle groups (0.95)',
+        'C · exercise composition (0.85)   D · normalized workout title (0.70)   E · program-level default (0.60).',
+        'Supported: push · pull · legs · upper · lower · full_body · core · conditioning.',
+        'Take the first source that yields a confident, unambiguous split; otherwise drop to rung 4.',
+      ] },
+      { n: '4', name: 'Dominant exercise family', rules: [
+        'Only when strength-based but no reliable split is found. Base dominance on working sets / planned volume, not raw exercise count.',
+        'A family wins only if it is ≥60% of meaningful working sets AND exceeds the second family by ≥20 percentage points.',
+        'Exclude warm-ups, cooldowns, optional finishers, and mobility drills from the calculation.',
+        'machines / bodyweight win only when they define the whole session; isolation wins only for intentional arms/accessory sessions.',
+      ] },
+      { n: '5', name: 'Program theme', rules: [
+        'Use when the workout lacks enough data, when representing an upcoming session before exercises exist, or when the theme is the strongest identity.',
+        'Themes: powerbuilding · bodybuilding · strength · athletic_performance · beginner · hypertrophy · cutting · offseason.',
+        'cutting / offseason must come from explicit program metadata — never from body weight, calories, appearance, or season.',
+        'beginner comes from program classification — never from user age or account creation date.',
+      ] },
+      { n: '6', name: 'Generic + neutral fallback', rules: [
+        'A strength session that cannot be classified → Workout Modality: strength.',
+        'A mixed session that cannot be classified → Training Split: full_body or Workout Modality: conditioning, by composition.',
+        'Final fallback → the registered neutral/default asset. Never a broken image, never a random choice.',
+      ] },
+    ];
+
+    var sexRules = [
+      { k: 'male', v: 'Resolve the male artwork set.' },
+      { k: 'female', v: 'Resolve the female artwork set.' },
+      { k: 'unspecified', v: 'Explicit neutral fallback asset (temporary placeholder until neutral art exists). Never guessed.' },
+    ];
+
+    var sigCode = 'resolveHomeWorkoutArtwork({\n  user,      // { sex: "male"|"female"|null }\n  workout,   // today\u2019s session (may be sparse)\n  program,   // active/ upcoming program (may be null)\n  exercises  // resolved exercise list (may be empty)\n}) -> ResolvedArtwork';
+
+    var overrideCode = 'artworkOverride: {\n  collection: "training_split",\n  key: "push"\n}\n// validated against manifest;\n// invalid \u2192 ignored, resolution continues';
+
+    var resolvedCode = '{\n  collection,   // e.g. "training_split"\n  key,          // e.g. "push"\n  sexVariant,   // "male"|"female"|"neutral"\n  confidence,   // 0.00 \u2013 1.00\n  reason,       // human-readable\n  source,       // which rung / field won\n  assetPath     // from manifest, never built\n}';
+
+    var resolvedFields = [
+      { k: 'collection', v: 'Registered collection id — training_split, workout_modality, program_theme, exercise_family.' },
+      { k: 'key', v: 'The specific artwork key within that collection.' },
+      { k: 'sexVariant', v: 'male · female · neutral (the variant actually served).' },
+      { k: 'confidence', v: 'Numeric 0.00–1.00 from the confidence scale.' },
+      { k: 'reason', v: 'Human-readable explanation for logging and debugging.' },
+      { k: 'source', v: 'Which rung and field produced the result (e.g. "split:muscle-groups").' },
+      { k: 'assetPath', v: 'Resolved from the manifest by key + sexVariant. Never string-built at the call site.' },
+    ];
+
+    var keyCode = 'home.<collection>.<key>.<sex>\n\nhome.training_split.push.male\nhome.workout_modality.running.female\nhome.program_theme.hypertrophy.male\nhome.exercise_family.pressing.female\nhome.default.neutral';
+
+    var manifestFields = [
+      { k: 'maleAsset', v: 'Path to the male variant.' },
+      { k: 'femaleAsset', v: 'Path to the female variant.' },
+      { k: 'neutralAsset', v: 'Optional neutral variant (currently the sex fallback).' },
+      { k: 'filePath', v: 'Base/resolved file path per variant.' },
+      { k: 'version', v: 'Asset version for cache-busting and audit.' },
+      { k: 'aspectRatio', v: 'Intrinsic aspect ratio of the art.' },
+      { k: 'placement', v: 'Intended crop / focal / placement metadata for the card.' },
+    ];
+
+    var confidence = [
+      { v: '1.00', d: 'Explicit valid override' },
+      { v: '0.95', d: 'Structured modality or split' },
+      { v: '0.85', d: 'Derived from structured exercise composition' },
+      { v: '0.70', d: 'Normalized title match' },
+      { v: '0.60', d: 'Program-theme fallback' },
+      { v: '0.00', d: 'Default / neutral fallback' },
+    ];
+
+    var titleEx = [
+      { in: 'Push Day A', out: 'push' },
+      { in: 'Chest + Shoulders', out: 'push' },
+      { in: 'Back & Biceps', out: 'pull' },
+      { in: 'Upper 1', out: 'upper' },
+      { in: 'Lower Strength', out: 'lower' },
+      { in: 'Leg Day', out: 'legs' },
+      { in: 'Total Body', out: 'full_body' },
+      { in: 'Abs & Core', out: 'core' },
+      { in: 'Tempo Run', out: 'running' },
+      { in: 'Sprint Intervals', out: 'sprinting' },
+    ];
+
+    var splits = [
+      { k: 'push', v: 'Chest, front/side delts, triceps; pressing movements substantially dominate.' },
+      { k: 'pull', v: 'Back, lats, rear delts, biceps; pulling movements substantially dominate.' },
+      { k: 'legs', v: 'General lower-body session across quads, glutes, hamstrings, calves — not upper/lower terminology.' },
+      { k: 'upper', v: 'Meaningful push and pull volume, little or no lower-body work.' },
+      { k: 'lower', v: 'Lower-body-focused session inside an explicit Upper/Lower program structure.' },
+      { k: 'full_body', v: 'Meaningful upper- and lower-body work; neither region is incidental.' },
+      { k: 'core', v: 'Trunk flexion, anti-extension, anti-rotation, rotation, carries, or core work clearly dominates.' },
+      { k: 'conditioning', v: 'Mixed circuits or work-capacity sessions where no lifting split is dominant.' },
+    ];
+
+    var familyRules = [
+      'Families: pressing · pulling · squatting · hip_hinge · carry · rotation · isolation · machines · bodyweight.',
+      'Dominance is measured on working sets / planned training volume, not raw exercise count.',
+      'A family wins only at ≥60% of meaningful working sets AND ≥20 percentage points clear of the second family.',
+      'machines and bodyweight are equipment/method families — they win only when they define the session (machine-only, calisthenics-only).',
+      'isolation wins only for sessions intentionally composed of isolation work (arms / accessory day); one machine or one isolation move never wins.',
+      'Warm-ups, cooldowns, optional finishers, and mobility drills are excluded from the calculation.',
+    ];
+
+    var pseudo = [
+      'function resolveHomeWorkoutArtwork({ user, workout, program, exercises }) {',
+      '  const sex = resolveSexVariant(user);            // male | female | neutral (never inferred)',
+      '',
+      '  // 1 · explicit override',
+      '  if (workout.artworkOverride) {',
+      '    const hit = manifest.validate(workout.artworkOverride, sex);',
+      '    if (hit && !isReserved(hit)) return build(hit, sex, 1.00, "override");',
+      '    // invalid \u2192 fall through',
+      '  }',
+      '',
+      '  // 2 · non-strength modality (primary session modality controls)',
+      '  const modality = primaryModality(workout);       // ignores warm-up/cooldown',
+      '  if (modality && modality !== "strength")',
+      '    return build(modalityArt(modality), sex, 0.95, "modality");',
+      '',
+      '  // 3 · strength split  (A structured \u2192 B muscles \u2192 C exercises \u2192 D title \u2192 E program)',
+      '  if (isStrength(workout, modality)) {',
+      '    const split = resolveSplit(workout, exercises, program);  // {key, confidence} | null',
+      '    if (split) return build(splitArt(split.key), sex, split.confidence, "split:" + split.via);',
+      '',
+      '  // 4 · dominant exercise family',
+      '    const fam = dominantFamily(exercises);          // >=60% sets & +20pp | null',
+      '    if (fam) return build(familyArt(fam), sex, 0.85, "family");',
+      '  }',
+      '',
+      '  // 5 · program theme',
+      '  if (program && program.theme)',
+      '    return build(themeArt(program.theme), sex, 0.60, "theme");',
+      '',
+      '  // 6 · generic fallback',
+      '  if (isStrength(workout, modality))',
+      '    return build(modalityArt("strength"), sex, 0.60, "generic:strength");',
+      '  if (isMixed(workout))',
+      '    return build(mixedFallback(workout), sex, 0.00, "generic:mixed");',
+      '',
+      '  // 7 · neutral default — always terminates',
+      '  return build(manifest.default, sex, 0.00, "default");',
+      '}',
+      '',
+      '// Tie-break: when two candidates are within tolerance, choose the BROADER',
+      '// category (upper > push, full_body > legs, conditioning > running).',
+    ].join('\n');
+
+    var edges = [
+      { s: 'Push Day A', r: 'split:push', w: 'Title + composition agree on pressing dominance.' },
+      { s: 'Upper/Lower program · Lower day', r: 'split:lower', w: 'Explicit upper/lower structure selects lower over legs.' },
+      { s: 'General Leg Day (no U/L structure)', r: 'split:legs', w: 'Lower-body session with no upper/lower terminology.' },
+      { s: 'Running workout w/ mobility warm-up', r: 'modality:running', w: 'Primary modality controls; warm-up ignored.' },
+      { s: 'Lifting workout w/ treadmill warm-up', r: 'strength split', w: 'Warm-up jog is not the session; classify the lift.' },
+      { s: 'Machine-only workout', r: 'family:machines', w: 'Machines define the whole session.' },
+      { s: 'One machine among free weights', r: 'not machines', w: 'A single machine move never wins the family.' },
+      { s: 'Arms / accessory session', r: 'family:isolation', w: 'Intentionally composed of isolation work.' },
+      { s: 'Mixed conditioning circuit', r: 'modality:conditioning', w: 'No lifting split dominant.' },
+      { s: 'Uncertain upper vs push', r: 'split:upper', w: 'Choose the broader category.' },
+      { s: 'Uncertain legs vs full body', r: 'split:full_body', w: 'Choose the broader category.' },
+      { s: 'Uncertain running vs mixed', r: 'modality:conditioning', w: 'Choose the broader category.' },
+      { s: 'Invalid artworkOverride', r: 'continue', w: 'Fails safe; resolution proceeds down the ladder.' },
+      { s: 'Missing exercises', r: 'theme / fallback', w: 'No composition to analyse; use program theme, then default.' },
+      { s: 'Missing program', r: 'workout-only', w: 'Resolve from workout data; else neutral default.' },
+      { s: 'Missing sex selection', r: 'sexVariant:neutral', w: 'Explicit neutral fallback; never guessed male/female.' },
+      { s: 'Missing / failed asset', r: 'default', w: 'Safe fallback asset; never a broken image.' },
+      { s: 'Legacy / Honors key', r: 'rejected', w: 'Reserved; never selected for the active workout card.' },
+    ];
+
+    var examples = [
+      { in: 'Push Day A', coll: 'split', out: 'push' },
+      { in: 'Chest + Shoulders', coll: 'split', out: 'push' },
+      { in: 'Back & Biceps', coll: 'split', out: 'pull' },
+      { in: 'Upper 1', coll: 'split', out: 'upper' },
+      { in: 'Lower Strength', coll: 'split', out: 'lower' },
+      { in: 'Leg Day', coll: 'split', out: 'legs' },
+      { in: 'Total Body', coll: 'split', out: 'full_body' },
+      { in: 'Abs & Core', coll: 'split', out: 'core' },
+      { in: 'Tempo Run', coll: 'modality', out: 'running' },
+      { in: 'Sprint Intervals', coll: 'modality', out: 'sprinting' },
+    ];
+
+    var perf = [
+      'Resolve locally from already-available structured data — no network round-trip on render.',
+      'Memoize by user variant + workout revision + program revision.',
+      'Compute exercise composition once per workout revision; do not recompute on every render.',
+      'Preload the resolved Home-card asset as soon as the object is known.',
+      'Provide a safe fallback asset if the resolved image is missing or fails to load.',
+    ];
+
+    var audit = [
+      {
+        title: 'Exists — usable', dot: '#5A9E68', ink: '#8FBF9A', border: 'rgba(90,158,104,0.28)',
+        sub: 'Present and structured enough to consume today.',
+        items: [
+          { f: 'user.sex', n: 'Stored (forge.profile.sex → m/f). Usable, but see “to add” for the fallback fix.' },
+          { f: 'program.family', n: 'Strength · Muscle Building · Running · Conditioning · Full Body & Home · Mobility.' },
+          { f: 'program.difficulty', n: 'Beginner · Intermediate · Advanced — seeds the beginner theme.' },
+          { f: 'program.schedule[].name/.focus', n: 'Per-day labels: “Push”, “Lower Body A”, “Tempo”, “Metcon”…' },
+          { f: 'program.nextWorkout', n: '{ name, focus } — the day shown on the Home card.' },
+          { f: 'template.item.muscles[] / type / equip / section', n: 'Richest composition signal (warmup/main/cooldown + sets).' },
+          { f: 'catalog.pattern / cat / primary / equip / type', n: 'Pattern (“Hip hinge”, “Vertical pull”…) maps closely to families.' },
+        ],
+      },
+      {
+        title: 'Inferred — derivable', dot: '#BF8F4F', ink: '#CDA063', border: 'rgba(191,143,79,0.3)',
+        sub: 'Obtainable now, but only by derivation — brittle without explicit fields.',
+        items: [
+          { f: 'modality', n: 'From family (Running→running, Conditioning→conditioning) + day name/focus text.' },
+          { f: 'split', n: 'From schedule day name + template muscles[]; today leans on string labels.' },
+          { f: 'exerciseFamily', n: 'From catalog.pattern via name-join, or template muscles/type/equip.' },
+          { f: 'program.theme', n: 'From family + name (“Powerbuilding II”) + difficulty — no explicit enum.' },
+          { f: 'programStructure', n: 'Upper/Lower vs PPL vs Full-Body only implied by day names — needed for Legs vs Lower.' },
+        ],
+      },
+      {
+        title: 'To add — before build', dot: '#BE5A4C', ink: '#D08579', border: 'rgba(190,90,76,0.3)',
+        sub: 'Structured metadata to introduce so the resolver is deterministic, not guesswork.',
+        items: [
+          { f: 'workout.modality', n: 'Explicit enum on the session (strength | run | walk | … | conditioning).' },
+          { f: 'workout.split', n: 'Explicit split enum on the strength session.' },
+          { f: 'workout.targetMuscleGroups[]', n: 'Structured muscle targets for source B.' },
+          { f: 'workout.artworkOverride', n: '{ collection, key } editorial/program override — does not exist yet.' },
+          { f: 'program.theme', n: 'Explicit theme enum, distinct from family (cutting/offseason/hypertrophy…).' },
+          { f: 'program.structure', n: 'upper_lower | ppl | full_body | … to disambiguate Legs vs Lower.' },
+          { f: 'exercise.catalogKey / workingSets', n: 'Link session exercises to catalog (pattern) + per-exercise working-set counts.' },
+          { f: 'sex neutral state + asset', n: '“unspecified” state and a registered neutral asset; stop defaulting to male.' },
+          { f: 'artwork manifest', n: 'The registered key→asset manifest with version / aspect / placement.' },
+        ],
+      },
+    ];
+
+    var implChecklist = [
+      'Author the artwork manifest: every supported key with male / female / optional neutral, path, version, aspect ratio, placement.',
+      'Build a manifest validator that rejects unregistered keys and reserved collections (Legacy, Honors).',
+      'Implement resolveSexVariant(user) with an explicit neutral fallback — never infer or default to male.',
+      'Implement primaryModality(workout) that ignores warm-up / cooldown items.',
+      'Implement resolveSplit() walking sources A→E with the documented confidences.',
+      'Implement dominantFamily() on working sets with the 60% / +20pp rule and warm-up/cooldown exclusion.',
+      'Implement title normalization with abbreviation expansion and no loose substring matching.',
+      'Implement the tie-break “choose broader category” rule.',
+      'Return the full ResolvedArtwork contract (collection, key, sexVariant, confidence, reason, source, assetPath).',
+      'Memoize by user variant + workout revision + program revision; preload the resolved asset.',
+      'Add the structured fields from the audit’s “to add” column to the data model.',
+      'Refactor the Home card to consume only the resolved object — remove all classification logic from the screen.',
+    ];
+
+    var testMatrix = [
+      'Push Day A → training_split:push',
+      'Pull Day B → training_split:pull',
+      'Upper/Lower program days → upper / lower (not legs)',
+      'General Leg Day → training_split:legs',
+      'Full-body workout → training_split:full_body',
+      'Dedicated core workout → training_split:core',
+      'Mixed conditioning circuit → workout_modality:conditioning',
+      'Running workout with mobility warm-up → workout_modality:running',
+      'Lifting workout with treadmill warm-up → strength split (not running)',
+      'Machine-only workout → exercise_family:machines',
+      'Bodyweight-only workout → exercise_family:bodyweight',
+      'Arms / isolation workout → exercise_family:isolation',
+      'Ambiguous custom title → broader category or theme fallback',
+      'Missing exercises → theme / neutral fallback',
+      'Missing program → workout-only resolution → fallback',
+      'Invalid override → ignored, resolution continues',
+      'Male selection → male variant',
+      'Female selection → female variant',
+      'Missing sex selection → neutral variant (never guessed)',
+      'Missing asset file → safe default, never broken',
+      'Determinism: same inputs always resolve identically',
+      'Workout card never selects Legacy or Honors',
+    ];
+
+    return {
+      principles: principles, precedence: precedence, rungs: rungs, sexRules: sexRules,
+      sigCode: sigCode, overrideCode: overrideCode, resolvedCode: resolvedCode, resolvedFields: resolvedFields,
+      keyCode: keyCode, manifestFields: manifestFields, confidence: confidence, titleEx: titleEx,
+      splits: splits, familyRules: familyRules, pseudo: pseudo, edges: edges, examples: examples,
+      perf: perf, audit: audit, implChecklist: implChecklist, testMatrix: testMatrix,
+    };
+  }
+}
+</script>
+</body>
+</html>

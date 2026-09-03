@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="forge-user.js"></script>
+<script src="forge-units.js"></script>
+<script src="forge-metrics.js"></script>
+<script src="forge-body.js"></script>
+<script src="forge-transformation.js"></script>
+<script src="forge-motion.js"></script>
+<script src="forge-coach.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+  .fl-scroll { scrollbar-width: none; }
+  @keyframes phRise { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform:none; } }
+  @keyframes phGlow { 0%,100% { box-shadow: var(--fl-border-inset), 0 0 0 1px var(--fl-bronze-border), 0 0 18px 1px rgba(191,143,79,0.10); } 50% { box-shadow: var(--fl-border-inset), 0 0 0 1px var(--fl-bronze-border), 0 0 24px 2px rgba(191,143,79,0.20); } }
+  @keyframes phView { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform:none; } }
+  @keyframes phSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @keyframes phFade { from { opacity:0; } to { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="P-2 Progress Hub" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/legacy-bg.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+      <!-- AppBar -->
+      <div style="height:56px; flex:none; display:flex; align-items:center; gap:6px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-700); position:relative; z-index:5;">
+        <button onClick="{{ back }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+        <span style="flex:1; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:var(--fl-text-primary);">Progress</span>
+        <span style="width:44px;"></span>
+      </div>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:0 0 40px;">
+
+        <!-- ═══════════ HERO · identity ═══════════ -->
+        <div data-coach="ph-intro" style="position:relative; padding:22px 22px 24px; animation:phRise 560ms var(--fl-ease-out, ease-out) both;">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="width:74px; flex:none; filter:drop-shadow(0 10px 18px rgba(0,0,0,0.6));">
+              <dc-import name="FoundationBadge" rank="{{ curKey }}" tier="{{ curTier }}" hint-size="74px,101px"></dc-import>
+            </div>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px;">
+              <span style="font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-tertiary);">Current Rank</span>
+              <span style="font-family:var(--fl-font-display); font-size:26px; font-weight:600; letter-spacing:-0.3px; line-height:1.0; color:var(--fl-text-primary);">{{ curRank }}</span>
+              <span style="font-family:var(--fl-font-display); font-style:italic; font-size:14px; line-height:1.4; color:var(--fl-bronze-bright); text-wrap:pretty;">{{ curStatement }}</span>
+            </div>
+          </div>
+
+          <!-- identity facts -->
+          <div style="display:flex; gap:10px; margin-top:20px;">
+            <div style="flex:1; display:flex; flex-direction:column; gap:4px; padding:12px 14px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700);">
+              <span style="font-size:9.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Chapter</span>
+              <span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ chapter }}</span>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:4px; padding:12px 14px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700);">
+              <span style="font-size:9.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Forging Since</span>
+              <span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:var(--fl-text-primary);">{{ since }}</span>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:4px; padding:12px 14px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700);">
+              <span style="font-size:9.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Lifetime</span>
+              <span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:var(--fl-text-primary);">{{ lifetime }}</span>
+            </div>
+          </div>
+
+          <!-- pinned achievement -->
+          <div role="button" tabindex="0" onClick="{{ openPinned }}" style="margin-top:12px; display:flex; align-items:center; gap:11px; padding:11px 14px; border-radius:var(--fl-radius-lg); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); cursor:pointer;">
+            <span style="display:flex; color:var(--fl-icon-bronze);">{{ pinIcon }}</span>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+              <span style="font-size:9px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Pinned</span>
+              <span style="font-size:13px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ pinned }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════ RANK JOURNEY (the centerpiece) ═══════════ -->
+        <div data-coach="ph-journey" style="padding:6px 22px 8px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; padding:0 2px 4px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Rank Journey</span>
+            <span style="font-size:10.5px; color:var(--fl-text-tertiary);">{{ earnedCount }} of the path walked</span>
+          </div>
+
+          <div style="position:relative; padding:14px 0 4px;">
+            <!-- vertical spine -->
+            <span aria-hidden="true" style="position:absolute; left:43px; top:24px; bottom:24px; width:2px; background:linear-gradient(180deg, var(--fl-bronze-border) 0%, var(--fl-bronze-border) {{ spineStop }}, var(--fl-charcoal-700) {{ spineStop }}, var(--fl-charcoal-700) 100%);"></span>
+
+            <sc-for list="{{ rungs }}" as="r" hint-placeholder-count="7">
+              <div style="{{ r.rowStyle }}">
+                <!-- node + emblem -->
+                <div style="position:relative; width:70px; flex:none; display:flex; align-items:center; justify-content:center;">
+                  <span aria-hidden="true" style="{{ r.nodeStyle }}"></span>
+                  <sc-if value="{{ r.hasArt }}" hint-placeholder-val="{{ true }}">
+                    <div style="{{ r.artWrap }}">
+                      <dc-import name="FoundationBadge" rank="{{ r.art }}" tier="{{ r.artTier }}" hint-size="52px,71px"></dc-import>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ r.emblem }}" hint-placeholder-val="{{ false }}">
+                    <span style="position:relative; z-index:1; width:50px; height:68px; display:flex; align-items:center; justify-content:center; clip-path:polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background:linear-gradient(180deg, #3a2c1a, #1c1610); border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-glow-subtle); color:var(--fl-bronze-bright);">{{ r.emblemIcon }}</span>
+                  </sc-if>
+                  <sc-if value="{{ r.locked }}" hint-placeholder-val="{{ false }}">
+                    <span style="position:relative; z-index:1; width:50px; height:68px; display:flex; align-items:center; justify-content:center; clip-path:polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background:linear-gradient(180deg, #16130f, #0b0a08); border:1px solid rgba(120,96,60,0.14);">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(150,130,100,0.5)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+                    </span>
+                  </sc-if>
+                </div>
+                <!-- label -->
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; padding:2px 0;">
+                  <div style="display:flex; align-items:center; gap:9px;">
+                    <span style="{{ r.nameStyle }}">{{ r.name }}</span>
+                    <sc-if value="{{ r.showChip }}" hint-placeholder-val="{{ false }}">
+                      <span style="{{ r.chipStyle }}">{{ r.chip }}</span>
+                    </sc-if>
+                  </div>
+                  <span style="{{ r.statementStyle }}">{{ r.statement }}</span>
+                </div>
+              </div>
+            </sc-for>
+
+            <!-- what lies beyond -->
+            <div style="display:flex; align-items:center; gap:12px; padding:16px 8px 2px;">
+              <span style="width:70px; flex:none; display:flex; justify-content:center; color:var(--fl-text-tertiary);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+              </span>
+              <span style="flex:1; font-size:11.5px; line-height:1.5; font-style:italic; font-family:var(--fl-font-display); color:var(--fl-text-tertiary); text-wrap:pretty;">The path continues. What comes next is earned, not previewed.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════ STRENGTH & PERFORMANCE (athlete-curated) ═══════════ -->
+        <div data-coach="ph-strength" style="padding:18px 22px 4px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; padding:0 2px 12px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Strength &amp; Performance</span>
+            <span role="button" tabindex="0" onClick="{{ openEdit }}" style="display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; color:var(--fl-bronze-primary); cursor:pointer;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18.5 9.5a2 2 0 0 0-2.8-2.8L5 17.2z"></path><path d="M13.5 6.5l4 4"></path></svg>Edit
+            </span>
+          </div>
+          <sc-if value="{{ hasStrength }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <sc-for list="{{ strengthCards }}" as="c" hint-placeholder-count="4">
+                <div role="button" tabindex="0" onClick="{{ c.open }}" style="position:relative; overflow:hidden; display:flex; flex-direction:column; gap:7px; padding:14px 14px 11px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-700); box-shadow:var(--fl-border-inset); cursor:pointer; transition:transform 200ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.97);">
+                  <span style="font-size:8.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ c.cat }}</span>
+                  <span style="font-size:12.5px; font-weight:600; color:var(--fl-text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.name }}</span>
+                  <div style="display:flex; align-items:center; gap:7px;">
+                    <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:700; letter-spacing:-0.4px; color:var(--fl-text-primary); line-height:1;">{{ c.value }}</span>
+                    <span style="display:flex; color:{{ c.trendColor }};">{{ c.trend }}</span>
+                  </div>
+                  <svg viewBox="0 0 82 30" width="100%" height="26" preserveAspectRatio="none" style="display:block; margin-top:2px; overflow:visible;">
+                    <path d="{{ c.sparkArea }}" fill="rgba(191,143,79,0.10)"></path>
+                    <path d="{{ c.sparkLine }}" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+                    <circle cx="{{ c.sparkX }}" cy="{{ c.sparkY }}" r="2.2" fill="var(--fl-bronze-bright)"></circle>
+                  </svg>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noStrength }}" hint-placeholder-val="{{ false }}">
+            <div role="button" tabindex="0" onClick="{{ openEdit }}" style="display:flex; align-items:center; justify-content:center; gap:8px; padding:22px; border-radius:var(--fl-radius-lg); border:1px dashed var(--fl-bronze-border); background:var(--fl-bronze-tint); cursor:pointer; color:var(--fl-bronze-primary); font-size:13px; font-weight:600;">Choose the lifts that matter to you</div>
+          </sc-if>
+        </div>
+
+        <!-- ═══════════ CONSISTENCY & TRAINING ═══════════ -->
+        <div style="padding:20px 22px 4px;">
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:0 2px 12px;">Consistency &amp; Training</span>
+          <div style="display:flex; align-items:flex-end; gap:14px; padding:0 2px 16px;">
+            <span style="font-family:var(--fl-font-display); font-size:52px; font-weight:700; letter-spacing:-1px; line-height:0.9; color:var(--fl-text-primary);">{{ lifetime }}</span>
+            <span style="font-size:11px; font-weight:600; letter-spacing:0.6px; color:var(--fl-text-tertiary); padding-bottom:8px;">workouts,<br>and counting</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:1px; background:var(--fl-charcoal-700); border:1px solid var(--fl-charcoal-700); border-radius:var(--fl-radius-lg); overflow:hidden;">
+            <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+              <div style="display:flex; flex-direction:column; gap:3px; padding:14px 16px; background:var(--fl-surface-recessed);">
+                <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:700; letter-spacing:-0.3px; color:var(--fl-text-stat); line-height:1;">{{ s.value }}</span>
+                <span style="font-size:10px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ s.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; padding:12px 4px 0;">
+            <span style="display:flex; color:var(--fl-text-tertiary);">{{ streakIcon }}</span>
+            <span style="font-size:12px; color:var(--fl-text-tertiary);">Best streak · <span style="color:var(--fl-text-secondary); font-weight:600;">{{ bestStreak }}</span></span>
+          </div>
+        </div>
+
+        <!-- ═══════════ HONORS ═══════════ -->
+        <div style="padding:24px 0 4px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; padding:0 24px 2px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Honors</span>
+            <span role="button" tabindex="0" onClick="{{ openHonors }}" style="font-size:11.5px; font-weight:600; color:var(--fl-bronze-primary); cursor:pointer;">{{ honorCount }} earned ›</span>
+          </div>
+          <div class="fl-scroll" style="display:flex; gap:16px; padding:12px 24px 6px; overflow-x:auto;">
+            <sc-for list="{{ honors }}" as="hon" hint-placeholder-count="5">
+              <div role="button" tabindex="0" onClick="{{ openHonors }}" style="flex:none; cursor:pointer;">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Insignia" variant="honor" size="md" artwork="{{ hon.artwork }}" label="{{ hon.label }}" hint-size="80px,104px"></x-import>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- ═══════════ BODY METRICS ═══════════ -->
+        <sc-if value="{{ showBody }}" hint-placeholder-val="{{ true }}">
+        <div data-coach="ph-body" style="padding:22px 22px 4px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:0 2px 12px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Body Metrics</span>
+            <div style="display:flex; align-items:center; gap:14px;">
+              <span style="display:inline-flex; align-items:center; gap:7px;"><span style="font-size:10px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Change</span><button type="button" onClick="{{ toggleTrend }}" aria-label="Toggle change" style="{{ bodyTrendSwitch }}"><span style="{{ bodyTrendKnob }}"></span></button></span>
+              <span role="button" tabindex="0" onClick="{{ openLog }}" style="display:inline-flex; align-items:center; gap:4px; font-size:11.5px; font-weight:600; color:var(--fl-bronze-primary); cursor:pointer;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Log</span>
+            </div>
+          </div>
+          <div style="padding:16px 14px 12px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700);">
+            <div style="display:flex; align-items:baseline; gap:12px; padding:0 2px 4px;">
+              <span style="font-family:var(--fl-font-display); font-size:32px; font-weight:700; letter-spacing:-0.6px; color:var(--fl-text-primary); line-height:1;">{{ bodyLatest }}</span>
+              <sc-if value="{{ bodyShowTrend }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:12.5px; font-weight:600; color:var(--fl-bronze-bright);">{{ bodyChange }}</span>
+              </sc-if>
+            </div>
+            <svg viewBox="0 0 300 120" width="100%" style="display:block; overflow:visible; margin-top:4px;">
+              <defs><linearGradient id="phBodyFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(191,143,79,0.18)"></stop><stop offset="100%" stop-color="rgba(191,143,79,0)"></stop></linearGradient></defs>
+              <line x1="8" y1="{{ bodyBaseline }}" x2="290" y2="{{ bodyBaseline }}" stroke="var(--fl-charcoal-600)" stroke-width="1"></line>
+              <path d="{{ bodyChartArea }}" fill="url(#phBodyFill)"></path>
+              <path d="{{ bodyChartLine }}" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              <sc-for list="{{ bodyDots }}" as="dt" hint-placeholder-count="0">
+                <circle cx="{{ dt.x }}" cy="{{ dt.y }}" r="2.5" fill="rgba(191,143,79,0.5)"></circle>
+                <circle cx="{{ dt.x }}" cy="{{ dt.y }}" r="11" fill="transparent" style="cursor:pointer; pointer-events:all;" onClick="{{ dt.tap }}"></circle>
+                <sc-if value="{{ dt.active }}" hint-placeholder-val="{{ false }}">
+                  <circle cx="{{ dt.x }}" cy="{{ dt.y }}" r="4" fill="var(--fl-bronze-bright)" stroke="#070707" stroke-width="1.4"></circle>
+                </sc-if>
+              </sc-for>
+              <circle cx="{{ bodyLastX }}" cy="{{ bodyLastY }}" r="3.4" fill="var(--fl-bronze-bright)" stroke="#070707" stroke-width="1.5"></circle>
+              <sc-for list="{{ bodyTicks }}" as="t" hint-placeholder-count="3"><text x="{{ t.x }}" y="116" text-anchor="middle" fill="var(--fl-text-tertiary)" style="font-size:9px; font-family:var(--fl-font-sans);">{{ t.label }}</text></sc-for>
+            </svg>
+            <sc-if value="{{ bodySelActive }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:12px; padding:12px 14px; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border-subtle);">
+                <div style="display:flex; align-items:baseline; gap:10px;"><span style="font-family:var(--fl-font-display); font-size:19px; font-weight:700; color:var(--fl-text-primary);">{{ bodySelWeight }}</span><span style="font-size:11px; color:var(--fl-text-tertiary);">{{ bodySelDate }}</span></div>
+                <sc-if value="{{ bodySelHasMeasure }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; flex-wrap:wrap; gap:7px; margin-top:10px;">
+                    <sc-for list="{{ bodySelMeasures }}" as="mm" hint-placeholder-count="3"><span style="display:inline-flex; gap:5px; padding:4px 10px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-600); font-size:11.5px;"><span style="color:var(--fl-text-tertiary);">{{ mm.label }}</span><span style="font-weight:600; color:var(--fl-text-primary);">{{ mm.value }}</span></span></sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ bodySelNoMeasure }}" hint-placeholder-val="{{ false }}"><span style="display:block; margin-top:7px; font-size:11px; color:var(--fl-text-tertiary);">No measurements logged this entry.</span></sc-if>
+              </div>
+            </sc-if>
+            <sc-if value="{{ hasMeasure }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-wrap:wrap; gap:8px; padding:12px 2px 2px;">
+                <sc-for list="{{ bodyMeasures }}" as="mm" hint-placeholder-count="3">
+                  <span style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); font-size:11.5px;"><span style="color:var(--fl-text-tertiary);">{{ mm.label }}</span><span style="font-weight:600; color:var(--fl-text-primary);">{{ mm.value }}</span></span>
+                </sc-for>
+              </div>
+            </sc-if>
+            <div role="button" tabindex="0" onClick="{{ goXform }}" style="display:flex; align-items:center; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--fl-charcoal-700); cursor:pointer;">
+              <span style="width:32px; height:32px; flex:none; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); color:var(--fl-icon-bronze);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="17" height="13" rx="2"></rect><circle cx="12" cy="12.5" r="3"></circle><path d="M8 6l1.3-2h5.4L16 6"></path></svg></span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+                <span style="font-size:13px; font-weight:600; color:var(--fl-text-primary);">Progress photos</span>
+                <span style="font-size:11px; color:var(--fl-text-tertiary);">{{ xformSub }}</span>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:flex-end; padding:8px 2px 0;">
+            <span role="button" tabindex="0" onClick="{{ disableBody }}" style="font-size:11px; font-weight:600; letter-spacing:0.3px; color:var(--fl-text-tertiary); cursor:pointer;">Turn off body metrics</span>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ bodyOff }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:22px 22px 4px;">
+          <div role="button" tabindex="0" onClick="{{ enableBody }}" style="display:flex; align-items:center; gap:12px; padding:16px 18px; border-radius:var(--fl-radius-lg); border:1px dashed var(--fl-charcoal-500); background:transparent; cursor:pointer;">
+            <span style="width:34px; height:34px; flex:none; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-charcoal-600); color:var(--fl-text-tertiary);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"></path></svg></span>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-size:14px; font-weight:600; color:var(--fl-text-secondary);">Track body metrics</span>
+              <span style="font-size:11.5px; color:var(--fl-text-tertiary);">Optional — bodyweight &amp; measurements, only if you want them.</span>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M12 5v14M5 12h14"></path></svg>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- ═══════════ WHAT'S NEXT ═══════════ -->
+        <div style="padding:20px 22px 8px;">
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:0 2px 12px;">What's Next</span>
+          <div role="button" tabindex="0" onClick="{{ goNext }}" style="position:relative; overflow:hidden; display:flex; align-items:center; gap:14px; padding:18px; border-radius:var(--fl-radius-xl); background:linear-gradient(180deg, rgba(191,143,79,0.08), transparent 60%), var(--fl-surface-card); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); cursor:pointer;">
+            <span style="width:46px; height:46px; flex:none; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); box-shadow:var(--fl-glow-subtle); color:var(--fl-icon-bronze);">{{ nextIcon }}</span>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+              <span style="font-size:9.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ nextKicker }}</span>
+              <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; line-height:1.1; color:var(--fl-text-primary);">{{ nextTitle }}</span>
+              <span style="font-size:12px; color:var(--fl-text-secondary);">{{ nextSub }}</span>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <!-- ═══ METRIC DETAIL (full-screen) ═══ -->
+    <sc-if value="{{ metricOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; z-index:70; display:flex; flex-direction:column; background:#070707; animation:phView 300ms var(--fl-ease-out, ease-out) both;">
+        <div style="height:56px; flex:none; display:flex; align-items:center; gap:6px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-700);">
+          <button onClick="{{ closeMetric }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+          <span style="flex:1; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-primary);">{{ mdName }}</span>
+          <span style="width:44px;"></span>
+        </div>
+        <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:24px 22px 40px;">
+          <span style="font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ mdCat }} · Latest</span>
+          <div style="display:flex; align-items:baseline; gap:12px; padding:6px 0 6px;">
+            <span style="font-family:var(--fl-font-display); font-size:44px; font-weight:700; letter-spacing:-1px; color:var(--fl-text-primary); line-height:0.9;">{{ mdValue }}</span>
+          </div>
+          <span style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:var(--fl-bronze-bright);"><span style="display:flex;">{{ mdGainIcon }}</span>{{ mdGain }}</span>
+
+          <div style="margin-top:20px; padding:16px 12px 10px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700);">
+            <svg viewBox="0 0 320 200" width="100%" style="display:block; overflow:visible;">
+              <defs><linearGradient id="phChartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(191,143,79,0.30)"></stop><stop offset="100%" stop-color="rgba(191,143,79,0)"></stop></linearGradient></defs>
+              <path d="{{ mdChartArea }}" fill="url(#phChartFill)"></path>
+              <path ref="{{ drawRef }}" d="{{ mdChartLine }}" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+              <sc-for list="{{ mdDots }}" as="dt" hint-placeholder-count="0">
+                <circle cx="{{ dt.x }}" cy="{{ dt.y }}" r="2.6" fill="rgba(191,143,79,0.45)"></circle>
+                <circle cx="{{ dt.x }}" cy="{{ dt.y }}" r="12" fill="transparent" style="cursor:pointer; pointer-events:all;" onClick="{{ dt.tap }}"></circle>
+                <sc-if value="{{ dt.active }}" hint-placeholder-val="{{ false }}">
+                  <circle cx="{{ dt.x }}" cy="{{ dt.y }}" r="4.5" fill="var(--fl-bronze-bright)" stroke="#070707" stroke-width="1.4"></circle>
+                </sc-if>
+              </sc-for>
+              <sc-for list="{{ mdMarkers }}" as="mk" hint-placeholder-count="0">
+                <path d="{{ mk.d }}" fill="var(--fl-bronze-bright)" stroke="#070707" stroke-width="1"></path>
+              </sc-for>
+              <circle cx="{{ mdLastX }}" cy="{{ mdLastY }}" r="8.5" fill="rgba(191,143,79,0.16)"></circle>
+              <circle cx="{{ mdLastX }}" cy="{{ mdLastY }}" r="4.6" fill="var(--fl-bronze-bright)" stroke="#070707" stroke-width="1.5"></circle>
+            </svg>
+          </div>
+          <sc-if value="{{ mdSelActive }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:10px; padding:10px 14px; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border-subtle); display:flex; align-items:center; gap:9px;"><span style="width:7px; height:7px; border-radius:50%; background:var(--fl-bronze-bright);"></span><span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ mdSelTxt }}</span></div>
+          </sc-if>
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:1px; margin-top:12px; background:var(--fl-charcoal-700); border:1px solid var(--fl-charcoal-700); border-radius:var(--fl-radius-lg); overflow:hidden;">
+            <sc-for list="{{ mdStats }}" as="st" hint-placeholder-count="4">
+              <div style="display:flex; flex-direction:column; gap:3px; padding:11px 6px; background:var(--fl-surface-recessed); text-align:center;">
+                <span style="font-family:var(--fl-font-display); font-size:14.5px; font-weight:700; color:var(--fl-text-stat); line-height:1.05;">{{ st.value }}</span>
+                <span style="font-size:8px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ st.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:26px 2px 10px;">Milestones</span>
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <sc-for list="{{ mdMilestones }}" as="m" hint-placeholder-count="2">
+              <div style="display:flex; align-items:center; gap:12px; padding:11px 4px;">
+                <span style="width:30px; height:30px; flex:none; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); color:var(--fl-icon-bronze);">{{ mdMilestoneIcon }}</span>
+                <span style="flex:1; font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ m.label }}</span>
+                <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ m.date }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:24px 2px 10px;">Recent Sessions</span>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <sc-for list="{{ mdRecent }}" as="r" hint-placeholder-count="2">
+              <div style="display:flex; align-items:center; gap:12px; padding:13px 15px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-700);">
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                  <span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ r.title }}</span>
+                  <span style="font-size:12px; color:var(--fl-text-secondary);">{{ r.detail }}</span>
+                </div>
+                <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ r.date }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ═══ EDIT METRICS (bottom sheet) ═══ -->
+    <sc-if value="{{ editOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeEdit }}" style="position:absolute; inset:0; z-index:75; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:phFade 200ms var(--fl-ease-out, ease-out) both;">
+        <div onClick="{{ stopProp }}" style="width:100%; max-height:82%; display:flex; flex-direction:column; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient); animation:phSheet 320ms var(--fl-ease-out, ease-out) both;">
+          <div style="display:flex; justify-content:center; padding:10px 0 6px;"><span style="width:40px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+          <div style="padding:6px 22px 4px;">
+            <span style="display:block; font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-text-primary);">Your Metrics</span>
+            <span style="display:block; font-size:12.5px; line-height:1.5; color:var(--fl-text-secondary); margin-top:4px;">Choose the lifts and metrics that matter to you — up to four appear on your Progress. Reorder with the arrows.</span>
+          </div>
+          <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:12px 16px 8px;">
+            <sc-for list="{{ editRows }}" as="e" hint-placeholder-count="6">
+              <div style="display:flex; align-items:center; gap:10px; padding:12px 6px; border-bottom:1px solid var(--fl-charcoal-700);">
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                  <span style="font-size:15px; font-weight:600; color:var(--fl-text-primary);">{{ e.name }}</span>
+                  <span style="font-size:11px; letter-spacing:0.4px; color:var(--fl-text-tertiary);">{{ e.cat }}</span>
+                </div>
+                <sc-if value="{{ e.on }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:inline-flex; gap:4px; margin-right:2px;">
+                    <button type="button" onClick="{{ e.up }}" aria-label="Move up" style="width:30px; height:30px; display:flex; align-items:center; justify-content:center; background:transparent; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-sm); cursor:pointer; color:{{ e.upColor }};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"></path></svg></button>
+                    <button type="button" onClick="{{ e.down }}" aria-label="Move down" style="width:30px; height:30px; display:flex; align-items:center; justify-content:center; background:transparent; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-sm); cursor:pointer; color:{{ e.downColor }};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+                  </span>
+                </sc-if>
+                <button type="button" onClick="{{ e.toggle }}" aria-label="Toggle metric" style="{{ e.switchStyle }}"><span style="{{ e.knobStyle }}"></span></button>
+              </div>
+            </sc-for>
+          </div>
+          <div style="padding:12px 22px 22px; border-top:1px solid var(--fl-charcoal-700);">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ closeEdit }}" hint-size="100%,48px">Done</x-import>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ═══ LOG WEIGHT (bottom sheet) ═══ -->
+    <sc-if value="{{ bodyOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeLog }}" style="position:absolute; inset:0; z-index:78; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:phFade 200ms var(--fl-ease-out, ease-out) both;">
+        <div onClick="{{ stopProp }}" style="width:100%; display:flex; flex-direction:column; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient); animation:phSheet 320ms var(--fl-ease-out, ease-out) both;">
+          <div style="display:flex; justify-content:center; padding:10px 0 6px;"><span style="width:40px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+          <div style="padding:6px 22px 22px;">
+            <span style="display:block; font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-text-primary);">Log Weight</span>
+            <span style="display:block; font-size:12.5px; line-height:1.5; color:var(--fl-text-secondary); margin-top:4px;">A quiet record — no goal weight, no pressure.</span>
+            <div style="margin-top:18px;">
+              <label style="display:block; font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:8px;">Bodyweight ({{ unitLabel }})</label>
+              <input type="number" inputmode="decimal" value="{{ logWeight }}" onInput="{{ setLogWeight }}" placeholder="e.g. 199" style="width:100%; padding:14px 16px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-500); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-size:16px; font-family:var(--fl-font-display); outline:none;">
+            </div>
+            <button type="button" onClick="{{ toggleMeasureFields }}" style="margin-top:16px; display:inline-flex; align-items:center; gap:7px; background:transparent; border:none; cursor:pointer; color:var(--fl-bronze-primary); font-size:12.5px; font-weight:600; padding:0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add measurements (optional)
+            </button>
+            <sc-if value="{{ showMeasureFields }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:14px;">
+                <div><label style="display:block; font-size:9.5px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:6px;">Waist</label><input type="number" inputmode="decimal" value="{{ logWaist }}" onInput="{{ setWaist }}" placeholder="in" style="width:100%; padding:11px 12px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-500); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-size:15px; outline:none;"></div>
+                <div><label style="display:block; font-size:9.5px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:6px;">Chest</label><input type="number" inputmode="decimal" value="{{ logChest }}" onInput="{{ setChest }}" placeholder="in" style="width:100%; padding:11px 12px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-500); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-size:15px; outline:none;"></div>
+                <div><label style="display:block; font-size:9.5px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:6px;">Arms</label><input type="number" inputmode="decimal" value="{{ logArm }}" onInput="{{ setArm }}" placeholder="in" style="width:100%; padding:11px 12px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-500); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-size:15px; outline:none;"></div>
+              </div>
+            </sc-if>
+            <div style="margin-top:22px;">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ saveLog }}" hint-size="100%,50px">Save weigh-in</x-import>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Forged grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.07; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;currentFamily&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Auto&quot;,&quot;Craftsman&quot;,&quot;Architect&quot;,&quot;Established&quot;,&quot;Legend&quot;],&quot;default&quot;:&quot;Auto&quot;,&quot;tsType&quot;:&quot;'Auto' | 'Craftsman' | 'Architect' | 'Established' | 'Legend'&quot;,&quot;section&quot;:&quot;Standing&quot;,&quot;label&quot;:&quot;You are here&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, openMetricId: null, mdTap: null, bodyTap: null, editOpen: false, bodyOpen: false, logWeight: '', logMeasure: { waist: '', chest: '', arm: '' }, showMeasureFields: false, tick: 0 };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      const u = typeof window !== 'undefined' && window.ForgeUnits;
+      const m = typeof window !== 'undefined' && window.ForgeMetrics;
+      const b = typeof window !== 'undefined' && window.ForgeBody;
+      if (r && ns && fs && u && m && b) {
+        this.setState({ ready: true });
+        if (!this._offU) this._offU = window.ForgeUnits.subscribe(() => this.setState(s => ({ tick: (s.tick || 0) + 1 })));
+        if (!this._offM) this._offM = window.ForgeMetrics.subscribe(() => this.setState(s => ({ tick: (s.tick || 0) + 1 })));
+        if (!this._offB) this._offB = window.ForgeBody.subscribe(() => this.setState(s => ({ tick: (s.tick || 0) + 1 })));
+        this._startCoach();
+      } else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+
+  _startCoach() {
+    if (!window.ForgeCoach) return;
+    window.ForgeCoach.start({
+      page: 'progress',
+      steps: [
+        { target: '[data-coach="ph-intro"]', radius: 16, title: 'Your Progress Hub', body: 'The full picture in one place \u2014 your rank journey, strength numbers, consistency, and body metrics. This is where you track what you\u2019re building.' },
+        { target: '[data-coach="ph-journey"]', radius: 16, title: 'The rank journey', body: 'Every rank from Foundation to Legacy. Ranks are earned through consistent training \u2014 never bought or skipped. The glowing rung is where you stand today.' },
+        { target: '[data-coach="ph-strength"]', radius: 16, title: 'Add the lifts that matter', body: 'Tap Edit to choose up to four lifts or metrics to feature here. The app tracks your personal bests automatically as you log workouts.' },
+        { target: '[data-coach="ph-body"]', radius: 16, title: 'Body metrics \u2014 optional', body: 'Log bodyweight and measurements only if you want them. There\u2019s no goal weight and no pressure \u2014 just a quiet record over time.' },
+      ],
+    });
+  }
+
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._offU) this._offU(); if (this._offM) this._offM(); if (this._offB) this._offB(); }
+
+  back = () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Forge%20Legacy.dc.html'); };
+  openMetric = (id) => this.setState({ openMetricId: id, mdTap: null });
+  closeMetric = () => this.setState({ openMetricId: null });
+  openEdit = () => this.setState({ editOpen: true });
+  closeEdit = () => this.setState({ editOpen: false });
+  openLog = () => this.setState({ bodyOpen: true });
+  closeLog = () => this.setState({ bodyOpen: false, logWeight: '', logMeasure: { waist: '', chest: '', arm: '' }, showMeasureFields: false });
+  setLogWeight = (e) => this.setState({ logWeight: e && e.target ? e.target.value : '' });
+  setMeasure = (k) => (e) => { const v = e && e.target ? e.target.value : ''; this.setState(s => ({ logMeasure: Object.assign({}, s.logMeasure, { [k]: v }) })); };
+  toggleMeasureFields = () => this.setState(s => ({ showMeasureFields: !s.showMeasureFields }));
+  toggleTrend = () => { if (window.ForgeBody) window.ForgeBody.setShowTrend(!window.ForgeBody.showTrend()); };
+  saveLog = () => {
+    const U = window.ForgeUnits, B = window.ForgeBody;
+    const w = parseFloat(this.state.logWeight);
+    if (!w || !B) { this.closeLog(); return; }
+    const lb = (U && U.label === 'kg') ? w * 2.20462 : w;
+    const lm = this.state.logMeasure || {};
+    const mm = {};
+    if (parseFloat(lm.waist)) mm.Waist = parseFloat(lm.waist);
+    if (parseFloat(lm.chest)) mm.Chest = parseFloat(lm.chest);
+    if (parseFloat(lm.arm)) mm.Arms = parseFloat(lm.arm);
+    B.add({ label: 'Now', weight: Math.round(lb), m: mm });
+    this.closeLog();
+  };
+  enableBody = () => { if (window.ForgeBody) window.ForgeBody.setEnabled(true); };
+  disableBody = () => { if (window.ForgeBody) window.ForgeBody.setEnabled(false); };
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true };
+    }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const ico = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.7 });
+
+    // ── Rank ladder (6 families; artwork only for what's unlocked) ──
+    const FAMILIES = [
+      { key: 'foundation', art: 'foundation', name: 'Foundation', statement: "I've started." },
+      { key: 'builder',    art: 'builder',    name: 'Builder',    statement: "I'm building habits." },
+      { key: 'craftsman',  art: 'craftsman',  name: 'Craftsman',  statement: "I know how to train." },
+      { key: 'architect',  art: 'architect',  name: 'Architect',  statement: "I'm intentionally shaping my development." },
+      { key: 'established', art: 'established', name: 'Established', statement: "What I built outlives me." },
+      { key: 'legend',     art: 'hall',       name: 'Legend',     statement: "My journey has become a meaningful story." },
+      { key: 'legacy',     art: 'legacy',     name: 'Legacy',     statement: "I repeatedly become the person I intend to become." },
+    ];
+    // Rank follows the canonical user (ForgeUser) by default so it stays consistent
+    // with every other screen + the tenure switch; the enum prop is an explicit override.
+    const famIndex = { 'Foundation': 0, 'Builder': 1, 'Craftsman': 2, 'Architect': 3, 'Established': 4, 'Legend': 5, 'Legacy': 6 };
+    const order = { 'Craftsman': 2, 'Architect': 3, 'Established': 4, 'Legend': 5 };
+    const _fuRank = window.ForgeUser ? window.ForgeUser.get() : null;
+    let cur, curSub;
+    if (order[this.props.currentFamily] != null) {
+      cur = order[this.props.currentFamily];
+      curSub = (this.props.currentFamily === 'Legend') ? 'II' : 'III';
+    } else if (_fuRank && famIndex[_fuRank.rankTitle] != null) {
+      cur = famIndex[_fuRank.rankTitle];
+      curSub = _fuRank.rankTier || 'III';
+    } else {
+      cur = 3; curSub = 'III';
+    }
+    const subToTier = { 'I': '1', 'II': '2', 'III': '3', 'IV': '4' };
+
+    const rowBase = 'position:relative; display:flex; align-items:center; gap:12px; padding:10px 8px;';
+    const rungs = FAMILIES.map((f, i) => {
+      const earned = i < cur, current = i === cur, locked = i > cur;
+      let rowStyle, nodeStyle, artWrap, nameStyle, statementStyle, chip, chipStyle, showChip;
+      const nodeBase = 'position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); border-radius:50%;';
+      if (current) {
+        rowStyle = rowBase + ' background:linear-gradient(180deg, rgba(191,143,79,0.09), transparent 70%); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); animation:phGlow 4s ease-in-out infinite; margin:4px 0;';
+        nodeStyle = nodeBase + ' width:60px; height:60px; background:radial-gradient(circle, rgba(191,143,79,0.16), transparent 70%);';
+        artWrap = 'position:relative; z-index:1; width:56px; filter:drop-shadow(0 6px 12px rgba(0,0,0,0.6));';
+        nameStyle = 'font-family:var(--fl-font-display); font-size:19px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);';
+        statementStyle = 'font-family:var(--fl-font-display); font-style:italic; font-size:13px; line-height:1.4; color:var(--fl-bronze-bright); text-wrap:pretty;';
+        chip = 'You are here'; showChip = true;
+        chipStyle = 'flex:none; display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); font-size:8.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);';
+      } else if (earned) {
+        rowStyle = rowBase;
+        nodeStyle = nodeBase + ' width:11px; height:11px; background:var(--fl-bronze-primary); box-shadow:0 0 0 3px #070707, var(--fl-glow-subtle);';
+        artWrap = 'position:relative; z-index:1; width:46px; filter:drop-shadow(0 5px 10px rgba(0,0,0,0.5));';
+        nameStyle = 'font-family:var(--fl-font-display); font-size:16px; font-weight:600; letter-spacing:-0.1px; color:var(--fl-text-secondary);';
+        statementStyle = 'font-size:12px; line-height:1.4; color:var(--fl-text-tertiary); text-wrap:pretty;';
+        chip = ico('chapter-seal', 11, 1.8); showChip = false;
+        chipStyle = '';
+      } else {
+        rowStyle = rowBase + ' opacity:0.7;';
+        nodeStyle = nodeBase + ' width:9px; height:9px; background:var(--fl-charcoal-600); box-shadow:0 0 0 3px #070707;';
+        artWrap = '';
+        nameStyle = 'font-family:var(--fl-font-display); font-size:15px; font-weight:600; letter-spacing:3px; color:var(--fl-text-tertiary);';
+        statementStyle = 'font-size:11.5px; line-height:1.4; color:var(--fl-charcoal-500); letter-spacing:0.5px;';
+        chip = ''; showChip = false; chipStyle = '';
+      }
+      return {
+        key: f.key,
+        name: locked ? '\u2014\u2014\u2014\u2014' : f.name,
+        statement: locked ? 'Sealed until earned' : f.statement,
+        art: f.art || 'foundation',
+        artTier: current ? subToTier[curSub] : '4',
+        hasArt: (earned || current) && !!f.art,
+        emblem: (earned || current) && !f.art,
+        emblemIcon: ico('flame', 18, 1.7),
+        locked,
+        rowStyle, nodeStyle, artWrap, nameStyle, statementStyle,
+        chip, chipStyle, showChip,
+      };
+    });
+
+    // spine fills bronze down to the current rung, charcoal beyond
+    const spineStop = Math.round(((cur + 0.5) / FAMILIES.length) * 100) + '%';
+
+    // ── Consistency ──
+    const stats = [
+      { value: '380', label: 'Hours Forged' },
+      { value: '14', label: 'This Month' },
+      { value: '12', label: 'Hours / Month' },
+      { value: '3.8', label: 'Avg / Week' },
+    ];
+
+    // ── Honors (recent) ──
+    const HON = [
+      { g: 'laurel', label: 'The Relentless' },
+      { g: 'medal', label: 'Century' },
+      { g: 'shield', label: 'First Iron' },
+      { g: 'spark', label: 'Ironwill' },
+      { g: 'flame', label: 'Unbroken' },
+    ];
+    const honors = HON.map(x => ({ artwork: ico(x.g, 28, 1.7), label: x.label }));
+
+    const curFam = FAMILIES[cur];
+
+    // ── Strength & Performance (athlete-curated) ──
+    const U = window.ForgeUnits, MET = window.ForgeMetrics;
+    const pad2 = (n) => (n < 10 ? '0' : '') + n;
+    const mmss = (sec) => { sec = Math.round(sec); const mm = Math.floor(sec / 60), ss = sec % 60; return mm + ':' + pad2(ss); };
+    const durFmt = (sec) => { sec = Math.round(sec); if (sec >= 3600) { const hh = Math.floor(sec / 3600); return hh + ':' + pad2(Math.floor((sec % 3600) / 60)) + ':' + pad2(sec % 60); } return mmss(sec); };
+    const fmtVal = (def, v) => def.unit === 'weight' ? U.fmt(v) : (def.unit === 'pace' ? (mmss(v) + ' /mi') : durFmt(v));
+    const lowerBetter = (def) => def.unit === 'duration' || def.unit === 'pace';
+    const arrowUp = h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M7 17L17 7' }), h('path', { d: 'M9 7h8v8' }));
+    const arrowFlat = h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round' }, h('path', { d: 'M6 12h12' }));
+    const buildChart = (def, W, H, padB, padL) => {
+      const series = def.series, low = lowerBetter(def);
+      padL = padL || 8; const padR = 10, padT = 9; const n = series.length;
+      const vals = series.map(p => p.v); const min = Math.min.apply(null, vals), max = Math.max.apply(null, vals); const range = (max - min) || 1;
+      const xs = [], ys = [], points = [];
+      for (let i = 0; i < n; i++) {
+        const x = padL + (n === 1 ? 0 : (i / (n - 1)) * (W - padL - padR));
+        const norm = low ? (max - series[i].v) / range : (series[i].v - min) / range;
+        const y = padT + (1 - norm) * (H - padT - padB);
+        xs.push(x); ys.push(y); points.push({ key: i, x: +x.toFixed(1), y: +y.toFixed(1) });
+      }
+      let line = 'M' + xs[0].toFixed(1) + ' ' + ys[0].toFixed(1);
+      for (let i = 0; i < n - 1; i++) {
+        const x0 = xs[i ? i - 1 : 0], y0 = ys[i ? i - 1 : 0];
+        const x1 = xs[i], y1 = ys[i], x2 = xs[i + 1], y2 = ys[i + 1];
+        const x3 = xs[i + 2 < n ? i + 2 : i + 1], y3 = ys[i + 2 < n ? i + 2 : i + 1];
+        const c1x = x1 + (x2 - x0) / 6, c1y = y1 + (y2 - y0) / 6;
+        const c2x = x2 - (x3 - x1) / 6, c2y = y2 - (y3 - y1) / 6;
+        line += ' C' + c1x.toFixed(1) + ' ' + c1y.toFixed(1) + ' ' + c2x.toFixed(1) + ' ' + c2y.toFixed(1) + ' ' + x2.toFixed(1) + ' ' + y2.toFixed(1);
+      }
+      const area = line + ' L' + xs[n - 1].toFixed(1) + ' ' + (H - padB).toFixed(1) + ' L' + xs[0].toFixed(1) + ' ' + (H - padB).toFixed(1) + ' Z';
+      const idxs = n <= 4 ? series.map((_, i) => i) : [0, Math.round((n - 1) / 3), Math.round(2 * (n - 1) / 3), n - 1];
+      const ticks = idxs.map((i, k) => ({ key: k, x: +xs[i].toFixed(1), label: series[i].label }));
+      const gridYs = [0.25, 0.5, 0.75].map((f, k) => ({ key: k, y: +(padT + f * (H - padT - padB)).toFixed(1) }));
+      return { line, area, points, ticks, gridYs, lastX: +xs[n - 1].toFixed(1), lastY: +ys[n - 1].toFixed(1), baselineY: H - padB, topY: padT, botY: H - padB, gx1: padL, gx2: W - padR, best: low ? min : max, worst: low ? max : min };
+    };
+    const selDefs = MET.selectedDefs();
+    const strengthCards = selDefs.map(def => {
+      const s = def.series, last = s[s.length - 1].v, prev = s.length > 1 ? s[s.length - 2].v : last;
+      const improving = lowerBetter(def) ? last < prev : last > prev;
+      const sp = buildChart(def, 82, 30, 3, 2);
+      return { key: def.id, name: def.name, cat: def.cat, value: fmtVal(def, last), trend: improving ? arrowUp : arrowFlat, trendColor: improving ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', sparkLine: sp.line, sparkArea: sp.area, sparkX: sp.lastX, sparkY: sp.lastY, open: () => this.openMetric(def.id) };
+    });
+    const hasStrength = strengthCards.length > 0;
+
+    // metric detail (richer chart)
+    const md = MET.byId(this.state.openMetricId);
+    let mdName = '', mdCat = '', mdValue = '', mdGain = '', mdChartLine = '', mdChartArea = '', mdBaseline = 0, mdLastX = 0, mdLastY = 0, mdLastLabelY = 0, mdTicks = [], mdPoints = [], mdGrid = [], mdGridX1 = 8, mdGridX2 = 300, mdTopY = 0, mdBotY = 0, mdBest = '', mdWorst = '', mdStats = [], mdMilestones = [], mdRecent = [];
+    let mdMarkers = [], mdDots = [];
+    if (md) {
+      const s = md.series, first = s[0].v, last = s[s.length - 1].v, low = lowerBetter(md);
+      const ch = buildChart(md, 320, 200, 12, 20);
+      mdName = md.name; mdCat = md.cat; mdValue = fmtVal(md, last);
+      const deltaTxt = low ? (mmss(Math.max(0, first - last)) + ' faster') : ('+' + fmtVal(md, Math.max(0, last - first)));
+      mdGain = deltaTxt + ' since ' + s[0].label;
+      mdChartLine = ch.line; mdChartArea = ch.area; mdBaseline = ch.baselineY; mdLastX = ch.lastX; mdLastY = ch.lastY; mdLastLabelY = Math.max(12, ch.lastY - 9);
+      mdTicks = ch.ticks; mdPoints = ch.points; mdGrid = ch.gridYs; mdGridX1 = ch.gx1; mdGridX2 = ch.gx2; mdTopY = ch.topY + 4; mdBotY = ch.botY;
+      if (md.unit === 'weight') {
+        const pts = ch.points, vals = s.map(p => p.v), mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+        mdMarkers = md.milestones.map((m, i) => {
+          const num = parseFloat(((m.label || '').match(/[0-9.]+/) || [])[0]);
+          if (!num || num < mn || num > mx) return null;
+          let x = pts[pts.length - 1].x, y = pts[pts.length - 1].y;
+          for (let j = 0; j < vals.length - 1; j++) { const a = vals[j], b = vals[j + 1]; if ((num >= a && num <= b) || (num >= b && num <= a)) { const t = (num - a) / ((b - a) || 1); x = pts[j].x + (pts[j + 1].x - pts[j].x) * t; y = pts[j].y + (pts[j + 1].y - pts[j].y) * t; break; } }
+          const rr = 4.6;
+          return { key: i, d: 'M' + x.toFixed(1) + ' ' + (y - rr).toFixed(1) + ' L' + (x + rr).toFixed(1) + ' ' + y.toFixed(1) + ' L' + x.toFixed(1) + ' ' + (y + rr).toFixed(1) + ' L' + (x - rr).toFixed(1) + ' ' + y.toFixed(1) + ' Z' };
+        }).filter(Boolean);
+      }
+      mdBest = fmtVal(md, ch.best); mdWorst = fmtVal(md, ch.worst);
+      mdDots = ch.points.map((p, i) => { const txt = fmtVal(md, s[i].v) + ' \u00B7 ' + s[i].label; const rw = txt.length * 5.6 + 14; const lx = Math.max(6 + rw / 2, Math.min(314 - rw / 2, p.x)); const ly = p.y > 40 ? p.y - 13 : p.y + 20; return { key: i, x: p.x, y: p.y, active: this.state.mdTap === i, tap: () => this.setState(st => ({ mdTap: st.mdTap === i ? null : i })), txt, lx, ly, rx: lx - rw / 2, ry: ly - 12, rw }; });
+      mdStats = [
+        { key: 'best', label: 'Best', value: mdBest },
+        { key: 'start', label: 'Start', value: fmtVal(md, first) },
+        { key: 'sessions', label: 'Entries', value: String(s.length) },
+        { key: 'delta', label: 'Change', value: deltaTxt },
+      ];
+      mdMilestones = md.milestones.map((m, i) => ({ key: i, label: m.label, date: m.date }));
+      mdRecent = md.recent.map((r, i) => ({ key: i, title: r.title, detail: r.detail, date: r.date }));
+    }
+
+    // edit sheet rows
+    const capReached = MET.selected().length >= 4;
+    const swBase = 'position:relative; width:42px; height:25px; flex:none; border-radius:var(--fl-radius-pill); border:1px solid; cursor:pointer; padding:0; transition:background 200ms var(--fl-ease-out, ease-out), border-color 200ms var(--fl-ease-out, ease-out);';
+    const knobBase = 'position:absolute; top:2px; width:19px; height:19px; border-radius:50%; transition:left 220ms var(--fl-ease-out, ease-out);';
+    const mkRow = (def, on, idx, count) => ({
+      key: def.id, name: def.name, cat: def.cat, on,
+      up: () => MET.move(def.id, -1), down: () => MET.move(def.id, 1), toggle: () => MET.toggle(def.id, 4),
+      upColor: (on && idx > 0) ? 'var(--fl-bronze-primary)' : 'var(--fl-charcoal-500)',
+      downColor: (on && idx < count - 1) ? 'var(--fl-bronze-primary)' : 'var(--fl-charcoal-500)',
+      switchStyle: on ? (swBase + ' background:var(--fl-bronze-metallic); border-color:var(--fl-bronze-border);') : (swBase + ' background:var(--fl-charcoal-800); border-color:var(--fl-charcoal-600);' + (capReached ? ' opacity:0.45;' : '')),
+      knobStyle: on ? (knobBase + ' left:20px; background:#1A1206;') : (knobBase + ' left:2px; background:var(--fl-charcoal-500);'),
+    });
+    const editRows = selDefs.map((def, i) => mkRow(def, true, i, selDefs.length))
+      .concat(MET.POOL.filter(m => !MET.isOn(m.id)).map(def => mkRow(def, false, 0, 0)));
+
+    // ── Body Metrics (calm — bodyweight + optional measurements) ──
+    const BODY = window.ForgeBody;
+    const bodyEnabled = BODY.enabled();
+    const bodyEntries = BODY.entries();
+    const showBody = bodyEnabled && bodyEntries.length > 0;
+    const bodyOff = !bodyEnabled;
+    const bodyShowTrend = BODY.showTrend();
+    const XF = window.ForgeTransformation;
+    const xformCount = XF ? XF.entries().length : 0;
+    let bodyLatest = '', bodyChange = '', bodyChartLine = '', bodyChartArea = '', bodyLastX = 0, bodyLastY = 0, bodyBaseline = 0, bodyTicks = [], bodyMeasures = [], bodyDots = [];
+    if (showBody) {
+      const bFirst = bodyEntries[0], bLast = bodyEntries[bodyEntries.length - 1];
+      bodyLatest = U.fmt(bLast.weight);
+      const bDelta = bLast.weight - bFirst.weight;
+      bodyChange = (bDelta <= 0 ? '\u2212' : '+') + U.fmt(Math.abs(bDelta)) + ' since ' + bFirst.label;
+      const bch = buildChart({ series: bodyEntries.map(e => ({ label: e.label, v: e.weight })), unit: 'weight' }, 300, 120, 20, 8);
+      bodyChartLine = bch.line; bodyChartArea = bch.area; bodyLastX = bch.lastX; bodyLastY = bch.lastY; bodyBaseline = bch.baselineY; bodyTicks = bch.ticks;
+      bodyDots = bch.points.map((p, i) => { const en = bodyEntries[i], mm2 = en.m || {}, mk = Object.keys(mm2); const txt = U.fmt(en.weight) + (mk.length ? '   ' + mk.map(k => k.charAt(0) + mm2[k] + '\u2033').join(' ') : ''); const rw = txt.length * 5.3 + 12; const lx = Math.max(6 + rw / 2, Math.min(294 - rw / 2, p.x)); const ly = p.y > 30 ? p.y - 12 : p.y + 18; return { key: i, x: p.x, y: p.y, active: this.state.bodyTap === i, tap: () => this.setState(st => ({ bodyTap: st.bodyTap === i ? null : i })), txt, lx, ly, rx: lx - rw / 2, ry: ly - 12, rw }; });
+      const lm = bLast.m || {};
+      bodyMeasures = Object.keys(lm).map((k, i) => ({ key: i, label: k, value: lm[k] + '\u2033' }));
+    }
+    const bodyTrendSwitch = bodyShowTrend ? (swBase + ' background:var(--fl-bronze-metallic); border-color:var(--fl-bronze-border);') : (swBase + ' background:var(--fl-charcoal-800); border-color:var(--fl-charcoal-600);');
+    const bodyTrendKnob = bodyShowTrend ? (knobBase + ' left:20px; background:#1A1206;') : (knobBase + ' left:2px; background:var(--fl-charcoal-500);');
+
+    const btSel = (showBody && this.state.bodyTap != null && bodyEntries[this.state.bodyTap]) ? bodyEntries[this.state.bodyTap] : null;
+    const btSelMeasures = btSel ? Object.keys(btSel.m || {}).map((k, i) => ({ key: i, label: k, value: btSel.m[k] + '\u2033' })) : [];
+    const mtTap = this.state.mdTap;
+    const mSelTxt = (md && mtTap != null && md.series[mtTap]) ? (fmtVal(md, md.series[mtTap].v) + ' \u00B7 ' + md.series[mtTap].label) : '';
+    const _fu = (window.ForgeUser ? window.ForgeUser.get() : null) || { joinedYear: '2023', lifts: { deadlift: 495, squat: 405, bench: 275 } };
+    const _bestLift = (function () {
+      var L = _fu.lifts || {};
+      var cands = [['Deadlift', L.deadlift], ['Squat', L.squat], ['Bench', L.bench]].filter(function (x) { return x[1] != null; });
+      if (!cands.length) return null;
+      cands.sort(function (a, b) { return b[1] - a[1]; });
+      return cands[0];
+    })();
+    const _pinnedPR = _bestLift ? (_bestLift[0] + ' ' + U.fmt(_bestLift[1]) + ' \u00B7 Personal Record') : 'Log your first lift';
+    return {
+      ready: true, notReady: false,
+      mdSelActive: mSelTxt !== '', mdSelTxt: mSelTxt,
+      bodySelActive: !!btSel, bodySelWeight: btSel ? U.fmt(btSel.weight) : '', bodySelDate: btSel ? btSel.label : '',
+      bodySelMeasures: btSelMeasures, bodySelHasMeasure: btSelMeasures.length > 0, bodySelNoMeasure: !!btSel && btSelMeasures.length === 0,
+      back: this.back,
+
+      // hero
+      curKey: curFam.art || curFam.key, curTier: subToTier[curSub],
+      curRank: curFam.name + ' \u00B7 ' + curSub,
+      curStatement: curFam.statement,
+      chapter: 'The Rebuild',
+      since: _fu.joinedYear,
+      lifetime: '412',
+      pinIcon: ico('trophy', 18, 1.7),
+      pinned: _pinnedPR,
+      openPinned: () => { const c = (strengthCards.find((x) => /dead\s*lift/i.test(x.name)) || strengthCards[0]); if (c) this.openMetric(c.key); else this.openEdit(); },
+
+      // rank journey
+      rungs,
+      spineStop,
+      earnedCount: (cur) + ' families',
+
+      // consistency
+      stats,
+      streakIcon: ico('flame', 15, 1.7),
+      bestStreak: '18 weeks',
+
+      // honors
+      honors,
+      honorCount: '11',
+      openHonors: () => { window.location.href = 'Forge%20Honors%20Hub.dc.html'; },
+
+      // strength & performance
+      hasStrength, noStrength: !hasStrength, strengthCards, openEdit: this.openEdit,
+      metricOpen: !!md, closeMetric: this.closeMetric,
+      mdName, mdCat, mdValue, mdGain, mdGainIcon: arrowUp,
+      drawRef: (this._drawRef || (this._drawRef = (el) => { if (el && window.ForgeMotion) window.ForgeMotion.drawPath(el, { dur: 480 }); })),
+      mdChartLine, mdChartArea, mdBaseline, mdLastX, mdLastY, mdLastLabelY, mdTicks,
+      mdMarkers, mdDots, mdBest, mdWorst, mdStats,
+      mdMilestones, mdMilestoneIcon: ico('trophy', 15, 1.7), mdRecent,
+      editOpen: this.state.editOpen, closeEdit: this.closeEdit, editRows,
+      stopProp: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+
+      // body metrics
+      showBody, bodyOff,
+      enableBody: () => { const B = window.ForgeBody; if (B) { B.setEnabled(true); this.setState(s => ({ tick: (s.tick || 0) + 1 })); } },
+      disableBody: () => { const B = window.ForgeBody; if (B) { B.setEnabled(false); this.setState(s => ({ tick: (s.tick || 0) + 1 })); } },
+      bodyLatest, bodyChange, bodyShowTrend,
+      bodyChartLine, bodyChartArea, bodyLastX, bodyLastY, bodyBaseline, bodyTicks, bodyDots,
+      hasMeasure: bodyMeasures.length > 0, bodyMeasures,
+      bodyTrendSwitch, bodyTrendKnob, toggleTrend: () => { const B = window.ForgeBody; if (B) { B.setShowTrend(!B.showTrend()); this.setState(s => ({ tick: (s.tick || 0) + 1 })); } },
+      goXform: () => { window.location.href = 'Forge%20Transformation.dc.html'; },
+      xformSub: xformCount + ' sets \u00B7 take new progress pics',
+      openLog: this.openLog, closeLog: this.closeLog, bodyOpen: this.state.bodyOpen,
+      logWeight: this.state.logWeight, setLogWeight: this.setLogWeight, unitLabel: U.label,
+      showMeasureFields: this.state.showMeasureFields, toggleMeasureFields: this.toggleMeasureFields,
+      setWaist: this.setMeasure('waist'), setChest: this.setMeasure('chest'), setArm: this.setMeasure('arm'),
+      logWaist: this.state.logMeasure.waist, logChest: this.state.logMeasure.chest, logArm: this.state.logMeasure.arm,
+      saveLog: this.saveLog,
+
+      // what's next
+      nextIcon: ico('dumbbell', 22, 1.7),
+      nextKicker: 'Continue your program',
+      nextTitle: 'The Rebuild',
+      nextSub: 'Week 3 of 8 \u00B7 Next: Push Day A',
+      goNext: () => { window.location.href = 'Forge%20Program.dc.html'; },
+    };
+  }
+}
+</script>
+</body>
+</html>

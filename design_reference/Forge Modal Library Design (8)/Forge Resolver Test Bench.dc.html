@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<script src="forge-artwork-resolver.js"></script>
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#08090C; color:#EFE9E0; font-family:'Playfair Display',Georgia,serif; -webkit-font-smoothing:antialiased; }
+  .fn-sans { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+  .fn-mono { font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace; }
+  a { color:#CDA063; } a:hover { color:#E4C88E; }
+</style>
+</helmet>
+<div style="min-height:100vh; background:radial-gradient(120% 46% at 50% -6%, rgba(191,143,79,0.09) 0%, rgba(191,143,79,0) 46%), #08090C; padding:58px 40px 90px; display:flex; flex-direction:column; align-items:center;">
+
+  <header style="display:flex; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:1260px;">
+    <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:5px; text-transform:uppercase; color:#8A6B41; margin-bottom:16px;"><a href="Forge Home Artwork Resolver.dc.html" style="color:#8A6B41; text-decoration:none;">Home Artwork Resolver</a> · Live Test Bench</span>
+    <h1 style="margin:0; font-size:46px; font-weight:700; letter-spacing:4px; background:linear-gradient(180deg,#EFD3A0,#93693B); -webkit-background-clip:text; background-clip:text; color:transparent;">TEN WORKOUT DAYS</h1>
+    <p class="fn-sans" style="max-width:680px; margin:22px 0 0; font-size:13px; line-height:1.7; color:#9A938A;">Ten different day inputs run through <span class="fn-mono" style="color:#B0A390;">resolveHomeWorkoutArtwork()</span> live. Each card shows the input, the artwork the resolver returned, and why. Toggle the sex to confirm the set follows the saved selection.</p>
+    <div class="fn-sans" style="display:inline-flex; margin-top:26px; padding:4px; border-radius:var(--fl-radius-pill); border:1px solid #241B10; background:#0A0805; gap:4px;">
+      <button onClick="{{ selectMale }}" style="{{ maleBtn }}">Male</button>
+      <button onClick="{{ selectFemale }}" style="{{ femaleBtn }}">Female</button>
+    </div>
+    <span class="fn-sans" style="margin-top:12px; font-size:10.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:#5F5648;">User sex · {{ setLabel }}</span>
+  </header>
+
+  <div style="width:100%; max-width:1260px; margin-top:46px; display:grid; grid-template-columns:repeat(5,1fr); gap:16px;">
+    <sc-for list="{{ cases }}" as="c" hint-placeholder-count="10">
+      <div style="border-radius:var(--fl-radius-xl); background:linear-gradient(180deg,#131017,#0B0B0D); border:1px solid #17171B; overflow:hidden; display:flex; flex-direction:column;">
+        <!-- input -->
+        <div class="fn-sans" style="padding:14px 16px 12px; border-bottom:1px solid #17110A;">
+          <span style="display:block; font-size:9px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#574029; margin-bottom:5px;">Input · Day {{ c.n }}</span>
+          <span style="display:block; font-size:15px; font-weight:600; color:#E4C88E; line-height:1.15;">{{ c.name }}</span>
+          <span class="fn-mono" style="display:block; font-size:10px; color:#6C5A41; margin-top:4px;">{{ c.ctx }}</span>
+        </div>
+        <!-- resolved art -->
+        <div style="position:relative; width:100%; aspect-ratio:300/360; background:#0A0A0C; overflow:hidden;">
+          {{ c.artImg }}
+          <span class="fn-mono" style="position:absolute; left:10px; bottom:10px; padding:4px 8px; border-radius:var(--fl-radius-sm); background:rgba(8,6,11,0.7); border:1px solid #241B10; font-size:10px; font-weight:600; color:#CDA063;">{{ c.badge }}</span>
+        </div>
+        <!-- resolution -->
+        <div class="fn-sans" style="padding:13px 16px 15px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;">
+            <span class="fn-mono" style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; color:#B0A390;">{{ c.collection }}</span>
+            <span class="fn-mono" style="flex:none; font-size:12px; font-weight:600; color:#BF8F4F;">{{ c.conf }}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="flex:none; width:6px; height:6px; border-radius:50%; background:#5A9E68;"></span>
+            <span style="font-size:11px; line-height:1.4; color:#8F877C;">{{ c.reason }}</span>
+          </div>
+          <span class="fn-mono" style="font-size:9.5px; color:#574029;">source · {{ c.source }} · {{ c.sexVariant }}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <p class="fn-sans" style="max-width:820px; text-align:center; margin:56px 0 0; font-size:12px; line-height:1.8; color:#5F5648;">All ten resolve deterministically from the same inputs every run. Splits from the workout title (0.70), modalities from the primary session (0.95). None select Legacy or Honors. — Resolver Test Bench</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { sex: 'male' };
+
+  renderVals() {
+    var self = this;
+    var sex = this.state.sex || 'male';
+    var R = (typeof window !== 'undefined' && window.ForgeArtworkResolver) || null;
+
+    // Ten varied day inputs (workout + minimal program context).
+    var CASES = [
+      { name: 'Push Day A', ctx: 'PPL · strength', workout: { name: 'Push Day A' }, program: { family: 'Muscle Building', structure: 'ppl' } },
+      { name: 'Pull Day B', ctx: 'PPL · strength', workout: { name: 'Pull Day B' }, program: { family: 'Muscle Building', structure: 'ppl' } },
+      { name: 'Leg Day', ctx: 'general lower', workout: { name: 'Leg Day' }, program: { family: 'Muscle Building' } },
+      { name: 'Lower Body A', ctx: 'upper/lower structure', workout: { name: 'Lower Body A' }, program: { family: 'Strength', structure: 'upper_lower' } },
+      { name: 'Upper 1', ctx: 'upper/lower structure', workout: { name: 'Upper 1' }, program: { family: 'Strength', structure: 'upper_lower' } },
+      { name: 'Total Body', ctx: 'full-body session', workout: { name: 'Total Body' }, program: { family: 'Full Body & Home' } },
+      { name: 'Core & Abs', ctx: 'trunk-dominant', workout: { name: 'Core & Abs' }, program: { family: 'Strength' } },
+      { name: 'Tempo Run', ctx: 'running family', workout: { name: 'Tempo Run' }, program: { family: 'Running' } },
+      { name: 'Sprint Intervals', ctx: 'sprint session', workout: { name: 'Sprint Intervals' }, program: { family: 'Conditioning' } },
+      { name: 'Saturday Yoga', ctx: 'yoga session', workout: { name: 'Saturday Yoga' }, program: { family: 'Mobility' } },
+    ];
+
+    var cases = CASES.map(function (c, i) {
+      var res = R ? R.resolveHomeWorkoutArtwork({ user: { sex: sex }, workout: c.workout, program: c.program, exercises: [] }) : {};
+      return {
+        n: String(i + 1), name: c.name, ctx: c.ctx,
+        collection: res.collection || '—', key: res.key || '—',
+        badge: (res.collection === 'workout_modality' ? 'modality' : res.collection === 'training_split' ? 'split' : res.collection === 'exercise_family' ? 'family' : res.collection === 'program_theme' ? 'theme' : 'default') + ' · ' + (res.key || '—'),
+        conf: (res.confidence != null ? res.confidence.toFixed(2) : '—'),
+        reason: res.reason || '—', source: res.source || '—', sexVariant: res.sexVariant || '—',
+        artImg: React.createElement('img', {
+          src: res.assetPath || 'assets/workout-push.png', alt: res.key || '',
+          style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', mixBlendMode: 'screen' },
+        }),
+      };
+    });
+
+    var activeBtn = { padding: '9px 30px', borderRadius: '999px', border: '1px solid rgba(191,143,79,0.35)', background: 'rgba(191,143,79,0.09)', color: '#E4C88E', fontSize: '11px', fontWeight: '700', letterSpacing: '2.5px', textTransform: 'uppercase', cursor: 'pointer', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif' };
+    var idleBtn = Object.assign({}, activeBtn, { border: '1px solid transparent', background: 'transparent', color: '#6C5A41' });
+
+    return {
+      cases: cases,
+      setLabel: sex === 'female' ? 'Female' : 'Male',
+      maleBtn: sex === 'male' ? activeBtn : idleBtn,
+      femaleBtn: sex === 'female' ? activeBtn : idleBtn,
+      selectMale: function () { self.setState({ sex: 'male' }); },
+      selectFemale: function () { self.setState({ sex: 'female' }); },
+    };
+  }
+}
+</script>
+</body>
+</html>

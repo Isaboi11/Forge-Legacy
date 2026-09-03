@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#0A0807; color:#EFE9E0; font-family:'Playfair Display',Georgia,serif; -webkit-font-smoothing:antialiased; }
+  .fn-sans { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+</style>
+</helmet>
+<div style="min-height:100vh; background:radial-gradient(120% 60% at 50% -6%, rgba(191,143,79,0.10) 0%, rgba(191,143,79,0) 46%), radial-gradient(90% 46% at 50% 118%, rgba(189,120,41,0.07) 0%, rgba(0,0,0,0) 62%), #0A0807; padding:60px 40px 84px; display:flex; flex-direction:column; align-items:center;">
+
+  <!-- ══ MASTHEAD ══ -->
+  <header style="display:flex; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:1160px;">
+    <h1 style="margin:0; font-size:62px; font-weight:800; letter-spacing:15px; text-indent:15px; background:linear-gradient(180deg,#F0D9A8,#93693B); -webkit-background-clip:text; background-clip:text; color:transparent;">LEGACY</h1>
+    <div style="display:flex; align-items:center; gap:16px; width:min(560px,82%); margin:22px 0 16px;">
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(191,143,79,0.7));"></span>
+      <span style="width:8px; height:8px; flex:none; transform:rotate(45deg); border:1px solid #BF8F4F;"></span>
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.7),transparent);"></span>
+    </div>
+    <span class="fn-sans" style="font-size:13px; font-weight:600; letter-spacing:5px; text-transform:uppercase; color:#B08A55;">The monument has always stood. You simply drew closer.</span>
+  </header>
+
+  <!-- ══ FOUR BADGES · each a separate artboard ══ -->
+  <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:26px; width:100%; max-width:1160px; margin-top:62px;">
+    <sc-for list="{{ items }}" as="it" hint-placeholder-count="4">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:2.6px; text-transform:uppercase; color:#8A6B41; margin-bottom:18px;">Legacy {{ it.roman }}</span>
+        <div style="width:100%; max-width:250px; margin:0 auto;">
+          <div role="img" aria-label="Legacy {{ it.roman }} — {{ it.name }}" style="{{ it.artStyle }}"></div>
+        </div>
+        <div style="text-align:center; margin-top:28px; display:flex; flex-direction:column; align-items:center; gap:13px;">
+          <span style="font-size:20px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#D8B981;">{{ it.name }}</span>
+          <span style="width:7px; height:7px; flex:none; transform:rotate(45deg); border:1px solid rgba(191,143,79,0.6);"></span>
+          <p class="fn-sans" style="margin:0; font-size:13.5px; line-height:1.85; color:#9A938A;">{{ it.d1 }}<br>{{ it.d2 }}</p>
+          <span class="fn-sans" style="font-size:11px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:#B98F4E; margin-top:2px;">{{ it.tag }}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ══ REFERENCE ROW ══ -->
+  <div style="display:flex; flex-direction:column; align-items:center; width:100%; max-width:1160px; margin-top:76px; padding-top:42px; border-top:1px solid #221A14;">
+    <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#6C5A41; margin-bottom:30px;">Reference · all four together</span>
+    <div style="display:flex; align-items:flex-end; justify-content:center; gap:40px;">
+      <sc-for list="{{ items }}" as="it" hint-placeholder-count="4">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:11px;">
+          <div role="img" aria-label="Legacy {{ it.roman }}" style="{{ it.refStyle }}"></div>
+          <span class="fn-sans" style="font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:#7A674C;">{{ it.roman }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ══ THE BUILDER MINDSET ══ -->
+  <div style="width:100%; max-width:1160px; margin-top:70px; border:1px solid #2A2016; border-radius:16px; background:linear-gradient(180deg, rgba(191,143,79,0.05), transparent 44%), #0C0A08; overflow:hidden;">
+    <div style="display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr 1fr; align-items:center;">
+      <div style="display:flex; align-items:center; gap:16px; padding:24px 26px; border-right:1px solid #201811;">
+        <span style="width:50px; height:50px; flex:none; border-radius:10px; background:linear-gradient(180deg,#E7C98E,#A9772F); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-size:27px; box-shadow:inset 0 1px 2px rgba(255,236,200,0.5), 0 0 14px rgba(191,143,79,0.25); color:#1A1206;"><svg viewBox="0 0 24 24" style="width:30px;height:30px;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+        <div>
+          <span style="display:block; font-size:17px; font-weight:700; letter-spacing:0.5px; color:#D8B981;">The Builder Mindset</span>
+          <span class="fn-sans" style="display:block; font-size:12px; line-height:1.5; color:#8A8178; margin-top:3px;">Consistent effort. Visible progress.<br>A stronger you. A legacy in the making.</span>
+        </div>
+      </div>
+      <sc-for list="{{ principles }}" as="p" hint-placeholder-count="4">
+        <div style="display:flex; flex-direction:column; gap:9px; padding:24px 20px; border-right:{{ p.br }};">
+          <span style="display:flex; color:#C89F5E;">{{ p.icon }}</span>
+          <span class="fn-sans" style="font-size:10.5px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:#B98F4E; line-height:1.3;">{{ p.label }}</span>
+          <span class="fn-sans" style="font-size:12px; line-height:1.4; color:#8A8178;">{{ p.sub }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ══ ASSET NOTE ══ -->
+  <p class="fn-sans" style="max-width:740px; text-align:center; margin:52px 0 0; font-size:12.5px; line-height:1.75; color:#5F5648;">Each tier is a finished badge illustration — <span style="color:#B08A55;">assets/legacy-rank-1…4.png</span> — the definitive Legacy rank artwork for the profile hero, rank ceremony, honors, and leaderboards. The monument grows nearer with every tier: distant peak → revealed scale → the final steps → timeless and complete.</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const art = (img) => "width:100%; aspect-ratio:366 / 500; background:url('" + img + "') center/cover no-repeat; filter:drop-shadow(0 16px 30px rgba(0,0,0,0.6));";
+    const ref = (img) => "width:104px; aspect-ratio:366 / 500; background:url('" + img + "') center/cover no-repeat; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.5));";
+
+    const raw = [
+      { roman: 'I',   img: 'assets/legacy-rank-1.png', name: 'The Discovery', d1: 'A distant monument,',   d2: 'mysterious and barely visible.', tag: 'You start.' },
+      { roman: 'II',  img: 'assets/legacy-rank-2.png', name: 'The Ascent',    d1: 'Closer now, the monument', d2: 'reveals its scale.',         tag: 'You show up.' },
+      { roman: 'III', img: 'assets/legacy-rank-3.png', name: 'The Presence',  d1: 'The final steps.',        d2: 'You stand before it.',        tag: 'You build it.' },
+      { roman: 'IV',  img: 'assets/legacy-rank-4.png', name: 'The Legacy',    d1: 'Timeless, complete,',     d2: 'and beyond the self.',        tag: 'You leave it.' },
+    ];
+    const items = raw.map((it) => Object.assign({}, it, { artStyle: art(it.img), refStyle: ref(it.img) }));
+
+    const svg = (paths, sw) => {
+      const React = window.React;
+      const h = React.createElement;
+      return h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(paths) ? paths : [paths]).map((d, i) => h('path', { key: i, d })));
+    };
+    const React = window.React, h = React && React.createElement;
+    const bootIcon = h ? h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'currentColor' }, h('ellipse', { cx: 9, cy: 7, rx: 4.4, ry: 5.2 }), h('circle', { cx: 15.6, cy: 15, r: 1.7 }), h('circle', { cx: 18, cy: 17.7, r: 1.4 }), h('circle', { cx: 13.4, cy: 17.5, r: 1.4 }), h('circle', { cx: 16.2, cy: 20.2, r: 1.2 })) : null;
+    const chartIcon = svg(['M4 20V10', 'M10 20V13', 'M16 20v-4', 'M4 8l6-3 5 2 5-4', 'M17 3h3v3'], 1.9);
+    const shieldIcon = svg(['M12 3.4l7 2.6v5.6c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6z', 'M9 12l2 2 4-4'], 1.8);
+    const mountainIcon = svg(['M3 19l6-9 4 5 3-4 5 8z', 'M9 10l1.4-2'], 1.8);
+
+    const principles = [
+      { label: 'Consistent Effort', sub: 'Show up daily.', icon: bootIcon, br: '1px solid #201811' },
+      { label: 'Visible Progress', sub: 'Small steps. Big change.', icon: chartIcon, br: '1px solid #201811' },
+      { label: 'Built on Discipline', sub: 'Earn, don\u2019t expect.', icon: shieldIcon, br: '1px solid #201811' },
+      { label: 'Legacy in the Making', sub: 'Inspire others.', icon: mountainIcon, br: 'none' },
+    ];
+
+    return { items, principles };
+  }
+}
+</script>
+</body>
+</html>

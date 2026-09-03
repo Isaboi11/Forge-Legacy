@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; justify-content:center; padding:40px 24px 56px;">
+  <div style="width:980px; max-width:100%; display:flex; flex-direction:column; gap:22px;">
+
+    <!-- ═══ HEADER ═══ -->
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:24px; padding-bottom:20px; border-bottom:1px solid var(--fl-charcoal-600);">
+      <div style="display:flex; flex-direction:column; gap:9px;">
+        <span style="font-size:11px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Forge Legacy · Build Status</span>
+        <span style="font-family:var(--fl-font-display); font-size:38px; font-weight:700; letter-spacing:0.3px; color:var(--fl-text-primary); line-height:1;">Where the build stands</span>
+        <span style="font-size:13.5px; color:var(--fl-text-secondary);">Social architecture thread · epic + peripheral complete · PersonalRecord model + Record History sheet shipped · actionable queue empty</span>
+      </div>
+      <span style="flex:none; padding:8px 15px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); font-size:12px; font-weight:600; letter-spacing:0.4px; color:var(--fl-text-tertiary);">July 15, 2026</span>
+    </div>
+
+    <!-- ═══ KPI TILES ═══ -->
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;">
+      <div style="display:flex; flex-direction:column; gap:5px; padding:18px 20px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700);">
+        <span style="font-size:10px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Social Units</span>
+        <span style="font-family:var(--fl-font-display); font-size:34px; font-weight:700; color:var(--fl-bronze-bright); line-height:1;">5<span style="font-size:20px; color:var(--fl-text-tertiary);"> live · 1 shelved</span></span>
+        <span style="font-size:12px; color:var(--fl-text-secondary);">all built &amp; committed</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:5px; padding:18px 20px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700);">
+        <span style="font-size:10px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Test Suite</span>
+        <span style="font-family:var(--fl-font-display); font-size:34px; font-weight:700; color:var(--fl-bronze-bright); line-height:1;">178<span style="font-size:20px; color:var(--fl-text-tertiary);"> / 178</span></span>
+        <span style="font-size:12px; color:var(--fl-text-secondary);">passing · tsc 0 · eslint clean</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:5px; padding:18px 20px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700);">
+        <span style="font-size:10px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Build Gates</span>
+        <span style="font-family:var(--fl-font-display); font-size:34px; font-weight:700; color:var(--fl-bronze-bright); line-height:1;">4<span style="font-size:20px; color:var(--fl-text-tertiary);"> / 4</span></span>
+        <span style="font-size:12px; color:var(--fl-text-secondary);">green · web export clean</span>
+      </div>
+    </div>
+
+    <!-- ═══ SOCIAL ARCHITECTURE EPIC ═══ -->
+    <div style="display:flex; flex-direction:column; gap:16px; padding:24px 26px; border-radius:var(--fl-radius-lg); background:radial-gradient(130% 120% at 10% 0%, rgba(191,143,79,0.06), transparent 55%), var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700);">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
+        <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-text-primary);">Social Architecture — feed → detail</span>
+        <span style="font-size:12px; font-weight:600; color:var(--fl-bronze-bright);">6 of 6 built · Community shelved</span>
+      </div>
+      <div style="height:9px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);">
+        <div style="width:100%; height:100%; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:11px; margin-top:4px;">
+
+        <div style="display:flex; align-items:center; gap:16px;">
+          <span style="width:260px; flex:none; font-size:13.5px; color:var(--fl-text-primary);">Ceremony / Share / Post foundation <span style="color:var(--fl-text-tertiary);">①–④</span></span>
+          <div style="flex:1; height:7px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);"><div style="width:100%; height:100%; background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div></div>
+          <span style="width:104px; flex:none; text-align:right; display:inline-flex; justify-content:flex-end;"><span style="padding:3px 10px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-border); font-size:9.5px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-bright);">Committed</span></span>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:16px;">
+          <span style="width:260px; flex:none; font-size:13.5px; color:var(--fl-text-primary);">Full Post Detail — feed-post viewer</span>
+          <div style="flex:1; height:7px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);"><div style="width:100%; height:100%; background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div></div>
+          <span style="width:104px; flex:none; text-align:right; display:inline-flex; justify-content:flex-end;"><span style="padding:3px 10px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-border); font-size:9.5px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-bright);">Committed</span></span>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:16px;">
+          <span style="width:260px; flex:none; font-size:13.5px; color:var(--fl-text-primary);">Root-Stack full-screen presentation</span>
+          <div style="flex:1; height:7px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);"><div style="width:100%; height:100%; background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div></div>
+          <span style="width:104px; flex:none; text-align:right; display:inline-flex; justify-content:flex-end;"><span style="padding:3px 10px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-border); font-size:9.5px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-bright);">Committed</span></span>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:16px;">
+          <span style="width:260px; flex:none; font-size:13.5px; color:var(--fl-text-primary);">Friends Feed — tap-through to detail</span>
+          <div style="flex:1; height:7px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);"><div style="width:100%; height:100%; background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div></div>
+          <span style="width:104px; flex:none; text-align:right; display:inline-flex; justify-content:flex-end;"><span style="padding:3px 10px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-border); font-size:9.5px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-bright);">Committed</span></span>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:16px;">
+          <span style="width:260px; flex:none; font-size:13.5px; color:var(--fl-text-secondary);">Community feed — <span style="color:var(--fl-text-tertiary);">built, shelved for launch</span></span>
+          <div style="flex:1; height:7px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);"><div style="width:100%; height:100%; background:repeating-linear-gradient(-45deg, var(--fl-charcoal-500) 0 6px, var(--fl-charcoal-600) 6px 12px);"></div></div>
+          <span style="width:104px; flex:none; text-align:right; display:inline-flex; justify-content:flex-end;"><span style="padding:3px 10px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-800); border:1px solid var(--fl-charcoal-600); font-size:9.5px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-tertiary);">Shelved</span></span>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:16px;">
+          <span style="width:260px; flex:none; font-size:13.5px; color:var(--fl-text-primary);">Squad feed (S-2) — 3 new types, per-squad firewall</span>
+          <div style="flex:1; height:7px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);"><div style="width:100%; height:100%; background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div></div>
+          <span style="width:104px; flex:none; text-align:right; display:inline-flex; justify-content:flex-end;"><span style="padding:3px 10px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-border); font-size:9.5px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-bright);">Committed</span></span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═══ TWO COLUMN: ROADMAP CHART + OPEN THREADS ═══ -->
+    <div style="display:grid; grid-template-columns:1.15fr 1fr; gap:16px;">
+
+      <!-- ROADMAP VERTICAL BAR CHART -->
+      <div style="display:flex; flex-direction:column; gap:18px; padding:22px 24px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700);">
+        <div style="display:flex; align-items:baseline; justify-content:space-between;">
+          <span style="font-size:11px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Roadmap by phase</span>
+          <span style="font-size:10.5px; color:var(--fl-text-tertiary);">est. completion</span>
+        </div>
+
+        <div style="display:flex; align-items:flex-end; gap:20px; height:150px; padding:0 4px; border-bottom:1px solid var(--fl-charcoal-600);">
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:7px;">
+            <span style="font-size:11px; font-weight:700; color:var(--fl-bronze-bright);">25%</span>
+            <div style="width:100%; max-width:54px; height:30px; border-radius:4px 4px 0 0; background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:7px;">
+            <span style="font-size:11px; font-weight:700; color:var(--fl-bronze-bright);">55%</span>
+            <div style="width:100%; max-width:54px; height:66px; border-radius:4px 4px 0 0; background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:7px;">
+            <span style="font-size:11px; font-weight:700; color:var(--fl-bronze-bright);">100%</span>
+            <div style="width:100%; max-width:54px; height:118px; border-radius:4px 4px 0 0; background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:7px;">
+            <span style="font-size:11px; font-weight:700; color:var(--fl-bronze-bright);">90%</span>
+            <div style="width:100%; max-width:54px; height:106px; border-radius:4px 4px 0 0; background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:7px;">
+            <span style="font-size:11px; font-weight:700; color:var(--fl-text-tertiary);">10%</span>
+            <div style="width:100%; max-width:54px; height:12px; border-radius:4px 4px 0 0; background:var(--fl-charcoal-500);"></div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:20px; padding:0 4px;">
+          <span style="flex:1; text-align:center; font-size:10.5px; color:var(--fl-text-secondary);"><b style="color:var(--fl-text-primary);">P0</b><br>Data model</span>
+          <span style="flex:1; text-align:center; font-size:10.5px; color:var(--fl-text-secondary);"><b style="color:var(--fl-text-primary);">P1</b><br>Resolver</span>
+          <span style="flex:1; text-align:center; font-size:10.5px; color:var(--fl-text-secondary);"><b style="color:var(--fl-text-primary);">P2</b><br>Core screens</span>
+          <span style="flex:1; text-align:center; font-size:10.5px; color:var(--fl-text-secondary);"><b style="color:var(--fl-text-primary);">P3</b><br>Peripheral</span>
+          <span style="flex:1; text-align:center; font-size:10.5px; color:var(--fl-text-secondary);"><b style="color:var(--fl-text-primary);">P4</b><br>Assets</span>
+        </div>
+      </div>
+
+      <!-- OPEN THREADS -->
+      <div style="display:flex; flex-direction:column; gap:15px; padding:22px 24px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700);">
+        <span style="font-size:11px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Open threads · carry-forward</span>
+
+        <div style="display:flex; flex-direction:column; gap:13px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between; gap:10px;"><span style="font-size:12.5px; color:var(--fl-text-primary);">Program plates structured (Phase-0)</span><span style="font-size:11px; color:var(--fl-bronze-bright);">shipped</span></div>
+            <div style="height:6px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);"><div style="width:100%; height:100%; background:var(--fl-bronze-metallic);"></div></div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between; gap:10px;"><span style="font-size:12.5px; color:var(--fl-text-primary);">Sex default → neutral</span><span style="font-size:11px; color:var(--fl-text-tertiary);">code fixed · art → P4</span></div>
+            <div style="height:6px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);"><div style="width:65%; height:100%; background:var(--fl-bronze-metallic);"></div></div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between; gap:10px;"><span style="font-size:12.5px; color:var(--fl-text-primary);">Asset manifest — version / aspect / placement</span><span style="font-size:11px; color:var(--fl-text-tertiary);">not started</span></div>
+            <div style="height:6px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);"></div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between; gap:10px;"><span style="font-size:12.5px; color:var(--fl-text-primary);">Resolver unit-test matrix</span><span style="font-size:11px; color:var(--fl-text-tertiary);">not started</span></div>
+            <div style="height:6px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);"></div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between; gap:10px;"><span style="font-size:12.5px; color:var(--fl-text-primary);">Blueprint reconciliation</span><span style="font-size:11px; color:var(--fl-text-tertiary);">not started</span></div>
+            <div style="height:6px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ NEXT UP PLAN ═══ -->
+    <div style="display:flex; flex-direction:column; gap:15px; padding:24px 26px; border-radius:var(--fl-radius-lg); background:radial-gradient(130% 130% at 90% 0%, rgba(191,143,79,0.06), transparent 55%), var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border-subtle);">
+      <span style="font-size:11px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Next up · the plan</span>
+      <div style="display:flex; flex-direction:column; gap:13px;">
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <span style="width:26px; height:26px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-border); font-family:var(--fl-font-display); font-size:13px; font-weight:700; color:var(--fl-bronze-bright);">1</span>
+          <div style="flex:1;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Member public profile</span> <span style="font-size:11px; color:var(--fl-bronze-bright);">· queued, resume pick</span><br><span style="font-size:12.5px; color:var(--fl-text-secondary); line-height:1.5;">Lights up two wired-but-inert seams at once — roster-row tap + feed-author tap both dead-end here. More leverage than challenge detail (single inbound). Needs new read-surface scaffolding.</span></div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <span style="width:26px; height:26px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-charcoal-800); border:1px solid var(--fl-charcoal-600); font-family:var(--fl-font-display); font-size:13px; font-weight:700; color:var(--fl-text-secondary);">2</span>
+          <div style="flex:1;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Deferred sub-details — remaining</span><br><span style="font-size:12.5px; color:var(--fl-text-secondary); line-height:1.5;">Challenge detail, per-holder PR timeline, train-together join. Records full-history sheet is now shipped; these are the tap-targets still left inert.</span></div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <span style="width:26px; height:26px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-charcoal-800); border:1px solid var(--fl-charcoal-600); font-family:var(--fl-font-display); font-size:13px; font-weight:700; color:var(--fl-text-secondary);">3</span>
+          <div style="flex:1;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Blocked-on — asset only</span><br><span style="font-size:12.5px; color:var(--fl-text-secondary); line-height:1.5;">Neutral artwork waits on Phase-4 assets — a documented + tested placeholder (male set served for neutral), not fabricated. PR-structuring (§11) is now cleared.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <span style="text-align:center; font-size:11px; color:var(--fl-text-tertiary); margin-top:2px;">Phase percentages are estimates against the handoff build order · social-unit + gate figures are exact.</span>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

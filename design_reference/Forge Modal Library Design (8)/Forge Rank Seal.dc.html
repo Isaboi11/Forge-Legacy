@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <style>
+    @keyframes sealRise { from { opacity:0; transform: translateY(14px) scale(0.985); } to { opacity:1; transform:none; } }
+    @keyframes emberFloat { 0%,100% { opacity:0.5; } 50% { opacity:0.9; } }
+  </style>
+</helmet>
+
+<div style="min-height:100vh; box-sizing:border-box; background:
+      radial-gradient(120% 80% at 50% -6%, rgba(191,143,79,0.10) 0%, rgba(191,143,79,0) 46%),
+      radial-gradient(90% 70% at 50% 120%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 60%),
+      linear-gradient(180deg, #0B0F13 0%, #0C1013 44%, #05080A 100%);
+      display:flex; flex-direction:column; align-items:center; padding:56px 24px 80px; font-family:var(--fl-font-sans, -apple-system, system-ui, sans-serif); color:var(--fl-text-primary, #F0EDE8);">
+
+  <!-- eyebrow -->
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:38px;">
+    <span style="width:34px; height:1px; background:linear-gradient(90deg, transparent, var(--fl-bronze-primary));"></span>
+    <span style="font-size:11px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--fl-bronze-primary);">Rank Insignia &nbsp;·&nbsp; The Forged Seal</span>
+    <span style="width:34px; height:1px; background:linear-gradient(90deg, var(--fl-bronze-primary), transparent);"></span>
+  </div>
+
+  <!-- ============ HERO SEAL ============ -->
+  <div style="animation: sealRise 900ms cubic-bezier(0.2,0.7,0.2,1) both; filter: drop-shadow(0 26px 40px rgba(0,0,0,0.6));">
+    <svg width="384" height="384" viewBox="0 0 620 620" role="img" aria-label="Foundation I rank seal">
+      <defs>
+        <radialGradient id="discGrad" cx="50%" cy="34%" r="78%">
+          <stop offset="0%" stop-color="#26262C"></stop>
+          <stop offset="46%" stop-color="#16181B"></stop>
+          <stop offset="100%" stop-color="#090B0D"></stop>
+        </radialGradient>
+        <linearGradient id="bevelBronze" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#DDB578"></stop>
+          <stop offset="16%" stop-color="#C0904F"></stop>
+          <stop offset="50%" stop-color="#8A6C46"></stop>
+          <stop offset="80%" stop-color="#5C452E"></stop>
+          <stop offset="100%" stop-color="#463526"></stop>
+        </linearGradient>
+        <linearGradient id="innerRing" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#D9B277"></stop>
+          <stop offset="55%" stop-color="#8A6C46"></stop>
+          <stop offset="100%" stop-color="#4A3826"></stop>
+        </linearGradient>
+        <radialGradient id="flameGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(205,160,99,0.55)"></stop>
+          <stop offset="60%" stop-color="rgba(191,143,79,0.16)"></stop>
+          <stop offset="100%" stop-color="rgba(191,143,79,0)"></stop>
+        </radialGradient>
+        <clipPath id="discClip"><circle cx="310" cy="310" r="236"></circle></clipPath>
+        <path id="topArc" d="M38,310 A272,272 0 0,1 582,310" fill="none"></path>
+        <path id="botArc" d="M38,310 A272,272 0 0,0 582,310" fill="none"></path>
+      </defs>
+
+      <!-- fine machined knurling on the very edge -->
+      <circle cx="310" cy="310" r="302" fill="none" stroke="#6A5334" stroke-width="13" stroke-dasharray="2.4 6.4"></circle>
+      <!-- outer machined bevel rim -->
+      <circle cx="310" cy="310" r="300" fill="none" stroke="#2A2016" stroke-width="20"></circle>
+      <circle cx="310" cy="310" r="299" fill="none" stroke="url(#bevelBronze)" stroke-width="15"></circle>
+      <circle cx="310" cy="310" r="307" fill="none" stroke="rgba(0,0,0,0.55)" stroke-width="2"></circle>
+      <circle cx="310" cy="310" r="291.5" fill="none" stroke="rgba(222,190,148,0.35)" stroke-width="1.2"></circle>
+      <!-- top specular sweep (light falls from above) -->
+      <path d="M160,130 A290,290 0 0,1 460,130" fill="none" stroke="rgba(240,220,180,0.45)" stroke-width="3.5" stroke-linecap="round" opacity="0.42"></path>
+
+      <!-- recessed text-band groove -->
+      <circle cx="310" cy="310" r="272" fill="none" stroke="#0B0E11" stroke-width="42"></circle>
+      <circle cx="310" cy="310" r="293" fill="none" stroke="rgba(186,146,92,0.30)" stroke-width="1"></circle>
+      <circle cx="310" cy="310" r="251" fill="none" stroke="rgba(186,146,92,0.30)" stroke-width="1"></circle>
+
+      <!-- curved rank text -->
+      <text fill="#CDA063" font-size="42" font-weight="600" letter-spacing="13" style="text-transform:uppercase;">
+        <textPath href="#topArc" startOffset="50%" text-anchor="middle">Foundation</textPath>
+      </text>
+      <text fill="#BF8F4F" font-size="40" font-weight="600" letter-spacing="15" style="text-transform:uppercase;">
+        <textPath href="#botArc" startOffset="50%" text-anchor="middle">Tier I</textPath>
+      </text>
+      <!-- side diamonds where the two arcs meet -->
+      <rect x="32" y="304" width="12" height="12" rx="1.5" transform="rotate(45 38 310)" fill="#BF8F4F"></rect>
+      <rect x="576" y="304" width="12" height="12" rx="1.5" transform="rotate(45 582 310)" fill="#BF8F4F"></rect>
+
+      <!-- inner recessed disc -->
+      <circle cx="310" cy="310" r="238" fill="url(#discGrad)"></circle>
+      <circle cx="310" cy="310" r="238" fill="none" stroke="url(#innerRing)" stroke-width="3"></circle>
+      <circle cx="310" cy="310" r="234" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"></circle>
+
+      <!-- flame heat glow + bowl/fire etch -->
+      <circle cx="310" cy="258" r="120" fill="url(#flameGlow)" style="mix-blend-mode:screen; animation: emberFloat 4s ease-in-out infinite;"></circle>
+      <g clip-path="url(#discClip)">
+        <image href="assets/rank-bowlfire.png" x="118" y="112" width="384" height="330" style="filter: brightness(1.5) contrast(1.08) sepia(0.6) saturate(1.9) hue-rotate(-10deg);"></image>
+      </g>
+      <!-- inner vignette to seat the etch into the metal -->
+      <circle cx="310" cy="310" r="238" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="26" style="mix-blend-mode:multiply;"></circle>
+    </svg>
+  </div>
+
+  <!-- caption -->
+  <div style="text-align:center; margin-top:34px; max-width:440px;">
+    <div style="font-family:var(--fl-font-display, Georgia, serif); font-size:26px; font-weight:600; letter-spacing:-0.2px;">Foundation&nbsp;I</div>
+    <p style="margin:12px 0 0; font-size:14px; line-height:1.6; color:var(--fl-text-secondary, #9E9890); text-wrap:pretty;">
+      The flame-bowl held inside a machined bronze seal. A knurled edge, a recessed groove carrying the rank in letterspaced type, and a forge-lit rim — a disciplined boundary that reads instantly as a <em style="color:var(--fl-bronze-bright); font-style:normal;">rank</em>, not an illustration.
+    </p>
+  </div>
+
+  <!-- divider -->
+  <div style="display:flex; align-items:center; gap:14px; margin:56px 0 30px; width:100%; max-width:520px;">
+    <span style="flex:1; height:1px; background:var(--fl-bronze-border-subtle);"></span>
+    <span style="font-size:11px; font-weight:600; letter-spacing:2.5px; text-transform:uppercase; color:var(--fl-text-tertiary, #666060);">Scales Across Tiers</span>
+    <span style="flex:1; height:1px; background:var(--fl-bronze-border-subtle);"></span>
+  </div>
+
+  <!-- ============ PROGRESSION STRIP ============ -->
+  <div style="display:flex; align-items:flex-start; justify-content:center; gap:30px; flex-wrap:wrap;">
+
+    <!-- Tier I -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:12px;">
+      <svg width="132" height="132" viewBox="0 0 140 140" aria-hidden="true">
+        <circle cx="70" cy="70" r="67" fill="none" stroke="#4A3A26" stroke-width="5" stroke-dasharray="1.4 3.4"></circle>
+        <circle cx="70" cy="70" r="64" fill="none" stroke="#5E4A30" stroke-width="6"></circle>
+        <circle cx="70" cy="70" r="53" fill="url(#discGrad)"></circle>
+        <circle cx="70" cy="70" r="53" fill="none" stroke="rgba(122,96,64,0.7)" stroke-width="1.5"></circle>
+        <text x="70" y="70" text-anchor="middle" dominant-baseline="central" font-family="var(--fl-font-display, Georgia, serif)" font-size="34" font-weight="600" fill="#8A7150">I</text>
+      </svg>
+      <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary, #666060);">Foundation</span>
+    </div>
+
+    <!-- Tier II -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:12px;">
+      <svg width="132" height="132" viewBox="0 0 140 140" aria-hidden="true">
+        <circle cx="70" cy="70" r="67" fill="none" stroke="#6A5334" stroke-width="5" stroke-dasharray="1.6 3.0"></circle>
+        <circle cx="70" cy="70" r="64" fill="none" stroke="#8A6C46" stroke-width="6"></circle>
+        <circle cx="70" cy="70" r="58" fill="none" stroke="rgba(191,143,79,0.55)" stroke-width="1.5"></circle>
+        <circle cx="70" cy="70" r="51" fill="url(#discGrad)"></circle>
+        <circle cx="70" cy="70" r="51" fill="none" stroke="rgba(191,143,79,0.85)" stroke-width="1.5"></circle>
+        <text x="70" y="70" text-anchor="middle" dominant-baseline="central" font-family="var(--fl-font-display, Georgia, serif)" font-size="34" font-weight="600" fill="#BF8F4F">II</text>
+      </svg>
+      <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-secondary, #9E9890);">Ascendant</span>
+    </div>
+
+    <!-- Tier III -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:12px;">
+      <svg width="132" height="132" viewBox="0 0 140 140" aria-hidden="true">
+        <circle cx="70" cy="70" r="67.5" fill="none" stroke="#8A6C46" stroke-width="6" stroke-dasharray="1.8 2.4"></circle>
+        <circle cx="70" cy="70" r="64" fill="none" stroke="#CDA063" stroke-width="6"></circle>
+        <circle cx="70" cy="70" r="59" fill="none" stroke="rgba(205,160,99,0.7)" stroke-width="1.5"></circle>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="rgba(205,160,99,0.4)" stroke-width="1"></circle>
+        <circle cx="70" cy="70" r="49" fill="url(#discGrad)"></circle>
+        <circle cx="70" cy="70" r="49" fill="none" stroke="rgba(205,160,99,0.95)" stroke-width="1.5"></circle>
+        <text x="70" y="70" text-anchor="middle" dominant-baseline="central" font-family="var(--fl-font-display, Georgia, serif)" font-size="32" font-weight="600" fill="#CDA063">III</text>
+      </svg>
+      <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-bright);">Ironbound</span>
+    </div>
+  </div>
+
+  <p style="margin:30px 0 0; font-size:13px; line-height:1.6; color:var(--fl-text-tertiary, #666060); max-width:440px; text-align:center; text-wrap:pretty;">
+    Each tier warms the metal (iron → bronze → bright bronze) and enriches the machined rim. The flame-bowl stays constant at the heart — the rim is the earned part, and can later become a live progress ring.
+  </p>
+
+</div>
+</x-dc>
+</body>
+</html>

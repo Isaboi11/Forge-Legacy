@@ -1,0 +1,284 @@
+/**
+ * Forge Legacy — Visual Foundation
+ * Material / atmosphere layer built ON TOP OF the canonical hex values in
+ * src/constants/tokens.ts. Hex values below are copied 1:1 from that file —
+ * this stylesheet does not invent new base colors, it defines how they
+ * behave as materials (gradients, glow, shadow, border, imagery treatment).
+ *
+ * Source of truth for raw hex: src/constants/tokens.ts (_palette)
+ * Source of truth for this material layer: this file.
+ */
+
+:root {
+  /* ============================================================
+     CORE PALETTE — copied from src/constants/tokens.ts (_palette)
+     ============================================================ */
+  --fl-base:          #05080A;
+  --fl-charcoal-900:  #0C1013;
+  --fl-charcoal-800:  #131517;
+  --fl-charcoal-700:  #1A1A1E;
+  --fl-charcoal-600:  #24242A;
+  --fl-charcoal-500:  #2E2E35;
+
+  --fl-cream-100:     #F0EDE8;
+  --fl-gray-400:      #9E9890;
+  --fl-gray-600:      #666060;
+
+  --fl-bronze-300:    #CDA063;
+  --fl-bronze-400:    #BF8F4F;
+  --fl-bronze-600:    #7A6040;
+  --fl-bronze-dark:   #574029;
+  --fl-bronze-glow-a: rgba(186, 146, 92, 0.10);
+
+  --fl-green-muted:   #5A9E68;
+  --fl-red-muted:     #BE5A4C;
+  --fl-blue-muted:    #568AAE;
+
+  --fl-overlay-dark:       rgba(0, 0, 0, 0.75);
+  --fl-inner-highlight:    rgba(255, 255, 255, 0.04);
+  --fl-inner-highlight-md: rgba(255, 255, 255, 0.07);
+
+  /* ============================================================
+     BACKGROUND LANGUAGE
+     Never flat black — a cold, dark blue-black steel base (the "cold iron").
+     Warmth is reserved for bronze accents and imagery embers; it never lives
+     in the chrome itself. A faint cool apex reads as distant night sky.
+     ============================================================ */
+  --fl-bg-primary:  var(--fl-charcoal-900);
+  --fl-bg-secondary: var(--fl-charcoal-800);
+
+  --fl-bg-atmospheric:
+    radial-gradient(130% 85% at 50% -8%, rgba(88,124,160,0.06) 0%, rgba(88,124,160,0) 48%),
+    linear-gradient(180deg, #0B0F13 0%, var(--fl-charcoal-900) 44%, var(--fl-base) 100%);
+
+  /* Bottom-weighted scrim used over any photograph or landscape layer */
+  --fl-bg-cinematic:
+    linear-gradient(180deg, rgba(6,9,12,0) 0%, rgba(6,9,12,0.35) 45%, rgba(6,9,12,0.75) 78%, rgba(6,9,12,0.96) 100%);
+
+  /* Faint drifting warm/cool haze, layered above atmospheric bg for depth */
+  --fl-bg-smoke:
+    radial-gradient(55% 45% at 18% 6%, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0) 60%),
+    radial-gradient(50% 42% at 88% 18%, rgba(96,130,165,0.06) 0%, rgba(96,130,165,0) 62%),
+    radial-gradient(70% 60% at 50% 110%, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 60%);
+
+  /* ============================================================
+     SURFACE MATERIALS — forged steel, never a flat gray rectangle.
+     Each surface carries a faint top-to-bottom gradient + inset
+     top highlight, as if catching light along its upper edge.
+     ============================================================ */
+  --fl-surface-card:     linear-gradient(180deg, #181A1C 0%, var(--fl-charcoal-800) 100%);
+  --fl-surface-elevated: linear-gradient(180deg, #1F2024 0%, var(--fl-charcoal-700) 100%);
+  --fl-surface-recessed: linear-gradient(180deg, var(--fl-base) 0%, #0C0C0E 100%);
+  --fl-surface-panel:    var(--fl-charcoal-800);
+  --fl-surface-modal:    linear-gradient(180deg, #232329 0%, #1E1E23 100%);
+  --fl-surface-nav:      rgba(13, 13, 15, 0.92);
+
+  /* ============================================================
+     BRONZE MATERIAL SYSTEM
+     Warm, weathered, brushed metal — never yellow, orange,
+     champagne, white-gold, or neon.
+     ============================================================ */
+  --fl-bronze-primary:  var(--fl-bronze-400);   /* earned / active / progress */
+  --fl-bronze-bright:   var(--fl-bronze-300);   /* pressed / highlight state */
+  --fl-bronze-mid:      var(--fl-bronze-600);   /* muted accent, track tint */
+  --fl-bronze-deep:     var(--fl-bronze-dark);  /* weathered / recessed bronze */
+
+  /* Brushed-metal sweep — use as a thin highlight bar, never a full fill */
+  --fl-bronze-metallic:
+    linear-gradient(115deg,
+      var(--fl-bronze-mid) 0%,
+      var(--fl-bronze-primary) 38%,
+      var(--fl-bronze-bright) 50%,
+      var(--fl-bronze-primary) 62%,
+      var(--fl-bronze-deep) 100%);
+
+  --fl-bronze-border:        rgba(186, 146, 92, 0.40);
+  --fl-bronze-border-subtle: rgba(186, 146, 92, 0.19);
+  --fl-bronze-glow-ring:     0 0 24px 2px rgba(186, 146, 92, 0.22);
+
+  /* Warm forge-lit bronze highlight — the Home-canonical inner-highlight hue,
+     a touch warmer than the base bronze-glow rgba. LOCKED from the Home Screen;
+     the two near-identical inline variants (198,156,100 / 202,162,106) are now
+     reconciled to this single value. */
+  --fl-bronze-warm: 198, 156, 100; /* @kind color */
+
+  /* Sanctioned FORGED-METAL fill — the one exception to "bronze is never a
+     large fill." Primary action button only. Reads as forged bronze catching
+     light: a polished bright top rim, deep bronze body, a strong bright bronze
+     specular band across the middle, deepest at the base. Hue stays in
+     bronze / burnished copper / brushed brass — never walnut or chocolate. */
+  --fl-bronze-fill:
+    linear-gradient(180deg,
+      #8A6A3E 0%,      /* thin polished top edge — reflected light, not a stripe */
+      #573F24 6%,
+      #3D2F1A 26%,
+      #2E2314 50%,     /* darkest forged-bronze core — center darker than the edges */
+      #342817 72%,
+      #42321C 92%,
+      #4A3822 97%,     /* soft reflected bottom edge */
+      #382A18 100%); /* @kind color */
+  --fl-bronze-fill-hover:
+    linear-gradient(180deg,
+      #A17E4A 0%,      /* hover: edges catch more light, the body barely lifts */
+      #63492A 6%,
+      #43331C 26%,
+      #322616 50%,
+      #382B19 72%,
+      #493720 92%,
+      #52402A 97%,
+      #3D2E1A 100%); /* @kind color */
+
+  /* Brushed-metal grain, layered OVER the fill. Dialed right down so it only
+     appears on close inspection — forged, not barcoded. */
+  --fl-bronze-brush:
+    repeating-linear-gradient(90deg,
+      rgba(255, 244, 214, 0.003) 0px, rgba(255, 244, 214, 0.003) 1px,
+      rgba(0, 0, 0, 0.004) 1px,       rgba(0, 0, 0, 0.004) 4px); /* @kind color */
+
+  /* Directional forged-metal lighting: a polished bright TOP edge, darker
+     SIDES (so the face reads slightly rounded), a faint reflected BOTTOM
+     light, and a tight top-biased glow that hugs the button. */
+  --fl-bronze-metal-border:       rgba(174, 136, 86, 0.55); /* @kind color */
+  --fl-bronze-metal-border-hover: rgba(196, 158, 104, 0.60); /* @kind color */
+  --fl-bronze-metal-top-rim:      inset 0 1px 0 rgba(222, 190, 148, 0.42); /* @kind shadow */
+  --fl-bronze-metal-bottom-rim:   inset 0 -1px 1px rgba(176, 134, 80, 0.14); /* @kind shadow */
+  --fl-bronze-metal-sides:        inset 10px 0 16px -12px rgba(0, 0, 0, 0.50), inset -10px 0 16px -12px rgba(0, 0, 0, 0.50); /* @kind shadow */
+  --fl-glow-forge:       0 0 2px rgba(186, 144, 90, 0.14);
+  --fl-glow-forge-hover: 0 0 4px rgba(198, 156, 100, 0.22), 0 0 1px rgba(198, 156, 100, 0.26);
+
+  /* Inactive primary — cool charcoal, desaturated bronze rim, no glow. */
+  --fl-bronze-fill-disabled:
+    linear-gradient(180deg, #1C1E22 0%, #15171B 100%); /* @kind color */
+  --fl-bronze-border-disabled: rgba(150, 140, 122, 0.22); /* @kind color */
+
+  /* Destructive — the SAME forged model as primary, in muted red: a dark forged
+     red-tinted body, a deep muted-red machined rim, a thin red edge highlight,
+     shaded sides, and an extremely subtle red glow. */
+  --fl-red-fill:
+    linear-gradient(180deg,
+      #2A1F1E 0%,      /* thin lit top edge */
+      #1E1615 8%,
+      #171111 50%,     /* dark forged center */
+      #1B1413 92%,
+      #241A19 97%,     /* soft reflected bottom edge */
+      #1B1413 100%); /* @kind color */
+  --fl-red-fill-hover:
+    linear-gradient(180deg,
+      #342624 0%,
+      #241918 8%,
+      #191212 50%,
+      #1F1615 92%,
+      #2B1F1D 97%,
+      #1F1615 100%); /* @kind color */
+  --fl-red-metal-border:       rgba(150, 74, 66, 0.72); /* @kind color */
+  --fl-red-metal-border-hover: rgba(178, 92, 82, 0.80); /* @kind color */
+  --fl-red-metal-top-rim:      inset 0 1px 0 rgba(190, 104, 92, 0.32); /* @kind shadow */
+  --fl-glow-red:       0 0 2px rgba(150, 70, 62, 0.16);
+  --fl-glow-red-hover: 0 0 4px rgba(170, 84, 74, 0.24), 0 0 1px rgba(170, 84, 74, 0.28);
+
+  /* ============================================================
+     BORDERS — machined, not drawn.
+     ============================================================ */
+  --fl-border-subtle:   1px solid var(--fl-charcoal-600);
+  --fl-border-bronze:   1px solid var(--fl-bronze-border);
+  --fl-border-active:   1.5px solid var(--fl-bronze-primary);
+  --fl-border-inset:    inset 0 1px 0 var(--fl-inner-highlight);
+  --fl-border-inset-md: inset 0 1px 0 var(--fl-inner-highlight-md);
+
+  /* ============================================================
+     RADIUS — one machined-corner scale for the whole system.
+     ============================================================ */
+  --fl-radius-xs:    6px;   /* @kind radius */
+  --fl-radius-sm:    8px;   /* @kind radius */
+  --fl-radius-md:    10px;  /* @kind radius */
+  --fl-radius-lg:    12px;  /* @kind radius */
+  --fl-radius-xl:    16px;  /* @kind radius */
+  --fl-radius-round: 50%;   /* @kind radius */
+  --fl-radius-pill:  999px; /* @kind radius */
+
+  /* ============================================================
+     SHADOWS — weight without obvious blur.
+     ============================================================ */
+  --fl-shadow-card:     0 2px 8px rgba(0, 0, 0, 0.35);
+  --fl-shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --fl-shadow-modal:    0 8px 24px rgba(0, 0, 0, 0.65);
+  --fl-shadow-image:    0 6px 20px rgba(0, 0, 0, 0.55);
+  --fl-shadow-ambient:  0 20px 60px rgba(0, 0, 0, 0.45);
+  --fl-shadow-float:    0 12px 28px rgba(0, 0, 0, 0.4);
+
+  /* Canonical forged-card treatments — LOCKED from the Home Screen.
+     hero = the Mission card; soft = secondary/list cards. Each carries a warm
+     inner top-highlight, a deep tight drop, and a faint bronze heat-glow. */
+  --fl-card-hero-wash:    linear-gradient(180deg, rgba(198,156,100,0.07) 0%, rgba(198,156,100,0) 42%); /* @kind color */
+  --fl-shadow-card-hero:  inset 0 1px 0 rgba(198,156,100,0.30), 0 18px 40px -24px rgba(0,0,0,0.82), 0 0 18px -6px rgba(186,146,92,0.11);
+  --fl-shadow-card-soft:  inset 0 1px 0 rgba(198,156,100,0.22), 0 12px 30px -24px rgba(0,0,0,0.72), 0 0 15px -6px rgba(186,146,92,0.09);
+
+  /* ============================================================
+     GLOW — heat from forged metal. Warm, restrained, localized. Metal glow
+     sits at the bronze accent hue; imagery embers (sunset behind a hero photo)
+     run deeper and more orange.
+     ============================================================ */
+  --fl-glow-ember:  radial-gradient(circle, rgba(186, 146, 92, 0.22) 0%, rgba(186, 146, 92, 0) 70%); /* @kind color */
+  --fl-glow-subtle: 0 0 20px rgba(186, 146, 92, 0.14);
+  --fl-glow-badge:  0 0 16px rgba(186, 146, 92, 0.28);
+  --fl-glow-focus:  drop-shadow(0 0 8px rgba(186, 146, 92, 0.5)); /* @kind other */
+
+  /* Deep sunset ember for imagery/hero embers — richer, more orange than metal
+     glow (matches the forge-light behind the hero and legacy photography). */
+  --fl-ember-sunset: #BD7829; /* @kind color */
+  --fl-glow-ember-deep:
+    radial-gradient(circle,
+      rgba(201, 128, 44, 0.55) 0%,
+      rgba(150, 84, 30, 0.24) 40%,
+      rgba(120, 66, 24, 0) 72%); /* @kind color */
+
+  /* Ember flame accent — the heat/flame icon stroke (Start Workout). LOCKED. */
+  --fl-ember-flame: #E0913F; /* @kind color */
+
+  /* Live / online status — the "training now" presence indicator. LOCKED. */
+  --fl-status-online:      #4CAF6E; /* @kind color */
+  --fl-status-online-glow: 0 0 6px rgba(76, 175, 110, 0.6); /* @kind shadow */
+
+  /* ============================================================
+     INTERACTION TINTS — faint washes for hover / active states.
+     ============================================================ */
+  --fl-hover-wash:  rgba(255, 255, 255, 0.02); /* @kind color */
+  --fl-bronze-tint: rgba(186, 146, 92, 0.05);  /* @kind color */
+
+  /* ============================================================
+     TYPOGRAPHY — FAMILIES
+     Sans carries labels, stats, and body. The display serif is
+     reserved for hero names, screen titles, and the legacy statement.
+     ============================================================ */
+  --fl-font-sans:    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* @kind font */
+  --fl-font-display: "Playfair Display", Georgia, "Times New Roman", serif; /* @kind font */
+  --fl-font-mono:    ui-monospace, SFMono-Regular, Menlo, monospace; /* @kind font */
+
+  /* ============================================================
+     TYPOGRAPHY COLORS
+     ============================================================ */
+  --fl-text-primary:      var(--fl-cream-100);
+  --fl-text-secondary:    var(--fl-gray-400);
+  --fl-text-tertiary:     var(--fl-gray-600);
+  --fl-text-bronze-label: var(--fl-bronze-primary);
+  --fl-text-stat:         var(--fl-cream-100);
+
+  /* ============================================================
+     ICON TREATMENT — engraved into the interface, not floating on it.
+     ============================================================ */
+  --fl-icon-bronze:           var(--fl-bronze-primary);
+  --fl-icon-inactive:         var(--fl-gray-600);
+  --fl-icon-active:           var(--fl-bronze-primary);
+  --fl-icon-container-bg:     var(--fl-charcoal-800);
+  --fl-icon-container-border: var(--fl-bronze-border-subtle);
+
+  /* ============================================================
+     MOTION — deliberate, heavy, smooth. Never bouncy or exaggerated.
+     ============================================================ */
+  --fl-ease-out:  cubic-bezier(0.16, 1, 0.3, 1); /* @kind other */
+  --fl-ease-in:   cubic-bezier(0.7, 0, 0.84, 0); /* @kind other */
+  --fl-ease-soft-spring: cubic-bezier(0.34, 1.1, 0.64, 1); /* @kind other */
+  --fl-duration-toggle:  50ms; /* @kind other */
+  --fl-duration-standard: 250ms; /* @kind other */
+  --fl-duration-ceremony: 500ms; /* @kind other */
+}

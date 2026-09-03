@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  @keyframes flRise { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform:none; } }
+  @keyframes flFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes flToast { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; flex-direction:column; align-items:center; gap:16px; padding:26px 16px 40px;">
+
+  <!-- ─── review-only state switcher (scaffolding, sits outside the device) ─── -->
+  <div style="display:flex; flex-direction:column; align-items:center; gap:8px; width:404px; max-width:100%;">
+    <span style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-tertiary);">G-1 · states (review)</span>
+    <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:6px;">
+      <sc-for list="{{ viewChips }}" as="c" hint-placeholder-count="5">
+        <button type="button" onClick="{{ c.set }}" style="padding:6px 12px; border-radius:999px; border:1px solid {{ c.border }}; background:{{ c.bg }}; color:{{ c.ink }}; font-size:11px; font-weight:600; font-family:var(--fl-font-sans); cursor:pointer; transition:all 140ms ease;">{{ c.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+
+  <div data-screen-label="G-1 Goal Hub" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/legacy-bg.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Goals" on-back="{{ goBack }}" hint-size="100%,56px"></x-import>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto;">
+
+        <!-- ═══════════ STATE 1 · NO ACTIVE CHAPTER ═══════════ -->
+        <sc-if value="{{ isNoChapter }}" hint-placeholder-val="{{ false }}">
+          <div style="min-height:640px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px 40px 60px; gap:20px; animation:flFade 500ms var(--fl-ease-out, ease-out) both;">
+            <span style="width:66px; height:66px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 5a1 1 0 0 1 1-1h11l-2.2 3L16 10H5v9" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+            <div style="display:flex; flex-direction:column; gap:9px; max-width:280px;">
+              <h2 style="margin:0; font-family:var(--fl-font-display); font-size:23px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">Goals live inside chapters.</h2>
+              <p style="margin:0; font-size:14px; line-height:1.55; color:var(--fl-text-tertiary); text-wrap:pretty;">Start a chapter to begin pursuing a goal.</p>
+            </div>
+            <button type="button" onClick="{{ startChapter }}" style="margin-top:6px; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:14px 26px; border-radius:var(--fl-radius-pill); border:none; background:var(--fl-bronze-metallic); color:#1A1206; font-size:14px; font-weight:700; letter-spacing:0.3px; font-family:var(--fl-font-sans); cursor:pointer; box-shadow:var(--fl-glow-subtle);">Start a Chapter</button>
+          </div>
+        </sc-if>
+
+        <!-- ═══════════ STATE 2 · CHAPTER, NO GOALS ═══════════ -->
+        <sc-if value="{{ isNoGoals }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:8px 24px 0;">
+            <span style="display:block; font-size:11px; font-weight:600; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ chapterNo }}</span>
+            <span style="display:block; margin-top:5px; font-family:var(--fl-font-display); font-size:19px; font-weight:600; color:var(--fl-text-secondary);">{{ chapterName }}</span>
+          </div>
+          <div style="min-height:520px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px 40px 60px; gap:20px; animation:flFade 500ms var(--fl-ease-out, ease-out) both;">
+            <span style="width:66px; height:66px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3.4"></circle></svg></span>
+            <div style="display:flex; flex-direction:column; gap:9px; max-width:280px;">
+              <h2 style="margin:0; font-family:var(--fl-font-display); font-size:23px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">What are you building toward?</h2>
+              <p style="margin:0; font-size:14px; line-height:1.55; color:var(--fl-text-tertiary); text-wrap:pretty;">Define the goal for this chapter.</p>
+            </div>
+            <button type="button" onClick="{{ addPrimary }}" style="margin-top:6px; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:14px 26px; border-radius:var(--fl-radius-pill); border:none; background:var(--fl-bronze-metallic); color:#1A1206; font-size:14px; font-weight:700; letter-spacing:0.3px; font-family:var(--fl-font-sans); cursor:pointer; box-shadow:var(--fl-glow-subtle);">Add a Goal</button>
+          </div>
+        </sc-if>
+
+        <!-- ═══════════ STATES 3–5 · GOALS PRESENT ═══════════ -->
+        <sc-if value="{{ hasGoals }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:34px; padding:8px 0 8px; animation:flFade 500ms var(--fl-ease-out, ease-out) both;">
+
+            <!-- Chapter anchor -->
+            <div style="padding:0 24px;">
+              <span style="display:block; font-size:11px; font-weight:600; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ chapterNo }}</span>
+              <span style="display:block; margin-top:5px; font-family:var(--fl-font-display); font-size:19px; font-weight:600; color:var(--fl-text-secondary);">{{ chapterName }}</span>
+            </div>
+
+            <!-- ── PRIMARY GOAL · dominant ── -->
+            <div style="padding:0 24px;">
+              <div role="button" tabindex="0" onClick="{{ primary.open }}" style="position:relative; overflow:hidden; border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); background:linear-gradient(180deg, rgba(191,143,79,0.08), transparent 62%), var(--fl-surface-card); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-elevated), var(--fl-glow-subtle); padding:22px 22px 26px; cursor:pointer; transition:border-color 160ms ease;" style-hover="border-color:var(--fl-bronze-bright);">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                  <span style="white-space:nowrap; font-size:9.5px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-tertiary);">Chapter Goal</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-charcoal-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+                </div>
+                <span style="display:block; margin-top:14px; font-family:var(--fl-font-display); font-size:26px; font-weight:600; letter-spacing:-0.3px; line-height:1.08; color:var(--fl-text-primary); text-wrap:pretty;">{{ primary.name }}</span>
+
+                <!-- quantifiable · in progress -->
+                <sc-if value="{{ primary.showBar }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px; padding:20px 0 12px;">
+                    <span style="font-family:var(--fl-font-display); font-size:40px; font-weight:700; letter-spacing:-1px; line-height:0.9; color:var(--fl-bronze-bright);">{{ primary.pctText }}</span>
+                    <span style="font-size:12.5px; font-weight:600; color:var(--fl-text-secondary); padding-bottom:5px;">{{ primary.context }}</span>
+                  </div>
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="{{ primary.done }}" max="{{ primary.max }}" hint-size="100%,8px"></x-import>
+                </sc-if>
+
+                <!-- narrative · in progress -->
+                <sc-if value="{{ primary.showNarrative }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:inline-flex; align-items:center; gap:7px; margin-top:16px; padding:6px 13px; border-radius:999px; background:rgba(196,142,74,0.11); border:1px solid var(--fl-bronze-border-subtle); font-size:12px; font-weight:600; letter-spacing:0.3px; color:var(--fl-bronze-bright);"><span style="width:5px; height:5px; border-radius:50%; background:var(--fl-bronze-bright);"></span>In Progress</span>
+                </sc-if>
+
+                <!-- achieved -->
+                <sc-if value="{{ primary.showAchieved }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:inline-flex; align-items:center; gap:9px; margin-top:18px; font-size:15px; font-weight:600; color:var(--fl-bronze-bright);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Achieved</span>
+                  <div style="display:flex; margin-top:16px; border:1px solid var(--fl-charcoal-700); border-radius:12px; overflow:hidden;">
+                    <div style="flex:1; padding:11px 14px;">
+                      <span style="display:block; font-size:9px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Started</span>
+                      <span style="display:block; margin-top:4px; font-size:14px; font-weight:600; color:var(--fl-text-secondary);">{{ primary.startedDate }}</span>
+                    </div>
+                    <div style="width:1px; background:var(--fl-charcoal-700);"></div>
+                    <div style="flex:1; padding:11px 14px;">
+                      <span style="display:block; font-size:9px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Achieved</span>
+                      <span style="display:block; margin-top:4px; font-size:14px; font-weight:600; color:var(--fl-text-secondary);">{{ primary.achievedDate }}</span>
+                    </div>
+                    <div style="width:1px; background:var(--fl-charcoal-700);"></div>
+                    <div style="flex:1; padding:11px 14px;">
+                      <span style="display:block; font-size:9px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-bronze-primary);">Pursued</span>
+                      <span style="display:block; margin-top:4px; font-size:14px; font-weight:700; color:var(--fl-bronze-bright);">{{ primary.duration }}</span>
+                    </div>
+                  </div>
+                  <sc-if value="{{ primary.hasReflection }}" hint-placeholder-val="{{ false }}">
+                    <p style="margin:16px 0 0; font-family:var(--fl-font-display); font-style:italic; font-size:14px; line-height:1.5; font-weight:500; color:var(--fl-text-tertiary); text-wrap:pretty;">{{ primary.reflection }}</p>
+                  </sc-if>
+                </sc-if>
+
+                <!-- program association (primary only, optional) -->
+                <sc-if value="{{ primary.hasProgram }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:18px; padding-top:15px; border-top:1px solid var(--fl-charcoal-700);">
+                    <span style="font-size:12px; color:var(--fl-text-tertiary);">Program · <span style="color:var(--fl-text-secondary); font-weight:500;">{{ primary.program }}</span></span>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+
+            <!-- ── SUPPORTING GOALS (active) ── -->
+            <sc-if value="{{ hasActiveSecondary }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:0 24px;">
+                <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-tertiary); padding:0 2px 14px;">Supporting Goals</span>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                  <sc-for list="{{ activeSecondary }}" as="g" hint-placeholder-count="2">
+                    <div role="button" tabindex="0" onClick="{{ g.open }}" style="border:1px solid var(--fl-charcoal-700); border-radius:14px; background:rgba(255,255,255,0.018); padding:15px 16px; cursor:pointer; transition:border-color 160ms ease, background 160ms ease;" style-hover="border-color:var(--fl-bronze-border-subtle); background:rgba(255,255,255,0.03);">
+                      <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="flex:1; min-width:0; font-size:15px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ g.name }}</span>
+                        <sc-if value="{{ g.showBar }}" hint-placeholder-val="{{ true }}"><span style="flex:none; font-size:12.5px; font-weight:700; color:var(--fl-bronze-bright); font-variant-numeric:tabular-nums;">{{ g.pctText }}</span></sc-if>
+                        <sc-if value="{{ g.showNarrative }}" hint-placeholder-val="{{ false }}"><span style="flex:none; white-space:nowrap; font-size:11.5px; font-weight:600; letter-spacing:0.2px; color:var(--fl-bronze-primary);">In Progress</span></sc-if>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--fl-charcoal-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+                      </div>
+                      <sc-if value="{{ g.showNarrative }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:block; margin-top:8px; font-size:12px; color:var(--fl-text-tertiary);">{{ g.narrativeContext }}</span>
+                      </sc-if>
+                      <sc-if value="{{ g.showBar }}" hint-placeholder-val="{{ true }}">
+                        <div style="padding-top:12px;">
+                          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="{{ g.done }}" max="{{ g.max }}" hint-size="100%,6px"></x-import>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ── ACHIEVED (secondary, subdued) ── -->
+            <sc-if value="{{ hasAchievedSecondary }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:0 24px;">
+                <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-charcoal-500); padding:0 2px 12px;">Achieved</span>
+                <div style="display:flex; flex-direction:column;">
+                  <sc-for list="{{ achievedSecondary }}" as="g" hint-placeholder-count="1">
+                    <div role="button" tabindex="0" onClick="{{ g.open }}" style="display:flex; align-items:center; gap:12px; padding:14px 2px; border-top:{{ g.border }}; cursor:pointer; opacity:0.72; transition:opacity 160ms ease;" style-hover="opacity:1;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M20 6L9 17l-5-5"></path></svg>
+                      <div style="flex:1; min-width:0;">
+                        <span style="display:block; font-size:14px; color:var(--fl-text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ g.name }}</span>
+                        <span style="display:block; margin-top:3px; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-charcoal-500);">Completed · {{ g.achievedDate }}</span>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ── PRIMARY ACTION · always present while chapter active ── -->
+            <div style="padding:2px 24px 14px;">
+              <button type="button" onClick="{{ addSupporting }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:9px; padding:15px; border-radius:var(--fl-radius-lg); border:1px dashed var(--fl-bronze-border); background:transparent; color:var(--fl-bronze-primary); font-size:13.5px; font-weight:600; letter-spacing:0.3px; font-family:var(--fl-font-sans); cursor:pointer; transition:background 160ms ease, border-color 160ms ease;" style-hover="background:rgba(196,142,74,0.06); border-color:var(--fl-bronze-bright);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>Add a Supporting Goal</button>
+            </div>
+
+          </div>
+        </sc-if>
+
+      </div>
+
+      <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; left:16px; right:16px; bottom:26px; z-index:40; display:flex; align-items:center; gap:11px; padding:13px 16px; border-radius:var(--fl-radius-md); background:#17130d; border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-shadow-float); animation:flToast 220ms var(--fl-ease-out, ease-out) both;">
+          <span style="flex:1; font-size:13px; line-height:1.4; color:var(--fl-text-secondary);">{{ toastMsg }}</span>
+        </div>
+      </sc-if>
+
+    </sc-if>
+
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:436,&quot;height&quot;:940},&quot;screenState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;no-chapter&quot;,&quot;no-goals&quot;,&quot;standard&quot;,&quot;achieved&quot;,&quot;all-done&quot;],&quot;default&quot;:&quot;standard&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Review&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, view: null, toast: null };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); }
+  _toast(msg) { this.setState({ toast: msg }); if (this._toastT) clearTimeout(this._toastT); this._toastT = setTimeout(() => this.setState({ toast: null }), 2600); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true };
+    }
+
+    const view = this.state.view || this.props.screenState || 'standard';
+    const goToGoal = (st) => { window.location.href = 'Forge%20Goal%20Detail.dc.html?state=' + st; };
+
+    // ── review switcher chips ──
+    const VIEWS = [
+      { id: 'no-chapter', label: 'No chapter' },
+      { id: 'no-goals',   label: 'No goals' },
+      { id: 'standard',   label: 'In progress' },
+      { id: 'achieved',   label: 'Primary achieved' },
+      { id: 'all-done',   label: 'All achieved' },
+    ];
+    const viewChips = VIEWS.map((v) => {
+      const on = v.id === view;
+      return {
+        key: v.id, label: v.label,
+        set: () => this.setState({ view: v.id }),
+        bg: on ? 'var(--fl-bronze-tint)' : 'transparent',
+        border: on ? 'var(--fl-bronze-metal-border)' : 'var(--fl-charcoal-600)',
+        ink: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)',
+      };
+    });
+
+    // ── goal fixtures ──
+    const mkSec = (o) => {
+      const narrative = o.max == null;
+      const done = o.done || 0, max = o.max || 1;
+      const pct = Math.round((done / max) * 100);
+      return {
+        key: o.name, name: o.name, open: () => goToGoal(narrative ? (o.achieved ? 'n-achieved' : 'n-progress') : (o.achieved ? 'q-achieved' : 'q-progress')),
+        showBar: !narrative && !o.achieved, showNarrative: narrative && !o.achieved,
+        pctText: pct + '%', done, max,
+        narrativeContext: o.context || '',
+        achieved: !!o.achieved, achievedDate: o.achievedDate || '',
+      };
+    };
+
+    // primary goal shape per view
+    let primary, active, achievedSec, hasGoals = true, hasChapter = true;
+    if (view === 'no-chapter') { hasChapter = false; hasGoals = false; }
+    else if (view === 'no-goals') { hasGoals = false; }
+
+    if (hasGoals) {
+      const primaryDone = 315, primaryMax = 405;
+      const achievedPrimary = (view === 'achieved' || view === 'all-done');
+      primary = {
+        name: 'Squat 405 lb',
+        open: () => goToGoal(achievedPrimary ? 'q-achieved' : 'q-progress'),
+        context: primaryDone + ' / ' + primaryMax + ' lb',
+        pctText: Math.round((primaryDone / primaryMax) * 100) + '%',
+        done: primaryDone, max: primaryMax,
+        showBar: !achievedPrimary, showNarrative: false, showAchieved: achievedPrimary,
+        startedDate: 'Mar 18', achievedDate: 'Jun 2', duration: '76 days',
+        hasReflection: achievedPrimary, reflection: '\u201C405 finally moved \u2014 eight months of grinding.\u201D',
+        hasProgram: true, program: 'Powerbuilding II',
+      };
+
+      const secStandard = [
+        mkSec({ name: 'Bench Press 275 lb', done: 225, max: 275 }),
+        mkSec({ name: 'Chin-ups × 12', done: 7, max: 12 }),
+        mkSec({ name: 'Train 4× every week', context: 'Week 6 of 12' }),
+      ];
+      if (view === 'all-done') {
+        active = [];
+        achievedSec = [
+          mkSec({ name: 'Bench Press 275 lb', done: 275, max: 275, achieved: true, achievedDate: 'May 20' }),
+          mkSec({ name: 'Chin-ups × 12', done: 12, max: 12, achieved: true, achievedDate: 'Apr 8' }),
+          mkSec({ name: 'Train 4× every week', achieved: true, achievedDate: 'Mar 30' }),
+        ];
+      } else if (view === 'achieved') {
+        active = [ secStandard[0], secStandard[1] ];
+        achievedSec = [ mkSec({ name: 'Deadlift 2× bodyweight', done: 1, max: 1, achieved: true, achievedDate: 'Apr 8' }) ];
+      } else {
+        active = secStandard;
+        achievedSec = [];
+      }
+    }
+
+    // top/border styling for achieved list rows
+    (achievedSec || []).forEach((g, i) => { g.border = i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)'; });
+
+    return {
+      ready: true, notReady: false,
+      viewChips,
+
+      isNoChapter: view === 'no-chapter',
+      isNoGoals: view === 'no-goals',
+      hasGoals,
+
+      chapterNo: 'Chapter III',
+      chapterName: 'The Rebuild',
+
+      primary: primary || { showBar: false, showNarrative: false, showAchieved: false, hasProgram: false },
+      activeSecondary: active || [], hasActiveSecondary: !!(active && active.length),
+      achievedSecondary: achievedSec || [], hasAchievedSecondary: !!(achievedSec && achievedSec.length),
+
+      goBack: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Forge%20Chapter%20Detail.dc.html'); },
+      startChapter: () => { window.location.href = 'Forge%20Beginner%20Home.dc.html'; },
+      addPrimary: () => { window.location.href = 'Forge%20Goal%20Create%20Edit.dc.html?slot=primary'; },
+      addSupporting: () => { window.location.href = 'Forge%20Goal%20Create%20Edit.dc.html?slot=secondary'; },
+
+      toastOpen: !!this.state.toast, toastMsg: this.state.toast || '',
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js"></script>
+<script src="forge-honors.js"></script>
+<script src="forge-honor-art.js"></script>
+<style>
+  body { margin: 0; background: var(--fl-bg-primary); }
+  a { color: var(--fl-bronze-bright); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-primary); }
+</style>
+</helmet>
+
+<div style="min-height:100vh; background:var(--fl-bg-primary); font-family:var(--fl-font-sans); padding:56px 40px 96px; display:flex; flex-direction:column; align-items:center; gap:44px;">
+
+  <header style="width:100%; max-width:1180px; display:flex; flex-direction:column; gap:14px;">
+    <div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--fl-text-bronze-label);">Honor artwork · interior mark</div>
+    <h1 style="margin:0; font-family:var(--fl-font-display); font-size:40px; line-height:1.1; color:var(--fl-text-primary); font-weight:600;">Five ways to cut the symbol</h1>
+    <p style="margin:0; max-width:66ch; font-size:15px; line-height:1.75; color:var(--fl-text-secondary); text-wrap:pretty;">Same bezel, same disc, same five glyphs, same grid. Only the finish of the interior mark changes — how the metal is worked where the symbol lives. Pick a letter and I will restrike all 179 in it.</p>
+  </header>
+
+  <section style="width:100%; max-width:1180px; display:flex; flex-direction:column; gap:12px; opacity:0.72;">
+    <div style="display:flex; align-items:baseline; gap:12px;">
+      <span style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--fl-text-secondary);">Current · for reference</span>
+      <span style="flex:1; height:1px; background:var(--fl-charcoal-600);"></span>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:22px;">
+      <sc-for list="{{ current }}" as="m" hint-placeholder-count="5">{{ m }}</sc-for>
+    </div>
+  </section>
+
+  <sc-for list="{{ rows }}" as="row" hint-placeholder-count="5">
+    <section style="width:100%; max-width:1180px; background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:34px 36px; display:flex; gap:40px; align-items:flex-start; flex-wrap:wrap;">
+
+      <div style="display:flex; flex-direction:column; align-items:center; gap:16px; flex:none;">
+        {{ row.hero }}
+        <span style="font-family:var(--fl-font-display); font-size:34px; line-height:1; color:var(--fl-bronze-primary);">{{ row.letter }}</span>
+      </div>
+
+      <div style="flex:1 1 420px; min-width:340px; display:flex; flex-direction:column; gap:18px;">
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <h2 style="margin:0; font-family:var(--fl-font-display); font-size:25px; line-height:1.2; color:var(--fl-text-primary); font-weight:600;">{{ row.name }}</h2>
+          <p style="margin:0; max-width:56ch; font-size:14.5px; line-height:1.7; color:var(--fl-text-secondary); text-wrap:pretty;">{{ row.note }}</p>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:20px; padding-top:4px;">
+          <sc-for list="{{ row.strip }}" as="m" hint-placeholder-count="5">{{ m }}</sc-for>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:8px; padding-top:2px;">
+          <sc-for list="{{ row.tags }}" as="t" hint-placeholder-count="3">
+            <span style="font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; white-space:nowrap; color:var(--fl-text-secondary); border:1px solid var(--fl-charcoal-600); border-radius:999px; padding:5px 11px;">{{ t }}</span>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+  </sc-for>
+
+  <footer style="width:100%; max-width:1180px; padding-top:26px; border-top:1px solid var(--fl-charcoal-600);">
+    <p style="margin:0; font-size:13px; line-height:1.8; color:var(--fl-text-secondary); text-wrap:pretty;">{{ recommendation }}</p>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = { ready: false };
+  componentDidMount() {
+    this._poll = () => {
+      const ns = window.ForgeLegacyVisualFoundation_5368b2;
+      // The DS bundle captures `const React = window.React` when it evaluates —
+      // if that happened before React landed, Insignia exists but throws. Gate on
+      // it actually running, not merely on it being a function.
+      let usable = false;
+      if (ns && typeof ns.Insignia === 'function') {
+        try { ns.Insignia({ variant: 'honor', size: 40 }); usable = true; } catch (e) { usable = false; }
+      }
+      const ok = typeof React !== 'undefined' && window.ForgeHonorArt && usable;
+      if (ok) { this.ensureGradients(); this.setState({ ready: true }); }
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { clearTimeout(this._t); }
+
+  // one shared defs sprite for the five style gradients — ids appear exactly once
+  ensureGradients() {
+    if (typeof document === 'undefined' || document.getElementById('fl-markstyle-defs')) return;
+    const defs = this.styles().map((st) =>
+      '<linearGradient id="ms-' + st.key + '" x1="0" y1="0" x2="0" y2="1">'
+      + '<stop offset="0%" stop-color="' + st.grad[0] + '"/>'
+      + '<stop offset="52%" stop-color="' + st.grad[1] + '"/>'
+      + '<stop offset="100%" stop-color="' + st.grad[2] + '"/></linearGradient>').join('');
+    const host = document.createElement('div');
+    host.id = 'fl-markstyle-defs';
+    host.setAttribute('aria-hidden', 'true');
+    host.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+    host.innerHTML = '<svg width="0" height="0" focusable="false"><defs>' + defs + '</defs></svg>';
+    (document.body || document.documentElement).appendChild(host);
+  }
+
+  // fit a mark from the art engine into the clean-face box
+  fit(id) {
+    const FA = window.ForgeHonorArt;
+    const b = FA.FIT[id] || [0, 0, 24, 24];
+    const box = [34, 34, 32];
+    const s = Math.min(box[0] / b[2], box[1] / b[3], 2.6);
+    return {
+      s,
+      tx: Math.round((32 - s * (b[0] + b[2] / 2)) * 100) / 100,
+      ty: Math.round((box[2] - s * (b[1] + b[3] / 2)) * 100) / 100,
+      d: FA.MARKS[id].d,
+      name: FA.MARKS[id].name,
+    };
+  }
+  // one offset pass of the whole mark
+  pass(m, dx, dy, color, w, op) {
+    return '<g transform="translate(' + dx + ',' + dy + ')" stroke="' + color + '" stroke-width="'
+      + Math.round((w / m.s) * 1000) / 1000 + '"' + (op == null ? '' : ' opacity="' + op + '"') + '>'
+      + '<g transform="translate(' + m.tx + ',' + m.ty + ') scale(' + Math.round(m.s * 1000) / 1000 + ')">'
+      + m.d + '</g></g>';
+  }
+
+  styles() {
+    const D = '#241B10', SH = 'rgba(0,0,0,0.72)', LI = 'rgb(226,196,148)';
+    const G = (id) => 'url(#' + id + ')';
+    return [
+      {
+        letter: 'A', key: 'relief', name: 'Struck relief',
+        note: 'The symbol stands proud of the field, the way a struck coin does — metal pushed up by the die. Top-lit ridge, shadow pooled underneath. The most obviously "medal" of the five, and the most photogenic at large sizes.',
+        tags: ['raised', 'coin-struck', 'high presence'],
+        grad: ['#D8AE70', '#BF8F4F', '#8A6534'],
+        draw: (m, gid) => this.pass(m, 0, 1.0, SH, 3.5, 0.9)
+          + this.pass(m, 0, 0, G(gid), 3.2)
+          + this.pass(m, 0, -0.85, LI, 1.1, 0.55),
+      },
+      {
+        letter: 'B', key: 'burin', name: 'Burin cut',
+        note: 'Hand-engraved with a graver: one hard dark channel, one bright lip where the tool broke the surface. Higher contrast and deeper than what is there now. Reads as a person cut it, not a machine.',
+        tags: ['recessed', 'hand-cut', 'high contrast'],
+        grad: ['#8A6534', '#7A5A2E', '#6A4E28'],
+        draw: (m, gid) => this.pass(m, 0, -0.8, SH, 4.0, 0.95)
+          + this.pass(m, 0, 0, G(gid), 3.6)
+          + this.pass(m, 0, 1.1, LI, 1.5, 0.6),
+      },
+      {
+        letter: 'C', key: 'bevel', name: 'Chased bevel',
+        note: 'A V-groove: each stroke has a lit wall and a shadowed wall meeting at a centre line. Machined precision rather than hand tooling — the most technical, most disciplined read of the set.',
+        tags: ['V-cut', 'machined', 'crisp'],
+        grad: ['#C99C5E', '#BF8F4F', '#A87C42'],
+        draw: (m, gid) => this.pass(m, 0, 0, D, 3.8, 0.95)
+          + this.pass(m, -0.5, -0.55, LI, 1.7, 0.72)
+          + this.pass(m, 0.5, 0.6, '#6E5028', 1.7, 0.95),
+      },
+      {
+        letter: 'D', key: 'hairline', name: 'Hairline etch',
+        note: 'Half the weight, twice the restraint — acid-etched line rather than a cut groove. Quiet, precise, watch-dial. Elegant at 160px; needs testing at 44px in the timeline, where it may whisper too softly.',
+        tags: ['fine line', 'restrained', 'watchmaking'],
+        grad: ['#D2A868', '#C08F4E', '#9A7340'],
+        draw: (m, gid) => this.pass(m, 0, 0, LI, 4.4, 0.07)
+          + this.pass(m, 0, -0.35, SH, 1.5, 0.6)
+          + this.pass(m, 0, 0, G(gid), 1.5)
+          + this.pass(m, 0, 0.4, LI, 1.1, 0.5),
+      },
+      {
+        letter: 'E', key: 'inlay', name: 'Bronze inlay',
+        note: 'A heavy rod of bronze set into a darker disc, keylined in shadow with a catch-light along its top. Thickest and richest — jewellery, not stationery. Simple glyphs sing; the busiest marks will need thinning.',
+        tags: ['inlaid', 'heavy', 'jewellery'],
+        grad: ['#E0BA80', '#C79A5C', '#8E6836'],
+        draw: (m, gid) => this.pass(m, 0, 0, D, 6.5, 0.92)
+          + this.pass(m, 0, 0, G(gid), 5.0)
+          + this.pass(m, 0, -1.2, LI, 1.5, 0.58)
+          + this.pass(m, 0, 1.3, 'rgba(0,0,0,0.42)', 1.3, 0.8),
+      },
+    ];
+  }
+
+  art(style, markId, px) {
+    const m = this.fit(markId);
+    const gid = 'ms-' + style.key;
+    const body = '<g fill="none" stroke-linecap="square" stroke-linejoin="miter" stroke-miterlimit="8">'
+      + style.draw(m, gid) + '</g>';
+    return React.createElement('svg', {
+      viewBox: '0 0 64 64', width: px, height: px, 'aria-hidden': 'true', focusable: 'false',
+      dangerouslySetInnerHTML: { __html: body },
+    });
+  }
+
+  medal(style, markId, px, label) {
+    const NS = window.ForgeLegacyVisualFoundation_5368b2;
+    return React.createElement(NS.Insignia, {
+      key: style.key + '-' + markId + '-' + px,
+      variant: 'honor', size: px,
+      label: label,
+      artwork: this.art(style, markId, Math.round(px * 0.8)),
+    });
+  }
+
+  renderVals() {
+    if (!this.state.ready) return { rows: [], current: [], recommendation: '' };
+    const FA = window.ForgeHonorArt;
+    const NS = window.ForgeLegacyVisualFoundation_5368b2;
+    const SAMPLES = ['str-ohp', 'org-first-pr', 'org-standard', 'org-first-goal', 'sqd-volume'];
+    const marks = SAMPLES.filter((id) => FA.MARKS[id]);
+
+    const current = marks.map((id) => React.createElement(NS.Insignia, {
+      key: 'cur-' + id, variant: 'honor', size: 84,
+      label: FA.MARKS[id].name,
+      artwork: this.currentArt(id, 68),
+    }));
+
+    const rows = this.styles().map((st) => ({
+      letter: st.letter, name: st.name, note: st.note, tags: st.tags,
+      hero: this.medal(st, marks[0], 176),
+      strip: marks.slice(1).map((id) => this.medal(st, id, 88)),
+    }));
+
+    return {
+      rows, current,
+      recommendation: 'My call: B, the burin cut. It keeps the engraved logic the system already commits to — light from above, nothing floating on the disc — but doubles the contrast so the symbol survives a 44px timeline row, which is where the current version goes soft. A is the one to pick instead if you want the medals to feel like objects first and interface second; E if the honors wall should look like a jewellery case.',
+    };
+  }
+
+  // the shipping engraving, drawn straight from the engine for honest comparison
+  currentArt(markId, px) {
+    const FA = window.ForgeHonorArt;
+    const m = this.fit(markId);
+    const inner = '<g transform="translate(' + m.tx + ',' + m.ty + ') scale(' + m.s + ')" stroke-width="'
+      + (3.1 / m.s) + '">' + m.d + '</g>';
+    return React.createElement('svg', {
+      viewBox: '0 0 64 64', width: px, height: px, 'aria-hidden': 'true', focusable: 'false',
+      dangerouslySetInnerHTML: { __html: FA.preview(inner, 2) },
+    });
+  }
+}
+</script>
+</body>
+</html>

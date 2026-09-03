@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .thumb-shell::-webkit-scrollbar { display:none; }
+</style>
+</helmet>
+
+<div style="min-height:100vh; padding:36px 40px 72px;">
+  <div style="max-width:1440px; margin:0 auto; display:flex; flex-direction:column; gap:26px;">
+
+    <!-- HEADER -->
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:24px; padding-bottom:22px; border-bottom:1px solid var(--fl-charcoal-600);">
+      <div style="display:flex; flex-direction:column; gap:9px;">
+        <span style="font-size:11px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Forge Legacy · Screen Gallery</span>
+        <span style="font-family:var(--fl-font-display); font-size:38px; font-weight:700; letter-spacing:0.3px; line-height:1;">Every screen, at a glance</span>
+        <span style="font-size:13.5px; color:var(--fl-text-secondary); max-width:680px; text-wrap:pretty;">Live thumbnails of every designed screen, grouped by family. The badge shows whether each design is built into the app yet — the design itself always renders here. Click any screen to open it full-size.</span>
+      </div>
+      <div style="display:flex; gap:20px; flex:none;">
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;"><span style="font-family:var(--fl-font-display); font-size:30px; font-weight:700; color:var(--fl-bronze-bright); line-height:1;">{{ totalScreens }}</span><span style="font-size:10px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Screens</span></div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;"><span style="font-family:var(--fl-font-display); font-size:30px; font-weight:700; color:var(--fl-bronze-bright); line-height:1;">{{ builtCount }}</span><span style="font-size:10px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Built</span></div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+        <span style="font-size:10px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-right:4px;">Status</span>
+        <sc-for list="{{ statusChips }}" as="chip" hint-placeholder-count="5">
+          <button onClick="{{ chip.onClick }}" style="{{ chip.style }}">{{ chip.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+        <span style="font-size:10px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-right:4px;">Family</span>
+        <sc-for list="{{ familyChips }}" as="chip" hint-placeholder-count="8">
+          <button onClick="{{ chip.onClick }}" style="{{ chip.style }}">{{ chip.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- GROUPS -->
+    <div style="display:flex; flex-direction:column; gap:34px;">
+      <sc-for list="{{ groups }}" as="group" hint-placeholder-count="4">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; align-items:baseline; gap:12px; padding-bottom:10px; border-bottom:1px solid var(--fl-charcoal-700);">
+            <span style="font-family:var(--fl-font-display); font-size:21px; font-weight:600;">{{ group.family }}</span>
+            <span style="font-size:12px; color:var(--fl-text-tertiary);">{{ group.countLabel }}</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(264px, 1fr)); gap:20px;">
+            <sc-for list="{{ group.screens }}" as="screen" hint-placeholder-count="4">
+              <a href="{{ screen.file }}" target="_blank" style="display:flex; flex-direction:column; border-radius:var(--fl-radius-lg); overflow:hidden; background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700); text-decoration:none; box-shadow:var(--fl-shadow-card);">
+                <div class="thumb-shell" data-src="{{ screen.file }}" style="position:relative; width:100%; height:372px; overflow:hidden; background:#0a0a0b; border-bottom:1px solid var(--fl-charcoal-700);">
+                  <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--fl-text-tertiary); font-size:11px; letter-spacing:1px; text-transform:uppercase;">Loading…</div>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px;">
+                  <span style="font-size:13px; font-weight:600; color:var(--fl-text-primary); line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ screen.name }}</span>
+                  <span style="flex:none; padding:3px 9px; border-radius:var(--fl-radius-pill); font-size:8.5px; font-weight:700; letter-spacing:0.7px; text-transform:uppercase; border:1px solid; background:{{ screen.badgeBg }}; border-color:{{ screen.badgeBorder }}; color:{{ screen.badgeFg }};">{{ screen.statusLabel }}</span>
+                </div>
+              </a>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="text-align:center; font-size:11px; color:var(--fl-text-tertiary); margin-top:8px; text-wrap:pretty;">Thumbnails render each design live and mount as you scroll. “Built” = wired into the app · “Partial” = built as a sheet or inert shell · “Shelved” = built then held for launch · “Designed” = design complete, not yet built.</div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { status: 'all', family: 'all' };
+
+  MANIFEST() {
+    // status: built | partial | shelved | ceremony | designed
+    return [
+      ['Onboarding / Auth', [
+        ['Forge Onboarding', 'designed'],
+      ]],
+      ['Home', [
+        ['Forge Home', 'built'],
+        ['Forge Beginner Home', 'designed'],
+        ['Forge Beginner Home Day 2', 'designed'],
+        ['Forge Home Gym', 'designed'],
+        ['Forge Strength Start', 'designed'],
+      ]],
+      ['Workouts / Active', [
+        ['Forge Programs Catalog', 'built'],
+        ['Forge Active Workout', 'designed'],
+        ['Forge Active Run', 'designed'],
+        ['Forge Workout Complete', 'designed'],
+        ['Forge Workout Invite', 'designed'],
+        ['Forge Run Record', 'designed'],
+        ['Forge Activity Type Picker', 'designed'],
+        ['Forge Activity History', 'designed'],
+        ['Forge Activity Detail', 'designed'],
+        ['Forge Free Workout Builder', 'designed'],
+        ['Forge Workout Templates', 'designed'],
+        ['Forge Workout Template Detail', 'designed'],
+        ['Forge Exercise Detail', 'designed'],
+        ['Forge Exercise Picker', 'designed'],
+        ['Forge Create Custom Exercise', 'designed'],
+      ]],
+      ['Programs / Builder', [
+        ['Forge Program', 'designed'],
+        ['Forge Program Detail', 'designed'],
+        ['Forge Program Builder', 'designed'],
+      ]],
+      ['Exercise Library', [
+        ['Forge Exercise Library', 'designed'],
+      ]],
+      ['Legacy / Chapters', [
+        ['Forge Legacy', 'built'],
+        ['Forge Legacy Timeline', 'designed'],
+        ['Forge Legacy Landing', 'designed'],
+        ['Forge Chapter Detail', 'designed'],
+        ['Forge Chapter Reflection', 'designed'],
+        ['Forge Photos Gallery', 'designed'],
+        ['Forge Transformation', 'designed'],
+        ['Forge Transformation Entry Detail', 'designed'],
+        ['Forge Trophy Case', 'designed'],
+        ['Forge Honors Hub', 'designed'],
+        ['Forge Progress Hub', 'designed'],
+        ['Forge Accomplishments', 'designed'],
+      ]],
+      ['Profile / Progress / Goals', [
+        ['Forge Public Profile', 'built'],
+        ['Forge Goal Hub', 'designed'],
+        ['Forge Goal Detail', 'designed'],
+        ['Forge Goal Create Edit', 'designed'],
+      ]],
+      ['Squads', [
+        ['Squads Hub', 'built'],
+        ['Squad Detail', 'built'],
+        ['Forge Squad Records', 'partial'],
+        ['Squad Settings', 'partial'],
+        ['Squad Settings Member', 'designed'],
+        ['Squad Composer', 'designed'],
+        ['Create Squad', 'designed'],
+        ['Discover Squads', 'designed'],
+        ['Squad Join Requests', 'designed'],
+        ['Squad Invite', 'designed'],
+        ['Squad Preview', 'designed'],
+        ['Squad Transfer Ownership', 'designed'],
+        ['Report Squad', 'designed'],
+        ['Invite by Handle', 'designed'],
+      ]],
+      ['Friends', [
+        ['Forge Friends Feed', 'built'],
+        ['Post Detail', 'built'],
+        ['Add Friend by Handle', 'designed'],
+      ]],
+      ['Challenges / Competition', [
+        ['Forge Competitions', 'designed'],
+        ['Forge Challenge', 'designed'],
+        ['Forge Create Challenge', 'designed'],
+        ['Forge Challenge Invite', 'designed'],
+        ['Forge Challenge Results', 'designed'],
+        ['Forge Competition History', 'designed'],
+        ['Forge Current Champions', 'designed'],
+        ['Forge Hall of Champions', 'designed'],
+        ['Forge Mission', 'designed'],
+      ]],
+      ['Communities', [
+        ['Community Home', 'shelved'],
+        ['Community Profile', 'shelved'],
+        ['Community Composer', 'shelved'],
+        ['Create Community', 'shelved'],
+        ['Discover Communities', 'shelved'],
+        ['Edit Community', 'shelved'],
+      ]],
+      ['Settings', [
+        ['Forge Settings Root', 'designed'],
+        ['Forge Account Settings', 'designed'],
+        ['Forge Preferences', 'designed'],
+        ['Forge Profile Visibility', 'designed'],
+        ['Forge Subscription', 'designed'],
+        ['Forge Notifications', 'designed'],
+      ]],
+      ['Modals / Ceremonies', [
+        ['Forge Honor Engraved', 'ceremony'],
+        ['Forge Legacy Unlocked', 'designed'],
+        ['Forge Podium Reveal', 'designed'],
+        ['Forge Rank Seal', 'designed'],
+      ]],
+    ];
+  }
+
+  STATUS_META() {
+    return {
+      built:    { label: 'Built',    bg: 'rgba(191,143,79,0.16)', border: 'var(--fl-bronze-border)',  fg: 'var(--fl-bronze-bright)' },
+      partial:  { label: 'Partial',  bg: 'rgba(191,143,79,0.06)', border: 'var(--fl-bronze-border-subtle)', fg: 'var(--fl-bronze-primary)' },
+      shelved:  { label: 'Shelved',  bg: 'var(--fl-charcoal-800)', border: 'var(--fl-charcoal-600)',   fg: 'var(--fl-text-tertiary)' },
+      ceremony: { label: 'Built · M', bg: 'rgba(191,143,79,0.16)', border: 'var(--fl-bronze-border)',  fg: 'var(--fl-bronze-bright)' },
+      designed: { label: 'Designed', bg: 'transparent',           border: 'var(--fl-charcoal-600)',   fg: 'var(--fl-text-secondary)' },
+    };
+  }
+
+  file(name) { return name + '.dc.html'; }
+
+  chipStyle(active) {
+    const base = 'padding:6px 13px; border-radius:var(--fl-radius-pill); font-size:12px; font-weight:600; letter-spacing:0.2px; cursor:pointer; transition:all .15s; border:1px solid ';
+    return active
+      ? base + 'var(--fl-bronze-border); background:var(--fl-bronze-fill); color:var(--fl-bronze-bright);'
+      : base + 'var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary);';
+  }
+
+  renderVals() {
+    const manifest = this.MANIFEST();
+    const meta = this.STATUS_META();
+    const { status, family } = this.state;
+
+    const allScreens = [];
+    manifest.forEach(([fam, screens]) => screens.forEach(([name, st]) => allScreens.push({ fam, name, st })));
+
+    const totalScreens = allScreens.length;
+    const builtCount = allScreens.filter(s => s.st === 'built' || s.st === 'ceremony').length;
+
+    const statusDefs = [
+      ['all', 'All'], ['built', 'Built'], ['partial', 'Partial'], ['shelved', 'Shelved'], ['designed', 'Designed'],
+    ];
+    const statusChips = statusDefs.map(([key, label]) => ({
+      label, style: this.chipStyle(status === key),
+      onClick: () => this.setState({ status: key }),
+    }));
+
+    const familyDefs = [['all', 'All families']].concat(manifest.map(([fam]) => [fam, fam]));
+    const familyChips = familyDefs.map(([key, label]) => ({
+      label, style: this.chipStyle(family === key),
+      onClick: () => this.setState({ family: key }),
+    }));
+
+    const matchStatus = (st) => status === 'all' ? true : (status === 'built' ? (st === 'built' || st === 'ceremony') : st === status);
+
+    const groups = manifest
+      .filter(([fam]) => family === 'all' || family === fam)
+      .map(([fam, screens]) => {
+        const filtered = screens
+          .filter(([, st]) => matchStatus(st))
+          .map(([name, st]) => {
+            const m = meta[st];
+            return {
+              name, file: this.file(name), status: st, statusLabel: m.label,
+              badgeBg: m.bg, badgeBorder: m.border, badgeFg: m.fg,
+            };
+          });
+        return { family: fam, screens: filtered, countLabel: filtered.length + (filtered.length === 1 ? ' screen' : ' screens') };
+      })
+      .filter(g => g.screens.length > 0);
+
+    return { totalScreens, builtCount, statusChips, familyChips, groups };
+  }
+
+  _mountVisibleThumbs() {
+    const root = this._rootEl || document;
+    const shells = root.querySelectorAll('.thumb-shell:not([data-mounted])');
+    shells.forEach(el => this._observer && this._observer.observe(el));
+  }
+
+  _buildIframe(el) {
+    if (el.dataset.mounted) return;
+    el.dataset.mounted = '1';
+    const src = el.getAttribute('data-src');
+    const f = document.createElement('iframe');
+    f.src = src;
+    f.setAttribute('scrolling', 'no');
+    f.setAttribute('tabindex', '-1');
+    f.style.cssText = 'position:absolute; top:0; left:0; width:404px; height:569px; border:0; transform:scale(0.6535); transform-origin:top left; pointer-events:none;';
+    el.appendChild(f);
+  }
+
+  componentDidMount() {
+    this._observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          this._buildIframe(e.target);
+          this._observer.unobserve(e.target);
+        }
+      });
+    }, { rootMargin: '600px 0px' });
+    this._raf = requestAnimationFrame(() => this._mountVisibleThumbs());
+  }
+
+  componentDidUpdate() {
+    // re-scan after filter changes; already-mounted shells keep their iframe
+    this._mountVisibleThumbs();
+  }
+
+  componentWillUnmount() {
+    if (this._observer) this._observer.disconnect();
+    if (this._raf) cancelAnimationFrame(this._raf);
+  }
+}
+</script>
+</body>
+</html>

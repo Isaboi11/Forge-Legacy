@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  @keyframes suRise { from { opacity:0; transform: translateY(9px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Subscription" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(180deg, rgba(26,19,11,0.55), rgba(5,5,5,0.6) 44%), #050505 url('assets/forge-slate.png') center top / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <!-- APP BAR -->
+    <div style="flex:none; position:relative; z-index:6; display:flex; align-items:center; gap:10px; padding:14px;">
+      <button type="button" onClick="{{ goBack }}" aria-label="Back" style="width:36px; height:36px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.5); border:1px solid var(--fl-charcoal-600); color:var(--fl-text-primary); cursor:pointer;">{{ backIcon }}</button>
+      <span style="flex:1; min-width:0; text-align:center; font-family:var(--fl-font-display); font-size:15px; font-weight:600; letter-spacing:0.5px; color:var(--fl-text-secondary);">Membership</span>
+      <span style="width:36px; flex:none;"></span>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:6px 20px 24px;">
+
+      <!-- HERO -->
+      <div style="display:flex; flex-direction:column; align-items:center; text-align:center; animation:suRise 420ms var(--fl-ease-out) both;">
+        <span style="width:60px; height:60px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); color:#1A1206; box-shadow:var(--fl-border-inset), 0 0 26px rgba(191,143,79,0.4);"><svg viewBox="0 0 24 24" style="width:56%;height:56%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+        <span style="display:block; font-size:11px; font-weight:600; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-top:15px;">Forge Premium</span>
+        <span style="display:block; font-family:var(--fl-font-display); font-size:29px; font-weight:700; letter-spacing:0.2px; line-height:1.12; color:var(--fl-text-primary); margin-top:9px; max-width:300px;">{{ heroTagline }}</span>
+        <span style="display:block; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); max-width:296px; margin-top:11px;">{{ heroPrinciple }}</span>
+
+        <!-- current plan chip (present, not disabled-looking) -->
+        <div style="display:inline-flex; align-items:center; gap:9px; margin-top:17px; padding:6px 7px 6px 14px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed);">
+          <span style="font-size:9.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Current plan</span>
+          <span style="{{ planChipStyle }}">{{ planChipValue }}</span>
+        </div>
+      </div>
+
+      <!-- SOCIAL PROOF -->
+      <span style="display:block; text-align:center; font-size:12.5px; line-height:1.6; color:var(--fl-text-tertiary); margin:20px 14px 0;">{{ socialProof }}</span>
+
+      <!-- ═══ SUBSCRIBED / MANAGE ═══ -->
+      <sc-if value="{{ subscribed }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:20px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border); background:linear-gradient(180deg, rgba(38,29,18,0.5), rgba(15,13,10,0.4)), var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); padding:18px;">
+          <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Your plan</span>
+          <span style="display:block; font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-text-primary); margin-top:6px;">{{ currentPlanLabel }}</span>
+          <span style="display:block; font-size:12.5px; color:var(--fl-text-secondary); margin-top:5px;">{{ renewLine }}</span>
+        </div>
+      </sc-if>
+
+      <!-- ═══ PLAN SELECTOR ═══ -->
+      <sc-if value="{{ showPlans }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:22px; display:flex; flex-direction:column; gap:11px;">
+          <sc-for list="{{ plans }}" as="p" hint-placeholder-count="3">
+            <button type="button" onClick="{{ p.select }}" style="{{ p.cardStyle }}">
+              <sc-if value="{{ p.hasBadge }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute; top:-9px; right:16px; display:inline-flex; align-items:center; padding:3px 10px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); color:#1A1206; font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; box-shadow:var(--fl-glow-subtle);">{{ p.badge }}</span>
+              </sc-if>
+              <span style="width:22px; height:22px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); border:1px solid {{ p.radioBorder }}; background:{{ p.radioBg }}; color:#1A1206;">{{ p.radioMark }}</span>
+              <div style="flex:1; min-width:0; text-align:left;">
+                <span style="display:block; font-size:15px; font-weight:600; color:var(--fl-text-primary);">{{ p.title }}</span>
+                <span style="display:block; font-size:12px; color:var(--fl-text-tertiary); margin-top:2px;">{{ p.cadence }}</span>
+              </div>
+              <div style="flex:none; text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
+                <span style="font-family:var(--fl-font-display); font-size:21px; font-weight:700; color:var(--fl-text-primary); line-height:1;">{{ p.price }}</span>
+                <span style="font-size:11.5px; font-weight:600; color:var(--fl-text-secondary);">{{ p.perMonth }}</span>
+                <sc-if value="{{ p.hasSave }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:inline-flex; padding:1px 8px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:9.5px; font-weight:700; letter-spacing:0.4px; color:var(--fl-bronze-bright);">{{ p.save }}</span>
+                </sc-if>
+              </div>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- ═══ WHAT PREMIUM UNLOCKS (Legacy first) ═══ -->
+      <div style="margin:28px 2px 14px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">What Premium unlocks</span></div>
+      <div style="display:flex; flex-direction:column; gap:2px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); overflow:hidden;">
+        <sc-for list="{{ benefits }}" as="b" hint-placeholder-count="5">
+          <div style="display:flex; align-items:flex-start; gap:13px; padding:15px 16px; border-top:{{ b.divider }}; background:{{ b.bg }};">
+            <span style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:radial-gradient(circle at 50% 32%, rgba(191,143,79,0.2), transparent 72%), var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright);">{{ b.icon }}</span>
+            <div style="flex:1; min-width:0;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ b.title }}</span>
+                <sc-if value="{{ b.starred }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:inline-flex; padding:1px 7px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:8.5px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-bronze-bright);">Why Forge</span>
+                </sc-if>
+              </div>
+              <span style="display:block; font-size:12.5px; line-height:1.5; color:var(--fl-text-secondary); margin-top:3px;">{{ b.desc }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- ═══ FREE VS PREMIUM — AT A GLANCE ═══ -->
+      <div style="margin:26px 2px 14px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">At a glance</span></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); overflow:hidden;">
+        <div style="padding:15px 14px; border-right:1px solid var(--fl-charcoal-700);">
+          <span style="display:block; font-size:11px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-secondary); margin-bottom:12px;">Free</span>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <sc-for list="{{ freeList }}" as="f" hint-placeholder-count="5">
+              <span style="display:flex; align-items:flex-start; gap:8px; font-size:12px; line-height:1.35; color:var(--fl-text-secondary);"><span style="flex:none; margin-top:1px; display:inline-flex; color:var(--fl-text-tertiary);">{{ tickIcon }}</span>{{ f.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="padding:15px 14px; background:linear-gradient(180deg, rgba(191,143,79,0.07), transparent 60%);">
+          <span style="display:block; font-size:11px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-bright); margin-bottom:12px;">Premium</span>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <sc-for list="{{ premiumList }}" as="pl" hint-placeholder-count="6">
+              <span style="display:flex; align-items:flex-start; gap:8px; font-size:12px; line-height:1.35; color:var(--fl-text-primary);"><span style="flex:none; margin-top:1px; display:inline-flex; color:var(--fl-bronze-bright);">{{ tickIconBronze }}</span>{{ pl.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <span style="display:block; text-align:center; font-size:12px; line-height:1.55; color:var(--fl-text-tertiary); margin:16px 10px 0;">Everything you’ve earned stays free — forever. Premium never locks your training or your Legacy.</span>
+
+      <span style="display:block; text-align:center; font-size:10.5px; line-height:1.5; color:var(--fl-text-tertiary); margin:16px 8px 0;">{{ fineprint }}</span>
+    </div>
+
+    <!-- ═══ COMMIT BAR ═══ -->
+    <div style="flex:none; position:relative; z-index:6; padding:13px 20px calc(15px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(9,9,9,0.6), rgba(6,6,6,0.95));">
+      <button type="button" onClick="{{ primaryAction }}" style="{{ commitStyle }}"><span style="display:inline-flex;">{{ commitIcon }}</span>{{ commitLabel }}</button>
+      <button type="button" onClick="{{ secondaryAction }}" style="width:100%; margin-top:9px; padding:6px; background:transparent; border:none; cursor:pointer; color:var(--fl-text-tertiary); font-size:12.5px; font-weight:600;">{{ secondaryLabel }}</button>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:104px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:13.5px; font-weight:500; white-space:nowrap; animation:suRise 240ms var(--fl-ease-out) both;">
+      <span style="display:inline-flex; color:{{ toastIconColor }}; flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false, toastMsg: null, billing: 'annual', subscribed: null };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = window.ForgeLegacyVisualFoundation_5368b2;
+      if (r && ns && window.ForgeSymbols) {
+        let sub = false; try { sub = localStorage.getItem('forge.premium') === '1'; } catch (e) {}
+        this.setState({ ready: true, subscribed: sub });
+      } else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); }
+  _toast(msg, tone) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastTone: tone || 'bronze' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2400); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) return { ready: false, notReady: true };
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const S = this.state;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.8 });
+    const sv = (d, size, sw) => h('svg', { width: size || 18, height: size || 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(d) ? d : [d]).map((p, i) => h('path', { key: i, d: p })));
+    const w = (el) => h('span', { style: { display: 'inline-flex' } }, el);
+    const check = (sz, sw) => sv('M5 12.5l4 4 10-10', sz || 13, sw || 2.4);
+
+    const subscribed = !!S.subscribed;
+
+    // ── plans (monthly-equivalent given prominence per review) ──
+    const PLANS = [
+      { key: 'monthly', title: 'Monthly', cadence: 'Billed monthly', price: '$10', perMonth: '$10 / month', save: null },
+      { key: 'six', title: '6 Months', cadence: 'Billed every 6 months', price: '$55', perMonth: '$9.17 / month', save: 'Save 8%' },
+      { key: 'annual', title: 'Annual', cadence: 'Billed yearly', price: '$100', perMonth: '$8.33 / month', save: 'Save 17%', badge: 'Best value' }
+    ];
+    const plans = PLANS.map(p => {
+      const on = S.billing === p.key;
+      return {
+        key: p.key, title: p.title, cadence: p.cadence, price: p.price, perMonth: p.perMonth,
+        hasSave: !!p.save, save: p.save || '', hasBadge: !!p.badge, badge: p.badge || '',
+        select: () => this.setState({ billing: p.key }),
+        radioBorder: on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-500)',
+        radioBg: on ? 'var(--fl-bronze-metallic)' : 'transparent',
+        radioMark: on ? w(check(12, 2.6)) : '',
+        cardStyle: { position: 'relative', width: '100%', display: 'flex', alignItems: 'center', gap: '13px', padding: '16px', borderRadius: 'var(--fl-radius-lg)', border: '1px solid ' + (on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: on ? 'linear-gradient(180deg, rgba(191,143,79,0.1), transparent 60%), var(--fl-surface-card)' : 'var(--fl-surface-card)', boxShadow: on ? 'var(--fl-border-inset), var(--fl-shadow-card)' : 'none', cursor: 'pointer', transition: 'border-color 160ms ease, background 160ms ease' }
+      };
+    });
+    const selected = PLANS.find(p => p.key === S.billing) || PLANS[2];
+
+    // ── benefits (Legacy first — the moat) ──
+    const BEN = [
+      { g: 'book', title: 'Unlimited Legacy', star: true, desc: 'Every photo, video, and Chapter Story kept for life \u2014 plus your annual \u201cYear Forged\u201d recap.' },
+      { g: 'dumbbell', title: 'Unlimited Training', desc: 'As many programs, templates, custom exercises, and favorites as your journey demands.' },
+      { g: 'swords', title: 'Unlimited Squads & Communities', desc: 'Create and lead without limits, plus Head-to-Head competitions.' },
+      { g: 'spark', title: 'Advanced Insight', desc: 'Advanced analytics and dashboards, program recaps, and chapter comparisons.' },
+      { g: 'medal', title: 'Share Your Legacy', desc: 'Premium before/after layouts, share templates, and featured Legacy posts.' }
+    ];
+    const benefits = BEN.map((b, i) => ({ key: b.title, icon: w(ic(b.g, 18, 1.8)), title: b.title, desc: b.desc, starred: !!b.star, bg: b.star ? 'linear-gradient(180deg, rgba(191,143,79,0.06), transparent 70%)' : 'transparent', divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-800)' }));
+
+    // ── at-a-glance comparison ──
+    const freeList = ['Full training engine', 'Legacy, Chapters & Honors', 'Calendar & history', 'Friends Feed & 1 Squad', 'Cloud sync & data export'].map((l, i) => ({ key: i, label: l }));
+    const premiumList = ['Unlimited programs & templates', 'Unlimited photos & videos', 'Unlimited Chapters & recaps', 'Unlimited Squads & Communities', 'Advanced analytics', 'Premium sharing & layouts'].map((l, i) => ({ key: i, label: l }));
+
+    // ── current-plan chip ──
+    const planChipStyle = subscribed
+      ? { padding: '3px 11px', borderRadius: 'var(--fl-radius-pill)', background: 'var(--fl-bronze-metallic)', border: '1px solid var(--fl-bronze-border)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.5px', color: '#1A1206' }
+      : { padding: '3px 11px', borderRadius: 'var(--fl-radius-pill)', background: 'var(--fl-charcoal-800)', border: '1px solid var(--fl-charcoal-500)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', color: 'var(--fl-text-secondary)' };
+
+    const commitStyle = { width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '9px', padding: '16px', borderRadius: 'var(--fl-radius-md)', fontSize: '15px', fontWeight: 700, letterSpacing: '0.3px', border: '1px solid var(--fl-bronze-border)', background: 'var(--fl-bronze-fill)', color: 'var(--fl-bronze-bright)', boxShadow: 'var(--fl-glow-subtle)', cursor: 'pointer' };
+    const forge = (size) => h('svg', { width: size || 17, height: size || 17, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z' }));
+    const toastColor = S.toastTone === 'positive' ? '#6E8E74' : 'var(--fl-icon-bronze)';
+
+    return {
+      ready: true, notReady: false,
+      backIcon: w(sv('M15 5l-7 7 7 7', 19, 2)),
+      subscribed, showPlans: !subscribed,
+      heroTagline: subscribed ? 'Your legacy, preserved for life.' : 'Everything you build, kept for life.',
+      heroPrinciple: 'The training engine is always free. Premium is for the permanence, scale, and story around it.',
+      socialProof: 'Thousands of photos. Years of chapters. One place to preserve everything you\u2019ve built.',
+      planChipValue: subscribed ? 'Premium' : 'Free', planChipStyle,
+      currentPlanLabel: 'Forge Premium \u00b7 Annual', renewLine: 'Renews Jul 12, 2027 \u00b7 $100 / year',
+      plans, benefits, freeList, premiumList,
+      tickIcon: w(check(13, 2.2)), tickIconBronze: w(check(13, 2.4)),
+      fineprint: subscribed
+        ? 'Manage or cancel anytime in your app store account. Changes take effect at the next renewal.'
+        : 'Billed through your app store. Renews automatically until cancelled \u2014 cancel anytime. Prices in USD.',
+      commitIcon: subscribed ? w(ic('settings', 17, 1.9)) : forge(17),
+      commitLabel: subscribed ? 'Manage Subscription' : ('Start Premium \u00b7 ' + selected.price),
+      commitStyle,
+      primaryAction: () => {
+        if (subscribed) { this._toast('Opening app store account\u2026', 'bronze'); return; }
+        try { localStorage.setItem('forge.premium', '1'); } catch (e) {}
+        this.setState({ subscribed: true });
+        this._toast('Welcome to Forge Premium', 'positive');
+      },
+      secondaryLabel: subscribed ? 'View plan details' : 'Restore purchase',
+      secondaryAction: () => this._toast(subscribed ? 'Plan details' : 'Checking for previous purchases\u2026', 'bronze'),
+      goBack: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Forge%20Settings%20Root.dc.html'); },
+      toastOpen: !!S.toastMsg, toastMsg: S.toastMsg || '', toastIcon: forge(18), toastIconColor: toastColor,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="forge-transformation.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+  .fl-scroll { scrollbar-width: none; }
+  .fl-strip::-webkit-scrollbar { height:0; }
+  .fl-strip { scrollbar-width: none; }
+  image-slot::part(ring) { border-color: var(--fl-bronze-border-subtle); }
+  image-slot::part(empty) { color: var(--fl-text-tertiary); }
+  image-slot::part(frame) { background: rgba(191,143,79,0.035); }
+  image-slot[framed]::part(ring) { border-style: dashed; border-color: var(--fl-bronze-border); }
+  image-slot[framed]::part(frame) { background: rgba(191,143,79,0.06); }
+  image-slot[flat]:not([vid])::part(empty)::before { content:""; width:26px; height:26px; flex:none; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B08A55' stroke-width='1.5'%3E%3Cpath d='M4 7h3.4l1.2-2h6.8L16.6 7H20v12H4z'/%3E%3Ccircle cx='12' cy='13' r='3.1'/%3E%3C/svg%3E") center/contain no-repeat; opacity:.5; }
+  image-slot[vid]::part(empty)::before { content:""; width:30px; height:30px; flex:none; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23B08A55'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E") center/contain no-repeat; opacity:.5; }
+  @keyframes xView { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform:none; } }
+  @keyframes xFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes xSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="L-17 Transformation Gallery" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/legacy-bg.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+    <!-- L-17 Transformation Gallery frame -->
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+      <!-- AppBar -->
+      <div style="height:56px; flex:none; display:flex; align-items:center; gap:4px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-700);">
+        <button onClick="{{ back }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+        <span style="flex:1; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-primary);">Transformation</span>
+        <button onClick="{{ openCompare }}" aria-label="Compare" style="width:40px; height:40px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-icon-bronze);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="7" height="14" rx="1.5"></rect><rect x="14" y="5" width="7" height="14" rx="1.5"></rect></svg></button>
+        <button onClick="{{ openAdd }}" aria-label="Add progress set" style="width:40px; height:40px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-icon-bronze);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+      </div>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:16px 18px 36px;">
+
+        <!-- intro + documentary summary -->
+        <p style="margin:0 0 6px; font-family:var(--fl-font-display); font-style:italic; font-size:16px; line-height:1.5; color:var(--fl-bronze-bright); text-wrap:pretty;">How have I changed?</p>
+        <p style="margin:0 0 8px; font-size:12.5px; line-height:1.5; color:var(--fl-text-tertiary); text-wrap:pretty;">A documentary record, chapter by chapter. Not a comparison — a chronicle.</p>
+        <p style="margin:0 0 18px; font-size:11px; font-weight:600; letter-spacing:0.3px; color:var(--fl-text-bronze-label); text-wrap:pretty;">{{ summaryLine }}</p>
+
+        <!-- reminder · quiet utility row -->
+        <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:6px; border-radius:var(--fl-radius-md); background:transparent; border:1px solid var(--fl-charcoal-700);">
+          <span style="display:flex; color:var(--fl-text-tertiary);">{{ bellIcon }}</span>
+          <div style="flex:1; min-width:0; display:flex; align-items:baseline; gap:7px;">
+            <span style="font-size:12px; font-weight:600; color:var(--fl-text-secondary);">Capture reminder</span>
+            <span style="font-size:10.5px; color:var(--fl-text-tertiary);">{{ remindSub }}</span>
+          </div>
+          <button type="button" onClick="{{ toggleRemind }}" aria-label="Toggle reminder" style="{{ remindSwitch }}"><span style="{{ remindKnob }}"></span></button>
+        </div>
+        <sc-if value="{{ remindOn }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; gap:6px; padding:8px 2px 4px;">
+            <sc-for list="{{ freqOptions }}" as="f" hint-placeholder-count="3">
+              <div role="button" tabindex="0" onClick="{{ f.pick }}" style="{{ f.style }}">{{ f.label }}</div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="height:8px;"></div>
+
+        <!-- chapter-grouped entries -->
+        <sc-for list="{{ chapters }}" as="ch" hint-placeholder-count="2">
+          <div style="margin-bottom:28px;">
+            <div style="display:flex; align-items:flex-start; gap:9px; padding:0 2px 14px;">
+              <span style="width:7px; height:7px; flex:none; margin-top:6px; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary); background:var(--fl-bronze-tint);"></span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600; letter-spacing:-0.1px; color:var(--fl-text-primary); line-height:1.05;">{{ ch.name }}</span>
+                <span style="font-size:10.5px; font-weight:500; letter-spacing:0.4px; color:var(--fl-text-tertiary);">{{ ch.sub }}</span>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <sc-for list="{{ ch.entries }}" as="e" hint-placeholder-count="2">
+                <div onClick="{{ e.open }}" style="{{ e.cardStyle }}" style-active="transform:scale(0.99);">
+                  <sc-if value="{{ e.accent }}" hint-placeholder-val="{{ false }}">
+                    <span aria-hidden="true" style="position:absolute; left:0; top:14px; bottom:14px; width:2px; border-radius:2px; background:linear-gradient(180deg, var(--fl-bronze-primary), transparent);"></span>
+                  </sc-if>
+                  <div style="display:flex; align-items:center; gap:8px; padding:13px 15px 10px;">
+                    <span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:var(--fl-text-primary);">{{ e.date }}</span>
+                    <sc-if value="{{ e.hasVideo }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-charcoal-600); font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-tertiary);"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>Video</span>
+                    </sc-if>
+                    <sc-for list="{{ e.tags }}" as="tg" hint-placeholder-count="1">
+                      <span style="{{ tg.style }}">{{ tg.label }}</span>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ e.hasMeta }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:0 15px 10px;"><span style="font-size:10.5px; letter-spacing:0.2px; color:var(--fl-text-tertiary);">{{ e.meta }}</span></div>
+                  </sc-if>
+                  <div class="fl-strip" style="display:flex; gap:8px; padding:2px 15px 14px; overflow-x:auto;">
+                    <sc-for list="{{ e.poses }}" as="p" hint-placeholder-count="6">
+                      <div style="flex:none; display:flex; flex-direction:column; align-items:center; gap:6px;">
+                        <image-slot id="{{ p.slotId }}" flat nocap shape="rounded" radius="10" placeholder="" style="width:76px; height:100px;"></image-slot>
+                        <span style="font-size:8.5px; font-weight:600; letter-spacing:0.4px; color:var(--fl-text-tertiary);">{{ p.label }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ e.hasCaption }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex; gap:9px; padding:4px 16px 22px;">
+                      <span style="font-family:var(--fl-font-display); font-size:26px; font-weight:700; line-height:0.7; color:var(--fl-bronze-primary); flex:none;">&#8220;</span>
+                      <span style="font-family:var(--fl-font-display); font-style:italic; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty; padding-top:2px;">{{ e.caption }}</span>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+
+        <div role="button" tabindex="0" onClick="{{ openAdd }}" style="display:flex; align-items:center; justify-content:center; gap:9px; padding:16px; border-radius:var(--fl-radius-lg); border:1px dashed var(--fl-bronze-border); background:var(--fl-bronze-tint); cursor:pointer; color:var(--fl-bronze-primary); font-size:13px; font-weight:600; transition:transform 180ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.98);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Take progress pics
+        </div>
+
+      </div>
+    </sc-if>
+
+    <!-- ═══ ADD PROGRESS SET (full-screen) ═══ -->
+    <sc-if value="{{ addOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; z-index:70; display:flex; flex-direction:column; background:#070707; animation:xView 300ms var(--fl-ease-out, ease-out) both;">
+        <div style="height:56px; flex:none; display:flex; align-items:center; gap:6px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-700);">
+          <button onClick="{{ closeAdd }}" aria-label="Cancel" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+          <span style="flex:1; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-primary);">{{ addSheetTitle }}</span>
+          <span style="width:44px;"></span>
+        </div>
+        <div class="fl-scroll" ref="{{ setAddRef }}" style="flex:1; min-height:0; overflow-y:auto; padding:20px 18px 30px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:0.4px; color:var(--fl-text-secondary);">Tied to <span style="color:var(--fl-bronze-bright); font-weight:700;">{{ draftChapter }}</span></span>
+            <span style="font-size:10.5px; font-weight:600; letter-spacing:0.4px; color:var(--fl-text-tertiary);">{{ poseCountLabel }}</span>
+          </div>
+          <p style="margin:8px 0 0; font-size:13px; line-height:1.55; color:var(--fl-text-tertiary); text-wrap:pretty;">Capture the poses you want. Every photo is optional — what matters is preserving the moment.</p>
+          <div style="margin-top:18px;">
+            <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:8px;">Capture date</span>
+            <input type="text" value="{{ addDate }}" onInput="{{ setDate }}" placeholder="e.g. Mar 6, 2026" style="width:100%; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-family:var(--fl-font-sans); font-size:14px; padding:12px 14px; outline:none;">
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:22px 12px; margin-top:22px;">
+            <sc-for list="{{ addPoses }}" as="p" hint-placeholder-count="6">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                <image-slot id="{{ p.slotId }}" flat framed nocap shape="rounded" radius="14" placeholder="" style="width:100%; aspect-ratio:3/4;"></image-slot>
+                <span style="font-size:10px; font-weight:600; letter-spacing:0.3px; color:var(--fl-text-secondary); text-align:center;">{{ p.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:7px; padding:28px 2px 12px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-bronze-label)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l11-7z"></path></svg>
+            <span style="font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Posing video · optional</span>
+          </div>
+          <div style="position:relative;">
+            <image-slot id="{{ videoSlot }}" flat framed vid shape="rounded" radius="14" placeholder="Tap to add a clip" style="width:100%; height:132px;"></image-slot>
+          </div>
+
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:28px 2px 4px;">Tags · optional</span>
+          <p style="margin:0 2px 11px; font-size:10.5px; line-height:1.45; color:var(--fl-text-tertiary); text-wrap:pretty;">What kind of moment this is — used to flag and filter your archive later.</p>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <sc-for list="{{ tagChips }}" as="t" hint-placeholder-count="6">
+              <div role="button" tabindex="0" onClick="{{ t.toggle }}" style="{{ t.style }}" style-active="transform:scale(0.94);">{{ t.label }}</div>
+            </sc-for>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px; padding:28px 2px 11px;">
+            <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:700; line-height:0.6; color:var(--fl-bronze-primary);">&#8220;</span>
+            <span style="font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Reflection · optional</span>
+          </div>
+          <textarea value="{{ addCaption }}" onInput="{{ setCaption }}" placeholder="A note to your future self…" style="width:100%; min-height:100px; resize:none; padding:15px 16px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-size:14px; font-family:var(--fl-font-display); font-style:italic; line-height:1.6; outline:none; transition:min-height 220ms var(--fl-ease-out, ease-out), border-color 200ms var(--fl-ease-out, ease-out);" style-focus="min-height:134px; border-color:var(--fl-bronze-border);"></textarea>
+
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:28px 2px 11px;">Context · optional</span>
+          <input type="text" value="{{ addMeta }}" onInput="{{ setMeta }}" placeholder="e.g. 183 lb · Week 12 · Morning" style="width:100%; padding:13px 15px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-size:13.5px; font-family:var(--fl-font-sans); outline:none;">
+          <p style="margin:8px 2px 0; font-size:10.5px; line-height:1.45; color:var(--fl-text-tertiary); text-wrap:pretty;">Bodyweight, prep phase, week, lighting — whatever you'll want to remember years from now.</p>
+
+          <div style="margin-top:24px;">
+            <button type="button" onClick="{{ saveAdd }}" disabled="{{ saveDisabled }}" style="{{ saveStyle }}" style-active="transform:scale(0.99);">{{ saveLabel }}</button>
+            <p style="margin:9px 0 0; text-align:center; font-size:9.5px; letter-spacing:0.2px; color:var(--fl-text-tertiary); opacity:0.65;">{{ saveHint }}</p>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ═══ COMPARE (full-screen) ═══ -->
+    <sc-if value="{{ compareOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; z-index:72; display:flex; flex-direction:column; background:#070707; animation:xView 300ms var(--fl-ease-out, ease-out) both;">
+        <div style="height:56px; flex:none; display:flex; align-items:center; gap:6px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-700);">
+          <button onClick="{{ closeCompare }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+          <span style="flex:1; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-primary);">Compare</span>
+          <span style="width:44px;"></span>
+        </div>
+        <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:18px 18px 30px;">
+          <p style="margin:0 2px 2px; font-family:var(--fl-font-display); font-style:italic; font-size:14.5px; line-height:1.5; color:var(--fl-bronze-bright); text-align:center; text-wrap:pretty;">Side by side, only when you choose to look.</p>
+
+          <div style="display:flex; gap:10px; margin-top:16px;">
+            <select value="{{ compareA }}" onChange="{{ setCompareA }}" style="{{ selectStyle }}">
+              <sc-for list="{{ entryOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
+            </select>
+            <select value="{{ compareB }}" onChange="{{ setCompareB }}" style="{{ selectStyle }}">
+              <sc-for list="{{ entryOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
+            </select>
+          </div>
+
+          <!-- elapsed between the two -->
+          <sc-if value="{{ cmpElapsed }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:14px;">
+              <span style="height:1px; flex:1; background:var(--fl-charcoal-700);"></span>
+              <span style="font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-bright);">{{ cmpElapsed }} apart</span>
+              <span style="height:1px; flex:1; background:var(--fl-charcoal-700);"></span>
+            </div>
+          </sc-if>
+
+          <!-- poses to compare (multi-select) -->
+          <div style="display:flex; align-items:baseline; justify-content:space-between; padding:16px 2px 9px;">
+            <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Poses</span>
+            <span style="font-size:10px; color:var(--fl-text-tertiary);">{{ cmpPoseHint }}</span>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:7px;">
+            <sc-for list="{{ poseChips }}" as="p" hint-placeholder-count="6">
+              <div role="button" tabindex="0" onClick="{{ p.pick }}" style="{{ p.style }}">{{ p.label }}</div>
+            </sc-for>
+          </div>
+
+          <!-- stacked comparison rows -->
+          <div style="display:flex; flex-direction:column; gap:16px; margin-top:18px;">
+            <sc-for list="{{ comparePairs }}" as="row" hint-placeholder-count="2">
+              <div>
+                <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary); padding:0 2px 7px;">{{ row.label }}</span>
+                <div style="display:flex; gap:10px;">
+                  <div style="flex:1; min-width:0; position:relative;">
+                    <image-slot id="{{ row.aSlot }}" flat nocap shape="rounded" radius="14" placeholder="" style="width:100%; aspect-ratio:3/4;"></image-slot>
+                    <span style="position:absolute; top:8px; left:8px; z-index:2; padding:3px 8px; border-radius:var(--fl-radius-sm); background:rgba(8,11,14,0.72); border:1px solid var(--fl-bronze-border-subtle); font-size:9.5px; font-weight:600; color:var(--fl-bronze-bright);">{{ aLabel }}</span>
+                  </div>
+                  <div style="flex:1; min-width:0; position:relative;">
+                    <image-slot id="{{ row.bSlot }}" flat nocap shape="rounded" radius="14" placeholder="" style="width:100%; aspect-ratio:3/4;"></image-slot>
+                    <span style="position:absolute; top:8px; left:8px; z-index:2; padding:3px 8px; border-radius:var(--fl-radius-sm); background:rgba(8,11,14,0.72); border:1px solid var(--fl-bronze-border-subtle); font-size:9.5px; font-weight:600; color:var(--fl-bronze-bright);">{{ bLabel }}</span>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- share comparison -->
+          <button type="button" onClick="{{ shareCompare }}" style="width:100%; margin-top:22px; display:flex; align-items:center; justify-content:center; gap:9px; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-fill); color:var(--fl-bronze-bright); font-size:14px; font-weight:700; letter-spacing:0.3px; cursor:pointer; box-shadow:var(--fl-glow-subtle);" style-active="transform:scale(0.99);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"></path><path d="M16 6l-4-4-4 4"></path><path d="M12 2v14"></path></svg>Share this comparison
+          </button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ═══ SHARE (full-screen) ═══ -->
+    <sc-if value="{{ shareOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; z-index:82; display:flex; flex-direction:column; background:#070707; animation:xView 300ms var(--fl-ease-out, ease-out) both;">
+        <div style="height:56px; flex:none; display:flex; align-items:center; gap:6px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-700);">
+          <button onClick="{{ closeShare }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+          <span style="flex:1; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-primary);">Share</span>
+          <span style="width:44px;"></span>
+        </div>
+        <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:18px 18px 28px;">
+          <p style="margin:0 2px 16px; font-family:var(--fl-font-display); font-style:italic; font-size:14px; line-height:1.5; color:var(--fl-bronze-bright); text-align:center; text-wrap:pretty;">A keepsake worth sending. Then share it wherever your people are.</p>
+
+          <!-- ── THE FORMATTED CARD ── -->
+          <div style="position:relative; overflow:hidden; border-radius:var(--fl-radius-xl); border:1px solid var(--fl-bronze-border); background:linear-gradient(180deg, rgba(191,143,79,0.12), transparent 34%), linear-gradient(180deg, #121014, #0a0a0c); box-shadow:var(--fl-border-inset), var(--fl-shadow-ambient); padding:18px 18px 20px;">
+            <!-- brand lockup -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+              <div style="display:flex; align-items:center; gap:9px;">
+                <span style="width:26px; height:26px; border-radius:7px; background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:15px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+                <span style="font-size:10px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-secondary);">Forge Legacy</span>
+              </div>
+              <span style="font-size:9.5px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);">{{ shareChapter }}</span>
+            </div>
+
+            <!-- entry mode -->
+            <sc-if value="{{ shareIsEntry }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex; gap:8px;">
+                <sc-for list="{{ sharePoses }}" as="p" hint-placeholder-count="3">
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px;">
+                    <image-slot id="{{ p.slotId }}" flat nocap shape="rounded" radius="12" placeholder="" style="width:100%; aspect-ratio:3/4;"></image-slot>
+                    <span style="font-size:8px; font-weight:600; letter-spacing:0.4px; text-align:center; color:var(--fl-text-tertiary);">{{ p.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <span style="display:block; margin-top:16px; font-family:var(--fl-font-display); font-size:22px; font-weight:700; letter-spacing:-0.3px; color:var(--fl-text-primary);">{{ shareDate }}</span>
+              <sc-if value="{{ shareHasMeta }}" hint-placeholder-val="{{ false }}"><span style="display:block; margin-top:3px; font-size:11px; color:var(--fl-text-tertiary);">{{ shareMeta }}</span></sc-if>
+              <sc-if value="{{ shareHasCaption }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; gap:8px; margin-top:14px;">
+                  <span style="font-family:var(--fl-font-display); font-size:22px; line-height:0.7; color:var(--fl-bronze-primary); flex:none;">&#8220;</span>
+                  <span style="font-family:var(--fl-font-display); font-style:italic; font-size:13.5px; line-height:1.5; color:var(--fl-text-secondary); text-wrap:pretty;">{{ shareCaption }}</span>
+                </div>
+              </sc-if>
+            </sc-if>
+
+            <!-- compare mode -->
+            <sc-if value="{{ shareIsCompare }}" hint-placeholder-val="{{ false }}">
+              <!-- date header -->
+              <div style="display:flex; gap:10px; margin-bottom:9px;">
+                <span style="flex:1; min-width:0; text-align:center; font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-secondary);">{{ shareThenLabel }}</span>
+                <span style="flex:1; min-width:0; text-align:center; font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-bright);">{{ shareNowLabel }}</span>
+              </div>
+              <!-- one before/after row per selected pose -->
+              <div style="display:flex; flex-direction:column; gap:11px;">
+                <sc-for list="{{ shareCompareRows }}" as="row" hint-placeholder-count="2">
+                  <div>
+                    <sc-if value="{{ shareMultiPose }}" hint-placeholder-val="{{ true }}"><span style="display:block; text-align:center; font-size:8px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:5px;">{{ row.label }}</span></sc-if>
+                    <div style="display:flex; gap:10px;">
+                      <div style="flex:1; min-width:0;"><image-slot id="{{ row.thenSlot }}" flat nocap shape="rounded" radius="12" placeholder="" style="width:100%; aspect-ratio:3/4;"></image-slot></div>
+                      <div style="flex:1; min-width:0;"><image-slot id="{{ row.nowSlot }}" flat nocap shape="rounded" radius="12" placeholder="" style="width:100%; aspect-ratio:3/4;"></image-slot></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="text-align:center; margin-top:16px;">
+                <span style="display:block; font-family:var(--fl-font-display); font-size:30px; font-weight:700; letter-spacing:-0.5px; color:var(--fl-bronze-bright); line-height:1;">{{ shareElapsedBig }}</span>
+                <span style="display:block; margin-top:5px; font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ shareHeroLabel }}</span>
+              </div>
+            </sc-if>
+          </div>
+
+          <!-- ── DESTINATIONS ── -->
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:24px 2px 12px;">Send to</span>
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;">
+            <sc-for list="{{ shareDests }}" as="d" hint-placeholder-count="4">
+              <div role="button" tabindex="0" onClick="{{ d.pick }}" style="display:flex; flex-direction:column; align-items:center; gap:9px; padding:15px 6px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-700); background:var(--fl-surface-card); cursor:pointer; transition:transform 160ms var(--fl-ease-out, ease-out), border-color 160ms;" style-active="transform:scale(0.95);">
+                <span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ d.icon }}</span>
+                <span style="font-size:10.5px; font-weight:600; color:var(--fl-text-secondary); text-align:center;">{{ d.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <button type="button" onClick="{{ doSaveImage }}" style="width:100%; margin-top:12px; display:flex; align-items:center; justify-content:center; gap:8px; padding:13px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:13px; font-weight:600; cursor:pointer;" style-active="transform:scale(0.99);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"></path><path d="M8 11l4 4 4-4"></path><path d="M5 19h14"></path></svg>Save image to photos
+          </button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ═══ CARD ACTIONS (long-press sheet) ═══ -->
+    <sc-if value="{{ actionsOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeActions }}" style="position:absolute; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:xFade 200ms var(--fl-ease-out, ease-out) both;">
+        <div onClick="{{ stopProp }}" style="width:100%; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient); padding:0 12px 22px; animation:xSheet 320ms var(--fl-ease-out, ease-out) both;">
+          <div style="display:flex; justify-content:center; padding:10px 0 6px;"><span style="width:40px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+          <div style="padding:6px 10px 10px;"><span style="font-size:11px; font-weight:600; letter-spacing:0.4px; color:var(--fl-text-tertiary);">{{ actionTitle }}</span></div>
+          <sc-for list="{{ actionRows }}" as="a" hint-placeholder-count="5">
+            <button type="button" onClick="{{ a.action }}" style="width:100%; display:flex; align-items:center; gap:14px; padding:14px 10px; background:transparent; border:none; border-top:{{ a.divider }}; cursor:pointer; text-align:left;">
+              <span style="display:inline-flex; flex:none; color:{{ a.color }};">{{ a.icon }}</span>
+              <span style="font-size:15px; color:{{ a.color }};">{{ a.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- toast -->
+    <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; left:50%; bottom:30px; transform:translateX(-50%); z-index:90; display:inline-flex; align-items:center; gap:9px; padding:12px 18px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); box-shadow:var(--fl-shadow-float); color:var(--fl-text-primary); font-size:13.5px; font-weight:600; white-space:nowrap; animation:xFade 200ms var(--fl-ease-out, ease-out) both;">
+        <span style="display:inline-flex; color:var(--fl-bronze-bright);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></span>{{ toastMsg }}
+      </div>
+    </sc-if>
+
+    <!-- Forged grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.07; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false, addOpen: false, compareOpen: false, draftBase: null, addCaption: '', addMeta: '', addTags: [], comparePoses: ['ff'], compareA: null, compareB: null, poseFilled: 0, videoFilled: false, actionsOpen: false, actionId: null, shareOpen: false, shareMode: null, toast: null, tick: 0 };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      const x = typeof window !== 'undefined' && window.ForgeTransformation;
+      if (r && ns && fs && x) {
+        this.setState({ ready: true });
+        if (!this._off) this._off = window.ForgeTransformation.subscribe(() => this.setState(s => ({ tick: (s.tick || 0) + 1 })));
+        this._route();
+      } else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+    if (!this._setAddRef) this._setAddRef = (el) => { if (el) { this._addRef = el; this._observeSlots(); } };
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._off) this._off(); if (this._mo) this._mo.disconnect(); if (this._lp) clearTimeout(this._lp); if (this._tt) clearTimeout(this._tt); }
+
+  _observeSlots() {
+    if (!this._addRef || this._mo) return;
+    this._mo = new MutationObserver(() => this._recount());
+    this._mo.observe(this._addRef, { subtree: true, attributes: true, attributeFilter: ['data-filled'] });
+    this._recount();
+  }
+  _recount() {
+    const base = this.state.draftBase; if (!base) return;
+    let n = 0;
+    ['rf', 'rs', 'rb', 'ff', 'su', 'bf'].forEach(k => { const el = document.getElementById(base + '-' + k); if (el && el.hasAttribute('data-filled')) n++; });
+    const vid = document.getElementById(base + '-video');
+    const v = !!(vid && vid.hasAttribute('data-filled'));
+    if (n !== this.state.poseFilled || v !== this.state.videoFilled) this.setState({ poseFilled: n, videoFilled: v });
+  }
+
+  back = () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Forge%20Progress%20Hub.dc.html'); };
+  openAdd = () => this.setState({ addOpen: true, editId: null, draftBase: 'xf-' + Date.now(), addCaption: '', addMeta: '', addTags: [], addDate: '', poseFilled: 0, videoFilled: false });
+  _route() {
+    let hash = ''; try { hash = (window.location.hash || '').replace(/^#/, ''); } catch (e) {}
+    const m = /(?:^|&)edit=([^&]+)/.exec(hash);
+    const c = /(?:^|&)compare=([^&]+)/.exec(hash);
+    let cw = null; try { cw = localStorage.getItem('forge.xform.compare_with'); if (cw) localStorage.removeItem('forge.xform.compare_with'); } catch (e) {}
+    if (m) { this.editEntry(decodeURIComponent(m[1])); }
+    else if (c) { this.setState({ compareOpen: true, compareB: decodeURIComponent(c[1]) }); }
+    else if (cw) { this.setState({ compareOpen: true, compareB: cw }); }
+  }
+  editEntry(id) {
+    const T = window.ForgeTransformation; const e = ((T && T.entries()) || []).filter((x) => x.id === id)[0]; if (!e) return;
+    this.setState({ addOpen: true, editId: id, draftBase: id, addCaption: e.caption || '', addMeta: e.meta || '', addTags: (e.tags || []).slice(), addDate: e.label || '', poseFilled: 0, videoFilled: false });
+  }
+  closeAdd = () => { if (this._mo) { this._mo.disconnect(); this._mo = null; } this._addRef = null; this.setState({ addOpen: false }); };
+  setCaption = (e) => this.setState({ addCaption: e && e.target ? e.target.value : '' });
+  setDate = (e) => this.setState({ addDate: e && e.target ? e.target.value : '' });
+  setMeta = (e) => this.setState({ addMeta: e && e.target ? e.target.value : '' });
+  toggleTag = (t) => this.setState(s => ({ addTags: s.addTags.indexOf(t) === -1 ? s.addTags.concat([t]) : s.addTags.filter(x => x !== t) }));
+  saveAdd = () => {
+    const T = window.ForgeTransformation; if (!T) return;
+    const editId = this.state.editId;
+    const canSave = this.state.poseFilled > 0 || this.state.videoFilled || (this.state.addCaption || '').trim().length > 0 || !!editId;
+    if (!canSave) return;
+    const dt = (this.state.addDate || '').trim();
+    const patch = { caption: (this.state.addCaption || '').trim(), tags: this.state.addTags.slice(), hasVideo: this.state.videoFilled, meta: (this.state.addMeta || '').trim() };
+    if (this._mo) { this._mo.disconnect(); this._mo = null; } this._addRef = null;
+    if (editId) {
+      // Save-in-place: update metadata only; media slots (keyed by the same id) are untouched.
+      if (dt) patch.label = dt;
+      T.update(editId, patch);
+      this.setState({ addOpen: false, editId: null });
+      window.location.href = 'Forge%20Transformation%20Entry%20Detail.dc.html?id=' + encodeURIComponent(editId);
+      return;
+    }
+    T.add(Object.assign({ id: this.state.draftBase, label: dt || 'Today', chapter: 'The Rebuild' }, patch));
+    this.setState({ addOpen: false, addCaption: '', addTags: [] });
+  };
+  openCompare = () => this.setState({ compareOpen: true });
+  closeCompare = () => this.setState({ compareOpen: false });
+  setCompareA = (e) => this.setState({ compareA: e && e.target ? e.target.value : null });
+  setCompareB = (e) => this.setState({ compareB: e && e.target ? e.target.value : null });
+  togglePose = (k) => this.setState(s => { const cur = s.comparePoses || []; const has = cur.indexOf(k) >= 0; let next = has ? cur.filter(x => x !== k) : cur.concat([k]); if (!next.length) next = [k]; return { comparePoses: next }; });
+  _slotPhoto(id) { try { var m = JSON.parse(localStorage.getItem('.image-slots.state.json') || '{}'); var s = m[id]; return (s && s.u) ? s.u : null; } catch (e) { return null; } }
+  _gotoShare(ctx) { try { localStorage.setItem('forge_share_ctx_v1', JSON.stringify(ctx)); } catch (e) {} window.location.href = 'Forge%20Share%20Configuration.dc.html'; }
+  openShareEntry = () => { const e = this._entry || {}; this.setState({ actionsOpen: false }); try { localStorage.setItem('forge_progress_post_ctx_v1', JSON.stringify({ origin: 'transformation', entryId: e.id || null })); } catch (err) {} window.location.href = 'Progress%20Photo%20Post.dc.html'; };
+  shareCompare = () => { const c = this._cmp || {}; this._gotoShare({ kind: 'transformation', mode: 'compare', thenLabel: c.thenLbl || 'Then', nowLabel: c.nowLbl || 'Now', elapsed: c.elapsed || '', chapter: c.chapter ? ('Chapter · ' + c.chapter) : '', date: c.nowLbl || '', reflection: c.caption || '', thenPhoto: this._slotPhoto(c.thenSlot), nowPhoto: this._slotPhoto(c.nowSlot), athlete: 'Ada Ridge', rank: 'Architect · IV', back: 'Forge%20Transformation.dc.html' }); };
+  closeShare = () => this.setState({ shareOpen: false });
+  _toast = (m) => { if (this._tt) clearTimeout(this._tt); this.setState({ toast: m }); this._tt = setTimeout(() => this.setState({ toast: null }), 2400); };
+  pickDest = (label) => { this.setState({ shareOpen: false }); this._toast(label); };
+  toggleRemind = () => { const T = window.ForgeTransformation; if (T) { const r = T.remind(); T.setRemind({ enabled: !r.enabled }); } };
+  setFreq = (f) => { const T = window.ForgeTransformation; if (T) T.setRemind({ freq: f }); };
+
+  _startPress = (id) => { if (this._lp) clearTimeout(this._lp); this._lp = setTimeout(() => this.setState({ actionsOpen: true, actionId: id }), 480); };
+  _endPress = () => { if (this._lp) clearTimeout(this._lp); };
+  closeActions = () => this.setState({ actionsOpen: false });
+  _compareFrom = () => { const id = this.state.actionId; this.setState({ actionsOpen: false, compareOpen: true, compareB: id }); };
+  _deleteEntry = () => { const T = window.ForgeTransformation; const id = this.state.actionId; if (T && T.remove) T.remove(id); this.setState({ actionsOpen: false }); };
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) return { ready: false, notReady: true };
+    const h = React.createElement;
+    const T = window.ForgeTransformation;
+    const POSES = T.POSES;
+
+    const raw = T.entries();
+    const newestId = raw.length ? raw[0].id : null;
+
+    // group by chapter (newest-first order preserved)
+    const groups = [], gi = {};
+    raw.forEach(e => { if (gi[e.chapter] == null) { gi[e.chapter] = groups.length; groups.push({ name: e.chapter, entries: [] }); } groups[gi[e.chapter]].entries.push(e); });
+
+    const cardBase = 'position:relative; border-radius:var(--fl-radius-xl); overflow:hidden; box-shadow:var(--fl-border-inset); transition:transform 200ms var(--fl-ease-out, ease-out); touch-action:pan-y;';
+    const tagPill = (emph) => 'padding:2px 8px; border-radius:var(--fl-radius-sm); border:1px solid ' + (emph ? 'var(--fl-bronze-border-subtle)' : 'var(--fl-charcoal-600)') + '; font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:' + (emph ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)') + ';';
+
+    const chapters = groups.map(g => {
+      const es = g.entries;
+      const newest = es[0], oldest = es[es.length - 1];
+      const sub = es.length === 1 ? ('Started ' + newest.label + ' · 1 entry')
+        : (oldest.label + ' – ' + newest.label + ' · ' + es.length + ' entries');
+      return {
+        key: g.name, name: g.name, sub,
+        entries: es.map(e => {
+          const isNewest = e.id === newestId;
+          const isMilestone = (e.tags || []).indexOf('Milestone') !== -1;
+          const emph = !!e.caption || !!e.hasVideo || isMilestone;
+          let cardStyle;
+          if (isNewest) cardStyle = cardBase + ' background:linear-gradient(180deg, rgba(191,143,79,0.06), transparent 42%), var(--fl-surface-card); border:1px solid var(--fl-bronze-border);';
+          else if (emph) cardStyle = cardBase + ' background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle);';
+          else cardStyle = cardBase + ' background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-700);';
+          return {
+            key: e.id, date: e.label, meta: e.meta || '', hasMeta: !!e.meta, caption: e.caption, hasCaption: !!e.caption, hasVideo: !!e.hasVideo,
+            isNewest, accent: emph && !isNewest, cardStyle,
+            tags: (e.tags || []).map((t, i) => ({ key: i, label: t === 'Milestone' ? '\u25C7 ' + t : t, style: tagPill(t === 'Milestone') })),
+            poses: POSES.map(p => ({ key: p.key, label: p.label, slotId: e.id + '-' + p.key })),
+            open: () => { window.location.href = 'Forge%20Transformation%20Entry%20Detail.dc.html?id=' + encodeURIComponent(e.id); },
+          };
+        }),
+      };
+    });
+
+    const summaryLine = raw.length + ' progress ' + (raw.length === 1 ? 'entry' : 'entries') + ' across ' + groups.length + ' ' + (groups.length === 1 ? 'chapter' : 'chapters');
+
+    // ── Reminder ──
+    const rem = T.remind();
+    const segBase = 'flex:1; text-align:center; padding:8px 0; font-size:11px; font-weight:700; letter-spacing:0.4px; border-radius:var(--fl-radius-md); border:1px solid transparent; cursor:pointer; user-select:none; transition:all 180ms var(--fl-ease-out, ease-out);';
+    const seg = (a) => a ? (segBase + ' background:var(--fl-bronze-tint); color:var(--fl-bronze-bright); border-color:var(--fl-bronze-border);') : (segBase + ' background:var(--fl-charcoal-800); color:var(--fl-text-tertiary);');
+    const freqOptions = [['weekly', 'Weekly'], ['biweekly', 'Every 2 wks'], ['monthly', 'Monthly']].map(f => ({ key: f[0], label: f[1], style: seg(rem.freq === f[0]), pick: () => this.setFreq(f[0]) }));
+    const swBase = 'position:relative; width:38px; height:22px; flex:none; border-radius:var(--fl-radius-pill); border:1px solid; cursor:pointer; padding:0; transition:background 200ms, border-color 200ms;';
+    const knobBase = 'position:absolute; top:2px; width:16px; height:16px; border-radius:50%; transition:left 220ms var(--fl-ease-out, ease-out);';
+    const remindSwitch = rem.enabled ? (swBase + ' background:var(--fl-bronze-metallic); border-color:var(--fl-bronze-border);') : (swBase + ' background:var(--fl-charcoal-800); border-color:var(--fl-charcoal-600);');
+    const remindKnob = rem.enabled ? (knobBase + ' left:18px; background:#1A1206;') : (knobBase + ' left:2px; background:var(--fl-charcoal-500);');
+    const freqLabel = { weekly: 'weekly', biweekly: 'every two weeks', monthly: 'monthly' }[rem.freq] || 'monthly';
+
+    // ── Add draft ──
+    const draftBase = this.state.draftBase || 'xf-draft';
+    const addPoses = POSES.map(p => ({ key: p.key, label: p.label, slotId: draftBase + '-' + p.key }));
+    const chipBase = 'padding:7px 13px; border-radius:var(--fl-radius-pill); font-size:11.5px; font-weight:600; cursor:pointer; user-select:none; transition:all 160ms var(--fl-ease-out, ease-out);';
+    const tagChips = T.TAGS.map(t => {
+      const on = this.state.addTags.indexOf(t) !== -1;
+      return { key: t, label: t, toggle: () => this.toggleTag(t), style: on ? (chipBase + ' background:var(--fl-bronze-tint); color:var(--fl-bronze-bright); border:1px solid var(--fl-bronze-border);') : (chipBase + ' background:transparent; color:var(--fl-text-tertiary); border:1px solid var(--fl-charcoal-700);') };
+    });
+    const canSave = this.state.poseFilled > 0 || this.state.videoFilled || (this.state.addCaption || '').trim().length > 0;
+    const saveBase = 'width:100%; padding:15px; border-radius:var(--fl-radius-md); font-size:15px; font-weight:700; letter-spacing:0.3px; transition:transform 160ms var(--fl-ease-out, ease-out), background 180ms, color 180ms;';
+    const saveStyle = canSave
+      ? (saveBase + ' border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-fill); color:var(--fl-bronze-bright); cursor:pointer; box-shadow:var(--fl-glow-subtle);')
+      : (saveBase + ' border:1px solid var(--fl-charcoal-600); background:var(--fl-charcoal-800); color:var(--fl-text-tertiary); cursor:default;');
+    const poseCountLabel = this.state.poseFilled + ' of 6 poses';
+    const saveHint = canSave ? 'Saved to ' + 'The Rebuild' : 'Add a photo, video, or reflection to save';
+
+    // ── Compare (multi-pose) ──
+    const entryOptions = raw.map(e => ({ key: e.id, id: e.id, label: e.label }));
+    const compareA = this.state.compareA || (raw.length ? raw[raw.length - 1].id : '');
+    const compareB = this.state.compareB || (raw.length ? raw[0].id : '');
+    const aEntry = raw.find(e => e.id === compareA) || {}, bEntry = raw.find(e => e.id === compareB) || {};
+    const selectStyle = 'width:100%; padding:9px 11px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-size:12px; font-family:var(--fl-font-sans); outline:none; -webkit-appearance:none; appearance:none;';
+
+    const selSet = this.state.comparePoses || ['ff'];
+    const poseChips = POSES.map(p => { const on = selSet.indexOf(p.key) >= 0; return { key: p.key, label: p.label, pick: () => this.togglePose(p.key), style: chipBase + (on ? ' flex:none; background:var(--fl-bronze-tint); color:var(--fl-bronze-bright); border:1px solid var(--fl-bronze-border);' : ' flex:none; background:transparent; color:var(--fl-text-secondary); border:1px solid var(--fl-charcoal-600);') }; });
+    const comparePairs = POSES.filter(p => selSet.indexOf(p.key) >= 0).map(p => ({ key: p.key, label: p.label, aSlot: compareA + '-' + p.key, bSlot: compareB + '-' + p.key }));
+    const cmpPoseHint = selSet.length + (selSet.length === 1 ? ' pose' : ' poses') + ' · tap to add';
+
+    // elapsed between the two selected entries
+    const parseLabel = (l) => { if (!l || l === 'Today' || l === 'Now') return new Date(); const d = new Date(l); return isNaN(d.getTime()) ? new Date() : d; };
+    const elapsedText = (l1, l2) => {
+      let a = parseLabel(l1), b = parseLabel(l2); if (a > b) { const t = a; a = b; b = t; }
+      let months = (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+      if (b.getDate() < a.getDate()) months--;
+      if (months < 1) { const days = Math.max(1, Math.round((b - a) / 86400000)); const wk = Math.round(days / 7); return wk <= 1 ? (days + (days === 1 ? ' day' : ' days')) : (wk + ' weeks'); }
+      if (months < 12) return months + (months === 1 ? ' month' : ' months');
+      const y = Math.floor(months / 12), rem = months % 12;
+      return rem ? (y + 'y ' + rem + 'mo') : (y + (y === 1 ? ' year' : ' years'));
+    };
+    const cmpElapsed = (aEntry.label && bEntry.label && compareA !== compareB) ? elapsedText(aEntry.label, bEntry.label) : '';
+
+    // ── Long-press actions ──
+    const ai = (paths, sw) => h('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(paths) ? paths : [paths]).map((d, i) => h('path', { key: i, d })));
+    const iw = (n, c) => h('span', { style: { display: 'inline-flex', color: c || 'var(--fl-icon-bronze)' } }, n);
+    const divT = '1px solid var(--fl-charcoal-700)';
+    const actEntry = raw.find(e => e.id === this.state.actionId) || {};
+    const actionRows = [
+      { key: 'compare', label: 'Compare from here', icon: iw(ai(['M4 6h6v12H4z', 'M14 6h6v12h-6z'], 1.7)), color: 'var(--fl-text-primary)', divider: 'none', action: this._compareFrom },
+      { key: 'reflect', label: 'Edit reflection', icon: iw(ai(['M4 20h4L18.5 9.5a2 2 0 0 0-2.8-2.8L5 17.2z', 'M13.5 6.5l4 4'])), color: 'var(--fl-text-primary)', divider: divT, action: this.closeActions },
+      { key: 'photos', label: 'Add missing photos', icon: iw(ai(['M3.5 6h4l1.3-2h6.4L16.5 6h4v13h-17z', 'M12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z'])), color: 'var(--fl-text-primary)', divider: divT, action: this.closeActions },
+      { key: 'share', label: 'Share', icon: iw(ai(['M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7', 'M16 6l-4-4-4 4', 'M12 2v14'])), color: 'var(--fl-text-primary)', divider: divT, action: this.openShareEntry },
+      { key: 'delete', label: 'Delete', icon: iw(ai(['M4 7h16', 'M9 7V5h6v2', 'M6.5 7l1 13h9l1-13', 'M10 11v6', 'M14 11v6']), 1.7, ), color: 'var(--fl-red-muted)', divider: divT, action: this._deleteEntry },
+    ];
+
+    const bell = h('svg', { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9' }), h('path', { d: 'M13.7 21a2 2 0 0 1-3.4 0' }));
+
+    // ── Share (formatted keepsake card + destinations) ──
+    const shareMode = this.state.shareMode;
+    const shareEntry = raw.find(e => e.id === this.state.actionId) || raw[0] || {};
+    const filledOf = (id) => POSES.filter(p => { const el = document.getElementById(id + '-' + p.key); return el && el.hasAttribute('data-filled'); });
+    let sharePoses = [];
+    if (shareEntry.id) {
+      const f = filledOf(shareEntry.id);
+      const chosen = f.length ? f.slice(0, 3) : [POSES[3], POSES[0], POSES[2]];
+      sharePoses = chosen.map(p => ({ key: p.key, label: p.label, slotId: shareEntry.id + '-' + p.key }));
+    }
+    const selPosesArr = POSES.filter(p => selSet.indexOf(p.key) >= 0);
+    const heroPose = selPosesArr[0] || POSES[0];
+    let thenId = compareA, nowId = compareB, thenLbl = aEntry.label || 'Then', nowLbl = bEntry.label || 'Now';
+    if (parseLabel(aEntry.label) > parseLabel(bEntry.label)) { thenId = compareB; nowId = compareA; thenLbl = bEntry.label || 'Then'; nowLbl = aEntry.label || 'Now'; }
+    // every selected pose becomes a before/after row on the share card (not just the first)
+    const shareCompareRows = selPosesArr.map(p => ({ key: p.key, label: p.label, thenSlot: thenId + '-' + p.key, nowSlot: nowId + '-' + p.key }));
+    const shareMultiPose = selPosesArr.length > 1;
+    const shareHeroSub = shareMultiPose ? (selPosesArr.length + ' poses compared') : heroPose.label;
+
+    const di = (paths, sw) => h('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(paths) ? paths : [paths]).map((d, i) => h('path', { key: i, d })));
+    const shareDests = [
+      { key: 'squad', label: 'Squad', icon: di(['M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6', 'M3 19v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1', 'M16 5.5a3 3 0 0 1 0 6', 'M18 14h.5a4 4 0 0 1 4 4v1']), pick: () => this.pickDest('Shared to your squad') },
+      { key: 'community', label: 'Community', icon: di(['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18', 'M3.5 9.5h17', 'M3.5 14.5h17', 'M12 3c2.5 2.6 2.5 15.4 0 18', 'M12 3c-2.5 2.6-2.5 15.4 0 18']), pick: () => this.pickDest('Posted to community') },
+      { key: 'message', label: 'Message', icon: di(['M20 5H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h4v4l4-4h8a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z']), pick: () => this.pickDest('Opening messages\u2026') },
+      { key: 'post', label: 'Post', icon: di(['M4 7h3l1.4-2h7.2L17 7h3v12H4z', 'M12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7']), pick: () => this.pickDest('Shared as a post') },
+    ];
+
+    // Payload captured for SH-1 Share Configuration (compare + entry share now route there).
+    this._cmp = { thenLbl: thenLbl, nowLbl: nowLbl, elapsed: cmpElapsed, thenSlot: thenId + '-' + heroPose.key, nowSlot: nowId + '-' + heroPose.key, chapter: bEntry.chapter || '', caption: bEntry.caption || '' };
+    this._entry = { id: shareEntry.id, pose: (sharePoses[0] && sharePoses[0].key) || 'ff', date: shareEntry.label || '', chapter: shareEntry.chapter || '', caption: shareEntry.caption || '' };
+
+    return {
+      ready: true, notReady: false,
+      back: this.back, bellIcon: bell, stopProp: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+      summaryLine,
+      remindOn: rem.enabled, remindSwitch, remindKnob, toggleRemind: this.toggleRemind,
+      remindSub: rem.enabled ? ('On · ' + freqLabel) : 'Off',
+      freqOptions, chapters,
+
+      addOpen: this.state.addOpen, openAdd: this.openAdd, closeAdd: this.closeAdd, saveAdd: this.saveAdd,
+      setAddRef: this._setAddRef, draftChapter: 'The Rebuild', addPoses, videoSlot: draftBase + '-video',
+      tagChips, addCaption: this.state.addCaption, setCaption: this.setCaption,
+      addMeta: this.state.addMeta, setMeta: this.setMeta,
+      addDate: this.state.addDate || '', setDate: this.setDate,
+      addSheetTitle: this.state.editId ? 'Edit Progress Set' : 'New Progress Set',
+      saveLabel: this.state.editId ? 'Save Changes' : 'Save Progress Set',
+      poseCountLabel, saveStyle, saveDisabled: !canSave, saveHint,
+
+      compareOpen: this.state.compareOpen, openCompare: this.openCompare, closeCompare: this.closeCompare,
+      poseChips, entryOptions, compareA, compareB, setCompareA: this.setCompareA, setCompareB: this.setCompareB,
+      comparePairs, cmpElapsed, cmpPoseHint, shareCompare: this.shareCompare,
+      aLabel: aEntry.label || 'A', bLabel: bEntry.label || 'B',
+      selectStyle,
+
+      // share
+      shareOpen: this.state.shareOpen, closeShare: this.closeShare,
+      shareIsEntry: shareMode === 'entry', shareIsCompare: shareMode === 'compare',
+      shareChapter: shareMode === 'compare' ? (bEntry.chapter || '') : (shareEntry.chapter || ''),
+      sharePoses, shareDate: shareEntry.label || '', shareMeta: shareEntry.meta || '', shareHasMeta: !!shareEntry.meta,
+      shareCaption: shareEntry.caption || '', shareHasCaption: !!shareEntry.caption,
+      shareThenSlot: thenId + '-' + heroPose.key, shareNowSlot: nowId + '-' + heroPose.key,
+      shareThenLabel: thenLbl, shareNowLabel: nowLbl, shareHeroLabel: shareHeroSub,
+      shareCompareRows, shareMultiPose,
+      shareElapsedBig: cmpElapsed || 'Progress',
+      shareDests, doSaveImage: () => this.pickDest('Saved to your photos'),
+      toastOpen: !!this.state.toast, toastMsg: this.state.toast || '',
+
+      pressEnd: this._endPress,
+      actionsOpen: this.state.actionsOpen, closeActions: this.closeActions, actionRows,
+      actionTitle: (actEntry.label || '') + (actEntry.chapter ? ' · ' + actEntry.chapter : ''),
+    };
+  }
+}
+</script>
+</body>
+</html>

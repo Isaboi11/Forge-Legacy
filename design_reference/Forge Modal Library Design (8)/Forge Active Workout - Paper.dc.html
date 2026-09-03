@@ -1,0 +1,2258 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&amp;display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  /* The DS bundle does `const React = window.React` at eval time, but support.js loads
+     React from a CDN asynchronously. The local bundle usually wins that race, so React
+     is undefined and every component throws on `.useState`. Gate the bundle load on
+     React actually being present. */
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() {
+      if (window.__flBundleInjected) return;
+      window.__flBundleInjected = true;
+      var s = document.createElement("script");
+      s.src = SRC;
+      document.head.appendChild(s);
+    }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0;
+    var iv = setInterval(function () {
+      if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); }
+    }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="forge-activity-log.js"></script>
+<script src="forge-units.js"></script>
+<script src="forge-workout-store.js"></script>
+<script src="forge-templates.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .fl-wheel::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-wheel { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .fl-navstrip::-webkit-scrollbar { height: 0; }
+  .fl-navstrip { scrollbar-width: none; }
+  @keyframes flRestIn { from { opacity: 0; transform: translate(-50%, -10px) scale(0.94); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+  @keyframes flHeroSwap { from { opacity: 0; transform: translateY(-6px) scale(0.992); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes flFuseDraw { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+  @keyframes flSparkFade { 0%, 82% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes flFuseFade { 0%, 74% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes flHeadRun { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+  @keyframes flBelt { from { background-position: 0 0; } to { background-position: 0 28px; } }
+  @keyframes flEmber { 0% { transform: translate(0,0) scale(1); opacity: 0.7; } 100% { transform: translate(var(--ex,4px), var(--ey,-4px)) scale(0.2); opacity: 0; } }
+  @keyframes flForgeStamp { 0% { transform: scale(0.62); } 55% { transform: scale(1.12); } 100% { transform: scale(1); } }
+  @keyframes flSealCycle { 0% { opacity: 0; transform: translateY(10px) scale(0.9); } 9% { opacity: 1; transform: translateY(0) scale(1); } 84% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-5px) scale(0.984); } }
+  @keyframes flSealGlow { 0% { opacity: 0; } 12% { opacity: 1; } 82% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes flPulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+  @keyframes flPlay { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes flValuePop { 0% { transform: scale(1); } 45% { transform: scale(1.16); } 100% { transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+<script src="forge-paper-theme.js"></script>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="Active Workout" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(247,243,234,0.18), rgba(247,243,234,0.18)), #F4EFE3 url('assets/forge-slate2-paper.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <!-- ═══ HEADER ═══ -->
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="{{ titleNode }}" on-back="{{ onBack }}" actions="{{ overflowBtn }}" hint-size="100%,56px"></x-import>
+
+      <!-- conflict prompt: a new launch intent collides with an in-progress template session -->
+      <sc-if value="{{ resumePromptOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; z-index:90; background:rgba(4,5,7,0.82); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; padding:26px;">
+          <div style="width:100%; max-width:322px; border-radius:var(--fl-radius-xl); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-modal, #12100d); box-shadow:0 24px 60px rgba(0,0,0,0.6); padding:24px 22px;">
+            <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-primary); margin-bottom:10px;">Unfinished workout</span>
+            <h2 style="margin:0 0 10px; font-family:var(--fl-font-display); font-size:22px; font-weight:700; line-height:1.12; color:var(--fl-text-primary);">Resume {{ resumeName }}?</h2>
+            <p style="margin:0 0 20px; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">You still have {{ resumeName }} in progress. Resume it, or start {{ pendingName }} instead?</p>
+            <div style="display:flex; flex-direction:column; gap:9px;">
+              <button type="button" onClick="{{ onResumePending }}" style="width:100%; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-metal-border); background:var(--fl-bronze-fill); color:#F7F5F1; font-size:14px; font-weight:700; letter-spacing:0.4px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">Resume {{ resumeName }}</button>
+              <button type="button" onClick="{{ onStartPending }}" style="width:100%; padding:13px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); color:var(--fl-text-secondary); font-size:13.5px; font-weight:600; cursor:pointer;">Discard &amp; start {{ pendingName }}</button>
+              <button type="button" onClick="{{ onCancelPending }}" style="width:100%; padding:11px; border:none; background:transparent; color:var(--fl-text-tertiary); font-size:13px; font-weight:600; cursor:pointer;">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- hidden capture input (photo/video) -->
+      <input ref="{{ setFileEl }}" type="file" accept="image/*,video/*" onChange="{{ onCaptureFile }}" style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;" />
+
+      <!-- Progress band + rest chip -->
+      <div style="flex:none; padding:14px 18px 16px; border-bottom:1px solid var(--fl-charcoal-700); display:flex; flex-direction:column; gap:12px; position:relative; z-index:5;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <span style="font-size:12px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-secondary); white-space:nowrap;"><span style="color:var(--fl-bronze-primary);">{{ completedCount }}</span> / {{ total }} Done</span>
+
+          <!-- REST CHIP · idle (tap the time to customise · switch = on/off) -->
+          <sc-if value="{{ restIdle }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; align-items:center; gap:8px; padding:6px 8px 6px 11px; border-radius:var(--fl-radius-pill); border:1px solid {{ restChipBorder }}; background:var(--fl-surface-elevated);">
+              <button onClick="{{ onRestTimeClick }}" aria-label="Customize rest duration" style="display:flex; align-items:center; gap:9px; background:transparent; border:none; cursor:pointer; padding:0;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ restClockColor }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 2.4"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 1.5M9 2h6"></path></svg>
+                <span style="display:flex; flex-direction:column; line-height:1.25; text-align:left; white-space:nowrap;">
+                  <span style="font-size:8px; font-weight:600; letter-spacing:0.9px; text-transform:uppercase; color:var(--fl-text-tertiary);">Rest Timer</span>
+                  <span style="display:flex; align-items:center; gap:3px; font-size:12px; font-weight:700; letter-spacing:0.6px; color:{{ restValueColor }};">{{ restValueText }}<sc-if value="{{ restEnabled }}" hint-placeholder-val="{{ true }}"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.65;"><path d="M6 9l6 6 6-6"></path></svg></sc-if></span>
+                </span>
+              </button>
+              <button onClick="{{ onRestToggle }}" aria-label="Toggle rest timer on or off" style="background:transparent; border:none; cursor:pointer; padding:0; display:flex; align-items:center;">
+                <sc-if value="{{ restEnabled }}" hint-placeholder-val="{{ true }}">
+                  <span style="width:34px; height:20px; flex:none; border-radius:999px; background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:flex-end; padding:2px;"><span style="width:14px; height:14px; border-radius:50%; background:var(--fl-bronze-primary); box-shadow:var(--fl-glow-subtle);"></span></span>
+                </sc-if>
+                <sc-if value="{{ restDisabled }}" hint-placeholder-val="{{ false }}">
+                  <span style="width:34px; height:20px; flex:none; border-radius:999px; background:var(--fl-charcoal-700); border:1px solid var(--fl-charcoal-600); display:flex; align-items:center; justify-content:flex-start; padding:2px;"><span style="width:14px; height:14px; border-radius:50%; background:var(--fl-gray-600);"></span></span>
+                </sc-if>
+              </button>
+            </div>
+          </sc-if>
+
+          <!-- REST CHIP · active compact -->
+          <sc-if value="{{ restActive }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:center; gap:8px; padding:5px 8px 5px 10px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border); background:var(--fl-surface-elevated); box-shadow:var(--fl-glow-subtle);">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressRing" value="{{ ringElapsed }}" max="{{ ringMax }}" size="24" stroke="3" hint-size="24px,24px"></x-import>
+              <span style="font-family:var(--fl-font-mono); font-size:13.5px; font-weight:600; color:var(--fl-text-primary); min-width:38px; letter-spacing:0.4px;">{{ timeText }}</span>
+              <button onClick="{{ onRestSub }}" aria-label="Subtract 15 seconds" style="width:44px; height:44px; margin:-9px -4px; padding:0; background:transparent; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;"><span style="width:26px; height:26px; border-radius:50%; border:1px solid var(--fl-charcoal-600); color:var(--fl-text-secondary); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;">−15</span></button>
+              <button onClick="{{ onRestPause }}" aria-label="Pause or resume rest" style="width:44px; height:44px; margin:-9px -3px; padding:0; background:transparent; border:none; cursor:pointer; flex:none; display:flex; align-items:center; justify-content:center;">
+                <span style="width:28px; height:28px; border-radius:50%; border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); color:var(--fl-bronze-primary); display:flex; align-items:center; justify-content:center;">
+                <sc-if value="{{ restPaused }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg></sc-if>
+                <sc-if value="{{ restPlaying }}" hint-placeholder-val="{{ true }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg></sc-if>
+                </span>
+              </button>
+              <button onClick="{{ onRestSkip }}" aria-label="Skip rest" style="width:44px; height:44px; margin:-9px -4px; padding:0; background:transparent; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;"><span style="width:26px; height:26px; border-radius:50%; border:1px solid var(--fl-charcoal-600); color:var(--fl-text-tertiary); display:flex; align-items:center; justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></span></button>
+            </div>
+          </sc-if>
+        </div>
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="{{ progressValue }}" max="{{ progressMax }}" height="6" hint-size="100%,6px"></x-import>
+        <sc-if value="{{ sharedOn }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; align-items:center; gap:10px; padding:8px 11px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint);">
+            <span style="display:flex;">
+              <sc-for list="{{ sharedWith }}" as="w" hint-placeholder-count="1">
+                <span style="width:24px; height:24px; border-radius:var(--fl-radius-round); background:{{ w.tint }}; border:1.5px solid #12100d; margin-left:-6px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:#1A1206;">{{ w.initials }}</span>
+              </sc-for>
+            </span>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-size:12px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ sharedLabel }}</span>
+              <span style="display:inline-flex; align-items:center; gap:6px; font-size:10.5px; color:var(--fl-text-tertiary);"><span style="width:6px; height:6px; border-radius:50%; background:var(--fl-status-online); box-shadow:var(--fl-status-online-glow); flex:none;"></span>{{ sharedStatus }}</span>
+            </div>
+            <span style="font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-primary); flex:none;">Shared</span>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- ═══ SCROLL BODY ═══ -->
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:14px 18px 16px; display:flex; flex-direction:column; gap:14px;">
+
+        <!-- HERO CARD (expanded) -->
+        <sc-if value="{{ heroStrengthExpanded }}" hint-placeholder-val="{{ true }}">
+        <div style="background:var(--fl-bg-primary); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); padding:16px; box-shadow:var(--fl-shadow-card-hero); animation:flHeroSwap 260ms var(--fl-ease-out) both;">
+          <div style="display:flex; gap:16px;">
+
+            <!-- Media slot · animation-ready -->
+            <div style="width:132px; flex:none; align-self:stretch; position:relative; border-radius:var(--fl-radius-lg); overflow:hidden; background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); min-height:172px; display:flex; align-items:center; justify-content:center;">
+              <!-- faint engraved dumbbell backdrop -->
+              <svg width="74" height="74" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; opacity:0.14;"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg>
+
+              <sc-if value="{{ mediaLoading }}" hint-placeholder-val="{{ false }}">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Skeleton" variant="card" hint-size="100%,100%"></x-import>
+              </sc-if>
+
+              <sc-if value="{{ mediaError }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ onMediaToggle }}" style="position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:8px; background:transparent; border:none; cursor:pointer; color:var(--fl-text-tertiary);">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+                  <span style="font-size:10px; letter-spacing:0.8px; text-transform:uppercase;">Retry</span>
+                </button>
+              </sc-if>
+
+              <!-- PLAYING · autoplaying loop: ember pulse, LOOP badge, looping playback bar -->
+              <sc-if value="{{ mediaPlaying }}" hint-placeholder-val="{{ true }}">
+                <span style="position:absolute; inset:0; z-index:1; pointer-events:none; background:var(--fl-glow-ember); opacity:0.55; animation:flPulse 2.6s ease-in-out infinite;"></span>
+                <span style="position:absolute; top:9px; left:9px; z-index:3; display:flex; align-items:center; gap:5px; font-size:8.5px; font-weight:700; letter-spacing:1px; color:var(--fl-bronze-primary); pointer-events:none;"><span style="width:5px; height:5px; border-radius:50%; background:var(--fl-bronze-primary); animation:flPulse 1.4s ease-in-out infinite;"></span>LOOP</span>
+                <span style="position:absolute; left:0; right:0; bottom:0; height:2px; z-index:3; background:var(--fl-charcoal-700); overflow:hidden; pointer-events:none;"><span style="display:block; height:100%; background:var(--fl-bronze-primary); transform-origin:left; animation:flPlay 3.4s linear infinite;"></span></span>
+              </sc-if>
+
+              <!-- PAUSED · scrim + resume affordance -->
+              <sc-if value="{{ mediaPaused }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute; inset:0; z-index:2; pointer-events:none; background:rgba(6,9,12,0.55);"></span>
+                <span style="position:relative; z-index:3; width:48px; height:48px; border-radius:50%; border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); backdrop-filter:blur(2px); color:var(--fl-bronze-primary); display:flex; align-items:center; justify-content:center; box-shadow:var(--fl-glow-subtle); pointer-events:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-left:2px;"><path d="M8 5v14l11-7z"></path></svg></span>
+              </sc-if>
+
+              <!-- full-area tap target: tap to pause, tap again to resume -->
+              <sc-if value="{{ mediaReady }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ onMediaToggle }}" aria-label="Play or pause demonstration" style="position:absolute; inset:0; z-index:4; background:transparent; border:none; cursor:pointer; padding:0;"></button>
+              </sc-if>
+
+              <!-- expand affordance -->
+              <button aria-label="Expand demonstration" onClick="{{ onHowTo }}" style="position:absolute; bottom:8px; left:8px; z-index:5; width:26px; height:26px; border-radius:var(--fl-radius-xs); border:none; background:rgba(0,0,0,0.35); color:var(--fl-text-secondary); display:flex; align-items:center; justify-content:center; cursor:pointer;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg></button>
+            </div>
+
+            <!-- Meta -->
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:10px;">
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+                <span style="font-family:var(--fl-font-display); font-size:24px; font-weight:600; letter-spacing:-0.3px; line-height:1.08;">{{ exName }}</span>
+                <span style="flex:none; display:flex; align-items:center; gap:2px;">
+                  <button onClick="{{ onFavorite }}" aria-label="Save exercise" style="width:30px; height:30px; border:none; background:transparent; cursor:pointer; color:{{ favColor }}; display:flex; align-items:center; justify-content:center;">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="{{ favFill }}" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v17l-6-4-6 4z"></path></svg>
+                  </button>
+                  <button onClick="{{ onToggleHero }}" aria-label="Collapse exercise details" style="width:30px; height:30px; border:none; background:transparent; cursor:pointer; color:var(--fl-text-tertiary); display:flex; align-items:center; justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"></path></svg></button>
+                </span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; color:var(--fl-text-secondary);">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="miter"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg>
+                <span style="font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase;">{{ exEquip }}</span>
+              </div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <sc-for list="{{ exTags }}" as="t" hint-placeholder-count="2">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" size="sm" hint-size="auto,24px">{{ t }}</x-import>
+                </sc-for>
+                <sc-for list="{{ exMuscles }}" as="m" hint-placeholder-count="2">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" size="sm" tone="muted" hint-size="auto,24px">{{ m }}</x-import>
+                </sc-for>
+              </div>
+              <div style="margin-top:auto; padding-top:4px;">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" on-click="{{ onHowTo }}" hint-size="auto,32px">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="margin-right:6px; vertical-align:-2px;"><circle cx="12" cy="12" r="9"></circle><path d="M10 8.5l6 3.5-6 3.5z" fill="currentColor" stroke="none"></path></svg>How To</x-import>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; margin-top:14px; padding-top:14px; border-top:1px solid var(--fl-charcoal-700);">
+            <div style="display:flex; flex-direction:column; gap:2px; padding-right:12px;">
+              <span style="font-size:9px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">Last</span>
+              <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary);">{{ insightLast }}</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:3px; padding:0 12px; border-left:1px solid var(--fl-charcoal-700); border-right:1px solid var(--fl-charcoal-700);">
+              <span style="display:flex; align-items:center; gap:4px; font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4.5"></circle><circle cx="12" cy="12" r="1" fill="var(--fl-bronze-primary)" stroke="none"></circle></svg>Goal</span>
+              <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:700; letter-spacing:-0.3px; line-height:1; color:var(--fl-bronze-bright);">{{ insightGoal }}</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:2px; padding-left:12px;">
+              <span style="display:flex; align-items:center; gap:4px; font-size:9px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v3a6 6 0 0 1-12 0zM6 7H4a2 2 0 0 1 0-4h2M18 7h2a2 2 0 0 0 0-4h-2M9 20h6M12 13v7"></path></svg>Best</span>
+              <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary);">{{ insightBest }}</span>
+            </div>
+          </div>
+
+          <!-- MEMORIES · attach a photo/video of a PR or the moment -->
+          <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--fl-charcoal-700);">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+              <span style="display:flex; align-items:center; gap:6px; font-size:9px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"></rect><circle cx="12" cy="13" r="3.4"></circle><path d="M8 6l1.4-2h5.2L16 6"></path></svg>Memories</span>
+              <sc-if value="{{ hasCaps }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px; font-weight:600; letter-spacing:0.4px; color:var(--fl-text-tertiary);">{{ capCount }} saved</span></sc-if>
+            </div>
+            <div class="fl-navstrip" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:2px;">
+              <button onClick="{{ onAddCapture }}" aria-label="Attach photo or video" style="width:60px; height:60px; flex:none; border-radius:var(--fl-radius-md); border:1px dashed var(--fl-bronze-border); background:var(--fl-bronze-tint); color:var(--fl-bronze-primary); display:flex; align-items:center; justify-content:center; cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"></rect><circle cx="12" cy="13" r="3"></circle><path d="M8 6l1.4-2h5.2L16 6"></path><path d="M12 11.5v3M10.5 13h3" stroke-width="1.4"></path></svg></button>
+              <sc-for list="{{ caps }}" as="cap" hint-placeholder-count="0">
+                <button onClick="{{ cap.onOpen }}" aria-label="View memory" style="width:60px; height:60px; flex:none; position:relative; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); overflow:hidden; background:{{ cap.bg }}; cursor:pointer; padding:0;">
+                  <sc-if value="{{ cap.isVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(6,9,12,0.4);"><span style="width:22px; height:22px; border-radius:50%; background:rgba(0,0,0,0.55); border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--fl-bronze-primary)" style="margin-left:1px;"><path d="M8 5v14l11-7z"></path></svg></span></span></sc-if>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- HERO CARD (collapsed strip · tap to expand) -->
+        <sc-if value="{{ heroStrengthCollapsed }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onToggleHero }}" aria-label="Expand exercise details" style="position:sticky; top:0; z-index:8; width:100%; text-align:left; display:flex; align-items:center; gap:12px; background:var(--fl-bg-primary); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); padding:9px 12px; box-shadow:var(--fl-shadow-card-soft), 0 6px 16px -8px rgba(0,0,0,0.55); cursor:pointer; animation:flHeroSwap 260ms var(--fl-ease-out) both;">
+            <span style="width:46px; height:46px; flex:none; position:relative; border-radius:var(--fl-radius-md); overflow:hidden; background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); display:flex; align-items:center; justify-content:center;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; opacity:0.16;"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg>
+              <sc-if value="{{ mediaPlaying }}" hint-placeholder-val="{{ true }}">
+                <span style="position:absolute; inset:0; background:var(--fl-glow-ember); opacity:0.5; animation:flPulse 2.6s ease-in-out infinite;"></span>
+                <span style="position:absolute; top:4px; right:4px; width:5px; height:5px; border-radius:50%; background:var(--fl-bronze-primary); animation:flPulse 1.4s ease-in-out infinite;"></span>
+              </sc-if>
+            </span>
+            <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+              <span style="font-family:var(--fl-font-display); font-size:16.5px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ exName }}</span>
+              <span style="display:flex; flex-wrap:wrap; align-items:center; gap:3px 12px;">
+                <span style="flex:none; white-space:nowrap; font-size:11px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-tertiary);">Prev <span style="color:var(--fl-text-secondary); font-weight:700;">{{ prevSet }}</span></span>
+                <span style="flex:none; white-space:nowrap; font-size:11px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-secondary);">Goal <span style="color:var(--fl-bronze-bright); font-weight:700;">{{ insightGoal }}</span></span>
+              </span>
+            </span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M6 9l6 6 6-6"></path></svg>
+          </button>
+        </sc-if>
+
+        <!-- ═══ CARDIO BLOCK · run / walk / ride inside the lifting session ═══ -->
+        <sc-if value="{{ isCardio }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:none; background:linear-gradient(180deg, #0D1116 0%, var(--fl-bg-primary) 58%); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-xl); overflow:hidden; box-shadow:var(--fl-shadow-card-hero); animation:flHeroSwap 260ms var(--fl-ease-out) both;">
+
+          <!-- TERRAIN BAND · route preview (outdoor) or belt + incline profile (treadmill) -->
+          <div style="position:relative; height:140px; border-bottom:1px solid var(--fl-charcoal-700); background:{{ bandBg }};">
+
+            <!-- OUTDOOR · GPS gives us a route. Dashed until it's run, solid once it is. -->
+            <sc-if value="{{ isOutdoor }}" hint-placeholder-val="{{ true }}">
+              <svg viewBox="0 0 372 126" preserveAspectRatio="xMidYMid meet" style="position:absolute; inset:0; width:100%; height:100%;">
+                <path d="M44 100 C 28 70 70 66 72 46 C 74 24 42 20 66 12 C 92 4 152 14 172 44 C 194 78 262 70 278 40 C 288 22 318 30 320 52" fill="none" stroke="{{ routeStroke }}" stroke-width="{{ routeWidth }}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="{{ routeDash }}" opacity="{{ routeOpacity }}"></path>
+                <circle cx="44" cy="100" r="5" fill="{{ routeStartFill }}" stroke="var(--fl-bronze-primary)" stroke-width="2" opacity="0.85"></circle>
+                <circle cx="320" cy="52" r="5" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2" opacity="0.7"></circle>
+              </svg>
+              <span aria-hidden="true" style="position:absolute; left:0; right:0; bottom:0; height:52px; pointer-events:none; background:linear-gradient(0deg, rgba(8,12,16,0.9) 0%, rgba(8,12,16,0) 100%);"></span>
+              <span style="position:absolute; bottom:11px; right:14px; white-space:nowrap; font-size:11px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-secondary);">{{ cardioBandCaption }}</span>
+            </sc-if>
+
+            <!-- TREADMILL · no GPS, no route, no incline history. The belt knows time. -->
+            <sc-if value="{{ isTreadmill }}" hint-placeholder-val="{{ false }}">
+              <span aria-hidden="true" style="position:absolute; inset:0; background-image:repeating-linear-gradient(180deg, rgba(191,143,79,0.085) 0 2px, rgba(191,143,79,0) 2px 28px); animation:{{ beltAnim }};"></span>
+              <span aria-hidden="true" style="position:absolute; inset:0; background:radial-gradient(78% 60% at 50% 50%, rgba(8,12,16,0.88) 0%, rgba(8,12,16,0) 100%);"></span>
+              <span style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px;">
+                <span style="font-family:var(--fl-font-display); font-size:46px; font-weight:600; line-height:0.92; letter-spacing:1px; color:{{ timerInk }}; font-variant-numeric:tabular-nums;">{{ bandTimeStr }}</span>
+                <span style="display:flex; align-items:center; gap:6px; font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-tertiary);">
+                  <sc-if value="{{ cardioTimerRunning }}" hint-placeholder-val="{{ false }}"><span style="width:5px; height:5px; border-radius:50%; background:var(--fl-status-online); box-shadow:var(--fl-status-online-glow); animation:flPulse 2s ease-in-out infinite;"></span></sc-if>
+                  {{ bandTimeCaption }}
+                </span>
+              </span>
+            </sc-if>
+
+            <span style="position:absolute; top:11px; left:14px; display:flex; align-items:center; gap:6px; font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-bronze-primary);">{{ cardioBandIcon }}{{ cardioBandLabel }}</span>
+
+            <sc-if value="{{ cardioLogged }}" hint-placeholder-val="{{ false }}">
+              <span style="position:absolute; top:10px; right:12px; display:flex; align-items:center; gap:5px; padding:4px 9px; border-radius:var(--fl-radius-pill); border:1px solid rgba(90,158,104,0.34); background:rgba(90,158,104,0.12);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--fl-green-muted)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg><span style="font-size:8.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-green-muted);">Logged</span></span>
+            </sc-if>
+          </div>
+
+          <div style="padding:15px 16px 16px; display:flex; flex-direction:column; gap:14px;">
+
+            <!-- name + prescription -->
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+              <span style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+                <span style="font-family:var(--fl-font-display); font-size:24px; font-weight:600; letter-spacing:-0.3px; line-height:1.08; color:var(--fl-text-primary);">{{ cardioName }}</span>
+                <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ cardioPrescription }}</span>
+              </span>
+              <span aria-hidden="true" style="width:34px; height:34px; flex:none; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); color:var(--fl-icon-bronze); display:flex; align-items:center; justify-content:center;">{{ cardioMarkIcon }}</span>
+            </div>
+
+            <!-- modality · author default, athlete can switch -->
+            <div style="display:flex; gap:4px; padding:4px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600);">
+              <div role="button" tabindex="0" onClick="{{ setOutdoor }}" onKeyDown="{{ setOutdoorKey }}" aria-label="Outdoor" style="flex:1; display:flex; align-items:center; justify-content:center; gap:7px; height:42px; border-radius:var(--fl-radius-md); cursor:pointer; background:{{ outdoorBg }}; transition:background 180ms;">
+                <span style="display:flex; color:{{ outdoorInk }};">{{ outdoorIcon }}</span>
+                <span style="font-size:13px; font-weight:600; color:{{ outdoorInk }};">Outdoor</span>
+              </div>
+              <div role="button" tabindex="0" onClick="{{ setTreadmill }}" onKeyDown="{{ setTreadmillKey }}" aria-label="Treadmill" style="flex:1; display:flex; align-items:center; justify-content:center; gap:7px; height:42px; border-radius:var(--fl-radius-md); cursor:pointer; background:{{ treadmillBg }}; transition:background 180ms;">
+                <span style="display:flex; color:{{ treadmillInk }};">{{ treadmillIcon }}</span>
+                <span style="font-size:13px; font-weight:600; color:{{ treadmillInk }};">Treadmill</span>
+              </div>
+            </div>
+
+            <!-- prescription strip -->
+            <div style="display:flex; padding:12px 0; border-top:1px solid var(--fl-charcoal-700); border-bottom:1px solid var(--fl-charcoal-700);">
+              <sc-for list="{{ cardioStats }}" as="st" hint-placeholder-count="3">
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; padding:{{ st.pad }}; border-left:{{ st.divider }};">
+                  <span style="font-size:9px; font-weight:{{ st.labelWeight }}; letter-spacing:1.2px; text-transform:uppercase; color:{{ st.labelInk }};">{{ st.label }}</span>
+                  <span style="font-family:var(--fl-font-display); font-size:{{ st.size }}; font-weight:600; line-height:1.15; color:{{ st.ink }};">{{ st.value }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <!-- ── STATE A · outdoor, not yet run ── -->
+            <sc-if value="{{ cardioOutdoorIdle }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex; flex-direction:column; gap:9px;">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ onStartOutdoorRun }}" hint-size="100%,54px">{{ startRunLabel }}</x-import>
+                <div style="display:flex; justify-content:center;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" on-click="{{ onOpenCardioLog }}" hint-size="auto,38px">Already did it · log manually</x-import>
+                </div>
+                <span style="text-align:center; font-size:11px; line-height:1.5; color:var(--fl-text-tertiary);">Tracking opens full screen. You'll come straight back here when you finish.</span>
+              </div>
+            </sc-if>
+
+            <!-- ── STATE B · treadmill, in-card timer ── -->
+            <sc-if value="{{ cardioTreadmillIdle }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:11px;">
+                <div style="display:flex; gap:9px;">
+                  <div style="flex:1;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="{{ timerBtnVariant }}" full-width="{{ true }}" on-click="{{ onToggleCardioTimer }}" hint-size="100%,50px">{{ timerBtnLabel }}</x-import></div>
+                  <sc-if value="{{ cardioTimerStarted }}" hint-placeholder-val="{{ false }}">
+                    <div style="flex:1;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ onOpenCardioLog }}" hint-size="100%,50px">Log Run</x-import></div>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ cardioTimerFresh }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex; justify-content:center;">
+                    <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" on-click="{{ onOpenCardioLog }}" hint-size="auto,38px">Skip timer · enter it myself</x-import>
+                  </div>
+                </sc-if>
+                <span style="text-align:center; font-size:11px; line-height:1.5; color:var(--fl-text-tertiary);">A treadmill only gives us time. You'll read the distance off the console when you log it.</span>
+              </div>
+            </sc-if>
+
+            <!-- ── STATE C · manual log form ── -->
+            <sc-if value="{{ cardioLogOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <sc-for list="{{ cardioFields }}" as="f" hint-placeholder-count="2">
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; border-radius:var(--fl-radius-md); background:var(--fl-surface-elevated); border:1px solid var(--fl-charcoal-500); box-shadow:var(--fl-border-inset);">
+                    <span style="display:flex; flex-direction:column; gap:2px; min-width:0;">
+                      <span style="display:flex; align-items:center; gap:7px;">
+                        <span style="font-size:9.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ f.label }}</span>
+                        <sc-if value="{{ f.hint }}" hint-placeholder-val="{{ false }}"><span style="font-size:9px; font-weight:600; letter-spacing:0.6px; color:var(--fl-text-bronze-label);">{{ f.hint }}</span></sc-if>
+                      </span>
+                      <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:600; line-height:1; color:var(--fl-text-primary); font-variant-numeric:tabular-nums;">{{ f.value }}</span>
+                    </span>
+                    <span style="flex:none; display:flex; align-items:center; gap:8px;">
+                      <button onClick="{{ f.onDec }}" aria-label="{{ f.decA11y }}" style="width:40px; height:40px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:var(--fl-surface-card); color:var(--fl-bronze-bright); font-size:22px; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer;">&#8722;</button>
+                      <button onClick="{{ f.onInc }}" aria-label="{{ f.incA11y }}" style="width:40px; height:40px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:var(--fl-surface-card); color:var(--fl-bronze-bright); font-size:22px; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer;">+</button>
+                    </span>
+                  </div>
+                </sc-for>
+
+                <div style="display:flex; align-items:baseline; justify-content:space-between; padding:2px 12px 0;">
+                  <span style="font-size:9.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ cardioComputedLabel }}</span>
+                  <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; color:var(--fl-bronze-bright); font-variant-numeric:tabular-nums;">{{ cardioComputedVal }}</span>
+                </div>
+
+                <div style="display:flex; gap:9px; margin-top:2px;">
+                  <div style="flex:1;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" full-width="{{ true }}" on-click="{{ onCancelCardioLog }}" hint-size="100%,50px">Cancel</x-import></div>
+                  <div style="flex:1.15;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ onSaveCardioLog }}" hint-size="100%,50px">Save Run</x-import></div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ── STATE D · logged ── -->
+            <sc-if value="{{ cardioLogged }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:13px;">
+                <div style="display:flex; padding:14px 0; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid rgba(90,158,104,0.24);">
+                  <sc-for list="{{ cardioResult }}" as="r" hint-placeholder-count="3">
+                    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; border-left:{{ r.divider }};">
+                      <span style="font-family:var(--fl-font-display); font-size:24px; font-weight:600; line-height:0.95; color:{{ r.ink }}; font-variant-numeric:tabular-nums;">{{ r.value }}</span>
+                      <span style="font-size:9px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ r.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display:flex; justify-content:center;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" on-click="{{ onOpenCardioLog }}" hint-size="auto,38px">Edit these numbers</x-import>
+                </div>
+              </div>
+            </sc-if>
+
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- SET LOGGING TABLE -->
+        <sc-if value="{{ isStrength }}" hint-placeholder-val="{{ true }}">
+        <div style="background:var(--fl-bg-primary); border-radius:var(--fl-radius-xl); padding:14px 14px 12px;">
+          <!-- column heads -->
+          <div style="display:grid; grid-template-columns:56px 1fr 1fr 1.05fr; align-items:center; padding:0 6px 8px; gap:6px;">
+            <span style="font-size:9.5px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">Set</span>
+            <span style="font-size:9.5px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary); text-align:center;">Target</span>
+            <span style="font-size:9.5px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary); text-align:center;">Weight ({{ weightUnit }})</span>
+            <span style="font-size:9.5px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary); text-align:right;">Actual</span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <sc-for list="{{ rows }}" as="row" hint-placeholder-count="3">
+              <div style="display:grid; grid-template-columns:56px 1fr 1fr 1.05fr; align-items:center; gap:6px; min-height:52px; padding:7px 8px; border:{{ row.wrapBorder }}; border-radius:var(--fl-radius-md); background:{{ row.wrapBg }}; box-shadow:{{ row.wrapShadow }}; position:relative; transition:background 240ms var(--fl-ease-out), border-color 240ms var(--fl-ease-out), box-shadow 240ms var(--fl-ease-out);">
+
+                <!-- fuse-ignite celebration: two sparks light at top-center, race down both sides, meet at bottom, leaving a green outline -->
+                <sc-if value="{{ row.flash }}" hint-placeholder-val="{{ false }}">
+                  <span style="position:absolute; inset:0; z-index:3; pointer-events:none; animation:flFuseFade 1500ms linear both;">
+                    <svg width="100%" height="100%" viewBox="0 0 338 54" preserveAspectRatio="none" fill="none" style="position:absolute; inset:0; overflow:visible;">
+                      <path d="M169 1.5 H327.5 A9 9 0 0 1 336.5 10.5 V43.5 A9 9 0 0 1 327.5 52.5 H169" pathLength="100" stroke="var(--fl-green-muted)" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke" style="stroke-dasharray:100; animation:flFuseDraw 820ms linear both;"></path>
+                      <path d="M169 1.5 H10.5 A9 9 0 0 0 1.5 10.5 V43.5 A9 9 0 0 0 10.5 52.5 H169" pathLength="100" stroke="var(--fl-green-muted)" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke" style="stroke-dasharray:100; animation:flFuseDraw 820ms linear both;"></path>
+                    </svg>
+                    <span style="position:absolute; top:0; left:0; width:0; height:0; offset-path:path('M169 1.5 H327.5 A9 9 0 0 1 336.5 10.5 V43.5 A9 9 0 0 1 327.5 52.5 H169'); offset-rotate:0deg; offset-distance:0%; animation:flHeadRun 820ms linear both, flSparkFade 820ms linear both;">
+                      <span style="position:absolute; left:-2.5px; top:-2.5px; width:5px; height:5px; border-radius:50%; background:#EAFBEC; box-shadow:0 0 7px 2px rgba(90,158,104,0.95);"></span>
+                      <span style="position:absolute; left:-1.25px; top:-1.25px; width:2.5px; height:2.5px; border-radius:50%; background:#DFFBE2; box-shadow:0 0 3px 0.5px rgba(90,158,104,0.8); --ex:9px; --ey:-6px; animation:flEmber 400ms ease-out infinite;"></span>
+                      <span style="position:absolute; left:-1.25px; top:-1.25px; width:2px; height:2px; border-radius:50%; background:#CFF6D2; --ex:-4px; --ey:9px; animation:flEmber 320ms ease-out infinite; animation-delay:120ms;"></span>
+                      <span style="position:absolute; left:-1.25px; top:-1.25px; width:2px; height:2px; border-radius:50%; background:#CFF6D2; --ex:7px; --ey:7px; animation:flEmber 360ms ease-out infinite; animation-delay:240ms;"></span>
+                    </span>
+                    <span style="position:absolute; top:0; left:0; width:0; height:0; offset-path:path('M169 1.5 H10.5 A9 9 0 0 0 1.5 10.5 V43.5 A9 9 0 0 0 10.5 52.5 H169'); offset-rotate:0deg; offset-distance:0%; animation:flHeadRun 820ms linear both, flSparkFade 820ms linear both;">
+                      <span style="position:absolute; left:-2.5px; top:-2.5px; width:5px; height:5px; border-radius:50%; background:#EAFBEC; box-shadow:0 0 7px 2px rgba(90,158,104,0.95);"></span>
+                      <span style="position:absolute; left:-1.25px; top:-1.25px; width:2.5px; height:2.5px; border-radius:50%; background:#DFFBE2; box-shadow:0 0 3px 0.5px rgba(90,158,104,0.8); --ex:-9px; --ey:-6px; animation:flEmber 380ms ease-out infinite;"></span>
+                      <span style="position:absolute; left:-1.25px; top:-1.25px; width:2px; height:2px; border-radius:50%; background:#CFF6D2; --ex:4px; --ey:9px; animation:flEmber 340ms ease-out infinite; animation-delay:120ms;"></span>
+                      <span style="position:absolute; left:-1.25px; top:-1.25px; width:2px; height:2px; border-radius:50%; background:#CFF6D2; --ex:-7px; --ey:7px; animation:flEmber 360ms ease-out infinite; animation-delay:240ms;"></span>
+                    </span>
+                  </span>
+                </sc-if>
+
+                <sc-if value="{{ row.isPR }}" hint-placeholder-val="{{ false }}">
+                  <span style="position:absolute; top:-7px; right:12px; z-index:6; display:flex; align-items:center; gap:3px; padding:2px 7px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle);"><svg width="9" height="9" viewBox="0 0 24 24" fill="var(--fl-bronze-bright)" stroke="none"><path d="M12 2l2.6 7.1H22l-6 4.4 2.3 7.1-6.3-4.6-6.3 4.6 2.3-7.1-6-4.4h7.4z"></path></svg><span style="font-size:8.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);">PR</span></span>
+                </sc-if>
+
+                <!-- Set # + status -->
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="width:30px; height:30px; flex:none; border-radius:50%; border:1.5px solid {{ row.ringColor }}; display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:14px; font-weight:600; color:{{ row.numColor }};">{{ row.num }}</span>
+                  <sc-if value="{{ row.isDone }}" hint-placeholder-val="{{ false }}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-green-muted)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+                  </sc-if>
+                </div>
+
+                <!-- Target -->
+                <div style="text-align:center;">
+                  <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; color:{{ row.valColor }};">{{ row.targetText }}</span>
+                  <span style="font-size:10px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-left:3px;">Reps</span>
+                </div>
+
+                <!-- Weight (editable) -->
+                <button onClick="{{ row.onEditWeight }}" aria-label="Edit weight" style="display:flex; align-items:center; justify-content:center; gap:7px; background:transparent; border:none; cursor:pointer; padding:6px 0;">
+                  <span style="display:inline-block; font-family:var(--fl-font-display); font-size:19px; font-weight:600; color:{{ row.valColor }}; animation:{{ row.weightAnim }};">{{ row.weightText }}</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.85;"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
+                </button>
+
+                <!-- Actual + completion -->
+                <div style="display:flex; align-items:center; justify-content:flex-end; gap:9px;">
+                  <sc-if value="{{ row.isDone }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ row.onEditReps }}" aria-label="Edit actual reps" style="display:inline-block; background:transparent; border:none; cursor:pointer; font-family:var(--fl-font-display); font-size:19px; font-weight:600; color:var(--fl-text-primary); padding:6px 2px; animation:{{ row.actualAnim }};">{{ row.actualText }}</button>
+                    <button onClick="{{ row.onUncomplete }}" aria-label="Mark set incomplete" style="width:26px; height:26px; flex:none; border-radius:50%; border:1.5px solid var(--fl-green-muted); background:transparent; display:flex; align-items:center; justify-content:center; color:var(--fl-green-muted); cursor:pointer; animation:{{ row.stampAnim }};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></button>
+                  </sc-if>
+                  <sc-if value="{{ row.isCurrent }}" hint-placeholder-val="{{ true }}">
+                    <button onClick="{{ row.onEditReps }}" aria-label="Edit actual reps" style="display:inline-block; background:transparent; border:none; cursor:pointer; font-family:var(--fl-font-display); font-size:19px; font-weight:600; color:{{ row.actualColor }}; padding:6px 2px; animation:{{ row.actualAnim }};">{{ row.actualText }}</button>
+                    <button onClick="{{ row.onComplete }}" aria-label="Complete set" style="width:34px; height:34px; flex:none; border-radius:50%; border:1.5px solid var(--fl-bronze-primary); background:var(--fl-bronze-tint); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-primary); cursor:pointer; box-shadow:var(--fl-glow-subtle);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></button>
+                  </sc-if>
+                  <sc-if value="{{ row.isPending }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; color:var(--fl-text-tertiary);">—</span>
+                    <span style="width:26px; height:26px; flex:none; border-radius:50%; border:1.5px solid var(--fl-charcoal-500);"></span>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+
+            <!-- Add / remove set -->
+            <div style="display:flex; gap:8px; margin-top:2px;">
+              <button onClick="{{ onAddSet }}" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; min-height:44px; border:1px dashed var(--fl-bronze-border); border-radius:var(--fl-radius-md); background:transparent; color:var(--fl-bronze-primary); cursor:pointer; font-size:12.5px; font-weight:600; letter-spacing:1px; text-transform:uppercase;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add Set
+              </button>
+              <sc-if value="{{ canRemoveSet }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ onRemoveSet }}" aria-label="Remove last set" style="flex:none; display:flex; align-items:center; justify-content:center; gap:7px; padding:0 16px; min-height:44px; border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-md); background:transparent; color:var(--fl-text-secondary); cursor:pointer; font-size:12.5px; font-weight:600; letter-spacing:1px; text-transform:uppercase;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path></svg>Remove
+                </button>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- EXERCISE NAVIGATION (slim · swipe-first) -->
+        <div style="display:flex; align-items:center; justify-content:center; gap:12px; padding:4px 0 0;">
+          <button onClick="{{ onPrev }}" aria-label="Previous exercise" style="width:40px; height:40px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:{{ prevColor }};"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+          <div style="display:flex; align-items:center; gap:7px;">
+            <sc-for list="{{ navItems }}" as="nav" hint-placeholder-count="6">
+              <button onClick="{{ nav.onTap }}" aria-label="{{ nav.name }}" style="width:30px; height:34px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; padding:0;">
+                <span style="width:{{ nav.dotW }}; height:8px; border-radius:999px; background:{{ nav.dotColor }}; transition:width 240ms var(--fl-ease-out), background 240ms var(--fl-ease-out);"></span>
+              </button>
+            </sc-for>
+          </div>
+          <button onClick="{{ onNextNav }}" aria-label="Next exercise" style="width:40px; height:40px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:{{ nextColor }};"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></button>
+        </div>
+        <button onClick="{{ onOpenOverview }}" aria-label="View full workout plan" style="display:flex; align-items:center; justify-content:center; gap:7px; margin:0 auto; padding:5px 12px; background:transparent; border:none; cursor:pointer;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
+          <span style="font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ exName }} · {{ posLabel }} / {{ total }}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+        </button>
+
+      </div>
+
+      <!-- ═══ BOTTOM ACTIONS ═══ -->
+      <div style="flex:none; border-top:1px solid var(--fl-charcoal-700); background:var(--fl-surface-nav); position:relative; z-index:5;">
+        <sc-if value="{{ workoutComplete }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 18px 0; font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label);"><span style="width:5px; height:5px; border-radius:50%; background:var(--fl-green-muted);"></span>All exercises complete</div>
+        </sc-if>
+        <div style="display:flex; gap:12px; padding:14px 18px;">
+          <div style="flex:1;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" full-width="{{ true }}" on-click="{{ onEnd }}" hint-size="100%,50px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-right:7px; vertical-align:-2px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>End Workout</x-import></div>
+          <div style="flex:1.15; border-radius:var(--fl-radius-md); box-shadow:{{ nextGlow }}; transition:box-shadow 320ms var(--fl-ease-out);"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ onPrimary }}" trailing-icon="{{ primaryIcon }}" hint-size="100%,50px">{{ primaryLabel }}</x-import></div>
+        </div>
+      </div>
+
+      <!-- ═══ TAB BAR ═══ -->
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.TabBar" items="{{ tabItems }}" active-id="{{ activeTab }}" on-change="{{ setTab }}" hint-size="100%,74px"></x-import>
+
+      <!-- ═══ PROMINENT REST OVERLAY ═══ -->
+      <sc-if value="{{ restProminent }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; top:130px; left:50%; z-index:40; width:288px; padding:22px 22px 18px; border-radius:var(--fl-radius-xl); background:var(--fl-surface-modal); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-shadow-modal), var(--fl-bronze-glow-ring); display:flex; flex-direction:column; align-items:center; gap:14px; animation:flRestIn 360ms var(--fl-ease-out) both;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Rest</span>
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressRing" value="{{ ringElapsed }}" max="{{ ringMax }}" size="112" stroke="6" hint-size="112px,112px">
+            <span style="font-family:var(--fl-font-mono); font-size:30px; font-weight:600; color:var(--fl-text-primary); letter-spacing:0.5px;">{{ timeText }}</span>
+          </x-import>
+          <div style="display:flex; align-items:center; gap:10px; width:100%; justify-content:center;">
+            <button onClick="{{ onRestSub }}" style="min-width:52px; height:44px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:12px; font-weight:700; cursor:pointer;">−15s</button>
+            <button onClick="{{ onRestPause }}" style="width:44px; height:44px; border-radius:50%; border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); color:var(--fl-bronze-primary); display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <sc-if value="{{ restPaused }}" hint-placeholder-val="{{ false }}"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg></sc-if>
+              <sc-if value="{{ restPlaying }}" hint-placeholder-val="{{ true }}"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg></sc-if>
+            </button>
+            <button onClick="{{ onRestAdd }}" style="min-width:52px; height:44px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:12px; font-weight:700; cursor:pointer;">+15s</button>
+          </div>
+          <button onClick="{{ onRestSkip }}" style="background:transparent; border:none; color:var(--fl-text-tertiary); font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; cursor:pointer; padding:2px 8px;">Skip Rest</button>
+        </div>
+      </sc-if>
+
+      <!-- ═══ EXERCISE-COMPLETE SEAL (middle tier · non-blocking, taps pass through) ═══ -->
+      <sc-if value="{{ exDoneOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; z-index:44; display:flex; align-items:center; justify-content:center; pointer-events:none;">
+          <span style="position:absolute; width:340px; height:340px; border-radius:50%; background:radial-gradient(circle, rgba(191,143,79,0.22) 0%, rgba(191,143,79,0) 66%); animation:flSealGlow 2800ms var(--fl-ease-out) both;"></span>
+          <div style="position:relative; width:292px; padding:26px 24px 22px; border-radius:var(--fl-radius-xl); background:var(--fl-surface-modal); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-shadow-modal), var(--fl-bronze-glow-ring); display:flex; flex-direction:column; align-items:center; gap:12px; animation:flSealCycle 2800ms var(--fl-ease-out) both;">
+            <span style="width:66px; height:66px; border-radius:50%; background:var(--fl-bronze-metallic); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle), inset 0 1px 0 var(--fl-inner-highlight-md); display:flex; align-items:center; justify-content:center;">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1A1206" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+            </span>
+            <span style="font-size:11px; font-weight:600; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Exercise Complete</span>
+            <span style="font-family:var(--fl-font-display); font-size:26px; font-weight:600; letter-spacing:-0.3px; color:var(--fl-text-primary); text-align:center; line-height:1.1;">{{ exDoneName }}</span>
+            <span style="display:flex; align-items:center; gap:9px; font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ exDoneSets }} Sets<span style="width:3px; height:3px; border-radius:50%; background:var(--fl-bronze-primary);"></span>{{ exDoneVolume }} lb</span>
+            <sc-if value="{{ exDoneHasNext }}" hint-placeholder-val="{{ true }}">
+              <span style="margin-top:5px; padding-top:12px; width:100%; text-align:center; border-top:1px solid var(--fl-charcoal-600); font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-secondary);">Up Next — <span style="color:var(--fl-bronze-primary);">{{ exDoneNext }}</span></span>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ═══ PR PROMPT · celebrate a record + invite a capture ═══ -->
+      <sc-if value="{{ prPromptOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:22px;">
+          <button onClick="{{ onPrDismiss }}" aria-label="Dismiss" style="position:absolute; inset:0; background:rgba(6,9,12,0.62); border:none; cursor:pointer;"></button>
+          <div style="position:relative; width:302px; padding:24px 22px 20px; border-radius:var(--fl-radius-xl); background:var(--fl-surface-modal); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-shadow-modal), var(--fl-bronze-glow-ring); display:flex; flex-direction:column; align-items:center; gap:12px; animation:flHeroSwap 300ms var(--fl-ease-out) both;">
+            <span style="position:absolute; width:220px; height:220px; top:-40px; border-radius:50%; background:radial-gradient(circle, rgba(191,143,79,0.20) 0%, rgba(191,143,79,0) 66%); pointer-events:none;"></span>
+            <span style="position:relative; width:62px; height:62px; border-radius:50%; background:var(--fl-bronze-metallic); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle), inset 0 1px 0 var(--fl-inner-highlight-md); display:flex; align-items:center; justify-content:center; animation:flForgeStamp 460ms var(--fl-ease-out) both;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="#1A1206" stroke="none"><path d="M12 2l2.6 7.1H22l-6 4.4 2.3 7.1-6.3-4.6-6.3 4.6 2.3-7.1-6-4.4h7.4z"></path></svg>
+            </span>
+            <span style="position:relative; font-size:11px; font-weight:600; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">New Personal Record</span>
+            <span style="position:relative; font-family:var(--fl-font-display); font-size:24px; font-weight:600; letter-spacing:-0.3px; color:var(--fl-text-primary); text-align:center; line-height:1.1;">{{ prName }}</span>
+            <span style="position:relative; font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:var(--fl-bronze-bright); letter-spacing:0.4px;">{{ prPerf }}</span>
+            <span style="position:relative; font-size:12px; font-weight:500; line-height:1.45; color:var(--fl-text-secondary); text-align:center; max-width:232px;">Capture the moment — add a photo or video to your legacy.</span>
+            <div style="position:relative; display:flex; flex-direction:column; gap:8px; width:100%; margin-top:4px;">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ onPrAddMedia }}" hint-size="100%,48px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-right:7px; vertical-align:-3px;"><rect x="3" y="6" width="18" height="14" rx="2"></rect><circle cx="12" cy="13" r="3"></circle><path d="M8 6l1.4-2h5.2L16 6"></path></svg>Add Photo / Video</x-import>
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" full-width="{{ true }}" on-click="{{ onPrDismiss }}" hint-size="100%,40px">Not now</x-import>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    </sc-if>
+
+    <!-- forged grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:50; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+<!-- ═══ WEIGHT / REPS WHEEL PICKER ═══ -->
+<x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ pickerOpen }}" on-close="{{ onPickerClose }}" title="{{ pickerTitle }}" footer="{{ pickerFooter }}" hint-size="1px,1px">
+  <sc-if value="{{ showTypeToggle }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex; justify-content:flex-end; margin-bottom:4px;">
+    <button onClick="{{ onPickerModeToggle }}" style="display:flex; align-items:center; gap:6px; padding:6px 11px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); cursor:pointer; font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase;">
+      <sc-if value="{{ wheelMode }}" hint-placeholder-val="{{ true }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"></path></svg>Type</sc-if>
+      <sc-if value="{{ keypadMode }}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>Wheel</sc-if>
+    </button>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ wheelMode }}" hint-placeholder-val="{{ true }}">
+    <div style="position:relative; height:240px; margin:2px 0;">
+      <div style="position:absolute; left:8px; right:8px; top:96px; height:48px; border-top:1px solid var(--fl-bronze-border); border-bottom:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); border-radius:var(--fl-radius-sm); pointer-events:none; z-index:1;"></div>
+      <div style="position:absolute; top:0; left:0; right:0; height:96px; z-index:2; pointer-events:none; background:linear-gradient(180deg, var(--fl-surface-modal) 10%, rgba(30,30,35,0) 100%);"></div>
+      <div style="position:absolute; bottom:0; left:0; right:0; height:96px; z-index:2; pointer-events:none; background:linear-gradient(0deg, var(--fl-surface-modal) 10%, rgba(30,30,35,0) 100%);"></div>
+      <div class="fl-wheel" ref="{{ setWheelEl }}" style="position:relative; height:240px; overflow-y:scroll; scroll-snap-type:y mandatory;">
+        <div style="height:96px;"></div>
+        <sc-for list="{{ pickerOptions }}" as="opt" hint-placeholder-count="7">
+          <div style="height:48px; scroll-snap-align:center; display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:26px; font-weight:600; color:var(--fl-text-primary);">{{ opt.label }}</div>
+        </sc-for>
+        <div style="height:96px;"></div>
+      </div>
+      <span style="position:absolute; top:110px; right:24px; z-index:3; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-primary); pointer-events:none;">{{ pickerUnit }}</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ keypadMode }}" hint-placeholder-val="{{ false }}">
+    <div style="height:240px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;">
+      <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Type the value</span>
+      <input inputmode="decimal" value="{{ keypadValue }}" onChange="{{ onKeypadInput }}" style="width:190px; text-align:center; font-family:var(--fl-font-display); font-size:54px; font-weight:600; color:var(--fl-text-primary); background:transparent; border:none; border-bottom:2px solid var(--fl-bronze-border); outline:none; padding:6px 0;" />
+      <span style="font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-primary);">{{ pickerUnit }}</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ durationMode }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex; justify-content:center; gap:14px; margin-bottom:6px;">
+      <span style="width:100px; text-align:center; font-size:9.5px; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary); font-weight:600;">Minutes</span>
+      <span style="width:100px; text-align:center; font-size:9.5px; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary); font-weight:600;">Seconds</span>
+    </div>
+    <div style="position:relative; height:240px;">
+      <div style="position:absolute; left:8px; right:8px; top:96px; height:48px; border-top:1px solid var(--fl-bronze-border); border-bottom:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); border-radius:var(--fl-radius-sm); pointer-events:none; z-index:1;"></div>
+      <div style="position:absolute; top:0; left:0; right:0; height:96px; z-index:2; pointer-events:none; background:linear-gradient(180deg, var(--fl-surface-modal) 10%, rgba(30,30,35,0) 100%);"></div>
+      <div style="position:absolute; bottom:0; left:0; right:0; height:96px; z-index:2; pointer-events:none; background:linear-gradient(0deg, var(--fl-surface-modal) 10%, rgba(30,30,35,0) 100%);"></div>
+      <span style="position:absolute; left:50%; top:106px; transform:translateX(-50%); z-index:3; font-family:var(--fl-font-display); font-size:28px; font-weight:600; color:var(--fl-bronze-primary); pointer-events:none;">:</span>
+      <div style="position:relative; height:240px; display:flex; justify-content:center; gap:14px;">
+        <div class="fl-wheel" ref="{{ setMinEl }}" style="width:100px; height:240px; overflow-y:scroll; scroll-snap-type:y mandatory;">
+          <div style="height:96px;"></div>
+          <sc-for list="{{ durMinOptions }}" as="opt" hint-placeholder-count="7">
+            <div style="height:48px; scroll-snap-align:center; display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:26px; font-weight:600; color:var(--fl-text-primary);">{{ opt.label }}</div>
+          </sc-for>
+          <div style="height:96px;"></div>
+        </div>
+        <div class="fl-wheel" ref="{{ setSecEl }}" style="width:100px; height:240px; overflow-y:scroll; scroll-snap-type:y mandatory;">
+          <div style="height:96px;"></div>
+          <sc-for list="{{ durSecOptions }}" as="opt" hint-placeholder-count="7">
+            <div style="height:48px; scroll-snap-align:center; display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:26px; font-weight:600; color:var(--fl-text-primary);">{{ opt.label }}</div>
+          </sc-for>
+          <div style="height:96px;"></div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</x-import>
+
+<!-- ═══ WORKOUT OVERVIEW (agenda · jump-around) ═══ -->
+<x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ overviewOpen }}" on-close="{{ onCloseOverview }}" title="Workout Plan" hint-size="1px,1px">
+  <div class="fl-scroll" style="display:flex; flex-direction:column; gap:5px; max-height:430px; overflow-y:auto; margin:2px -4px 0; padding:0 4px;">
+    <sc-for list="{{ overviewItems }}" as="ov" hint-placeholder-count="6">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ListRow" title="{{ ov.name }}" subtitle="{{ ov.subtitle }}" value="{{ ov.weightText }}" value-unit="{{ weightUnit }}" icon="{{ ov.icon }}" trailing="chevron" density="exercise" on-click="{{ ov.onTap }}" style="{{ ov.rowStyle }}" hint-size="100%,72px"></x-import>
+  </div>
+</x-import>
+
+<!-- ═══ WORKOUT OPTIONS ═══ -->
+<x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ optionsOpen }}" on-close="{{ onCloseOptions }}" title="Workout Options" hint-size="1px,1px">
+  <div style="display:flex; flex-direction:column; gap:8px; padding-top:2px;">
+    <button type="button" onClick="{{ onAddExercise }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:14px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); cursor:pointer; text-align:left;">
+      <span style="flex:none; width:38px; height:38px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+      <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Add an exercise</span><span style="font-size:12px; color:var(--fl-text-tertiary); line-height:1.4;">Pick another movement for this session</span></span>
+    </button>
+    <button type="button" onClick="{{ onSwapExercise }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:14px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); cursor:pointer; text-align:left;">
+      <span style="flex:none; width:38px; height:38px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l-3-3M20 17H7l3 3"></path></svg></span>
+      <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Swap this exercise</span><span style="font-size:12px; color:var(--fl-text-tertiary); line-height:1.4;">Pick a different movement</span></span>
+    </button>
+    <button type="button" onClick="{{ onSkipExercise }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:14px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); cursor:pointer; text-align:left;">
+      <span style="flex:none; width:38px; height:38px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l9 7-9 7zM18 5v14"></path></svg></span>
+      <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Skip this exercise</span><span style="font-size:12px; color:var(--fl-text-tertiary); line-height:1.4;">Move on to the next one</span></span>
+    </button>
+    <button type="button" onClick="{{ onInviteToWorkout }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:14px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); cursor:pointer; text-align:left;">
+      <span style="flex:none; width:38px; height:38px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+      <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Invite training partner</span><span style="font-size:12px; color:var(--fl-text-tertiary); line-height:1.4;">They’ll do this workout too</span></span>
+    </button>
+    <button type="button" onClick="{{ onEndWorkout }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:14px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-red-metal-border); background:rgba(190,90,76,0.12); cursor:pointer; text-align:left;">
+      <span style="flex:none; width:38px; height:38px; border-radius:var(--fl-radius-round); border:1px solid rgba(190,90,76,0.3); background:rgba(190,90,76,0.14); display:flex; align-items:center; justify-content:center; color:var(--fl-red-muted);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1.5"></rect></svg></span>
+      <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-red-muted);">End workout</span><span style="font-size:12px; color:var(--fl-text-tertiary); line-height:1.4;">Finish and save your session</span></span>
+    </button>
+  </div>
+</x-import>
+<x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Toast" open="{{ toastOpen }}" message="{{ toastMsg }}" icon="{{ toastIcon }}" on-dismiss="{{ onToastDismiss }}" hint-size="1px,1px"></x-import>
+
+<!-- ═══ WORKOUT-COMPLETE CEREMONY ═══ -->
+<x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Modal" open="{{ ceremonyOpen }}" on-close="{{ onCeremonyClose }}" eyebrow="{{ ceremonyEyebrow }}" title="{{ ceremonyTitle }}" artwork="{{ ceremonyArt }}" footer="{{ ceremonyFooter }}" hint-size="1px,1px">
+  <div style="display:flex; flex-direction:column; gap:18px;">
+    <sc-if value="{{ sharedComplete }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; align-items:center; gap:11px; padding:13px 14px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint);">
+        <span style="width:32px; height:32px; flex:none; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>
+        <span style="flex:1; font-size:13px; font-weight:600; color:var(--fl-text-primary); line-height:1.4; text-wrap:pretty;">{{ sharedCompleteText }}</span>
+      </div>
+    </sc-if>
+    <div style="display:flex; justify-content:space-between; gap:10px;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.StatBlock" value="{{ cVolume }}" label="{{ volumeLabel }}" icon="{{ volIcon }}" hint-size="auto,66px"></x-import>
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.StatBlock" value="{{ cSets }}" label="Sets" icon="{{ setsIcon }}" hint-size="auto,66px"></x-import>
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.StatBlock" value="{{ cDuration }}" label="Time" icon="{{ timeIcon }}" hint-size="auto,66px"></x-import>
+    </div>
+    <sc-if value="{{ cHasRecords }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:9px; padding-top:16px; border-top:1px solid var(--fl-charcoal-700);">
+        <span style="font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); text-align:center;">New Records</span>
+        <div style="display:flex; flex-direction:column; gap:7px; align-items:center;">
+          <sc-for list="{{ cRecords }}" as="rec" hint-placeholder-count="1">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.RankMarker" variant="honor" label="{{ rec.label }}" hint-size="auto,34px"></x-import>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+    <div style="display:flex; flex-direction:column; gap:11px; padding-top:16px; border-top:1px solid var(--fl-charcoal-700);">
+      <span style="font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); text-align:center;">Session Memories</span>
+      <div class="fl-navstrip" style="display:flex; gap:8px; overflow-x:auto; justify-content:center; padding-bottom:2px;">
+        <button onClick="{{ onAddSessionCapture }}" aria-label="Attach photo or video" style="width:62px; height:62px; flex:none; border-radius:var(--fl-radius-md); border:1px dashed var(--fl-bronze-border); background:var(--fl-bronze-tint); color:var(--fl-bronze-primary); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"></rect><circle cx="12" cy="13" r="3"></circle><path d="M8 6l1.4-2h5.2L16 6"></path><path d="M12 11.5v3M10.5 13h3" stroke-width="1.4"></path></svg><span style="font-size:8px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase;">Add</span></button>
+        <sc-for list="{{ sessionCaps }}" as="cap" hint-placeholder-count="0">
+          <button onClick="{{ cap.onOpen }}" aria-label="View memory" style="width:62px; height:62px; flex:none; position:relative; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); overflow:hidden; background:{{ cap.bg }}; cursor:pointer; padding:0;">
+            <sc-if value="{{ cap.isVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(6,9,12,0.4);"><span style="width:22px; height:22px; border-radius:50%; background:rgba(0,0,0,0.55); border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--fl-bronze-primary)" style="margin-left:1px;"><path d="M8 5v14l11-7z"></path></svg></span></span></sc-if>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:11px; padding-top:16px; border-top:1px solid var(--fl-charcoal-700);">
+      <span style="font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); text-align:center;">Trained With</span>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
+        <sc-for list="{{ taggedPartners }}" as="p" hint-placeholder-count="0">
+          <span style="display:inline-flex; align-items:center; gap:8px; padding:6px 13px 6px 6px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint);">
+            <span style="width:26px; height:26px; flex:none; border-radius:var(--fl-radius-round); background:{{ p.tint }}; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#1A1206;">{{ p.initials }}</span>
+            <span style="font-size:12.5px; font-weight:600; color:var(--fl-text-primary);">{{ p.name }}</span>
+          </span>
+        </sc-for>
+        <button type="button" onClick="{{ openPartnerSheet }}" aria-label="Tag training partners" style="display:inline-flex; align-items:center; gap:7px; padding:8px 15px; border-radius:var(--fl-radius-pill); border:1px dashed var(--fl-bronze-border); background:transparent; color:var(--fl-bronze-primary); cursor:pointer; font-size:12.5px; font-weight:600;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>{{ partnerCtaLabel }}</button>
+      </div>
+    </div>
+  </div>
+</x-import>
+
+<!-- ═══ PARTNER SELECTION SHEET (W-20) ═══ -->
+<x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ partnerSheetOpen }}" on-close="{{ closePartnerSheet }}" footer="{{ partnerFooter }}" dismissible="{{ true }}" show-handle="{{ false }}" hint-size="1px,1px">
+  <div style="display:flex; justify-content:center; padding:0 0 12px; margin:-4px 0 2px;"><span style="width:40px; height:5px; border-radius:99px; background:var(--fl-charcoal-500);"></span></div>
+  <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px;">
+    <span style="font-family:var(--fl-font-display); font-size:21px; font-weight:600; color:var(--fl-text-primary);">Trained with</span>
+    <span style="font-size:12px; color:var(--fl-text-tertiary);">{{ partnerCountLabel }}</span>
+  </div>
+  <sc-for list="{{ partnerGroups }}" as="g" hint-placeholder-count="2">
+    <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:6px 0 10px;">{{ g.label }}</span>
+    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:18px;">
+      <sc-for list="{{ g.people }}" as="p" hint-placeholder-count="3">
+        <div role="button" tabindex="0" aria-label="{{ p.a11y }}" onClick="{{ p.toggle }}" style="{{ p.rowStyle }}">
+          <span style="width:40px; height:40px; flex:none; border-radius:var(--fl-radius-round); background:{{ p.tint }}; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#1A1206;">{{ p.initials }}</span>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+            <span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">{{ p.name }}</span>
+            <span style="font-size:12px; color:var(--fl-text-tertiary);">{{ p.sub }}</span>
+          </div>
+          <span style="{{ p.checkStyle }}">{{ p.check }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </sc-for>
+</x-import>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:436,&quot;height&quot;:928},&quot;cardioTarget&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;author&quot;,&quot;options&quot;:[&quot;author&quot;,&quot;prescribed&quot;,&quot;open&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Cardio block&quot;,&quot;label&quot;:&quot;Distance target&quot;}}">
+class Component extends DCLogic {
+  PARTNER_NAMES = { dana: 'Dana Cole', marcus: 'Marcus Vale', theo: 'Theo Brandt', lena: 'Lena Cross', nadia: 'Nadia Okafor', quinn: 'Quinn Rhodes' };
+  state = {
+    ready: false,
+    activeTab: 'workouts',
+    taggedIds: [],
+    partnerSheetOpen: false,
+    exerciseIdx: 0,
+    picker: null,
+    pickerMode: 'wheel',
+    keypadValue: '',
+    restEnabled: true,
+    restPhase: 'idle',
+    restDuration: 90,
+    restRemaining: 90,
+    restPaused: false,
+    mediaState: 'playing',
+    favorite: true,
+    heroExpanded: false,
+    heroPref: {},
+    autoCollapsed: {},
+    insightExpanded: false,
+    toast: null,
+    flash: null,
+    bump: null,
+    captures: {},
+    prPrompt: null,
+    exDone: null,
+    ceremonyOpen: false,
+    startedAt: null,
+    finishedAt: null,
+    saved: false,
+    overviewOpen: false,
+    optionsOpen: false,
+    resumePrompt: null,
+    cardioTimerRunning: false,
+    cardioTimerSec: 0,
+    cardioDraft: null,
+    exercises: [
+      { name: 'Bench Press', equip: 'Barbell', tags: ['Compound', 'Push'], muscles: ['Chest', 'Triceps'],
+        last: '185 × 10', lastSub: 'May 30, 2025', goal: '190 × 10', goalSub: '+5 lb from last week', best: '215 × 5', bestSub: 'Apr 28, 2025', prevSets: ['185 × 10', '175 × 10', '170 × 8'],
+        sets: [ { target: 10, weight: 185, actual: 10, done: true }, { target: 10, weight: 185, actual: 10, done: true }, { target: 10, weight: 190, actual: null, done: false } ] },
+      // A cardio block sits in the program like any other block. It carries its own
+      // prescription and a single synthetic set, so progress / nav / overview math is unchanged.
+      { kind: 'cardio', activity: 'run', name: 'Outdoor Run', modality: 'outdoor',
+        equip: 'Road', tags: ['Cardio'], muscles: ['Aerobic'],
+        targetMi: 3, targetPaceSec: 495,
+        last: '3.0 mi · 8:28 /mi', lastSub: 'May 28, 2025', goal: '3.0 mi', goalSub: 'Hold 8:15 or better', best: '3.0 mi · 8:02 /mi', bestSub: 'Apr 12, 2025',
+        cardio: { distanceMi: null, timeSec: null, inclinePct: null, source: null },
+        sets: [ { target: 3, weight: null, actual: null, done: false } ] },
+      { name: 'Incline Dumbbell Press', equip: 'Dumbbell', tags: ['Compound', 'Push'], muscles: ['Upper Chest', 'Shoulders'],
+        last: '70 × 10', lastSub: 'May 30, 2025', goal: '72.5 × 10', goalSub: '+2.5 lb from last week', best: '80 × 8', bestSub: 'Mar 14, 2025', prevSets: ['70 × 10', '70 × 9', '65 × 9'],
+        sets: [ { target: 12, weight: 70, actual: null, done: false }, { target: 10, weight: 70, actual: null, done: false }, { target: 10, weight: 70, actual: null, done: false } ] },
+      { name: 'Bent-Over Row', equip: 'Barbell', tags: ['Compound', 'Pull'], muscles: ['Back', 'Biceps'],
+        last: '155 × 10', lastSub: 'May 30, 2025', goal: '160 × 10', goalSub: '+5 lb from last week', best: '175 × 6', bestSub: 'Feb 22, 2025', prevSets: ['155 × 10', '155 × 9', '145 × 10'],
+        sets: [ { target: 10, weight: 155, actual: null, done: false }, { target: 10, weight: 155, actual: null, done: false }, { target: 10, weight: 155, actual: null, done: false } ] },
+      { name: 'Lat Pulldown', equip: 'Cable', tags: ['Isolation', 'Pull'], muscles: ['Lats', 'Biceps'],
+        last: '130 × 12', lastSub: 'May 30, 2025', goal: '140 × 12', goalSub: '+10 lb from last week', best: '150 × 10', bestSub: 'Apr 05, 2025', prevSets: ['130 × 12', '130 × 11', '120 × 12'],
+        sets: [ { target: 12, weight: 130, actual: null, done: false }, { target: 12, weight: 130, actual: null, done: false }, { target: 12, weight: 130, actual: null, done: false } ] },
+      { name: 'Cable Fly', equip: 'Cable', tags: ['Isolation', 'Push'], muscles: ['Chest'],
+        last: '35 × 15', lastSub: 'May 30, 2025', goal: '37.5 × 15', goalSub: '+2.5 lb from last week', best: '45 × 12', bestSub: 'Mar 30, 2025', prevSets: ['35 × 15', '35 × 13', '30 × 15'],
+        sets: [ { target: 15, weight: 35, actual: null, done: false }, { target: 15, weight: 35, actual: null, done: false }, { target: 15, weight: 35, actual: null, done: false } ] },
+      { name: 'Face Pull', equip: 'Cable', tags: ['Isolation', 'Pull'], muscles: ['Rear Delts'],
+        last: '50 × 20', lastSub: 'May 30, 2025', goal: '55 × 20', goalSub: '+5 lb from last week', best: '65 × 15', bestSub: 'Apr 18, 2025', prevSets: ['50 × 20', '50 × 18', '45 × 20'],
+        sets: [ { target: 20, weight: 50, actual: null, done: false }, { target: 20, weight: 50, actual: null, done: false }, { target: 20, weight: 50, actual: null, done: false } ] },
+    ],
+  };
+
+  _applyStoreOverrides(list) {
+    const St = window.ForgeWorkoutStore;
+    if (!St) return list;
+    return list.map((e, i) => {
+      const o = St.get('w:' + i, null);
+      return o ? Object.assign({}, e, { name: o.name, equip: o.equip || e.equip, muscles: o.muscles || e.muscles, tags: o.tags || e.tags }) : e;
+    });
+  }
+
+  // The store is a plain helmet script that may not have executed at mount time —
+  // poll briefly, then merge any saved swaps into the exercise list.
+  _ensureOverrides(tries) {
+    tries = tries || 0;
+    if (!window.ForgeWorkoutStore) { if (tries < 40) this._ovT = setTimeout(() => this._ensureOverrides(tries + 1), 25); return; }
+    this.setState((s) => ({ exercises: this._applyStoreOverrides(s.exercises) }));
+  }
+
+  componentDidMount() {
+    if (window.ForgeUnits) this._unitOff = ForgeUnits.subscribe(() => { try { this.forceUpdate(); } catch (e) {} });
+    // Returning from the full-screen run tracker: fold the result into this session.
+    this._cardioResultT = setTimeout(() => this._applyCardioResult(), 260);
+    this._defaultExercises = this.state.exercises;   // capture the built-in program demo before any swap
+    let restored = this._applyAddInbox(this._loadSession());
+    if (restored && Array.isArray(restored.exercises) && restored.exercises.length === 0) { delete restored.exercises; delete restored.exerciseIdx; this._sessionMeta = null; }
+    const boot = () => {
+      if (this._booted) return; this._booted = true;
+      const init = Object.assign({ ready: true }, restored);
+      init.heroExpanded = this._heroShouldExpand(init.exerciseIdx || 0);
+      init.exercises = this._applyStoreOverrides(init.exercises || this.state.exercises);
+      if (this._pendingLaunch && this._resumeCandidate) {
+        const p = this._pendingLaunch;
+        init.resumePrompt = {
+          resumeName: (this._resumeCandidate.meta && this._resumeCandidate.meta.name) || 'your workout',
+          pendingName: (p.sourceType === 'template') ? (p.name || p.sourceName || 'a new workout') : 'the program workout',
+        };
+      }
+      // Shared workout: a session started from a "train with others" invite pre-tags partners.
+      const shared = this._readShared();
+      if (shared && Array.isArray(shared.partnerIds) && shared.partnerIds.length) {
+        const valid = shared.partnerIds.filter((id) => this.PARTNER_NAMES[id]);
+        if (valid.length) init.taggedIds = valid;
+        // Host-only, in-context feedback that a partner joined (no chasing notifications elsewhere).
+        if (shared.role === 'host' && valid.length && !this._joinShown) {
+          this._joinShown = true;
+          const nm = this.PARTNER_NAMES[valid[0]];
+          const extra = valid.length > 1 ? (' +' + (valid.length - 1) + ' more') : '';
+          setTimeout(() => { this.setState({ toast: { msg: nm + extra + ' joined your workout' } }); }, 1000);
+        }
+      }
+      this.setState(init);
+    };
+    this._raf = requestAnimationFrame(boot);
+    this._bootT = setTimeout(boot, 80);   // fallback: requestAnimationFrame is throttled while the tab/iframe is hidden
+    this._tick = setInterval(() => this._onTick(), 1000);
+    // Drag-to-dismiss for slide-up sheets (the DS BottomSheet ships no gesture).
+    this._onPD = (e) => this._sheetDown(e);
+    this._onPM = (e) => this._sheetMove(e);
+    this._onPU = (e) => this._sheetUp(e);
+    document.addEventListener('pointerdown', this._onPD, true);
+    document.addEventListener('pointermove', this._onPM, { passive: false });
+    document.addEventListener('pointerup', this._onPU, true);
+    document.addEventListener('pointercancel', this._onPU, true);
+    // Arm every slide-up sheet with touch-action:none on its grab zone the moment it
+    // mounts, so touch/trackpad drags there aren't hijacked as scroll (observer is
+    // more reliable than lifecycle timing across the x-import boundary).
+    this._sheetObserver = new MutationObserver((muts) => {
+      for (const m of muts) {
+        for (const n of m.addedNodes) {
+          if (!n || n.nodeType !== 1) continue;
+          const dlg = (n.matches && n.matches('[role="dialog"]')) ? n : (n.querySelector && n.querySelector('[role="dialog"]'));
+          if (dlg) this._armDialog(dlg);
+        }
+      }
+    });
+    this._sheetObserver.observe(document.body, { childList: true, subtree: true });
+    this._ensureOverrides();
+  }
+
+  _armDialog(dlg, tries) {
+    tries = tries || 0;
+    const kids = Array.from(dlg.children);
+    if (!kids.length && tries < 8) { setTimeout(() => this._armDialog(dlg, tries + 1), 30); return; }
+    kids.forEach((c) => {
+      const oy = getComputedStyle(c).overflowY;
+      if (oy !== 'auto' && oy !== 'scroll') c.style.touchAction = 'none';
+    });
+  }
+
+  _anySheetOpen() { return !!(this.state.picker || this.state.overviewOpen); }
+  _dismissOpenSheet() {
+    if (this.state.picker) this.closePicker();
+    else if (this.state.overviewOpen) this.closeOverview();
+  }
+  _sheetDown(e) {
+    if (!this._anySheetOpen()) return;
+    const t = e.target;
+    const dialog = t && t.closest ? t.closest('[role="dialog"]') : null;
+    if (!dialog) return;
+    const rect = dialog.getBoundingClientRect();
+    const fromTop = (e.clientY - rect.top) <= 84;   // handle + title grab zone
+    // else allow pull-to-dismiss only if no scrollable ancestor is scrolled down
+    let scrolledDown = false, node = t;
+    while (node && node !== dialog) {
+      if (node.scrollHeight - node.clientHeight > 2 && node.scrollTop > 0) { scrolledDown = true; break; }
+      node = node.parentElement;
+    }
+    if (!fromTop && scrolledDown) return;
+    this._drag = { dialog, startY: e.clientY, dy: 0, decided: fromTop };
+    dialog.style.transition = 'none';
+    dialog.style.willChange = 'transform';
+    if (dialog.setPointerCapture && e.pointerId != null) { try { dialog.setPointerCapture(e.pointerId); } catch (_) {} }
+  }
+  _sheetMove(e) {
+    if (!this._drag) return;
+    const dy = e.clientY - this._drag.startY;
+    // Undecided (started inside content at scrollTop 0): an upward move means the
+    // user wants to scroll, so abandon the drag and let the browser take over.
+    if (!this._drag.decided) {
+      if (dy < -2) { this._drag = null; return; }
+      if (dy > 3) this._drag.decided = true;
+      else return;
+    }
+    if (dy <= 0) { this._drag.dy = 0; this._drag.dialog.style.transform = 'translateY(0px)'; return; }
+    e.preventDefault();
+    this._drag.dy = dy;
+    this._drag.dialog.style.transform = 'translateY(' + dy + 'px)';
+  }
+  _sheetUp() {
+    if (!this._drag) return;
+    const { dialog, dy } = this._drag;
+    const threshold = Math.min(130, dialog.getBoundingClientRect().height * 0.3);
+    dialog.style.transition = '';
+    dialog.style.willChange = '';
+    if ((dy || 0) > threshold) {
+      dialog.style.transform = 'translateY(100%)';
+      this._dismissOpenSheet();
+    } else {
+      dialog.style.transform = 'translateY(0px)';
+    }
+    this._drag = null;
+  }
+  componentDidUpdate() {
+    // NOTE: the DC runtime forwards componentDidUpdate WITHOUT prevState, so we detect
+    // change via a lightweight signature of the persisted fields rather than prevState.
+    const s = this.state;
+    let sig = s.exerciseIdx + '|' + s.restDuration + '|' + s.restEnabled + '|' + (s.startedAt || 0) + '|';
+    sig += (s.exercises || []).map((e) => e.sets.map((x) => x.weight + ':' + (x.actual == null ? '_' : x.actual) + ':' + (x.done ? 1 : 0) + ':' + x.target).join(',')).join(';');
+    sig += '|' + (s.exercises || []).map((e) => (e.kind === 'cardio' ? (e.modality + ':' + JSON.stringify(e.cardio || null)) : '')).join(';');
+    if (sig !== this._lastSig) { this._lastSig = sig; this._persist(); }
+
+    const nowOpen = !!(this.state.picker || this.state.overviewOpen);
+    if (nowOpen && !this._prevSheetOpen) this._armSheetDrag();
+    this._prevSheetOpen = nowOpen;
+  }
+  // Mark the sheet's non-scrolling top zone as touch-action:none so a touch/trackpad
+  // drag there isn't swallowed by the browser as a scroll gesture.
+  _armSheetDrag() {
+    let tries = 0;
+    const attempt = () => {
+      const dialog = document.querySelector('[role="dialog"]');
+      if (dialog) { this._armDialog(dialog); return; }
+      if (tries++ < 10) setTimeout(attempt, 40);
+    };
+    attempt();
+  }
+  componentWillUnmount() {
+    this._unitOff && this._unitOff();
+    if (this._cardioIv) clearInterval(this._cardioIv);
+    if (this._cardioResultT) clearTimeout(this._cardioResultT);
+    cancelAnimationFrame(this._raf);
+    clearTimeout(this._bootT);
+    clearInterval(this._tick);
+    clearTimeout(this._collapse);
+    clearTimeout(this._flashT);
+    clearTimeout(this._exDoneT);
+    clearTimeout(this._bumpT);
+    clearTimeout(this._ovT);
+    document.removeEventListener('pointerdown', this._onPD, true);
+    document.removeEventListener('pointermove', this._onPM, { passive: false });
+    document.removeEventListener('pointerup', this._onPU, true);
+    document.removeEventListener('pointercancel', this._onPU, true);
+    if (this._sheetObserver) this._sheetObserver.disconnect();
+  }
+
+  _onTick() {
+    const s = this.state;
+    if (s.restPhase === 'idle' || s.restPaused) return;
+    const next = s.restRemaining - 1;
+    if (next <= 0) {
+      clearTimeout(this._collapse);
+      this.setState({ restPhase: 'idle', restRemaining: 0, toast: { msg: 'Rest complete — next set' } });
+    } else {
+      this.setState({ restRemaining: next });
+    }
+  }
+
+  _startRest() {
+    clearTimeout(this._collapse);
+    this.setState({ restPhase: 'prominent', restRemaining: this.state.restDuration, restPaused: false });
+    this._collapse = setTimeout(() => {
+      if (this.state.restPhase === 'prominent') this.setState({ restPhase: 'compact' });
+    }, 2600);
+  }
+
+  _mutateSets(fn) {
+    this.setState((s) => ({
+      exercises: s.exercises.map((e, ei) => (ei !== s.exerciseIdx ? e : { ...e, sets: fn(e.sets) })),
+    }));
+  }
+
+  completeSet(i) {
+    const exIdx = this.state.exerciseIdx;
+    const ex = this.state.exercises[exIdx];
+    const moreToGo = ex.sets.some((set, si) => si !== i && !set.done);
+    const nextSets = ex.sets.map((set, si) => (si === i ? { ...set, done: true, actual: set.actual != null ? set.actual : set.target } : set));
+    this._mutateSets(() => nextSets);
+    // A freshly-logged set that beats the recorded best (estimated 1RM) is a PR —
+    // celebrate it and invite the athlete to capture the moment on the spot.
+    if (this._prSetIndex({ ...ex, sets: nextSets }) === i) {
+      const st = nextSets[i];
+      this.setState({ prPrompt: { exIdx, name: ex.name, perf: st.weight + ' lb × ' + st.actual } });
+    }
+    // Forge-strike: fire a one-shot celebration flash on the row that was just logged.
+    const _fn = (this._flashN = (this._flashN || 0) + 1);
+    this.setState({ flash: { i, n: _fn } });
+    clearTimeout(this._flashT);
+    this._flashT = setTimeout(() => { if (this._flashN === _fn) this.setState({ flash: null }); }, 1500);
+    // First resolved set of an untouched exercise collapses the hero once, handing
+    // its space to the log — suppressed if the athlete already chose a card state.
+    const heroIdx = this.state.exerciseIdx;
+    if (!this.state.autoCollapsed[heroIdx]) {
+      this.setState((s) => ({ heroExpanded: false, autoCollapsed: { ...s.autoCollapsed, [heroIdx]: true } }));
+    }
+    // Auto-rest fires only when the timer is switched on AND another set remains:
+    // the last set of an exercise needs no rest, and a fully-off timer never triggers.
+    if (moreToGo) {
+      this.setState({ toast: { msg: 'Set logged' } });
+      if (this.state.restEnabled) this._startRest();
+      return;
+    }
+    // No sets left in this exercise — decide the milestone tier.
+    const newSets = ex.sets.map((set, si) => (si === i ? { ...set, done: true, actual: set.actual != null ? set.actual : set.target } : set));
+    const othersDone = this.state.exercises.every((e, ei) => (ei === heroIdx ? true : (e.sets.length > 0 && e.sets.every((x) => x.done))));
+    if (othersDone) {
+      // Whole workout is done. Don't hijack — surface the earned finish; the ceremony
+      // fires on the explicit Finish tap (the primary button morphs + a nudge appears).
+      this.setState({ toast: { msg: 'All exercises complete — tap Finish' } });
+      return;
+    }
+    // Middle tier: this movement is finished but the session continues. Fire the
+    // non-blocking exercise-complete seal (the fuse already fired on the row).
+    const volume = newSets.reduce((a, set) => a + (set.weight || 0) * (set.actual != null ? set.actual : set.target), 0);
+    clearTimeout(this._exDoneT);
+    this.setState({ exDone: { idx: heroIdx, name: ex.name, sets: newSets.length, volume } });
+    this._exDoneT = setTimeout(() => this.setState({ exDone: null }), 2800);
+  }
+
+  uncompleteSet(i) {
+    this._mutateSets((sets) => sets.map((set, si) => (si === i ? { ...set, done: false } : set)));
+  }
+
+  addSet() {
+    this._mutateSets((sets) => {
+      const last = sets[sets.length - 1] || { target: 8, weight: 135 };
+      return [...sets, { target: last.target, weight: last.weight, actual: null, done: false }];
+    });
+  }
+
+  // Remove the last set (adds always append, so this undoes an accidental "Add Set").
+  // Guarded to keep at least one set.
+  removeLastSet() {
+    this._mutateSets((sets) => (sets.length > 1 ? sets.slice(0, -1) : sets));
+  }
+
+  // ── Units: canonical storage is lb; display + input use the athlete's chosen unit. ──
+  _U() { return window.ForgeUnits || null; }
+  _toDisp(lb) {
+    const U = this._U(); if (U == null || lb == null || isNaN(lb)) return lb;
+    return U.unit === 'kg' ? Math.round((lb / U.LB_PER_KG) * 2) / 2 : Math.round(lb);
+  }
+  _toLb(disp) {
+    const U = this._U(); if (U == null || disp == null || isNaN(disp)) return disp;
+    return U.unit === 'kg' ? Math.round(disp * U.LB_PER_KG * 10) / 10 : disp;
+  }
+  // Convert the leading weight in a "weight × reps" string to the display unit.
+  _cvtWxR(s) {
+    if (s == null) return s;
+    return String(s).replace(/^\s*(\d+(?:\.\d+)?)/, (m, n) => String(this._toDisp(parseFloat(n))));
+  }
+  // Convert every "N lb" inside a free-text string to the display unit.
+  _cvtLbStr(s) {
+    const U = this._U(); if (s == null || U == null) return s;
+    return String(s).replace(/(\d+(?:\.\d+)?)\s*lb\b/gi, (m, n) => this._toDisp(parseFloat(n)) + ' ' + U.label);
+  }
+
+  _pickerCfg(kind) {
+    if (kind === 'weight') {
+      return (this._U() && this._U().unit === 'kg')
+        ? { min: 0, max: 250, step: 2.5, unit: 'kg', title: 'Weight', confirm: 'Set Weight' }
+        : { min: 0, max: 500, step: 5, unit: 'lb', title: 'Weight', confirm: 'Set Weight' };
+    }
+    return { min: 0, max: 30, step: 1, unit: 'reps', title: 'Actual Reps', confirm: 'Set Reps' };
+  }
+
+  openPicker(kind, setIdx) {
+    const ex = this.state.exercises[this.state.exerciseIdx];
+    const set = ex.sets[setIdx];
+    const value = kind === 'weight'
+      ? this._toDisp(set.weight != null ? set.weight : 135)
+      : (set.actual != null ? set.actual : set.target);
+    this.setState({ picker: { kind, setIdx, value }, pickerMode: 'wheel', keypadValue: String(value) });
+  }
+  closePicker() { this.setState({ picker: null }); }
+
+  confirmPicker() {
+    const p = this.state.picker;
+    if (!p) return;
+    if (p.kind === 'duration') {
+      const mi = Math.max(0, Math.min(this._wheelElMin ? Math.round(this._wheelElMin.scrollTop / 48) : 0, 10));
+      const si = Math.max(0, Math.min(this._wheelElSec ? Math.round(this._wheelElSec.scrollTop / 48) : 0, 11));
+      const dur = Math.max(15, mi * 60 + si * 5);
+      this.setState((st) => ({ restDuration: dur, restRemaining: st.restPhase === 'idle' ? dur : st.restRemaining, picker: null }));
+      return;
+    }
+    const cfg = this._pickerCfg(p.kind);
+    const n = Math.round((cfg.max - cfg.min) / cfg.step);
+    let value;
+    if (this.state.pickerMode === 'keypad') {
+      value = parseFloat(this.state.keypadValue);
+      if (isNaN(value)) value = p.value;
+      value = Math.max(cfg.min, Math.min(value, cfg.max));
+      if (p.kind === 'reps') value = Math.round(value);
+    } else {
+      let idx = this._wheelEl ? Math.round(this._wheelEl.scrollTop / 48) : 0;
+      idx = Math.max(0, Math.min(idx, n));
+      value = cfg.min + idx * cfg.step;
+    }
+    const storeVal = p.kind === 'weight' ? this._toLb(value) : value;
+    this._mutateSets((sets) => sets.map((set, si) => {
+      if (si !== p.setIdx) return set;
+      return p.kind === 'weight' ? { ...set, weight: storeVal } : { ...set, actual: storeVal };
+    }));
+    // Subtle value-change pop (<300ms) on the edited cell.
+    const field = p.kind === 'weight' ? 'weight' : 'actual';
+    const bn = (this._bumpN = (this._bumpN || 0) + 1);
+    this.setState({ picker: null, bump: { i: p.setIdx, field, n: bn } });
+    clearTimeout(this._bumpT);
+    this._bumpT = setTimeout(() => { if (this._bumpN === bn) this.setState({ bump: null }); }, 320);
+  }
+
+  // ── Media capture (photo/video) — attachable during, after a set, or post-workout ──
+  setFileEl(el) { this._fileInput = el; }
+  triggerCapture(key) {
+    this._captureKey = key;
+    if (this._fileInput) { this._fileInput.value = ''; this._fileInput.click(); }
+  }
+  onCaptureFile(e) {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    const isVideo = (f.type || '').indexOf('video') === 0;
+    const key = this._captureKey != null ? this._captureKey : this.state.exerciseIdx;
+    this.setState((st) => ({
+      captures: Object.assign({}, st.captures, { [key]: [ ...(st.captures[key] || []), { id: Date.now(), url, isVideo } ] }),
+      toast: { msg: isVideo ? 'Video attached' : 'Photo attached' },
+      prPrompt: null,
+    }));
+  }
+  dismissPr() { this.setState({ prPrompt: null }); }
+  prAddMedia() { const p = this.state.prPrompt; this.setState({ prPrompt: null }); if (p) this.triggerCapture(p.exIdx); }
+
+  // Robustly park a wheel on its target scroll offset. The BottomSheet animates in,
+  // so layout (scrollHeight) isn't ready on the first frames and an early scrollTop
+  // write clamps to 0. Retry each frame (up to ~1.2s) until the container is
+  // scrollable AND the offset sticks (scroll-snap can re-nudge), then stop.
+  _settleWheel(getEl, target) {
+    const start = Date.now();
+    const step = () => {
+      const el = getEl();
+      if (!el || !el.isConnected || !this.state.picker) return;
+      const max = el.scrollHeight - el.clientHeight;
+      if (max <= 0) { if (Date.now() - start < 1200) requestAnimationFrame(step); return; }
+      const want = Math.max(0, Math.min(target, max));
+      if (Math.abs(el.scrollTop - want) > 1) {
+        el.scrollTop = want;
+        if (Date.now() - start < 1200) requestAnimationFrame(step);
+      }
+    };
+    requestAnimationFrame(step);
+  }
+
+  setWheelEl(el) {
+    this._wheelEl = el;
+    if (el && this.state.picker) this._settleWheel(() => this._wheelEl, (this._curPickerIndex || 0) * 48);
+  }
+  setMinEl(el) { this._wheelElMin = el; if (el) this._settleWheel(() => this._wheelElMin, (this._curMinIndex || 0) * 48); }
+  setSecEl(el) { this._wheelElSec = el; if (el) this._settleWheel(() => this._wheelElSec, (this._curSecIndex || 0) * 48); }
+
+  openDurationPicker() {
+    const d = this.state.restDuration;
+    this.setState({ picker: { kind: 'duration', minutes: Math.floor(d / 60), seconds: d % 60 } });
+  }
+
+  // ══ CARDIO BLOCK ══
+  // A run inside a lifting session. Outdoor hands off to the full-screen tracker and
+  // comes back; treadmill never leaves this screen. Either way the run is logged into
+  // THIS session and sealed once, at the workout ceremony — never mid-workout.
+  _cardioHandoffKey() { return 'forge_workout_cardio_handoff_v1'; }
+  _cardioResultKey() { return 'forge_workout_cardio_result_v1'; }
+
+  // Effective distance target for a cardio block. null means an OPEN session: the program
+  // prescribed no distance, so nothing downstream may pretend it did.
+  _effTargetMi(ex) {
+    const p = this.props && this.props.cardioTarget;
+    if (p === 'open') return null;
+    if (p === 'prescribed') return ex.targetMi || 3;
+    return (ex.targetMi != null && ex.targetMi > 0) ? ex.targetMi : null;
+  }
+
+  _mutateCardio(fn) {
+    this.setState((s) => ({ exercises: s.exercises.map((e, i) => (i !== s.exerciseIdx ? e : fn(e))) }), () => this._persist());
+  }
+  setModality(m) {
+    const ex = this.state.exercises[this.state.exerciseIdx];
+    if (!ex || ex.kind !== 'cardio' || ex.modality === m) return;
+    this._stopCardioTimer();
+    const V = { run: 'Run', walk: 'Walk', bike: 'Ride' }[ex.activity || 'run'] || 'Run';
+    this.setState({ cardioTimerSec: 0, cardioDraft: null });
+    this._mutateCardio((e) => ({ ...e, modality: m,
+      name: m === 'treadmill' ? ('Treadmill ' + V) : ('Outdoor ' + V),
+      equip: m === 'treadmill' ? 'Treadmill' : 'Road' }));
+  }
+  toggleCardioTimer() {
+    if (this.state.cardioTimerRunning) { this._stopCardioTimer(); return; }
+    this.setState({ cardioTimerRunning: true });
+    if (!this._cardioIv) this._cardioIv = setInterval(() => this.setState((s) => ({ cardioTimerSec: s.cardioTimerSec + 1 })), 1000);
+  }
+  _stopCardioTimer() {
+    if (this._cardioIv) { clearInterval(this._cardioIv); this._cardioIv = null; }
+    if (this.state.cardioTimerRunning) this.setState({ cardioTimerRunning: false });
+  }
+  openCardioLog() {
+    const ex = this.state.exercises[this.state.exerciseIdx];
+    if (!ex || ex.kind !== 'cardio') return;
+    const c = ex.cardio || {};
+    const treadmill = ex.modality === 'treadmill';
+    this._stopCardioTimer();
+    const tgt = this._effTargetMi(ex) || 1;
+    const lm = c.loggedModality;
+    const wasLogged = c.distanceMi != null;
+    // Which shape this form takes is decided ONCE, here, from how the run was (or will be)
+    // recorded — not from whatever the toggle says later.
+    const formTreadmill = (wasLogged && lm) ? lm === 'treadmill' : treadmill;
+    this.setState({ cardioDraft: {
+      distanceMi: c.distanceMi != null ? c.distanceMi : tgt,
+      timeSec: c.timeSec != null ? c.timeSec : (this.state.cardioTimerSec || Math.round(tgt * (ex.targetPaceSec || 540))),
+      inclinePct: c.inclinePct != null ? c.inclinePct : (formTreadmill ? 1 : 0),
+      hasIncline: formTreadmill,
+      modality: formTreadmill ? 'treadmill' : 'outdoor',
+    } });
+  }
+  cancelCardioLog() { this.setState({ cardioDraft: null }); }
+  adjCardio(field, delta) {
+    this.setState((s) => {
+      if (!s.cardioDraft) return null;
+      const d = Object.assign({}, s.cardioDraft);
+      if (field === 'distanceMi') d.distanceMi = Math.max(0, Math.round((d.distanceMi + delta) * 10) / 10);
+      if (field === 'timeSec') d.timeSec = Math.max(0, d.timeSec + delta);
+      if (field === 'inclinePct') d.inclinePct = Math.max(0, Math.min(15, Math.round((d.inclinePct + delta) * 2) / 2));
+      return { cardioDraft: d };
+    });
+  }
+  saveCardioLog() {
+    const d = this.state.cardioDraft; if (!d) return;
+    const idx = this.state.exerciseIdx;
+    this._stopCardioTimer();
+    this.setState((s) => ({
+      cardioDraft: null, cardioTimerSec: 0,
+      exercises: s.exercises.map((e, i) => (i !== idx ? e : Object.assign({}, e, {
+        cardio: { distanceMi: d.distanceMi, timeSec: d.timeSec,
+          inclinePct: d.hasIncline ? d.inclinePct : ((e.cardio && e.cardio.inclinePct != null) ? e.cardio.inclinePct : null),
+          loggedModality: d.modality || e.modality,
+          source: (e.cardio && e.cardio.source === 'tracked') ? 'tracked' : 'manual' },
+        sets: [Object.assign({}, e.sets[0] || { target: e.targetMi }, { actual: d.distanceMi, done: true })],
+      }))),
+      toast: { msg: (s.exercises[idx] && s.exercises[idx].name ? s.exercises[idx].name : 'Run') + ' logged' },
+    }), () => this._persist());
+  }
+  // Hand off to the full-screen tracker. It reads this payload, suppresses its own
+  // seal ceremony, and writes a result back before returning here.
+  startOutdoorRun() {
+    const idx = this.state.exerciseIdx;
+    const ex = this.state.exercises[idx];
+    if (!ex || ex.kind !== 'cardio') return;
+    const meta = this._sessionMeta;
+    try {
+      localStorage.setItem(this._cardioHandoffKey(), JSON.stringify({
+        slot: idx, activity: ex.activity || 'run', name: ex.name,
+        targetMi: this._effTargetMi(ex), targetPaceSec: ex.targetPaceSec || null,
+        program: (meta && meta.name) || 'Strength Foundation I · Day 1',
+        returnTo: 'Forge%20Active%20Workout%20-%20Paper.dc.html',
+      }));
+    } catch (e) {}
+    this._persist();
+    window.location.href = 'Forge%20Active%20Run.dc.html?type=' + encodeURIComponent(ex.activity || 'run');
+  }
+  // Coming back from the tracker: fill the block in, mark it done, land the athlete on it.
+  _applyCardioResult() {
+    let res = null;
+    try { res = JSON.parse(localStorage.getItem(this._cardioResultKey()) || 'null'); } catch (e) {}
+    try { localStorage.removeItem(this._cardioResultKey()); localStorage.removeItem(this._cardioHandoffKey()); } catch (e) {}
+    if (!res || typeof res.slot !== 'number') return;
+    this.setState((s) => {
+      const target = s.exercises[res.slot];
+      if (!target || target.kind !== 'cardio') return null;
+      return {
+        exerciseIdx: res.slot,
+        heroExpanded: true,
+        exercises: s.exercises.map((e, i) => (i !== res.slot ? e : Object.assign({}, e, {
+          cardio: { distanceMi: res.distanceMi, timeSec: res.timeSec,
+            inclinePct: (e.cardio && e.cardio.inclinePct != null) ? e.cardio.inclinePct : null,
+            loggedModality: 'outdoor', source: 'tracked' },
+          sets: [Object.assign({}, e.sets[0] || { target: e.targetMi }, { actual: res.distanceMi, done: true })],
+        }))),
+        toast: { msg: 'Run added to this workout' },
+      };
+    }, () => this._persist());
+  }
+
+  // Every value the cardio block renders. Strength blocks get the inverse flags and nothing else.
+  _cardioVals(ex) {
+    if (!ex || ex.kind !== 'cardio') return { isCardio: false, isStrength: true };
+    const s = this.state;
+    const FS = window.ForgeSymbols;
+    const FU = window.ForgeUnits;
+    const sym = (n, sz) => (FS ? FS.create(React, n, { size: sz || 15, strokeWidth: 1.8 }) : null);
+    const dU = FU ? FU.distanceLabel : 'mi';
+    const toD = (mi, p) => (FU ? +FU.toDistance(mi || 0, p == null ? 1 : p) : +(mi || 0));
+    const d1 = (mi) => toD(mi, 1).toFixed(1);
+    const pace = (sec) => (FU ? FU.fmtPace(sec) : (Math.floor(sec / 60) + ':' + String(Math.round(sec % 60)).padStart(2, '0')));
+    const mmss = (sec) => { sec = Math.max(0, Math.round(sec)); const m = Math.floor(sec / 60), ss = sec % 60; return m + ':' + String(ss).padStart(2, '0'); };
+    const V = { run: 'Run', walk: 'Walk', bike: 'Ride' }[ex.activity || 'run'] || 'Run';
+    const treadmill = ex.modality === 'treadmill';
+    const tgtMi = this._effTargetMi(ex);
+    const hasTarget = tgtMi != null;
+    const c = ex.cardio || {};
+    const draft = s.cardioDraft;
+    const logged = c.distanceMi != null && c.timeSec != null && !!(ex.sets[0] && ex.sets[0].done);
+    // How the run was ACTUALLY recorded. Flipping the toggle afterwards must never
+    // restyle a treadmill session into a GPS-traced route, or drop its incline.
+    const lm = c.loggedModality || (logged ? ex.modality : null);
+    const traced = logged && lm === 'outdoor';
+    const loggedIndoors = logged && lm === 'treadmill';
+    const tSec = s.cardioTimerSec || 0;
+    const running = !!s.cardioTimerRunning;
+
+    const fields = [];
+    if (draft) {
+      fields.push({ label: 'Distance', value: d1(draft.distanceMi) + ' ' + dU, hint: draft.hasIncline ? 'Read it off the console' : '',
+        onDec: () => this.adjCardio('distanceMi', -0.1), onInc: () => this.adjCardio('distanceMi', 0.1),
+        decA11y: 'Less distance', incA11y: 'More distance' });
+      fields.push({ label: 'Time', value: mmss(draft.timeSec), hint: (draft.hasIncline && tSec > 0) ? 'From your timer' : '',
+        onDec: () => this.adjCardio('timeSec', -15), onInc: () => this.adjCardio('timeSec', 15),
+        decA11y: 'Less time', incA11y: 'More time' });
+      if (draft.hasIncline) fields.push({ label: 'Incline', value: (draft.inclinePct || 0).toFixed(1) + '%', hint: '',
+        onDec: () => this.adjCardio('inclinePct', -0.5), onInc: () => this.adjCardio('inclinePct', 0.5),
+        decA11y: 'Lower incline', incA11y: 'Higher incline' });
+    }
+    const dPace = (draft && draft.distanceMi > 0.05) ? pace(draft.timeSec / draft.distanceMi) : '\u2014';
+
+    // The prescription strip. An open block has no target cell to show — it doesn't
+    // invent one, and it doesn't leave a hole where one would be.
+    const stats = [];
+    if (hasTarget) stats.push({ label: 'Target', value: d1(tgtMi) + ' ' + dU, size: '20px', ink: 'var(--fl-bronze-bright)', labelInk: 'var(--fl-text-bronze-label)', labelWeight: '700' });
+    else stats.push({ label: 'Distance', value: 'Open', size: '20px', ink: 'var(--fl-bronze-bright)', labelInk: 'var(--fl-text-bronze-label)', labelWeight: '700' });
+    if (ex.targetPaceSec) stats.push({ label: ex.activity === 'bike' ? 'Target Speed' : 'Target Pace', value: pace(ex.targetPaceSec) + ' /' + dU, size: '16px', ink: 'var(--fl-text-primary)', labelInk: 'var(--fl-text-tertiary)', labelWeight: '600' });
+    stats.push({ label: 'Last', value: ex.last || '\u2014', size: '16px', ink: 'var(--fl-text-primary)', labelInk: 'var(--fl-text-tertiary)', labelWeight: '600' });
+    stats.forEach((st, i) => {
+      st.pad = i === 0 ? '0 12px 0 0' : '0 12px';
+      st.divider = i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)';
+    });
+
+    const res = [];
+    if (logged) {
+      res.push({ value: d1(c.distanceMi), label: dU, ink: 'var(--fl-text-primary)', divider: 'none' });
+      res.push({ value: mmss(c.timeSec), label: 'Time', ink: 'var(--fl-text-primary)', divider: '1px solid var(--fl-bronze-border-subtle)' });
+      res.push({ value: c.distanceMi > 0.05 ? pace(c.timeSec / c.distanceMi) : '\u2014', label: 'Avg /' + dU, ink: 'var(--fl-bronze-bright)', divider: '1px solid var(--fl-bronze-border-subtle)' });
+      if (loggedIndoors && c.inclinePct != null) res.push({ value: c.inclinePct.toFixed(1) + '%', label: 'Incline', ink: 'var(--fl-text-primary)', divider: '1px solid var(--fl-bronze-border-subtle)' });
+    }
+
+    return {
+      isCardio: true, isStrength: false,
+      isOutdoor: !treadmill, isTreadmill: treadmill,
+      cardioName: ex.name,
+      cardioPrescription: hasTarget ? (ex.goalSub || (V + ' block')) : 'No distance target \u2014 run what you\u2019ve got',
+      cardioBandIcon: sym(ex.activity === 'bike' ? 'bicycle' : (ex.activity === 'walk' ? 'footprints' : 'shoe'), 12),
+      cardioBandLabel: 'Cardio Block',
+      cardioMarkIcon: sym(treadmill ? 'stopwatch' : (ex.activity === 'bike' ? 'bicycle' : 'shoe'), 17),
+
+      // Outdoor gets a map grid; the treadmill gets a belt, no grid, no fake terrain.
+      bandBg: treadmill
+        ? 'linear-gradient(180deg, #10141A 0%, #070A0D 100%)'
+        : 'repeating-linear-gradient(0deg, rgba(191,143,79,0.045) 0 1px, transparent 1px 30px), repeating-linear-gradient(90deg, rgba(191,143,79,0.045) 0 1px, transparent 1px 30px), radial-gradient(130% 110% at 50% 12%, #131A20, #080C10)',
+      routeStroke: traced ? 'var(--fl-bronze-bright)' : 'var(--fl-bronze-border)',
+      routeWidth: traced ? '3' : '2.4',
+      routeDash: traced ? 'none' : '5 8',
+      routeOpacity: traced ? '0.95' : (loggedIndoors ? '0.28' : '0.45'),
+      routeStartFill: traced ? 'var(--fl-bronze-bright)' : 'none',
+      beltAnim: running ? 'flBelt 900ms linear infinite' : 'none',
+      bandTimeStr: logged ? mmss(c.timeSec) : mmss(tSec),
+      bandTimeCaption: logged
+        ? (loggedIndoors ? (d1(c.distanceMi) + ' ' + dU + ' on the belt') : (d1(c.distanceMi) + ' ' + dU + ' logged outdoors'))
+        : (running ? 'Belt running' : (tSec > 0 ? 'Paused' : 'Time only \u00b7 no GPS indoors')),
+      cardioBandCaption: traced
+        ? (d1(c.distanceMi) + ' ' + dU + ' \u00b7 ' + mmss(c.timeSec))
+        : (loggedIndoors ? 'Logged on a treadmill \u00b7 no route' : 'Your route traces as you run'),
+
+      cardioStats: stats,
+
+      setOutdoor: () => this.setModality('outdoor'),
+      setTreadmill: () => this.setModality('treadmill'),
+      setOutdoorKey: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setModality('outdoor'); } },
+      setTreadmillKey: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setModality('treadmill'); } },
+      outdoorIcon: sym('shoe', 17), treadmillIcon: sym('stopwatch', 17),
+      outdoorBg: treadmill ? 'transparent' : 'var(--fl-bronze-tint)',
+      outdoorInk: treadmill ? 'var(--fl-text-secondary)' : 'var(--fl-bronze-bright)',
+      treadmillBg: treadmill ? 'var(--fl-bronze-tint)' : 'transparent',
+      treadmillInk: treadmill ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)',
+
+      cardioOutdoorIdle: !treadmill && !logged && !draft,
+      cardioTreadmillIdle: treadmill && !logged && !draft,
+      cardioLogOpen: !!draft,
+      cardioLogged: logged && !draft,
+
+      startRunLabel: 'Start ' + V,
+      onStartOutdoorRun: () => this.startOutdoorRun(),
+      onOpenCardioLog: () => this.openCardioLog(),
+      onCancelCardioLog: () => this.cancelCardioLog(),
+      onSaveCardioLog: () => this.saveCardioLog(),
+      onToggleCardioTimer: () => this.toggleCardioTimer(),
+
+      cardioTimerStr: mmss(tSec),
+      cardioTimerRunning: running,
+      cardioTimerStarted: tSec > 0,
+      cardioTimerFresh: tSec === 0 && !running,
+      cardioTimerCaption: running ? 'On the belt' : (tSec > 0 ? 'Paused' : 'Ready when you are'),
+      timerBtnLabel: running ? 'Pause' : (tSec > 0 ? 'Resume' : 'Start Timer'),
+      timerBtnVariant: (running || tSec > 0) ? 'secondary' : 'primary',
+      timerBorder: running ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+      timerGlow: running ? '0 0 18px 1px rgba(191,143,79,0.16)' : 'var(--fl-border-inset)',
+      timerInk: running ? 'var(--fl-bronze-bright)' : 'var(--fl-text-primary)',
+
+      cardioFields: fields,
+      cardioComputedLabel: ex.activity === 'bike' ? 'Avg Speed' : 'Avg Pace',
+      cardioComputedVal: dPace === '\u2014' ? dPace : (dPace + ' /' + dU),
+      cardioResult: res,
+    };
+  }
+
+  nextExercise() { this.setState((s) => { const idx = Math.min(s.exerciseIdx + 1, s.exercises.length - 1); return { exerciseIdx: idx, mediaState: 'playing', restPhase: 'idle', heroExpanded: this._heroShouldExpand(idx) }; }); }
+  jumpExercise(i) { this.setState({ exerciseIdx: i, mediaState: 'playing', heroExpanded: this._heroShouldExpand(i) }); }
+  toggleMedia() { this.setState((s) => ({ mediaState: s.mediaState === 'playing' ? 'paused' : 'playing' })); }
+  _heroShouldExpand(idx) {
+    // Open on arrival at every exercise; stay collapsed only if the athlete manually
+    // collapsed THIS specific exercise earlier in the session (per-exercise, not global).
+    return this.state.heroPref[idx] !== 'collapsed';
+  }
+  // Manual tap always wins for the current exercise: it sets a sticky preference
+  // AND marks this exercise resolved so completing a set won't fight the choice.
+  toggleHero() {
+    this.setState((s) => {
+      const next = !s.heroExpanded;
+      // Record the choice for THIS exercise only, and mark it resolved so a later
+      // set-completion won't auto-collapse against a manual expand.
+      return { heroExpanded: next, heroPref: { ...s.heroPref, [s.exerciseIdx]: next ? 'expanded' : 'collapsed' }, autoCollapsed: { ...s.autoCollapsed, [s.exerciseIdx]: true } };
+    });
+  }
+  toggleInsight() { this.setState((s) => ({ insightExpanded: !s.insightExpanded })); }
+  endWorkout() { this.openCeremony(); }
+
+  // ── Session persistence (namespaced; never touches other keys) ──
+  _sessionKey() { return 'forge.activeWorkout.v1'; }
+  _baseKey() { return 'forge_active_base_v1'; }
+  _metaKey() { return 'forge_active_meta_v1'; }
+  // Build the session exercise list from a template launch snapshot. Template
+  // sessions carry no prescription history, so the reference fields read as blanks.
+  _buildFromLaunch(p) {
+    if (!p || !Array.isArray(p.exercises) || !p.exercises.length) return null;
+    return p.exercises.map((it) => {
+      const n = Math.max(1, Math.min(8, it.sets || 3));
+      const reps = Math.max(1, it.reps || 10);
+      const sets = [];
+      for (let k = 0; k < n; k++) sets.push({ target: reps, weight: 0, actual: null, done: false });
+      const tags = [];
+      if (it.type) tags.push(it.type);
+      if (it.section === 'warmup') tags.push('Warm-up');
+      else if (it.section === 'cooldown') tags.push('Cool-down');
+      return { name: it.name, equip: it.equip || '', tags: tags, muscles: it.muscles || [],
+        last: '\u2014', lastSub: '', goal: '\u2014 \u00d7 ' + reps, goalSub: 'Target', best: '\u2014', bestSub: '', prevSets: [], sets: sets };
+    });
+  }
+  _addInboxKey() { return 'forge_active_add_inbox_v1'; }
+  // Build session exercises from Exercise-Picker selections (build-as-you-go). No history → blank refs.
+  _buildFromItems(items) {
+    return (items || []).map((it) => {
+      const reps = Math.max(1, it.reps || 10);
+      const n = Math.max(1, Math.min(8, it.sets || 3));
+      const sets = [];
+      for (let k = 0; k < n; k++) sets.push({ target: reps, weight: 0, actual: null, done: false });
+      return { name: it.name, equip: it.equip || '', tags: it.type ? [it.type] : [], muscles: it.muscles || [],
+        last: '\u2014', lastSub: '', goal: '\u2014 \u00d7 ' + reps, goalSub: 'Target', best: '\u2014', bestSub: '', prevSets: [], sets: sets };
+    });
+  }
+  // Start a fresh, empty build-as-you-go session (exercises arrive via the add-inbox).
+  _commitFreestyleStart() {
+    const meta = { source: 'freestyle', name: 'Free Session' };
+    try {
+      localStorage.setItem(this._baseKey(), JSON.stringify([]));
+      localStorage.setItem(this._metaKey(), JSON.stringify(meta));
+      localStorage.setItem(this._sessionKey(), JSON.stringify({ startedAt: Date.now(), exerciseIdx: 0, exercises: [] }));
+    } catch (e) {}
+    this._sessionMeta = meta;
+    return [];
+  }
+  // Append any exercises the Exercise Picker handed back (build-as-you-go add).
+  _applyAddInbox(restored) {
+    let items = null;
+    try { const raw = localStorage.getItem(this._addInboxKey()); if (raw) { const d = JSON.parse(raw) || {}; items = d.items; } } catch (e) {}
+    if (!items || !items.length) return restored;
+    try { localStorage.removeItem(this._addInboxKey()); } catch (e) {}
+    const built = this._buildFromItems(items);
+    const current = (restored && Array.isArray(restored.exercises)) ? restored.exercises.slice() : this.state.exercises.slice();
+    const merged = current.concat(built);
+    const meta = (this._sessionMeta && (this._sessionMeta.source === 'template' || this._sessionMeta.source === 'freestyle')) ? this._sessionMeta : { source: 'freestyle', name: 'Free Session' };
+    this._sessionMeta = meta;
+    const startedAt = (restored && restored.startedAt) || Date.now();
+    const idx = current.length;
+    try {
+      localStorage.setItem(this._baseKey(), JSON.stringify(merged));
+      localStorage.setItem(this._metaKey(), JSON.stringify(meta));
+      localStorage.setItem(this._sessionKey(), JSON.stringify({ startedAt: startedAt, exerciseIdx: idx, exercises: merged.map((e) => ({ sets: e.sets })) }));
+    } catch (e) {}
+    return Object.assign({}, restored, { exercises: merged, exerciseIdx: idx, startedAt: startedAt });
+  }
+  _launchKey() { return (window.ForgeTemplates && (window.ForgeTemplates.LAUNCH_CONTEXT_KEY || window.ForgeTemplates.LAUNCH_KEY)) || 'forge_workout_launch_context_v1'; }
+  // A resumable in-progress TEMPLATE session: base snapshot + meta + a session that
+  // hasn't gone stale (>5h). Program/demo sessions carry no meta, so this is null for them.
+  _resumableTemplate() {
+    try {
+      const sessRaw = localStorage.getItem(this._sessionKey());
+      const baseRaw = localStorage.getItem(this._baseKey());
+      const metaRaw = localStorage.getItem(this._metaKey());
+      if (sessRaw && baseRaw && metaRaw) {
+        const sess = JSON.parse(sessRaw);
+        const fresh = sess && sess.startedAt && (Date.now() - sess.startedAt <= 5 * 3600 * 1000);
+        const b = JSON.parse(baseRaw), m = JSON.parse(metaRaw);
+        if (fresh && Array.isArray(b) && b.length && m && (m.source === 'template' || m.source === 'freestyle')) return { base: b, meta: m, sess: sess };
+      }
+    } catch (e) {}
+    return null;
+  }
+  // Commit a template launch as a fresh session (snapshot + meta + a seed session so a
+  // refresh resumes it). Idempotent: the launchId is stamped on the session and the use
+  // is recorded exactly once, here, only after successful initialization.
+  _commitTemplateLaunch(p, built) {
+    const meta = { source: 'template', templateId: p.templateId || p.sourceId || null, name: p.name || p.sourceName || '', launchId: p.launchId || null };
+    try {
+      localStorage.setItem(this._baseKey(), JSON.stringify(built));
+      localStorage.setItem(this._metaKey(), JSON.stringify(meta));
+      localStorage.setItem(this._sessionKey(), JSON.stringify({ startedAt: Date.now(), exerciseIdx: 0, exercises: built.map((e) => ({ sets: e.sets })), initializedFromLaunchId: p.launchId || null }));
+    } catch (e) {}
+    this._sessionMeta = meta;
+    if (meta.templateId && window.ForgeTemplates) { try { window.ForgeTemplates.touch(meta.templateId, p.estMin || 0); } catch (e) {} }
+    return built;
+  }
+  _clearCustomSession() {
+    this._sessionMeta = null;
+    try { localStorage.removeItem(this._baseKey()); localStorage.removeItem(this._metaKey()); localStorage.removeItem(this._sessionKey()); } catch (e) {}
+  }
+  // Decide the base exercise list for this mount. Every INTENTIONAL launch (template or
+  // program) writes an explicit intent; a payload-less open is a refresh/return and may
+  // safely auto-resume. A new intent that collides with an in-progress template session
+  // raises a conflict prompt instead of silently launching the wrong workout.
+  _resolveBaseExercises() {
+    try {
+      const launchRaw = localStorage.getItem(this._launchKey());
+      if (launchRaw) {
+        const p = JSON.parse(launchRaw) || {};
+        const resumable = this._resumableTemplate();
+        if (p.sourceType === 'freestyle') { localStorage.removeItem(this._launchKey()); return this._commitFreestyleStart(); }
+        if ((p.sourceType === 'template' || p.sourceType === 'program') && Array.isArray(p.exercises) && p.exercises.length) {
+          const built = this._buildFromLaunch(p);
+          if (built && built.length) {
+            const already = resumable && resumable.sess && resumable.sess.initializedFromLaunchId === p.launchId;
+            if (already) { localStorage.removeItem(this._launchKey()); this._sessionMeta = resumable.meta; return resumable.base; }   // idempotent refresh
+            if (resumable && resumable.meta && resumable.meta.launchId !== p.launchId) { this._pendingLaunch = p; this._resumeCandidate = resumable; return null; }   // conflict → prompt
+            localStorage.removeItem(this._launchKey());
+            return this._commitTemplateLaunch(p, built);
+          }
+        }
+        // program / free intent
+        if (resumable) { this._pendingLaunch = p; this._resumeCandidate = resumable; return null; }   // don't silently discard a template session
+        localStorage.removeItem(this._launchKey());
+        this._clearCustomSession();     // fresh program/demo session
+        return null;
+      }
+      // no intent → refresh / return: safe to auto-resume an in-progress template session
+      const resumable = this._resumableTemplate();
+      if (resumable) { this._sessionMeta = resumable.meta; return resumable.base; }
+      // otherwise this is the default session — drop any stale custom base
+      this._sessionMeta = null;
+      localStorage.removeItem(this._baseKey());
+      localStorage.removeItem(this._metaKey());
+    } catch (e) {}
+    return null;
+  }
+  // ── conflict-prompt resolutions (called from the overlay) ──
+  _restoreSets(base) {
+    let sess = {}; try { sess = JSON.parse(localStorage.getItem(this._sessionKey())) || {}; } catch (e) {}
+    const exercises = base.map((e, i) => this._mergeSaved(e, sess.exercises && sess.exercises[i]));
+    return { exercises, startedAt: sess.startedAt || Date.now(), exerciseIdx: Math.max(0, Math.min(sess.exerciseIdx || 0, exercises.length - 1)) };
+  }
+  resumePending = () => {
+    const c = this._resumeCandidate; try { localStorage.removeItem(this._launchKey()); } catch (e) {}
+    this._pendingLaunch = null; this._resumeCandidate = null;
+    if (!c) { this.setState({ resumePrompt: null }); return; }
+    this._sessionMeta = c.meta;
+    const r = this._restoreSets(c.base);
+    this.setState({ resumePrompt: null, exercises: this._applyStoreOverrides(r.exercises), startedAt: r.startedAt, exerciseIdx: r.exerciseIdx, heroExpanded: this._heroShouldExpand(r.exerciseIdx) });
+  };
+  startPending = () => {
+    const p = this._pendingLaunch; try { localStorage.removeItem(this._launchKey()); } catch (e) {}
+    this._pendingLaunch = null; this._resumeCandidate = null;
+    if (p && p.sourceType === 'template' && Array.isArray(p.exercises)) {
+      const built = this._buildFromLaunch(p);
+      if (built && built.length) {
+        this._commitTemplateLaunch(p, built);
+        this.setState({ resumePrompt: null, exercises: this._applyStoreOverrides(built), startedAt: Date.now(), exerciseIdx: 0, heroExpanded: this._heroShouldExpand(0) });
+        return;
+      }
+    }
+    // program / free — start the default session fresh
+    this._clearCustomSession();
+    this.setState({ resumePrompt: null, exercises: this._applyStoreOverrides(this._defaultExercises || this.state.exercises), startedAt: Date.now(), exerciseIdx: 0, heroExpanded: this._heroShouldExpand(0) });
+  };
+  _loadSession() {
+    // adopt a template/custom base (snapshot) before restoring set progress against it
+    try { const base = this._resolveBaseExercises(); if (base) this.state.exercises = base; } catch (e) {}
+    try {
+      const raw = localStorage.getItem(this._sessionKey());
+      if (!raw) return { startedAt: Date.now() };
+      const d = JSON.parse(raw);
+      // A session resumed after a long gap (next day, etc.) would otherwise show a
+      // wildly inflated duration in the ceremony. Treat >5h old as stale → restart the clock.
+      let started = d.startedAt || Date.now();
+      if (Date.now() - started > 5 * 3600 * 1000) started = Date.now();
+      const out = { startedAt: started };
+      if (Array.isArray(d.exercises) && d.exercises.length === this.state.exercises.length) {
+        out.exercises = this.state.exercises.map((e, i) => this._mergeSaved(e, d.exercises[i]));
+      }
+      if (typeof d.exerciseIdx === 'number') out.exerciseIdx = Math.max(0, Math.min(d.exerciseIdx, this.state.exercises.length - 1));
+      if (typeof d.restDuration === 'number') out.restDuration = d.restDuration;
+      if (typeof d.restEnabled === 'boolean') out.restEnabled = d.restEnabled;
+      return out;
+    } catch (e) { return { startedAt: Date.now() }; }
+  }
+  // Restore a saved block, carrying cardio state (modality / logged numbers) as well as sets.
+  _mergeSaved(e, rec) {
+    if (!rec) return e;
+    const out = Object.assign({}, e, { sets: rec.sets ? rec.sets : e.sets });
+    if (e.kind === 'cardio') {
+      if (rec.cardio) out.cardio = rec.cardio;
+      if (rec.modality) out.modality = rec.modality;
+      if (rec.name) out.name = rec.name;
+      if (rec.equip) out.equip = rec.equip;
+    }
+    return out;
+  }
+  _persist() {
+    try {
+      const s = this.state;
+      localStorage.setItem(this._sessionKey(), JSON.stringify({
+        startedAt: s.startedAt, exerciseIdx: s.exerciseIdx, restDuration: s.restDuration, restEnabled: s.restEnabled,
+        exercises: s.exercises.map((e) => (e.kind === 'cardio'
+          ? { sets: e.sets, cardio: e.cardio, modality: e.modality, name: e.name, equip: e.equip }
+          : { sets: e.sets })),
+      }));
+    } catch (e) {}
+  }
+
+  // ── Records (estimated 1RM, Epley) ──
+  _parsePerf(str) {
+    if (!str) return null;
+    const m = String(str).match(/([\d.]+)\s*[\u00d7x]\s*(\d+)/);
+    if (!m) return null;
+    return { weight: parseFloat(m[1]), reps: parseInt(m[2], 10) };
+  }
+  _e1rm(weight, reps) { return (weight || 0) * (1 + (reps || 0) / 30); }
+  // Index of the exercise's PR set — the done set whose estimated 1RM (Epley) most
+  // exceeds the recorded best, or -1 if none beats it. At most one PR per exercise.
+  _prSetIndex(e) {
+    const best = this._parsePerf(e.best);
+    if (!best) return -1;
+    let idx = -1, top = this._e1rm(best.weight, best.reps) + 0.01;
+    e.sets.forEach((set, i) => {
+      if (!set.done) return;
+      const reps = set.actual != null ? set.actual : set.target;
+      const e1 = this._e1rm(set.weight, reps);
+      if (e1 > top) { top = e1; idx = i; }
+    });
+    return idx;
+  }
+
+  // ── Ceremony ──
+  openCeremony() {
+    clearTimeout(this._collapse);
+    this.setState({ ceremonyOpen: true, finishedAt: Date.now(), restPhase: 'idle', exDone: null });
+  }
+  _sharedKey() { return 'forge_shared_session_v1'; }
+  _readShared() { try { return JSON.parse(localStorage.getItem(this._sharedKey()) || 'null'); } catch (e) { return null; } }
+  _clearShared() { try { localStorage.removeItem(this._sharedKey()); } catch (e) {} }
+  closeCeremony() { this.setState({ ceremonyOpen: false }); }
+  openPartnerSheet() { this.setState({ partnerSheetOpen: true }); }
+  closePartnerSheet() { this.setState({ partnerSheetOpen: false }); }
+  togglePartner(id) {
+    this.setState((s) => {
+      const cur = s.taggedIds || [];
+      if (cur.indexOf(id) >= 0) return { taggedIds: cur.filter((x) => x !== id) };
+      if (cur.length >= 3) return { toast: { msg: 'Up to 3 partners' } };
+      return { taggedIds: cur.concat([id]) };
+    });
+  }
+  saveCeremony() { this._logStrength(); this._clearShared(); this.setState({ ceremonyOpen: false, saved: true, toast: { msg: 'Session saved to your legacy' } }); }
+  _logStrength() {
+    try {
+      if (!window.ForgeActivityLog) return;
+      if (this._logged) return; this._logged = true;
+      const ex = this.state.exercises || [];
+      if (!ex.length) return;
+      let setCount = 0;
+      const items = ex.map((e) => ({
+        name: e.name,
+        sets: (e.sets || []).map((st) => { setCount += 1; const w = (st.actual != null ? st.actual : st.weight); return { w: (w || 0), r: (st.target != null ? st.target : (st.reps || 0)) }; })
+      }));
+      const meta = this._sessionMeta || {};
+      const freestyle = meta.source === 'freestyle';
+      const title = meta.name || (freestyle ? 'Free Session' : 'Strength Session');
+      const min = this.state.startedAt ? Math.max(1, Math.round((Date.now() - this.state.startedAt) / 60000)) : 30;
+      const partners = (this.state.taggedIds || []).map((id) => this.PARTNER_NAMES[id]).filter(Boolean);
+      window.ForgeActivityLog.logSession({ type: 'strength', title: title, min: min, ex: ex.length, sets: setCount, partners: partners, _sections: [{ section: 'Session', items: items }], _ordLabel: freestyle ? 'Free Session' : 'Logged Workout' });
+    } catch (e) {}
+  }
+  prevExercise() { this.setState((s) => { const idx = Math.max(s.exerciseIdx - 1, 0); return { exerciseIdx: idx, mediaState: 'playing', heroExpanded: this._heroShouldExpand(idx) }; }); }
+  openOverview() { this.setState({ overviewOpen: true }); }
+  closeOverview() { this.setState({ overviewOpen: false }); }
+
+  restPauseToggle() { this.setState((s) => ({ restPaused: !s.restPaused })); }
+  restSkip() { clearTimeout(this._collapse); this.setState({ restPhase: 'idle' }); }
+  restAdjust(delta) { this.setState((s) => ({ restRemaining: Math.max(0, s.restRemaining + delta), restDuration: Math.max(15, s.restDuration + delta) })); }
+
+  toggleRestEnabled() {
+    clearTimeout(this._collapse);
+    // Fully on or fully off. Turning off also stops any running rest, and nothing
+    // re-arms it until the athlete switches it back on.
+    this.setState((s) => (s.restEnabled ? { restEnabled: false, restPhase: 'idle' } : { restEnabled: true }));
+  }
+
+  togglePickerMode() {
+    this.setState((s) => {
+      if (!s.picker) return {};
+      const cfg = this._pickerCfg(s.picker.kind);
+      if (s.pickerMode === 'wheel') {
+        const n = Math.round((cfg.max - cfg.min) / cfg.step);
+        let val = s.picker.value;
+        if (this._wheelEl) { const idx = Math.max(0, Math.min(Math.round(this._wheelEl.scrollTop / 48), n)); val = cfg.min + idx * cfg.step; }
+        return { pickerMode: 'keypad', keypadValue: String(val) };
+      }
+      let val = parseFloat(s.keypadValue);
+      if (isNaN(val)) val = s.picker.value;
+      val = Math.max(cfg.min, Math.min(val, cfg.max));
+      return { pickerMode: 'wheel', picker: { ...s.picker, value: val } };
+    });
+  }
+
+  onKeypadInput(e) { this.setState({ keypadValue: e.target.value }); }
+
+  renderVals() {
+    const s = this.state;
+    const ex = s.exercises[s.exerciseIdx];
+    const _isCardio = !!ex && ex.kind === 'cardio';
+
+    // Progress reflects real completion: a set counts when done, an exercise
+    // counts only when ALL its sets are done. Skipping never advances the bar.
+    let setsDone = 0, setsTotal = 0, completedCount = 0;
+    s.exercises.forEach((e) => {
+      const d = e.sets.filter((x) => x.done).length;
+      setsDone += d; setsTotal += e.sets.length;
+      if (e.sets.length > 0 && d === e.sets.length) completedCount += 1;
+    });
+
+    const ic = (paths, opts) => React.createElement('svg', Object.assign({ width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, opts || {}), ...paths.map((d, i) => React.createElement('path', { key: i, d })));
+
+    // ── AppBar title (stacked) ──
+    const _meta = this._sessionMeta;
+    const _sessionSub = (_meta && _meta.source === 'template') ? (_meta.name || 'Template') : ((_meta && _meta.source === 'freestyle') ? (_meta.name || 'Free Session') : 'Strength Foundation I · Day 1');
+    const titleNode = React.createElement('span', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.15 } },
+      React.createElement('span', { style: { fontSize: '15px', fontWeight: 700, letterSpacing: '2.4px', textTransform: 'uppercase', color: 'var(--fl-text-primary)' } }, 'Workout'),
+      React.createElement('span', { style: { fontSize: '10px', fontWeight: 600, letterSpacing: '1.4px', textTransform: 'uppercase', color: 'var(--fl-text-bronze-label)' } }, _sessionSub));
+
+    const overflowBtn = React.createElement('button', {
+      'aria-label': 'Workout options',
+      onClick: () => this.setState({ optionsOpen: true }),
+      style: { width: '40px', height: '40px', border: 'none', background: 'transparent', color: 'var(--fl-text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    }, React.createElement('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'currentColor' },
+      React.createElement('circle', { cx: 12, cy: 5, r: 1.7 }),
+      React.createElement('circle', { cx: 12, cy: 12, r: 1.7 }),
+      React.createElement('circle', { cx: 12, cy: 19, r: 1.7 })));
+
+    const nextIcon = ic(['M5 12h14M13 6l6 6-6 6'], { width: 18, height: 18, strokeWidth: 2, stroke: '#E7C99A' });
+
+    // ── Tab bar ──
+    const navIcon = (id) => (window.ForgeSymbols && window.ForgeSymbols.create(React, id, { size: 22, strokeWidth: 2 })) || null;
+    const tabItems = [
+      { id: 'home', label: 'Home', icon: navIcon('home') },
+      { id: 'workouts', label: 'Workouts', icon: navIcon('workouts') },
+      { id: 'legacy', label: 'Legacy', emphasized: true, icon: navIcon('legacy') },
+      { id: 'squads', label: 'Squads', icon: navIcon('squads') },
+      { id: 'community', label: 'Community', icon: navIcon('explore') },
+    ];
+
+    // ── Rest timer ──
+    const restIdle = s.restPhase === 'idle';
+    const restActive = !restIdle;
+    const restProminent = s.restPhase === 'prominent';
+    const rem = s.restRemaining;
+    const timeText = Math.floor(rem / 60) + ':' + String(rem % 60).padStart(2, '0');
+    const durationText = Math.floor(s.restDuration / 60) + ':' + String(s.restDuration % 60).padStart(2, '0');
+
+    // ── Set rows ──
+    const firstUndone = ex.sets.findIndex((x) => !x.done);
+    const curSetPos = firstUndone === -1 ? ex.sets.length : firstUndone + 1;
+    const setCountEx = ex.sets.length;
+    // "Prev" reflects the SAME set index from last session (set 1 vs last-session set 1, etc.).
+    const prevSet = (ex.prevSets && ex.prevSets[curSetPos - 1]) || '—';
+    const prIdx = this._prSetIndex(ex);
+
+    // ── Captures (per-exercise + whole-session gallery) ──
+    const capBg = (c) => (c.isVideo ? 'var(--fl-surface-recessed)' : ("url('" + c.url + "') center / cover no-repeat"));
+    const openCap = (c) => () => { try { window.open(c.url, '_blank'); } catch (_) {} };
+    const capList = s.captures[s.exerciseIdx] || [];
+    const caps = capList.map((c) => ({ id: c.id, isVideo: c.isVideo, bg: capBg(c), onOpen: openCap(c) }));
+    const sessionCapsRaw = [];
+    Object.keys(s.captures).forEach((k) => (s.captures[k] || []).forEach((c) => sessionCapsRaw.push(c)));
+    const sessionCaps = sessionCapsRaw.map((c) => ({ id: c.id, isVideo: c.isVideo, bg: capBg(c), onOpen: openCap(c) }));
+    const rows = ex.sets.map((set, i) => {
+      const isDone = set.done;
+      const isCurrent = !isDone && i === firstUndone;
+      const isPending = !isDone && !isCurrent;
+      const valColor = isCurrent ? 'var(--fl-bronze-primary)' : (isDone ? 'var(--fl-text-primary)' : 'var(--fl-text-secondary)');
+      return {
+        num: String(i + 1),
+        isDone, isCurrent, isPending,
+        isPR: i === prIdx,
+        flash: s.flash != null && s.flash.i === i,
+        stampAnim: (s.flash != null && s.flash.i === i) ? 'flForgeStamp 440ms var(--fl-ease-out) both' : 'none',
+        targetText: String(set.target),
+        weightText: set.weight != null ? String(this._toDisp(set.weight)) : '—',
+        actualText: set.actual != null ? String(set.actual) : '—',
+        valColor,
+        actualColor: set.actual != null ? 'var(--fl-bronze-primary)' : 'var(--fl-text-tertiary)',
+        ringColor: isCurrent ? 'var(--fl-bronze-primary)' : (isDone ? 'var(--fl-charcoal-500)' : 'var(--fl-charcoal-500)'),
+        numColor: isCurrent ? 'var(--fl-bronze-primary)' : 'var(--fl-text-secondary)',
+        wrapBorder: isCurrent ? '1px solid var(--fl-bronze-primary)' : (isDone ? '1px solid rgba(90,158,104,0.28)' : '1px solid var(--fl-charcoal-500)'),
+        wrapBg: isCurrent ? 'linear-gradient(180deg, rgba(191,143,79,0.15), rgba(191,143,79,0.09))' : 'var(--fl-surface-elevated)',
+        wrapShadow: isCurrent ? 'inset 0 1px 0 var(--fl-inner-highlight-md), 0 0 15px 1px rgba(191,143,79,0.24)' : 'var(--fl-border-inset), var(--fl-shadow-card)',
+        weightAnim: (s.bump && s.bump.i === i && s.bump.field === 'weight') ? 'flValuePop 260ms var(--fl-ease-out)' : 'none',
+        actualAnim: (s.bump && s.bump.i === i && s.bump.field === 'actual') ? 'flValuePop 260ms var(--fl-ease-out)' : 'none',
+        onEditWeight: () => this.openPicker('weight', i),
+        onEditReps: () => this.openPicker('reps', i),
+        onComplete: () => this.completeSet(i),
+        onUncomplete: () => this.uncompleteSet(i),
+      };
+    });
+
+    // ── Exercise nav strip ──
+    const navItems = s.exercises.map((e, i) => {
+      const allDone = e.sets.length > 0 && e.sets.every((x) => x.done);
+      const isCurrent = i === s.exerciseIdx;
+      const isCompleted = !isCurrent && allDone;
+      const isSkipped = !isCurrent && !allDone && i < s.exerciseIdx;
+      const isNext = !isCurrent && !allDone && i > s.exerciseIdx;
+      return {
+        name: e.name, isDone: isCompleted, isCurrent, isSkipped, isNext,
+        onTap: () => this.jumpExercise(i),
+        dotColor: isCompleted ? 'var(--fl-green-muted)' : (isCurrent ? 'var(--fl-bronze-primary)' : (isSkipped ? 'var(--fl-ember-flame)' : 'var(--fl-charcoal-500)')),
+        dotW: isCurrent ? '22px' : '8px',
+        border: isCurrent ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+        bg: isCurrent ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+        glow: isCurrent ? 'var(--fl-glow-subtle)' : 'none',
+        nameColor: (isCurrent || isCompleted) ? 'var(--fl-text-primary)' : 'var(--fl-text-secondary)',
+        statusText: isCompleted ? 'Completed' : (isCurrent ? 'Current' : (isSkipped ? 'Skipped' : 'Up Next')),
+        statusColor: isCompleted ? 'var(--fl-green-muted)' : (isCurrent ? 'var(--fl-bronze-primary)' : (isSkipped ? 'var(--fl-ember-flame)' : 'var(--fl-text-tertiary)')),
+      };
+    });
+
+    // ── Workout overview (agenda sheet) ──
+    const overviewItems = s.exercises.map((e, i) => {
+      const allDone = e.sets.length > 0 && e.sets.every((x) => x.done);
+      const doneCount = e.sets.filter((x) => x.done).length;
+      const isCur = i === s.exerciseIdx;
+      const isCompleted = !isCur && allDone;
+      const isSkipped = !isCur && !allDone && i < s.exerciseIdx;
+      const weight = e.sets[0] ? e.sets[0].weight : null;
+      let icon, statusText;
+      if (isCompleted) { statusText = 'Completed'; icon = ic(['M20 6L9 17l-5-5'], { width: 15, height: 15, strokeWidth: 2.5, stroke: 'var(--fl-green-muted)' }); }
+      else if (isCur) { statusText = 'Current'; icon = React.createElement('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'var(--fl-bronze-primary)' }, React.createElement('path', { d: 'M8 5v14l11-7z' })); }
+      else if (isSkipped) { statusText = 'Skipped'; icon = ic(['M6 6l12 12M18 6L6 18'], { width: 14, height: 14, strokeWidth: 2.2, stroke: 'var(--fl-ember-flame)' }); }
+      else { statusText = 'Up Next'; icon = window.ForgeSymbols && window.ForgeSymbols.create(React, 'dumbbell', { size: 16, strokeWidth: 1.6, style: { color: 'var(--fl-text-tertiary)' } }); }
+      return {
+        name: e.name,
+        subtitle: statusText + '  ·  ' + doneCount + '/' + e.sets.length + ' sets',
+        weightText: weight != null ? String(this._toDisp(weight)) : '—',
+        icon, isCurrent: isCur,
+        rowStyle: isCur ? { background: 'var(--fl-bronze-tint)', borderRadius: 'var(--fl-radius-md)', border: '1px solid var(--fl-bronze-border)' } : { border: '1px solid transparent' },
+        onTap: () => { this.jumpExercise(i); this.setState({ overviewOpen: false }); },
+      };
+    });
+
+    // ── Picker ──
+    const p = s.picker;
+    const pKind = p ? p.kind : null;
+    const durationMode = pKind === 'duration';
+    let pickerOptions = [], pickerTitle = '', pickerUnit = '', pickerConfirm = 'Set';
+    let durMinOptions = [], durSecOptions = [];
+    if (p && !durationMode) {
+      const cfg = this._pickerCfg(p.kind);
+      const n = Math.round((cfg.max - cfg.min) / cfg.step);
+      for (let k = 0; k <= n; k++) pickerOptions.push({ label: String(cfg.min + k * cfg.step), value: cfg.min + k * cfg.step });
+      this._curPickerIndex = Math.max(0, Math.min(Math.round((p.value - cfg.min) / cfg.step), n));
+      pickerTitle = cfg.title; pickerUnit = cfg.unit; pickerConfirm = cfg.confirm;
+    } else if (durationMode) {
+      for (let m = 0; m <= 10; m++) durMinOptions.push({ label: String(m), value: m });
+      for (let sec = 0; sec <= 55; sec += 5) durSecOptions.push({ label: String(sec).padStart(2, '0'), value: sec });
+      this._curMinIndex = Math.max(0, Math.min(p.minutes, 10));
+      this._curSecIndex = Math.max(0, Math.min(Math.round(p.seconds / 5), 11));
+      pickerTitle = 'Rest Duration'; pickerConfirm = 'Set Duration';
+    }
+    const NS = (typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2) || {};
+    const Button = NS.Button;
+    const pickerFooter = Button ? [
+      React.createElement(Button, { key: 'a', variant: 'primary', fullWidth: true, onClick: () => this.confirmPicker() }, pickerConfirm),
+      React.createElement(Button, { key: 'b', variant: 'text', fullWidth: true, onClick: () => this.closePicker() }, 'Cancel'),
+    ] : null;
+
+    const toastIcon = ic(['M20 6L9 17l-5-5'], { width: 16, height: 16, strokeWidth: 2.4, stroke: 'var(--fl-bronze-primary)' });
+
+    // ── Workout completion + ceremony summary ──
+    const workoutComplete = s.exercises.every((e) => e.sets.length > 0 && e.sets.every((x) => x.done));
+    const finishIcon = ic(['M20 6L9 17l-5-5'], { width: 18, height: 18, strokeWidth: 2.2, stroke: '#E7C99A' });
+    // Freestyle build-as-you-go: on the last exercise, the forward action is ADD, not a no-op "Next".
+    const _isFreestyle = _meta && _meta.source === 'freestyle';
+    const _addAsPrimary = _isFreestyle && (s.exerciseIdx >= s.exercises.length - 1);
+    const addIcon = ic(['M12 5v14M5 12h14'], { width: 18, height: 18, strokeWidth: 2, stroke: '#E7C99A' });
+    const primaryLabel = _addAsPrimary ? 'Add Exercise' : (workoutComplete ? 'Finish Workout' : 'Next Exercise');
+    const primaryIcon = _addAsPrimary ? addIcon : (workoutComplete ? finishIcon : nextIcon);
+    const onPrimary = _addAsPrimary ? () => { window.location.href = 'Forge%20Exercise%20Picker.dc.html#o=workoutadd'; } : (workoutComplete ? () => this.openCeremony() : () => this.nextExercise());
+
+    let cVolumeNum = 0, cSetsNum = 0;
+    s.exercises.forEach((e) => e.sets.forEach((set) => { if (set.done) { cVolumeNum += (set.weight || 0) * (set.actual != null ? set.actual : set.target); cSetsNum += 1; } }));
+    const cVolume = (this._toDisp(cVolumeNum) || 0).toLocaleString();
+    const cSets = String(cSetsNum);
+    const durMs = (s.finishedAt || Date.now()) - (s.startedAt || Date.now());
+    // Clamp defensively (e.g., tab left open for hours) so the summary never shows absurd time.
+    const durMin = Math.max(0, Math.min(Math.round(durMs / 60000), 360));
+    const cDuration = durMin >= 60 ? (Math.floor(durMin / 60) + 'h ' + (durMin % 60) + 'm') : (durMin + 'm');
+    const cRecords = [];
+    s.exercises.forEach((e) => {
+      const idx = this._prSetIndex(e);
+      if (idx < 0) return;
+      const set = e.sets[idx];
+      const reps = set.actual != null ? set.actual : set.target;
+      cRecords.push({ label: e.name + ' · ' + set.weight + ' × ' + reps });
+    });
+    const volIcon = window.ForgeSymbols && window.ForgeSymbols.create(React, 'dumbbell', { size: 18, strokeWidth: 1.7, style: { color: 'var(--fl-bronze-primary)' } });
+    const setsIcon = ic(['M4 7h16M4 12h16M4 17h16'], { width: 18, height: 18, strokeWidth: 1.9, stroke: 'var(--fl-bronze-primary)' });
+    const timeIcon = window.ForgeSymbols && window.ForgeSymbols.create(React, 'clock', { size: 18, strokeWidth: 1.7, style: { color: 'var(--fl-bronze-primary)' } });
+    const checkArt = React.createElement('svg', { width: 40, height: 40, viewBox: '0 0 24 24', fill: 'none', stroke: '#F2E7D0', strokeWidth: 2.4, strokeLinecap: 'round', strokeLinejoin: 'round' }, React.createElement('path', { d: 'M20 6L9 17l-5-5' }));
+    const ceremonyArt = NS.Insignia ? React.createElement(NS.Insignia, { variant: 'honor', size: 'xl', artwork: checkArt }) : null;
+    const ceremonyFooter = Button ? [
+      React.createElement(Button, { key: 'a', variant: 'primary', fullWidth: true, onClick: () => this.saveCeremony() }, 'Save to Legacy'),
+      React.createElement(Button, { key: 'b', variant: 'text', fullWidth: true, onClick: () => this.closeCeremony() }, 'Back to Program'),
+    ] : null;
+
+    // ── Partner tagging (W-20) ──
+    const P_TINTS = ['oklch(0.80 0.09 60)', 'oklch(0.82 0.06 40)', 'oklch(0.80 0.05 95)', 'oklch(0.83 0.07 48)', 'oklch(0.80 0.06 28)', 'oklch(0.82 0.05 72)'];
+    const P_ROSTER = [
+      { group: 'Your Squad \u00b7 Iron Vigil', people: [
+        { id: 'dana', name: 'Dana Cole', sub: 'Hybrid Athlete \u00b7 Craftsman' },
+        { id: 'marcus', name: 'Marcus Vale', sub: 'Bodybuilder \u00b7 Architect' },
+        { id: 'theo', name: 'Theo Brandt', sub: 'Strongman \u00b7 Legend' },
+        { id: 'lena', name: 'Lena Cross', sub: 'Olympic Lifter \u00b7 Builder' },
+      ] },
+      { group: 'Other Athletes', people: [
+        { id: 'nadia', name: 'Nadia Okafor', sub: 'Runner \u00b7 Craftsman' },
+        { id: 'quinn', name: 'Quinn Rhodes', sub: 'Calisthenics \u00b7 Builder' },
+      ] },
+    ];
+    const P_INIT = (n) => n.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+    const tagged = s.taggedIds || [];
+    let _pi = 0; const tintFor = {};
+    P_ROSTER.forEach((g) => g.people.forEach((p) => { tintFor[p.id] = P_TINTS[_pi % P_TINTS.length]; _pi += 1; }));
+    const partnerGroups = P_ROSTER.map((g, gi) => ({
+      key: gi, label: g.group,
+      people: g.people.map((p) => {
+        const on = tagged.indexOf(p.id) >= 0;
+        return {
+          key: p.id, name: p.name, sub: p.sub, initials: P_INIT(p.name), tint: tintFor[p.id],
+          a11y: (on ? 'Remove ' : 'Add ') + p.name,
+          toggle: () => this.togglePartner(p.id),
+          rowStyle: 'display:flex; align-items:center; gap:12px; padding:11px 13px; border-radius:var(--fl-radius-lg); cursor:pointer; border:1px solid ' + (on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-700)') + '; background:' + (on ? 'var(--fl-bronze-tint)' : 'var(--fl-bg-primary)') + ';',
+          check: '',
+          checkStyle: 'width:22px; height:22px; flex:none; border-radius:50%; border:1px solid ' + (on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-500)') + '; background:' + (on ? 'var(--fl-bronze-metallic)' : 'transparent') + ';',
+        };
+      }),
+    }));
+    const _allP = []; P_ROSTER.forEach((g) => g.people.forEach((p) => _allP.push(p)));
+    const taggedPartners = tagged.map((id) => { const p = _allP.filter((x) => x.id === id)[0]; return p ? { key: id, name: p.name, initials: P_INIT(p.name), tint: tintFor[id] } : null; }).filter(Boolean);
+    const partnerFooter = Button ? React.createElement(Button, { variant: 'primary', fullWidth: true, onClick: () => this.closePartnerSheet() }, tagged.length ? ('Done \u00b7 ' + tagged.length + ' tagged') : 'Done') : null;
+
+    // ── Shared workout header cue ──
+    const _shared = this._readShared();
+    const _sharedIds = (_shared && Array.isArray(_shared.partnerIds)) ? _shared.partnerIds.filter((id) => this.PARTNER_NAMES[id]) : [];
+    const sharedWith = _sharedIds.map((id) => { const p = _allP.filter((x) => x.id === id)[0]; return { key: id, initials: p ? P_INIT(p.name) : '?', tint: tintFor[id] || 'var(--fl-bronze-metallic)' }; });
+    const _sharedNames = _sharedIds.map((id) => this.PARTNER_NAMES[id]);
+    const sharedLabel = _sharedNames.length ? ('Training with ' + (_sharedNames.length === 1 ? _sharedNames[0] : (_sharedNames.length + ' others'))) : '';
+    const sharedStatus = 'Training now';
+    const _swk = (_shared && _shared.workoutName) ? _shared.workoutName : 'this workout';
+    const sharedCompleteText = _sharedNames.length ? ('You trained with ' + (_sharedNames.length === 1 ? _sharedNames[0] : (_sharedNames.length + ' others')) + ' \u00b7 both completed ' + _swk) : '';
+
+    return {
+      ready: s.ready, notReady: !s.ready,
+      activeTab: s.activeTab, setTab: (id) => { if (id === 'home') { window.location.href = 'Forge%20Home%20-%20Paper.dc.html'; return; } if (id === 'workouts') { window.location.href = 'Forge%20Programs%20Catalog%20-%20Paper.dc.html'; return; } this.setState({ activeTab: id }); },
+      titleNode, overflowBtn, nextIcon, tabItems,
+      onBack: () => { if (_meta && _meta.source === 'template') { window.location.href = _meta.templateId ? ('Forge%20Workout%20Template%20Detail.dc.html?id=' + encodeURIComponent(_meta.templateId)) : 'Forge%20Workout%20Templates.dc.html'; return; } window.location.href = 'Forge%20Home%20-%20Paper.dc.html'; },
+      resumePromptOpen: !!s.resumePrompt,
+      resumeName: s.resumePrompt ? s.resumePrompt.resumeName : '',
+      pendingName: s.resumePrompt ? s.resumePrompt.pendingName : '',
+      onResumePending: this.resumePending,
+      onStartPending: this.startPending,
+      onCancelPending: () => { try { localStorage.removeItem(this._launchKey()); } catch (e) {} this._pendingLaunch = null; this._resumeCandidate = null; this.setState({ resumePrompt: null }); },
+      posLabel: s.exerciseIdx + 1, total: s.exercises.length,
+
+      // rest
+      restIdle, restActive, restProminent, restPaused: s.restPaused, restPlaying: !s.restPaused,
+      restEnabled: s.restEnabled, restDisabled: !s.restEnabled,
+      restValueText: s.restEnabled ? durationText : 'OFF',
+      restValueColor: s.restEnabled ? 'var(--fl-bronze-primary)' : 'var(--fl-text-secondary)',
+      restClockColor: s.restEnabled ? 'var(--fl-bronze-primary)' : 'var(--fl-text-tertiary)',
+      restChipBorder: s.restEnabled ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+      ringElapsed: Math.max(0, s.restDuration - s.restRemaining), ringMax: s.restDuration, timeText,
+      onRestToggle: () => this.toggleRestEnabled(),
+      onRestTimeClick: () => { if (this.state.restEnabled) this.openDurationPicker(); else this.toggleRestEnabled(); },
+      onRestPause: () => this.restPauseToggle(),
+      onRestSkip: () => this.restSkip(),
+      onRestAdd: () => this.restAdjust(15),
+      onRestSub: () => this.restAdjust(-15),
+
+      // exercise
+      exName: ex.name, exEquip: ex.equip, exTags: ex.tags, exMuscles: ex.muscles,
+      curSetPos, setCountEx, prevSet: this._cvtWxR(prevSet),
+      weightUnit: this._U() ? this._U().label : 'lb',
+      volumeLabel: 'Volume · ' + (this._U() ? this._U().label : 'lb'),
+      insightLast: this._cvtWxR(ex.last), insightLastSub: ex.lastSub, insightGoal: this._cvtWxR(ex.goal), insightGoalSub: this._cvtLbStr(ex.goalSub), insightBest: this._cvtWxR(ex.best), insightBestSub: ex.bestSub,
+
+      // media
+      mediaLoading: s.mediaState === 'loading', mediaError: s.mediaState === 'error',
+      mediaReady: s.mediaState === 'paused' || s.mediaState === 'playing',
+      mediaPlaying: s.mediaState === 'playing', mediaPaused: s.mediaState === 'paused',
+      onMediaToggle: () => this.toggleMedia(),
+      onFavorite: () => this.setState((st) => ({ favorite: !st.favorite })),
+      favColor: s.favorite ? 'var(--fl-bronze-primary)' : 'var(--fl-text-tertiary)',
+      favFill: s.favorite ? 'var(--fl-bronze-primary)' : 'none',
+      onHowTo: () => { window.location.href = 'Forge%20Exercise%20Detail.dc.html#a=replace&o=workout&slot=w:' + s.exerciseIdx + '&ex=' + encodeURIComponent(ex.name); },
+      heroExpanded: s.heroExpanded, heroCollapsed: !s.heroExpanded,
+      heroStrengthExpanded: s.heroExpanded && !_isCardio, heroStrengthCollapsed: !s.heroExpanded && !_isCardio,
+      onToggleHero: () => this.toggleHero(),
+      insightExpanded: s.insightExpanded, insightCollapsed: !s.insightExpanded, onToggleInsight: () => this.toggleInsight(),
+      completedCount, progressValue: setsDone, progressMax: setsTotal || 1,
+
+      // sets
+      rows, onAddSet: () => this.addSet(),
+      onRemoveSet: () => this.removeLastSet(), canRemoveSet: ex.sets.length > 1,
+
+      // captures / memories
+      setFileEl: (el) => this.setFileEl(el),
+      onCaptureFile: (e) => this.onCaptureFile(e),
+      caps, hasCaps: caps.length > 0, capCount: String(caps.length),
+      sessionCaps,
+      onAddCapture: () => this.triggerCapture(s.exerciseIdx),
+      onAddSessionCapture: () => this.triggerCapture('workout'),
+
+      // nav + actions
+      navItems, onPrev: () => this.prevExercise(), onNextNav: () => this.nextExercise(),
+      overviewOpen: s.overviewOpen, onOpenOverview: () => this.openOverview(), onCloseOverview: () => this.closeOverview(), overviewItems,
+      optionsOpen: s.optionsOpen,
+      onCloseOptions: () => this.setState({ optionsOpen: false }),
+      onSwapExercise: () => { window.location.href = 'Forge%20Exercise%20Picker.dc.html#o=workout&slot=w:' + s.exerciseIdx + '&ex=' + encodeURIComponent(ex.name); },
+      onAddExercise: () => { this.setState({ optionsOpen: false }); window.location.href = 'Forge%20Exercise%20Picker.dc.html#o=workoutadd'; },
+      onInviteToWorkout: () => { this.setState({ optionsOpen: false }); this.openPartnerSheet(); },
+      onSkipExercise: () => { this.setState({ optionsOpen: false }); this.nextExercise(); },
+      onEndWorkout: () => { this.setState({ optionsOpen: false }); this.openCeremony(); },
+      prevColor: s.exerciseIdx > 0 ? 'var(--fl-text-secondary)' : 'var(--fl-charcoal-500)',
+      nextColor: s.exerciseIdx < s.exercises.length - 1 ? 'var(--fl-text-secondary)' : 'var(--fl-charcoal-500)',
+      onPrimary, primaryLabel, primaryIcon, workoutComplete,
+      onEnd: () => this.endWorkout(),
+
+      // picker
+      pickerOpen: !!p, pickerOptions, pickerTitle, pickerUnit, pickerFooter,
+      durationMode, durMinOptions, durSecOptions,
+      showTypeToggle: !!p && !durationMode,
+      wheelMode: !!p && !durationMode && s.pickerMode !== 'keypad',
+      keypadMode: !!p && !durationMode && s.pickerMode === 'keypad',
+      keypadValue: s.keypadValue,
+      setWheelEl: (el) => this.setWheelEl(el),
+      setMinEl: (el) => this.setMinEl(el),
+      setSecEl: (el) => this.setSecEl(el),
+      onPickerModeToggle: () => this.togglePickerMode(),
+      onKeypadInput: (e) => this.onKeypadInput(e),
+      onPickerClose: () => this.closePicker(),
+
+      ...this._cardioVals(ex),
+
+      // exercise-complete seal (middle tier)
+      exDoneOpen: !!s.exDone,
+      exDoneName: s.exDone ? s.exDone.name : '',
+      exDoneSets: s.exDone ? String(s.exDone.sets) : '',
+      exDoneVolume: s.exDone ? (this._toDisp(s.exDone.volume) || 0).toLocaleString() : '',
+      exDoneHasNext: !!(s.exDone && s.exercises[s.exDone.idx + 1]),
+      exDoneNext: s.exDone && s.exercises[s.exDone.idx + 1] ? s.exercises[s.exDone.idx + 1].name : '',
+      nextGlow: (s.exDone || workoutComplete) ? '0 0 0 1px var(--fl-bronze-border), 0 0 20px 2px rgba(191,143,79,0.42)' : 'none',
+
+      // workout-complete ceremony
+      ceremonyOpen: s.ceremonyOpen,
+      ceremonyEyebrow: _sessionSub,
+      ceremonyTitle: workoutComplete ? 'Workout Complete' : 'Workout Ended',
+      ceremonyArt, ceremonyFooter,
+      onCeremonyClose: () => this.closeCeremony(),
+      cVolume, cSets, cDuration, volIcon, setsIcon, timeIcon,
+      partnerSheetOpen: s.partnerSheetOpen,
+      openPartnerSheet: () => this.openPartnerSheet(),
+      closePartnerSheet: () => this.closePartnerSheet(),
+      partnerGroups, partnerFooter, taggedPartners,
+      partnerCtaLabel: tagged.length ? 'Add or edit' : 'Tag partners',
+      partnerCountLabel: tagged.length + ' of 3',
+      sharedOn: sharedWith.length > 0,
+      sharedWith: sharedWith,
+      sharedLabel: sharedLabel,
+      sharedStatus: sharedStatus,
+      sharedComplete: sharedWith.length > 0,
+      sharedCompleteText: sharedCompleteText,
+      cHasRecords: cRecords.length > 0, cRecords,
+
+      // PR prompt
+      prPromptOpen: !!s.prPrompt,
+      prName: s.prPrompt ? s.prPrompt.name : '',
+      prPerf: s.prPrompt ? s.prPrompt.perf : '',
+      onPrDismiss: () => this.dismissPr(),
+      onPrAddMedia: () => this.prAddMedia(),
+
+      // toast
+      toastOpen: !!s.toast, toastMsg: s.toast ? s.toast.msg : '', toastIcon,
+      onToastDismiss: () => this.setState({ toast: null }),
+    };
+  }
+}
+</script>
+</body>
+</html>

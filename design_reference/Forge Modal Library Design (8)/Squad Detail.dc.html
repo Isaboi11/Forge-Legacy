@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-squad-posts.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<script src="forge-coach.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  image-slot::part(ring) { border-color: var(--fl-bronze-border); }
+  image-slot::part(empty) { color: var(--fl-text-tertiary); }
+  image-slot::part(frame) { background: rgba(191,143,79,0.04); }
+  @keyframes sqRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes sheetUp { from { transform: translateY(100%); } to { transform:none; } }
+  @keyframes viewIn { from { opacity:0; transform: translateX(24px); } to { opacity:1; transform:none; } }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  @keyframes clBreathe { 0%, 100% { box-shadow: inset 0 1px 3px rgba(0,0,0,0.55), 0 0 0 0 rgba(91,122,97,0); } 50% { box-shadow: inset 0 1px 3px rgba(0,0,0,0.55), 0 0 8px 1px rgba(91,122,97,0.5); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-coach-frame="squad-detail" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:radial-gradient(120% 62% at 50% 108%, rgba(150,110,60,0.06) 0%, transparent 60%), radial-gradient(100% 40% at 50% -6%, rgba(191,143,79,0.05) 0%, transparent 60%), var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <div style="flex:none; position:relative; z-index:5;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="" on-back="{{ goBack }}" actions="{{ optionsBtn }}" hint-size="100%,56px"></x-import>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:12px 16px 30px; background-image:linear-gradient(180deg, rgba(5,5,5,0.12) 0%, rgba(5,5,5,0.26) 38%, rgba(5,5,5,0.38) 100%), url('assets/squad-bg-continued.png'); background-repeat:no-repeat, no-repeat; background-position:top center, top center; background-size:100% 100%, 100% auto; background-attachment:local, local; background-color:#050505;">
+
+      <!-- ═══ HERO (sits on the page artwork — no card, no border) ═══ -->
+      <div style="position:relative; margin:-12px -16px 0; animation:sqRise 460ms var(--fl-ease-out) both;">
+        <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(9,11,14,0.05) 0%, rgba(9,11,14,0.18) 52%, rgba(9,11,14,0.4) 100%);"></div>
+        <div style="position:relative; z-index:1; padding:28px 18px 20px;">
+          <!-- Name / motto (left) + squad photo (right) -->
+          <div data-coach="sd-intro" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+            <div style="flex:1; min-width:0; padding-top:6px;">
+              <span style="display:block; font-family:var(--fl-font-display); font-size:34px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-text-primary); line-height:1.0; text-shadow:0 2px 14px rgba(0,0,0,0.75);">{{ squadName }}</span>
+              <span style="display:block; font-size:14px; line-height:1.4; color:var(--fl-text-secondary); margin-top:8px; text-shadow:0 1px 8px rgba(0,0,0,0.6);">{{ purpose }}</span>
+            </div>
+            <div style="flex:none; position:relative; width:92px; height:92px; border-radius:var(--fl-radius-round); box-shadow:0 0 0 2.5px var(--fl-bronze-primary), 0 8px 22px rgba(0,0,0,0.7), 0 0 18px rgba(191,143,79,0.3);">
+              <sc-if value="{{ heroHasPhoto }}" hint-placeholder-val="{{ true }}">
+                <image-slot id="squad-iron-vigil-avatar" shape="circle" placeholder="Add" style="position:absolute; inset:0; width:100%; height:100%; border-radius:var(--fl-radius-round); overflow:hidden;"></image-slot>
+              </sc-if>
+              <sc-if value="{{ heroHasCrest }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute; inset:0; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 50% 34%, rgba(191,143,79,0.24), transparent 72%), var(--fl-charcoal-900); color:var(--fl-bronze-bright);">{{ heroCrest }}</span>
+              </sc-if>
+            </div>
+          </div>
+          <!-- Editorial metadata -->
+          <div style="display:flex; align-items:center; gap:11px; margin-top:18px;">
+            <button type="button" onClick="{{ openMembers }}" aria-label="View members" style="display:inline-flex; align-items:center; gap:7px; background:transparent; border:none; cursor:pointer; padding:0; font-size:11px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-secondary);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"></circle><path d="M3.4 19a5.6 5.6 0 0 1 11.2 0"></path><path d="M16 5.3a3.2 3.2 0 0 1 0 5.4"></path><path d="M18.2 19a5.6 5.6 0 0 0-3-4.9"></path></svg>
+              {{ memberCountLabel }}
+            </button>
+            <span style="width:3px; height:3px; border-radius:var(--fl-radius-round); background:var(--fl-bronze-primary);"></span>
+            <span style="display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-secondary);"><span style="width:7px; height:7px; border-radius:var(--fl-radius-round); background:#5B7A61;"></span>{{ trainingTodayLabel }}</span>
+          </div>
+          <div style="height:1px; background:var(--fl-bronze-border-subtle); margin:20px 0 16px;"></div>
+          <!-- Current Goal (progress emphasized) -->
+          <div data-coach="sd-goal">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Current Goal</span>
+            <sc-if value="{{ canEditGoal }}" hint-placeholder-val="{{ true }}">
+              <button type="button" aria-label="Edit goal" onClick="{{ editGoal }}" style="width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-icon-inactive); border-radius:var(--fl-radius-round);">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
+              </button>
+            </sc-if>
+          </div>
+          <div role="button" tabindex="0" aria-label="View goal progress and breakdown" onClick="{{ viewGoal }}" style="cursor:pointer; padding:15px 16px 13px; border-radius:var(--fl-radius-lg); background:linear-gradient(180deg, rgba(191,143,79,0.07), transparent 58%), var(--fl-surface-card); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); transition:transform 180ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.99);">
+            <div style="display:flex; align-items:flex-start; gap:12px;">
+              <span style="flex:1; min-width:0; font-family:var(--fl-font-display); font-size:21px; font-weight:600; color:var(--fl-text-primary); line-height:1.25;">{{ goalTitle }}</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-top:4px;"><path d="M9 5l7 7-7 7"></path></svg>
+            </div>
+            <div style="margin-top:14px; height:10px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);">
+              <div style="width:{{ goalPct }}; height:100%; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:11px; padding-top:10px; border-top:1px solid var(--fl-bronze-border-subtle);">
+              <span style="font-size:12px; font-weight:500; letter-spacing:0.3px; color:var(--fl-text-secondary);">{{ goalCount }}</span>
+              <span style="flex:none; font-size:10.5px; font-weight:600; letter-spacing:0.9px; text-transform:uppercase; color:var(--fl-bronze-primary);">View Breakdown</span>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TRAIN TOGETHER (optional) ═══ -->
+      <sc-if value="{{ showTrainTogether }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:14px;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" icon="{{ trainIcon }}" on-click="{{ trainTogether }}" style="{{ trainBtnStyle }}" hint-size="100%,56px">Train Together</x-import>
+        </div>
+      </sc-if>
+
+      <!-- ═══ CURRENT MISSION (compact pill) ═══ -->
+      <div data-coach="sd-mission" style="margin-top:22px; display:flex; align-items:center; gap:14px; background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700); border-radius:var(--fl-radius-lg); padding:11px 15px;">
+        <div style="flex:1; min-width:0;">
+          <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Mission · {{ missionWeek }}</span>
+          <span style="display:block; font-family:var(--fl-font-display); font-size:14.5px; font-weight:600; color:var(--fl-text-primary); line-height:1.25; margin-top:3px;">{{ missionTitle }}</span>
+          <div style="margin-top:9px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-600); overflow:hidden;">
+            <div style="width:{{ missionPct }}; height:100%; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic);"></div>
+          </div>
+        </div>
+        <div style="flex:none; text-align:right; display:flex; flex-direction:column; gap:3px;">
+          <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:700; color:var(--fl-bronze-bright); line-height:1;">{{ missionProgress }}</span>
+          <span style="font-size:10.5px; color:var(--fl-text-tertiary);">{{ missionDays }}</span>
+        </div>
+      </div>
+
+      <!-- ═══ TODAY'S CHECK-INS (carousel) ═══ -->
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin:26px 4px 12px;">
+        <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Today's Check-ins</span>
+        <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ checkinDate }}</span>
+      </div>
+      <div class="fl-scroll" style="display:flex; gap:6px; overflow-x:auto; padding:2px 2px 4px; scroll-snap-type:x proximity;">
+        <sc-for list="{{ checkins }}" as="c" hint-placeholder-count="5">
+          <div role="button" tabindex="0" onClick="{{ c.open }}" style="flex:none; width:72px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; scroll-snap-align:start; padding:2px 0;">
+            <div style="position:relative; width:58px; height:58px;">
+              <span style="position:absolute; inset:0; border-radius:var(--fl-radius-round); background:{{ c.tint }}; border:2px solid {{ c.ring }}; opacity:{{ c.dim }}; box-shadow:inset 0 1px 3px rgba(0,0,0,0.55); animation:{{ c.breathe }};"></span>
+              <sc-if value="{{ c.hasVideo }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;"><span style="width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(0,0,0,0.5); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright);"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg></span></span>
+              </sc-if>
+              <sc-if value="{{ c.unread }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute; top:-1px; right:-1px; width:12px; height:12px; border-radius:var(--fl-radius-round); background:var(--fl-bronze-bright); border:2px solid var(--fl-charcoal-800); box-shadow:var(--fl-glow-subtle);"></span>
+              </sc-if>
+            </div>
+            <span style="max-width:72px; font-size:12.5px; color:var(--fl-text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ c.first }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- ═══ ACTIVE COMPETITION (flat navigation row) ═══ -->
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin:28px 2px 12px;">
+        <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Active Competition</span>
+        <button type="button" onClick="{{ viewChallenges }}" style="display:inline-flex; align-items:center; gap:4px; background:transparent; border:none; cursor:pointer; color:var(--fl-bronze-primary); font-size:12px; font-weight:500;">View All<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></button>
+      </div>
+      <div data-coach="sd-competition" role="button" tabindex="0" onClick="{{ viewChallenge }}" style="cursor:pointer; background:linear-gradient(180deg, rgba(32,26,19,0.5), rgba(15,13,10,0.45)), var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); overflow:hidden;">
+        <div style="display:flex; align-items:center; gap:12px; padding:14px 14px;">
+          <span style="width:46px; height:46px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:radial-gradient(circle at 50% 30%, rgba(191,143,79,0.22), transparent 72%), var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle); color:var(--fl-bronze-bright);">{{ challengeEmblem }}</span>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+            <span style="font-size:9px; font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Current Competition</span>
+            <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary); line-height:1.1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ competitionName }}</span>
+          </div>
+          <div style="flex:none; display:flex; flex-direction:column; align-items:center; gap:2px; padding-left:13px; border-left:1px solid var(--fl-charcoal-600);">
+            <span style="font-size:8px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-tertiary);">Rank</span>
+            <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:700; letter-spacing:-0.3px; color:var(--fl-bronze-bright); line-height:1;">{{ challengePlace }}</span>
+            <span style="font-size:8px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ challengeRankOf }}</span>
+          </div>
+          <div style="flex:none; display:flex; flex-direction:column; align-items:center; gap:2px; padding-left:13px; border-left:1px solid var(--fl-charcoal-600);">
+            <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:700; letter-spacing:-0.3px; color:var(--fl-text-stat); line-height:1;">{{ challengeWorkouts }}</span>
+            <span style="font-size:8px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-tertiary);">Workouts</span>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-left:2px;"><path d="M9 5l7 7-7 7"></path></svg>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 15px; border-top:1px solid var(--fl-bronze-border-subtle); background:rgba(0,0,0,0.18);">
+          <span style="display:inline-flex; align-items:center; gap:6px; font-size:10.5px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-primary);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"></path><path d="M6 11l6-6 6 6"></path></svg>{{ challengeGap }}</span>
+          <span style="font-size:10.5px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ challengeEnds }}</span>
+        </div>
+      </div>
+
+      <!-- ═══ HALL OF CHAMPIONS (flat navigation row) ═══ -->
+      <div role="button" tabindex="0" onClick="{{ viewHall }}" style="margin-top:12px; display:flex; align-items:center; gap:13px; padding:14px 15px; border-radius:var(--fl-radius-lg); background:linear-gradient(180deg, rgba(191,143,79,0.07), transparent 58%), var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); cursor:pointer; transition:transform 180ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.99);">
+        <span style="width:40px; height:40px; flex:none; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; box-shadow:var(--fl-border-inset);"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z"></path></svg></span>
+        <div style="flex:1; min-width:0;">
+          <span style="display:block; font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Hall of Champions</span>
+          <span style="display:block; font-size:11.5px; color:var(--fl-text-tertiary); margin-top:2px;">{{ hallSub }}</span>
+        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+      </div>
+
+      <!-- ═══ SQUAD FEED ═══ -->
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin:26px 4px 12px;">
+        <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Squad Feed</span>
+        <button type="button" onClick="{{ composePost }}" style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright); font-size:11.5px; font-weight:700; letter-spacing:0.3px; cursor:pointer; box-shadow:var(--fl-glow-subtle);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>New Post</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <sc-for list="{{ feed }}" as="f" hint-placeholder-count="5">
+          <div onClick="{{ f.open }}" style="position:relative; background:{{ f.bg }}; border:{{ f.border }}; border-radius:var(--fl-radius-lg); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); padding:15px 16px; cursor:{{ f.cursor }}; overflow:hidden;">
+            <div style="display:flex; align-items:flex-start; gap:12px;">
+              <span style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-sm); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright);">{{ f.icon }}</span>
+              <div style="flex:1; min-width:0;">
+                <span style="display:block; font-size:14px; line-height:1.35; color:var(--fl-text-primary);"><span style="font-weight:600;">{{ f.who }}</span>{{ f.text }}</span>
+                <sc-if value="{{ f.hasDetail }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:block; font-size:12.5px; color:var(--fl-text-secondary); margin-top:3px;">{{ f.detail }}</span>
+                </sc-if>
+                <sc-if value="{{ f.hasVideo }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:relative; margin:12px -16px 0 -62px; aspect-ratio:16 / 9; background:linear-gradient(150deg,#20170d,#100b06); overflow:hidden; display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);">
+                    <span style="position:relative; z-index:1; width:44px; height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(0,0,0,0.45); border:1px solid var(--fl-bronze-border); backdrop-filter:blur(4px);"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg></span>
+                    <span style="position:absolute; inset:0; pointer-events:none; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 -56px 56px -44px rgba(6,7,9,0.85);"></span>
+                    <sc-if value="{{ f.hasDur }}" hint-placeholder-val="{{ false }}">
+                      <span style="position:absolute; right:12px; bottom:10px; padding:3px 8px; border-radius:var(--fl-radius-pill); background:rgba(6,7,9,0.62); border:1px solid rgba(255,255,255,0.09); font-size:10.5px; font-weight:600; color:var(--fl-text-primary);">{{ f.dur }}</span>
+                    </sc-if>
+                  </div>
+                </sc-if>
+                <!-- PHOTO · full-bleed to the card edge; the image is the post -->
+                <sc-if value="{{ f.hasPhoto }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:relative; margin:12px -16px 0 -62px; aspect-ratio:4 / 5; background:var(--fl-charcoal-800); overflow:hidden;">
+                    <image-slot id="{{ f.photoId }}" radius="0" placeholder="Progress photo" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                    <span style="position:absolute; inset:0; pointer-events:none; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 -70px 70px -50px rgba(6,7,9,0.85);"></span>
+                    <sc-if value="{{ f.hasPhotoCount }}" hint-placeholder-val="{{ false }}">
+                      <span style="position:absolute; right:12px; bottom:12px; padding:4px 9px; border-radius:var(--fl-radius-pill); background:rgba(6,7,9,0.62); border:1px solid rgba(255,255,255,0.09); backdrop-filter:blur(6px); font-size:11px; font-weight:600; letter-spacing:0.4px; color:var(--fl-text-primary);">{{ f.photoCount }}</span>
+                    </sc-if>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ f.hasMediaCaption }}" hint-placeholder-val="{{ false }}">
+                  <p style="margin:12px 0 0; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">{{ f.mediaCaption }}</p>
+                </sc-if>
+                <div style="display:flex; align-items:center; gap:18px; margin-top:{{ f.actionsTop }};">
+                  <button type="button" onClick="{{ f.react }}" style="display:inline-flex; align-items:center; gap:6px; background:transparent; border:none; cursor:pointer; color:var(--fl-text-tertiary); font-size:12.5px; padding:0;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20C6.6 15.5 4 12.4 4 9.2A4 4 0 0 1 11.2 6.8L12 7.8 12.8 6.8A4 4 0 0 1 20 9.2C20 12.4 17.4 15.5 12 20z"></path></svg>{{ f.reacts }}
+                  </button>
+                  <button type="button" onClick="{{ f.comment }}" style="display:inline-flex; align-items:center; gap:6px; background:transparent; border:none; cursor:pointer; color:var(--fl-text-tertiary); font-size:12.5px; padding:0;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16v11H9l-4 3z"></path></svg>{{ f.comments }}
+                  </button>
+                  <span style="margin-left:auto; font-size:11.5px; color:var(--fl-text-tertiary);">{{ f.time }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ showLoadMore }}" hint-placeholder-val="{{ false }}">
+          <button type="button" onClick="{{ loadMore }}" style="width:100%; margin-top:2px; padding:13px; border-radius:var(--fl-radius-md); background:transparent; border:1px solid var(--fl-charcoal-500); cursor:pointer; color:var(--fl-text-secondary); font-size:13px; font-weight:600; letter-spacing:0.3px; display:inline-flex; align-items:center; justify-content:center; gap:7px;">Load More<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+        </sc-if>
+      </div>
+
+      <!-- ═══ HONORS (breathing — no card, faint discs) ═══ -->
+      <div style="margin:30px 2px 16px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Honors</span></div>
+      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:20px 10px;">
+        <sc-for list="{{ honors }}" as="hn" hint-placeholder-count="4">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:11px;">
+            <span style="width:68px; height:68px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 50% 36%, rgba(191,143,79,0.18), transparent 72%); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle); color:var(--fl-bronze-bright);">{{ hn.icon }}</span>
+            <span style="font-size:10.5px; text-align:center; line-height:1.25; color:var(--fl-text-secondary);">{{ hn.name }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- ═══ OUR SQUAD (analytics — icon · value · label, subtle vertical dividers) ═══ -->
+      <div style="margin:28px 2px 10px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Our Squad</span></div>
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); row-gap:8px;">
+        <sc-for list="{{ stats }}" as="st" hint-placeholder-count="6">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:9px; text-align:center; padding:18px 8px; border-right:{{ st.br }};">
+            <span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ st.icon }}</span>
+            <span style="font-family:var(--fl-font-display); font-size:24px; font-weight:700; letter-spacing:-0.5px; color:var(--fl-text-stat); line-height:1;">{{ st.value }}</span>
+            <span style="font-size:9.5px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-bronze-label); line-height:1.35;">{{ st.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- ═══ INVITE ═══ -->
+      <div style="margin-top:26px;">
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" full-width="{{ true }}" icon="{{ inviteIcon }}" on-click="{{ invite }}" hint-size="100%,50px">Invite to Squad</x-import>
+      </div>
+
+    </div>
+  </sc-if>
+
+  <!-- ═══ MEMBERS PAGE (full-screen) ═══ -->
+  <sc-if value="{{ membersOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; inset:0; z-index:800; display:flex; flex-direction:column; background:var(--fl-bg-atmospheric); animation:viewIn 300ms var(--fl-ease-out) both;">
+      <div style="flex:none; position:relative; z-index:5;">
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Members" on-back="{{ closeMembers }}" hint-size="100%,56px"></x-import>
+      </div>
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:12px 16px 30px;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; margin:2px 4px 12px;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ squadName }}</span>
+          <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ memberCountLabel }}</span>
+        </div>
+        <div style="position:relative; background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); padding:4px 16px;">
+          <sc-for list="{{ membersList }}" as="m" hint-placeholder-count="5">
+            <div role="button" tabindex="0" onClick="{{ m.open }}" style="display:flex; align-items:center; gap:13px; padding:13px 0; border-bottom:{{ m.divider }}; cursor:pointer;">
+              <span style="width:44px; height:44px; flex:none; border-radius:var(--fl-radius-round); background:{{ m.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-size:15.5px; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ m.name }}</span>
+                <span style="display:inline-flex; align-items:center; gap:5px; font-size:12px; color:{{ m.statusColor }};"><span style="display:inline-flex;">{{ m.statusIcon }}</span>{{ m.trainingStatus }}</span>
+              </div>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ═══ TODAY'S CHECK-IN DETAIL SHEET ═══ -->
+  <sc-if value="{{ checkinDetailOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeCheckin }}" style="position:absolute; inset:0; z-index:1000; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:fadeIn 200ms var(--fl-ease-out) both;">
+      <div onClick="{{ stop }}" style="width:100%; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient); padding:0 22px 26px; animation:sheetUp 320ms var(--fl-ease-out) both;">
+        <div data-drag-handle="true" style="display:flex; justify-content:center; padding:12px 0 8px; margin-top:-2px; cursor:grab; touch-action:none;"><span style="width:40px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+        <div style="display:flex; align-items:center; gap:14px; padding-top:14px;">
+          <span style="width:56px; height:56px; flex:none; border-radius:var(--fl-radius-round); background:{{ ciTint }}; border:2px solid {{ ciRing }}; box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);"></span>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+            <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; color:var(--fl-text-primary);">{{ ciName }}</span>
+            <span style="display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:{{ ciStatusColor }};"><span style="display:inline-flex;">{{ ciStatusIcon }}</span>{{ ciStatusLabel }} · {{ checkinDate }}</span>
+          </div>
+        </div>
+        <sc-if value="{{ ciHasVideo }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:18px; height:190px; border-radius:var(--fl-radius-md); background:linear-gradient(150deg,#20170d,#100b06); border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);">
+            <span style="width:52px; height:52px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(0,0,0,0.45); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle);"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg></span>
+          </div>
+        </sc-if>
+        <div style="margin-top:16px; padding:14px 16px; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border-subtle);">
+          <span style="font-size:14px; line-height:1.4; color:var(--fl-text-secondary);">{{ ciSummary }}</span>
+        </div>
+        <button type="button" onClick="{{ ciAction }}" style="width:100%; margin-top:16px; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px;"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ ciActionIcon }}</span>{{ ciActionLabel }}</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ═══ OPTIONS SHEET ═══ -->
+  <sc-if value="{{ optionsOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeOptions }}" style="position:absolute; inset:0; z-index:1100; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:fadeIn 200ms var(--fl-ease-out) both;">
+      <div onClick="{{ stop }}" style="width:100%; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient); padding:0 16px 24px; animation:sheetUp 320ms var(--fl-ease-out) both;">
+        <div data-drag-handle="true" style="display:flex; justify-content:center; padding:12px 0 8px; cursor:grab; touch-action:none;"><span style="width:40px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+        <sc-for list="{{ optionRows }}" as="o" hint-placeholder-count="4">
+          <button type="button" onClick="{{ o.action }}" style="width:100%; display:flex; align-items:center; gap:14px; padding:15px 8px; background:transparent; border:none; border-top:{{ o.divider }}; cursor:pointer; text-align:left;">
+            <span style="display:inline-flex; flex:none; color:{{ o.color }};">{{ o.icon }}</span>
+            <span style="font-size:15px; color:{{ o.color }};">{{ o.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ═══ CONFIRM MODAL ═══ -->
+  <sc-if value="{{ confirmOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; inset:0; z-index:1200; display:flex; align-items:center; justify-content:center; padding:32px; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:fadeIn 200ms var(--fl-ease-out) both;">
+      <div style="width:100%; max-width:320px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-xl); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-modal); padding:24px 22px; animation:sqRise 240ms var(--fl-ease-out) both;">
+        <span style="display:block; font-family:var(--fl-font-display); font-size:19px; font-weight:600; color:var(--fl-text-primary); text-align:center;">{{ confirmTitle }}</span>
+        <span style="display:block; font-size:13.5px; line-height:1.5; color:var(--fl-text-secondary); text-align:center; margin-top:10px;">{{ confirmMsg }}</span>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:22px;">
+          <button type="button" onClick="{{ doConfirm }}" style="width:100%; padding:15px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-red-metal-border); background:var(--fl-red-fill); color:#E4ABA0; font-size:14px; font-weight:700; letter-spacing:0.4px; cursor:pointer; box-shadow:var(--fl-red-metal-top-rim), var(--fl-glow-red);">{{ confirmLabel }}</button>
+          <button type="button" onClick="{{ cancelConfirm }}" style="width:100%; padding:15px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer;">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ═══ EDIT GOAL SHEET ═══ -->
+  <sc-if value="{{ goalEditOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ cancelGoal }}" style="position:absolute; inset:0; z-index:1150; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:fadeIn 200ms var(--fl-ease-out) both;">
+      <div onClick="{{ stop }}" style="width:100%; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient); padding:0 22px 26px; animation:sheetUp 320ms var(--fl-ease-out) both;">
+        <div style="display:flex; justify-content:center; padding:12px 0 8px;"><span style="width:40px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+        <span style="display:block; font-family:var(--fl-font-display); font-size:19px; font-weight:600; color:var(--fl-text-primary); margin:6px 2px 4px;">Edit Squad Goal</span>
+        <span style="display:block; font-size:12.5px; line-height:1.5; color:var(--fl-text-secondary); margin:0 2px 16px;">One long-term objective the whole squad pushes toward together.</span>
+        <input type="text" value="{{ goalDraft }}" placeholder="e.g. Forge 500 workouts together" onInput="{{ onGoalDraft }}" style="width:100%; font-family:var(--fl-font-sans); font-size:15px; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); padding:13px 14px; outline:none;">
+        <button type="button" onClick="{{ saveGoal }}" style="width:100%; margin-top:16px; padding:15px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-fill); color:var(--fl-bronze-bright); font-size:14px; font-weight:700; letter-spacing:0.3px; cursor:pointer; box-shadow:var(--fl-glow-subtle);">Save Goal</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:34px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:sqRise 260ms var(--fl-ease-out) both;">
+      <span style="display:inline-flex; color:var(--fl-icon-bronze); flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:90; opacity:0.09; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;isOwner&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Role&quot;},&quot;canEditGoal&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Permissions&quot;},&quot;showTrainTogether&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, toastMsg: null, toastIconId: 'squad', selectedId: null, checkinId: null, membersOpen: false, feedExpanded: false, optionsOpen: false, confirm: null, goalEdit: null };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs && window.ForgeSquadPosts) { this.setState({ ready: true }); this._startCoach(); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+    // Drag-to-dismiss for the slide-up bottom sheets (DS sheets ship no gesture).
+    this._onPD = (e) => this._sheetDown(e);
+    this._onPM = (e) => this._sheetMove(e);
+    this._onPU = (e) => this._sheetUp(e);
+    document.addEventListener('pointerdown', this._onPD, true);
+    document.addEventListener('pointermove', this._onPM, { passive: false });
+    document.addEventListener('pointerup', this._onPU, true);
+    document.addEventListener('pointercancel', this._onPU, true);
+  }
+  componentWillUnmount() {
+    if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT);
+    document.removeEventListener('pointerdown', this._onPD, true);
+    document.removeEventListener('pointermove', this._onPM, { passive: false });
+    document.removeEventListener('pointerup', this._onPU, true);
+    document.removeEventListener('pointercancel', this._onPU, true);
+  }
+  _openSheet() {
+    if (this.state.checkinId) return 'checkin';
+    if (this.state.selectedId) return 'profile';
+    if (this.state.optionsOpen) return 'options';
+    return null;
+  }
+  _startCoach() {
+    if (!window.ForgeCoach) return;
+    window.ForgeCoach.start({
+      page: 'squad-detail',
+      frame: '[data-coach-frame="squad-detail"]',
+      steps: [
+        { target: '[data-coach="sd-intro"]', radius: 16, title: 'Your squad', body: 'This is your squad\u2019s home \u2014 see who\u2019s trained today, follow the feed, and rally around shared objectives together.' },
+        { target: '[data-coach="sd-goal"]', radius: 14, title: 'The Goal', body: 'A Goal is one long-term objective the whole squad pushes toward together \u2014 like logging 500 workouts. Every member\u2019s sessions count toward it.' },
+        { target: '[data-coach="sd-mission"]', radius: 14, title: 'The Mission', body: 'A Mission is a short weekly challenge \u2014 a shared target to hit before the week ends. It keeps everyone showing up between the bigger goals.' },
+        { target: '[data-coach="sd-competition"]', radius: 14, title: 'Competitions', body: 'A Competition pits members or squads against each other over a set period. Climb the ranking by logging workouts \u2014 tap in to see the standings.' },
+      ],
+    });
+  }
+
+  _sheetDown(e) {
+    const h = e.target && e.target.closest && e.target.closest('[data-drag-handle]');
+    if (!h) return;
+    const dialog = h.parentElement;
+    if (!dialog) return;
+    this._drag = { dialog, y0: e.clientY, dy: 0, sheet: this._openSheet() };
+    dialog.style.transition = 'none';
+  }
+  _sheetMove(e) {
+    if (!this._drag) return;
+    const dy = Math.max(0, e.clientY - this._drag.y0);
+    this._drag.dy = dy;
+    this._drag.dialog.style.transform = 'translateY(' + dy + 'px)';
+    if (e.cancelable) e.preventDefault();
+  }
+  _sheetUp() {
+    if (!this._drag) return;
+    const { dialog, dy, sheet } = this._drag;
+    this._drag = null;
+    if (dy > 90) {
+      dialog.style.transition = 'transform 200ms var(--fl-ease-out, ease-out)';
+      dialog.style.transform = 'translateY(100%)';
+      setTimeout(() => {
+        if (sheet === 'checkin') this.setState({ checkinId: null });
+        else if (sheet === 'profile') this.setState({ selectedId: null });
+        else if (sheet === 'options') this.setState({ optionsOpen: false });
+      }, 180);
+    } else {
+      dialog.style.transition = 'transform 220ms var(--fl-ease-out, ease-out)';
+      dialog.style.transform = '';
+    }
+  }
+
+  _toast(msg, iconId) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastIconId: iconId || 'squad' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2600); }
+
+  _tint(seed) {
+    const T = [
+      'radial-gradient(circle at 42% 32%, #4a3826, #1c1510)',
+      'radial-gradient(circle at 45% 35%, #34302a, #17130f)',
+      'radial-gradient(circle at 40% 30%, #40301f, #17120c)',
+      'radial-gradient(circle at 48% 38%, #2d2822, #141210)',
+      'radial-gradient(circle at 44% 34%, #453322, #1a140e)',
+    ];
+    return T[seed % T.length];
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.8 });
+
+    // ── Members ──
+    const MEMBERS = [
+      { id: 'dana', name: 'Dana Cole', first: 'Dana', type: 'Hybrid Athlete', rank: 'Craftsman', since: 'Jun 2023', accolades: ['Sub-20 5K', 'Century Club'], checkin: 'trained', video: true, unread: true, summary: 'Logged Leg Day A — 58 min, 22,400 lb moved.' },
+      { id: 'marcus', name: 'Marcus Vale', first: 'Marcus', type: 'Bodybuilder', rank: 'Architect', since: 'Nov 2022', accolades: ['First Iron', 'Iron Will', '12-Week Cut'], checkin: 'trained', checkedIn: true, summary: 'Checked in — logged a Bench Session and set a new personal record.' },
+      { id: 'ada', name: 'Ada Ridge', first: 'Ada', you: true, type: 'Powerlifter', rank: 'Architect', since: 'Mar 2023', accolades: ['405 lb Squat Club', '100-Day Streak', 'The Unbroken'], checkin: 'trained', checkedIn: true, summary: 'Checked in — logged Push Day A, 47 min.' },
+      { id: 'theo', name: 'Theo Brandt', first: 'Theo', type: 'Strongman', rank: 'Legend', since: 'Aug 2021', accolades: ['Atlas Stone PR', 'The Unbroken', 'Century Club'], checkin: 'rest', summary: 'Marked a rest day — active recovery.' },
+      { id: 'lena', name: 'Lena Cross', first: 'Lena', type: 'Olympic Lifter', rank: 'Builder', since: 'Jan 2024', accolades: ['Bodyweight Snatch'], checkin: 'missed', summary: 'No session logged yet today.' },
+    ];
+    const tintOf = {}; MEMBERS.forEach((m, i) => { tintOf[m.id] = this._tint(m.name.length + i); });
+
+    // ── Status vocabulary ──
+    // Restrained Forge tones — no bright/alarming colors. Missed reads calm, never punitive.
+    const statusMeta = {
+      trained: { label: 'Trained', training: 'Trained today', ring: '#5B7A61', color: '#6E8E74' },
+      rest:    { label: 'Rest Day', training: 'Rest day', ring: 'var(--fl-charcoal-500)', color: 'var(--fl-text-tertiary)' },
+      notyet:  { label: 'Not Yet', training: 'Not checked in', ring: 'var(--fl-bronze-border-subtle)', color: 'var(--fl-text-tertiary)' },
+      missed:  { label: 'Missed', training: 'Missed today', ring: 'var(--fl-charcoal-500)', color: '#9A8578' },
+    };
+    const statusIcon = {
+      trained: h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M5 12.5l4 4 10-10' })),
+      rest: h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M17 15.5A8 8 0 0 1 8.5 4 8 8 0 1 0 17 15.5z' })),
+      missed: h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round' }, h('path', { d: 'M6 6l12 12M18 6L6 18' })),
+      notyet: h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M7 4h10M7 20h10M8 4c0 3.4 3.4 4.6 4 6 .6-1.4 4-2.6 4-6M8 20c0-3.4 3.4-4.6 4-6 .6 1.4 4 2.6 4 6' })),
+    };
+
+    // ── Header avatar stack + live "training today" (derived from check-ins) ──
+    const avatarStack = MEMBERS.map(m => ({ key: m.id, tint: tintOf[m.id] }));
+    const trainingTodayCount = MEMBERS.filter(m => m.checkin === 'trained').length;
+
+    // ── Check-ins carousel: video check-in (bronze play) → checked-in (green breathing ring) → not yet (gray) ──
+    const weight = (m) => (m.video && m.unread) ? 0 : (m.video ? 1 : (m.checkedIn ? 2 : 3));
+    const ordered = MEMBERS.map((m, i) => ({ m, i })).sort((a, b) => (weight(a.m) - weight(b.m)) || (a.i - b.i)).map(x => x.m);
+    const checkins = ordered.map(m => {
+      const isVideo = !!m.video;
+      const isIn = isVideo || !!m.checkedIn;
+      return {
+        key: m.id, first: m.first, tint: tintOf[m.id],
+        ring: isIn ? '#5B7A61' : 'var(--fl-charcoal-500)',
+        dim: isIn ? '1' : '0.48',
+        breathe: isIn ? 'clBreathe 3.6s ease-in-out infinite' : 'none',
+        hasVideo: isVideo, unread: !!m.unread,
+        open: () => this.setState({ checkinId: m.id }),
+      };
+    });
+
+    // ── Feed ──
+    const feedIcon = (id) => ic(id, 18, 1.7);
+    const FEED = [
+      { key: 'wk', weekly: true, text: 'Weekly Summary — 27 sessions, 2 PRs, 1 Honor earned across the squad.', time: 'Mon', reacts: 8, comments: 2, icon: 'banner' },
+      { key: 'pr', who: 'Marcus Vale ', text: 'set a Bench Press personal record.', detail: 'A new squad best for the month.', time: '2h', reacts: 5, comments: 1, icon: 'trophy' },
+      { key: 'hon', who: 'Ada Ridge ', text: 'earned the Honor \u201CThe Unbroken.\u201D', time: '5h', reacts: 7, comments: 2, icon: 'medal' },
+      { key: 'comp', who: '', text: 'Forge League \u00B7 Week 3 results are in.', time: '1d', reacts: 6, comments: 3, icon: 'swords' },
+      { key: 'goal', who: '', text: 'The squad crossed 300 workouts toward the Goal.', time: '2d', reacts: 6, comments: 1, icon: 'target' },
+      { key: 'wo', who: 'Theo Brandt ', text: 'completed Push Day A.', time: '2d', reacts: 2, comments: 0, icon: 'dumbbell' },
+    ];
+    const INITIAL = 5;
+    // ── Squad Feed backed by ForgeSquadPosts (training-only threaded posts) + one ambient summary ──
+    const SP = window.ForgeSquadPosts;
+    const squadId = SP ? SP.activeId() : 'iron';
+    const squadMeta = SP ? SP.meta(squadId) : { name: 'Iron Vigil', tagline: 'Hold the line, every dawn.', members: 5 };
+    const openSquadPost = (pid) => { try { localStorage.setItem('forge.postOrigin', 'squad'); localStorage.setItem('forge.squad', squadId); localStorage.setItem('forge.post', pid); } catch (e) {} window.location.href = 'Post%20Detail.dc.html'; };
+    const TYPE_ICON = { progress: 'camera', checkin: 'flame', recap: 'dumbbell', pr: 'trophy', formcheck: 'camera', challenge: 'swords', traintogether: 'train', discussion: 'notes', announcement: 'banner' };
+    const leadFor = (p) => { const ex = (p.achievement && p.achievement.exercise) || ''; switch (p.type) { case 'progress': return 'posted progress photos.'; case 'checkin': return 'checked in \u2014 trained today.'; case 'recap': return 'logged a workout recap.'; case 'pr': return 'set a ' + (ex || 'new') + ' PR.'; case 'formcheck': return 'posted a form check for the squad.'; case 'challenge': return 'posted a challenge update.'; case 'traintogether': return 'called a train-together.'; case 'announcement': return 'posted a squad announcement.'; default: return ''; } };
+    const detailFor = (p) => { if (p.type === 'pr' && p.achievement) return p.achievement.value + ' \u00b7 ' + (p.achievement.label || 'Squad PR'); const b = (p.body || '').replace(/\s+/g, ' '); return b.length > 90 ? b.slice(0, 90) + '\u2026' : b; };
+    const storePosts = SP ? SP.list(squadId) : [];
+    const WEEKLY = { key: 'wk', weekly: true, who: '', text: 'Weekly Summary \u2014 27 sessions, 2 PRs, 1 Honor earned across the squad.', detail: '', hasVideo: false, time: 'Mon', reacts: 8, comments: 2, icon: 'banner' };
+    // A media post leads with attribution, then the image, then the author's words —
+    // its body never sits above the photo.
+    const postItems = storePosts.map(p => {
+      const isPhoto = p.type === 'progress';
+      const isVideo = p.type === 'formcheck';
+      const isMedia = isPhoto || isVideo;
+      const body = (p.body || '').replace(/\s+/g, ' ');
+      return {
+        key: p.id, pid: p.id, weekly: false, who: p.author + ' ',
+        text: p.type === 'discussion' ? body : leadFor(p),
+        detail: (p.type === 'discussion' || isMedia) ? '' : detailFor(p),
+        hasVideo: isVideo,
+        hasPhoto: isPhoto,
+        photoCount: '1 / ' + ((p.media && p.media.count) || 2),
+        hasPhotoCount: ((p.media && p.media.count) || 2) > 1,
+        dur: (p.media && p.media.dur) || p.videoDur || '',
+        mediaCaption: isMedia ? body : '',
+        time: p.time, reacts: p.respect || 0, comments: (p.comments || []).length,
+        icon: TYPE_ICON[p.type] || 'banner',
+      };
+    });
+    const feedItems = [WEEKLY].concat(postItems);
+    const shown = this.state.feedExpanded ? feedItems : feedItems.slice(0, INITIAL);
+    const feed = shown.map(f => ({
+      key: f.key,
+      who: f.who || '', text: f.text,
+      hasDetail: !!f.detail, detail: f.detail || '',
+      hasVideo: !!f.hasVideo,
+      hasPhoto: !!f.hasPhoto,
+      photoId: 'sq-photo-' + f.key,
+      photoCount: f.photoCount || '',
+      hasPhotoCount: !!f.hasPhotoCount,
+      dur: f.dur || '', hasDur: !!f.dur,
+      hasMediaCaption: !!f.mediaCaption,
+      mediaCaption: f.mediaCaption || '',
+      actionsTop: (f.hasPhoto || f.hasVideo) ? '13px' : '11px',
+      icon: feedIcon(f.icon),
+      reacts: String(f.reacts), comments: String(f.comments), time: f.time,
+      bg: f.weekly ? 'linear-gradient(180deg, rgba(191,143,79,0.06), transparent 46%), var(--fl-surface-card)' : 'var(--fl-surface-card)',
+      border: f.weekly ? '1px solid var(--fl-bronze-border)' : '1px solid var(--fl-bronze-border-subtle)',
+      cursor: f.weekly ? 'default' : 'pointer',
+      open: f.weekly ? () => {} : () => openSquadPost(f.pid),
+      react: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this._toast('Reacted', 'flame'); },
+      comment: (e) => { if (e && e.stopPropagation) e.stopPropagation(); if (f.weekly) this._toast('Weekly summary', 'squad'); else openSquadPost(f.pid); },
+    }));
+
+    // ── Members list (dedicated page) ──
+    const membersList = MEMBERS.map((m, i) => {
+      const s = statusMeta[m.checkin];
+      return {
+        key: m.id, name: m.you ? m.name + ' (You)' : m.name, tint: tintOf[m.id],
+        trainingStatus: s.training, statusColor: s.color, statusIcon: statusIcon[m.checkin],
+        divider: i < MEMBERS.length - 1 ? '1px solid var(--fl-charcoal-700)' : 'none',
+        open: () => { window.location.href = 'Forge%20Public%20Profile.dc.html?name=' + encodeURIComponent(m.name) + '&id=' + m.id + '&squad=1'; },
+      };
+    });
+
+    // ── Honors ──
+    const HONORS = [
+      { id: 'unbroken', name: 'The Unbroken', glyph: 'medal' },
+      { id: 'century', name: 'Century Club', glyph: 'trophy' },
+      { id: 'firstiron', name: 'First Iron', glyph: 'shield' },
+      { id: 'ironwill', name: 'Iron Will', glyph: 'flame' },
+    ];
+    const honors = HONORS.map(x => ({ key: x.id, name: x.name, icon: ic(x.glyph, 30, 1.6) }));
+
+    // ── Analytics ──
+    const STAT_DEFS = [
+      { key: 'wo', icon: 'dumbbell', value: '143', label: 'Workouts This Month' },
+      { key: 'part', icon: 'squad', value: '86%', label: 'Participation' },
+      { key: 'streak', icon: 'flame', value: '18', label: 'Day Streak' },
+      { key: 'goal', icon: 'target', value: '62%', label: 'Goal Progress' },
+      { key: 'mission', icon: 'banner', value: '3 / 5', label: 'Mission Progress' },
+      { key: 'comp', icon: 'swords', value: '3\u20131', label: 'Competition Record' },
+    ];
+    const stats = STAT_DEFS.map((s, i) => ({
+      key: s.key, value: s.value, label: s.label, icon: ic(s.icon, 20, 1.7),
+      br: (i % 3 !== 2) ? '1px solid var(--fl-charcoal-700)' : 'none',
+    }));
+
+    // ── Chrome / icons ──
+    const trainIcon = h('span', { style: { display: 'inline-flex', color: 'currentColor' } }, ic('train', 18, 1.9));
+    const inviteIcon = h('span', { style: { display: 'inline-flex', color: 'currentColor' } }, ic('invite', 18, 1.9));
+    const missionClockIcon = h('span', { style: { display: 'inline-flex' } }, ic('clock', 14, 1.8));
+    const optionsBtn = h('button', {
+      type: 'button', 'aria-label': 'Squad options', onClick: () => this.setState({ optionsOpen: true }),
+      style: { width: '40px', height: '40px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--fl-icon-bronze)', borderRadius: 'var(--fl-radius-round)' },
+    }, h('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'currentColor' }, h('circle', { cx: 5, cy: 12, r: 1.8 }), h('circle', { cx: 12, cy: 12, r: 1.8 }), h('circle', { cx: 19, cy: 12, r: 1.8 })));
+
+    // ── Options rows ──
+    const optIcon = (id, color) => h('span', { style: { display: 'inline-flex', color: color } }, ic(id, 20, 1.8));
+    const svg = (paths) => h('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, paths.map((d, i) => h('path', { key: i, d: d })));
+    const leaveGlyph = svg(['M15 4H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7', 'M10 12h10', 'M17 9l3 3-3 3']);
+    const trashGlyph = svg(['M4 7h16', 'M9 7V5h6v2', 'M6.5 7l1 13h9l1-13', 'M10 11v6', 'M14 11v6']);
+    const reportGlyph = h('span', { style: { display: 'inline-flex', color: 'var(--fl-icon-bronze)' } }, svg(['M5 21V4', 'M5 5h11l-1.6 3.2L16 12H5']));
+    // Owner sees management + Delete; a member sees the member Settings, Report, and Leave.
+    // Role persists across screens via localStorage (set by whichever entry point opened this squad).
+    let isOwner = this.props.isOwner ?? true;
+    try { const _r = window.localStorage.getItem('forge.squad.role'); if (_r === 'owner') isOwner = true; else if (_r === 'member') isOwner = false; } catch (e) {}
+    const div0 = 'none';
+    const divT = '1px solid var(--fl-charcoal-700)';
+    const settingsRow = { key: 'settings', label: 'Squad Settings', icon: optIcon('settings', 'var(--fl-icon-bronze)'), color: 'var(--fl-text-primary)', divider: div0, action: () => { window.location.href = isOwner ? 'Squad%20Settings.dc.html' : 'Squad%20Settings%20Member.dc.html'; } };
+    const inviteRow = { key: 'invite', label: 'Invite to Squad', icon: optIcon('invite', 'var(--fl-icon-bronze)'), color: 'var(--fl-text-primary)', divider: divT, action: () => { window.location.href = 'Squad%20Invite.dc.html'; } };
+    const optionRows = isOwner ? [
+      settingsRow,
+      inviteRow,
+      { key: 'delete', label: 'Delete Squad', icon: trashGlyph, color: 'var(--fl-red-muted)', divider: divT, action: () => this.setState({ optionsOpen: false, confirm: 'delete' }) },
+    ] : [
+      settingsRow,
+      inviteRow,
+      { key: 'report', label: 'Report Squad', icon: reportGlyph, color: 'var(--fl-text-primary)', divider: divT, action: () => { window.location.href = 'Report%20Squad.dc.html'; } },
+      { key: 'leave', label: 'Leave Squad', icon: leaveGlyph, color: 'var(--fl-red-muted)', divider: divT, action: () => this.setState({ optionsOpen: false, confirm: 'leave' }) },
+    ];
+
+    // ── Profile sheet ──
+    const sel = MEMBERS.find(m => m.id === this.state.selectedId) || null;
+
+    // ── Check-in detail sheet ──
+    const ci = MEMBERS.find(m => m.id === this.state.checkinId) || null;
+    const ciIn = ci ? (!!ci.video || !!ci.checkedIn) : false;
+    const ciActionCfg = ci ? (!ciIn
+      ? { label: 'Send a Nudge', icon: 'flame', done: 'Nudge sent to ' + ci.first }
+      : { label: 'React to Check-in', icon: 'flame', done: 'Reacted to ' + ci.first + '\u2019s check-in' }) : null;
+
+    // ── Confirm ──
+    const confirmType = this.state.confirm;
+    const confirmMap = {
+      leave: { title: 'Leave ' + squadMeta.name + '?', msg: 'You will stop sharing progress with this squad. You can be invited back later.', label: 'Leave Squad', done: 'You left ' + squadMeta.name },
+      delete: { title: 'Delete ' + squadMeta.name + '?', msg: 'This permanently removes the squad for all members. This cannot be undone.', label: 'Delete Squad', done: 'Squad deleted' },
+    };
+    const cfg = confirmType ? confirmMap[confirmType] : null;
+
+    // ── Props ──
+    const canEditGoal = this.props.canEditGoal ?? true;
+    const showTrainTogether = this.props.showTrainTogether ?? false;
+
+    return {
+      ready: true, notReady: false,
+      squadName: squadMeta.name,
+      heroHasPhoto: !!squadMeta.photo, heroHasCrest: !squadMeta.photo, heroCrest: ic(squadMeta.crest || 'swords', 42, 1.5),
+      crestIcon: ic('swords', 24, 1.7),
+      purpose: squadMeta.tagline,
+      avatarStack: avatarStack, memberCountLabel: MEMBERS.length + ' Members',
+      trainingTodayLabel: trainingTodayCount + ' Training Today',
+      openMembers: () => this.setState({ membersOpen: true }),
+      closeMembers: () => this.setState({ membersOpen: false }), membersOpen: this.state.membersOpen,
+      membersList: membersList,
+
+      canEditGoal: canEditGoal,
+      goalTitle: squadMeta.goal || 'Forge 500 Workouts Together', goalValue: 312, goalMax: 500, goalPct: squadMeta.created ? '0%' : '62%', goalCount: squadMeta.created ? 'Just set \u00b7 0% Complete' : '62% Complete',
+      editGoal: () => this.setState({ goalEdit: (squadMeta.goal || 'Forge 500 Workouts Together') }),
+      goalEditOpen: this.state.goalEdit !== null, goalDraft: this.state.goalEdit || '',
+      onGoalDraft: (e) => this.setState({ goalEdit: e.target.value }),
+      cancelGoal: () => this.setState({ goalEdit: null }),
+      saveGoal: () => { const v = (this.state.goalEdit || '').trim(); if (v) { try { window.ForgeSquadPosts.updateMeta(squadId, { goal: v }); } catch (e) {} } this.setState({ goalEdit: null }); this._toast('Goal updated', 'target'); },
+
+      showTrainTogether: showTrainTogether,
+      trainIcon: trainIcon, trainBtnStyle: { padding: '19px 26px', letterSpacing: '0.6px' },
+      trainTogether: () => this._toast('Choose who to train with', 'train'),
+
+      missionTitle: 'Everyone logs a session this week', missionWeek: 'Week 3 of 4', missionProgress: '3 / 5', missionPct: '60%', missionDays: 'Ends in 2 days', missionClockIcon: missionClockIcon,
+
+      checkinDate: 'Today', checkins: checkins,
+
+      feed: feed, showLoadMore: !this.state.feedExpanded && feedItems.length > INITIAL, loadMore: () => this.setState({ feedExpanded: true }),
+      composePost: () => { try { localStorage.setItem('forge.squad', squadId); } catch (e) {} window.location.href = 'Squad%20Composer.dc.html'; },
+
+      competitionName: 'Forge League', challengeEmblem: h('span', { style: { display: 'inline-flex' } }, ic('swords', 24, 1.6)),
+      challengePlace: '2nd', challengeRankOf: 'Out of 5', challengeWorkouts: '5',
+      challengeGap: '2 behind Marcus', challengeEnds: 'Ends in 6 days',
+      viewChallenge: () => { window.location.href = 'Forge%20Challenge.dc.html'; },
+      viewChallenges: () => { window.location.href = 'Forge%20Challenge.dc.html'; },
+      viewHall: () => { window.location.href = 'Forge%20Hall%20of%20Champions.dc.html'; },
+      viewGoal: () => { window.location.href = 'Squad%20Goal%20Detail.dc.html'; },
+      hallSub: '8 titles won \u00B7 since 2024',
+
+      honors: honors,
+      stats: stats,
+      inviteIcon: inviteIcon, invite: () => { window.location.href = 'Squad%20Invite.dc.html'; },
+      goBack: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Squads%20Hub.dc.html'); },
+      optionsBtn: optionsBtn,
+      optionsOpen: this.state.optionsOpen, closeOptions: () => this.setState({ optionsOpen: false }), optionRows: optionRows,
+
+      profileOpen: !!sel, closeProfile: () => this.setState({ selectedId: null }), stop: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+      profileName: sel ? (sel.you ? sel.name + ' (You)' : sel.name) : '', profileType: sel ? sel.type : '', profileRank: sel ? sel.rank : '', profileSince: sel ? sel.since : '',
+      profileFirst: sel ? (sel.first || sel.name.split(' ')[0]) : '',
+      trainWith: () => { if (sel) window.location.href = 'Forge%20Programs%20Catalog.dc.html?train=1&with=' + encodeURIComponent(sel.id); },
+      profileTint: sel ? tintOf[sel.id] : 'transparent',
+      profileAccolades: sel ? sel.accolades.slice(0, 3).map((a, i) => ({ key: i, name: a })) : [],
+
+      checkinDetailOpen: !!ci, closeCheckin: () => this.setState({ checkinId: null }),
+      ciName: ci ? (ci.you ? ci.name + ' (You)' : ci.name) : '', ciTint: ci ? tintOf[ci.id] : 'transparent',
+      ciRing: ciIn ? '#5B7A61' : 'var(--fl-charcoal-500)', ciStatusColor: ciIn ? '#6E8E74' : 'var(--fl-text-tertiary)', ciStatusLabel: ciIn ? 'Checked in' : 'Not checked in yet', ciStatusIcon: ci ? (ciIn ? statusIcon.trained : statusIcon.notyet) : null,
+      ciHasVideo: ci ? !!ci.video : false, ciSummary: ci ? (ciIn ? ci.summary : 'Has not posted a check-in today.') : '',
+      ciActionLabel: ciActionCfg ? ciActionCfg.label : '', ciActionIcon: ciActionCfg ? ic(ciActionCfg.icon, 17, 1.8) : null,
+      ciAction: () => { const d = ciActionCfg ? ciActionCfg.done : ''; this.setState({ checkinId: null }); this._toast(d, 'flame'); },
+
+      confirmOpen: !!cfg, confirmTitle: cfg ? cfg.title : '', confirmMsg: cfg ? cfg.msg : '', confirmLabel: cfg ? cfg.label : '',
+      cancelConfirm: () => this.setState({ confirm: null }),
+      doConfirm: () => { const d = cfg ? cfg.done : ''; this.setState({ confirm: null }); this._toast(d, 'squad'); },
+      toastOpen: !!this.state.toastMsg, toastMsg: this.state.toastMsg || '', toastIcon: ic(this.state.toastIconId || 'squad', 18, 1.7),
+    };
+  }
+}
+</script>
+</body>
+</html>

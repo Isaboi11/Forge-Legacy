@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js"></script>
+<script src="./image-slot.js"></script>
+<style>
+  body { margin:0; background:#05080A; }
+  a { color: var(--fl-bronze-primary); }
+  a:hover { color: var(--fl-bronze-bright); }
+  @keyframes fl-ember { 0%,100%{ opacity:.55; transform:scale(1);} 50%{ opacity:.9; transform:scale(1.05);} }
+  @keyframes fl-rise { from{ opacity:0; transform:translateY(18px);} to{ opacity:1; transform:none;} }
+  .fl-grain { position:absolute; inset:0; pointer-events:none; opacity:0.05; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.82%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px; }
+</style>
+</helmet>
+
+<x-import component-from-global-scope="deck-stage" from="./deck-stage.js" width="1920" height="1080" hint-size="100%,100%">
+
+  <!-- ========== 1 · COVER ========== -->
+  <section data-label="Cover" data-speaker-notes="Open cold. Let the room sit in the atmosphere for a beat before you speak. This is Forge — a training app where discipline becomes a permanent record." style="position:relative; overflow:hidden; width:100%; height:100%; background:var(--fl-bg-atmospheric); display:flex; flex-direction:column; justify-content:center; padding:0 150px; font-family:var(--fl-font-sans); color:var(--fl-text-primary);">
+    <div style="position:absolute; inset:0; background:url('forge-stone-texture.png') center/cover no-repeat; opacity:0.22; mix-blend-mode:luminosity;"></div>
+    <div style="position:absolute; left:-6%; top:38%; width:52%; height:60%; background:var(--fl-glow-ember-deep); filter:blur(30px); animation:fl-ember 6s var(--fl-ease-out) infinite;"></div>
+    <div style="position:relative; z-index:2; max-width:1140px;">
+      <div style="display:inline-flex; align-items:center; gap:14px; margin-bottom:40px;">
+        <span style="width:46px; height:46px; border-radius:var(--fl-radius-round); padding:5px; background:var(--fl-bronze-metallic); box-shadow:var(--fl-border-inset), var(--fl-glow-badge); display:flex;"><span style="flex:1; border-radius:50%; background:var(--fl-surface-recessed); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg></span></span>
+        <span style="font-size:19px; font-weight:700; letter-spacing:5px; text-transform:uppercase; color:var(--fl-text-primary);">Forge</span>
+      </div>
+      <h1 style="margin:0; font-family:var(--fl-font-display); font-weight:600; font-size:104px; line-height:1.02; letter-spacing:-2px; color:var(--fl-text-primary); text-wrap:balance;">Build your story.<br><span style="color:var(--fl-bronze-bright);">Forge your legacy.</span></h1>
+      <p style="margin:40px 0 0; max-width:720px; font-size:25px; line-height:1.5; color:var(--fl-text-secondary); text-wrap:pretty;">A training app where every session you finish is carved into a permanent record of who you are becoming.</p>
+      <div style="margin-top:54px; display:inline-flex; align-items:center; gap:14px; padding:18px 34px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); color:#F7F5F1; font-size:20px; font-weight:700; letter-spacing:0.5px; text-shadow:0 1px 1px rgba(8,5,2,.5);">Join the forge<span style="color:var(--fl-ember-flame); font-size:22px;">&rarr;</span></div>
+    </div>
+    <div class="fl-grain"></div>
+  </section>
+
+  <!-- ========== 2 · THE PROBLEM ========== -->
+  <section data-label="The Problem" data-speaker-notes="Name the pain honestly. Every hard session you have ever done has already evaporated. The effort was real; the record isn't." style="position:relative; overflow:hidden; width:100%; height:100%; background:var(--fl-bg-atmospheric); display:flex; flex-direction:column; justify-content:center; padding:0 150px; font-family:var(--fl-font-sans); color:var(--fl-text-primary);">
+    <div style="position:relative; z-index:2; max-width:1240px;">
+      <span style="font-size:15px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">The problem</span>
+      <h2 style="margin:22px 0 0; font-family:var(--fl-font-display); font-weight:600; font-size:76px; line-height:1.08; letter-spacing:-1.2px; text-wrap:balance;">You train for years. Then it all disappears.</h2>
+      <p style="margin:34px 0 0; max-width:960px; font-size:26px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Every brutal set, every early morning, every rep past failure — logged in a note, a spreadsheet, or nothing at all. The work was monumental. What's left of it is a number in a forgotten app. Discipline deserves a monument, not a data dump.</p>
+    </div>
+    <div class="fl-grain"></div>
+  </section>
+
+  <!-- ========== 3 · THE IDEA ========== -->
+  <section data-label="The Idea" data-speaker-notes="The turn. Forge treats training as identity. Discipline becomes legacy — a record carved in bronze, not typed in a cell." style="position:relative; overflow:hidden; width:100%; height:100%; background:var(--fl-bg-atmospheric); display:flex; align-items:center; padding:0 150px; font-family:var(--fl-font-sans); color:var(--fl-text-primary);">
+    <div style="position:absolute; right:-4%; top:20%; width:44%; height:64%; background:var(--fl-glow-ember-deep); filter:blur(40px); opacity:.7;"></div>
+    <div style="position:relative; z-index:2; max-width:1200px;">
+      <span style="font-size:15px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">The idea</span>
+      <h2 style="margin:22px 0 0; font-family:var(--fl-font-display); font-weight:600; font-size:82px; line-height:1.05; letter-spacing:-1.4px; text-wrap:balance;">Discipline becomes <span style="color:var(--fl-bronze-bright);">legacy.</span></h2>
+      <p style="margin:36px 0 0; max-width:1000px; font-size:26px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Forge turns training into a story you author with your body. You build a program, you do the work, and the app forges each session into chapters, honors, and a timeline that grows heavier and more earned every year. It's not a tracker. It's the record of a life spent in the arena.</p>
+    </div>
+    <div class="fl-grain"></div>
+  </section>
+
+  <!-- ========== 4 · ACTIVE WORKOUT ========== -->
+  <section data-label="Active Workout" data-speaker-notes="Feature 1. The moment of work. Play the demo — show how fast and heavy the logger feels while you're actually lifting." style="position:relative; overflow:hidden; width:100%; height:100%; background:var(--fl-bg-atmospheric); display:flex; align-items:center; gap:96px; padding:0 130px; font-family:var(--fl-font-sans); color:var(--fl-text-primary);">
+    <div style="position:relative; z-index:2; flex:1; max-width:820px;">
+      <span style="font-size:14px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">01 — In the arena</span>
+      <h2 style="margin:20px 0 0; font-family:var(--fl-font-display); font-weight:600; font-size:66px; line-height:1.06; letter-spacing:-1px;">The workout logger</h2>
+      <p style="margin:26px 0 0; font-size:23px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Heavy, fast, and out of your way. Log sets with a thumb, watch rest tick down, and feel the weight of the session build in real time — no fiddling between reps.</p>
+      <div style="margin-top:34px; display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px; color:var(--fl-text-primary);"><span style="color:var(--fl-bronze-bright);">&#9670;</span>One-thumb set logging built for mid-lift</div>
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px; color:var(--fl-text-primary);"><span style="color:var(--fl-bronze-bright);">&#9670;</span>Rest timer and live session weight</div>
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px; color:var(--fl-text-primary);"><span style="color:var(--fl-bronze-bright);">&#9670;</span>Every rep saved the instant you rack it</div>
+      </div>
+      <p style="margin:30px 0 0; font-size:19px; font-style:italic; color:var(--fl-text-tertiary); font-family:var(--fl-font-display);">Why it matters — the effort is captured while it's still hot, so nothing you earn is ever lost.</p>
+    </div>
+    <div style="position:relative; z-index:2; flex:none;">
+      <div style="position:absolute; inset:-30px; background:var(--fl-glow-ember-deep); filter:blur(38px); opacity:.6; z-index:0;"></div>
+      <div style="position:relative; z-index:1; width:392px; height:800px; border-radius:52px; padding:13px; background:linear-gradient(160deg,#26262c,#0d0d10); box-shadow:var(--fl-border-inset), var(--fl-shadow-ambient), var(--fl-glow-subtle); border:1px solid var(--fl-charcoal-600);">
+        <div style="position:relative; width:100%; height:100%; border-radius:40px; overflow:hidden; background:#0A0B0D;">
+          <image-slot id="demo-active-workout" shape="rect" fit="cover" placeholder="Drop Active Workout demo video frame"></image-slot>
+          <div style="position:absolute; left:50%; top:14px; transform:translateX(-50%); width:118px; height:30px; border-radius:16px; background:#000; z-index:3; pointer-events:none;"></div>
+          <div style="position:absolute; left:16px; bottom:16px; z-index:3; pointer-events:none; display:inline-flex; align-items:center; gap:8px; padding:7px 13px; border-radius:var(--fl-radius-pill); background:rgba(8,9,11,.66); border:1px solid var(--fl-bronze-border-subtle); backdrop-filter:blur(6px); font-size:13px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);"><span style="width:8px; height:8px; border-radius:50%; background:var(--fl-ember-flame); box-shadow:0 0 8px var(--fl-ember-flame);"></span>Demo</div>
+        </div>
+      </div>
+    </div>
+    <div class="fl-grain"></div>
+  </section>
+
+  <!-- ========== 5 · PROGRAM BUILDER ========== -->
+  <section data-label="Program Builder" data-speaker-notes="Feature 2. Ownership. Show the builder demo — split, weeks, exercises. You author the plan, it's yours." style="position:relative; overflow:hidden; width:100%; height:100%; background:var(--fl-bg-atmospheric); display:flex; align-items:center; gap:96px; padding:0 130px; flex-direction:row-reverse; font-family:var(--fl-font-sans); color:var(--fl-text-primary);">
+    <div style="position:relative; z-index:2; flex:1; max-width:820px;">
+      <span style="font-size:14px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">02 — Author the plan</span>
+      <h2 style="margin:20px 0 0; font-family:var(--fl-font-display); font-weight:600; font-size:66px; line-height:1.06; letter-spacing:-1px;">The program builder</h2>
+      <p style="margin:26px 0 0; font-size:23px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Set your split, your weeks, and your work — repeat a template or shape every week by hand. Pulled from a real exercise library, it's a plan you own instead of one you rent.</p>
+      <div style="margin-top:34px; display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>Choose length, split, and days per week</div>
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>Repeat a week or customize each one</div>
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>Build from a full library of exercises</div>
+      </div>
+      <p style="margin:30px 0 0; font-size:19px; font-style:italic; color:var(--fl-text-tertiary); font-family:var(--fl-font-display);">Why it matters — a legacy has to be yours to mean anything. You design the path you'll be judged by.</p>
+    </div>
+    <div style="position:relative; z-index:2; flex:none;">
+      <div style="position:absolute; inset:-30px; background:var(--fl-glow-ember-deep); filter:blur(38px); opacity:.55; z-index:0;"></div>
+      <div style="position:relative; z-index:1; width:392px; height:800px; border-radius:52px; padding:13px; background:linear-gradient(160deg,#26262c,#0d0d10); box-shadow:var(--fl-border-inset), var(--fl-shadow-ambient), var(--fl-glow-subtle); border:1px solid var(--fl-charcoal-600);">
+        <div style="position:relative; width:100%; height:100%; border-radius:40px; overflow:hidden; background:#0A0B0D;">
+          <image-slot id="demo-program-builder" shape="rect" fit="cover" placeholder="Drop Program Builder demo video frame"></image-slot>
+          <div style="position:absolute; left:50%; top:14px; transform:translateX(-50%); width:118px; height:30px; border-radius:16px; background:#000; z-index:3; pointer-events:none;"></div>
+          <div style="position:absolute; left:16px; bottom:16px; z-index:3; pointer-events:none; display:inline-flex; align-items:center; gap:8px; padding:7px 13px; border-radius:var(--fl-radius-pill); background:rgba(8,9,11,.66); border:1px solid var(--fl-bronze-border-subtle); backdrop-filter:blur(6px); font-size:13px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);"><span style="width:8px; height:8px; border-radius:50%; background:var(--fl-ember-flame); box-shadow:0 0 8px var(--fl-ember-flame);"></span>Demo</div>
+        </div>
+      </div>
+    </div>
+    <div class="fl-grain"></div>
+  </section>
+
+  <!-- ========== 6 · WORKOUT COMPLETE / HONORS ========== -->
+  <section data-label="Honors Ceremony" data-speaker-notes="Feature 3. The payoff. When a session ends, Forge stages a ceremony — the work comes alive, honors are awarded. This is the dopamine that keeps people coming back." style="position:relative; overflow:hidden; width:100%; height:100%; background:var(--fl-bg-atmospheric); display:flex; align-items:center; gap:96px; padding:0 130px; font-family:var(--fl-font-sans); color:var(--fl-text-primary);">
+    <div style="position:relative; z-index:2; flex:1; max-width:820px;">
+      <span style="font-size:14px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">03 — The reckoning</span>
+      <h2 style="margin:20px 0 0; font-family:var(--fl-font-display); font-weight:600; font-size:66px; line-height:1.06; letter-spacing:-1px;">The honors ceremony</h2>
+      <p style="margin:26px 0 0; font-size:23px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Finish a session and the work comes alive. Forge stages a moment — the session recounted, honors struck in bronze, your record advanced. Effort ends in ceremony, not a silent save.</p>
+      <div style="margin-top:34px; display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>Earned honors, forged and awarded</div>
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>A reflection captured while it's raw</div>
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>The session written into your chapter</div>
+      </div>
+      <p style="margin:30px 0 0; font-size:19px; font-style:italic; color:var(--fl-text-tertiary); font-family:var(--fl-font-display);">Why it matters — closing the loop with ceremony is what turns a workout into a memory you keep.</p>
+    </div>
+    <div style="position:relative; z-index:2; flex:none;">
+      <div style="position:absolute; inset:-30px; background:var(--fl-glow-ember-deep); filter:blur(38px); opacity:.7; z-index:0;"></div>
+      <div style="position:relative; z-index:1; width:392px; height:800px; border-radius:52px; padding:13px; background:linear-gradient(160deg,#26262c,#0d0d10); box-shadow:var(--fl-border-inset), var(--fl-shadow-ambient), var(--fl-glow-subtle); border:1px solid var(--fl-charcoal-600);">
+        <div style="position:relative; width:100%; height:100%; border-radius:40px; overflow:hidden; background:#0A0B0D;">
+          <image-slot id="demo-honors" shape="rect" fit="cover" placeholder="Drop Workout Complete / honors demo video frame"></image-slot>
+          <div style="position:absolute; left:50%; top:14px; transform:translateX(-50%); width:118px; height:30px; border-radius:16px; background:#000; z-index:3; pointer-events:none;"></div>
+          <div style="position:absolute; left:16px; bottom:16px; z-index:3; pointer-events:none; display:inline-flex; align-items:center; gap:8px; padding:7px 13px; border-radius:var(--fl-radius-pill); background:rgba(8,9,11,.66); border:1px solid var(--fl-bronze-border-subtle); backdrop-filter:blur(6px); font-size:13px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);"><span style="width:8px; height:8px; border-radius:50%; background:var(--fl-ember-flame); box-shadow:0 0 8px var(--fl-ember-flame);"></span>Demo</div>
+        </div>
+      </div>
+    </div>
+    <div class="fl-grain"></div>
+  </section>
+
+  <!-- ========== 7 · LEGACY HUB ========== -->
+  <section data-label="Legacy Hub" data-speaker-notes="Feature 4. The heart of the product. This is why it's called Forge Legacy — chapters, a timeline, insignia. The record that grows heavier every year." style="position:relative; overflow:hidden; width:100%; height:100%; background:var(--fl-bg-atmospheric); display:flex; align-items:center; gap:96px; padding:0 130px; flex-direction:row-reverse; font-family:var(--fl-font-sans); color:var(--fl-text-primary);">
+    <div style="position:relative; z-index:2; flex:1; max-width:820px;">
+      <span style="font-size:14px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">04 — The monument</span>
+      <h2 style="margin:20px 0 0; font-family:var(--fl-font-display); font-weight:600; font-size:66px; line-height:1.06; letter-spacing:-1px;">Your legacy hub</h2>
+      <p style="margin:26px 0 0; font-size:23px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Every session flows into one place: chapters that mark your eras, a timeline of what you've done, and insignia that rank the discipline behind it. Open it in year three and feel the weight of the work.</p>
+      <div style="margin-top:34px; display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>Chapters that mark your training eras</div>
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>A living timeline of every milestone</div>
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>Insignia and ranks earned over time</div>
+      </div>
+      <p style="margin:30px 0 0; font-size:19px; font-style:italic; color:var(--fl-text-tertiary); font-family:var(--fl-font-display);">Why it matters — this is the payoff for years of consistency: proof, in one place, that you showed up.</p>
+    </div>
+    <div style="position:relative; z-index:2; flex:none;">
+      <div style="position:absolute; inset:-30px; background:var(--fl-glow-ember-deep); filter:blur(38px); opacity:.6; z-index:0;"></div>
+      <div style="position:relative; z-index:1; width:392px; height:800px; border-radius:52px; padding:13px; background:linear-gradient(160deg,#26262c,#0d0d10); box-shadow:var(--fl-border-inset), var(--fl-shadow-ambient), var(--fl-glow-subtle); border:1px solid var(--fl-charcoal-600);">
+        <div style="position:relative; width:100%; height:100%; border-radius:40px; overflow:hidden; background:#0A0B0D;">
+          <image-slot id="demo-legacy" shape="rect" fit="cover" placeholder="Drop Legacy hub demo video frame"></image-slot>
+          <div style="position:absolute; left:50%; top:14px; transform:translateX(-50%); width:118px; height:30px; border-radius:16px; background:#000; z-index:3; pointer-events:none;"></div>
+          <div style="position:absolute; left:16px; bottom:16px; z-index:3; pointer-events:none; display:inline-flex; align-items:center; gap:8px; padding:7px 13px; border-radius:var(--fl-radius-pill); background:rgba(8,9,11,.66); border:1px solid var(--fl-bronze-border-subtle); backdrop-filter:blur(6px); font-size:13px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);"><span style="width:8px; height:8px; border-radius:50%; background:var(--fl-ember-flame); box-shadow:0 0 8px var(--fl-ember-flame);"></span>Demo</div>
+        </div>
+      </div>
+    </div>
+    <div class="fl-grain"></div>
+  </section>
+
+  <!-- ========== 8 · PROGRESS & TRANSFORMATION ========== -->
+  <section data-label="Progress" data-speaker-notes="Feature 5. The evidence. Progress and transformation — numbers climbing, body changing. Show the demo of the trend/photo view." style="position:relative; overflow:hidden; width:100%; height:100%; background:var(--fl-bg-atmospheric); display:flex; align-items:center; gap:96px; padding:0 130px; font-family:var(--fl-font-sans); color:var(--fl-text-primary);">
+    <div style="position:relative; z-index:2; flex:1; max-width:820px;">
+      <span style="font-size:14px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">05 — The evidence</span>
+      <h2 style="margin:20px 0 0; font-family:var(--fl-font-display); font-weight:600; font-size:66px; line-height:1.06; letter-spacing:-1px;">Progress &amp; transformation</h2>
+      <p style="margin:26px 0 0; font-size:23px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Watch the lines climb and the body change. Forge tracks your numbers over time and holds your transformation photos side by side, so the slow, invisible work finally becomes something you can see.</p>
+      <div style="margin-top:34px; display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>Strength and volume trends over time</div>
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>Transformation photos, then vs. now</div>
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>Goals you set and then close out</div>
+      </div>
+      <p style="margin:30px 0 0; font-size:19px; font-style:italic; color:var(--fl-text-tertiary); font-family:var(--fl-font-display);">Why it matters — seeing the change is what keeps you in it long enough to earn the legacy.</p>
+    </div>
+    <div style="position:relative; z-index:2; flex:none;">
+      <div style="position:absolute; inset:-30px; background:var(--fl-glow-ember-deep); filter:blur(38px); opacity:.55; z-index:0;"></div>
+      <div style="position:relative; z-index:1; width:392px; height:800px; border-radius:52px; padding:13px; background:linear-gradient(160deg,#26262c,#0d0d10); box-shadow:var(--fl-border-inset), var(--fl-shadow-ambient), var(--fl-glow-subtle); border:1px solid var(--fl-charcoal-600);">
+        <div style="position:relative; width:100%; height:100%; border-radius:40px; overflow:hidden; background:#0A0B0D;">
+          <image-slot id="demo-progress" shape="rect" fit="cover" placeholder="Drop Progress / transformation demo video frame"></image-slot>
+          <div style="position:absolute; left:50%; top:14px; transform:translateX(-50%); width:118px; height:30px; border-radius:16px; background:#000; z-index:3; pointer-events:none;"></div>
+          <div style="position:absolute; left:16px; bottom:16px; z-index:3; pointer-events:none; display:inline-flex; align-items:center; gap:8px; padding:7px 13px; border-radius:var(--fl-radius-pill); background:rgba(8,9,11,.66); border:1px solid var(--fl-bronze-border-subtle); backdrop-filter:blur(6px); font-size:13px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);"><span style="width:8px; height:8px; border-radius:50%; background:var(--fl-ember-flame); box-shadow:0 0 8px var(--fl-ember-flame);"></span>Demo</div>
+        </div>
+      </div>
+    </div>
+    <div class="fl-grain"></div>
+  </section>
+
+  <!-- ========== 9 · SOCIAL / SQUADS ========== -->
+  <section data-label="Squads & Social" data-speaker-notes="Feature 6. Accountability. Squads, friends, competitions. Legacy is witnessed. Show the demo of a squad feed / competition." style="position:relative; overflow:hidden; width:100%; height:100%; background:var(--fl-bg-atmospheric); display:flex; align-items:center; gap:96px; padding:0 130px; flex-direction:row-reverse; font-family:var(--fl-font-sans); color:var(--fl-text-primary);">
+    <div style="position:relative; z-index:2; flex:1; max-width:820px;">
+      <span style="font-size:14px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">06 — Witnessed</span>
+      <h2 style="margin:20px 0 0; font-family:var(--fl-font-display); font-weight:600; font-size:66px; line-height:1.06; letter-spacing:-1px;">Squads &amp; competition</h2>
+      <p style="margin:26px 0 0; font-size:23px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">A legacy that no one sees is just a diary. Train alongside a squad, hold friends accountable, and enter competitions where the work is measured against others who show up. Discipline sharpens when it's witnessed.</p>
+      <div style="margin-top:34px; display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>Squads that train and rank together</div>
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>Friends and shared accountability</div>
+        <div style="display:flex; align-items:center; gap:15px; font-size:20px;"><span style="color:var(--fl-bronze-bright);">&#9670;</span>Competitions decided by the work</div>
+      </div>
+      <p style="margin:30px 0 0; font-size:19px; font-style:italic; color:var(--fl-text-tertiary); font-family:var(--fl-font-display);">Why it matters — showing up is easier when a brotherhood is counting on you to.</p>
+    </div>
+    <div style="position:relative; z-index:2; flex:none;">
+      <div style="position:absolute; inset:-30px; background:var(--fl-glow-ember-deep); filter:blur(38px); opacity:.6; z-index:0;"></div>
+      <div style="position:relative; z-index:1; width:392px; height:800px; border-radius:52px; padding:13px; background:linear-gradient(160deg,#26262c,#0d0d10); box-shadow:var(--fl-border-inset), var(--fl-shadow-ambient), var(--fl-glow-subtle); border:1px solid var(--fl-charcoal-600);">
+        <div style="position:relative; width:100%; height:100%; border-radius:40px; overflow:hidden; background:#0A0B0D;">
+          <image-slot id="demo-social" shape="rect" fit="cover" placeholder="Drop Squads / social demo video frame"></image-slot>
+          <div style="position:absolute; left:50%; top:14px; transform:translateX(-50%); width:118px; height:30px; border-radius:16px; background:#000; z-index:3; pointer-events:none;"></div>
+          <div style="position:absolute; left:16px; bottom:16px; z-index:3; pointer-events:none; display:inline-flex; align-items:center; gap:8px; padding:7px 13px; border-radius:var(--fl-radius-pill); background:rgba(8,9,11,.66); border:1px solid var(--fl-bronze-border-subtle); backdrop-filter:blur(6px); font-size:13px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);"><span style="width:8px; height:8px; border-radius:50%; background:var(--fl-ember-flame); box-shadow:0 0 8px var(--fl-ember-flame);"></span>Demo</div>
+        </div>
+      </div>
+    </div>
+    <div class="fl-grain"></div>
+  </section>
+
+  <!-- ========== 10 · THE SYSTEM ========== -->
+  <section data-label="One System" data-speaker-notes="Tie it together. Every feature feeds the same loop: work, ceremony, record. One system, one legacy." style="position:relative; overflow:hidden; width:100%; height:100%; background:var(--fl-bg-atmospheric); display:flex; flex-direction:column; justify-content:center; padding:0 150px; font-family:var(--fl-font-sans); color:var(--fl-text-primary);">
+    <div style="position:relative; z-index:2;">
+      <span style="font-size:15px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">One system</span>
+      <h2 style="margin:20px 0 40px; font-family:var(--fl-font-display); font-weight:600; font-size:68px; line-height:1.05; letter-spacing:-1.2px; max-width:1200px; text-wrap:balance;">Every feature feeds the same loop.</h2>
+      <div style="display:flex; gap:24px; align-items:stretch;">
+        <div style="flex:1; padding:34px 30px; border-radius:var(--fl-radius-xl); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:var(--fl-border-inset), var(--fl-shadow-card);">
+          <div style="font-family:var(--fl-font-display); font-size:34px; color:var(--fl-bronze-bright);">Build</div>
+          <p style="margin:12px 0 0; font-size:19px; line-height:1.5; color:var(--fl-text-secondary);">Author a program that's yours to be judged by.</p>
+        </div>
+        <div style="display:flex; align-items:center; color:var(--fl-bronze-primary); font-size:30px;">&rarr;</div>
+        <div style="flex:1; padding:34px 30px; border-radius:var(--fl-radius-xl); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:var(--fl-border-inset), var(--fl-shadow-card);">
+          <div style="font-family:var(--fl-font-display); font-size:34px; color:var(--fl-bronze-bright);">Train</div>
+          <p style="margin:12px 0 0; font-size:19px; line-height:1.5; color:var(--fl-text-secondary);">Do the work; every rep captured while it's hot.</p>
+        </div>
+        <div style="display:flex; align-items:center; color:var(--fl-bronze-primary); font-size:30px;">&rarr;</div>
+        <div style="flex:1; padding:34px 30px; border-radius:var(--fl-radius-xl); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:var(--fl-border-inset), var(--fl-shadow-card);">
+          <div style="font-family:var(--fl-font-display); font-size:34px; color:var(--fl-bronze-bright);">Forge</div>
+          <p style="margin:12px 0 0; font-size:19px; line-height:1.5; color:var(--fl-text-secondary);">Ceremony strikes the honor and advances your record.</p>
+        </div>
+        <div style="display:flex; align-items:center; color:var(--fl-bronze-primary); font-size:30px;">&rarr;</div>
+        <div style="flex:1; padding:34px 30px; border-radius:var(--fl-radius-xl); background:linear-gradient(180deg, rgba(191,143,79,0.12), transparent 60%), var(--fl-surface-card); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-border-inset), var(--fl-glow-subtle);">
+          <div style="font-family:var(--fl-font-display); font-size:34px; color:var(--fl-bronze-bright);">Legacy</div>
+          <p style="margin:12px 0 0; font-size:19px; line-height:1.5; color:var(--fl-text-secondary);">It all lands in a monument that grows heavier every year.</p>
+        </div>
+      </div>
+      <p style="margin:44px 0 0; max-width:1080px; font-size:23px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Squads witness it, progress proves it — but the spine never changes. Work becomes record. That's the whole promise of Forge.</p>
+    </div>
+    <div class="fl-grain"></div>
+  </section>
+
+  <!-- ========== 11 · CALL TO JOIN ========== -->
+  <section data-label="Join" data-speaker-notes="Close hard. The ask: join the forge. Give them the one action — sign up and start their record today." style="position:relative; overflow:hidden; width:100%; height:100%; background:var(--fl-bg-atmospheric); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 150px; font-family:var(--fl-font-sans); color:var(--fl-text-primary);">
+    <div style="position:absolute; inset:0; background:url('forge-stone-texture.png') center/cover no-repeat; opacity:0.2; mix-blend-mode:luminosity;"></div>
+    <div style="position:absolute; left:50%; top:56%; transform:translateX(-50%); width:64%; height:66%; background:var(--fl-glow-ember-deep); filter:blur(46px); opacity:.75; animation:fl-ember 6s var(--fl-ease-out) infinite;"></div>
+    <div style="position:relative; z-index:2; max-width:1160px;">
+      <span style="font-size:15px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Your record starts today</span>
+      <h2 style="margin:26px 0 0; font-family:var(--fl-font-display); font-weight:600; font-size:96px; line-height:1.02; letter-spacing:-2px; text-wrap:balance;">Build your story.<br><span style="color:var(--fl-bronze-bright);">Forge your legacy.</span></h2>
+      <p style="margin:34px auto 0; max-width:760px; font-size:25px; line-height:1.5; color:var(--fl-text-secondary); text-wrap:pretty;">The first session is the first line of a record you'll be proud of for years. Step into the forge.</p>
+      <div style="margin-top:52px; display:flex; gap:20px; justify-content:center; align-items:center;">
+        <div style="display:inline-flex; align-items:center; gap:14px; padding:20px 42px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); color:#F7F5F1; font-size:22px; font-weight:700; letter-spacing:0.5px; text-shadow:0 1px 1px rgba(8,5,2,.5);">Join the forge<span style="color:var(--fl-ember-flame);">&rarr;</span></div>
+        <div style="font-size:20px; color:var(--fl-text-tertiary); letter-spacing:1px;">forgelegacy.app</div>
+      </div>
+    </div>
+    <div class="fl-grain"></div>
+  </section>
+
+</x-import>
+</x-dc>
+</body>
+</html>
