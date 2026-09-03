@@ -50,6 +50,63 @@ export interface WeeklyReviewData {
  * ⚠ THE BANDS ARE ABOUT SHAPE, NOT QUALITY. `steady` is not "mediocre" — it is the most common real
  * week and the one most training is actually made of. Nothing here ranks them.
  */
+/**
+ * ══ THE WEEK'S HEADLINE — the rarest thing that happened, not the biggest number ══
+ *
+ * PO: *"I want to make weekly and monthly reviews more meaningful and emotionally pulling. Not just
+ * numbers."* The diagnosis was that the emotional content lives in the sections that are usually EMPTY
+ * — most weeks are three sessions, no PR, no honor — so everything guaranteed to appear is a total, and
+ * a total is unfeelable. 38,420 lb is not a memory. "Back Squat — 225 × 5" is.
+ *
+ * ⚠ AND THE SCREEN ALREADY ARGUED AGAINST PROMOTING THE HEAVIEST LIFT, correctly:
+ *
+ *   > "HEAVIEST IS A ROW, NOT A HERO. It is the fallback fact — the thing Holt names only when there is
+ *   >  no honor and no PR — so it is on almost every week and is the most ordinary line here. Giving it
+ *   >  the largest figure on the screen would rank the week's most common event above its rarest."
+ *
+ * Both are right, and this is what reconciles them: **the hero is whatever is RAREST on that week.** An
+ * honor outranks a PR, a PR outranks the heaviest lift. So the heaviest lift never displaces something
+ * scarcer — it only leads a week that had nothing scarcer, which is exactly the week that currently
+ * opens with four totals and nothing else.
+ *
+ * ⚠ IT RETURNS NULL RATHER THAN INVENTING ONE. A cardio-only week has no `top_lift`, no PR and no honor.
+ * The screen then opens on the stats as it always did; a headline that says "you trained" is a headline
+ * that says nothing while occupying the space of something that did.
+ */
+export type HeroKind = 'honor' | 'pr' | 'lift';
+
+export interface WeekHero {
+  kind: HeroKind;
+  /** The uppercase eyebrow above it — what KIND of thing this is. */
+  eyebrow: string;
+  /** The thing itself. An exercise name, an honor name. */
+  title: string;
+  /** The load, when there is one. Formatted by the caller, which owns units. */
+  weight: number | null;
+  reps: number | null;
+  /** True when this hero is the ONLY member of its section, so the section below can be dropped. */
+  solo: boolean;
+}
+
+export function weekHero(d: WeeklyReviewData): WeekHero | null {
+  if (d.honors.length > 0) {
+    return { kind: 'honor', eyebrow: 'Honor earned', title: d.honors[0].honor,
+             weight: null, reps: null, solo: d.honors.length === 1 };
+  }
+  if (d.prs.length > 0) {
+    return { kind: 'pr', eyebrow: 'Personal record', title: d.prs[0].exercise,
+             weight: d.prs[0].value, reps: null, solo: d.prs.length === 1 };
+  }
+  /* ⚠ A `top_lift` with no weight is not a headline. Bodyweight work records `weight: null` here (0140
+     stores what was lifted, and a dip carries nothing), and "Dip — " is not a fact worth the largest
+     type on the screen. It stays in its row below. */
+  if (d.top_lift && d.top_lift.weight != null) {
+    return { kind: 'lift', eyebrow: 'Heaviest', title: d.top_lift.name,
+             weight: d.top_lift.weight, reps: d.top_lift.reps, solo: true };
+  }
+  return null;
+}
+
 export type WeekShape = 'single' | 'steady' | 'full' | 'heavy';
 
 /** ⚠ Thresholds describe frequency only. They never move because of volume — a heavy week of two
