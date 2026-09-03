@@ -1,4 +1,5 @@
 import { displayWeight, unitLabel, type UnitSystem } from '../settings/units.ts';
+import { BODYWEIGHT } from './set-load.ts';
 import type { ActiveSession, SessionExercise, SessionSet } from './types.ts';
 
 /**
@@ -191,10 +192,20 @@ export function targetLine(set: SessionSet, units: UnitSystem): string {
   const reps = repsPart(set);
   const lb = set.weight ?? set.targetWeight ?? null;
 
-  if (lb == null || lb <= 0) {
+  /*
+   * ⚠ ZERO AND NULL PARTED COMPANY HERE. `lb <= 0` folded a BODYWEIGHT set in with an unanswered one
+   * and showed the wrist "8 reps" — dropping the one fact the athlete had actually stated. Zero is an
+   * answer: no added load. It reads "BW × 8", the same as everywhere else in the app.
+   * Genuinely absent weight still falls through to reps alone. See `set-load.ts`.
+   */
+  if (lb == null || lb < 0) {
     if (set.toFailure) return 'to failure';
     if (set.targetSec != null && set.targetSec > 0) return reps;
     return `${reps} reps`;
+  }
+  if (lb === 0) {
+    if (set.toFailure) return `${BODYWEIGHT} to failure`;
+    return `${BODYWEIGHT} × ${reps}`;
   }
 
   const { value } = displayWeight(lb, units);
