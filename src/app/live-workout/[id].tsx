@@ -12,7 +12,7 @@ import { fetchLiveSession, type LiveSessionView } from '@/data/live-session-live
 import { minutesTraining } from '@/data/presence-live';
 import { liveProgress, type LiveExercise, type LiveSet } from '@/domain/workout/live-session';
 import { CARDIO_ACTIVITIES, distanceUnitFor, fmtDistanceIn, fmtDuration, type CardioActivity } from '@/domain/workout/conditioning';
-import { displayWeight } from '@/domain/settings/units';
+import { setLoadLineLb } from '@/domain/workout/set-load';
 import { useUnits } from '@/lib/settings';
 
 /**
@@ -186,11 +186,16 @@ function ExerciseCard({ exercise, current, units }: { exercise: LiveExercise; cu
 }
 
 function SetRow({ index, set, units }: { index: number; set: LiveSet; units: ReturnType<typeof useUnits>['units'] }) {
-  const w = set.weight != null ? displayWeight(set.weight, units) : null;
+  /* ⚠ `!= null` LET A BODYWEIGHT SET THROUGH AS A NUMBER, and this screen rendered it "0 lb" to
+     whoever was watching. Zero is not a missing weight, it is the answer "no added load" — see
+     `domain/workout/set-load.ts`. `setLoadLineLb` owns the three-way rule and the lb→kg conversion
+     these stored sets need; "BW" comes back without a unit, because "BW lb" is not a thing.
+     An UNANSWERED weight still shows reps alone, as it always has — no load, no "× ". */
+  const load = set.weight == null ? null : setLoadLineLb(set.weight, null, units);
   const logged = set.done
     ? set.durationSec != null
       ? fmtDuration(set.durationSec)
-      : `${w ? `${w.value} ${w.unit} × ` : ''}${set.reps ?? set.targetReps}`
+      : `${load ? `${load} × ` : ''}${set.reps ?? set.targetReps}`
     : null;
   const planned = set.targetSec != null ? fmtDuration(set.targetSec) : set.targetReps ? `× ${set.targetReps}` : 'to failure';
   return (

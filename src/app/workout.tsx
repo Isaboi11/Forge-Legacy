@@ -79,6 +79,7 @@ import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/doma
 import { publishLiveSession } from '@/data/live-session-live';
 import { liveSessionSnapshot } from '@/domain/workout/live-session';
 import { blockAt, breakBlock, endsSupersetRound, indexAfterRemoval, makeSuperset, nextInSuperset, nextPosition, removeExerciseAt, sessionToTemplateExercises, supersetRounds } from '@/domain/workout/session-core';
+import { setWeightLabel, setWeightLabelLb } from '@/domain/workout/set-load';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
 import { continueWorkout, fetchLastNotes, saveWorkout, type LastNote } from '@/domain/workout/save';
@@ -218,8 +219,9 @@ function targetRepsText(set: SessionSet): string {
  * three warm-up sets that they had done zero.
  */
 function weightText(set: SessionSet): string {
-  if (set.weight === 0) return 'BW';
-  return set.weight != null ? String(set.weight) : '—';
+  // The rule itself now lives in `domain/workout/set-load.ts` — see that file for why zero is never
+  // shown as a number. Session sets hold what the athlete typed, so this is the no-conversion form.
+  return setWeightLabel(set.weight);
 }
 
 /**
@@ -2111,7 +2113,15 @@ export default function WorkoutScreen() {
      kilos. Before that fix, storage held whatever was typed, and converting here would have halved a
      metric athlete's logged lift in front of them; showing it raw was the correct workaround for a
      broken write. The write is fixed, so the workaround is now the bug. */
-  const wxr = (weight: number, reps: number): string => `${displayWeight(weight, units).value} × ${reps}`;
+  /* ⚠ AND A BODYWEIGHT BEST IS "BW × 8", NOT "0 × 8". This line is the athlete's own history handed
+     back to them — last time, and their best ever. Rendering a dip PR as `0 × 12` was the app telling
+     someone their record was nothing. `setLoadLineLb` owns that rule; it also carries the conversion
+     these canonical-pound figures need. */
+  /* ⚠ AND A BODYWEIGHT BEST IS "BW × 8", NOT "0 × 8". This line is the athlete's own history handed
+     back to them — last time, and their best ever. Rendering a dip PR as `0 × 12` was the app telling
+     someone their record was nothing.
+     No unit label, deliberately: these sit under their own "Last"/"Best" captions and always have. */
+  const wxr = (weight: number, reps: number): string => `${setWeightLabelLb(weight, units)} × ${reps}`;
   const lastPerf = liftHist?.sessions[0] ? sessionPerformance(liftHist.sessions[0]) : null;
   const lastText = lastPerf ? wxr(lastPerf.weight, lastPerf.reps) : '—';
   const bestText = liftHist?.best ? wxr(liftHist.best.weight, liftHist.best.reps) : '—';
