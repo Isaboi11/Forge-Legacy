@@ -4,6 +4,182 @@ Overflow from `Forge-Legacy-Master-Status.md` § Recently Completed, moved **ver
 
 ---
 
+### 0. ⭐ A treadmill then chest and back saved itself as "Chest" — and 64% of the catalogue could not name a session (2026-08-27, session naming / Design System colour / Active Workout — **no migration**, ✅ **WEB DEPLOYED** `index-f4d37582a36d795dd0704cc93f228330` · ✅ **LANDING SITE DEPLOYED** version `f912d323` · ✅ **OTA PUBLISHED TO BUILD 7** iOS `01a04433-632b-7064-beee-28e83d91b45d`, runtime `4d728d16…`)
+
+PO, on a session containing a treadmill walk, two chest presses, a row and a fifth lift: *"This is not
+a good name for it. We need to do better with the names. Even if it was strength and cardio."*
+
+**The naming rule was right; its vocabulary was invented.** `MUSCLE_GROUP` was keyed on gym shorthand —
+`Lats`, `Quads`, `Abs`, `Back`, `Shoulders`, `Side Delts`, `Rear Delts`, `Upper Chest`, `Core` — and
+`buildPickerDb` emits the raw `muscles.json` display name, so what actually arrives is
+`Latissimus Dorsi`, `Quadriceps`, `Upper Back`, `Rectus Abdominis`. **Nine of fifteen keys matched no
+muscle at all**, and only six worked: Chest, Biceps, Triceps, Forearms, Glutes, Hamstrings.
+
+**521 of 809 exercises (64%) could not contribute to a name.** Every quad movement (111), every ab
+movement (65), every upper-back movement (53), every lat (32), every deltoid (59) was invisible. A leg
+day named itself after whatever glute accessory it happened to contain. The PO's session read "Chest"
+because the row's primary is `Upper Back`, which the table could not see, so only the two presses
+counted.
+
+⚠ **THE UNIT TESTS PASSED THROUGHOUT, AND THAT IS THE LESSON.** They asserted
+`groupLabel([['Quads']]) === 'Legs'` — the fixture spoke the same invented dialect as the map, so the
+two agreed with each other and neither was ever compared to the catalogue. `session-label.test.mjs` now
+reads `muscles.json` and `exercise_muscles.json` **directly** and fails if any real primary muscle is
+unmapped. That test, not a comment, is what stops this returning.
+
+**Second fault: the cardio then vanished.** Naming a mixed session for its lifting is correct — you do
+not call a chest day "Treadmill Walk" because the walk came first — but twenty minutes of work left no
+trace at all. `sessionLabel` **appends** the modality rather than counting it, because counting would
+trip the 3-or-more rule and call a chest-and-back day with a warm-up walk "Full Body". A stretching
+session is now **Mobility** rather than the launch-path literal (48 movements carry it as their primary
+and no anatomical muscle). The PO's session now reads **"Chest & Back + Cardio"**.
+
+**A style pass on both surfaces, run through the `interfaces` skills** (`better-interface` routed
+across all six domains for the site; `better-typography` + `better-colors` adapted to RN for the app —
+the adaptation is recorded in `Docs/App-Style-Review-2026-08-27.md`).
+
+⭐ **`gray600` `#666060` failed WCAG AA on every ground it renders on** — `charcoal700` **2.81:1**,
+`charcoal800` **2.97**, `charcoal900` **3.10**, `base` **3.26**, against the **4.5** normal-size text
+requires, and under even the **3.0** non-text floor on two of them. It serves `flText.tertiary` **and**
+`flIcon.inactive`. **`#888282`** clears 4.5 on all four (worst **4.60**) and moves **878 usages** — 752
+`color`, 69 `placeholderTextColor`, 44 `stroke`, 5 `fill`. Every non-text use was inspected first: a
+5px dot, two switch knobs, one border, all of which only become more visible. `gray400` stays clearly
+brighter (6.69 vs 5.06), so secondary and tertiary remain distinct steps. The identical value shipped
+to `site/index.html`, recorded in that README's deltas table so a regeneration from the `.dc` cannot
+put `#666060` back.
+
+⚠ **THE COMPOUNDING WAS THE REAL COST.** This token is where the app's *smallest* type lives —
+`rowScoreUnit` 8px, `badgeText` 8.5px, `HoldTimer.hint` 9px — so the tiniest text carried the faintest
+colour. Still small; no longer unreadable as well.
+
+⛔ **AND THE TOKEN FIX DOES NOT REACH EIGHT HARD-CODED COPIES.** `#666060` survives as a literal in
+`ChallengeCard.expired`, `_cardTokens.TREND_NEUTRAL`, `constants/tokens.ts`, `legacy-theme.textDim`
+and four share-image `FAINT` constants. Found by grepping the **live bundle** after deploying, not
+before. **Owed to the next pass**; the first two are live app UI.
+
+**Active Workout answers the thumb.** 54 pressables, **3** of which had any pressed state — including
+the set-complete circle, the most-tapped control in the app, which acknowledged nothing until the data
+round-tripped. 27 controls now respond at `scale: 0.96` with a colour or opacity shift alongside, so
+the confirmation survives Reduce Motion. **Haptics is real**: `expo-haptics` + `lib/haptics{,.web}.ts`
+as the exact sibling of `lib/ding`, and `useHaptics()` returns **pre-gated callables** rather than a
+boolean so a caller cannot forget the `if` and leak a tap the athlete switched off. Fired from inside
+`completeSet`, so the hold timer and sheet auto-complete get it too. `EXPERIENCE_TOGGLES.haptics.live`
+is finally `true` — the Settings switch had defaulted on and done nothing on native since P-4b.
+
+✅ Web alias 200 and hash-matched **on the first probe**, both the deployment's own URL and production ·
+ten pass strings verified in the live 13.5 MB bundle · landing site 200 on both apex and `www`, new
+value present and the old token absent · `tsc` 0 · `expo lint` at baseline · **domain suite
+2,538/2,538** · `src/constants` 28/28.
+
+### 0. ⭐ Route sharing approved, the trim vetoed, and a run finally posts as a run (2026-08-26, Route-Sharing-Amendment-001 / feeds / Activity Detail — **0180 comment-only NOT APPLIED**, ✅ **WEB DEPLOYED** `index-61963996f59016ba80e20ee58fc20b00` · ⛔ **iOS OTA REACHES NOBODY — the fingerprint moved**)
+
+Four PO decisions on the running-post review, then three build units, then a delivery failure worth more
+than the builds.
+
+**⭐ THE DECISIONS (Route-Sharing-Amendment-001).** D1 share the route map: *"Yes."* D2 mixed sessions:
+*"post both honestly. Be able to choose."* D3 splits: deferred. And unprompted: *"we veto the 200m
+remove. Take this out completely."* ⚠ **The engineering advice to keep the endpoint trim — or trim only
+the shared copy — was given and vetoed**; Section 2 of the amendment records the accepted risk (a shared
+route can show a squadmate where the run began) so nobody later claims it was unexamined. The one
+mitigation standing is consent: **the map on a post is opt-in, per post, default off (D-RS-3), and must
+not become a sticky preference without a further amendment.** Routes stored under the old rule are
+trimmed forever; nothing marks which era a row is from.
+
+**⭐ THE TRIM IS OUT, AND ITS TESTS ARE INVERTED, NOT DELETED.** `route-privacy.test.mjs` asserted the
+doorsteps were ABSENT from the stored shape; it now asserts they are PRESENT, point for point, end to
+end through the save builder — a regression that quietly reintroduces trimming fails as loudly as
+removing it used to. `MIN_MAPPABLE_MI`, both trim captions and `ROUTE_TRIM_NOTE` retired with it
+(→ `ROUTE_STORED_NOTE`, "as it was saved", true of both eras). `routeForStorage` stays the single path
+to a stored route so the rule cannot fork. 0162's column comment claimed the column never held a start
+point; **0180 corrects it — comment-only, NOT APPLIED, nothing breaks either way.**
+
+**⭐ A RUN POSTS AS A RUN.** *"0 Volume (lb) · 32:06 Time · 1 Lifts"* was the card judging a run by a
+lifting scorecard — the "1" was the run itself. `WorkoutSummary` gains optional `cardio` + `lead`
+(the name/playlist snapshot pattern, third time: no migration, old posts render unchanged), both feeds
+draw **Distance · Pace · Time** through one shared `cardioStats` (converted at draw; stair shows Floors;
+an unsupportable pace is dropped, not zero-filled), the marker becomes the running shoe copied from
+CardioBlockCard's own glyph, labelled Run/Walk/Ride/Climb, and the squad-post detail's "Under Iron" row
+follows. "1 Lift" not "1 Lifts" while in there. **D-RS-4's chooser** — The lifting / The run — appears
+in ShareSessionSheet **only for a mixed session**, and the choice rides the snapshot. ⚠ Known gaps,
+deliberate: the squad composer's own picker posts the derived default without the chooser, and the
+sheet's preview card does not re-render per chip.
+
+**⭐ THE STORED MAP GOT ITS FIRST READER.** Every outdoor run since 0162 wrote its shape; nothing ever
+selected it back. Your own Activity Detail now draws it — tappable band above the tiles, RouteSheet
+fullscreen — and **climb joins the stat tiles** (written since 0162, shown nowhere until now). ⚠ Shared
+views get `route: null` DELIBERATELY: D-RS-3's consent is not plumbed yet, and a shared detail that
+always drew the map would hollow the opt-in into decoration.
+
+**⛔ THE OTA REACHES NOBODY, AND NO RE-PUBLISH CAN FIX IT.** The parallel session's polish pass added
+`expo-haptics` — a NATIVE module — and the fingerprint moved off build 6 (`411fd2b6…` → `7cc0745f…`).
+The update published cleanly onto a runtime no installed binary has. **Fourth stranding, and the first
+where the answer is genuinely a new iOS build**: haptics could never ship by OTA. Until that build is
+cut, the phone holds everything through the Coach Holt fix and nothing after; **the web preview carries
+everything.** ⚠ The empty worker also struck a THIRD time (deployment URL and alias both 404, healthy
+payload; identical re-deploy live on probe two).
+
+✅ **BUILD 7 BUILT AND SUBMITTED same evening** — `39778ce0…`, buildNumber 7, runtime `4d728d16…`
+(the buildNumber bump moved the fingerprint a second time, so the stranded OTA group is dead forever;
+build 7 embeds HEAD `ed527c9` directly). Submission `75305248…` accepted by App Store Connect;
+TestFlight availability follows Apple's processing. ⚠ Every future OTA now compares against BUILD 7,
+not `078d2838…`. ⏳ NEXT: the run-card composer (photo / map / photo+map formats, D-RS-3 consent
+plumbing, shared-detail map), the squad composer's chooser. Gates: tsc 0 · lint clean · **2,877/2,877** (+12).
+Commits `25d27db`, `523fe4f`, `9f0f2d6` (+ `80224bc`, the parallel session's haptics pass, committed
+separately after a `git add -A` briefly swept it into the rescission commit — caught before push, redone
+as two honest commits). Live-bundle verification: three pass-specific strings fetched from production.
+⏳ Not device-confirmed (and cannot be, until the new build).
+
+
+### 0. ⭐ Closing Holt deletes the conversation — deleting it was never the hard part (2026-08-26, Coach Holt chat — **no migration**, ✅ **WEB DEPLOYED** `index-11e7ce19edd156440ecab570fb12784a` · ✅ **OTA PUBLISHED TO BUILD 6** iOS group `bfd6bb37-f36b-44a8-b947-c37144fb7eb5`)
+
+PO: *"with coach holt if I close him then the conversation should delete and restart."*
+
+⛔ **IT ALREADY CALLED `clearThread`, AND HAD SINCE 2026-08-11** (`4919414`). Two holes let the thread come
+back anyway, and neither of them is in the deleting.
+
+**1 · THE DELETE HAD NO AUTHORITY OVER THE WRITER.** Half a dozen paths `say()` after an `await pause(…)`
+— `advance`, the opener chips, the active-program guard — and the intro beats land on a `setTimeout` of up
+to **1400 ms**. The exit animation is **200 ms**. Close him while any of those is in flight and the turn
+lands on a sheet that is **still mounted**, the save effect fires, and it writes the conversation straight
+back over the `removeItem` that just deleted it. `clearThread` now shuts a write gate as it deletes, so the
+two cannot drift apart, and `saveThread` refuses while it is shut.
+
+**2 · ONLY THREE PATHS CLEARED** — the X, the scrim, the drag. The sheet is rendered by `CoachBubble`,
+which returns `null` the moment a session, a ceremony or the tour starts, or the route leaves the four home
+surfaces. Every one of those unmounted the conversation without going near `collapse` **and left `open`
+true in the door**, so he reopened later still holding it — the same "picked up mid-sentence" complaint the
+original fix was for. Clearing is now the **default** on unmount; the hand-off is the exception, and §15.3's
+Builder paths go through `handOff()` as the only ones that live.
+
+⚠ **WHY THE RULE IS A MODULE.** It was two `if`s inside 2,000 lines of React that `node --test` cannot
+mount, which is how it stayed wrong for a fortnight. `domain/coach/thread-lifecycle.ts` owns it, the sheet
+and `coach-thread` import it, and the test exercises **the same functions** — so deleting a guard fails the
+test instead of leaving it passing over a hole. **All five guards proven by mutation**, and the first run
+showed **two NOT caught** because the unmount cleanup masked the resurrection, so the test now asserts
+before the unmount as well.
+
+⚠ **THE GATE LIVES IN THE STORAGE LAYER, NOT A REF.** As a `useRef` it tripped react-compiler: `collapse`
+is handed to `PanResponder.create`, which runs DURING RENDER, so a `collapse` that writes a ref is *"passing
+a ref to a function [that] may read its value during render"*. Routing the drag through a second ref moved
+the error rather than fixing it. It is also simply where it belongs.
+
+⚠ **AND THE IMPORT IS RELATIVE WITH THE EXTENSION.** Written as `@/domain/…` it broke `intro.test.mjs` with
+`ERR_MODULE_NOT_FOUND` — `node --test` cannot resolve the alias, and that file reaches `coach-thread`
+through the chat core. The `@/` above it survives only because it is a **type** import and is erased.
+
+Two comments corrected, both wrong since 2026-08-11: the CLOSE button's *"it does not clear the
+conversation"*, and `collapse`'s claim that only the X and the drag land there.
+
+⚠ **THE DEPLOY HIT THE EMPTY WORKER AGAIN.** First `--prod` returned **404 on the deployment's own URL AND
+the alias** — the runbook's empty-worker signature, not propagation — with a payload verified healthy
+beforehand (13,361 bytes, real `assets.json`). Re-deploying the identical `dist` was live and hash-matched
+on the **first** probe. That is now twice in two days; the probe in the runbook is what tells them apart.
+
+Gates: tsc **0** · lint clean · **2,868/2,868** (+6). Verified against the live host: alias 200, hash
+matched, and the 13.5 MB bundle searched for the two new exit literals (`hand-off`, `interrupted`) — both
+present. `fingerprint:compare --build-id 078d2838…` matched build 6 before publishing. Commit `d4b765b`.
+⏳ Not yet confirmed on a device.
+
 ### 0. ⭐ Alabaster's last frozen grounds — four surfaces kept Forge's colours under Paper's ink, and a housekeeping line had stranded every OTA (2026-08-26, Design System / Button / Coach Holt / Cardio Block / 14 screens — **no migration**, ✅ **WEB DEPLOYED** `index-4d3adbd886e3bc5a38a9ced52c38dac1` · ✅ **OTA PUBLISHED TO BUILD 6** iOS `01a03e67-50f5-7e57-8bdb-174baa84b6b2`)
 
 **A correction pass on the light theme, from four PO reports in one sitting.** Every defect was the same
