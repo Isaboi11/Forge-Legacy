@@ -203,11 +203,45 @@ twelve times a year.
 
 ---
 
-## §9 — Open questions for the PO
+## §9 — ANSWERED by the PO, 2026-09-03
 
-1. **§5** — may Holt say what a week sets up? This is the only place I am asking to move the line.
-2. **§7.1** — is the monthly review a Legacy chapter dispatch that ends in the athlete's own words, or
-   something else?
-3. **§7.4** — displace the weekly card in week one of a month, confirmed?
-4. **Firsts** — is "first time ever" computed against all logged history, or since the current chapter
-   began? Chapter-scoped is more meaningful and more expensive.
+All four settled. This document is no longer a proposal awaiting a decision; it is the brief.
+
+**1 · May Holt say what a week sets up? → YES.**
+The forward-looking line is in. He may name what the week makes possible — *"that squat is asking for
+235."* He may never say how it measured up: no ranking, no comparison, no *"your best week this month"*.
+The line, in one sentence: **he may say what the week makes possible, never how it measured up.**
+
+**2 · What is the monthly review for? → A CHAPTER DISPATCH THAT ENDS IN THE ATHLETE'S OWN WORDS.**
+It names what accumulated over the month, then asks one question and **stores the answer to the current
+Legacy chapter**. That is what makes it structurally different from a longer weekly, which is exactly
+what §9.1 of the design brief demanded before one could be specced. `src/app/chapter/reflect.tsx`
+already exists and is where this hooks in.
+
+**3 · The first-week-of-the-month collision? → THE MONTHLY DISPLACES THE WEEKLY CARD.**
+One card on Home. That week's weekly review still exists and stays reachable from Progress (P-2); it
+simply does not take the Home slot. The monthly is the rarer, larger thing and should not compete for
+that space twelve times a year.
+
+**4 · What counts as a "first"? → EVER.**
+Measured against everything the athlete has ever logged. Rarer, cheaper (one lookup), and it stays
+true — which is the whole reason it lands. ⚠ The rejected alternative is worth recording: a
+chapter-scoped "first" would produce far more of them, but a lift done two years ago returning is not a
+first, and calling it one makes the word softer every time it appears.
+
+---
+
+## §10 — What this unblocks
+
+§8's build order stands unchanged, with item 6 (*"what it sets up"*) now approved and item 7 (monthly)
+now specced enough to start:
+
+1. `top_lift` becomes the hero — layout only, no dependency. **Do this first.**
+2. The snapshot gains `day`, `sessions[]`, `first_time[]`, `longest_session` — one migration.
+3–5. Days-that-happened, the firsts section, and Holt's new phrases — all ride on 2.
+6. The "what it sets up" line — **approved**.
+7. The monthly review — a migration, a screen, the Home card displacement rule, and the reflect hook.
+
+⚠ **The weekly review is SNAPSHOTTED AND FROZEN** (`set_weekly_review_note` accepts a note only while
+none exists). Every change above affects reviews generated AFTER it ships; already-written weeks keep
+the prose they were born with, and that is correct — a review is a record of what that week was.
