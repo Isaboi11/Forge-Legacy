@@ -287,3 +287,82 @@ is what "recent" means; the rest is history, and history reads better one file b
 
 > When the dashboard does not explain why something was built the way it was, the answer is very often in
 > the archive. Several of those entries are the only record of a decision.
+
+### 0. ⭐ The coin's rim stopped floating, and Holt stopped repeating himself to an empty history (2026-08-26, Coach Holt medallion / CoachBubble nudges — **no migration**, ✅ **WEB DEPLOYED** `index-3fefea43a5f60eadb8d1d4e555d3abfc` · ✅ **OTA PUBLISHED TO BUILD 6** iOS `01a03fd3-3e7f-7e7c-a06e-f9f86336286e`)
+
+Two PO reports in one sitting, unrelated to each other and both worse than reported.
+
+**⭐ THE SLIVER IS SHADING, NOT AN EDGE.** PO: *"I don't know if I like the 3d look of it. The sliver on
+the right side that's outside of the outline."* Measured outward from the coin's fitted centre
+(192.5, 207.0 in master pixels): field and figure to R 152, then a **dark ring at R 153–157, median
+luminance 4 of 255**, then the rim at R 159–173, then nothing. That trench is the 3D disc's own bevel and
+it runs the whole way round — where the light catches it, lower-left, it fills with bronze and the rim
+reads as part of the coin; where it does not, upper-right, it stays black and the rim's highlight floats
+free as a crescent. **A crop was tried first and did nothing, because there is no stray geometry to
+crop.** The trench is filled with the field's own colour and the rim redrawn as one flat ring lit from a
+single direction, butted against the field with a 1 px seam.
+
+**⭐ AND ALABASTER HAD COLLAPSED THE FIGURE INTO THE FIELD** — the light-mode complaint from earlier the
+same day, which the ramp in **Recently Completed #1** improved but did not measure. Relief against field,
+inside the coin:
+
+| | shipped | now |
+|---|---|---|
+| Forge | 3.89 : 1 | **6.48 : 1** |
+| Alabaster | **1.58 : 1** | **4.08 : 1** |
+
+The old ramp squeezed the whole medallion into luminance 95–158. `#745730 → #F7E9D0` lands Paper on
+Forge's separation, and the disc measures **5.6:1 against the cream page, up from 4.9** — it gained
+presence rather than punching a hole. ⚠ **The light end stops at warm ivory on purpose**: near-white
+scores *better* on separation and renders the coach in **pewter**, which `holt-mark-paper.py` had already
+recorded once and which was confirmed again by rendering it.
+
+⚠ **NOTHING WAS REDRAWN.** Same coach, same folded arms, same bubble — only the ring around him is new.
+Eight vector reconstructions of the folded arms were drawn and rendered at 52/36/24 first and all were
+worse than the original (chevron, slash, lectern, nameplate); the master's own artwork wins.
+
+**⚠ THE PRISTINE ARTWORK MOVED to `coach-holt-mark.master.png`.** Both shipped files are now generated
+output, so `holt-mark-paper.py`'s *"the Forge master, never written"* premise had quietly become false —
+it would re-ramp a ramp. Superseded by `scripts/artwork/holt-mark.py` (both variants, one master) and its
+entry point now hard-exits. ⏳ **`site/README.md` derives the landing page's `coach-mark.webp` from the
+Forge file and has NOT been regenerated.**
+
+**Home's lead mark 54 → 44.** It was the largest Holt in the app — bigger than the floating coin that is
+his actual tap target — while its own comment called it low visual weight, and closing the artwork's 9%
+dead margin made the same number read a tenth larger again. The ladder is now hierarchy rather than
+drift: **52** floating coin · **44** lead card · **40** chat gutter · **34** session sheet. 52 was already
+correct and stays; it simply now draws a coin that fills its box instead of one inset by 9%.
+
+**⭐ AND THE NUDGE WAS SPENT ON THE TAP, NOT THE READ.** PO: *"coach holt as prompted me the same prompt
+about honors about three times now… why it's repeating even after I clicked on it, and why other things
+haven't come up (is it because I've used everything?)"* `CoachBubble` rendered the invitation on every
+arrival at a home surface but only wrote `shown` from `openCoach` — so a line that was **read and not
+tapped left no trace**. The effect keys on `pathname` and there are **four** home surfaces, so switching
+tabs re-asked the same question.
+
+⚠ **AND IT STARVED THE REST OF THE CATALOGUE**, which is the half that is not obvious and is the answer to
+the second question. `honors` is eligible whenever `honors > 0` — **forever, once earned** — and it sits
+third in a strictly ordered list. An un-retired nudge at the head is not merely repetitive: **nothing
+below it is ever reachable.** `program`, `templates`, `progress`, `squads` and `metrics` were all waiting
+behind one row that was never written. **Nothing had been "used up".** The write moves to the display and
+is guarded by every suppression that follows it — a session, a ceremony, the tour, or a route off the four
+home surfaces — because a nudge recorded while invisible is one the athlete never got, spent.
+
+⛔ **NOT VERIFIED — whether the writes are landing at all.** `markNudge` is best-effort by design and
+swallows every failure, so a missing grant or an RLS refusal on `coach_nudge_state` would look **identical
+to this bug** from the client. `0179` grants `execute` on `coach_nudge_signals()` but nothing on the table,
+relying on Supabase default privileges as every other table migration here does. If `coach_nudge_state` is
+empty for an athlete who has tapped through a nudge, there is a second defect and this fix will not hold.
+Query recorded in the session; **owed to the next pass.**
+
+Gates: tsc **0** · lint at baseline · nudge domain **12/12** still green (the cadence was always right —
+the caller was not doing its part) plus **4 new** in `nudge-repeat.test.mjs` holding both halves.
+✅ **Verified against the live host**, not the deploy's own output: alias 200 with a matching bundle hash
+on the first probe, and both marks fetched by their content-hashed URLs (`c0c05900d3…`, `d1676d3e77…`) —
+the filenames *are* the md5 of the files in the repo, so the served bytes are provably the new artwork.
+`fingerprint:compare --build-id 078d2838…` matched build 6 exactly before publishing, and the OTA went out
+on runtime `411fd2b6…`. Commit `453d769` on `origin/feat/route-map`.
+⏳ Not yet confirmed on a device.
+
+
+> **Older entries moved to `Docs/Status-Archive-2026-09.md`** (maintenance rule 6 — this section holds the 15 most recent). Moving is not deleting.
