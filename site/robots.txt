@@ -1,0 +1,15 @@
+# Content signals, carried forward from Cloudflare's managed robots.txt so that replacing
+# that file does not quietly drop a rights reservation.
+#
+# search:   building a search index and providing search results.
+# ai-input: inputting content into one or more AI models.
+# ai-train: training or fine-tuning AI models.
+#
+# ANY RESTRICTIONS EXPRESSED VIA CONTENT SIGNALS ARE EXPRESS RESERVATIONS OF RIGHTS UNDER ARTICLE 4 OF
+# THE EUROPEAN UNION DIRECTIVE 2019/790 ON COPYRIGHT AND RELATED RIGHTS IN THE DIGITAL SINGLE MARKET.
+
+User-agent: *
+Allow: /
+Content-Signal: search=yes, ai-train=no
+
+Sitemap: https://forgelegacy.app/sitemap.xml
