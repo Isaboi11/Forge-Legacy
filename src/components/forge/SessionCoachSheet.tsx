@@ -529,16 +529,37 @@ export function SessionCoachSheet({
             offer to break it, or say nothing — and the escape reads "Can't do this one" when Holt had
             no alternatives to name and "Something else…" when he did, because in the second case the
             athlete has already been given answers and this is the way past them.
+
+            ⚠ AND THE THIRD SUPERSET STATE — SAYING NOTHING — IS ONLY CORRECT ON THE LAST EXERCISE.
+            `canSuperset` is `!isLastEx` at the call site, because a superset is formed with the NEXT
+            exercise and the last one has no next. That is a real constraint, not a gap: if an athlete
+            reports the option missing and they were on the final lift, this is why.
           */}
           <View style={styles.group}>
             <Text style={styles.groupLabel}>CHANGE THE PLAN</Text>
             <View style={styles.planBox}>
               {swapPicks ? null : <Row label="Can't do this one" onPress={run(onSwap)} />}
               {swapPicks ? <Row label="Something else…" onPress={run(onSwap)} /> : null}
+              {/*
+                ⚠ IT SAYS "SUPERSET". IT USED TO SAY "SHORT ON TIME".
+                PO: *"I'd add it in the holt chat and make it obvious super sets."*
+
+                The row was named after the REASON you might want one rather than the thing itself, and
+                an athlete looking for supersets scanned straight past it — the feature read as missing
+                when it had been here the whole time. The reason still earns its place, but in the
+                sub-line, under the name.
+
+                The pair is deliberately symmetrical: whichever state you are in, the word "superset" is
+                on screen, so the way out is as findable as the way in.
+              */}
               {isSuperset ? (
-                <Row label="Stop pairing these" onPress={run(onBreakSuperset)} />
+                <Row label="Break the superset" sub="Back to one at a time, with rest between" onPress={run(onBreakSuperset)} />
               ) : canSuperset && supersetWithName ? (
-                <Row label="Short on time" sub={`Pair with ${supersetWithName}`} onPress={run(onSuperset)} />
+                <Row
+                  label={`Superset with ${supersetWithName}`}
+                  sub="Back to back, no rest between — good when you're short on time"
+                  onPress={run(onSuperset)}
+                />
               ) : null}
               <Row label="Add a movement" onPress={run(onAdd)} />
               {/* `last` follows whichever of the two actually ends the box — the hairline would otherwise
