@@ -24,6 +24,7 @@ import { installErrorSink } from '@/data/errors-live';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { ForgeSplash } from '@/components/forge-splash';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
+import { PendingSaveDrain } from '@/components/pending-save-drain';
 import { CoachBubble } from '@/components/forge/CoachBubble';
 import { KeyboardPrimerProvider } from '@/components/forge/KeyboardPrimer';
 import { OverlayBoundary } from '@/components/overlay-boundary';
@@ -180,6 +181,9 @@ export default function RootLayout() {
                         degrade using it. */}
                     <OverlayBoundary>
                       <AnalyticsTracker />
+                      {/* Replays workouts held offline (W-9 §13.4). Same boundary, same reason: a thing
+                          mounted on every screen must never be able to take the app down. */}
+                      <PendingSaveDrain />
                     </OverlayBoundary>
                     </CoachDoorProvider>
                   </TourProvider>

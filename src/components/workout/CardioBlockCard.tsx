@@ -534,7 +534,13 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
    */
   const [mapOpen, setMapOpen] = useState(false);
 
-  const note = signalNote(tracker.phase === 'paused', tracker.weakSignal, tracker.accuracyM, tracker.gps);
+  /* `'auto'` when the app stopped the clock rather than the athlete — see `signalNote`. */
+  const note = signalNote(
+    tracker.phase === 'paused' ? (tracker.autoPaused ? 'auto' : true) : false,
+    tracker.weakSignal,
+    tracker.accuracyM,
+    tracker.gps,
+  );
 
   /**
    * The pace cue, ported from the retired Active Run screen.

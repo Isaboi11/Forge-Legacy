@@ -477,8 +477,13 @@ export async function continueWorkout(
  * ⚠ FAILS TOWARD RE-THROWING. If this read itself cannot complete, it returns null and the caller
  * surfaces the original error — telling an athlete their workout did not save when it did is recoverable
  * (they retry, and the retry now recovers); telling them it saved when it did not loses the session.
+ *
+ * ⚠ EXPORTED FOR THE OFFLINE QUEUE, WHICH CANNOT RETRY WITHOUT IT (W-9 §13.4). `data/pending-save-live`
+ * replays sessions that never reached the server, and every replay is exactly the "did this already
+ * commit?" question this function answers. Retrying a queued save without calling this first is how the
+ * duplicate this whole path guards against would arrive by a different road.
  */
-async function findCommittedWorkout(athleteId: string, startedAt: string): Promise<string | null> {
+export async function findCommittedWorkout(athleteId: string, startedAt: string): Promise<string | null> {
   try {
     const { data, error } = await supabase
       .from('workouts')

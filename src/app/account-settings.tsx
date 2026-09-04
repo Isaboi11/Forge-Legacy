@@ -33,6 +33,9 @@ import {
 import { useAuth } from '@/lib/auth';
 import { useTier } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
+import { fetchExportWorkouts } from '@/data/export-live';
+import { countSets, exportBaseName, toCsv } from '@/domain/settings/export-core';
+import { saveTextFile } from '@/lib/save-file';
 import { useTour } from '@/hooks/useTour';
 
 /**
@@ -107,6 +110,38 @@ export default function AccountSettingsScreen() {
       rollback: () => setDeleting(false),
       detail: true,
     });
+  };
+
+  /*
+   * ⚠ THE ONLY IN-APP FEEDBACK, PER P-9 §4.2 — no progress bar, no export history, no delivery status.
+   * The spec allows one toast and this is it. It names the row count so an athlete can tell a real
+   * export from an empty one, which is the single thing that sentence has to earn.
+   */
+  const [exporting, setExporting] = useState(false);
+  const doExport = () => {
+    if (exporting) return;
+    setExporting(true);
+    void (async () => {
+      try {
+        const workouts = await fetchExportWorkouts();
+        const res = await saveTextFile(`${exportBaseName(new Date())}.csv`, toCsv(workouts));
+        if (res.ok) {
+          const sets = countSets(workouts);
+          showToast(
+            workouts.length === 0
+              ? 'Nothing logged yet — the file has its headings and no rows.'
+              : `${workouts.length} workout${workouts.length === 1 ? '' : 's'} · ${sets} set${sets === 1 ? '' : 's'}. Photos aren’t included.`,
+          );
+        } else if (res.reason) {
+          showToast(res.reason);
+        }
+      } catch {
+        /* One sentence, and it names the likely cause rather than the layer that threw. */
+        showToast('Couldn’t build your export — check your connection and try again.');
+      } finally {
+        setExporting(false);
+      }
+    })();
   };
 
   const router = useRouter();
@@ -237,6 +272,31 @@ export default function AccountSettingsScreen() {
               </View>
             </View>
           ))}
+
+          {/*
+            EXPORT MY DATA (P-9 §2, §4) — a locked row that had never been built.
+
+            §4.1: tapping starts it immediately, with no confirmation step. §4.3 leaves format and
+            delivery undefined, so this hands over a CSV through the share sheet (a browser download on
+            web) rather than the email §4.2's copy describes — there is no email pipeline and no way to
+            deploy one from here. See `P9-Amendment-001`.
+
+            Placed above Sign Out rather than beside Delete Account: P-9 §3 asks for a hairline break
+            between the two, and this screen already separates its quiet actions from the delete
+            ceremony at the foot. The risk profiles must not read as one list.
+          */}
+          <Pressable
+            onPress={doExport}
+            disabled={exporting}
+            accessibilityRole="button"
+            accessibilityLabel="Export my data"
+            accessibilityState={{ disabled: exporting }}
+            style={styles.signOut}
+          >
+            <Text style={[styles.signOutText, exporting && styles.exportBusy]}>
+              {exporting ? 'Preparing your export…' : 'Export My Data'}
+            </Text>
+          </Pressable>
 
           {/* sign out — centered bronze text, its own quiet card */}
           <Pressable onPress={confirmSignOut} accessibilityRole="button" accessibilityLabel="Sign out" style={styles.signOut}>
@@ -375,6 +435,8 @@ const styles = StyleSheet.create({
 
   signOut: { alignItems: 'center', justifyContent: 'center', paddingVertical: 16, marginBottom: 22 },
   signOutText: { fontSize: 15, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze400 },
+  /* Dimmed while the read runs. A ROLE token, so it means the same thing in Forge and in Alabaster. */
+  exportBusy: { color: flColor.gray600 },
 
   footer: { alignItems: 'center', gap: 10, paddingTop: 4 },
   legalRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },

@@ -4,6 +4,15 @@ import * as Location from 'expo-location';
 
 import { ACCURACY_FLOOR_M, acceptFix, totalMiles, type ActivityKind, type Fix, type TrackPoint } from '@/domain/run/run-core';
 import { clearBackgroundFixes, drainBackgroundFixes, startBackgroundFixes, stopBackgroundFixes } from '@/domain/run/background-task';
+import { autoResumeStep, probeAt, shouldAutoPause, type AutoResumeProbe } from '@/domain/run/auto-pause';
+
+/**
+ * How long the device may go quiet before "the track stopped growing" stops meaning "the athlete stopped".
+ *
+ * Comfortably longer than `AUTO_PAUSE_WINDOW_SEC` so a single dropped fix cannot flip the reading, and
+ * short enough that a real tunnel is recognised as one within a few seconds of entering it.
+ */
+const FIX_SILENCE_MS = 15_000;
 
 /** Fold a batch of buffered fixes into a track through the ONE accept rule. Order matters; it is time. */
 const applyFixes = (track: TrackPoint[], fixes: Fix[], kind: ActivityKind): TrackPoint[] =>
@@ -84,6 +93,13 @@ export interface RunTracker {
   pause: () => void;
   resume: () => void;
   /**
+   * The run is paused because the app decided it was, not because the athlete did.
+   *
+   * The card reads this to say "Auto-paused" rather than "Paused" — the athlete needs to know the clock
+   * will start again on its own, or they will stand there waiting to press something.
+   */
+  autoPaused: boolean;
+  /**
    * End the run and hand back the FINISHED track — the one that includes whatever the OS was still
    * holding when the athlete pressed the button.
    *
@@ -104,6 +120,14 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
   const [track, setTrack] = useState<TrackPoint[]>([]);
   const [elapsedSec, setElapsedSec] = useState(0);
   const [accuracyM, setAccuracyM] = useState<number | null>(null);
+  /**
+   * Paused by the app rather than by the athlete.
+   *
+   * ⚠ STATE, NOT A REF, BECAUSE THE CARD RENDERS IT. A ref read during render is what the strict
+   * react-compiler lint errors on, and the athlete has to be told which kind of pause this is: "Paused"
+   * they chose, "Auto-paused" the app chose, and the second one starts again on its own.
+   */
+  const [autoPaused, setAutoPaused] = useState(false);
 
   const sub = useRef<Location.LocationSubscription | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -115,6 +139,36 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
   const reanchor = useRef(false);
   /** Ends a bout exactly once, so a second `stop()` returns the finished track instead of re-draining. */
   const stopped = useRef(false);
+  /**
+   * Where the athlete was when AUTO-pause engaged, and how many fixes have arrived far from it.
+   *
+   * ⚠ NULL IS THE WHOLE SIGNAL. Non-null means "the app paused this and is watching for movement"; null
+   * means either running or paused BY THE ATHLETE, and a manual pause must never end itself. See
+   * `autoResumeStep`.
+   */
+  const autoProbe = useRef<AutoResumeProbe | null>(null);
+  /**
+   * When a fix was last DELIVERED — whether or not it was used.
+   *
+   * `shouldAutoPause` refuses to read silence as stillness, and this is the fact it refuses on. A frozen
+   * track means "standing still" only while the device is still talking to us; in a tunnel it means the
+   * opposite, and pausing there would stop the clock on someone still running.
+   */
+  const lastFixAt = useRef(0);
+  /** The clock, readable from inside the interval without making it a dependency. */
+  const elapsedRef = useRef(0);
+  /**
+   * ⚠ AUTO-PAUSE IS A FOREGROUND-ONLY FEATURE, AND THIS REF IS THE ENFORCEMENT.
+   *
+   * Auto-RESUME reads the raw fix stream in `onFix` — and `onFix` does not run while the app is
+   * suspended. That is the whole reason `background-task.ts` exists: the OS buffers fixes and this hook
+   * drains them later. So a run auto-paused with the phone in a pocket would have **no mechanism able to
+   * start it again**, and would sit paused for the rest of the session while the athlete ran on.
+   *
+   * The rule is therefore: pause only while we can also see them leave. Mounted in the foreground, so it
+   * starts true.
+   */
+  const appActive = useRef(true);
 
   /**
    * ══ THE TRACK IS HELD IN A REF AS WELL AS IN STATE, AND THE REF IS THE ONE THAT IS TRUE NOW ══
@@ -151,7 +205,43 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
 
   const onFix = useCallback((loc: Location.LocationObject) => {
     setAccuracyM(loc.coords.accuracy ?? null);
-    if (!running.current) return; // paused: the ground still moves, the run does not
+    /* Delivery is recorded BEFORE anything can return — that is the point of it. See `lastFixAt`. */
+    lastFixAt.current = Date.now();
+
+    if (!running.current) {
+      /*
+       * ══ AUTO-RESUME LIVES HERE, AND IT HAS TO ══
+       *
+       * The line below drops every fix while paused, so the TRACK is frozen for the whole pause — it
+       * stops being evidence at exactly the moment resuming needs some. The raw stream is still
+       * arriving though, and that is what this reads. A manual pause leaves `autoProbe` null and
+       * `autoResumeStep` then decides nothing, which is the rule that keeps a deliberate pause paused.
+       */
+      const step = autoResumeStep(autoProbe.current, {
+        lat: loc.coords.latitude,
+        lon: loc.coords.longitude,
+        accuracy: loc.coords.accuracy ?? null,
+      });
+      autoProbe.current = step.probe;
+      if (step.resume) {
+        /* The same three lines `resume()` runs — including `reanchor`, so the distance covered while
+           stopped is not credited to the run. */
+        running.current = true;
+        reanchor.current = true;
+        /*
+         * ⚠ AND DROP WHAT THE OS BUFFERED WHILE WE WERE STOPPED.
+         *
+         * `reanchor` protects the FOREGROUND stream only. The background drain folds its batch straight
+         * through `applyFixes` → `acceptFix`, which knows nothing about a pause — so without this, the
+         * walk to the water fountain arrives on the next foreground and is credited to the run. This is
+         * a pre-existing defect of manual pause that auto-pause would have fired many times a session.
+         */
+        void clearBackgroundFixes();
+        setPhase('live');
+        setAutoPaused(false);
+      }
+      return; // paused: the ground still moves, the run does not
+    }
 
     commit((() => {
       const prev = trackRef.current;
@@ -243,6 +333,11 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     setAccuracyM(null);
     setPhase('live');
     setGps('acquiring');
+    /* A fresh bout owns none of the last one's pause state — see `commit([])` above, same reason. */
+    setAutoPaused(false);
+    autoProbe.current = null;
+    elapsedRef.current = 0;
+    lastFixAt.current = Date.now();
     // Wall-time-driven rather than a counter, so a throttled background tab can't make a 40-minute run
     // report 26 minutes.
     let lastTick = Date.now();
@@ -250,7 +345,34 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
       const now = Date.now();
       const delta = (now - lastTick) / 1000;
       lastTick = now;
-      if (running.current) setElapsedSec((s) => s + delta);
+      if (!running.current) return;
+      elapsedRef.current += delta;
+      setElapsedSec((s) => s + delta);
+      /*
+       * ══ THE AUTO-PAUSE DECISION, ONCE A SECOND ══
+       *
+       * On the timer rather than on a fix, because the evidence for a stop is the ABSENCE of movement —
+       * and when an athlete stands still `acceptFix` rejects their jitter as drift, so fixes stop
+       * entering the track and a fix-driven check would go quiet exactly when it was needed.
+       */
+      /* Foreground only — see `appActive`. Nothing may pause a run it cannot also un-pause. */
+      if (!appActive.current) return;
+      if (
+        shouldAutoPause({
+          track: trackRef.current,
+          nowMs: now,
+          elapsedSec: elapsedRef.current,
+          receivingFixes: now - lastFixAt.current < FIX_SILENCE_MS,
+        })
+      ) {
+        const last = trackRef.current[trackRef.current.length - 1];
+        if (last) {
+          running.current = false;
+          autoProbe.current = probeAt(last.lat, last.lon);
+          setPhase('paused');
+          setAutoPaused(true);
+        }
+      }
     }, 1000);
     /*
      * ══ ⚠ THE ORDER OF THESE THREE IS THE FEATURE, NOT A TIDY-UP ══
@@ -279,15 +401,29 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     })();
   }, [attachGps, commit]);
 
+  /**
+   * ⚠ BOTH OF THESE CLEAR `autoProbe`, AND THAT IS THE MANUAL-OVERRIDE RULE.
+   *
+   * Pressing Pause is a statement — the athlete is stopping for as long as they mean to, and the app
+   * ending that pause for them the moment they take fifteen steps is worse than never having had the
+   * feature. Clearing the probe is what makes `autoResumeStep` decline to decide.
+   */
   const pause = useCallback(() => {
     running.current = false;
+    autoProbe.current = null;
     setPhase('paused');
+    setAutoPaused(false);
   }, []);
 
   const resume = useCallback(() => {
     running.current = true;
     reanchor.current = true;
+    autoProbe.current = null;
+    /* See the auto-resume path: the OS kept buffering through the pause, and the drain does not honour
+       `reanchor`. Pre-existing, and fixed here rather than left inconsistent with the automatic one. */
+    void clearBackgroundFixes();
     setPhase('live');
+    setAutoPaused(false);
   }, []);
 
   const stop = useCallback(async (): Promise<TrackPoint[]> => {
@@ -323,7 +459,30 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
    */
   useEffect(() => {
     const sub = AppState.addEventListener('change', (next) => {
-      if (next !== 'active' || !running.current) return;
+      appActive.current = next === 'active';
+
+      if (next !== 'active') {
+        /*
+         * ══ LEAVING THE FOREGROUND WHILE AUTO-PAUSED RESUMES THE RUN ══
+         *
+         * Not a tidy-up — the alternative is a silently ruined session. From here on, nothing can
+         * observe the athlete starting again (`onFix` is about to stop running; only the background
+         * buffer keeps filling), so a pause held now is a pause held forever.
+         *
+         * Err toward the clock running. A few seconds of standing still counted into a run is a
+         * rounding error; forty minutes of running counted as a pause is the run.
+         */
+        if (autoProbe.current) {
+          autoProbe.current = null;
+          running.current = true;
+          reanchor.current = true;
+          void clearBackgroundFixes(); // same reason as the other two resumes
+          setPhase('live');
+          setAutoPaused(false);
+        }
+        return;
+      }
+      if (!running.current) return;
       void drainBackgroundFixes().then((fixes) => {
         if (fixes.length) commit(applyFixes(trackRef.current, fixes, kind));
       });
@@ -353,5 +512,7 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     pause,
     resume,
     stop,
+    /** Paused by the app, not by the athlete — the card says so, and it will start again on its own. */
+    autoPaused,
   };
 }
