@@ -13,6 +13,7 @@ import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { writeExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
+import type { WorkoutSectionKind } from '@/domain/workout/types';
 import { fetchHomeGym } from '@/data/home-gym-live';
 import { canDoExercise, HOME_GYM_EQUIPMENT } from '@/domain/home-gym/equipment';
 import { dismissGearPrompt, getGearOnly, getGearPromptDismissed, setGearOnly } from '@/lib/gear-filter';
@@ -162,6 +163,17 @@ export default function ExercisePickerScreen() {
   const [selected, setSelected] = useState<string | null>(null); // replace: single key
   const [picked, setPicked] = useState<string[]>([]); // add: many keys
   const [asSuperset, setAsSuperset] = useState(false); // add: group the picks into one block
+  /**
+   * add: WHICH PART OF THE SESSION THESE ARE — the answer to "there's no way to add a warm up".
+   *
+   * The Program Builder has asked this question since it was written: you tap "add warm-up" under a
+   * section heading and the picker arrives already addressed (`params.section`, drained by
+   * `writeBuilderInbox` below). Building as you go there are no headings to tap under, so the question
+   * had nowhere to be asked and every ad-hoc add was silently a main lift.
+   *
+   * Defaults to 'main', so the common case is unchanged and nobody has to answer anything.
+   */
+  const [addSection, setAddSection] = useState<WorkoutSectionKind>('main');
   const [applied, setApplied] = useState<PickerFilters>(EMPTY_FILTERS);
   const [draft, setDraft] = useState<PickerFilters>(EMPTY_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -475,7 +487,14 @@ export default function ExercisePickerScreen() {
           items: items.map(toPicked),
         });
       } else {
-        void writeExerciseInbox({ kind: 'add', items: items.map(toPicked), group: supersetOn ? 'superset' : undefined });
+        void writeExerciseInbox({
+          kind: 'add',
+          items: items.map(toPicked),
+          group: supersetOn ? 'superset' : undefined,
+          /* Omitted rather than sent as 'main', so the payload only ever carries a decision somebody
+             actually made — and an inbox from a build without this control drains identically. */
+          section: addSection === 'main' ? undefined : addSection,
+        });
       }
       router.back();
     }
@@ -487,14 +506,18 @@ export default function ExercisePickerScreen() {
   const supersetOn = isAdd && asSuperset && picked.length >= 2;
 
   const confirmDisabled = isReplace ? selected == null : picked.length === 0;
+  /* The button says what it is about to do, section included. "Add 2 exercises" and "Add 2 warm-ups"
+     are different sentences, and the second is the only confirmation the athlete gets that the pills
+     above took — the list itself looks identical either way. */
+  const sectionNoun = addSection === 'warmup' ? 'warm-up' : addSection === 'cooldown' ? 'cool-down' : 'exercise';
   const confirmLabel = isReplace
     ? selected != null
       ? `Replace with ${resolveKey(selected)?.name ?? ''}`
       : 'Select an exercise'
     : supersetOn
-      ? `Add ${picked.length} exercises as a superset`
+      ? `Add ${picked.length} ${sectionNoun}s as a superset`
       : picked.length
-        ? `Add ${picked.length} ${picked.length === 1 ? 'exercise' : 'exercises'}`
+        ? `Add ${picked.length} ${picked.length === 1 ? sectionNoun : `${sectionNoun}s`}`
         : 'Select exercises';
 
   const appliedChips: { group: keyof PickerFilters; value: string; label: string }[] = [
@@ -579,6 +602,21 @@ export default function ExercisePickerScreen() {
             </View>
           </View>
         ) : null}
+        {/* ══ THE HINT COMES BEFORE THE CONTROL IT EXPLAINS ══
+
+            PO, 2026-09-04: *"at the top of the search bar it should say subtly something like 'Add
+            multiple at a time to do a superset'"*.
+
+            The superset toggle only appears once two exercises are ticked, which means the athlete had
+            to discover multi-select BEFORE anything told them it was worth doing. This is the sentence
+            that closes that gap, and it sits above the search field because that is the first thing
+            read on the way into the list.
+
+            It retires itself. Once two are picked the real control is on screen saying the same thing
+            with a checkbox, and a hint repeating a visible control is noise. */}
+        {isAdd && picked.length < 2 ? (
+          <Text style={styles.multiHint}>Tick more than one to add them as a superset.</Text>
+        ) : null}
         <View style={styles.searchWrap}>
           <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" style={styles.searchIcon}>
             <Circle cx={11} cy={11} r={7} />
@@ -593,6 +631,93 @@ export default function ExercisePickerScreen() {
             accessibilityLabel="Search exercises"
           />
         </View>
+
+        {/* ══ THE QUESTION THE BUILDER HAS ALWAYS ASKED, ASKED HERE TOO ══
+
+            PO, 2026-09-04: *"When you do a 'build as you go workout', there's no way to do a warm up or
+            add a warm up."*
+
+            The Program Builder addresses this picker to a section before it opens it — you tap "add
+            warm-up" under a heading and `params.section` arrives with you. A freestyle session has no
+            headings to tap under, so the question was never asked and `pickedToExercise` answered it
+            'main' on the athlete's behalf, every time, forever.
+
+            ⚠ ALWAYS VISIBLE IN `add` MODE, NOT REVEALED ONCE SOMETHING IS PICKED. The complaint is that
+            warm-ups appear not to exist here; a control that only appears after you have already done
+            the thing would leave that exactly as true. It costs one row and answers itself — 'Main' is
+            pre-selected, so an athlete who wants what they have always had touches nothing.
+
+            ⚠ COOL-DOWN IS HERE TOO, and it is not scope creep: `WorkoutSectionKind` has three members,
+            the save path has carried all three since 0095, and shipping two of them would leave the
+            identical complaint waiting behind the third. Same control, same plumbing, one more pill. */}
+        {isAdd ? (
+          <View style={styles.sectionPickRow}>
+            <Text style={styles.sectionPickLabel}>Adding to</Text>
+            {([
+              { key: 'warmup' as const, label: 'Warm-up' },
+              { key: 'main' as const, label: 'Main' },
+              { key: 'cooldown' as const, label: 'Cool-down' },
+            ]).map((o) => {
+              const on = addSection === o.key;
+              return (
+                <Pressable
+                  key={o.key}
+                  onPress={() => setAddSection(o.key)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: on }}
+                  accessibilityLabel={`Add to the ${o.label} of this workout`}
+                  style={[styles.sectionPick, on && styles.sectionPickOn]}
+                >
+                  <Text style={[styles.sectionPickText, on && styles.sectionPickTextOn]}>{o.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+
+        {/* ══ SAY IT WHILE YOU PICK THEM — AND SAY IT WHERE THEY ARE LOOKING ══
+
+            Building as you go, the ⋮ menu's "Superset with next exercise" means adding three lifts and
+            then pairing them one at a time — restating a decision already made. Ticking them together
+            is when the athlete knows. Appears only once there are two to pair.
+
+            ⚠ MOVED OUT OF THE FOOTER, 2026-09-04. PO: *"make the super set button more obvious and
+            bring it to the top when adding multiple."* In the footer it was a quiet outline directly
+            above a filled primary button, which is the worst place in the layout to put an optional
+            choice: the eye goes to the button, the thumb follows, and the pairing is never declared.
+            Up here it appears in the space the athlete is already scanning — and it appears the instant
+            the second tick lands, next to the list they are ticking, not two hundred points below it.
+
+            Loud on purpose now: a bronze rule above it, the round count spelled out, and the ON state
+            filled rather than outlined. It is still a checkbox, not a button — nothing is committed
+            until Confirm, which is why it must not look like the primary action it used to sit on. */}
+        {isAdd && picked.length >= 2 ? (
+          <Pressable
+            onPress={() => setAsSuperset((v) => !v)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: supersetOn }}
+            accessibilityLabel="Add these as a superset — alternate them, one rest at the end of the round"
+            style={[styles.ssRow, supersetOn && styles.ssRowOn]}
+          >
+            <View style={[styles.ssBox, supersetOn && styles.ssBoxOn]}>
+              {supersetOn ? (
+                /* The tick is the ROW's fill colour, not a fixed dark — the box it sits in is white
+                   (`onBronze`) once checked, so the mark has to be bronze to exist at all. */
+                <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronzeSolid} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M4 12.5l5.2 5.2L20 7" />
+                </Svg>
+              ) : null}
+            </View>
+            <View style={styles.ssText}>
+              <Text style={[styles.ssTitle, supersetOn && styles.ssTitleOn]}>
+                Add these {picked.length} as a superset
+              </Text>
+              <Text style={[styles.ssSub, supersetOn && styles.ssSubOn]}>
+                Alternate them — one rest, at the end of the round
+              </Text>
+            </View>
+          </Pressable>
+        ) : null}
         {/* The gate is never silent. When it is on it says so and says how many it is holding back, and
             one tap sees everything — so a short list is always explained, never just short. */}
         {hasGymProfile ? (
@@ -789,31 +914,6 @@ export default function ExercisePickerScreen() {
 
       {/* footer confirm */}
       <View style={[styles.footer, { paddingBottom: barBottom }]}>
-        {/* SAY IT WHILE YOU PICK THEM.
-            Building as you go, the ⋮ menu's "Superset with next exercise" means adding three lifts
-            and then pairing them one at a time — restating a decision already made. Ticking them
-            together is when the athlete knows. Appears only once there are two to pair. */}
-        {isAdd && picked.length >= 2 ? (
-          <Pressable
-            onPress={() => setAsSuperset((v) => !v)}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: supersetOn }}
-            accessibilityLabel="Add these as a superset — alternate them, one rest at the end of the round"
-            style={[styles.ssRow, supersetOn && styles.ssRowOn]}
-          >
-            <View style={[styles.ssBox, supersetOn && styles.ssBoxOn]}>
-              {supersetOn ? (
-                <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.charcoal900} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                  <Path d="M4 12.5l5.2 5.2L20 7" />
-                </Svg>
-              ) : null}
-            </View>
-            <View style={styles.ssText}>
-              <Text style={[styles.ssTitle, supersetOn && styles.ssTitleOn]}>Add as a superset</Text>
-              <Text style={styles.ssSub}>Alternate them — one rest, at the end of the round</Text>
-            </View>
-          </Pressable>
-        ) : null}
         <Button variant="primary" fullWidth disabled={confirmDisabled} onPress={onConfirm} accessibilityLabel={confirmLabel}>
           {confirmLabel}
         </Button>
@@ -1087,15 +1187,55 @@ const styles = StyleSheet.create({
   /* `paddingBottom` from `useBarBottom` — see `lib/screen-insets`. */
   footer: { paddingHorizontal: SCREEN_GUTTER, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: flColor.charcoal900, gap: 12 },
 
-  // "Add as a superset" — the pick-time pairing declaration
-  ssRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
-  ssRowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  ssBox: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: flColor.charcoal600, alignItems: 'center', justifyContent: 'center' },
-  ssBoxOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeSolid },
+  /* The sentence that tells you multi-select exists, before you have found it. Quiet by instruction —
+     it explains an option, it does not ask for anything. Sits above the search field. */
+  multiHint: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
+
+  /* "Adding to · Warm-up | Main | Cool-down". Deliberately the SAME pill grammar as `filterChip` and
+     `appliedChip` above rather than a new segmented control: this screen already teaches that a small
+     outlined pill that fills bronze is a choice you have made, and a second visual language for the
+     same idea is how a screen stops reading as one screen. Tokens only, so it lands on both themes. */
+  sectionPickRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 7 },
+  sectionPickLabel: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
+    color: flColor.gray600,
+    marginRight: 2,
+  },
+  sectionPick: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
+  sectionPickOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeSolid },
+  sectionPickText: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
+  sectionPickTextOn: { color: flColor.onBronze },
+
+  /* "Add as a superset" — the pick-time pairing declaration, in the SUB-HEADER now, not the footer.
+     ⚠ LOUDER THAN THE OUTLINE IT REPLACED (PO 2026-09-04). Its old home was directly above the primary
+     button, where an outlined row reads as the disabled twin of the thing beneath it. Away from that
+     button it has to carry its own weight: a bronze-tinted resting state so it registers as an offer
+     rather than a divider, and a filled bronze ON state so the answer is legible at a glance. */
+  ssRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 13,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.bronzeTint,
+  },
+  /* ⚠ TOKENS ONLY, NO LITERAL. The ON state is `bronzeSolid` + `onBronze` — the app's one "this is
+     selected" pair, chosen together for contrast (see `foundation.forge.ts`). A hand-mixed rgba bronze
+     would land as a muddy tan on Alabaster, which is exactly the one-theme colour mistake. */
+  ssRowOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeSolid },
+  ssBox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: flColor.bronze400, alignItems: 'center', justifyContent: 'center' },
+  ssBoxOn: { borderColor: flColor.onBronze, backgroundColor: flColor.onBronze },
   ssText: { flex: 1 },
-  ssTitle: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
-  ssTitleOn: { color: flColor.bronze300 },
-  ssSub: { fontSize: 11.5, color: flColor.gray600, marginTop: 2 },
+  ssTitle: { fontSize: 13.5, fontWeight: '700', color: flColor.bronze300 },
+  ssTitleOn: { color: flColor.onBronze },
+  ssSub: { fontSize: 11.5, lineHeight: 16, color: flColor.gray400, marginTop: 2 },
+  ssSubOn: { color: flColor.onBronze, opacity: 0.82 },
 
   // sheets
   sheetWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'flex-end' },

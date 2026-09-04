@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { useBarBottom } from '@/lib/screen-insets';
 import { EMPTY_COACH_PROFILE, fetchCoachProfile } from '@/data/coach-profile-live';
 import { fetchLiftHistory, liftId } from '@/data/lift-history-live';
 import { assemble } from '@/domain/coach/assemble';
@@ -647,6 +648,7 @@ export default function CoachScreen() {
 /* ── INTRO ───────────────────────────────────────────────────────────────────────────────────────── */
 
 function Intro({ onDone }: { onDone: () => void }) {
+  const barBottom = useBarBottom();
   return (
     <>
       <ScrollView contentContainerStyle={styles.introScroll}>
@@ -668,7 +670,7 @@ function Intro({ onDone }: { onDone: () => void }) {
           yours.
         </Text>
       </ScrollView>
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: barBottom }]}>
         <Button variant="primary" fullWidth onPress={onDone}>
           Let&apos;s go
         </Button>
@@ -1246,6 +1248,7 @@ function Reveal({
   onAdjust: () => void;
   onRestart: () => void;
 }) {
+  const barBottom = useBarBottom();
   return (
     <>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -1302,7 +1305,7 @@ function Reveal({
         ))}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: barBottom }]}>
         <Button variant="primary" fullWidth disabled={busy} onPress={onApply}>
           Final touches
         </Button>
@@ -1543,9 +1546,9 @@ const styles = StyleSheet.create({
   note: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600, marginTop: 4 },
   error: { fontSize: 15, lineHeight: 23, color: flColor.bronze300, textAlign: 'center' },
 
+  /* `paddingBottom` comes from `useBarBottom` — see `lib/screen-insets`. */
   footer: {
     padding: 18,
-    paddingBottom: 22,
     gap: 8,
     borderTopWidth: 1,
     borderTopColor: flColor.charcoal600,

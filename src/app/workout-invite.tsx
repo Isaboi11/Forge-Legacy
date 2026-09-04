@@ -9,6 +9,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { acceptJoinRequest, acceptWorkoutInvite, declineWorkoutInvite, fetchWorkoutInvite, inviteSubtitle } from '@/data/train-together-live';
 import { loadSession, persistSession } from '@/domain/workout/autosave';
 import { sessionToTemplateExercises } from '@/domain/workout/session-core';
@@ -46,6 +47,7 @@ import { writeWorkoutLaunch } from '@/lib/workout-launch';
  */
 
 export default function WorkoutInviteScreen() {
+  const barBottom = useBarBottom();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const inviteId = typeof id === 'string' ? id : '';
@@ -232,7 +234,7 @@ export default function WorkoutInviteScreen() {
             </View>
           </ScrollView>
 
-          <View style={styles.actions}>
+          <View style={[styles.actions, { paddingBottom: barBottom }]}>
             <Button variant="primary" fullWidth onPress={accept} disabled={busy} accessibilityLabel={isJoin ? 'Let them join' : 'Accept and start'}>
               {busy ? (isJoin ? 'Adding them…' : 'Starting…') : isJoin ? 'Let Them Join' : 'Accept & Start'}
             </Button>
@@ -288,7 +290,8 @@ const styles = StyleSheet.create({
   how: { flexDirection: 'row', alignItems: 'flex-start', gap: 11, width: '100%', marginTop: 18, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: 'rgba(255,255,255,0.015)' },
   howText: { flex: 1, fontSize: 12.5, lineHeight: 18.8, color: flColor.gray400 },
 
-  actions: { flexShrink: 0, gap: 10, paddingHorizontal: 22, paddingTop: 14, paddingBottom: 24, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  /* `paddingBottom` comes from `useBarBottom` — see `lib/screen-insets`. */
+  actions: { flexShrink: 0, gap: 10, paddingHorizontal: SCREEN_GUTTER, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34 },
   missingTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', textAlign: 'center', color: flColor.cream100 },

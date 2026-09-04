@@ -11,6 +11,7 @@ import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { Pill } from '@/components/forge/composites/Pill';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { flColor, flFont, flGradient, flRadius, flShadow, flText } from '@/constants/foundation';
+import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { editorialRule, surfaceEditorial } from '@/constants/surfaces';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useCoachDoor } from '@/hooks/useCoachDoor';
@@ -326,6 +327,32 @@ export default function WorkoutsScreen() {
                     <Text style={styles.anchorMeta}>
                       {sessionsPerWeek(myActive.structure)}× a week · {totalSessions(myActive.structure)} sessions
                     </Text>
+                    {/*
+                      ══ IT WAS ALWAYS PRESSABLE AND IT NEVER LOOKED IT ══
+
+                      PO, 2026-09-04: *"it doesn't look like the active program is clickable. Needs to
+                      look clickable because it is."* Correct — the `Pressable` has been here the whole
+                      time, wrapping three lines of type on the editorial surface, with a pressed
+                      opacity as its only tell. A pressed state is feedback AFTER the tap; it can't
+                      invite one.
+
+                      ⚠ NOT SOLVED BY GIVING IT A CARD. That is the reflex and it is the wrong one here:
+                      a card says "you act INSIDE this", and you do not act inside the anchor — you
+                      leave it for the program screen. Wrapping it would also undo the composition this
+                      section was deliberately rebuilt into, and make it a fourth bordered rectangle
+                      above three more.
+
+                      So the affordance is a NAMED DESTINATION rather than a container: the bronze cue
+                      and the chevron every other navigating row on this screen already carries. It says
+                      where the tap goes, which the pressed state never did.
+
+                      Layout and form, so it lands on BOTH themes (Design System §2.0). The two colours
+                      are role tokens, not literals.
+                    */}
+                    <View style={styles.anchorGo}>
+                      <Text style={styles.anchorGoText}>View program</Text>
+                      <ChevronRightIcon size={14} color={flColor.bronze400} />
+                    </View>
                   </Pressable>
                 ) : (
                   <View style={styles.anchorBody}>
@@ -958,7 +985,7 @@ const styles = StyleSheet.create({
   scroll: {
     paddingHorizontal: 20,
     paddingTop: 22,
-    paddingBottom: 40,
+    paddingBottom: SCREEN_BOTTOM_GAP,
   },
   stack: { gap: 28 },
   stackTight: { gap: 10 },
@@ -1035,6 +1062,16 @@ const styles = StyleSheet.create({
     color: flColor.cream100,
   },
   anchorMeta: { fontSize: 13.5, lineHeight: 19, color: flColor.gray400 },
+  /* The affordance. Same bronze label grammar as `anchorKicker` so it reads as part of the composition
+     rather than a button dropped onto it — the chevron is what makes it a destination. */
+  anchorGo: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10 },
+  anchorGoText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: flColor.bronze400,
+  },
   anchorActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
   anchorCta: {
     paddingVertical: 11,
