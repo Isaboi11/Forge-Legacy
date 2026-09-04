@@ -41,8 +41,19 @@ export interface MatchResult {
  *
  * Only unambiguous ones. "Press" could be bench, overhead or leg, so it is never expanded — a guess
  * here becomes a wrong lift in somebody's program.
+ *
+ * ⚠ EXPORTED SINCE 2026-09-04, AND THE REASON IS A BUG THIS TABLE COULD HAVE PREVENTED FOR MONTHS.
+ *
+ * PO: *"Romanian deadlift does not come up when you search RDL, which is how a lot of people know
+ * it."* — and `rdl` was sitting in this table the whole time. The knowledge was never missing; it was
+ * only reachable from `tokenize()`, which serves PROGRAM IMPORT. The Picker's search box runs a
+ * different function (`search-core.ts`) that had never heard of any of these. So the app could read
+ * "RDL" out of an imported spreadsheet and resolve it perfectly, and then fail to find it when the
+ * same athlete typed the same three letters into the search field.
+ *
+ * One table, both readers, from here on.
  */
-const ABBREVIATIONS: Record<string, string> = {
+export const ABBREVIATIONS: Record<string, string> = {
   db: 'dumbbell',
   bb: 'barbell',
   kb: 'kettlebell',
@@ -57,6 +68,33 @@ const ABBREVIATIONS: Record<string, string> = {
   chinup: 'chin up',
   situp: 'sit up',
   latpulldown: 'lat pulldown',
+  /*
+   * ── ADDED 2026-09-04, EACH ONE MEASURED AT ZERO RESULTS FIRST ────────────────────────────────────
+   *
+   * ⚠ AN EXPANSION HERE BEATS AN ALIAS IN `aliases.ts` WHENEVER THE SHORTHAND IS ONE TOKEN, and the
+   * difference is not stylistic. An alias pins a name to ONE catalogue id: `dl` would have had to
+   * choose a single deadlift out of 22. Expanding to the WORD instead lets the ordinary matcher run,
+   * so "dl" returns every deadlift the catalogue has and "dl romanian" narrows to the Romanian ones —
+   * which is what the athlete meant by typing two letters instead of eight.
+   *
+   * Multi-word shorthand ("farmers walk") cannot live here, because this table is keyed per token.
+   * That is what `EXERCISE_SYNONYMS` is for.
+   */
+  dl: 'deadlift',
+  bss: 'bulgarian split squat',
+  ghr: 'glute ham developer raise',
+  ghd: 'glute ham developer',
+  ohs: 'overhead squat',
+  cgbp: 'close grip bench press',
+  t2b: 'toes to bar',
+  ttb: 'toes to bar',
+  c2b: 'chest to bar',
+  /* A spelling, not a different lift — so it is normalised here rather than aliased to one row. "Fly"
+     names a FAMILY (chest, rear-delt, cable), and `aliases.ts` forbids pinning a family to a member. */
+  flye: 'fly',
+  /* What most gyms call the Back Extension. The catalogue holds no row with "hyper" in it at all. */
+  hyper: 'back extension',
+  hyperextension: 'back extension',
 };
 
 /** Words that carry no identity — dropping them lets "Seated row" reach "Seated Cable Row". */
@@ -85,7 +123,17 @@ const EQUIPMENT_PREFERENCE = ['barbell', 'dumbbell', 'cable', 'machine', 'smith'
  */
 const OBSCURE_IMPLEMENTS = new Set(['band', 'smith', 'kettlebell']);
 
-function singular(w: string): string {
+/**
+ * ⚠ EXPORTED 2026-09-04, and for the same reason `ABBREVIATIONS` was: the search box had never heard
+ * of it, so **every plural query in the app returned nothing**. "squats", "curls", "rows",
+ * "deadlifts", "lunges", "dips", "shrugs", "crunches", "planks" — all zero, on a 733-row catalogue,
+ * under both the old substring rule and its replacement. Measured, not assumed.
+ *
+ * That is very likely a larger everyday failure than the RDL report that started this, because typing
+ * the plural is not a shorthand or a regionalism — it is just how people name a movement they are
+ * about to do several sets of.
+ */
+export function singular(w: string): string {
   if (w.length > 3 && w.endsWith('ies')) return `${w.slice(0, -3)}y`;
   if (w.length > 3 && w.endsWith('es') && /(sh|ch|ss|x|z)es$/.test(w)) return w.slice(0, -2);
   if (w.length > 2 && w.endsWith('s') && !w.endsWith('ss')) return w.slice(0, -1);

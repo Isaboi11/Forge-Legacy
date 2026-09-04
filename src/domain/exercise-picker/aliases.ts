@@ -126,6 +126,34 @@ export const EXERCISE_SYNONYMS: Record<string, string> = {
    */
   'cable reverse fly': 'cable-rear-delt-fly',
   /*
+   * ── THE MULTI-WORD HALF OF THE 2026-09-04 VERNACULAR PASS ────────────────────────────────────────
+   *
+   * PO: *"go through the exercise list and find and add the searchable as anything that exercise could
+   * be called."* The sweep turned up 102 candidates and the honest outcome is that **64 of them needed
+   * nothing** — the matcher fixes in `search-core.ts` (abbreviation expansion, word-boundary matching,
+   * plural folding) had already made them answer. Writing those down would have been 64 lines of file
+   * pretending to do work the matcher does.
+   *
+   * What is left is the genuinely different WORDS, and only the ones that take more than one token —
+   * single-token shorthand belongs in `ABBREVIATIONS`, where it matches every variant instead of
+   * pinning one. Every line below was measured at zero results before it was written, per the file's
+   * standing rule, and anything ambiguous was dropped rather than guessed.
+   */
+  /* ONE entry, not two: `aliasKey` folds plurals and sorts, so "farmer walk" normalises to the very
+     same key and the duplicate invariant rejects it. Which is the point of that test — the singular
+     is already covered, and writing both would only look like it covered more. */
+  'farmers walk': 'farmer-carry',
+  // The lift has three common names and the catalogue files it under the fourth.
+  'lying triceps extension': 'barbell-skull-crusher',
+  'french press': 'barbell-skull-crusher',
+  // What the two machines are called by everyone who is not reading the sticker on them.
+  'inner thigh machine': 'multi-hip-adduction-machine',
+  'outer thigh machine': 'multi-hip-abduction-machine',
+  'stiff legged deadlift': 'barbell-stiff-leg-deadlift',
+  'straight leg deadlift': 'barbell-stiff-leg-deadlift',
+  // A brand that became the noun, like Gravitron did for the assisted pull-up tower.
+  gravitron: 'assisted-pull-up-machine',
+  /*
    * NO ALIAS FOR "squat jump", and the tests are why. Hiding `squat-jump` (PO ruling 2026-08-05) left
    * the obvious follow-up — alias the retired ordering onto the survivor — and both invariants above
    * rejected it: `aliasKey` SORTS tokens, so "squat jump" and "Jump Squat" normalise to the identical
