@@ -31,6 +31,12 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useSheetDrag } from '@/hooks/useSheetDrag';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
+/* The ceremony toast — used for EXACTLY ONE message, on the way out. See the offline branch in the
+   Finish handler for why this screen's own overlay cannot carry it. */
+import { useToast } from '@/hooks/useCeremony';
+/* Identity for the offline save queue — read from the CACHED session, so it is still there when the
+   network is not. See `PendingSave.athleteId`. */
+import { useAuth } from '@/lib/auth';
 import { useAppPrefs, useCoachIntensity, useHaptics, useSoundEnabled, useUnits } from '@/lib/settings';
 import { loadContextFor } from '@/domain/program/percent-max';
 import { displayWeight, unitLabel, weightInExact } from '@/domain/settings/units';
@@ -82,9 +88,12 @@ import { blockAt, breakBlock, endsSupersetRound, indexAfterRemoval, makeSuperset
 import { setWeightLabel, setWeightLabelLb } from '@/domain/workout/set-load';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
-import { continueWorkout, fetchLastNotes, saveWorkout, type LastNote } from '@/domain/workout/save';
+import { continueWorkout, fetchLastNotes, saveWorkout, type IntensitySignalRow, type LastNote } from '@/domain/workout/save';
+import { isTransportFailure } from '@/domain/workout/pending-save';
+import { queueSave } from '@/data/pending-save-live';
 import { saveAppPrefs, fetchVisibility } from '@/data/settings-live';
 import { bumpWorkoutsLogged } from '@/lib/tour-phase';
+import { track } from '@/lib/analytics';
 import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { fetchLiftHistory, liftId, type LiftHistory } from '@/data/lift-history-live';
 import { backOffTo, incrementFor, progressionFor, sessionPerformance, type Progression } from '@/domain/coach/progression';
@@ -704,6 +713,11 @@ export default function WorkoutScreen() {
     setTimeout(() => setToast((t) => (t && t.token === token ? null : t)), 1900);
   }, []);
 
+  /* The ONE message on this screen that has to outlive it — the offline-save confirmation, read on Home
+     after the logger has unmounted. Everything else uses `showToast` above, deliberately. */
+  const { showToast: ceremonyToast } = useToast();
+  const { session: authSession } = useAuth();
+
   /**
    * `usePersist` for the coach-intensity writes, but against THIS screen's toast rather than the ceremony
    * one.
@@ -855,6 +869,23 @@ export default function WorkoutScreen() {
        * only the snapshot path and an invite carrying a TEMPLATE credited nobody.
        */
       const startSession = (s: ActiveSession) => {
+        /*
+         * ⭐ THE OTHER HALF OF THE ACTIVATION RATIO — started, against `workout_saved`'s finished.
+         *
+         * Here and not in a `useEffect` on `session`, because this is the one place the comment above
+         * already guarantees every launch passes through, and because `session` is also set by the RESUME
+         * prompt and by every mid-session mutation. An event that counted those would report a person
+         * who trained once as having started nine workouts, and the abandonment rate — the number this
+         * exists to produce — would read as excellent while nobody finished anything.
+         *
+         * `source` is read the same way `workout_saved` reads it, so the two are directly comparable.
+         * If they ever disagree, the funnel is lying and one of the two lines is wrong.
+         */
+        track('workout_started', {
+          source: s.programId ? 'program' : s.templateId ? 'template' : s.templated ? 'starter' : 'freestyle',
+          activity_type: s.activityType,
+          count: s.exercises.length,
+        });
         setSession(
           applyCredits({
             ...s,
@@ -1797,6 +1828,17 @@ export default function WorkoutScreen() {
     setSeal(null);
     setPhase('saving');
     setError(null);
+    /*
+     * ⚠ HOISTED OUT OF THE `try` SO THE OFFLINE BRANCH IN THE `catch` CAN QUEUE WHAT IT HAS.
+     *
+     * Both default to empty, and that is the correct offline answer rather than a shortfall: the partner
+     * read below is itself a network call, so on the connection that is about to fail the save it may
+     * never return. An annotation is worth less than the session it decorates — a credit read that failed
+     * must not cost the workout. `partners` and the intensity signals are both written best-effort AFTER
+     * the commit anyway (see `save.ts`), so an empty one degrades exactly as designed.
+     */
+    let partnerNames: string[] = [];
+    let signals: IntensitySignalRow[] = [];
     try {
       /*
        * WHO WAS THERE — re-derived at the last possible moment, for two reasons.
@@ -1815,7 +1857,7 @@ export default function WorkoutScreen() {
       /* Names from the live roster first, the accepted invite as the fallback. It used to be the roster
          alone, and `training_partners()` returns `[]` on ANY failure by design — so one dropped read at
          Finish silently cost the tag on a workout that saved perfectly. */
-      const partnerNames = resolvePartnerNames(creditedIds, partners ?? [], credits);
+      partnerNames = resolvePartnerNames(creditedIds, partners ?? [], credits);
       /* A reopened workout is APPENDED to, never saved again. `saveWorkout` writes the chapter
          counter, the program slot and an honor pass — running it twice for one session would count a
          single workout as two on the Legacy screen and claim a second slot in the program. */
@@ -1831,7 +1873,7 @@ export default function WorkoutScreen() {
        * decisions were recorded the first time round — writing them again would double the record of a
        * single week's training.
        */
-      const signals = [...progressions.entries()].map(([i, p]) => ({
+      signals = [...progressions.entries()].map(([i, p]) => ({
         position: session.exercises[i]?.position ?? i,
         action: p.action,
         catalog_key: session.exercises[i]?.catalogKey ?? null,
@@ -1849,9 +1891,80 @@ export default function WorkoutScreen() {
          only place a workout becomes one. A no-op until the count has been seeded from the server, so it
          can never invent a "1" for a veteran on a new phone. */
       void bumpWorkoutsLogged();
+      /*
+       * ⭐ THE ACTIVATION EVENT. Every retention number this product quotes is a ratio over this line.
+       *
+       * ⚠ `source` IS THE POINT OF IT, not `count`. It answers which of the app's doors actually ends in
+       *   a saved workout — and that is the question the whole first-run pass turns on, because the
+       *   RECOMMENDED door currently ends in a program to review rather than a session. `templated`
+       *   exists precisely because the difference is unknowable later (see `types.ts`), so the four cases
+       *   are read here, at the only moment they are still distinguishable.
+       *
+       * ⚠ NO `first_time` FLAG, DELIBERATELY. Whether this is somebody's first workout is a property of
+       *   their event SEQUENCE, not of this event — the query already knows it from the earliest
+       *   `workout_saved` per athlete. Computing it here would mean an extra awaited read in the finish
+       *   path, and nothing may slow down the moment a workout is committed.
+       */
+      track('workout_saved', {
+        source: session.programId ? 'program' : session.templateId ? 'template' : session.templated ? 'starter' : 'freestyle',
+        activity_type: session.activityType,
+        state: session.continuingWorkoutId ? 'continued' : 'new',
+        count: doneSetCount(session),
+        duration_ms: Math.max(0, Date.now() - new Date(session.startedAt).getTime()),
+      });
       endSession();
       router.replace({ pathname: '/workout-complete', params: { id: workoutId } });
     } catch (e) {
+      /*
+       * ══ THE SAVE NEVER REACHED THE SERVER — HOLD IT AND LET THEM LEAVE (W-9 §13.4) ══
+       *
+       * §13.4: *"Cloud sync occurs after session save when a connection is available … The athlete sees
+       * no error state · Sync completes silently when connection is restored."* Until now this catch was
+       * the whole story: "Couldn't save", back to `phase: 'active'`, and an athlete standing in a gym
+       * with no signal tapping Finish at a screen that would not let them out. The session was never
+       * LOST — the autosave holds it and Home still offers Continue Workout — but it could not be
+       * finished, which is the complaint.
+       *
+       * ⚠ ONLY A TRANSPORT FAILURE, AND `isTransportFailure` ERRS TOWARD SURFACING. Queueing something
+       * the server actually REJECTED would tell the athlete it saved and then retry forever against an
+       * answer that will never change — data loss wearing a success message. See that guard's header.
+       *
+       * ⚠ NEW SAVES ONLY, NEVER A CONTINUE. The queue replays `saveWorkout`; a continue is
+       * `continue_workout`, a different RPC appending to a workout that already exists, with its own
+       * doubling hazard documented in its own header. Replaying one through this path would append the
+       * same sets twice. A continue that fails offline still surfaces, exactly as before.
+       */
+      if (!session.continuingWorkoutId && isTransportFailure(e)) {
+        const held = await queueSave({
+          athleteId: authSession?.user?.id ?? '',
+          session,
+          partners: partnerNames,
+          signals,
+          system: units,
+        });
+        /* Only claim it is safe if it is actually on disk — `queueSave` reads back before saying yes. */
+        if (held) {
+          await clearSession();
+          void bumpWorkoutsLogged();
+          endSession();
+          /*
+           * ⚠ THE CEREMONY TOAST, WHICH THIS SCREEN OTHERWISE REFUSES ON PURPOSE (see `persistPref`).
+           *
+           * That refusal is about not interrupting a WORKING SET. This fires as the screen unmounts, and
+           * the message has to outlive it to be read at all — the local 1.9s overlay would leave with the
+           * screen it belongs to. This is the one message on W-9 that is not about the session in front
+           * of the athlete; it is about the one they just walked away from.
+           *
+           * ⚠ NOT AN ERROR, AND NOT A SYNC INDICATOR. §13.4 forbids both. It says the workout is theirs
+           * and stops talking.
+           */
+          ceremonyToast('Workout saved. It’ll sync when you’re back online.');
+          router.replace('/(tabs)');
+          return;
+        }
+        /* The queue itself could not be written. Fall through — an unkept promise is worse than the
+           error the athlete would have seen anyway. */
+      }
       setError(errorMessage(e));
       setPhase('active');
     }
@@ -2159,6 +2272,18 @@ export default function WorkoutScreen() {
      someone their record was nothing.
      No unit label, deliberately: these sit under their own "Last"/"Best" captions and always have. */
   const wxr = (weight: number, reps: number): string => `${setWeightLabelLb(weight, units)} × ${reps}`;
+  /**
+   * What they did at THIS set position last time — the per-row `Prev` (W9-Amendment-007).
+   *
+   * `sessions[0]` is the most recent SAVED session, so today's work in progress never appears here and a
+   * set cannot end up compared against itself. Indexed to the same position rather than to the best set
+   * of that day: set 3 answers to last week's set 3, which is the comparison an athlete is actually
+   * making when they load the bar.
+   */
+  const prevAtIndex = (setI: number): string | null => {
+    const p = liftHist?.sessions[0]?.sets[setI];
+    return p?.weight != null && p.reps != null ? wxr(p.weight, p.reps) : null;
+  };
   const lastPerf = liftHist?.sessions[0] ? sessionPerformance(liftHist.sessions[0]) : null;
   const lastText = lastPerf ? wxr(lastPerf.weight, lastPerf.reps) : '—';
   const bestText = liftHist?.best ? wxr(liftHist.best.weight, liftHist.best.reps) : '—';
@@ -3513,9 +3638,15 @@ export default function WorkoutScreen() {
                     const ringColor = isDone ? flColor.greenMuted : isCurrent ? flColor.bronze400 : flColor.charcoal500;
                     const numColor = isDone ? flColor.greenMuted : isCurrent ? flColor.bronze300 : flColor.gray600;
                     const valColor = isDone || isCurrent ? flColor.cream100 : flColor.gray600;
+                    /* Null on a first-ever lift, and on any set position last session did not reach. */
+                    const rowPrev = prevAtIndex(si);
                     return (
                       <View key={si} style={[styles.row, isDone && styles.rowDone, isCurrent && styles.rowCurrent]}>
                         {flash && flash.ei === exIdx && flash.si === si ? <FuseFlash key={flash.token} /> : null}
+                        {/* ⚠ THE CELLS ARE NOW A ROW INSIDE THE ROW (W9-A7). `styles.row` became a column so
+                            a `Prev` line can sit UNDER the five cells without becoming a sixth one — the
+                            border, background and done/current highlight still wrap the whole thing. */}
+                        <View style={styles.rowCells}>
                         <View style={[styles.cSet, styles.setCell]}>
                           <View style={[styles.setNum, { borderColor: ringColor }]}>
                             <Text style={[styles.setNumText, { color: numColor }]}>{si + 1}</Text>
@@ -3636,6 +3767,27 @@ export default function WorkoutScreen() {
                             </Pressable>
                           ) : null}
                         </View>
+                        </View>
+                        {/*
+                          ══ `Prev` — WHAT THIS SET WAS LAST TIME (W9-Amendment-007) ══
+
+                          PO, 2026-09-04: *"We do not want to have to tap to see it. Should be there
+                          always."* So: no tap, no chevron, no sixth column — a subline under the cells,
+                          in the row it belongs to.
+
+                          ⚠ NOT ON A DONE ROW. Once a set is finished the athlete's OWN number is sitting
+                          in the Actual cell, and last week's beside it is noise on the busiest row in the
+                          table. The list therefore gets quieter as the session goes on rather than
+                          denser, which is the direct answer to "without making it look too crowded".
+                          Every set they have not done yet — which is when the number is any use — carries
+                          it. Flip `!isDone` to show it everywhere if that reads better on device.
+                        */}
+                        {!isDone && rowPrev ? (
+                          <Text style={styles.prevLine} accessibilityLabel={`Last time, set ${si + 1}, ${rowPrev}`}>
+                            <Text style={styles.prevTag}>PREV </Text>
+                            {rowPrev}
+                          </Text>
+                        ) : null}
                       </View>
                     );
                   })}
@@ -5368,7 +5520,23 @@ const styles = StyleSheet.create({
   headRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingBottom: 8, gap: 6 },
   h: { fontSize: 9.5, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600 },
   rows: { gap: 8 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 52, paddingVertical: 7, paddingHorizontal: 8, borderRadius: flRadius.md, borderWidth: 1, borderColor: 'transparent' },
+  /* ⚠ A COLUMN SINCE W9-A7, so a `Prev` line can sit under the cells. The border, background and the
+     done/current highlight still wrap the whole row; `rowCells` holds what used to be here. */
+  row: { flexDirection: 'column', paddingVertical: 7, paddingHorizontal: 8, borderRadius: flRadius.md, borderWidth: 1, borderColor: 'transparent' },
+  rowCells: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 52 },
+  /*
+   * `Prev`, under the cells it describes.
+   *
+   * ⚠ `gray400`, NOT `gray600`, AND THAT IS A CONTRAST DECISION NOT A TASTE ONE. `foundation.paper.ts`
+   * puts `gray600` at `#8B8377`, which its own header measures at 3.15:1 — over the 3.0 non-text floor
+   * and UNDER the 4.5 needed for text. This line is text, and it has to be readable in Alabaster as well
+   * as in Forge, so it takes the role that clears the bar in both.
+   *
+   * Indented past the 56pt set column + its 6pt gap so it begins under the data rather than under the
+   * set number, which is the only part of the row it says nothing about.
+   */
+  prevLine: { marginTop: 3, marginLeft: 62, fontSize: 11, color: flColor.gray400 },
+  prevTag: { fontFamily: flFont.sans, fontSize: 9, fontWeight: '700', letterSpacing: 0.7, color: flColor.gray400 },
   rowDone: { borderColor: 'rgba(90,158,104,0.35)', backgroundColor: 'rgba(90,158,104,0.06)' },
   rowCurrent: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   cSet: { width: 56 },

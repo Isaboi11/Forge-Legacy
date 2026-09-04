@@ -504,11 +504,21 @@ const KM_PER_MI = 1.609344;
 export type GpsReport = 'off' | 'acquiring' | 'tracking' | 'denied' | 'unavailable';
 
 export function signalNote(
-  paused: boolean,
+  /**
+   * `false` running · `true` the athlete pressed Pause · `'auto'` the app stopped the clock itself.
+   *
+   * ⚠ A UNION RATHER THAN A SECOND BOOLEAN, and rather than a changed parameter order — every existing
+   * caller and every existing test passes a boolean and still means exactly what it meant. `'auto'` is
+   * truthy, so even a caller that only knows the old shape falls into the paused branch correctly.
+   */
+  paused: boolean | 'auto',
   weak: boolean,
   accuracyM: number | null,
   gps: GpsReport = 'tracking',
 ): string {
+  /* Named differently because it BEHAVES differently: this one ends by itself. An athlete who reads
+     plain "Paused" stands there waiting to press something that is not going to matter. */
+  if (paused === 'auto') return 'Auto-paused · it starts again when you do';
   if (paused) return 'Paused · the ground still moves, the run does not';
   // The run is under way and nothing will measure it. Say what that means for the number, not what
   // went wrong with a radio.

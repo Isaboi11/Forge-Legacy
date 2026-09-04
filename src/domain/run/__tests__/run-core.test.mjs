@@ -580,6 +580,19 @@ test('signalNote: paused outranks everything — the clock stopping is the headl
   assert.match(signalNote(true, true, 90), /Paused/);
 });
 
+test('signalNote: an AUTO pause is named differently, because it ends by itself', () => {
+  const auto = signalNote('auto', true, 90);
+  assert.match(auto, /Auto-paused/);
+  // The athlete must not be left waiting to press something.
+  assert.match(auto, /starts again/);
+  assert.notEqual(auto, signalNote(true, true, 90));
+});
+
+test('signalNote: the old boolean shape still means what it always meant', () => {
+  assert.match(signalNote(true, true, 90), /^Paused/);
+  assert.doesNotMatch(signalNote(false, false, 10), /Paused/);
+});
+
 test('signalNote: a good fix reports its accuracy rather than claiming precision', () => {
   assert.equal(signalNote(false, false, 6), 'Tracking · ±6 m');
   assert.equal(signalNote(false, false, null), 'Tracking');
