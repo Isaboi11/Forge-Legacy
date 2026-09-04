@@ -105,7 +105,7 @@ import { getRestMode, nextRestMode, setRestMode, type RestMode } from '@/lib/res
 import { getWheelInput, setWheelInput } from '@/lib/set-input-pref';
 import { useKeyboardInset } from '@/lib/useKeyboardInset';
 import { clearExerciseInbox, readExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
-import type { ActiveSession, SessionExercise, SessionSet } from '@/domain/workout/types';
+import type { ActiveSession, SessionExercise, SessionSet, WorkoutSectionKind } from '@/domain/workout/types';
 import { registerWatchCommands } from '@/domain/workout/watch-commands';
 import { projectWatchState } from '@/domain/workout/watch-projection';
 import { pushWatchState, subscribeWatchCommands } from '@/lib/watch-bridge';
@@ -159,6 +159,35 @@ const DUR_SEC_OPTS = Array.from({ length: 12 }, (_, i) => i * 5); // 0–55 by 5
  */
 const WHEEL_ITEM = 44;
 const WHEEL_PAD = 98; // (240 − 44) / 2 — centers the selected row under the band
+
+/**
+ * ══ WHAT PART OF THE SESSION THIS IS — IN WORDS, FOR THE FIRST TIME ══
+ *
+ * PO, 2026-09-04, on build-as-you-go: *"there's no way to do a warm up or add a warm up."* Adding one
+ * is the Picker's half (`ExerciseInbox.section`). This is the other half, and it turned out to be the
+ * larger one: **this screen has never drawn the section at all.**
+ *
+ * ⚠ THAT WAS ALREADY A BUG FOR PROGRAM DAYS, NOT ONLY FOR FREESTYLE. `templateToSessionExercises` has
+ * carried warm-up and cool-down through the round trip since 0095 and left a comment saying *"the
+ * logger is where that has to show up"* — and the logger printed the literal string `Main lift` under
+ * every exercise name in the app, warm-ups included. So a program that prescribed a warm-up showed the
+ * athlete a main lift, and the one place the distinction was visible was the program's own detail
+ * screen, before they started.
+ *
+ * `LABEL` is the noun on its own (a kicker, a plan row). `NOUN` is the same fact inside a sentence
+ * ("Added 2 warm-ups"), which is why it is lower case and why 'main' is `exercise` rather than
+ * `main lift` — "Added 2 main lifts" would name a section nobody chose.
+ */
+const SECTION_LABEL: Record<WorkoutSectionKind, string> = {
+  warmup: 'Warm-up',
+  main: 'Main lift',
+  cooldown: 'Cool-down',
+};
+const SECTION_NOUN: Record<WorkoutSectionKind, string> = {
+  warmup: 'warm-up',
+  main: 'exercise',
+  cooldown: 'cool-down',
+};
 
 function nearestIdx(opts: number[], v: number): number {
   let best = 0;
@@ -1204,21 +1233,29 @@ export default function WorkoutScreen() {
              `blockAt`'s adjacency walk requires. */
           const asSuperset = inbox.group === 'superset' && inbox.items.length >= 2;
           const gid = `ss${Date.now()}`;
+          /* WHAT the athlete said these are, not where they go — see the note on `ExerciseInbox`. An
+             inbox from a build that predates the picker's section pills has no `section` and drains as
+             'main', which is exactly what it meant. */
+          const addedSection = inbox.section ?? 'main';
           // Appending and jumping to what was appended are ONE update now that the index lives on the
           // session — two calls would still queue correctly, but a later edit could reorder them.
           setSession((s) => {
             if (!s) return s;
             const pos = nextPosition(s.exercises);
-            const appended = [...s.exercises, ...inbox.items.map((p, i) => pickedToExercise(p, pos + i))];
+            const appended = [...s.exercises, ...inbox.items.map((p, i) => pickedToExercise(p, pos + i, addedSection))];
             return { ...s, exercises: asSuperset ? makeSuperset(appended, at, inbox.items.length, gid) : appended, exerciseIndex: at };
           });
           /* NOTHING IS ASKED HERE. This used to queue a goal panel per added lift — see `goalOpen` for
              why that came out. The added exercise arrives ready to train, and its goal is one tap away
              on its own card whenever the athlete wants it. */
+          /* The toast names the SECTION, because the pager is about to look identical either way: one
+             card, one exercise, whatever it was filed as. Without this the only feedback that a warm-up
+             was recorded as a warm-up is the kicker on the card the athlete has to reach first. */
+          const addedNoun = SECTION_NOUN[addedSection];
           showToast(
             asSuperset
-              ? `Added ${inbox.items.length} exercises as a superset`
-              : `Added ${inbox.items.length} ${inbox.items.length === 1 ? 'exercise' : 'exercises'}`,
+              ? `Added ${inbox.items.length} ${addedNoun}s as a superset`
+              : `Added ${inbox.items.length} ${inbox.items.length === 1 ? addedNoun : `${addedNoun}s`}`,
           );
         } else {
           const idx = inbox.targetIdx;
@@ -3362,11 +3399,18 @@ export default function WorkoutScreen() {
                         </View>
                       </View>
                       {ex.coachNote ? <Text style={styles.planCueLine}>{ex.coachNote}</Text> : null}
+                      {/* ⚠ THIS LINE SAID THE LITERAL STRING `Main lift` FOR EVERY EXERCISE IN THE APP.
+                          Under a prescribed warm-up, under a cool-down stretch, under everything. It
+                          reads `ex.section` now — which is the field that made the PO's "no way to do a
+                          warm up" true from the other end: you could not add one, and if a program gave
+                          you one the logger called it a main lift anyway. */}
                       <View style={styles.heroEquipRow}>
                         <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.6} strokeLinecap="square">
                           <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
                         </Svg>
-                        <Text style={styles.heroEquip}>Main lift</Text>
+                        <Text style={[styles.heroEquip, ex.section !== 'main' && styles.heroEquipSection]}>
+                          {SECTION_LABEL[ex.section]}
+                        </Text>
                       </View>
                       <View style={styles.heroTags}>
                         <Pill size="sm">Strength</Pill>
@@ -3479,6 +3523,14 @@ export default function WorkoutScreen() {
                     </Svg>
                   </View>
                   <View style={styles.heroStripText}>
+                    {/* ⚠ DRAWN IN BOTH HERO FACES, for the same reason the plan cue below is: the hero
+                        auto-collapses the moment the first set resolves, so anything that lives only in
+                        the expanded face is invisible for most of the exercise. Omitted entirely on a
+                        main lift — that is the default and a label for it would be furniture on every
+                        card in the app. */}
+                    {ex.section !== 'main' ? (
+                      <Text style={styles.heroStripSection}>{SECTION_LABEL[ex.section]}</Text>
+                    ) : null}
                     <Text style={styles.heroStripName} numberOfLines={1}>{ex.name}</Text>
                     {/* Collapsed, the strip is all the athlete can see of the lift — so it carries what they
                         did at THIS set position last time beside what is being asked now. Omitted rather than
@@ -4408,13 +4460,24 @@ export default function WorkoutScreen() {
                         goExercise(i);
                       }}
                       accessibilityRole="button"
-                      accessibilityLabel={`${e.name}, ${status}`}
+                      accessibilityLabel={
+                        e.section === 'main' ? `${e.name}, ${status}` : `${e.name}, ${SECTION_LABEL[e.section]}, ${status}`
+                      }
                       style={styles.ovRowMain}
                     >
                       <View style={[styles.ovStatusDot, { backgroundColor: tint }]} />
                       <View style={styles.ovRowText}>
                         <Text style={styles.ovRowName} numberOfLines={1}>{e.name}</Text>
+                        {/* ══ THE PLAN IS THE ONE PLACE THE SHAPE OF THE SESSION IS VISIBLE ══
+                            Its own comment already says so — *"this screen is the whole plan at once,
+                            which is where you actually notice that today has three warm-ups you are not
+                            going to do"* — written for the Remove control beside it, at a time when the
+                            screen could not tell you which three those were. The sub-line joins the
+                            section to the status rather than adding a row, because this list is scrolled
+                            to find one exercise and a second line per row halves how many fit.
+                            Prefixed, not appended: it is what the thing IS, before how it is going. */}
                         <Text style={styles.ovRowSub}>
+                          {e.section !== 'main' ? `${SECTION_LABEL[e.section]} · ` : ''}
                           {status} · {done}/{total} sets{w != null ? ` · ${w} ${unitLabel(units)}` : ''}
                         </Text>
                       </View>
@@ -4842,12 +4905,27 @@ function templateToSessionExercises(rows: readonly TemplateExercise[]): SessionE
   });
 }
 
-function pickedToExercise(p: PickedExercise, position: number): SessionExercise {
+/**
+ * How many sets an ad-hoc add opens with, BY SECTION.
+ *
+ * ⚠ THIS IS A PRESCRIPTION DECISION AND IT IS DELIBERATELY A TABLE, so changing it is changing one
+ * number rather than reading this function. Everything added mid-session used to get three sets,
+ * because everything added mid-session used to be a main lift by definition (see `pickedToExercise`).
+ * Now that a warm-up can say it is one, giving it a main lift's volume would make the athlete delete a
+ * set every single time — the default arguing with the label they just chose.
+ *
+ * Two for a warm-up, one for a cool-down: a cool-down is a stretch or a walk, and a second set of it is
+ * something you add rather than something you remove. Nothing is capped — sets are added and removed
+ * freely on the card either way.
+ */
+const AD_HOC_SETS: Record<SessionExercise['section'], number> = { warmup: 2, main: 3, cooldown: 1 };
+
+function pickedToExercise(p: PickedExercise, position: number, section: SessionExercise['section'] = 'main'): SessionExercise {
   // A run picked from the catalog becomes a CARDIO BLOCK, not three sets of eight — the picker returns
   // it like any other exercise, and this is where the two kinds diverge. Added ad hoc, so it carries no
   // target: nothing prescribed it.
   const picked = activityFromKey(p.catalogKey);
-  if (picked) return cardioExercise(picked, position, { targetMi: null, targetPaceSec: null, targetSpdMph: null });
+  if (picked) return cardioExercise(picked, position, { section, targetMi: null, targetPaceSec: null, targetSpdMph: null });
   /* Which side it is counted on, derived from the name. This is the add-as-you-go path — nothing
      prescribed this lift, so if it is not worked out here the athlete gets "3 × 8" on a single-arm row
      and does half the work the number implies. */
@@ -4868,10 +4946,10 @@ function pickedToExercise(p: PickedExercise, position: number): SessionExercise 
   return {
     catalogKey: p.catalogKey,
     name: p.name,
-    section: 'main',
+    section,
     position,
     ...(per ? { per } : {}),
-    sets: Array.from({ length: 3 }, (_, s) => ({
+    sets: Array.from({ length: AD_HOC_SETS[section] }, (_, s) => ({
       setIndex: s,
       weight: null,
       // Zero, never a plausible-looking rep count — the same rule `session-core` applies to a
@@ -4889,7 +4967,13 @@ function swapExercise(ex: SessionExercise, p: PickedExercise): SessionExercise {
   // structure — three sets of eight is not a shape a run has. This is the path someone takes when the
   // program said Outdoor Run and it started raining.
   if (isCardioKey(p.catalogKey) !== (ex.kind === 'cardio')) {
-    return pickedToExercise(p, ex.position);
+    /* ⚠ `ex.section` IS PASSED, and leaving it off was a real hole rather than a new requirement. This
+       branch rebuilds the slot from scratch, so it took `pickedToExercise`'s default — 'main'. Swapping
+       a prescribed warm-up JOG for a warm-up stretch therefore filed it as a main lift, silently, and
+       the slot it replaced kept its position and its place in the pager while changing what the session
+       claims it was. The other branch below spreads `...ex` and has always kept the section; these two
+       must agree, because they are one action from the athlete's side. */
+    return pickedToExercise(p, ex.position, ex.section);
   }
   /* ⚠ RE-DERIVED, not carried over. Swapping a Bulgarian Split Squat for a Back Squat keeps the set
      structure but is emphatically NOT still per-leg, and inheriting the old label would double the
@@ -4929,12 +5013,15 @@ function swapExercise(ex: SessionExercise, p: PickedExercise): SessionExercise {
  */
 function ExercisePeek({ ex, index, total }: { ex: SessionExercise; index: number; total: number }) {
   const done = ex.sets.filter((s) => s.done).length;
-  const sub =
+  const progress =
     ex.kind === 'cardio'
       ? VERB[ex.activity ?? 'run']
       : done > 0
         ? `${done} of ${ex.sets.length} sets logged`
         : `${ex.sets.length} ${ex.sets.length === 1 ? 'set' : 'sets'}`;
+  /* Same prefix rule as the Overview row: what it IS, then how it is going. The peek is what the
+     athlete sees mid-swipe, so "is the next one still a warm-up" is answerable without landing on it. */
+  const sub = ex.section === 'main' ? progress : `${SECTION_LABEL[ex.section]} · ${progress}`;
   return (
     <View style={styles.peek} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <Text style={styles.peekPos}>{index + 1} / {total}</Text>
@@ -5290,6 +5377,11 @@ const styles = StyleSheet.create({
   heroIconBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   heroEquipRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   heroEquip: { fontSize: 12, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray400 },
+  /* Bronze ONLY when the section is not the default. "Main lift" is the answer under four exercises out
+     of five and colouring it would make the accent mean nothing; "Warm-up" is the exception, and the
+     exception is the thing worth seeing at a glance. Colour, so it needs both themes — `bronze400` is a
+     role token and resolves in each. */
+  heroEquipSection: { color: flColor.bronze400 },
   heroTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   howTo: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 4 },
   howToText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
@@ -5319,6 +5411,10 @@ const styles = StyleSheet.create({
   heroStrip: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorder, borderRadius: flRadius.xl, paddingVertical: 9, paddingHorizontal: 12, boxShadow: flShadow.card },
   heroStripThumb: { width: 46, height: 46, borderRadius: flRadius.md, overflow: 'hidden', backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: flColor.charcoal600, alignItems: 'center', justifyContent: 'center' },
   heroStripText: { flex: 1, minWidth: 0, gap: 3 },
+  /* A kicker, not a pill. It sits above the name in the one-line strip, so it has to cost as little
+     vertical space as possible — 9.5pt tracked-out bronze is the app's established "this is what the
+     thing below is" grammar (see `anchorKicker`, `filterGroupLabel`). */
+  heroStripSection: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 1 },
   heroStripName: { fontFamily: flFont.display, fontSize: 16.5, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   heroStripMeta: { fontSize: 11, fontWeight: '600', color: flColor.gray400 },
   heroStripGoal: { color: flColor.bronze300, fontWeight: '700' },

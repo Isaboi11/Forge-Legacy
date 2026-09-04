@@ -12,6 +12,7 @@ import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { Image } from 'expo-image';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { ensurePinPoster } from '@/data/pin-poster';
 import { useProfile } from '@/lib/profile';
 import type { Sex } from '@/domain/profile/schema';
@@ -718,7 +719,7 @@ function PlusIcon({ color = flColor.bronze400 }: { color?: string }) {
 }
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingBottom: 44 },
+  scroll: { paddingBottom: SCREEN_BOTTOM_GAP },
 
   // loading / error status slot
   statusWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingHorizontal: 40 },

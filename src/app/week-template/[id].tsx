@@ -8,6 +8,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { Button } from '@/components/forge/composites/Button/Button';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import {
@@ -45,6 +46,7 @@ import { schemeText } from '@/domain/program/prescription';
  */
 
 export default function WeekTemplateDetail() {
+  const barBottom = useBarBottom();
   const router = useRouter();
   const { showToast } = useToast();
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -209,7 +211,7 @@ export default function WeekTemplateDetail() {
           {/* Start is the one bronze thing on the screen. Edit and Duplicate are quiet peers; Delete is
               behind the overflow, per W-27's own rule that a destructive action must never be one tap
               from the primary one. */}
-          <View style={styles.actions}>
+          <View style={[styles.actions, { paddingBottom: barBottom }]}>
             <Button
               variant="primary"
               fullWidth
@@ -322,7 +324,7 @@ const styles = StyleSheet.create({
 
   actions: {
     position: 'absolute', left: 0, right: 0, bottom: 0,
-    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 30,
+    paddingHorizontal: SCREEN_GUTTER, paddingTop: 12,
     backgroundColor: flColor.base, borderTopWidth: 1, borderTopColor: flColor.charcoal700,
     gap: 10,
   },

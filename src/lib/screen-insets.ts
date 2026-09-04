@@ -43,6 +43,28 @@ export const SCREEN_GUTTER = 20;
 export const BAR_BOTTOM_MIN = 20;
 
 /**
+ * How much empty space a SCROLLING screen leaves after its last row.
+ *
+ * ⚠ A DIFFERENT PROBLEM FROM `useBarBottom`, WHICH IS WHY IT IS A DIFFERENT NUMBER AND NOT A HOOK.
+ * An anchored bar has hardware underneath it and must clear the home indicator. A scroll end has
+ * nothing underneath it — either the tab bar (which applies its own inset, see `TabBar`) or the screen
+ * edge — so the inset would be counted twice. What it needs is simply room to breathe: the last row of
+ * a list should not end flush against the bar below it, which reads as content that got cut off.
+ *
+ * PO, 2026-09-04: *"other things in general are too close to the edges or to the bottom. It needs to
+ * have a little bit of a buffer zone."*
+ *
+ * 44 because that is already what the two most-composed screens (Home, Legacy) settled on by eye. The
+ * outliers were Squads at 30 and Workouts at 40 — close enough that nobody noticed each one, far enough
+ * apart that moving between the four tabs never felt like one app. Same reasoning as `SCREEN_GUTTER`:
+ * standardise toward what most screens already do.
+ *
+ * ⚠ NOT FOR A SCREEN WHOSE ACTION BAR IS `position: absolute`. There the scroll end must clear the bar
+ * itself, which is much taller than this — see `week-template`'s 176.
+ */
+export const SCREEN_BOTTOM_GAP = 44;
+
+/**
  * Bottom padding for a control anchored to the foot of the screen.
  *
  * ⚠ `Math.max`, NOT ADDITION. Adding the inset to the floor gives a home-indicator phone 54 pt of dead

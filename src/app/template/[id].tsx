@@ -12,6 +12,7 @@ import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { Button } from '@/components/forge/composites/Button/Button';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { themeScrim } from '@/constants/theme-scrim';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
@@ -110,6 +111,7 @@ function Chevron({ size = 15 }: { size?: number }) {
 }
 
 export default function TemplateDetailScreen() {
+  const barBottom = useBarBottom();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const templateId = typeof id === 'string' && id.length > 0 ? id : null;
@@ -308,7 +310,7 @@ export default function TemplateDetailScreen() {
           </ScrollView>
 
           {/* sticky action bar — one bronze primary, two quiet peers, one escape hatch */}
-          <View style={styles.actionBar}>
+          <View style={[styles.actionBar, { paddingBottom: barBottom }]}>
             <Button
               variant="primary"
               fullWidth
@@ -527,7 +529,8 @@ const styles = StyleSheet.create({
   emptyHist: { padding: 20, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal600, alignItems: 'center' },
   emptyHistText: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600, textAlign: 'center' },
 
-  actionBar: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 16, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: themeScrim('rgba(6,7,8,0.86)') },
+  /* `paddingBottom` comes from `useBarBottom` — see `lib/screen-insets`. */
+  actionBar: { paddingHorizontal: SCREEN_GUTTER, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: themeScrim('rgba(6,7,8,0.86)') },
   secondaryRow: { flexDirection: 'row', gap: 8, marginTop: 9 },
   secondaryBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 11, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   secondaryText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },

@@ -8,6 +8,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { adoptStarterTemplate, schemeText } from '@/data/templates-live';
 import { getStarterTemplate, starterMeta } from '@/domain/workout/starter-templates';
 import { activityFromKey, deriveEquip } from '@/domain/workout/conditioning';
@@ -44,6 +45,7 @@ import { writeWorkoutLaunch } from '@/lib/workout-launch';
  * of the page says what that buys.
  */
 export default function StarterTemplateScreen() {
+  const barBottom = useBarBottom();
   const router = useRouter();
   const { showToast } = useToast();
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -186,7 +188,7 @@ export default function StarterTemplateScreen() {
           Forge — the real one is the bronze METAL treatment (gradient fill, top rim, cream label) that
           `Button` owns. Reported by the PO as the wrong colour, and it was: the only bronze-400 primary in
           the app. Using the composite means it cannot drift again. */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: barBottom }]}>
         <Button
           variant="primary"
           fullWidth
@@ -249,6 +251,7 @@ const styles = StyleSheet.create({
 
   note: { marginTop: 4, fontSize: 12, lineHeight: 18, color: flColor.gray600 },
 
-  footer: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 22, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: flColor.charcoal900 },
+  /* `paddingBottom` comes from `useBarBottom` — see `lib/screen-insets`. */
+  footer: { paddingHorizontal: SCREEN_GUTTER, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: flColor.charcoal900 },
   footerSecondary: { marginTop: 9 },
 });

@@ -22,6 +22,7 @@ import { EquipIcon, equipmentLabel } from '@/components/forge/EquipIcon';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { themeScrim } from '@/constants/theme-scrim';
 import { claimInitiativeHonor } from '@/data/honors-live';
 import {
@@ -1679,6 +1680,7 @@ function SetupView({
   onVary: () => void;
   onSave: () => void;
 }) {
+  const barBottom = useBarBottom();
   // In Customize mode the list is weeks, so the summary counts every week's exercises — counting only
   // the (now unused) repeat template would under-report the program by a factor of its length.
   const totalEx = draft.vary
@@ -1949,7 +1951,7 @@ function SetupView({
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </Animated.ScrollView>
 
-      <LinearGradient colors={[themeScrim('rgba(6,7,8,0.35)'), themeScrim('rgba(6,7,8,0.82)')]} style={styles.footer}>
+      <LinearGradient colors={[themeScrim('rgba(6,7,8,0.35)'), themeScrim('rgba(6,7,8,0.82)')]} style={[styles.footer, { paddingBottom: barBottom }]}>
         <TourAnchor id="builder-save">
           {!valid ? (
             <View style={styles.checks}>
@@ -2056,6 +2058,7 @@ function WeekDaysView({
   onUseSavedWeek: () => void;
   onAdvance: () => void;
 }) {
+  const barBottom = useBarBottom();
   const rise = useEntryRise(360);
   const week = draft.openWeek ?? 0;
   const built = completedWeeks(draft);
@@ -2123,7 +2126,7 @@ function WeekDaysView({
         <UseSavedWeekRow onPress={onUseSavedWeek} />
       </Animated.ScrollView>
 
-      <LinearGradient colors={[themeScrim('rgba(6,7,8,0.35)'), themeScrim('rgba(6,7,8,0.82)')]} style={styles.footer}>
+      <LinearGradient colors={[themeScrim('rgba(6,7,8,0.35)'), themeScrim('rgba(6,7,8,0.82)')]} style={[styles.footer, { paddingBottom: barBottom }]}>
         <Button variant="primary" fullWidth onPress={onAdvance} accessibilityLabel="Save and continue">
           Save &amp; continue
         </Button>
@@ -2208,6 +2211,7 @@ function DayBuilder({
   onPair: (section: BuilderSection, i: number) => void;
   onUnpair: (section: BuilderSection, i: number) => void;
 }) {
+  const barBottom = useBarBottom();
   const total = dayTotal(day);
   const est = Math.round((day.main.length * 9 + day.warmup.length * 4 + day.cooldown.length * 4) / 5) * 5;
   const rise = useEntryRise(360);
@@ -2353,7 +2357,7 @@ function DayBuilder({
         the difference is only where you land: still building, or back at the overview. `Save workout` keeps
         its name because it is the athlete's own word for it.
       */}
-      <LinearGradient colors={[themeScrim('rgba(6,7,8,0.35)'), themeScrim('rgba(6,7,8,0.82)')]} style={styles.footer}>
+      <LinearGradient colors={[themeScrim('rgba(6,7,8,0.35)'), themeScrim('rgba(6,7,8,0.82)')]} style={[styles.footer, { paddingBottom: barBottom }]}>
         {nextLabel ? (
           <>
             <Button
@@ -2918,10 +2922,10 @@ const styles = StyleSheet.create({
   },
   error: { marginTop: 16, fontSize: 13, color: flColor.redMuted },
 
+  /* `paddingBottom` comes from `useBarBottom` — see `lib/screen-insets`. */
   footer: {
-    paddingHorizontal: 18,
+    paddingHorizontal: SCREEN_GUTTER,
     paddingTop: 12,
-    paddingBottom: 20,
     borderTopWidth: 1,
     borderTopColor: flColor.charcoal700,
   },
