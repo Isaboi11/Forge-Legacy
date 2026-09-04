@@ -21,7 +21,7 @@ import { CARDIO_ACTIVITIES, CARDIO_SEARCH_ALIASES, cardioKey } from '../workout/
 import { type MatchResult } from '../program/exercise-match.ts';
 import { ALIASES_BY_ID, resolveAgainstCatalog } from './aliases.ts';
 import { mergeForSearch } from './custom-core.ts';
-import { matchesSearch, rankFor } from './search-core.ts';
+import { matchesFuzzy, matchesSearch, rankFor } from './search-core.ts';
 import equipmentData from '../exercise-relationships/source/equipment.json';
 import exerciseMusclesData from '../exercise-relationships/source/exercise_muscles.json';
 import exercisesData from '../exercise-relationships/source/exercises.json';
@@ -42,7 +42,7 @@ import {
 
 export { EXERCISE_CATEGORIES, DIFFS, DEFAULT_HOLD_SEC, asUnit } from './catalog-core';
 // Re-exported so a screen has one import site for search, not two.
-export { matchesSearch, matchesTokens, rankFor, searchFields, searchTokens } from './search-core.ts';
+export { matchesFuzzy, matchesSearch, matchesTokens, rankFor, searchFields, searchTokens } from './search-core.ts';
 export type { Difficulty, ExerciseCategoryKey, PickerItem, EquipClass, ExerciseUnit } from './catalog-core';
 
 export const PICKER_DB: PickerItem[] = buildPickerDb({
@@ -245,7 +245,23 @@ export function buildSections(opts: {
    * nothing about finding a bench press changes.
    */
   const pool = filters.cat.includes('CARDIO') ? [...(opts.pool ?? PICKER_DB), ...CONDITIONING_ROWS] : (opts.pool ?? PICKER_DB);
-  const matched = pool.filter((x) => matchItem(x, search, filters, exclude));
+  const strict = pool.filter((x) => matchItem(x, search, filters, exclude));
+  /*
+   * ══ THE TYPO PASS, AND IT ONLY RUNS OVER AN EMPTY SCREEN ══
+   *
+   * `matchesFuzzy` is deliberately a worse matcher (see its note). Running it here — after the real
+   * one, and only when the real one found nothing — is what keeps it from costing anything: while
+   * there is a single honest answer on screen the athlete never meets it, and the moment there are
+   * none, a slightly misspelled query beats the dead end it would otherwise have been.
+   *
+   * ⚠ THE FILTERS STILL APPLY. This widens the SPELLING, never the selection: a query that fuzzed its
+   * way to a barbell lift must still survive the equipment chip the athlete set, or the gate they can
+   * see on screen would be quietly overruled by the one they cannot.
+   */
+  const matched =
+    strict.length === 0 && searching
+      ? pool.filter((x) => matchesFuzzy(x, search) && matchItem(x, '', filters, exclude))
+      : strict;
 
   /*
    * ══ THE ATHLETE'S OWN EXERCISES, AND THE ONE PLACE THEY DO NOT APPEAR ══
