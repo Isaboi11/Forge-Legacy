@@ -769,8 +769,8 @@ export default function WorkoutComplete() {
             />
               <Text style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
             </Pressable>
-            <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="See the details" style={styles.textLink}>
-              <Text style={styles.textLinkText}>See the details</Text>
+            <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="View workout details" style={styles.textLink}>
+              <Text style={styles.textLinkText}>View details</Text>
             </Pressable>
           </View>
         </Shell>
@@ -781,16 +781,41 @@ export default function WorkoutComplete() {
       <Shell>
         <View style={styles.center}>
           {data.chapterName ? <Text style={styles.eyebrow}>{data.chapterName}</Text> : null}
-          <SealMedallion size={132} sealed={sealed} />
+          {/* ⚠ 116, NOT 132 (design review 2026-09-04). *"The emblem is beautiful, but it occupies a
+              lot of visual real estate for something that isn't actionable."* Correct — it was the
+              largest thing on a screen whose actual subject is the session and its two numbers, and
+              shrinking it is what lets everything below move up into one composition. The FIRST-RUN
+              branch above keeps 132 on purpose: that screen has no stats, no milestone and no quote,
+              so the medallion is genuinely the subject there rather than the ornament. */}
+          <SealMedallion size={116} sealed={sealed} />
           {/*
-            Name the destination. "Session Sealed" tells the athlete something happened but not where it
-            went — and the chapter card is the only place it lands, so say so.
+            ══ ONE IDENTITY BLOCK, NOT THREE SIBLINGS ══
+
+            *"The current spacing makes SESSION COMPLETE feel almost like a separate section heading…
+            I'd make the relationship more like SESSION COMPLETE / Less / Sep 4 — one cohesive identity
+            block."*
+
+            ⚠ THE GAP WAS NEVER IN THESE STYLES, WHICH IS WHY TUNING THEIR MARGINS WOULD NOT HAVE FIXED
+            IT. `styles.center` sets `gap: 12`, so every direct child paid 12pt on top of whatever
+            margin it carried — the status line, the title and the date were three separate rows of a
+            centred stack that happened to be adjacent. Wrapping them makes them ONE child: the
+            container's gap applies once, to the group, and the three lines inside it are spaced by
+            their own much tighter rule.
+
+            Name the destination. "Session Sealed" tells the athlete something happened but not where
+            it went — and the chapter card is the only place it lands, so say so.
           */}
-          <Text style={[styles.sealStatus, sealed && styles.sealStatusSealed]}>
-            {sealed ? (data.chapterName ? `Sealed to ${data.chapterName}` : 'Session Sealed') : 'Session Complete'}
-          </Text>
-          <Text style={styles.sealTitle}>{shownName}</Text>
-          {data.dateLabel ? <Text style={styles.sealSubtitle}>{data.dateLabel}</Text> : null}
+          <View style={styles.identity}>
+            <Text style={[styles.sealStatus, sealed && styles.sealStatusSealed]}>
+              {sealed ? (data.chapterName ? `Sealed to ${data.chapterName}` : 'Session Sealed') : 'Session Complete'}
+            </Text>
+            <Text style={styles.sealTitle}>{shownName}</Text>
+            {data.dateLabel ? <Text style={styles.sealSubtitle}>{data.dateLabel}</Text> : null}
+          </View>
+          {/* ⚠ THE TWO NUMBERS ARE THE POINT OF THE SCREEN. *"Those are arguably the most useful
+              pieces of information on this entire screen, yet visually they're subordinate to the
+              emblem and the decorative elements."* They now outrank everything except the session
+              name — see `statN`. */}
           <View style={styles.sealStats}>
             <Stat n={fmtDuration(data.durationSec)} label="Under Iron" />
             <View style={styles.statDivider} />
@@ -843,8 +868,8 @@ export default function WorkoutComplete() {
               />
               <Text style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
             </Pressable>
-            <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="See the details" style={styles.textLink}>
-              <Text style={styles.textLinkText}>See the details</Text>
+            <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="View workout details" style={styles.textLink}>
+              <Text style={styles.textLinkText}>View details</Text>
             </Pressable>
           </View>
         </View>
@@ -1478,13 +1503,33 @@ function Hero({ hero }: { hero: CompletionHero }) {
       </View>
     );
   }
+  /*
+   * ══ THE MILESTONE IS NOT A CARD ANY MORE ══
+   *
+   * Design review 2026-09-04: *"The card is good, but it currently feels slightly like a notification
+   * inserted into the middle of a ceremonial screen… I'd make it feel less like a standard app card."*
+   *
+   * The fix the project already has a rule for. A card says *you act inside this*, and there is nothing
+   * to do inside a milestone — it is a fact about the session, and a fact gets a label. So the recessed
+   * fill and the charcoal border come off and what is left is the glyph, the label and the fact, on the
+   * same ground as everything else on the screen. Subtraction, not a new treatment.
+   *
+   * ⚠ ONE LINE, NOT TWO. "MILESTONE" over "20th Session" was a stacked block roughly the height of the
+   * stats it sits under, which is what made it read as a competing element. Joined by a middle dot, it
+   * becomes a caption — the register the review asked for ("MILESTONE · 20TH SESSION").
+   *
+   * ⚠ `featured` (an honor or a PR) IS STILL A CARD, deliberately. That branch is the "one true thing"
+   * and is supposed to dominate; the review's complaint was about the quiet variant sitting in the
+   * ceremony wearing a card's clothes.
+   */
   return (
     <View style={styles.heroStandard}>
-      <HeroGlyph kind={hero.kind} size={22} />
-      <View style={styles.heroTextS}>
+      <HeroGlyph kind={hero.kind} size={19} />
+      <Text style={styles.heroLineS} numberOfLines={1}>
         <Text style={styles.heroEyebrowS}>{hero.eyebrow}</Text>
+        <Text style={styles.heroDotS}> · </Text>
         <Text style={styles.heroTitleS}>{hero.title}</Text>
-      </View>
+      </Text>
     </View>
   );
 }
@@ -1631,21 +1676,37 @@ const styles = StyleSheet.create({
 
   eyebrow: { fontSize: 13, fontWeight: '600', letterSpacing: 2.6, textTransform: 'uppercase', color: flColor.gray400 },
 
-  quoteRow: { flexDirection: 'row', gap: 12, maxWidth: 300, marginTop: 22, alignSelf: 'center' },
+  /* ══ THE QUOTE IS THE PRE-SEAL STATEMENT, AND SPACING IS WHAT SAYS SO ══
+     *"I'd create a stronger closing sequence… the quote feels like the narrative justification for the
+     action."* It was already in the right ORDER; what it lacked was punctuation. More air ABOVE cuts it
+     free of the milestone it was competing with, and `sealBottom`'s much smaller `marginTop` binds it
+     to the button underneath: what you did · then the sentence · then the act. Left rule and left
+     alignment untouched — the review called this element excellent, and it is not what was wrong. */
+  quoteRow: { flexDirection: 'row', gap: 12, maxWidth: 300, marginTop: 26, alignSelf: 'center' },
   quoteRule: { width: 2, borderRadius: 1 },
 
   firstEyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronze400 },
   revealChapter: { fontFamily: flFont.display, fontSize: 30, fontWeight: '600', color: flColor.cream100, textAlign: 'center', marginTop: 6, letterSpacing: -0.3 },
   revealLine: { fontFamily: flFont.sans, fontSize: 14.5, color: flColor.gray400, textAlign: 'center', marginTop: 4 },
-  sealStatus: { fontSize: 12, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 12 },
+  /* The status line, the name and the date as ONE child of the centred stack — see the note at the
+     call site. 6pt inside it against the container's 12pt between groups: the three lines read as one
+     thing, and the block reads as separate from the medallion above and the numbers below. */
+  identity: { alignItems: 'center', gap: 6 },
+  /* ⚠ `marginTop` REMOVED from all three. It was compounding with `center`'s `gap: 12` — the exact
+     stretch the review objected to. Spacing for this group now lives in `identity` alone. */
+  sealStatus: { fontSize: 12, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronze400 },
   sealStatusSealed: { color: flColor.bronze300 },
   sealTitle: { fontFamily: flFont.display, fontSize: 38, fontWeight: '700', letterSpacing: 0.4, color: flColor.cream100, textAlign: 'center' },
-  sealSubtitle: { fontFamily: flFont.sans, fontSize: 14, letterSpacing: 1, color: flColor.gray400, marginTop: 8 },
-  sealStats: { flexDirection: 'row', marginTop: 22 },
+  sealSubtitle: { fontFamily: flFont.sans, fontSize: 14, letterSpacing: 1, color: flColor.gray400 },
+  sealStats: { flexDirection: 'row', marginTop: 12 },
   statDivider: { width: 1, backgroundColor: flColor.bronzeBorderSubtle },
-  stat: { alignItems: 'center', gap: 3, paddingHorizontal: 18 },
-  statN: { fontFamily: flFont.display, fontSize: 24, fontWeight: '600', color: flColor.cream100 },
-  statLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600 },
+  /* ⚠ THE NUMBERS GAIN ~12%, THE LABELS GAIN CONTRAST — the review's biggest UX point, and the two
+     halves are separate fixes. 24→27 is the size; `gray600`→`gray400` is the one that actually makes
+     the block read as important, because a label nobody can see makes the number above it ambiguous.
+     Wider gutters too: the pair has to hold its own against the medallion, and air is what does that. */
+  stat: { alignItems: 'center', gap: 4, paddingHorizontal: 22 },
+  statN: { fontFamily: flFont.display, fontSize: 27, fontWeight: '600', color: flColor.cream100 },
+  statLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.gray400 },
 
   honorHero: { alignItems: 'center', gap: 3, marginTop: 12, paddingVertical: 12, paddingHorizontal: 20, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
   honorKicker: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
@@ -1658,7 +1719,8 @@ const styles = StyleSheet.create({
   holdBtn: { marginTop: 26, width: '100%', height: 54, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.borderInset },
   holdFill: { position: 'absolute', left: 0, top: 0, bottom: 0 },
   holdBtnInSection: { marginTop: 0 },
-  sealBottom: { width: '100%', maxWidth: 320, marginTop: 32 },
+  /* 32→14: the seal belongs TO the sentence above it, not to a separate footer region. */
+  sealBottom: { width: '100%', maxWidth: 320, marginTop: 14 },
   upNext: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 15 },
   upNextDiamond: { width: 5, height: 5, transform: [{ rotate: '45deg' }], backgroundColor: flColor.bronze400 },
   upNextText: { fontSize: 12, color: flColor.gray600 },
@@ -1666,8 +1728,21 @@ const styles = StyleSheet.create({
   holdTextDark: { color: flColor.onBronze },
   // alignSelf, not just textAlign: the Pressable would otherwise stretch to the column's full width and
   // sit its label on the left edge, off-axis from the medallion and the Hold-to-Seal button above it.
-  textLink: { alignSelf: 'center', paddingVertical: 12 },
-  textLinkText: { fontFamily: flFont.sans, fontSize: 14, color: flColor.gray400 },
+  /* ══ "VIEW DETAILS", IN THE SCREEN'S OWN LABEL VOICE ══
+     *"This is probably the weakest visual element on the screen… I'd make it slightly more obviously
+     interactive without making it look like a button."* It was 14pt sentence-case grey — the one thing
+     here written in no particular language, which is why it read as a footnote rather than a door.
+     Small tracked-out uppercase is the register `eyebrow`, `statLabel` and `sealStatus` already speak,
+     and bronze is what the screen uses for "this responds". Still not a button: no fill, no border. */
+  textLink: { alignSelf: 'center', paddingVertical: 13, paddingHorizontal: 16 },
+  textLinkText: {
+    fontFamily: flFont.sans,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.8,
+    textTransform: 'uppercase',
+    color: flColor.bronze400,
+  },
 
   back: { alignSelf: 'flex-start', marginBottom: 14 },
   backText: { fontFamily: flFont.sans, fontSize: 15, color: flColor.gray400 },
@@ -1774,10 +1849,13 @@ const styles = StyleSheet.create({
   heroEyebrowF: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
   heroTitleF: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', color: flColor.cream100, lineHeight: 22 },
   heroNoteF: { fontSize: 11.5, color: flColor.gray400 },
-  heroStandard: { flexDirection: 'row', alignItems: 'center', gap: 12, width: '100%', maxWidth: 290, marginTop: 22, paddingVertical: 12, paddingHorizontal: 15, borderRadius: flRadius.lg, backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: flColor.charcoal600 },
-  heroTextS: { flex: 1, minWidth: 0, gap: 1, alignItems: 'flex-start' },
-  heroEyebrowS: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.gray600 },
-  heroTitleS: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100, lineHeight: 18 },
+  /* No fill, no border, no card — see the note on `Hero`. What is left is a centred caption: glyph,
+     label, fact. `marginTop: 4` because `center`'s own 12pt gap is now doing the separating. */
+  heroStandard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, maxWidth: 300, marginTop: 4 },
+  heroLineS: { flexShrink: 1, textAlign: 'center' },
+  heroEyebrowS: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  heroDotS: { fontSize: 10, color: flColor.bronzeBorder },
+  heroTitleS: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
 
   // record
   recHeader: { height: 56, flexDirection: 'row', alignItems: 'center', gap: 4, paddingTop: 6, paddingLeft: 6, paddingRight: 14, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
