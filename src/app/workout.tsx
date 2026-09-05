@@ -3617,6 +3617,10 @@ export default function WorkoutScreen() {
                 <CardioBlockCard
                   exercise={ex}
                   index={exIdx}
+                  /* Scopes the bout's stored clock to THIS session. `startedAt` and not the workout
+                     name or the program id: it is the one field that is unique per session and
+                     survives a resume unchanged. See `cardio-timer-store.ts`. */
+                  sessionKey={session.startedAt}
                   units={units}
                   onSetModality={setCardioModality}
                   onSave={saveCardioLog}
