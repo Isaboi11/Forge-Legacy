@@ -923,6 +923,28 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
 > Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
 
+### 0. ⭐ A weight somebody lifted is shown exactly — 37.5 stops rendering as 38 (2026-09-05, Units / set cards / watch / lift chart / Body — **no migration**, ✅ **DEPLOYED BOTH SURFACES** — web `index-cd0b3482b525ac6703ed70acb1e0af66.js`, iOS OTA `01a0721b-ef68-710c-b5cf-5d0b9716c600` on runtime `47944f2e…`, commit `8343d1c` on `feat/route-map`, cherry-picked as `a76ed53` on `ota/build8-js`. ⏳ **NOT YET CONFIRMED ON A DEVICE**)
+
+PO: *"On each set card during an active workout it shows what was done last time. For some reason we're rounding numbers up. For example, instead of 37.5 we're putting 38 for the weight. We want the exact for all of them."*
+
+`displayWeight` rounded to a whole number on the reasoning that **gyms don't count grams**. Gyms do, however, count **half pounds**: 37.5 is a real dumbbell, 2.5 is a real plate, and a 1.25 kg micro-plate is the entire point of owning one.
+
+⚠ **NOTHING WAS WRONG WITH THE DATA, AND THAT IS THE DIAGNOSTIC WORTH KEEPING.** `workout_sets.weight` is `numeric` and `readDraft` writes the weight with `round: false`, so the exact figure was typed and stored intact — it was destroyed at the last step, on the way back **out**. Today's live sets go through `setWeightLabel`, which never rounded, so **one lift read 37.5 while you trained and 38 a week later**. A number that changes depending on when you look at it is a display bug, not a storage bug; the round trip is where to look.
+
+New `exactWeight` converts and quantises to two decimals. ⚠ **Quantising is not rounding.** 17 kg stores as 37.4785… lb and converts back to `17.000000000000004`, which rendered verbatim would be a **worse** lie than the rounding was. Two decimals holds every increment anybody loads — a 0.25 lb micro-plate included — and nothing else. A metric athlete's own kilos round-trip clean, and there is a test that walks six of them.
+
+⭐ **THE RULE IS BY KIND, NOT BY PREFERENCE — a weight somebody actually LIFTED is exact; a total computed from many of them rounds.** So `displayWeight` survives and keeps every one of its remaining callers, all of which are summed **volume** (weekly review, workout total, ledger post, home circle). ⚠ A tonnage of `43,250.5 lb` is noise, not precision: the half pound is real on one plate and meaningless across four hundred of them. **Do not "finish the job" by pointing volume at `exactWeight`.**
+
+Moved to exact: the set card's "last time" (the report), Last/Best, the live-workout viewer, the watch's set line, the lift chart's points/headline/delta, the per-exercise delta on Workout Complete, and **`formatLoad`** — which carries heaviest set, week's top lift, PR values and body weight.
+
+⭐ **TWO DOUBLE-ROUNDING BUGS FELL OUT OF THE SAME PASS, NEITHER REPORTED.** `BodySection` subtracted two already-rounded body weights — drifting by up to a whole unit against the change the athlete would compute themselves, and **erasing any change under half a pound entirely**, which on that screen is most real weeks. And `changeLabel` rounded a lift delta, so a 2.5 lb gain reported "+3". Both now convert the DELTA, never the endpoints — the rule `changeLabel`'s own comment had already documented and its code did not follow.
+
+⚠ **CONSEQUENCES, STATED SO NOBODY FILES THEM AS REGRESSIONS.** A metric athlete reading an *imperial-logged* lift now sees `183.7 kg × 3` rather than `184`, and the Preferences preview shows the true `142.88 kg` for its fixed 315 lb. Both are the honest conversion; the old figures named lifts nobody did.
+
+⚠ **THE WATCH CHANGE IS NOT IN THIS OTA.** `watch-projection.ts` **does not exist on `ota/build8-js`** — the watch postdates build 8's base and was never cherry-picked, so build 8 has no watch projection to fix. The change is on `feat/route-map` and ships whenever the watch does. The cherry-pick conflicted as `DU` on three files and was resolved by keeping them absent, which is the correct resolution and not a dropped change.
+
+✅ **VERIFIED, NOT MERELY PUBLISHED.** `fingerprint:compare --build-id 3f67281b…` matched build 8 exactly BEFORE publishing. Dry-run payload healthy (20,899-byte tarball, `assets.json` 63,305 bytes). ⚠ **The production alias served the PREVIOUS hash for ~5.3 minutes** while the deployment's own URL was already 200-and-matching — textbook propagation, and the deployment-URL probe is what told it apart from an empty worker. **It was not re-deployed.** The live bundle was then fetched from `forgelegacy.expo.app` and the minified quantiser `Math.round(100*o(t,n))/100` found in it. ⚠ **A source-level grep for `*100)/100` returned ZERO** — the minifier had reordered it to `100*o(...)`; a check written against the un-minified shape would have reported the fix missing. tsc clean · 3239 tests pass · lint at baseline.
+
 ### 0. ⭐ The indoor ride ends when the workout does (2026-09-05, Active Workout / cardio — **no migration**, ✅ **DEPLOYED BOTH SURFACES** — web `index-b60341ce2ed31de87709cc21588d332a.js`, iOS OTA `01a071fc-024f-7e80-b5f5-c80c1608d8bc` on runtime `47944f2e…`, commit `2e61c45` on `feat/route-map`, cherry-picked as `9e67b1f` on `ota/build8-js`. ⏳ **NOT YET CONFIRMED ON A DEVICE**)
 
 PO: *"the indoor ride is just one continuous ride even when you end the workout, it just picks up on the next."* It was, and it was **two failures lining up** — either alone would have been survivable.
