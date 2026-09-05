@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { convertMeasure, displayWeight, formatLoad, previewSquat } from '../units.ts';
+import { convertMeasure, displayWeight, formatLoad, previewSquat, toCanonicalLb } from '../units.ts';
 import {
   AUDIENCES,
   canSee,
@@ -14,11 +14,32 @@ import { APP_PREFS_DEFAULTS, EXPERIENCE_TOGGLES, sanitizePrefs } from '../prefer
 // ── units ─────────────────────────────────────────────────────────────────────
 
 test('a stored pound weight displays in the athlete’s system, storage unchanged', () => {
+  // `displayWeight` still ROUNDS, and still should — its remaining callers are all summed volume.
   assert.deepEqual(displayWeight(315, 'imperial'), { value: 315, unit: 'lb' });
   assert.deepEqual(displayWeight(315, 'metric'), { value: 143, unit: 'kg' }, '315 lb ≈ 143 kg');
+  /*
+   * ⚠ `formatLoad` IS EXACT, AND THAT IS THE CHANGE. PO: *"instead of 37.5 we're putting 38 for the
+   * weight. We want the exact for all of them."* Every caller hands this ONE measured figure — a
+   * heaviest set, a week's top lift, a PR, a body weight — so `184 kg` was the app reporting a lift
+   * that never happened. 405 lb really is 183.7 kg.
+   */
   assert.equal(formatLoad(405, 'imperial', 3), '405 lb × 3');
-  assert.equal(formatLoad(405, 'metric', 3), '184 kg × 3');
+  assert.equal(formatLoad(405, 'metric', 3), '183.7 kg × 3');
   assert.equal(formatLoad(1000, 'imperial'), '1,000 lb', 'thousands read as gym numbers');
+  // The half plate survives, which is the whole report.
+  assert.equal(formatLoad(37.5, 'imperial'), '37.5 lb', '⚠ 37.5 must never render as 38');
+  assert.equal(formatLoad(2.5, 'imperial'), '2.5 lb');
+  assert.equal(formatLoad(1250.5, 'imperial'), '1,250.5 lb', 'thousands AND a fraction');
+  // A whole number stays whole — no trailing ".0" anywhere.
+  assert.equal(formatLoad(225, 'imperial'), '225 lb');
+});
+
+test('⚠ a metric athlete reads back their OWN number, not float noise', () => {
+  // 17 kg stores as 37.4785… lb and converts back to 17.000000000000004. Rendering that verbatim would
+  // be a worse lie than rounding was, which is why `exactWeight` quantises to two decimals.
+  for (const kg of [17, 20, 42.5, 60, 100, 142.5]) {
+    assert.equal(formatLoad(toCanonicalLb(kg, 'metric'), 'metric'), `${kg} kg`, `${kg} kg round-trips`);
+  }
 });
 
 test('convertMeasure only touches a pounds measure, and only for metric', () => {
@@ -58,8 +79,11 @@ test('⚠ a fractional pounds value converts as ONE number, not just its fractio
 });
 
 test('the preview matches what a real 315 lb squat would render', () => {
+  /* Still true, and now true more literally: the preview runs through `formatLoad`, so it shows the
+     same exact conversion a real lift would. A rounded preview beside exact figures would misdescribe
+     the setting it exists to demonstrate. */
   assert.equal(previewSquat('imperial'), '315 lb');
-  assert.equal(previewSquat('metric'), '143 kg');
+  assert.equal(previewSquat('metric'), '142.88 kg');
 });
 
 // ── visibility ────────────────────────────────────────────────────────────────

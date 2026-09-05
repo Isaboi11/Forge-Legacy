@@ -14,7 +14,7 @@ import { saveWorkoutAsTemplate } from '@/data/templates-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { useUnits } from '@/lib/settings';
-import { displayWeight } from '@/domain/settings/units';
+import { displayWeight, exactWeight } from '@/domain/settings/units';
 import { WORKOUT_NAME_MAX, fetchCompletion, renameWorkout, savePlaylist, saveReflection, saveWorkoutNote, type CompletionCardio, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
 import { fetchWorkoutAsSession } from '@/data/continue-workout-live';
 import { persistSession } from '@/domain/workout/autosave';
@@ -965,8 +965,18 @@ export default function WorkoutComplete() {
             {/* Two bare text buttons, never full-width ones. The weight difference is the whole hierarchy:
                 the exit reads above the secondary navigation, and neither competes with Share. */}
             <View style={styles.capExits}>
-              <Pressable onPress={goHome} accessibilityRole="button" accessibilityLabel={review ? 'Done' : 'Back to home'} style={styles.capExitBtn}>
-                <Text style={styles.capExit}>{review ? 'Done' : 'Back to home'}</Text>
+              {/*
+                ⚠ IT SAID "Back to home" AND WENT TO LEGACY — for two years, on the screen an athlete
+                reaches at the single best moment the app has.
+
+                The DESTINATION is right and deliberate (see `goHome`): the session just landed in Legacy,
+                the first-workout chapter reveal draws there, and the Initiative ceremony fires on
+                whichever tab has focus. The LABEL was the defect. A control names what happens, and this
+                one named a different screen — so the app quietly moved them somewhere they had not asked
+                to go, at the exact moment it had earned their trust.
+              */}
+              <Pressable onPress={goHome} accessibilityRole="button" accessibilityLabel={review ? 'Done' : 'See your Legacy'} style={styles.capExitBtn}>
+                <Text style={styles.capExit}>{review ? 'Done' : 'See your Legacy'}</Text>
               </Pressable>
               <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="See workout details" style={styles.capExitBtn}>
                 <Text style={styles.capExitSub}>See workout details</Text>
@@ -1440,7 +1450,8 @@ function ord(n: number): string {
 function deltaLabel(d: ExerciseDelta, units: import('@/domain/settings/units').UnitSystem): string {
   if (d.kind === 'hold') return 'Held';
   if (d.kind === 'reps') return `+${d.n} reps`;
-  const w = displayWeight(d.n, units);
+  /* Exact: a 2.5 lb step up is what the athlete did, and "+3" is not. Volume above still rounds. */
+  const w = exactWeight(d.n, units);
   return `+${w.value} ${w.unit}`;
 }
 // Exact forge-symbols glyphs: laurel (honor) · spark (pr) · medal (milestone) · flame (consistency).
