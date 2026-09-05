@@ -85,3 +85,58 @@ test('the watch still renders a loaded set with its unit', () => {
   const set = { weight: 225, targetReps: 5, targetWeight: null, targetSec: null, toFailure: false };
   assert.equal(targetLine(set, IMP), '225 lb × 5');
 });
+
+/*
+ * ══ ⚠ THE HALF PLATE SURVIVES THE ROUND TRIP ══
+ *
+ * PO: *"On each set card during an active workout it shows what was done last time. For some reason
+ * we're rounding numbers up. For example, instead of 37.5 we're putting 38 for the weight. We want the
+ * exact for all of them."*
+ *
+ * `workout_sets.weight` is `numeric` and `readDraft` writes the weight with `round: false`, so 37.5 was
+ * typed and stored intact — `displayWeight`'s `Math.round` was destroying it at the very last step, and
+ * only on the way back OUT. Today's live sets went through `setWeightLabel`, which never rounded, so
+ * the same number read 37.5 while you trained and 38 a week later.
+ */
+
+
+test('⚠ 37.5 is 37.5 — the set card shows the athlete their own number', () => {
+  assert.equal(setWeightLabelLb(37.5, IMP), '37.5', 'the reported defect');
+  assert.equal(setLoadLineLb(37.5, 8, IMP), '37.5 lb × 8');
+});
+
+test('every increment anybody actually loads survives', () => {
+  // Micro-plates go to a quarter pound; 1.25 is a real kg plate; 2.5 is the commonest jump there is.
+  for (const w of [0.25, 1.25, 2.5, 7.5, 37.5, 42.5, 137.5]) {
+    assert.equal(setWeightLabelLb(w, IMP), String(w), `${w} lb`);
+  }
+});
+
+test('a whole number stays whole — no trailing ".0" appears anywhere', () => {
+  assert.equal(setWeightLabelLb(225, IMP), '225');
+  assert.equal(setLoadLineLb(225, 5, IMP), '225 lb × 5');
+});
+
+test('⚠ exactness must not resurrect the zero — BW still wins over the number', () => {
+  // The whole point of this file. A fractional path that forgot the zero rule would print "0".
+  assert.equal(setWeightLabelLb(0, IMP), BODYWEIGHT);
+  assert.equal(setLoadLineLb(0, 8, IMP), `${BODYWEIGHT} × 8`);
+  assert.equal(setWeightLabelLb(null, IMP), UNANSWERED);
+  assert.equal(setWeightLabelLb(undefined, IMP), UNANSWERED);
+});
+
+test('⚠ and no float noise for a metric athlete reading their own kilos back', () => {
+  // 17 kg is stored as 37.4785… lb. Converted back naively that is 17.000000000000004.
+  const stored = 17 / 0.45359237;
+  assert.equal(setWeightLabelLb(stored, MET), '17', 'quantised, not spelled out');
+  assert.equal(setLoadLineLb(stored, 10, MET), '17 kg × 10');
+});
+
+test('the thousands separator survives a fraction', () => {
+  assert.equal(setLoadLineLb(1250.5, 1, IMP), '1,250.5 lb × 1');
+});
+
+test('the watch shows the same half plate the phone does', () => {
+  const set = { weight: 37.5, targetReps: 8, targetWeight: null, targetSec: null, toFailure: false };
+  assert.equal(targetLine(set, IMP), '37.5 lb × 8');
+});

@@ -1,4 +1,4 @@
-import { displayWeight, unitLabel, type UnitSystem } from '../settings/units.ts';
+import { exactWeight, unitLabel, type UnitSystem } from '../settings/units.ts';
 import { BODYWEIGHT } from './set-load.ts';
 import type { ActiveSession, SessionExercise, SessionSet } from './types.ts';
 
@@ -15,7 +15,7 @@ import type { ActiveSession, SessionExercise, SessionSet } from './types.ts';
  * Weights are canonical POUNDS in the session (`units.ts` header). If the wrist received a number and a
  * unit it would have to convert, and then a units change mid-session would need a second code path in
  * Swift that nobody can run on this machine. So `target` crosses the wire as a **finished display
- * string** — "185 lb × 8" — built here by `displayWeight`/`unitLabel`, the same two calls every phone
+ * string** — "185 lb × 8" — built here by `exactWeight`/`unitLabel`, the same two calls every phone
  * surface uses. Switch to kg and the next push simply carries a different string.
  *
  * ⚠ NO `@/` IMPORTS. `watch-projection.test.mjs` loads this under `node --test`, where a runtime `@/`
@@ -208,7 +208,8 @@ export function targetLine(set: SessionSet, units: UnitSystem): string {
     return `${BODYWEIGHT} × ${reps}`;
   }
 
-  const { value } = displayWeight(lb, units);
+  /* Exact: the wrist shows the same figure the phone does, half plates included. */
+  const { value } = exactWeight(lb, units);
   return `${value} ${unitLabel(units)} × ${reps}`;
 }
 

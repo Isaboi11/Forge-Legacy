@@ -98,8 +98,9 @@ test('a cardio block is stepped over, never pointed at', () => {
 test('every target shape a session can hold becomes a finished string', () => {
   assert.equal(targetLine(set(), 'imperial'), '185 lb × 8');
 
-  // The athlete's unit, converted once, here. 185 lb → 84 kg.
-  assert.equal(targetLine(set(), 'metric'), '84 kg × 8');
+  /* The athlete's unit, converted once, here — and EXACTLY. 185 lb is 83.91 kg, not 84; the wrist
+     shows the same figure the phone does now that neither rounds a lifted weight. */
+  assert.equal(targetLine(set(), 'metric'), '83.91 kg × 8');
 
   // A rep range is the ask, not two numbers to reconcile on the wrist.
   assert.equal(targetLine(set({ targetRepsMax: 10 }), 'imperial'), '185 lb × 8–10');
@@ -114,9 +115,16 @@ test('every target shape a session can hold becomes a finished string', () => {
   assert.equal(targetLine(set({ targetSec: 45, weight: null }), 'imperial'), '45s');
   assert.equal(targetLine(set({ targetSec: 45, weight: 95 }), 'imperial'), '95 lb × 45s');
 
-  // Bodyweight gets no unit at all rather than "0 lb".
+  /*
+   * ⚠ `0` AND `null` ARE DIFFERENT ANSWERS, and this test asserted they were the same until `9b576ca`.
+   *
+   * `set-load.ts` names three values, not two: `0` is BODYWEIGHT — the athlete said this set carried no
+   * added load — and `null` is UNANSWERED, nothing entered. A warm-up with an empty bar is not a
+   * bodyweight set, and the app must not decide that it was. So the wrist says "BW × 12" for the claim
+   * and "12 reps" for the absence, which is what every other surface says since that commit.
+   */
   assert.equal(targetLine(set({ weight: null, targetReps: 12 }), 'imperial'), '12 reps');
-  assert.equal(targetLine(set({ weight: 0, targetReps: 12 }), 'imperial'), '12 reps');
+  assert.equal(targetLine(set({ weight: 0, targetReps: 12 }), 'imperial'), 'BW × 12');
 
   // An untouched set in a percentage program falls back to what was prescribed.
   assert.equal(targetLine(set({ weight: null, targetWeight: 225 }), 'imperial'), '225 lb × 8');

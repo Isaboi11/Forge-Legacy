@@ -7,7 +7,7 @@ import { LogWeightSheet } from '@/components/forge/LogWeightSheet';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { fetchBodyEntries } from '@/data/body-metrics-live';
-import { displayWeight } from '@/domain/settings/units';
+import { exactWeight } from '@/domain/settings/units';
 import { useBodyGoalSync } from '@/hooks/useBodyGoalSync';
 import { useBodyPrefs } from '@/lib/body-metrics';
 import { useUnits } from '@/lib/settings';
@@ -84,8 +84,11 @@ export function BodySection() {
   // ── on with data ──
   const last = list[list.length - 1];
   const first = list[0];
-  const changeVal = displayWeight(last.weightLb, units).value - displayWeight(first.weightLb, units).value;
-  const changeUnit = displayWeight(last.weightLb, units).unit;
+  /* ⚠ CONVERT THE DELTA, NOT THE ENDPOINTS. Rounding both and subtracting drifted by up to a whole
+     unit against the change the athlete would compute themselves, and erased any change under half a
+     pound entirely — which on this screen is most real weeks. Same rule `changeLabel` documents. */
+  const changeVal = exactWeight(last.weightLb - first.weightLb, units).value;
+  const changeUnit = exactWeight(last.weightLb, units).unit;
   const measures = [
     { label: 'Waist', v: last.waist },
     { label: 'Chest', v: last.chest },

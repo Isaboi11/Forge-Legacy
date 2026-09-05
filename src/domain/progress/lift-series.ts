@@ -35,7 +35,7 @@
  * line would put 12 (reps) below 135 (lb) and call it a collapse.
  */
 
-import { displayWeight, weightInExact, type UnitSystem } from '../settings/units.ts';
+import { exactWeight, unitLabel, weightInExact, type UnitSystem } from '../settings/units.ts';
 
 export type MetricUnit = 'weight' | 'reps';
 
@@ -175,14 +175,15 @@ export function pointLabel(
   system: UnitSystem = 'imperial',
 ): string {
   if (m.unit === 'reps') return `${p.value} ${p.value === 1 ? 'rep' : 'reps'}`;
-  const { value, unit } = displayWeight(p.value, system);
+  /* A point on this chart IS one lifted set, so it is shown exactly — see `exactWeight`. */
+  const { value, unit } = exactWeight(p.value, system);
   return p.reps != null ? `${value} ${unit} × ${p.reps}` : `${value} ${unit}`;
 }
 
 /** The headline figure on a card or the detail hero. */
 export function currentLabel(m: Pick<MetricSeries, 'unit' | 'current'>, system: UnitSystem = 'imperial'): string {
   if (m.unit === 'reps') return `${m.current} ${m.current === 1 ? 'rep' : 'reps'}`;
-  const { value, unit } = displayWeight(m.current, system);
+  const { value, unit } = exactWeight(m.current, system);
   return `${value} ${unit}`;
 }
 
@@ -204,9 +205,10 @@ export function changeLabel(m: MetricSeries, system: UnitSystem = 'imperial'): s
   /* ⚠ CONVERT THE DELTA, NOT THE ENDPOINTS. Rounding 245 and 200 to kg and subtracting drifts by up to
      a kilo against the "+45 lb" the athlete would compute themselves; converting the difference keeps
      the sentence true in both systems. */
-  const { unit } = displayWeight(m.current, system);
-  if (delta === 0) return `Holding at ${displayWeight(m.current, system).value} ${unit}`;
-  const shown = Math.round(Math.abs(weightInExact(delta, system)));
+  const unit = unitLabel(system);
+  if (delta === 0) return `Holding at ${exactWeight(m.current, system).value} ${unit}`;
+  /* A 2.5 lb gain is a gain. Rounding it reported "+3", or erased it entirely at +0.5. */
+  const shown = Math.round(Math.abs(weightInExact(delta, system)) * 100) / 100;
   return `${delta > 0 ? '+' : '−'}${shown} ${unit} since ${monthYear(m.points[0].date)}`;
 }
 

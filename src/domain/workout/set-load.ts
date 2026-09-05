@@ -45,7 +45,7 @@
  * rule that will be missed. This is the only copy.
  */
 
-import { displayWeight, unitLabel, type UnitSystem } from '../settings/units.ts';
+import { exactWeight, unitLabel, type UnitSystem } from '../settings/units.ts';
 
 /** The athlete entered nothing. Kept as a constant so the two meanings cannot drift apart. */
 export const UNANSWERED = '—';
@@ -63,11 +63,16 @@ export function setWeightLabel(shown: number | null | undefined): string {
   return String(shown);
 }
 
-/** The rule plus conversion, for a weight stored in canonical pounds. */
+/**
+ * The rule plus conversion, for a weight stored in canonical pounds.
+ *
+ * ⚠ `exactWeight`, NOT `displayWeight` — this is the athlete's own logged set handed back to them, and
+ * it used to round. PO: *"instead of 37.5 we're putting 38."* The half plate is the point.
+ */
 export function setWeightLabelLb(lb: number | null | undefined, units: UnitSystem): string {
   if (lb === 0) return BODYWEIGHT;
   if (lb == null) return UNANSWERED;
-  return String(displayWeight(lb, units).value);
+  return String(exactWeight(lb, units).value);
 }
 
 /**
@@ -81,6 +86,6 @@ export function setLoadLineLb(lb: number | null | undefined, reps: number | null
     ? BODYWEIGHT
     : lb == null
       ? UNANSWERED
-      : `${displayWeight(lb, units).value.toLocaleString('en-US')} ${unitLabel(units)}`;
+      : `${exactWeight(lb, units).value.toLocaleString('en-US')} ${unitLabel(units)}`;
   return reps != null ? `${load} × ${reps}` : load;
 }

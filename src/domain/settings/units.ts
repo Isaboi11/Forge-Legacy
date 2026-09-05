@@ -59,6 +59,34 @@ export function weightInExact(lb: number, system: UnitSystem): number {
 }
 
 /**
+ * Pounds → the athlete's unit, KEEPING THE HALF PLATE.
+ *
+ * ══ ⚠ THE DEFECT THIS EXISTS TO CLOSE ══
+ *
+ * PO: *"instead of 37.5 we're putting 38 for the weight. We want the exact for all of them."*
+ *
+ * `displayWeight` rounds to a whole number on the reasoning that gyms don't count grams. Gyms do,
+ * however, count HALF POUNDS: 37.5 is a real dumbbell, 2.5 is a real plate, and a 1.25 kg micro-plate
+ * is the entire point of owning one. `workout_sets.weight` is `numeric` and `readDraft` passes the
+ * weight through with `round: false`, so the exact figure was typed, stored and then rounded away at
+ * the last step — the athlete reading their own history back as a number they never lifted.
+ *
+ * ⚠ WHY THIS IS A SECOND FUNCTION AND NOT A FIX TO `displayWeight`. Its other callers are summed
+ * VOLUME (a weekly review, a workout's total, a ledger post) and a body-weight change. A tonnage of
+ * 43,250.5 lb is noise, not precision — the half pound is real on one plate and meaningless across
+ * four hundred of them. So the rule is by KIND, not by preference: **a weight somebody actually
+ * lifted is shown exactly; a total computed from many of them rounds.**
+ *
+ * ⚠ QUANTISED TO TWO DECIMALS, WHICH IS NOT THE SAME AS ROUNDING. It exists to kill float noise from
+ * the lb↔kg round trip, not to lose the athlete's figure: 17 kg stores as 37.4785… lb and converts
+ * back to 17.000000000000004, which would render as exactly that. Two decimals holds every increment
+ * anybody loads — a 0.25 lb micro-plate included — and nothing else.
+ */
+export function exactWeight(lb: number, system: UnitSystem): { value: number; unit: 'lb' | 'kg' } {
+  return { value: Math.round(weightInExact(lb, system) * 100) / 100, unit: unitLabel(system) };
+}
+
+/**
  * The athlete's typed figure → canonical POUNDS. The inverse of `weightInExact`, and the one place a
  * logged weight becomes storable.
  *
@@ -87,9 +115,14 @@ export function toCanonicalLb(value: number, system: UnitSystem): number {
   return system === 'metric' ? value / LB_PER_KG : value;
 }
 
-/** "315 lb" / "143 kg", and with reps "315 lb × 3". The canonical load string, unit-aware. */
+/**
+ * "315 lb" / "143 kg", and with reps "315 lb × 3". The canonical load string, unit-aware.
+ *
+ * ⚠ EXACT. Every caller of this hands it ONE measured figure — a heaviest set, a week's top lift, a PR,
+ * a morning body weight — never a total. See `exactWeight` for why that distinction is the rule.
+ */
 export function formatLoad(lb: number, system: UnitSystem, reps?: number | null): string {
-  const { value, unit } = displayWeight(lb, system);
+  const { value, unit } = exactWeight(lb, system);
   const withCommas = value.toLocaleString('en-US');
   return reps != null ? `${withCommas} ${unit} × ${reps}` : `${withCommas} ${unit}`;
 }
