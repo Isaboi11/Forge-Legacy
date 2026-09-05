@@ -1,4 +1,3 @@
-import { signOne } from '@/lib/signed-media';
 import { supabase } from '@/lib/supabase';
 import { XFORM_POSES, fetchTransformationEntries, type TransformationEntry } from './transformation-live';
 
@@ -69,8 +68,7 @@ async function readPhotos(): Promise<ArchivePhotos> {
     supabase.from('chapter_photos').select('url').order('taken_on', { ascending: false }).order('created_at', { ascending: false }).limit(1),
   ]);
   const latest = ((data ?? []) as { url: string }[])[0]?.url ?? null;
-  // `chapter-photos` is private as of 0187 — the tile is a chapter photo like any other.
-  return { count: count ?? 0, latest: await signOne(latest) };
+  return { count: count ?? 0, latest };
 }
 
 async function readTransformation(): Promise<ArchiveTransformation> {
