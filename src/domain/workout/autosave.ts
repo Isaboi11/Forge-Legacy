@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { clearCardioTimers } from './cardio-timer-store.ts';
 import type { ActiveSession } from './types';
 
 /**
@@ -31,6 +32,16 @@ export async function clearSession(): Promise<void> {
   } catch {
     /* best-effort */
   }
+  /*
+   * ⚠ AND THE CARDIO CLOCKS WITH IT — see `cardio-timer-store.ts` for what happened when they outlived
+   * the session. This is the right place for it because it is the ONE call every ending shares: a
+   * committed Finish, a Discard, "Not today", "End workout" from the resume prompt, and a save handed
+   * to the offline queue all pass through here. Hanging the sweep off Finish alone would have left
+   * every other ending leaking exactly as before.
+   *
+   * Not awaited inside the try above: a failed `removeItem` must not skip it, and vice versa.
+   */
+  await clearCardioTimers();
 }
 
 /**

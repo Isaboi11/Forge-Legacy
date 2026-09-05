@@ -5,6 +5,7 @@ import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop } f
 import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useWallClockTimer } from '@/hooks/useWallClockTimer';
+import { cardioTimerKey } from '@/domain/workout/cardio-timer-store';
 import { useKeepScreenAwake } from '@/hooks/useKeepScreenAwake';
 import { useRunTracker } from '@/hooks/useRunTracker';
 import { useReduceMotion } from '@/lib/settings';
@@ -130,6 +131,15 @@ interface Draft {
 interface Props {
   exercise: SessionExercise;
   index: number;
+  /**
+   * The session this block belongs to — its `startedAt`, which is what scopes the bout's stored clock.
+   *
+   * ⚠ REQUIRED, AND THE REASON IS THE DEFECT IT CLOSES. The clock used to be keyed on `index` alone, so
+   * every workout's third exercise shared one stored timer and each ride picked up the last one's
+   * running total. See `cardio-timer-store.ts`. An optional prop with a fallback would have quietly
+   * restored that behaviour for any caller that forgot it.
+   */
+  sessionKey: string;
   units: UnitSystem;
   onSetModality: (m: Modality) => void;
   onSave: (r: {
@@ -173,7 +183,7 @@ interface Props {
   onLiveChange?: (live: boolean) => void;
 }
 
-export function CardioBlockCard({ exercise, index, units, onSetModality, onSave, onLiveChange }: Props) {
+export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModality, onSave, onLiveChange }: Props) {
   const activity: CardioActivity = exercise.activity ?? 'run';
   /* `?? 'outdoor'` put every machine outdoors when no modality was stored — a rower, an elliptical,
      a pool swim and a stair climber. `resolveModality` is the model's own answer. */
@@ -213,7 +223,11 @@ export function CardioBlockCard({ exercise, index, units, onSetModality, onSave,
   const [ownTarget, setOwnTarget] = useState<{ mi: number | null; paceSec: number | null; spdMph: number | null; sec: number | null } | null>(null);
   const reduceMotion = useReduceMotion();
 
-  const timer = useWallClockTimer(logged ? null : `forge_cardio_timer_v1:${index}`);
+  /*
+   * `null` once the bout is logged — the card stops reading a clock it has finished with, and `onSave`
+   * has already called `timer.reset()` to delete the row.
+   */
+  const timer = useWallClockTimer(logged ? null : cardioTimerKey(sessionKey, index));
   /*
    * GPS SPEAKS ONLY ROAD.
    *
