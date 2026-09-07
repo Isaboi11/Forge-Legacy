@@ -923,6 +923,39 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
 > Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
 
+### 0. ⛔ A rolled-back migration left its client half on the OTA branch, and a squad photo expired an hour after it was posted (2026-09-06, Photos / squad feed — **repair SQL applied**, ✅ **DEPLOYED BOTH SURFACES** — web `index-faac21764dfc0352d2b730bdf8caa374.js`, iOS OTA `01a073b6-40c4-7113-80f9-4a7a4a151349` on runtime `47944f2e…`, commit `ce65aa6` on `ota/build8-js`. ✅ **CONFIRMED BY THE PO IN THE APP** — *"I can see it now."*)
+
+PO: *"Why is this picture in the squad not showing up… He can see it on his side but I can't see it on my side."*
+
+`squad_posts.media` on Brady's recap held a **signed URL with a 60-minute TTL** — issued 19:22:52Z, expired 20:22:52Z, and returning `400 InvalidJWT: "exp" claim timestamp check failed` by the time anyone else looked. The same object via `/object/public/` returned **200 and 507 KB**. ⭐ **A PERMANENT ROW WAS HOLDING A ONE-HOUR URL.**
+
+⭐ **THE ASYMMETRY WAS THE WHOLE DIAGNOSIS AND IT POINTED AT THE WRONG THING FOR AN HOUR.** "He sees it, I don't" reads as permissions, and it is not: the author sees it because **his own client cached the image inside the hour the token was valid**. Nobody else ever had it cached. ⚠ When one person can see media and another cannot, check the URL's LIFETIME before checking anyone's access.
+
+⛔ **THE CAUSE: `fd09f99` EXISTS ON EXACTLY ONE BRANCH.**
+
+```
+$ git branch --contains fd09f99
+  ota/build8-js
+```
+
+It is the client half of `0188` — `signMedia`, written for a PRIVATE `chapter-photos` bucket. **`0188` was rolled back the same hour** (the bucket is public by PO decision, `project_photo_buckets_public_by_decision`) **but only the DATABASE half was undone.** The signing code stayed on the branch that feeds every OTA, and no other branch — `feat/route-map` never had it and needed no change.
+
+⚠ **SIGNING A PUBLIC BUCKET IS INVISIBLE WHILE RENDERING.** That is why it survived four days and three deploys unnoticed: every photo still drew correctly. It is fatal only when a URL is **PERSISTED**, and `workout-complete.tsx:257` attaches today's chapter photo to a squad recap — a straight path from a signed read into a permanent row. ⭐ **The lesson generalises past photos: a rollback is not complete until the client half is reverted too, and "the app still looks right" does not prove it was.** The existing rule (`feedback_migration_can_break_the_deployed_client`) covered applying a migration ahead of client code; this is the mirror image and was not covered.
+
+⚠ **I SHIPPED THIS LINEAGE TWICE ON 09-05 WITHOUT NOTICING IT CARRIED A ROLLED-BACK MIGRATION'S CLIENT HALF**, and the web deploy spread it to the preview for the first time. The OTA branch is NOT merely "route-map's JS-only commits cherry-picked" — it carries commits of its own, and `git branch --contains` is the check that says so.
+
+**The fix, in two halves and in this order.** ① `ce65aa6` reverts the client half — `signed-media.ts` deleted, `photos-live.ts` / `legacy-archive-live.ts` / `auth.tsx` restored. ⚠ `0188_private_chapter_photos.sql` and `pending-0188.sql` are **KEPT**: the migration was applied and rolled back, and that belongs in the ledger. ② `supabase/apply/repair-signed-media-urls.sql` rewrote the stored URLs `/object/sign/…?token=` → `/object/public/…`, preserving photo ORDER (a transformation post carries two and reversing them would silently invert a before/after). **1 row affected, verified 0 remaining.**
+
+⭐ **THE REPAIR DID NOT NEED TO WAIT FOR THE OTHER DEVICE, AND THAT WAS CHECKED RATHER THAN ASSUMED.** PO: *"should I just wait until I know for sure that he has opened it?"* No — on the stale build `signMedia` is applied in only `legacy-archive-live.ts:73` and `photos-live.ts:102,117,141,248`. **The squad feed read does not sign at all**, so an un-updated client renders a repaired public URL correctly and can only write a bad one by COMPOSING a new post. The repair is idempotent; the standing check is:
+
+```sql
+select count(*) from public.squad_posts where media::text like '%/object/sign/%';
+```
+
+⚠ **Non-zero at any later date means somebody posted from a stale build — re-run the repair, do not re-investigate.**
+
+⚠ **`sheet-drag-wiring.test.mjs` FAILS ON `ota/build8-js` AND DID BEFORE THIS PASS** — proven by re-running it with the revert stashed. 3156 pass / 1 fail. **The OTA branch does not have a green suite**; the main tree does (3239). Do not read a green gate off this branch.
+
 ### 0. ⭐ A weight somebody lifted is shown exactly — 37.5 stops rendering as 38 (2026-09-05, Units / set cards / watch / lift chart / Body — **no migration**, ✅ **DEPLOYED BOTH SURFACES** — web `index-cd0b3482b525ac6703ed70acb1e0af66.js`, iOS OTA `01a0721b-ef68-710c-b5cf-5d0b9716c600` on runtime `47944f2e…`, commit `8343d1c` on `feat/route-map`, cherry-picked as `a76ed53` on `ota/build8-js`. ⏳ **NOT YET CONFIRMED ON A DEVICE**)
 
 PO: *"On each set card during an active workout it shows what was done last time. For some reason we're rounding numbers up. For example, instead of 37.5 we're putting 38 for the weight. We want the exact for all of them."*
