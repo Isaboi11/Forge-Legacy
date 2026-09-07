@@ -58,6 +58,21 @@ const BUCKET = 'exercise-media';
 const THEME_PREFIX = IS_PAPER ? 'paper/' : '';
 
 /**
+ * Which cut of the objects to ask for. A query string the bucket ignores and every cache keys on.
+ *
+ * The objects are served with a one-year `cache-control` (the Alabaster set) and expo-image keeps
+ * what it fetched on disk regardless of headers, so re-uploading a loop under the same key changes
+ * nothing for an athlete who has already watched it — the CDN, the browser and the device all keep
+ * serving the old bytes. Bumping this is how a re-cut reaches them: a new URL is a new object to
+ * everything in the chain.
+ *
+ *     1  the 2026-08-05 / 09-03 uploads
+ *     2  2026-09-07 — fix_flicker.py pass over every loop: background flash-ins cleared, body holes
+ *        filled (scripts/animation-processing/fix_flicker.py)
+ */
+const MEDIA_REV = '2';
+
+/**
  * Which variant to show.
  *
  * `unspecified` gets the male render. Not a statement about anybody — it is the larger, more complete
@@ -78,7 +93,7 @@ export function exerciseDemoUrl(exerciseId: string | null | undefined, sex: Athl
   const id = (exerciseId ?? '').trim();
   if (!id) return null;
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(`${THEME_PREFIX}${demoVariant(sex)}/${id}.webp`);
-  return data.publicUrl || null;
+  return data.publicUrl ? `${data.publicUrl}?v=${MEDIA_REV}` : null;
 }
 
 /**
@@ -99,5 +114,5 @@ export function exercisePosterUrl(exerciseId: string | null | undefined, sex: At
   // ⚠ `poster/` OUTSIDE, theme INSIDE — `poster/paper/male/x.webp`, not `paper/poster/...`.
   // That is the layout the uploader writes; reversing the two 404s every still in Alabaster.
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(`poster/${THEME_PREFIX}${demoVariant(sex)}/${id}.webp`);
-  return data.publicUrl || null;
+  return data.publicUrl ? `${data.publicUrl}?v=${MEDIA_REV}` : null;
 }
