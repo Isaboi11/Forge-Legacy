@@ -125,6 +125,24 @@ pre-existing unused `displayWeight` import, present on `HEAD` and left alone as 
 ⚠ **Not yet seen rendered, on a device or in Alabaster.** This is a layout change, so it lands in **both**
 themes and the compiler only catches colour. It needs eyes on both faces before it is called done.
 
+**Delivery — 2026-09-08.** ✅ **OTA published to build 8**, iOS `01a080dd-5d96-77e9-aa8e-6fdea3ad19e0` on
+runtime `47944f2eea0b6bc314118d59fe087bcd5a652aca`. `fingerprint:compare --build-id 3f67281b…` returned an
+**exact match before publishing**, and the manifest endpoint was then queried as a build-8 iOS client and
+returned this update's id — deliverable, not merely published. eas-cli pinned **22.3.0**. Commit `c78af25`
+on `feat/route-map`, cherry-picked as `8aa3712` on `ota/build8-js`. ⛔ **Web not deployed.**
+
+⚠ **`eas update` now also requires `--environment` in non-interactive mode** — without it the command exits
+"update command failed", which reads like a publish failure rather than a missing flag. New since W9-A7.
+
+⛔ **W9-A8-D7 — The cherry-pick found `ota/build8-js` already failing `tsc`, and it is NOT this pass's
+doing.** Three errors in `src/app/squad/[id].tsx`: `takePostedWorkout` imported from `planned-workout-live`,
+which does not export it on that branch, and `PlannedWorkout.source`, which does not exist there. `7ad824b`
+cherry-picked the posted-workouts **client** half onto a branch that never received its **data** half — that
+work is still uncommitted on `feat/route-map` beside an unapplied `0192_posted_workouts.sql`. It was
+published in that state on 2026-09-07. Left alone here rather than repaired with somebody else's
+in-progress code: `doTake` wraps the call in a try/catch so the symptom is a toast, not a crash, and the
+posted-workout UI needs `0192` to be reachable at all. **Third half-shipped pair to reach this branch.**
+
 ---
 
 ## Change Log
