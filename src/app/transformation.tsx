@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -37,16 +37,12 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  * reproduced. Add / Edit / Compare / Entry Detail are their own routes.
  */
 
-/** The gap between cards on a chapter's shelf, and half of the pitch a flick snaps to. */
+/** The gap between two cards in a chapter's stack. */
 const CARD_GAP = 14;
-/**
- * How much of the NEXT card is left showing at the right edge.
- *
- * ⚠ IT IS NOT DECORATION. A carousel whose cards are exactly the content width looks identical to a
- * static card until you happen to drag it — the peek is the only thing on screen that says there is
- * more to the side. `snapToInterval` still lands each card flush against the left gutter.
- */
-const CARD_PEEK = 26;
+
+/** The pose tile inside a card, and the gap between two of them — the `.dc`'s `fl-strip` numbers. */
+const POSE_W = 76;
+const POSE_GAP = 8;
 
 const FREQ_LABEL: Record<RemindFreq, string> = { weekly: 'weekly', biweekly: 'every two weeks', monthly: 'monthly' };
 const FREQ_OPTS: [RemindFreq, string][] = [
@@ -58,11 +54,6 @@ const FREQ_OPTS: [RemindFreq, string][] = [
 export default function TransformationRoute() {
   const persist = usePersist();
   const router = useRouter();
-  /* The card is measured from the window rather than from `onLayout`: the shelf has to know its pitch
-     on the FIRST frame or the initial snap offset is computed against a width of zero. `scroll`'s 18pt
-     gutter is on both sides. */
-  const { width: winW } = useWindowDimensions();
-  const cardW = Math.max(220, winW - 18 * 2 - CARD_PEEK);
   const { showToast } = useToast();
   const { data, refetch } = useQuery(fetchTransformationEntries, []);
   const { data: remind, refetch: refetchRemind } = useQuery(getRemind, []);
@@ -211,6 +202,14 @@ export default function TransformationRoute() {
           <EmptyState onAdd={() => router.push('/transformation-add')} />
         ) : (
           <>
+            {/* Above the record, not under it. PO: *"let's have the add progress pics at the top of the
+                cards and not the bottom"* — the shelf grows, so a button pinned after the last chapter
+                gets further from the thumb with every entry, which is backwards for the one action this
+                screen exists to make easy. The empty state keeps its own centred call. */}
+            <Pressable onPress={() => router.push('/transformation-add')} accessibilityRole="button" accessibilityLabel="Take progress pics" style={styles.cta}>
+              <PlusGlyph size={16} />
+              <Text style={styles.ctaText}>Take progress pics</Text>
+            </Pressable>
             {groups.map((g) => {
               const es = g.entries;
               const sub = es.length === 1 ? `Started ${es[0].label} · 1 entry` : `${es[es.length - 1].label} – ${es[0].label} · ${es.length} entries`;
@@ -224,54 +223,33 @@ export default function TransformationRoute() {
                     </View>
                   </View>
                   {/*
-                    ⭐ A CHAPTER'S ENTRIES ARE A SHELF, NOT A STACK.
+                    A CHAPTER'S ENTRIES ARE A STACK. The pictures move, the cards do not.
 
-                    PO: *"I see my three different entries, I should be able to carousel scroll on those
-                    cards quickly."* They were a vertical `cardStack`, so moving between two entries in
-                    the same chapter meant scrolling the whole page past a full-height card each time —
-                    and comparing them by eye meant scrolling back. A chapter is a small, bounded set of
-                    moments in one period; flicking sideways through it is the gesture that matches.
-
-                    ⚠ SNAPPED, NOT FREE-SCROLLING. `snapToInterval` on the card pitch with
-                    `decelerationRate="fast"` means a flick lands on a card rather than between two —
-                    which is the difference between a carousel and a horizontally scrolling div.
-
-                    ⚠ AND THE CARD'S OWN POSE STRIP HAD TO STOP SCROLLING SIDEWAYS FOR THIS TO EXIST.
-                    It was a horizontal `ScrollView` inside what is now a horizontal `ScrollView` — two
-                    scrollers on one axis, where the inner one silently eats every drag that begins on a
-                    photograph, which is most of the card. This app has already spent two passes on
-                    exactly that class of defect in the comparison slider; building a third one
-                    deliberately is not a trade. The poses are a fixed 3-column grid now — see
-                    `EntryCard` — so the whole card is a drag target and nothing competes.
+                    PO, 2026-09-08: *"I don't want the cards to be carousels. Just the pictures in the
+                    cards."* This was briefly a horizontal shelf, on an earlier reading of *"I should be
+                    able to carousel scroll on those cards quickly"*; the shelf and the card's own pose
+                    strip are then two horizontal scrollers on one axis, and the whole of the last two
+                    passes here was spent trying to make that share out cleanly — first by flattening
+                    the poses into a grid (which doubled the card's height), then by chaining the drag
+                    out of the strip with `bounces={false}`. Neither was ever the ask. With the stack
+                    back there is exactly one horizontal scroller on this screen, inside the card, and
+                    it is the one that holds the photographs.
                   */}
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    decelerationRate="fast"
-                    snapToInterval={cardW + CARD_GAP}
-                    snapToAlignment="start"
-                    disableIntervalMomentum
-                    contentContainerStyle={styles.cardShelf}
-                  >
+                  <View style={styles.cardStack}>
                     {es.map((e) => (
-                      <View key={e.id} style={{ width: cardW }}>
-                        <EntryCard
-                          entry={e}
-                          isNewest={e.id === newestId}
-                          onOpen={() => router.push({ pathname: '/transformation/[id]', params: { id: e.id } })}
-                          onLongPress={() => setActionEntry(e)}
-                        />
-                      </View>
+                      <EntryCard
+                        key={e.id}
+                        entry={e}
+                        isNewest={e.id === newestId}
+                        onOpen={() => router.push({ pathname: '/transformation/[id]', params: { id: e.id } })}
+                        onLongPress={() => setActionEntry(e)}
+                      />
                     ))}
-                  </ScrollView>
+                  </View>
                 </View>
               );
             })}
 
-            <Pressable onPress={() => router.push('/transformation-add')} accessibilityRole="button" accessibilityLabel="Take progress pics" style={styles.cta}>
-              <PlusGlyph size={16} />
-              <Text style={styles.ctaText}>Take progress pics</Text>
-            </Pressable>
           </>
         )}
       </ScrollView>
@@ -380,21 +358,43 @@ function EntryCard({ entry, isNewest, onOpen, onLongPress }: { entry: Transforma
       ) : null}
 
       {/*
-        ⚠ A GRID, NOT A HORIZONTAL SCROLLER — see the note at the carousel that contains this card. Six
-        poses across a card that is itself a carousel page cannot be a second horizontal scroller, and
-        shrinking them to fit one row would have made each pose a 45pt stamp. Three columns over two
-        rows gives every pose more room than the strip did AND leaves the card a single drag target.
-        `flexBasis: '31%'` rather than a computed width: the card's width comes from the shelf, and a
-        percentage follows it without this component needing to know what it is.
+        ⭐ THE POSES ARE A STRIP YOU DRAG, NOT A GRID.
+
+        PO: *"I like the way the cards are. Keep the shape and size. But have it be able to scroll like a
+        carousel with my thumb through the pictures."*
+
+        This spent one pass as a 3-column grid — six poses over two rows — which does fit the whole
+        capture on screen, at the cost of roughly DOUBLING the card's height. The height is the thing
+        that was explicitly kept, and `Forge Transformation.dc.html` draws this row as `overflow-x:auto`
+        anyway, so the strip is both the instruction and the design. Seeing all six at once did not get
+        dropped: it moved to the Entry Detail's own "Grid" layout, one tap away, on a screen with the
+        room for it.
+
+        ⚠ NO `disableIntervalMomentum`. It caps a flick at one interval, which is right for a carousel
+        whose interval is a whole card and wrong here: one 76pt tile per flick, with four of six poses
+        already on screen, would be three flicks to reach the last one. Momentum carries, and
+        `snapToInterval` still lands the strip ON a tile rather than between two.
+
+        This is the screen's ONLY horizontal scroller — the page above it scrolls vertically, so nothing
+        competes for the drag. It briefly sat inside a horizontal card shelf, which is what forced the
+        two previous shapes here (a wrapped grid, then `bounces={false}` to chain the drag out). The
+        shelf is gone; neither workaround is needed and neither is left behind.
       */}
-      <View style={styles.poseGrid}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        decelerationRate="fast"
+        snapToInterval={POSE_W + POSE_GAP}
+        snapToAlignment="start"
+        contentContainerStyle={styles.poseStrip}
+      >
         {XFORM_POSES.map((p) => (
-          <View key={p.key} style={styles.poseCell}>
+          <View key={p.key} style={styles.poseSlotWrap}>
             <View style={styles.poseSlot}>{entry.photos[p.key] ? <Image source={{ uri: entry.photos[p.key] }} style={styles.poseSlotImage} contentFit="cover" /> : <CameraGlyph />}</View>
             <Text style={styles.poseSlotLabel} numberOfLines={1}>{p.label}</Text>
           </View>
         ))}
-      </View>
+      </ScrollView>
 
       {entry.caption ? (
         <View style={styles.captionWrap}>
@@ -522,9 +522,7 @@ const styles = StyleSheet.create({
   chapterHeadText: { flex: 1, minWidth: 0, gap: 3 },
   chapterName: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', letterSpacing: -0.1, color: flColor.cream100, lineHeight: 18 },
   chapterSub: { fontSize: 10.5, fontWeight: '500', letterSpacing: 0.4, color: flColor.gray600 },
-  /* The shelf's own gutter matches the page's `scroll` padding, so the first card lines up with the
-     chapter heading above it and the last one can still be flicked fully into view. */
-  cardShelf: { gap: CARD_GAP, paddingRight: 4 },
+  cardStack: { gap: CARD_GAP },
 
   card: { position: 'relative', borderRadius: flRadius.xl, overflow: 'hidden', boxShadow: flShadow.borderInset },
   cardNewest: { borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800 },
@@ -546,11 +544,11 @@ const styles = StyleSheet.create({
   metaWrap: { paddingHorizontal: 15, paddingBottom: 10 },
   metaLine: { fontSize: 10.5, letterSpacing: 0.2, color: flColor.gray600 },
 
-  poseGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10, paddingHorizontal: 15, paddingBottom: 14, paddingTop: 2 },
-  poseCell: { flexBasis: '31.5%', alignItems: 'center', gap: 6 },
-  /* `aspectRatio`, not a fixed height — the cell's width now comes from the card, which comes from the
-     screen, so a hard 76×100 would letterbox on a wide phone and overflow on a narrow one. */
-  poseSlot: { width: '100%', aspectRatio: 3 / 4, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
+  poseStrip: { gap: POSE_GAP, paddingHorizontal: 15, paddingBottom: 14, paddingTop: 2 },
+  /* Pinned to `POSE_W` rather than left to size itself off the label, so `snapToInterval` above is
+     describing the pitch the tiles are actually laid out on and a flick lands flush. */
+  poseSlotWrap: { width: POSE_W, alignItems: 'center', gap: 6 },
+  poseSlot: { width: POSE_W, height: 100, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
   poseSlotImage: { width: '100%', height: '100%' },
   poseSlotLabel: { fontSize: 8.5, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray600 },
 
@@ -558,7 +556,9 @@ const styles = StyleSheet.create({
   captionQuote: { fontFamily: flFont.display, fontSize: 26, fontWeight: '700', lineHeight: 18, color: flColor.bronze400 },
   captionText: { flex: 1, fontFamily: flFont.display, fontStyle: 'italic', fontSize: 13.5, lineHeight: 21, color: flColor.gray400, paddingTop: 2 },
 
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 16, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, borderStyle: 'dashed', backgroundColor: flColor.bronzeTint },
+  /* `marginBottom` because the CTA now has the first chapter heading under it rather than the bottom of
+     the page — without it the dashed button sits flush against the rivet. */
+  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginBottom: 24, paddingVertical: 16, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, borderStyle: 'dashed', backgroundColor: flColor.bronzeTint },
   ctaText: { fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
 
   emptyWrap: { alignItems: 'center', paddingTop: 24, paddingHorizontal: 10 },

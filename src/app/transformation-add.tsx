@@ -16,6 +16,8 @@ import {
   type PhotoMap,
   type PoseKey,
 } from '@/data/transformation-live';
+import { CalendarField, prettyDate, todayYmd } from '@/components/forge/composites/CalendarField';
+import { captureDateIso } from '@/domain/legacy/capture-date';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
@@ -53,7 +55,23 @@ export default function TransformationAddRoute() {
   const { data: activeChapter } = useQuery(() => (isEdit ? Promise.resolve(null) : fetchActiveChapter()), [editId]);
 
   const [ready, setReady] = useState(false);
-  const [date, setDate] = useState('');
+  /*
+   * THE CAPTURE DATE IS A DAY, PICKED — not a sentence, typed.
+   *
+   * PO: *"Default to today's date when putting in a progress pictures, and then put a calendar icon
+   * that we can click on if needed to change the date."* This was a bare `TextInput` placeheld
+   * "e.g. Mar 6, 2026", so the overwhelmingly common case — photos taken minutes ago — cost a fully
+   * hand-typed date, and skipping it stored the literal string `Today`. `elapsedBetween` resolves
+   * `Today` to *now* every time it is read, so an entry from March goes on claiming to have been
+   * captured this morning for as long as it exists. That is the defect under the inconvenience.
+   *
+   * `legacyLabel` is the other half. Rows written before this hold whatever was typed: if it parses as
+   * a day, the calendar adopts it; if it does not (`Today`, `Comp day`), it is held here and saved back
+   * untouched, because silently rewriting a label an athlete chose is not this screen's business.
+   * Picking any date replaces it.
+   */
+  const [dateIso, setDateIso] = useState<string | null>(() => (isEdit ? null : todayYmd()));
+  const [legacyLabel, setLegacyLabel] = useState('');
   const [caption, setCaption] = useState('');
   const [meta, setMeta] = useState('');
   const [tags, setTags] = useState<string[]>([]);
@@ -68,7 +86,9 @@ export default function TransformationAddRoute() {
 
   // Prefill once the edit target loads (derive-then-seed via a ready flag — no effect setState churn).
   if (isEdit && existing && !ready) {
-    setDate(existing.label);
+    const iso = captureDateIso(existing.label);
+    setDateIso(iso);
+    setLegacyLabel(iso ? '' : existing.label);
     setCaption(existing.caption ?? '');
     setMeta(existing.meta ?? '');
     setTags(existing.tags);
@@ -77,6 +97,9 @@ export default function TransformationAddRoute() {
     setReady(true);
   }
 
+  /* What actually gets stored in `label`: the picked day spelled the way the gallery already spells its
+     dates ("September 8, 2026"), or the untouched legacy string when there is no picked day. */
+  const dateLabel = dateIso ? prettyDate(dateIso, 'long') ?? '' : legacyLabel;
   const chapterName = isEdit ? existing?.chapterName ?? 'this chapter' : activeChapter?.name ?? 'your active chapter';
   const poseFilled = Object.keys(photos).length;
   /*
@@ -139,7 +162,7 @@ export default function TransformationAddRoute() {
     if (!canSave || saving || uploading) return;
     setSaving(true);
     if (isEdit) {
-      updateTransformationEntry(String(editId), { label: date, caption, meta, tags, photos, videoUrl }).then(
+      updateTransformationEntry(String(editId), { label: dateLabel, caption, meta, tags, photos, videoUrl }).then(
         () => router.replace({ pathname: '/transformation/[id]', params: { id: String(editId) } }),
         (e: unknown) => {
           setSaving(false);
@@ -147,7 +170,7 @@ export default function TransformationAddRoute() {
         },
       );
     } else {
-      addTransformationEntry({ label: date, caption, meta, tags, photos, videoUrl, chapterId: activeChapter?.id ?? null }).then(
+      addTransformationEntry({ label: dateLabel, caption, meta, tags, photos, videoUrl, chapterId: activeChapter?.id ?? null }).then(
         () => {
           showToast('Saved to your gallery');
           router.back();
@@ -216,7 +239,22 @@ export default function TransformationAddRoute() {
         <Text style={styles.reassure}>Capture the poses you want. Every photo is optional — what matters is preserving the moment.</Text>
 
         <Text style={styles.fieldLabel}>Capture date</Text>
-        <TextInput value={date} onChangeText={setDate} placeholder="e.g. Mar 6, 2026" placeholderTextColor={flColor.gray600} style={styles.input} accessibilityLabel="Capture date" />
+        {/* `CalendarField`, not the native wheel the `.dc` implies — `@react-native-community/datetimepicker`
+            does not render on the web, which is the surface these get tested on. Same finding and same
+            substitution as `accomplishments.tsx`. The screen draws its own bronze field label, so
+            `hideLabel`; `monthStyle="long"` because this string is SAVED and printed on the card next to
+            labels typed by hand back when the field was free text. */}
+        <CalendarField
+          label="Capture date"
+          hideLabel
+          monthStyle="long"
+          value={dateIso}
+          onChange={(v) => {
+            setDateIso(v);
+            setLegacyLabel('');
+          }}
+          placeholder={legacyLabel || 'Today'}
+        />
 
         <View style={styles.poseGrid}>
           {XFORM_POSES.map((p) => (

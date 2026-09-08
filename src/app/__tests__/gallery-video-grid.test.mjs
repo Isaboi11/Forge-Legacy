@@ -8,6 +8,22 @@
  *   3. "When I click on a transformation card I should be able to just view it in different ways. Like a
  *      grid style if I want too."
  *
+ * …and two from 2026-09-08, after none of the above had yet reached the phone (they went onto a branch
+ * the build-8 OTA was never cut from). Together they REPLACE (1):
+ *
+ *   4. "I like the way the cards are. Keep the shape and size. But have it be able to scroll like a
+ *      carousel with my thumb through the pictures."
+ *   5. "I don't want the cards to be carousels. Just the pictures in the cards we have in the
+ *      screenshot. Also, let's have the add progress pics at the top of the cards and not the bottom."
+ *
+ * ⚠ (1) WAS READ TOO WIDELY, AND TWO PASSES WERE SPENT ON THE CONSEQUENCE. Making the cards a
+ * horizontal shelf put two horizontal scrollers on one axis, since the card carries its own pose strip.
+ * The first reconciliation flattened the poses into a 3-column grid, which doubled the card's height;
+ * the second put the strip back and chained the drag out of it with `bounces={false}`. (5) says the
+ * shelf was never wanted: the PICTURES move, the cards stack. One horizontal scroller on the screen,
+ * and no workaround for a conflict that no longer exists. Seeing all six poses at once was never
+ * dropped — it is (3), one tap away, on a screen with room for it.
+ *
  * (2) is the interesting one, and the reason this file leads with it: the defect was a guard whose
  * CONDITION contradicted its own comment. Nothing was missing and nothing threw — the code did exactly
  * what it said and the opposite of what it meant. tsc cannot see that, lint cannot see that, and no unit
@@ -63,38 +79,65 @@ test('a new clip is a new decision', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. a chapter's entries are a shelf
+// 1 / 5. the cards stack; the pictures move
 // ─────────────────────────────────────────────────────────────────────────────
 
-test('⭐ a chapter’s entries scroll sideways, and a flick lands ON a card', () => {
-  // A free-scrolling horizontal list is not a carousel: it stops between two cards.
-  assert.match(GALLERY, /snapToInterval=\{cardW \+ CARD_GAP\}/, 'the shelf no longer snaps to the card pitch');
-  assert.match(GALLERY, /decelerationRate="fast"/, 'the shelf scrolls with list momentum rather than carousel momentum');
-  assert.doesNotMatch(GALLERY, /cardStack:/, 'the vertical stack is back');
+test('⭐ THE CARDS DO NOT MOVE SIDEWAYS — only the pictures inside them do', () => {
+  // PO, 2026-09-08: "I don't want the cards to be carousels. Just the pictures in the cards."
+  // The shelf is what made the card's own pose strip a nested same-axis scroller, and every workaround
+  // for that (the wrapped grid, then `bounces={false}`) cost something the PO had asked to keep.
+  assert.match(GALLERY, /cardStack: \{ gap: CARD_GAP \}/, 'the entries are not a plain vertical stack');
+  assert.doesNotMatch(GALLERY, /cardShelf/, 'the horizontal card shelf is back');
+  assert.doesNotMatch(GALLERY, /snapToInterval=\{cardW/, 'the cards snap like a carousel again');
+  assert.doesNotMatch(GALLERY, /useWindowDimensions/, 'the card is being measured off the window again — only a carousel page needed that');
 });
 
-test('⚠ THE CARD STOPPED SCROLLING SIDEWAYS, or the carousel could not exist', () => {
-  // A horizontal ScrollView inside a horizontal ScrollView: the inner one eats every drag that begins on
-  // a photograph, which is most of the card. This app has spent two passes on exactly that defect class
-  // in the comparison slider; a third one built on purpose is not a trade.
+test('⭐ “Take progress pics” sits ABOVE the record, not under it', () => {
+  // PO: "let's have the add progress pics at the top of the cards and not the bottom." The list grows;
+  // a button after the last chapter gets further from the thumb with every entry added.
+  const populated = GALLERY.slice(GALLERY.indexOf('        ) : ('), GALLERY.indexOf('      </ScrollView>'));
+  const cta = populated.indexOf('accessibilityLabel="Take progress pics"');
+  const firstGroup = populated.indexOf('{groups.map((g) => {');
+  assert.ok(cta !== -1 && firstGroup !== -1, 'the CTA or the chapter list moved — update this test with the screen');
+  assert.ok(cta < firstGroup, 'the add-photos CTA is below the chapter cards again');
+});
+
+test('⭐ the poses inside a card are a strip you drag, and a flick lands ON a pose', () => {
+  // PO, 2026-09-08: "I like the way the cards are. Keep the shape and size. But have it be able to
+  // scroll like a carousel with my thumb through the pictures."
+  //
+  // These six spent one pass as a 3-column grid, so that nothing competed with the card shelf for the
+  // horizontal drag. It worked, and it roughly DOUBLED the card's height — the one dimension the
+  // instruction protects. `Forge Transformation.dc.html` draws this row as `overflow-x:auto` anyway, so
+  // the strip is both the instruction and the design. The shelf it was competing with is now gone.
   const card = GALLERY.slice(GALLERY.indexOf('function EntryCard('));
-  assert.doesNotMatch(card, /<ScrollView\s+horizontal/, 'the pose strip is a horizontal scroller again, nested inside the carousel');
-  assert.match(card, /styles\.poseGrid/, 'the poses are no longer laid out as a grid');
+  assert.match(card, /<ScrollView\s+horizontal/, 'the pose strip stopped scrolling sideways');
+  assert.match(card, /snapToInterval=\{POSE_W \+ POSE_GAP\}/, 'the strip no longer snaps to the pose pitch, so a flick stops between two photographs');
+  assert.doesNotMatch(card, /styles\.poseGrid/, 'the poses are a wrapped grid again, which is the card-height regression');
 });
 
-test('the pose tiles size themselves from the card, which sizes itself from the screen', () => {
-  // A hard 76×100 letterboxes on a wide phone and overflows on a narrow one now that the card's width
-  // comes from the shelf rather than from the page.
-  const grid = GALLERY.slice(GALLERY.indexOf('  poseCell:'));
-  assert.match(grid.slice(0, 500), /flexBasis: '3\d(\.\d)?%'/, 'the pose cell is back on a fixed width');
-  assert.match(grid.slice(0, 500), /aspectRatio: 3 \/ 4/, 'the pose slot is back on a fixed height');
+test('the strip is the screen’s ONLY horizontal scroller, and carries no workaround for a shelf', () => {
+  // `bounces={false}` and `nestedScrollEnabled` existed solely to share the horizontal axis with the
+  // card shelf. The shelf is gone; a prop kept "just in case" is a prop the next reader has to explain.
+  const strips = GALLERY.match(/<ScrollView\s+horizontal/g) ?? [];
+  assert.equal(strips.length, 1, 'a second horizontal scroller is back on this screen');
+  const card = GALLERY.slice(GALLERY.indexOf('function EntryCard('));
+  const strip = card.slice(card.indexOf('<ScrollView'), card.indexOf('</ScrollView>'));
+  assert.doesNotMatch(strip, /bounces=\{false\}/, 'the strip refuses to bounce for a shelf that no longer exists');
+  assert.doesNotMatch(strip, /disableIntervalMomentum/, 'one 76pt tile per flick is three flicks to the last pose');
 });
 
-test('⚠ the shelf shows that there IS more to the side', () => {
-  // A carousel whose cards are exactly the content width is indistinguishable from a static card until
-  // you happen to drag it.
-  assert.match(GALLERY, /const CARD_PEEK = \d+/, 'the peek is gone — the carousel looks like a single card');
-  assert.match(GALLERY, /winW - 18 \* 2 - CARD_PEEK/, 'the card width no longer leaves room for the peek');
+test('the card keeps the shape and size it was told to keep', () => {
+  // The `.dc`'s `fl-strip` numbers: a 76×100 tile, 8 apart. Sizing the tile off the card instead — which
+  // is what the grid did — is what made the card grow.
+  assert.match(GALLERY, /const POSE_W = 76;/, 'the pose tile is no longer the design’s width');
+  assert.match(GALLERY, /const POSE_GAP = 8;/, 'the gap between poses left the design');
+  const slot = GALLERY.slice(GALLERY.indexOf('  poseSlot:'), GALLERY.indexOf('  poseSlot:') + 300);
+  assert.match(slot, /width: POSE_W, height: 100/, 'the pose slot is sizing itself from the card again, which grows the card');
+});
+
+test('the shelf left nothing behind', () => {
+  assert.doesNotMatch(GALLERY, /CARD_PEEK/, 'the card peek is dead machinery — it only ever sized a carousel page');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

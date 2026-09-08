@@ -35,9 +35,25 @@ function parseYmd(iso: string | null): { y: number; m: number; d: number } | nul
 
 const ymd = (y: number, m: number, d: number) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
-export function prettyDate(iso: string | null): string | null {
+/**
+ * `2026-03-06` → `Mar 6, 2026`, or `March 6, 2026` when `monthStyle` is `'long'`.
+ *
+ * The long form exists for the Transformation gallery, where this string is not just the field's own
+ * display: it is SAVED as the entry's capture label and then printed on the card, beside labels athletes
+ * typed by hand back when the field was free text (`August 17, 2026`). A picker that silently started
+ * writing `Aug 17, 2026` would leave one shelf holding both spellings of the same date.
+ */
+export function prettyDate(iso: string | null, monthStyle: 'short' | 'long' = 'short'): string | null {
   const p = parseYmd(iso);
-  return p ? `${MONTHS[p.m].slice(0, 3)} ${p.d}, ${p.y}` : null;
+  if (!p) return null;
+  const month = monthStyle === 'long' ? MONTHS[p.m] : MONTHS[p.m].slice(0, 3);
+  return `${month} ${p.d}, ${p.y}`;
+}
+
+/** Today, as the `YYYY-MM-DD` this field speaks — local, never UTC. Call it in an event, not in render. */
+export function todayYmd(): string {
+  const now = new Date();
+  return ymd(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
 export interface CalendarFieldProps {
@@ -55,9 +71,11 @@ export interface CalendarFieldProps {
    * control for a screen reader either way.
    */
   hideLabel?: boolean;
+  /** How the chosen date is spelled in the field — see `prettyDate`. */
+  monthStyle?: 'short' | 'long';
 }
 
-export function CalendarField({ label, value, onChange, placeholder = 'Choose a date', clearable = false, hideLabel = false }: CalendarFieldProps) {
+export function CalendarField({ label, value, onChange, placeholder = 'Choose a date', clearable = false, hideLabel = false, monthStyle = 'short' }: CalendarFieldProps) {
   const [open, setOpen] = useState(false);
   // The month on screen. Set when the grid opens, so nothing impure runs during render.
   const [view, setView] = useState<{ y: number; m: number } | null>(null);
@@ -97,13 +115,13 @@ export function CalendarField({ label, value, onChange, placeholder = 'Choose a 
       <Pressable
         onPress={toggle}
         accessibilityRole="button"
-        accessibilityLabel={`${label}: ${prettyDate(value) ?? placeholder}. Tap to choose a date.`}
+        accessibilityLabel={`${label}: ${prettyDate(value, monthStyle) ?? placeholder}. Tap to choose a date.`}
         accessibilityState={{ expanded: open }}
         style={({ pressed }) => [styles.field, open ? styles.fieldOpen : null, pressed ? styles.pressed : null]}
       >
         <CalendarGlyph />
         <Text style={[styles.fieldText, !value ? styles.fieldPlaceholder : null]} numberOfLines={1}>
-          {prettyDate(value) ?? placeholder}
+          {prettyDate(value, monthStyle) ?? placeholder}
         </Text>
         <Text style={styles.chevron}>{open ? '▴' : '▾'}</Text>
       </Pressable>
