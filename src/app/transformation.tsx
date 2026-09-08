@@ -15,9 +15,9 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import {
   deleteTransformationEntry,
   fetchTransformationEntries,
+  filledPoses,
   getRemind,
   setRemind,
-  XFORM_POSES,
   type Remind,
   type RemindFreq,
   type TransformationEntry,
@@ -32,7 +32,8 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
  * Transformation Gallery (L-17) — built to `Forge Transformation.dc.html`, wired to real storage. A
  * documentary progress-photo archive: intro thesis, a device-local capture reminder, chapter-grouped entry
  * cards in the design's 3-tier hierarchy (newest / emphasized / plain — the accent bar never stacks with the
- * newest gradient), the always-six-poses strip as a capture checklist, and long-press actions
+ * newest gradient), a strip of the poses that were actually captured (the six-slot checklist lives on the
+ * capture form, where an empty slot is the control that fills it), and long-press actions
  * (Compare-from-here / Edit / Delete, with a confirm the design omits). The dead in-file Share overlay is not
  * reproduced. Add / Edit / Compare / Entry Detail are their own routes.
  */
@@ -157,6 +158,11 @@ export default function TransformationRoute() {
         scrollEventThrottle={16}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
+        /* ⚠ SO A SIDEWAYS DRAG REACHES THE POSE STRIP INSIDE A CARD. Without the lock, a vertical
+           scroller claims a drag on the first movement in ANY direction — a swipe across a photograph
+           that is a few degrees off horizontal scrolls the page instead, and the strip reads as
+           "doesn't scroll" without ever being broken. iOS-only prop; harmless elsewhere. */
+        directionalLockEnabled
       >
         {/* intro */}
         <TourAnchor id="transformation-grid">
@@ -317,6 +323,20 @@ function EntryCard({ entry, isNewest, onOpen, onLongPress }: { entry: Transforma
   const isMilestone = entry.tags.includes('Milestone');
   const emph = !!entry.caption || !!entry.videoUrl || isMilestone;
   const accent = emph && !isNewest;
+  /*
+   * ⚠ THE CARD SHOWS WHAT WAS TAKEN, NOT WHAT COULD HAVE BEEN.
+   *
+   * PO: *"if there isn't a picture for a certain pose don't show me that empty spot."* Every card drew
+   * all six `XFORM_POSES` with a camera glyph standing in for the misses — the `.dc` draws it that way
+   * and the file header called it "a capture checklist". On a four-pose entry that is two dead tiles
+   * hanging off the right edge of a card, and because they were the LAST two, the strip always looked
+   * like it had more to show and always scrolled to nothing. The checklist belongs on the capture form,
+   * where the empty slot is the control you tap to fill it; here it is a record.
+   *
+   * The strip is sized by what is in it now, so a four-pose entry does not overflow and does not need
+   * scrolling at all — which is the other half of the same report.
+   */
+  const shot = filledPoses(entry);
   return (
     <Pressable
       onPress={onOpen}
@@ -380,21 +400,25 @@ function EntryCard({ entry, isNewest, onOpen, onLongPress }: { entry: Transforma
         two previous shapes here (a wrapped grid, then `bounces={false}` to chain the drag out). The
         shelf is gone; neither workaround is needed and neither is left behind.
       */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        decelerationRate="fast"
-        snapToInterval={POSE_W + POSE_GAP}
-        snapToAlignment="start"
-        contentContainerStyle={styles.poseStrip}
-      >
-        {XFORM_POSES.map((p) => (
-          <View key={p.key} style={styles.poseSlotWrap}>
-            <View style={styles.poseSlot}>{entry.photos[p.key] ? <Image source={{ uri: entry.photos[p.key] }} style={styles.poseSlotImage} contentFit="cover" /> : <CameraGlyph />}</View>
-            <Text style={styles.poseSlotLabel} numberOfLines={1}>{p.label}</Text>
-          </View>
-        ))}
-      </ScrollView>
+      {shot.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToInterval={POSE_W + POSE_GAP}
+          snapToAlignment="start"
+          contentContainerStyle={styles.poseStrip}
+        >
+          {shot.map((p) => (
+            <View key={p.key} style={styles.poseSlotWrap}>
+              <View style={styles.poseSlot}>
+                <Image source={{ uri: entry.photos[p.key] }} style={styles.poseSlotImage} contentFit="cover" />
+              </View>
+              <Text style={styles.poseSlotLabel} numberOfLines={1}>{p.label}</Text>
+            </View>
+          ))}
+        </ScrollView>
+      ) : null}
 
       {entry.caption ? (
         <View style={styles.captionWrap}>
