@@ -21,7 +21,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { ExerciseLoop } from '@/components/forge/ExerciseLoop';
-import { Pill } from '@/components/forge/composites/Pill';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
@@ -2284,9 +2283,35 @@ export default function WorkoutScreen() {
     const p = liftHist?.sessions[0]?.sets[setI];
     return p?.weight != null && p.reps != null ? wxr(p.weight, p.reps) : null;
   };
-  const lastPerf = liftHist?.sessions[0] ? sessionPerformance(liftHist.sessions[0]) : null;
-  const lastText = lastPerf ? wxr(lastPerf.weight, lastPerf.reps) : '—';
   const bestText = liftHist?.best ? wxr(liftHist.best.weight, liftHist.best.reps) : '—';
+  /*
+   * ══ THE DATE THE MARK WAS SET — what makes it read as a record and not a statistic ══
+   *
+   * `fetchBests` has always selected `achieved_on`, and this hero has always thrown it away. It earns
+   * its place now that `Last` is gone (W9-A8-D1): the standing mark is the only history left on the
+   * card, and a bare `185 × 5` sitting under a goal of `3×8` invites exactly the comparison it must
+   * not — a record here is the heaviest load at 1–`PR_MAX_REPS` reps, which is a different measurement
+   * from a working set, not a worse one. The date says "another day" without spending a second line.
+   *
+   * ⚠ LOCAL MIDNIGHT, NOT `new Date(iso)`. A bare `YYYY-MM-DD` parses as UTC, so every athlete west of
+   * Greenwich would be shown the day BEFORE their own PR. The `T00:00:00` suffix is the fix `add-photo`
+   * and `legacy-timeline-live` already use; the slice lets a full timestamp take the same path.
+   */
+  const bestWhen = ((): string | null => {
+    const iso = liftHist?.best?.achievedOn;
+    if (!iso) return null;
+    const d = new Date(`${iso.slice(0, 10)}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return null;
+    /* The year only when it is not this one — "Apr 28" for a mark set this season, "Apr 28, 2025" for
+       one that has stood since last. */
+    const sameYear = d.getFullYear() === new Date().getFullYear();
+    return d.toLocaleDateString(
+      'en-US',
+      sameYear
+        ? { month: 'short', day: 'numeric' }
+        : { month: 'short', day: 'numeric', year: 'numeric' },
+    );
+  })();
   const progression = progressions.get(exIdx) ?? null;
   /*
    * WHAT THE COIN IS SAYING ABOUT THIS EXERCISE.
@@ -3451,8 +3476,59 @@ export default function WorkoutScreen() {
                           {SECTION_LABEL[ex.section]}
                         </Text>
                       </View>
-                      <View style={styles.heroTags}>
-                        <Pill size="sm">Strength</Pill>
+                      {/*
+                        ══ THE GOAL, MOVED UP OUT OF THE PLINTH IT USED TO SHARE (W9-A8-D1) ══
+
+                        ⚠ AND THE HARDCODED `Strength` PILL THAT STOOD HERE IS GONE, NOT RELOCATED. It
+                        was the literal string — `<Pill size="sm">Strength</Pill>` — printed under a
+                        mobility cool-down as readily as under a bench press, which is the same defect
+                        as the literal `Main lift` fixed on the equipment line directly above it. A row
+                        that says the same word on all 721 exercises is furniture, so it goes by
+                        subtraction rather than being merged somewhere.
+
+                        The goal sits here because it is the one thing on this card that is a DECISION
+                        rather than a record: it belongs beside the name the eye already lands on, not
+                        in a footer under two figures nobody can edit. Same figure, same pencil, same
+                        panel — `setGoalOpen` is untouched; only where it is drawn has changed.
+                      */}
+                      <Pressable
+                        onPress={() => setGoalOpen(goalPanelOpen ? null : exIdx)}
+                        disabled={!goalEditable}
+                        accessibilityRole={goalEditable ? 'button' : 'text'}
+                        accessibilityState={{ expanded: goalPanelOpen }}
+                        accessibilityLabel={goalEditable ? `Goal is ${goalText}. Change it.` : `Goal was ${goalText}`}
+                        style={styles.heroGoal}
+                      >
+                        <Text style={styles.heroGoalLabel}>Goal</Text>
+                        <View style={styles.heroGoalRow}>
+                          <Text style={styles.heroGoalFigure}>{goalText}</Text>
+                          {goalEditable ? (
+                            <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" opacity={0.9}>
+                              <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+                            </Svg>
+                          ) : null}
+                        </View>
+                      </Pressable>
+                      {/*
+                        ══ THE STANDING MARK — a line, because it is information (W9-A8-D2) ══
+
+                        The only figure the old plinth carried that appears nowhere else on this screen.
+                        Every other surface that shows a record — Progress Hub, Workout Complete, the
+                        Legacy timeline, the squad recap — is read AFTER the session or away from it;
+                        this is the only one in front of an athlete while they are under the bar, which
+                        is why it survived the row it was in.
+
+                        ⚠ AN EM-DASH STILL MEANS NEVER SET ONE, and it must. A zero here would tell an
+                        athlete their record was nothing, and a zero read back as a prior best would
+                        make their first ever set a PR. Same rule the column obeyed.
+                      */}
+                      <View style={styles.heroBest}>
+                        <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                          <Path d="M6 4h12v3a6 6 0 0 1-12 0zM6 7H4a2 2 0 0 1 0-4h2M18 7h2a2 2 0 0 0 0-4h-2M9 20h6M12 13v7" />
+                        </Svg>
+                        <Text style={styles.heroBestCap}>Best</Text>
+                        <Text style={styles.heroBestVal}>{bestText}</Text>
+                        {bestWhen ? <Text style={styles.heroBestWhen}>{`· ${bestWhen}`}</Text> : null}
                       </View>
                       {/*
                         735 exercises ship published coaching — setup, execution, cues, common mistakes,
@@ -3511,48 +3587,6 @@ export default function WorkoutScreen() {
                     thing, points at itself, and is tappable to answer. It also survives the collapse, which is
                     the actual defect. `coachLine` decides which of the three he says — see `domain/coach/coach-says`.
                   */}
-                  {/*
-                    insight row: Last · Goal · Best
-
-                    Both outer figures were hard-coded em-dashes over data the app already had — Best in
-                    particular was fetched on mount, held in state, and read three lines away to decide the PR
-                    moment while the column beside it claimed there was nothing to show.
-
-                    An em-dash still means NEVER DONE IT, and it must: a zero here would read as "you lifted
-                    nothing", and a zero taken as a prior best would make an athlete's first ever set a record.
-                  */}
-                  <View style={styles.insightRow}>
-                    <View style={styles.insightCol}>
-                      <Text style={styles.insightLabel}>Last</Text>
-                      <Text style={styles.insightVal}>{lastText}</Text>
-                    </View>
-                    {/* THE ONE FIGURE HERE THAT IS A DECISION RATHER THAN A RECORD, so it is the one that
-                        opens. Last and Best are history and nothing can edit them; the goal is the athlete's
-                        own, and until now the only way to change it was to have caught the panel the moment the
-                        exercise was added. The pencil says so, in the same bronze the weight cells use. */}
-                    <Pressable
-                      onPress={() => setGoalOpen(goalPanelOpen ? null : exIdx)}
-                      disabled={!goalEditable}
-                      accessibilityRole={goalEditable ? 'button' : 'text'}
-                      accessibilityState={{ expanded: goalPanelOpen }}
-                      accessibilityLabel={goalEditable ? `Goal is ${goalText}. Change it.` : `Goal was ${goalText}`}
-                      style={[styles.insightCol, styles.insightMid]}
-                    >
-                      <Text style={styles.insightGoalLabel}>Goal</Text>
-                      <View style={styles.insightGoalRow}>
-                        <Text style={styles.insightGoal}>{goalText}</Text>
-                        {goalEditable ? (
-                          <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" opacity={0.9}>
-                            <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-                          </Svg>
-                        ) : null}
-                      </View>
-                    </Pressable>
-                    <View style={styles.insightCol}>
-                      <Text style={styles.insightLabel}>Best</Text>
-                      <Text style={styles.insightVal}>{bestText}</Text>
-                    </View>
-                  </View>
                 </TourAnchor>
               ) : (
                 <Pressable onPress={() => setHero(false)} accessibilityRole="button" accessibilityLabel="Expand exercise details" style={({ pressed }) => [styles.heroStrip, pressed && styles.ctlPressed]}>
@@ -5452,7 +5486,6 @@ const styles = StyleSheet.create({
      exception is the thing worth seeing at a glance. Colour, so it needs both themes — `bronze400` is a
      role token and resolves in each. */
   heroEquipSection: { color: flColor.bronze400 },
-  heroTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   howTo: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 4 },
   howToText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
   /* The first-time face: a real target rather than a link, on the one occasion it is the whole question. */
@@ -5467,14 +5500,22 @@ const styles = StyleSheet.create({
   },
   howToPressed: { opacity: 0.7 },
   howToTextFirst: { fontSize: 14, color: flColor.bronze300 },
-  insightRow: { flexDirection: 'row', marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
-  insightCol: { flex: 1, gap: 2, paddingHorizontal: 12 },
-  insightMid: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: flColor.charcoal700, alignItems: 'flex-start' },
-  insightLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600 },
-  insightVal: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
-  insightGoalLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
-  insightGoal: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.3, lineHeight: 24, color: flColor.bronze300 },
-  insightGoalRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  /* ══ THE GOAL AND THE MARK, INSIDE THE META COLUMN (W9-A8-D1) ══
+     Renamed off `insight*` deliberately: there is no insight ROW any more, and a style named for a
+     container that no longer exists is how the next person rebuilds it. The goal figure keeps the 22/24
+     bronze it had in the plinth — moving it must not quietly demote it. */
+  heroGoal: { gap: 2, alignItems: 'flex-start' },
+  heroGoalLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  heroGoalFigure: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.3, lineHeight: 24, color: flColor.bronze300 },
+  heroGoalRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  /* One line, wrapping allowed: "Latissimus Dorsi"-length names are not here, but a metric athlete's
+     `102.5 kg × 5 · Apr 28` is longer than the imperial figure this was measured against. */
+  heroBest: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
+  heroBestCap: { fontSize: 9, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600 },
+  heroBestVal: { fontFamily: flFont.display, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
+  /* ⚠ `gray400`, NOT `gray600`, and for the reason W9-A7-D5 gives: Alabaster's `gray600` measures
+     3.15:1, which clears the non-text floor and FAILS the 4.5 this date needs as text. */
+  heroBestWhen: { fontSize: 11, fontWeight: '500', color: flColor.gray400 },
   memoryBadge: { position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: flRadius.round, backgroundColor: flColor.bronze400 },
 
   // hero collapsed strip
