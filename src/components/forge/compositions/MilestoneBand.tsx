@@ -39,7 +39,7 @@
  * Nothing drawn here can fix a flat master, and it does not pretend to. What it does is PRESENT it:
  * a warm radial behind the badge, two concentric hexagons echoing its own silhouette, a perimeter ring,
  * a scatter of embers, and a small contrast lift on the raster itself. A stronger Builder I master is an
- * art commission, not a layout change — see the note beside `ART_LIFT`.
+ * art commission, not a layout change.
  *
  * ══ ⚠ THE INTENSITY RISES WITH THE FAMILY, AND THAT IS THE WHOLE POINT ══
  *
@@ -139,22 +139,6 @@ const INNER_R = 0.435;
 /** The design's own artboard draws these at 240×268 — so at 188 the feed is now within a fifth of the
  *  size the badge was designed to be looked at. */
 const ART = 188;
-
-/**
- * A contrast adjustment on the raster, and nothing more.
- *
- * ⚠ IT DOES ALMOST NOTHING ON ALABASTER NOW, AND THAT IS THE POINT. This used to carry the whole
- * light-theme problem: the Forge masters were being drawn on cream, so the filter was trying to hold
- * back a badge whose blacks and whites were both wrong for the ground. Alabaster has its own masters
- * since the design’s Paper Mode badge delivery, so the badge already fits the page and the filter is
- * back to what its name says — a touch of separation from the cream, nothing more.
- *
- * ⚠ CAPPED IN BOTH DIRECTIONS, ON PURPOSE. Pushed harder the frame blooms and the centre goes muddy.
- * If Builder I still does not read as a rank emblem at a glance — the PO's original complaint — the
- * answer is a new master, not a bigger number here. Raising this is how a real art problem gets quietly
- * buried under a filter.
- */
-const ART_LIFT = IS_PAPER ? 'contrast(1.05)' : 'brightness(1.09) contrast(1.07) saturate(1.1)';
 
 /**
  * The stage's own palette — the few colours drawn INSIDE an SVG, which therefore cannot come from a
@@ -400,12 +384,16 @@ export function MilestoneBand({ card, postId }: { card: MilestoneCard; postId?: 
                   straight through to the emblem. The dashed circle that used to sit between them is
                   gone: at radius 0.47 it crossed outside the hexagon at the flats and inside at the
                   points, so it interleaved with the very structure it was decorating. */}
-              <Polygon points={hexPoints(STAGE / 2, STAGE / 2, STAGE * OUTER_R)} fill="none" stroke={RING.outer} strokeWidth={0.75} opacity={(0.1 + t * 0.16) * STAGE_PALETTE.lineGain} />
-              <Polygon points={hexPoints(STAGE / 2, STAGE / 2, STAGE * INNER_R)} fill="none" stroke={RING.inner} strokeWidth={1} opacity={(0.14 + t * 0.2) * STAGE_PALETTE.lineGain} />
+              {/* ⚠ THESE WERE HALF AS STRONG, AND INVISIBLE ON DEVICE. They were tuned against a flat mock,
+                  then the card moved onto the home screen's slate plate — a busy, high-contrast texture that
+                  swallows a 12%-alpha hairline whole. The PO's screenshot shows a badge with no structure
+                  around it at all. Doubled, and still the quietest thing on the card. */}
+              <Polygon points={hexPoints(STAGE / 2, STAGE / 2, STAGE * OUTER_R)} fill="none" stroke={RING.outer} strokeWidth={0.9} opacity={(0.24 + t * 0.2) * STAGE_PALETTE.lineGain} />
+              <Polygon points={hexPoints(STAGE / 2, STAGE / 2, STAGE * INNER_R)} fill="none" stroke={RING.inner} strokeWidth={1.2} opacity={(0.32 + t * 0.24) * STAGE_PALETTE.lineGain} />
 
               {/* Embers. Four at Foundation, all twelve at Legacy. */}
               {EMBERS.slice(0, 4 + Math.round(t * (EMBERS.length - 4))).map((e, i) => (
-                <Circle key={i} cx={e.x * STAGE} cy={e.y * STAGE} r={e.r} fill={STAGE_PALETTE.ember} opacity={e.o * (0.4 + t * 0.6) * STAGE_PALETTE.emberGain} />
+                <Circle key={i} cx={e.x * STAGE} cy={e.y * STAGE} r={e.r} fill={STAGE_PALETTE.ember} opacity={e.o * (0.6 + t * 0.5) * STAGE_PALETTE.emberGain} />
               ))}
             </Svg>
 
@@ -505,13 +493,22 @@ function hexPoints(cx: number, cy: number, r: number): string {
 function Seal({ rank, size }: { rank: MilestoneRank; size: number }) {
   const art = resolveRankBadge({ family: rank.family, level: rank.level, sex: rank.sex });
   if (art == null) return <RankSeal family={rank.family} level={rank.level} size={size} />;
-  /* The lift goes on a wrapping View: `filter` is a view style, and expo-image's `ImageStyle` does not
-     accept it. Same pixels, and it keeps the cast out of the file. */
-  return (
-    <View style={{ filter: ART_LIFT }}>
-      <Image source={art} style={{ width: size, height: size }} contentFit="contain" />
-    </View>
-  );
+  /*
+   * ⚠ NO `filter` HERE, AND ITS ABSENCE IS A BUG FIX.
+   *
+   * This wrapped the badge in `<View style={{ filter: ART_LIFT }}>` to nudge its contrast. On iOS a
+   * filtered view is rasterised offscreen and the badge's transparency is composited against an OPAQUE
+   * backing — so every rank post shipped with the emblem sitting on a hard WHITE SQUARE. PO, on device:
+   * *"the card is not what you showed me."*
+   *
+   * Nothing caught it. tsc, lint and 3,256 tests all passed, and the HTML mock renders `filter` correctly
+   * because a browser composites it with alpha. It is precisely the failure this repo already has a name
+   * for: green on web is not working on device.
+   *
+   * Not worth a second attempt. The filter existed to compensate for drawing Forge-lit artwork on cream,
+   * and both themes have had their own masters since the design's Paper Mode delivery.
+   */
+  return <Image source={art} style={{ width: size, height: size }} contentFit="contain" />;
 }
 
 /** The eyebrow's diamond — the ◆ the design uses as its milestone tick. */
