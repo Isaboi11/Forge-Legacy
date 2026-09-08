@@ -35,6 +35,7 @@ import type { Sex } from '@/domain/profile/schema'
 import { useShareSheet } from '@/hooks/useShareSheet'
 import { useProfile } from '@/lib/profile'
 import type { ShareKind } from '@/domain/share/content'
+import type { MilestoneCard } from '@/domain/share/milestone-card'
 
 /**
  * ✅ FLIPPED 2026-08-16 — `src/app/subscription.tsx` exists (Launch Checklist 4.1, P-8).
@@ -128,6 +129,54 @@ function ceremonyShareValues(event: CeremonyEvent, earnedOn: string): Record<str
       return { date: earnedOn }
     case 'premiumUpsell':
       return {}
+  }
+}
+
+/**
+ * The card a Forge destination STORES, so the post can be drawn instead of flattened to text.
+ *
+ * ══ WHY THIS IS NOT `ceremonyShareValues` ══
+ *
+ * That function builds the OUTBOUND artifact — the strings the OS share sheet receives. This builds the
+ * INBOUND one, and the difference is a rank family: a seal cannot be drawn from the string "Builder I",
+ * and the transition cannot be drawn from anything the snippet carries at all. Both read the same event;
+ * neither is derivable from the other. See `ShareRequest.milestone`.
+ *
+ * ⚠ IT IS BUILT AT SHARE TIME AND NEVER RE-RESOLVED. Every string here is stored on the post — the same
+ * snapshot rule the recap summary and the progress card follow. `copy.body` is the rank's LOCKED
+ * identity statement (RSA §2.2) for a rank-up, so a Builder post keeps saying "I'm building habits" even
+ * after the athlete has climbed three families past it.
+ *
+ * Returns null for M-7, which has no share and nothing earned to record.
+ */
+function ceremonyMilestone(
+  event: CeremonyEvent,
+  copy: { eyebrow?: string; title: string; body: string },
+  earnedOn: string,
+  sex?: Sex,
+): MilestoneCard | null {
+  const base = { kind: 'milestone-card' as const, eyebrow: copy.eyebrow ?? 'Milestone', headline: copy.title, date: earnedOn }
+  switch (event.kind) {
+    case 'rankUp':
+      return {
+        ...base,
+        event: 'rank',
+        line: copy.body,
+        rank: { family: event.rank.family, level: event.rank.level, label: rankTierLabel(event.rank), sex },
+        /* Absent stays absent. `RankUpCeremony.previous` is optional precisely so a first-ever
+           evaluation records no transition rather than a Foundation I the athlete never held. */
+        previous: event.previous
+          ? { family: event.previous.family, level: event.previous.level, label: rankTierLabel(event.previous), sex }
+          : null,
+      }
+    case 'honorEarned':
+      return { ...base, event: 'honor', line: copy.body }
+    case 'goalAchieved':
+      return { ...base, event: 'goal', line: copy.body }
+    case 'programGraduated':
+      return { ...base, event: 'program', line: copy.body }
+    case 'premiumUpsell':
+      return null
   }
 }
 
@@ -251,6 +300,10 @@ export function CeremonyProvider({ children }: { children: React.ReactNode }) {
                     athlete: profile?.name,
                     values: ceremonyShareValues(current, earnedOn),
                   },
+                  /* What a Forge destination stores. `sex` rides along because `established` is the one
+                     family with two badges and a feed post is read by people who cannot see the
+                     author's profile — the ceremony already resolves it the same way, two functions up. */
+                  milestone: ceremonyMilestone(current, copy, earnedOn, profile?.sex),
                 })
               }
               dismiss()

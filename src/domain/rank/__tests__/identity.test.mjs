@@ -17,10 +17,13 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { RANK_IDENTITY, rankIdentity } from '../identity.ts';
+import { RANK_ASCENT, RANK_IDENTITY, rankAscent, rankIdentity } from '../identity.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SPEC = path.join(here, '../../../../Docs/Rank-System-Architecture.md');
+const AMD3 = path.join(here, '../../../../Docs/Amendments/Rank-System-Architecture-Amendment-003-Sub-Tier-Statements.md');
+const FAMILIES = ['foundation', 'builder', 'craftsman', 'architect', 'established', 'legend', 'legacy'];
+const ROMAN = { I: 1, II: 2, III: 3, IV: 4 };
 
 /** §2.2's table: `| Foundation | "I've started." |` — family, then the quoted sentence. */
 function lockedIdentities() {
@@ -56,6 +59,89 @@ test('all seven families are covered — a missing one renders as empty, not as 
 
 test('an unknown family is empty, never an invented sentence', () => {
   assert.equal(rankIdentity('apprentice'), '', 'RSA §639 records "Apprentice" as a placeholder that is not a rank');
+});
+
+/* ══ RSA-A3 — the 28 ascent statements ══ */
+
+/** §4's table: `| Builder | II | "I'm becoming consistent." |`. */
+function lockedAscents() {
+  const src = readFileSync(AMD3, 'utf8');
+  const out = {};
+  for (const line of src.split('\n')) {
+    const m = line.match(/^\|\s*(Foundation|Builder|Craftsman|Architect|Established|Legend|Legacy)\s*\|\s*(I|II|III|IV)\s*\|\s*"(.+?)"\s*\|\s*$/);
+    if (m) (out[m[1].toLowerCase()] ??= {})[ROMAN[m[2]]] = m[3];
+  }
+  return out;
+}
+
+test('the amendment table is still readable — 28 rows, or this whole block proves nothing', () => {
+  const locked = lockedAscents();
+  const rows = Object.values(locked).reduce((n, tiers) => n + Object.keys(tiers).length, 0);
+  assert.equal(rows, 28, `expected 28 ascent statements in RSA-A3 §4, parsed ${rows}`);
+});
+
+test('every rung in the app matches the sentence the amendment locked', () => {
+  const locked = lockedAscents();
+  for (const [family, tiers] of Object.entries(locked)) {
+    for (const [level, sentence] of Object.entries(tiers)) {
+      assert.equal(norm(RANK_ASCENT[family][level]), norm(sentence), `${family} ${level} drifted from RSA-A3 §4`);
+    }
+  }
+});
+
+test('⚠ RSA-A3-D2.2 — tier I IS the family identity, verbatim', () => {
+  /*
+   * The structural guarantee that this is ONE identity at four depths rather than four identities.
+   * §13.1 is the clause the whole amendment turns on; if a tier-I line is ever edited into something of
+   * its own, the table has quietly become the second identity set that Amendment 002 §3 banned.
+   */
+  for (const f of FAMILIES) {
+    assert.equal(RANK_ASCENT[f][1], RANK_IDENTITY[f], `${f} · I is no longer the §2.2 identity statement`);
+  }
+});
+
+test('⚠ RSA-A3-D2.1 — every statement is first person, present tense, and sayable', () => {
+  for (const f of FAMILIES) {
+    for (const lvl of [1, 2, 3, 4]) {
+      const line = RANK_ASCENT[f][lvl];
+      assert.ok(line.length > 0, `${f} ${lvl} is empty`);
+      assert.ok(/[.!]$/.test(line), `${f} ${lvl} is not a finished sentence: ${line}`);
+      // "self-descriptions the athlete should be able to say honestly" (§2.2) — so the athlete is in it.
+      assert.match(line, /\b(I|I’m|I’ve|My|me|myself)\b/, `${f} ${lvl} is not first person: ${line}`);
+      // §3.4 — no comparison, no standing, no numbers.
+      assert.doesNotMatch(line, /\b(rank|better|best|top|others|everyone else|percent|%|\d)\b/i, `${f} ${lvl} makes a comparison or a performance claim: ${line}`);
+    }
+  }
+});
+
+test('all 28 rungs are distinct — the entire point of the amendment', () => {
+  const seen = new Map();
+  for (const f of FAMILIES) {
+    for (const lvl of [1, 2, 3, 4]) {
+      const line = RANK_ASCENT[f][lvl];
+      assert.ok(!seen.has(line), `"${line}" is used by both ${seen.get(line)} and ${f} ${lvl}`);
+      seen.set(line, `${f} ${lvl}`);
+    }
+  }
+  assert.equal(seen.size, 28);
+});
+
+test('an unknown level falls back to the family identity; an unknown family to empty', () => {
+  // A fifth sub-tier would otherwise be announced in silence, and the family identity is always true
+  // of any rung of that family. An unknown family has nothing true to say at all.
+  assert.equal(rankAscent('builder', 9), RANK_IDENTITY.builder);
+  assert.equal(rankAscent('apprentice', 1), '');
+});
+
+test('⚠ the family surfaces still say the FAMILY identity (RSA-A3-D4)', () => {
+  /*
+   * The §13.1 error in the other direction: picking one of four rungs to stand for a whole family. The
+   * Progress Hub and Rank Progression display families, so they must not reach for `rankAscent`.
+   */
+  for (const file of ['../../../app/progress-hub.tsx', '../../../app/rank-progression.tsx']) {
+    const src = readFileSync(path.join(here, file), 'utf8');
+    assert.ok(!src.includes('rankAscent'), `${file} shows FAMILIES — it must use rankIdentity, not rankAscent`);
+  }
 });
 
 test('⚠ the two screens that used to hold their own copies no longer do', () => {

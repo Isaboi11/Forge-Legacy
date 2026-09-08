@@ -31,6 +31,15 @@ interface CeremonyBase {
 export interface RankUpCeremony extends CeremonyBase {
   kind: 'rankUp';
   rank: RankTier;
+  /**
+   * The rank left behind, when there was one — what makes this an ASCENSION rather than a label.
+   *
+   * ⚠ OPTIONAL, AND ABSENT IS THE ANSWER "we don't know". A first-ever evaluation has no stored rank to
+   * have come from (`refreshRank`'s `previous`), and the dev harness passes none. Every consumer must
+   * omit the transition rather than substitute Foundation I — a rank the athlete never held is not a
+   * softer version of the truth, it is a different claim, and this one ends up on a permanent post.
+   */
+  previous?: RankTier | null;
 }
 /** M-3 Goal Achieved. */
 export interface GoalAchievedCeremony extends CeremonyBase {

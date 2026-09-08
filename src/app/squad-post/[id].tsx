@@ -17,9 +17,10 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
+import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
 import { cardioStats } from '@/domain/share/recap-stats';
 import { useUnits } from '@/lib/settings';
-import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, deleteSquadPost, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, renameSquadPost, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
+import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, isMilestoneCard, deleteSquadPost, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, renameSquadPost, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -464,8 +465,13 @@ export default function SquadPostRoute() {
             </>
           ) : null}
 
-          {/* The same card the composer previewed and the feed showed — one renderer, three surfaces. */}
-          {isProgressCard(post.layout) ? (
+          {/* The same card the composer previewed and the feed showed — one renderer, three surfaces.
+              A ceremony share draws the identical band the two feeds draw, at full width: the post detail
+              showing a rank ascension as bare text while the feed showed the seal is exactly the one-post,
+              two-answers split the transformation layout was fixed for. */}
+          {isMilestoneCard(post.layout) ? (
+            <MilestoneBand card={post.layout} postId={post.id} />
+          ) : isProgressCard(post.layout) ? (
             <View style={styles.sliderWrap} onLayout={(e) => setCardW(e.nativeEvent.layout.width)}>
               {cardW > 0 ? <ProgressPostCard card={post.layout} width={cardW} /> : null}
             </View>

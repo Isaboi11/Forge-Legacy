@@ -14,6 +14,7 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
+import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
@@ -31,6 +32,7 @@ import {
   type PostComment,
   type Reaction,
 } from '@/data/friends-feed-live';
+import { isMilestoneCard, milestoneAckLabel } from '@/domain/share/milestone-card';
 import { fetchFriendLists } from '@/data/friends-live';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -340,9 +342,16 @@ function FeedLedgerPost({
 }) {
   const shape = shapeOf(post);
   const summary = shape === 'recap' ? post.workoutSummary : null;
+  /* The ceremony share, drawn identically to the way the Squad feed draws it — same column, same guard,
+     same band. The two feeds disagreeing about what a rank-up looks like is the drift `LedgerPost` was
+     extracted to prevent. */
+  const milestone = shape === 'ceremony' && isMilestoneCard(post.layout) ? post.layout : null;
 
   /* PR and milestone posts keep their own marker; a plain note has no type worth announcing, and a
-     label reading DISCUSSION over somebody's sentence is the decoration this redesign removes. */
+     label reading DISCUSSION over somebody's sentence is the decoration this redesign removes.
+
+     A `ceremony` gets none: the band's own eyebrow already names it, and `LedgerPost` suppresses the
+     marker above a custom band regardless — passing one would be a claim the component then ignores. */
   const marker: { kind: LedgerMarker; label: string } | null = summary
     ? recapMarker(summary)
     : shape === 'milestone'
@@ -381,10 +390,12 @@ function FeedLedgerPost({
        */
       media={shape === 'photo' || shape === 'gallery' || shape === 'video' || shape === 'recap' ? post.media.map((m) => ({ url: m.url, kind: m.kind })) : []}
       /* The before/after comparison keeps its draggable divider — the art is the exception, the rules
-         around it are not: it still suppresses the marker, the title and the stats. */
-      customMedia={shape === 'progress' ? <ProgressCompare post={post} /> : undefined}
+         around it are not: it still suppresses the marker, the title and the stats. The milestone band
+         is the same bargain. */
+      customMedia={milestone ? <MilestoneBand card={milestone} postId={post.id} /> : shape === 'progress' ? <ProgressCompare post={post} /> : undefined}
       alt={alt}
       busy={busy}
+      acknowledgeLabel={(milestone && milestoneAckLabel(milestone)) || undefined}
       acknowledged={!!post.myReaction}
       acknowledgeCount={post.reactionCount}
       commentCount={post.commentCount}

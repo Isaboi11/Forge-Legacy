@@ -34,7 +34,10 @@ import {
   ACK_LABEL,
   type AckKind,
   asTransformationLayout,
+  isMilestoneCard,
+  isPostedWorkout,
   isProgressCard,
+  type PostedWorkoutCard,
   leadFor,
   recapSummaryLine,
   timeAgo,
@@ -44,10 +47,14 @@ import {
   type SquadPostType,
 } from '@/data/squad-feed-live';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
+import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
+import { milestoneAckLabel } from '@/domain/share/milestone-card';
 import { TransformationLayout } from '@/components/forge/TransformationLayout';
 import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { useQuery } from '@/lib/useQuery';
+import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
+import { fetchPlannedWorkout, takePostedWorkout } from '@/data/planned-workout-live';
 import { useUnits } from '@/lib/settings';
 import { callerModalGone, useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
@@ -145,6 +152,43 @@ export default function SquadDetailRoute() {
   // Whether YOU may hand out this squad's code — owner always, members only if the owner opened it
   // up (0056). Resolved server-side; the Options row follows it rather than assuming.
   const { data: inviteInfo } = useQuery(() => fetchSquadInvite(squadId), [squadId]);
+
+  /*
+   * ══ TAKING A POSTED WORKOUT (0192, SQ-A5-D3) ══
+   *
+   * The slot is read so a card can say "In your workouts" instead of offering a take that would
+   * replace itself — and so the replacement warning below knows what is about to be lost.
+   */
+  const { data: slot, refetch: refetchSlot } = useQuery(fetchPlannedWorkout, []);
+  const [takingPostId, setTakingPostId] = useState<string | null>(null);
+  const [confirmTake, setConfirmTake] = useState<{ postId: string; losing: string } | null>(null);
+
+  const doTake = async (postId: string) => {
+    setConfirmTake(null);
+    setTakingPostId(postId);
+    try {
+      const name = await takePostedWorkout(postId);
+      await refetchSlot();
+      showToast(`${name} is on your home screen.`);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Couldn’t take that workout.');
+    } finally {
+      setTakingPostId(null);
+    }
+  };
+
+  /**
+   * SQ-A5-D3.2 — replacement is STATED when what it displaces was the athlete's own, and silent when
+   * it was a previous take. Losing a workout you built yourself is worth a sentence; losing last
+   * night's untrained drop is not, and a confirmation every evening would train people to dismiss it.
+   */
+  const askTake = (postId: string) => {
+    if (slot && !slot.source) {
+      setConfirmTake({ postId, losing: slot.name });
+      return;
+    }
+    void doTake(postId);
+  };
   // Its own tolerant read: a squad with no competition — or an unapplied migration — must not take the
   // whole screen down, so the section is simply absent rather than the page erroring.
   const { data: liveChallenge } = useQuery(() => fetchSquadActiveChallenge(squadId).catch(() => null), [squadId]);
@@ -793,6 +837,9 @@ export default function SquadDetailRoute() {
                   onReact={() => onReactCard(p)}
                   ackKind={kindMap[p.id]}
                   onLongReact={() => setAckFor(p.id)}
+                  takenPostId={slot?.source?.postId ?? null}
+                  takingPostId={takingPostId}
+                  onTake={() => askTake(p.id)}
                 />
               ))}
               {canLoadMore ? (
@@ -888,6 +935,19 @@ export default function SquadDetailRoute() {
           })}
         </View>
       </BottomSheet>
+
+      {/*
+        SQ-A5-D3.2 — named, because the thing being lost is one the athlete built. It says WHAT goes,
+        not "are you sure": a confirmation that cannot tell you what it costs is a speed bump.
+      */}
+      <ConfirmSheet
+        open={confirmTake != null}
+        onClose={() => setConfirmTake(null)}
+        headline="Replace your planned workout?"
+        body={`You built “${confirmTake?.losing ?? ''}” for later. Taking this one replaces it.`}
+        confirmLabel="Take it"
+        onConfirm={() => confirmTake && void doTake(confirmTake.postId)}
+      />
 
       <BottomSheet open={optionsOpen} onClose={() => setOptionsOpen(false)}>
         <View style={styles.optionsList}>
@@ -1224,6 +1284,45 @@ function FeedProgressCard({ card }: { card: ProgressCardData }) {
   );
 }
 
+/**
+ * The workout a squad-mate posted, with the one action it exists for (0192, SQ-A5-D1).
+ *
+ * ⚠ NO TAKE COUNT, AND NOT BY OMISSION — SQ-A5-D5.2 forbids one, and nothing in the schema counts
+ * takes for this to read even if a later hand wanted it. What a poster learns is what the product
+ * teaches everywhere else: people train it and post their own recaps.
+ *
+ * `taken` is the athlete's OWN slot pointing at this post, so the card can say "In your workouts"
+ * rather than offering a take that would silently replace itself.
+ */
+function FeedPostedWorkout({ card, taken, busy, onTake }: { card: PostedWorkoutCard; taken: boolean; busy: boolean; onTake: () => void }) {
+  const lifts = card.exercises.length;
+  const sets = card.exercises.reduce((n, e) => n + (e.sets || 0), 0);
+  return (
+    <View style={styles.postedWorkout}>
+      <Text style={styles.postedWorkoutName} numberOfLines={2}>
+        {card.name}
+      </Text>
+      <Text style={styles.postedWorkoutMeta}>
+        {lifts} {lifts === 1 ? 'lift' : 'lifts'} · {sets} {sets === 1 ? 'set' : 'sets'}
+      </Text>
+      <Pressable
+        onPress={onTake}
+        disabled={taken || busy}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: taken || busy }}
+        accessibilityLabel={taken ? `${card.name} is already in your workouts` : `Take ${card.name}`}
+        style={[styles.postedWorkoutBtn, taken ? styles.postedWorkoutBtnDone : null]}
+      >
+        {busy ? (
+          <ActivityIndicator color={flColor.onBronze} />
+        ) : (
+          <Text style={[styles.postedWorkoutBtnText, taken ? styles.postedWorkoutBtnTextDone : null]}>{taken ? 'In your workouts' : 'Take it'}</Text>
+        )}
+      </Pressable>
+    </View>
+  );
+}
+
 /** Which type marker a squad post carries, or null where the type is not worth announcing. */
 const SQUAD_MARKER: Partial<Record<SquadPostType, { kind: LedgerMarker; label: string }>> = {
   recap: { kind: 'workout', label: 'Workout' },
@@ -1232,6 +1331,9 @@ const SQUAD_MARKER: Partial<Record<SquadPostType, { kind: LedgerMarker; label: s
   transformation: { kind: 'transformation', label: 'Transformation' },
   announcement: { kind: 'announcement', label: 'Announcement' },
   checkin: { kind: 'milestone', label: 'Check-in' },
+  // 0192 — reuses the workout marker a recap wears. Same sport, different tense: one is a session
+  // that happened, this is one being offered.
+  workout: { kind: 'workout', label: 'Workout' },
 };
 
 /**
@@ -1260,6 +1362,9 @@ function FeedCard({
   onAuthor,
   onReact,
   onLongReact,
+  takenPostId,
+  takingPostId,
+  onTake,
 }: {
   post: SquadFeedPost;
   units: ReturnType<typeof useUnits>['units'];
@@ -1272,6 +1377,10 @@ function FeedCard({
   onComments: () => void;
   onAuthor: () => void;
   onReact: () => void;
+  /** The post the athlete's own slot currently holds, if any. */
+  takenPostId: string | null;
+  takingPostId: string | null;
+  onTake: (card: PostedWorkoutCard) => void;
   /** Press and hold the acknowledge control — opens the four kinds (SOC-A4-D3). */
   onLongReact: () => void;
   /** A tap on the media band — a video plays instead of opening the card's destination. */
@@ -1317,11 +1426,21 @@ function FeedCard({
    * `customMedia` already existed for exactly this — its own doc names "the before/after comparison with
    * its draggable divider" — so nothing new is drawn here, the feed just finally asks.
    */
-  const shaped = card ? null : asTransformationLayout(post.layout);
+  const posted = isPostedWorkout(post.layout) ? post.layout : null;
+  /*
+   * The ceremony share — a rank ascension, an honor, a goal, a graduation.
+   *
+   * It rides in `layout` on an ordinary `discussion` post (no new post type, therefore no check-constraint
+   * migration) and it is drawn as a BAND rather than as a card, for the reason `MilestoneBand`'s header
+   * gives: the seal is this post's photograph, and the ledger already has exactly one shape for a post
+   * whose subject is an image.
+   */
+  const milestone = isMilestoneCard(post.layout) ? post.layout : null;
+  const shaped = card || posted || milestone ? null : asTransformationLayout(post.layout);
   /* Both custom bands replace the standard one. Passing `post.media` as well would render the raw photos
      underneath the composition — the same double-render the friends feed avoids for its own comparison. */
-  const media = card || shaped ? [] : post.media.map((m) => ({ url: m.url, kind: m.kind }));
-  const hasMedia = !!card || !!shaped || media.length > 0;
+  const media = card || shaped || posted || milestone ? [] : post.media.map((m) => ({ url: m.url, kind: m.kind }));
+  const hasMedia = !!card || !!shaped || !!posted || !!milestone || media.length > 0;
   /* §3.7: a progress post gets the photo treatment and a form check the video treatment — which they
      already do, because the media itself says which it is. What changes is that the stand-in sentence
      stops being the post: above an image it is attribution, and it is not rendered at all without one. */
@@ -1357,13 +1476,29 @@ function FeedCard({
          stand-ins it exists to suppress. */
       caption={post.type === 'discussion' || summary ? post.body : detail || null}
       media={media}
-      customMedia={card ? <FeedProgressCard card={card} /> : shaped ? <TransformationLayout data={shaped} compact /> : undefined}
+      customMedia={
+        milestone ? (
+          <MilestoneBand card={milestone} postId={post.id} />
+        ) : card ? (
+          <FeedProgressCard card={card} />
+        ) : posted ? (
+          <FeedPostedWorkout card={posted} taken={takenPostId === post.id} busy={takingPostId === post.id} onTake={() => onTake(posted)} />
+        ) : shaped ? (
+          <TransformationLayout data={shaped} compact />
+        ) : undefined
+      }
       attribution={attribution}
-      /* Past the section's own 20px inset, so an image reaches the card edge like the handoff asks. */
-      bleed={20}
+      /* Past the section's own 20px inset, so an image reaches the card edge like the handoff asks.
+
+         ⚠ ZERO FOR A MILESTONE, because a milestone is not bleeding to anything. It is an inset object
+         aligned to the post's own text gutter — pulling it 20px wider would drag its border out past the
+         copy it is meant to line up with, which is the difference between "issued by the system" and
+         "photo attached". */
+      bleed={milestone ? 0 : 20}
       alt={alt}
       acknowledged={reacted}
       ackKind={ackKind}
+      acknowledgeLabel={(milestone && milestoneAckLabel(milestone)) || undefined}
       acknowledgeCount={respect}
       commentCount={post.commentCount}
       onAuthor={onAuthor}
@@ -1903,6 +2038,15 @@ const styles = StyleSheet.create({
   feedTime: { marginLeft: 'auto', fontSize: 11.5, color: flColor.gray600 },
   loadMore: { marginTop: 2, paddingVertical: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal500, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   loadMoreText: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray400 },
+  /* The posted-workout card (0192). A card because it is a thing you act INSIDE of — it holds the one
+     action the post exists for — rather than information wearing a border. */
+  postedWorkout: { padding: 16, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal900, gap: 4 },
+  postedWorkoutName: { fontSize: 16, fontWeight: '700', letterSpacing: 0.2, color: flColor.cream100 },
+  postedWorkoutMeta: { fontSize: 12, color: flColor.gray400 },
+  postedWorkoutBtn: { marginTop: 10, paddingVertical: 12, borderRadius: flRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronze400 },
+  postedWorkoutBtnDone: { backgroundColor: 'transparent', borderWidth: 1, borderColor: flColor.charcoal500 },
+  postedWorkoutBtnText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.3, color: flColor.onBronze },
+  postedWorkoutBtnTextDone: { color: flColor.gray400 },
   feedEmpty: { padding: 20, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal900 },
   feedEmptyText: { fontSize: 13, lineHeight: 20, color: flColor.gray400, textAlign: 'center' },
 

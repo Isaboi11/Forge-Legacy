@@ -130,6 +130,21 @@ export interface RankRefresh {
    * sub-tier promotion too would fire two ceremonies for one advancement.
    */
   promotedSubTier: number | null;
+  /**
+   * The rank held BEFORE this run — what the ascension was FROM.
+   *
+   * The one fact a rank-up needs to be a story rather than a label, and the one the caller could never
+   * have: this function already reads the stored row, decides the promotion against it, and then
+   * overwrites it, so by the time anything downstream looks the previous rank is gone. Every surface
+   * that wanted to say "Foundation IV → Builder I" had to either not say it or make it up.
+   *
+   * ⚠ NULL WHEN THERE WAS NO STORED ROW, AND THAT IS NOT THE SAME AS FOUNDATION I. An athlete evaluated
+   * for the first time did not hold Foundation I and then leave it — they were simply never ranked.
+   * `fetchStoredRank` defaults to Foundation I because a DISPLAY needs something to draw; a permanent
+   * record of a transition does not, and printing a rank somebody never held is exactly the class of
+   * invention `share/content.ts` deleted its whole `DEMO` table over.
+   */
+  previous: { family: RankFamily; subTier: number } | null;
 }
 
 /**
@@ -154,6 +169,8 @@ export async function refreshRank(): Promise<RankRefresh | null> {
   const storedRow = stored as { family: string; sub_tier: number; rank_level: number } | null;
   const storedFamily = (storedRow?.family ?? 'foundation') as RankFamily;
   const storedLevel = storedRow?.rank_level ?? 1;
+  // Captured BEFORE the upsert below overwrites it. Null on a first-ever evaluation — see `previous`.
+  const previous = storedRow ? { family: storedFamily, subTier: storedRow.sub_tier } : null;
 
   /**
    * ONE FAMILY PER REFRESH — every promotion is individually experienced (RS-D12, RSA §12).
@@ -183,6 +200,8 @@ export async function refreshRank(): Promise<RankRefresh | null> {
       rank: { family: storedFamily, subTier: storedRow.sub_tier, rankLevel: storedLevel, display: rankDisplay(storedFamily, storedRow.sub_tier) },
       promotedFamily: null,
       promotedSubTier: null,
+      // Nothing was promoted, so nothing was left behind — `previous` is meaningful only beside a promotion.
+      previous: null,
     };
   }
 
@@ -208,5 +227,6 @@ export async function refreshRank(): Promise<RankRefresh | null> {
     rank,
     promotedFamily: familyChanged ? rank.family : null,
     promotedSubTier: familyChanged ? null : rank.subTier,
+    previous,
   };
 }

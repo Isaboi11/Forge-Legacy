@@ -47,12 +47,21 @@ import { createFriendPost } from '@/data/friends-feed-live'
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live'
 import { errorMessage } from '@/lib/useQuery'
 import { shareSnippet, type ShareContent } from '@/domain/share/content'
+import type { MilestoneCard } from '@/domain/share/milestone-card'
 import { shareSummary, shareTargets, shareVerb } from '@/domain/share/fanout'
 
 export interface ShareSheetProps {
   open: boolean
   onClose: () => void
   content: ShareContent
+  /**
+   * The card a Forge destination stores, when the caller composed one (every ceremony does).
+   *
+   * Given, the post carries the milestone in its `layout` and its body is left EMPTY — see
+   * `onForgeShare`. Absent, the old behaviour stands and the snippet becomes the body, which is still
+   * right for every share that has no card to draw.
+   */
+  milestone?: MilestoneCard | null
 }
 
 type DestId = 'squad' | 'friends'
@@ -61,7 +70,7 @@ const FORGE_DESTS: { id: DestId; label: string; verb: string }[] = [
   { id: 'friends', label: 'Friends', verb: 'Share with Friends' },
 ]
 
-export function ShareSheet({ open, onClose, content }: ShareSheetProps) {
+export function ShareSheet({ open, onClose, content, milestone = null }: ShareSheetProps) {
   const [hidden, setHidden] = useState<Set<string>>(new Set())
   const [includeName, setIncludeName] = useState(true)
   const [forgingSince, setForgingSince] = useState(false)
@@ -118,9 +127,24 @@ export function ShareSheet({ open, onClose, content }: ShareSheetProps) {
   const flash = (msg: string) => setToast(msg)
 
   /**
-   * Post it. The card is not captured, so what lands in the feed is the SNIPPET — the same text the
-   * external share carries, and the same text the preview above is built from. No media, because
-   * claiming an image was attached would be the original lie in a new place.
+   * Post it.
+   *
+   * ══ THE FEED GETS THE CARD NOW, NOT THE TEXT FALLBACK ══
+   *
+   * This used to send `snippet` as the body of a plain `discussion`, for both destinations, with the
+   * comment *"the card is not captured, so what lands in the feed is the SNIPPET"*. True, and the
+   * consequence was that the most significant post the app can make arrived as five stacked grey lines
+   * with the rank printed twice and the app's own name signing the athlete's post. PO: *"It needs to
+   * feel special. Needs to feel momentous."*
+   *
+   * A card does not have to be CAPTURED to be drawn — it has to be DESCRIBED. `milestone` is that
+   * description, and `MilestoneBand` draws it live in both feeds and on the post detail. Nothing is
+   * rasterised, nothing is uploaded, and the post stays a row of data rather than an image of one.
+   *
+   * ⚠ AND THE BODY GOES EMPTY WHEN THERE IS A CARD. The band already says the eyebrow, the rank, the
+   * rank's meaning and the date; the snippet says all four again in worse type directly underneath. The
+   * external share still carries the snippet — that path is untouched, because the OS share sheet has
+   * no band to draw.
    *
    * ONE INSERT PER CHOSEN SQUAD, in the order they are shown, and awaited one at a time so a failure
    * halfway through can name what already landed instead of leaving the athlete to guess and re-post.
@@ -129,15 +153,17 @@ export function ShareSheet({ open, onClose, content }: ShareSheetProps) {
     if (posting || !canPost) return
     setPosting(true)
     const landed: string[] = []
+    // A card carries the words. Without one, the snippet is still the only thing the post could say.
+    const body = milestone ? '' : snippet
     try {
       if (dest === 'squad') {
         for (const t of shareTargets(chosen.map((s) => s.id), false)) {
-          await addSquadPost({ squadId: t.squadId!, type: 'discussion', body: snippet })
+          await addSquadPost({ squadId: t.squadId!, type: 'discussion', body, layout: milestone })
           landed.push(chosen.find((s) => s.id === t.squadId)?.name ?? 'your squad')
         }
         flash(shareSummary(landed, false))
       } else {
-        await createFriendPost({ body: snippet, audience: 'FRIENDS', squadId: null, media: [] })
+        await createFriendPost({ body, audience: 'FRIENDS', squadId: null, media: [], layout: milestone })
         flash(shareSummary([], true))
       }
       setTimeout(onClose, 900)
