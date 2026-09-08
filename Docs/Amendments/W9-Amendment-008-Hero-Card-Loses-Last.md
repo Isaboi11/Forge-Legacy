@@ -1,5 +1,12 @@
 # W-9 Amendment 008 — The hero card loses `Last`
 
+> ⚠ **§2 IS SUPERSEDED BY `W9-Amendment-009-Plinth-Returns-And-Target-Folds.md`** (same day, later
+> decision). A9 restores a three-column plinth. **That is not a reversal of this document**: §1's
+> deletion of `Last` — the duplicate of the per-set `Prev` — stands, and A9's third column is the
+> athlete's NOTE, which duplicates nothing. Read A9 before moving `Goal` or `Best` again; everything
+> A8-D1a, A8-D2, A8-D4 and A8-D5 decide about those two figures is still in force, and A8-D3a's OPEN
+> follow-on is closed there. §4's design-authority divergence is replaced by A9-D5's.
+
 **Amends:** `W9-Amendment-007-Per-Set-Prev.md` (which created this duplication and did not clear it)
 **Touches:** the expanded lifting hero in `src/app/workout.tsx` — the `Last · Goal · Best` insight row
 **Status:** 🔒 LOCKED

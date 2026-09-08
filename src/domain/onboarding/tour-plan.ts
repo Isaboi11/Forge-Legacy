@@ -501,15 +501,21 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
     {
       key: 'w-hero',
       title: 'What to hit, and what you’ve done',
-      body: 'Last is what you lifted here last time. Goal is today’s target. Best is your record on this lift. “How To” opens the full coaching for it — form cues, common mistakes, what it’s for.',
+      /* ⚠ THIS SAID "Last is what you lifted here last time" AND THERE HAS BEEN NO `Last` SINCE W9-A8
+         deleted it — a tour that points at a column the screen does not draw teaches the wrong screen.
+         The band under the card is Goal · Best · Last Time, and the third of those is a NOTE. */
+      body: 'Goal is today’s target — tap it to change it. Best is your record on this lift. Last Time is the note you left yourself here, and it opens in full. “How To” gives you the coaching — form cues, common mistakes, what it’s for.',
       anchor: 'workout-hero',
       pad: 8,
       radius: 18,
     },
     {
       key: 'w-sets',
-      title: 'Target is the plan. Actual is the truth.',
-      body: 'Log what you really lifted, not what was written down — heavier, lighter, fewer reps, all of it. The record is only worth having if it’s honest, and beating your best here is what earns a personal record.',
+      /* ⚠ AND THIS NAMED TWO COLUMNS, `Target` AND `Actual`, THAT W9-A9 FOLDED INTO ONE. The Reps field
+         now shows the ask in faded ink and your own answer in bronze; Prev is what you did at this set
+         last time, and tapping it on the live row loads that weight. */
+      title: 'Log what you actually lifted',
+      body: 'The faded number in Reps is what the plan asked for — change it to what you really got, heavier, lighter, fewer reps, all of it. Prev is this set last time; tap it to use that weight again. The record is only worth having if it’s honest, and beating your best here is what earns a personal record.',
       anchor: 'workout-sets',
       pad: 8,
       radius: 14,
@@ -1353,6 +1359,35 @@ export function stepsFor(key: ScreenTourKey, workoutsLogged: number): readonly S
  * The tabs leg finishes, records itself, and the provider's arm effect fires the Home leg a beat later —
  * which is also, exactly, the two-moments design this tour was split into in the first place.
  */
+/**
+ * ⭐ WHETHER THE GUIDED RUN MAY START AT ALL YET.
+ *
+ * Separate from `planTour`, which answers *what* to show: this answers *when*, and the two failed for
+ * different reasons. The tabs leg used to arm 850 ms after a brand-new athlete first reached Home and
+ * then NAVIGATE them through four tabs before they had done one thing — its opening card saying "today's
+ * workout" while pointing at a hero that screen deliberately does not draw. A walkthrough of somewhere
+ * you have not been is a map with no You Are Here.
+ *
+ * ⚠ NOTHING IS CUT. Every step, both legs, all 27 surfaces still exist and still say what they said.
+ *   This moves the moment to just after a first saved workout, when the four tabs stop being
+ *   abstractions: there is a chapter with something in it, a record to look at, and a reason to care
+ *   what Squads is for.
+ *
+ * ⚠ NULL MEANS UNRESTRICTED, AND MUST KEEP MEANING THAT (ONB-A4-D10). `getWorkoutsLogged` returns null
+ *   when the count could not be read, and every phase check in this system reads null as "no
+ *   restriction". Treating it as 0 here would silence the tour for every athlete whose seed read failed
+ *   — including veterans, who are the least defensible people to silence.
+ *
+ * ⚠ A REPLAY IGNORES IT ENTIRELY. "Replay all tips" is an explicit request from Account Settings, and a
+ *   request is not something to gate behind having trained.
+ */
+export function tourMayStart(input: { workoutsLogged: number | null | undefined; replay?: boolean }): boolean {
+  if (input.replay) return true;
+  const n = input.workoutsLogged;
+  if (n == null) return true;
+  return n > 0;
+}
+
 export function planTour(input: TourPlanInput): TourStep[] {
   const { tabsDone, homeDone, homeHasCards, anchors, replay = false, workoutsLogged } = input;
 
