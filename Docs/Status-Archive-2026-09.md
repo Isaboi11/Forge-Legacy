@@ -4,6 +4,12 @@ Overflow from `Forge-Legacy-Master-Status.md` § Recently Completed, moved **ver
 
 ---
 
+### 0. A set leaves the table from its own row — the Remove Set pill is gone (2026-08-27, Active Workout — **no migration**, ✅ **WEB DEPLOYED** `index-167b1ae51fc074a35304675302b311ed` · ✅ **OTA PUBLISHED TO BUILD 7** iOS `01a0461c-7e9a-7a30-ac3c-51e6eb4a77dd`, runtime `4d728d16…` — commit `49a97ab`)
+
+**PO:** *"take out the 'remove set' button during an active workout and put a small subtle red trash can symbol on the right of the set."* Each set row now ends in a 14pt trash glyph (`redMuted`, half opacity, full on press) in a fixed 22pt trailing column that the header carries too, so the three data cells keep their widths; `hitSlop` gives it a 44pt target without drawing one. It is **absent, not greyed, at one set** — a disabled trash beside the only set reads as "this one is stuck". Add Set is full width again. ⚠ `removeSet` now removes the TAPPED set rather than the tail, and **re-indexes `setIndex` after the splice** — `save-core` writes it as `set_index` and matches saved rows to fresh ones by that number, so a hole would save a session numbered 1, 2, 4.
+
+**Gates:** tsc 0 · **2,908/2,908** · lint at baseline. Shipped later the same evening with the import pass below — both surfaces, the OTA from the worktree route that entry describes. ⏳ Not seen rendered.
+
 ### 0. Every grabber drags — Holt's sheet too — and the ⋮ menu stops repeating Holt (2026-08-28, BottomSheet / SessionCoachSheet / Active Workout — **no migration**, ✅ **WEB DEPLOYED** `index-d797721b8f4c7213bdbe27ccb4b8f4ff` · ✅ **OTA PUBLISHED TO BUILD 7** iOS `01a04898-1949-7507-bc18-4fc22fb5891f`, runtime `4d728d16…` — commit `f1bd582`)
 
 **PO:** *"The line at the top in the middle is an indicator that you can drag that page down and gone. But the only way to get out right now is with the x. This is happening everywhere in the app."* And, on the ⋮ menu: *"things that we should just have coach holt have. Let's make sure we're not repeating and we keep it simple."*
