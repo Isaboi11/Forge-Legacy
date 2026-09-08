@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import type { WorkoutSummary } from './squad-feed-live';
+import type { PostLayout, WorkoutSummary } from './squad-feed-live';
+import { isMilestoneCard } from '@/domain/share/milestone-card';
 
 /**
  * The Friends Feed (migration 0074) — SOC-D9's intentional-sharing feed.
@@ -67,6 +68,15 @@ export interface FeedPost {
   /** Stats snapshotted at share time. Null on every post that isn't a recap (and on every recap
    *  written before 0113 taught `friends_feed` to return the column it was already storing). */
   workoutSummary: WorkoutSummary | null;
+  /**
+   * The composed shape a post carries, when it carries one — the same `layout` column the Squad feed
+   * reads, which `friends_feed()` has returned since 0074 and which nothing on this side ever mapped.
+   *
+   * That was fine while the only laid-out shapes were squad-audience ones, and `shapeOf`'s own ⚠ said
+   * so in advance: *"anything that later posts a card with audience 'FRIENDS' or 'BOTH' must teach this
+   * function to look at `layout` first."* A ceremony share can be sent to Friends, so this is that.
+   */
+  layout: PostLayout | null;
   commentCount: number;
   reactionCount: number;
   myReaction: Reaction | null;
@@ -74,9 +84,23 @@ export interface FeedPost {
 }
 
 /** What the card renders, derived from the media rather than stored as a type — see 0074. */
-export type PostShape = 'note' | 'photo' | 'gallery' | 'video' | 'progress' | 'milestone' | 'recap';
+export type PostShape = 'note' | 'photo' | 'gallery' | 'video' | 'progress' | 'milestone' | 'ceremony' | 'recap';
 
 export function shapeOf(p: FeedPost): PostShape {
+  /*
+   * ⚠ THE LAYOUT IS ASKED FIRST NOW, which is what the note below has always demanded.
+   *
+   * A ceremony share (rank ascension, honor, goal, program) posts as `discussion` carrying a
+   * `milestone-card` in `layout` — it has no post type of its own, deliberately, because a new `type`
+   * value is a check-constraint migration and this needs none. Asking `type` first would therefore
+   * classify the biggest post in the app as a plain note and draw it as grey text, which is precisely
+   * the bug being fixed.
+   *
+   * `ceremony` rather than `milestone`: `milestone` already means the bronze text card that PR, weekly
+   * and pre-0113 recap posts fall into, and one shape name meaning two layouts is how the `progress`
+   * collision below happened.
+   */
+  if (isMilestoneCard(p.layout)) return 'ceremony';
   /*
    * ⚠ `progress` MEANS TWO THINGS IN ONE TABLE, and only the audience keeps them apart. Here it is a
    * before/after pair whose media carry `slot`, rendered with a draggable divider. On the SQUAD side it
@@ -145,6 +169,7 @@ export async function fetchFriendsFeed(limit = 40, before?: string): Promise<Fee
     prLabel: (r.pr_label as string) ?? null,
     workoutId: (r.workout_id as string) ?? null,
     workoutSummary: (r.workout_summary as WorkoutSummary) ?? null,
+    layout: (r.layout as PostLayout) ?? null,
     commentCount: Number(r.comment_count ?? 0),
     reactionCount: Number(r.reaction_count ?? 0),
     myReaction: asReaction(r.my_reaction),
@@ -202,6 +227,15 @@ export interface NewPost {
   prValue?: string | null;
   prExercise?: string | null;
   prLabel?: string | null;
+  /**
+   * A composed shape for the `layout` column — today, only a ceremony's milestone card.
+   *
+   * ⚠ THIS WRITER COULD NOT SET `layout` AT ALL, and the omission was invisible until something wanted
+   * to. `friends_feed()` has always RETURNED the column; only `addSquadPost` ever wrote it, so sharing
+   * a rank-up to Friends rather than to a Squad would have produced a post whose card silently did not
+   * exist — the card in one feed and grey text in the other, from the same sheet, one tap apart.
+   */
+  layout?: PostLayout | null;
 }
 
 export async function createFriendPost(input: NewPost): Promise<string> {
@@ -230,6 +264,9 @@ export async function createFriendPost(input: NewPost): Promise<string> {
       pr_value: isPr ? (input.prValue?.trim() || null) : null,
       pr_exercise: isPr ? (input.prExercise?.trim() || null) : null,
       pr_label: isPr ? (input.prLabel?.trim() || null) : null,
+      /* Gated on the SHAPE rather than on a type, exactly as `addSquadPost` gates it — a milestone card
+         is a structural test, so nothing a caller leaves on the input by accident can pass it. */
+      layout: isMilestoneCard(input.layout) ? input.layout : null,
     })
     .select('id')
     .single();

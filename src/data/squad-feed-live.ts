@@ -6,6 +6,8 @@ import { fetchCompletion } from '@/data/workout-complete-live';
 // Type only: the snapshot arrives already validated by `fetchCompletion`, and `RecapBlock` re-validates
 // it on the way back out of the post's jsonb.
 import type { WorkoutPlaylistLink } from '@/domain/workout/playlist';
+import type { TemplateExercise } from '@/data/templates-live';
+import { isMilestoneCard, type MilestoneCard } from '@/domain/share/milestone-card';
 
 /**
  * Squad Feed data (Social · Part 1) — training-only threaded posts (`squad_posts`), flat comments
@@ -17,7 +19,7 @@ import type { WorkoutPlaylistLink } from '@/domain/workout/playlist';
  * formcheck/challenge/traintogether need subsystems that don't exist yet and are intentionally omitted.
  */
 
-export type SquadPostType = 'checkin' | 'progress' | 'recap' | 'pr' | 'formcheck' | 'transformation' | 'discussion' | 'announcement' | 'weekly';
+export type SquadPostType = 'checkin' | 'progress' | 'recap' | 'pr' | 'formcheck' | 'transformation' | 'discussion' | 'announcement' | 'weekly' | 'workout';
 
 // ── Weekly Recap (SQ-D8, migration 0057) ──
 // Snapshotted at generation time, so a week's summary can't silently change because someone later
@@ -181,14 +183,57 @@ export interface ProgressPostCard {
   incl: { date: boolean; meta: boolean; chapter: boolean; name: boolean; pose: boolean };
 }
 
-/** Either shape the `layout` column can hold. */
-export type PostLayout = TransformationLayoutData | ProgressPostCard;
+// ── Posted Workout (0192, SQ-A5-D1) ──
+/**
+ * The workout a `workout` post offers the squad — a snapshot, not a pointer.
+ *
+ * RIDES IN `layout` FOR THE REASON THE PROGRESS CARD DOES, and the reason is structural rather than
+ * convenient: `squad_feed()` and the post-detail read are both `returns table (...)`, which
+ * `create or replace` cannot widen. A real column would mean dropping and rebuilding two functions a
+ * dozen migrations have touched — see 0186's header, and 0043's before it. So 0192 adds no column here
+ * at all, and `kind` discriminates this from the two shapes already sharing the jsonb.
+ *
+ * SNAPSHOTTED (SQ-A5-D1.1): the poster editing or deleting their own copy afterwards must not rewrite a
+ * session somebody is midway through.
+ */
+export interface PostedWorkoutCard {
+  kind: 'posted-workout';
+  name: string;
+  exercises: TemplateExercise[];
+}
+
+// ── Milestone card (the ceremony share, SCR-D3) ──
+/**
+ * The Rank Card and its three siblings ride here too — the FOURTH shape in this column.
+ *
+ * Defined in `domain/share/milestone-card.ts` rather than in this file, because it is pure and the
+ * post-detail screen, the two feeds and the band component all need the guard; re-exported here so
+ * every reader of a post's `layout` finds all four shapes in one place. Same structural reason as the
+ * two above it: `squad_feed()` is `returns table (...)` and cannot be widened, so a milestone needs no
+ * migration at all — 0192's header makes the argument at length.
+ */
+export type { MilestoneCard } from '@/domain/share/milestone-card';
+export { isMilestoneCard } from '@/domain/share/milestone-card';
+
+/** Every shape the `layout` column can hold. */
+export type PostLayout = TransformationLayoutData | ProgressPostCard | PostedWorkoutCard | MilestoneCard;
+
+export const isPostedWorkout = (l: PostLayout | null | undefined): l is PostedWorkoutCard =>
+  !!l && (l as PostedWorkoutCard).kind === 'posted-workout' && Array.isArray((l as PostedWorkoutCard).exercises);
 
 export const isProgressCard = (l: PostLayout | null | undefined): l is ProgressPostCard =>
   !!l && (l as ProgressPostCard).kind === 'progress-card' && Array.isArray((l as ProgressPostCard).photos);
 
-/** The transformation half of the column, or null when this post carries the other shape. */
-export const asTransformationLayout = (l: PostLayout | null | undefined): TransformationLayoutData | null => (l && !isProgressCard(l) ? l : null);
+/**
+ * The transformation half of the column, or null when this post carries one of the other shapes.
+ *
+ * ⚠ EVERY NEW `kind` MUST BE EXCLUDED HERE. This read is "anything without a known kind is a
+ * transformation layout", which is correct — rows written before `kind` existed have none — and which
+ * turns every shape added later into a transformation unless it is named. A posted workout leaking
+ * through would be drawn as a photo comparison with no photos.
+ */
+export const asTransformationLayout = (l: PostLayout | null | undefined): TransformationLayoutData | null =>
+  l && !isProgressCard(l) && !isPostedWorkout(l) && !isMilestoneCard(l) ? (l as TransformationLayoutData) : null;
 
 /** Snapshot of a completed workout captured at recap-post time (survives later edits to the workout). */
 export interface RecapExercise {
@@ -287,6 +332,7 @@ export const SQUAD_POST_TYPES: SquadPostTypeDef[] = [
   { id: 'pr', label: 'PR / Milestone', ownerOnly: false, blurb: 'Mark a personal record for the squad.' },
   { id: 'formcheck', label: 'Form Check', ownerOnly: false, blurb: 'Post a lift for the squad’s eyes.' },
   { id: 'transformation', label: 'Transformation', ownerOnly: false, blurb: 'Compare two of your progress captures.' },
+  { id: 'workout', label: 'Workout', ownerOnly: false, blurb: 'Post a session for the squad to run.' },
   { id: 'discussion', label: 'Discussion', ownerOnly: false, blurb: 'A short note to the squad.' },
   { id: 'announcement', label: 'Squad Announcement', ownerOnly: true, blurb: 'Owner note pinned for the squad.' },
 ];
@@ -532,8 +578,22 @@ export async function addSquadPost(input: NewSquadPost): Promise<string> {
     media: input.media ?? [],
     workout_id: input.type === 'recap' ? input.workoutId ?? null : null,
     workout_summary: input.type === 'recap' ? input.workoutSummary ?? null : null,
-    // Two shapes, one column (0045) — a comparison layout or a progress card, never both.
-    layout: input.type === 'transformation' || input.type === 'progress' ? input.layout ?? null : null,
+    /*
+     * Four shapes, one column (0045) — a comparison layout, a progress card, a posted workout (0192),
+     * or a milestone card. Never more than one, and `kind` tells the reader which.
+     *
+     * ⚠ THE MILESTONE IS GATED ON ITS OWN SHAPE, NOT ON A POST TYPE, and that is the only reason it
+     * needs no migration. `squad_posts.type` is a check constraint; a `milestone` value would mean
+     * altering it and asking the PO to paste SQL before a rank-up could look like anything. A ceremony
+     * share posts as `discussion` — which is what it has always been — and the LAYOUT says what it is.
+     * `isMilestoneCard` is a structural test, so a discussion cannot pick one up by accident.
+     */
+    layout:
+      input.type === 'transformation' || input.type === 'progress' || input.type === 'workout'
+        ? input.layout ?? null
+        : isMilestoneCard(input.layout)
+          ? input.layout
+          : null,
   };
   const { data, error } = await supabase.from('squad_posts').insert(row).select('id').single();
   if (error) throw error;

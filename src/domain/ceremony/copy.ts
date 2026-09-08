@@ -13,7 +13,7 @@
 
 import type { CeremonyEvent } from './types';
 import type { RankTier } from '../rank-artwork/resolver';
-import { rankIdentity } from '../rank/identity.ts';
+import { rankAscent } from '../rank/identity.ts';
 
 export interface CeremonyCopy {
   eyebrow?: string;
@@ -56,6 +56,18 @@ export function ceremonyCopy(event: CeremonyEvent): CeremonyCopy {
        * able to say honestly when they reach the rank"* — which is precisely a ceremony line. Two other
        * screens were already showing it (and disagreeing about it); see `domain/rank/identity.ts`.
        *
+       * ══ AND IT IS NOW PER RUNG, NOT PER FAMILY (RSA-A3-D4) ══
+       *
+       * PO: *"I do want a different saying for all of them."* Amendment 002 made M-1 fire on all 28 steps
+       * of the ladder, and every one of those 28 then said one of seven sentences — so an athlete
+       * climbing Foundation I → II → III → IV was congratulated four times in identical words, which
+       * reads as the app not having noticed.
+       *
+       * `rankAscent` is the family's identity expressed at that depth, and tier I of every family IS the
+       * §2.2 identity verbatim, so this is strictly MORE SPECIFIC than what it replaces rather than
+       * different from it. §13.1 is untouched — still seven identities. See
+       * `Amendments/Rank-System-Architecture-Amendment-003-Sub-Tier-Statements.md`.
+       *
        * ⚠ THE LOCKED GENERIC LINE IS KEPT AS THE FALLBACK, not deleted: M-1 §6.2 is a locked clause, and
        * it remains the right words for a family this build has no statement for.
        */
@@ -64,7 +76,7 @@ export function ceremonyCopy(event: CeremonyEvent): CeremonyCopy {
         title: rankTierLabel(event.rank),
         body: isFinalRank(event.rank)
           ? 'Your legacy has been forged.'
-          : rankIdentity(event.rank.family) || 'Earned through every session. Welcome to what you’ve become.',
+          : rankAscent(event.rank.family, event.rank.level) || 'Earned through every session. Welcome to what you’ve become.',
         primary: 'Continue',
         secondary: 'Share this advancement',
       };

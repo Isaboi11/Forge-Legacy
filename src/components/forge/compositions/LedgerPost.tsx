@@ -111,6 +111,19 @@ export interface LedgerPostProps {
    * written before 0178 was and what a plain tap still writes.
    */
   ackKind?: AckKind;
+  /**
+   * What the control says BEFORE anyone has acknowledged. Default 'Acknowledge'.
+   *
+   * The one thing a milestone post changes about the action row (PO: *"give the acknowledgment a little
+   * more significance… the interaction feels connected to the achievement"*). Everything else — the tap,
+   * the press-and-hold, the four kinds, the count — is identical, which is the point: this is the same
+   * social gesture, named for what it is being offered to.
+   *
+   * ⚠ IT DOES NOT OVERRIDE THE ACKNOWLEDGED STATE. Once you have left one, the row must name the KIND
+   * you left (`ACK_LABEL`) — that was the whole fix behind `AckGlyph`, and a post that answered
+   * "Acknowledge the Ascension" back at you would have undone it.
+   */
+  acknowledgeLabel?: string;
   acknowledgeCount: number;
   commentCount: number;
   /** The almost-invisible surface shift on every other row. Remove it the moment it reads as banding. */
@@ -201,6 +214,7 @@ export function LedgerPost({
   bleed = 0,
   acknowledged,
   ackKind,
+  acknowledgeLabel = 'Acknowledge',
   acknowledgeCount,
   commentCount,
   alt = false,
@@ -316,7 +330,7 @@ export function LedgerPost({
           disabled={busy}
           accessibilityRole="button"
           accessibilityState={{ selected: acknowledged }}
-          accessibilityLabel={acknowledged ? `Acknowledged, ${acknowledgeCount}` : 'Acknowledge this'}
+          accessibilityLabel={acknowledged ? `Acknowledged, ${acknowledgeCount}` : acknowledgeLabel}
           accessibilityHint={onLongAcknowledge ? 'Press and hold to change how' : undefined}
           style={styles.action}
         >
@@ -324,7 +338,7 @@ export function LedgerPost({
               the athlete had chosen, so four kinds were writable and only one was ever legible. */}
           <AckGlyph kind={acknowledged ? ackKind ?? 'respect' : 'respect'} on={acknowledged} />
           <Text style={[styles.actionLabel, acknowledged ? styles.actionLabelOn : null]}>
-            {acknowledged ? ACK_LABEL[ackKind ?? 'respect'] : 'Acknowledge'}
+            {acknowledged ? ACK_LABEL[ackKind ?? 'respect'] : acknowledgeLabel}
           </Text>
           {acknowledgeCount > 0 ? (
             <Text style={[styles.actionCount, acknowledged ? styles.actionLabelOn : null]}>{acknowledgeCount}</Text>

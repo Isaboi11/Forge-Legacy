@@ -95,6 +95,10 @@ export function useEarnedMoments({ onRankChanged, enabled = true }: EarnedMoment
             id: `rank-${res.rank.rankLevel}`,
             kind: 'rankUp',
             rank: { family: res.rank.family, level: res.rank.subTier as RankLevel },
+            /* Where they came from. `refreshRank` captures it before it overwrites the stored row, and
+               hands back null on a first-ever evaluation — which stays null here rather than becoming
+               a Foundation I nobody held. */
+            previous: res.previous ? { family: res.previous.family, level: res.previous.subTier as RankLevel } : null,
           });
           onRankChanged?.();
         })

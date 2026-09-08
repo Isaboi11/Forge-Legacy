@@ -47,7 +47,10 @@ export default function CeremonyHarness() {
 
   const uid = () => `ev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-  const rankUp = (): CeremonyEvent => ({ id: uid(), kind: 'rankUp', rank: PLACEHOLDER_RANK });
+  /* `previous` is what makes the share a transition rather than a label — the milestone band draws the
+     rank left behind beside the one earned. Supplied here because the harness is the only place a
+     rank-up can be looked at on demand, and a harness that omits it exercises the wrong half. */
+  const rankUp = (): CeremonyEvent => ({ id: uid(), kind: 'rankUp', rank: PLACEHOLDER_RANK, previous: { family: 'established', level: 2 } });
   const goal = (): CeremonyEvent => ({ id: uid(), kind: 'goalAchieved', goalName: 'Squat 315 lbs', chapterName: 'The Rebuild' });
   const honor = (): CeremonyEvent => ({ id: uid(), kind: 'honorEarned', honorName: 'Century Club', citation: '100 workouts logged.' });
 
@@ -71,7 +74,7 @@ export default function CeremonyHarness() {
         <Button variant="primary" fullWidth onPress={() => enqueue(rankUp())}>
           Rank Up · Foundation III (real badge)
         </Button>
-        <Button variant="primary" fullWidth onPress={() => enqueue({ id: uid(), kind: 'rankUp', rank: { family: 'legend', level: 2 } })}>
+        <Button variant="primary" fullWidth onPress={() => enqueue({ id: uid(), kind: 'rankUp', rank: { family: 'legend', level: 2 }, previous: { family: 'legend', level: 1 } })}>
           Rank Up · Legend II (real badge)
         </Button>
         <Button variant="secondary" fullWidth onPress={() => enqueue(goal())}>
