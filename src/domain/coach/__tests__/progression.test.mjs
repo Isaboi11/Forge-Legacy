@@ -160,7 +160,9 @@ test('a loaded lift is untouched by the bodyweight rule', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// sessionPerformance — the figure the Active Workout's "Last" column shows
+// sessionPerformance — the top set of a past session. ⚠ It no longer feeds a `Last` column: W9-A8
+// deleted that from the hero as a duplicate of the per-set `Prev`. Its live caller is the `recent`
+// weight list the coach reads in workout.tsx.
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('one session reduces to the working weight and the best reps at it', () => {
