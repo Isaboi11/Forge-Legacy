@@ -15,6 +15,8 @@
  *      carousel with my thumb through the pictures."
  *   5. "I don't want the cards to be carousels. Just the pictures in the cards we have in the
  *      screenshot. Also, let's have the add progress pics at the top of the cards and not the bottom."
+ *   6. "On this card I should be able to scroll left to right through the photos. And if there isn't a
+ *      picture for a certain pose don't show me that empty spot."
  *
  * ⚠ (1) WAS READ TOO WIDELY, AND TWO PASSES WERE SPENT ON THE CONSEQUENCE. Making the cards a
  * horizontal shelf put two horizontal scrollers on one axis, since the card carries its own pose strip.
@@ -102,6 +104,26 @@ test('⭐ “Take progress pics” sits ABOVE the record, not under it', () => {
   assert.ok(cta < firstGroup, 'the add-photos CTA is below the chapter cards again');
 });
 
+test('⭐ the card shows the poses that were TAKEN — an empty slot is not a record', () => {
+  // PO, 2026-09-08: "if there isn't a picture for a certain pose don't show me that empty spot."
+  // Every card drew all six poses with a camera glyph for the misses. On a four-pose entry that is two
+  // dead tiles off the right edge — and because they are always the LAST two, the strip permanently
+  // looked like it had more to show and permanently scrolled to nothing. That is the same report's
+  // other half: with only what was captured in it, a four-pose strip does not overflow at all.
+  const card = GALLERY.slice(GALLERY.indexOf('function EntryCard('));
+  assert.match(card, /const shot = filledPoses\(entry\);/, 'the card is no longer drawing only the filled poses');
+  assert.doesNotMatch(card, /XFORM_POSES\.map/, 'the card is drawing all six poses again, empty slots included');
+  assert.doesNotMatch(card, /: <CameraGlyph \/>\}/, 'the empty-slot camera placeholder is back on the card');
+  assert.match(card, /\{shot\.length > 0 \? \(/, 'a video-only entry draws an empty strip rather than none');
+});
+
+test('⚠ a sideways drag has to REACH the strip — the page must not claim it first', () => {
+  // A vertical ScrollView claims a drag on the first movement in any direction, so a swipe across a
+  // photograph a few degrees off horizontal scrolls the page and the strip reads as "doesn't scroll"
+  // without ever being broken.
+  assert.match(GALLERY, /directionalLockEnabled/, 'the page scroller can steal a horizontal drag from the pose strip again');
+});
+
 test('⭐ the poses inside a card are a strip you drag, and a flick lands ON a pose', () => {
   // PO, 2026-09-08: "I like the way the cards are. Keep the shape and size. But have it be able to
   // scroll like a carousel with my thumb through the pictures."
@@ -114,6 +136,7 @@ test('⭐ the poses inside a card are a strip you drag, and a flick lands ON a p
   assert.match(card, /<ScrollView\s+horizontal/, 'the pose strip stopped scrolling sideways');
   assert.match(card, /snapToInterval=\{POSE_W \+ POSE_GAP\}/, 'the strip no longer snaps to the pose pitch, so a flick stops between two photographs');
   assert.doesNotMatch(card, /styles\.poseGrid/, 'the poses are a wrapped grid again, which is the card-height regression');
+  assert.match(card, /\{shot\.map\(\(p\) => \(/, 'the strip is no longer drawn from the captured poses');
 });
 
 test('the strip is the screen’s ONLY horizontal scroller, and carries no workaround for a shelf', () => {
