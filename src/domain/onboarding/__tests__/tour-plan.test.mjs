@@ -327,6 +327,13 @@ test('the walkthroughs teach the decisions, not the labels', () => {
   assert.match(body('workouts', 'wk-start'), /TRACK|LOG/, 'track vs log is spelled out');
   assert.match(body('program-builder', 'pb-structure'), /Repeat the same week|Customize each week/);
   assert.match(body('day-builder', 'db-sections'), /optional/i, 'which sections are optional');
-  assert.match(body('workout', 'w-sets'), /Actual/, 'target vs actual');
+  /* ⚠ THIS ASKED FOR THE WORD `Actual` AND THERE IS NO SUCH COLUMN SINCE W9-A9 — the ask and the answer
+     share the Reps field now (faded ink vs the athlete's own). The CLAIM the step has to teach is
+     unchanged and is what is asserted: the printed number is the plan, and you overwrite it with what
+     you really got. `Prev` is asserted alongside it because promoting it to a column is the other half
+     of the same rearrangement and it is now a control, not a caption. */
+  assert.match(body('workout', 'w-sets'), /what the plan asked for/i, 'the printed number is the plan');
+  assert.match(body('workout', 'w-sets'), /what you really got/i, 'and you overwrite it with the truth');
+  assert.match(body('workout', 'w-sets'), /Prev/, 'Prev is a control now, and the tour has to say so');
   assert.match(body('program-detail', 'pd-actions'), /End Program/, 'ending is not deleting');
 });
