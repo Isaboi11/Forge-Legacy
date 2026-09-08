@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 import { syncPhotoReminder, type ReminderResult } from '@/lib/photo-reminder';
+import { sortByCapture } from '@/domain/legacy/capture-date';
 
 /**
  * Transformation gallery data (L-17) — a personal, owner-scoped progress-photo archive (migration 0044).
@@ -78,13 +79,23 @@ async function uid(): Promise<string | null> {
   return user?.id ?? null;
 }
 
-/** Every transformation entry, newest first (by insertion time). */
+/**
+ * Every transformation entry, newest CAPTURE first.
+ *
+ * ⚠ THE SERVER ORDER IS `created_at`, AND THAT IS NOT THE SAME QUESTION. It was close enough for as
+ * long as the capture date was a free-text box nobody backdated; now that it is a calendar, "these are
+ * from last Sunday" is two taps, and a set from last Sunday must not sit at the top of the shelf above
+ * this morning's. `sortByCapture` reads the day out of the label and falls back to `created_at` for the
+ * labels that are not dates — including the literal `Today` this module still writes for a blank
+ * field. The `order()` below stays: it is what makes that fallback, and ties within a day, come out in
+ * the order the sets were actually added.
+ */
 export async function fetchTransformationEntries(): Promise<TransformationEntry[]> {
   const id = await uid();
   if (!id) return [];
   const { data, error } = await supabase.from('transformation_entries').select(COLS).eq('athlete_id', id).order('created_at', { ascending: false });
   if (error) return [];
-  return ((data ?? []) as unknown as Row[]).map(toEntry);
+  return sortByCapture(((data ?? []) as unknown as Row[]).map(toEntry));
 }
 
 /**
