@@ -923,6 +923,31 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
 > Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
 
+### 0. The Option 5a card keeps its old colours, and Alabaster needed nothing (2026-09-09, Active Workout hero — **no migration**, ⛔ **NOT PUBLISHED YET**)
+
+> PO on the published A12 build: *"All the coloring we should keep as before. **No coloring changes.**
+> Do the same layout changes for the alabaster side. If it's the same animation size then that's fine."*
+> **A12 is a LAYOUT pass — it keeps the geometry and hands the palette back.** Five reverts: card ground
+> `charcoal800` → **`charcoal900`**; plate ground `surfaceRecessed` → **`charcoal600`**; plate shadow
+> `borderInset` → **the bronze glow**; fallback glyph `charcoal500` → **`bronze400` @ 0.14**; and the How
+> To bar loses the tint it briefly gained on every face, so **`howToFirst` comes back**.
+> ⚠ **SIZE IS LAYOUT, INK IS NOT** — the line the revert draws. The glyph keeps the spec's 50pt/1.25
+> stroke with its old bronze; the bar keeps its new full-width shape without the fill.
+> ✅ **AUDITED, NOT ASSERTED.** Every colour token in the diff vs the pre-A12 build (`ae31923`) was
+> enumerated and normalised for role aliases that resolve identically in both palettes. **Five net deltas
+> remain, none a colour change**: `gray400` −1 and `bronze400` −3 are role-token swaps of identical
+> value; `bronze300` −1 is the deleted `Read note` link; `charcoal500` −1 is the deleted middot span;
+> `bronzeBorder` +1 is the new hairline.
+> ✅ **ALABASTER NEEDED NO SEPARATE PASS, AND THAT WAS CHECKED.** `workout.tsx` has one `StyleSheet` and
+> **no `IS_PAPER` branch** — every geometry change was already live in both themes. And the clips are the
+> same shape: `deliver_alabaster.py` and `deliver_forge.py` both normalise to `LOOP_H = 300`, verified
+> against the live bucket over 34 ids in both prefixes — **all 300 tall in both**, widths differing 1–2px
+> from independent rounding, invisible under `contain`.
+> ⚠ **`tsc` CAUGHT A REAL BREAK MID-PASS** — a `{/* … */}` JSX comment inside `fallback={…}`, which is an
+> expression slot, and then a comment whose own text contained the close-comment marker. Both fixed;
+> recorded because the second one closes a block comment early and the error lands lines away from it.
+> tsc **0** · lint clean · **28 pass** · W9-A12 amended with **D7** (colour revert) and **D8** (Alabaster).
+
 ### 0. The hero card, built to Option 5a (2026-09-09, Active Workout hero — **no migration**, ✅ **OTA PUBLISHED TO BUILD 8 AND VERIFIED DELIVERABLE** iOS `01a08630-e9d4-7135-aac1-ad7e146e9a7d` on runtime `47944f2e…` — commits `b053be7` + `615f5dc` on `feat/route-map` (**pushed**), cherry-picked as `2a7d294` + `2ab8cbd` on `ota/build8-js`. ⛔ **WEB NOT DEPLOYED** · ⛔ **NOT SEEN ON A DEVICE OR IN ALABASTER** — **W9-Amendment-012 LOCKED**)
 
 > PO handed over a full literal spec for the card — *"every number below is literal; do not round,
