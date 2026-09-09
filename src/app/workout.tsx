@@ -3644,13 +3644,12 @@ export default function WorkoutScreen() {
                   <View style={styles.heroRow1}>
                     {/* The plate — the exercise's looping demonstration, falling back to the engraved
                         dumbbell for lifts the library doesn't cover (strongman, most mobility).
-                        ⚠ `cover`, NOT `contain` (W9-A12): the plate holds its 150 × 212 whatever the
-                        clip's aspect ratio is, so the figure fills it and is cropped rather than
-                        letterboxed. See `mediaSlot` for what that trades away. */}
+                        ⚠ `contain`, AND IT IS NOT NEGOTIABLE — see `mediaSlot`. The whole movement has
+                        to be in the frame; `cover` cut half of it off on a third of the catalogue. */}
                     <View style={styles.mediaSlot}>
                       <ExerciseLoop
                         exerciseId={ex.catalogKey}
-                        contentFit="cover"
+                        contentFit="contain"
                         fallback={
                           <Svg width={50} height={50} viewBox="0 0 24 24" fill="none" stroke={flColor.charcoal500} strokeWidth={1.25} strokeLinecap="round" strokeLinejoin="round">
                             <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
@@ -5903,11 +5902,24 @@ const styles = StyleSheet.create({
    * asks for and it is recorded, not hidden: see W9-A12 §4. `heroRow1` is `flex-start`, so the rail
    * sits at the top of the plate rather than centring beside it.
    *
-   * ⚠ **`cover` CROPS; `contain` LETTERBOXED.** The spec is explicit — the plate keeps its dimensions
-   * "regardless of the animation's aspect ratio", which is only achievable by cropping. At 0.708 the
-   * plate is more portrait than the clips, so the crop takes the SIDES of the figure. Worth watching on
-   * a wide movement (a barbell at lockout); if a demonstration ever loses its bar, `contain` is the
-   * one-word revert and the plate keeps its size either way.
+   * ⚠ **`contain`, NOT THE SPEC'S `cover` — PO: *"I want the full animation in there."*** The spec
+   * asked for `cover` so the plate would hold its size "regardless of the animation's aspect ratio".
+   * It holds its size either way; what `cover` actually costs is the movement.
+   *
+   * **MEASURED, NOT ASSUMED — 96 clips sampled across the catalogue.** `deliver_forge.py` normalises
+   * every loop to `LOOP_H = 300` and lets the WIDTH fall where it lands, so aspect ratio is per-clip
+   * and the spread is enormous:
+   *
+   *     min 0.327 (ring-muscle-up) · p25 0.613 · MEDIAN 0.800 · p75 1.160 · max 3.640 (foam-roll-lats)
+   *
+   * That is an 11× range. Against this 0.708 plate, `cover` crops a ring muscle-up to ~46% of its
+   * width and a foam roll to ~19% of its — the athlete is cut in half on the exact movements they are
+   * least likely to already know. There is no plate size that fixes it, which is the point: no single
+   * aspect ratio can contain an 11× spread.
+   *
+   * ⚠ **AND THE PLATE'S SHAPE BARELY MATTERS, SO DO NOT SPEND THE SPEC ON IT.** Average area filled
+   * under `contain`, same 96 clips: **150 × 212 → 69.1%**, 150 × 181 → 69.6%, 150 × 150 → 64.9%. The
+   * spec's number is already within half a point of the best of them. It is kept.
    *
    * ⚠ NO GLOW. The bronze inner/outer glow this carried is replaced by `flShadow.borderInset` per the
    * spec's "the only shadows are card and border-inset" — do not put it back.

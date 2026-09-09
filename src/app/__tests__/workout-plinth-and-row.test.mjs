@@ -283,8 +283,13 @@ test('⚠ the plate is a fixed 150 × 212 stage, and it CROPS rather than letter
      plate. The bronze glow A9 gave it is not one of them. */
   assert.match(slot, /boxShadow: flShadow\.borderInset/, 'the plate lost border-inset, or grew a glow back');
   assert.ok(!/rgba\(181, 138, 97/.test(slot), 'the bronze glow is back on the plate — the spec removed it');
-  // `cover` is what lets the plate keep its size whatever the clip's aspect ratio is.
-  assert.match(WORKOUT, /<ExerciseLoop[\s\S]{0,120}contentFit="cover"/, 'the demo is letterboxing again — the plate will not fill');
+  /* ⚠ `contain`, AND THIS ONE IS A HARD FLOOR — PO: *"I want the full animation in there."*
+     `deliver_forge.py` normalises every loop to height 300 and lets the width land where it lands, so
+     aspect ratio is per-clip. Measured over 96 clips: min 0.327 (ring-muscle-up), median 0.800, max
+     3.640 (foam-roll-lats) — an 11× spread that NO fixed plate can `cover` without cutting the
+     movement in half. Changing this back crops the athlete out of their own demonstration. */
+  assert.match(WORKOUT, /<ExerciseLoop[\s\S]{0,160}contentFit="contain"/, '⚠ the demo is cropping again — an 11× aspect spread means cover cuts movements in half');
+  assert.ok(!/contentFit="cover"/.test(WORKOUT), 'a cover fit is back on this screen');
 });
 
 test('⚠ How To is a full-width bar, and its "first time" STYLE variant is gone but the COPY is not', () => {
