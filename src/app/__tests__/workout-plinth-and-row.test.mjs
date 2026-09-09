@@ -133,7 +133,13 @@ test('⚠ `Last` does NOT come back with the band — the plinth’s third colum
 });
 
 test('the note is truncated WITH a way through, never truncated full stop', () => {
-  assert.match(WORKOUT, /<Text style=\{styles\.plinthNote\} numberOfLines=\{2\}>\{plinthNote\}<\/Text>/, 'the excerpt is no longer clamped');
+  /* ⚠ ASSERT THE CLAMP AND THE SOURCE, NOT THE EXACT CHILD EXPRESSION. The first version of this
+     pinned `>{plinthNote}<` literally and broke the moment W9-A10 wrapped the note in quotation
+     marks — a test that fails on a change it does not care about teaches people to edit tests. */
+  const el = WORKOUT.match(/<Text style=\{styles\.plinthNote\}[^>]*>[\s\S]{0,80}?<\/Text>/);
+  assert.ok(el, 'the note excerpt element is gone');
+  assert.match(el[0], /numberOfLines=\{2\}/, 'the excerpt is no longer clamped to two lines');
+  assert.match(el[0], /plinthNote/, 'the excerpt is no longer reading the note');
   assert.match(WORKOUT, /onPress=\{\(\) => setReadNote\(plinthNote\)\}/, 'Read note does not open the full note');
   assert.match(WORKOUT, /\{readNote \?/, 'the full-note sheet is not mounted');
   // Mounted as a sibling of the note editor — see `overlay-branch.test.mjs` for why that matters.
@@ -185,6 +191,57 @@ test('the animations and the auto-collapse are untouched', () => {
   assert.match(WORKOUT, /popCell\(si, 'weight'/, 'the weight cell lost its value-pop');
   assert.match(WORKOUT, /popCell\(si, 'reps'/, 'the reps cell lost its value-pop');
   assert.match(WORKOUT, /styles\.checkCurrentPressed/, 'the check lost its press answer');
+});
+
+/* ── 6 · W9-A10 — THE PO'S CRITIQUE PASS ─────────────────────────────────────────────────────────── */
+
+test('⚠ the plinth figures sit BELOW the set row\'s numerals, or the hierarchy inverts', () => {
+  /* The whole point of the resize. The row's own numerals are 20pt (`fieldNum`); at 24 the plinth
+     out-shouted the thing the athlete is actually doing. Any future bump has to keep this order. */
+  // Deliberately loose about the two fallback steps — those are a width calculation and will move
+  // again; the TOP size is the hierarchy claim and is what this test is about.
+  const plinth = Number(WORKOUT.match(/const size = s\.length > \d+ \? \d+ : s\.length > \d+ \? \d+ : (\d+);/)?.[1]);
+  const field = Number(WORKOUT.match(/fieldNum: \{ fontFamily: flFont\.display, fontSize: (\d+)/)?.[1]);
+  assert.ok(Number.isFinite(plinth) && Number.isFinite(field), 'could not read both type sizes');
+  assert.ok(plinth <= 21, `the plinth figure is back up to ${plinth}pt — the PO asked for ~10-15% off 24`);
+  assert.ok(plinth - field <= 1, `plinth ${plinth}pt vs row ${field}pt — Level 2 is shouting over Level 4 again`);
+});
+
+test('the three plinth columns are one structure — label, value, sub-line', () => {
+  const plinth = WORKOUT.slice(WORKOUT.indexOf('<View style={styles.plinth}>'), WORKOUT.indexOf('</TourAnchor>', WORKOUT.indexOf('<View style={styles.plinth}>')));
+  assert.equal((plinth.match(/styles\.plinthLabelRow/g) ?? []).length, 3, 'a column lost its label row');
+  assert.equal((plinth.match(/styles\.plinthSub|styles\.plinthRead/g) ?? []).length, 3, 'a column lost its sub-line');
+  // The label must name what the value IS. "Last Time" reads as a third statistic.
+  assert.match(plinth, />Last Note</, 'the note column no longer says it holds a note');
+  assert.ok(!/>Last Time</.test(plinth), '"Last Time" is back — it does not say the value is a note');
+});
+
+test('⚠ the figures are spaced, and the size thresholds count the SPACED string', () => {
+  // `spacedFigure` adds two characters. Measuring the compact form would keep `185 × 5` at a size it
+  // no longer fits, which is the clipping this function exists to prevent.
+  assert.match(WORKOUT, /const spacedFigure = \(s: string\): string => s\.replace\(\/×\/g, ' × '\);/, 'the spacing helper is gone');
+  assert.match(WORKOUT, /plinthFigureStyle\(spacedFigure\(goalText\)\)/, 'the goal is sized off the unspaced string');
+  assert.match(WORKOUT, /\$\{setWeightLabelLb\(liftHist\.best\.weight, units\)\} × \$\{liftHist\.best\.reps\}/, 'Best lost its spaces');
+  // The collapsed strip keeps the COMPACT form — 11pt has no room for the spaces.
+  assert.match(WORKOUT, /Goal <Text style=\{styles\.heroStripGoal\}>\{goalText\}<\/Text>/, 'the collapsed strip is now spacing its goal too');
+});
+
+test('an empty weight field says what it wants, not just that it is empty', () => {
+  assert.match(WORKOUT, /<Text style=\{styles\.emDashUnit\}>\{unitLabel\(units\)\}<\/Text>/, 'the em-dash lost its unit affordance');
+  // Quieter than the faded ask beside it — a unit must not read as a value somebody entered.
+  assert.match(WORKOUT, /emDashUnit: \{ fontSize: 10\.5, fontWeight: '600', color: flColor\.charcoal500 \}/, 'the unit is no longer quieter than the ask');
+});
+
+test('the bottom actions read as a bar the screen ends at', () => {
+  const bar = WORKOUT.match(/\n  bottom: \{[\s\S]*?\n  \},/)?.[0] ?? '';
+  assert.ok(bar, 'the bottom bar style is gone');
+  assert.match(bar, /backgroundColor: flColor\.charcoal800/, 'the bar sank back to the canvas colour');
+  assert.match(bar, /borderTopColor: flColor\.charcoal600/, 'the edge softened back to a seam');
+  assert.match(bar, /boxShadow: '0 -\d+px \d+px/, 'the upward shadow is gone — content no longer passes behind it');
+});
+
+test('the hint says the thing in as few words as it can', () => {
+  assert.match(WORKOUT, /<Text style=\{styles\.tableHint\}>Tap weight or reps to edit\.<\/Text>/, 'the hint grew back');
 });
 
 test('a hold still gets a clock instead of a reps box', () => {
