@@ -923,6 +923,35 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
 > Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
 
+### 0. The hero card, built to Option 5a (2026-09-09, Active Workout hero — **no migration**, ⛔ **NOT PUBLISHED — NEITHER SURFACE, NOT SEEN ON A DEVICE OR IN ALABASTER** — **W9-Amendment-012 LOCKED**)
+
+> PO handed over a full literal spec for the card — *"every number below is literal; do not round,
+> rescale, or 'improve' spacing"* and *"don't change any of the functionality. Just layout."* Built to it.
+> **Plate 112 × 148 stretching → 150 × 212 FIXED**, `contain` → **`cover`**, bronze glow → `border-inset`.
+> **How To leaves the text rail and becomes a full-width bar** (row 2 of the upper block). New 34 × 1
+> bronze hairline. Meta becomes **two lines** (equipment / muscles) instead of one wrapping `·` run.
+> Strip goes **0.85 / 0.85 / 1.3** with per-cell padding; figures **17 → 19 and lose their spaces**;
+> note **11.5pt, `Read note` deleted, `Last Note` → `Note`**.
+> ⚠ **THIS BREAKS A11's BINDING CONSTRAINT AND THE PO SHOULD KNOW.** A11-D1 made the plate stretch
+> precisely so a bigger picture cost the set table nothing. A fixed 212 makes the plate set the row
+> height: **the card goes ~240pt → ~363pt**. Mitigated only by existing behaviour — the hero
+> auto-collapses the moment the first set resolves, so the tall card is what you see BEFORE set 1 and
+> never again. **If the first set must be visible before it is logged, the plate is where the height is.**
+> ⚠ **ONE NUMBER DECLINED, ON A CONTRAST MEASUREMENT.** The spec asks for `--fl-text-tertiary` on the
+> meta lines and strip sub-lines. W9-A7-D5/A8-D4 already measured it: **Alabaster's `gray600` is 3.15:1**,
+> which fails the 4.5:1 that 12.5pt/10pt running text needs. Forge fine, **Paper unreadable**. Held at
+> `gray400`. Reaching tertiary is a **ramp change, not a token change** — PO's call.
+> ⚠ **`cover` CROPS the demonstration** — the spec requires it (fixed plate, any aspect ratio). The crop
+> takes the sides; watch a barbell at lockout. `contain` is the one-word revert.
+> ⚠ **REVERSES A10-D1a** (spaced figures) and **narrows A10-D2** (the note loses its third line, the two
+> figure cells keep theirs). `spacedFigure` **deleted, not left uncalled**. Thresholds re-measured for
+> unspaced strings — `102.5×5`, which has needed a fallback since A9, now fits at full size.
+> ⚠ **A10's hierarchy guard survived all four resizes** (24→21→17→19): the plinth figure still sits
+> under the set row's 20pt, now at −1. ⚠ **The How To COPY variant was kept** while its STYLE variant went
+> — the words are behaviour, the face was layout.
+> tsc **0** · lint clean · `workout-plinth-and-row` **28 pass** (5 A10/A11 guards rewritten to the A12
+> truths, +2 new) · all 14 files reading `workout.tsx` green.
+
 ### 0. The hero becomes a stage, and the plinth steps back again (2026-09-09, Active Workout hero + set table + rest overlay — **no migration**, ✅ **OTA PUBLISHED TO BUILD 8 AND VERIFIED DELIVERABLE** iOS `01a085fb-f3df-71cf-b7a3-4bf1b90b4f0d` on runtime `47944f2e…` — commit `ae31923` on `feat/route-map` (**pushed to origin**), cherry-picked as `52551ec` on `ota/build8-js`. ⛔ **WEB NOT DEPLOYED** (OTA-only by request) · ⛔ **NOT SEEN ON A DEVICE OR IN ALABASTER** — **W9-Amendment-011 LOCKED**)
 
 > ✅ **DELIVERABLE, NOT MERELY PUBLISHED.** `fingerprint:compare --build-id 3f67281b-48b3-4048-adf2-a16b20ad0aa8`

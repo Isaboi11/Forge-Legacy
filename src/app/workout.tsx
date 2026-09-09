@@ -27,7 +27,7 @@ import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
-import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { flColor, flFont, flIcon, flRadius, flShadow, flText } from '@/constants/foundation';
 import { useSheetDrag } from '@/hooks/useSheetDrag';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 /* The ceremony toast — used for EXACTLY ONE message, on the way out. See the offline branch in the
@@ -287,10 +287,14 @@ function goalTextFor(sets: readonly SessionSet[]): string {
  *
  * PO: *"Make Goal / Best / Last Time structurally consistent… that is substantially easier to scan."*
  * The `×` is an operator between two facts (how many sets, how many reps), and set tight against them
- * it reads as one token. `goalTextFor` keeps its compact form because the COLLAPSED strip has 11pt to
- * spend and no room for the spaces; only the plinth, which is the thing being scanned, opens it up.
+ * it reads as one token.
+ *
+ * ⚠ **RETIRED BY W9-A12, WHICH SPELLS THE FORMAT OUT AS `3×8` AND `15×12`.** A10-D1a opened the
+ * figures up at 24pt, where they had the room; the spec closes them again at 19pt in a 0.85fr cell,
+ * where the two spaces are what would push `102.5×5` onto a smaller step for nothing. Kept as a named
+ * constant with no caller ONLY long enough to say that, and deleted below — a helper nothing calls is
+ * how a deleted format gets rebuilt by somebody who finds it and assumes it is wanted.
  */
-const spacedFigure = (s: string): string => s.replace(/×/g, ' × ');
 
 /**
  * The plinth figure, sized so it never clips (W9-A9-D1, resized W9-A10-D1, resized again W9-A11-D2).
@@ -311,23 +315,28 @@ const spacedFigure = (s: string): string => s.replace(/×/g, ' × ');
  * value and vertical space around it. That preserves the premium feeling."* `plinthLabel` stays 9.5,
  * `plinthSub` stays 10.5; the height comes out of `plinthCol`'s padding instead.
  *
- * ⚠ THE COLUMN IS A THIRD OF A CARD AND THE FIGURE IS NOT A FIXED WIDTH. `185 × 5` fits at 21pt;
- * `102.5 × 5` — a metric athlete's own bench — does not, and neither does a ladder goal like
- * `4 × 6-6-4-4`, which `goalTextFor` produces deliberately because "4×6" would describe a different
- * exercise. Clipping either hides the athlete's record or half their prescription, so the type steps
- * down instead. ⚠ THE THRESHOLDS COUNT THE **SPACED** STRING — `spacedFigure` adds two characters, so
- * measuring the compact form would keep `185 × 5` at a size it no longer fits. Not
- * `adjustsFontSizeToFit`: that is iOS-only and does nothing on web, which is the surface the PO tests.
+ * ⚠ **AND THEN W9-A12 PUT IT BACK UP TO 19**, which is not a third reversal — the spec sets the figure
+ * and the CELL together. At 0.85fr with its own padding the cell is narrower than the 1fr A11 sized
+ * against, and `spacedFigure` is gone, so 19 on an unspaced string occupies less width than 21 on a
+ * spaced one did. The hierarchy claim A10 made still holds: 19 sits under the set row's 20pt.
+ *
+ * ⚠ THE CELL IS 0.85fr OF A CARD AND THE FIGURE IS NOT A FIXED WIDTH. A ladder goal like `4×6-6-4-4`,
+ * which `goalTextFor` produces deliberately because "4×6" would describe a different exercise, still
+ * overflows. Clipping it would hide half an athlete's prescription, so the type steps down instead.
+ * ⚠ THE THRESHOLDS NOW COUNT THE **UNSPACED** STRING — `spacedFigure` was retired by A12, and
+ * thresholds left at the spaced counts would step every figure down one size for characters that are
+ * no longer there. Not `adjustsFontSizeToFit`: that is iOS-only and does nothing on web, which is the
+ * surface the PO tests.
  */
 function plinthFigureStyle(s: string): { fontSize: number; lineHeight: number } {
-  /* ⚠ THE THRESHOLDS MOVED WITH THE SIZES, BECAUSE THEY ARE A WIDTH CALCULATION AND THE TYPE GOT
-     NARROWER. The binding case is the THREE-column plinth, where `plinthColWide`'s 1.25 leaves Goal
-     ~84pt of text width after padding. At the old 21pt, 7 characters was the ceiling. At 17 a spaced
-     `3 × 1:00` (8) now measures ~75pt and fits, so it is promoted off the fallback rather than being
-     shrunk for a reason that stopped being true. `102.5 × 5` (9) still does not — 14. `4 × 6-6-4-4`
-     (11), which `goalTextFor` produces deliberately, still needs the third step — 11. */
-  const size = s.length > 10 ? 11 : s.length > 8 ? 14 : 17;
-  return { fontSize: size, lineHeight: size + 2 };
+  /* ⚠ RE-MEASURED FOR **UNSPACED** STRINGS AND A 0.85fr COLUMN (W9-A12). Two things moved at once and
+     they pull opposite ways: the figure went UP to 19, but `spacedFigure` is gone so every string lost
+     two characters. Goal now has ~78pt of text width (0.85/3.0 of a 359pt strip, less 24pt of padding).
+     `3×8` (3) ≈ 31pt, `185×5` (5) ≈ 52 and `102.5×5` (7) ≈ 73 all hold 19 — the metric bench, which has
+     needed a fallback since A9, finally fits at full size. `4×6-6-4-4` (9) ≈ 94 does not: 14. The third
+     step is kept for a longer ladder than `goalTextFor` has produced yet. */
+  const size = s.length > 10 ? 11 : s.length > 8 ? 14 : 19;
+  return { fontSize: size, lineHeight: size };
 }
 
 /** Thousands separators without leaning on Intl (Hermes-safe). */
@@ -2460,13 +2469,13 @@ export default function WorkoutScreen() {
     mutate((s) => patchSet(s, exIdx, setI, (set) => ({ ...set, weight: w })));
   };
   /**
-   * The plinth's `Best`, set tight — `185×5` rather than `185 × 8`.
+   * The plinth's `Best`, set tight — `185×5`, which W9-A12 makes the format for BOTH plinth figures.
    *
-   * A third of a card is not a line of prose, and the spaces `wxr` puts in are what push `102.5 × 5`
-   * past the column. Same rule as the row's `Previous`, which keeps its spaces because it has 76pt
-   * (W9-A11-D4) and the spaces are what stop `45×8` reading as a single number.
+   * A third of a card is not a line of prose, and the spaces `wxr` puts in are what push `102.5×5`
+   * past the column. ⚠ The row's `Previous` KEEPS its spaces: it has 76pt (W9-A11-D4) and there the
+   * spaces are what stop `45×8` reading as a single number. Two formats, two column widths, on purpose.
    */
-  const bestFigure = liftHist?.best ? `${setWeightLabelLb(liftHist.best.weight, units)} × ${liftHist.best.reps}` : '—';
+  const bestFigure = liftHist?.best ? `${setWeightLabelLb(liftHist.best.weight, units)}×${liftHist.best.reps}` : '—';
   /**
    * ══ THE ATTRIBUTE RUN — the OPEN follow-on W9-A8-D3a left behind ══
    *
@@ -2476,9 +2485,16 @@ export default function WorkoutScreen() {
    * render at all.
    */
   const catalogItem = ex.catalogKey ? itemByKey(ex.catalogKey) : itemByName(ex.name);
-  const heroAttrs = catalogItem
-    ? [catalogItem.equip, ...catalogItem.muscles.slice(0, 2)].filter((s): s is string => !!s)
-    : [];
+  /**
+   * ⚠ TWO LINES, SPLIT HERE RATHER THAN AT THE RENDER (W9-A12). This was one `heroAttrs` array joined
+   * by ` · `, so equipment and muscles were the same kind of item and the middot meant "next
+   * attribute" — which is why a long muscle name wrapped the equipment onto a line of its own at
+   * random. The spec asks for equipment on line 1 and the muscles on line 2, so the split is a fact
+   * about the data and belongs with the data. Each line is empty-checked on its own: a lift the
+   * catalogue does not cover draws neither, and one with equipment but no muscles draws only the first.
+   */
+  const heroEquipText = catalogItem?.equip ?? '';
+  const heroMuscleText = (catalogItem?.muscles ?? []).slice(0, 2).filter(Boolean).join(' · ');
   /**
    * The plinth's third column. Shown only for a note from a DIFFERENT session — repeating back one the
    * athlete wrote ninety seconds ago would be the app talking to itself, and `ex.note` already has its
@@ -3625,13 +3641,18 @@ export default function WorkoutScreen() {
               {isCardio || ssFused ? null : heroExpanded ? (
                 <TourAnchor id="workout-hero" style={styles.hero}>
                   <View style={styles.heroUpper}>
-                    {/* media slot — the exercise's looping demonstration, falling back to the engraved
-                        dumbbell for lifts the library doesn't cover (strongman, most mobility). */}
+                  <View style={styles.heroRow1}>
+                    {/* The plate — the exercise's looping demonstration, falling back to the engraved
+                        dumbbell for lifts the library doesn't cover (strongman, most mobility).
+                        ⚠ `cover`, NOT `contain` (W9-A12): the plate holds its 150 × 212 whatever the
+                        clip's aspect ratio is, so the figure fills it and is cropped rather than
+                        letterboxed. See `mediaSlot` for what that trades away. */}
                     <View style={styles.mediaSlot}>
                       <ExerciseLoop
                         exerciseId={ex.catalogKey}
+                        contentFit="cover"
                         fallback={
-                          <Svg width={74} height={74} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.1} strokeLinecap="round" strokeLinejoin="round" opacity={0.14}>
+                          <Svg width={50} height={50} viewBox="0 0 24 24" fill="none" stroke={flColor.charcoal500} strokeWidth={1.25} strokeLinecap="round" strokeLinejoin="round">
                             <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
                           </Svg>
                         }
@@ -3651,26 +3672,32 @@ export default function WorkoutScreen() {
                       <View style={styles.heroTitleRow}>
                         <Text style={styles.heroName}>{ex.name}</Text>
                         <View style={styles.heroActionsTop}>
-                          <Pressable onPress={() => setFavorite((v) => !v)} accessibilityRole="button" accessibilityLabel="Save exercise" hitSlop={6} style={({ pressed }) => [styles.heroIconBtn, pressed && styles.ctlPressed]}>
-                            <Svg width={19} height={19} viewBox="0 0 24 24" fill={favorite ? flColor.bronze300 : 'none'} stroke={favorite ? flColor.bronze300 : flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+                          {/* ⚠ 15pt GLYPHS, 44pt TARGETS — bought with `hitSlop`, never with size, which
+                              is what the spec means by "expand with padding, not size". A 15pt icon
+                              inside a 15pt Pressable is a control an athlete with chalk on cannot hit. */}
+                          <Pressable onPress={() => setFavorite((v) => !v)} accessibilityRole="button" accessibilityLabel="Save exercise" hitSlop={15} style={({ pressed }) => [styles.heroIconBtn, pressed && styles.ctlPressed]}>
+                            <Svg width={15} height={15} viewBox="0 0 24 24" fill={favorite ? flColor.bronze300 : 'none'} stroke={favorite ? flColor.bronze300 : flIcon.inactive} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
                               <Path d="M6 4h12v17l-6-4-6 4z" />
                             </Svg>
                           </Pressable>
-                          <Pressable onPress={() => setHero(true)} accessibilityRole="button" accessibilityLabel="Collapse exercise details" hitSlop={6} style={({ pressed }) => [styles.heroIconBtn, pressed && styles.ctlPressed]}>
-                            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <Pressable onPress={() => setHero(true)} accessibilityRole="button" accessibilityLabel="Collapse exercise details" hitSlop={15} style={({ pressed }) => [styles.heroIconBtn, pressed && styles.ctlPressed]}>
+                            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flIcon.inactive} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
                               <Path d="M18 15l-6-6-6 6" />
                             </Svg>
                           </Pressable>
                         </View>
                       </View>
                       {ex.coachNote ? <Text style={styles.planCueLine}>{ex.coachNote}</Text> : null}
+                      {/* The bronze hairline (W9-A12). 34 × 1, purely a rule between the name and the
+                          classification — it carries no state and is never a border on anything. */}
+                      <View style={styles.heroRule} />
                       {/* ⚠ THIS LINE SAID THE LITERAL STRING `Main lift` FOR EVERY EXERCISE IN THE APP.
                           Under a prescribed warm-up, under a cool-down stretch, under everything. It
                           reads `ex.section` now — which is the field that made the PO's "no way to do a
                           warm up" true from the other end: you could not add one, and if a program gave
                           you one the logger called it a main lift anyway. */}
                       <View style={styles.heroEquipRow}>
-                        <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="square">
+                        <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flIcon.bronze} strokeWidth={1.8} strokeLinecap="square">
                           <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
                         </Svg>
                         <Text style={[styles.heroEquip, ex.section !== 'main' && styles.heroEquipSection]}>
@@ -3690,49 +3717,47 @@ export default function WorkoutScreen() {
                         overflows — a long muscle name takes a second line, which is what the design's
                         `flex-wrap` run does too.
 
-                        Equipment first, then the two muscles the catalogue lists first (it orders them
-                        primary before secondary). Omitted entirely for a lift the catalogue does not
-                        cover: a `·` run with one word in it says less than no line at all.
+                        ⚠ W9-A12 SPLIT IT INTO TWO DELIBERATE LINES, not one run that wraps where it
+                        happens to. Equipment is line 1; the muscles are line 2, joined by a middot.
+                        `heroEquipText` / `heroMuscleText` do the split at the derivation so the run's
+                        `·` separator no longer has to mean two different kinds of break. Either line is
+                        omitted on its own when the catalogue has nothing for it, so a lift it does not
+                        cover still draws no empty rows.
                       */}
-                      {heroAttrs.length ? (
-                        <Text style={styles.heroAttrs}>
-                          {heroAttrs.map((a, i) => (
-                            <Text key={`${i}-${a}`}>
-                              {i > 0 ? <Text style={styles.heroAttrsSep}>{'  ·  '}</Text> : null}
-                              {a}
-                            </Text>
-                          ))}
-                        </Text>
+                      {heroEquipText || heroMuscleText ? (
+                        <View style={styles.heroMetaStack}>
+                          {heroEquipText ? <Text style={styles.heroAttrs}>{heroEquipText}</Text> : null}
+                          {heroMuscleText ? <Text style={styles.heroAttrs}>{heroMuscleText}</Text> : null}
+                        </View>
                       ) : null}
-                      {/*
-                        735 exercises ship published coaching — setup, execution, cues, common mistakes,
-                        breathing, tempo. It is the best beginner asset in the product and it used to open
-                        nothing; then it opened the right screen, styled as a footnote.
-
-                        ⚠ LOUD ON A MOVEMENT THEY HAVE NEVER DONE, QUIET EVERYWHERE ELSE. Somebody meeting a
-                        lift for the first time has exactly one question — *how do I do this* — and the answer
-                        was a 13pt link competing with the weight field. Somebody on their fortieth set of
-                        bench does not need it shouted at them, and shouting it at everybody is how a useful
-                        affordance becomes furniture nobody reads.
-
-                        `liftHist` is null for a lift with no history — the same fact the card already uses to
-                        print `—` where a previous best would go. No new state, no new read.
-                      */}
-                      <Pressable
-                        onPress={() => (ex.catalogKey ? router.push({ pathname: '/exercise/[id]', params: { id: ex.catalogKey } }) : undefined)}
-                        accessibilityRole="button"
-                        accessibilityLabel={liftHist ? `How to ${ex.name}` : `First time on ${ex.name} — see how it's done`}
-                        style={({ pressed }) => [styles.howTo, liftHist ? null : styles.howToFirst, pressed ? styles.howToPressed : null]}
-                      >
-                        <Svg width={liftHist ? 14 : 16} height={liftHist ? 14 : 16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.6}>
-                          <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" />
-                          <Path d="M10 8.5l6 3.5-6 3.5z" fill={flColor.bronze300} stroke="none" />
-                        </Svg>
-                        <Text style={[styles.howToText, liftHist ? null : styles.howToTextFirst]}>
-                          {liftHist ? 'How To' : "First time — here's how"}
-                        </Text>
-                      </Pressable>
                     </View>
+                  </View>
+                  {/*
+                    ══ HOW TO — A FULL-WIDTH BAR UNDER THE ROW, NOT A PILL INSIDE THE TEXT RAIL (W9-A12) ══
+
+                    735 exercises ship published coaching — setup, execution, cues, common mistakes,
+                    breathing, tempo. It is the best beginner asset in the product and it used to open
+                    nothing; then it opened the right screen, styled as a footnote.
+
+                    ⚠ THE STYLE VARIANT IS GONE AND THE COPY VARIANT STAYS, which is the line between
+                    layout and behaviour this pass was told not to cross. `howToFirst` existed to make the
+                    control loud on a movement the athlete has never done — but the bar is now bronze-tinted
+                    and bronze-bordered for EVERYBODY, so a second "louder" treatment has nothing left to
+                    say. The words still change: `liftHist` is null for a lift with no history, and
+                    "First time — here's how" is the answer to the one question somebody meeting a lift has.
+                  */}
+                  <Pressable
+                    onPress={() => (ex.catalogKey ? router.push({ pathname: '/exercise/[id]', params: { id: ex.catalogKey } }) : undefined)}
+                    accessibilityRole="button"
+                    accessibilityLabel={liftHist ? `How to ${ex.name}` : `First time on ${ex.name} — see how it's done`}
+                    style={({ pressed }) => [styles.howTo, pressed ? styles.howToPressed : null]}
+                  >
+                    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.6}>
+                      <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" />
+                      <Path d="M10 8.5l6 3.5-6 3.5z" fill={flColor.bronze300} stroke="none" />
+                    </Svg>
+                    <Text style={styles.howToText}>{liftHist ? 'How To' : "First time — here's how"}</Text>
+                  </Pressable>
                   </View>
                   {/*
                     ══ THE PLINTH — GOAL · BEST · LAST TIME, ON ONE BASELINE (W9-A9-D1) ══
@@ -3764,14 +3789,14 @@ export default function WorkoutScreen() {
                       style={({ pressed }) => [styles.plinthCol, styles.plinthColFirst, pressed && goalEditable ? styles.plinthColPressed : null]}
                     >
                       <View style={styles.plinthLabelRow}>
-                        <Svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2}>
+                        <Svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke={flIcon.bronze} strokeWidth={2}>
                           <Circle cx={12} cy={12} r={8} />
-                          <Circle cx={12} cy={12} r={2.5} fill={flColor.bronze400} stroke="none" />
+                          <Circle cx={12} cy={12} r={2.5} fill={flIcon.bronze} stroke="none" />
                         </Svg>
                         <Text style={[styles.plinthLabel, styles.plinthLabelLive]}>Goal</Text>
                       </View>
                       <View style={styles.plinthValueRow}>
-                        <Text style={[styles.plinthGoalVal, plinthFigureStyle(spacedFigure(goalText))]}>{spacedFigure(goalText)}</Text>
+                        <Text style={[styles.plinthGoalVal, plinthFigureStyle(goalText)]}>{goalText}</Text>
                         {goalEditable ? (
                           <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
                             <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
@@ -3794,9 +3819,9 @@ export default function WorkoutScreen() {
                       record is the heaviest load at 1–`PR_MAX_REPS` reps and a working set is not. The date
                       says *another day* without spending a second line.
                     */}
-                    <View style={[styles.plinthCol, styles.plinthColRuled]}>
+                    <View style={[styles.plinthCol, styles.plinthColBest, styles.plinthColRuled]}>
                       <View style={styles.plinthLabelRow}>
-                        <Svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                        <Svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke={flIcon.inactive} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                           <Path d="M6 4h12v3a6 6 0 0 1-12 0zM6 7H4a2 2 0 0 1 0-4h2M18 7h2a2 2 0 0 0 0-4h-2M9 20h6M12 13v7" />
                         </Svg>
                         <Text style={styles.plinthLabel}>Best</Text>
@@ -3838,13 +3863,23 @@ export default function WorkoutScreen() {
                               Last Time"; at 9.5pt with 1.3px tracking that measures ~142pt against the
                               ~100pt this column has for label text, so it is the same sentence at a width
                               that fits. ⚠ Do not re-lengthen it without re-measuring the column. */}
-                          <Text style={styles.plinthLabel}>Last Note</Text>
+                          {/* ⚠ `NOTE`, SHORTENED FROM `LAST NOTE` (W9-A12). A10-D2b chose `Last Note` over
+                              the PO's "Note From Last Time" on a width measurement, and the same
+                              measurement now allows the shorter word: this cell is 1.3fr rather than
+                              1.25 flex, and dropping the sub-line gave the label room it no longer has to
+                              share. The column is still the only place a note appears, so `Note` cannot
+                              be confused with `ex.note`'s own row under the table. */}
+                          <Text style={styles.plinthLabel}>Note</Text>
                         </View>
                         {/* The quotation marks do the other half of the job: they say "a person wrote
                             this" without spending a word, which is what stops a sentence sitting in a
-                            row of figures from reading as data. */}
+                            row of figures from reading as data.
+                            ⚠ `Read note` IS GONE AND THE TAP IS NOT (W9-A12). The excerpt is still an
+                            excerpt and the whole note is still one tap away — the affordance moved from a
+                            printed link to the whole cell, which was already the tap target. Deleting the
+                            Pressable instead of the label would be the version of this change that loses
+                            the note. */}
                         <Text style={styles.plinthNote} numberOfLines={2}>{`“${plinthNote}”`}</Text>
-                        <Text style={styles.plinthRead}>Read note</Text>
                       </Pressable>
                     ) : null}
                   </View>
@@ -5839,7 +5874,10 @@ const styles = StyleSheet.create({
   // hero card
   /* ⚠ `overflow: 'hidden'` IS STRUCTURAL, NOT TIDINESS. The plinth is a full-bleed band with its own
      background, and without the clip its square bottom corners stand proud of the card's 16pt radius. */
-  hero: { backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.xl, overflow: 'hidden', boxShadow: flShadow.card },
+  /* `charcoal800` is `--fl-surface-card` — the CARD role in both palettes, as W9-A10-D5 established for
+     the bottom bar. `overflow: hidden` is load-bearing: the plinth's square corners stand proud of the
+     xl radius without it (guarded). */
+  hero: { backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.xl, overflow: 'hidden', boxShadow: flShadow.card },
   /* ⚠ `alignItems: 'stretch'` + `marginTop: 'auto'` ON `howTo` IS WHAT ALIGNS THE PILL WITH THE ART'S
      FOOT. The art is a fixed 104×145; the meta column stretches to whatever the taller of the two is,
      and the pill takes the slack. A one-line exercise name would otherwise leave it floating mid-card. */
@@ -5849,73 +5887,95 @@ const styles = StyleSheet.create({
      26/28: it is Level 1 of the hierarchy and shrinking it would flatten the exercise into a caption.
      Targeted compression, not a global tightening — the set rows were rated "very good" and keep
      every pixel they have. */
-  heroUpper: { flexDirection: 'row', gap: 12, padding: 12, alignItems: 'stretch' },
+  /* ⚠ A COLUMN NOW, NOT A ROW (W9-A12). It holds two rows: the plate + text rail, then the full-width
+     How To bar. It was itself the row, which is why How To had to live inside the text rail. */
+  heroUpper: { flexDirection: 'column', gap: 12, padding: 14 },
+  heroRow1: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
   /**
-   * ══ A STAGE, NOT A THUMBNAIL (W9-A11-D1) ══
+   * ══ THE PLATE — 150 × 212, FIXED (W9-A12) ══
    *
-   * PO: *"the exercise deserves a more substantial visual stage… I'd increase the image/animation area
-   * by roughly 20–25%."* 104 × 130 → **112 × 148 minimum**, which is +22.6% of AREA — the reading the
-   * ask is actually about — for +8pt of width and no fixed height at all.
+   * A11 made this a stretching 112 × 148 minimum specifically so a bigger picture would cost the set
+   * table no height. **A12 overrides that: the plate is now a fixed 150 × 212**, a literal number in
+   * the spec, and it is the tallest thing in the row rather than a passenger on the text column.
    *
-   * ⚠ THIS PARTLY UNDOES W9-A10-D3, WHICH CUT THE ART 145 → 130 ON THE PO'S OWN COMPRESSION NOTE. Both
-   * calls are the PO's and the later one wins; it is recorded here so the next person to read A10's
-   * table does not "restore" it.
+   * ⚠ **THE STRETCH IS GONE, AND SO IS THE PROPERTY THAT MADE A11 FREE.** At 212 the plate — not the
+   * rail — sets the row height, so the card is ~120pt taller than it was. That is the trade the spec
+   * asks for and it is recorded, not hidden: see W9-A12 §4. `heroRow1` is `flex-start`, so the rail
+   * sits at the top of the plate rather than centring beside it.
    *
-   * ⚠ `minHeight` + STRETCH, NOT A TALLER FIXED BOX — and that is the whole reason this costs the set
-   * table nothing. `alignSelf: 'flex-start'` pinned a 130pt box beside a meta column that measures
-   * ~141–165pt, so the slot sat in a well of its own dead space. Inheriting `heroUpper`'s `stretch`
-   * makes the art take the height the text column was already spending, and the card only grows in the
-   * one case the meta stack is SHORTER than 148 (a one-line name, no cue). See W9-A11 §4 for why
-   * "don't push the first set below the fold" was the binding constraint on this pass.
+   * ⚠ **`cover` CROPS; `contain` LETTERBOXED.** The spec is explicit — the plate keeps its dimensions
+   * "regardless of the animation's aspect ratio", which is only achievable by cropping. At 0.708 the
+   * plate is more portrait than the clips, so the crop takes the SIDES of the figure. Worth watching on
+   * a wide movement (a barbell at lockout); if a demonstration ever loses its bar, `contain` is the
+   * one-word revert and the plate keeps its size either way.
    *
-   * ⚠ WIDTH HAD TO MOVE TOO. `ExerciseLoop` is `contentFit: 'contain'`, so a slot that grows in one
-   * axis only makes the figure bigger *until the other axis becomes the limiter* — a taller box around
-   * a squarish clip is a change that renders and does nothing. 112 × 148 is more portrait than the
-   * 104 × 130 it replaces (0.757 vs 0.800), so both axes buy real figure.
-   *
-   * The design (`Forge Active Workout.dc.html`) asks for 132 wide × 172 min, stretching — this is the
-   * same MECHANISM at the size the PO asked for, and the remaining 20pt of width is a live delta.
+   * ⚠ NO GLOW. The bronze inner/outer glow this carried is replaced by `flShadow.borderInset` per the
+   * spec's "the only shadows are card and border-inset" — do not put it back.
    */
-  mediaSlot: { width: 112, minHeight: 148, borderRadius: flRadius.md, overflow: 'hidden', backgroundColor: flColor.charcoal600, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, boxShadow: 'inset 0 0 32px rgba(181, 138, 97, 0.10), 0 0 20px rgba(181, 138, 97, 0.14)', alignItems: 'center', justifyContent: 'center' },
-  heroMeta: { flex: 1, minWidth: 0, gap: 7 },
+  mediaSlot: { width: 150, height: 212, flexGrow: 0, flexShrink: 0, borderRadius: flRadius.md, overflow: 'hidden', backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, boxShadow: flShadow.borderInset, alignItems: 'center', justifyContent: 'center' },
+  heroMeta: { flex: 1, minWidth: 0, gap: 9 },
+  /* 34 × 1 of bronze between the name and the classification. A rule, not a border — it belongs to
+     neither the thing above it nor the thing below it, which is why it is its own View. */
+  heroRule: { width: 34, height: 1, backgroundColor: flColor.bronzeBorder },
+  /* The two meta lines sit closer to each other (3) than the rail's own stack does (9), so they read
+     as one block of metadata rather than two more rail items. */
+  heroMetaStack: { gap: 3 },
   heroTitleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
   /* Two lines on most names at this width, and that is expected — the display serif at 26 is the card's
      whole hierarchy, and shrinking it to force one line would flatten the exercise into a caption. */
-  heroName: { flex: 1, fontFamily: flFont.display, fontSize: 26, fontWeight: '600', letterSpacing: -0.4, lineHeight: 28, color: flColor.cream100 },
-  heroActionsTop: { flexDirection: 'row', alignItems: 'center' },
-  heroIconBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  /* 25/27 — `lineHeight` is the spec's 1.08 resolved, because RN takes points and not a ratio. */
+  heroName: { flex: 1, minWidth: 0, fontFamily: flFont.display, fontSize: 25, fontWeight: '600', letterSpacing: -0.4, lineHeight: 27, color: flText.primary },
+  /* ⚠ `marginTop: 4` LINES THE GLYPHS TO THE NAME'S FIRST LINE, not to the block. The row is
+     `alignItems: 'flex-start'`, so without it a 15pt icon sits at the cap line of a 27pt line box and
+     reads as floating above the title. */
+  heroActionsTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 4 },
+  /* The glyph is 15; the TARGET is the 15 plus `hitSlop={15}` at the call sites = 45pt. Do not grow
+     this box to buy the target — that would scale the icon with it. */
+  heroIconBtn: { alignItems: 'center', justifyContent: 'center' },
   heroEquipRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  heroEquip: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray400 },
+  heroEquip: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flText.secondary },
   /* Bronze ONLY when the section is not the default. "Main lift" is the answer under four exercises out
      of five and colouring it would make the accent mean nothing; "Warm-up" is the exception, and the
      exception is the thing worth seeing at a glance. Colour, so it needs both themes — `bronze400` is a
      role token and resolves in each. */
   heroEquipSection: { color: flColor.bronze400 },
-  /* ⚠ `gray400`, NOT `gray600`, for the reason W9-A7-D5 gives: Alabaster's `gray600` measures 3.15:1,
-     which clears the non-text floor and FAILS the 4.5 this needs as running text. The `·` separators are
-     their own spans a step back from the words, so the run reads as three facts rather than one string. */
+  /**
+   * ⚠ **THE ONE NUMBER IN THE W9-A12 SPEC NOT TAKEN, AND IT IS A COLOUR NOT A NUMBER.** The spec asks
+   * for `--fl-text-tertiary` here. That is `gray600`, and W9-A7-D5 already measured it for exactly this
+   * text: **Alabaster's `gray600` is 3.15:1**, which clears the 3.0 floor for non-text UI and FAILS the
+   * 4.5:1 that 12.5pt running text needs. Forge would have been fine; Paper would have shipped two
+   * unreadable lines under every exercise name.
+   *
+   * `gray400` (`--fl-text-secondary`) is the nearest token that passes in BOTH themes, so the lines
+   * stay one step back from the name without going under the bar in the light theme. **Flagged to the
+   * PO rather than silently substituted — if tertiary is wanted here, the ramp has to move first (see
+   * `foundation.paper.ts`, where gray600 and gray400 are 0.08 apart and cannot both shift alone).**
+   */
   heroAttrs: { fontSize: 12.5, lineHeight: 16, color: flColor.gray400 },
-  heroAttrsSep: { color: flColor.charcoal500 },
-  /* A pill, not a link. It is the answer to the one question a beginner has on a movement they have
-     never done, and a 13pt underline lost that argument to the weight field every time. */
+  /**
+   * ══ A FULL-WIDTH BAR, NOT A PILL IN THE RAIL (W9-A12) ══
+   *
+   * It was a left-aligned pill pushed to the bottom of the text rail with `marginTop: 'auto'`, which
+   * is why it needed a second "first-time" face to be noticed at all. As row 2 of the upper block it
+   * spans the card, so the emphasis is structural and the variant could go with it.
+   *
+   * ⚠ `marginTop: 'auto'` AND `alignSelf` ARE GONE ON PURPOSE. Both were doing work only inside the
+   * rail; left on a full-width row they would collapse the bar to its content and re-open the exact
+   * bug this replaced. `radius.md`, not `pill` — a bar this wide with a 999 radius reads as a slider.
+   */
   howTo: {
-    marginTop: 'auto',
-    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 11,
-    borderRadius: flRadius.pill,
+    justifyContent: 'center',
+    gap: 7,
+    padding: 10,
+    borderRadius: flRadius.md,
     borderWidth: 1,
     borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.bronzeTint,
   },
-  howToText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze300 },
-  /* The first-time face: louder on the one occasion it is the whole question, quiet on the fortieth set
-     of bench. Same pill, filled and firmly bordered. */
-  howToFirst: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  howToText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronze300 },
   howToPressed: { opacity: 0.7 },
-  howToTextFirst: { fontSize: 13.5 },
 
   /* ══ THE PLINTH — GOAL · BEST · LAST TIME (W9-A9-D1) ══
      A recessed band across the card's foot with a 1px lid and vertical rules between the columns, so
@@ -5923,16 +5983,18 @@ const styles = StyleSheet.create({
      other two carry a figure each; the note column simply is not rendered when there is no note, and the
      remaining two then split the card. */
   plinth: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
-  /* ⚠ TIGHTENED (W9-A10-D3): the critique rated this band *"too much vertical allocation"*. 12/13 →
-     10/10 and the stack gap 5 → 4, which with the smaller figure takes ~9pt off the card without
-     touching the set rows below it. */
-  /* 10 → 8 top and bottom (−20%, W9-A11-D3): *"Shrink the value and vertical space around it."* The
-     HORIZONTAL padding is untouched — it is what keeps the figures off the column rules, and it is the
-     ~84pt of text width `plinthFigureStyle`'s thresholds are measured against. */
-  plinthCol: { flex: 1, minWidth: 0, gap: 4, paddingTop: 8, paddingBottom: 8, paddingHorizontal: 10 },
-  plinthColFirst: { paddingLeft: 14 },
+  /**
+   * ⚠ **THE THREE CELLS ARE 0.85 / 0.85 / 1.3 AND EACH HAS ITS OWN PADDING (W9-A12).** A10 and A11 gave
+   * every column the same 10pt sides and let flex do the rest; the spec pads them individually so the
+   * outer two hug the card edge (14) while the inner seams stay at 10–12. `flex` here IS the spec's
+   * `grid-template-columns` — RN has no grid, and proportional flex on fixed-width children is the
+   * same division. With no note the strip is two cells; they are 0.85 and 0.85, which is still 1:1.
+   */
+  plinthCol: { minWidth: 0, gap: 3, paddingTop: 9, paddingBottom: 10, paddingHorizontal: 10 },
+  plinthColFirst: { flex: 0.85, paddingLeft: 14 },
+  plinthColBest: { flex: 0.85 },
   plinthColRuled: { borderLeftWidth: 1, borderLeftColor: flColor.charcoal600 },
-  plinthColWide: { flex: 1.25, paddingRight: 14 },
+  plinthColWide: { flex: 1.3, paddingLeft: 12, paddingRight: 14 },
   plinthColPressed: { backgroundColor: flColor.bronzeTint },
   plinthLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   plinthLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.gray600 },
@@ -5940,16 +6002,19 @@ const styles = StyleSheet.create({
      an accent on all three would say nothing about any of them. */
   plinthLabelLive: { color: flColor.bronze400 },
   plinthValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  /* Sizes come from `plinthFigureStyle` — see there for why they are not fixed. */
-  plinthGoalVal: { fontFamily: flFont.display, fontWeight: '700', letterSpacing: -0.3, color: flColor.bronze300 },
+  /* Sizes come from `plinthFigureStyle` — see there for why they are not fixed. `letterSpacing` is the
+     spec's -0.2 (was -0.3); the display face needs less negative tracking at 19 than it did at 24. */
+  plinthGoalVal: { fontFamily: flFont.display, fontWeight: '700', letterSpacing: -0.2, color: flColor.bronze300 },
   /* Cream, not bronze: it is a record, not today's target, and only one figure on this band is an
      instruction. */
-  plinthBestVal: { fontFamily: flFont.display, fontWeight: '600', letterSpacing: -0.3, color: flColor.cream100 },
+  plinthBestVal: { fontFamily: flFont.display, fontWeight: '600', letterSpacing: -0.2, color: flText.primary },
   /* ⚠ `gray400`, NOT `gray600`, and for the reason W9-A8-D4 gives: Alabaster's `gray600` measures
-     3.15:1, which clears the non-text floor and FAILS the 4.5 these lines need as text. */
-  plinthSub: { fontSize: 10.5, color: flColor.gray400 },
-  plinthNote: { fontSize: 13, fontStyle: 'italic', lineHeight: 17, color: flColor.cream100 },
-  plinthRead: { fontSize: 10.5, fontWeight: '600', color: flColor.bronze300 },
+     3.15:1, which clears the non-text floor and FAILS the 4.5 these lines need as text. The W9-A12 spec
+     asks for `--fl-text-tertiary` here; same flag as `heroAttrs` — see there. */
+  plinthSub: { fontSize: 10, lineHeight: 14, color: flColor.gray400 },
+  /* 13 → 11.5 with a tighter 1.2 leading (W9-A12). Still clamped to two lines at the render, and the
+     whole cell is still the tap that opens the rest — `plinthRead` was deleted, not the Pressable. */
+  plinthNote: { fontSize: 11.5, fontStyle: 'italic', lineHeight: 14, color: flText.primary },
   readNoteText: { fontSize: 15, lineHeight: 23, fontStyle: 'italic', color: flColor.cream100, marginTop: 6 },
   memoryBadge: { position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: flRadius.round, backgroundColor: flColor.bronze400 },
 
