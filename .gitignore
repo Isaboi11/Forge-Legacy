@@ -71,3 +71,7 @@ design_reference/**/assets/
 design_reference/**/screenshots/
 design_reference/**/.thumbnail
 design_reference/**/.image-slots.state.json
+
+# Python
+__pycache__/
+scripts/animation-processing/cache_control_done.json

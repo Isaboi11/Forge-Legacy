@@ -36,21 +36,28 @@ export function ExerciseLoop({
   const { profile } = useProfile();
   const url = exerciseDemoUrl(exerciseId, sex ?? (profile?.sex as AthleteSex | undefined));
   /*
-   * ⚠ THE FAILURE IS SCOPED TO A URL, NOT TO THIS MOUNT — and that is the whole fix.
+   * ⚠ THE FAILURE IS SCOPED TO A URL, NOT TO THIS MOUNT — and ONE failure is not a verdict.
    *
    * This was a bare `failed` boolean. Swap an exercise the library doesn't cover for one it does and
    * the slot stayed empty, because the flag set by the FIRST lift's 404 was still true for the second.
    * Storing WHICH url failed makes the reset automatic: a new `exerciseId` derives a new url, the
    * comparison stops matching, and the clip is tried again. No effect, no ref, nothing to remember to
    * clear — which matters because the sync-setState-in-an-effect version of this is a lint error here.
+   *
+   * And the latch now takes TWO failures, not one. These are ~1MB fetches; on gym reception the first
+   * attempt timing out is ordinary weather, and latching on it kept the engraved dumbbell up for the
+   * rest of the workout over a clip that exists (PO, 2026-09-09: "it just doesn't load at all").
+   * The first error bumps `tries`, which changes the element key below — a NEW element is a fresh
+   * fetch. The second error latches, so a genuinely missing object still costs exactly two requests.
    */
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const [failure, setFailure] = useState<{ url: string; tries: number } | null>(null);
+  const tries = failure?.url === url ? failure.tries : 0;
 
   /* The clip is transparent, so the engraved fallback must be REMOVED once it's up, not merely
      covered — anything left mounted shows THROUGH the figure. Gate on "have a URL and it hasn't
-     errored", never on onLoad: expo-image's load event is unreliable for animated WebP on web, and
-     waiting for it stranded the dumbbell behind the animation. A 404 flips `failedUrl` and it returns. */
-  const hasClip = !!url && failedUrl !== url;
+     errored out", never on onLoad: expo-image's load event is unreliable for animated WebP on web,
+     and waiting for it stranded the dumbbell behind the animation. */
+  const hasClip = !!url && tries < 2;
 
   return (
     <View style={[StyleSheet.absoluteFill, styles.center, { borderRadius: radius }]}>
@@ -66,13 +73,13 @@ export function ExerciseLoop({
            * figure survived the swap and then vanished the moment the athlete scrolled. A key makes the
            * new lift a NEW element, so there is no previous frame for it to inherit.
            */
-          key={url}
+          key={`${url}#${tries}`}
           source={{ uri: url }}
           style={StyleSheet.absoluteFill}
           contentFit={contentFit}
           transition={220}
           cachePolicy="memory-disk"
-          onError={() => setFailedUrl(url ?? null)}
+          onError={() => setFailure((f) => (url ? (f?.url === url ? { url, tries: f.tries + 1 } : { url, tries: 1 }) : f))}
           accessibilityLabel="Movement demonstration"
         />
       ) : null}

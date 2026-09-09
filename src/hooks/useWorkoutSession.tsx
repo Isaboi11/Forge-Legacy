@@ -3,6 +3,9 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { setTrainingStatus } from '@/data/presence-live'
 import { clearLiveSession } from '@/data/live-session-live'
 import { invalidateEarnedMoments } from '@/hooks/useEarnedMoments'
+import { prefetchDemoLoops } from '@/lib/demo-loop-prefetch'
+import { useProfile } from '@/lib/profile'
+import type { AthleteSex } from '@/domain/exercise-detail/media'
 
 /** One planned lift carried into the session so the Finish log sheet knows what to record. */
 export type SessionLift = {
@@ -55,6 +58,9 @@ function setLiveWorkoutPresence(active: boolean, workoutName?: string): void {
 export function WorkoutSessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<WorkoutSession | null>(null)
   const staleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Safe here: this provider mounts INSIDE ProfileProvider (_layout.tsx). Only `sex` is read, to
+  // pick which render of each demo loop to warm — the same variant rule ExerciseLoop applies.
+  const { profile } = useProfile()
 
   const clearStaleTimer = useCallback(() => {
     if (staleTimer.current) {
@@ -82,10 +88,15 @@ export function WorkoutSessionProvider({ children }: { children: React.ReactNode
       setSession({ workoutName, startedAt: new Date().toISOString(), lifts })
       setLiveWorkoutPresence(true, workoutName)
 
+      // Warm every planned lift's demo loop while the athlete is still racking up — the clips are
+      // ~1MB each and the hero slot otherwise cold-fetches each one on its first view mid-workout.
+      // Fire-and-forget, same contract as presence: never blocks starting a workout.
+      prefetchDemoLoops(lifts.map((l) => l.catalogKey), (profile?.sex as AthleteSex | undefined) ?? null)
+
       clearStaleTimer()
       staleTimer.current = setTimeout(endSession, STALE_SESSION_TIMEOUT_MS)
     },
-    [clearStaleTimer, endSession],
+    [clearStaleTimer, endSession, profile?.sex],
   )
 
   useEffect(() => clearStaleTimer, [clearStaleTimer])
