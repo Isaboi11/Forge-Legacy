@@ -289,13 +289,23 @@ function goalTextFor(sets: readonly SessionSet[]): string {
 const spacedFigure = (s: string): string => s.replace(/×/g, ' × ');
 
 /**
- * The plinth figure, sized so it never clips (W9-A9-D1, resized W9-A10-D1).
+ * The plinth figure, sized so it never clips (W9-A9-D1, resized W9-A10-D1, resized again W9-A11-D2).
  *
  * PO: *"Reduce Goal / Best numbers ~10–15%. Not dramatically. They currently feel slightly too much
- * like headline statistics."* 24 → **21** (−12.5%), and the two fallback steps come down with it. The
+ * like headline statistics."* 24 → **21** (−12.5%), and the two fallback steps came down with it. The
  * point is the HIERARCHY: the set row's own numerals are 20pt, so at 24 the plinth out-shouted the
  * thing the athlete is actually doing. At 21 it reads as context to a row that is nearly its equal —
  * which is the *"Level 4 slightly more dominant than Levels 2 and 3"* the critique asks for.
+ *
+ * ⚠ **AND THEN THE PO WENT FURTHER: 21 → 17 (−19%), W9-A11-D2.** *"I'd go further than my previous
+ * 10–15% suggestion… I'd reduce the numeric value approximately 15–20%."* 21 was still a peer of the
+ * 20pt row; 17 is subordinate to it, which is the hierarchy the A11 brief states outright — *"Goal:
+ * medium · Best: medium · Sets: very prominent."* The percentage is measured off **21**, the size on
+ * the phone when the critique was written, not off the original 24.
+ *
+ * ⚠ THE LABEL AND SUB-LINE DO NOT MOVE, BY INSTRUCTION: *"Don't shrink the entire cell. Shrink the
+ * value and vertical space around it. That preserves the premium feeling."* `plinthLabel` stays 9.5,
+ * `plinthSub` stays 10.5; the height comes out of `plinthCol`'s padding instead.
  *
  * ⚠ THE COLUMN IS A THIRD OF A CARD AND THE FIGURE IS NOT A FIXED WIDTH. `185 × 5` fits at 21pt;
  * `102.5 × 5` — a metric athlete's own bench — does not, and neither does a ladder goal like
@@ -306,9 +316,13 @@ const spacedFigure = (s: string): string => s.replace(/×/g, ' × ');
  * `adjustsFontSizeToFit`: that is iOS-only and does nothing on web, which is the surface the PO tests.
  */
 function plinthFigureStyle(s: string): { fontSize: number; lineHeight: number } {
-  /* `3 × 8` (5) and `185 × 5` (7) hold 21. `3 × 1:00` (8) — a timed goal — and `102.5 × 5` (9) do not:
-     both measure past the ~85pt a 1fr column has after padding. `4 × 6-6-4-4` (11) needs the third step. */
-  const size = s.length > 10 ? 13 : s.length > 7 ? 16 : 21;
+  /* ⚠ THE THRESHOLDS MOVED WITH THE SIZES, BECAUSE THEY ARE A WIDTH CALCULATION AND THE TYPE GOT
+     NARROWER. The binding case is the THREE-column plinth, where `plinthColWide`'s 1.25 leaves Goal
+     ~84pt of text width after padding. At the old 21pt, 7 characters was the ceiling. At 17 a spaced
+     `3 × 1:00` (8) now measures ~75pt and fits, so it is promoted off the fallback rather than being
+     shrunk for a reason that stopped being true. `102.5 × 5` (9) still does not — 14. `4 × 6-6-4-4`
+     (11), which `goalTextFor` produces deliberately, still needs the third step — 11. */
+  const size = s.length > 10 ? 11 : s.length > 8 ? 14 : 17;
   return { fontSize: size, lineHeight: size + 2 };
 }
 
@@ -2363,8 +2377,8 @@ export default function WorkoutScreen() {
    * The plinth's `Best`, set tight — `185×5` rather than `185 × 8`.
    *
    * A third of a card is not a line of prose, and the spaces `wxr` puts in are what push `102.5 × 5`
-   * past the column. Same rule as the row's `Prev`, which keeps its spaces because it has 66pt and the
-   * spaces are what stop `45×8` reading as a single number.
+   * past the column. Same rule as the row's `Previous`, which keeps its spaces because it has 76pt
+   * (W9-A11-D4) and the spaces are what stop `45×8` reading as a single number.
    */
   const bestFigure = liftHist?.best ? `${setWeightLabelLb(liftHist.best.weight, units)} × ${liftHist.best.reps}` : '—';
   /**
@@ -3784,7 +3798,11 @@ export default function WorkoutScreen() {
                         drawn as "Prev —": a placeholder in a one-line strip is noise, and the expanded card
                         above already says the honest em-dash. */}
                     <Text style={styles.heroStripMeta}>
-                      {prevText ? <>Prev <Text style={styles.heroStripPrev}>{prevText}</Text>{'   '}</> : null}
+                      {/* Renamed with the column (W9-A11-D4): the same fact must not be `Previous` in
+                          the table and `Prev` in the strip that stands in for the table's card. There
+                          is room — at 11pt the longest run, `Previous 102.5 × 12   Goal 4 × 6-6-4-4`,
+                          measures ~209pt against the ~270 this line has beside the thumb. */}
+                      {prevText ? <>Previous <Text style={styles.heroStripPrev}>{prevText}</Text>{'   '}</> : null}
                       Goal <Text style={styles.heroStripGoal}>{goalText}</Text>
                     </Text>
                     {/* ⚠ THE CUE HAS TO BE HERE, NOT ONLY IN THE EXPANDED FACE. The hero auto-collapses
@@ -3857,7 +3875,12 @@ export default function WorkoutScreen() {
                 */}
                 <View style={styles.headRow}>
                   <Text style={[styles.h, styles.cSet]}>Set</Text>
-                  <Text style={[styles.h, styles.cPrev]}>Prev</Text>
+                  {/* ⚠ `Previous`, NOT `Prev` (W9-A11-D4) — and the column was widened to pay for it.
+                      An abbreviation in a five-column header is only free while it fits; at 9pt with
+                      1.1 tracking `PREVIOUS` measures ~56pt against `PREV`'s ~28, which the old 66pt
+                      column could only have taken by wrapping the heading onto a second line and
+                      dropping the header row out of line with the ones under it. See `cPrev`. */}
+                  <Text style={[styles.h, styles.cPrev]}>Previous</Text>
                   <Text style={[styles.h, styles.cWeight, styles.hCentered]}>Weight · {unitLabel(units)}</Text>
                   <Text style={[styles.h, styles.cReps, styles.hCentered]}>Reps</Text>
                   <View style={styles.cCheck} />
@@ -5666,7 +5689,26 @@ const styles = StyleSheet.create({
   ringSvg: { position: 'absolute' },
 
   // rest prominent overlay
-  restOverlayWrap: { position: 'absolute', top: 118, left: 0, right: 0, alignItems: 'center', zIndex: 40 },
+  /**
+   * ══ DOWN 118 → 200, AND DELIBERATELY NOT CENTRED ══
+   *
+   * PO asked whether the panel should be vertically centred. No — for three reasons that all outlast
+   * the 3 seconds it is usually up. It drops in under the band chip it DEMOTES INTO, and from mid-screen
+   * that collapse reads as the count vanishing rather than moving. It is ~265pt tall, so centred it
+   * covers set rows 3–8 instead of the first two — and the table is what a rest is spent reading. And
+   * `restPinned` ("Stay") makes it permanent for the session, which a card parked across the middle of
+   * the set table cannot survive.
+   *
+   * What the question was really pointing at is real, though: the tap that STARTS the rest is `Log Set`
+   * at the foot of the screen, and the panel's own controls (−15s / +15s / Stay / Skip) were at the top,
+   * out of one-handed reach. 200 buys ~82pt of that back and clears the collapsed hero strip — the hero
+   * auto-collapses on the first resolved set, so the exercise name now stays readable BEHIND the panel
+   * instead of under it, which is the W9-A11 hierarchy (name is Level 1) kept intact while resting.
+   *
+   * ⚠ THE DESIGN SAYS 130 (`Forge Active Workout.dc.html`, `top:130px`). This is a knowing delta, not
+   * drift. Do not "correct" it back without the reach problem above being solved some other way.
+   */
+  restOverlayWrap: { position: 'absolute', top: 200, left: 0, right: 0, alignItems: 'center', zIndex: 40 },
   restOverlay: { width: 288, paddingTop: 22, paddingHorizontal: 22, paddingBottom: 18, borderRadius: flRadius.xl, backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorder, alignItems: 'center', gap: 14, boxShadow: flShadow.elevated },
   restOverlayLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronze400 },
   restOverlayTime: { fontFamily: flFont.display, fontSize: 30, fontWeight: '600', letterSpacing: 0.5, color: flColor.cream100, fontVariant: ['tabular-nums'] },
@@ -5722,7 +5764,33 @@ const styles = StyleSheet.create({
      Targeted compression, not a global tightening — the set rows were rated "very good" and keep
      every pixel they have. */
   heroUpper: { flexDirection: 'row', gap: 12, padding: 12, alignItems: 'stretch' },
-  mediaSlot: { width: 104, height: 130, alignSelf: 'flex-start', borderRadius: flRadius.md, overflow: 'hidden', backgroundColor: flColor.charcoal600, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, boxShadow: 'inset 0 0 32px rgba(181, 138, 97, 0.10), 0 0 20px rgba(181, 138, 97, 0.14)', alignItems: 'center', justifyContent: 'center' },
+  /**
+   * ══ A STAGE, NOT A THUMBNAIL (W9-A11-D1) ══
+   *
+   * PO: *"the exercise deserves a more substantial visual stage… I'd increase the image/animation area
+   * by roughly 20–25%."* 104 × 130 → **112 × 148 minimum**, which is +22.6% of AREA — the reading the
+   * ask is actually about — for +8pt of width and no fixed height at all.
+   *
+   * ⚠ THIS PARTLY UNDOES W9-A10-D3, WHICH CUT THE ART 145 → 130 ON THE PO'S OWN COMPRESSION NOTE. Both
+   * calls are the PO's and the later one wins; it is recorded here so the next person to read A10's
+   * table does not "restore" it.
+   *
+   * ⚠ `minHeight` + STRETCH, NOT A TALLER FIXED BOX — and that is the whole reason this costs the set
+   * table nothing. `alignSelf: 'flex-start'` pinned a 130pt box beside a meta column that measures
+   * ~141–165pt, so the slot sat in a well of its own dead space. Inheriting `heroUpper`'s `stretch`
+   * makes the art take the height the text column was already spending, and the card only grows in the
+   * one case the meta stack is SHORTER than 148 (a one-line name, no cue). See W9-A11 §4 for why
+   * "don't push the first set below the fold" was the binding constraint on this pass.
+   *
+   * ⚠ WIDTH HAD TO MOVE TOO. `ExerciseLoop` is `contentFit: 'contain'`, so a slot that grows in one
+   * axis only makes the figure bigger *until the other axis becomes the limiter* — a taller box around
+   * a squarish clip is a change that renders and does nothing. 112 × 148 is more portrait than the
+   * 104 × 130 it replaces (0.757 vs 0.800), so both axes buy real figure.
+   *
+   * The design (`Forge Active Workout.dc.html`) asks for 132 wide × 172 min, stretching — this is the
+   * same MECHANISM at the size the PO asked for, and the remaining 20pt of width is a live delta.
+   */
+  mediaSlot: { width: 112, minHeight: 148, borderRadius: flRadius.md, overflow: 'hidden', backgroundColor: flColor.charcoal600, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, boxShadow: 'inset 0 0 32px rgba(181, 138, 97, 0.10), 0 0 20px rgba(181, 138, 97, 0.14)', alignItems: 'center', justifyContent: 'center' },
   heroMeta: { flex: 1, minWidth: 0, gap: 7 },
   heroTitleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
   /* Two lines on most names at this width, and that is expected — the display serif at 26 is the card's
@@ -5772,7 +5840,10 @@ const styles = StyleSheet.create({
   /* ⚠ TIGHTENED (W9-A10-D3): the critique rated this band *"too much vertical allocation"*. 12/13 →
      10/10 and the stack gap 5 → 4, which with the smaller figure takes ~9pt off the card without
      touching the set rows below it. */
-  plinthCol: { flex: 1, minWidth: 0, gap: 4, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 10 },
+  /* 10 → 8 top and bottom (−20%, W9-A11-D3): *"Shrink the value and vertical space around it."* The
+     HORIZONTAL padding is untouched — it is what keeps the figures off the column rules, and it is the
+     ~84pt of text width `plinthFigureStyle`'s thresholds are measured against. */
+  plinthCol: { flex: 1, minWidth: 0, gap: 4, paddingTop: 8, paddingBottom: 8, paddingHorizontal: 10 },
   plinthColFirst: { paddingLeft: 14 },
   plinthColRuled: { borderLeftWidth: 1, borderLeftColor: flColor.charcoal600 },
   plinthColWide: { flex: 1.25, paddingRight: 14 },
@@ -5868,7 +5939,12 @@ const styles = StyleSheet.create({
      distribute the slack BETWEEN them, never into or out of them, or the columns stop lining up with
      their headings the moment one row holds a longer figure than another. */
   cSet: { width: 30, flexGrow: 0, flexShrink: 0 },
-  cPrev: { width: 66, flexGrow: 0, flexShrink: 0 },
+  /* 66 → 76 (W9-A11-D4). The heading is the reason — `PREVIOUS` needs ~56pt and 66 left no margin for
+     a larger text scale — but the VALUE wanted it too: `prevVal` is 14.5pt display, so a metric
+     athlete's `102.5 × 8` measured ~72pt and was already overflowing the column it was given. The 10pt
+     comes out of `rowCells`' `space-between` slack (cells total 268 in ~308), not out of another
+     column, so every heading still sits over its own cell. */
+  cPrev: { width: 76, flexGrow: 0, flexShrink: 0 },
   cWeight: { width: 70, flexGrow: 0, flexShrink: 0 },
   cReps: { width: 54, flexGrow: 0, flexShrink: 0 },
   cCheck: { width: 30, flexGrow: 0, flexShrink: 0 },

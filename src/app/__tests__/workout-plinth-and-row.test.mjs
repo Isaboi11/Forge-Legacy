@@ -89,9 +89,14 @@ test('a percentage program’s prescribed bar survived too, and is still not pre
 
 /* ── 2 · `Prev` IS A COLUMN, AND ON THE LIVE ROW A CONTROL ───────────────────────────────────────── */
 
-test('Prev is a column with its own header, not a subline', () => {
-  assert.match(WORKOUT, /<Text style=\{\[styles\.h, styles\.cPrev\]\}>Prev<\/Text>/, 'Prev lost its column heading');
-  assert.match(WORKOUT, /cPrev: \{ width: 66, flexGrow: 0, flexShrink: 0 \}/, 'the Prev column lost its width');
+test('Previous is a column with its own header, not a subline', () => {
+  /* ⚠ W9-A11-D4 SPELLS THE HEADING OUT: `Prev` → `Previous`, and the column went 66 → 76 to hold it.
+     Both halves are asserted together because either alone is the bug — the wider column without the
+     word is dead space, and the word without the column wraps the heading onto a second line. */
+  assert.match(WORKOUT, /<Text style=\{\[styles\.h, styles\.cPrev\]\}>Previous<\/Text>/, 'the Previous column lost its heading');
+  assert.match(WORKOUT, /cPrev: \{ width: 76, flexGrow: 0, flexShrink: 0 \}/, 'the Previous column lost the width its heading needs');
+  // The strip that stands in for the table once the hero collapses says the same word.
+  assert.match(WORKOUT, /\{prevText \? <>Previous </, 'the collapsed strip still abbreviates the label the table spells out');
 });
 
 test('⚠ Prev fills the weight with the figure it SHOWS — not the pounds underneath it', () => {
@@ -250,4 +255,50 @@ test('a hold still gets a clock instead of a reps box', () => {
     /\{isCurrent && set\.targetSec != null \? \([\s\S]{0,240}<HoldTimer/,
     'the hold timer no longer stands in for the Reps field',
   );
+});
+
+/* ── 7 · W9-A11 — THE HERO BECOMES A STAGE AND THE PLINTH STEPS BACK AGAIN ───────────────────────── */
+
+test('⚠ the art STRETCHES — a taller fixed box would have cost the set table the height', () => {
+  /* The binding constraint on A11 was the PO's own: *"don't let the larger hero push the sets too
+     far down… the first set is visible immediately. That's extremely important."* Inheriting
+     `heroUpper`'s `stretch` spends the dead space beside a ~141–165pt meta column instead of buying
+     new height, so the card only grows when the meta stack is shorter than the minimum. */
+  const slot = WORKOUT.match(/\n  mediaSlot: \{[^}]*\},/)?.[0] ?? '';
+  assert.ok(slot, 'the media slot style is gone');
+  assert.match(slot, /width: 112/, 'the art lost the width W9-A11-D1 gave it');
+  assert.match(slot, /minHeight: 148/, 'the art is back to a fixed height — it will not stretch to the meta column');
+  assert.ok(!/height: \d/.test(slot), '⚠ a fixed `height` is back on the slot — that pins it and re-opens the well of dead space');
+  assert.ok(!/alignSelf: 'flex-start'/.test(slot), '⚠ the slot is pinned to the top again — it no longer stretches');
+});
+
+test('⚠ the art grew in BOTH axes, or `contain` makes the change render and do nothing', () => {
+  // `ExerciseLoop` is contentFit:'contain'. Grow one axis only and the figure stops at the other.
+  const slot = WORKOUT.match(/\n  mediaSlot: \{[^}]*\},/)?.[0] ?? '';
+  const w = Number(slot.match(/width: (\d+)/)?.[1]);
+  const h = Number(slot.match(/minHeight: (\d+)/)?.[1]);
+  assert.ok(w > 104 && h > 130, `the art is ${w}x${h} — one axis did not clear the 104x130 it replaced`);
+  assert.ok(w * h >= 104 * 130 * 1.2, 'the art gained under 20% of area — the PO asked for 20–25%');
+  assert.ok(h > w, 'the stage is no longer portrait');
+});
+
+test('⚠ the plinth figure came down again, and ONLY the figure did', () => {
+  /* PO: *"Don't shrink the entire cell. Shrink the value and vertical space around it. That preserves
+     the premium feeling."* So the label and sub-line sizes are asserted UNCHANGED — a pass that
+     scaled the whole column would satisfy a size test and lose the thing the note is protecting. */
+  const top = Number(WORKOUT.match(/const size = s\.length > \d+ \? \d+ : s\.length > \d+ \? \d+ : (\d+);/)?.[1]);
+  assert.ok(top <= 17, `the plinth figure is back up to ${top}pt — W9-A11-D2 asked for 15–20% off 21`);
+  assert.match(WORKOUT, /plinthLabel: \{ fontSize: 9\.5,/, 'the plinth LABEL was shrunk — the PO asked for it to stay');
+  assert.match(WORKOUT, /plinthSub: \{ fontSize: 10\.5,/, 'the plinth SUB-LINE was shrunk — the PO asked for it to stay');
+  assert.match(WORKOUT, /plinthCol: \{ flex: 1, minWidth: 0, gap: 4, paddingTop: 8, paddingBottom: 8,/, 'the plinth lost the -20% vertical padding');
+});
+
+test('the rest panel moved DOWN toward the thumb, and was deliberately not centred', () => {
+  /* The PO asked whether to centre it. No: it drops in under the band chip it demotes into, it is
+     ~265pt tall so centred it covers set rows 3–8 rather than the first two, and `restPinned` keeps
+     it up for the whole session. 200 buys the reach without any of that. */
+  const top = Number(WORKOUT.match(/restOverlayWrap: \{ position: 'absolute', top: (\d+),/)?.[1]);
+  assert.ok(Number.isFinite(top), 'the rest overlay lost its anchor');
+  assert.ok(top > 118, `the panel is back at ${top} — the controls are out of one-handed reach again`);
+  assert.ok(top < 300, `the panel is at ${top} — that is the centre, and it parks over the set table when pinned`);
 });
