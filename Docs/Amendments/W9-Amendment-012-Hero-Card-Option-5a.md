@@ -20,7 +20,8 @@ Those two sentences govern every decision here, including the four places they p
 | Card ground | `charcoal900` | **`charcoal800`** (`--fl-surface-card`) |
 | Upper block | row, padding 12, gap 12 | **column**, padding **14**, gap 12 |
 | Row 1 | plate + rail, gap 12 | plate + rail, gap **14**, `flex-start` |
-| Plate | 112 × 148 **min, stretching**, `contain`, bronze glow | **150 × 212 fixed**, **`cover`**, `border-inset`, recessed ground |
+| Plate | 112 × 148 **min, stretching**, bronze glow | **150 × 212 fixed**, `border-inset`, recessed ground |
+| Plate fit | `contain` | **`contain`** — spec said `cover`, reversed on the PO's call (D2) |
 | Fallback glyph | 74, bronze @ 0.14 | **50**, `charcoal500`, stroke 1.25 |
 | Rail gap | 7 | **9** |
 | Name | 26 / 28 | **25 / 27** |
@@ -52,11 +53,30 @@ moment the first set resolves (`autoCollapsed`), so the tall card is what an ath
 and never again during the exercise. **Flagged for the PO — if the first set must be visible before it
 is logged, the plate is where the height is.**
 
-**W9-A12-D2 — `cover` crops the demonstration.** The spec is unambiguous: the plate *"keeps its fixed
-dimensions regardless of the animation's aspect ratio"*, which is only reachable by cropping. At 0.708 the
-plate is more portrait than the clips, so the crop takes the **sides**. ⚠ Watch a wide movement — a
-barbell at lockout can lose its plates. `contain` is the one-word revert and the plate keeps its size
-either way.
+**W9-A12-D2 — the spec asked for `cover`; it ships `contain`, on the PO's call and a measurement.**
+
+The spec's reasoning was that the plate should *"keep its fixed dimensions regardless of the animation's
+aspect ratio"*. It does that under either fit — what `cover` actually costs is the movement. PO, on
+review before publishing: *"if we have to slightly make the animation shorter or wider to make it work
+with the plates do that. **I want the full animation in there.**"*
+
+**MEASURED, 96 CLIPS SAMPLED ACROSS THE CATALOGUE.** `deliver_forge.py` normalises every loop to
+`LOOP_H = 300` and lets the WIDTH fall where it lands, so aspect ratio is **per-clip**:
+
+| min | p10 | p25 | median | p75 | p90 | max |
+|---|---|---|---|---|---|---|
+| **0.327** `ring-muscle-up` | 0.453 | 0.613 | **0.800** | 1.160 | 2.107 | **3.640** `foam-roll-lats` |
+
+That is an **11× spread**. Against the 0.708 plate, `cover` crops a ring muscle-up to ~46% of its width
+and a foam roll to ~19% of its — the athlete is cut in half on exactly the movements they are least
+likely to already know. ⚠ **No plate size fixes this**, which is the whole point: no single aspect ratio
+contains an 11× spread. `contain` is the only fit that satisfies "the full animation".
+
+⚠ **AND THE PLATE'S SHAPE BARELY MATTERS — SO THE SPEC'S NUMBER WAS KEPT.** Average area filled under
+`contain`, same 96 clips: **150 × 212 → 69.1%** · 150 × 181 → 69.6% · 150 × 150 → 64.9% ·
+164 × 150 → 62.7%. The spec's 150 × 212 is within half a point of the best of them, so there was nothing
+to buy by moving it. **OPEN:** 150 × 181 is the one variant that is equal on fill and **31pt shorter**,
+which is the cheapest available answer to D1's height problem — PO's call.
 
 **W9-A12-D3 — `--fl-text-tertiary` was NOT taken on the two meta lines or the strip sub-lines.**
 **This is the one deviation in the pass.** W9-A7-D5 and W9-A8-D4 already measured that token for exactly
@@ -108,7 +128,7 @@ label + value + sub-line. Only the note trades its third line for the tap.
   on fixed-content children this is the same division. **With no note the strip is two cells at 0.85 and
   0.85 — still 1:1**, which is the spec's two-cell fallback.
 - `-webkit-line-clamp: 2` → `numberOfLines={2}` (already there).
-- `object-fit: cover` → `contentFit="cover"` on `ExerciseLoop`.
+- `object-fit: cover` → **`contentFit="contain"`** on `ExerciseLoop` — see D2 for why the spec's fit was not taken.
 - `line-height: 1.08` / `1` / `1.4` / `1.2` → resolved to points (27 / 19 / 14 / 14); RN takes points.
 - **44px hit targets "with padding, not size"** → `hitSlop={15}` around a 15pt glyph = 45pt. ⚠ The
   `heroIconBtn` box must NOT be grown to buy the target — that scales the icon with it.
@@ -130,4 +150,4 @@ plinth-under-row hierarchy all still assert exactly what they did before.
 
 | Date | Change |
 |---|---|
-| 2026-09-09 | Created and locked. Reverses A11-D1's stretch and A10-D1a's spacing; narrows A10-D2. D3 (tertiary text) **declined on a contrast measurement — PO's call**; D1 (card height) and D2 (crop) flagged. |
+| 2026-09-09 | Created and locked. Reverses A11-D1's stretch and A10-D1a's spacing; narrows A10-D2. D3 (tertiary text) **declined on a contrast measurement**; D2 **reversed to `contain` on the PO's call before publishing**, backed by a 96-clip aspect-ratio sample. D1 (card height) flagged, with 150 × 181 offered as a free 31pt. |

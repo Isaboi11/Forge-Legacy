@@ -941,8 +941,15 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > meta lines and strip sub-lines. W9-A7-D5/A8-D4 already measured it: **Alabaster's `gray600` is 3.15:1**,
 > which fails the 4.5:1 that 12.5pt/10pt running text needs. Forge fine, **Paper unreadable**. Held at
 > `gray400`. Reaching tertiary is a **ramp change, not a token change** — PO's call.
-> ⚠ **`cover` CROPS the demonstration** — the spec requires it (fixed plate, any aspect ratio). The crop
-> takes the sides; watch a barbell at lockout. `contain` is the one-word revert.
+> ⚠ **THE SPEC'S `cover` WAS REVERSED TO `contain` BEFORE PUBLISHING**, PO: *"I want the full animation
+> in there."* **Measured 96 clips**: `deliver_forge.py` normalises every loop to height 300 and lets the
+> WIDTH land where it lands, so aspect is per-clip — **min 0.327 (`ring-muscle-up`), median 0.800, max
+> 3.640 (`foam-roll-lats`), an 11× spread**. `cover` on the 0.708 plate cropped a ring muscle-up to ~46%
+> of its width and a foam roll to ~19%. ⚠ **No plate size fixes that** — no single aspect contains an
+> 11× spread, so the fit was the bug, not the dimensions. ⚠ **And the plate's SHAPE barely matters**:
+> average area filled under `contain` is 150×212 → **69.1%**, 150×181 → 69.6%, 150×150 → 64.9% — the
+> spec's number is within half a point of the best, so it was kept. **OPEN: 150×181 is equal on fill and
+> 31pt shorter**, the cheapest answer to the height problem above — PO's call.
 > ⚠ **REVERSES A10-D1a** (spaced figures) and **narrows A10-D2** (the note loses its third line, the two
 > figure cells keep theirs). `spacedFigure` **deleted, not left uncalled**. Thresholds re-measured for
 > unspaced strings — `102.5×5`, which has needed a fallback since A9, now fits at full size.
