@@ -212,21 +212,30 @@ test('⚠ the plinth figures sit BELOW the set row\'s numerals, or the hierarchy
   assert.ok(plinth - field <= 1, `plinth ${plinth}pt vs row ${field}pt — Level 2 is shouting over Level 4 again`);
 });
 
-test('the three plinth columns are one structure — label, value, sub-line', () => {
+test('the three plinth cells still share a label row — and only the NOTE lost its sub-line', () => {
+  /* ⚠ W9-A12 DELETED `Read note`, WHICH A10-D2 HAD MADE THE NOTE'S THIRD LINE. That is a deliberate
+     narrowing of A10's "all three, no exceptions", not a regression: the two FIGURE cells still carry
+     label + value + sub, and the note cell trades its printed link for the whole-cell tap it already
+     had. The tap is asserted separately below and is the thing that must never go. */
   const plinth = WORKOUT.slice(WORKOUT.indexOf('<View style={styles.plinth}>'), WORKOUT.indexOf('</TourAnchor>', WORKOUT.indexOf('<View style={styles.plinth}>')));
-  assert.equal((plinth.match(/styles\.plinthLabelRow/g) ?? []).length, 3, 'a column lost its label row');
-  assert.equal((plinth.match(/styles\.plinthSub|styles\.plinthRead/g) ?? []).length, 3, 'a column lost its sub-line');
+  assert.equal((plinth.match(/styles\.plinthLabelRow/g) ?? []).length, 3, 'a cell lost its label row');
+  assert.equal((plinth.match(/styles\.plinthSub/g) ?? []).length, 2, 'Goal and Best must both keep a sub-line');
+  assert.ok(!/plinthRead/.test(WORKOUT), '`Read note` is back — A12 replaced the link with the cell tap');
   // The label must name what the value IS. "Last Time" reads as a third statistic.
-  assert.match(plinth, />Last Note</, 'the note column no longer says it holds a note');
+  assert.match(plinth, />Note</, 'the note cell no longer says it holds a note');
   assert.ok(!/>Last Time</.test(plinth), '"Last Time" is back — it does not say the value is a note');
 });
 
-test('⚠ the figures are spaced, and the size thresholds count the SPACED string', () => {
-  // `spacedFigure` adds two characters. Measuring the compact form would keep `185 × 5` at a size it
-  // no longer fits, which is the clipping this function exists to prevent.
-  assert.match(WORKOUT, /const spacedFigure = \(s: string\): string => s\.replace\(\/×\/g, ' × '\);/, 'the spacing helper is gone');
-  assert.match(WORKOUT, /plinthFigureStyle\(spacedFigure\(goalText\)\)/, 'the goal is sized off the unspaced string');
-  assert.match(WORKOUT, /\$\{setWeightLabelLb\(liftHist\.best\.weight, units\)\} × \$\{liftHist\.best\.reps\}/, 'Best lost its spaces');
+test('⚠ the plinth figures are TIGHT, and the Previous column is not', () => {
+  /* ⚠ A12 REVERSES A10-D1a. A10 opened the figures to `3 × 8` at 24pt, where the cell had the room;
+     A12 sets them at 19pt in a 0.85fr cell and spells the format out as `3×8`. `spacedFigure` is
+     deleted rather than left uncalled — a helper with no consumer is how a retired format comes back. */
+  assert.ok(!/spacedFigure/.test(WORKOUT), 'the spacing helper is back — A12 sets the plinth figures tight');
+  assert.match(WORKOUT, /plinthFigureStyle\(goalText\)/, 'the goal is no longer sized off the string it renders');
+  assert.match(WORKOUT, /\$\{setWeightLabelLb\(liftHist\.best\.weight, units\)\}×\$\{liftHist\.best\.reps\}/, 'Best is spaced again');
+  /* ⚠ THE SET ROW IS THE EXCEPTION AND MUST STAY ONE. `Previous` has 76pt (A11-D4) and there the
+     spaces are what stop `45×8` reading as a single number. Two formats, two widths, on purpose. */
+  assert.match(WORKOUT, /\$\{setWeightLabelLb\(p\.weight, units\)\} × \$\{p\.reps\}|prevText/, 'the row lost its spaced Previous figure');
   // The collapsed strip keeps the COMPACT form — 11pt has no room for the spaces.
   assert.match(WORKOUT, /Goal <Text style=\{styles\.heroStripGoal\}>\{goalText\}<\/Text>/, 'the collapsed strip is now spacing its goal too');
 });
@@ -259,38 +268,61 @@ test('a hold still gets a clock instead of a reps box', () => {
 
 /* ── 7 · W9-A11 — THE HERO BECOMES A STAGE AND THE PLINTH STEPS BACK AGAIN ───────────────────────── */
 
-test('⚠ the art STRETCHES — a taller fixed box would have cost the set table the height', () => {
-  /* The binding constraint on A11 was the PO's own: *"don't let the larger hero push the sets too
-     far down… the first set is visible immediately. That's extremely important."* Inheriting
-     `heroUpper`'s `stretch` spends the dead space beside a ~141–165pt meta column instead of buying
-     new height, so the card only grows when the meta stack is shorter than the minimum. */
-  const slot = WORKOUT.match(/\n  mediaSlot: \{[^}]*\},/)?.[0] ?? '';
+test('⚠ the plate is a fixed 150 × 212 stage, and it CROPS rather than letterboxes', () => {
+  /* ⚠ W9-A12 OVERRIDES W9-A11-D1. A11 made this a stretching `minHeight` precisely so a bigger
+     picture would cost the set table no height; A12 sets a literal fixed size instead and accepts the
+     ~120pt taller card that comes with it. Both are the PO's; the later one governs. */
+  const slot = WORKOUT.slice(WORKOUT.indexOf('mediaSlot: {'), WORKOUT.indexOf('},', WORKOUT.indexOf('mediaSlot: {')));
   assert.ok(slot, 'the media slot style is gone');
-  assert.match(slot, /width: 112/, 'the art lost the width W9-A11-D1 gave it');
-  assert.match(slot, /minHeight: 148/, 'the art is back to a fixed height — it will not stretch to the meta column');
-  assert.ok(!/height: \d/.test(slot), '⚠ a fixed `height` is back on the slot — that pins it and re-opens the well of dead space');
-  assert.ok(!/alignSelf: 'flex-start'/.test(slot), '⚠ the slot is pinned to the top again — it no longer stretches');
+  assert.match(slot, /width: 150/, 'the plate lost its spec width');
+  assert.match(slot, /height: 212/, 'the plate lost its spec height');
+  assert.ok(!/minHeight/.test(slot), 'the plate is stretching again — A12 fixes both dimensions');
+  assert.match(slot, /flexGrow: 0, flexShrink: 0/, 'the plate can be squeezed by the text rail');
+  assert.match(slot, /backgroundColor: flColor\.surfaceRecessed/, 'the plate lost the recessed ground');
+  /* The spec allows exactly two shadows on this card: `shadow-card` on the card, `border-inset` on the
+     plate. The bronze glow A9 gave it is not one of them. */
+  assert.match(slot, /boxShadow: flShadow\.borderInset/, 'the plate lost border-inset, or grew a glow back');
+  assert.ok(!/rgba\(181, 138, 97/.test(slot), 'the bronze glow is back on the plate — the spec removed it');
+  // `cover` is what lets the plate keep its size whatever the clip's aspect ratio is.
+  assert.match(WORKOUT, /<ExerciseLoop[\s\S]{0,120}contentFit="cover"/, 'the demo is letterboxing again — the plate will not fill');
 });
 
-test('⚠ the art grew in BOTH axes, or `contain` makes the change render and do nothing', () => {
-  // `ExerciseLoop` is contentFit:'contain'. Grow one axis only and the figure stops at the other.
-  const slot = WORKOUT.match(/\n  mediaSlot: \{[^}]*\},/)?.[0] ?? '';
-  const w = Number(slot.match(/width: (\d+)/)?.[1]);
-  const h = Number(slot.match(/minHeight: (\d+)/)?.[1]);
-  assert.ok(w > 104 && h > 130, `the art is ${w}x${h} — one axis did not clear the 104x130 it replaced`);
-  assert.ok(w * h >= 104 * 130 * 1.2, 'the art gained under 20% of area — the PO asked for 20–25%');
-  assert.ok(h > w, 'the stage is no longer portrait');
+test('⚠ How To is a full-width bar, and its "first time" STYLE variant is gone but the COPY is not', () => {
+  /* The line this pass was told not to cross: *"don't change any of the functionality, just layout."*
+     The bar is bronze-tinted for everybody now, so `howToFirst`'s louder face had nothing left to say
+     — but the WORDS still change for a lift with no history, and that is behaviour, not styling. */
+  const bar = WORKOUT.slice(WORKOUT.indexOf('howTo: {'), WORKOUT.indexOf('howToText:'));
+  assert.ok(bar, 'the How To style is gone');
+  assert.match(bar, /justifyContent: 'center'/, 'the bar no longer centres its content');
+  assert.match(bar, /backgroundColor: flColor\.bronzeTint/, 'the bar lost its bronze fill');
+  assert.ok(!/marginTop: 'auto'|alignSelf/.test(bar), '⚠ rail-era `marginTop: auto`/`alignSelf` are back — they collapse the bar to its content');
+  assert.ok(!/howToFirst|howToTextFirst/.test(WORKOUT), 'the style variant is back — the bar is already the emphasis');
+  assert.match(WORKOUT, /liftHist \? 'How To' : "First time — here's how"/, '⚠ the first-time COPY was dropped — that is behaviour, not layout');
+  // It is row 2 of the upper block, so it must sit OUTSIDE the plate/rail row.
+  assert.ok(WORKOUT.indexOf('styles.heroRow1') < WORKOUT.indexOf('styles.howTo'), 'How To drifted back inside the text rail');
 });
 
-test('⚠ the plinth figure came down again, and ONLY the figure did', () => {
-  /* PO: *"Don't shrink the entire cell. Shrink the value and vertical space around it. That preserves
-     the premium feeling."* So the label and sub-line sizes are asserted UNCHANGED — a pass that
-     scaled the whole column would satisfy a size test and lose the thing the note is protecting. */
+test('⚠ the plinth figure is 19 and STILL sits under the set row numerals', () => {
+  /* A10's hierarchy claim is the one thing that has survived every resize: 24 → 21 → 17 → 19, and at
+     every step the plinth must not out-shout the row the athlete is actually filling in. */
   const top = Number(WORKOUT.match(/const size = s\.length > \d+ \? \d+ : s\.length > \d+ \? \d+ : (\d+);/)?.[1]);
-  assert.ok(top <= 17, `the plinth figure is back up to ${top}pt — W9-A11-D2 asked for 15–20% off 21`);
-  assert.match(WORKOUT, /plinthLabel: \{ fontSize: 9\.5,/, 'the plinth LABEL was shrunk — the PO asked for it to stay');
-  assert.match(WORKOUT, /plinthSub: \{ fontSize: 10\.5,/, 'the plinth SUB-LINE was shrunk — the PO asked for it to stay');
-  assert.match(WORKOUT, /plinthCol: \{ flex: 1, minWidth: 0, gap: 4, paddingTop: 8, paddingBottom: 8,/, 'the plinth lost the -20% vertical padding');
+  const field = Number(WORKOUT.match(/fieldNum: \{ fontFamily: flFont\.display, fontSize: (\d+)/)?.[1]);
+  assert.equal(top, 19, `the plinth figure is ${top}pt — W9-A12 specifies 19`);
+  assert.ok(top - field <= 1, `plinth ${top}pt vs row ${field}pt — Level 2 is shouting over Level 4 again`);
+  /* Label and sub-line are set by the spec too, and are NOT derived from the figure. */
+  assert.match(WORKOUT, /plinthLabel: \{ fontSize: 9\.5,/, 'the plinth label left its spec size');
+  assert.match(WORKOUT, /plinthSub: \{ fontSize: 10, lineHeight: 14,/, 'the plinth sub-line left its spec size');
+  assert.match(WORKOUT, /plinthNote: \{ fontSize: 11\.5,/, 'the note body left its spec size');
+});
+
+test('the bottom strip is 0.85 / 0.85 / 1.3, and collapses to two cells with no note', () => {
+  assert.match(WORKOUT, /plinthColFirst: \{ flex: 0\.85/, 'the Goal cell lost its share');
+  assert.match(WORKOUT, /plinthColBest: \{ flex: 0\.85 \}/, 'the Best cell lost its share');
+  assert.match(WORKOUT, /plinthColWide: \{ flex: 1\.3/, 'the Note cell lost its share');
+  /* ⚠ THE WHOLE CELL GOES when there is no note — border and all — rather than standing as a
+     labelled em-dash. `plinthColRuled` lives on the cell, so removing the cell removes its rule. */
+  assert.match(WORKOUT, /\{plinthNote \? \(/, 'the note cell is no longer conditional');
+  assert.match(WORKOUT, /styles\.plinthColWide, pressed && styles\.plinthColPressed/, 'the note cell stopped being the tap target');
 });
 
 test('the rest panel moved DOWN toward the thumb, and was deliberately not centred', () => {
