@@ -663,3 +663,195 @@ on runtime `411fd2b6…`. Commit `453d769` on `origin/feat/route-map`.
 ⛔ **WHAT NO OTA CAN CLOSE: the OS splash frame itself.** `app.json`'s `backgroundColor` is BUILD config — one value for every athlete on the binary — so the very first frame of a cold launch is dark whatever the theme. A light variant needs a new build AND would follow the **system** appearance rather than the in-app choice, so an Alabaster athlete running iOS in dark mode would still get a dark frame. What shipped here is as close as the platform allows without a binary.
 
 **Gates:** tsc **0** · **3,054/3,054** (+4 guards: the handle's anchor, the move-claim and the native block, `touch-action` on both sliders, and the dissolve's position in the animation) · lint at baseline. ✅ **WEB VERIFIED** — deployment URL and production alias both **200**, hash-matched on the first probe, and `pan-y` / `onShouldBlockNativeResponder` / `bottom:10` all found in the live bundle. ✅ **OTA VERIFIED DELIVERABLE** — `fingerprint:compare --build-id` said MATCH before publishing, and the manifest endpoint, queried as an iOS client on runtime `47944f2e…`, returns the new id and no longer the previous one. ⏳ **Not seen rendered** — a handle position, a gesture and a launch sequence are three things a test suite cannot look at.
+### 0. ⭐ The check-in exists in the database — and privatising a bucket took 21 photos off the live app for as long as it took to paste it (2026-09-03, Forge Coach / storage — **migrations `0183` `0193` APPLIED AND VERIFIED · `0188` APPLIED THEN ROLLED BACK**, ⛔ **NOT DEPLOYED — no client code calls any of it** — commits `e310f35` `426db2d` `5826134` on `feat/forge-coach`)
+
+**Phase B's conversation half is now real in Postgres.** `0183` opened what a coach may read of an
+athlete's training and `0193` built the check-in itself — the form he builds, the day it lands on, the
+answers she writes, the reply he sends. Both verified against a written prediction before being believed.
+
+**`0183` — six read functions**, every one `definer`, every one `guarded`, every one `no photos`. Exactly
+the six predicted, exactly the prediction's shape.
+
+**`0193` — four tables** (`trainer_checkin_forms`, `_questions`, `trainer_checkins`, `_answers`), all
+RLS-on with one policy each; **five functions**, all `definer`, with `trainer_client_checkins` and
+`trainer_checkin_reply` additionally `guarded`; and the **four measurement columns the body log could
+never take** — `hips_in`, `thigh_in`, `calf_in`, `neck_in`. Every row count **0**, which is the correct
+answer and the point of predicting it: nothing writes this yet.
+
+⛔ **THE RULE THE SCHEMA EXISTS TO HONOUR.** *"Photos file into their Transformation, weight and
+measurements into their body log. Nothing here creates a second copy."* — the design, verbatim. A
+check-in holds **pointers** (`body_entry_id`, `transformation_entry_id`) and never a copy. That is the
+privacy model, not tidiness: **a copied weight survives the revocation meant to take it away, and
+survives quietly.** The eight weekly metrics live on the check-in only because they have no home
+anywhere else.
+
+⚠ **RENUMBERED BEFORE ANY OF IT WAS PASTED.** The branch was holding a **different** `0189` and a
+**different** `0190` from the ones main had already applied (`0189_testing_defaults_open`,
+`0190_training_status_definer`). A merge would have produced two files claiming one slot and a ledger
+that no longer said what ran. `0189_trainer_checkins` → **`0193`**, and the in-flight private-photo work
+→ **`0194`**. **And it happened AGAIN the same afternoon**: main’s own session committed `0191_weekly_review_story_fields`, so the check-in moved a second time — `0189` → `0191` → **`0193`**, with the private-photo work to **`0194`**. Ours was already applied and theirs was not, so the feature branch yielded. The migration now carries a header note recording that it was **applied under the number 0191**, because this project has **no migration history table** — the ledger IS the filenames, and without that line the schema in Postgres has no traceable origin. **Twice in one day is a pattern, not bad luck: a number claimed on a long-running branch is a reservation nobody else can see.**
+
+⛔ **`0188` PRIVATISED `chapter-photos` AND BROKE THE LIVE APP.** It applied perfectly — bucket `private`,
+four policies `authenticated` + `owner+chapter`, **0 unreachable objects** — and that was the problem.
+The `signed-media.ts` that reads a private bucket exists **only on `feat/forge-coach`**; the deployed app
+is built from `main`, where `photos-live.ts` still calls `getPublicUrl`. **All 21 chapter photos went dark
+for testers** until `update storage.buckets set public = true where id = 'chapter-photos'` put them back.
+
+**The lesson is a sequencing rule, and it is the inverse of every additive migration.** "Applying is not
+working" — a migration that lands while its client sits undeployed — has been the recurring failure here
+since `0153`. This is the sharper case: **applying can UNDO working.** Any migration that revokes,
+privatises, tightens RLS or drops a grant is a **client-code-FIRST** change: ship and deploy the reader,
+see it work, *then* paste the SQL. And the branch to grep for that reader is the **deployed** one
+(`git show main:<path>`) — a feature branch having the fix proves nothing. `0188` is back on the shelf
+until `signed-media.ts` reaches `main` and is deployed.
+
+⚠ **Two bundle bugs that only running them could find.** `0188`'s §3 declared `with obj as (…)` and then
+read `o.total` off `from obj` — the `o` alias belongs to `storage.objects` *inside* the CTE — so the
+report raised **42P01** and the editor's single transaction rolled §1 and §2 back with it (nothing partial
+landed, which is the one mercy). `0193`'s FC-D16 check was `pg_get_functiondef(…) like '%photo%'`, and
+flagged `athlete_checkin_form` and `trainer_checkin_form_save` as **READS PHOTOS** — they carry the column
+`photos_on`, the boolean for whether the form *asks* for photos, and touch no photo data at all. Narrowed
+to the two table names, which is what `0183`'s report already did. **A guard that fires on the word rather
+than the access teaches you to ignore it**, which is worse than not having it. Neither bug was catchable
+by the guard tests, which read the bundle as text.
+
+**Where this actually stands: SQL applied ✅ · client code deployed ❌ · observed working ❌.** One of
+three. There is no check-in screen, no coach CRM, no messaging table, no due-day scheduling, and
+`checkin_due` / `coach_replied` are not registered in `KINDS` in `notifications-live.ts`, which drops
+unknown kinds silently. **The athlete-side screen is designed** —
+`design_reference/Forge Modal Library Design (8)/Forge Client Check-in.dc.html`, with the coach's
+`Forge Coach Check-in Review.dc.html` (seven screens, all states, four themes) beside it — and neither
+file is referenced anywhere in `Docs/`. Guard tests: **21/21** for the check-in, **10/10** for the reads,
+**15/15** for the buckets.
+
+### 0. ⭐ A squad-mate starting a workout finally reaches you — and it took three separate defects, none of which shared a cause (2026-09-03, Presence / Push / Home — **migrations `0185` `0186` `0187` `0189` `0190` ALL APPLIED AND VERIFIED**, ✅ **OTA PUBLISHED TO BUILD 8** iOS `01a0681d-59ad-7238-9f13-fb2ffda6e1d1`, runtime `47944f2e…` — commits `2734e76` `7a2c25b` `2217ffa`)
+
+⭐ **OBSERVED WORKING, which is the only claim that counts here.** PO: *"Looks like it's showing
+rachelle training from our test that we're running, so we are good."* The notification arrived AND the
+card showed her — SQL applied, client deployed, seen in the app. All three.
+
+**PO's report was two sentences and three bugs.** *"Brady started a workout and I did not get a
+notification. Rachelle is currently working out but she's not showing up in the your circle card."*
+
+**1 · THE NOTIFICATION WAS NEVER GENERATED (`0189`).** Not a defect — the shipped defaults.
+`squads.training_alerts` (the leader's) and `squad_members.notify_start` (the recipient's, per squad)
+have defaulted **false since 0153**, so two people must say yes before a start notification can exist,
+and nobody ever had. Verified before: 2 squads / 13 members / 28 profiles shut. After: **0 / 0 / 0.**
+
+**2 · ⛔ NOBODY COULD ANNOUNCE AT ALL (`0190`) — 0161'S BUG ON A SECOND FUNCTION.**
+`set_training_status` is SECURITY INVOKER, so it runs as the athlete. `0086` only ASSIGNED
+`training_since` (an UPDATE that assigns needs no SELECT); `0149` revoked their SELECT on that column
+on purpose; **`0187` then made the body READ it.** Every call raised **42501** — and `presence-live.ts`
+catches and discards that error DELIBERATELY, so presence can never block starting a workout. The
+silence was designed; the failure it hid was not. 0161 fixed this exact shape on
+`squads_set_invite_code` and left the note *"'Internal' describes where a function is CALLED FROM. It
+says nothing about what it may READ."* ⚠ **A fire-and-forget RPC with a swallowing catch has no failure
+signal — diagnose it from the DATA it should have written.**
+
+**3 · HOME READ PRESENCE ONCE AND NEVER AGAIN.** With both migrations in, the push arrived and the card
+still disagreed with it. `useQuery(fetchTrainingNow, [])` never destructured `refetch`, and the focus
+effect refreshed five other queries and not this one — so Home could only ever show people who were
+ALREADY training when the app cold-started. Now refetched on focus AND on a 60s interval **while
+focused only** (the timer belongs to the screen being looked at, not the app being alive). Presence is
+the one read on that screen that changes while nobody touches anything.
+
+⚠ **I GOT THE TIMELINE WRONG AND CORRECTED IT IN `7a2c25b`.** I read the verifier's *"last announced
+322 hours ago"* as time-since-the-last-announcement. It is not: `training_since` is set to **NULL when
+a workout ENDS**, so a finished session leaves no trace and `max(training_since)` surfaces only the
+oldest session never ended. That 2026-08-21 stamp is a ghost, and 0187 was authored eleven days AFTER
+it. The mechanism and the fix were unaffected; the blast radius I stated was not.
+
+⚠ **`0190` renumbered off 0188**, which is taken by `0188_private_chapter_photos` on the **unmerged**
+branch `ota/build8-js` — a whole feature and its migration sit one commit ahead of main.
+**`ls supabase/migrations | tail` is not proof a number is free.** Second collision after `0152`.
+
+Also applied and confirmed client-deployed: `0185` (shared route consent) and `0186` (rename squad
+post) — both callers were already on the shipped branch. ⛔ **Neither fix works backwards:** the push
+fires on a trigger at the moment a session starts.
+
+
+### 0. ⭐ Every exercise that could have a demo now has one — in BOTH themes — and a bodyweight set stops being written as zero (2026-09-03, Exercise media / Active Workout / Alabaster / public catalogue — **migration `0189` WRITTEN, NOT APPLIED**, ✅ **WEB DEPLOYED** `index-0cf7d29a2f7b9b5ca314fedb7bf18ef4` · ✅ **OTA PUBLISHED TO BUILD 8** iOS `01a067c6-3d3f-77f6-a4c6-d9eee8b9037c`, runtime `47944f2e…` · ✅ **LANDING SITE DEPLOYED** 1,247 files — commits `9b576ca` `0a2ef28` `3139de4` `399e339` `024a4b9` `559c7ec`)
+
+**The 904-row animation review is finished.** 420 picks, 273 "not needed", 211 "no match", 128 marked
+close **and every one of those carries its note**. 264 clips were rendered per theme, 0 errors. Coverage
+of the catalogue goes **43% → 70% of slots**, which is the harsh reading; counted the way an athlete
+meets it — *does this exercise show me how to do it* — it is **588 of 735 published (80%)**, and **93% of
+the 635 the PO did not rule out**. The 43 with nothing left are machines and cardio the 3D library never
+rendered (Stair Climber, Row Erg, Jacobs Ladder, Ruck); no further matching finds them.
+
+⭐ **ALABASTER HAD NEVER HAD ITS OWN ANIMATIONS — not in the app, and not in the bucket.** 702 paper
+renders were delivered to disk months ago and never uploaded: every `paper/` key returned 400. And
+`media.ts` only ever built the Forge URL, so a how-to card in the light theme showed a demo graded to
+glow against near-black, on ivory. Both halves are closed — **1,122 paper slots uploaded** (+12 Forge
+fallbacks for entries with no source video) and `THEME_PREFIX` added under `IS_PAPER`. ⚠ The prefix went
+in **after** the upload and never before: nothing in that file asks whether an object exists, so the
+reverse order turns every Alabaster demo into an empty frame with no error to explain it.
+
+⚠ **THE REVIEW SERVER DIED AT 795 OF 904 AND THE CAUSE WAS A LEAKED FILE HANDLE PER ABANDONED CLIP.**
+`.pipe(res)` does not close the source when the destination goes away, and a one-at-a-time queue tears
+six `<video>` requests off the document every time it advances. They accumulated until node threw
+`EMFILE` from an `error` event with no listener — which kills the process rather than failing the
+request. Streams are destroyed on response close now; proved against 900 aborted streams.
+
+⭐ **A BODYWEIGHT SET SAYS BW, EVERYWHERE.** PO: *"I don't want 0. I want it to be BW. That's the point
+of it. More mental than anything. Seeing 0 can be discouraging."* The rule existed and was **private**
+inside `workout.tsx`, so three other surfaces had to remember it and did not: the live-workout view
+showed a watching squad-mate `0 lb`, the Last/Best line showed a dip PR as `0 × 12`, and the watch folded
+zero in with null and sent the wrist bare reps. `domain/workout/set-load.ts` is the only copy now, keeps
+zero and null apart (an empty bar is not a bodyweight set), and names its two unit domains apart because
+mixing them halves a metric athlete's lift. **9 tests.**
+
+**The superset row says "superset."** It was in Holt's chat the whole time, named after the reason
+("Short on time") rather than the thing, so it read as removed. ⚠ It is absent on the last exercise by
+design — a superset forms with the NEXT one.
+
+**The public catalogue shipped**: 735 exercise pages, facets, sitemap, robots — **502 now carry a demo,
+up from 283**. That gap was not a thin library; the Aug 31 still-extraction ran short while 108 clips it
+needed were already live.
+
+⚠ **`0189` IS WRITTEN AND UNAPPLIED, AND IT IS THE ANSWER TO THE PO'S OTHER REPORT** — no push when a
+squad-mate starts, and a training squad-mate absent from Live Now. Neither is a defect:
+`squads.training_alerts` and `squad_members.notify_start` have defaulted FALSE since 0153, so two people
+must say yes before a start notification can exist. **`0185`–`0189` all appear unapplied**;
+`supabase/apply/verify-0185-0189.sql` is one read-only query that says which. ⚠ It **renumbered from
+0188**, which was already taken by `0188_private_chapter_photos` on the **unmerged** branch
+`ota/build8-js` — a whole feature and its migration live one commit ahead of main and have never been
+merged. `ls supabase/migrations | tail` is not proof a number is free.
+
+⚠ **THE OTA COULD NOT SHIP FROM MAIN.** The watch native module (`14402b3`, whose own status commit says
+*"nothing has compiled"*) moved main's fingerprint off build 8's `47944f2e…`. Published from the
+`forge-ota8-wt` worktree instead, after `fingerprint:compare --build-id` returned an exact match and
+with `eas.json`/`.easignore` byte-identical to main; the manifest was then queried as an iOS client on
+that runtime and returned the new id. `watch-projection.ts` does not exist at build 8 and was dropped
+from the cherry-pick.
+
+Gates: tsc 0 · lint clean on every touched file · web alias 200 and hash-matched with three pass-strings
+found in the live bundle · 48 bucket objects fetched anonymously, 0 failures, paper bytes ≠ Forge bytes.
+⏳ **Not seen on a device.** ⏳ `Docs/Review-Emotional-Depth-Proposal-v1.0.md` awaits four PO answers.
+
+
+### 0. A chapter's entries are a shelf, an entry has more than one layout, a playing video can be left — and the feed comparison slides again after I broke it chasing a no-op (2026-09-01, Transformation Gallery / Entry Detail / Accomplishments / Compare drag — **no migration**, ✅ **WEB DEPLOYED** `index-c2e8eb4a893e80ae206ffd2382a28e3b` · ✅ **OTA PUBLISHED TO BUILD 8** iOS `01a05ef3-ac5d-7c32-bc41-33dde8df96b4`, runtime `47944f2e…` — commits `729a944` `d47471e` ⚠ **WAS SUPERSEDED OFF THE DEVICE** — neither commit was on `ota/build8-js`, so every OTA from 09-03 to 09-08 shipped a bundle without them. ✅ **RESTORED 2026-09-08** in OTA `01a0814d…` (`729a944`'s card shelf deliberately reversed by that pass; its entry-detail layouts kept))
+
+**PO, four reports across two messages.**
+
+⭐ **1 · "When I go into my transformation page and I see my three different entries, I should be able to carousel scroll on those cards quickly."** A chapter's entries were a vertical `cardStack`, so moving between two of them meant scrolling the page past a full-height card and back. They are a snapping horizontal shelf now — `snapToInterval` on the card pitch with `decelerationRate="fast"`, so a flick lands ON a card rather than between two, and a `CARD_PEEK` at the right edge says there is more to the side (a carousel whose cards are exactly the content width is indistinguishable from a static card until you happen to drag it).
+
+⚠ **THE CARD'S POSE STRIP HAD TO STOP SCROLLING SIDEWAYS FOR THAT TO EXIST.** It was a horizontal `ScrollView`, which inside a horizontal `ScrollView` means the inner one silently eats every drag beginning on a photograph — most of the card. This repo has already spent two passes on that exact defect class in the comparison slider; building a third on purpose is not a trade. The poses are a fixed 3-column grid now, so the whole card is one drag target and each pose gets **more** room than the strip gave it. Cells size from the card, which sizes from the screen — a hard `76×100` would letterbox on a wide phone and overflow on a narrow one.
+
+⭐ **2 · "When I click on a video in my accomplishment it has to be paused for me to leave it, but I want to be able to leave it at any time."** ⚠ **NOTHING WAS MISSING AND NOTHING THREW — the guard's CONDITION contradicted its own comment.** It read *"guarded on `isPlaying` so returning from fullscreen — which fires the event again on resume — does not immediately shove it back in"*, and then did `if (isPlaying) enterFullscreen()`. Leaving fullscreen does not pause the clip, so on the way out `isPlaying` was still **true**, the listener fired, and the athlete was put straight back in. That is exactly the report: **pause first and the exit works; leave while it is playing and you are pulled back.** The fix is a **latch**, not a better condition — "expand when they press play" is an interpretation of intent at one moment, and any condition re-evaluated on every `playingChange` can be re-entered. ⚠ `onFullscreenExit` latches it too, which is not redundant: the athlete can reach fullscreen without passing through the listener at all, by tapping the native expand button before pressing play.
+
+⭐ **3 · "When I click on a transformation card I should be able to view it in different ways. Like a grid style."** The entry detail had one answer: a 3:4 hero plus a thumbnail strip to choose what went in it. Right default, wrong thing when the question is *"what did I capture that day?"* — answering that meant tapping six thumbnails one at a time and holding the last one in your head. A Compare-shaped segmented toggle adds a grid of the whole capture; tapping a tile drops back into the hero on that pose, so the grid is also the fastest way to reach one. Offered only where there is more than one pose — a grid of one tile is the hero with extra steps.
+
+⛔ **4 · "The slider went to the bottom like we wanted on the post, but now the sliding doesn't work on the feed." — I BROKE THIS, CHASING A NO-OP.** The previous round moved the responder claim from touch-DOWN to the first horizontal MOVE, reasoning that `onShouldBlockNativeResponder` is asked only at grant and so could not consult an axis decided later. The premise was right; the conclusion was wrong, because of one line in `PanResponder.js`'s `onResponderGrant`:
+
+`return config.onShouldBlockNativeResponder == null ? true : config.onShouldBlockNativeResponder(...)`
+
+⚠ **IT DEFAULTS TO `true`.** Every version of this drag has blocked the native scroller from the moment it was granted, so setting it to `true` changed **nothing** — and the only thing that actually changed was giving up the touch-down claim. A comparison in the FEED sits inside a vertical scroller and a ledger card's own press targets, and this view only reliably wins the gesture by claiming on down, where it is the deepest node on the path. The post kept working because less competes for the touch there.
+
+⚠ **AND THE MOVE-CLAIM READ STALE DATA BESIDES.** `_updateGestureStateOnMove` is called from `onMoveShouldSetResponderCapture` and from `onResponderMove` — **not** from the bubble-phase `onMoveShouldSetResponder` the predicate lived in, where `g.dx` is whatever the capture pass last left behind (guarded by `_accountsForMovesUpTo`). A claim resting on that works on one screen and not the next, which is precisely what shipped.
+
+⭐ **WHAT ACTUALLY KEEPS THE PAGE STILL, AND IS KEPT:** `touch-action: pan-y` on **web**, where there is no native responder to block and the page is scrolled by the browser's compositor off the main thread. On native it was never not held. Restored with the down-claim: tap-to-place on release, and the axis latch — whose **vertical arm is load-bearing**, because grant blocks the scroller by default and the termination request is the only thing that hands it back; without it a comparison is a dead zone in the middle of the feed. **A guard now fails the build if anyone sets `onShouldBlockNativeResponder` again**, with the reason beside it.
+
+**Gates:** tsc **0** · **3,066/3,066** (+11 in `gallery-video-grid`, plus the compare guards re-pointed) · lint at baseline. ✅ **WEB VERIFIED** — deployment URL and production alias both **200**, hash-matched on the first probe, and seven strings only this pass's code contains found in the live bundle (`snapToInterval`, `poseGrid`, `cardShelf`, `One at a time`, `gridTile`, `onFullscreenExit`, `pan-y`). ⚠ **`escalated` and `CARD_PEEK` are NOT searchable in a bundle** — a local `const` and a module const are renamed and inlined by the minifier; a probe on either would have reported MISSING on correct code. ✅ **OTA VERIFIED DELIVERABLE** — fingerprint MATCHED before publishing, and the manifest queried as an iOS client on runtime `47944f2e…` returns the new id and no longer the previous one. ⏳ **Not seen rendered.**
+
+
