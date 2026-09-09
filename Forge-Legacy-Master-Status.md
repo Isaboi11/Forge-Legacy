@@ -935,6 +935,37 @@ Three causes, none of them the missing-clip case: (1) the 09-07 `MEDIA_REV=2` bu
 
 **Gates:** tsc **0** · lint at baseline · **3,327/3,327** (+5: `exercise-loop-retry` — the two-failure latch, the remount key, the prefetch wiring, and the repair's storage-API-not-SQL scoping). ⏳ **NOT SEEN ON A DEVICE** — load feel under gym reception is exactly what the gates cannot see.
 
+### 0. Active Workout, option 6a — How To goes back in the rail and the header stops wrapping (2026-09-09, Active Workout hero + set table + reps field + scroll — **no migration**, ⛔ **NOT PUBLISHED YET**)
+
+> PO handed over a layout-only brief plus a reference screenshot. *"Do not change any color, token, font
+> family, font size, font weight, letter-spacing, border, radius, shadow, or background."*
+> ✅ **AUDITED AGAINST THAT**: colour tokens, `fontSize`, `fontWeight`, `letterSpacing`, `fontFamily`
+> and `backgroundColor` all show **no net change** across the diff. The single radius change
+> (`md`→`pill` on the How To) is the one the brief itself asks for.
+> **How To leaves the full-width bar A12 gave it and returns to the rail as a bottom-anchored pill.**
+> Three properties do it and each one fails differently: `heroMeta` gains `alignSelf: 'stretch'` so the
+> rail matches the 212pt plate, `marginTop: 'auto'` eats that slack so the pill sits at the rail's foot
+> at any title length, and `alignSelf: 'flex-start'` stops it spanning the width. `heroRow1` deleted.
+> **≈ 56pt off the card**, repaying part of A12-D1's height debt.
+> **Header**: `PREVIOUS` → **`Prev`**, `WEIGHT · LB` → **`Weight`** (the unit already prints in every
+> field), `Set` centred over its ring, bottom padding 7 → 9. ⚠ **The column stays 76** — A11-D4 widened
+> it for TWO reasons and only the heading went away; `102.5 × 8` at 14.5pt still measures ~72pt.
+> **Reps**: an un-entered goal now renders at **`opacity: 0.35`**. ⚠ Opacity ONLY — the W9-A9 three-ink
+> ladder is untouched and the dim rides on top of it. Lands at ~1.60:1, a shade more visible than the
+> weight column's own `charcoal500` placeholder (~1.45:1) beside it.
+> **Coach coin** no longer covers the last delete icon: `scroll.paddingBottom` 24 → **88**, derived as
+> coin bottom 82 + height 52 − bar (14+48) = 72 of intrusion, + 16. ⚠ **`barBottom` cancels** — coin and
+> bar both ride it, so taking the brief's literal offset would reserve ~150pt of dead space instead.
+> ⚠ **FOUR NUMBERS DECLINED, EACH BECAUSE TAKING IT CAUSES THE DEFECT BEING FIXED.** The brief's set-row
+> grid (`34/66/1fr/1fr/34/18, gap 10`) is not what the rows are — the real, guarded definition is
+> `30/76/70/54/30/18, gap 4, space-between`, which the header ALREADY shared; header horizontal padding
+> `14` would sit 10pt inboard of `row`'s 4; header top padding `11` would STACK on `table`'s existing 14
+> to make 25 (the screenshot shows ~14); and §2.3's "44×44 hit area" for the pencil is already the whole
+> ~102×70 Goal cell — giving the pencil its own would nest a Pressable inside a Pressable and let a tap
+> swallow the cell's press. The header guard now asserts header and row insets are **equal to each
+> other** rather than pinning a number, so the pair cannot drift.
+> tsc **0** · lint clean · **30 pass** (2 A12 guards rewritten, +2 new) · all 14 files green.
+
 ### 0. The Option 5a card keeps its old colours, and Alabaster needed nothing (2026-09-09, Active Workout hero — **no migration**, ✅ **OTA PUBLISHED TO BUILD 8 AND VERIFIED DELIVERABLE** iOS `01a0863f-637c-7964-a0c0-dbac3acf8f48` — commit `d6e44cb` on `feat/route-map` (**pushed**), cherry-picked as `b97f765` on `ota/build8-js`. ⛔ **WEB NOT DEPLOYED** · ⛔ **NOT SEEN ON A DEVICE OR IN ALABASTER**)
 
 > PO on the published A12 build: *"All the coloring we should keep as before. **No coloring changes.**
