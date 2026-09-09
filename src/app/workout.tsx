@@ -279,17 +279,36 @@ function goalTextFor(sets: readonly SessionSet[]): string {
   return uniform ? `${sets.length}×${parts[0]}` : `${sets.length}×${parts.join('-')}`;
 }
 /**
- * The plinth figure, sized so it never clips (W9-A9-D1).
+ * `3×8` → `3 × 8` — the plinth's figures, spaced (W9-A10-D1).
  *
- * ⚠ THE COLUMN IS A THIRD OF A CARD AND THE FIGURE IS NOT A FIXED WIDTH. `185×5` fits the design's
- * 24pt; `102.5×5` — a metric athlete's own bench — does not, and neither does a ladder goal like
- * `4×6-6-4-4`, which `goalTextFor` produces deliberately because "4×6" would describe a different
- * exercise. Clipping either one hides the athlete's record or half their prescription, so the type
- * steps down instead. Not `adjustsFontSizeToFit`: that is iOS-only and does nothing on web, which is
- * the surface the PO tests on.
+ * PO: *"Make Goal / Best / Last Time structurally consistent… that is substantially easier to scan."*
+ * The `×` is an operator between two facts (how many sets, how many reps), and set tight against them
+ * it reads as one token. `goalTextFor` keeps its compact form because the COLLAPSED strip has 11pt to
+ * spend and no room for the spaces; only the plinth, which is the thing being scanned, opens it up.
+ */
+const spacedFigure = (s: string): string => s.replace(/×/g, ' × ');
+
+/**
+ * The plinth figure, sized so it never clips (W9-A9-D1, resized W9-A10-D1).
+ *
+ * PO: *"Reduce Goal / Best numbers ~10–15%. Not dramatically. They currently feel slightly too much
+ * like headline statistics."* 24 → **21** (−12.5%), and the two fallback steps come down with it. The
+ * point is the HIERARCHY: the set row's own numerals are 20pt, so at 24 the plinth out-shouted the
+ * thing the athlete is actually doing. At 21 it reads as context to a row that is nearly its equal —
+ * which is the *"Level 4 slightly more dominant than Levels 2 and 3"* the critique asks for.
+ *
+ * ⚠ THE COLUMN IS A THIRD OF A CARD AND THE FIGURE IS NOT A FIXED WIDTH. `185 × 5` fits at 21pt;
+ * `102.5 × 5` — a metric athlete's own bench — does not, and neither does a ladder goal like
+ * `4 × 6-6-4-4`, which `goalTextFor` produces deliberately because "4×6" would describe a different
+ * exercise. Clipping either hides the athlete's record or half their prescription, so the type steps
+ * down instead. ⚠ THE THRESHOLDS COUNT THE **SPACED** STRING — `spacedFigure` adds two characters, so
+ * measuring the compact form would keep `185 × 5` at a size it no longer fits. Not
+ * `adjustsFontSizeToFit`: that is iOS-only and does nothing on web, which is the surface the PO tests.
  */
 function plinthFigureStyle(s: string): { fontSize: number; lineHeight: number } {
-  const size = s.length > 8 ? 15 : s.length > 6 ? 18 : 24;
+  /* `3 × 8` (5) and `185 × 5` (7) hold 21. `3 × 1:00` (8) — a timed goal — and `102.5 × 5` (9) do not:
+     both measure past the ~85pt a 1fr column has after padding. `4 × 6-6-4-4` (11) needs the third step. */
+  const size = s.length > 10 ? 13 : s.length > 7 ? 16 : 21;
   return { fontSize: size, lineHeight: size + 2 };
 }
 
@@ -2347,7 +2366,7 @@ export default function WorkoutScreen() {
    * past the column. Same rule as the row's `Prev`, which keeps its spaces because it has 66pt and the
    * spaces are what stop `45×8` reading as a single number.
    */
-  const bestFigure = liftHist?.best ? `${setWeightLabelLb(liftHist.best.weight, units)}×${liftHist.best.reps}` : '—';
+  const bestFigure = liftHist?.best ? `${setWeightLabelLb(liftHist.best.weight, units)} × ${liftHist.best.reps}` : '—';
   /**
    * ══ THE ATTRIBUTE RUN — the OPEN follow-on W9-A8-D3a left behind ══
    *
@@ -3652,7 +3671,7 @@ export default function WorkoutScreen() {
                         <Text style={[styles.plinthLabel, styles.plinthLabelLive]}>Goal</Text>
                       </View>
                       <View style={styles.plinthValueRow}>
-                        <Text style={[styles.plinthGoalVal, plinthFigureStyle(goalText)]}>{goalText}</Text>
+                        <Text style={[styles.plinthGoalVal, plinthFigureStyle(spacedFigure(goalText))]}>{spacedFigure(goalText)}</Text>
                         {goalEditable ? (
                           <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
                             <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
@@ -3713,9 +3732,18 @@ export default function WorkoutScreen() {
                           <Svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round">
                             <Path d="M4 5h16M4 12h16M4 19h10" />
                           </Svg>
-                          <Text style={styles.plinthLabel}>Last Time</Text>
+                          {/* ⚠ `LAST NOTE`, NOT `LAST TIME` — the label has to say WHAT the value is, the
+                              way `Goal` and `Best` do, or the column reads as a third statistic and the
+                              eye stops on it looking for a number (W9-A10-D2). The PO asked for "Note From
+                              Last Time"; at 9.5pt with 1.3px tracking that measures ~142pt against the
+                              ~100pt this column has for label text, so it is the same sentence at a width
+                              that fits. ⚠ Do not re-lengthen it without re-measuring the column. */}
+                          <Text style={styles.plinthLabel}>Last Note</Text>
                         </View>
-                        <Text style={styles.plinthNote} numberOfLines={2}>{plinthNote}</Text>
+                        {/* The quotation marks do the other half of the job: they say "a person wrote
+                            this" without spending a word, which is what stops a sentence sitting in a
+                            row of figures from reading as data. */}
+                        <Text style={styles.plinthNote} numberOfLines={2}>{`“${plinthNote}”`}</Text>
                         <Text style={styles.plinthRead}>Read note</Text>
                       </Pressable>
                     ) : null}
@@ -3929,7 +3957,16 @@ export default function WorkoutScreen() {
                             ) : set.targetWeight != null ? (
                               <Text style={[styles.fieldNum, styles.fieldNumFaded, String(set.targetWeight).length > 4 ? styles.fieldNumSm : null]} numberOfLines={1}>{set.targetWeight}</Text>
                             ) : (
-                              <View style={styles.emDash} />
+                              /* ⚠ `— lb`, NOT A BARE DASH (W9-A10-D4). PO: *"I'd question whether a user
+                                 immediately understands that this is tappable."* The unit is the cheapest
+                                 affordance available — it says the box expects a number from you, which a
+                                 rule on its own does not, and it costs no height. ⚠ It DOES repeat the
+                                 `Weight · lb` column header; that is the trade, and the header is read
+                                 once while the row is read every set. */
+                              <View style={styles.emDashRow}>
+                                <View style={styles.emDash} />
+                                <Text style={styles.emDashUnit}>{unitLabel(units)}</Text>
+                              </View>
                             )}
                           </Pressable>
                           {/* ══ A HOLD GETS A CLOCK, NOT A REPS BOX ══
@@ -4019,7 +4056,7 @@ export default function WorkoutScreen() {
                       it stops being news. Derived from the session rather than a stored "seen" flag — there
                       is nothing to persist, nothing to clear on account switch, and no effect to get wrong. */}
                   {setsDone === 0 ? (
-                    <Text style={styles.tableHint}>Tap a weight or a rep count to change it — then Log Set marks it done.</Text>
+                    <Text style={styles.tableHint}>Tap weight or reps to edit.</Text>
                   ) : null}
 
                 </View>
@@ -5678,9 +5715,15 @@ const styles = StyleSheet.create({
   /* ⚠ `alignItems: 'stretch'` + `marginTop: 'auto'` ON `howTo` IS WHAT ALIGNS THE PILL WITH THE ART'S
      FOOT. The art is a fixed 104×145; the meta column stretches to whatever the taller of the two is,
      and the pill takes the slack. A one-line exercise name would otherwise leave it floating mid-card. */
-  heroUpper: { flexDirection: 'row', gap: 12, padding: 14, alignItems: 'stretch' },
-  mediaSlot: { width: 104, height: 145, alignSelf: 'flex-start', borderRadius: flRadius.md, overflow: 'hidden', backgroundColor: flColor.charcoal600, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, boxShadow: 'inset 0 0 32px rgba(181, 138, 97, 0.10), 0 0 20px rgba(181, 138, 97, 0.14)', alignItems: 'center', justifyContent: 'center' },
-  heroMeta: { flex: 1, minWidth: 0, gap: 10 },
+  /* ⚠ COMPRESSED ~10% ON THE PO'S CRITIQUE (W9-A10-D3): *"Compress the exercise information area ~10%
+     — especially muscle/equipment line, How To, vertical gaps"* and *"exercise card internal spacing:
+     slightly too generous"*. Padding 14→12, stack gap 10→7, art 145→130. The NAME is untouched at
+     26/28: it is Level 1 of the hierarchy and shrinking it would flatten the exercise into a caption.
+     Targeted compression, not a global tightening — the set rows were rated "very good" and keep
+     every pixel they have. */
+  heroUpper: { flexDirection: 'row', gap: 12, padding: 12, alignItems: 'stretch' },
+  mediaSlot: { width: 104, height: 130, alignSelf: 'flex-start', borderRadius: flRadius.md, overflow: 'hidden', backgroundColor: flColor.charcoal600, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, boxShadow: 'inset 0 0 32px rgba(181, 138, 97, 0.10), 0 0 20px rgba(181, 138, 97, 0.14)', alignItems: 'center', justifyContent: 'center' },
+  heroMeta: { flex: 1, minWidth: 0, gap: 7 },
   heroTitleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
   /* Two lines on most names at this width, and that is expected — the display serif at 26 is the card's
      whole hierarchy, and shrinking it to force one line would flatten the exercise into a caption. */
@@ -5697,7 +5740,7 @@ const styles = StyleSheet.create({
   /* ⚠ `gray400`, NOT `gray600`, for the reason W9-A7-D5 gives: Alabaster's `gray600` measures 3.15:1,
      which clears the non-text floor and FAILS the 4.5 this needs as running text. The `·` separators are
      their own spans a step back from the words, so the run reads as three facts rather than one string. */
-  heroAttrs: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
+  heroAttrs: { fontSize: 12.5, lineHeight: 16, color: flColor.gray400 },
   heroAttrsSep: { color: flColor.charcoal500 },
   /* A pill, not a link. It is the answer to the one question a beginner has on a movement they have
      never done, and a 13pt underline lost that argument to the weight field every time. */
@@ -5706,9 +5749,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 11,
     borderRadius: flRadius.pill,
     borderWidth: 1,
     borderColor: flColor.bronzeBorderSubtle,
@@ -5726,7 +5769,10 @@ const styles = StyleSheet.create({
      other two carry a figure each; the note column simply is not rendered when there is no note, and the
      remaining two then split the card. */
   plinth: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
-  plinthCol: { flex: 1, minWidth: 0, gap: 5, paddingTop: 12, paddingBottom: 13, paddingHorizontal: 10 },
+  /* ⚠ TIGHTENED (W9-A10-D3): the critique rated this band *"too much vertical allocation"*. 12/13 →
+     10/10 and the stack gap 5 → 4, which with the smaller figure takes ~9pt off the card without
+     touching the set rows below it. */
+  plinthCol: { flex: 1, minWidth: 0, gap: 4, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 10 },
   plinthColFirst: { paddingLeft: 14 },
   plinthColRuled: { borderLeftWidth: 1, borderLeftColor: flColor.charcoal600 },
   plinthColWide: { flex: 1.25, paddingRight: 14 },
@@ -5852,6 +5898,10 @@ const styles = StyleSheet.create({
   /* An em-dash BAR, not a `0` and not the character. A warm-up done with an empty bar is not a
      bodyweight set, and a placeholder that looks like a value is how the app decides it was. */
   emDash: { width: 14, height: 1.5, backgroundColor: flColor.charcoal500 },
+  emDashRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  /* Quieter than the faded ask in the Reps field beside it — this is a unit, not a number, and it must
+     not read as a value somebody entered. */
+  emDashUnit: { fontSize: 10.5, fontWeight: '600', color: flColor.charcoal500 },
   /* The hold timer stands in for the Reps field AND the Check, so it is the one cell allowed to size
      itself — it is wider than 54 + 30 and there is slack in the row to lend it. */
   holdCell: { alignItems: 'center', justifyContent: 'center' },
@@ -5925,7 +5975,26 @@ const styles = StyleSheet.create({
   err: { fontFamily: flFont.sans, fontSize: 13, color: flColor.redMuted, textAlign: 'center' },
 
   // bottom actions
-  bottom: { borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: flColor.charcoal900 },
+  /*
+   * ══ A BAR THE SCREEN ENDS AT, NOT A ROW THE SCROLL RUNS OUT INTO (W9-A10-D5) ══
+   *
+   * PO: *"the bottom region feels slightly detached… I'd give this area a slightly stronger fixed
+   * bottom-sheet treatment. Just enough separation that the user understands: these actions remain
+   * available regardless of where I am in the workout."*
+   *
+   * Three cheap changes, no layout move: the surface lifts off the canvas (`charcoal800` is the CARD
+   * role in both palettes — in Alabaster it is `#F9F6EF` against a `#F6F2E8` page, which is exactly the
+   * "raised" reading), the rule hardens one step to `charcoal600` so it reads as an edge rather than a
+   * seam, and an UPWARD shadow puts the scrolling content behind it. Literal `boxShadow` because every
+   * `flShadow` token throws downward and this one has to throw up; kept at 0.30 so it is an elevation
+   * cue on cream rather than a smudge.
+   */
+  bottom: {
+    borderTopWidth: 1,
+    borderTopColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal800,
+    boxShadow: '0 -10px 22px rgba(0, 0, 0, 0.30)',
+  },
   completeNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 10 },
   completeDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: flColor.greenMuted },
   completeNoteText: { fontSize: 10, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
