@@ -278,11 +278,12 @@ test('⚠ the plate is a fixed 150 × 212 stage, and it CROPS rather than letter
   assert.match(slot, /height: 212/, 'the plate lost its spec height');
   assert.ok(!/minHeight/.test(slot), 'the plate is stretching again — A12 fixes both dimensions');
   assert.match(slot, /flexGrow: 0, flexShrink: 0/, 'the plate can be squeezed by the text rail');
-  assert.match(slot, /backgroundColor: flColor\.surfaceRecessed/, 'the plate lost the recessed ground');
-  /* The spec allows exactly two shadows on this card: `shadow-card` on the card, `border-inset` on the
-     plate. The bronze glow A9 gave it is not one of them. */
-  assert.match(slot, /boxShadow: flShadow\.borderInset/, 'the plate lost border-inset, or grew a glow back');
-  assert.ok(!/rgba\(181, 138, 97/.test(slot), 'the bronze glow is back on the plate — the spec removed it');
+  /* ⚠ THE PALETTE IS THE PRE-A12 ONE AND THAT IS THE POINT. The spec asked for `--fl-surface-recessed`
+     and `--fl-border-inset`; PO afterwards: *"All the coloring we should keep as before. No coloring
+     changes."* A12 is a LAYOUT pass — it moved the geometry and handed the palette back. Asserted so
+     nobody "finishes" the spec by re-applying a ground that was reverted on purpose. */
+  assert.match(slot, /backgroundColor: flColor\.charcoal600/, 'the plate ground changed — A12 was layout only');
+  assert.match(slot, /rgba\(181, 138, 97/, 'the bronze glow was removed again — the PO kept the colouring as it was');
   /* ⚠ `contain`, AND THIS ONE IS A HARD FLOOR — PO: *"I want the full animation in there."*
      `deliver_forge.py` normalises every loop to height 300 and lets the width land where it lands, so
      aspect ratio is per-clip. Measured over 96 clips: min 0.327 (ring-muscle-up), median 0.800, max
@@ -299,9 +300,14 @@ test('⚠ How To is a full-width bar, and its "first time" STYLE variant is gone
   const bar = WORKOUT.slice(WORKOUT.indexOf('howTo: {'), WORKOUT.indexOf('howToText:'));
   assert.ok(bar, 'the How To style is gone');
   assert.match(bar, /justifyContent: 'center'/, 'the bar no longer centres its content');
-  assert.match(bar, /backgroundColor: flColor\.bronzeTint/, 'the bar lost its bronze fill');
   assert.ok(!/marginTop: 'auto'|alignSelf/.test(bar), '⚠ rail-era `marginTop: auto`/`alignSelf` are back — they collapse the bar to its content');
-  assert.ok(!/howToFirst|howToTextFirst/.test(WORKOUT), 'the style variant is back — the bar is already the emphasis');
+  /* ⚠ BOTH COLOUR FACES SURVIVE. A12 briefly gave every bar the spec's tint and deleted `howToFirst`;
+     the PO's *"no coloring changes"* put it back. The SHAPE is the spec's, the INK is the old one.
+     `howToTextFirst` did NOT come back — type size is layout, and the spec sets 13 for both faces. */
+  assert.ok(!/backgroundColor: flColor\.bronzeTint/.test(bar), 'the default bar grew a fill — only the first-time face is filled');
+  assert.match(WORKOUT, /howToFirst: \{ borderColor: flColor\.bronzeBorder, backgroundColor: flColor\.bronzeTint \}/, 'the first-time face lost its colouring');
+  assert.match(WORKOUT, /liftHist \? null : styles\.howToFirst/, 'the first-time face is no longer applied');
+  assert.ok(!/howToTextFirst/.test(WORKOUT), 'the first-time TYPE SIZE is back — that is layout, and the spec sets 13 for both');
   assert.match(WORKOUT, /liftHist \? 'How To' : "First time — here's how"/, '⚠ the first-time COPY was dropped — that is behaviour, not layout');
   // It is row 2 of the upper block, so it must sit OUTSIDE the plate/rail row.
   assert.ok(WORKOUT.indexOf('styles.heroRow1') < WORKOUT.indexOf('styles.howTo'), 'How To drifted back inside the text rail');

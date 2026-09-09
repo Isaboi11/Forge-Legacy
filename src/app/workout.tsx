@@ -3565,7 +3565,11 @@ export default function WorkoutScreen() {
                         exerciseId={ex.catalogKey}
                         contentFit="contain"
                         fallback={
-                          <Svg width={50} height={50} viewBox="0 0 24 24" fill="none" stroke={flColor.charcoal500} strokeWidth={1.25} strokeLinecap="round" strokeLinejoin="round">
+                          /* ⚠ SPEC SIZE (50, stroke 1.25), PRE-A12 COLOUR (bronze at 0.14, not the
+                             spec's `charcoal500`) — PO: *"no coloring changes."* Size is layout, ink
+                             is not. ⚠ A PLAIN BLOCK COMMENT, NOT A JSX ONE: `fallback={…}` is an
+                             expression slot, so a brace-wrapped JSX comment here is a syntax error. */
+                          <Svg width={50} height={50} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.25} strokeLinecap="round" strokeLinejoin="round" opacity={0.14}>
                             <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
                           </Svg>
                         }
@@ -3652,18 +3656,18 @@ export default function WorkoutScreen() {
                     breathing, tempo. It is the best beginner asset in the product and it used to open
                     nothing; then it opened the right screen, styled as a footnote.
 
-                    ⚠ THE STYLE VARIANT IS GONE AND THE COPY VARIANT STAYS, which is the line between
-                    layout and behaviour this pass was told not to cross. `howToFirst` existed to make the
-                    control loud on a movement the athlete has never done — but the bar is now bronze-tinted
-                    and bronze-bordered for EVERYBODY, so a second "louder" treatment has nothing left to
-                    say. The words still change: `liftHist` is null for a lift with no history, and
-                    "First time — here's how" is the answer to the one question somebody meeting a lift has.
+                    ⚠ BOTH VARIANTS SURVIVE — the copy AND the fill. `howToFirst` makes the control loud
+                    on a movement the athlete has never done; A12 briefly deleted it, having given every
+                    bar the spec's bronze tint, and the PO's *"no coloring changes"* put it back. What
+                    changed is only the SHAPE: a left-aligned pill in the text rail became a bar across
+                    the card. `liftHist` is null for a lift with no history — the same fact the plinth
+                    uses to print `—` where a previous best would go. No new state, no new read.
                   */}
                   <Pressable
                     onPress={() => (ex.catalogKey ? router.push({ pathname: '/exercise/[id]', params: { id: ex.catalogKey } }) : undefined)}
                     accessibilityRole="button"
                     accessibilityLabel={liftHist ? `How to ${ex.name}` : `First time on ${ex.name} — see how it's done`}
-                    style={({ pressed }) => [styles.howTo, pressed ? styles.howToPressed : null]}
+                    style={({ pressed }) => [styles.howTo, liftHist ? null : styles.howToFirst, pressed ? styles.howToPressed : null]}
                   >
                     <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.6}>
                       <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" />
@@ -5787,10 +5791,11 @@ const styles = StyleSheet.create({
   // hero card
   /* ⚠ `overflow: 'hidden'` IS STRUCTURAL, NOT TIDINESS. The plinth is a full-bleed band with its own
      background, and without the clip its square bottom corners stand proud of the card's 16pt radius. */
-  /* `charcoal800` is `--fl-surface-card` — the CARD role in both palettes, as W9-A10-D5 established for
-     the bottom bar. `overflow: hidden` is load-bearing: the plinth's square corners stand proud of the
-     xl radius without it (guarded). */
-  hero: { backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.xl, overflow: 'hidden', boxShadow: flShadow.card },
+  /* ⚠ `charcoal900`, AND THE A12 SPEC'S `--fl-surface-card` (`charcoal800`) WAS REVERTED OUT OF IT.
+     PO: *"All the coloring we should keep as before. No coloring changes."* A12 was a LAYOUT pass; the
+     ground it inherited is the ground it keeps. `overflow: hidden` is load-bearing: the plinth's square
+     corners stand proud of the xl radius without it (guarded). */
+  hero: { backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.xl, overflow: 'hidden', boxShadow: flShadow.card },
   /* ⚠ `alignItems: 'stretch'` + `marginTop: 'auto'` ON `howTo` IS WHAT ALIGNS THE PILL WITH THE ART'S
      FOOT. The art is a fixed 104×145; the meta column stretches to whatever the taller of the two is,
      and the pill takes the slack. A one-line exercise name would otherwise leave it floating mid-card. */
@@ -5835,10 +5840,13 @@ const styles = StyleSheet.create({
    * under `contain`, same 96 clips: **150 × 212 → 69.1%**, 150 × 181 → 69.6%, 150 × 150 → 64.9%. The
    * spec's number is already within half a point of the best of them. It is kept.
    *
-   * ⚠ NO GLOW. The bronze inner/outer glow this carried is replaced by `flShadow.borderInset` per the
-   * spec's "the only shadows are card and border-inset" — do not put it back.
+   * ⚠ **THE GROUND AND THE GLOW ARE THE PRE-A12 ONES, DELIBERATELY.** The spec asked for
+   * `--fl-surface-recessed` and `--fl-border-inset` in place of `charcoal600` and the bronze glow; PO
+   * afterwards: *"All the coloring we should keep as before. No coloring changes."* So A12 keeps its
+   * GEOMETRY (150 × 212, fixed) and hands the palette back. ⚠ Do not "finish" the spec by re-applying
+   * the recessed ground — it was reverted on purpose, not missed.
    */
-  mediaSlot: { width: 150, height: 212, flexGrow: 0, flexShrink: 0, borderRadius: flRadius.md, overflow: 'hidden', backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, boxShadow: flShadow.borderInset, alignItems: 'center', justifyContent: 'center' },
+  mediaSlot: { width: 150, height: 212, flexGrow: 0, flexShrink: 0, borderRadius: flRadius.md, overflow: 'hidden', backgroundColor: flColor.charcoal600, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, boxShadow: 'inset 0 0 32px rgba(181, 138, 97, 0.10), 0 0 20px rgba(181, 138, 97, 0.14)', alignItems: 'center', justifyContent: 'center' },
   heroMeta: { flex: 1, minWidth: 0, gap: 9 },
   /* 34 × 1 of bronze between the name and the classification. A rule, not a border — it belongs to
      neither the thing above it nor the thing below it, which is why it is its own View. */
@@ -5888,6 +5896,11 @@ const styles = StyleSheet.create({
    * ⚠ `marginTop: 'auto'` AND `alignSelf` ARE GONE ON PURPOSE. Both were doing work only inside the
    * rail; left on a full-width row they would collapse the bar to its content and re-open the exact
    * bug this replaced. `radius.md`, not `pill` — a bar this wide with a 999 radius reads as a slider.
+   *
+   * ⚠ **THE TWO COLOUR FACES CAME BACK.** A12 first gave every bar the spec's `--fl-bronze-tint` fill
+   * and deleted `howToFirst` as redundant; PO: *"All the coloring we should keep as before. No
+   * coloring changes."* So the SHAPE is the spec's full-width bar and the INK is what it always was —
+   * unfilled by default, filled and firmly bordered on a lift with no history.
    */
   howTo: {
     flexDirection: 'row',
@@ -5898,9 +5911,12 @@ const styles = StyleSheet.create({
     borderRadius: flRadius.md,
     borderWidth: 1,
     borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.bronzeTint,
   },
   howToText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronze300 },
+  /* The first-time face: louder on the one occasion it is the whole question, quiet on the fortieth set
+     of bench. ⚠ COLOUR ONLY — `howToTextFirst`'s 13.5pt did NOT come back, because type size is layout
+     and the spec sets it at 13 for both faces. */
+  howToFirst: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   howToPressed: { opacity: 0.7 },
 
   /* ══ THE PLINTH — GOAL · BEST · LAST TIME (W9-A9-D1) ══

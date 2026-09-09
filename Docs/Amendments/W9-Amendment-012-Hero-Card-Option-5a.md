@@ -17,19 +17,19 @@ Those two sentences govern every decision here, including the four places they p
 
 | | Was (A11) | Now (A12) |
 |---|---|---|
-| Card ground | `charcoal900` | **`charcoal800`** (`--fl-surface-card`) |
+| Card ground | `charcoal900` | `charcoal900` — spec's `--fl-surface-card` **reverted** (D7) |
 | Upper block | row, padding 12, gap 12 | **column**, padding **14**, gap 12 |
 | Row 1 | plate + rail, gap 12 | plate + rail, gap **14**, `flex-start` |
-| Plate | 112 × 148 **min, stretching**, bronze glow | **150 × 212 fixed**, `border-inset`, recessed ground |
+| Plate | 112 × 148 **min, stretching**, `charcoal600` + bronze glow | **150 × 212 fixed**; ground and glow **kept** (D7) |
 | Plate fit | `contain` | **`contain`** — spec said `cover`, reversed on the PO's call (D2) |
-| Fallback glyph | 74, bronze @ 0.14 | **50**, `charcoal500`, stroke 1.25 |
+| Fallback glyph | 74, bronze @ 0.14 | **50**, stroke **1.25** — bronze @ 0.14 **kept** (D7) |
 | Rail gap | 7 | **9** |
 | Name | 26 / 28 | **25 / 27** |
 | Title icons | 19 and 18 | **15 and 15**, `margin-top: 4` |
 | Hairline | — | **new: 34 × 1 bronze** |
 | Category | 11pt, icon 12 | **10.5pt**, icon **11**, `--fl-text-secondary` |
 | Meta | one wrapping `·` run | **two lines** — equipment, then muscles |
-| How To | pill, left-aligned in the rail, 2 style faces | **full-width bar**, row 2, one face |
+| How To | pill, left-aligned in the rail, 2 colour faces | **full-width bar**, row 2 — both faces **kept** (D7) |
 | Strip cells | flex 1 / 1 / 1.25, uniform padding | **0.85 / 0.85 / 1.3**, per-cell padding |
 | Strip labels | icon 10 | icon **9** |
 | Figures | 17pt, **spaced** `3 × 8` | **19pt, tight `3×8`** |
@@ -86,10 +86,62 @@ unreadable lines under every exercise name. `gray400` (`--fl-text-secondary`) is
 passes in **both** themes. ⚠ Reaching tertiary here is a **ramp change, not a token change** — in
 `foundation.paper.ts` `gray600` and `gray400` sit 0.08 apart and neither moves alone. **PO's call.**
 
-**W9-A12-D4 — the How To *style* variant went; the *copy* variant stayed.** `howToFirst` made the
-control loud for a lift with no history. The bar is now bronze-tinted and bronze-bordered for everybody,
-so a second "louder" face had nothing left to say — that is layout, and it went. The **words** still
-change (`"First time — here's how"`), because that is behaviour and the brief said not to touch it.
+**W9-A12-D4 — the How To variant: BOTH faces stayed.** A12 first deleted `howToFirst`, having given
+every bar the spec's bronze tint — a second "louder" face has nothing to say when the default is already
+filled. D7 reverted the fill, so the variant came back with it. The bar's SHAPE is the spec's; its INK is
+what it always was. ⚠ `howToTextFirst`'s 13.5pt did **not** come back — type size is layout, and the spec
+sets 13 for both faces.
+
+---
+
+## 2a. W9-A12-D7 — the colour half of the spec was reverted, after the fact
+
+PO, after reviewing the published build: *"All the coloring we should keep as before. **No coloring
+changes.**"* A12 is a **layout** pass; it moved geometry and handed the palette back. Four reverts:
+
+| | Spec asked | Ships |
+|---|---|---|
+| Card ground | `--fl-surface-card` (`charcoal800`) | **`charcoal900`** |
+| Plate ground | `--fl-surface-recessed` | **`charcoal600`** |
+| Plate shadow | `--fl-border-inset` | **the bronze inner/outer glow** |
+| Fallback glyph | `--fl-charcoal-500`, full opacity | **`bronze400` @ 0.14** |
+| How To fill | `--fl-bronze-tint` on every bar | **unfilled by default; `howToFirst` restored** |
+
+⚠ **SIZE IS LAYOUT, INK IS NOT** — that is the line D7 draws. The fallback glyph keeps the spec's 50pt
+and 1.25 stroke while keeping its old bronze; the How To bar keeps its new full-width shape while losing
+the fill it briefly gained.
+
+**AUDITED, NOT ASSERTED.** Every colour token in the diff against the pre-A12 build (`ae31923`) was
+enumerated and normalised for role aliases that resolve identically in both palettes
+(`flText.primary`≡`cream100`, `flText.secondary`≡`gray400`, `flIcon.inactive`≡`gray600`,
+`flIcon.bronze`≡`bronze400`). **Five net deltas remain and none is a colour change:**
+
+| Delta | Cause |
+|---|---|
+| `gray400` −1, `bronze400` −3 | role-token swaps — **identical value in both themes** |
+| `bronze300` −1 | `plinthRead` deleted — the `Read note` link the spec removed |
+| `charcoal500` −1 | `heroAttrsSep` deleted — the middot span, gone with the two-line meta |
+| `bronzeBorder` +1 | the new 34 × 1 hairline the spec added |
+
+---
+
+## 2b. W9-A12-D8 — Alabaster needs no separate pass, and that was checked rather than assumed
+
+PO: *"Do the same layout changes for the alabaster side. If it's the same animation size then that's
+fine with me."*
+
+**LAYOUT IS ALREADY SHARED.** `workout.tsx` has one `StyleSheet` and **no `IS_PAPER` branch anywhere in
+it** — grepped. Every geometry change in this amendment is already live in both themes; there is no
+paper-side file to mirror them into. That is the Design-System §2.0 rule holding: *structure is both
+themes, value is one.*
+
+**AND THE CLIPS ARE THE SAME SHAPE.** `deliver_alabaster.py` and `deliver_forge.py` both normalise to
+`LOOP_H = 300`. Verified against the live bucket over 34 ids present in both prefixes: **every clip is
+300 tall in both**, and widths differ by 1–2px from independent rounding of the same source — invisible
+under `contain`. One genuine outlier (`broad-jump`, 540 vs 701 wide) letterboxes in the same plate
+without cropping either way. **No plate change is needed for Alabaster.**
+
+
 
 ---
 
@@ -150,4 +202,4 @@ plinth-under-row hierarchy all still assert exactly what they did before.
 
 | Date | Change |
 |---|---|
-| 2026-09-09 | Created and locked. Reverses A11-D1's stretch and A10-D1a's spacing; narrows A10-D2. D3 (tertiary text) **declined on a contrast measurement**; D2 **reversed to `contain` on the PO's call before publishing**, backed by a 96-clip aspect-ratio sample. D1 (card height) flagged, with 150 × 181 offered as a free 31pt. |
+| 2026-09-09 | Created and locked. Reverses A11-D1's stretch and A10-D1a's spacing; narrows A10-D2. D7 **reverts the spec's colour half** on the PO's call (audited: zero unintended colour deltas). D8 confirms **Alabaster needs no separate pass** — layout is one shared StyleSheet, and both pipelines normalise clips to height 300. D3 (tertiary text) **declined on a contrast measurement**; D2 **reversed to `contain` on the PO's call before publishing**, backed by a 96-clip aspect-ratio sample. D1 (card height) flagged, with 150 × 181 offered as a free 31pt. |
