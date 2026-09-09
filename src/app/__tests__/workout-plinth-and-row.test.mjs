@@ -89,14 +89,25 @@ test('a percentage program’s prescribed bar survived too, and is still not pre
 
 /* ── 2 · `Prev` IS A COLUMN, AND ON THE LIVE ROW A CONTROL ───────────────────────────────────────── */
 
-test('Previous is a column with its own header, not a subline', () => {
-  /* ⚠ W9-A11-D4 SPELLS THE HEADING OUT: `Prev` → `Previous`, and the column went 66 → 76 to hold it.
-     Both halves are asserted together because either alone is the bug — the wider column without the
-     word is dead space, and the word without the column wraps the heading onto a second line. */
-  assert.match(WORKOUT, /<Text style=\{\[styles\.h, styles\.cPrev\]\}>Previous<\/Text>/, 'the Previous column lost its heading');
-  assert.match(WORKOUT, /cPrev: \{ width: 76, flexGrow: 0, flexShrink: 0 \}/, 'the Previous column lost the width its heading needs');
-  // The strip that stands in for the table once the hero collapses says the same word.
-  assert.match(WORKOUT, /\{prevText \? <>Previous </, 'the collapsed strip still abbreviates the label the table spells out');
+test('Prev is a column with its own header, not a subline — and the column stayed 76', () => {
+  /* ⚠ W9-A13 REVERSES A11-D4's SPELLING BUT NOT ITS WIDTH, AND THE SPLIT IS THE POINT. A11 widened
+     `cPrev` 66 → 76 for TWO reasons: `PREVIOUS` needed ~56pt of heading, and `prevVal` is 14.5pt
+     display so a metric athlete's `102.5 × 8` measures ~72pt and was overflowing 66. A13 shortens the
+     word; only the first reason went away. Re-narrowing the column to 66 clips the figure again. */
+  assert.match(WORKOUT, /<Text style=\{\[styles\.h, styles\.cSet, styles\.hCentered\]\}>Set<\/Text>/, 'the Set heading is not centred over its ring');
+  assert.match(WORKOUT, /<Text style=\{\[styles\.h, styles\.cPrev\]\}>Prev<\/Text>/, 'the Prev heading changed');
+  assert.match(WORKOUT, /cPrev: \{ width: 76, flexGrow: 0, flexShrink: 0 \}/, '⚠ the Prev column was re-narrowed — 102.5 × 8 clips at 66');
+  /* The unit prints inside every weight field already; in the heading it cost a second line. */
+  assert.match(WORKOUT, /<Text style=\{\[styles\.h, styles\.cWeight, styles\.hCentered\]\}>Weight<\/Text>/, 'the Weight heading is not the bare word');
+  assert.ok(!/>Weight · \{unitLabel/.test(WORKOUT), 'the unit is back in the Weight heading — it wraps to two lines there');
+  /* ⚠ THE HEADER MUST KEEP THE ROWS' HORIZONTAL PADDING OR EVERY LABEL SITS INBOARD OF ITS CELL.
+     A13 asked for `11px 14px 9px`; 14 would put the header 10pt off the rows, which is the defect the
+     instruction exists to fix. Both stay at 4. */
+  const head = WORKOUT.slice(WORKOUT.indexOf('headRow: {'), WORKOUT.indexOf('},', WORKOUT.indexOf('headRow: {')));
+  const rowAt = WORKOUT.indexOf('row: { flexDirection');
+  const row = WORKOUT.slice(rowAt, WORKOUT.indexOf('},', rowAt));
+  const pad = (b) => Number(b.match(/paddingHorizontal: (\d+)/)?.[1]);
+  assert.equal(pad(head), pad(row), 'the header and the rows no longer share a horizontal inset — the labels have drifted off their cells');
 });
 
 test('⚠ Prev fills the weight with the figure it SHOWS — not the pounds underneath it', () => {
@@ -293,24 +304,41 @@ test('⚠ the plate is a fixed 150 × 212 stage, and it CROPS rather than letter
   assert.ok(!/contentFit="cover"/.test(WORKOUT), 'a cover fit is back on this screen');
 });
 
-test('⚠ How To is a full-width bar, and its "first time" STYLE variant is gone but the COPY is not', () => {
-  /* The line this pass was told not to cross: *"don't change any of the functionality, just layout."*
-     The bar is bronze-tinted for everybody now, so `howToFirst`'s louder face had nothing left to say
-     — but the WORDS still change for a lift with no history, and that is behaviour, not styling. */
+test('⚠ How To is a pill anchored to the foot of the rail, and BOTH its faces survive', () => {
+  /* ⚠ TWO PROPERTIES, TWO DIFFERENT BUGS (W9-A13). `marginTop: 'auto'` eats the rail's vertical slack
+     so the pill lands level with the bottom of the 212pt plate at any title length — without it the
+     dead space under the meta stack comes back, which is the whole reason A13 exists. `alignSelf:
+     flex-start` stops the pill stretching to the rail's width — without it, it is a bar again. And
+     BOTH depend on `heroMeta` stretching; a rail only as tall as its own text gives `auto` no slack. */
   const bar = WORKOUT.slice(WORKOUT.indexOf('howTo: {'), WORKOUT.indexOf('howToText:'));
   assert.ok(bar, 'the How To style is gone');
-  assert.match(bar, /justifyContent: 'center'/, 'the bar no longer centres its content');
-  assert.ok(!/marginTop: 'auto'|alignSelf/.test(bar), '⚠ rail-era `marginTop: auto`/`alignSelf` are back — they collapse the bar to its content');
-  /* ⚠ BOTH COLOUR FACES SURVIVE. A12 briefly gave every bar the spec's tint and deleted `howToFirst`;
-     the PO's *"no coloring changes"* put it back. The SHAPE is the spec's, the INK is the old one.
-     `howToTextFirst` did NOT come back — type size is layout, and the spec sets 13 for both faces. */
-  assert.ok(!/backgroundColor: flColor\.bronzeTint/.test(bar), 'the default bar grew a fill — only the first-time face is filled');
+  assert.match(bar, /marginTop: 'auto'/, '⚠ the pill is no longer pushed to the foot of the rail — the gap is back');
+  assert.match(bar, /alignSelf: 'flex-start'/, '⚠ the pill will stretch to the rail width — that is the bar again');
+  assert.match(bar, /borderRadius: flRadius\.pill/, 'the pill lost its radius');
+  assert.match(WORKOUT, /heroMeta: \{[^}]*alignSelf: 'stretch'/, "⚠ the rail stopped stretching — marginTop:auto has no slack to eat");
+  assert.ok(!/heroRow1/.test(WORKOUT), 'the A12 column wrapper is back — the block holds one row now');
+  /* Both colour faces, and the copy that goes with them. */
   assert.match(WORKOUT, /howToFirst: \{ borderColor: flColor\.bronzeBorder, backgroundColor: flColor\.bronzeTint \}/, 'the first-time face lost its colouring');
   assert.match(WORKOUT, /liftHist \? null : styles\.howToFirst/, 'the first-time face is no longer applied');
-  assert.ok(!/howToTextFirst/.test(WORKOUT), 'the first-time TYPE SIZE is back — that is layout, and the spec sets 13 for both');
-  assert.match(WORKOUT, /liftHist \? 'How To' : "First time — here's how"/, '⚠ the first-time COPY was dropped — that is behaviour, not layout');
-  // It is row 2 of the upper block, so it must sit OUTSIDE the plate/rail row.
-  assert.ok(WORKOUT.indexOf('styles.heroRow1') < WORKOUT.indexOf('styles.howTo'), 'How To drifted back inside the text rail');
+  assert.match(WORKOUT, /liftHist \? 'How To' : "First time — here's how"/, 'the first-time copy was dropped');
+});
+
+test('⚠ an un-entered rep count reads as a suggestion — by OPACITY, not by a new colour', () => {
+  /* PO: the goal rep count rendered *"at the same strength as a real entry"*. The fix is 0.35 on the
+     digit and nothing else — the brief says *"opacity is the only difference"* and forbids colour
+     changes, so the W9-A9 three-ink ladder underneath is untouched and asserted elsewhere. */
+  assert.match(WORKOUT, /const repsSuggested = !isDone && !repsAnswered;/, 'the suggestion state is gone');
+  assert.match(WORKOUT, /fieldNumSuggested: \{ opacity: 0\.35 \}/, 'the suggestion dim changed — or grew a colour of its own');
+  assert.match(WORKOUT, /repsSuggested && styles\.fieldNumSuggested/, 'the dim is not applied to the reps digit');
+  // It must ride ON TOP of the ladder, never replace it.
+  assert.match(WORKOUT, /\{ color: repsColor \}, repsSuggested && styles\.fieldNumSuggested/, 'the dim replaced the state ink instead of riding on it');
+});
+
+test('the scroll reserves room for the coach coin, and does not double-count the safe area', () => {
+  /* coin bottom 82 + height 52 − bar (14 + 48) = 72 of intrusion, + 16 clearance = 88. ⚠ `barBottom`
+     cancels: the coin and the bar both ride it, so adding it here would reserve ~150pt of dead space. */
+  assert.match(WORKOUT, /scroll: \{ paddingHorizontal: 18, paddingTop: 14, paddingBottom: 88, gap: 14 \}/, 'the coach-coin clearance changed');
+  assert.match(WORKOUT, /styles\.holtWrap, \{ bottom: 82 \+ barBottom \}/, '⚠ the coin moved — re-derive the scroll padding above');
 });
 
 test('⚠ the plinth figure is 19 and STILL sits under the set row numerals', () => {

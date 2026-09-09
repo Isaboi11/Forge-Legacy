@@ -3555,7 +3555,6 @@ export default function WorkoutScreen() {
               {isCardio || ssFused ? null : heroExpanded ? (
                 <TourAnchor id="workout-hero" style={styles.hero}>
                   <View style={styles.heroUpper}>
-                  <View style={styles.heroRow1}>
                     {/* The plate — the exercise's looping demonstration, falling back to the engraved
                         dumbbell for lifts the library doesn't cover (strongman, most mobility).
                         ⚠ `contain`, AND IT IS NOT NEGOTIABLE — see `mediaSlot`. The whole movement has
@@ -3647,34 +3646,36 @@ export default function WorkoutScreen() {
                           {heroMuscleText ? <Text style={styles.heroAttrs}>{heroMuscleText}</Text> : null}
                         </View>
                       ) : null}
+                      {/*
+                        ══ HOW TO — A PILL AT THE FOOT OF THE RAIL (W9-A13) ══
+
+                        735 exercises ship published coaching — setup, execution, cues, common mistakes,
+                        breathing, tempo. It is the best beginner asset in the product and it used to open
+                        nothing; then it opened the right screen, styled as a footnote.
+
+                        ⚠ `marginTop: 'auto'` IS THE WHOLE MECHANISM, AND IT ONLY WORKS BECAUSE THE RAIL
+                        STRETCHES. A12 made this a full-width bar under the row; the empty space that left
+                        under the meta stack is what A13 is fixing. `heroMeta` now takes `alignSelf:
+                        'stretch'`, so the rail is as tall as the 212pt plate rather than as tall as its
+                        own text — and `marginTop: 'auto'` pushes this to the rail's foot, so the rail and
+                        the plate end level at ANY title length. Remove either half and the gap comes back.
+
+                        ⚠ BOTH VARIANTS SURVIVE — the copy AND the fill. `liftHist` is null for a lift with
+                        no history, the same fact the plinth uses to print `—` for a previous best.
+                      */}
+                      <Pressable
+                        onPress={() => (ex.catalogKey ? router.push({ pathname: '/exercise/[id]', params: { id: ex.catalogKey } }) : undefined)}
+                        accessibilityRole="button"
+                        accessibilityLabel={liftHist ? `How to ${ex.name}` : `First time on ${ex.name} — see how it's done`}
+                        style={({ pressed }) => [styles.howTo, liftHist ? null : styles.howToFirst, pressed ? styles.howToPressed : null]}
+                      >
+                        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.6}>
+                          <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" />
+                          <Path d="M10 8.5l6 3.5-6 3.5z" fill={flColor.bronze300} stroke="none" />
+                        </Svg>
+                        <Text style={styles.howToText}>{liftHist ? 'How To' : "First time — here's how"}</Text>
+                      </Pressable>
                     </View>
-                  </View>
-                  {/*
-                    ══ HOW TO — A FULL-WIDTH BAR UNDER THE ROW, NOT A PILL INSIDE THE TEXT RAIL (W9-A12) ══
-
-                    735 exercises ship published coaching — setup, execution, cues, common mistakes,
-                    breathing, tempo. It is the best beginner asset in the product and it used to open
-                    nothing; then it opened the right screen, styled as a footnote.
-
-                    ⚠ BOTH VARIANTS SURVIVE — the copy AND the fill. `howToFirst` makes the control loud
-                    on a movement the athlete has never done; A12 briefly deleted it, having given every
-                    bar the spec's bronze tint, and the PO's *"no coloring changes"* put it back. What
-                    changed is only the SHAPE: a left-aligned pill in the text rail became a bar across
-                    the card. `liftHist` is null for a lift with no history — the same fact the plinth
-                    uses to print `—` where a previous best would go. No new state, no new read.
-                  */}
-                  <Pressable
-                    onPress={() => (ex.catalogKey ? router.push({ pathname: '/exercise/[id]', params: { id: ex.catalogKey } }) : undefined)}
-                    accessibilityRole="button"
-                    accessibilityLabel={liftHist ? `How to ${ex.name}` : `First time on ${ex.name} — see how it's done`}
-                    style={({ pressed }) => [styles.howTo, liftHist ? null : styles.howToFirst, pressed ? styles.howToPressed : null]}
-                  >
-                    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.6}>
-                      <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" />
-                      <Path d="M10 8.5l6 3.5-6 3.5z" fill={flColor.bronze300} stroke="none" />
-                    </Svg>
-                    <Text style={styles.howToText}>{liftHist ? 'How To' : "First time — here's how"}</Text>
-                  </Pressable>
                   </View>
                   {/*
                     ══ THE PLINTH — GOAL · BEST · LAST TIME, ON ONE BASELINE (W9-A9-D1) ══
@@ -3714,8 +3715,16 @@ export default function WorkoutScreen() {
                       </View>
                       <View style={styles.plinthValueRow}>
                         <Text style={[styles.plinthGoalVal, plinthFigureStyle(goalText)]}>{goalText}</Text>
+                        {/*
+                          ⚠ 11pt, AND ITS TAP TARGET IS THE WHOLE GOAL CELL — WHICH IS ALREADY WELL OVER
+                          44 × 44 (W9-A13). The cell measures ~102 × 70 and the `Pressable` wrapping it
+                          IS `setGoalOpen`, so the pencil is a MARK saying the value is editable, not a
+                          separate control. ⚠ Do not wrap it in its own `Pressable` to "give it a target"
+                          — a nested touchable inside the cell's touchable is how a tap near the pencil
+                          starts swallowing the cell's own press, and the brief was layout-only.
+                        */}
                         {goalEditable ? (
-                          <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+                          <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={styles.goalPencil}>
                             <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
                           </Svg>
                         ) : null}
@@ -3912,14 +3921,20 @@ export default function WorkoutScreen() {
                   ~58pt ones and the table stops scrolling on a three-set exercise.
                 */}
                 <View style={styles.headRow}>
-                  <Text style={[styles.h, styles.cSet]}>Set</Text>
-                  {/* ⚠ `Previous`, NOT `Prev` (W9-A11-D4) — and the column was widened to pay for it.
-                      An abbreviation in a five-column header is only free while it fits; at 9pt with
-                      1.1 tracking `PREVIOUS` measures ~56pt against `PREV`'s ~28, which the old 66pt
-                      column could only have taken by wrapping the heading onto a second line and
-                      dropping the header row out of line with the ones under it. See `cPrev`. */}
-                  <Text style={[styles.h, styles.cPrev]}>Previous</Text>
-                  <Text style={[styles.h, styles.cWeight, styles.hCentered]}>Weight · {unitLabel(units)}</Text>
+                  {/* Centred, because the set-number ring it labels is centred in the same 30pt cell.
+                      Each heading takes the alignment of the content under it — `Prev` stays left
+                      because its figure is left-aligned in `prevCell`. */}
+                  <Text style={[styles.h, styles.cSet, styles.hCentered]}>Set</Text>
+                  {/* ⚠ BACK TO `Prev` (W9-A13), REVERSING W9-A11-D4's spelling — but NOT its column
+                      width. A11 widened `cPrev` 66 → 76 for two reasons and only one of them was the
+                      heading: `prevVal` is 14.5pt display, so a metric athlete's `102.5 × 8` measures
+                      ~72pt and was overflowing 66. The word shrinks; the column stays 76, or that
+                      figure clips again. See `cPrev`. */}
+                  <Text style={[styles.h, styles.cPrev]}>Prev</Text>
+                  {/* ⚠ NO `· LB`. The unit prints inside every weight field already (W9-A10-D4's
+                      `— lb` affordance), so in the heading it was a duplicate that cost a second line:
+                      `WEIGHT · LB` at 9pt/1.1 tracking measures ~76pt against this column's 70. */}
+                  <Text style={[styles.h, styles.cWeight, styles.hCentered]}>Weight</Text>
                   <Text style={[styles.h, styles.cReps, styles.hCentered]}>Reps</Text>
                   <View style={styles.cCheck} />
                   <View style={styles.cTrash} />
@@ -3960,6 +3975,27 @@ export default function WorkoutScreen() {
                           ? durText(set.targetSec) || '—'
                           : targetRepsText(set);
                     const repsColor = isDone ? flColor.cream100 : repsAnswered ? flColor.bronze300 : flColor.gray600;
+                    /*
+                     * ══ THE GOAL READS AS A SUGGESTION, NOT AN ENTRY (W9-A13) ══
+                     *
+                     * PO: the reps field prints the goal before anything is entered, *"at the same
+                     * strength as a real entry, so there is no visual difference between suggested and
+                     * logged."* True: the ink ladder separated ASKED from ANSWERED from LOGGED, but all
+                     * three rendered at full strength, so an untouched `8` looked typed.
+                     *
+                     * ⚠ OPACITY, NOT A COLOUR — and that is the whole reason this is a one-line change.
+                     * The brief is explicit twice over: *"opacity is the only difference"* and *"do not
+                     * change any color, token…"*. So the three inks are untouched and 0.35 rides on top
+                     * of the faded one. ⚠ The spec's §4.3 says the digit "stays `--fl-text-primary`" —
+                     * it never was; the pending digit is `gray600` by the W9-A9 ladder, and moving it to
+                     * primary would be exactly the token change the same brief forbids.
+                     *
+                     * It lands where the weight field already is: `emDashUnit` draws its placeholder at
+                     * `charcoal500` (~1.45:1), and `gray600` at 0.35 measures ~1.60:1 on `charcoal900` —
+                     * a shade MORE visible than the placeholder beside it, which is the point. Faint
+                     * means waiting and full means logged, in both columns.
+                     */
+                    const repsSuggested = !isDone && !repsAnswered;
                     return (
                       <View key={si} style={[styles.row, si > 0 && !isDone && !isCurrent && styles.rowRuled, isDone && styles.rowDone, isCurrent && styles.rowCurrent]}>
                         {flash && flash.ei === exIdx && flash.si === si ? <FuseFlash key={flash.token} /> : null}
@@ -4056,7 +4092,7 @@ export default function WorkoutScreen() {
                                 accessibilityRole="button"
                                 accessibilityLabel={isDone ? `Edit actual reps, set ${si + 1}` : repsAnswered ? `Reps for set ${si + 1}, ${repsShown}` : `Set ${si + 1} asks for ${repsShown} reps. Change it.`}
                               >
-                                {popCell(si, 'reps', <Text style={[styles.fieldNum, repsShown.length > 2 ? styles.fieldNumSm : null, { color: repsColor }]} numberOfLines={1}>{repsShown}</Text>)}
+                                {popCell(si, 'reps', <Text style={[styles.fieldNum, repsShown.length > 2 ? styles.fieldNumSm : null, { color: repsColor }, repsSuggested && styles.fieldNumSuggested]} numberOfLines={1}>{repsShown}</Text>)}
                               </Pressable>
                               {isDone ? (
                                 <Pressable onPress={() => uncompleteSet(exIdx, si)} accessibilityRole="button" accessibilityLabel={`Mark set ${si + 1} incomplete`} style={({ pressed }) => [styles.cCheck, styles.checkDoneBtn, pressed && styles.checkDoneBtnPressed]}>
@@ -5657,7 +5693,25 @@ const styles = StyleSheet.create({
   peekName: { fontSize: 21, fontWeight: '600', color: flColor.cream100 },
   peekSub: { fontSize: 12.5, color: flColor.gray400 },
   peekRule: { height: 1, backgroundColor: flColor.charcoal700, marginTop: 4 },
-  scroll: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 24, gap: 14 },
+  /**
+   * ⚠ `paddingBottom` CLEARS THE COACH COIN, WHICH FLOATS OVER THIS SCROLL (W9-A13). PO: the coin sat
+   * on top of the last set row's delete icon.
+   *
+   * 24 → 88, derived rather than eyeballed:
+   *
+   *     coin bottom (`holtWrap`)  82 + barBottom     measured from the SCREEN's bottom
+   *     coin height (BUBBLE_SIZE) 52
+   *     action bar                14 + 48 + barBottom  (`bottomRow` padding + the primary Button)
+   *     ────────────────────────────────────────────
+   *     intrusion into the scroll = 82 + 52 − 62 = 72   ← `barBottom` cancels
+   *     plus the brief's 16pt clearance             = 88
+   *
+   * ⚠ `barBottom` CANCELS AND MUST NOT BE ADDED BACK. The coin and the bar both ride it, so the coin's
+   * overlap with the scroll is the same on a phone with a home indicator and one without. Adding the
+   * spec's literal "bottom offset" (82 + barBottom) would reserve ~150pt of dead space at the foot of
+   * every exercise instead of the 72 the coin actually covers.
+   */
+  scroll: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 88, gap: 14 },
   barTitle: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.cream100, maxWidth: 240 },
   overflowBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   /* `box-none` so the empty space around the bubble stays tappable by the scroll view under it — a
@@ -5805,10 +5859,11 @@ const styles = StyleSheet.create({
      26/28: it is Level 1 of the hierarchy and shrinking it would flatten the exercise into a caption.
      Targeted compression, not a global tightening — the set rows were rated "very good" and keep
      every pixel they have. */
-  /* ⚠ A COLUMN NOW, NOT A ROW (W9-A12). It holds two rows: the plate + text rail, then the full-width
-     How To bar. It was itself the row, which is why How To had to live inside the text rail. */
-  heroUpper: { flexDirection: 'column', gap: 12, padding: 14 },
-  heroRow1: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
+  /* ⚠ A ROW AGAIN (W9-A13), AND `heroRow1` IS GONE WITH THE COLUMN IT EXISTED INSIDE. A12 made this a
+     column of two rows so How To could be a full-width bar; A13 puts How To back in the rail, which
+     leaves the block holding a single row — so the wrapper and its `gap: 12` are redundant, not merely
+     unused. `padding: 14` is unchanged. */
+  heroUpper: { flexDirection: 'row', gap: 14, alignItems: 'flex-start', padding: 14 },
   /**
    * ══ THE PLATE — 150 × 212, FIXED (W9-A12) ══
    *
@@ -5847,7 +5902,11 @@ const styles = StyleSheet.create({
    * the recessed ground — it was reverted on purpose, not missed.
    */
   mediaSlot: { width: 150, height: 212, flexGrow: 0, flexShrink: 0, borderRadius: flRadius.md, overflow: 'hidden', backgroundColor: flColor.charcoal600, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, boxShadow: 'inset 0 0 32px rgba(181, 138, 97, 0.10), 0 0 20px rgba(181, 138, 97, 0.14)', alignItems: 'center', justifyContent: 'center' },
-  heroMeta: { flex: 1, minWidth: 0, gap: 9 },
+  /* ⚠ `alignSelf: 'stretch'` IS HALF OF THE HOW-TO ANCHOR (W9-A13) — the other half is that pill's
+     `marginTop: 'auto'`. Without it the rail is only as tall as its own text, `auto` has no slack to
+     absorb, and the pill sits directly under the meta stack with the plate's remaining height empty
+     beside it. With it the rail matches the 212pt plate and the two columns always end level. */
+  heroMeta: { flex: 1, minWidth: 0, gap: 9, alignSelf: 'stretch' },
   /* 34 × 1 of bronze between the name and the classification. A rule, not a border — it belongs to
      neither the thing above it nor the thing below it, which is why it is its own View. */
   heroRule: { width: 34, height: 1, backgroundColor: flColor.bronzeBorder },
@@ -5893,22 +5952,31 @@ const styles = StyleSheet.create({
    * is why it needed a second "first-time" face to be noticed at all. As row 2 of the upper block it
    * spans the card, so the emphasis is structural and the variant could go with it.
    *
-   * ⚠ `marginTop: 'auto'` AND `alignSelf` ARE GONE ON PURPOSE. Both were doing work only inside the
-   * rail; left on a full-width row they would collapse the bar to its content and re-open the exact
-   * bug this replaced. `radius.md`, not `pill` — a bar this wide with a 999 radius reads as a slider.
+   * ⚠ **A PILL AT THE FOOT OF THE RAIL AGAIN (W9-A13).** A12 made it a full-width bar under the row;
+   * that left dead space under the meta stack beside a 212pt plate, and A13 puts it back.
    *
-   * ⚠ **THE TWO COLOUR FACES CAME BACK.** A12 first gave every bar the spec's `--fl-bronze-tint` fill
-   * and deleted `howToFirst` as redundant; PO: *"All the coloring we should keep as before. No
-   * coloring changes."* So the SHAPE is the spec's full-width bar and the INK is what it always was —
-   * unfilled by default, filled and firmly bordered on a lift with no history.
+   * ⚠ `marginTop: 'auto'` AND `alignSelf: 'flex-start'` ARE BOTH LOAD-BEARING, AND THEY DO DIFFERENT
+   * JOBS. `auto` eats the rail's vertical slack so the pill lands at the bottom no matter how many
+   * lines the exercise name takes — it is what makes the rail and the plate end level. `flex-start`
+   * stops the pill stretching to the rail's full WIDTH, so it hugs its label. Removing either one is a
+   * different bug: no `auto` and the gap comes back under the meta; no `flex-start` and the pill
+   * becomes a bar again. Both depend on `heroMeta`'s `alignSelf: 'stretch'` — see there.
+   *
+   * ⚠ `radius.pill`, not `radius.md` — md was the bar's radius, and a pill is what a control that hugs
+   * its own content wants.
+   *
+   * ⚠ **THE TWO COLOUR FACES ARE UNTOUCHED.** Unfilled by default, filled and firmly bordered on a
+   * lift with no history (`howToFirst`), exactly as before A12 and after the D7 revert.
    */
   howTo: {
+    marginTop: 'auto',
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 7,
-    padding: 10,
-    borderRadius: flRadius.md,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: flRadius.pill,
     borderWidth: 1,
     borderColor: flColor.bronzeBorderSubtle,
   },
@@ -5944,6 +6012,9 @@ const styles = StyleSheet.create({
      an accent on all three would say nothing about any of them. */
   plinthLabelLive: { color: flColor.bronze400 },
   plinthValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  /* `flex: none` in the spec's terms — the pencil must never be squeezed by a long goal figure, which
+     is what `plinthFigureStyle`'s step-down is for instead. */
+  goalPencil: { flexGrow: 0, flexShrink: 0 },
   /* Sizes come from `plinthFigureStyle` — see there for why they are not fixed. `letterSpacing` is the
      spec's -0.2 (was -0.3); the display face needs less negative tracking at 19 than it did at 24. */
   plinthGoalVal: { fontFamily: flFont.display, fontWeight: '700', letterSpacing: -0.2, color: flColor.bronze300 },
@@ -6006,7 +6077,25 @@ const styles = StyleSheet.create({
   /* ⚠ NARROW HORIZONTAL PADDING ON PURPOSE (8, not 14). Six cells and a 30pt slack budget do not fit at
      14, and the row needs the width more than the card needs the margin. */
   table: { backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.charcoal700, borderRadius: flRadius.xl, paddingHorizontal: 8, paddingTop: 14, paddingBottom: 12 },
-  headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, paddingBottom: 7, gap: 4 },
+  /**
+   * ⚠ **THE HEADER ALREADY SHARES THE ROWS' COLUMN DEFINITION, AND THAT IS WHY THE HORIZONTAL PADDING
+   * STAYS 4.** W9-A13 asks for `11px 14px 9px`. The vertical halves are taken; the 14 is not, and
+   * taking it would cause the exact defect the instruction exists to fix — `row` is
+   * `paddingHorizontal: 4`, so a header at 14 would sit 10pt inboard of the cells it labels. The
+   * spec's own rule wins over its own number: *"the header and the rows must share one column
+   * definition so every label sits over its own cell."*
+   *
+   * ⚠ AND THE COLUMNS ARE `space-between` + FIXED WIDTHS, NOT A GRID. The spec describes
+   * `34px 66px 1fr 1fr 34px 18px / gap 10`; the real definition — shared by both, and guarded — is
+   * `cSet 30 · cPrev 76 · cWeight 70 · cReps 54 · cCheck 30 · cTrash 18` with `gap: 4`. The header is
+   * brought into line with what the rows ACTUALLY are, which is what the instruction asked for.
+   *
+   * ⚠ NO `paddingTop` EITHER, AND FOR THE SAME KIND OF REASON: `table` already contributes
+   * `paddingTop: 14`, so the spec's 11 would STACK to 25 rather than set the gap to 11. The reference
+   * picture shows ~14 above the headings, which is what the table alone already gives. Only the
+   * bottom moves, 7 → 9.
+   */
+  headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, paddingBottom: 9, gap: 4 },
   h: { fontSize: 9, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray600 },
   /* Set and Prev sit over left-aligned content; Weight and Reps sit over centred fields. */
   hCentered: { textAlign: 'center' },
@@ -6064,6 +6153,10 @@ const styles = StyleSheet.create({
   /* THE FADED ASK. Do not weaken this against `bronze300` and `cream100`: with the Target column gone
      it is the only thing distinguishing a set nobody has answered from one that is logged. */
   fieldNumFaded: { color: flColor.gray600 },
+  /* ⚠ OPACITY ONLY (W9-A13) — no font, size, weight or colour of its own, by instruction. It rides on
+     top of whichever ink the state ladder chose, so the ladder stays the single source of state and
+     this stays the single source of "not entered yet". */
+  fieldNumSuggested: { opacity: 0.35 },
   /* An em-dash BAR, not a `0` and not the character. A warm-up done with an empty bar is not a
      bodyweight set, and a placeholder that looks like a value is how the app decides it was. */
   emDash: { width: 14, height: 1.5, backgroundColor: flColor.charcoal500 },
