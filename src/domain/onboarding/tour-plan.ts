@@ -250,7 +250,7 @@ export const HOME_STEPS: readonly TourStep[] = [
      * running a program, and this leg now runs for the athlete who never builds one, where it would have
      * described a card that says "Train Today" and holds nothing.
      */
-    body: 'Today’s training, and the one button that starts it. Running a program? This is your next session, already built. Not running one? Start Workout asks what you’re training — lifts or cardio — and you fill it in as you go.',
+    body: 'Today’s training, and the one button that starts it. Running a program? This is your next session, already built. Not running one? Start a Workout gives you the ways in — a template, build as you go, or cardio.',
     anchor: 'todays-workout',
     pad: 10,
     radius: 20,

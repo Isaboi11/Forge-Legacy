@@ -171,8 +171,8 @@ export function composeHome(s: HomeStateInput): HomeComposition {
           : 'none';
 
   /*
-   * The open hero's button IS the freestyle choice — it opens "What are you training?" (the spec's W-8
-   * Activity Type Picker). A "Something else today?" link beneath it would be the same tap twice, which is
+   * The open hero's button IS the freestyle choice — it opens the Start a Workout sheet (the spec's W-8
+   * Activity Type Picker, W25-A1-D9). A "Something else today?" link beneath it would be the same tap twice, which is
    * the rule the starting-point slot already encodes for its own freestyle card.
    */
   const heroOffersFreestyle = hero === 'program' || hero === 'resume' || hero === 'planned';

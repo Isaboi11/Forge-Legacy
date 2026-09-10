@@ -57,8 +57,8 @@ export interface TodaysWorkoutCardProps {
    */
   onFreestyle?: () => void
   /**
-   * Overrides the primary button's label. The `open` face says "Start Freestyle Workout", because with
-   * nothing planned that is literally what the button does — "Start Workout" implied a workout existed.
+   * Overrides the primary button's label. The `open` face says "Start a Workout" — "Start Workout" implied
+   * a workout existed, and "Start Freestyle Workout" named only one of the sheet's rows (W25-A1-D9).
    */
   startLabel?: string
   /**

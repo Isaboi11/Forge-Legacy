@@ -63,7 +63,7 @@ import { dayLabel, nextOpenSlot, plannedDays, totalSessions, trainingDays } from
 import { swapSessionOrder } from '@/domain/program/schedule-edit';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { clearPlannedWorkout, fetchPlannedWorkout } from '@/data/planned-workout-live';
-import { StartStrengthSheet } from '@/components/forge/compositions/StartStrengthSheet';
+import { START_COPY, START_ICON, StartOptionRow } from '@/components/forge/compositions/StartStrengthSheet';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgramById } from '@/domain/training/active-program';
@@ -289,7 +289,7 @@ function ProgramPathChooser({
             <Text style={styles.pathCardTitle}>Just train today</Text>
             {/* ⚠ NOT "nothing planned" — that phrasing made the option sound like the athlete had failed
                 to prepare, when choosing to train without a plan is a legitimate way to train. The tap
-                opens the "What are you training?" sheet, so this is also the only door to cardio here. */}
+                opens the Start a Workout sheet, so this is also the only door to cardio here. */}
             <Text style={styles.pathCardSub}>No plan. Just start training and log as you go.</Text>
           </View>
           <ChevronRightIcon size={18} color={flColor.gray600} />
@@ -406,14 +406,17 @@ export default function HomeScreen() {
   const resumeSets = resume?.sets ?? null;
 
   const [elseOpen, setElseOpen] = useState(false);
-  const [strengthOpen, setStrengthOpen] = useState(false);
   /**
-   * The sheet has two pages: the choice, then the cardio list.
+   * The sheet has two pages: the ways to start, then the cardio list.
    *
    * A flat list put seven conditioning rows in front of an athlete whose most likely answer is
    * "freestyle" — the common case paying for the rare one, and the same mistake the exercise picker
    * already fixed by moving cardio BELOW the catalogue. Two taps to a rower is cheaper than seven rows
    * to a bench press.
+   *
+   * Strength is NOT a page (W25-A1-D9). It used to be: "Strength" opened a second sheet whose only job
+   * was to ask how — a tap that did nothing but unlock another menu. Its two answers now sit on the root
+   * directly, so every strength start is one tap from the sheet.
    */
   const [elseView, setElseView] = useState<'root' | 'cardio'>('root');
   /**
@@ -855,18 +858,17 @@ export default function HomeScreen() {
   };
 
   /**
-   * "Strength" from the What-are-you-training sheet opens the CHOOSER, not an empty session.
+   * "From a template", straight off the Start a Workout sheet.
    *
-   * Build-as-you-go is one of three legitimate answers (`Forge Strength Start.dc.html`) and Home was
-   * applying it as though it were the only one — so a template the athlete had saved was reachable
-   * from Home only by remembering that Workouts → Templates exists.
+   * Build-as-you-go is one of several legitimate answers (`Forge Strength Start.dc.html`) and Home once
+   * applied it as though it were the only one — so a template the athlete had saved was reachable from
+   * Home only by remembering that Workouts → Templates exists.
    */
-  const chooseStrengthFromHome = () => {
+  const startFromTemplate = () => {
     closeElse();
-    setStrengthOpen(true);
+    router.push('/templates');
   };
 
-  /** …and this is what the third option does once it has actually been chosen. */
   /**
    * Start the workout they built earlier, and consume it — it was an intention for ONE session.
    *
@@ -908,7 +910,7 @@ export default function HomeScreen() {
   };
 
   const buildAsYouGo = async () => {
-    setStrengthOpen(false);
+    closeElse();
     await writeWorkoutLaunch({ freestyle: true });
     startWorkout('Freestyle Workout', []);
     router.push('/workout');
@@ -1189,7 +1191,9 @@ export default function HomeScreen() {
           ? {
               eyebrow: 'Today',
               title: 'Train Today',
-              focus: 'Nothing planned. Build it as you go.',
+              /* Was "Build it as you go." — true of one of the sheet's three rows, false of the template
+                 and cardio rows beside it. The line only has to say the state; the sheet says the how. */
+              focus: 'Nothing planned. Train your way today.',
               onStart: startFreestyleFromHome,
               resumeSets: null,
             }
@@ -1372,8 +1376,9 @@ export default function HomeScreen() {
                         never asked. It is also the face that was UNREACHABLE for anyone without a
                         program — `resumeSets` was computed and then had no card to live in.
               program — the planned next session. Unchanged.
-              open    — no program, nothing planned: "Train Today", and the button opens the same
-                        "What are you training?" sheet that IS the spec's W-8 Activity Type Picker.
+              open    — no program, nothing planned: "Train Today", and the button opens the Start a
+                        Workout sheet — the spec's W-8 Activity Type Picker with the strength chooser
+                        folded into it (W25-A1-D9).
 
             The `open` face passes no `exerciseCount` (there is nothing to count and "0 Exercises" would be
             a confident false claim) and no `onFreestyle` (its button already asks that question).
@@ -1395,8 +1400,10 @@ export default function HomeScreen() {
                 onFreestyle={composition.heroOffersFreestyle ? startFreestyleFromHome : undefined}
                 /* Only the `open` face renames its button and offers the builder: with nothing planned,
                    "Start Workout" claimed a workout that did not exist, and this is the one state where
-                   planning one in advance is the obvious second thing to want. */
-                startLabel={composition.hero === 'open' ? 'Start Freestyle Workout' : undefined}
+                   planning one in advance is the obvious second thing to want.
+                   ⚠ "A", NOT "FREESTYLE" (W25-A1-D9): the sheet behind it offers a template and cardio,
+                   neither of which is freestyle — the old label named one row, not the button. */
+                startLabel={composition.hero === 'open' ? 'Start a Workout' : undefined}
                 onBuildLater={composition.hero === 'open' ? buildForLater : undefined}
                 /* Only the face that HAS something in the slot can give it back (SQ-A5-D4). */
                 onDiscard={composition.hero === 'planned' ? () => void discardPlannedWorkout() : undefined}
@@ -1642,50 +1649,65 @@ export default function HomeScreen() {
       </Animated.View>
 
       {/*
-        TWO PAGES: the choice, then the cardio list.
+        START A WORKOUT — the ways to start, then the cardio list (W25-A1-D9).
+
+        The root is three ACTIONS under two section labels, not two categories that each lead to another
+        menu. Strength's two rows are its answers already; Cardio stays one row deep because its answer is
+        an activity out of seven, and seven rows in front of a bench press is the common case paying for
+        the rare one.
 
         Every conditioning activity still comes from `CARDIO_ACTIVITIES` rather than being typed out —
-        that is what stopped Walk and Ride being built and reachable from nowhere. The list simply lives
-        one tap in, behind a single Cardio row, so the athlete who wants to lift is not asked to read
-        past a stair climber first.
-      */}
-      {/* The three ways into a lifting session (`Forge Strength Start.dc.html`), reached from every Home
-          door that would otherwise have assumed build-as-you-go. */}
-      <StartStrengthSheet
-        open={strengthOpen}
-        onClose={() => setStrengthOpen(false)}
-        onFreestyle={() => void buildAsYouGo()}
-        /* Promoted to the hero's own "Build for later", where it makes a one-off rather than a template. */
-        offerBuildFirst={false}
-      />
+        that is what stopped Walk and Ride being built and reachable from nowhere.
 
+        "Build it first" is deliberately absent: Home promotes planning ahead to the hero's own "Build for
+        later", which makes a one-off rather than a template. Offering it here too would be one intent
+        behind two doors with two different outcomes.
+      */}
       <BottomSheet
         open={elseOpen}
         onClose={closeElse}
-        title={elseView === 'root' ? 'What are you training?' : cardioAsk ? 'Where?' : 'Cardio'}
+        header={
+          elseView === 'root' ? (
+            <View style={styles.startHead}>
+              <View style={styles.startHeadText}>
+                <Text style={styles.startEyebrow}>Train today</Text>
+                <Text style={styles.startTitle}>Start a Workout</Text>
+                <Text style={styles.startSub}>Choose how you want to train.</Text>
+              </View>
+              <Pressable onPress={closeElse} accessibilityRole="button" accessibilityLabel="Close" hitSlop={6} style={({ pressed }) => [styles.startClose, pressed ? styles.pathPressed : null]}>
+                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round">
+                  <Path d="M6 6l12 12M18 6L6 18" />
+                </Svg>
+              </Pressable>
+            </View>
+          ) : undefined
+        }
+        title={elseView === 'root' ? undefined : cardioAsk ? 'Where?' : 'Cardio'}
         scroll
       >
         <View style={styles.elseList}>
           {elseView === 'root' ? (
             <>
-              <Pressable
-                onPress={chooseStrengthFromHome}
-                accessibilityRole="button"
-                accessibilityLabel="Strength — from a template, or built as you go"
-                style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
-              >
-                <Text style={styles.pathCardTitle}>Strength</Text>
-                <Text style={styles.pathCardSub}>From a template, or built as you go.</Text>
-              </Pressable>
-              <Pressable
+              {/* Section labels, not cards: information gets a label, only the rows you act on get a surface. */}
+              <View style={styles.startSection}>
+                <Text style={styles.startSectionLabel}>Strength</Text>
+                <Text style={styles.startSectionSub}>Lift. Move. Get stronger.</Text>
+              </View>
+              <StartOptionRow {...START_COPY.template} icon={START_ICON.template} onPress={startFromTemplate} />
+              <StartOptionRow {...START_COPY.buildAsYouGo} icon={START_ICON.buildAsYouGo} onPress={() => void buildAsYouGo()} />
+
+              <View style={styles.startRule} />
+
+              <View style={styles.startSection}>
+                <Text style={styles.startSectionLabel}>Cardio</Text>
+                <Text style={styles.startSectionSub}>Run, ride, row, swim and more.</Text>
+              </View>
+              <StartOptionRow
+                title="Track cardio"
+                sub="Measure distance, time, and pace."
+                icon={START_ICON.cardio}
                 onPress={() => setElseView('cardio')}
-                accessibilityRole="button"
-                accessibilityLabel="Cardio — run, walk, ride, row, elliptical, stair climber or swim"
-                style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
-              >
-                <Text style={styles.pathCardTitle}>Cardio</Text>
-                <Text style={styles.pathCardSub}>Run, ride, row, swim and more. Measured in distance and time.</Text>
-              </Pressable>
+              />
             </>
           ) : (
             <>
@@ -1695,7 +1717,7 @@ export default function HomeScreen() {
                    question feel like a dead end rather than a step. */
                 onPress={() => (cardioAsk ? setCardioAsk(null) : setElseView('root'))}
                 accessibilityRole="button"
-                accessibilityLabel={cardioAsk ? 'Back to the cardio list' : 'Back to what are you training'}
+                accessibilityLabel={cardioAsk ? 'Back to the cardio list' : 'Back to Start a Workout'}
                 style={({ pressed }) => [styles.elseBack, pressed ? styles.pathPressed : null]}
               >
                 <Text style={styles.elseBackLabel}>← Back</Text>
@@ -1835,16 +1857,35 @@ const styles = StyleSheet.create({
   elseList: { gap: 10 },
   elseBack: { paddingVertical: 6, paddingHorizontal: 2, alignSelf: 'flex-start' },
   elseBackLabel: { fontSize: 14, fontWeight: '600', color: flColor.gray600 },
-  /* Bronze, matching the Start Strength rows this sheet leads INTO. They were charcoal, so the first
-     step of the flow looked like a list and the second like a decision. Same weight, same door. */
+  /* The same edge as `StartOptionRow` on the page before it — a neutral hairline, warmed only when
+     pressed — so the cardio list reads as the next page of one sheet, not a different component. */
   elseRow: {
     padding: 15,
     borderRadius: flRadius.xl,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
+    borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
-    boxShadow: flShadow.trainTogetherCard,
   },
+  /* ── Start a Workout header — the editorial register of Home carried into the sheet: bronze tracked
+     eyebrow, display serif title, sans explanation. Serif is for the moment, sans for the instructions. */
+  startHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 22, paddingTop: 12 },
+  startHeadText: { flex: 1, minWidth: 0 },
+  startEyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  startTitle: { marginTop: 6, fontFamily: flFont.display, fontSize: 28, lineHeight: 32, fontWeight: '600', letterSpacing: -0.3, color: flColor.cream100 },
+  startSub: { marginTop: 6, fontSize: 14, lineHeight: 19, color: flColor.gray400 },
+  startClose: {
+    width: 38,
+    height: 38,
+    borderRadius: flRadius.round,
+    borderWidth: 1,
+    borderColor: flColor.charcoal500,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  startSection: { gap: 3, marginBottom: 2 },
+  startSectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  startSectionSub: { fontSize: 13, lineHeight: 18, color: flColor.gray400 },
+  startRule: { height: 1, backgroundColor: flColor.charcoal600, marginVertical: 10 },
   /* Tightened from 12 — the stack read as a web form at its old height. The lead card carries the
      hierarchy now, so the gaps no longer have to do it. */
   pathBlock: { gap: 10 },
