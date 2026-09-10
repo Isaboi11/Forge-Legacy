@@ -40,6 +40,12 @@ export interface BottomSheetProps {
   onClose: () => void
   dismissible?: boolean
   title?: string
+  /**
+   * A composed header in place of the plain `title` — for a sheet that opens a flow and wants the
+   * editorial eyebrow + display title rather than the utility label. It renders inside the grab area,
+   * so the drag still lands on the header (see the note there). Wins over `title` when both are given.
+   */
+  header?: React.ReactNode
   showHandle?: boolean
   children?: React.ReactNode
   /**
@@ -65,7 +71,7 @@ export interface BottomSheetProps {
   onDismiss?: () => void
 }
 
-export function BottomSheet({ open, onClose, dismissible = true, title, showHandle = true, scroll = false, children, footer, onDismiss }: BottomSheetProps) {
+export function BottomSheet({ open, onClose, dismissible = true, title, header, showHandle = true, scroll = false, children, footer, onDismiss }: BottomSheetProps) {
   const insets = useSafeAreaInsets()
   const { height: windowHeight } = useWindowDimensions()
 
@@ -155,14 +161,14 @@ export function BottomSheet({ open, onClose, dismissible = true, title, showHand
             Nothing below the title is claimed, so the body scrolls exactly as before. `hitSlop` widens the
             strip on sheets with no title.
           */}
-          {showHandle || title ? (
+          {showHandle || title || header ? (
             <View style={styles.grabArea} hitSlop={{ top: 12, bottom: 8, left: 0, right: 0 }} {...drag.panHandlers}>
               {showHandle ? (
                 <View style={styles.handleRow}>
                   <View style={styles.handle} />
                 </View>
               ) : null}
-              {title ? <Text style={styles.title}>{title}</Text> : null}
+              {header ? header : title ? <Text style={styles.title}>{title}</Text> : null}
             </View>
           ) : null}
 

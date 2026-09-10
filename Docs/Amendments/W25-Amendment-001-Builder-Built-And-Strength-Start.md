@@ -4,7 +4,8 @@
 `Workout-Template-Detail-Spec-W27.md` §Edit
 **Status:** 🔒 LOCKED
 **Date:** 2026-08-03 · **Addendum 2026-08-13** (Section 3, W25-A1-D8 — narrows W25-A1-D1: an *authoring*
-door opens the builder, not the chooser)
+door opens the builder, not the chooser) · **Addendum 2026-09-10** (Section 4, W25-A1-D9 — on Home, the
+chooser folds into the activity sheet; the hero says "Start a Workout")
 **Design authority:** `Forge Strength Start.dc.html`, `Forge Free Workout Builder.dc.html`
 
 ---
@@ -130,3 +131,43 @@ Workout' starts a session you log as you go"* and *"authoring a workout you've n
 your own capacity"* — which W25-A1-D3 had already overturned by shipping the builder. Capture is still
 described as the primary loop, because it is; authoring is now described as the second door, because it
 exists.
+
+---
+
+## Section 4 — Addendum, 2026-09-10: on Home, "Strength" was a tap that only opened another menu
+
+### W25-A1-D9 — Home's Start a Workout sheet carries the strength answers itself
+
+Home's no-plan path was three decisions deep: **Start Freestyle Workout → "What are you training?" →
+Strength → Start Strength → From a template / Build as you go**. Every step was legitimate, but the
+Strength row did nothing except unlock a second sheet, and the two sheets did not look like one
+interaction.
+
+**Home now opens ONE sheet** — eyebrow *Train today*, title *Start a Workout*, sub *Choose how you want
+to train.* — with three actions under two section labels:
+
+| Section | Row | Destination |
+|---|---|---|
+| **Strength** · *Lift. Move. Get stronger.* | From a template | Templates hub (W-26) |
+| | Build as you go | Exercise Picker, fresh session |
+| **Cardio** · *Run, ride, row, swim and more.* | Track cardio · *Measure distance, time, and pace.* | The cardio activity list, then indoor/outdoor where it is open |
+
+Strength's rows are its answers already; Cardio stays one page deep because its answer is one activity
+of seven. The two sections are deliberately *not* symmetrical — they are different kinds of flow.
+
+**What is unchanged.** W25-A1-D1 (every training door asks how you want to begin) still holds — the
+question is simply asked on the first sheet rather than the second. W25-A1-D2 (a program day is one tap)
+is untouched. "Build it first" stays off Home, as before: planning ahead is the hero's own "Build for
+later". The Workouts tab `+` still opens the three-row Start Strength sheet (it is already inside a
+strength library, so there is no category to skip). Both sheets render the same `StartOptionRow` with the
+same copy, so they cannot drift.
+
+**The hero label becomes "Start a Workout"** (was "Start Freestyle Workout"), and its line becomes
+*"Nothing planned. Train your way today."* (was *"Build it as you go."*). Both old strings named one row
+of the sheet — a template is not freestyle, and cardio is not built as you go.
+
+**Visual.** The option rows lose their bronze outline and bronze rim shadow for a neutral hairline, warmed
+only on press — bronze stays in the glyph and chevron. Applies to both themes (layout) and to both sheets.
+
+**Requested by the PO, 2026-09-10,** from a design critique: *"You tap Strength, but nothing has really
+happened. You just get another menu."* Target: Home → Start a Workout sheet → setup/workout.
