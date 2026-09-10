@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -11,9 +11,14 @@ import { Field, Heading, ProgressHeader, SelectTile } from '@/components/onboard
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { completeOnboarding, isHandleAvailable } from '@/domain/onboarding/service';
 import type { EquipmentId, GoalId } from '@/domain/onboarding/derive';
-import type { Experience } from '@/domain/coach/constraints';
-import { HOME_GYM_EQUIPMENT, HOME_GYM_GROUPS } from '@/domain/home-gym/equipment';
+import { constraintsForFirstWeek, dayLines } from '@/domain/onboarding/first-week';
+import { assemble } from '@/domain/coach/assemble';
+import { PICKER_DB } from '@/domain/exercise-picker/data';
+import { createProgram, startProgram } from '@/data/programs-live';
+import type { Experience, SessionMinutes } from '@/domain/coach/constraints';
+import { canDoExercise, HOME_GYM_EQUIPMENT, HOME_GYM_GROUPS } from '@/domain/home-gym/equipment';
 import { CHAPTER_SUGGESTIONS, CHAPTER_TITLE_MAX, chapterNameFrom, DEFAULT_CHAPTER_I_TITLE } from '@/domain/legacy/chapter-name';
+import { track } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth';
 import { useProfile } from '@/lib/profile';
 import { useMediaPicker } from '@/lib/useMediaPicker';
@@ -21,7 +26,25 @@ import { errorMessage } from '@/lib/useQuery';
 
 /**
  * The onboarding route (session, not-onboarded): Account → Username → Goal → Experience → Equipment
- * (→ Gear) → Chapter → Transition.
+ * (→ Gear) → Schedule → Chapter → Transition.
+ *
+ * ══ ⭐ IT ENDS ON A WORKOUT, NOT ON A QUESTION ══
+ *
+ * It used to end by handing the athlete a Home with NO Start button — `composeHome()` returns
+ * `hero: 'none'` for somebody who has neither trained nor chosen — and asking "How do you want to
+ * start?". That is the one question a beginner cannot answer, arriving after eight they could, and it
+ * is the reported shape of "the app is intimidating at first".
+ *
+ * `missingFor()` in `constraints.ts` is why the fix is small: goal, experience and environment are
+ * already collected here, `splitStyle` and `limitations` take the goal's defaults, so **two numbers —
+ * days a week and session length — are the whole distance between this screen and a real program.**
+ * The Schedule step asks them and the Transition spends them, building through the same `assemble()`
+ * the "Build it with me" door uses. Home then paints its settled face with a real Today's Workout.
+ *
+ * ⚠ FOUR OF THE SIX GOALS, AND THE OTHER TWO MUST NOT BE FAKED. `coachGoalForGoalId` returns null for
+ *   `endurance` and `athletic` — a race plan is built backwards from a date nobody has asked for, and
+ *   the rulebook has no Running family to fill it from. Those two finish exactly as they always did,
+ *   on the chooser. Refusing is the honest answer; inventing a block for a runner is not.
  *
  * ══ WHY THE THREE TRAINING QUESTIONS CAME BACK ══
  *
@@ -50,7 +73,7 @@ import { errorMessage } from '@/lib/useQuery';
  * (`completeOnboarding`). On success `onboarded_at` flips and the boot router swaps to the app.
  * Welcome/Create/Sign-In are the auth route.
  */
-const BASE_SETUP: Step[] = ['account', 'username', 'goal', 'experience', 'equipment', 'chapter'];
+const BASE_SETUP: Step[] = ['account', 'username', 'goal', 'experience', 'equipment', 'schedule', 'chapter'];
 
 /** The 6 goals from the design `.dc` Goals screen, in its order. */
 const GOAL_OPTIONS: { id: GoalId; title: string; desc: string }[] = [
@@ -83,8 +106,22 @@ const EQUIPMENT_OPTIONS: { id: EquipmentId; title: string; desc: string }[] = [
   { id: 'bands', title: 'Resistance bands', desc: 'Bands and bodyweight.' },
   { id: 'bodyweight', title: 'Nothing yet', desc: 'Just me and the floor. That’s a real answer.' },
 ];
-type Step = 'account' | 'username' | 'goal' | 'experience' | 'equipment' | 'gear' | 'chapter' | 'transition';
+type Step = 'account' | 'username' | 'goal' | 'experience' | 'equipment' | 'gear' | 'schedule' | 'chapter' | 'transition';
 type UStatus = 'idle' | 'short' | 'checking' | 'available' | 'taken';
+
+/**
+ * The week, as the two numbers `missingFor()` reports and nothing more.
+ *
+ * ⚠ THESE ARE NOT PERSISTED, AND THAT IS THE EXISTING DESIGN RATHER THAN AN OVERSIGHT. `constraints.ts`
+ *   keeps days and session length as PER-BUILD questions — "a shoulder that hurts this week is not a
+ *   profile field", and neither is the week you happen to have free this month. There is no
+ *   `profiles.days_per_week` column and this pass does not add one. They are answered here, spent on the
+ *   first program immediately, and Holt asks again next time because by then the answer may have changed.
+ */
+const DAY_CHOICES = [2, 3, 4, 5, 6] as const;
+/* Typed as the engine's own union rather than `number[]`, so adding a fifth option here is a compile
+   error until `SessionMinutes` admits it — the prescription tables are keyed on these four. */
+const MINUTE_CHOICES: readonly SessionMinutes[] = [30, 45, 60, 75];
 
 interface Data {
   name: string;
@@ -111,6 +148,79 @@ interface Data {
   chapterTitle: string;
   /** A local file URI until "Enter Forge" uploads it. Null = they never added one, which is fine. */
   photoUri: string | null;
+  /** How many days a week they can train, and how long a session. See `DAY_CHOICES` above. */
+  daysPerWeek: number | null;
+  sessionMinutes: SessionMinutes | null;
+}
+
+/**
+ * The first session, once it exists — what the transition shows instead of a promise.
+ *
+ * `programId` is a real `programs` row by the time this is set, so "Start Day 1" has something to open
+ * and Home's hero has something to draw. Held apart from `Data` because `Data` is what the athlete
+ * typed and this is what the app made of it.
+ */
+interface FirstWeek {
+  programId: string;
+  programName: string;
+  dayName: string;
+  exercises: string[];
+  daysPerWeek: number;
+  weeks: number;
+}
+
+/**
+ * Build and save the athlete's first program from what onboarding just collected.
+ *
+ * Returns `null` for every "we cannot honestly do this" case — an unmappable goal, an unanswered
+ * schedule, a rulebook refusal, or any failure at all — and the caller then finishes exactly the way it
+ * always did. **Never throws**: the account is already committed by the time this runs, and nothing here
+ * is worth failing a completed signup over.
+ *
+ * ⚠ `learned` AND `recent` ARE NOT FETCHED. `coach.tsx` reads both before assembling so that repeat
+ *   builds stop repeating themselves — but this athlete is seconds old and has no swaps and no history,
+ *   so both reads are guaranteed empty and would only add two network round trips to the one moment the
+ *   athlete is standing there waiting. `assemble()` treats absent as "no history", which is the truth.
+ */
+async function buildFirstWeek(d: Data): Promise<FirstWeek | null> {
+  try {
+    // The whole "can we honestly build one" rule lives in `first-week.ts`, where a test can reach it.
+    // Null covers endurance, athletic, and any unanswered step — see that module's header.
+    const constraints = constraintsForFirstWeek(d);
+    if (!constraints) return null;
+
+    const res = assemble(constraints, PICKER_DB, canDoExercise);
+    if (!res.ok) return null;
+
+    const { structure } = res.assembly;
+    const week1 = structure.weekPlans?.[0]?.days ?? structure.days;
+    const day1 = week1?.[0];
+    if (!day1) return null;
+
+    const { id } = await createProgram(structure);
+
+    track('program_generated', {
+      source: 'onboarding',
+      goal: constraints.goal,
+      days_per_week: structure.daysPerWeek,
+      count: day1.main.length,
+    });
+
+    return {
+      programId: id,
+      programName: structure.name,
+      dayName: day1.name,
+      // The main work only — a warm-up listed here would make the first session look longer than it is,
+      // on the one screen whose whole job is to make starting feel possible. Through `dayLines` because
+      // a cardio finisher carries no `name` and would otherwise render as a blank row.
+      exercises: dayLines(day1.main),
+      daysPerWeek: structure.daysPerWeek,
+      weeks: structure.weeks,
+    };
+  } catch {
+    // Deliberately silent — the signup succeeded, and the chooser is a working app.
+    return null;
+  }
 }
 
 export default function Onboarding() {
@@ -118,10 +228,13 @@ export default function Onboarding() {
   const [data, setData] = useState<Data>({
     name: '', sex: null, units: 'imperial', username: '', goals: [], experience: null,
     equipment: [], gear: null, chapterTitle: '', photoUri: null,
+    daysPerWeek: null, sessionMinutes: null,
   });
   const [uStatus, setUStatus] = useState<UStatus>('idle');
   const [finishing, setFinishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Set once the account is committed AND a program was built. Null = the old straight-through finish. */
+  const [firstWeek, setFirstWeek] = useState<FirstWeek | null>(null);
   const { refetch: refetchProfile } = useProfile();
   /*
    * ══ ⚠ THE WAY OUT ══
@@ -187,6 +300,26 @@ export default function Onboarding() {
     : BASE_SETUP;
 
   const idx = setup.indexOf(step);
+
+  /*
+   * ⭐ STEP-LEVEL DROP-OFF — the single most useful number in the funnel, and the app has never had it.
+   *
+   * "Onboarding is intimidating" is a feeling; "41% of accounts never leave the Equipment step" is a
+   * defect with an address. Recording the step SHOWN rather than the step COMPLETED is what makes the
+   * last event of an abandoned run point at the screen they abandoned — a completion event can only ever
+   * describe the steps somebody survived.
+   *
+   * ⚠ `section` carries the step NAME, not `step`. `step` is a number everywhere else in this app's
+   *   analytics (`tour_step_shown`), and one key meaning an index in one event and a label in another is
+   *   how a chart quietly becomes wrong. The index rides in `index`, where it already belongs.
+   *
+   * `transition` reports `index: -1` because it is deliberately outside the counted setup — the progress
+   * bar shows full there, and pretending it is step 7 of 6 would misreport the denominator.
+   */
+  useEffect(() => {
+    track('onboarding_step_shown', { section: step, index: idx, total: setup.length });
+  }, [step, idx, setup.length]);
+
   const next = () => setStep(step === 'chapter' ? 'transition' : setup[idx + 1]);
   const back = () => {
     setError(null);
@@ -274,12 +407,57 @@ export default function Onboarding() {
         equipment: data.equipment,
         gear: data.gear,
       });
+      /*
+       * ⭐ THE FIRST WEEK, BUILT BEFORE THEY EVER SEE HOME.
+       *
+       * ⚠ THE ORDER IS LOAD-BEARING AND SO IS THE `catch`. The account, handle and Chapter I are
+       *   committed above; everything here is a bonus on top of a finished signup. A refusal, a network
+       *   failure, a cap trigger — none of them may strand somebody with a real account on a screen that
+       *   says it did not work. So this whole block swallows its own failure and falls through to the
+       *   chooser, which is exactly the app every athlete got before this existed.
+       *
+       * ⚠ `refetchProfile()` IS THE DOOR, AND IT IS DELIBERATELY NOT CALLED HERE. `routeFor` swaps this
+       *   route out the instant `onboarded_at` lands, so calling it now would replace the reveal with
+       *   Home mid-render. It moves to "Start Day 1" below.
+       */
+      const built = await buildFirstWeek(data);
+      if (built) {
+        setFirstWeek(built);
+        setFinishing(false);
+        return;
+      }
+
       // Pull the new onboarded_at so the boot router swaps to the app (it fetched once per session and
       // would otherwise stay stale on this screen — the "stuck on Opening your forge" bug).
       refetchProfile();
     } catch (e) {
       setFinishing(false);
       setError(errorMessage(e));
+    }
+  };
+
+  /**
+   * Leave the reveal. The profile read is what releases the route to the app.
+   *
+   * ⚠ THE BUTTON SAYS "START DAY 1", SO IT HAS TO ACTUALLY START THE PROGRAM. `createProgram` writes a
+   *   row in state `future` (0017's default), and Home draws the Day-1 hero only for an ACTIVE one —
+   *   `composition.ts` is explicit that a planned program must never render the enrolled experience for
+   *   somebody who never enrolled. Without this call the athlete would land on the generic "Train Today"
+   *   CTA having just been shown their Day 1 and pressed a button promising it, which is the same
+   *   broken-promise shape this whole pass exists to remove.
+   *
+   * ⚠ AWAITED, BUT NEVER BLOCKING. A failed start leaves a perfectly good planned program the athlete
+   *   can begin from the Programs tab, so it must not trap them on this screen — `finally` releases the
+   *   route either way.
+   */
+  const enterForge = async () => {
+    setFinishing(true);
+    try {
+      if (firstWeek) await startProgram(firstWeek.programId);
+    } catch {
+      // The program exists and is theirs; it simply opens as planned rather than active.
+    } finally {
+      refetchProfile();
     }
   };
 
@@ -308,7 +486,46 @@ export default function Onboarding() {
         onExit={finishing ? undefined : () => setExitOpen(true)}
       />
 
-      {step === 'transition' ? (
+      {step === 'transition' && firstWeek ? (
+        /*
+         * ⭐ THE REVEAL — the payoff the whole flow was missing.
+         *
+         * Everything on this screen is real and already saved: a `programs` row exists, and these are the
+         * lifts in its first session. It replaces "Every legacy begins with a single workout", which was
+         * a promise, with the workout itself.
+         */
+        <ScrollView contentContainerStyle={styles.revealScroll} showsVerticalScrollIndicator={false}>
+          <Text style={styles.tEyebrow}>Built for you</Text>
+          <Text style={styles.revealTitle}>{firstWeek.programName}</Text>
+          <Text style={styles.revealMeta}>
+            {firstWeek.weeks} weeks · {firstWeek.daysPerWeek} days a week
+          </Text>
+
+          <View style={styles.dayCard}>
+            <Text style={styles.dayLabel}>Day 1</Text>
+            <Text style={styles.dayName}>{firstWeek.dayName}</Text>
+            <View style={styles.exList}>
+              {firstWeek.exercises.map((name, i) => (
+                <View key={`${name}-${i}`} style={styles.exRow}>
+                  <Text style={styles.exIndex}>{i + 1}</Text>
+                  <Text style={styles.exName}>{name}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <Text style={styles.tBody}>
+            <Text style={styles.tAccent}>{chapterName}</Text> is open. Change any of this whenever you like —
+            nothing here is fixed.
+          </Text>
+
+          <View style={styles.tAction}>
+            <Button variant="primary" fullWidth disabled={finishing} onPress={enterForge} accessibilityLabel="Start Day 1">
+              {finishing ? 'Opening your forge…' : 'Start Day 1'}
+            </Button>
+          </View>
+        </ScrollView>
+      ) : step === 'transition' ? (
         <View style={styles.transition}>
           <ForgeBrandMark glow={150} mark={74} />
           <Text style={styles.tEyebrow}>Your forge is ready</Text>
@@ -321,7 +538,7 @@ export default function Onboarding() {
           {error ? <Text style={styles.err}>Couldn&apos;t finish — {error}. Try again.</Text> : null}
           <View style={styles.tAction}>
             <Button variant="primary" fullWidth disabled={finishing} onPress={onFinish} accessibilityLabel="Enter Forge">
-              {finishing ? 'Opening your forge…' : 'Enter Forge'}
+              {finishing ? 'Building your first week…' : 'Enter Forge'}
             </Button>
           </View>
         </View>
@@ -512,6 +729,62 @@ export default function Onboarding() {
             </>
           ) : null}
 
+          {/*
+            ⭐ THE TWO NUMBERS THAT BUY A PROGRAM.
+            `missingFor()` reports exactly these and nothing else once goal, experience and environment
+            are known — so this one step is the whole distance between finishing setup and owning a real
+            block. The copy says what they are for, because a question that visibly buys something is a
+            different experience from a question that just delays the app.
+          */}
+          {step === 'schedule' ? (
+            <>
+              <Heading
+                eyebrow="Your week"
+                title="How often can you train?"
+                body="This is all Holt needs to write your first block. Change it any time — it's a starting point, not a commitment."
+              />
+              <Group label="DAYS A WEEK">
+                <View style={styles.chipWrap}>
+                  {DAY_CHOICES.map((n) => {
+                    const on = data.daysPerWeek === n;
+                    return (
+                      <Pressable
+                        key={n}
+                        onPress={() => patch({ daysPerWeek: n })}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${n} days a week`}
+                        accessibilityState={{ selected: on }}
+                        style={[styles.numChip, on ? styles.gearChipOn : null]}
+                      >
+                        <Text style={[styles.numChipText, on ? styles.gearChipTextOn : null]}>{n}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </Group>
+              <Group label="HOW LONG A SESSION">
+                <View style={styles.chipWrap}>
+                  {MINUTE_CHOICES.map((m) => {
+                    const on = data.sessionMinutes === m;
+                    return (
+                      <Pressable
+                        key={m}
+                        onPress={() => patch({ sessionMinutes: m })}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${m} minutes`}
+                        accessibilityState={{ selected: on }}
+                        style={[styles.gearChip, on ? styles.gearChipOn : null]}
+                      >
+                        <Text style={[styles.gearChipText, on ? styles.gearChipTextOn : null]}>{m} min</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </Group>
+              <Continue disabled={data.daysPerWeek == null || data.sessionMinutes == null} onPress={next} />
+            </>
+          ) : null}
+
           {step === 'chapter' ? (
             <>
               <Heading
@@ -654,6 +927,14 @@ const styles = StyleSheet.create({
   gearChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
   gearChipText: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
   gearChipTextOn: { color: flColor.bronze300, fontWeight: '600' },
+  /* A day count is one or two glyphs, so it gets a square-ish target rather than a pill that would be
+     mostly padding. `minWidth` and not a fixed width: 2–6 are one digit today and the tile must not
+     break if a two-digit option is ever added. */
+  numChip: {
+    minWidth: 52, paddingVertical: 11, paddingHorizontal: 14, alignItems: 'center',
+    borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed,
+  },
+  numChipText: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.gray400 },
 
   handleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   at: { fontFamily: flFont.display, fontSize: 20, color: flColor.bronze400, paddingBottom: 12 },
@@ -672,6 +953,23 @@ const styles = StyleSheet.create({
   tBody: { fontFamily: flFont.sans, fontSize: 15, lineHeight: 23, color: flColor.gray400, textAlign: 'center' },
   tAccent: { color: flColor.bronze400, fontWeight: '600' },
   tAction: { alignSelf: 'stretch', marginTop: 8 },
+
+  /* The reveal. A ScrollView rather than the centred `transition` block, because a six-exercise day on a
+     small phone is taller than the viewport and the Start button must never be the thing that is cut. */
+  revealScroll: { paddingHorizontal: 28, paddingTop: 12, paddingBottom: 40, gap: 14, alignItems: 'center' },
+  revealTitle: { fontFamily: flFont.display, fontSize: 27, fontWeight: '600', lineHeight: 33, color: flColor.cream100, textAlign: 'center' },
+  revealMeta: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400, textAlign: 'center' },
+  dayCard: {
+    alignSelf: 'stretch', marginTop: 4, padding: 18, borderRadius: flRadius.lg,
+    borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, gap: 3,
+  },
+  dayLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.bronze400 },
+  dayName: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
+  exList: { marginTop: 10, gap: 9 },
+  exRow: { flexDirection: 'row', alignItems: 'baseline', gap: 11 },
+  /* Fixed width so the names form a column instead of stepping right as the numbers change. */
+  exIndex: { fontFamily: flFont.sans, fontSize: 12, fontWeight: '600', color: flColor.gray600, width: 14, fontVariant: ['tabular-nums'] },
+  exName: { fontFamily: flFont.sans, fontSize: 15, lineHeight: 21, color: flColor.cream100, flex: 1 },
 
   err: { fontFamily: flFont.sans, fontSize: 13, color: flColor.redMuted },
 });

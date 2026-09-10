@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 
 import { m7Benefits, m7Content, type CapKey } from '@/domain/entitlement/caps-core';
 import { ENTITLEMENT_RETRY_MESSAGE, useCapGates } from '@/lib/entitlement';
+import { track } from '@/lib/analytics';
 import { useCeremony, useToast } from './useCeremony';
 import { useWorkoutSession } from './useWorkoutSession';
 
@@ -44,6 +45,24 @@ export function usePremiumGate(): (key: CapKey) => boolean {
   return useCallback(
     (key: CapKey): boolean => {
       const gate = gates(key);
+      /*
+       * ⭐ EVERY GATE CROSSING, ALLOWED OR NOT — because the interesting rows are the allowed ones.
+       *
+       * ⚠ THIS IS NOT THE CAP-METERING THE PLAN ASKED FOR, AND IT CANNOT BE. `entitlement_config
+       *   .default_tier` is `PREMIUM`, so `gate.ok` is always true and `gate.cap` is the PAID ceiling —
+       *   a client event fired here can never say what a FREE athlete would have hit. Setting the free
+       *   caps from evidence (Decision Queue #22) needs `athlete_live_counts()` read across all
+       *   athletes in SQL, which is a `/admin` query, not app code, and does not depend on this line.
+       *
+       * What this DOES answer, and nothing else can: which gates athletes actually reach, how often, and
+       * — once tiers go live — the exact ratio of blocked to allowed at each one. `result` carries the
+       * outcome so an allowed crossing and a refused one are never summed by accident.
+       */
+      track('cap_attempt', {
+        cap: key,
+        result: gate.ok ? 'allowed' : gate.showRetry ? 'unverified' : inWorkout ? 'suppressed' : 'blocked',
+        limit: gate.cap ?? -1,
+      });
       if (gate.ok) return true;
 
       if (gate.showRetry) {
@@ -71,6 +90,10 @@ export function usePremiumGate(): (key: CapKey) => boolean {
       }
 
       const { reason } = m7Content(key, gate.cap ?? 0);
+      /* The upsell is about to be SHOWN. Separate from `cap_attempt` above because a blocked crossing and
+         a displayed modal are not the same event — the in-workout branch above blocks without showing
+         one, and conflating them would report an upsell the athlete never saw. */
+      track('paywall_shown', { cap: key, source: 'gate' });
       enqueue({
         // Keyed by the cap so a double tap is the same trigger rather than two stacked modals —
         // `mergeCeremonies` dedupes on id. Distinct trigger events still evaluate independently, which is

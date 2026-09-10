@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { track } from '@/lib/analytics';
 import { saveAppPrefs } from '@/data/settings-live';
 import { APP_PREFS_DEFAULTS } from '@/domain/settings/preferences';
 import type { UnitSystem } from '@/domain/settings/units';
@@ -137,14 +138,31 @@ export async function completeOnboarding(input: OnboardingInput): Promise<void> 
   const homeGym = equipment.length > 0 ? homeGymForEquipment(equipment, input.gear) : null;
   if (homeGym != null) patch.home_gym_equipment = homeGym;
 
+  /*
+   * ⚠ TRACKED BECAUSE IT FAILS SILENTLY BY DESIGN.
+   *
+   * Everything below the RPC is best-effort and swallows its own errors — correct, for the reasons above,
+   * and it means a dropped answer is invisible to us AND to the athlete. The only symptom is Coach Holt
+   * asking a question they already answered, which reads as the app not listening and gets reported, if
+   * at all, as something else entirely. `console.warn` reaches nobody on a stranger's phone.
+   *
+   * So the outcome rides on `onboarding_completed` below. This is what tells us whether the fix — folding
+   * these writes into the RPC — is urgent or theoretical, before anyone writes the migration for it.
+   */
+  let answersSaved = true;
+
   if (Object.keys(patch).length > 0) {
     try {
       const { error: patchError } = await supabase.from('profiles').update(patch).eq('id', user.id);
       // Reported, not thrown — see above. A silent catch here is how "the coach forgot what I told it"
       // becomes unexplainable.
-      if (patchError) console.warn('[onboarding] training answers not saved:', patchError.message);
+      if (patchError) {
+        answersSaved = false;
+        console.warn('[onboarding] training answers not saved:', patchError.message);
+      }
     } catch {
       // Network or client failure. Same reasoning: the athlete is onboarded.
+      answersSaved = false;
     }
   }
 
@@ -167,6 +185,26 @@ export async function completeOnboarding(input: OnboardingInput): Promise<void> 
       await saveAppPrefs({ ...APP_PREFS_DEFAULTS, units: input.units });
     } catch {
       // ignore — the athlete is onboarded; the default stands and Settings can change it.
+      answersSaved = false;
     }
   }
+
+  /*
+   * ⭐ THE BOTTOM OF THE SIGNUP FUNNEL — the denominator for every activation number we will quote.
+   *
+   * Fired here rather than on the screen because THIS is the moment the account exists: the RPC has
+   * committed and `onboarded_at` is set. A screen-level event would also fire for a finish that threw,
+   * and an activation rate whose denominator counts failed signups flatters itself.
+   *
+   * The three training answers ride along because they are how the number gets segmented — "beginners
+   * activate at half the rate of everyone else" is an answer we can act on, and "activation is 34%" is
+   * not. All three are shipped enums (`derive.ts`, `constraints.ts`), never athlete text.
+   */
+  track('onboarding_completed', {
+    goal: goals[0] ?? 'none',
+    experience: input.experience ?? 'none',
+    environment: equipment.length > 0 ? environmentForEquipment(equipment) : 'none',
+    count: goals.length,
+    success: answersSaved,
+  });
 }

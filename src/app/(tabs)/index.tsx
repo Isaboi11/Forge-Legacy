@@ -41,7 +41,8 @@ import { useToast } from '@/hooks/useCeremony';
 import { fetchAwaitingChapter, fetchHomeChapter } from '@/data/home-live';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useProfile } from '@/lib/profile';
-import { ExperienceLevelCard, EXPERIENCE_FOR, type IntakeResult } from '@/components/forge/compositions/ExperienceLevelCard';
+import { ExperienceLevelCard, EXPERIENCE_FOR, LEVEL_FOR_EXPERIENCE, type IntakeResult, type IntakeSeed } from '@/components/forge/compositions/ExperienceLevelCard';
+import { fetchCoachProfile } from '@/data/coach-profile-live';
 import { getHomeLevel, setHomeLevel, clearHomeLevel } from '@/lib/home-level';
 import { getStartChoice, setStartChoice, type StartChoice } from '@/lib/program-intent';
 import { getHomeIntake, setHomeIntake, clearHomeIntake } from '@/lib/home-intake';
@@ -58,7 +59,8 @@ import { SwapWorkoutSheet, type SwapOption } from '@/components/forge/SwapWorkou
 import { structureFromDefinition } from '@/domain/program/adopt-core';
 import { itemByName } from '@/domain/exercise-picker/data';
 import { getProgramDefinitions } from '@/domain/training/programs';
-import { dayLabel, nextOpenSlot, plannedDays, swapSessionOrder, totalSessions, trainingDays } from '@/domain/program/progress-core';
+import { dayLabel, nextOpenSlot, plannedDays, totalSessions, trainingDays } from '@/domain/program/progress-core';
+import { swapSessionOrder } from '@/domain/program/schedule-edit';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { clearPlannedWorkout, fetchPlannedWorkout } from '@/data/planned-workout-live';
 import { StartStrengthSheet } from '@/components/forge/compositions/StartStrengthSheet';
@@ -369,6 +371,18 @@ export default function HomeScreen() {
    * cannot re-close the gate.
    */
   const [resumeSettled, setResumeSettled] = useState(false);
+  /**
+   * WHICH PROGRAM the unfinished workout belongs to, or null.
+   *
+   * Swapping a session while a workout for that same program is open files the workout against the wrong
+   * day — the logger resolved its slot when it opened, `save_workout` resolves the first open slot when
+   * it commits, and a swap in between moves a different session under that position. It comes out of the
+   * autosave read directly below, so it costs no round trip.
+   *
+   * ⚠ Declared ABOVE the effect that sets it. React-compiler's lint errors on a setter used before its
+   * declaration, and it is right to: the earlier reference would not track the value over time.
+   */
+  const [resumeProgramId, setResumeProgramId] = useState<string | null>(null);
   useFocusEffect(
     useCallback(() => {
       let alive = true;
@@ -376,6 +390,12 @@ export default function HomeScreen() {
         if (!alive) return;
         const summary = resumeSummary(saved);
         setResume(summary ? { ...summary, sets: doneSetCount(saved!) } : null);
+        /* ⚠ WHICH PROGRAM the open session belongs to, taken from the read Home already does.
+           `resumeSummary` is itself gated on `hasLoggedWork`, so a non-null summary means there is real
+           work in it — the condition under which moving that program's sessions would file the workout
+           against the wrong day. No second read, and deliberately no `fetchProgramSessions` here:
+           `home-first-paint.test.mjs` forbids one on this screen. */
+        setResumeProgramId(summary ? saved?.programId ?? null : null);
         setResumeSettled(true);
       });
       return () => {
@@ -499,6 +519,11 @@ export default function HomeScreen() {
   const { data: startChoice, refetch: refetchStartChoice, settled: startChoiceSettled } = useQuery(getStartChoice, []);
   // Goals + equipment intake (local only) — feeds the recommendation on the suggested face.
   const { data: homeIntake, refetch: refetchIntake, settled: intakeSettled } = useQuery(getHomeIntake, []);
+  /* ⚠ WHAT ONBOARDING ALREADY ASKED. The intake stepper below used to open blank and ask goal, level and
+     equipment a SECOND time, in different words, writing its answers only to AsyncStorage — which reads
+     to the athlete as the app not having listened. `fetchCoachProfile` is the same read `coach.tsx` uses
+     to skip questions Holt already knows the answer to; this is that, for the other surface. */
+  const { data: coachProfile, settled: coachProfileSettled } = useQuery(fetchCoachProfile, []);
   const { data: homeGymData, refetch: refetchHomeGym, settled: homeGymSettled } = useQuery(fetchHomeGym, []);
   /* Your Circle's friend row, real since 0074 — the newest post from anyone the athlete is connected to.
      One ROW, not the feed: this is a doorway, and `/friends` is the room. Live presence is NOT read
@@ -717,6 +742,29 @@ export default function HomeScreen() {
    * opens Holt, who asks which — see `onImport` on the chooser.
    */
   const openImport = () => router.push('/program-builder?o=import');
+
+  /*
+   * ⭐ SO THE STEPPER STOPS ASKING WHAT ONBOARDING ALREADY WROTE DOWN.
+   *
+   * Level and goals come straight off the profile; the athlete sees them pre-selected and can still
+   * change any of them. Equipment is deliberately NOT seeded — the profile keeps the coach's coarse
+   * `environment`, where `home` means both "a home setup" and "dumbbells only", so mapping it back would
+   * be a guess, and a wrong pre-selection is worse than the question because nobody re-reads an answer
+   * the app appears to already know. `LEVEL_FOR_EXPERIENCE` carries the argument in full.
+   *
+   * Falls back to the device-local intake for an athlete who answered here before ever onboarding into
+   * the profile columns, and to nothing at all when neither knows — which is the blank stepper as it was.
+   */
+  const intakeSeed: IntakeSeed | null =
+    coachProfile?.experience || (coachProfile?.goalIds.length ?? 0) > 0 || homeLevel || homeIntake
+      ? {
+          level: coachProfile?.experience ? LEVEL_FOR_EXPERIENCE[coachProfile.experience] : homeLevel,
+          goals: coachProfile?.goalIds.length ? coachProfile.goalIds : (homeIntake?.goals ?? []),
+          primaryGoal: coachProfile?.goalIds[0] ?? homeIntake?.primaryGoal ?? null,
+          equipment: [],
+        }
+      : null;
+
   const completeIntake = async (r: IntakeResult) => {
     await setHomeLevel(r.level);
     await setHomeIntake({ goals: r.goals, primaryGoal: r.primaryGoal, equipment: r.equipment });
@@ -833,6 +881,26 @@ export default function HomeScreen() {
     router.push('/workout');
   };
 
+  /**
+   * Give the slot back (SQ-A5-D4). The program day returns to the hero on the next read.
+   *
+   * ⚠ AWAITED, unlike the fire-and-forget clear on the way INTO a workout. There the athlete is
+   * already walking into the logger and a failed delete is covered by the resume state; here the
+   * whole point is what the hero shows next, so refetching before the toast is the difference
+   * between “discarded” and a card that is still sitting there when they look up.
+   */
+  const discardPlannedWorkout = async () => {
+    if (!planned) return;
+    const name = planned.name;
+    try {
+      await clearPlannedWorkout();
+      await refetchPlanned();
+      showToast(`${name} discarded.`);
+    } catch {
+      showToast('Couldn’t discard that workout.');
+    }
+  };
+
   /** Home's quiet second door — the builder, in one-off mode rather than authoring a template. */
   const buildForLater = () => {
     closeElse();
@@ -916,12 +984,18 @@ export default function HomeScreen() {
    */
   const swapOptions = useMemo<SwapOption[]>(() => {
     if (!anchorProgram || !activeProgram || !nextSlot) return [];
+    /* ⚠ NOT WHILE A WORKOUT FOR THIS PROGRAM IS OPEN. The logger resolved its slot when it opened and
+       `save_workout` resolves the first open slot when it commits; swap in between and the workout is
+       filed at a position that now holds a different session. Offering nothing is the honest form of the
+       refusal here — the athlete came to the preview sheet, not to a schedule editor, and Program Detail
+       says it in a sentence when they go looking. */
+    if (resumeProgramId && resumeProgramId === activeProgram.id) return [];
     const touched = new Set(builtMarks.filter((m) => m.weekIndex === nextSlot.weekIndex).map((m) => m.dayIndex));
     return trainingDays(plannedDays(anchorProgram.structure, nextSlot.weekIndex))
       .map((d, di) => ({ d, di }))
       .filter(({ di }) => di !== nextSlot.dayIndex && !touched.has(di))
       .map(({ d, di }) => ({ dayIndex: di, name: dayLabel(d, di), position: di + 1 }));
-  }, [anchorProgram, activeProgram, nextSlot, builtMarks]);
+  }, [anchorProgram, activeProgram, nextSlot, builtMarks, resumeProgramId]);
 
   /** Trade the offered workout with the chosen one; the hero then re-resolves from the saved order. */
   const swapFromHome = async (dayIndex: number) => {
@@ -1094,9 +1168,19 @@ export default function HomeScreen() {
         }
       : composition.hero === 'planned'
         ? {
-            eyebrow: 'Built for later',
+            /*
+             * THE SLOT NAMES ITS SOURCE (0192, SQ-A5-D3.1). A workout that turns up on your Home
+             * screen with no account of who put it there is an unsolicited payload, and it does not
+             * stop being one because the sender was a squad-mate. Built-it-yourself keeps the old
+             * wording, because there is nobody to name.
+             */
+            eyebrow: planned?.source ? `From ${planned.source.squadName ?? 'your squad'}` : 'Built for later',
             title: planned?.name || 'Your workout',
-            focus: 'Waiting for you. Start when you are ready.',
+            focus: planned?.source
+              ? planned.source.authorName
+                ? `${planned.source.authorName} posted this. Start when you are ready.`
+                : 'Waiting for you. Start when you are ready.'
+              : 'Waiting for you. Start when you are ready.',
             exerciseCount: planned?.exercises.length ?? 0,
             onStart: startPlannedWorkout,
             resumeSets: null,
@@ -1167,6 +1251,7 @@ export default function HomeScreen() {
       levelSettled, // ┐
       startChoiceSettled, // ├ the starting-point slot: chooser / intake / suggestion
       intakeSettled, // │
+      coachProfileSettled, // ┘ …and what onboarding already answered, so it stops re-asking
       homeGymSettled, // ┘
       goalsSettled, // the Mission tile
       circleSettled, // ┐
@@ -1313,6 +1398,8 @@ export default function HomeScreen() {
                    planning one in advance is the obvious second thing to want. */
                 startLabel={composition.hero === 'open' ? 'Start Freestyle Workout' : undefined}
                 onBuildLater={composition.hero === 'open' ? buildForLater : undefined}
+                /* Only the face that HAS something in the slot can give it back (SQ-A5-D4). */
+                onDiscard={composition.hero === 'planned' ? () => void discardPlannedWorkout() : undefined}
               />
             </TourAnchor>
           ) : null}
@@ -1350,7 +1437,7 @@ export default function HomeScreen() {
                 />
               ) : composition.startingPoint === 'intake' ? (
                 // Chose "Help me find one" — the intake stepper (level → goals → equipment), inline.
-                <ExperienceLevelCard mode="collect" onComplete={completeIntake} onBuild={openBuilder} />
+                <ExperienceLevelCard mode="collect" onComplete={completeIntake} onBuild={openBuilder} seed={intakeSeed} />
               ) : (
                 /* Only ever seen on arrival now, so the title no longer has a second, sadder variant for
                    the athlete who had simply been here a while. */
@@ -1729,6 +1816,15 @@ export default function HomeScreen() {
           options={swapOptions}
           busy={swapBusy}
           onSwap={(dayIndex) => void swapFromHome(dayIndex)}
+          /* A lasting reorder belongs to Program Detail, which shows the whole week. The week index
+             travels so it opens on the one they were looking at rather than on week 1. */
+          onReorder={() => {
+            setSwapOpen(false);
+            router.push({
+              pathname: '/program/[id]',
+              params: { id: activeProgram.id, reorder: String(nextSlot.weekIndex) },
+            });
+          }}
         />
       ) : null}
     </View>

@@ -12,6 +12,9 @@ import type { GoalId, EquipmentId } from '@/domain/onboarding/derive';
 import type { HomeLevel } from '@/lib/home-level';
 import type { HomeIntake } from '@/lib/home-intake';
 import { quickPickItems } from '@/domain/home-gym/equipment';
+// The level mapping, the seed shape and the opening-step rule — in a `.ts` module because `node --test`
+// cannot load a `.tsx`, and that rule is worth a real test rather than a source scan.
+import { EXPERIENCE_FOR, firstUnansweredStep, type IntakeSeed } from '@/domain/onboarding/intake-seed';
 
 /**
  * ExperienceLevelCard — the opt-in personalization on-ramp on Home (ONB-Amendment-002). ONE card, rendered
@@ -45,12 +48,9 @@ const LEVEL_META: Record<HomeLevel, { mark: string; title: string; subtitle: str
   experienced: { mark: 'III', title: 'Very experienced', subtitle: 'Years of structured training.', because: "you're very experienced" },
 };
 
-/** The Home level ids map onto `recommendProgram`'s experience ids. */
-export const EXPERIENCE_FOR: Record<HomeLevel, 'beginner' | 'intermediate' | 'advanced'> = {
-  new: 'beginner',
-  training: 'intermediate',
-  experienced: 'advanced',
-};
+/* The Home level ids map onto `recommendProgram`'s experience ids. Re-exported from the domain module
+   (see the import at the top) so every existing import site of this file keeps working. */
+export { EXPERIENCE_FOR, LEVEL_FOR_EXPERIENCE, firstUnansweredStep, type IntakeSeed } from '@/domain/onboarding/intake-seed';
 
 /** Goal + equipment copy — verbatim from the design's Onboarding `.dc` Goals/Equipment screens. */
 const GOALS: { id: GoalId; title: string; subtitle: string }[] = [
@@ -180,7 +180,7 @@ function CheckBox({ checked }: { checked: boolean }) {
 }
 
 type Props =
-  | { mode: 'collect'; onComplete: (r: IntakeResult) => void; onBuild: () => void }
+  | { mode: 'collect'; onComplete: (r: IntakeResult) => void; onBuild: () => void; seed?: IntakeSeed | null }
   | {
       mode: 'suggested';
       level: HomeLevel;
@@ -198,7 +198,7 @@ type Props =
     };
 
 export function ExperienceLevelCard(props: Props) {
-  if (props.mode === 'collect') return <IntakeStepper onComplete={props.onComplete} onBuild={props.onBuild} />;
+  if (props.mode === 'collect') return <IntakeStepper onComplete={props.onComplete} onBuild={props.onBuild} seed={props.seed} />;
   return (
     <SuggestedFace
       level={props.level}
@@ -214,12 +214,24 @@ export function ExperienceLevelCard(props: Props) {
 }
 
 /** The level → goals → equipment stepper (component-local state; persists only at the end). */
-function IntakeStepper({ onComplete, onBuild }: { onComplete: (r: IntakeResult) => void; onBuild: () => void }) {
-  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
-  const [level, setLevel] = useState<HomeLevel | null>(null);
-  const [goals, setGoals] = useState<GoalId[]>([]);
-  const [primaryGoal, setPrimaryGoal] = useState<GoalId | null>(null);
-  const [equipment, setEquipment] = useState<EquipmentId[]>([]);
+/**
+ * ⚠ WHAT ONBOARDING ALREADY ASKED, SO THIS DOES NOT ASK IT AGAIN.
+ *
+ * Onboarding collects goal, experience and equipment and writes all three to `profiles`. This stepper
+ * asked for the same three in DIFFERENT WORDS — "Get stronger" here, "Get Stronger" there; "Go further"
+ * here, "Improve Endurance" there — and wrote its answers only to AsyncStorage. To the athlete that is
+ * not a second question, it is the app not having listened the first time.
+ *
+ * Seeded, the stepper opens on the first thing it genuinely does not know. Everything already answered
+ * is pre-selected and visible rather than hidden, so they can still change it — which is the difference
+ * between "we remembered" and "we decided for you".
+ */
+function IntakeStepper({ onComplete, onBuild, seed }: { onComplete: (r: IntakeResult) => void; onBuild: () => void; seed?: IntakeSeed | null }) {
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(() => firstUnansweredStep(seed));
+  const [level, setLevel] = useState<HomeLevel | null>(seed?.level ?? null);
+  const [goals, setGoals] = useState<GoalId[]>(() => [...(seed?.goals ?? [])]);
+  const [primaryGoal, setPrimaryGoal] = useState<GoalId | null>(seed?.primaryGoal ?? null);
+  const [equipment, setEquipment] = useState<EquipmentId[]>(() => [...(seed?.equipment ?? [])]);
   const [gym, setGym] = useState<string[]>([]);
 
   // Anyone NOT training in a full commercial gym is training on their own equipment — dumbbells, bands

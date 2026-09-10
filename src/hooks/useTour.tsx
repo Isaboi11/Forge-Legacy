@@ -55,6 +55,7 @@ import {
   phaseFor,
   planTour,
   stepsFor,
+  tourMayStart,
   type ScreenTourStep,
   type TourLeg,
   type TourPhase,
@@ -374,11 +375,14 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loaded || run || deferred || !tipsEnabled || face == null) return;
     if (ceremony || showUnlock) return; // never over an earned moment — it re-arms when the ceremony closes
+    // Nothing runs before the first workout. The rule and its whole argument live in `tourMayStart`,
+    // where `node --test` can hold it — this effect is unmountable by the suite.
+    if (!tourMayStart({ workoutsLogged })) return;
     const owed = face === 'first-run' ? tabsStatus === 'pending' : tabsStatus === 'pending' || homeStatus === 'pending';
     if (!owed) return;
     const t = setTimeout(() => beginRun(planNow()), START_BEAT_MS);
     return () => clearTimeout(t);
-  }, [loaded, run, deferred, tipsEnabled, face, ceremony, showUnlock, tabsStatus, homeStatus, beginRun, planNow]);
+  }, [loaded, run, deferred, tipsEnabled, face, ceremony, showUnlock, tabsStatus, homeStatus, workoutsLogged, beginRun, planNow]);
 
   /** "Keep Building" — straight into whatever the un-gated Home owes, no beat. */
   const startFromCeremony = useCallback(() => {
