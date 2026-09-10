@@ -927,6 +927,22 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
 > Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
 
+### 0. ⭐ Alabaster: the dark bands, headers and panels that stayed black on the light theme (2026-09-10, Design System / Alabaster — commit `3ebb401` on `feat/route-map` (pushed) · ✅ **WEB** `index-7d0bca61fa230f22b4bfc2bb171e62db.js` (200, MATCH) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a08d05-bbdf-7eaa-b52c-e878a4f8c5f3` on runtime `47944f2e…` (fingerprint MATCHED first; manifest returned this id), Android `01a08d05-bbdf-7e5d…`; picked as `f198aac` on `ota/build8-js` (pushed, tsc 0) · ⏳ **NOT SEEN BY A HUMAN**)
+
+PO, screenshot of Activity History on Alabaster: *"Those colors should not be like that. We need this fixed, and
+any other spots like this on the light side."* The filter strip and month band were raw near-black literals. A
+sweep of every dark `backgroundColor` literal (95 in 46 files) and dark gradient found the same class app-wide.
+**Fixed:** `themeGround()` (new, tested in `paper-scrim.test.mjs`) turns a solid near-black ground into Alabaster's
+canvas — applied to `ScreenBackground`'s `base`, which silently fixes **~40 screens** passing `base="#050505"`;
+`forgeOr()` names the light value for warm raised darks (crest discs, recap/achievement/invite cards, sheets,
+video tiles, selected rows); sticky headers/bands on Activity History, Competition History, Hall + Current
+Champions, Trophy Case, Legacy Timeline; challenge hero vignettes; the photo crop editor (title was dark ink on
+near-black); the workout share card; the squad-post composer bar; `tokens.ts` borrows the live palette on
+Alabaster so the legacy `SkeletonCard` + `ForgeTextArea` follow. **Forge unchanged by construction** (every helper
+returns the Forge literal as-is; `tokens.ts` keeps its dark palette byte for byte). **Left dark on purpose:** modal
+backdrops, photo/video viewers, chips on photos, unused legacy modals, `boot.tsx`. Text/border literals were NOT
+swept (Decision Queue #26 item 2 still owed). tsc 0 · lint clean · 320/320 constants+app tests.
+
 ### 0. ⭐ Home's no-plan start is ONE sheet — template, build as you go and cardio on the first tap (2026-09-10, Home / Workouts — **W25-A1-D9** addendum to `W25-Amendment-001` · commit `6c85f00` on `feat/route-map` (pushed) · ✅ **WEB DEPLOYED AND VERIFIED** (latest `index-9e695faf…`) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a08ca1-a157-7b76…` (with the two follow-ups below) · ⏳ **NOT SEEN BY A HUMAN**)
 
 PO critique: *"You tap Strength, but nothing has really happened. You just get another menu."* Home was
