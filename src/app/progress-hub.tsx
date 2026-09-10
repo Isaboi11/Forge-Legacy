@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,9 +14,9 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { forgeOr, themeGround } from '@/constants/theme-scrim';
+import { themeGround } from '@/constants/theme-scrim';
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
-import { rankIdentity } from '@/domain/rank/identity';
+import { rankAscent, rankIdentity } from '@/domain/rank/identity';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
 import { fetchProgressHub, type MetricSeries } from '@/data/progress-hub-live';
 import { currentLabel } from '@/domain/progress/lift-series';
@@ -56,6 +56,8 @@ const LADDER: { key: RankFamily; name: string }[] = [
   { key: 'legacy', name: 'Legacy' },
 ];
 const ORDER = LADDER.map((l) => l.key);
+/** Sub-tiers climb I → IV within a family (Foundation · I is the first rung of all). */
+const LEVELS: readonly RankLevel[] = [1, 2, 3, 4];
 
 export default function ProgressHubScreen() {
   const router = useRouter();
@@ -84,6 +86,8 @@ export default function ProgressHubScreen() {
 
   const cur = ORDER.indexOf(data.rankFamily);
   const curDef = LADDER[cur];
+  /** The athlete's rung among all 28 — family, then sub-tier I→IV. */
+  const curRung = cur * LEVELS.length + ((data.rankSubTier as RankLevel) - 1);
   const sex = profile?.sex;
 
   // Which lifts show as cards: the saved selection, else the athlete's most-recent lifts (default).
@@ -142,14 +146,49 @@ export default function ProgressHubScreen() {
             <TourAnchor id="progress-rank">
               <Text style={styles.sectionLabel}>Rank Journey</Text>
             </TourAnchor>
-            <Text style={styles.sectionCaption}>{cur} of the path walked</Text>
+            <Text style={styles.sectionCaption}>
+              Rank {curRung + 1} of {LADDER.length * LEVELS.length}
+            </Text>
           </View>
+          {/*
+            ══ EVERY RUNG, NOT EVERY FAMILY — AND NOTHING SEALED ══
+
+            PO, 2026-09-10: *"I want each sub division to be showing here too. With the sayings underneath.
+            That way it shows the entire progression."* The ladder was seven family rows, with every family
+            past the athlete's own reading "————  Sealed until earned" — so the only rung anyone could see
+            was the one they stood on, and the 28 sayings of Amendment 003 were said by the ceremony once
+            and then never again.
+
+            Now all 28 rungs, each its own badge and its own ascent statement (`rankAscent`; tier I IS the
+            family identity, so the seven identities are all still here — RSA-A3-D5). Unreached rungs are
+            named and quoted but faded: seeing the whole road is the point, and walking it is still the
+            only way along it. Rank Progression already named every rank, so the seal hid nothing real.
+          */}
           <View style={styles.journey}>
-            <View style={[styles.spine, { top: 24, bottom: 24 }]} pointerEvents="none">
-              <View style={[styles.spineFill, { height: `${Math.round(((cur + 0.5) / 7) * 100)}%` }]} />
-            </View>
-            {LADDER.map((f, i) => (
-              <Rung key={f.key} def={f} state={i < cur ? 'earned' : i === cur ? 'current' : 'locked'} subTier={data.rankSubTier as RankLevel} sex={sex} />
+            {LADDER.map((f, fi) => (
+              <Fragment key={f.key}>
+                {/* A breath between families, carrying the line through it — walked once this family's
+                    first rung is. */}
+                {fi > 0 ? (
+                  <View style={styles.familyGap} pointerEvents="none">
+                    <View style={[styles.seg, styles.segFull, fi * LEVELS.length <= curRung && styles.segWalked]} />
+                  </View>
+                ) : null}
+                {LEVELS.map((lv) => {
+                  const i = fi * LEVELS.length + (lv - 1);
+                  return (
+                    <Rung
+                      key={lv}
+                      def={f}
+                      level={lv}
+                      state={i < curRung ? 'earned' : i === curRung ? 'current' : 'locked'}
+                      first={i === 0}
+                      last={i === LADDER.length * LEVELS.length - 1}
+                      sex={sex}
+                    />
+                  );
+                })}
+              </Fragment>
             ))}
             {/* WAS: "The path continues. What comes next is earned, not previewed."
                 That stance is reversed, deliberately. Hiding what a rank asks for does not make it feel
@@ -280,9 +319,7 @@ const PATHS = {
   flame: 'M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z',
   pulse: 'M3 12h4l3 8 4-16 3 8h4',
   plus: 'M12 5v14M5 12h14',
-  trendUp: 'M7 17L17 7M9 7h8v8',
-  lock: 'M7 11h10a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2z M8 11V8a4 4 0 0 1 8 0v3',
-} as const;
+  trendUp: 'M7 17L17 7M9 7h8v8',} as const;
 
 function Glyph({ d, size, color, width = 1.9 }: { d: string; size: number; color: string; width?: number }) {
   return (
@@ -309,31 +346,55 @@ function Fact({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Rung({ def, state, subTier, sex }: { def: { key: RankFamily; name: string }; state: 'earned' | 'current' | 'locked'; subTier: RankLevel; sex?: 'male' | 'female' | 'unspecified' }) {
+/**
+ * One rung of the 28: its own badge, its name with the sub-tier, and its own ascent statement.
+ *
+ * ⚠ THE SPINE IS DRAWN PER ROW, NOT AS ONE LINE BEHIND THE LIST. It was a single absolute line with a fill
+ * set to `(cur + 0.5) / 7` of its height — right only while every row is the same height, which stopped
+ * being true the moment the current rung grew a border, a chip and a bigger badge. Each row now owns the
+ * two halves of the line through its own node — bronze where the path has been walked — so the fill lands
+ * on the athlete's badge by construction, at any row height.
+ */
+function Rung({
+  def,
+  level,
+  state,
+  first,
+  last,
+  sex,
+}: {
+  def: { key: RankFamily; name: string };
+  level: RankLevel;
+  state: 'earned' | 'current' | 'locked';
+  first: boolean;
+  last: boolean;
+  sex?: 'male' | 'female' | 'unspecified';
+}) {
+  const current = state === 'current';
   return (
-    <View style={[styles.rung, state === 'current' && styles.rungCurrent, state === 'locked' && styles.rungLocked]}>
+    <View style={[styles.rung, current && styles.rungCurrent]}>
+      {/* The two halves of the line through this node, positioned on the ROW so they run through its
+          padding and meet the next row's line with no gap. */}
+      {first ? null : <View style={[styles.seg, styles.segTop, state !== 'locked' && styles.segWalked]} pointerEvents="none" />}
+      {last ? null : <View style={[styles.seg, styles.segBottom, state === 'earned' && styles.segWalked]} pointerEvents="none" />}
       <View style={styles.rungNode}>
-        {state === 'locked' ? (
-          <View style={styles.lockHex}>
-            <Glyph d={PATHS.lock} size={15} color="rgba(150,130,100,0.5)" width={1.8} />
-          </View>
-        ) : (
-          <Badge family={def.key} level={state === 'current' ? subTier : 4} sex={sex} size={state === 'current' ? 48 : 41} />
-        )}
+        <View style={state === 'locked' ? styles.badgeAhead : null}>
+          <Badge family={def.key} level={level} sex={sex} size={current ? 44 : 32} />
+        </View>
       </View>
-      <View style={styles.rungLabel}>
+      <View style={[styles.rungLabel, state === 'locked' && styles.rungAhead]}>
         <View style={styles.rungNameRow}>
-          <Text style={[state === 'current' ? styles.rungNameCurrent : state === 'earned' ? styles.rungNameEarned : styles.rungNameLocked]} numberOfLines={1}>
-            {state === 'locked' ? '————' : def.name}
+          <Text style={current ? styles.rungNameCurrent : state === 'earned' ? styles.rungNameEarned : styles.rungNameLocked} numberOfLines={1}>
+            {def.name} {ROMAN[level]}
           </Text>
-          {state === 'current' ? (
+          {current ? (
             <View style={styles.hereChip}>
               <Text style={styles.hereChipText}>You are here</Text>
             </View>
           ) : null}
         </View>
-        <Text style={[state === 'current' ? styles.rungStmtCurrent : styles.rungStmt]} numberOfLines={2}>
-          {state === 'locked' ? 'Sealed until earned' : rankIdentity(def.key)}
+        <Text style={current ? styles.rungStmtCurrent : styles.rungStmt} numberOfLines={2}>
+          {rankAscent(def.key, level)}
         </Text>
       </View>
     </View>
@@ -435,19 +496,29 @@ const styles = StyleSheet.create({
   editText: { fontFamily: flFont.sans, fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
 
   // journey
-  journey: { position: 'relative', paddingTop: 14, paddingBottom: 4 },
-  spine: { position: 'absolute', left: 34, width: 2, backgroundColor: flColor.charcoal700, borderRadius: 1 },
-  spineFill: { width: 2, backgroundColor: flColor.bronzeBorder, borderRadius: 1 },
-  rung: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8, borderRadius: flRadius.xl, paddingRight: 8 },
-  rungCurrent: { borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, paddingLeft: 0 },
-  rungLocked: { opacity: 0.7 },
+  journey: { position: 'relative', paddingTop: 10, paddingBottom: 4 },
+  /* Every rung carries a transparent 1px border so the current one's real border does not shift its node
+     a pixel right of the line. */
+  rung: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 5, borderRadius: flRadius.xl, paddingRight: 8, borderWidth: 1, borderColor: 'transparent' },
+  rungCurrent: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, paddingVertical: 9 },
   rungNode: { width: 70, alignItems: 'center', justifyContent: 'center' },
-  lockHex: { width: 50, height: 68, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: 'rgba(120,96,60,0.14)', backgroundColor: forgeOr('#0f0d0a', flColor.surfaceRecessed) },
-  rungLabel: { flex: 1, minWidth: 0, gap: 4, paddingVertical: 2 },
+  /* The line. Absolute on the ROW (inside its border), so `-1` reaches over the border to meet the next
+     row's half with no seam. 34 = the node column's centre, less half the line. */
+  seg: { position: 'absolute', left: 34, width: 2, backgroundColor: flColor.charcoal700 },
+  segTop: { top: -1, height: '50%' },
+  segBottom: { top: '50%', bottom: -1 },
+  segFull: { top: 0, bottom: 0 },
+  segWalked: { backgroundColor: flColor.bronzeBorder },
+  /* `marginLeft: 1` stands in for the rungs' 1px border so the line does not jog through the gap. */
+  familyGap: { height: 12, marginLeft: 1 },
+  /* Ahead of the athlete: named and quoted, but quiet — the badge a ghost of itself. */
+  badgeAhead: { opacity: 0.38 },
+  rungAhead: { opacity: 0.75 },
+  rungLabel: { flex: 1, minWidth: 0, gap: 3, paddingVertical: 2 },
   rungNameRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  rungNameEarned: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.gray400 },
+  rungNameEarned: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.gray400 },
   rungNameCurrent: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
-  rungNameLocked: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', letterSpacing: 3, color: flColor.gray600 },
+  rungNameLocked: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.gray600 },
   rungStmt: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600, lineHeight: 16 },
   rungStmtCurrent: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 13, color: flColor.bronze300, lineHeight: 18 },
   hereChip: { paddingVertical: 3, paddingHorizontal: 9, borderRadius: flRadius.pill, backgroundColor: flColor.bronzeSolid },
