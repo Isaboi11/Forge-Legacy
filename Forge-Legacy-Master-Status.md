@@ -927,7 +927,7 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
 > Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
 
-### 0. ⭐ Home's no-plan start is ONE sheet — template, build as you go and cardio on the first tap (2026-09-10, Home / Workouts — **W25-A1-D9** addendum to `W25-Amendment-001` · commit `6c85f00` on `feat/route-map` (not pushed) · ✅ **WEB DEPLOYED AND VERIFIED** `index-b351b08cc28fc51461d3aaa047fac63b.js` — alias 200, hash MATCH, live bundle contains the new copy · ⏳ **NO OTA · NOT SEEN BY A HUMAN**)
+### 0. ⭐ Home's no-plan start is ONE sheet — template, build as you go and cardio on the first tap (2026-09-10, Home / Workouts — **W25-A1-D9** addendum to `W25-Amendment-001` · commit `6c85f00` on `feat/route-map` (pushed) · ✅ **WEB DEPLOYED AND VERIFIED** (latest `index-9e695faf…`) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a08ca1-a157-7b76…` (with the two follow-ups below) · ⏳ **NOT SEEN BY A HUMAN**)
 
 PO critique: *"You tap Strength, but nothing has really happened. You just get another menu."* Home was
 Start Freestyle Workout → "What are you training?" → Strength → Start Strength → template / build as you go.
@@ -943,7 +943,15 @@ still unpasted.
 **Follow-up, same day — `1db9af4` (W25-A1-D10):** "Build as you go" now opens the Exercise Picker straight
 away, titled *Build Freestyle Workout*; the one-button freestyle intro stays only as the back-out landing.
 ✅ Web `index-2ae90be50e4b6f24c8ca6e713579b3c3.js` — alias 200, hash MATCH, title string present. tsc 0 ·
-761/761 app+workout tests. ⏳ No OTA · not seen by a human.
+761/761 app+workout tests.
+**Then `8f45838`:** backing out of that picker with nothing chosen discards the empty session (as "Not today"
+does) and returns to the card that was tapped — handled on focus, so back arrow, swipe-back and Android back
+all take it. ✅ Web `index-9e695faf092fd7e3545b086c5c71f097.js` (200, MATCH). ✅ **All three OTA'd to build 8
+and VERIFIED DELIVERABLE**: iOS `01a08ca1-a157-7b76-9f12-1a07864bce11` on runtime `47944f2e…` (fingerprint
+MATCHED build `3f67281b…` first; the manifest returned this id to a build-8 client), Android
+`01a08ca1-a157-7943…`. Picked as `c538e0d` · `fe2ae06` · `ba4f86b` on `ota/build8-js` (pushed; tsc 0);
+`feat/route-map` pushed. Pre-OTA audit: the only other subjects missing from build 8 are migration/design/
+tooling commits (the two touching `src/` are comment-only). ⏳ Not seen by a human.
 
 ### 0. ⭐ A squad goal ENDS now — posted, pushed, and the card stops saying it's still going; and a tapped squad photo shows the photo (2026-09-10, Squads — **`Squad-Architecture-Amendment-006-Goal-Close.md` 🔒 LOCKED** (PO took D1–D3 same day) · ⛔ **`0200` WRITTEN, NOT APPLIED** (`supabase/apply/pending-0200.sql` — paste now; the app half is out) · ✅ **OTA PUBLISHED TO BUILD 8 AND VERIFIED DELIVERABLE** iOS `01a08c4d-9e0f-74d3-a6c8-51bb66ce26b1` (group `de4b0ea2…`) on runtime `47944f2e…` (fingerprint MATCHED build `3f67281b…` first), Android `01a08c4d-9e0f-76e1…` — commit `67cc632` on `feat/route-map` (**pushed**), cherry-picked as `fabfca4` on `ota/build8-js` (**pushed**; tsc 0, 3,371/3,371 in the worktree). ⛔ **WEB NOT DEPLOYED · NOT SEEN ON A DEVICE**)
 
