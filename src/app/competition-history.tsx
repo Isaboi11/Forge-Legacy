@@ -18,6 +18,7 @@ import {
 } from '@/data/challenges-live';
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { themeGround } from '@/constants/theme-scrim';
 
 /**
  * Competition History — every competition this athlete has finished, filterable.
@@ -402,7 +403,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   pressed: { opacity: 0.88 },
 
-  header: { flexShrink: 0, backgroundColor: '#070808', borderBottomWidth: 1, borderBottomColor: flColor.charcoal700, paddingBottom: 10, zIndex: 6 },
+  header: { flexShrink: 0, backgroundColor: themeGround('#070808'), borderBottomWidth: 1, borderBottomColor: flColor.charcoal700, paddingBottom: 10, zIndex: 6 },
   barTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.cream100 },
 
   searchWrap: { flexDirection: 'row', alignItems: 'center', gap: 9, marginHorizontal: 20, marginBottom: 4, paddingHorizontal: 12, height: 40, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
@@ -417,7 +418,7 @@ const styles = StyleSheet.create({
   chipTextOn: { color: flColor.bronze300 },
 
   scroll: { paddingBottom: 30 },
-  yearHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 8, backgroundColor: '#060708' },
+  yearHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 8, backgroundColor: themeGround('#060708') },
   yearLabel: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   yearCount: { fontSize: 10.5, letterSpacing: 0.3, color: flColor.gray600 },
 

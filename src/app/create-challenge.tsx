@@ -16,7 +16,7 @@ import { ACTIVITY_KEYS, LIFT_KEYS, SCOPE_OF, createChallenge, isGainType, metric
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
-import { themeScrim } from '@/constants/theme-scrim';
+import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 
 /**
  * Create Challenge (C-2) — built to `Forge Create Challenge.dc.html`.
@@ -267,7 +267,7 @@ export default function CreateChallengeScreen() {
           {/* ── Live preview seal ── */}
           <View style={styles.hero}>
             <View style={[styles.seal, editing && styles.sealSmall]}>
-              <LinearGradient colors={['#40301f', '#17130f'] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+              <LinearGradient colors={forgeOr<readonly [string, string]>(['#40301f', '#17130f'], [flColor.iconContainerBg, flColor.surfaceRecessed])} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
               <SwordsGlyph size={editing ? 24 : 28} color={flColor.bronze300} />
             </View>
             <Text style={[styles.heroTitle, editing && styles.heroTitleSmall, !trimmedName && styles.heroTitleMuted]} numberOfLines={3}>

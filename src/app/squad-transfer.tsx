@@ -13,7 +13,7 @@ import { fetchSquad, transferSquadOwnership } from '@/data/squad-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { themeScrim } from '@/constants/theme-scrim';
+import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 
 /**
  * Transfer Ownership — built to `Squad Transfer Ownership.dc.html`, wired to real data. Owner picks another
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
   memberList: { gap: 10 },
   memberRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 13, borderRadius: flRadius.lg, borderWidth: 1, boxShadow: flShadow.card },
   memberRowOff: { backgroundColor: flColor.charcoal800, borderColor: flColor.bronzeBorderSubtle },
-  memberRowOn: { backgroundColor: '#171009', borderColor: flColor.bronzeBorder },
+  memberRowOn: { backgroundColor: forgeOr('#171009', flColor.charcoal700), borderColor: flColor.bronzeBorder },
   memberText: { flex: 1, minWidth: 0, gap: 3 },
   memberName: { fontSize: 15.5, fontWeight: '500', color: flColor.cream100 },
   tenureRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },

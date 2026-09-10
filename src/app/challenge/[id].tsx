@@ -27,6 +27,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { getSeenPodiums } from '@/lib/podium-seen';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { themeScrim } from '@/constants/theme-scrim';
 
 /**
  * Challenge (C-3) — the standings screen. Built to `Forge Challenge.dc.html`.
@@ -307,7 +308,7 @@ function Hero({ challenge: c }: { challenge: ChallengeDetail }) {
   return (
     <View style={styles.hero}>
       {/* the vignette the crown reads against — layered rather than radial, RN has no radial-gradient */}
-      <LinearGradient colors={['rgba(6,7,9,0.97)', 'rgba(6,7,9,0.72)', 'transparent'] as const} locations={[0, 0.54, 0.84] as const} start={{ x: 0.5, y: 0.2 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={[themeScrim('rgba(6,7,9,0.97)'), themeScrim('rgba(6,7,9,0.72)'), 'transparent'] as const} locations={[0, 0.54, 0.84] as const} start={{ x: 0.5, y: 0.2 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
 
       <View style={styles.crownWrap}>
         {/* 0.34 → 0.60 (PO 2026-08-17: "I can't see it at all"). The design's 34% is measured against a

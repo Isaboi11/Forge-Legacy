@@ -28,6 +28,7 @@ import { fetchRecentPlaylists } from '@/data/playlists-live';
 import { ShareSessionSheet } from '@/components/forge/ShareSessionSheet';
 import type { PriorShare } from '@/domain/share/fanout';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -591,7 +592,7 @@ export default function WorkoutComplete() {
    */
   const shareCard = (
     <View style={styles.shareCard}>
-      <LinearGradient colors={['#0E1216', '#070A0C']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={forgeOr<readonly [string, string]>(['#0E1216', '#070A0C'], [flColor.charcoal800, flColor.charcoal700])} style={StyleSheet.absoluteFill} />
       {/* RN has no radial gradient; a top-anchored linear wash that fades out by ~55% is the sanctioned
           stand-in (the same trick the Mission Card uses). */}
       <LinearGradient

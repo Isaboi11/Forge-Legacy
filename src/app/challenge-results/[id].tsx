@@ -24,6 +24,7 @@ import {
 } from '@/data/challenges-live';
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { themeScrim } from '@/constants/theme-scrim';
 
 /**
  * Challenge Results (C-4) — the permanent record of a finished season. Built to
@@ -144,7 +145,7 @@ function Hero({ result: r }: { result: ChallengeResultsDetail }) {
 
   return (
     <View style={styles.hero}>
-      <LinearGradient colors={['rgba(6,7,9,0.97)', 'rgba(6,7,9,0.72)', 'transparent'] as const} locations={[0, 0.54, 0.84] as const} start={{ x: 0.5, y: 0.1 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={[themeScrim('rgba(6,7,9,0.97)'), themeScrim('rgba(6,7,9,0.72)'), 'transparent'] as const} locations={[0, 0.54, 0.84] as const} start={{ x: 0.5, y: 0.1 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
 
       <View style={styles.crownWrap}>
         <CrownArt opacity={1} duration={1000} shimmer={false} />

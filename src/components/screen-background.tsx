@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { flGradient, IS_PAPER } from '@/constants/foundation';
 import { paperTextureOpacity, type PaperTexture } from '@/constants/paper-scrim';
-import { themeScrim } from '@/constants/theme-scrim';
+import { themeGround, themeScrim } from '@/constants/theme-scrim';
 import { svgStop } from '@/lib/svg-color';
 
 /**
@@ -136,7 +136,10 @@ export function ScreenBackground({
     scrimFade && scrollY ? scrollY.interpolate({ inputRange: [0, 220], outputRange: [0, 0.52], extrapolate: 'clamp' }) : 0;
 
   return (
-    <View style={[styles.base, { backgroundColor: themeScrim(base) }]} pointerEvents="none">
+    /* `themeGround`, not `themeScrim`: ~40 screens pass `base="#050505"`/`"#060708"`, and a solid hex is
+       exactly what `paperScrim` lets through — so on Alabaster those screens drew their light plate over
+       a near-black canvas that showed through wherever the plate is translucent. */
+    <View style={[styles.base, { backgroundColor: themeGround(base) }]} pointerEvents="none">
       {atmospheric ? (
         <LinearGradient
           colors={flGradient.bgAtmospheric.colors}

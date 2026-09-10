@@ -14,6 +14,7 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr, themeGround } from '@/constants/theme-scrim';
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import { rankIdentity } from '@/domain/rank/identity';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
@@ -404,7 +405,7 @@ function spark(series: number[]): { line: string; area: string; lastX: number; l
 const HAIRLINE = flColor.charcoal700;
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#050505' },
+  root: { flex: 1, backgroundColor: themeGround('#050505') },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   err: { fontSize: 14, color: flColor.gray400 },
   body: { paddingTop: 4 },
@@ -441,7 +442,7 @@ const styles = StyleSheet.create({
   rungCurrent: { borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, paddingLeft: 0 },
   rungLocked: { opacity: 0.7 },
   rungNode: { width: 70, alignItems: 'center', justifyContent: 'center' },
-  lockHex: { width: 50, height: 68, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: 'rgba(120,96,60,0.14)', backgroundColor: '#0f0d0a' },
+  lockHex: { width: 50, height: 68, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: 'rgba(120,96,60,0.14)', backgroundColor: forgeOr('#0f0d0a', flColor.surfaceRecessed) },
   rungLabel: { flex: 1, minWidth: 0, gap: 4, paddingVertical: 2 },
   rungNameRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   rungNameEarned: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.gray400 },

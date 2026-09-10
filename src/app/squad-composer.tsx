@@ -46,6 +46,7 @@ import { UploadError } from '@/lib/storage-upload';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Squad Composer — built to `Squad Composer.dc.html`, scoped to the post types Squad Feed backs with real
@@ -1073,7 +1074,7 @@ const styles = StyleSheet.create({
   postBtnTextOff: { color: flColor.gray600 },
 
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 11 },
-  authorDisc: { width: 40, height: 40, borderRadius: flRadius.round, backgroundColor: '#2c2118', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
+  authorDisc: { width: 40, height: 40, borderRadius: flRadius.round, backgroundColor: forgeOr('#2c2118', flColor.iconContainerBg), borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   authorText: { flex: 1, minWidth: 0 },
   authorName: { fontSize: 14.5, fontWeight: '500', color: flColor.cream100 },
   authorMeta: { fontSize: 11.5, color: flColor.gray600, marginTop: 1 },
@@ -1100,7 +1101,7 @@ const styles = StyleSheet.create({
     borderRadius: flRadius.md,
     borderWidth: 1,
     borderColor: flColor.bronzeBorder,
-    backgroundColor: '#171109',
+    backgroundColor: forgeOr('#171109', flColor.charcoal800),
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
@@ -1123,7 +1124,7 @@ const styles = StyleSheet.create({
   pickerRowText: { flex: 1, minWidth: 0, gap: 2 },
   pickerRowName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   pickerRowSub: { fontSize: 12, color: flColor.gray600 },
-  recapCard: { gap: 14, padding: 16, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#171109', boxShadow: `${flShadow.borderInset}, ${flShadow.card}` },
+  recapCard: { gap: 14, padding: 16, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr('#171109', flColor.charcoal800), boxShadow: `${flShadow.borderInset}, ${flShadow.card}` },
   recapName: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100 },
   recapStats: { flexDirection: 'row', flexWrap: 'wrap', gap: 22 },
   recapStat: { gap: 3 },
@@ -1152,7 +1153,7 @@ const styles = StyleSheet.create({
   mediaHint: { fontSize: 12.5, color: flColor.gray400 },
   mediaPreviewWrap: { position: 'relative', borderRadius: flRadius.md, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   mediaPreview: { width: '100%', height: 200, backgroundColor: flColor.charcoal900 },
-  videoPreview: { height: 140, backgroundColor: '#171009', alignItems: 'center', justifyContent: 'center', gap: 10 },
+  videoPreview: { height: 140, backgroundColor: forgeOr('#171009', flColor.surfaceRecessed), alignItems: 'center', justifyContent: 'center', gap: 10 },
   playDisc: { width: 44, height: 44, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.45)', borderWidth: 1, borderColor: flColor.bronzeBorder },
   videoPreviewText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
   mediaRemove: { position: 'absolute', top: 8, right: 8, width: 30, height: 30, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)' },

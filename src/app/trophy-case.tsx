@@ -12,6 +12,7 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { themeGround, themeScrim } from '@/constants/theme-scrim';
 import {
   chipMeta,
   eventLabel,
@@ -208,7 +209,7 @@ export default function TrophyCaseScreen() {
       <View style={styles.header}>
         {/* Opaque at the top, translucent at the bottom — scrolled content dissolves under the tally
             rather than stopping at a hard edge. */}
-        <LinearGradient colors={['#0a0b0c', 'rgba(10,11,12,0.85)']} style={StyleSheet.absoluteFill} pointerEvents="none" />
+        <LinearGradient colors={[themeGround('#0a0b0c'), themeScrim('rgba(10,11,12,0.85)')]} style={StyleSheet.absoluteFill} pointerEvents="none" />
         <AppBar title="Trophy Case" onBack={goBack} transparent />
 
         <View style={styles.identity}>

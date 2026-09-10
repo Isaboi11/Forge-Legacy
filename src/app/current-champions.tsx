@@ -12,6 +12,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { CHALLENGE_TYPES, fetchCurrentChampions, formatScore, metricLabel, type ChallengeType, type ChampionTitle, type CurrentChampions, type FinalStanding } from '@/data/challenges-live';
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { themeGround, themeScrim } from '@/constants/theme-scrim';
 
 /**
  * Current Champions (C-7, CS-D20) — who holds each title right now.
@@ -90,7 +91,7 @@ export default function CurrentChampionsScreen() {
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.32)' }} />
 
       <View style={styles.header}>
-        <LinearGradient colors={['#0a0b0c', 'rgba(10,11,12,0.86)'] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={[themeGround('#0a0b0c'), themeScrim('rgba(10,11,12,0.86)')] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
         <AppBar title="Current Champions" onBack={goBack} />
         {data ? (
           <View style={styles.identity}>

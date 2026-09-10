@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/useCeremony';
 import { usePersist } from '@/hooks/usePersist';
 import { ensurePhotoReminder } from '@/lib/photo-reminder';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Transformation Gallery (L-17) — built to `Forge Transformation.dc.html`, wired to real storage. A
@@ -591,7 +592,7 @@ const styles = StyleSheet.create({
     height: 78,
     borderRadius: flRadius.round,
     overflow: 'hidden',
-    backgroundColor: '#1b130b',
+    backgroundColor: forgeOr('#1b130b', flColor.iconContainerBg),
     borderWidth: 1.5,
     borderColor: flColor.bronze400,
     alignItems: 'center',

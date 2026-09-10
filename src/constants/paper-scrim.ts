@@ -53,6 +53,36 @@ export function paperScrim(color: string): string {
   return `rgba(${PAPER_SCRIM_RGB},${alpha})`;
 }
 
+/** Alabaster's `--fl-base` — the canvas `ScreenBackground` paints behind every plate. */
+export const PAPER_BASE = '#F4F0E6';
+
+/**
+ * Flip a GROUND — a solid near-black a screen is painted on — to Alabaster's canvas.
+ *
+ * ══ WHY `paperScrim` IS NOT ENOUGH ══
+ *
+ * `paperScrim` deliberately ignores hex (`'#050505'` must pass through it — a solid colour is not a
+ * scrim, and its test says so). But half the app's grounds ARE solid hex: a sticky month header
+ * (`#060708`), a year band, a screen root, and the `base="#050505"` that 40-odd screens hand
+ * `ScreenBackground`. Every one of those stayed near-black on Alabaster — PO, 2026-09-10, on Activity
+ * History: *"Those colors should not be like that."*
+ *
+ * So this adds the solid case and delegates the rest: an opaque near-black hex becomes `PAPER_BASE`
+ * (opaque in, opaque out — it was a ground, it stays one), and anything else goes through `paperScrim`
+ * unchanged, so a translucent scrim still keeps its alpha exactly.
+ *
+ * The same threshold as the scrim classifier, for the same reason: a warm raised surface like
+ * `#1b130b` (max channel 27) is a considered colour, not a ground, and is given its Alabaster value by
+ * name at the call site rather than guessed at here.
+ */
+export function paperGround(color: string): string {
+  const m = /^\s*#([0-9a-f]{3}|[0-9a-f]{6})\s*$/i.exec(color);
+  if (!m) return paperScrim(color);
+  const h = m[1].length === 3 ? m[1].replace(/./g, (c) => c + c) : m[1];
+  const max = Math.max(parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16));
+  return max > DARK_SCRIM_MAX_CHANNEL ? color : PAPER_BASE;
+}
+
 /**
  * ══ TWO TEXTURE LEVELS, AND ONLY ALABASTER HAS THEM ══
  *

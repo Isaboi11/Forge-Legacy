@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { themeGround } from '@/constants/theme-scrim';
 
 /**
  * Get the photo INTO the circle, the way you want it.
@@ -248,7 +249,7 @@ function ZoomGlyph({ small }: { small?: boolean }) {
 const SHADE = 'rgba(6,7,8,0.72)';
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#060708', paddingHorizontal: 22, paddingTop: 84 },
+  root: { flex: 1, backgroundColor: themeGround('#060708'), paddingHorizontal: 22, paddingTop: 84 },
   // `height` and `paddingTop` are overridden inline with the safe-area top inset — see the comment above
   // `insets`. These values are the zero-inset baseline (web, and phones with no notch).
   header: { position: 'absolute', top: 0, left: 0, right: 0, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },

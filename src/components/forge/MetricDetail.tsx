@@ -7,6 +7,7 @@ import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { themeGround } from '@/constants/theme-scrim';
 import { changeLabel, currentLabel, monthYear, pointLabel, tickIndices, type MetricSeries } from '@/domain/progress/lift-series';
 import { useUnits } from '@/lib/settings';
 import { unitLabel } from '@/domain/settings/units';
@@ -225,7 +226,7 @@ function Glyph({ d, size, color, width = 1.9 }: { d: string; size: number; color
 }
 
 const styles = StyleSheet.create({
-  root: { backgroundColor: '#050505', zIndex: 70 },
+  root: { backgroundColor: themeGround('#050505'), zIndex: 70 },
   bar: { flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingHorizontal: 8, paddingBottom: 6 },
   barBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   barTitle: { flex: 1, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.cream100, textAlign: 'center' },
