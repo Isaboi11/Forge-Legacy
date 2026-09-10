@@ -855,3 +855,105 @@ found in the live bundle · 48 bucket objects fetched anonymously, 0 failures, p
 **Gates:** tsc **0** · **3,066/3,066** (+11 in `gallery-video-grid`, plus the compare guards re-pointed) · lint at baseline. ✅ **WEB VERIFIED** — deployment URL and production alias both **200**, hash-matched on the first probe, and seven strings only this pass's code contains found in the live bundle (`snapToInterval`, `poseGrid`, `cardShelf`, `One at a time`, `gridTile`, `onFullscreenExit`, `pan-y`). ⚠ **`escalated` and `CARD_PEEK` are NOT searchable in a bundle** — a local `const` and a module const are renamed and inlined by the minifier; a probe on either would have reported MISSING on correct code. ✅ **OTA VERIFIED DELIVERABLE** — fingerprint MATCHED before publishing, and the manifest queried as an iOS client on runtime `47944f2e…` returns the new id and no longer the previous one. ⏳ **Not seen rendered.**
 
 
+### 0. ⭐ The catalogue answers to what people say, and the seal screen composes as one thing (2026-09-04, Exercise search / Workout Complete — **no migration**, ✅ **OTA PUBLISHED TO BUILD 8** iOS `01a06c8a-e5fa-7af7-b3f7-e6a86f84bde6`, runtime `47944f2e…` — commits `a9ba4e4` `2035270` on `feat/route-map`, cherry-picked as `381b9b0` `214ea88` on `ota/build8-js`. ⛔ **WEB NOT DEPLOYED · NOT SEEN ON A DEVICE**)
+
+**Search.** PO: *"Romanian deadlift does not come up when you search RDL."* ⚠ **`rdl` was already in the codebase** — in `ABBREVIATIONS`, reachable only from `tokenize()`, which serves PROGRAM IMPORT. The Picker's search box runs a different function and had never heard of it. Same for `singular()`. **Two matchers, one vocabulary — check both when touching either.** Measured on the real 733 visible rows: `rdl` returned three HURDLE drills and none of the eight Romanian Deadlifts (`includes()` matched hu·RDL·e); `bb` returned 92 rows, nearly all DUMBBELL; and ⭐ **every plural returned ZERO** — squats · curls · rows · presses · deadlifts · lunges · dips · shrugs · crunches · planks. That last one is almost certainly a bigger daily failure than the report that found it, and nobody had raised it. Four rules in `search-core.ts` (shared by the Picker, the Library hub and the cardio rows): abbreviation expansion, word-PREFIX instead of substring, `singular()` folded on BOTH sides, and adjacent-token joins with backtracking. Plus `matchesFuzzy` — Damerau, budget by token length, **run only when the strict pass found nothing**. ⚠ Ordering trap: `singular('ohs')` = `'oh'`, so the fold destroyed any abbreviation ending in s. **⭐ Of 102 hand-written vernacular candidates, 64 needed NO alias** once the matcher was fixed — validate against the live catalogue before writing data. Auto-generating initialisms is a trap (477 "rescues" like `bfr` → Band Front Raise).
+
+⚠ **7 CATALOGUE GAPS surfaced and were NOT invented** (`exercises.json` is append-only): handstand push-up · trap-bar/hex-bar deadlift · landmine press · viking press · reverse hyperextension · jumping jack · Jefferson deadlift. **Open content task.**
+
+**Workout Complete.** PO design review scored it 8.5/10 — *"my main criticism is not the styling, it's hierarchy and vertical composition."* ~120pt of slack removed. The identity block (SESSION COMPLETE / name / date) became ONE wrapped child — ⚠ the gap was never in their margins, `styles.center` has `gap: 12` and each of the three paid it on top of its own. Emblem 132→116 (first-run keeps 132: no stats or milestone there, so it IS the subject). Stats 24→27 and labels `gray600`→`gray400` — contrast bought more hierarchy than size. **The milestone stopped being a card** — nothing to act inside, so glyph + "MILESTONE · 20TH SESSION" as a caption; the `featured` honor/PR variant stays a card. Quote spacing rebalanced so it reads as the pre-seal statement. "See the details" → **VIEW DETAILS** in the screen's own label voice. ⚠ **Hold-to-Seal untouched by PO instruction**, which overrides item 6 of the review (it asked for a progress ring). Items 8 and 9 untouched.
+
+### 0. ⭐ A workout saves with no signal, a run stops at the light, your training log leaves as a file, and last week's numbers sit under every set you haven't done (2026-09-04, Active Workout / Run tracking / Account Settings — **no migration**, ✅ **OTA PUBLISHED TO BUILD 8** iOS `01a06c82-886d-7789-b469-e78ff816e49a`, runtime `47944f2e…` — commit `3b88146` on `feat/route-map`, cherry-picked as `dbae58d` on `ota/build8-js`. ⛔ **WEB NOT DEPLOYED · NOT SEEN ON A DEVICE**)
+
+Four units from a competitive gap-close pass against Hevy and Strava (`Docs/Competitive-Analysis-Hevy-Strava-v1.0.md`,
+`Docs/Competitive-Gap-Close-Build-Plan-v1.0.md`). ⚠ **Three of the six planned items collided with LOCKED
+documents, and the spec pass found all three before any code was written** — which is the whole reason that
+plan exists.
+
+**1 — The offline save queue (W-9 §13.4, a locked clause finished).** Finish a workout with no signal and it
+now saves: the session is held on the device and replayed silently when the connection returns. The old
+behaviour was **stuck, not lost** — the autosave held the session and Home still offered Continue Workout,
+but the athlete stood in the gym tapping Finish at a screen that would not let them out. ⚠ **`save_workout`
+has no idempotency key and `workouts` has no unique index**, so a blind retry writes a second workout, a
+second chapter bump, a second record set and a second honors pass; the drain asks the existing
+`findCommittedWorkout(athlete, startedAt)` before **every** replay. The transport-failure guard errs toward
+SURFACING — queueing a real rejection would tell the athlete it saved and retry forever against an answer
+that never changes. The discriminator was read out of the installed `postgrest-js`: its fetch-rejection path
+is the only one producing `code: ""`. ⚠ **A bug caught in self-review before it shipped:** the queue was
+keyed on `startedAt` alone with no owner, so two testers on one device would have drained one person's
+workout into the other's account, invisibly. Entries now carry `athleteId`.
+
+**2 — Auto-pause on runs.** No governing spec; greenfield. Pause below 0.8 mph over a trailing 10 s window
+after a 25 s grace; resume on two consecutive fixes ≥ 15 m away. Asymmetric on purpose — a false pause
+self-corrects in ~4 s of running. ⚠ Speed is measured against the **wall clock, not the last fix**: when an
+athlete stops, `acceptFix` rejects their jitter as drift and the track stops growing, so a fix-derived speed
+divides a tiny distance by a tiny elapsed and reports anything. **Three holes found while wiring it:**
+(a) silence is not stillness — a frozen track means a stop only while fixes are still arriving, so a tunnel
+must never pause the clock; (b) **auto-pause had to become FOREGROUND-ONLY** — auto-resume reads the raw fix
+stream, which does not run while suspended, so a run auto-paused with the phone pocketed would have had no
+mechanism able to restart it and would have sat paused for the rest of the session; (c) **a pre-existing
+defect of MANUAL pause** — the OS keeps buffering through a pause and the drain bypasses `reanchor`, so the
+walk to the water fountain was credited on the next foreground. All three resume paths now clear the buffer.
+
+**3 — Export My Data (P-9 §2 + §4, another locked row never built).** ⚠ Found late: P-9 gives Account exactly
+two rows and only Delete was ever built, and `settings/content.ts` records the Terms being amended DOWN from
+"export or delete" because the control did not exist. One tap now hands over a CSV — share sheet on device,
+download on web. §4.2's copy said the export is **emailed**, which is undeployable from here (no Supabase CLI,
+no service key, no email provider), so `P9-Amendment-001-Local-Data-Export.md` moves that sentence and leaves
+§2, §3, §4.1 and §4.3 untouched. ⚠ **The read is deliberately uncapped** — an export that stopped at 200
+workouts would tell an athlete they had trained less than they have. Columns are restricted to the `0001`
+spine + `0096`, per `activity-live.ts`'s rule that selecting a column that might not exist fails the WHOLE
+query. **P9-A1-D6 is owed:** the Terms sentence may have "export" back, and that belongs with a Terms review.
+
+**4 — Per-set `Prev` (PO override of W9-A5 §A5).** PO: *"We do not want to have to tap to see it. Should be
+there always."* A5 had declined it on phone-width grounds and deferred to the `.dc` under **PD-7** — and A5's
+own arithmetic was out of date, describing a four-column table that has had **five** since `cTrash` was added.
+So: no sixth column. `styles.row` became a column, the cells moved into `rowCells`, and `PREV 185 × 10` sits
+underneath, indexed to the same set position last session. ⚠ **Not on a DONE row** — the athlete's own number
+is already there and the table gets quieter as the session goes on; flipping `!isDone` is the one-line change
+if that reads wrong. ⚠ **`gray400`, not `gray600`** — `foundation.paper.ts` measures `gray600` at 3.15:1,
+under the 4.5 needed for text in Alabaster. `W9-Amendment-007-Per-Set-Prev.md` records the override **and the
+`.dc` divergence**: the design file has no per-set `Prev`, so a `design-gate` run on W-9 will report it as a
+delta. **That is DEFERRED-HONEST, not a regression.** PO approved the layout from a faithful render at 390 pt
+in both themes (artifact `eb07e1cb-8121-486e-8e44-b315d1b3898e`) — **not from a device.**
+
+**⛔ SKIPPED — Hevy/Strong CSV history import**, PO decision 2026-09-04. ⚠ The analysis still rates it the
+single highest-value **acquisition** fix in the document (a switcher must abandon their history), and that
+assessment stands — this is a sequencing call, not a finding that the gap closed.
+
+**⛔ BLOCKED — the rest-timer alert.** `Rest-Timer-Architecture-v1.0.md` §8.1: *"No rest-timer notifications
+fire in V1."* The PO chose "sound only, no banner" and **it cannot be built**: `UIBackgroundModes: audio` keeps
+an app alive only while audio is playing, the rest timer is a `setInterval`, and iOS suspends the JS so the
+timer never fires and nothing ever requests a ding. iOS offers no programmatic "sound but no banner". Real
+options are a **local notification with sound** (reliable, and OTA-able — `expo-notifications` is already in
+the binary; needs an amendment resolving **RT-OQ-1**) or dropping it. **Awaiting PO.**
+
+**Gates:** `tsc --noEmit` clean · `expo lint` at baseline (1 pre-existing error, 14 pre-existing warnings) ·
+**3224 tests pass, 0 fail** (+50 new). ✅ **Published from a CLEAN WORKTREE, not from main** — `fingerprint:compare --build-id 3f67281b…` printed MATCH on `47944f2e…` before publishing, and the manifest endpoint returns `01a06c82…` for that runtime. ⚠ **Option B was chosen deliberately:** the main tree held 35 uncommitted files of a parallel session's work — an onboarding/intake rework, `usePremiumGate`, and Posted Workouts whose migration `0192` is WRITTEN-NOT-APPLIED — and `expo export` bundles the WORKING TREE, so publishing from main would have shipped all of it. ⏳ **Build 7 was NOT fed this pass** (`ota/build7-js` exists; build 8 is the tester build). ⚠ **NOTHING HERE HAS BEEN OBSERVED WORKING.** Auto-pause's thresholds
+in particular are a road test, not a unit test. ⚠ A second session was editing this tree throughout the pass
+(commit `3e84fdf` landed mid-way, and a transient typecheck failure in `workout-complete.tsx` was theirs,
+mid-edit); nothing here is staged, so these changes are still loose in the working tree.
+
+---
+
+### 0. ⭐ The indoor ride ends when the workout does (2026-09-05, Active Workout / cardio — **no migration**, ✅ **DEPLOYED BOTH SURFACES** — web `index-b60341ce2ed31de87709cc21588d332a.js`, iOS OTA `01a071fc-024f-7e80-b5f5-c80c1608d8bc` on runtime `47944f2e…`, commit `2e61c45` on `feat/route-map`, cherry-picked as `9e67b1f` on `ota/build8-js`. ⏳ **NOT YET CONFIRMED ON A DEVICE**)
+
+PO: *"the indoor ride is just one continuous ride even when you end the workout, it just picks up on the next."* It was, and it was **two failures lining up** — either alone would have been survivable.
+
+**1 — The clock was keyed on the block's POSITION and nothing else** (`forge_cardio_timer_v1:2`). Position is not identity: Tuesday's ride and Thursday's ride are both the third exercise, so they were one row on disk.
+
+**2 — Nothing ever deleted that row.** `timer.reset()` runs on the card's own Save, so a bout logged the intended way cleaned up after itself; **every other ending did not** — Finish after a reload, Discard, "End workout" from the resume prompt, a force-quit, a save handed to the offline queue. `clearSession` wiped the session draft and left the clocks standing. ⚠ **`useWallClockTimer` measures `now − startedAt` BY DESIGN** (so a sleeping screen cannot cheat it), which means a stale row is not merely restored — **it keeps counting**. The next ride opened at two days and rising, offering Resume where it should have offered Start.
+
+⚠ **THE OUTDOOR RUN WAS NEVER AFFECTED, AND THAT IS WHY IT LOOKED LIKE A RIDE BUG.** GPS runs through `useRunTracker`'s phase machine, which holds nothing on disk. An indoor **run** had the identical defect — nobody had trained one. The comparison the PO drew ("like the run") was pointing at a different mechanism, not a working version of the same one.
+
+`cardio-timer-store.ts` now owns the key format, scoped by the session's `startedAt` — the one field on `ActiveSession` that is unique per session AND survives a resume unchanged, which the block index is neither. A new session cannot construct an old one's key. `clearSession` sweeps every `forge_cardio_timer_v1:*` row: it is the **one call all endings share**, so hanging the sweep off Finish alone would have left every other ending leaking exactly as before. ⚠ **The sweep is deliberately blind to scope** — matching only the ending session would strand the rows from sessions that ended some other way, which is the bug, kept. It also collects the legacy position-only keys, so rows already sitting on athletes' phones go with the first workout ended after this ships.
+
+⚠ **THE `boutLive` LOCK IS NOT A SECOND LINE OF DEFENCE.** `workout.tsx` blocks Finish while a bout is open, but `liveBoutIdx` is `useState` — pure memory. Navigate away and the lock is gone; the row on disk is not.
+
+⛔ **THE TREE COULD NOT BE PUBLISHED AND THE GUARD IS WHAT CAUGHT IT.** ~1,150 lines of a parallel session's in-progress work sat in the working tree, and `planned-workout-live.ts:152` calls `take_posted_workout` — **an RPC `0192` creates, and `0192` is still pending** (`supabase/apply/pending-0192.sql`). A tree-wide publish would have put a client in front of the testers calling a function the database does not have. Published from `C:/Users/isaia/forge-ota8-wt` at the cherry-picked commit instead. ⚠ **This is the third time a pending migration has nearly ridden out on an unrelated publish** — check for pending migrations before publishing ANYTHING, not just before publishing the feature that needs them.
+
+✅ **VERIFIED, NOT MERELY PUBLISHED.** `fingerprint:compare --build-id 3f67281b-48b3-4048-adf2-a16b20ad0aa8` returned an **exact match** on runtime `47944f2eea0b…` BEFORE publishing. Dry-run payload checked first (20,901-byte tarball, `assets.json` **63,305 bytes** of real entries — not the 295-byte `{}` of the 22.4.0 bug). Deployment URL **and** the production alias both returned **200** with a hash matching `dist/index.html` on the first probe, and the **live** bundle fetched from `forgelegacy.expo.app` was searched for `unscoped`, a literal only the new code contains — **PRESENT**, with the old `forge_cardio_timer_v1:${index}` template **absent**. tsc clean · 3231 tests pass · lint at baseline.
+
+⚠ **A BOUT IN PROGRESS WHEN THIS LANDS LOSES ITS CLOCK** — the key format changed. That clock is the broken one.
+
+⏳ **UNCHECKED: STALE ROWS ALREADY IN THE DATABASE.** Nothing clamps the seeded duration on save, so any ride the PO ended on an inflated clock wrote a multi-day `timeSec` into `workouts` and is skewing totals. The Supabase MCP server was down this session (`AUTH_HEADER_REJECTED — JWT could not be decoded`), so **Nate Witt's profile was never looked at**. This fix stops new ones; it cleans up nothing. **Open task.**

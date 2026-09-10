@@ -1,7 +1,19 @@
-# Coach Holt — Exploration Nudges (plan, not yet built)
+# Coach Holt — Exploration Nudges
 
-**Status:** PLAN. Awaiting PO sign-off on the cadence numbers in §4, which are the whole design.
-**Date:** 2026-08-25
+> ✅ **BUILT 2026-08-25, as written and signed off** — migration `0179_coach_nudge_state.sql` (applied),
+> `src/domain/coach/nudges.ts`, `src/data/nudge-live.ts`, `src/components/forge/CoachBubble.tsx`; commit
+> `0db5868`. Fixed 2026-08-26 (`4383a50`): the DISPLAY records `shown`, not the tap, after the PO saw the
+> honors line three times. Shipped without push, per §4. **This header read "PLAN, not yet built" until
+> 2026-09-09** — two weeks after the code shipped — and is corrected here rather than rewritten, because §1–§7
+> are the reasoning record the code cites.
+>
+> **Superseded for design purposes by `Docs/Coach-Holt-Feature-Discovery-System-v1.0.md` (2026-09-09)**, which
+> keeps every rule below and extends the catalogue with MOMENTS (event-triggered, 72-hour window), a phase
+> ladder for invitations, a third reply ("Don't bring this up again"), two Preferences switches, and a
+> wayfinding list inside Holt's chat.
+
+**Status:** BUILT (see above). The §4 cadence numbers are the ones in the code.
+**Date:** 2026-08-25 · header corrected 2026-09-09
 **Ask:** *"Coach holt should invite people to do things they haven't in the app once in a while… Subtly help them explore the app to get more buy in. Even push notifications when appropriate. Plan this out appropriately so it's not annoying… When he says something and they click on him he should help them get to that thing."*
 
 ---

@@ -693,6 +693,18 @@ most common rejection at D&B and at Apple enrollment, and it restarts the clock 
       correction just avoided. If the address matters later, change the Apple ID on the account.
       ⚠ **Fallback if Apple says no:** the old plan stands — enroll a separate organization account under
       a different Apple ID, and 9.3–9.5 apply in full.
+      ⏳ **STATUS 2026-09-04 — FILED → ANSWERED → STILL NOT GRANTED, and those are three states.**
+      Apple replied (Taylor, Developer Support) asking exactly one thing — *“Are you the founder or
+      cofounder of the organization?”* — and **the PO answered it 2026-08-24**. **Verified 2026-09-04:
+      Membership details still reads `Enrolled as: Individual`**, Team ID `G722GV8H8C`, and **the card
+      carries no `Entity Name` row at all** — that row is organization-only, so its absence confirms it
+      independently. Thread nudged 2026-09-04; **no second case opened.**
+      **The check:** `developer.apple.com` → Account → Membership → read **Enrolled as** and **Entity
+      Name**. Granted looks like `Forge Legacy LLC` / Organization **with the Team ID unchanged**, which is
+      itself the evidence for 9.3 and 9.4. ⚠ **“Update your information” cannot do this** — it edits the
+      name, address and phone on the *individual* membership and does not change the enrollment type;
+      changing the name there is not becoming an LLC. **Next lever after ~5 more business days is a phone
+      call-back, not a duplicate case.**
 - [ ] **9.3 — ⚠ BUNDLE IDENTIFIER — LIKELY A NON-ISSUE NOW, BUT CONFIRM RATHER THAN ASSUME.** Bundle IDs
       are globally unique and `com.qest4.forgelegacy` is registered to `G722GV8H8C`.
       **If 9.2's conversion succeeds, this item costs nothing: the team record is the same record, so the
