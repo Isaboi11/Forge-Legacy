@@ -112,12 +112,25 @@ export function isMeaningfulWork(session: { durationMinutes: number; completed: 
   return (ACTIVITY_TYPES as readonly string[]).includes(session.activityType.toUpperCase() as ActivityType);
 }
 
+/**
+ * Memo for `mondayWeekKey`, keyed by calendar day. A pure day → Monday mapping, so caching it changes
+ * nothing but speed — and speed is the point: the rank replay (`history.ts`) runs the engine once per
+ * candidate day, and every run re-buckets every session three times (active weeks, recent weeks, blocks).
+ * Bounded by the number of distinct days anyone has trained on.
+ */
+const mondayMemo = new Map<string, string>();
+
 /** The Monday (YYYY-MM-DD) that starts the ISO calendar week of `dateISO` (D-RCM-5: Mon–Sun weeks). */
 export function mondayWeekKey(dateISO: string): string {
-  const d = new Date(`${dateISO.slice(0, 10)}T00:00:00Z`);
+  const key = dateISO.slice(0, 10);
+  const hit = mondayMemo.get(key);
+  if (hit) return hit;
+  const d = new Date(`${key}T00:00:00Z`);
   const back = (d.getUTCDay() + 6) % 7; // 0=Mon … 6=Sun
   d.setUTCDate(d.getUTCDate() - back);
-  return d.toISOString().slice(0, 10);
+  const monday = d.toISOString().slice(0, 10);
+  mondayMemo.set(key, monday);
+  return monday;
 }
 
 /** Distinct Mon–Sun weeks that contain at least one of the given (meaningful-session) dates. */
