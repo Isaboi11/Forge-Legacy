@@ -634,7 +634,14 @@ function MemberSettings({ squad, members, onBack }: { squad: SquadDetail; member
   const ownerLabel = owner ? (owner.isSelf ? 'You' : owner.name) : 'the owner';
   const joinedAt = members.find((m) => m.isSelf)?.joinedAt ?? null;
   const memberSince = joinedAt ? fmtMonthYear(joinedAt) : null;
-  const goalProgress = squad.goalTarget != null ? `${Math.round(Math.min(squad.goalProgress, squad.goalTarget))} / ${squad.goalTarget}` : null;
+  // The same three states the S-2 card draws (Amendment 006 §4) — a closed goal says what was logged.
+  const goalPhase = squad.goalState.phase;
+  const goalProgress =
+    squad.goalTarget == null
+      ? null
+      : goalPhase === 'closed'
+        ? `${Math.round(squad.goalProgress)} logged · closed`
+        : `${Math.round(Math.min(squad.goalProgress, squad.goalTarget))} / ${squad.goalTarget}${goalPhase === 'met' ? ' · met' : ''}`;
   const hasIdentityAbove = !!squad.motto || !!squad.description;
 
   const doLeave = () => {
@@ -681,7 +688,7 @@ function MemberSettings({ squad, members, onBack }: { squad: SquadDetail; member
           {squad.description ? <InfoField label="About" value={squad.description} divided={!!squad.motto} lines={3} /> : null}
           {squad.goal || squad.goalTarget != null ? (
             <View style={[styles.infoField, hasIdentityAbove ? styles.infoFieldDivided : null]}>
-              <Text style={styles.infoLabel}>Current Goal</Text>
+              <Text style={styles.infoLabel}>{goalPhase === 'met' ? 'Goal Complete' : goalPhase === 'closed' ? 'Last Goal' : 'Current Goal'}</Text>
               <Text style={styles.infoValue}>{squad.goal || (squad.goalTarget != null ? `Reach ${squad.goalTarget}` : '—')}</Text>
               {goalProgress ? <Text style={styles.infoProgress}>{goalProgress}</Text> : null}
             </View>

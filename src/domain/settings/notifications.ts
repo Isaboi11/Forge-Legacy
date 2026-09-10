@@ -25,10 +25,15 @@
  * since 0022: the control claimed to govern squad posts and governed nothing. `squad_reactions` was
  * inert for thirteen migrations for the same reason and went live in 0135.
  *
- * TWO are locked by P-5 §3.1/§3.2 and still have no event branch emitting them. They persist intent,
- * exactly as all nine did before 0120, and they are listed here so the screen matches the locked
- * architecture rather than matching the sender:
- *   squad_goals · squad_invites
+ * `squad_goals` went live in 0200 — but NOT through the union. A goal closing is written to `push_outbox`
+ * directly by `squad_goal_record_close`, which reads this key itself and defaults it ON (Amendment 006 D1),
+ * because the union and both preference functions are restated by unapplied migrations on another branch.
+ * It is therefore absent from `PUSH_KIND_PREF` on purpose, and `push.test.mjs` pins its default to 0200.
+ *
+ * ONE is locked by P-5 §3.1/§3.2 and still has no event branch emitting it. It persists intent, exactly as
+ * all nine did before 0120, and it is listed here so the screen matches the locked architecture rather
+ * than matching the sender:
+ *   squad_invites
  *
  * ⚠ `squad_invites` cannot become live by writing a branch: THERE IS NO SQUAD-INVITE TABLE. Invites are
  * code-only — `squad-invite.tsx` shares a link and a code, and nothing records a directed invitation. It
@@ -83,7 +88,11 @@ export const NOTIF_SECTIONS: NotifSection[] = [
     toggles: [
       { key: 'squad_feed', label: 'Squad Posts & Activity', desc: 'New posts and workouts in your squads', def: false, icon: 'squad' },
       { key: 'squad_reactions', label: 'Reactions & Mentions', desc: 'When someone reacts to or mentions you', def: false, icon: 'heart' },
-      { key: 'squad_goals', label: 'Goal & Mission Updates', desc: 'Squad goal progress and mission milestones', def: false, icon: 'target' },
+      /* 0200, and ON — the one default-ON row in this section, by PO decision (Amendment 006 D1). It fires
+         about once a month per squad, when a goal is met or closes, and it is the squad event every member
+         signed up for. Off, it would have reproduced half of the report that asked for it: *"Didn't send a
+         notification."* Its sender is `squad_goal_record_close`, not the union — see 0200's header. */
+      { key: 'squad_goals', label: 'Squad Goals', desc: 'When a squad goal is met, or closes', def: true, icon: 'target' },
       { key: 'squad_activity', label: 'Squad Membership', desc: 'Join requests, approvals, and new members', def: false, icon: 'motion' },
     ],
   },

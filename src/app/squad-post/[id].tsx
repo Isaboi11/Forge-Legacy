@@ -20,7 +20,7 @@ import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
 import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
 import { cardioStats } from '@/domain/share/recap-stats';
 import { useUnits } from '@/lib/settings';
-import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, isMilestoneCard, deleteSquadPost, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, renameSquadPost, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
+import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, isMilestoneCard, deleteSquadPost, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, renameSquadPost, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadMedia, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -407,22 +407,35 @@ export default function SquadPostRoute() {
 
       <ScrollView style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.body}>
-          {/* author */}
+          {/* author — or the squad itself, on a post nobody wrote (a goal's close, 0200). No profile to open,
+              and "Athlete" over the squad's own announcement would invent a person. */}
           <View style={styles.headerRow}>
-            <Pressable onPress={() => router.push({ pathname: '/athlete/[id]', params: { id: post.authorId } })} accessibilityRole="button" accessibilityLabel={`View ${post.authorName}'s profile`} style={styles.identity}>
-              <Avatar src={post.authorAvatar ?? undefined} name={post.authorName} size="listRow" />
-              <View style={styles.headerText}>
-                <View style={styles.nameRow}>
-                  <Text style={styles.author} numberOfLines={1}>
-                    {post.authorName}
-                  </Text>
-                  {post.authorIsOwner ? <OwnerBadge /> : null}
+            {post.authorId ? (
+              <Pressable onPress={() => router.push({ pathname: '/athlete/[id]', params: { id: post.authorId as string } })} accessibilityRole="button" accessibilityLabel={`View ${post.authorName}'s profile`} style={styles.identity}>
+                <Avatar src={post.authorAvatar ?? undefined} name={post.authorName} size="listRow" />
+                <View style={styles.headerText}>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.author} numberOfLines={1}>
+                      {post.authorName}
+                    </Text>
+                    {post.authorIsOwner ? <OwnerBadge /> : null}
+                  </View>
+                  <Text style={styles.time}>{timeAgo(post.createdAt)}</Text>
                 </View>
-                <Text style={styles.time}>{timeAgo(post.createdAt)}</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.identity}>
+                <Avatar name={data?.squadName ?? 'Squad'} size="listRow" />
+                <View style={styles.headerText}>
+                  <Text style={styles.author} numberOfLines={1}>
+                    {data?.squadName ?? 'Your squad'}
+                  </Text>
+                  <Text style={styles.time}>{timeAgo(post.createdAt)}</Text>
+                </View>
               </View>
-            </Pressable>
+            )}
             <Pill tone="muted" size="sm">
-              {def.label}
+              {isMilestoneCard(post.layout) && post.layout.event === 'goal' ? 'Squad Goal' : def.label}
             </Pill>
           </View>
 
@@ -436,6 +449,10 @@ export default function SquadPostRoute() {
           ) : null}
 
           {post.body ? <Text style={styles.bodyText}>{post.body}</Text> : null}
+
+          {/* A recap's photos lead, as they do on the feed card. Drawn after the session block they sat
+              below a screen of stats, and the one thing the athlete tapped to see was the last on the page. */}
+          {post.type === 'recap' ? <PostMedia media={post.media} /> : null}
 
           {post.type === 'recap' && post.workoutSummary ? (
             <>
@@ -485,12 +502,8 @@ export default function SquadPostRoute() {
             <View style={styles.sliderWrap}>
               <BeforeAfterSlider before={post.media[1].url} after={post.media[0].url} beforeLabel="Before" afterLabel="After" beforeT={post.media[1].transform} afterT={post.media[0].transform} />
             </View>
-          ) : post.media[0] ? (
-            post.media[0].kind === 'image' ? (
-              <Image source={{ uri: post.media[0].url }} style={styles.detailImage} contentFit="cover" />
-            ) : (
-              <VideoBlock uri={post.media[0].url} />
-            )
+          ) : post.type !== 'recap' ? (
+            <PostMedia media={post.media} />
           ) : null}
 
           {/* engagement */}
@@ -613,6 +626,39 @@ export default function SquadPostRoute() {
 
 function PostBg() {
   return <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.32)' }} />;
+}
+
+/**
+ * Every photo the post carries, each at its own shape.
+ *
+ * ⚠ IT DREW ONE, CROPPED. `media[0]` in a fixed 300px `cover` band — so a six-pose capture showed its
+ * first pose, a portrait lost its head and feet, and the feed's "+3" thumbnail row promised a full set
+ * one tap away that this screen never had. This is the screen someone opens to LOOK at the photo.
+ */
+function PostMedia({ media }: { media: SquadMedia[] }) {
+  if (!media.length) return null;
+  return (
+    <>
+      {media.map((m, i) => (m.kind === 'image' ? <DetailPhoto key={`${m.url}-${i}`} uri={m.url} /> : <VideoBlock key={`${m.url}-${i}`} uri={m.url} />))}
+    </>
+  );
+}
+
+/** Portrait-ish until the file reports its real size, then exactly that — uncropped. */
+function DetailPhoto({ uri }: { uri: string }) {
+  const [ratio, setRatio] = useState(4 / 5);
+  return (
+    <Image
+      source={{ uri }}
+      style={[styles.detailImage, { aspectRatio: ratio }]}
+      contentFit="cover"
+      onLoad={(e) => {
+        const { width, height } = e.source;
+        // Clamped so a panorama or a screenshot cannot collapse to a sliver or run a full screen tall.
+        if (width > 0 && height > 0) setRatio(Math.min(1.91, Math.max(0.56, width / height)));
+      }}
+    />
+  );
 }
 
 function VideoBlock({ uri }: { uri: string }) {
@@ -846,7 +892,7 @@ const styles = StyleSheet.create({
   achLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 2.5, color: flColor.bronze400 },
 
   bodyText: { fontSize: 15.5, lineHeight: 24, color: flColor.cream100, marginTop: 13 },
-  detailImage: { width: '100%', height: 300, borderRadius: flRadius.lg, marginTop: 14, backgroundColor: flColor.charcoal900 },
+  detailImage: { width: '100%', borderRadius: flRadius.lg, marginTop: 14, backgroundColor: flColor.charcoal900 },
   detailVideo: { width: '100%', height: 240, borderRadius: flRadius.lg, marginTop: 14, backgroundColor: '#000' },
   sliderWrap: { marginTop: 14 },
 

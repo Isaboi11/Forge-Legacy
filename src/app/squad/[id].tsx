@@ -37,6 +37,7 @@ import {
   isMilestoneCard,
   isPostedWorkout,
   isProgressCard,
+  isSquadVoice,
   type PostedWorkoutCard,
   leadFor,
   recapSummaryLine,
@@ -49,6 +50,7 @@ import {
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
 import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
 import { milestoneAckLabel } from '@/domain/share/milestone-card';
+import { earlyLabel, goalDraft, parseGoalEditMode, type GoalEditMode, type GoalPhase } from '@/domain/squad/goal-state';
 import { TransformationLayout } from '@/components/forge/TransformationLayout';
 import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
@@ -84,11 +86,6 @@ function parseYmd(text: string): Date | null {
   return d.getFullYear() === y && d.getMonth() === mo - 1 && d.getDate() === da ? d : null;
 }
 
-const ymdToday = (): string => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-
 /** A deadline of "the 31st" has to include the 31st. */
 const endOfDay = (d: Date): Date => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
 
@@ -122,6 +119,18 @@ const GOAL_TARGET_PLACEHOLDER: Record<SquadGoalMetric, string> = {
 };
 const goalUnit = (kind: SquadGoalMetric): string => GOAL_UNITS[kind];
 const fmtProgress = (n: number): string => String(Number(n.toFixed(1)));
+
+/** The goal section's label per state (Amendment 006 §4). "Last Goal", not "Failed" or "Ended" — §5. */
+const GOAL_SECTION_LABEL: Record<GoalPhase, string> = { live: 'Current Goal', met: 'Goal Complete', closed: 'Last Goal' };
+const GOAL_SHEET_TITLE: Record<GoalEditMode, string> = { edit: 'Edit Squad Goal', new: 'New Squad Goal', again: 'Try Again', raise: 'Raise the Bar' };
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const shortDay = (iso: string): string => {
+  const d = new Date(iso);
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
+};
+const closedOn = (iso: string | null): string => (iso ? ` · closed ${shortDay(iso)}` : '');
+const capitalise = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function SquadDetailRoute() {
   const { id, editGoal } = useLocalSearchParams<{ id: string; editGoal?: string }>();
@@ -210,21 +219,31 @@ export default function SquadDetailRoute() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   /*
-   * The goal editor opens EITHER from the pencil here or from `?editGoal=1`, which is how Squad Goal
-   * Detail hands the athlete back for an edit. Derived rather than opened from an effect: this repo's
-   * react-compiler rules make a synchronous `setState` in an effect body an ERROR, and a pure `||` says
+   * The goal editor opens EITHER from a control here or from `?editGoal=<mode>`, which is how Squad Goal
+   * Detail hands the owner back — `1` for an edit (what it has always sent), `new` / `again` / `raise`
+   * for Amendment 006 §6's next-goal actions. Derived rather than opened from an effect: this repo's
+   * react-compiler rules make a synchronous `setState` in an effect body an ERROR, and a pure `??` says
    * the same thing without one. `goalDismissed` is what lets Close actually close it while the param
    * is still on the URL.
+   *
+   * ⚠ EVERY FIELD IS `null` UNTIL TOUCHED, and null means "whatever `goalDraft` opens this mode holding".
+   * The fields used to be filled by the pencil's handler alone, so arriving by `?editGoal=1` opened the
+   * editor BLANK — and Save would have written that blank over the live goal. Deriving the starting
+   * values instead of copying them in means there is no path that opens without them.
    */
-  const [goalOpen, setGoalOpen] = useState(false);
+  const [goalMode, setGoalMode] = useState<GoalEditMode | null>(null);
   const [goalDismissed, setGoalDismissed] = useState(false);
-  const [goalTitle, setGoalTitle] = useState('');
-  const [goalTargetText, setGoalTargetText] = useState('');
-  const [goalMetricKind, setGoalMetricKind] = useState<SquadGoalMetric>('workout_count');
-  const [goalMetricKey, setGoalMetricKey] = useState<string | null>(null);
-  const [goalStartText, setGoalStartText] = useState('');
-  const [goalEndText, setGoalEndText] = useState('');
+  const [goalTitleEdit, setGoalTitle] = useState<string | null>(null);
+  const [goalTargetEdit, setGoalTargetText] = useState<string | null>(null);
+  const [goalMetricKindEdit, setGoalMetricKind] = useState<SquadGoalMetric | null>(null);
+  // `undefined` = untouched; `null` is a real choice (no distance activity).
+  const [goalMetricKeyEdit, setGoalMetricKey] = useState<string | null | undefined>(undefined);
+  const [goalStartEdit, setGoalStartText] = useState<string | null>(null);
+  const [goalEndEdit, setGoalEndText] = useState<string | null>(null);
   const [savingGoal, setSavingGoal] = useState(false);
+  // "Today" for the drafts: the moment the editor was opened, or the screen mounted for a URL-opened one.
+  const [mountedAt] = useState(() => Date.now());
+  const [goalOpenedAt, setGoalOpenedAt] = useState<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -383,6 +402,17 @@ export default function SquadDetailRoute() {
 
   // ── Detail ──
   const goalPct = squad.goalTarget ? Math.min(100, Math.round((squad.goalProgress / squad.goalTarget) * 100)) : 0;
+  const goalPhase = squad.goalState.phase;
+
+  // The editor's fields: what the athlete typed, else what this mode opens holding (see the state above).
+  const activeGoalMode = goalMode ?? (goalDismissed ? null : parseGoalEditMode(editGoal));
+  const draft = goalDraft(activeGoalMode ?? 'edit', squad, new Date(goalOpenedAt ?? mountedAt), 'workout_count' as SquadGoalMetric);
+  const goalTitle = goalTitleEdit ?? draft.title;
+  const goalTargetText = goalTargetEdit ?? draft.target;
+  const goalMetricKind = goalMetricKindEdit ?? draft.metricKind;
+  const goalMetricKey = goalMetricKeyEdit === undefined ? draft.metricKey : goalMetricKeyEdit;
+  const goalStartText = goalStartEdit ?? draft.start;
+  const goalEndText = goalEndEdit ?? draft.end;
   /**
    * The window. A calendar grid picks both, so the only thing left to check is their ORDER — the picker
    * cannot produce a malformed date, which is most of why it replaced the two text fields.
@@ -402,15 +432,23 @@ export default function SquadDetailRoute() {
   const checkinPeople = checkinsData?.members ?? [];
   const iHaveActive = checkinsData?.iHaveActive ?? false;
 
-  const openGoalEditor = () => {
-    setGoalTitle(squad.goal ?? '');
-    setGoalTargetText(squad.goalTarget != null ? String(squad.goalTarget) : '');
-    setGoalMetricKind(squad.goalMetricKind);
-    setGoalMetricKey(squad.goalMetricKey);
-    setGoalStartText(squad.goalStartedAt ? squad.goalStartedAt.slice(0, 10) : ymdToday());
-    setGoalEndText(squad.goalEndsAt ? squad.goalEndsAt.slice(0, 10) : '');
+  const resetGoalFields = () => {
+    setGoalTitle(null);
+    setGoalTargetText(null);
+    setGoalMetricKind(null);
+    setGoalMetricKey(undefined);
+    setGoalStartText(null);
+    setGoalEndText(null);
+  };
+  const openGoalEditor = (mode: GoalEditMode = 'edit') => {
+    resetGoalFields();
+    setGoalOpenedAt(Date.now());
     setOptionsOpen(false);
-    setGoalOpen(true);
+    setGoalMode(mode);
+  };
+  const closeGoalEditor = () => {
+    setGoalMode(null);
+    setGoalDismissed(true); // …or the `?editGoal=` on the URL would reopen it the moment it closed
   };
   const saveGoal = () => {
     if (!goalValid || savingGoal) return;
@@ -427,10 +465,9 @@ export default function SquadDetailRoute() {
     }).then(
       () => {
         setSavingGoal(false);
-        setGoalOpen(false);
-        setGoalDismissed(true); // …or the `?editGoal=1` on the URL would reopen it the moment it closed
+        closeGoalEditor();
         refetch();
-        showToast('Goal updated');
+        showToast(activeGoalMode === 'edit' ? 'Goal updated' : 'New goal set');
       },
       (e: unknown) => {
         setSavingGoal(false);
@@ -444,8 +481,7 @@ export default function SquadDetailRoute() {
     clearSquadGoal(squad.id).then(
       () => {
         setSavingGoal(false);
-        setGoalOpen(false);
-        setGoalDismissed(true);
+        closeGoalEditor();
         refetch();
       },
       () => setSavingGoal(false),
@@ -624,13 +660,26 @@ export default function SquadDetailRoute() {
             {iHaveActive || checkinPeople.length ? null : <Text style={styles.checkinEmpty}>Be the first — post a quick video and let the squad see your effort.</Text>}
           </TourAnchor>
 
-          {/* CURRENT GOAL */}
+          {/*
+            THE GOAL — LIVE, MET OR CLOSED (Amendment 006 §4).
+
+            PO: *"it still looks like it's going right now."* It did: past its deadline the card kept the
+            "Current Goal" label, the live bronze bar and the owner's pencil, and said so in one small line.
+            A finished goal now looks finished, and it STAYS on the card — in its finished state — until the
+            owner sets the next one. Clearing it the moment it closed would be the same problem again: a goal
+            that is simply gone.
+
+            A closed goal reports what the squad DID (SQ-D3.5, CC-D3, SA-D4): "412 workouts logged", never a
+            shortfall. Its bar stops where it ended and loses the bronze — the one colour on this screen that
+            means "still going". The figure is stable because 0103 freezes the sum at the deadline.
+          */}
           {squad.goalTarget != null ? (
             <TourAnchor id="squad-goal">
               <View style={styles.goalHead}>
-                <Text style={styles.sectionLabel}>Current Goal</Text>
-                {squad.isOwner ? (
-                  <Pressable onPress={openGoalEditor} hitSlop={8} accessibilityRole="button" accessibilityLabel="Edit goal">
+                <Text style={styles.sectionLabel}>{GOAL_SECTION_LABEL[goalPhase]}</Text>
+                {/* You don't edit a finished goal — you set the next one, below. */}
+                {squad.isOwner && goalPhase === 'live' ? (
+                  <Pressable onPress={() => openGoalEditor('edit')} hitSlop={8} accessibilityRole="button" accessibilityLabel="Edit goal">
                     <PencilIcon />
                   </Pressable>
                 ) : null}
@@ -641,41 +690,58 @@ export default function SquadDetailRoute() {
               <Pressable
                 onPress={() => router.push({ pathname: '/squad/[id]/goal', params: { id } })}
                 accessibilityRole="button"
-                accessibilityLabel="See this goal's progress"
+                accessibilityLabel={goalPhase === 'live' ? "See this goal's progress" : 'See how this goal went'}
                 style={({ pressed }) => (pressed ? styles.goalPressed : null)}
               >
               <Text style={styles.goalTitle}>{squad.goal || `Reach ${squad.goalTarget} ${goalUnit(squad.goalMetricKind)}`}</Text>
               <View style={styles.progressTrack}>
-                <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={[styles.progressFill, { width: `${goalPct}%` }]} />
+                {goalPhase === 'closed' ? (
+                  <View style={[styles.progressFill, styles.progressFillClosed, { width: `${goalPct}%` }]} />
+                ) : (
+                  <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={[styles.progressFill, { width: `${goalPct}%` }]} />
+                )}
               </View>
               <Text style={styles.progressCaption}>
-                {fmtProgress(Math.min(squad.goalProgress, squad.goalTarget))} / {squad.goalTarget} {goalUnit(squad.goalMetricKind)} · {goalPct}% complete
+                {goalPhase === 'closed'
+                  ? `${fmtProgress(squad.goalProgress)} ${goalUnit(squad.goalMetricKind)} logged${closedOn(squad.goalState.closedAt ?? squad.goalEndsAt)}`
+                  : goalPhase === 'met'
+                    ? `${fmtProgress(squad.goalTarget)} / ${squad.goalTarget} ${goalUnit(squad.goalMetricKind)} · ${squad.goalState.closedAt ? `met ${shortDay(squad.goalState.closedAt)}` : 'goal met'}`
+                    : `${fmtProgress(Math.min(squad.goalProgress, squad.goalTarget))} / ${squad.goalTarget} ${goalUnit(squad.goalMetricKind)} · ${goalPct}% complete`}
               </Text>
-              {/*
-                THE DEADLINE, AND WHAT HAPPENS WHEN IT PASSES.
-
-                SQ-D3.5 and the anti-shame guardrails (CC-D3, SA-D4 — "non-participation is never shown as
-                failure") rule out "you missed it". So an expired goal reports what the squad DID, with no
-                target and no percentage beside it: "Goal ended · 312 workouts logged". The figure is stable
-                because 0103's `squad_metric_sum` stops accumulating at the deadline — without that freeze
-                this line would quietly keep counting the following month.
-              */}
-              {squad.goalEnded ? (
-                <Text style={styles.goalEnded}>
-                  Goal ended · {fmtProgress(squad.goalProgress)} {goalUnit(squad.goalMetricKind)} logged
-                </Text>
-              ) : squad.goalDaysLeft != null ? (
-                <Text style={styles.goalWindow}>
-                  {squad.goalDaysLeft === 1 ? 'Final day' : `${squad.goalDaysLeft} days left`}
-                </Text>
+              {goalPhase === 'live' && squad.goalState.daysLeft != null ? (
+                <Text style={styles.goalWindow}>{squad.goalState.daysLeft === 1 ? 'Final day' : `${squad.goalState.daysLeft} days left`}</Text>
+              ) : goalPhase === 'met' && earlyLabel(squad.goalState.daysEarly) ? (
+                <Text style={styles.goalWindow}>{capitalise(earlyLabel(squad.goalState.daysEarly)!)}</Text>
               ) : null}
-              <Text style={styles.goalMore}>See the progress ›</Text>
+              <Text style={styles.goalMore}>{goalPhase === 'live' ? 'See the progress ›' : 'See how it went ›'}</Text>
               </Pressable>
+
+              {/* What happens next (§6) — the owner's alone (SQ-A4-D5). Every action opens the editor that
+                  already exists, prefilled; none of them is a new write path. Members get a sentence, not a
+                  control (D3). */}
+              {goalPhase !== 'live' ? (
+                squad.isOwner ? (
+                  <View style={styles.goalActions}>
+                    <View style={styles.goalActionCell}>
+                      <Button variant="primary" fullWidth onPress={() => openGoalEditor(goalPhase === 'met' ? 'new' : 'again')} accessibilityLabel={goalPhase === 'met' ? 'Set the next goal' : 'Try this goal again'}>
+                        {goalPhase === 'met' ? 'Set the next goal' : 'Try again'}
+                      </Button>
+                    </View>
+                    <View style={styles.goalActionCell}>
+                      <Button variant="secondary" fullWidth onPress={() => openGoalEditor(goalPhase === 'met' ? 'raise' : 'new')} accessibilityLabel={goalPhase === 'met' ? 'Raise the bar' : 'Set a new goal'}>
+                        {goalPhase === 'met' ? 'Raise the bar' : 'Set a new goal'}
+                      </Button>
+                    </View>
+                  </View>
+                ) : (
+                  <Text style={styles.goalOwnerNote}>The owner sets the next goal.</Text>
+                )
+              ) : null}
             </TourAnchor>
           ) : squad.isOwner ? (
             <View>
               <Text style={styles.sectionLabel}>Current Goal</Text>
-              <Pressable onPress={openGoalEditor} accessibilityRole="button" accessibilityLabel="Set a squad goal" style={styles.setGoalRow}>
+              <Pressable onPress={() => openGoalEditor('new')} accessibilityRole="button" accessibilityLabel="Set a squad goal" style={styles.setGoalRow}>
                 <View style={styles.setGoalIcon}>
                   <TargetIcon />
                 </View>
@@ -827,13 +893,21 @@ export default function SquadDetailRoute() {
                   onComments={() => openPost(p.id)}
                   /* The clip PLAYS. The card's one handler above sent a tap on the video to the workout
                      summary — what the PO reported — and the band now opens the same full-screen player a
-                     pinned video uses. Photos keep the card's own destination. */
+                     pinned video uses.
+
+                     ⚠ A PHOTO OPENS THE POST, NOT THE CARD'S DESTINATION. For a recap that destination is
+                     Activity Detail, which has no photo slot (`chapter_photos` has no workout column), so the
+                     PO tapped a picture and landed on a page without it. The post shows the photos, the
+                     session and "See every set" together. */
                   onMedia={
                     p.media[0]?.kind === 'video'
                       ? () => router.push({ pathname: '/pin-video', params: { url: p.media[0].url } })
-                      : undefined
+                      : p.media.length
+                        ? () => openPost(p.id)
+                        : undefined
                   }
-                  onAuthor={() => router.push({ pathname: '/athlete/[id]', params: { id: p.authorId } })}
+                  squadPhotoUrl={squad.photoUrl}
+                  onAuthor={p.authorId ? () => router.push({ pathname: '/athlete/[id]', params: { id: p.authorId as string } }) : undefined}
                   onReact={() => onReactCard(p)}
                   ackKind={kindMap[p.id]}
                   onLongReact={() => setAckFor(p.id)}
@@ -985,14 +1059,7 @@ export default function SquadDetailRoute() {
       {mediaPickerSheet}
 
       {/* EDIT GOAL SHEET */}
-      <BottomSheet
-        open={goalOpen || (editGoal === '1' && !goalDismissed)}
-        onClose={() => {
-          setGoalOpen(false);
-          setGoalDismissed(true);
-        }}
-        title="Edit Squad Goal"
-      >
+      <BottomSheet open={activeGoalMode != null} onClose={closeGoalEditor} title={GOAL_SHEET_TITLE[activeGoalMode ?? 'edit']}>
         <View style={styles.goalSheetBody}>
           <Text style={styles.goalSheetSub}>One shared objective the whole squad pushes toward together.</Text>
           <InputField label="Goal" value={goalTitle} onChange={setGoalTitle} maxLength={60} showCount placeholder="e.g. Run 200 miles together" />
@@ -1047,7 +1114,9 @@ export default function SquadDetailRoute() {
           <Button variant="primary" fullWidth disabled={!goalValid || savingGoal} onPress={saveGoal} accessibilityLabel="Save goal">
             {savingGoal ? 'Saving…' : 'Save Goal'}
           </Button>
-          {squad.goalTarget != null ? (
+          {/* Only on an edit of a LIVE goal. The next-goal modes replace a finished goal by saving — offering
+              "Remove" there would be a second, quieter way to do what Save already does. */}
+          {squad.goalTarget != null && activeGoalMode === 'edit' && goalPhase === 'live' ? (
             <Pressable onPress={removeGoal} accessibilityRole="button" accessibilityLabel="Remove goal" style={styles.removeGoalBtn} hitSlop={6}>
               <Text style={styles.removeGoalText}>Remove goal</Text>
             </Pressable>
@@ -1352,6 +1421,7 @@ function FeedCard({
   post,
   units,
   squadName,
+  squadPhotoUrl,
   alt,
   reacted,
   respect,
@@ -1369,13 +1439,16 @@ function FeedCard({
   post: SquadFeedPost;
   units: ReturnType<typeof useUnits>['units'];
   squadName: string;
+  /** Heads a post the squad wrote itself (`isSquadVoice`). */
+  squadPhotoUrl: string | null;
   alt: boolean;
   reacted: boolean;
   respect: number;
   ackKind?: AckKind;
   onOpen: () => void;
   onComments: () => void;
-  onAuthor: () => void;
+  /** Absent on a post the squad wrote — there is no profile to open. */
+  onAuthor?: () => void;
   onReact: () => void;
   /** The post the athlete's own slot currently holds, if any. */
   takenPostId: string | null;
@@ -1444,14 +1517,18 @@ function FeedCard({
   /* §3.7: a progress post gets the photo treatment and a form check the video treatment — which they
      already do, because the media itself says which it is. What changes is that the stand-in sentence
      stops being the post: above an image it is attribution, and it is not rendered at all without one. */
-  const attribution = post.type === 'discussion' ? null : `${post.authorName} ${leadFor(post)}`;
-  const detail = post.type === 'discussion' ? null : detailFor(post);
+  /* A goal's close (0200) is written by the SQUAD. It is headed with the squad's own name and crest, and
+     has no attribution line or caption: "Athlete reached a milestone" would invent a person, and the band
+     already carries every word the post has. */
+  const squadVoice = isSquadVoice(post);
+  const attribution = post.type === 'discussion' || squadVoice ? null : `${post.authorName} ${leadFor(post)}`;
+  const detail = post.type === 'discussion' || squadVoice ? null : detailFor(post);
 
   return (
     <LedgerPost
-      authorName={post.authorName}
-      authorAvatarUrl={post.authorAvatar}
-      audience={squadName}
+      authorName={squadVoice ? squadName : post.authorName}
+      authorAvatarUrl={squadVoice ? squadPhotoUrl : post.authorAvatar}
+      audience={squadVoice ? null : squadName}
       time={timeAgo(post.createdAt)}
       /* ⚠ `&& !summary`: a recap keeps its WORKOUT marker even when it carries a photo, for the same
          reason it keeps its stats — see `LedgerPost`'s `showBody`. Without this the screen nulls the
@@ -1830,7 +1907,11 @@ const styles = StyleSheet.create({
   goalWindow: { marginTop: 6, fontSize: 11.5, color: flColor.gray600 },
   goalMore: { marginTop: 8, fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
   goalPressed: { opacity: 0.82 },
-  goalEnded: { marginTop: 6, fontSize: 12, color: flColor.bronze400, fontWeight: '600' },
+  // A closed goal's bar keeps its length and loses the bronze — bronze on this screen means "still going".
+  progressFillClosed: { backgroundColor: flColor.gray600, boxShadow: undefined },
+  goalActions: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  goalActionCell: { flex: 1 },
+  goalOwnerNote: { marginTop: 12, fontSize: 12, color: flColor.gray400 },
   removeGoalBtn: { alignSelf: 'center', paddingVertical: 4 },
   removeGoalText: { fontSize: 13, fontWeight: '600', color: flColor.redMuted },
 

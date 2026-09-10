@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trackInvite } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
 import { extensionFor, MAX_CHECKIN_BYTES, uploadToBucket, type UploadOpts } from '@/lib/storage-upload';
+import { goalState, mergePastGoals, type GoalOutcome, type GoalState } from '@/domain/squad/goal-state';
 
 /**
  * Squad Core data (Social · Part 1) — real `squads` + `squad_members` (migrations 0029/0030). Create is
@@ -53,18 +54,17 @@ export interface SquadDetail {
   /** Optional deadline (0103). Past it, `squad_metric_sum` freezes the figure. */
   goalEndsAt: string | null;
   /**
-   * The window, resolved HERE rather than at render.
+   * Live, met or closed (Amendment 006) — resolved HERE rather than at render.
    *
-   * Both need the current time, and the strict react-compiler rules forbid calling `Date.now()` during
-   * render — an impure read that can change between two renders of the same state. A fetch callback is the
-   * honest place for it, and since every screen refetches on focus the countdown is as fresh as the screen.
+   * It needs the current time, and the strict react-compiler rules forbid calling `Date.now()` during
+   * render. A fetch callback is the honest place for it, and since every screen refetches on focus the
+   * countdown is as fresh as the screen.
    *
-   * `goalEnded` deliberately requires the target NOT to have been met: a goal that was reached is a
-   * COMPLETION (SQ-D3.5, announced via `archive_squad_goal`), and calling that "ended" would rob it.
+   * ⚠ IT REPLACES `goalEnded`, a boolean that drew a LIVE card with one small line under it once the
+   * deadline passed — "it still looks like it's going right now" — and never changed at all for a goal met
+   * early. The server's close (0200) wins when it has one; see `goalState`.
    */
-  goalEnded: boolean;
-  /** Days remaining, or null when there is no deadline or it has already passed. */
-  goalDaysLeft: number | null;
+  goalState: GoalState;
   goalMetricKind: SquadGoalMetric;
   goalMetricKey: string | null; // activity modality for distance_total
   goalProgress: number; // computed from the metric since goalStartedAt (your own for now)
@@ -187,28 +187,22 @@ export async function fetchMySquads(): Promise<SquadSummary[]> {
     .map(({ createdAt: _c, ...s }) => s);
 }
 
-/** One squad's identity + roster (owner first, then you, then name). Null if it doesn't exist / isn't visible. */
 /**
- * Resolve a goal's window against the clock. Lives here, not in a component, because the strict
- * react-compiler rules forbid an impure `Date.now()` during render — and because every screen refetches on
- * focus, so this is as fresh as the screen is.
+ * The server's close for a squad's current goal (0200), or nulls.
+ *
+ * ⚠ ITS OWN TOLERANT READ, NOT TWO MORE NAMES IN `SQUAD_COLS`. Selecting a column 0200 has not created
+ * yet fails the WHOLE select, and `SQUAD_COLS` feeds the Squads tab — so an unapplied migration would take
+ * every squad screen down instead of just falling back to the clock.
  */
-function goalWindow(
-  endsAt: string | null,
-  progress: number,
-  target: number | null,
-): { goalEnded: boolean; goalDaysLeft: number | null } {
-  if (!endsAt) return { goalEnded: false, goalDaysLeft: null };
-  const ends = new Date(endsAt).getTime();
-  const now = Date.now();
-  if (now >= ends) {
-    // Met, then expired, is a COMPLETION — never "ended". SQ-D3.5.
-    const met = target != null && progress >= target;
-    return { goalEnded: !met, goalDaysLeft: null };
-  }
-  return { goalEnded: false, goalDaysLeft: Math.max(1, Math.ceil((ends - now) / 86400000)) };
+async function fetchGoalClose(squadId: string): Promise<{ closedAt: string | null; outcome: GoalOutcome | null }> {
+  const { data, error } = await supabase.from('squads').select('goal_closed_at, goal_outcome').eq('id', squadId).maybeSingle();
+  if (error || !data) return { closedAt: null, outcome: null };
+  const r = data as { goal_closed_at: string | null; goal_outcome: string | null };
+  const outcome = r.goal_outcome === 'met' || r.goal_outcome === 'closed' ? r.goal_outcome : null;
+  return { closedAt: outcome ? r.goal_closed_at : null, outcome };
 }
 
+/** One squad's identity + roster (owner first, then you, then name). Null if it doesn't exist / isn't visible. */
 export async function fetchSquad(id: string): Promise<{ squad: SquadDetail; members: SquadMemberView[] } | null> {
   const {
     data: { user },
@@ -256,6 +250,8 @@ export async function fetchSquad(id: string): Promise<{ squad: SquadDetail; memb
     }
   }
 
+  const close = s.goal_target != null ? await fetchGoalClose(id) : { closedAt: null, outcome: null };
+
   return {
     squad: {
       id: s.id,
@@ -265,7 +261,7 @@ export async function fetchSquad(id: string): Promise<{ squad: SquadDetail; memb
       goalTarget: s.goal_target ?? null,
       goalStartedAt: s.goal_started_at ?? null,
       goalEndsAt: s.goal_ends_at ?? null,
-      ...goalWindow(s.goal_ends_at, goalProgress, s.goal_target),
+      goalState: goalState({ target: s.goal_target ?? null, progress: goalProgress, endsAt: s.goal_ends_at ?? null, ...close, now: new Date() }),
       goalMetricKind,
       goalMetricKey: s.goal_metric_key ?? null,
       goalProgress,
@@ -528,14 +524,20 @@ export async function setSquadGoal(
   if (error) throw error;
 }
 
-/** Clear the squad's goal (owner). Banks it first if it was met — clearing a finished goal is finishing it. */
+/**
+ * Clear the squad's goal (owner). Banks it first if it was met — clearing a finished goal is finishing it.
+ *
+ * `goal_ends_at` goes too. It was left behind, so a squad with no goal kept a deadline on its row — and the
+ * next goal set without one inherited nothing only because `setSquadGoal` happens to write it. 0200's
+ * trigger does the same server-side; this keeps a pre-0200 database honest as well.
+ */
 export async function clearSquadGoal(id: string): Promise<void> {
   try {
     await supabase.rpc('archive_squad_goal', { p_squad: id });
   } catch {
     // See setSquadGoal.
   }
-  const { error } = await supabase.from('squads').update({ goal: null, goal_target: null, goal_started_at: null, updated_at: new Date().toISOString() }).eq('id', id);
+  const { error } = await supabase.from('squads').update({ goal: null, goal_target: null, goal_started_at: null, goal_ends_at: null, updated_at: new Date().toISOString() }).eq('id', id);
   if (error) throw error;
 }
 
@@ -865,7 +867,12 @@ export interface PastGoal {
   target: number;
   metricKind: SquadGoalMetric;
   startedAt: string;
+  /** When it ended — met, closed or removed. The field keeps its old name; it predates the other two. */
   completedAt: string;
+  /** Amendment 006 §7. Every goal before 0200 is `met`, because met goals were the only ones recorded. */
+  outcome: 'met' | 'closed' | 'removed';
+  /** What the squad logged. Null on a goal banked before 0200, which stored only the target. */
+  finalTotal: number | null;
 }
 
 export interface SquadGoalDetail {
@@ -878,6 +885,8 @@ export interface SquadGoalDetail {
   startedAt: string | null;
   endsAt: string | null;
   total: number;
+  /** Live, met or closed — the same answer the S-2 card draws (`goalState`). */
+  state: GoalState;
   isOwner: boolean;
   memberCount: number;
   contributions: GoalContribution[];
@@ -885,6 +894,32 @@ export interface SquadGoalDetail {
   events: GoalEvent[];
   past: PastGoal[];
 }
+
+/**
+ * Every goal that ended (0200's `squad_goal_closures`), newest first — or [] before 0200.
+ *
+ * Tolerant for the same reason `fetchGoalClose` is: a missing table must shorten Past Goals, never take
+ * Squad Goal Detail down with it.
+ */
+async function fetchGoalClosures(squadId: string): Promise<PastGoal[]> {
+  const { data, error } = await supabase
+    .from('squad_goal_closures')
+    .select('goal, target, metric_kind, started_at, closed_at, outcome, final_total')
+    .eq('squad_id', squadId)
+    .order('closed_at', { ascending: false })
+    .limit(20);
+  if (error || !data) return [];
+  return (data as { goal: string | null; target: number; metric_kind: string; started_at: string; closed_at: string; outcome: string; final_total: number | null }[]).map((r) => ({
+    goal: r.goal ?? null,
+    target: Number(r.target ?? 0),
+    metricKind: asMetric(r.metric_kind),
+    startedAt: r.started_at,
+    completedAt: r.closed_at,
+    outcome: r.outcome === 'closed' || r.outcome === 'removed' ? r.outcome : 'met',
+    finalTotal: r.final_total == null ? null : Number(r.final_total),
+  }));
+}
+
 
 const asMetric = (v: unknown): SquadGoalMetric =>
   (['workout_count', 'distance_total', 'volume_total', 'time_total', 'pr_count'] as SquadGoalMetric[]).includes(v as SquadGoalMetric)
@@ -911,16 +946,24 @@ export async function fetchSquadGoalDetail(squadId: string): Promise<SquadGoalDe
   }
   if (!data) return null;
   const d = data as Record<string, unknown>;
+  const target = d.target == null ? null : Number(d.target);
+  const endsAt = (d.endsAt as string) ?? null;
+  const total = Number(d.total ?? 0);
+  const [close, closures] = await Promise.all([
+    target != null ? fetchGoalClose(squadId) : Promise.resolve({ closedAt: null, outcome: null }),
+    fetchGoalClosures(squadId),
+  ]);
   return {
     squadId: String(d.squadId),
     squadName: String(d.squadName ?? 'Your Squad'),
     goal: (d.goal as string) ?? null,
-    target: d.target == null ? null : Number(d.target),
+    target,
     metricKind: asMetric(d.metricKind),
     metricKey: (d.metricKey as string) ?? null,
     startedAt: (d.startedAt as string) ?? null,
-    endsAt: (d.endsAt as string) ?? null,
-    total: Number(d.total ?? 0),
+    endsAt,
+    total,
+    state: goalState({ target, progress: total, endsAt, ...close, now: new Date() }),
     isOwner: !!d.isOwner,
     memberCount: Number(d.memberCount ?? 0),
     contributions: ((d.contributions ?? []) as Record<string, unknown>[]).map((c) => ({
@@ -941,12 +984,19 @@ export async function fetchSquadGoalDetail(squadId: string): Promise<SquadGoalDe
       distance: e.distance == null ? null : Number(e.distance),
       durationSec: e.durationSec == null ? null : Number(e.durationSec),
     })),
-    past: ((d.past ?? []) as Record<string, unknown>[]).map((h) => ({
-      goal: (h.goal as string) ?? null,
-      target: Number(h.target ?? 0),
-      metricKind: asMetric(h.metricKind),
-      startedAt: String(h.startedAt),
-      completedAt: String(h.completedAt),
-    })),
+    past: mergePastGoals(
+      closures,
+      ((d.past ?? []) as Record<string, unknown>[]).map((h) => ({
+        goal: (h.goal as string) ?? null,
+        target: Number(h.target ?? 0),
+        metricKind: asMetric(h.metricKind),
+        startedAt: String(h.startedAt),
+        completedAt: String(h.completedAt),
+        outcome: 'met' as const,
+        finalTotal: null,
+      })),
+      // Only a goal still on the card is excluded; with no goal set, every closure is history.
+      target != null ? ((d.startedAt as string) ?? null) : null,
+    ),
   };
 }

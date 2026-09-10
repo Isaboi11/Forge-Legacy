@@ -9,8 +9,10 @@ import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
-import { fetchSquadGoalDetail, GOAL_UNITS, type GoalContribution } from '@/data/squad-live';
+import { Button } from '@/components/forge/composites/Button';
+import { fetchSquadGoalDetail, GOAL_UNITS, type GoalContribution, type PastGoal } from '@/data/squad-live';
 import { barPct, milestones, pctOf, projectedClose, recentPace, sharePct } from '@/domain/squad/goal-progress';
+import { earlyLabel } from '@/domain/squad/goal-state';
 import { useQuery } from '@/lib/useQuery';
 
 /**
@@ -66,6 +68,15 @@ const shortDate = (iso: string | null) => {
   return Number.isNaN(d.getTime()) ? null : `${MONTHS[d.getMonth()]} ${d.getDate()}`;
 };
 const monthOf = (d: Date) => `${MONTHS[d.getMonth()]}`;
+
+/** One past goal's line. A closed goal leads with what was logged, never with the gap (Amendment 006 §5). */
+function pastLine(h: PastGoal): string {
+  const u = GOAL_UNITS[h.metricKind];
+  const when = shortDate(h.completedAt);
+  if (h.outcome === 'removed') return `Removed ${when}`;
+  if (h.outcome === 'closed') return h.finalTotal != null ? `Closed ${when} · ${fmtValue(h.finalTotal, h.metricKind)} ${u} logged` : `Closed ${when}`;
+  return `Completed ${when} · ${h.target} ${u}`;
+}
 
 export default function SquadGoalScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -148,8 +159,18 @@ export default function SquadGoalScreen() {
   const done = data.total;
   const unit = GOAL_UNITS[data.metricKind];
   const pct = pctOf(done, target);
-  const completed = target > 0 && done >= target;
+  /*
+   * Live, met or closed — the same answer the S-2 card draws (Amendment 006 §4). This screen used to know
+   * only "met or not": past its deadline an unmet goal still showed "N to go", a projected close in the
+   * future, and "When this closes" — for a goal that had already closed.
+   */
+  const phase = data.state.phase;
+  const completed = phase === 'met';
+  const closed = phase === 'closed';
+  const closedDay = shortDate(data.state.closedAt ?? data.endsAt);
+  const early = earlyLabel(data.state.daysEarly);
   const remaining = Math.max(0, target - done);
+  const nextGoal = (mode: 'new' | 'again' | 'raise') => router.replace({ pathname: '/squad/[id]', params: { id: squadId, editGoal: mode } });
 
   const pace = recentPace(data.weeks);
   const close = projectedClose(done, target, pace, new Date());
@@ -173,7 +194,7 @@ export default function SquadGoalScreen() {
          *
          * Members still see the goal, their own contribution and everyone else's. They just don't set it.
          */
-        !completed && data.isOwner ? (
+        phase === 'live' && data.isOwner ? (
           <Pressable
             onPress={() => router.replace({ pathname: '/squad/[id]', params: { id: squadId, editGoal: '1' } })}
             accessibilityRole="button"
@@ -195,7 +216,7 @@ export default function SquadGoalScreen() {
           <View style={styles.heroKicker}>
             <TargetGlyph size={15} />
             <Text style={styles.kickerText}>
-              {completed ? 'Goal Complete' : 'Current Goal'} · {data.squadName}
+              {completed ? 'Goal Complete' : closed ? 'Last Goal' : 'Current Goal'} · {data.squadName}
             </Text>
           </View>
           <Text style={styles.goalTitle}>{data.goal?.trim() || 'A goal, together'}</Text>
@@ -203,21 +224,28 @@ export default function SquadGoalScreen() {
           <View style={styles.figures}>
             <Text style={styles.done}>{fmtValue(done, data.metricKind)}</Text>
             <Text style={styles.of}>/ {fmtValue(target, data.metricKind)}</Text>
-            <Text style={styles.pct}>{pct}%</Text>
+            {/* No percentage on a closed goal: beside a finished number it only restates the shortfall (§5). */}
+            {closed ? null : <Text style={styles.pct}>{pct}%</Text>}
           </View>
 
           <View style={styles.bar}>
-            <LinearGradient
-              colors={flGradient.bronzeMetallic.colors}
-              locations={flGradient.bronzeMetallic.locations}
-              start={flGradient.bronzeMetallic.start}
-              end={flGradient.bronzeMetallic.end}
-              style={[styles.barFill, { width: `${pct}%` }]}
-            />
+            {closed ? (
+              <View style={[styles.barFill, styles.barFillClosed, { width: `${pct}%` }]} />
+            ) : (
+              <LinearGradient
+                colors={flGradient.bronzeMetallic.colors}
+                locations={flGradient.bronzeMetallic.locations}
+                start={flGradient.bronzeMetallic.start}
+                end={flGradient.bronzeMetallic.end}
+                style={[styles.barFill, { width: `${pct}%` }]}
+              />
+            )}
           </View>
           <Text style={styles.remaining}>
             {completed
-              ? `Reached · ${fmtValue(target, data.metricKind)} ${unit} logged together`
+              ? `Reached · ${fmtValue(target, data.metricKind)} ${unit} logged together${early ? `, ${early}` : ''}`
+              : closed
+                ? `${fmtValue(done, data.metricKind)} ${unit} logged together${closedDay ? ` · closed ${closedDay}` : ''}`
               : pace != null && pace > 0
                 ? `${fmtValue(remaining, data.metricKind)} ${unit} to go · ${data.squadName} logs about ${fmtValue(pace, data.metricKind)} a week`
                 : `${fmtValue(remaining, data.metricKind)} ${unit} to go`}
@@ -230,13 +258,15 @@ export default function SquadGoalScreen() {
           <PaceCell icon={<FlameGlyph />} value={pace != null ? `${fmtValue(pace, data.metricKind)} / wk` : '—'} label="Recent Pace" divider />
           <PaceCell
             icon={<TargetGlyph size={20} />}
-            value={completed ? 'Closed' : close ? `${monthOf(close)} ${close.getDate()}` : '—'}
-            label={completed ? 'Goal Complete' : 'Projected Close'}
+            value={completed ? 'Closed' : closed ? closedDay ?? '—' : close ? `${monthOf(close)} ${close.getDate()}` : '—'}
+            label={completed ? 'Goal Complete' : closed ? 'Closed' : 'Projected Close'}
           />
         </View>
         <Text style={styles.paceNote}>
           {completed
             ? 'Completed goals stay in the squad record. Every member contributed to this one.'
+            : closed
+              ? 'This goal has closed. Everything the squad logged toward it stays in the squad record.'
             : close
               ? `At the squad’s recent pace this closes around ${monthOf(close)} ${close.getDate()}. Progress only moves forward — a quiet week slows it, nothing takes it back.`
               : 'There isn’t enough recent work to project a close yet. Progress only moves forward — a quiet week slows it, nothing takes it back.'}
@@ -328,15 +358,19 @@ export default function SquadGoalScreen() {
                   <Text style={[styles.mileTitle, m.reached && styles.mileTitleOn]}>
                     {fmtValue(m.value, data.metricKind)} {unit}
                   </Text>
-                  <Text style={styles.mileMeta}>
-                    {m.reached
-                      ? m.crossedAt
-                        ? `Crossed ${shortDate(m.crossedAt)}`
-                        : 'Crossed'
-                      : m.isTarget
-                        ? 'The goal closes · Honor awarded to the squad'
-                        : 'Ahead'}
-                  </Text>
+                  {/* On a closed goal an uncrossed waypoint says nothing — "Ahead" is over, and naming what
+                      was not reached is the shortfall §5 rules out. */}
+                  {m.reached || !closed ? (
+                    <Text style={styles.mileMeta}>
+                      {m.reached
+                        ? m.crossedAt
+                          ? `Crossed ${shortDate(m.crossedAt)}`
+                          : 'Crossed'
+                        : m.isTarget
+                          ? 'The goal closes · Honor awarded to the squad'
+                          : 'Ahead'}
+                    </Text>
+                  ) : null}
                 </View>
               </View>
             );
@@ -376,35 +410,61 @@ export default function SquadGoalScreen() {
         {/* ═══ WHAT HAPPENS WHEN IT CLOSES ═══ */}
         <View style={styles.closeCard}>
           <LinearGradient colors={['rgba(181,138,97,0.07)', 'transparent']} locations={[0, 0.58]} style={StyleSheet.absoluteFill} pointerEvents="none" />
-          <Text style={styles.closeLabel}>{completed ? 'Recorded' : 'When this closes'}</Text>
-          <Text style={styles.closeTitle}>{completed ? 'Sealed into the squad’s record.' : 'The squad earns an Honor, and the goal is kept.'}</Text>
+          <Text style={styles.closeLabel}>{completed || closed ? 'Recorded' : 'When this closes'}</Text>
+          <Text style={styles.closeTitle}>
+            {completed ? 'Sealed into the squad’s record.' : closed ? 'Kept in the squad’s record.' : 'The squad earns an Honor, and the goal is kept.'}
+          </Text>
           <Text style={styles.closeBody}>
             {completed
               ? 'The goal, its final count, and every member’s contribution are permanent. It sits in the squad record next to the competitions and titles.'
-              : `Reaching ${fmtValue(target, data.metricKind)} ${METRIC_LABEL[data.metricKind] ?? unit} awards the squad Honor for a completed goal and files this goal in the squad’s record with its final count. Then you set the next one.`}
+              : closed
+                ? 'The goal, its final count, and every member’s contribution stay in the record. The squad can take it on again, or set something new.'
+                : `Reaching ${fmtValue(target, data.metricKind)} ${METRIC_LABEL[data.metricKind] ?? unit} awards the squad Honor for a completed goal and files this goal in the squad’s record with its final count. Then you set the next one.`}
           </Text>
+          {/* What happens next (Amendment 006 §6) — the owner's alone. Both hand back to Squad Detail, where
+              the one goal editor lives, opened in the matching mode. */}
+          {completed || closed ? (
+            data.isOwner ? (
+              <View style={styles.nextActions}>
+                <View style={styles.nextCell}>
+                  <Button variant="primary" fullWidth onPress={() => nextGoal(completed ? 'new' : 'again')} accessibilityLabel={completed ? 'Set the next goal' : 'Try this goal again'}>
+                    {completed ? 'Set the next goal' : 'Try again'}
+                  </Button>
+                </View>
+                <View style={styles.nextCell}>
+                  <Button variant="secondary" fullWidth onPress={() => nextGoal(completed ? 'raise' : 'new')} accessibilityLabel={completed ? 'Raise the bar' : 'Set a new goal'}>
+                    {completed ? 'Raise the bar' : 'Set a new goal'}
+                  </Button>
+                </View>
+              </View>
+            ) : (
+              <Text style={styles.ownerNote}>The owner sets the next goal.</Text>
+            )
+          ) : null}
         </View>
 
         {/* ═══ PAST GOALS ═══ */}
         {data.past.length > 0 ? (
           <>
+            {/* Every goal that ended, not only the met ones (Amendment 006 §7). A squad that closed three
+                goals and met one used to have a history of one. */}
             <View style={styles.sectionHead}>
               <Text style={styles.sectionLabel}>Past Goals</Text>
-              <Text style={styles.sectionMeta}>{data.past.length} completed</Text>
+              <Text style={styles.sectionMeta}>
+                {data.past.length} {data.past.length === 1 ? 'goal' : 'goals'}
+              </Text>
             </View>
             <View style={styles.eventList}>
               {data.past.map((h) => (
-                <View key={`${h.startedAt}`} style={styles.pastRow}>
-                  <View style={styles.eventIcon}>
-                    <MedalGlyph />
+                <View key={`${h.startedAt}`} style={[styles.pastRow, h.outcome === 'removed' && styles.pastRowQuiet]}>
+                  <View style={[styles.eventIcon, h.outcome !== 'met' && styles.eventIconQuiet]}>
+                    {h.outcome === 'met' ? <MedalGlyph /> : <TargetGlyph size={14} color={flColor.gray600} />}
                   </View>
                   <View style={styles.eventBody}>
-                    <Text style={styles.pastTitle} numberOfLines={1}>
+                    <Text style={[styles.pastTitle, h.outcome === 'removed' && styles.pastTitleQuiet]} numberOfLines={1}>
                       {h.goal?.trim() || `${h.target} ${GOAL_UNITS[h.metricKind]}`}
                     </Text>
-                    <Text style={styles.eventTime}>
-                      Completed {shortDate(h.completedAt)} · {h.target} {GOAL_UNITS[h.metricKind]}
-                    </Text>
+                    <Text style={styles.eventTime}>{pastLine(h)}</Text>
                   </View>
                 </View>
               ))}
@@ -558,6 +618,8 @@ const styles = StyleSheet.create({
   pct: { marginLeft: 'auto', fontFamily: flFont.display, fontSize: 22, fontWeight: '700', color: flColor.bronze300, paddingBottom: 4 },
   bar: { marginTop: 14, height: 12, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal700, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: flRadius.pill, boxShadow: flShadow.glowSubtle },
+  // Keeps its length, loses the bronze and the glow — the same rule the S-2 card follows.
+  barFillClosed: { backgroundColor: flColor.gray600, boxShadow: undefined },
   remaining: { fontSize: 12, fontWeight: '500', color: flColor.gray400, marginTop: 10 },
 
   pace: { flexDirection: 'row', marginTop: 6, borderTopWidth: 1, borderBottomWidth: 1, borderColor: flColor.charcoal700 },
@@ -617,6 +679,12 @@ const styles = StyleSheet.create({
   eventWho: { fontWeight: '600' },
   eventTime: { fontSize: 11, color: flColor.gray600, marginTop: 3 },
   pastTitle: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
+  pastRowQuiet: { borderColor: flColor.charcoal700 },
+  pastTitleQuiet: { color: flColor.gray400, fontWeight: '500' },
+  eventIconQuiet: { backgroundColor: 'transparent', borderColor: flColor.charcoal700 },
+  nextActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  nextCell: { flex: 1 },
+  ownerNote: { fontSize: 12, color: flColor.gray400, marginTop: 12 },
 
   closeCard: { marginTop: 26, paddingVertical: 17, paddingHorizontal: 18, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card, overflow: 'hidden' },
   closeLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronze400 },

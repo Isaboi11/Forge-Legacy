@@ -35,6 +35,8 @@ export type NotificationDestination =
   | { pathname: '/athlete/[id]'; params: { id: string } }
   | { pathname: '/workout-join'; params: { athlete: string } }
   | { pathname: '/squad/[id]'; params: { id: string } }
+  | { pathname: '/squad/[id]'; params: { id: string; editGoal: string } }
+  | { pathname: '/squad/[id]/goal'; params: { id: string } }
   | { pathname: '/squad-post/[id]'; params: { id: string } }
   | '/transformation'
   | '/friends'
@@ -130,6 +132,19 @@ export function destinationFor(n: NotificationTarget): NotificationDestination {
      */
     case 'progress_photo':
       return '/transformation';
+    /*
+     * 0200 — a squad goal ended. The GOAL, not the squad page: Squad Goal Detail is where the final count,
+     * everyone's contribution and — for the owner — the next-goal actions are. The post in the feed is the
+     * announcement; this is the thing it announced. The push carries the same kind and squad id, so a
+     * tapped push lands here too.
+     */
+    case 'squad_goal_met':
+    case 'squad_goal_closed':
+      return n.squadId ? { pathname: '/squad/[id]/goal', params: { id: n.squadId } } : '/inbox';
+    /* The owner's two-day reminder opens the goal EDITOR, because moving the deadline is the one useful
+       thing to do with it (D2 — extending lives before the deadline, and this is where). */
+    case 'squad_goal_closing':
+      return n.squadId ? { pathname: '/squad/[id]', params: { id: n.squadId, editGoal: 'edit' } } : '/inbox';
     default:
       return n.squadId ? { pathname: '/squad/[id]', params: { id: n.squadId } } : '/inbox';
   }
