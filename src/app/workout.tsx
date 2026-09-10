@@ -419,6 +419,12 @@ export default function WorkoutScreen() {
    * mount with a fresh ref. Read only inside the effect; react-compiler errors on `ref.current` in render.
    */
   const endedRef = useRef(false);
+  /**
+   * Set when a fresh freestyle launch opened the Picker itself (W25-A1-D10), cleared on the way back.
+   * Tells the focus drain that coming back with NOTHING picked means "not this after all" — see there.
+   * A ref, read only inside the focus callback, for the same react-compiler reason as `endedRef`.
+   */
+  const autoPickerRef = useRef(false);
   const endSession = useCallback(() => {
     endedRef.current = true;
     finishWorkout();
@@ -1098,11 +1104,14 @@ export default function WorkoutScreen() {
          * screen? … no."* Choosing "Build as you go" already answered it, so the empty state's only button
          * — Add Exercise — was a second confirmation of the same choice.
          *
-         * PUSHED, not replaced: the empty state stays underneath, so backing out of the picker with
-         * nothing chosen lands on it (with "Not today" to leave) rather than dumping the athlete home.
+         * Backing out with nothing chosen goes back to the card the athlete tapped, NOT to the empty
+         * state underneath (PO, 2026-09-10) — the focus drain below discards the empty session and steps
+         * back once more. Handled there rather than on the picker's back arrow so a swipe-back or
+         * Android's back key take the same route.
          * Only a FRESH freestyle launch does this — a resumed empty session, or the no-launch fallback
          * below, shows the empty state as before, because nobody just asked to pick an exercise.
          */
+        autoPickerRef.current = true;
         router.push({ pathname: '/exercise-picker', params: { mode: 'add', start: 'freestyle' } });
         return;
       }
@@ -1324,8 +1333,27 @@ export default function WorkoutScreen() {
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      /* Captured NOW, synchronously: the mount's own first focus runs before the freestyle launch sets
+         the flag, and reading it inside the promise could mistake that first focus for a return. */
+      const backFromAutoPicker = autoPickerRef.current;
+      autoPickerRef.current = false;
       void readExerciseInbox().then((inbox) => {
-        if (!active || !inbox) return;
+        if (!active) return;
+        /*
+         * ══ BACKED OUT OF A FRESH FREESTYLE PICKER WITH NOTHING CHOSEN → BACK TO THE CARD ══
+         *
+         * The empty state under the Picker is no longer a step (W25-A1-D10), so landing on it here would
+         * resurrect the very screen that was removed. Discard exactly as "Not today" does — autosave AND
+         * presence — and step back to wherever Build as you go was tapped (Home or the Workouts tab).
+         */
+        if (backFromAutoPicker && (!inbox || inbox.kind !== 'add' || inbox.items.length === 0) && sessionRef.current?.exercises.length === 0) {
+          void clearSession();
+          leaveSession();
+          if (router.canGoBack()) router.back();
+          else router.replace('/(tabs)');
+          return;
+        }
+        if (!inbox) return;
         void clearExerciseInbox();
         const cur = sessionRef.current;
         if (!cur) return;
@@ -1376,7 +1404,7 @@ export default function WorkoutScreen() {
       return () => {
         active = false;
       };
-    }, [showToast]),
+    }, [showToast, leaveSession, router]),
   );
 
   const mutate = useCallback((fn: (s: ActiveSession) => ActiveSession) => setSession((s) => (s ? fn(s) : s)), []);
