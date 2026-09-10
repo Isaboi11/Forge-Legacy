@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import { assembleSignals, distinctProgramCount, type RawSession } from '@/domain/rank/signals';
+import { assembleSignals, type RawSession } from '@/domain/rank/signals';
+import { rawAsOf, replayRungs, type DatedRankInputs, type RungEarned } from '@/domain/rank/history';
 import { rankDisplay, rankLevel, resolveRank, resolveSubTier, type RankSignals, type ResolvedRank } from '@/domain/rank/rank';
 import { FAMILIES, type AthleteType, type RankFamily } from '@/domain/rank/thresholds';
 
@@ -36,66 +37,107 @@ interface GoalRow {
   chapter_id: string | null;
 }
 
-export async function buildRankSignals(): Promise<RankSignals> {
+/** A session as the rank history needs it: the engine's fields, plus what to show and where to go. */
+export type HistorySession = RawSession & { id: string; name: string | null };
+
+/**
+ * Everything the engine reads, each row with its DATE — so it can be cut at today (the live rank) or at
+ * any past day (the rung replay, `history.ts`). One fetch for both, so the replay can never be fed
+ * different rows from the ones that promote.
+ *
+ * ⚠ DATES ARE CLAMPED TO TODAY. A row stamped in the future (clock skew on a device) would otherwise be
+ *   cut OUT of today's count by `rawAsOf` — silently lowering the live rank below what this function
+ *   counted before it learned about dates. Clamping keeps "today" identical to the old undated count.
+ */
+async function fetchDatedRankInputs(): Promise<{ dated: DatedRankInputs; sessions: HistorySession[]; today: string }> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error('not signed in');
   const uid = user.id;
   const today = new Date().toISOString().slice(0, 10);
+  const clamp = (iso: string | null | undefined): string => (iso && iso.slice(0, 10) <= today ? iso : today);
 
   const [prof, workoutsRes, prRes, programsRes, chaptersRes, goalsRes] = await Promise.all([
     supabase.from('profiles').select('athlete_type').eq('id', uid).single(),
-    supabase.from('workouts').select('saved_at, started_at, duration_sec, activity_type, distance').eq('athlete_id', uid).eq('state', 'saved'),
+    supabase.from('workouts').select('id, workout_name, saved_at, started_at, duration_sec, activity_type, distance').eq('athlete_id', uid).eq('state', 'saved'),
     supabase.from('personal_records').select('achieved_on, created_at').eq('athlete_id', uid).eq('measure_kind', 'load'),
-    supabase.from('programs').select('id, source_definition_id').eq('athlete_id', uid).eq('state', 'graduated'),
-    supabase.from('chapters').select('id').eq('athlete_id', uid).not('sealed_at', 'is', null),
+    supabase.from('programs').select('id, source_definition_id, ended_at, updated_at').eq('athlete_id', uid).eq('state', 'graduated'),
+    supabase.from('chapters').select('id, sealed_at').eq('athlete_id', uid).not('sealed_at', 'is', null),
     supabase.from('goals').select('is_primary, achieved_at, chapter_id').eq('athlete_id', uid),
   ]);
 
   const athleteType = ATHLETE_TYPE[(prof.data as { athlete_type: string | null } | null)?.athlete_type ?? ''] ?? 'strength';
 
-  const sessions: RawSession[] = ((workoutsRes.data ?? []) as WorkoutRow[]).map((w) => ({
-    date: w.saved_at ?? w.started_at ?? today,
+  const sessions: HistorySession[] = ((workoutsRes.data ?? []) as (WorkoutRow & { id: string; workout_name: string | null })[]).map((w) => ({
+    id: w.id,
+    name: w.workout_name,
+    date: clamp(w.saved_at ?? w.started_at),
     durationSec: w.duration_sec ?? 0,
     state: 'saved',
     activityType: w.activity_type ?? 'strength',
     distance: w.distance,
   }));
 
-  const loadPRDates = ((prRes.data ?? []) as PRRow[]).map((r) => r.achieved_on ?? r.created_at?.slice(0, 10)).filter((d): d is string => !!d);
+  const loadPRDates = ((prRes.data ?? []) as PRRow[]).map((r) => r.achieved_on ?? r.created_at?.slice(0, 10)).filter((d): d is string => !!d).map((d) => clamp(d));
 
   // Goal participation = a goal resolved through chapter sealing (RCM §6.6); primary achievements are the
-  // subset flagged achieved. Only goals attached to a SEALED chapter count.
-  const sealedChapterIds = new Set(((chaptersRes.data ?? []) as { id: string }[]).map((c) => c.id));
-  const resolvedGoals = ((goalsRes.data ?? []) as GoalRow[]).filter((g) => g.chapter_id != null && sealedChapterIds.has(g.chapter_id));
-  const goalEvents = resolvedGoals.length;
-  const primaryGoalsAchieved = resolvedGoals.filter((g) => g.is_primary && g.achieved_at != null).length;
+  // subset flagged achieved. Only goals attached to a SEALED chapter count — and each resolved the day its
+  // chapter sealed.
+  const sealedAt = new Map(((chaptersRes.data ?? []) as { id: string; sealed_at: string }[]).map((c) => [c.id, clamp(c.sealed_at)]));
+  const resolvedGoals = ((goalsRes.data ?? []) as GoalRow[])
+    .filter((g) => g.chapter_id != null && sealedAt.has(g.chapter_id))
+    .map((g) => ({ date: sealedAt.get(g.chapter_id as string) as string, primaryAchieved: g.is_primary && g.achieved_at != null }));
 
   /*
    * Total graduations is the honest count — it is what `honor_metrics()` counts for the program honors,
    * and it is what the athlete actually did. The DISTINCT count collapses re-runs of one plan to one
-   * (CAL Q14); see `distinctProgramCount` for why the old "no source-template column exists" comment
-   * that stood here was wrong, and what it was hiding.
+   * (CAL Q14); `planKey` is `distinctProgramCount`'s key, so the two cannot disagree.
    *
    * NOTE the two are still equal for most athletes — `programs_one_per_source` prevents a second row for
    * the same catalog program — so this is not expected to move anyone's rank. It closes the gap for
    * athlete-AUTHORED programs, which carry no source id.
    */
-  const programRows = (programsRes.data ?? []) as { id: string; source_definition_id: string | null }[];
-  const programGraduations = programRows.length;
+  const programRows = (programsRes.data ?? []) as { id: string; source_definition_id: string | null; ended_at: string | null; updated_at: string }[];
 
-  return assembleSignals({
-    athleteType,
+  return {
     today,
     sessions,
-    loadPRDates,
-    programGraduations,
-    distinctProgramGraduations: distinctProgramCount(programRows),
-    sealedChapters: sealedChapterIds.size,
-    goalEvents,
-    primaryGoalsAchieved,
-  });
+    dated: {
+      athleteType,
+      sessions,
+      loadPRDates,
+      graduations: programRows.map((p) => ({ date: clamp(p.ended_at ?? p.updated_at), planKey: p.source_definition_id ?? `id:${p.id}` })),
+      sealedChapterDates: [...sealedAt.values()],
+      resolvedGoals,
+    },
+  };
+}
+
+export async function buildRankSignals(): Promise<RankSignals> {
+  const { dated, today } = await fetchDatedRankInputs();
+  return assembleSignals(rawAsOf(dated, today));
+}
+
+export interface RankHistory {
+  /** The signals as of today — where the athlete stands against a rung not yet earned. */
+  current: RankSignals;
+  /** Rung index (0–27) → the day it was first reached and what the engine read that day. */
+  earned: Map<number, RungEarned>;
+  sessions: HistorySession[];
+}
+
+/**
+ * The Rank Journey's rung sheets: when each rung was earned and what it took (`replayRungs`).
+ *
+ * ⚠ YIELDS BEFORE REPLAYING. The replay is synchronous work on the JS thread (≈0.1 s for two years of
+ *   training on a desktop, a few times that on a phone), so it is pushed past the frame that renders the
+ *   screen rather than run inside it.
+ */
+export async function fetchRankHistory(): Promise<RankHistory> {
+  const { dated, sessions, today } = await fetchDatedRankInputs();
+  await new Promise((r) => setTimeout(r, 0));
+  return { current: assembleSignals(rawAsOf(dated, today)), earned: replayRungs(dated, today), sessions };
 }
 
 /** The rank the athlete has earned right now (signals → convergence). */

@@ -19,6 +19,8 @@ import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import { rankAscent, rankIdentity } from '@/domain/rank/identity';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
 import { fetchProgressHub, type MetricSeries } from '@/data/progress-hub-live';
+import { fetchRankHistory } from '@/data/rank-live';
+import { RankRungSheet, type RungTarget } from '@/components/forge/compositions/RankRungSheet';
 import { currentLabel } from '@/domain/progress/lift-series';
 import { useMetricSelection } from '@/lib/metric-selection';
 import { useProfile } from '@/lib/profile';
@@ -73,6 +75,9 @@ export default function ProgressHubScreen() {
   const { selected, persist } = useMetricSelection();
   const [openId, setOpenId] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  /* The rung sheets' history — its own query so the screen never waits on the replay (`fetchRankHistory`). */
+  const { data: history, loading: historyLoading } = useQuery(fetchRankHistory, []);
+  const [openRung, setOpenRung] = useState<number | null>(null);
 
   if (loading || !data) {
     return (
@@ -89,6 +94,12 @@ export default function ProgressHubScreen() {
   /** The athlete's rung among all 28 — family, then sub-tier I→IV. */
   const curRung = cur * LEVELS.length + ((data.rankSubTier as RankLevel) - 1);
   const sex = profile?.sex;
+  const rungAt = (i: number): RungTarget => {
+    const f = LADDER[Math.floor(i / LEVELS.length)];
+    return { family: f.key, name: f.name, level: ((i % LEVELS.length) + 1) as RankLevel, state: i < curRung ? 'earned' : i === curRung ? 'current' : 'locked' };
+  };
+  const openTarget = openRung != null ? rungAt(openRung) : null;
+  const lastRung = LADDER.length * LEVELS.length - 1;
 
   // Which lifts show as cards: the saved selection, else the athlete's most-recent lifts (default).
   const metrics = data.metrics;
@@ -183,8 +194,9 @@ export default function ProgressHubScreen() {
                       level={lv}
                       state={i < curRung ? 'earned' : i === curRung ? 'current' : 'locked'}
                       first={i === 0}
-                      last={i === LADDER.length * LEVELS.length - 1}
+                      last={i === lastRung}
                       sex={sex}
+                      onPress={() => setOpenRung(i)}
                     />
                   );
                 })}
@@ -299,6 +311,22 @@ export default function ProgressHubScreen() {
       <ScreenTour screenKey="progress-hub" ready={!!data} />
 
       {openMetric ? <MetricDetail metric={openMetric} onClose={() => setOpenId(null)} /> : null}
+      <RankRungSheet
+        target={openTarget}
+        next={openTarget?.state === 'current' && openRung != null && openRung < lastRung ? rungAt(openRung + 1) : null}
+        history={history}
+        loading={historyLoading}
+        badge={openTarget ? <Badge family={openTarget.family} level={openTarget.level} sex={sex} size={44} muted={openTarget.state === 'locked'} /> : null}
+        onClose={() => setOpenRung(null)}
+        onOpenWorkout={(id) => {
+          setOpenRung(null);
+          router.push({ pathname: '/activity/[id]', params: { id } });
+        }}
+        onSeeAll={() => {
+          setOpenRung(null);
+          router.push('/rank-progression');
+        }}
+      />
       <EditMetricsSheet
         open={editOpen}
         onClose={() => setEditOpen(false)}
@@ -329,10 +357,26 @@ function Glyph({ d, size, color, width = 1.9 }: { d: string; size: number; color
   );
 }
 
-function Badge({ family, level, sex, size }: { family: RankFamily; level: RankLevel; sex?: 'male' | 'female' | 'unspecified'; size: number }) {
+/**
+ * A rank badge — full colour, or GRAYED OUT for a rung not yet earned.
+ *
+ * ⚠ THE GRAY IS A TINTED SILHOUETTE LAID OVER THE ART, NOT `filter: grayscale()`. RN's `filter` is not
+ *   honoured for every function on every platform, and a treatment that is gray on the web preview and
+ *   full colour on the phone is exactly the "green on web" trap. `tintColor` is supported everywhere: the
+ *   art underneath at low opacity keeps a trace of its engraving, and the flat gray over it takes the
+ *   colour out. PO, 2026-09-10: *"make sure the ones not earned yet are grayed out."*
+ */
+function Badge({ family, level, sex, size, muted = false }: { family: RankFamily; level: RankLevel; sex?: 'male' | 'female' | 'unspecified'; size: number; muted?: boolean }) {
   const art = resolveRankBadge({ family, level, sex });
-  if (art != null) return <Image source={art} style={{ width: size, height: size * 1.37 }} resizeMode="contain" />;
-  return <RankSeal family={family} level={level} size={size} />;
+  const box = { width: size, height: size * 1.37 };
+  if (art == null) return <View style={muted ? styles.sealMuted : null}><RankSeal family={family} level={level} size={size} /></View>;
+  if (!muted) return <Image source={art} style={box} resizeMode="contain" />;
+  return (
+    <View style={box}>
+      <Image source={art} style={[box, styles.badgeUnder]} resizeMode="contain" />
+      <Image source={art} style={[box, styles.badgeGray, { tintColor: flColor.gray600 }]} resizeMode="contain" />
+    </View>
+  );
 }
 
 function Fact({ label, value }: { label: string; value: string }) {
@@ -362,6 +406,7 @@ function Rung({
   first,
   last,
   sex,
+  onPress,
 }: {
   def: { key: RankFamily; name: string };
   level: RankLevel;
@@ -369,18 +414,22 @@ function Rung({
   first: boolean;
   last: boolean;
   sex?: 'male' | 'female' | 'unspecified';
+  onPress: () => void;
 }) {
   const current = state === 'current';
   return (
-    <View style={[styles.rung, current && styles.rungCurrent]}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${def.name} ${ROMAN[level]}, ${state === 'locked' ? 'not yet earned' : state === 'current' ? 'your rank' : 'earned'} — ${rankAscent(def.key, level)}`}
+      style={({ pressed }) => [styles.rung, current && styles.rungCurrent, pressed && styles.rungPressed]}
+    >
       {/* The two halves of the line through this node, positioned on the ROW so they run through its
           padding and meet the next row's line with no gap. */}
       {first ? null : <View style={[styles.seg, styles.segTop, state !== 'locked' && styles.segWalked]} pointerEvents="none" />}
       {last ? null : <View style={[styles.seg, styles.segBottom, state === 'earned' && styles.segWalked]} pointerEvents="none" />}
       <View style={styles.rungNode}>
-        <View style={state === 'locked' ? styles.badgeAhead : null}>
-          <Badge family={def.key} level={level} sex={sex} size={current ? 44 : 32} />
-        </View>
+        <Badge family={def.key} level={level} sex={sex} size={current ? 44 : 32} muted={state === 'locked'} />
       </View>
       <View style={[styles.rungLabel, state === 'locked' && styles.rungAhead]}>
         <View style={styles.rungNameRow}>
@@ -397,7 +446,8 @@ function Rung({
           {rankAscent(def.key, level)}
         </Text>
       </View>
-    </View>
+      <Chevron right />
+    </Pressable>
   );
 }
 
@@ -511,8 +561,11 @@ const styles = StyleSheet.create({
   segWalked: { backgroundColor: flColor.bronzeBorder },
   /* `marginLeft: 1` stands in for the rungs' 1px border so the line does not jog through the gap. */
   familyGap: { height: 12, marginLeft: 1 },
-  /* Ahead of the athlete: named and quoted, but quiet — the badge a ghost of itself. */
-  badgeAhead: { opacity: 0.38 },
+  rungPressed: { opacity: 0.72 },
+  /* Ahead of the athlete: named and quoted, but grayed out — see `Badge` for how the art is desaturated. */
+  badgeUnder: { opacity: 0.35 },
+  badgeGray: { position: 'absolute', top: 0, left: 0, opacity: 0.6 },
+  sealMuted: { opacity: 0.4 },
   rungAhead: { opacity: 0.75 },
   rungLabel: { flex: 1, minWidth: 0, gap: 3, paddingVertical: 2 },
   rungNameRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },

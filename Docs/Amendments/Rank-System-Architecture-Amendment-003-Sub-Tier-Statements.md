@@ -154,3 +154,22 @@ identities still appear on the ladder, at the head of each family.
 - **Rank Progression is unchanged** — it shows families and requirements, and keeps the identity.
 - **Unreached rungs are named and quoted, faded — not sealed.** Rank Progression already named every rank,
   so the seal hid nothing real; seeing the whole road is the point, and walking it is still the only way.
+
+### RSA-A3-D5 follow-up, same day — every rung opens, and unreached rungs are grayed out
+
+**PO:** *"Let's make them tapable, and then make sure the ones not earned yet are grayed out."*
+
+- **Tapping a rung opens its sheet.** Earned: the day it was earned, what it took (workouts, active weeks,
+  days on the path, PRs, programs/blocks, chapters — as of that day), what it asked (`rungStandards`), and
+  the session that did it (→ activity detail). Current: the same, plus what the next rung asks and where the
+  athlete stands. Unreached: what it asks and where the athlete stands today.
+- **The dates are replayed, not stored.** There is no rank history table; rank is a pure function of dated
+  training history, so `domain/rank/history.ts` runs the engine as of each day that can change its answer
+  and notes the first day each rung is reached. `history.test.mjs` proves the fast replay equals the
+  every-day walk, and that no earned rung can show an unmet row.
+- **Unreached badges are desaturated** (a tinted silhouette over the faded art — `filter: grayscale()` is not
+  honoured on every platform).
+- ⚠ **OPEN DISCREPANCY, NOT RESOLVED HERE:** the engine gives Legacy **no sub-tiers** (`resolveSubTier`
+  returns 1; rank levels stop at 25), while §4 and the ladder carry Legacy I–IV. Legacy II–IV can therefore
+  never be earned, and their sheets say the steps are not defined. A PO decision: define Legacy II–IV in the
+  engine, or show Legacy as one rung.

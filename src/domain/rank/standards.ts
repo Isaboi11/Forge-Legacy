@@ -175,6 +175,40 @@ const SUBTIER_EVIDENCE: Partial<Record<RankFamily, Partial<Record<2 | 3 | 4, str
   legend: { 4: 'and a seventh program or block' },
 };
 
+/**
+ * What ONE rung of the 28 asks for, as rows — the Rank Journey's rung sheet (RSA-A3-D5).
+ *
+ * A rung is entered one of three ways, and each already has its rule here, so this only routes:
+ *   · Foundation · I — nothing. Everyone starts there; `'start'`.
+ *   · tier I of any other family — the family's promotion (`familyStandards`), every row.
+ *   · tiers II–IV — that family's within-family active weeks for the tier (`subTierStandards`), with the
+ *     extra proof the step asks for carried as the row's `detail`.
+ * Legacy has no sub-tiers in the engine (`resolveSubTier` returns 1), so Legacy II–IV return `'none'`
+ * rather than rows invented for them.
+ */
+export function rungStandards(family: RankFamily, level: number, signals: RankSignals | null): StandardRow[] | 'start' | 'none' {
+  if (family === 'foundation' && level === 1) return 'start';
+  if (level === 1) return familyStandards(family as PromotableFamily, signals);
+  if (family === 'legacy') return 'none';
+  const row = subTierStandards(family, signals).find((r) => r.tier === level);
+  if (!row) return 'none';
+  const name = family.charAt(0).toUpperCase() + family.slice(1);
+  // Said exactly as `resolveSubTier` counts: active weeks past the number that opened the family.
+  const entry = FAMILY_ENTRY_ACTIVE_WEEKS[family];
+  const counted = entry > 0 ? `Active weeks past the ${entry} that opened ${name}` : 'Active weeks since your first session';
+  return [
+    {
+      key: `tier${level}`,
+      label: `Active weeks as ${name}`,
+      have: row.have,
+      need: row.weeks,
+      unit: 'weeks',
+      met: row.met,
+      detail: row.evidence ? `${counted} — ${row.evidence}.` : `${counted}.`,
+    },
+  ];
+}
+
 export function subTierStandards(family: RankFamily, signals: RankSignals | null): SubTierRow[] {
   if (family === 'legacy') return []; // Legacy has no sub-tiers — it is the end of the ladder
   const [t2, t3, t4] = SUBTIER_ACTIVE_WEEKS[family];

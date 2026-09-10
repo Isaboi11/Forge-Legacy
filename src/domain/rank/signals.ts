@@ -111,15 +111,18 @@ export const distinctProgramCount = (
   rows: readonly { id: string; source_definition_id: string | null }[],
 ): number => new Set(rows.map((p) => p.source_definition_id ?? `id:${p.id}`)).size;
 
+/** Does this raw session count as meaningful work? The one definition — `assembleSignals` and the rank
+ *  replay (which needs the journey's first day to place the time gates) both ask it. */
+export const isMeaningfulRawSession = (s: RawSession): boolean =>
+  isMeaningfulWork({
+    durationMinutes: s.durationSec / 60,
+    completed: s.state === 'saved',
+    activityType: MODALITY_TO_ACTIVITY[s.activityType.toLowerCase()] ?? 'OTHER',
+  });
+
 /** Assemble the engine's `RankSignals` from raw activity. All sessions are native today (no import path). */
 export function assembleSignals(raw: RawRankInputs): RankSignals {
-  const meaningful = raw.sessions.filter((s) =>
-    isMeaningfulWork({
-      durationMinutes: s.durationSec / 60,
-      completed: s.state === 'saved',
-      activityType: MODALITY_TO_ACTIVITY[s.activityType.toLowerCase()] ?? 'OTHER',
-    }),
-  );
+  const meaningful = raw.sessions.filter(isMeaningfulRawSession);
   /* Named `native` deliberately. Every session is native today (there is no import path), but blocks are
    * derived from these dates and take NO import credit — so when the import pipeline lands, feeding
    * imported dates in here would silently grant them 100%, violating R-D46 and RCM §14.13. The name is
