@@ -27,6 +27,23 @@ export const XFORM_TAGS = ['Milestone', 'Competition', 'Posing', 'Bulk', 'Cut', 
 
 export type PhotoMap = Partial<Record<PoseKey, string>>;
 
+/**
+ * How one photo sits in its frame — pan as a fraction of the frame plus a scale, the shape
+ * `useFrameAdjust` produces and `BeforeAfterSlider` draws. Written structurally rather than imported so
+ * the data layer stays free of anything that pulls in React Native; `squad-feed-live` states it the same
+ * way, for the same reason.
+ *
+ * ⚠ STORED PER PHOTO, NOT PER COMPARISON. The alignment used to live in a `useState` on the Compare
+ * screen: the athlete lined two photographs up, walked away, and did it again next time. Keyed by pose on
+ * the entry, the work is done once and every comparison that photo appears in inherits it.
+ */
+export interface PhotoFrame {
+  tx: number;
+  ty: number;
+  scale: number;
+}
+export type FrameMap = Partial<Record<PoseKey, PhotoFrame>>;
+
 export interface TransformationEntry {
   id: string;
   chapterId: string | null;
@@ -36,6 +53,8 @@ export interface TransformationEntry {
   meta: string | null; // context line
   tags: string[];
   photos: PhotoMap;
+  /** Per-pose framing. Empty until the athlete lines something up — or until 0197 is applied. */
+  frames: FrameMap;
   videoUrl: string | null;
   createdAt: string;
 }
@@ -48,12 +67,31 @@ interface Row {
   meta: string | null;
   tags: string[] | null;
   photos: PhotoMap | null;
+  frames: FrameMap | null;
   video_url: string | null;
   created_at: string;
   chapters: { name: string } | null;
 }
 
-const COLS = 'id, chapter_id, label, caption, meta, tags, photos, video_url, created_at, chapters(name)';
+const COLS_BASE = 'id, chapter_id, label, caption, meta, tags, photos, video_url, created_at, chapters(name)';
+const COLS_FRAMED = `${COLS_BASE}, frames`;
+
+/**
+ * ⚠ A MIGRATION CAN BREAK THE DEPLOYED CLIENT, AND SELECTING A COLUMN THAT IS NOT THERE YET BREAKS IT
+ * TOTALLY.
+ *
+ * `frames` arrives in 0197, which is pasted by hand in the Supabase editor — so for however long it takes
+ * to get from a publish to that paste, asking for the column would fail the whole query and the
+ * Transformation archive would render as "no entries" rather than as "no alignments". That is six
+ * irreplaceable photographs looking deleted because of a cosmetic feature.
+ *
+ * So the first miss downgrades the selection permanently for the session and everything else keeps
+ * working. It costs one wasted round trip, once, on a database that has not been migrated yet.
+ */
+let framesColumn = true;
+const cols = () => (framesColumn ? COLS_FRAMED : COLS_BASE);
+/** PostgREST's undefined-column code. Anything else is a real failure and is reported as one. */
+const missingFrames = (code: string | undefined) => framesColumn && code === '42703';
 
 const toEntry = (r: Row): TransformationEntry => ({
   id: r.id,
@@ -64,6 +102,7 @@ const toEntry = (r: Row): TransformationEntry => ({
   meta: r.meta,
   tags: r.tags ?? [],
   photos: r.photos ?? {},
+  frames: r.frames ?? {},
   videoUrl: r.video_url,
   createdAt: r.created_at,
 });
@@ -93,7 +132,12 @@ async function uid(): Promise<string | null> {
 export async function fetchTransformationEntries(): Promise<TransformationEntry[]> {
   const id = await uid();
   if (!id) return [];
-  const { data, error } = await supabase.from('transformation_entries').select(COLS).eq('athlete_id', id).order('created_at', { ascending: false });
+  const q = () => supabase.from('transformation_entries').select(cols()).eq('athlete_id', id).order('created_at', { ascending: false });
+  let { data, error } = await q();
+  if (error && missingFrames(error.code)) {
+    framesColumn = false;
+    ({ data, error } = await q());
+  }
   if (error) return [];
   return sortByCapture(((data ?? []) as unknown as Row[]).map(toEntry));
 }
@@ -115,7 +159,12 @@ export async function fetchTransformationEntries(): Promise<TransformationEntry[
 export async function fetchTransformationEntry(entryId: string): Promise<TransformationEntry | null> {
   const id = await uid();
   if (!id) return null;
-  const { data, error } = await supabase.from('transformation_entries').select(COLS).eq('id', entryId).eq('athlete_id', id).maybeSingle();
+  const q = () => supabase.from('transformation_entries').select(cols()).eq('id', entryId).eq('athlete_id', id).maybeSingle();
+  let { data, error } = await q();
+  if (error && missingFrames(error.code)) {
+    framesColumn = false;
+    ({ data, error } = await q());
+  }
   if (error) throw error;
   if (!data) return null;
   return toEntry(data as unknown as Row);
@@ -159,6 +208,25 @@ export async function addTransformationEntry(input: SaveEntryInput): Promise<str
     .single();
   if (error) throw error;
   return (data as { id: string }).id;
+}
+
+/**
+ * Store how this entry's photos sit in their frames.
+ *
+ * ⚠ THE WHOLE MAP, AND IT MUST BE. `frames` is one jsonb column, so a partial write would drop every pose
+ * the caller did not mention — the Compare screen therefore sends the entry's full map each time, merged
+ * from what it read.
+ *
+ * ⚠ SILENT ON FAILURE, DELIBERATELY. This is fired from a finger lifting off a photograph, several times
+ * a minute, and the athlete is mid-gesture. A framing that did not persist costs them one drag next time;
+ * a toast in the middle of lining two photos up costs them the thing they were looking at. The local state
+ * is already showing the new position either way. It also swallows the missing-column case, so nothing
+ * breaks between a publish and the 0197 paste.
+ */
+export async function saveTransformationFrames(entryId: string, frames: FrameMap): Promise<void> {
+  const id = await uid();
+  if (!id) return;
+  await supabase.from('transformation_entries').update({ frames }).eq('id', entryId).eq('athlete_id', id);
 }
 
 /** Edit an entry in place (metadata + media map). */

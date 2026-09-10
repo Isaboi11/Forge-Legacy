@@ -8,6 +8,13 @@
  *   4. "Let me be able to name/rename the post for transformation."
  *   5. "Let me be able to delete a post."
  *
+ * ⚠ (1) CAME BACK ON 2026-09-08, AND THE ANSWER WAS THE OPPOSITE OF THE FIRST ONE. *"It would be easier
+ * to adjust the photos like this somehow. You see how I can see them lining up?"* — said while looking at
+ * the SLIDER. Making the modal's onion-skin readable had been the right repair to the wrong thing: the
+ * comparison itself is where the two bodies can be seen meeting, so the modal is retired and the drag
+ * happens on the photograph. And the alignment is now KEPT (0197) rather than living in a `useState` that
+ * threw the work away on every exit. Section 1 guards that shape.
+ *
  * ⚠ (3) IS THE SECOND TIME. `BeforeAfterSlider` was already rewritten once for "the slider feature isn't
  * too smooth" — the position moved to a Reanimated shared value and it got better rather than good,
  * because it was still animating `width` (a LAYOUT property) and still claiming every touch. And there
@@ -22,12 +29,15 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
-const ALIGN = strip(read('../../components/forge/AlignEditor.tsx'));
+const ADJUST = strip(read('../../hooks/useFrameAdjust.ts'));
+const COMPARE = strip(read('../transformation-compare.tsx'));
+const XDATA = strip(read('../../data/transformation-live.ts'));
+const SQL_FRAMES = read('../../../supabase/migrations/0197_transformation_frames.sql');
 const SLIDER = strip(read('../../components/forge/BeforeAfterSlider.tsx'));
 const DRAG = strip(read('../../hooks/useCompareDrag.ts'));
 const FRIENDS = strip(read('../friends.tsx'));
@@ -42,24 +52,52 @@ const SQL_CODE = SQL.replace(/^[ ]*--.*$/gm, '');
 const BUNDLE = read('../../../supabase/apply/pending-0186.sql');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. you can see the photo you are lining up against
+// 1. you line them up ON the comparison, and it is kept
 // ─────────────────────────────────────────────────────────────────────────────
 
-test('⚠ the MOVING photo is the translucent one, not the reference', () => {
-  // The bug was the other way round: the reference was drawn at 0.4 UNDERNEATH a fully opaque moving
-  // photo, and both `cover` the same frame — so the reference was never visible at all.
-  assert.match(ALIGN, /moving: \{ opacity: 0\.\d+ \}/, 'the translucent style is gone or renamed');
-  assert.doesNotMatch(ALIGN, /dim: \{ opacity/, 'the old `dim` reference style is back');
-  const moving = ALIGN.indexOf('styles.moving');
-  const first = ALIGN.indexOf('<Image');
-  assert.ok(moving > first, 'the translucent layer is drawn first — it must sit ON TOP of the reference');
+test('⭐ the line-up happens on the comparison, not in a modal beside it', () => {
+  // The first repair made the modal's onion-skin readable. The second deleted the modal: the slider's
+  // seam is the ruler, and the athlete was being asked to judge alignment somewhere it was not.
+  assert.ok(!existsSync(new URL('../../components/forge/AlignEditor.tsx', import.meta.url)), 'the align modal is back');
+  assert.doesNotMatch(COMPARE, /AlignEditor/, 'Compare opens the align modal again');
+  assert.match(COMPARE, /adjust=\{adjusting\}/, 'the slider is no longer given an adjust mode');
+  assert.match(SLIDER, /adjust \? adj\.panHandlers : panHandlers/, 'adjusting no longer takes the drag from the divider');
 });
 
-test('the two selections cannot disagree about which layer is which', () => {
-  // Written as one pair driven by `sel`, not two mirrored branches — mirrored branches are how the
-  // layers got swapped in one case and not the other.
-  assert.doesNotMatch(ALIGN, /sel === 'after' \? \(\s*<>/, 'the mirrored-branch shape is back');
-  assert.match(ALIGN, /source=\{\{ uri: sel === 'after' \? before : after \}\}/, 'the reference is no longer chosen from `sel`');
+test('⭐ the finger picks its own photo — there is no Before/After control', () => {
+  // The modal asked WHICH photo before letting you move one. Touching it is the answer.
+  assert.match(ADJUST, /splitV\.value && wv\.value && e\.nativeEvent\.locationX > wv\.value \/ 2 \? 1 : 0/, 'the slot is no longer chosen by which side the finger landed on');
+  assert.match(SLIDER, /split: true/, 'the slider no longer tells the gesture it holds two photos');
+});
+
+test('⚠ the alignment is STORED — it used to be thrown away on every exit', () => {
+  // It lived in a `useState` on the Compare screen. The athlete lined two photographs up, left, and did
+  // it again next time — every time, forever.
+  assert.match(COMPARE, /saveTransformationFrames\(entry\.id, next\)/, 'the framing is no longer persisted');
+  assert.match(XDATA, /COLS_FRAMED = .\$\{COLS_BASE\}, frames./, 'the entry read no longer asks for frames');
+  assert.match(SQL_FRAMES, /add column if not exists frames jsonb/, '0197 no longer adds the column');
+});
+
+test('⚠ a client that ships before 0197 is pasted still shows the archive', () => {
+  // Selecting a column that is not there fails the WHOLE query — six irreplaceable photographs would
+  // read as "no entries" because of a cosmetic feature.
+  assert.match(XDATA, /code === '42703'/, 'the missing-column downgrade is gone');
+  assert.match(XDATA, /framesColumn = false;/, 'the downgrade no longer sticks, so every read pays for it');
+});
+
+test('⚠ changing which captures are compared REMOUNTS the row', () => {
+  // `useFrameAdjust` seeds its shared values once, at mount — it cannot be synced from a prop later
+  // without tripping `react-hooks/immutability`, and syncing would fight a live gesture besides. Without
+  // both entry ids in the key, the framing of the photograph that just left is applied to its replacement.
+  assert.match(COMPARE, /key=\{.\$\{aEff \?\? 'a'\}:\$\{bEff \?\? 'b'\}:\$\{p\.key\}.\}/, 'the row key no longer carries both entry ids');
+});
+
+test('the adjust drag never re-renders either photo', () => {
+  // Same rule the divider drag was rewritten twice for: state per touch event re-reconciles both Images
+  // and the clip. React hears about this gesture once, on release.
+  assert.match(ADJUST, /const t0 = useSharedValue<PhotoFrame>/, 'the live frame is no longer a shared value');
+  assert.doesNotMatch(ADJUST, /useState<PhotoFrame>/, 'the frame is back in React state, and every touch will re-render');
+  assert.match(ADJUST, /useAnimatedReaction\(/, 'the commit no longer goes back to JS through a reaction');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,14 +105,17 @@ test('the two selections cannot disagree about which layer is which', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('⭐ the squad feed draws the comparison, not flat photos', () => {
-  assert.match(SQUAD, /const shaped = card \? null : asTransformationLayout\(post\.layout\)/, 'the feed no longer reads a transformation layout');
-  assert.match(SQUAD, /customMedia=\{card \? <FeedProgressCard card=\{card\} \/> : shaped \? <TransformationLayout/, 'the feed no longer passes the composition as custom media');
+  // ⚠ WIDENED, NOT WEAKENED (0192). A third shape now shares `layout` — the posted workout — so these
+  // read "the transformation branch is still there and still guarded" rather than pinning the exact
+  // ternary, which would have to be rewritten by every future shape without saying anything more.
+  assert.match(SQUAD, /const shaped = card[^;]*\? null : asTransformationLayout\(post\.layout\)/, 'the feed no longer reads a transformation layout');
+  assert.match(SQUAD, /customMedia=\{[\s\S]{0,400}?shaped \? \(?\s*<TransformationLayout/, 'the feed no longer passes the composition as custom media');
 });
 
 test('the raw photos are suppressed when the composition draws them', () => {
   // Passing both renders the comparison AND the loose photos under it.
-  assert.match(SQUAD, /const media = card \|\| shaped \? \[\] : post\.media\.map/, 'a composed post also passes its raw media');
-  assert.match(SQUAD, /const hasMedia = !!card \|\| !!shaped \|\| media\.length > 0/, 'hasMedia no longer counts the composition');
+  assert.match(SQUAD, /const media = card \|\| shaped[^?]*\? \[\] : post\.media\.map/, 'a composed post also passes its raw media');
+  assert.match(SQUAD, /const hasMedia = !!card \|\| !!shaped[^;]*\|\| media\.length > 0/, 'hasMedia no longer counts the composition');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

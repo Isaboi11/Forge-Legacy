@@ -24,12 +24,18 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
  * forgot would silently show a different crop of the same person. Cropping here means the stored file IS
  * the avatar: `lib/avatar.ts` and every consumer stay exactly as they were.
  *
- * ══ MODELLED ON `AlignEditor` ══
+ * ══ MODELLED ON `AlignEditor`, WHICH NO LONGER EXISTS ══
  *
  * Same pan-by-responder, same 0.5–3× zoom slider, same fraction-of-frame transform maths — deliberately,
- * because that editor already solved this on this codebase's terms (no gesture library, no ref-in-render,
- * transforms that survive a resize). What differs is the mask (a circle, 1:1) and the ending: this one
- * produces a file rather than a stored transform.
+ * because that editor had already solved this on this codebase's terms (no gesture library, no
+ * ref-in-render, transforms that survive a resize). What differed was the mask (a circle, 1:1) and the
+ * ending: this one produces a file rather than a stored transform.
+ *
+ * ⚠ **The transformation line-up it was modelled on was RETIRED on 2026-09-08** — a modal beside the
+ * comparison was the wrong shape for that job, and the drag moved onto the photograph itself
+ * (`hooks/useFrameAdjust`). This screen is not the same job: an avatar crop has no second image to line
+ * up against and it produces a FILE, so it keeps the modal and the slider on purpose. Read
+ * `useFrameAdjust` before assuming this one is owed the same treatment.
  */
 
 export interface AvatarCropEditorProps {

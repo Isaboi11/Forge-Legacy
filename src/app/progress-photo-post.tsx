@@ -112,7 +112,7 @@ export default function ProgressPhotoPostRoute() {
      render, so a hook declared beside `renderCard` further down would be called conditionally — the
      rules-of-hooks error, and a real one: the ref would be re-created whenever an entry finished
      loading, taking the last export's delivery method with it. */
-  const lastVia = useRef<'clipboard' | 'download'>('download');
+  const lastVia = useRef<'sheet' | 'clipboard' | 'download'>('download');
 
   const entries = data ?? [];
   const entry: TransformationEntry | null = entries.find((e) => e.id === entryId) ?? entries[0] ?? null;
@@ -197,17 +197,20 @@ export default function ProgressPhotoPostRoute() {
   /**
    * ⚠ THE VERB COMES FROM THE RESULT, NOT FROM THE PLATFORM OR THE HOPE.
    *
-   * The web downloads files; the device copies ONE image to the clipboard, because writing to the
-   * camera roll needs `expo-media-library` and that changes the native fingerprint (see
-   * `lib/progress-image.ts`). This used to say "Saved to your photos" either way, which on device
-   * would have sent somebody to Instagram to attach a file that was never written — the confident
-   * false claim this screen's own header calls unshippable.
+   * The web downloads files. On device the destination depends on where the athlete is going next:
+   * **Save** opens the iOS share sheet on a real PNG, where Save Image puts it in Photos; the Instagram
+   * and Facebook tiles put it on the CLIPBOARD instead, because a paste is what happens after a deep
+   * link, and two hand-offs for one tap is worse than one. `lib/progress-image.ts` holds the reasoning.
    *
-   * `slides > count` is the hero carousel on device: one slide is on the clipboard and the rest are
-   * not, and saying so is better than letting the athlete discover it in the Instagram composer.
+   * ⚠ A sheet has NO outcome to report — nothing here knows which button was pressed in it — so `sheet`
+   * says nothing rather than claiming a save. This used to say "Saved to your photos" on every platform,
+   * which on device would have sent somebody to Instagram to attach a file that was never written.
+   *
+   * `slides > count` is the hero carousel on device: one slide went over and the rest did not, and
+   * saying so is better than letting the athlete discover it in the Instagram composer.
    */
-  const renderCard = async (announce: boolean): Promise<boolean> => {
-    const result = await saveProgressCard({ card, fileName });
+  const renderCard = async (announce: boolean, prefer: 'sheet' | 'clipboard'): Promise<boolean> => {
+    const result = await saveProgressCard({ card, fileName, prefer });
     if (!result.ok) {
       showToast(result.reason);
       return false;
@@ -220,8 +223,11 @@ export default function ProgressPhotoPostRoute() {
             ? `Copied slide 1 of ${result.slides} — paste it anywhere`
             : 'Copied — paste it anywhere',
         );
-      } else {
+      } else if (result.via === 'download') {
         showToast(result.count > 1 ? `Saved ${result.count} images` : 'Saved to your photos');
+      } else if (result.slides > result.count) {
+        // The sheet is the receipt for the slide it carried; the ones it did not carry still need saying.
+        showToast(`Slide 1 of ${result.slides} — the rest need another tap`);
       }
     }
     return true;
@@ -235,7 +241,7 @@ export default function ProgressPhotoPostRoute() {
         await systemShare();
         return;
       }
-      const ok = await renderCard(target === 'save');
+      const ok = await renderCard(target === 'save', target === 'save' ? 'sheet' : 'clipboard');
       if (!ok || target === 'save') return;
       const app = APP_URL[target];
       const url = Platform.OS === 'web' ? app.web : app.native;
