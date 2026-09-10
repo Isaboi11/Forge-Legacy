@@ -447,7 +447,9 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
     {
       key: 'pb-list',
       title: 'Build it day by day',
-      body: 'Tap a row to fill that day in; the check appears once it holds a main exercise. The ⋮ on each row copies, clears, or reorders it.',
+      // ⚠ It said "copies, clears, or reorders it". The ⋮ menu renames, duplicates and clears — it has
+      // never reordered anything, and the tour was describing a control that does not exist.
+      body: 'Tap a row to fill that day in; the check appears once it holds a main exercise. The ⋮ on each row renames, copies, or clears it.',
       anchor: 'builder-list',
       pad: 8,
       radius: 16,

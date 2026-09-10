@@ -2,8 +2,8 @@ import { supabase } from '@/lib/supabase';
 import { chapterNameFrom, chapterOrdinal, sanitizeChapterTitle, splitChapterName } from '@/domain/legacy/chapter-name';
 import { fetchLegacyData } from './legacy-live';
 import { fetchChapterGoals } from './goals-live';
-import { fetchMyPrograms, fetchProgramCompletedCount } from './programs-live';
-import { nextSession, totalSessions } from '@/domain/program/progress-core';
+import { fetchMyPrograms, fetchProgramSessions } from './programs-live';
+import { nextOpenSlot, totalSessions, touchedCount } from '@/domain/program/progress-core';
 import { isAchieved, type Goal } from '@/domain/goals/goals';
 import type { Chapter, Honor, TimelineEntry } from '@/types/legacy';
 
@@ -76,14 +76,17 @@ export async function fetchChapterDetail(chapterId: string): Promise<ChapterDeta
     const savedPrograms = (await fetchMyPrograms()).filter((p) => p.state === 'active');
     programs = await Promise.all(
       savedPrograms.map(async (p): Promise<ChapterProgramView> => {
-        const completed = await fetchProgramCompletedCount(p.id, p.structure);
-        const next = nextSession(p.structure, completed);
+        // One read, two answers. `nextOpenSlot` names the first session with nothing against it — not the
+        // (completed + 1)-th, which is a different session the moment one is skipped or trained early.
+        const marks = await fetchProgramSessions(p.id);
+        const completed = touchedCount(p.structure, marks);
+        const next = nextOpenSlot(p.structure, marks);
         return {
           id: p.id,
           name: p.name,
           completed,
           total: totalSessions(p.structure),
-          nextLabel: next ? `Week ${next.weekIndex + 1} · Day ${next.dayIndex + 1} · ${next.day.name}` : null,
+          nextLabel: next?.day ? `Week ${next.weekIndex + 1} · Day ${next.dayIndex + 1} · ${next.day.name}` : null,
         };
       }),
     );

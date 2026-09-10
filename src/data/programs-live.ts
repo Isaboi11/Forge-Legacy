@@ -1,6 +1,5 @@
 import type { CardioActivity } from '@/domain/workout/conditioning';
 import { supabase } from '@/lib/supabase';
-import { touchedCount } from '@/domain/program/progress-core';
 import type { LoggedWorkout, ProgramState, SessionMark, SessionState } from '@/domain/program/progress-core';
 import { matchSharedShapeToSlot, type SharedShapeExercise } from '@/domain/program/shared-session';
 import type { LiftMaxes } from '@/domain/program/percent-max';
@@ -536,36 +535,39 @@ export async function deleteProgram(id: string): Promise<void> {
  * rows. A skip counts here — that is the product decision — while `state` on the row keeps saying which
  * it was, so nothing downstream can present a skip as a workout.
  */
-/**
- * How many of this program's sessions are accounted for — trained or skipped.
+/*
+ * `fetchProgramCompletedCount(programId, structure)` USED TO LIVE HERE and was retired with the
+ * count-based selectors it fed (`nextSession`, `computeProgress`).
  *
- * ⚠ TAKES THE STRUCTURE, and that is the whole change. This was a raw `count(*)` over `program_sessions`,
- * which over-reports the moment a program's shape no longer matches the rows written against it: nothing
- * deletes a (week_index, day_index) row when a structure shrinks. Every caller feeds the result straight
- * into `nextSession(structure, done)`, so an over-count served a slot past the end of the program — and
- * the same arithmetic in SQL is what decides graduation.
+ * It returned `touchedCount(...)`, and every caller passed that number straight to `nextSession(structure,
+ * done)` — which names the (done+1)-th session rather than the first OUTSTANDING one. Those are the same
+ * session only in a program trained strictly in order, and skipping, swapping and training out of order
+ * all shipped in 0119. After any of them the number was right and the session it selected was wrong,
+ * which is how a session the athlete had already logged ended up inside a Train-Together invite (P0-24).
  *
- * `touchedCount` drops any mark with no live slot. The read is a row fetch rather than a `head: true`
- * count because the filter needs the coordinates; a program is at most 52 × 6 rows.
+ * The replacement is `fetchProgramSessions` + `nextOpenSlot(structure, marks)` — the same pair Home and
+ * the logger have used since 0119. Callers that want the count still say `touchedCount(structure, marks)`
+ * from the marks they already hold, so there is one read and no second opinion.
  */
-export async function fetchProgramCompletedCount(
-  programId: string,
-  structure: ProgramStructure,
-): Promise<number> {
-  return touchedCount(structure, await fetchProgramSessions(programId));
-}
 
-/** Which sessions of a program have been touched, and how. Empty on any read failure. */
+/**
+ * Which sessions of a program have been touched, how, and BY WHICH WORKOUT.
+ *
+ * ⚠ `workout_id` is not decoration. It is the only record of which slot a workout satisfied, and without
+ * it "Your Log" has to guess by date order — which files every session after a skip under the wrong day
+ * (P0-23). `buildLog` reads it.
+ */
 export async function fetchProgramSessions(programId: string): Promise<SessionMark[]> {
   const { data, error } = await supabase
     .from('program_sessions')
-    .select('week_index, day_index, state')
+    .select('week_index, day_index, state, workout_id')
     .eq('program_id', programId);
   if (error || !data) return [];
-  return (data as { week_index: number; day_index: number; state: SessionState }[]).map((r) => ({
+  return (data as { week_index: number; day_index: number; state: SessionState; workout_id: string | null }[]).map((r) => ({
     weekIndex: r.week_index,
     dayIndex: r.day_index,
     state: r.state,
+    workoutId: r.workout_id,
   }));
 }
 
@@ -631,6 +633,9 @@ export async function fetchAllProgramSessions(): Promise<Record<string, SessionM
   if (!user) return {};
   const { data, error } = await supabase
     .from('program_sessions')
+    // ⚠ No `workout_id` here, deliberately. Home only ever asks WHICH session is next (`nextOpenSlot`),
+    // never what was logged against a past one, and this read sits on the first-paint path.
+    // `fetchProgramSessions` is the one that carries it, for the log.
     .select('program_id, week_index, day_index, state')
     .eq('athlete_id', user.id);
   // Swallowed, exactly as `fetchProgramSessions` does: no marks means Home offers the program's first
@@ -659,6 +664,40 @@ export async function skipProgramSession(programId: string, weekIndex: number, d
     p_day_index: dayIndex,
   });
   if (error) throw error;
+}
+
+/**
+ * Take a skip back — the session goes back to being owed (0198).
+ *
+ * ⚠ THE WINDOW IS THE RUN. The RPC refuses anything but an ACTIVE program, so a skip that FINISHED the
+ * program cannot be undone: un-skipping it would drop the session count back below the finish line on a
+ * program already sealed, and Amendment-001 §1 has no un-graduate path to follow that with. The
+ * confirmation in front of the skip is what keeps that from being reached by accident.
+ *
+ * A `completed` mark is never touched — the RPC deletes only where `state = 'skipped'`. Undoing a skip
+ * and erasing a workout look identical from here; only one of them is what anybody asked for.
+ */
+export async function unskipProgramSession(
+  programId: string,
+  weekIndex: number,
+  dayIndex: number,
+): Promise<{ ok: boolean; removed: boolean; reason?: string }> {
+  const { data, error } = await supabase.rpc('unskip_program_session', {
+    p_program_id: programId,
+    p_week_index: weekIndex,
+    p_day_index: dayIndex,
+  });
+  if (error) throw error;
+  /*
+   * ⚠ THE RESULT IS RETURNED, NOT DISCARDED, and this is the first of these RPCs where that matters.
+   *
+   * `{ok: false}` here is a DESIGNED, reachable outcome rather than a should-never-happen: the program
+   * can be sealed between the row rendering and the tap — the last skip graduating it from another
+   * device, or `skipDay`'s own post-write refetch having failed and left `state` locally stale. It comes
+   * back with no Postgres error, so swallowing it makes the tap a silent nothing, which is the shape of
+   * bug this codebase has been bitten by before (a control whose only behaviour is not working).
+   */
+  return (data as { ok: boolean; removed: boolean; reason?: string } | null) ?? { ok: false, removed: false };
 }
 
 type WorkoutRow = {

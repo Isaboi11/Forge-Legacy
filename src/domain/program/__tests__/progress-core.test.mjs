@@ -2,13 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildLog,
-  computeProgress,
+  progressFromMarks,
   computeStats,
   earnsStructuredDevelopmentCredit,
   equipmentOf,
   fmtVolume,
   isSealed,
-  nextSession,
+  nextOpenSlot,
   scheduleSlots,
   sessionsPerWeek,
   isFinalSession,
@@ -19,6 +19,20 @@ import {
   weekSizes,
 } from '../progress-core.ts';
 import { STRUCTURED_DEVELOPMENT_MIN_WEEKS } from '../../rank/thresholds.ts';
+
+/**
+ * The first `n` sessions of a program, trained in order.
+ *
+ * ⚠ THIS HELPER IS THE POINT OF THE MIGRATION FROM `computeProgress(structure, count)`. A count could
+ * only ever describe THIS case — the program done strictly in order, start to finish. Everything the
+ * app has allowed since 0119 (skip a session, swap two, train one early) needs marks that say WHICH
+ * sessions, and the count could not carry that. These tests keep the in-order case honest; the
+ * out-of-order cases live in `session-log.test.mjs` and `progress-from-marks.test.mjs`.
+ */
+const marksFor = (s, n, state = 'completed') =>
+  scheduleSlots(s)
+    .slice(0, n)
+    .map((slot, i) => ({ weekIndex: slot.weekIndex, dayIndex: slot.dayIndex, state, workoutId: `w${i + 1}` }));
 
 const ex = (name, sets = 3, reps = 10, equip = 'Barbell') => ({ name, sets, reps, equip });
 const day = (letter, name, main = [], warmup = [], cooldown = []) => ({ letter, name, warmup, main, cooldown });
@@ -60,29 +74,64 @@ test('an entirely empty program still reports a sane, non-zero shape', () => {
 
 // ── progress ─────────────────────────────────────────────────────────────────
 
-test('progress derives week and in-week position purely from the completed count', () => {
-  const p0 = computeProgress(structure, 0);
+test('progress derives week and in-week position from the marks', () => {
+  const p0 = progressFromMarks(structure, marksFor(structure, 0));
   assert.deepEqual([p0.completed, p0.total, p0.week, p0.completedThisWeek, p0.pct], [0, 8, 1, 0, 0]);
 
-  const p3 = computeProgress(structure, 3);
+  const p3 = progressFromMarks(structure, marksFor(structure, 3));
   assert.equal(p3.week, 2, '3 sessions at 2/week puts you in week 2');
   assert.equal(p3.completedThisWeek, 1);
   assert.equal(p3.pct, 38);
 });
 
-test('progress clamps at the program length instead of overflowing', () => {
-  const over = computeProgress(structure, 99);
-  assert.equal(over.completed, 8);
-  assert.equal(over.pct, 100);
-  assert.equal(over.week, 4, 'never reports week 50 of a 4-week program');
-  assert.equal(over.nextWeekIndex, null, 'nothing left to do');
+test('a fully accounted-for program reports 100% and nothing next', () => {
+  const done = progressFromMarks(structure, marksFor(structure, 8));
+  assert.equal(done.completed, 8);
+  assert.equal(done.pct, 100);
+  assert.equal(done.week, 4, 'it rests on the last week, never past the end of the program');
+  assert.equal(done.nextWeekIndex, null, 'nothing left to do');
+});
+
+/**
+ * ⚠ THE DEFECT THIS FUNCTION REPLACED (P0-22). A skip writes no workout, so the old
+ * `computeProgress(structure, workouts.length)` could not see it at all: a program the athlete skipped
+ * their way to the end of reported a fraction of itself, forever, with the "current week" dot pointing
+ * at a week they had left behind. `completed` counts sessions ACCOUNTED FOR, which is also what
+ * graduation counts — the two can no longer disagree.
+ */
+test('a skipped session is progress, because it is what finishing counts', () => {
+  const p = progressFromMarks(structure, marksFor(structure, 8, 'skipped'));
+  assert.equal(p.completed, 8, 'skips count toward finishing (PO decision, 2026-08-07)');
+  assert.equal(p.pct, 100, 'and the bar says so, rather than sitting at 0 forever');
+  assert.equal(p.nextWeekIndex, null);
+
+  // One skipped, one trained — week 1 is ACCOUNTED FOR, so the athlete is standing in week 2.
+  const mixed = progressFromMarks(structure, [
+    { weekIndex: 0, dayIndex: 0, state: 'skipped' },
+    { weekIndex: 0, dayIndex: 1, state: 'completed', workoutId: 'w1' },
+  ]);
+  assert.equal(mixed.completed, 2, 'the skip counts beside the workout');
+  assert.equal(mixed.week, 2, 'a week you skipped half of is still a week behind you');
+  assert.equal(mixed.completedThisWeek, 0, 'and week 2, where they now stand, has nothing in it yet');
+  assert.deepEqual([mixed.nextWeekIndex, mixed.nextDayIndex], [1, 0]);
+});
+
+/**
+ * ⚠ AND THE OTHER HALF OF IT. Training a session out of order used to leave the count pointing at a
+ * session already in the log — `slots[count]` names the (count+1)-th session, not the first one still
+ * owed. After skipping ahead to day 2, "next" must be day 1, not day 3.
+ */
+test('progress names the first OUTSTANDING session, not the (n+1)-th', () => {
+  const p = progressFromMarks(structure, [{ weekIndex: 0, dayIndex: 1, state: 'completed', workoutId: 'w1' }]);
+  assert.equal(p.completed, 1);
+  assert.deepEqual([p.nextWeekIndex, p.nextDayIndex], [0, 0], 'the session they jumped over is still owed');
 });
 
 test('the next session walks the schedule in order and stops at the end', () => {
-  assert.deepEqual(pick(nextSession(structure, 0)), { weekIndex: 0, dayIndex: 0, name: 'Push' });
-  assert.deepEqual(pick(nextSession(structure, 1)), { weekIndex: 0, dayIndex: 1, name: 'Pull' });
-  assert.deepEqual(pick(nextSession(structure, 2)), { weekIndex: 1, dayIndex: 0, name: 'Push' }, 'wraps into week 2');
-  assert.equal(nextSession(structure, 8), null, 'a finished program has no next session');
+  assert.deepEqual(pick(nextOpenSlot(structure, marksFor(structure, 0))), { weekIndex: 0, dayIndex: 0, name: 'Push' });
+  assert.deepEqual(pick(nextOpenSlot(structure, marksFor(structure, 1))), { weekIndex: 0, dayIndex: 1, name: 'Pull' });
+  assert.deepEqual(pick(nextOpenSlot(structure, marksFor(structure, 2))), { weekIndex: 1, dayIndex: 0, name: 'Push' }, 'wraps into week 2');
+  assert.equal(nextOpenSlot(structure, marksFor(structure, 8)), null, 'a finished program has no next session');
 });
 
 const pick = (s) => (s ? { weekIndex: s.weekIndex, dayIndex: s.dayIndex, name: s.day.name } : null);
@@ -98,8 +147,8 @@ test('progress reads the open week plan in Customize mode', () => {
     ],
   };
   assert.equal(sessionsPerWeek(vary), 2);
-  assert.equal(pick(nextSession(vary, 0)).name, 'Heavy');
-  assert.equal(pick(nextSession(vary, 2)).name, 'Deload', 'week 2 uses its own plan, not week 1');
+  assert.equal(pick(nextOpenSlot(vary, marksFor(vary, 0))).name, 'Heavy');
+  assert.equal(pick(nextOpenSlot(vary, marksFor(vary, 2))).name, 'Deload', 'week 2 uses its own plan, not week 1');
 });
 
 // ── the log ──────────────────────────────────────────────────────────────────
@@ -147,6 +196,102 @@ test('the log spans the whole program even with nothing logged', () => {
   assert.equal(weeks.length, 4);
   assert.ok(weeks.every((w) => w.days.length === 2 && !w.complete));
   assert.ok(weeks.every((w) => w.days.every((d) => !d.completed)));
+});
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════════════════════════════
+ * THE LOG, FILED BY MARK — P0-23
+ *
+ * `buildLog` used to file workouts POSITIONALLY: sort them by date, put the Nth in the Nth slot. That is
+ * only ever correct for a program trained strictly in order, and the app stopped requiring that in 0119.
+ *
+ * The failure was not subtle. A skip consumes no workout, so every session after it shifted one slot
+ * EARLIER — the skipped day showed the NEXT workout's sets underneath it, wearing a completion tick and
+ * a "Skipped" chip at the same time, and the last real session read as untrained. These lock the fix.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════════════
+ */
+
+test('⚠ a skip does not drag the next workout back into its slot', () => {
+  const weeks = buildLog(
+    structure,
+    [logged(2, '2026-07-03T10:00:00Z')],
+    undefined,
+    [
+      { weekIndex: 0, dayIndex: 0, state: 'skipped' },
+      { weekIndex: 0, dayIndex: 1, state: 'completed', workoutId: 'w2' },
+    ],
+  );
+  const [d0, d1] = weeks[0].days;
+
+  assert.deepEqual([d0.skipped, d0.completed], [true, false], 'the skipped day is skipped and NOT trained');
+  assert.equal(d0.meta, 'Skipped');
+  assert.deepEqual(d0.exercises[0].sets, [], 'it shows the plan it passed over, never somebody else’s sets');
+
+  assert.equal(d1.completed, true, 'the workout lands in the slot its mark names');
+  assert.equal(d1.name, 'Session 2');
+  assert.equal(weeks[0].complete, true, 'a week you skipped half of is still behind you');
+  assert.equal(weeks[0].completedCount, 1, 'but only ONE of them was trained, and the count says so');
+});
+
+test('no row ever carries a completion tick and a Skipped chip at once', () => {
+  const weeks = buildLog(
+    structure,
+    [logged(1, '2026-07-01T10:00:00Z'), logged(2, '2026-07-03T10:00:00Z')],
+    undefined,
+    [
+      { weekIndex: 0, dayIndex: 0, state: 'skipped' },
+      { weekIndex: 0, dayIndex: 1, state: 'completed', workoutId: 'w1' },
+      { weekIndex: 1, dayIndex: 0, state: 'completed', workoutId: 'w2' },
+    ],
+  );
+  assert.ok(weeks.every((w) => w.days.every((d) => !(d.completed && d.skipped))));
+});
+
+test('a session trained out of order is filed where it was trained', () => {
+  // Day 2 of week 1 trained first. Positionally it would have landed on day 1.
+  const weeks = buildLog(structure, [logged(9, '2026-07-01T10:00:00Z')], undefined, [
+    { weekIndex: 0, dayIndex: 1, state: 'completed', workoutId: 'w9' },
+  ]);
+  assert.equal(weeks[0].days[0].completed, false, 'the session they jumped over is still owed');
+  assert.equal(weeks[0].days[1].completed, true);
+  assert.equal(weeks[0].days[1].name, 'Session 9');
+});
+
+/**
+ * ⚠ `program_sessions.workout_id` is `on delete set null` (0119). The session stays ACCOUNTED FOR, so it
+ * must not reappear as owed — the progress bar counts it and the log has to agree. There is simply
+ * nothing to show underneath it.
+ */
+test('a trained session whose workout was deleted still reads as trained', () => {
+  const weeks = buildLog(structure, [], undefined, [
+    { weekIndex: 0, dayIndex: 0, state: 'completed', workoutId: null },
+  ]);
+  assert.equal(weeks[0].days[0].completed, true);
+  assert.equal(weeks[0].days[0].skipped, false);
+  assert.equal(weeks[0].days[0].meta, 'Trained');
+  assert.equal(weeks[0].days[0].date, null, 'nothing is invented to fill the gap');
+});
+
+/**
+ * ⚠ NOT DEAD CODE. Workouts saved before 0119 carry no mark, and `save_workout` writes its session row
+ * inside an `exception when others` block, so a live program can hold one too. They fill the still-open
+ * slots in date order — the old behaviour, confined to slots nothing else claims.
+ */
+test('workouts with no mark still fill the open slots in date order', () => {
+  const weeks = buildLog(structure, [logged(1, '2026-07-01T10:00:00Z'), logged(2, '2026-07-03T10:00:00Z')]);
+  assert.deepEqual([weeks[0].days[0].name, weeks[0].days[1].name], ['Session 1', 'Session 2']);
+});
+
+test('an unmarked workout can never displace a marked one', () => {
+  const weeks = buildLog(
+    structure,
+    [logged(1, '2026-07-01T10:00:00Z'), logged(2, '2026-07-03T10:00:00Z')],
+    undefined,
+    // Session 2 is pinned to week 1 day 1 by its mark, though it was trained LAST.
+    [{ weekIndex: 0, dayIndex: 0, state: 'completed', workoutId: 'w2' }],
+  );
+  assert.equal(weeks[0].days[0].name, 'Session 2', 'the mark wins over the date order');
+  assert.equal(weeks[0].days[1].name, 'Session 1', 'and the unmarked one takes the slot left open');
 });
 
 // ── stats ────────────────────────────────────────────────────────────────────
@@ -239,27 +384,27 @@ test('the schedule walks every ragged week without falling off the end', () => {
 });
 
 test('the 18th session still has a next session — the regression this shape caused', () => {
-  // 17 logged puts the athlete at session 18, which the old stride located as week 3, day 6 of 5.
-  const s = nextSession(ragged, 17);
+  // 17 done puts the athlete at session 18, which the old stride located as week 3, day 6 of 5.
+  const s = nextOpenSlot(ragged, marksFor(ragged, 17));
   assert.ok(s, 'Continue Training must not go dead mid-program');
   assert.deepEqual([s.weekIndex, s.dayIndex, s.day.name], [3, 0, 'W4D1']);
 });
 
 test('every session in a ragged program is reachable in order, start to finish', () => {
-  const names = Array.from({ length: 32 }, (_, i) => nextSession(ragged, i)?.day.name ?? null);
+  const names = Array.from({ length: 32 }, (_, i) => nextOpenSlot(ragged, marksFor(ragged, i))?.day.name ?? null);
   assert.equal(names.filter(Boolean).length, 32, 'no dead slot anywhere in the program');
   assert.equal(names[0], 'W1D1');
   assert.equal(names[31], 'W6D5');
-  assert.equal(nextSession(ragged, 32), null, 'and it ends exactly once, at the end');
+  assert.equal(nextOpenSlot(ragged, marksFor(ragged, 32)), null, 'and it ends exactly once, at the end');
 });
 
 test('progress reports the week the athlete is actually in', () => {
-  assert.equal(computeProgress(ragged, 0).week, 1);
-  assert.equal(computeProgress(ragged, 12).week, 3, '12 done = weeks 1-2 complete, standing in week 3');
-  assert.equal(computeProgress(ragged, 12).completedThisWeek, 0);
-  assert.equal(computeProgress(ragged, 14).completedThisWeek, 2);
-  assert.equal(computeProgress(ragged, 14).perWeek, 5, 'week 3 is a five-day week and says so');
-  assert.equal(computeProgress(ragged, 32).pct, 100);
+  assert.equal(progressFromMarks(ragged, marksFor(ragged, 0)).week, 1);
+  assert.equal(progressFromMarks(ragged, marksFor(ragged, 12)).week, 3, '12 done = weeks 1-2 complete, standing in week 3');
+  assert.equal(progressFromMarks(ragged, marksFor(ragged, 12)).completedThisWeek, 0);
+  assert.equal(progressFromMarks(ragged, marksFor(ragged, 14)).completedThisWeek, 2);
+  assert.equal(progressFromMarks(ragged, marksFor(ragged, 14)).perWeek, 5, 'week 3 is a five-day week and says so');
+  assert.equal(progressFromMarks(ragged, marksFor(ragged, 32)).pct, 100);
 });
 
 test('the log gives each ragged week its own number of day slots', () => {

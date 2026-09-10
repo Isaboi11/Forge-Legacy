@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { STRUCTURE } from './program.mjs';
 import { ALIASES } from './aliases.mjs';
 import { matchExercise } from '../../src/domain/program/exercise-match.ts';
-import { scheduleSlots, totalSessions, weekSizes, nextSession } from '../../src/domain/program/progress-core.ts';
+import { scheduleSlots, totalSessions, weekSizes, nextOpenSlot } from '../../src/domain/program/progress-core.ts';
 import { deriveBlocks, plannedSetCount, schemeText } from '../../src/domain/program/prescription.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -41,7 +41,9 @@ const allItems = (s) => {
 const sizes = weekSizes(STRUCTURE);
 const slots = scheduleSlots(STRUCTURE);
 const dead = slots.filter((s) => !s.day).length;
-const unreachable = Array.from({ length: totalSessions(STRUCTURE) }, (_, i) => nextSession(STRUCTURE, i)).filter((s) => !s).length;
+// "Continue Training" after the first i sessions were trained in order — every one must land on a session.
+const trainedFirst = (n) => slots.slice(0, n).map((s) => ({ weekIndex: s.weekIndex, dayIndex: s.dayIndex, state: 'completed' }));
+const unreachable = Array.from({ length: totalSessions(STRUCTURE) }, (_, i) => nextOpenSlot(STRUCTURE, trainedFirst(i))).filter((s) => !s).length;
 
 console.log('── shape ──');
 console.log('weeks       :', sizes.join(', '), `(${sizes.reduce((a, b) => a + b, 0)} sessions)`);
@@ -53,7 +55,7 @@ const problems = [];
 if (totalSessions(STRUCTURE) !== 32) problems.push(`expected 32 sessions, got ${totalSessions(STRUCTURE)}`);
 if (String(sizes) !== String([6, 6, 5, 5, 5, 5])) problems.push(`expected weeks 6,6,5,5,5,5 — got ${sizes}`);
 if (dead) problems.push(`${dead} slot(s) resolve to no day`);
-if (unreachable) problems.push(`${unreachable} session(s) unreachable via nextSession`);
+if (unreachable) problems.push(`${unreachable} session(s) unreachable via nextOpenSlot`);
 
 // Every day must actually prescribe something, and every circuit must know its own size.
 for (const [wi, wp] of STRUCTURE.weekPlans.entries()) {

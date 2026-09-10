@@ -11,8 +11,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { STRUCTURE } from './program.mjs';
-import { scheduleSlots, totalSessions, weekSizes, nextSession } from '../../src/domain/program/progress-core.ts';
+import { scheduleSlots, totalSessions, weekSizes, nextOpenSlot } from '../../src/domain/program/progress-core.ts';
 import { deriveBlocks, isAmrap, repTargets, schemeText } from '../../src/domain/program/prescription.ts';
+
+/** "Continue Training" after the first `n` sessions were trained in order — what `nextSession(n)` used to answer. */
+const afterTraining = (n) =>
+  nextOpenSlot(STRUCTURE, scheduleSlots(STRUCTURE).slice(0, n).map((s) => ({ weekIndex: s.weekIndex, dayIndex: s.dayIndex, state: 'completed' })));
 
 const dayAt = (w, d) => STRUCTURE.weekPlans[w - 1].days[d - 1];
 const items = (day) => [...day.warmup, ...day.main, ...day.cooldown];
@@ -27,11 +31,11 @@ test('six weeks, ragged, 32 sessions', () => {
 
 test('every session is reachable, in order, with no dead slot', () => {
   assert.ok(scheduleSlots(STRUCTURE).every((s) => s.day));
-  const walk = Array.from({ length: 32 }, (_, i) => nextSession(STRUCTURE, i));
+  const walk = Array.from({ length: 32 }, (_, i) => afterTraining(i));
   assert.equal(walk.filter(Boolean).length, 32);
   assert.equal(walk[0].day.name, 'PUSH');
   assert.equal(walk[31].day.name, 'LOWER');
-  assert.equal(nextSession(STRUCTURE, 32), null);
+  assert.equal(afterTraining(32), null);
 });
 
 test('the day titles are the ones on the cards', () => {
