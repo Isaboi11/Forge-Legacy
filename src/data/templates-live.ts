@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import { fetchActiveProgram, fetchProgramCompletedCount } from './programs-live';
-import { nextSession } from '@/domain/program/progress-core';
+import { fetchActiveProgram, fetchProgramSessions } from './programs-live';
+import { nextOpenSlot } from '@/domain/program/progress-core';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { isCustomKey } from '@/domain/exercise-picker/custom-core';
 import {
@@ -136,8 +136,9 @@ export async function fetchPlannedSession(): Promise<{ name: string; exercises: 
   try {
     const program = await fetchActiveProgram();
     if (!program) return null;
-    const done = await fetchProgramCompletedCount(program.id, program.structure);
-    const next = nextSession(program.structure, done);
+    /* ⚠ THE FIRST OUTSTANDING SESSION, not the (done + 1)-th. This snapshot goes into an invite, so
+       getting it wrong sends BOTH athletes to a session one of them has already logged (P0-24). */
+    const next = nextOpenSlot(program.structure, await fetchProgramSessions(program.id));
     const day = next?.day ?? program.structure.days.find((d) => d.main.length > 0) ?? program.structure.days[0] ?? null;
     if (!day || day.main.length === 0) return null;
     return {

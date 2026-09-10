@@ -2,8 +2,8 @@ import { supabase } from '@/lib/supabase';
 import { countActiveWeeks, mondayWeekKey } from '@/domain/rank/rank';
 import { buildLiftSeries, prDayKey, type LoggedSet, type MetricSeries } from '@/domain/progress/lift-series';
 import { fetchStoredRank } from '@/data/rank-live';
-import { fetchMyPrograms, fetchProgramCompletedCount } from '@/data/programs-live';
-import { dayLabel, nextSession } from '@/domain/program/progress-core';
+import { fetchMyPrograms, fetchProgramSessions } from '@/data/programs-live';
+import { dayLabel, nextOpenSlot } from '@/domain/program/progress-core';
 import type { RankFamily } from '@/domain/rank-artwork/resolver';
 
 /**
@@ -188,9 +188,12 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
   const active = myPrograms.filter((p) => p.state === 'active')[0];
   let next: NextProgram | null = null;
   if (active) {
-    const completed = await fetchProgramCompletedCount(active.id, active.structure);
-    const ns = nextSession(active.structure, completed);
-    const sub = ns ? `Week ${ns.weekIndex + 1} of ${active.structure.weeks} · Next: ${dayLabel(ns.day, ns.dayIndex)}` : 'Program complete';
+    // The first OUTSTANDING session, not the (done + 1)-th — after a skip or a swap those differ, and
+    // naming the wrong one here puts a session the athlete already logged on the Progress Hub.
+    const ns = nextOpenSlot(active.structure, await fetchProgramSessions(active.id));
+    const sub = ns?.day
+      ? `Week ${ns.weekIndex + 1} of ${active.structure.weeks} · Next: ${dayLabel(ns.day, ns.dayIndex)}`
+      : 'Program complete';
     next = { id: active.id, title: active.name, sub };
   }
 

@@ -2,10 +2,16 @@
  * Program progress, schedule and log derivation — the model behind Program Detail (`Forge Program.dc`).
  * Pure (no JSON, no Supabase) so every rule here is unit-testable under `node --test`.
  *
- * The core idea: a program prescribes `weeks × daysPerWeek` sessions. Saved workouts carrying this
- * program's id ARE the progress — ordered by when they were started, the Nth saved workout is week
- * `floor(N / daysPerWeek)`, day `N % daysPerWeek`. Nothing is stored twice; there is no separate
- * progress cursor to drift out of sync with the workouts the athlete actually logged.
+ * The core idea: a program prescribes a LIST of sessions — `scheduleSlots`, walked rather than computed,
+ * because weeks are not all the same size. Each session's fate is a row in `program_sessions` (a
+ * `SessionMark` here), so progress is a lookup against that list and never arithmetic over a count.
+ *
+ * ⚠ TWO EARLIER MODELS LIVED HERE AND BOTH WERE WRONG, in ways the athlete could see:
+ *   · `floor(N / daysPerWeek)` — a stride. It walked off the end of the first short week and killed
+ *     "Continue Training" mid-program (see `weekSizes`).
+ *   · `slots[count(workouts)]` — a count. It could not see a skip, could not survive a session trained
+ *     out of order, and could not survive a reorder (see `progressFromMarks`).
+ * Nothing is stored twice: the marks ARE the record, and every number on Program Detail derives from them.
  */
 
 import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/programs-live';
@@ -146,8 +152,9 @@ export function totalSessions(structure: ProgramStructure): number {
  * `__tests__/progress-core.test.mjs` are duplicated verbatim into a self-check in 0104 that aborts the
  * migration on a mismatch, so the two can only drift through a deliberate edit to both test lists.
  *
- * Extracted from the anonymous `const done = completed >= total` inside `computeProgress` so the rule
- * has a name, one TS implementation, and something for the SQL comment to point at.
+ * Extracted from an anonymous `completed >= total` so the rule has a name, one TS implementation, and
+ * something for the SQL comment to point at. `isProgramFinished` below is the same predicate fed from
+ * marks rather than a count, and is what the app actually asks now.
  */
 export function isFinalSession(structure: ProgramStructure, completedCount: number): boolean {
   return completedCount >= totalSessions(structure);
@@ -190,53 +197,65 @@ export const dayLabel = (d: ProgramDay, i: number) => (d.name.trim() ? d.name : 
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface ProgramProgress {
+  /** Sessions ACCOUNTED FOR — trained or skipped. The same number graduation counts. */
   completed: number;
   total: number;
-  /** 1-based, clamped to the program length. */
+  /** 1-based. The week the next outstanding session lives in, or the last week once none is. */
   week: number;
-  /** How many of THIS week's sessions are done. */
+  /** How many of THIS week's sessions are accounted for. */
   completedThisWeek: number;
   perWeek: number;
   pct: number;
-  /** Index of the next prescribed session, or null once every session is logged. */
+  /** Where the next OUTSTANDING session is, or null once every session is accounted for. */
   nextWeekIndex: number | null;
   nextDayIndex: number | null;
 }
 
-export function computeProgress(structure: ProgramStructure, completedCount: number): ProgramProgress {
-  const slots = scheduleSlots(structure);
-  const total = slots.length;
-  const completed = Math.max(0, Math.min(total, completedCount));
-  const done = isFinalSession(structure, completed);
+/**
+ * Progress read off the SESSION MARKS — the only honest source once a program can be skipped or reordered.
+ *
+ * ══ WHY A COUNT COULD NOT DO THIS (P0-22) ══
+ *
+ * This replaced `computeProgress(structure, workouts.length)`, which took the number of saved workouts and
+ * walked that many slots forward. Three things it could not see, all of them shipped behaviour:
+ *
+ *   1. A SKIP IS PROGRESS. It has no workout, so the count never moved. A program graduated entirely by
+ *      skipping read 17% forever, and the "current week" dot sat on a week the athlete had left behind.
+ *   2. OUT-OF-ORDER TRAINING. `slots[count]` names the (count+1)-th session, not the first OUTSTANDING
+ *      one. Train day 3 before day 2 and it points at a session already in the log.
+ *   3. A DELETED WORKOUT. Its mark survives (`workout_id` goes null, 0119), so the session is still
+ *      accounted for — the count is not.
+ *
+ * `completed` here means TOUCHED — trained or skipped — because that is what finishing the program counts
+ * (PO decision, 2026-08-07). `sessionTally` is the split when the honest breakdown is wanted; this is the
+ * denominator-facing number, and it agrees with `touchedCount` by construction: `slotStates` only ever
+ * walks slots the structure still prescribes, so an orphaned mark cannot inflate it.
+ */
+export function progressFromMarks(
+  structure: ProgramStructure,
+  marks: readonly SessionMark[],
+): ProgramProgress {
+  const states = slotStates(structure, marks);
+  const total = states.length;
+  const completed = states.filter((s) => s.state != null).length;
 
-  // The slot the athlete is standing on — the next one owed, or the last one when the program is done.
-  const here = slots[done ? total - 1 : completed];
+  // The slot the athlete is standing on — the first one still owed, or the last one once nothing is.
+  const open = states.find((s) => s.state === null && s.day != null) ?? null;
+  const here = open ?? states[total - 1] ?? null;
   const weekIndex = here?.weekIndex ?? 0;
-  // Sessions that came before this week; what is left of `completed` is this week's own progress.
-  const weekStart = slots.findIndex((s) => s.weekIndex === weekIndex);
-  const perWeek = weekSizes(structure)[weekIndex] ?? 1;
 
   return {
     completed,
     total,
     week: weekIndex + 1,
-    completedThisWeek: Math.max(0, completed - Math.max(0, weekStart)),
-    perWeek,
+    // Counted, not subtracted. The old arithmetic (`completed - weekStart`) assumed every session before
+    // this week was done, which stops being true the moment one is trained out of order.
+    completedThisWeek: states.filter((s) => s.weekIndex === weekIndex && s.state != null).length,
+    perWeek: weekSizes(structure)[weekIndex] ?? 1,
     pct: total > 0 ? Math.round((completed / total) * 100) : 0,
-    nextWeekIndex: done ? null : here?.weekIndex ?? null,
-    nextDayIndex: done ? null : here?.dayIndex ?? null,
+    nextWeekIndex: open?.weekIndex ?? null,
+    nextDayIndex: open?.dayIndex ?? null,
   };
-}
-
-/** The session "Continue Training" should open — the first one not yet logged. */
-export function nextSession(
-  structure: ProgramStructure,
-  completedCount: number,
-): { weekIndex: number; dayIndex: number; day: ProgramDay } | null {
-  const slots = scheduleSlots(structure);
-  const next = slots[Math.max(0, completedCount)];
-  if (!next?.day) return null;
-  return { weekIndex: next.weekIndex, dayIndex: next.dayIndex, day: next.day };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -272,7 +291,13 @@ export interface LogExercise {
 export interface LogDay {
   name: string;
   num: number;
+  /** Trained. A skipped session is NOT completed — see `skipped`; the two are never both true. */
   completed: boolean;
+  /**
+   * Passed over. It counts toward finishing the program and the record still says it was not trained,
+   * which is the whole reason `SessionState` is an enum and not a boolean.
+   */
+  skipped: boolean;
   date: string | null;
   meta: string;
   exercises: LogExercise[];
@@ -280,7 +305,9 @@ export interface LogDay {
 export interface LogWeek {
   week: number; // 1-based
   days: LogDay[];
+  /** Every session in the week accounted for — trained OR skipped. A week with a skip in it still ends. */
   complete: boolean;
+  /** Trained only. What the "3 / 5" meta counts, so a skip never reads as a workout. */
   completedCount: number;
 }
 
@@ -350,9 +377,24 @@ const dateLabel = (iso: string) => {
 };
 
 /**
- * Build the full week-by-week log. Sessions are matched to slots by ORDER, not by name — an athlete who
- * swapped or renamed a day still gets a truthful log, and a workout logged off-plan still occupies the
- * slot it was trained in.
+ * Build the full week-by-week log.
+ *
+ * ══ WHY THIS TAKES MARKS (P0-23) ══
+ *
+ * It used to file workouts POSITIONALLY: sort the logged workouts by date, and the Nth one goes in the
+ * Nth slot. That is only correct for a program trained strictly in order, and the app stopped requiring
+ * that in 0119 — the athlete can skip a session, swap two, or train one out of order.
+ *
+ * Every one of those broke the log in a way that was visible and wrong. A skip consumed no workout, so
+ * every session after it shifted one slot EARLIER: the day the athlete skipped showed the next workout's
+ * sets under it, carrying a completion tick and a "Skipped" chip at the same time, and the last real
+ * session showed as untrained. `program_sessions.workout_id` has recorded exactly which slot each workout
+ * satisfied since 0119; this reads it instead of guessing.
+ *
+ * ⚠ THE FALLBACK IS NOT DEAD CODE. Workouts saved before 0119 have no mark, and `save_workout` writes its
+ * session row inside an `exception when others` block, so a mark can be missing from a live program too.
+ * Those fill the still-open slots in date order — precisely the old behaviour, confined to the slots
+ * nothing else claims, so an unmarked workout can never displace a marked one.
  */
 export function buildLog(
   structure: ProgramStructure,
@@ -366,9 +408,20 @@ export function buildLog(
    * trained and cannot move one already trained: the completed branch never reads a percentage at all.
    */
   load?: LoadContext,
+  /** What the schedule has been told. Empty is legal and reproduces the pre-0119 positional log. */
+  marks: readonly SessionMark[] = [],
 ): LogWeek[] {
   const sizes = weekSizes(structure);
-  const ordered = [...logged].sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt));
+  const byId = new Map(logged.map((w) => [w.id, w]));
+  const markAt = new Map(marks.map((m) => [slotKey(m.weekIndex, m.dayIndex), m]));
+
+  // Workouts no mark claims, oldest first — the pre-0119 rows and any whose session row failed to write.
+  const claimed = new Set(marks.map((m) => m.workoutId).filter((id): id is string => id != null));
+  const unclaimed = logged
+    .filter((w) => !claimed.has(w.id))
+    .sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt));
+  let nextUnclaimed = 0;
+
   // Where each week starts in the flat session list. Ragged weeks mean this is a running total, not a
   // multiplication — week 4 of a 6,6,5,… program starts at session 17, never at 4 × anything.
   const offsets = sizes.reduce<number[]>((acc, size, i) => [...acc, (acc[i - 1] ?? 0) + (sizes[i - 1] ?? 0)], []);
@@ -376,18 +429,41 @@ export function buildLog(
   return sizes.map((size, wi) => {
     const planned = trainingDays(plannedDays(structure, wi));
     const days: LogDay[] = Array.from({ length: size }, (_, di) => {
-      const slot = offsets[wi] + di;
-      const done = ordered[slot];
       const plan = planned[di];
-      const num = slot + 1;
+      const num = offsets[wi] + di + 1;
+      const mark = markAt.get(slotKey(wi, di));
+      const planName = plan ? dayLabel(plan, di) : `Day ${di + 1}`;
+
+      if (mark?.state === 'skipped') {
+        return {
+          name: planName,
+          num,
+          completed: false,
+          skipped: true,
+          date: null,
+          // The plan stays visible. "What did I pass over" is the question a skipped row is asked.
+          meta: 'Skipped',
+          exercises: plan ? plannedLine(plan, load) : [],
+        };
+      }
+
+      // A marked slot takes its own workout and no other. Unmarked slots draw from the fallback queue.
+      const done =
+        mark?.state === 'completed'
+          ? (mark.workoutId != null ? byId.get(mark.workoutId) : undefined)
+          : mark == null
+            ? unclaimed[nextUnclaimed]
+            : undefined;
+      if (done && mark == null) nextUnclaimed += 1;
 
       if (done) {
         const sets = done.exercises.reduce((a, e) => a + e.sets.length, 0);
         const mins = done.durationSec != null ? Math.round(done.durationSec / 60) : null;
         return {
-          name: done.name || (plan ? dayLabel(plan, di) : `Day ${di + 1}`),
+          name: done.name || planName,
           num,
           completed: true,
+          skipped: false,
           date: dateLabel(done.startedAt),
           meta: [mins != null ? `${mins} min` : null, `${sets} ${sets === 1 ? 'set' : 'sets'}`]
             .filter(Boolean)
@@ -396,10 +472,25 @@ export function buildLog(
         };
       }
 
+      // Trained, but the workout is gone — `workout_id` is `on delete set null`. The session is still
+      // accounted for, so it must not render as owed; there is simply nothing to show under it.
+      if (mark?.state === 'completed') {
+        return {
+          name: planName,
+          num,
+          completed: true,
+          skipped: false,
+          date: null,
+          meta: 'Trained',
+          exercises: plan ? plannedLine(plan, load) : [],
+        };
+      }
+
       return {
-        name: plan ? dayLabel(plan, di) : `Day ${di + 1}`,
+        name: planName,
         num,
         completed: false,
+        skipped: false,
         date: null,
         meta: plan ? `${plan.main.length + plan.warmup.length + plan.cooldown.length} planned` : 'Rest',
         exercises: plan ? plannedLine(plan, load) : [],
@@ -407,7 +498,9 @@ export function buildLog(
     });
 
     const completedCount = days.filter((d) => d.completed).length;
-    return { week: wi + 1, days, complete: completedCount === days.length && days.length > 0, completedCount };
+    const touched = days.filter((d) => d.completed || d.skipped).length;
+    // Accounted for, not trained — a week the athlete skipped their way through is still behind them.
+    return { week: wi + 1, days, complete: touched === days.length && days.length > 0, completedCount };
   });
 }
 
@@ -570,6 +663,17 @@ export interface SessionMark {
   weekIndex: number;
   dayIndex: number;
   state: SessionState;
+  /**
+   * The workout that satisfied this session — what `buildLog` files under this slot.
+   *
+   * ⚠ NULL IS NOT "MISSING", IT IS TWO DIFFERENT THINGS. A `skipped` mark never had one. A `completed`
+   * mark can lose one: `program_sessions.workout_id` is `on delete set null` (0119), so deleting the
+   * workout leaves the session accounted for with nothing to show. Both must still render as touched,
+   * or the log and the progress bar disagree about the same session.
+   *
+   * Optional because rows written before 0119 have no mark at all, and the log falls back for those.
+   */
+  workoutId?: string | null;
 }
 
 /** A slot plus what has happened to it. `state` is null when the session is still outstanding. */
@@ -665,41 +769,10 @@ export function isProgramFinished(structure: ProgramStructure, marks: readonly S
   return touchedCount(structure, marks) >= totalSessions(structure);
 }
 
-/**
- * Swap two sessions' positions within one week — a real reorder of the plan, not a one-off.
+/*
+ * `swapSessionOrder` LIVES IN `schedule-edit.ts` NOW, beside the general reorder it turned out to be a
+ * two-element case of. Import it from there.
  *
- * ══ WHY IT MATERIALISES PER-WEEK PLANS ══
- *
- * A non-varying program stores ONE `days` array that every week repeats. Reordering that array would
- * change the order of every remaining week — so swapping Tuesday and Thursday in week 3 because the rack
- * was busy would silently rewrite weeks 4 through 8 as well. Almost never what anyone means.
- *
- * So the first swap converts the program to per-week plans (`vary: true`, every week materialised as its
- * own copy) and edits only the week asked for. That is the same "Customize" shape the builder already
- * writes, so nothing downstream learns a new structure — `plannedDays` has always preferred `weekPlans`.
- *
- * ⚠ BOTH DAYS MUST BE UNTOUCHED, and the caller is responsible for only offering those.
- * `program_sessions` rows are keyed by (week, dayIndex), so moving a day that has been trained or
- * skipped would silently re-point that record at a different workout — the app would then claim you did
- * a session you never did. Untouched days carry no rows, so swapping them moves nothing but the plan.
- * Days at other positions keep their index and are unaffected.
+ * It moved rather than being re-exported here: `schedule-edit` reads `plannedDays`, `trainingDays` and
+ * `totalSessions` out of this file, and a re-export would have made that a cycle. One direction only.
  */
-export function swapSessionOrder(
-  structure: ProgramStructure,
-  weekIndex: number,
-  a: number,
-  b: number,
-): ProgramStructure {
-  if (a === b) return structure;
-  const weeks = weekCount(structure);
-  if (weekIndex < 0 || weekIndex >= weeks) return structure;
-
-  // Materialise every week from whatever it resolves to today, so the untouched weeks keep the plan they
-  // already had rather than inheriting the edit.
-  const plans = Array.from({ length: weeks }, (_, wi) => ({ days: [...plannedDays(structure, wi)] }));
-  const days = plans[weekIndex]?.days;
-  if (!days || a < 0 || b < 0 || a >= days.length || b >= days.length) return structure;
-
-  [days[a], days[b]] = [days[b], days[a]];
-  return { ...structure, vary: true, weekPlans: plans };
-}

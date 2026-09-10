@@ -7,7 +7,9 @@ import { AskHoltSheet } from '@/components/forge/AskHoltSheet';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
+import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
+import { ReorderWeekSheet } from '@/components/forge/ReorderWeekSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
@@ -23,6 +25,7 @@ import {
   fetchProgramWorkouts,
   runProgramAgain,
   skipProgramSession,
+  unskipProgramSession,
   updateProgram,
   startProgram,
   type ProgramStructure,
@@ -32,7 +35,7 @@ import { fmtLongDate, spanLabel, workoutsLabel } from '@/domain/program/graduati
 import { useCoachDoor } from '@/hooks/useCoachDoor';
 import {
   buildLog,
-  computeProgress,
+  progressFromMarks,
   dayLabel,
   computeStats,
   equipmentOf,
@@ -40,7 +43,7 @@ import {
   isSealed,
   nextOpenSlot,
   plannedDays,
-  swapSessionOrder,
+  slotStates,
   totalSessions,
   trainingDays,
   viewForState,
@@ -50,6 +53,13 @@ import {
   type SessionMark,
   type SessionState,
 } from '@/domain/program/progress-core';
+import {
+  reorderTargets,
+  reorderWeek,
+  swapSessionOrder,
+  weekSessionCount,
+  type ReorderScope,
+} from '@/domain/program/schedule-edit';
 import { getProgramDefinition } from '@/domain/training/programs';
 import { structureFromDefinition } from '@/domain/program/adopt-core';
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
@@ -64,6 +74,8 @@ import {
   requiredMaxKeys,
 } from '@/domain/program/percent-max';
 import { weightInExact } from '@/domain/settings/units';
+import { track } from '@/lib/analytics';
+import { hasLoggedWork, loadSession } from '@/domain/workout/autosave';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { useUnits } from '@/lib/settings';
 import { useProfile } from '@/lib/profile';
@@ -114,7 +126,8 @@ export default function ProgramDetailScreen() {
   const router = useRouter();
   const { openShare } = useShareSheet();
   const { profile } = useProfile();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  /** `reorder` is a 0-based week index, set only when Home linked here asking for the reorder sheet. */
+  const { id, reorder } = useLocalSearchParams<{ id: string; reorder?: string }>();
   const { startWorkout } = useWorkoutSession();
   const { load, units } = useUnits(); // "Heaviest" set, in the athlete's system
 
@@ -124,6 +137,32 @@ export default function ProgramDetailScreen() {
   const [marks, setMarks] = useState<SessionMark[]>([]);
   /** The session an athlete asked to move, while they pick what to move it with. Null when closed. */
   const [swapping, setSwapping] = useState<{ weekIndex: number; dayIndex: number; name: string } | null>(null);
+  /**
+   * The session an athlete has asked to skip, awaiting confirmation. `last` is the case with no undo:
+   * skipping the only session still owed graduates the program, permanently.
+   */
+  const [skipping, setSkipping] = useState<{ weekIndex: number; dayIndex: number; name: string; last: boolean } | null>(null);
+  /**
+   * ⚠ IS THERE A WORKOUT OPEN AGAINST THIS PROGRAM RIGHT NOW?
+   *
+   * Moving sessions while one is being trained is the one way a reorder can lie about work that really
+   * happened. The logger resolves its slot when it OPENS and `save_workout` resolves the first open slot
+   * when it COMMITS; reorder in between and the workout is filed at a position that now holds a different
+   * day — the log would show sets under a session nobody trained.
+   *
+   * Sending the resolved slot along instead does not fix it and makes it worse: the position is the same
+   * either way, and an explicit slot that has since been touched hits `on conflict do nothing` and saves
+   * the workout with NO mark at all, silently. So the schedule holds still until the workout is finished
+   * or discarded, which is a sentence the athlete can act on.
+   *
+   * Device-local, and knowingly so: `useWorkoutSession` carries no program id, and the 0181 live snapshot
+   * carries no program field either, so a session open on another device is invisible here. That window
+   * already exists for Home's swap and is named in the amendment rather than quietly ignored.
+   */
+  const [openSessionProgramId, setOpenSessionProgramId] = useState<string | null>(null);
+  const [blocked, setBlocked] = useState<'reorder' | 'swap' | null>(null);
+  /** Which week's order is being rearranged, or null when the sheet is closed. */
+  const [reordering, setReordering] = useState<number | null>(null);
   const [asking, setAsking] = useState<{ weekIndex: number; dayIndex: number; name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -149,6 +188,8 @@ export default function ProgramDetailScreen() {
    * this screen would delete the program they had just answered for.
    */
   const provisionalRef = useRef<string | null>(null);
+  /** The `?reorder=` link opens the sheet ONCE. A ref, because consuming it must not re-render. */
+  const reorderLinkUsed = useRef(false);
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
 
@@ -198,11 +239,43 @@ export default function ProgramDetailScreen() {
           return;
         }
         try {
-          const [p, w, m] = await Promise.all([fetchProgram(id), fetchProgramWorkouts(id), fetchProgramSessions(id)]);
+          /* ⚠ THE AUTOSAVE READ IS AWAITED WITH THE REST, not fired alongside it. The `?reorder=` link
+             below has to know whether a workout is open before it may open the sheet, and a promise
+             racing this one would still be `null` when it asked. Read on every focus, too: the athlete
+             leaves to train and comes back, and a stale answer blocks a safe edit or allows an unsafe one. */
+          const [p, w, m, session] = await Promise.all([
+            fetchProgram(id),
+            fetchProgramWorkouts(id),
+            fetchProgramSessions(id),
+            loadSession().catch(() => null),
+          ]);
           if (!active) return;
           setProgram(p);
           setWorkouts(w);
           setMarks(m);
+          const openFor = hasLoggedWork(session) ? session?.programId ?? null : null;
+          setOpenSessionProgramId(openFor);
+
+          /*
+           * ARRIVED HERE ASKING TO REORDER — Home's swap sheet links in with `?reorder=<weekIndex>`.
+           *
+           * ⚠ OPENED AFTER THE READ, never on mount: the sheet renders the week's sessions, and there
+           * are none until the program lands. Consumed once (`reorderLinkUsed`) so coming back later does
+           * not reopen a sheet nobody asked for.
+           *
+           * ⚠ AND IT PASSES THROUGH THE SAME GATES AS THE BUTTON. A URL is not a lesser caller — on the
+           * web preview it is the athlete's back button and their reload. It is checked for a real week,
+           * for an ACTIVE program, for two sessions left to move, and for a workout open against this
+           * program, which is why the session read above is awaited rather than raced.
+           */
+          const asked = Number(reorder);
+          const weekIsReal = Number.isInteger(asked) && asked >= 0 && asked < (p?.structure.weeks ?? 0);
+          if (!reorderLinkUsed.current && reorder != null && weekIsReal && p?.state === 'active') {
+            reorderLinkUsed.current = true;
+            setOpenWeek(asked);
+            if (openFor && openFor === p.id) setBlocked('reorder');
+            else if (weekSessionCount(p.structure, asked) >= 2) setReordering(asked);
+          }
         } catch (e) {
           if (active) setError(errorMessage(e));
         } finally {
@@ -212,7 +285,7 @@ export default function ProgramDetailScreen() {
       return () => {
         active = false;
       };
-    }, [id, previewDef]),
+    }, [id, previewDef, reorder]),
   );
 
   /* ⚠ ABOVE THE EARLY RETURNS. Both of these are hooks, and the loading and not-found branches below
@@ -293,7 +366,15 @@ export default function ProgramDetailScreen() {
    */
   const coverage = sourceDefId ? programGymCoverage(sourceDefId, homeGym) : null;
   const gearGap = coverage && coverage.total > 0 && coverage.doable < coverage.total ? coverage : null;
-  const progress = computeProgress(structure, workouts.length);
+  /**
+   * ⚠ FROM THE MARKS, NOT FROM `workouts.length` (P0-22).
+   *
+   * The count could not see a skip — it has no workout — so a program the athlete skipped their way to
+   * the end of sat at 17% forever, and the "current week" dot pointed at a week they had left behind.
+   * The marks are the schedule's own record of what happened to each session; `stats` still reads the
+   * workouts, because a skip lifted nothing and belongs in no total.
+   */
+  const progress = progressFromMarks(structure, marks);
   const stats = computeStats(workouts);
 
   /**
@@ -332,11 +413,13 @@ export default function ProgramDetailScreen() {
   const changeWarning =
     workouts.length > 0
       ? `Sessions you've already trained won't change — they record what you actually lifted. This moves the ${
-          Math.max(0, totalSessions(structure) - workouts.length)
+          Math.max(0, totalSessions(structure) - progress.completed)
         } sessions ahead of you, which are built from this number.`
       : null;
 
-  const weeks = buildLog(structure, workouts, loadCtx);
+  /* Marks travel with the workouts, so each one lands in the slot it actually satisfied. Filing them by
+     date order put every session after a skip under the wrong day (P0-23). */
+  const weeks = buildLog(structure, workouts, loadCtx, marks);
   const equipment = equipmentOf(structure);
   const trained = workouts.length > 0;
   /** Sealed: a permanent legacy record. Not editable, not deletable, never reactivated (Amendment-001). */
@@ -379,6 +462,63 @@ export default function ProgramDetailScreen() {
     } finally {
       setBusy(false);
     }
+  };
+
+  /**
+   * ⭐ REORDER A WHOLE WEEK, and keep it for the rest of the program.
+   *
+   * The ask this screen could not answer: *"he wants to be able to go into the program and drag the days
+   * into different orders… And then have that be the adjustments for the rest of the weeks."* Swap moves
+   * two sessions in one week; this moves as many as they like, for as long as they like.
+   *
+   * Same write, same optimistic update, and the same safety as `doSwap` — `reorderWeek` pins every
+   * touched position and is only ever a permutation, so the session count cannot move and the 0175
+   * trigger has nothing to refuse.
+   */
+  const doReorder = async (weekIndex: number, order: number[], scope: ReorderScope) => {
+    if (!program || busy) return;
+    setBusy(true);
+    try {
+      const next = reorderWeek(program.structure, marks, weekIndex, order, scope);
+      await updateProgram(program.id, next);
+      setProgram({ ...program, structure: next });
+      track('program_week_reordered', {
+        index: weekIndex,
+        count: order.filter((d, i) => d !== i).length,
+        section: scope,
+        total: reorderTargets(program.structure, weekIndex, scope).length,
+      });
+      setReordering(null);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /**
+   * Open the reorder sheet — unless a workout for this program is open on this device.
+   *
+   * ⚠ THE RACE IS REAL AND THE FIX IS TO WAIT, NOT TO SEND MORE. The logger resolves its slot when it
+   * opens and `save_workout` resolves the first open slot when it commits; reorder in between and the
+   * workout is filed at a position that now holds a different session. Sending the resolved slot along
+   * would not help — the position is the same either way — and would make it worse, because a slot that
+   * has since been touched hits `on conflict do nothing` and saves the workout with no mark at all.
+   */
+  const openReorder = (weekIndex: number) => {
+    if (openSessionProgramId && program && openSessionProgramId === program.id) {
+      setBlocked('reorder');
+      return;
+    }
+    setReordering(weekIndex);
+  };
+
+  const openSwap = (weekIndex: number, dayIndex: number, name: string) => {
+    if (openSessionProgramId && program && openSessionProgramId === program.id) {
+      setBlocked('swap');
+      return;
+    }
+    setSwapping({ weekIndex, dayIndex, name });
   };
 
   /**
@@ -425,6 +565,21 @@ export default function ProgramDetailScreen() {
   };
 
   /**
+   * ⚠ ASK FIRST. Skipping is not a display preference — it WRITES to the schedule, it counts toward
+   * finishing the program, and until now it was a single unguarded tap on a row of four text buttons
+   * sitting beside "Train this".
+   *
+   * The last outstanding session is the case that has no undo: skipping it graduates the program, fires
+   * a PROGRAM_GRADUATED timeline event and awards five honors, and Amendment-001 §1 says a graduated
+   * program cannot be reactivated. So that confirmation says something different, because it is
+   * something different.
+   */
+  const askSkip = (weekIndex: number, dayIndex: number, name: string) => {
+    const outstanding = slotStates(structure, marks).filter((s) => s.state === null && s.day != null).length;
+    setSkipping({ weekIndex, dayIndex, name, last: outstanding <= 1 });
+  };
+
+  /**
    * Pass over a session. It counts toward finishing the program and can therefore be the thing that
    * completes it, which is what the product decision means — the record keeps saying it was a skip.
    */
@@ -433,7 +588,51 @@ export default function ProgramDetailScreen() {
     setBusy(true);
     try {
       await skipProgramSession(program.id, weekIndex, dayIndex);
+      /* ⚠ THE PROGRAM, NOT JUST THE MARKS. A skip can graduate the program server-side, and re-reading
+         only the marks left this screen showing an ACTIVE program — with Train and Skip still on every
+         row — until something else happened to refetch it. */
+      const [p, m] = await Promise.all([fetchProgram(program.id), fetchProgramSessions(program.id)]);
+      if (p) setProgram(p);
+      setMarks(m);
+      setSkipping(null);
+      track('program_session_skipped', {
+        index: weekIndex,
+        position: dayIndex,
+        total: totalSessions(structure),
+        count: m.length,
+      });
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /**
+   * Take a skip back.
+   *
+   * The window is the run itself: `unskip_program_session` refuses anything but an ACTIVE program, so a
+   * skip that finished the program stands. That is not an oversight to fix later — it is the same rule
+   * that makes a graduation permanent, and the confirmation above is what stops someone reaching it by
+   * accident.
+   */
+  const unskipDay = async (weekIndex: number, dayIndex: number) => {
+    if (!program || busy) return;
+    setBusy(true);
+    try {
+      const res = await unskipProgramSession(program.id, weekIndex, dayIndex);
+      if (!res.ok) {
+        /* Refused, with no Postgres error to raise — almost always because the program was sealed
+           between this row rendering and the tap. Re-read it so the screen stops offering the action,
+           and say why rather than leaving a button that does nothing. */
+        const [p, m] = await Promise.all([fetchProgram(program.id), fetchProgramSessions(program.id)]);
+        if (p) setProgram(p);
+        setMarks(m);
+        setError('This program has finished, so its record cannot be changed.');
+        return;
+      }
       setMarks(await fetchProgramSessions(program.id));
+      track('program_session_unskipped', { index: weekIndex, position: dayIndex });
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -899,13 +1098,27 @@ export default function ProgramDetailScreen() {
                 setOpenDay(null);
               }}
               onToggleDay={(k) => setOpenDay(openDay === k ? null : k)}
-              states={stateByWeek[wi]}
               /* Only an ACTIVE program can be trained or skipped. A sealed record is history
                  (Amendment-001 §1) and a preview has no row to write against yet. */
               onTrainDay={state === 'active' ? (di, name) => void trainDay(wi, di, name) : undefined}
-              onSkipDay={state === 'active' ? (di) => void skipDay(wi, di) : undefined}
-              onSwapDay={state === 'active' ? (di, name) => setSwapping({ weekIndex: wi, dayIndex: di, name }) : undefined}
+              onSkipDay={state === 'active' ? (di, name) => askSkip(wi, di, name) : undefined}
+              onUnskipDay={state === 'active' ? (di) => void unskipDay(wi, di) : undefined}
+              onSwapDay={state === 'active' ? (di, name) => openSwap(wi, di, name) : undefined}
               onAskHolt={state === 'active' ? (di, name) => setAsking({ weekIndex: wi, dayIndex: di, name }) : undefined}
+              /* Offered only where there is something to rearrange: at least two sessions in the week
+                 still outstanding. One left, or none, and the control would open onto a fixed list.
+
+                 ⚠ `weekSessionCount` GUARDS THE OTHER END. The log gives an unbuilt week `daysPerWeek`
+                 rows, all of them "Rest" and all of them technically outstanding — so counting log rows
+                 alone would offer a reorder over rows with no session behind them, and Save would write
+                 the structure back unchanged and close, silently doing nothing. */
+              onReorder={
+                state === 'active' &&
+                weekSessionCount(structure, wi) >= 2 &&
+                wk.days.filter((d) => !d.completed && !d.skipped).length >= 2
+                  ? () => openReorder(wi)
+                  : undefined
+              }
             />
           ))}
           </View>
@@ -1144,6 +1357,68 @@ export default function ProgramDetailScreen() {
         </View>
       </BottomSheet>
 
+      {/*
+        ⭐ REORDER THE WEEK. Mounted only while open and only with a real program in hand — the same
+        shape `AskHoltSheet` uses below, and the shape `browse-is-not-adopt` requires of anything on this
+        screen that takes a `programId`: a preview has no row to write to.
+      */}
+      {reordering != null && program ? (
+        <ReorderWeekSheet
+          open
+          onClose={() => setReordering(null)}
+          weekNumber={reordering + 1}
+          totalWeeks={structure.weeks}
+          rows={(weeks[reordering]?.days ?? []).map((d, di) => ({
+            dayIndex: di,
+            name: d.name,
+            meta: d.meta,
+            pinned: d.completed || d.skipped,
+          }))}
+          targetsFor={(scope) => reorderTargets(program.structure, reordering, scope)}
+          busy={busy}
+          onSave={(order, scope) => void doReorder(reordering, order, scope)}
+        />
+      ) : null}
+
+      {/*
+        ⚠ NOT WHILE A WORKOUT IS OPEN. Moving sessions under a session being trained files it against the
+        wrong day, and there is no way to send the logger's intent through that fixes it — see
+        `openReorder`. A sentence the athlete can act on beats a schedule that quietly lies.
+      */}
+      <ConfirmSheet
+        open={blocked != null}
+        onClose={() => setBlocked(null)}
+        headline="Finish your workout first"
+        body={`You have a workout open for this program. ${
+          blocked === 'swap' ? 'Swapping' : 'Reordering'
+        } sessions while it is running would file it against the wrong day. Finish it or discard it, then come back.`}
+        confirmLabel="Got it"
+        tone="primary"
+        cancelLabel="Close"
+        onConfirm={() => setBlocked(null)}
+      />
+
+      {/*
+        SKIP, CONFIRMED — and the last session gets a different sentence, because it is a different act.
+
+        Everywhere else in this screen a confirmation guards something reversible. This one guards a
+        write that counts toward graduation, and on the final outstanding session it IS the graduation:
+        a timeline event and five honors that Amendment-001 §1 provides no way to undo. The copy says so
+        rather than asking "Are you sure?" over a decision the athlete has no way to price.
+      */}
+      <ConfirmSheet
+        open={skipping != null}
+        onClose={() => setSkipping(null)}
+        headline={skipping?.last ? 'Skip the last session?' : `Skip ${skipping?.name ?? 'this session'}?`}
+        body={
+          skipping?.last
+            ? 'This is the only session you have left. Skipping it finishes the program — the record will say you skipped it, and finishing cannot be undone.'
+            : 'It counts toward finishing the program, and the record will say you skipped it rather than trained it. You can undo this while the program is running.'
+        }
+        confirmLabel={busy ? 'Skipping…' : 'Skip'}
+        onConfirm={() => skipping && void skipDay(skipping.weekIndex, skipping.dayIndex)}
+      />
+
       {/* Only mounted while a session is actually being edited. `program` is non-null here because the
           action that opens it is gated on `state === 'active'`, which requires a real row. */}
       {asking && program ? (
@@ -1234,11 +1509,12 @@ function WeekCard({
   openDay,
   onToggle,
   onToggleDay,
-  states,
   onTrainDay,
   onSkipDay,
+  onUnskipDay,
   onSwapDay,
   onAskHolt,
+  onReorder,
 }: {
   week: LogWeek;
   current: boolean;
@@ -1246,13 +1522,20 @@ function WeekCard({
   openDay: string | null;
   onToggle: () => void;
   onToggleDay: (key: string) => void;
-  /** What has happened to each day of THIS week, by day index. Empty on a program not being trained. */
-  states?: Record<number, SessionState | undefined>;
-  /** Train or skip this specific session. Absent on a sealed or not-yet-started program. */
+  /**
+   * Train or skip this specific session. Absent on a sealed or not-yet-started program.
+   *
+   * ⚠ There is no `states` prop any more. Each `LogDay` carries its own `completed` / `skipped`, filed
+   * by `buildLog` from the marks — one source, in one index space, rather than a row and a parallel
+   * lookup that had to agree about what "day 2" meant.
+   */
   onTrainDay?: (dayIndex: number, name: string) => void;
-  onSkipDay?: (dayIndex: number) => void;
+  onSkipDay?: (dayIndex: number, name: string) => void;
+  onUnskipDay?: (dayIndex: number) => void;
   onSwapDay?: (dayIndex: number, name: string) => void;
   onAskHolt?: (dayIndex: number, name: string) => void;
+  /** Rearrange the whole week. Absent when fewer than two of its sessions are still outstanding. */
+  onReorder?: () => void;
 }) {
   const meta = week.complete
     ? 'Complete'
@@ -1283,6 +1566,21 @@ function WeekCard({
 
       {open ? (
         <View style={styles.weekBody}>
+          {/* ⚠ THE WEEK IS THE UNIT AN ATHLETE REORDERS WITHIN, so the control belongs to the week and
+              not to a session. "Swap" on a row answers "not this one, today"; this answers "these are in
+              the wrong order, and they have been for a while". */}
+          {onReorder ? (
+            <Pressable
+              onPress={onReorder}
+              accessibilityRole="button"
+              accessibilityLabel={`Reorder the sessions in week ${week.week}`}
+              style={styles.weekReorder}
+            >
+              <Glyph d="M4 9h16M4 15h16" color={flColor.bronze300} width={2} />
+              <Text style={styles.weekReorderText}>Reorder this week</Text>
+            </Pressable>
+          ) : null}
+
           {week.days.map((d, di) => {
             const key = `${week.week}:${di}`;
             const dayOpen = openDay === key;
@@ -1308,15 +1606,19 @@ function WeekCard({
                   </View>
                   {/* SKIPPED is its own mark, never a tick. A skipped session carries you to the end of
                       the program (PO decision) and the record still says you did not train it — the
-                      whole reason `state` exists rather than a boolean. */}
-                  {states?.[di] === 'skipped' ? <Text style={styles.skippedChip}>Skipped</Text> : null}
+                      whole reason `state` exists rather than a boolean.
+
+                      ⚠ Read off the LOG ROW, not off a separate `states[di]` lookup. The two agree only
+                      while both are in the same index space, and `buildLog` now files by mark, so one
+                      source is one fewer thing that can drift. */}
+                  {d.skipped ? <Text style={styles.skippedChip}>Skipped</Text> : null}
                   <Glyph d={CHEVRON} color={flColor.gray600} flip={dayOpen} />
                 </Pressable>
 
                 {/* Any OUTSTANDING session can be trained or passed over, not just the next one in line
                     — that is the swap. Offered only where there is something to act on: a day already
                     trained or skipped shows its state above instead. */}
-                {onTrainDay && onSkipDay && states?.[di] === undefined && d.exercises.length > 0 ? (
+                {onTrainDay && onSkipDay && !d.completed && !d.skipped && d.exercises.length > 0 ? (
                   <View style={styles.dayActions}>
                     <Pressable
                       onPress={() => onTrainDay(di, d.name)}
@@ -1347,12 +1649,33 @@ function WeekCard({
                       </Pressable>
                     ) : null}
                     <Pressable
-                      onPress={() => onSkipDay(di)}
+                      onPress={() => onSkipDay(di, d.name)}
                       accessibilityRole="button"
                       accessibilityLabel={`Skip ${d.name}`}
                       style={styles.dayAction}
                     >
                       <Text style={styles.dayActionSkip}>Skip</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+
+                {/* ── A SKIP IS A DECISION, NOT A VERDICT ───────────────────────────────────────────
+                    Skipping used to be a one-way door: one tap, no confirmation, and no way back. The
+                    session it passes over counts toward finishing the program, so a mis-tap does not
+                    merely mislabel a row — it moves the athlete a session closer to a graduation they
+                    did not train for.
+
+                    ⚠ Offered only while the program is ACTIVE. Once it is sealed the record is history
+                    (Amendment-001 §1), and `unskip_program_session` refuses it at the database too. */}
+                {onUnskipDay && d.skipped ? (
+                  <View style={styles.dayActions}>
+                    <Pressable
+                      onPress={() => onUnskipDay(di)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Undo the skip on ${d.name}`}
+                      style={styles.dayAction}
+                    >
+                      <Text style={styles.dayActionText}>Undo skip</Text>
                     </Pressable>
                   </View>
                 ) : null}
@@ -1501,6 +1824,16 @@ const styles = StyleSheet.create({
   weekMeta: { fontSize: 11.5, color: flColor.gray600 },
   weekMetaDone: { color: flColor.greenMuted },
   weekBody: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  weekReorder: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderBottomWidth: 1,
+    borderBottomColor: flColor.charcoal700,
+  },
+  weekReorderText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
 
   dayBlock: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   dayHead: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, paddingHorizontal: 15 },

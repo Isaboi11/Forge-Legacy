@@ -42,6 +42,7 @@ export function SwapWorkoutSheet({
   options,
   busy,
   onSwap,
+  onReorder,
 }: {
   open: boolean;
   onClose: () => void;
@@ -52,6 +53,8 @@ export function SwapWorkoutSheet({
   options: readonly SwapOption[];
   busy?: boolean;
   onSwap: (dayIndex: number) => void;
+  /** Hand off to Program Detail's reorder sheet — a lasting change rather than a one-off trade. */
+  onReorder?: () => void;
 }) {
   const [pending, setPending] = useState<SwapOption | null>(null);
 
@@ -124,6 +127,28 @@ export function SwapWorkoutSheet({
               ))}
             </>
           )}
+
+          {/*
+            ⚠ THE OTHER QUESTION, WHICH THIS SHEET CANNOT ANSWER.
+
+            A swap is a one-off: two sessions trade places, this week only. An athlete who is here because
+            the order has been wrong for a while — the tester who took up Saturday soccer and keeps having
+            to move legs — wants it to STAY changed, and doing that from here would mean this sheet
+            growing a second, different commitment behind the same "Swap" button.
+
+            So it hands off rather than absorbing it. The link carries the week, so the reorder sheet
+            opens on the week they were already looking at.
+          */}
+          {onReorder ? (
+            <Pressable
+              onPress={onReorder}
+              accessibilityRole="button"
+              accessibilityLabel="Change the order of this week for the rest of the program"
+              style={styles.linkRow}
+            >
+              <Text style={styles.linkText}>Change the order for the rest of the program →</Text>
+            </Pressable>
+          ) : null}
         </View>
       )}
     </BottomSheet>
@@ -164,6 +189,9 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.bronzeTint,
   },
   pillText: { fontSize: 12.5, fontWeight: '700', color: flColor.bronze300 },
+
+  linkRow: { paddingTop: 6, paddingBottom: 2 },
+  linkText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
 
   confirm: { gap: 14 },
   confirmText: { fontSize: 14.5, lineHeight: 21, color: flColor.cream100 },

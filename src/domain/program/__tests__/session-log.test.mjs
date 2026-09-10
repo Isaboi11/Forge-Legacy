@@ -30,10 +30,10 @@ import {
   sessionTally,
   plannedDays,
   slotStates,
-  swapSessionOrder,
   totalSessions,
   touchedCount,
 } from '../progress-core.ts';
+import { swapSessionOrder } from '../schedule-edit.ts';
 
 /** A 2-week, 3-day program: 6 sessions, every day prescribing something. */
 const day = (letter) => ({ letter, name: `Day ${letter}`, warmup: [], main: [{ name: 'Squat', sets: 3, reps: 5 }], cooldown: [] });

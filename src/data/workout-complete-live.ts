@@ -4,7 +4,7 @@ import { personalBests, type ActivityKind, type PersonalBest, type UnitSystem } 
 import { fetchPriorSessions } from '@/data/runs-live';
 import { completionHeroKind, completionSetCount, e1rm } from '@/domain/workout/metrics';
 import { fetchProgram, fetchProgramSessions } from '@/data/programs-live';
-import { dayLabel, nextSession, touchedCount } from '@/domain/program/progress-core';
+import { dayLabel, nextOpenSlot, touchedCount } from '@/domain/program/progress-core';
 
 /** This session's top set vs the same lift's previous session → +weight / +reps / Held (or null if new). */
 function deltaOf(now: { w: number; r: number } | null, last: { w: number; r: number } | null): ExerciseDelta | null {
@@ -241,8 +241,10 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
       if (program) {
         programName = program.name;
         const done = touchedCount(program.structure, marks);
-        const next = nextSession(program.structure, done);
-        if (next) nextWorkoutName = dayLabel(next.day, next.dayIndex);
+        // The first session with nothing against it. `slots[done]` named the wrong one after any skip or
+        // swap — and this is the name the athlete reads on the screen that ends their workout.
+        const next = nextOpenSlot(program.structure, marks);
+        if (next?.day) nextWorkoutName = dayLabel(next.day, next.dayIndex);
 
         /*
          * Did THIS save graduate it? `ended_at === saved_at` is the proof — both are the same `now()`
