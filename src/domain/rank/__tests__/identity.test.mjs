@@ -135,13 +135,24 @@ test('an unknown level falls back to the family identity; an unknown family to e
 
 test('⚠ the family surfaces still say the FAMILY identity (RSA-A3-D4)', () => {
   /*
-   * The §13.1 error in the other direction: picking one of four rungs to stand for a whole family. The
-   * Progress Hub and Rank Progression display families, so they must not reach for `rankAscent`.
+   * The §13.1 error in the other direction: picking one of four rungs to stand for a whole family. Rank
+   * Progression displays families, so it must not reach for `rankAscent`.
    */
-  for (const file of ['../../../app/progress-hub.tsx', '../../../app/rank-progression.tsx']) {
-    const src = readFileSync(path.join(here, file), 'utf8');
-    assert.ok(!src.includes('rankAscent'), `${file} shows FAMILIES — it must use rankIdentity, not rankAscent`);
-  }
+  const src = readFileSync(path.join(here, '../../../app/rank-progression.tsx'), 'utf8');
+  assert.ok(!src.includes('rankAscent'), 'rank-progression shows FAMILIES — it must use rankIdentity, not rankAscent');
+});
+
+test('the Progress Hub ladder shows RUNGS, so it says ascent statements — its hero still says the identity (RSA-A3-D5)', () => {
+  /*
+   * PO, 2026-09-10: "I want each sub division to be showing here too. With the sayings underneath." The
+   * ladder became 28 rungs, and D4's own rule — the split is by what the surface shows — then puts the
+   * ascent statement on each. The hero is still "who you are", the family identity.
+   */
+  const src = readFileSync(path.join(here, '../../../app/progress-hub.tsx'), 'utf8');
+  assert.ok(src.includes('rankAscent(def.key, level)'), 'the ladder must say each rung its own ascent statement');
+  assert.ok(src.includes('rankIdentity(curDef.key)'), 'the hero must keep the family identity');
+  // The JS string literal, not the words — the screen's own comment quotes the old line to explain why it went.
+  assert.ok(!src.includes("'Sealed until earned'"), 'unreached rungs are named and quoted now, not sealed');
 });
 
 test('⚠ the two screens that used to hold their own copies no longer do', () => {

@@ -109,7 +109,8 @@ The two fields are not interchangeable, and the split is by what the surface is 
 | --- | --- | --- |
 | M-1 rank-up ceremony | **ascent statement** | It announces one rung. Amendment 002 made it fire on all 28. |
 | Rank ascension post (squad + friends feed, post detail) | **ascent statement** | It is the permanent record of that same rung, and must agree with the ceremony. |
-| P-2 Progress Hub — rank hero and ladder | **identity statement** | It shows FAMILIES. A family's meaning is §2.2's sentence. |
+| P-2 Progress Hub — rank hero | **identity statement** | It shows who the athlete is — the family. |
+| P-2 Progress Hub — ladder | **ascent statement** (per rung) | ⚠ **Amended by RSA-A3-D5 (2026-09-10):** the ladder now shows all 28 RUNGS. |
 | Rank Progression screen | **identity statement** | Same: seven families, seven meanings. |
 
 A surface showing a family must never show an ascent statement — picking one of the four would claim that
@@ -136,3 +137,20 @@ ceremony.
 | RSA-A3-D2 | Five rules an ascent statement must satisfy; sub-tier I is the family identity verbatim | LOCKED |
 | RSA-A3-D3 | The 28-row table in §4 | LOCKED |
 | RSA-A3-D4 | Ceremony + post say the ascent statement; family surfaces say the identity | LOCKED |
+| RSA-A3-D5 | The Progress Hub ladder shows all 28 rungs, each with its ascent statement; unreached rungs are named, not sealed | LOCKED (2026-09-10) |
+
+## Section 9 — Addendum, 2026-09-10 — RSA-A3-D5: the Progress Hub ladder shows every rung
+
+**PO, 2026-09-10,** on the Rank Journey: *"I want each sub division to be showing here too. With the sayings
+underneath. That way it shows the entire progression."*
+
+The ladder was seven FAMILY rows, so by D4 it said the identity — and every family past the athlete's own read
+*"———— Sealed until earned"*. It now shows all **28 rungs**, each with its own badge and its own ascent
+statement. D4's rule is unchanged — *the split is by what the surface is showing* — the ladder simply shows
+rungs now, so it takes the rung field. Because sub-tier I is the family identity verbatim (D2), all seven
+identities still appear on the ladder, at the head of each family.
+
+- **The hero keeps the identity statement.** It answers *who am I*, which is the family.
+- **Rank Progression is unchanged** — it shows families and requirements, and keeps the identity.
+- **Unreached rungs are named and quoted, faded — not sealed.** Rank Progression already named every rank,
+  so the seal hid nothing real; seeing the whole road is the point, and walking it is still the only way.
