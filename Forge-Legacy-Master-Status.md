@@ -927,6 +927,20 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
 > Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
 
+### 0. ⭐ Home's no-plan start is ONE sheet — template, build as you go and cardio on the first tap (2026-09-10, Home / Workouts — **W25-A1-D9** addendum to `W25-Amendment-001` · commit `6c85f00` on `feat/route-map` (not pushed) · ✅ **WEB DEPLOYED AND VERIFIED** `index-b351b08cc28fc51461d3aaa047fac63b.js` — alias 200, hash MATCH, live bundle contains the new copy · ⏳ **NO OTA · NOT SEEN BY A HUMAN**)
+
+PO critique: *"You tap Strength, but nothing has really happened. You just get another menu."* Home was
+Start Freestyle Workout → "What are you training?" → Strength → Start Strength → template / build as you go.
+Now: **Start a Workout** → one sheet (eyebrow *Train today*, serif title, section labels) with **From a
+template**, **Build as you go** and **Track cardio** (→ the existing activity list). Hero line is *"Nothing
+planned. Train your way today."* Option rows lost the bronze outline for a neutral hairline (both themes, both
+sheets). The Workouts `+` Start Strength sheet is unchanged in structure and shares `StartOptionRow` + copy.
+`BottomSheet` gained an optional `header` slot (renders in the drag area). Tour step `todays-workout` reworded.
+tsc 0 · lint clean · tour/home tests 146/146. Deployed from worktree `C:\Users\isaia\forge-web-wt` because a
+parallel session's untracked 0199 files were in the main tree. ⚠ This web deploy also carries every earlier
+commit on the branch that had not reached web yet — including squad goal close (`67cc632`), whose `0200` is
+still unpasted.
+
 ### 0. ⭐ A squad goal ENDS now — posted, pushed, and the card stops saying it's still going; and a tapped squad photo shows the photo (2026-09-10, Squads — **`Squad-Architecture-Amendment-006-Goal-Close.md` 🔒 LOCKED** (PO took D1–D3 same day) · ⛔ **`0200` WRITTEN, NOT APPLIED** (`supabase/apply/pending-0200.sql` — paste now; the app half is out) · ✅ **OTA PUBLISHED TO BUILD 8 AND VERIFIED DELIVERABLE** iOS `01a08c4d-9e0f-74d3-a6c8-51bb66ce26b1` (group `de4b0ea2…`) on runtime `47944f2e…` (fingerprint MATCHED build `3f67281b…` first), Android `01a08c4d-9e0f-76e1…` — commit `67cc632` on `feat/route-map` (**pushed**), cherry-picked as `fabfca4` on `ota/build8-js` (**pushed**; tsc 0, 3,371/3,371 in the worktree). ⛔ **WEB NOT DEPLOYED · NOT SEEN ON A DEVICE**)
 
 **PO:** *"A goal in the squad Moch 1 ended without anyone knowing. It didn't prompt us or post anything. Didn't send a notification, and it still looks like it's going right now."* Every clause was a missing path, not a broken one: 0103 only **froze** the total at the deadline — no status, no job, no post, no push — and an unmet goal left no record anywhere. The spec had no rule for a deadline passing unmet (Missions had one, SQ-D4.5; Goals never got it).
