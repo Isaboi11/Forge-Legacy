@@ -315,12 +315,13 @@ export default function ShareConfigRoute() {
   };
 
   /**
-   * Save the card as a real image.
+   * Save the card as a real image — on iOS, into the system share sheet, where Save Image puts it in
+   * Photos. It COPIED before, and it said so in a toast; the athlete tapped a button called Save, went
+   * to Photos and found nothing. See `lib/save-image-file.ts` for why no new build was needed.
    *
    * Built from exactly the state the preview above renders — the same photos, the same alignment, the
-   * same toggled lines — so what lands in the athlete's downloads is what they were looking at. It is
-   * COMPOSED at 1080px rather than captured, because a capture exports whatever the device happened to
-   * render at whatever density it happened to use.
+   * same toggled lines — so what leaves is what they were looking at. It is COMPOSED at 1080px rather
+   * than captured, because a capture exports whatever the device happened to render at whatever density.
    */
   const onSaveImage = async () => {
     if (savingImage) return;
@@ -345,10 +346,13 @@ export default function ShareConfigRoute() {
         fileName: `forge-legacy-${(chapterName ?? 'transformation').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
       });
       setSavingImage(false);
-      // The verb has to match what actually happened. Native copies the card (writing to the camera roll
-      // needs a native module and therefore a new build); web downloads it. Saying "Saved" on a device
-      // that copied would send the athlete to a Photos app with nothing in it.
-      showToast(result.ok ? (result.via === 'clipboard' ? 'Card copied — paste it anywhere' : 'Saved to your downloads') : result.reason);
+      // ⚠ THE VERB HAS TO MATCH WHAT ACTUALLY HAPPENED, AND ON A PHONE IT NO LONGER GUESSES.
+      // The iOS sheet is its own receipt: the athlete taps Save Image in it, and nothing here is told
+      // whether they did — so `sheet` says nothing rather than claiming a save. Web downloads; the
+      // clipboard fallback still says "copied", because sending somebody to Photos for a card that is
+      // on the pasteboard is the exact false claim this screen was built to avoid.
+      const said = result.ok ? (result.via === 'sheet' ? '' : result.via === 'clipboard' ? 'Card copied — paste it anywhere' : 'Saved to your downloads') : result.reason;
+      if (said) showToast(said);
     } catch {
       setSavingImage(false);
       showToast('Couldn’t save the image.');

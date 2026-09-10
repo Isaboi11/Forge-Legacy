@@ -1,5 +1,5 @@
-import * as Clipboard from 'expo-clipboard';
 import { Image } from 'react-native';
+import { handOffImage } from './save-image-file';
 import { rasterizeCard, setCardPhotos } from './share-card-host';
 
 /**
@@ -11,13 +11,17 @@ import { rasterizeCard, setCardPhotos } from './share-card-host';
  * has no way to produce or verify an iOS build" — stopped being true once builds started shipping, but the
  * conclusion was only half right. Composing the card on device needs no new native module: the layout is
  * shared, `card-draw` resolves every number, and `react-native-svg` (already installed) rasterises it.
- * WRITING the result to the camera roll still does need one, and adding it changes the native fingerprint,
- * which costs a new build and blocks OTA delivery of everything else waiting behind it.
  *
- * So the card goes to the CLIPBOARD, via `expo-clipboard` — also already installed. The athlete pastes it
- * into Instagram, Messages, anywhere. It is a worse verb than "Saved" and it is a real one; a button that
- * says it saved and did not would be worse than either. When a native build is next cut for other reasons,
- * `expo-media-library` turns this into a true save and nothing above this line changes.
+ * ⚠ **HANDING THE RESULT OVER NEEDED NO NEW MODULE EITHER, AND THIS FILE CLAIMED FOR WEEKS THAT IT DID.**
+ * The card went to the clipboard because a share sheet was believed to cost `expo-sharing` +
+ * `expo-file-system` and therefore a new build. `expo-file-system` was already in the binary (it ships
+ * with `expo`), and React Native's own `Share` opens the iOS sheet on a `file://` url. The athlete taps
+ * **Save Image** and it lands in Photos. See `save-image-file.ts` — it holds that reasoning and the
+ * clipboard fallback, and both exporters go through it.
+ *
+ * The verb still is not this file's to choose: nothing here knows which button the athlete pressed in the
+ * sheet, so `via` reports how the image LEFT and the caller phrases from that. A button that says it saved
+ * when it copied is the failure this whole path exists to avoid.
  *
  * ══ THE PHOTOS ARE FETCHED FIRST, AND ALL OF THEM ══
  *
@@ -50,11 +54,12 @@ export interface ShareCardSpec {
   title?: string;
   lines: ShareCardLine[];
   athlete?: string;
-  /** Filename stem. Unused on native — the clipboard has no filename — kept so both paths share a spec. */
+  /** Filename stem — the name the PNG carries into the share sheet, and into a browser download. */
   fileName: string;
 }
 
-export type SaveResult = { ok: true; via: 'clipboard' | 'download' } | { ok: false; reason: string };
+/** ⚠ The caller MUST phrase its toast from `via`. `sheet` has no outcome to report; the sheet is the receipt. */
+export type SaveResult = { ok: true; via: 'sheet' | 'clipboard' | 'download' } | { ok: false; reason: string };
 
 export const canSaveImage = true;
 
@@ -100,13 +105,9 @@ export async function saveShareCard(spec: ShareCardSpec): Promise<SaveResult> {
     return { ok: false, reason: 'Couldn’t build the image just now. Try again in a moment.' };
   }
 
-  // `toDataURL` returns bare base64; `setImageAsync` wants the same. A data-uri prefix here is silently
-  // accepted on one platform and rejected on the other, so it is stripped either way.
-  const payload = base64.replace(/^data:image\/\w+;base64,/, '');
-  try {
-    await Clipboard.setImageAsync(payload);
-  } catch {
-    return { ok: false, reason: 'Couldn’t copy the card. Try again in a moment.' };
+  const via = await handOffImage(base64, spec.fileName);
+  if (!via) {
+    return { ok: false, reason: 'Couldn’t hand over the image. Try again in a moment.' };
   }
-  return { ok: true, via: 'clipboard' };
+  return { ok: true, via };
 }

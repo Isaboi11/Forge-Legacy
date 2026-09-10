@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import Svg, { Path } from 'react-native-svg';
 
 import { COMPARE_TOUCH_STYLE, useCompareDrag } from '@/hooks/useCompareDrag';
+import { ADJUST_TOUCH_STYLE, useFrameAdjust, type PhotoFrame } from '@/hooks/useFrameAdjust';
 import { flColor, flRadius } from '@/constants/foundation';
 
 /**
@@ -12,16 +13,37 @@ import { flColor, flRadius } from '@/constants/foundation';
  * the other. The drag comes from `useCompareDrag`; works on web + native. Used for transformation
  * comparisons in the Compare view, the Share preview, and the squad post they create.
  */
-/** Pan (`tx`/`ty` as fractions of the frame) + `scale` for aligning a photo. */
-export interface PhotoTransform {
-  tx: number;
-  ty: number;
-  scale: number;
-}
+/**
+ * Pan (`tx`/`ty` as fractions of the frame) + `scale` for aligning a photo. Defined by `useFrameAdjust`,
+ * which owns the gesture that produces it; kept exported here because every caller reaches it through this
+ * component.
+ */
+export type PhotoTransform = PhotoFrame;
 
-const asTransform = (t: PhotoTransform | undefined, w: number, h: number) => (t ? [{ translateX: t.tx * w }, { translateY: t.ty * h }, { scale: t.scale }] : undefined);
-
-export function BeforeAfterSlider({ before, after, beforeLabel, afterLabel, beforeT, afterT }: { before: string; after: string; beforeLabel?: string; afterLabel?: string; beforeT?: PhotoTransform; afterT?: PhotoTransform }) {
+export function BeforeAfterSlider({
+  before,
+  after,
+  beforeLabel,
+  afterLabel,
+  beforeT,
+  afterT,
+  adjust,
+  onAdjust,
+}: {
+  before: string;
+  after: string;
+  beforeLabel?: string;
+  afterLabel?: string;
+  beforeT?: PhotoTransform;
+  afterT?: PhotoTransform;
+  /**
+   * ⚠ A MODE, AND IT TAKES THE DRAG. The divider stays where the athlete left it and a drag moves the
+   * PHOTO under the finger instead — left of the seam is the before, right of it is the after. There is no
+   * "which one" control because the finger already answered.
+   */
+  adjust?: boolean;
+  onAdjust?: (side: 'before' | 'after', frame: PhotoTransform) => void;
+}) {
   /**
    * ══ THE DIVIDER IS A SHARED VALUE, NOT STATE, AND THAT IS HALF THE FIX ══
    *
@@ -63,20 +85,35 @@ export function BeforeAfterSlider({ before, after, beforeLabel, afterLabel, befo
 
   const h = (w * 4) / 3; // 3:4 frame
 
+  /* Slot 0 is left of the divider (the before), slot 1 is right of it (the after) — the order `frames`
+     is given in, and the order `split` picks between. */
+  const adj = useFrameAdjust({
+    frames: [beforeT, afterT],
+    width: w,
+    height: h,
+    enabled: !!adjust,
+    split: true,
+    onCommit: (slot, frame) => onAdjust?.(slot === 1 ? 'after' : 'before', frame),
+  });
+
   return (
     <View
       onLayout={onLayout}
-      {...panHandlers}
-      style={[styles.container, COMPARE_TOUCH_STYLE]}
+      {...(adjust ? adj.panHandlers : panHandlers)}
+      style={[styles.container, adjust ? ADJUST_TOUCH_STYLE : COMPARE_TOUCH_STYLE]}
       accessibilityRole="adjustable"
-      accessibilityLabel="Before and after slider — drag to compare"
+      accessibilityLabel={adjust ? 'Drag either photo to line the two up' : 'Before and after slider — drag to compare'}
     >
       <View style={styles.full} pointerEvents="none">
-        <Image source={{ uri: after }} style={[styles.fill, afterT ? { transform: asTransform(afterT, w, h) } : null]} contentFit="cover" />
+        <Animated.View style={[styles.fill, adj.styles[1]]}>
+          <Image source={{ uri: after }} style={styles.fill} contentFit="cover" />
+        </Animated.View>
       </View>
       <Animated.View style={[styles.clip, clipStyle]} pointerEvents="none">
         <Animated.View style={[styles.full, clipInnerStyle]}>
-          <Image source={{ uri: before }} style={{ width: w, height: '100%', transform: asTransform(beforeT, w, h) }} contentFit="cover" />
+          <Animated.View style={[styles.fill, adj.styles[0]]}>
+            <Image source={{ uri: before }} style={{ width: w, height: '100%' }} contentFit="cover" />
+          </Animated.View>
         </Animated.View>
       </Animated.View>
 
@@ -96,11 +133,15 @@ export function BeforeAfterSlider({ before, after, beforeLabel, afterLabel, befo
       ) : null}
 
       <Animated.View style={[styles.divider, dividerStyle]} pointerEvents="none" />
-      <Animated.View style={[styles.handle, handleStyle]} pointerEvents="none">
-        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M9 7l-4 5 4 5M15 7l4 5-4 5" />
-        </Svg>
-      </Animated.View>
+      {/* The handle says "drag me sideways", which is a lie in Adjust mode — the seam stays put and the
+          photographs move. The divider itself remains: it is the ruler you are lining up against. */}
+      {adjust ? null : (
+        <Animated.View style={[styles.handle, handleStyle]} pointerEvents="none">
+          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M9 7l-4 5 4 5M15 7l4 5-4 5" />
+          </Svg>
+        </Animated.View>
+      )}
     </View>
   );
 }

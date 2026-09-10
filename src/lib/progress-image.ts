@@ -1,4 +1,4 @@
-import * as Clipboard from 'expo-clipboard';
+import { handOffImage } from './save-image-file';
 import { Image } from 'react-native';
 
 import type { ProgressPostCard } from '@/data/squad-feed-live';
@@ -33,30 +33,32 @@ import { progressHostReady, rasterizeProgressFrame } from './progress-card-host'
  * A capture exports whatever the device happened to render, at whatever density, with any UI that
  * strayed into frame.
  *
- * ══ ⚠ IT COPIES. IT DOES NOT SAVE, AND IT MUST NOT SAY IT DOES ══
+ * ══ ⚠ IT HANDS THE IMAGE OVER. IT DOES NOT SAVE, AND IT MUST NOT SAY IT DOES ══
  *
- * Writing to the camera roll needs `expo-media-library`; a system share sheet carrying a file needs
- * `expo-sharing` and `expo-file-system`. **None of the three is installed, and adding any of them changes
- * the native fingerprint.** So the card goes to the CLIPBOARD via `expo-clipboard` — the same trade
- * `share-image.ts` already ships, for the same reason.
+ * This said the card could only go to the CLIPBOARD, because a share sheet carrying a file was believed to
+ * need `expo-sharing` + `expo-file-system` and therefore a new build. **Two thirds of that was wrong** —
+ * `expo-file-system` ships with `expo` and was already in the binary, and React Native's own `Share` opens
+ * the iOS sheet on a `file://` url. `save-image-file.ts` holds that reasoning; both exporters go through
+ * it, and the clipboard is now the fallback rather than the ceiling.
  *
- * "Copied" is a worse verb than "Saved" and it is a true one. A button that says it saved and did not is
- * the exact failure this codebase treats as unshippable, and `progress-photo-post.tsx` therefore reads
- * `via` and phrases its toast from it rather than assuming.
+ * The verb still is not this file's to choose. Nothing here knows which button the athlete pressed in the
+ * sheet, so `via` reports how the image LEFT and `progress-photo-post.tsx` phrases its toast from it. A
+ * button that says it saved and did not is the exact failure this codebase treats as unshippable.
  *
- * ⚠ **The clipboard holds ONE image**, which is the honest limit of this approach: a hero carousel is N
- * separate files by design (Instagram cannot un-flatten a strip), and only one of them can be copied per
- * tap. `slides` reports how many the card actually has so the caller can say so. When Phase E cuts a new
- * iOS build for RevenueCat — which it must — `expo-media-library` turns this into a true multi-file save
- * and nothing above this line changes.
+ * ⚠ **One image per tap either way** — the sheet takes one url and the clipboard holds one image, while a
+ * hero carousel is N separate files by design (Instagram cannot un-flatten a strip). `slides` reports how
+ * many the card actually has so the caller can say so. A true multi-file save still needs
+ * `expo-media-library`, which does change the fingerprint and therefore waits for the next build.
  */
 
 export interface ProgressExportSpec {
   card: ProgressPostCard;
-  /** Filename stem. Unused on native — the clipboard has no filename — kept so both paths share a spec. */
+  /** Filename stem — the name the PNG carries into the share sheet, and into a browser download. */
   fileName: string;
   /** Hero only: which slide to export. Grid ignores it. Defaults to the first. */
   slide?: number;
+  /** Where the image should go. `clipboard` for a caller that is about to open Instagram — see `handOffImage`. */
+  prefer?: 'sheet' | 'clipboard';
 }
 
 export type ProgressExportResult =
@@ -64,8 +66,8 @@ export type ProgressExportResult =
       ok: true;
       /** How many images were produced. Always 1 on native — the clipboard holds one. */
       count: number;
-      /** ⚠ The caller MUST phrase its toast from this. Native copies; web downloads. */
-      via: 'clipboard' | 'download';
+      /** ⚠ The caller MUST phrase its toast from this. `sheet` has no outcome to report — the sheet is the receipt. */
+      via: 'sheet' | 'clipboard' | 'download';
       /** How many slides the card has in total, so the caller can be honest about the rest. */
       slides: number;
     }
@@ -126,14 +128,8 @@ export async function saveProgressCard(spec: ProgressExportSpec): Promise<Progre
   const base64 = await rasterizeProgressFrame({ card, photoUris: uris, natural, slide });
   if (!base64) return { ok: false, reason: 'Couldn’t build the image just now. Try again in a moment.' };
 
-  // `toDataURL` returns bare base64 and `setImageAsync` wants the same; a data-uri prefix is silently
-  // accepted on one platform and rejected on the other, so it is stripped either way.
-  const payload = base64.replace(/^data:image\/\w+;base64,/, '');
-  try {
-    await Clipboard.setImageAsync(payload);
-  } catch {
-    return { ok: false, reason: 'Couldn’t copy the card. Try again in a moment.' };
-  }
+  const via = await handOffImage(base64, spec.fileName, spec.prefer);
+  if (!via) return { ok: false, reason: 'Couldn’t hand over the image. Try again in a moment.' };
 
-  return { ok: true, count: 1, via: 'clipboard', slides };
+  return { ok: true, count: 1, via, slides };
 }
