@@ -108,6 +108,76 @@ test('real ids and enums pass untouched', () => {
   );
 });
 
+// ── the activation funnel ────────────────────────────────────────────────────
+
+/**
+ * ⚠ THESE ARE THE REAL PAYLOADS, NOT SAMPLES OF THEM.
+ *
+ * `sanitizeProps` DROPS rather than throws, which is right for the athlete and merciless for us: an
+ * event whose props were all filtered out still records, still looks fine in the code, and answers
+ * nothing. The funnel was already instrumented once this way — `analytics.ts`'s own header names
+ * `sign_in_submitted`, `onboarding_continue` and `workout_saved`, and not one of them was ever emitted.
+ * So each payload below is asserted WHOLE: if a key is renamed or dropped from the allowlist, the
+ * event that depends on it fails here rather than going quiet in production.
+ */
+test('every activation-funnel payload survives sanitisation whole', () => {
+  /*
+   * `[event, props]` pairs, not an object — one event legitimately appears several times, because
+   * `workout_saved`'s whole job is the `source` dimension and all four of its values must survive.
+   *
+   * WIRED (copied from the call sites) then NOT-YET-WIRED. The second group is asserted deliberately:
+   * those are the payloads Phase 1 and Phase 5 will emit, and the allowlist keys they need (`theme`,
+   * `cap`, `limit`, `days_per_week`) landed in this pass. If a later edit trims one of them as unused, it
+   * fails HERE rather than six weeks on in a screen nobody re-reads. Delete a line only when the event it
+   * describes is genuinely abandoned.
+   */
+  const payloads = [
+    // ── wired ──
+    // src/app/sign-in.tsx
+    ['auth_submitted', { method: 'email', source: 'create' }],
+    ['auth_result', { method: 'email', source: 'create', success: true }],
+    // src/app/onboarding.tsx — `section` is the step NAME, `index` the position. Never both in `step`.
+    ['onboarding_step_shown', { section: 'equipment', index: 4, total: 6 }],
+    // src/domain/onboarding/service.ts — 'none' is the honest value for "not answered".
+    ['onboarding_completed', { goal: 'strength', experience: 'beginner', environment: 'full_gym', count: 2, success: true }],
+    ['onboarding_completed', { goal: 'none', experience: 'none', environment: 'none', count: 0, success: false }],
+    // src/app/workout.tsx — all four `source` values, because `source` is what this event is FOR.
+    ['workout_saved', { source: 'freestyle', activity_type: 'strength', state: 'new', count: 12, duration_ms: 2_640_000 }],
+    ['workout_saved', { source: 'program', activity_type: 'strength', state: 'continued', count: 18, duration_ms: 3_000 }],
+    ['workout_saved', { source: 'template', activity_type: 'cardio', state: 'new', count: 1, duration_ms: 1 }],
+    ['workout_saved', { source: 'starter', activity_type: 'strength', state: 'new', count: 9, duration_ms: 60_000 }],
+    ['workout_started', { source: 'freestyle', activity_type: 'strength', count: 0 }],
+    ['workout_started', { source: 'program', activity_type: 'strength', count: 5 }],
+    // src/hooks/usePremiumGate.ts — `result` keeps an allowed crossing from being summed with a refused
+    // one, and `limit: -1` is the honest value when entitlement could not be read at all.
+    ['cap_attempt', { cap: 'photos', result: 'allowed', limit: 1000 }],
+    ['cap_attempt', { cap: 'squads', result: 'blocked', limit: 1 }],
+    ['cap_attempt', { cap: 'programs', result: 'unverified', limit: -1 }],
+    ['cap_attempt', { cap: 'templates', result: 'suppressed', limit: 5 }],
+    ['paywall_shown', { cap: 'programs', source: 'gate' }],
+    // ── not yet wired: Phase 1 ──
+    ['program_generated', { source: 'onboarding', goal: 'muscle', days_per_week: 3 }],
+    ['theme_chosen', { theme: 'paper', source: 'onboarding' }],
+  ];
+
+  for (const [kind, props] of payloads) {
+    assert.ok(sanitizeKind(kind), `${kind} is not a valid event name`);
+    assert.deepEqual(
+      sanitizeProps(props),
+      props,
+      `${kind} ${JSON.stringify(props)} loses props on the way to the database — it would record, and answer nothing`,
+    );
+  }
+});
+
+test('the funnel keys do not smuggle athlete data in behind a new name', () => {
+  // The same guard as the allowlist test, aimed at the keys this pass added. `days_per_week` is what
+  // the athlete SAID they can train, not a weight; `limit` is the server's own cap.
+  assert.deepEqual(sanitizeProps({ goal: 'Bench 315 by June' }), {}, 'a prose goal is still prose');
+  assert.deepEqual(sanitizeProps({ days_per_week: 4 }), { days_per_week: 4 });
+  assert.deepEqual(sanitizeProps({ limit: 75, cap: 'photos' }), { limit: 75, cap: 'photos' });
+});
+
 // ── shape and safety ─────────────────────────────────────────────────────────
 
 test('sanitizeProps never throws, whatever it is handed', () => {

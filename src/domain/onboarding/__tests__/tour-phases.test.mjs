@@ -12,6 +12,7 @@ import {
   phaseFor,
   phaseOfStep,
   planTour,
+  tourMayStart,
   stepsFor,
 } from '../tour-plan.ts';
 
@@ -137,4 +138,34 @@ test('day one drops from ~23 steps to under a dozen', () => {
   const dayOne =
     TAB_STEPS.length + HOME_PHASE_1_STEPS + stepsFor('workouts', 0).length + stepsFor('workout', 0).length;
   assert.ok(dayOne < 12, `day one is still ${dayOne} steps`);
+});
+
+// ── when the guided run may start at all ─────────────────────────────────────
+
+test('⭐ the guided run waits for the first workout — it is moved, not cut', () => {
+  // The tabs leg used to arm 850ms after a new athlete first reached Home and then navigate them
+  // through four tabs before they had done anything, with its opening card naming a hero that screen
+  // does not draw.
+  assert.equal(tourMayStart({ workoutsLogged: 0 }), false, 'a brand-new athlete must not be toured');
+  assert.equal(tourMayStart({ workoutsLogged: 1 }), true, 'one saved workout is the whole gate');
+  assert.equal(tourMayStart({ workoutsLogged: 47 }), true);
+});
+
+test('⚠ an unreadable count UNLOCKS, exactly as every other phase check reads null (ONB-A4-D10)', () => {
+  // Reading null as 0 would silence the tour for every athlete whose seed read failed — including
+  // veterans, who are the least defensible people to silence.
+  assert.equal(tourMayStart({ workoutsLogged: null }), true);
+  assert.equal(tourMayStart({ workoutsLogged: undefined }), true);
+});
+
+test('a replay is an explicit request and is never gated on having trained', () => {
+  // "Replay all tips" comes from Account Settings. Refusing it because they have not trained would be
+  // the app declining to answer a direct question.
+  assert.equal(tourMayStart({ workoutsLogged: 0, replay: true }), true);
+});
+
+test('the gate governs TIMING only — every step still exists to be shown', () => {
+  // Guards the "moved, not cut" claim: nothing about the gate may shrink the plan itself.
+  assert.equal(TAB_STEPS.length, 4, 'the tabs leg still has all four cards');
+  assert.ok(HOME_STEPS.length >= 7, 'the home leg still has its steps');
 });

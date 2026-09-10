@@ -58,6 +58,25 @@ export const ALLOWED_PROP_KEYS: ReadonlySet<string> = new Set([
   'offline',
   'has_program',
   'is_empty',
+  /*
+   * ══ THE ACTIVATION FUNNEL ══
+   *
+   * Added so "where does a new athlete stop" is answerable. Every one is a fixed enum the APP offered or
+   * a count of the app's own configuration — never a number the athlete moved.
+   *
+   * ⚠ `has_photo` and `has_handle` were wanted here and are deliberately ABSENT. The guard test
+   *   ("the allowlist itself contains no field that describes the athlete") bans `photo` and `handle` as
+   *   substrings, and its comment is explicit that the amendment changes before the assertion does. The
+   *   funnel does not need them: `onboarding_step_shown` already reports which steps were reached.
+   */
+  'goal', // strength | muscle | fatloss | endurance | health | athletic — the shipped taxonomy
+  'experience', // beginner | intermediate | advanced
+  'environment', // full_gym | home | dumbbells | bands | bodyweight
+  'days_per_week', // 2–6, what they told the app they can train. Not a lift.
+  'theme', // forge | paper
+  // Metering (Phase 5). `limit` is the SERVER's configured cap, not anything the athlete created.
+  'cap',
+  'limit',
 ]);
 
 /** One prop value, after sanitising. */

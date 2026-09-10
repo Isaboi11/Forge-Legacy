@@ -11,6 +11,7 @@ import { Field, Heading } from '@/components/onboarding/kit';
 import { LEGAL, type LegalKey } from '@/domain/settings/content';
 import { useAuth } from '@/lib/auth';
 import { flColor, flFont } from '@/constants/foundation';
+import { track } from '@/lib/analytics';
 
 /**
  * The auth route (no session) — Welcome → Create Account → Sign In → Reset Password, the screens
@@ -65,8 +66,28 @@ export default function AuthFlow() {
   const submit = async (kind: 'create' | 'signin') => {
     setBusy(true);
     setErr(null);
+    /*
+     * ⭐ THE TOP OF THE ACTIVATION FUNNEL.
+     *
+     * ⚠ DO NOT COMPUTE A SIGNUP SUCCESS RATE FROM THESE TWO. It would always read ~100%, and the reason
+     *   is structural rather than a bug here.
+     *
+     *   Both fire BEFORE a session exists. `app_events.user_id` is not nullable and `flushAnalytics`
+     *   drops the whole batch when `getUser()` returns nobody — so on SUCCESS the session flips before
+     *   the next flush and both rows land against the new athlete, while on FAILURE there is never a
+     *   user to attribute them to and they are discarded. A failed signup is therefore invisible to this
+     *   table by construction, and `success: false` will essentially never be seen.
+     *
+     *   What these ARE good for is the denominator of everything after them — accounts that got in — and
+     *   `source` separates a new account from a returning sign-in, which nothing else does. Genuine
+     *   signup failures need the auth provider's own logs, not this.
+     */
+    track('auth_submitted', { method: 'email', source: kind });
     const { error } = kind === 'create' ? await signUp(email.trim(), password) : await signIn(email.trim(), password);
     setBusy(false);
+    /* `auth_result`, not `auth_succeeded` — an event named for the happy path that also fires on failure
+       is a trap for whoever queries it in six months. The name states the fact; `success` carries it. */
+    track('auth_result', { method: 'email', source: kind, success: !error });
     if (error) setErr(error);
     // success → session flips → boot router takes over (no manual navigation)
   };
