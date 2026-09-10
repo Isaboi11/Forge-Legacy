@@ -49,11 +49,12 @@ export interface HomeStateInput {
   /** The program actually yielded a session to show. A program with no next day is not a hero. */
   hasProgramSession: boolean;
   /**
-   * A one-off built in the builder and not yet trained (0136), waiting to be started.
+   * Something in the one-off slot (`planned_workouts`, 0136), waiting to be started — either a workout
+   * the athlete built for later, or one they TOOK from a squad post (SQ-A5-D3).
    *
-   * Ranks BELOW a program day on purpose. A scheduled session is a commitment the athlete made to a
-   * plan; this is a note they left themselves for a day with nothing on it. When both exist the program
-   * keeps the card and the planned one stays reachable through "Something else today?".
+   * ⚠ Ranks ABOVE a program day since `Squad-Architecture-Amendment-005` §3. It used to rank below; see
+   * the long note on the `hero` ternary for why that hid it rather than deferring it, and why the two
+   * sources share one slot and one rank rather than being ordered against each other.
    */
   hasPlannedWorkout: boolean;
   /** Logged sets sitting in the local autosave, or null when there is no unfinished work. */
@@ -136,14 +137,33 @@ export function composeHome(s: HomeStateInput): HomeComposition {
 
   const hero: HomeHero = hasResume
     ? 'resume'
-    : s.hasProgramSession
-      ? 'program'
-      : /* A workout they built for a day with nothing on it. Deliberately NOT gated on `settled`: having
-           planned one is itself the answer to "how do you want to start?", and a stronger one than a tap
-           on a chooser — asking the question over the top of it would be the same mistake `startChosen`
-           was added to fix. */
-        s.hasPlannedWorkout
-        ? 'planned'
+    : /*
+       * ⚠ THE OCCUPIED SLOT OUTRANKS THE PROGRAM DAY — reversed from the original ordering by
+       * `Squad-Architecture-Amendment-005-Posted-Workouts.md` §3 (SQ-A5-D2), PO ruling 2026-09-03.
+       *
+       * This branch used to sit BELOW `hasProgramSession`, on the reasoning that a scheduled session is a
+       * commitment to a plan where a one-off is a note left for an empty day. That reasoning was wrong in
+       * a way that only became visible when the slot could be filled from outside: **when the hero is
+       * `program`, the planned workout is not reachable from Home at all.** There is no secondary
+       * affordance pointing at it — so ranking it second did not defer it, it hid it.
+       *
+       * The rule that replaces it is the one this module already applies one line down, and the one
+       * `workout-launch.ts` applies to an explicitly-picked program day: **a deliberate choice beats a
+       * passively-rendered default.** A program day is whatever the schedule says, drawn today without
+       * anyone asking for it. Occupying this slot is an act — building a workout for tomorrow, or taking
+       * one a squad-mate posted. The act wins.
+       *
+       * The program is not stranded the way the slot was: the Program tile and Current Program both still
+       * route to it, and discarding what is in the slot restores it to the hero (SQ-A5-D4). That asymmetry
+       * — one reachable elsewhere, one not — is the whole argument for this order.
+       *
+       * Deliberately NOT gated on `settled`, unchanged: having something in the slot is itself the answer
+       * to "how do you want to start?", and a stronger one than a tap on a chooser.
+       */
+      s.hasPlannedWorkout
+      ? 'planned'
+      : s.hasProgramSession
+        ? 'program'
         : // Settled and program-less: the Tier 3 CTA the spec marks Always. Only an athlete who has neither
           // trained nor chosen gets the chooser instead — the question is worth asking exactly once.
           settled

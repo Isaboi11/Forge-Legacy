@@ -31,6 +31,7 @@ import {
 import { createFriendPost, uploadFeedMedia, type PostAudience } from '@/data/friends-feed-live';
 import { friendsTypeFor, offeredToFriends } from '@/domain/squad/post-audience';
 import { fetchMySquads } from '@/data/squad-live';
+import { fetchTemplates, templateSummary, type WorkoutTemplate } from '@/data/templates-live';
 import { fetchTransformationEntries, type TransformationEntry } from '@/data/transformation-live';
 import {
   EntryStrip,
@@ -158,6 +159,16 @@ export default function SquadComposerRoute() {
 
   const set = (k: keyof Form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
+  /*
+   * The library IS the authoring surface for a posted workout (0192). A template is exactly "a workout
+   * shape you wrote down", which is what is being offered to the squad, so this picks one rather than
+   * growing a second builder inside the composer. Building a new one is the Workout Builder's job and
+   * it already lands here the moment it saves.
+   */
+  const [templates, setTemplates] = useState<WorkoutTemplate[] | null>(null);
+  const [templateId, setTemplateId] = useState<string | null>(null);
+  const chosenTemplate = templates?.find((t) => t.id === templateId) ?? null;
+
   // Shared with the friends composer: one definition of what a comparison is.
   const xform = useTransformationPick(entries, thenId, nowId);
 
@@ -191,10 +202,13 @@ export default function SquadComposerRoute() {
         return !!form.prExercise.trim() && !!form.prValue.trim();
       case 'transformation':
         return canPostPick(xform);
+      case 'workout':
+        // A workout post with nothing to run is the one shape this type cannot have.
+        return !!chosenTemplate && chosenTemplate.exercises.length > 0;
       default:
         return !!body; // discussion / announcement
     }
-  }, [type, form, media, recap, uploading, buildingRecap, xform, needsSquad, squadId]);
+  }, [type, form, media, recap, uploading, buildingRecap, xform, needsSquad, squadId, chosenTemplate]);
 
   const pick = (t: SquadPostType) => {
     /*
@@ -224,6 +238,21 @@ export default function SquadComposerRoute() {
     if (t === 'pr') {
       setRecentPRs(null);
       fetchRecentPRs().then(setRecentPRs, () => setRecentPRs([]));
+    }
+    if (t === 'workout') {
+      setTemplateId(null);
+      setTemplates(null);
+      setLoadingList(true);
+      fetchTemplates().then(
+        (rows) => {
+          setTemplates(rows);
+          setLoadingList(false);
+        },
+        () => {
+          setTemplates([]);
+          setLoadingList(false);
+        },
+      );
     }
     if (t === 'transformation') {
       setEntries(null);
@@ -316,7 +345,17 @@ export default function SquadComposerRoute() {
   const submit = () => {
     if (!type || !valid || posting) return;
 
-    const layout = type === 'transformation' ? layoutFromPick(xform) : null;
+    /*
+     * A SNAPSHOT, not a pointer (SQ-A5-D1.1). Deleting or editing this template tomorrow must not reach
+     * into a session a squad-mate already took — the same rule `share_program` follows, for the same
+     * reason, and the reason the exercises are copied here rather than referenced by id.
+     */
+    const layout =
+      type === 'transformation'
+        ? layoutFromPick(xform)
+        : type === 'workout' && chosenTemplate
+          ? { kind: 'posted-workout' as const, name: chosenTemplate.name, exercises: chosenTemplate.exercises }
+          : null;
     const xformMedia = layout
       ? mediaFromPick(xform).map((m) => ({ url: m.url, kind: 'image' as SquadMediaKind }))
       : [];
@@ -640,6 +679,55 @@ export default function SquadComposerRoute() {
             </View>
             <MediaAttach media={media} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={() => setMedia(null)} />
           </>
+        ) : type === 'workout' ? (
+          chosenTemplate ? (
+            <>
+              <View style={styles.recapCard}>
+                <Text style={styles.recapName}>{chosenTemplate.name}</Text>
+                <Text style={styles.pickerRowSub}>{templateSummary(chosenTemplate)}</Text>
+                <Pressable onPress={() => setTemplateId(null)} accessibilityRole="button" accessibilityLabel="Choose a different workout" style={styles.recapChange} hitSlop={6}>
+                  <Text style={styles.recapChangeText}>Choose a different workout</Text>
+                </Pressable>
+              </View>
+              <Area label="Say something (optional)" value={form.body} onChange={(v) => set('body', v)} placeholder="Tomorrow's session…" rows={2} />
+              {/*
+                Said before posting, not discovered afterwards. What travels is a COPY: editing this
+                template next week will not change what anybody took, and deleting it will not take their
+                session away (SQ-A5-D1.1).
+              */}
+              <View style={styles.gateNote}>
+                <ShieldIcon />
+                <Text style={styles.gateNoteText}>
+                  Your squad can take this workout and start it whenever they’re ready. They get a copy — editing or deleting yours later won’t change theirs.
+                </Text>
+              </View>
+            </>
+          ) : (
+            <View style={styles.pickerWrap}>
+              <Text style={styles.pickerLabel}>Choose a workout to post</Text>
+              {loadingList ? (
+                <View style={styles.pickerBusy}>
+                  <ActivityIndicator color={flColor.bronze400} />
+                </View>
+              ) : (templates?.length ?? 0) === 0 ? (
+                <Text style={styles.pickerEmpty}>No saved workouts yet. Build one in the Workout Builder and it’ll show up here.</Text>
+              ) : (
+                <View style={styles.pickerList}>
+                  {templates!.map((t, i) => (
+                    <Pressable key={t.id} onPress={() => setTemplateId(t.id)} accessibilityRole="button" accessibilityLabel={`Post ${t.name}`} style={[styles.pickerRow, i > 0 ? styles.pickerRowDiv : null]}>
+                      <View style={styles.pickerRowText}>
+                        <Text style={styles.pickerRowName} numberOfLines={1}>
+                          {t.name}
+                        </Text>
+                        <Text style={styles.pickerRowSub}>{templateSummary(t)}</Text>
+                      </View>
+                      <ChevronRight />
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </View>
+          )
         ) : type === 'discussion' ? (
           <>
             <Area label="Note to the squad" value={form.body} onChange={(v) => set('body', v)} placeholder="Keep it short…" rows={4} />

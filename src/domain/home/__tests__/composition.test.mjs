@@ -280,11 +280,15 @@ test('no programs at all is a real state, not a fallback', () => {
 });
 
 /**
- * THE ONE-OFF BUILT FOR LATER (0136) — where it sits in the pecking order, and why.
+ * THE ONE-OFF SLOT (0136) — where it sits in the pecking order, and why.
  *
- * Below a program day: a scheduled session is a commitment to a plan, this is a note left for a day with
- * nothing on it. Above `open`: having planned one is a stronger answer to "how do you want to start?"
- * than any tap on the chooser, so it must not be gated on `settled` the way `open` is.
+ * ⚠ REVERSED against a program day by `Squad-Architecture-Amendment-005` §3 (SQ-A5-D2). It used to rank
+ * below, on the reasoning that a scheduled session is a commitment where a one-off is a note left for an
+ * empty day. The flaw: with the hero on `program` the slot has NO other route on Home, so ranking it
+ * second hid it rather than deferring it — which became unshippable once a squad post could fill it.
+ *
+ * Above `open`, unchanged: having something in the slot is a stronger answer to "how do you want to
+ * start?" than any tap on the chooser, so it must not be gated on `settled` the way `open` is.
  */
 test('a workout built for later takes the hero when nothing is scheduled', () => {
   const c = compose({ hasPlannedWorkout: true });
@@ -292,9 +296,35 @@ test('a workout built for later takes the hero when nothing is scheduled', () =>
   assert.equal(c.heroOffersFreestyle, true, 'they may not want it today, and must be able to say so');
 });
 
-test('a program day outranks a workout built for later', () => {
+/**
+ * ⚠ THIS ASSERTION IS THE REVERSAL. It read `'program'` until 2026-09-03 and the change is deliberate —
+ * PO: "if they go in and deliberately click on our workout for the next day then that one takes
+ * precedence". If a future change flips it back, the squad-posted workout becomes invisible to every
+ * athlete running a program, which is most of them.
+ */
+test('the occupied slot outranks a program day', () => {
   const c = compose({ hasPlannedWorkout: true, hasProgramSession: true });
-  assert.equal(c.hero, 'program', 'the scheduled session keeps the card');
+  assert.equal(c.hero, 'planned', 'the deliberate act beats the passively-rendered schedule');
+  assert.equal(c.heroOffersFreestyle, true, 'and they can still say "something else today"');
+});
+
+/**
+ * The domain cannot tell a self-planned workout from one taken off a squad post, and must not learn to.
+ * Both are the same act — someone decided this is what tomorrow is — so both get the same rank. Ranking
+ * them against each other would be the product claiming a squad's intention outweighs the athlete's own.
+ */
+test('the slot ranks the same however it was filled', () => {
+  const built = compose({ hasPlannedWorkout: true, hasProgramSession: true, hasProgram: true });
+  const taken = compose({ hasPlannedWorkout: true, hasProgramSession: true, hasProgram: true });
+  assert.deepEqual(built, taken);
+  assert.equal(built.hero, 'planned');
+});
+
+/** The program is not stranded by the reversal — the tile still carries it. That asymmetry is the argument. */
+test('a program outranked on the hero still keeps its tile', () => {
+  const c = compose({ hasPlannedWorkout: true, hasProgramSession: true, hasProgram: true });
+  assert.equal(c.hero, 'planned');
+  assert.equal(c.showProgramTile, true, 'reachable elsewhere — which the slot never was');
 });
 
 test('unfinished work outranks both', () => {
