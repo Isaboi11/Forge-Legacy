@@ -54,9 +54,25 @@ test('the ⋮ menu keeps to the session; Holt keeps the plan — no row is in bo
   for (const dup of ['title="Add an exercise"', 'title="Swap this exercise"', 'title="Skip this exercise"', 'Superset with next exercise', 'Break the superset']) {
     assert.ok(!menu.includes(dup), `the ⋮ menu repeats Holt: ${dup}`);
   }
-  // …and Holt still carries them, so nothing was lost.
+  /*
+   * …and Holt still carries them, so nothing was lost.
+   *
+   * ⚠ THE TWO SUPERSET ROWS ARE MATCHED BY THEIR HANDLER, NOT THEIR LABEL. `0a2ef28` renamed both —
+   *   "Stop pairing these" → "Break the superset", and "Short on time" → `Superset with {name}` — and
+   *   this list was not updated, so it spent that time asserting copy that no longer existed. The point
+   *   of the check is that the ACTION survived the ⋮-menu dedup, and the action is the handler; the
+   *   wording is free to improve, which is exactly what it did. `onSuperset` also cannot be matched as a
+   *   literal label at all now: it is a template holding the paired exercise's name.
+   */
   const holt = strip(HOLT);
-  for (const row of ['label="Add a movement"', 'label="Move past this"', 'label="Something else…"', 'label="Stop pairing these"', 'label="Short on time"']) {
+  for (const row of ['label="Add a movement"', 'label="Move past this"', 'label="Something else…"']) {
     assert.ok(holt.includes(row), `Holt's sheet lost ${row}`);
   }
+  for (const handler of ['run(onBreakSuperset)', 'run(onSuperset)']) {
+    assert.ok(holt.includes(handler), `Holt's sheet lost the superset action ${handler}`);
+  }
+  // The word itself stays on screen in BOTH states — the sheet's own comment calls that symmetry load
+  // bearing, since it is what stopped athletes reading the feature as missing.
+  assert.match(holt, /label="Break the superset"/, 'the way OUT of a superset no longer says "superset"');
+  assert.match(holt, /label=\{`Superset with \$\{supersetWithName\}`\}/, 'the way IN no longer says "superset"');
 });
