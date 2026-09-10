@@ -27,6 +27,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useKeyboardInset } from '@/lib/useKeyboardInset';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 import { openPlaylist, PlaylistChip } from '@/components/forge/composites/Playlist';
 import { playlistFromRow } from '@/domain/workout/playlist';
 
@@ -882,7 +883,7 @@ const styles = StyleSheet.create({
     borderRadius: flRadius.lg,
     borderWidth: 1,
     borderColor: flColor.bronzeBorder,
-    backgroundColor: '#171109',
+    backgroundColor: forgeOr('#171109', flColor.charcoal800),
     alignItems: 'center',
     justifyContent: 'center',
     gap: 7,
@@ -985,7 +986,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: flColor.bronzeBorderSubtle,
-    backgroundColor: 'rgba(9,9,11,0.96)',
+    backgroundColor: themeScrim('rgba(9,9,11,0.96)'),
   },
   composerInput: {
     flex: 1,

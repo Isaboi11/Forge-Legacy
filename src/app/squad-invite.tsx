@@ -18,6 +18,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { encodeQr, type QrMatrix } from '@/lib/qr';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Squad Invite — built to `Squad Invite.dc.html`, scoped to what Squad Core can back with real data.
@@ -497,7 +498,7 @@ const styles = StyleSheet.create({
     borderRadius: flRadius.xl,
     borderWidth: 1,
     borderColor: flColor.bronzeBorder,
-    backgroundColor: '#161009',
+    backgroundColor: forgeOr('#161009', flColor.charcoal800),
     overflow: 'hidden',
     boxShadow: `${flShadow.borderInset}, ${flShadow.card}`,
   },
@@ -527,7 +528,7 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 30, marginBottom: 12, marginLeft: 4 },
   tileGrid: { flexDirection: 'row', gap: 10 },
   tile: { flex: 1, alignItems: 'center', gap: 11, paddingVertical: 18, paddingHorizontal: 8, borderRadius: flRadius.lg, borderWidth: 1 },
-  tilePrimary: { backgroundColor: '#17120B', borderColor: flColor.bronzeBorder, boxShadow: `${flShadow.borderInset}, ${flShadow.card}` },
+  tilePrimary: { backgroundColor: forgeOr('#17120B', flColor.charcoal700), borderColor: flColor.bronzeBorder, boxShadow: `${flShadow.borderInset}, ${flShadow.card}` },
   tileSecondary: { backgroundColor: flColor.charcoal800, borderColor: flColor.bronzeBorderSubtle, boxShadow: flShadow.card },
   tilePressed: { transform: [{ scale: 0.96 }] },
   tileDisabled: { opacity: 0.4 },

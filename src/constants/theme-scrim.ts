@@ -26,7 +26,7 @@
  */
 
 import { IS_PAPER } from './foundation';
-import { paperScrim } from './paper-scrim';
+import { paperGround, paperScrim } from './paper-scrim';
 
 /**
  * Flip a darkening scrim to its lightening twin, but only on Alabaster.
@@ -36,4 +36,23 @@ import { paperScrim } from './paper-scrim';
  */
 export function themeScrim(color: string): string {
   return IS_PAPER ? paperScrim(color) : color;
+}
+
+/**
+ * The same, for a GROUND: a solid near-black (`'#060708'`) becomes Alabaster's canvas, and a scrim is
+ * handled exactly as `themeScrim` would. Forge gets the string back untouched. See `paperGround`.
+ */
+export function themeGround(color: string): string {
+  return IS_PAPER ? paperGround(color) : color;
+}
+
+/**
+ * Forge's authored literal, untouched — and on Alabaster, the value named.
+ *
+ * For the raw dark surfaces that are NOT plain grounds (a warm crest disc, a raised recap card, a
+ * sheet): no rule can guess their Alabaster value, so the call site names it, and Forge keeps its exact
+ * literal so the dark side is provably unchanged.
+ */
+export function forgeOr<T>(forge: T, paper: T): T {
+  return IS_PAPER ? paper : forge;
 }

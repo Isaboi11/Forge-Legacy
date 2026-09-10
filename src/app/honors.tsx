@@ -10,6 +10,7 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 import { useSheetDrag } from '@/hooks/useSheetDrag';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
@@ -335,7 +336,7 @@ const styles = StyleSheet.create({
     paddingBottom: 34,
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
-    backgroundColor: '#17130D',
+    backgroundColor: forgeOr('#17130D', flColor.charcoal700),
     borderWidth: 1,
     borderBottomWidth: 0,
     borderColor: flColor.bronzeBorderSubtle,

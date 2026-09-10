@@ -61,6 +61,7 @@ import { useUnits } from '@/lib/settings';
 import { callerModalGone, useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 import { textHalo } from '@/constants/washes';
 
 /**
@@ -778,7 +779,7 @@ export default function SquadDetailRoute() {
               accessibilityLabel={`${liveChallenge.name}, ranked ${placeLabel(liveChallenge.myPlace)} of ${liveChallenge.roster}`}
               style={({ pressed }) => [styles.compCard, pressed ? styles.recordsRowPressed : null]}
             >
-              <LinearGradient colors={['rgba(32,26,19,0.5)', 'rgba(15,13,10,0.45)'] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+              <LinearGradient colors={forgeOr<readonly [string, string]>(['rgba(32,26,19,0.5)', 'rgba(15,13,10,0.45)'], [flColor.bronzeTint, 'transparent'])} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
 
               <View style={styles.compTop}>
                 <View style={styles.compEmblem}>
@@ -2004,7 +2005,7 @@ const styles = StyleSheet.create({
   ciAvatarWrap: { width: 48, height: 48, borderRadius: flRadius.round, overflow: 'hidden' },
   ciDim: { opacity: 0.45 },
   ciImg: { width: '100%', height: '100%' },
-  ciInitials: { width: '100%', height: '100%', backgroundColor: '#2c2118', alignItems: 'center', justifyContent: 'center' },
+  ciInitials: { width: '100%', height: '100%', backgroundColor: forgeOr('#2c2118', flColor.iconContainerBg), alignItems: 'center', justifyContent: 'center' },
   ciInitialsText: { fontSize: 15, fontWeight: '700', color: flColor.bronze300 },
   ciPlayBadge: { position: 'absolute', bottom: -1, right: -1, width: 19, height: 19, borderRadius: 9.5, backgroundColor: flColor.bronzeSolid, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: flColor.charcoal900, paddingLeft: 1 },
   ciFirst: { maxWidth: 72, fontSize: 12.5, color: flColor.gray400 },
@@ -2110,7 +2111,7 @@ const styles = StyleSheet.create({
   feedMediaMoreWrap: { flex: 1, minWidth: 0, position: 'relative' },
   feedMediaMore: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: flRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(6,7,8,0.62)' },
   feedMediaMoreText: { fontSize: 15, fontWeight: '700', color: flColor.cream100 },
-  feedVideoTile: { height: 96, borderRadius: flRadius.md, marginTop: 10, backgroundColor: '#171009', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, alignItems: 'center', justifyContent: 'center' },
+  feedVideoTile: { height: 96, borderRadius: flRadius.md, marginTop: 10, backgroundColor: forgeOr('#171009', flColor.surfaceRecessed), borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, alignItems: 'center', justifyContent: 'center' },
   feedPlayDisc: { width: 40, height: 40, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: flColor.bronzeBorder },
   feedActions: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 11 },
   feedAction: { flexDirection: 'row', alignItems: 'center', gap: 6 },

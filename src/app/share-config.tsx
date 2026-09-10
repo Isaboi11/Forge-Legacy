@@ -19,6 +19,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useProfile } from '@/lib/profile';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 import { useSheetDrag } from '@/hooks/useSheetDrag';
 
 /**
@@ -659,7 +660,7 @@ function ShareDots({ color = flColor.bronze300 }: { color?: string }) {
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
   scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(4,5,7,0.6)' },
-  sheet: { maxHeight: '95%', backgroundColor: '#111214', borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderBottomWidth: 0, borderColor: flColor.charcoal500, boxShadow: '0 -30px 70px rgba(0,0,0,0.6)' },
+  sheet: { maxHeight: '95%', backgroundColor: forgeOr('#111214', flColor.charcoal700), borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderBottomWidth: 0, borderColor: flColor.charcoal500, boxShadow: '0 -30px 70px rgba(0,0,0,0.6)' },
 
   /** ~22px of grabbable height around the drawn bar — see `useSheetDrag`. */
   handleWrap: { alignItems: 'center', paddingTop: 10, paddingBottom: 2 },
@@ -690,7 +691,7 @@ const styles = StyleSheet.create({
   poseSelTextOn: { color: flColor.bronze300 },
 
   // preview card
-  card: { alignSelf: 'center', width: '100%', maxWidth: 300, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#0d0b09', padding: 18, alignItems: 'center', boxShadow: flShadow.borderInset, marginTop: 22 },
+  card: { alignSelf: 'center', width: '100%', maxWidth: 300, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr('#0d0b09', flColor.charcoal800), padding: 18, alignItems: 'center', boxShadow: flShadow.borderInset, marginTop: 22 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 16 },
   anvilTile: { width: 20, height: 20, borderRadius: 6, backgroundColor: flColor.bronzeSolid, alignItems: 'center', justifyContent: 'center' },
   brandText: { fontSize: 10, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.gray400 },

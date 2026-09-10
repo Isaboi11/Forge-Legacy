@@ -22,6 +22,7 @@ import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { textHalo } from '@/constants/washes';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
@@ -417,7 +418,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     borderRadius: flRadius.round,
     overflow: 'hidden',
-    backgroundColor: '#1b130b',
+    backgroundColor: forgeOr('#1b130b', flColor.iconContainerBg),
     borderWidth: 1.5,
     borderColor: flColor.bronze400,
     alignItems: 'center',
@@ -491,7 +492,7 @@ const styles = StyleSheet.create({
     height: 78,
     borderRadius: flRadius.round,
     overflow: 'hidden',
-    backgroundColor: '#1b130b',
+    backgroundColor: forgeOr('#1b130b', flColor.iconContainerBg),
     borderWidth: 1.5,
     borderColor: flColor.bronze400,
     alignItems: 'center',

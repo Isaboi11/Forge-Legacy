@@ -7,6 +7,7 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { themeGround, themeScrim } from '@/constants/theme-scrim';
 import { fetchActivityHistory } from '@/data/activity-live';
 import {
   ACTIVITY_LABEL,
@@ -232,7 +233,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34 },
 
-  chipStrip: { borderBottomWidth: 1, borderBottomColor: flColor.charcoal700, backgroundColor: 'rgba(7,8,8,0.92)' },
+  chipStrip: { borderBottomWidth: 1, borderBottomColor: flColor.charcoal700, backgroundColor: themeScrim('rgba(7,8,8,0.92)') },
   chips: { flexDirection: 'row', gap: 7, paddingHorizontal: 16, paddingBottom: 13 },
   chip: {
     flexDirection: 'row',
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
   chipTextOn: { color: flColor.bronze300, fontWeight: '700' },
 
   listPad: { paddingBottom: 22 },
-  monthHeader: { backgroundColor: '#060708', paddingTop: 40, paddingBottom: 14, paddingHorizontal: 24 },
+  monthHeader: { backgroundColor: themeGround('#060708'), paddingTop: 40, paddingBottom: 14, paddingHorizontal: 24 },
   monthLabel: {
     fontSize: 15,
     fontWeight: '700',

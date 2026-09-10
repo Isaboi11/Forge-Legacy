@@ -23,6 +23,7 @@ import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr, themeGround } from '@/constants/theme-scrim';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 
 /**
@@ -443,7 +444,7 @@ function PlayGlyph({ color, size }: { color: string; size: number }) {
 const DASH = { borderStyle: 'dashed' as const };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#070707' },
+  root: { flex: 1, backgroundColor: themeGround('#070707') },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { paddingHorizontal: 18, paddingTop: 20, paddingBottom: 40 },
 
@@ -481,7 +482,7 @@ const styles = StyleSheet.create({
   tagsLabel: { paddingTop: 28, paddingBottom: 4 },
   videoSlot: { width: '100%', height: 132, borderRadius: flRadius.xl, alignItems: 'center', justifyContent: 'center', gap: 8, position: 'relative' },
   videoEmpty: { borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(186, 134, 84,0.06)', ...DASH },
-  videoFilled: { borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: '#171009' },
+  videoFilled: { borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: forgeOr('#171009', flColor.surfaceRecessed) },
   videoEmptyText: { fontSize: 12, color: flColor.gray600 },
   videoText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
   playDisc: { width: 44, height: 44, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorder },

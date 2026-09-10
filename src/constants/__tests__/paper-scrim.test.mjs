@@ -14,7 +14,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { paperScrim, DARK_SCRIM_MAX_CHANNEL, PAPER_SCRIM_RGB, paperTextureOpacity, FUNCTIONAL_TEXTURE_SCALE } from '../paper-scrim.ts';
+import { paperScrim, paperGround, PAPER_BASE, DARK_SCRIM_MAX_CHANNEL, PAPER_SCRIM_RGB, paperTextureOpacity, FUNCTIONAL_TEXTURE_SCALE } from '../paper-scrim.ts';
 
 /** Every darkening overlay in the app, verbatim. */
 const REAL_OVERLAYS = [
@@ -108,6 +108,35 @@ test('malformed or unrecognised input is returned rather than mangled', () => {
   // A 3-channel rgb() with no alpha IS a darkening scrim and should still flip, opaque.
   assert.equal(paperScrim('rgb(5,5,5)'), `rgba(${PAPER_SCRIM_RGB},1)`);
   assert.equal(paperScrim('not a colour'), 'not a colour');
+});
+
+// ── GROUNDS — the solid near-blacks `paperScrim` deliberately ignores (PO, 2026-09-10) ──────────────────
+
+/** Every solid ground literal the Alabaster sweep routes through `paperGround`, verbatim from `src/`. */
+const REAL_GROUNDS = ['#050505', '#060708', '#070808', '#070707', '#0A0807', '#0a0b0c'];
+
+test('every real solid ground flips to the Alabaster canvas, opaque', () => {
+  for (const c of REAL_GROUNDS) assert.equal(paperGround(c), PAPER_BASE, `${c} stayed dark`);
+  assert.equal(paperGround('#000'), PAPER_BASE, 'three-digit hex is a ground too');
+});
+
+test('a ground helper still treats a scrim as a scrim — alpha kept, not made opaque', () => {
+  assert.equal(paperGround('rgba(7,8,8,0.92)'), 'rgba(247,243,234,0.92)');
+  for (const c of REAL_OVERLAYS) assert.equal(paperGround(c), paperScrim(c));
+});
+
+test('considered colours are NOT grounds — warm surfaces and the palette pass through', () => {
+  // `#1b130b` (27) and friends get an Alabaster value BY NAME at the call site; guessing here is how a
+  // crest disc would silently become flat canvas.
+  for (const c of ['#1b130b', '#171009', '#2c2118', '#0E1216', '#F4F0E6', '#BA8654', 'transparent', '']) {
+    assert.equal(paperGround(c), c, `${c} was wrongly treated as a ground`);
+  }
+  // The margin rule the scrim classifier holds itself to, applied to grounds: brightest real ground vs
+  // darkest considered surface.
+  const chan = (h) => Math.max(...[1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)));
+  const brightestGround = Math.max(...REAL_GROUNDS.filter((c) => c.length === 7).map(chan));
+  assert.ok(DARK_SCRIM_MAX_CHANNEL - brightestGround >= 2, `a real ground (${brightestGround}) is too close to the line`);
+  assert.ok(chan('#171009') - DARK_SCRIM_MAX_CHANNEL >= 3, 'the darkest considered surface is too close to the line');
 });
 
 // ── TWO TEXTURE LEVELS (PO design review, 2026-08-25) ────────────────────────────────────────────────

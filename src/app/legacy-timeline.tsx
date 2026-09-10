@@ -11,6 +11,7 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { themeScrim } from '@/constants/theme-scrim';
 import {
   chapterRange,
   chapterSummary,
@@ -114,7 +115,7 @@ export default function LegacyTimelineScreen() {
         sticky.push(children.length);
         children.push(
           <View key={n.key} style={styles.yearRow}>
-            <LinearGradient colors={['rgba(8,11,14,0.94)', 'rgba(8,11,14,0.94)', 'rgba(8,11,14,0)']} locations={[0, 0.6, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
+            <LinearGradient colors={[themeScrim('rgba(8,11,14,0.94)'), themeScrim('rgba(8,11,14,0.94)'), themeScrim('rgba(8,11,14,0)')]} locations={[0, 0.6, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
             <View style={styles.yearMark} />
             <Text style={styles.yearLabel}>{n.year}</Text>
           </View>,

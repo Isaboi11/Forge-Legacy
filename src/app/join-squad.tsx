@@ -16,6 +16,7 @@ import { errorMessage } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Join a Squad by invite code — the counterpart to Squad Invite (`squad-invite.tsx`). No dedicated
@@ -223,7 +224,7 @@ const styles = StyleSheet.create({
     height: 78,
     borderRadius: flRadius.round,
     overflow: 'hidden',
-    backgroundColor: '#1b130b',
+    backgroundColor: forgeOr('#1b130b', flColor.iconContainerBg),
     borderWidth: 1.5,
     borderColor: flColor.bronze400,
     alignItems: 'center',

@@ -21,6 +21,7 @@ import {
 import { ADJUST_TOUCH_STYLE, useFrameAdjust } from '@/hooks/useFrameAdjust';
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { themeGround } from '@/constants/theme-scrim';
 
 /**
  * Compare (Transformation) — built to the Compare overlay of `Forge Transformation.dc.html`. Two entries,
@@ -346,7 +347,7 @@ function CompareCell({ url, dateLabel, frame, adjust, onAdjust }: { url?: string
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#070707' },
+  root: { flex: 1, backgroundColor: themeGround('#070707') },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 40 },
   emptyTitle: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', color: flColor.cream100, textAlign: 'center' },
   emptyBody: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400, textAlign: 'center' },

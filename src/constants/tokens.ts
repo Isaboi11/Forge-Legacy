@@ -16,12 +16,14 @@
  * Dark-only V1: CLA-D12 — no light/dark pairs; single values only.
  */
 
+import { IS_PAPER, flColor as _live } from './foundation'
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PALETTE (internal source values — do NOT import these in component code)
 // These raw values exist here only to build the semantic token layer below.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const _palette = {
+const _forgePalette = {
   // Neutral dark system — warm-tinted (very subtle blue-black base reads as
   // dark charcoal under warm amber lighting, not cold tech blue)
   base:         '#09090C',   // absolute canvas base
@@ -53,6 +55,44 @@ const _palette = {
   innerHighlight:   'rgba(255, 255, 255, 0.04)',  // subtle top-edge card highlight
   innerHighlightMd: 'rgba(255, 255, 255, 0.07)',  // stronger highlight for modals
 } as const
+
+/**
+ * ══ ON ALABASTER, THIS PALETTE BORROWS THE LIVE ONE ══
+ *
+ * "Dark-only V1" above predates Alabaster, and this file never learned about it — so every component
+ * still built on it (the legacy card/input/modal libraries) painted Forge's near-black on the light
+ * theme. Two of them reach real screens: `SkeletonCard` (Squads, Weekly Review loading) and
+ * `ForgeTextArea` (Log Activity, Squad Settings). PO, 2026-09-10: *"any other spots like this on the
+ * light side."*
+ *
+ * ⚠ FORGE IS UNTOUCHED, BY CONSTRUCTION. These values are NOT the same as `foundation.forge.ts` (this
+ *   file is the older, stale palette — `bronze400` here is `#C8A97E`, there `#BA8654`), so pointing
+ *   Forge at `flColor` would have quietly re-coloured every legacy component on the dark side. Only the
+ *   Alabaster branch reads the live palette; Forge keeps `_forgePalette` byte for byte.
+ */
+const _palette: Record<keyof typeof _forgePalette, string> = IS_PAPER
+  ? {
+      base: _live.base,
+      charcoal900: _live.charcoal900,
+      charcoal800: _live.charcoal800,
+      charcoal700: _live.charcoal700,
+      charcoal600: _live.charcoal600,
+      charcoal500: _live.charcoal500,
+      cream100: _live.cream100,
+      gray400: _live.gray400,
+      gray600: _live.gray600,
+      bronze300: _live.bronze300,
+      bronze400: _live.bronze400,
+      bronze600: _live.bronze600,
+      bronzeGlow: _live.bronzeTint,
+      greenMuted: _live.greenMuted,
+      redMuted: _live.redMuted,
+      blueMuted: _live.blueMuted,
+      overlayDark: _live.overlayDark,
+      innerHighlight: _live.innerHighlight,
+      innerHighlightMd: _live.innerHighlightMd,
+    }
+  : _forgePalette
 
 
 // ─────────────────────────────────────────────────────────────────────────────

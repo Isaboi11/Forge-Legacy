@@ -11,6 +11,7 @@ import { Field, Heading } from '@/components/onboarding/kit';
 import { LEGAL, type LegalKey } from '@/domain/settings/content';
 import { useAuth } from '@/lib/auth';
 import { flColor, flFont } from '@/constants/foundation';
+import { themeGround } from '@/constants/theme-scrim';
 import { track } from '@/lib/analytics';
 
 /**
@@ -382,7 +383,7 @@ export default function AuthFlow() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, alignItems: 'center', backgroundColor: '#050505' },
+  root: { flex: 1, alignItems: 'center', backgroundColor: themeGround('#050505') },
   frame: { flex: 1, width: '100%', maxWidth: 480, overflow: 'hidden' },
   flex: { flex: 1 },
   welcome: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 34, paddingHorizontal: 34, paddingTop: 44, paddingBottom: 74 },

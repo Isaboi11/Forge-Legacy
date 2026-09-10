@@ -7,6 +7,7 @@ import { RankSeal } from '@/components/forge/RankSeal';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { themeGround } from '@/constants/theme-scrim';
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
 import { rankIdentity } from '@/domain/rank/identity';
@@ -269,7 +270,7 @@ const styles = StyleSheet.create({
 
   stdRule: { fontFamily: flFont.sans, fontSize: 11, lineHeight: 16, color: '#5F5648', fontStyle: 'italic' },
 
-  root: { flex: 1, backgroundColor: '#0A0807' },
+  root: { flex: 1, backgroundColor: themeGround('#0A0807') },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   body: { paddingHorizontal: 18, paddingTop: 6 },
 

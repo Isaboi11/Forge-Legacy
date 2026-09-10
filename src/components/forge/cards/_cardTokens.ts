@@ -1,3 +1,7 @@
+import { flColor } from '@/constants/foundation'
+import { forgeOr } from '@/constants/theme-scrim'
+
+// The three dark literals below are Forge-only: on Alabaster a skeleton or card edge takes the live palette.
 export const CARD = {
   RADIUS: 8,
   PADDING: 16,
@@ -20,7 +24,7 @@ export const CARD = {
   AVATAR_SIZE: 40,
   BADGE_SIZE: 64,
 
-  BORDER: '#222229',
+  BORDER: forgeOr('#222229', flColor.charcoal600),
   BORDER_BRONZE: 'rgba(200,169,126,0.22)',
   BORDER_GLOW: 'rgba(200,169,126,0.40)',
 
@@ -38,8 +42,8 @@ export const CARD = {
   TREND_DOWN: '#A85252',
   TREND_NEUTRAL: '#666060',
 
-  SHIMMER_BASE: '#18181F',
-  SHIMMER_HIGHLIGHT: '#2C2C36',
+  SHIMMER_BASE: forgeOr('#18181F', flColor.surfaceRecessed),
+  SHIMMER_HIGHLIGHT: forgeOr('#2C2C36', flColor.charcoal600),
 
   // Banner variant colors
   BANNER_INFO_BG: 'rgba(74,124,160,0.12)',

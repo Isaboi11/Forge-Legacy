@@ -11,6 +11,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { CHALLENGE_TYPES, fetchSquadHall, formatScore, metricLabel, type ChallengeType, type HallEntry, type SquadHall } from '@/data/challenges-live';
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { themeGround, themeScrim } from '@/constants/theme-scrim';
 
 /**
  * Hall of Champions (C-5) — every competition this squad has ever finished, newest first.
@@ -55,7 +56,7 @@ export default function HallOfChampionsScreen() {
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.32)' }} />
 
       <View style={styles.header}>
-        <LinearGradient colors={['#0a0b0c', 'rgba(10,11,12,0.86)'] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={[themeGround('#0a0b0c'), themeScrim('rgba(10,11,12,0.86)')] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
         <AppBar title="Hall of Champions" onBack={goBack} />
         {data ? (
           <View style={styles.identity}>
@@ -301,7 +302,7 @@ const styles = StyleSheet.create({
 
   bodyWrap: { flex: 1, minHeight: 0 },
   scroll: { paddingBottom: 26 },
-  yearHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, paddingHorizontal: 24, paddingTop: 15, paddingBottom: 9, backgroundColor: '#070808' },
+  yearHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, paddingHorizontal: 24, paddingTop: 15, paddingBottom: 9, backgroundColor: themeGround('#070808') },
   yearLabel: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   yearCount: { fontSize: 10.5, letterSpacing: 0.3, color: flColor.gray600 },
   yearRows: { gap: 10, paddingHorizontal: 20, paddingTop: 2, paddingBottom: 8 },
