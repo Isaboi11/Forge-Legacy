@@ -927,6 +927,20 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
 > Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
 
+### 0. ⭐ Tap any rank rung: when it was earned and what it took; unreached rungs grayed out (2026-09-10, Progress Hub — RSA-A3-D5 follow-up · commit `3e4709f` (pushed) · ✅ **WEB** `index-04094f6a53633026d6374c5233690f19.js` (200, MATCH, sheet copy in bundle) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a08d93-5c11-7aa7-a6a7-5e4921e1bfc3` (fingerprint MATCHED; manifest returned it), Android `01a08d93-5c11-70a7…`; picked as `bf15945` on `ota/build8-js` (pushed; tsc 0; rank tests 54/54 there) · ⏳ **NOT SEEN BY A HUMAN**)
+
+PO: *"Let's make them tapable, and then make sure the ones not earned yet are grayed out."* No rank history is stored,
+so `domain/rank/history.ts` **replays the engine** over each day that can change its answer (events, Mondays,
+time-gate days — asserted equal to the every-day walk; 1,165 → 132 ms for two years on desktop) and records the first
+day each rung is reached + that day's signals. `rank-live.ts` now fetches **dated** inputs once and cuts them at today
+(live rank, unchanged by construction; dates clamped to today) or any past day. ⚠ Caught before shipping: the draft
+selected `programs.graduated_at`, which is not a column (it is `ended_at`) — that would have zeroed graduations in the
+LIVE rank. Sheet (`RankRungSheet`): earned date · what it took · what it asked (`rungStandards`) · the session that did
+it (→ activity); current adds the next rung's bar; unreached shows the bar and where you stand. Unreached badges: tinted
+gray silhouette over faded art (not `filter: grayscale`, which isn't honoured on every platform). 3,431/3,431 tests.
+⚠ **DECISION NEEDED:** the engine gives Legacy **no sub-tiers** (levels stop at 25) but the ladder shows Legacy I–IV —
+Legacy II–IV can never be earned. Define them in the engine, or show Legacy as one rung.
+
 ### 0. ⭐ Rank Journey shows all 28 rungs, each with its own saying (2026-09-10, Progress Hub — **RSA-A3-D5** addendum to `Rank-System-Architecture-Amendment-003` · commit `df31a8f` (pushed) · ✅ **WEB** `index-6a23330dd3516cb9b39bb9ec44e895f9.js` (200, MATCH, "Sealed until earned" gone from the bundle) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a08d6f-828f-7b2c-a104-42f0e357f538` (fingerprint MATCHED; manifest returned it), Android `01a08d6f-828f-7a34…`; picked as `69c0266` on `ota/build8-js` (pushed, tsc 0) · ⏳ **NOT SEEN BY A HUMAN**)
 
 PO: *"I want each sub division to be showing here too. With the sayings underneath. That way it shows the entire
