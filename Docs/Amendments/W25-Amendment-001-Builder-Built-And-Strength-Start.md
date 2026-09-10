@@ -171,3 +171,17 @@ only on press — bronze stays in the glyph and chevron. Applies to both themes 
 
 **Requested by the PO, 2026-09-10,** from a design critique: *"You tap Strength, but nothing has really
 happened. You just get another menu."* Target: Home → Start a Workout sheet → setup/workout.
+
+### W25-A1-D10 — "Build as you go" opens the Exercise Picker, as W25-A1-D1 always said
+
+W25-A1-D1's table names the destination: *Exercise Picker, fresh session*. The build landed on the
+freestyle empty state instead — *"Build today's session as you go. Add exercises as you train."* — whose
+only action was **Add Exercise**, a second confirmation of the choice just made.
+
+A fresh freestyle launch now opens the picker on top of the session, titled **Build Freestyle Workout**
+(mid-session it stays *Add Exercise*). The empty state is kept underneath as the back-out landing, with
+"Not today" to leave — it is no longer a step anyone has to pass through. A resumed empty session still
+shows it. Covers both doors: Home's sheet and the Workouts tab's Start Strength.
+
+**PO, 2026-09-10:** *"Does this screen contain a decision that cannot reasonably happen on the next
+screen? In this case, no."*

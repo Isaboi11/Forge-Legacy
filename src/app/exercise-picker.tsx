@@ -152,6 +152,8 @@ export default function ExercisePickerScreen() {
     day?: string;
     section?: string;
     dest?: string;
+    /** `freestyle` when this IS the start of a build-as-you-go session rather than an add mid-session. */
+    start?: string;
   }>();
   const isBuilder = params.mode === 'builder';
   const isReplace = !isBuilder && params.mode !== 'add';
@@ -575,7 +577,9 @@ export default function ExercisePickerScreen() {
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate2} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
       <AppBar
-        title={isReplace ? 'Replace Exercise' : 'Add Exercise'}
+        /* Same screen, two moments: opening a freestyle session says what is being made; once inside a
+           workout it is just an add. */
+        title={isReplace ? 'Replace Exercise' : params.start === 'freestyle' ? 'Build Freestyle Workout' : 'Add Exercise'}
         onBack={() => router.back()}
         actions={
           <Pressable onPress={openFilter} accessibilityRole="button" accessibilityLabel="Filter" hitSlop={6} style={styles.filterBtn}>

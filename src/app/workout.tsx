@@ -1087,6 +1087,19 @@ export default function WorkoutScreen() {
         await clearWorkoutLaunch();
         startSession({ workoutName: launch.workoutName ?? 'Freestyle Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
         setPhase('active');
+        /*
+         * ══ STRAIGHT TO THE PICKER — THE INTRO WAS A GATE WITH ONE BUTTON ══
+         *
+         * PO, 2026-09-10: *"Does this screen contain a decision that cannot reasonably happen on the next
+         * screen? … no."* Choosing "Build as you go" already answered it, so the empty state's only button
+         * — Add Exercise — was a second confirmation of the same choice.
+         *
+         * PUSHED, not replaced: the empty state stays underneath, so backing out of the picker with
+         * nothing chosen lands on it (with "Not today" to leave) rather than dumping the athlete home.
+         * Only a FRESH freestyle launch does this — a resumed empty session, or the no-launch fallback
+         * below, shows the empty state as before, because nobody just asked to pick an exercise.
+         */
+        router.push({ pathname: '/exercise-picker', params: { mode: 'add', start: 'freestyle' } });
         return;
       }
       if (launch?.programId) {
