@@ -68,9 +68,22 @@ export interface TodaysWorkoutCardProps {
    * advance is the rarer intent and should not compete with the button that just starts.
    */
   onBuildLater?: () => void
+  /**
+   * Give back what is in the one-off slot (SQ-A5-D4) — the workout they built for later, or the one
+   * they took off a squad post.
+   *
+   * ⚠ THIS IS LOAD-BEARING, NOT A COURTESY. Since `Squad-Architecture-Amendment-005` §3 the occupied
+   * slot OUTRANKS the program day, so without a way out an athlete who takes a workout and changes
+   * their mind is looking at it instead of their own training with no route back. The slot used to
+   * empty only by being STARTED.
+   *
+   * Quiet row rather than a button, and last of the three: it is the least likely thing wanted and
+   * must never compete with Start.
+   */
+  onDiscard?: () => void
 }
 
-export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCount, onStart, resumeSets, onPreview, onFreestyle, startLabel, onBuildLater }: TodaysWorkoutCardProps) {
+export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCount, onStart, resumeSets, onPreview, onFreestyle, startLabel, onBuildLater, onDiscard }: TodaysWorkoutCardProps) {
   const artSource = resolveArtworkSource(resolved.assetPath)
   const kicker = eyebrow ?? 'Today’s Workout'
   // "1 Exercises" was unreachable while this card only ever drew program days. A one-block cardio resume
@@ -202,6 +215,19 @@ export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCou
             style={({ pressed }) => [styles.freestyleRow, pressed ? styles.freestylePressed : null]}
           >
             <Text style={styles.freestyleText}>Build for later</Text>
+          </Pressable>
+        ) : null}
+
+        {/* The way out of the slot. Last, and quietest — see `onDiscard`. */}
+        {onDiscard ? (
+          <Pressable
+            onPress={onDiscard}
+            accessibilityRole="button"
+            accessibilityLabel={`Discard ${title} and go back to your program`}
+            hitSlop={8}
+            style={({ pressed }) => [styles.freestyleRow, pressed ? styles.freestylePressed : null]}
+          >
+            <Text style={styles.freestyleText}>Discard this workout</Text>
           </Pressable>
         ) : null}
       </View>
