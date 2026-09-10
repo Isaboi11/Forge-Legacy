@@ -927,6 +927,15 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
 > Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
 
+### 0. ⭐ Rank Journey shows all 28 rungs, each with its own saying (2026-09-10, Progress Hub — **RSA-A3-D5** addendum to `Rank-System-Architecture-Amendment-003` · commit `df31a8f` (pushed) · ✅ **WEB** `index-6a23330dd3516cb9b39bb9ec44e895f9.js` (200, MATCH, "Sealed until earned" gone from the bundle) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a08d6f-828f-7b2c-a104-42f0e357f538` (fingerprint MATCHED; manifest returned it), Android `01a08d6f-828f-7a34…`; picked as `69c0266` on `ota/build8-js` (pushed, tsc 0) · ⏳ **NOT SEEN BY A HUMAN**)
+
+PO: *"I want each sub division to be showing here too. With the sayings underneath. That way it shows the entire
+progression."* The ladder was 7 family rows with every family ahead "Sealed until earned". Now 28 rungs — own badge,
+`rankAscent` statement, "You are here" on the athlete's rung, unreached rungs named/quoted but faded, a 12px breath
+between families. The spine is drawn per row (the old single line's `(cur+0.5)/7` fill was only right at uniform row
+heights). Hero keeps `rankIdentity`; Rank Progression unchanged. `identity.test.mjs` now enforces D5 (hub ladder says
+the ascent statement, hero the identity, no seal literal). 153/153 rank+tour tests.
+
 ### 0. ⭐ Alabaster: the dark bands, headers and panels that stayed black on the light theme (2026-09-10, Design System / Alabaster — commit `3ebb401` on `feat/route-map` (pushed) · ✅ **WEB** `index-7d0bca61fa230f22b4bfc2bb171e62db.js` (200, MATCH) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a08d05-bbdf-7eaa-b52c-e878a4f8c5f3` on runtime `47944f2e…` (fingerprint MATCHED first; manifest returned this id), Android `01a08d05-bbdf-7e5d…`; picked as `f198aac` on `ota/build8-js` (pushed, tsc 0) · ⏳ **NOT SEEN BY A HUMAN**)
 
 PO, screenshot of Activity History on Alabaster: *"Those colors should not be like that. We need this fixed, and
