@@ -192,12 +192,47 @@ test('the newest preference bodies did not drop a key an older migration added',
   assert.equal(defaults.squad_training, 'true', "0153's squad_training default did not survive 0159's restatement");
 });
 
+/*
+ * ⚠ ONE KEY IS SENT AROUND THE UNION, AND ITS DEFAULT LIVES WITH ITS SENDER.
+ *
+ * 0200 closes squad goals and pushes the squad from `squad_goal_record_close`, which writes `push_outbox`
+ * directly and reads `squad_goals` itself — defaulting it ON (Amendment 006 D1). It does not restate
+ * `push_pref_default`, because 0195/0196 on feat/forge-coach restate it unapplied and whichever lands
+ * second would erase the other. So `push_pref_default('squad_goals')` still says false, and NOTHING READS
+ * THAT ARM: `push_prefs_allows` only consults it for a kind `push_pref_key` maps there, and none does.
+ *
+ * The exemption is therefore exactly as wide as that fact, and asserts it: the moment a union kind maps
+ * to `squad_goals`, the dead arm becomes live and this exemption fails rather than hiding it.
+ */
+const SQL_0200 = readFileSync(resolve(ROOT, 'supabase/migrations/0200_squad_goal_close.sql'), 'utf8');
+
+function directSenderDefault(src, fn, key) {
+  const body = fnBody(fn, src);
+  const m = new RegExp(`->\\s*'${key}'\\)\\s*=\\s*'boolean'[\\s\\S]*?else\\s+(true|false)`).exec(body);
+  assert.ok(m, `${fn} no longer reads '${key}' with an explicit default — the parser or the sender has drifted`);
+  return m[1];
+}
+
+const DIRECT_SENDER_DEFAULTS = {
+  squad_goals: directSenderDefault(SQL_0200, 'squad_goal_record_close', 'squad_goals'),
+};
+
+test("a key sent around the union is pinned to its sender's default, and only while no union kind uses it", () => {
+  for (const [key, value] of Object.entries(DIRECT_SENDER_DEFAULTS)) {
+    assert.ok(key in NOTIF_DEFAULTS, `'${key}' has a direct sender but no toggle`);
+    assert.ok(!Object.values(PUSH_KIND_PREF).includes(key), `a union kind now maps to '${key}', so push_pref_default() is live for it — drop the exemption and restate the default there`);
+    assert.equal(value === 'true', NOTIF_DEFAULTS[key], `'${key}' defaults to ${value} in its sender and ${NOTIF_DEFAULTS[key]} on the screen`);
+  }
+  assert.equal(DIRECT_SENDER_DEFAULTS.squad_goals, 'true', 'Amendment 006 D1: squad goal pushes are ON by default');
+});
+
 test('every default in the SQL matches the toggle the athlete actually sees', () => {
   const sql = pairs(fnBody('push_pref_default', SQL_PREFS), `(true|false)`);
   assert.ok(Object.keys(sql).length > 0, 'no defaults parsed — the regex has drifted from the SQL');
 
   for (const [key, value] of Object.entries(sql)) {
     assert.ok(key in NOTIF_DEFAULTS, `push_pref_default() answers for '${key}', which no toggle offers`);
+    if (key in DIRECT_SENDER_DEFAULTS) continue; // pinned by the test above, which also proves this arm is dead
     assert.equal(
       value === 'true',
       NOTIF_DEFAULTS[key],

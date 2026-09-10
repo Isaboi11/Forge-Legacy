@@ -357,7 +357,12 @@ export interface SquadFeedPost {
   prValue: string | null;
   prExercise: string | null;
   prLabel: string | null;
-  authorId: string;
+  /**
+   * NULL ON A POST THE SQUAD WROTE — the Weekly Summary (0057) and a goal's close (0200). It was typed
+   * `string` while arriving null, so an authorless post rendered as "Athlete" with a profile link to
+   * nobody. See `isSquadVoice`.
+   */
+  authorId: string | null;
   authorName: string;
   authorAvatar: string | null;
   authorIsOwner: boolean;
@@ -426,7 +431,7 @@ interface FeedRow {
   pr_value: string | null;
   pr_exercise: string | null;
   pr_label: string | null;
-  author_id: string;
+  author_id: string | null;
   author_name: string | null;
   author_avatar: string | null;
   author_is_owner: boolean;
@@ -441,6 +446,13 @@ interface FeedRow {
   layout: PostLayout | null;
   recap: WeeklyRecapRow | null;
 }
+
+/**
+ * Did the SQUAD write this, rather than a member? The Weekly Summary and a goal's close (0200) are posted
+ * by nobody, so they are headed with the squad's own name and crest, carry no profile link, and have no
+ * attribution line ("Athlete reached a milestone") inventing a person who did the posting.
+ */
+export const isSquadVoice = (p: Pick<SquadFeedPost, 'authorId'>): boolean => !p.authorId;
 
 const toPost = (r: FeedRow): SquadFeedPost => ({
   id: r.id,

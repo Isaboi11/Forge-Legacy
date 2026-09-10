@@ -312,6 +312,26 @@ function bodyFor(n: ForgeNotification, actor: string) {
           <Text style={styles.strong}>{actor}</Text> finished a workout in <Text style={styles.strong}>{n.squadName}</Text>
         </>
       );
+    /* 0200 — the squad is the subject, like the weekly review. A closed goal leads with what the squad did
+       ("412 workouts logged together"), never with the gap (Amendment 006 §5). */
+    case 'squad_goal_met':
+      return (
+        <>
+          <Text style={styles.strong}>{n.squadName}</Text> hit its goal{n.detail ? ` — ${n.detail}` : ''}
+        </>
+      );
+    case 'squad_goal_closed':
+      return (
+        <>
+          <Text style={styles.strong}>{n.squadName}</Text>’s goal closed{n.detail ? ` — ${n.detail}` : ''}
+        </>
+      );
+    case 'squad_goal_closing':
+      return (
+        <>
+          <Text style={styles.strong}>{n.squadName}</Text>’s goal closes soon{n.detail ? ` — ${n.detail}` : ''}
+        </>
+      );
   }
 }
 
@@ -355,6 +375,13 @@ function subFor(n: ForgeNotification): string {
       return 'Ask to join them';
     case 'squad_training_finished':
       return 'See what they did';
+    case 'squad_goal_met':
+      return 'See how the squad got there';
+    case 'squad_goal_closed':
+      return 'See what the squad logged';
+    // Owner only, and the one thing worth doing two days out is moving the date (D2).
+    case 'squad_goal_closing':
+      return 'Extend the deadline, or let it close';
   }
 }
 
@@ -397,6 +424,12 @@ function accessibilityLabelFor(n: ForgeNotification, actor: string): string {
       return `${actor} is training in ${n.squadName}, started ${when} ago. Ask to join them.`;
     case 'squad_training_finished':
       return `${actor} finished a workout in ${n.squadName}, ${when} ago. See what they did.`;
+    case 'squad_goal_met':
+      return `${n.squadName} hit its goal${n.detail ? `, ${n.detail}` : ''}, ${when} ago.`;
+    case 'squad_goal_closed':
+      return `${n.squadName}'s goal closed${n.detail ? `, ${n.detail}` : ''}, ${when} ago.`;
+    case 'squad_goal_closing':
+      return `${n.squadName}'s goal closes soon${n.detail ? `, ${n.detail}` : ''}. Extend the deadline, or let it close.`;
   }
 }
 
@@ -443,6 +476,13 @@ function glyphFor(kind: ForgeNotification['kind']) {
       return <PlayGlyph size={11} color={flColor.bronze300} />;
     case 'squad_training_finished':
       return <CheckGlyph size={11} color="#8FB295" />;
+    // A met goal takes the tick; a closed one and the reminder take the neutral page — never a warning mark.
+    case 'squad_goal_met':
+      return <CheckGlyph size={11} color="#8FB295" />;
+    case 'squad_goal_closed':
+      return <ProgramGlyph size={11} color={flColor.gray400} />;
+    case 'squad_goal_closing':
+      return <ProgramGlyph size={11} color={flColor.bronze300} />;
   }
 }
 
