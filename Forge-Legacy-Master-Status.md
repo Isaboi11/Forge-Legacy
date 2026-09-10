@@ -940,6 +940,10 @@ tsc 0 · lint clean · tour/home tests 146/146. Deployed from worktree `C:\Users
 parallel session's untracked 0199 files were in the main tree. ⚠ This web deploy also carries every earlier
 commit on the branch that had not reached web yet — including squad goal close (`67cc632`), whose `0200` is
 still unpasted.
+**Follow-up, same day — `1db9af4` (W25-A1-D10):** "Build as you go" now opens the Exercise Picker straight
+away, titled *Build Freestyle Workout*; the one-button freestyle intro stays only as the back-out landing.
+✅ Web `index-2ae90be50e4b6f24c8ca6e713579b3c3.js` — alias 200, hash MATCH, title string present. tsc 0 ·
+761/761 app+workout tests. ⏳ No OTA · not seen by a human.
 
 ### 0. ⭐ A squad goal ENDS now — posted, pushed, and the card stops saying it's still going; and a tapped squad photo shows the photo (2026-09-10, Squads — **`Squad-Architecture-Amendment-006-Goal-Close.md` 🔒 LOCKED** (PO took D1–D3 same day) · ⛔ **`0200` WRITTEN, NOT APPLIED** (`supabase/apply/pending-0200.sql` — paste now; the app half is out) · ✅ **OTA PUBLISHED TO BUILD 8 AND VERIFIED DELIVERABLE** iOS `01a08c4d-9e0f-74d3-a6c8-51bb66ce26b1` (group `de4b0ea2…`) on runtime `47944f2e…` (fingerprint MATCHED build `3f67281b…` first), Android `01a08c4d-9e0f-76e1…` — commit `67cc632` on `feat/route-map` (**pushed**), cherry-picked as `fabfca4` on `ota/build8-js` (**pushed**; tsc 0, 3,371/3,371 in the worktree). ⛔ **WEB NOT DEPLOYED · NOT SEEN ON A DEVICE**)
 
