@@ -13,7 +13,8 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { deleteTemplate, fetchTemplates, templateSummary, type WorkoutTemplate } from '@/data/templates-live';
+import { deleteTemplate, fetchTemplates, reorderTemplates, templateSummary, type WorkoutTemplate } from '@/data/templates-live';
+import { ReorderTemplatesSheet } from '@/components/forge/ReorderTemplatesSheet';
 import { fetchWeekTemplates, weekSummary } from '@/data/week-templates-live';
 import { STARTER_TEMPLATES, starterMeta, starterSummary, suggestedStarters } from '@/domain/workout/starter-templates';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
@@ -126,6 +127,22 @@ export default function TemplatesScreen() {
    */
   const onNew = () => setNewOpen(true);
 
+  const [reorderOpen, setReorderOpen] = useState(false);
+  const [reorderBusy, setReorderBusy] = useState(false);
+  const saveOrder = async (ids: string[]) => {
+    setReorderBusy(true);
+    try {
+      await reorderTemplates(ids);
+      setReorderOpen(false);
+      showToast('Order saved.');
+      refetch();
+    } catch (e) {
+      showToast(`Couldn’t save the order — ${errorMessage(e)}`);
+    } finally {
+      setReorderBusy(false);
+    }
+  };
+
   const remove = async (t: WorkoutTemplate) => {
     setConfirmDelete(null);
     try {
@@ -204,8 +221,8 @@ export default function TemplatesScreen() {
         >
           <Text style={styles.lede}>
             {mineOnly
-              ? 'Everything you’ve built, saved or duplicated. Recently used appear first.'
-              : 'Reusable workouts, ready whenever you are. Recently used appear first.'}
+              ? 'Everything you’ve built, saved or duplicated, in your order.'
+              : 'Reusable workouts, ready whenever you are.'}
           </Text>
 
           {/* ── FROM FORGE ────────────────────────────────────────────────────────────────────────
@@ -302,6 +319,25 @@ export default function TemplatesScreen() {
             </View>
           ) : null}
 
+          {/* ── YOURS, IN YOUR ORDER (W26-Amendment-003) ──────────────────────────────────────────
+              PO: *"I should be able to rearrange my templates how I want."* The label is dropped under
+              `?mine=1`, where the AppBar already says "Your Templates"; Reorder stays either way, and
+              only appears once there are two things to put in an order. ── */}
+          {list.length >= 2 ? (
+            <View style={styles.yoursHead}>
+              <Text style={styles.shelfLabel}>{mineOnly ? '' : 'Your Templates'}</Text>
+              <Pressable
+                onPress={() => setReorderOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Reorder your templates"
+                hitSlop={8}
+                style={({ pressed }) => [styles.reorderBtn, pressed ? styles.pressed : null]}
+              >
+                <Text style={styles.reorderText}>Reorder</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
           <TourAnchor id="templates-list" style={styles.stack}>
             {list.map((t) => (
               <View key={t.id} style={[styles.card, t.lastUsedAt ? styles.cardUsed : null]}>
@@ -395,6 +431,14 @@ export default function TemplatesScreen() {
       {/* The empty state already says, in full sentences, the one thing this tour teaches — so it only
           fires once there are templates to point at. */}
       <ScreenTour screenKey="templates" ready={list.length > 0} />
+
+      <ReorderTemplatesSheet
+        open={reorderOpen}
+        onClose={() => setReorderOpen(false)}
+        rows={list.map((t) => ({ id: t.id, name: t.name, meta: templateSummary(t) }))}
+        busy={reorderBusy}
+        onSave={(ids) => void saveOrder(ids)}
+      />
 
       {/* The `+` asks which.
           ⚠ NOT a ConfirmSheet, which was the first attempt and was wrong: its cancel and its
@@ -509,6 +553,9 @@ const styles = StyleSheet.create({
   shelfHead: { marginBottom: 2 },
   shelfLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
   shelfSub: { marginTop: 3, fontSize: 12, color: flColor.gray600 },
+  yoursHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  reorderBtn: { paddingVertical: 6, paddingLeft: 12 },
+  reorderText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronze300 },
   starterCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
   starterText: { flex: 1, minWidth: 0 },
   starterName: { fontFamily: flFont.display, fontSize: 16.5, fontWeight: '600', color: flColor.cream100 },
