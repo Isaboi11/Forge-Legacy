@@ -927,6 +927,16 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
 > Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
 
+### 0. ⭐ A rower reads in metres by default — Preferences: Meters | Miles (2026-09-11, cardio units · commit `05e5a0b` on `feat/route-map` (pushed) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a09197-b488-7f40-a937-43472e255a23` on runtime `47944f2e…` (fingerprint MATCHED `3f67281b…`; manifest returned it), Android `01a09197-b488-730c…`; picked onto `ota/build8-js` (pushed; tsc 0; 3,395/3,395 there, 3,441/3,441 on main) · no migration (`app_prefs` is jsonb) · ⛔ **WEB NOT DEPLOYED** · ⏳ **NOT SEEN BY A HUMAN**)
+
+PO: *"default meters"*. `distanceUnitFor(activity, metric, rowUnit = 'm')` — a rower is metres in either system;
+`AppPrefs.rowUnit` (`'m' | 'road'`, server-backed) opts back to mi/km from Preferences → Display. Wired through the card,
+Log a Run, Program Builder, a friend's live view, The Record (`catalog_key` now read to know a bout was a row), feed/share
+posts, Activity Detail and History — summaries convert rowing only, from the canonical mile; swims there unchanged. Seed
+2000 m (was 1.5 mi = 2414 m); metre cap 100,000 (half-marathon row), yard cap stays 10,000. Pace labelled per mi/km
+(`paceUnitFor`) — the "/yd" under a per-mile number on swims was already wrong. **No /500 m split** (EPS-D12, not asked).
+Storage canonical miles throughout; goals, honors and squad totals untouched.
+
 ### 0. ⭐ Templates in your own order (0201) + an all-upper-body session is "Upper Body", not "Full Body" (2026-09-11, W-26 + session naming · commits `88f71f2` `f8e6d83` on `feat/route-map` (pushed) · ✅ **0201 APPLIED** — §3 `templates 26 · placed 0 · athletes_with_an_order 0`, exactly as predicted · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a09102-189e-79db-9d21-c470be29bf65` on runtime `47944f2e…` (fingerprint MATCHED `3f67281b…`; manifest returned it), Android `01a09102-189e-7bcf…`; picked as `30e4cf5` `6266521` on `ota/build8-js` (pushed; tsc 0; 388/388 related, 3,437/3,437 on main) · ⛔ **WEB NOT DEPLOYED** · ⏳ **NOT SEEN BY A HUMAN**)
 
 **Naming** — PO on Kim's lateral raises / curls / presses / floor press / renegade rows, saved "Full Body + Cardio":
@@ -938,8 +948,7 @@ appended only when a cardio bout was logged, so her session likely had one above
 Reorder" (2+ templates) → `ReorderTemplatesSheet` (the week sheet's hook, pitch, grip, chevrons, haptics; Save writes).
 `workout_templates.position` (null = unplaced) sorted by `workout_templates_list()` — unplaced (new) on top in the old
 recency order, so every template list in the app follows it. **W26-Amendment-003** supersedes W26-D1.
-⚠ **DECISION NEEDED — rower units:** metres by default (recommended) with a remembered m/mi switch on the card? And a
-/500m pace (needs an EPS-D12 amendment — the card shows /mi pace on a rower today, which means nothing)?
+✅ Rower units RESOLVED — see the entry above.
 
 ### 0. ⭐ Active Workout layout: All Exercises at the top, bare prev/next arrows, one count on screen (2026-09-11, Active Workout — PO layout brief · commit `0b33510` on `feat/route-map` · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a0903a-6aab-750d-876c-16f60d750640` on runtime `47944f2e…` (fingerprint MATCHED build `3f67281b…` first; manifest returned it to a build-8 iOS client), Android `01a0903a-6aab-7440…`; picked as `c2573cb` on `ota/build8-js` (tsc 0; 254/254 related tests there) · ⛔ **WEB NOT DEPLOYED** — PO asked for OTA only · ⏳ **NOT SEEN BY A HUMAN**)
 
