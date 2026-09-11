@@ -160,7 +160,9 @@ export async function fetchPlannedSession(): Promise<{ name: string; exercises: 
 }
 
 /**
- * The library, ordered by when each template was last actually trained.
+ * The library, in the athlete's own order once they have set one (0201), and until then — and for any
+ * template saved since — by when each was last actually trained. The ordering is the RPC's, so every
+ * screen that lists templates follows it without sorting anything itself.
  *
  * Through the RPC rather than the table, because `use_count` and `last_used_at` are DERIVED from
  * `workouts.template_id` (0095). The direct select ordered by the STORED `last_used_at`, which nothing
@@ -305,6 +307,20 @@ export async function adoptStarterTemplate(def: { id: string; name: string; exer
 export async function renameTemplate(id: string, name: string): Promise<void> {
   const { error } = await supabase.from('workout_templates').update({ name: name.trim() }).eq('id', id);
   if (error) throw error;
+}
+
+/**
+ * Save the athlete's order — `ids` top to bottom, the whole list in one call (0201), so a failure can't
+ * leave half the list renumbered.
+ */
+export async function reorderTemplates(ids: string[]): Promise<void> {
+  const { error } = await supabase.rpc('workout_templates_reorder', { p_ids: ids });
+  if (error) {
+    if ((error as { code?: string }).code === 'PGRST202') {
+      throw new Error('Reordering isn’t available yet — migration 0201 hasn’t been applied.');
+    }
+    throw error;
+  }
 }
 
 export async function deleteTemplate(id: string): Promise<void> {

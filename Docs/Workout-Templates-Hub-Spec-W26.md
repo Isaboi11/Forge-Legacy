@@ -133,7 +133,7 @@ MAIN is always present. WARM_UP and COOL_DOWN are included in the count when pre
 
 ### 3.5 Sort Order
 
-Default sort. No user-facing sort controls in MVP. (W26-D1)
+Default sort. No user-facing sort controls in MVP. (W26-D1 — ⚠ superseded by W26-Amendment-003: a manual order via Reorder)
 
 1. Templates where `lastUsedAt` is non-null — sorted by `lastUsedAt` descending (most recently used first)
 2. Templates where `lastUsedAt` is null — sorted by `createdAt` descending (most recently created first)
@@ -329,7 +329,7 @@ W-26 does not and will not (MVP):
 
 | ID | Decision | Rationale |
 |----|----------|-----------|
-| W26-D1 | Single default sort (lastUsedAt desc, never-used by createdAt desc), no user controls | A list of under 30 templates does not require a sort UI. The most relevant template is always the most recently used. Adding controls adds administrative weight to a personal library. |
+| W26-D1 ⚠ **SUPERSEDED by `Amendments/W26-Amendment-003`** (2026-09-11: the athlete can set their own order via a Reorder sheet; this sort remains the default and the fallback) | Single default sort (lastUsedAt desc, never-used by createdAt desc), no user controls | A list of under 30 templates does not require a sort UI. The most relevant template is always the most recently used. Adding controls adds administrative weight to a personal library. |
 | W26-D2 | Template launch bypasses W-8 when activityType is non-null | The athlete explicitly chose this activity type when building the template. Prompting the type again is friction without value. Consistent with W-8's existing bypass pattern for typed program slots (W-3). |
 | W26-D3 | Template prescription values are the starting values; carry-forward is not applied | Carry-forward (EL-D8) is a free-workout behavior. The template IS the prescription. Overriding it silently with prior session data would diverge from the athlete's explicit design choice. |
 | W26-D4 | useCount and lastUsedAt update on first save of a derived session with ≥1 set logged | Prevents inflating counts for sessions started and immediately abandoned. "Used" requires at least one logged set. Partial saves count. Full completion is not required. |
