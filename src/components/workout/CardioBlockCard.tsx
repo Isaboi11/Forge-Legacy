@@ -8,7 +8,7 @@ import { useWallClockTimer } from '@/hooks/useWallClockTimer';
 import { cardioTimerKey } from '@/domain/workout/cardio-timer-store';
 import { useKeepScreenAwake } from '@/hooks/useKeepScreenAwake';
 import { useRunTracker } from '@/hooks/useRunTracker';
-import { useReduceMotion } from '@/lib/settings';
+import { useAppPrefs, useReduceMotion } from '@/lib/settings';
 import {
   activitySymbol,
   avgPaceSec,
@@ -42,6 +42,7 @@ import {
   type CardioResult,
   type Modality,
   OUTDOOR_CAPABLE,
+  paceUnitFor,
   resolveModality,
 } from '@/domain/workout/conditioning';
 import {
@@ -279,10 +280,15 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
    * ══ THE UNIT THIS ACTIVITY IS MEASURED IN ══
    *
    * Miles or kilometres for a road bout; YARDS OR METRES for a swim, because a pool session is written
-   * "1200 yd" and nobody converts it in their head. Storage stays canonical miles throughout — this
-   * chooses the scale that is read, typed and stepped, and nothing else.
+   * "1200 yd" and nobody converts it in their head; METRES for a rower unless the athlete chose miles in
+   * Preferences, because every erg reads metres. Storage stays canonical miles throughout — this chooses
+   * the scale that is read, typed and stepped, and nothing else.
    */
-  const dU = distanceUnitFor(activity, units === 'metric');
+  const { prefs } = useAppPrefs();
+  /* A rower reads in METRES unless the athlete chose miles in Preferences (`rowUnit`). */
+  const dU = distanceUnitFor(activity, units === 'metric', prefs.rowUnit);
+  /** Pace is per mile or km, never per metre or yard — see `paceUnitFor`. */
+  const pU = paceUnitFor(units === 'metric');
   const pool = dU === 'yd' || dU === 'm';
   /** A display figure back to canonical miles — the one conversion, replacing four inline `/ 1.609344`. */
   const dMi = (v: number) => fromDistanceIn(v, dU);
@@ -352,7 +358,7 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
       ? `${toSpeed(targetSpdMph, units).toFixed(1)} ${units === 'metric' ? 'km/h' : 'mph'}`
       : null
     : targetPaceSec != null
-      ? `${fmtPace(toPace(targetPaceSec, units))} /${dU}`
+      ? `${fmtPace(toPace(targetPaceSec, units))} /${pU}`
       : null;
   const subtitle = hasTarget
     ? paceStr
@@ -399,7 +405,8 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
     // The form's shape is decided ONCE, here, from how the bout was (or will be) recorded — not from
     // whatever the toggle says later. Otherwise editing an outdoor-toggled treadmill run drops its incline.
     const formTreadmill = logged && lm ? lm === 'indoor' : treadmill;
-    const target = targetMi ?? 1;
+    /* A rower with no target opens on 2000 m, not on a mile — 1609 m is a distance nobody rows. */
+    const target = targetMi ?? (activity === 'row' ? FIRST_TARGET.row.mi : 1);
     const pace = targetPaceSec ?? 540;
     // A bout with a measured distance is TRACKED; one with only a clock is not, and must not be filed
     // as though GPS vouched for the number the athlete is about to type.
@@ -648,7 +655,7 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
         <Field
           label="PACE"
           hint=""
-          value={ownTarget.paceSec == null ? 'Any' : `${fmtPace(toPace(ownTarget.paceSec, units))} /${dU}`}
+          value={ownTarget.paceSec == null ? 'Any' : `${fmtPace(toPace(ownTarget.paceSec, units))} /${pU}`}
           /* `−` is FASTER for a pace: the numeral going down is the runner speeding up. */
           onDec={() => setOwnTarget((t) => (t ? { ...t, paceSec: bumpPace(t.paceSec, -1, FIRST_TARGET[activity].paceSec) } : t))}
           onInc={() => setOwnTarget((t) => (t ? { ...t, paceSec: bumpPace(t.paceSec, 1, FIRST_TARGET[activity].paceSec) } : t))}
@@ -800,7 +807,7 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
                           ? '--'
                           : speed
                             ? `${toSpeed(3600 / livePaceSec, units).toFixed(1)} ${units === 'metric' ? 'km/h' : 'mph'}`
-                            : `${fmtPace(toPace(livePaceSec, units))} /${dU}`}
+                            : `${fmtPace(toPace(livePaceSec, units))} /${pU}`}
                       </Text>
                       {/* ⚠ ONLY WHEN THE PHONE ACTUALLY MEASURED ALTITUDE. `hasClimbData` is the
                           difference between "0 ft" — a claim that the route was flat — and a device that
@@ -943,7 +950,7 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
                   <StripCell label="TARGET SPEED" value={`${toSpeed(targetSpdMph, units).toFixed(1)}`} first={!hasTarget} big={!hasTarget} accent={!hasTarget} />
                 )
               : targetPaceSec != null && (
-                  <StripCell label="TARGET PACE" value={`${fmtPace(toPace(targetPaceSec, units))} /${dU}`} first={!hasTarget} big={!hasTarget} accent={!hasTarget} />
+                  <StripCell label="TARGET PACE" value={`${fmtPace(toPace(targetPaceSec, units))} /${pU}`} first={!hasTarget} big={!hasTarget} accent={!hasTarget} />
                 )}
           </View>
         ) : null}
@@ -1029,7 +1036,7 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
               <View style={styles.computed}>
                 <Text style={styles.computedLabel}>{speed ? 'AVG SPEED' : 'AVG PACE'}</Text>
                 <Text style={styles.computedValue}>
-                  {draftPace == null ? '—' : speed ? `${toSpeed(3600 / draftPace, units).toFixed(1)}` : `${fmtPace(toPace(draftPace, units))} /${dU}`}
+                  {draftPace == null ? '—' : speed ? `${toSpeed(3600 / draftPace, units).toFixed(1)}` : `${fmtPace(toPace(draftPace, units))} /${pU}`}
                 </Text>
               </View>
             ) : tracksFloors && draft.floors > 0 ? (
@@ -1100,7 +1107,7 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
                     const p = avgPaceSec(result?.distanceMi, result?.timeSec);
                     return p == null ? '—' : speed ? toSpeed(3600 / p, units).toFixed(1) : fmtPace(toPace(p, units));
                   })()}
-                  label={speed ? 'AVG' : `AVG /${dU.toUpperCase()}`}
+                  label={speed ? 'AVG' : `AVG /${pU.toUpperCase()}`}
                   accent
                 />
               ) : null}

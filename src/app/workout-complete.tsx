@@ -14,6 +14,7 @@ import { saveWorkoutAsTemplate } from '@/data/templates-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { useUnits } from '@/lib/settings';
+import { rowMetresText } from '@/domain/workout/conditioning';
 import { displayWeight, exactWeight } from '@/domain/settings/units';
 import { WORKOUT_NAME_MAX, fetchCompletion, renameWorkout, savePlaylist, saveReflection, saveWorkoutNote, type CompletionCardio, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
 import { fetchWorkoutAsSession } from '@/data/continue-workout-live';
@@ -1595,9 +1596,12 @@ function CheckGlyph({ size = 15, color = '#8FB295' }: { size?: number; color?: s
  */
 function CardioRecordRow({ name, cardio, units }: { name: string; cardio: CompletionCardio; units: UnitSystem }) {
   const u = distanceLabel(units);
+  const { rowUnit } = useUnits();
   const cells: { value: string; label: string; accent?: boolean }[] = [];
   if (cardio.distanceMi != null) {
-    cells.push({ value: toDistance(cardio.distanceMi, units).toFixed(2), label: u.toUpperCase() });
+    // A row reads in metres, as it did on the card (`rowUnit`); pace below stays per mile or km.
+    const metres = rowMetresText(cardio.distanceMi, cardio.isRow, rowUnit);
+    cells.push(metres ? { value: metres, label: 'M' } : { value: toDistance(cardio.distanceMi, units).toFixed(2), label: u.toUpperCase() });
   }
   /* Floors sit where miles would, and take the accent for the same reason a distance does: on a stair
      session it is the number the athlete came for. ⚠ NOT passed through `toDistance` — there is no

@@ -234,8 +234,9 @@ function Body({
   onOpenExercise: (keyOrName: string) => void;
   onOpenSummary: () => void;
 }) {
+  const { rowUnit } = useUnits();
   const sections = sectionsOf(detail);
-  const tiles = statTiles(detail);
+  const tiles = statTiles(detail, rowUnit);
   const isStrength = detail.type === 'strength';
   /*
    * ══ THE STORED MAP, FINALLY READ BACK ══

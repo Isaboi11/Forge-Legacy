@@ -142,3 +142,10 @@ test('a distance with no duration still shows distance, just no pace', () => {
   assert.deepEqual(t.map((x) => x.label), ['Distance', 'Duration']);
   assert.equal(t[1].value, '—');
 });
+
+test('a rowing session’s Distance tile reads in metres by default', () => {
+  const row = statTiles(detail({ type: 'rowing', distance: 2000 / 1609.344, distanceUnit: 'mi', durationSec: 480 }));
+  assert.equal(row.find((t) => t.label === 'Distance')?.value, '2000 m');
+  const miles = statTiles(detail({ type: 'rowing', distance: 1.5, distanceUnit: 'mi', durationSec: 480 }), 'road');
+  assert.equal(miles.find((t) => t.label === 'Distance')?.value, '1.5 mi');
+});

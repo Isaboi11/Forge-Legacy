@@ -11,7 +11,7 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { fetchLiveSession, type LiveSessionView } from '@/data/live-session-live';
 import { minutesTraining } from '@/data/presence-live';
 import { liveProgress, type LiveExercise, type LiveSet } from '@/domain/workout/live-session';
-import { CARDIO_ACTIVITIES, distanceUnitFor, fmtDistanceIn, fmtDuration, type CardioActivity } from '@/domain/workout/conditioning';
+import { CARDIO_ACTIVITIES, distanceUnitFor, fmtDistanceIn, fmtDuration, type CardioActivity, type RowUnit } from '@/domain/workout/conditioning';
 import { setLoadLineLb } from '@/domain/workout/set-load';
 import { useUnits } from '@/lib/settings';
 
@@ -162,6 +162,7 @@ function Progress({ snapshot }: { snapshot: Parameters<typeof liveProgress>[0] }
 }
 
 function ExerciseCard({ exercise, current, units }: { exercise: LiveExercise; current: boolean; units: ReturnType<typeof useUnits>['units'] }) {
+  const { rowUnit } = useUnits();
   const done = exercise.sets.filter((s) => s.done).length;
   const finished = exercise.sets.length > 0 && done === exercise.sets.length;
   return (
@@ -173,7 +174,7 @@ function ExerciseCard({ exercise, current, units }: { exercise: LiveExercise; cu
         {current && !finished ? <Text style={styles.nowPill}>NOW</Text> : finished ? <CheckGlyph /> : null}
       </View>
       {exercise.kind === 'cardio' ? (
-        <Text style={styles.cardioLine}>{cardioLine(exercise, units === 'metric')}</Text>
+        <Text style={styles.cardioLine}>{cardioLine(exercise, units === 'metric', rowUnit)}</Text>
       ) : (
         <View style={styles.sets}>
           {exercise.sets.map((s, i) => (
@@ -207,12 +208,12 @@ function SetRow({ index, set, units }: { index: number; set: LiveSet; units: Ret
   );
 }
 
-function cardioLine(e: LiveExercise, metric: boolean): string {
+function cardioLine(e: LiveExercise, metric: boolean, rowUnit: RowUnit): string {
   const activity = (e.activity ?? 'run') as CardioActivity;
   const name = CARDIO_ACTIVITIES.find((a) => a.key === activity)?.name ?? 'Cardio';
   const parts: string[] = [name];
   if (e.targetMi != null) {
-    const unit = distanceUnitFor(activity, metric);
+    const unit = distanceUnitFor(activity, metric, rowUnit);
     parts.push(`${fmtDistanceIn(e.targetMi, unit)} ${unit}`);
   }
   if (e.targetSec != null) parts.push(fmtDuration(e.targetSec));

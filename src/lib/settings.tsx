@@ -8,6 +8,7 @@ import { fetchAppPrefs } from '@/data/settings-live';
 import { APP_PREFS_DEFAULTS, type AppPrefs } from '@/domain/settings/preferences';
 import type { IntensityLevel } from '@/domain/coach/rulebook/intensity';
 import { convertMeasure, formatLoad, type UnitSystem } from '@/domain/settings/units';
+import type { RowUnit } from '@/domain/workout/conditioning';
 
 /**
  * App-wide experience preferences (units, haptics, sound, reduce-motion), fetched once and shared so a
@@ -77,11 +78,13 @@ export function useUnits(): {
   units: UnitSystem;
   fmt: (formatted: string) => string;
   load: (lb: number, reps?: number | null) => string;
+  /** How a rower's distance reads — metres by default. Pass it to `distanceUnitFor`. */
+  rowUnit: RowUnit;
 } {
   const { prefs } = useAppPrefs();
   const fmt = useCallback((formatted: string) => convertMeasure(formatted, prefs.units), [prefs.units]);
   const load = useCallback((lb: number, reps?: number | null) => formatLoad(lb, prefs.units, reps), [prefs.units]);
-  return { units: prefs.units, fmt, load };
+  return { units: prefs.units, fmt, load, rowUnit: prefs.rowUnit };
 }
 
 /** Whether to simplify animation — the athlete's preference (the OS setting is honoured separately). */

@@ -7,6 +7,7 @@
  */
 
 import { ACTIVITY_LABEL, fmtDuration, type Modality } from './history-core.ts';
+import { DEFAULT_ROW_UNIT, rowMetresText, type RowUnit } from '../workout/conditioning.ts';
 /**
  * ⚠ `durText`, NOT `fmtDuration`. They answer different questions and only one of them is right here.
  *
@@ -254,11 +255,14 @@ export function pacePer(distance: number | null, durationSec: number | null, uni
  * The stat tiles for a non-strength session. Only tiles backed by real data appear — a session logged
  * without a distance shows Duration alone rather than an empty Distance tile.
  */
-export function statTiles(d: ActivityDetail): StatTile[] {
+export function statTiles(d: ActivityDetail, rowUnit: RowUnit = DEFAULT_ROW_UNIT): StatTile[] {
   const tiles: StatTile[] = [];
   const unit = d.distanceUnit ?? 'mi';
   if (d.distance != null && d.distance > 0) {
-    tiles.push({ label: 'Distance', value: `${Number(d.distance.toFixed(1))} ${unit}` });
+    /* A row reads in metres (`rowUnit`), as it did on the card it was logged on. Only when the stored unit
+       is the canonical mile — the pace beside it keeps the stored unit either way. */
+    const metres = unit === 'mi' ? rowMetresText(d.distance, d.type === 'rowing', rowUnit) : null;
+    tiles.push({ label: 'Distance', value: metres ? `${metres} m` : `${Number(d.distance.toFixed(1))} ${unit}` });
     const pace = pacePer(d.distance, d.durationSec, unit);
     if (pace) tiles.push({ label: 'Avg Pace', value: pace });
   }

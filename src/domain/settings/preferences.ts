@@ -21,6 +21,8 @@ import { DEFAULT_THEME, isThemeName, type ThemeName } from '../../constants/them
    below survives on `@/` only because it is type-only and stripped before anything tries. */
 import { DEFAULT_INTENSITY, INTENSITY_LEVELS, type IntensityLevel } from '../coach/rulebook/intensity.ts';
 import type { SymbolName } from '@/components/forge/ForgeSymbol';
+// Type-only, so it is erased before `node --test` runs and adds no runtime edge to the workout model.
+import type { RowUnit } from '../workout/conditioning.ts';
 
 export interface AppPrefs {
   units: UnitSystem;
@@ -68,6 +70,12 @@ export interface AppPrefs {
    *   dark again on a new phone with no idea why.
    */
   theme: ThemeName;
+  /**
+   * A rower's distance: `'m'` metres (default — PO, 2026-09-11, *"default meters"*) or `'road'`, the
+   * athlete's miles/km. Server-backed like `units`, so it reads the same on every device and every
+   * screen can take it synchronously. See `distanceUnitFor`.
+   */
+  rowUnit: RowUnit;
 }
 
 export const APP_PREFS_DEFAULTS: AppPrefs = {
@@ -78,6 +86,7 @@ export const APP_PREFS_DEFAULTS: AppPrefs = {
   analyticsOptOut: false,
   coachIntensity: DEFAULT_INTENSITY,
   theme: DEFAULT_THEME,
+  rowUnit: 'm',
 };
 
 export type ExperienceKey = 'haptics' | 'sound' | 'reduceMotion';
@@ -114,6 +123,7 @@ export function sanitizePrefs(raw: unknown): AppPrefs {
       out.coachIntensity = r.coachIntensity as IntensityLevel;
     }
     if (isThemeName(r.theme)) out.theme = r.theme;
+    if (r.rowUnit === 'm' || r.rowUnit === 'road') out.rowUnit = r.rowUnit;
   }
   return out;
 }

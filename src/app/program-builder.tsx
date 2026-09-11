@@ -233,7 +233,7 @@ function ProgramBuilderScreen() {
   const { profile } = useProfile();
   /* A pool is 25 yd or 25 m depending on where you swim, and a road distance is miles or kilometres.
      Storage stays in miles either way — this only chooses the scale the steppers walk and the card reads. */
-  const { units } = useUnits();
+  const { units, rowUnit } = useUnits();
   const metric = units === 'metric';
   const { o: entryMode, id: entryId, mode: surfaceMode } = useLocalSearchParams<{ o?: string; id?: string; mode?: string }>();
   /**
@@ -397,6 +397,7 @@ function ProgramBuilderScreen() {
             targetSheet.section
           ]?.[targetSheet.index]?.activity ?? 'run') as CardioActivity,
           metric,
+          rowUnit,
         )
       : 'mi';
   /** "Use a template" for the open day — the chooser, and the replace/add question it can raise. */
@@ -840,7 +841,7 @@ function ProgramBuilderScreen() {
                 const act = x.activity ?? 'run';
                 return {
                   ...x,
-                  targetMi: bumpDistanceUnit(x.targetMi ?? null, dir, distanceUnitFor(act, metric), FIRST_TARGET[act].mi),
+                  targetMi: bumpDistanceUnit(x.targetMi ?? null, dir, distanceUnitFor(act, metric, rowUnit), FIRST_TARGET[act].mi),
                 };
               }),
             )
@@ -865,7 +866,7 @@ function ProgramBuilderScreen() {
           onTypeDistance={(section, i) => {
             primeKeyboard('decimal-pad');
             const row = days[draft.openDay!]?.[section]?.[i];
-            const unit = distanceUnitFor((row?.activity ?? 'run') as CardioActivity, metric);
+            const unit = distanceUnitFor((row?.activity ?? 'run') as CardioActivity, metric, rowUnit);
             setTargetDraft(row?.targetMi == null ? '' : fmtDistanceIn(row.targetMi, unit));
             setTargetSheet({ section, index: i, field: 'distance' });
           }}
@@ -1023,7 +1024,7 @@ function ProgramBuilderScreen() {
                     const sec = raw && Number.isFinite(mins) && mins > 0 ? Math.round(mins * 60) : null;
                     return { ...x, targetSec: sec };
                   }
-                  const unit = distanceUnitFor((x.activity ?? 'run') as CardioActivity, metric);
+                  const unit = distanceUnitFor((x.activity ?? 'run') as CardioActivity, metric, rowUnit);
                   return { ...x, targetMi: raw ? parseDistanceIn(raw, unit) : null };
                 }),
               );
@@ -2452,8 +2453,10 @@ function ExerciseCard({
   const indoor = modality === 'indoor';
   const id = (n: number) => n;
 
-  /** Yards (or metres) for a swim, miles (or kilometres) for everything else. Storage is miles regardless. */
-  const distUnit = distanceUnitFor(activity, metric);
+  /** Yards (or metres) for a swim, metres for a rower unless they chose miles, miles (or km) for the rest.
+      Storage is miles regardless. */
+  const { rowUnit } = useUnits();
+  const distUnit = distanceUnitFor(activity, metric, rowUnit);
   const showDistance = !cardio || TRACKS_DISTANCE[activity];
   const showRate = cardio && hasRateTarget(activity);
 

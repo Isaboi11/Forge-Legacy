@@ -683,8 +683,8 @@ function RecapBlock({ summary }: { summary: WorkoutSummary }) {
    * the screen it opens never disagree about what the session was. "Under Iron" over a run was the
    * detail-screen version of the "0 Volume · 1 Lifts" card this pass exists to fix.
    */
-  const { units } = useUnits();
-  const cardioRow = summary.lead === 'cardio' && summary.cardio ? cardioStats(summary.cardio, summary.durationSec, units) : null;
+  const { units, rowUnit } = useUnits();
+  const cardioRow = summary.lead === 'cardio' && summary.cardio ? cardioStats(summary.cardio, summary.durationSec, units, rowUnit) : null;
   return (
     <View style={styles.recapBlock}>
       <View style={styles.recapStatRow}>

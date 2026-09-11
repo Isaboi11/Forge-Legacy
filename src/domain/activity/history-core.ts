@@ -10,6 +10,9 @@
  * ENUM, because a chip for a type the app cannot log would be a filter that can never match anything.
  */
 
+// Relative and extensioned — still `node --test`-loadable; `conditioning.ts` has no runtime imports.
+import { DEFAULT_ROW_UNIT, rowMetresText, type RowUnit } from '../workout/conditioning.ts';
+
 export type Modality = 'strength' | 'running' | 'walking' | 'cycling' | 'swimming' | 'rowing' | 'mobility' | 'other';
 
 export interface ActivityRecord {
@@ -89,7 +92,7 @@ export function monthKey(iso: string): string {
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 /** The centre stat line, by type. Empty when duration already says everything. */
-export function statLine(r: ActivityRecord): string {
+export function statLine(r: ActivityRecord, rowUnit: RowUnit = DEFAULT_ROW_UNIT): string {
   switch (r.type) {
     case 'strength':
       return r.setCount > 0 ? plural(r.setCount, 'set') : '';
@@ -97,10 +100,13 @@ export function statLine(r: ActivityRecord): string {
     case 'walking':
     case 'cycling':
     case 'swimming':
-    case 'rowing':
-      return r.distance != null && r.distance > 0
-        ? `${Number(r.distance.toFixed(1))} ${r.distanceUnit ?? 'mi'}`
-        : '';
+    case 'rowing': {
+      if (r.distance == null || r.distance <= 0) return '';
+      // A row reads in metres by default (`rowUnit`) — only converted from the canonical mile.
+      const unit = r.distanceUnit ?? 'mi';
+      const metres = unit === 'mi' ? rowMetresText(r.distance, r.type === 'rowing', rowUnit) : null;
+      return metres ? `${metres} m` : `${Number(r.distance.toFixed(1))} ${unit}`;
+    }
     default:
       return '';
   }

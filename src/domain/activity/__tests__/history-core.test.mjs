@@ -133,3 +133,10 @@ test('the spoken row carries everything the visual row shows', () => {
   }
   assert.ok(label.endsWith('Double-tap for detail.'));
 });
+
+test('a row reads in metres by default, and in the stored unit when the athlete chose miles', () => {
+  // PO, 2026-09-11: "default meters". Stored canonical miles; converted only for display.
+  assert.equal(statLine(rec({ type: 'rowing', distance: 2000 / 1609.344, distanceUnit: 'mi' })), '2000 m');
+  assert.equal(statLine(rec({ type: 'rowing', distance: 1.5, distanceUnit: 'mi' }), 'road'), '1.5 mi');
+  assert.equal(statLine(rec({ type: 'running', distance: 3, distanceUnit: 'mi' })), '3 mi', 'only the rower moves');
+});

@@ -58,7 +58,7 @@ export default function LogActivityScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
-  const { units } = useUnits();
+  const { units, rowUnit } = useUnits();
 
   const [activity, setActivity] = useState<DistanceActivity>('running');
   const [distance, setDistance] = useState('');
@@ -67,7 +67,7 @@ export default function LogActivityScreen() {
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const unit = distanceUnitFor(CARDIO_OF_DISTANCE_ACTIVITY[activity], units === 'metric');
+  const unit = distanceUnitFor(CARDIO_OF_DISTANCE_ACTIVITY[activity], units === 'metric', rowUnit);
   const copy = UNIT_COPY[unit];
 
   /*
@@ -82,7 +82,7 @@ export default function LogActivityScreen() {
    * did not mean. Duration and notes are unit-free and are deliberately kept.
    */
   const pickActivity = (next: DistanceActivity) => {
-    if (distanceUnitFor(CARDIO_OF_DISTANCE_ACTIVITY[next], units === 'metric') !== unit) setDistance('');
+    if (distanceUnitFor(CARDIO_OF_DISTANCE_ACTIVITY[next], units === 'metric', rowUnit) !== unit) setDistance('');
     setActivity(next);
   };
 

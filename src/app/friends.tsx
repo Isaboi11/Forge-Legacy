@@ -340,6 +340,7 @@ function FeedLedgerPost({
   /** A tap on the media band — a video plays instead of the card's destination. */
   onMedia?: () => void;
 }) {
+  const { rowUnit } = useUnits();
   const shape = shapeOf(post);
   const summary = shape === 'recap' ? post.workoutSummary : null;
   /* The ceremony share, drawn identically to the way the Squad feed draws it — same column, same guard,
@@ -371,7 +372,7 @@ function FeedLedgerPost({
          stands in rather than a heading reading "null". No backfill, no version check. */
       title={summary ? summary.name ?? recapMarker(summary).label : shape === 'milestone' ? post.prExercise ?? post.body ?? 'A milestone' : null}
       context={summary ? summary.context ?? null : shape === 'milestone' ? post.prValue : null}
-      stats={summary ? workoutStats(summary, units) : []}
+      stats={summary ? workoutStats(summary, units, rowUnit) : []}
       playlist={summary?.playlist ?? null}
       onPlaylist={summary?.playlist ? () => void openPlaylist(summary.playlist!) : undefined}
       caption={post.body}
