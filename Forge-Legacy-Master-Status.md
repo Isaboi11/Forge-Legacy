@@ -927,6 +927,20 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
 > Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
 
+### 0. ⭐ Templates in your own order (0201) + an all-upper-body session is "Upper Body", not "Full Body" (2026-09-11, W-26 + session naming · commits `88f71f2` `f8e6d83` on `feat/route-map` (pushed) · ✅ **0201 APPLIED** — §3 `templates 26 · placed 0 · athletes_with_an_order 0`, exactly as predicted · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a09102-189e-79db-9d21-c470be29bf65` on runtime `47944f2e…` (fingerprint MATCHED `3f67281b…`; manifest returned it), Android `01a09102-189e-7bcf…`; picked as `30e4cf5` `6266521` on `ota/build8-js` (pushed; tsc 0; 388/388 related, 3,437/3,437 on main) · ⛔ **WEB NOT DEPLOYED** · ⏳ **NOT SEEN BY A HUMAN**)
+
+**Naming** — PO on Kim's lateral raises / curls / presses / floor press / renegade rows, saved "Full Body + Cardio":
+*"just upper body."* `groupLabel` called any 3+ primary groups Full Body, but upper body is four groups and lower is
+one, so "Upper Body" was unreachable. Now Full Body = Legs + an upper group; 3+ without Legs = Upper Body (Core rides
+along). Program Builder day rows share the rule. Future saves only — Kim's stored name is unchanged. "+ Cardio" is
+appended only when a cardio bout was logged, so her session likely had one above the fold.
+**Template order** — PO: *"rearrange my templates … same drag and drop as the days in a program."* "Your Templates ·
+Reorder" (2+ templates) → `ReorderTemplatesSheet` (the week sheet's hook, pitch, grip, chevrons, haptics; Save writes).
+`workout_templates.position` (null = unplaced) sorted by `workout_templates_list()` — unplaced (new) on top in the old
+recency order, so every template list in the app follows it. **W26-Amendment-003** supersedes W26-D1.
+⚠ **DECISION NEEDED — rower units:** metres by default (recommended) with a remembered m/mi switch on the card? And a
+/500m pace (needs an EPS-D12 amendment — the card shows /mi pace on a rower today, which means nothing)?
+
 ### 0. ⭐ Active Workout layout: All Exercises at the top, bare prev/next arrows, one count on screen (2026-09-11, Active Workout — PO layout brief · commit `0b33510` on `feat/route-map` · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a0903a-6aab-750d-876c-16f60d750640` on runtime `47944f2e…` (fingerprint MATCHED build `3f67281b…` first; manifest returned it to a build-8 iOS client), Android `01a0903a-6aab-7440…`; picked as `c2573cb` on `ota/build8-js` (tsc 0; 254/254 related tests there) · ⛔ **WEB NOT DEPLOYED** — PO asked for OTA only · ⏳ **NOT SEEN BY A HUMAN**)
 
 PO: *"This is just a layout change. And some word changes."* No logging, timer, Finish or save behaviour moved —
