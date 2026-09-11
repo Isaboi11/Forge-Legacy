@@ -47,10 +47,17 @@ export function ScreenTour({
    */
   ready = true,
   restingBottom,
+  onShowingChange,
 }: {
   screenKey: ScreenKey;
   ready?: boolean;
   restingBottom?: number;
+  /**
+   * Told when the overlay goes on and off screen. For a surface with its own one-time motion (the live
+   * session's swipe hint) that must not play underneath the walkthrough. `shouldShow` alone can't say
+   * this — it goes false at step two, while the overlay is still drawn.
+   */
+  onShowingChange?: (showing: boolean) => void;
 }) {
   const { shouldShow, dismiss, steps: unlocked } = useScreenPrompt(screenKey);
   const { registeredAnchors } = useTourAnchors();
@@ -75,14 +82,14 @@ export function ScreenTour({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live, screenKey, unlocked]);
 
-  return <ScreenTourStage screenKey={screenKey} live={live} steps={steps} stepIndex={stepIndex} setStepIndex={setStepIndex} setStarted={setStarted} started={started} setClosed={setClosed} dismiss={dismiss} restingBottom={restingBottom} />;
+  return <ScreenTourStage screenKey={screenKey} live={live} steps={steps} stepIndex={stepIndex} setStepIndex={setStepIndex} setStarted={setStarted} started={started} setClosed={setClosed} dismiss={dismiss} restingBottom={restingBottom} onShowingChange={onShowingChange} />;
 }
 
 /**
  * Split out so the effects below can run unconditionally — a hook after an early `return null` is a
  * hook that fires in some renders and not others, which React forbids outright.
  */
-function ScreenTourStage({ screenKey, live, steps, stepIndex, setStepIndex, started, setStarted, setClosed, dismiss, restingBottom }: {
+function ScreenTourStage({ screenKey, live, steps, stepIndex, setStepIndex, started, setStarted, setClosed, dismiss, restingBottom, onShowingChange }: {
   screenKey: ScreenKey;
   live: boolean;
   steps: SpotlightStep[];
@@ -93,8 +100,13 @@ function ScreenTourStage({ screenKey, live, steps, stepIndex, setStepIndex, star
   setClosed: (v: boolean) => void;
   dismiss: () => void;
   restingBottom?: number;
+  onShowingChange?: (showing: boolean) => void;
 }) {
   const showing = live && steps.length > 0;
+
+  useEffect(() => {
+    onShowingChange?.(showing);
+  }, [showing, onShowingChange]);
 
   /* One event when a surface starts teaching, one per step after that. `screenKey` rides `section`,
      which is an allow-listed enum-shaped prop — no athlete text reaches this. */
