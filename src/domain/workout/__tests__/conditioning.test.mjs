@@ -38,8 +38,10 @@ import {
   parseDistance,
   parseDistanceIn,
   parsePace,
+  paceUnitFor,
   parseWithin,
   resolveModality,
+  rowMetresText,
   sessionActivityType,
   setModality,
   toDistanceIn,
@@ -413,12 +415,38 @@ test('an empty session keeps its fallback rather than inventing a type', () => {
 //
 // The mile stepper moves in half-mile steps, so before this the only pool sessions the builder could
 // express were 880 / 1760 / 2640 yd. Every swim set in every real plan is written in hundreds of yards.
-test('a swim is measured in yards, everything else in miles', () => {
+test('a swim is measured in yards, a rower in metres, everything else in miles', () => {
   assert.equal(distanceUnitFor('swim', false), 'yd');
   assert.equal(distanceUnitFor('swim', true), 'm', 'a metric pool is 25 m, not 27.3 yd');
   assert.equal(distanceUnitFor('run', false), 'mi');
   assert.equal(distanceUnitFor('bike', true), 'km');
-  assert.equal(distanceUnitFor('row', false), 'mi', 'an erg reads metres but the model stores a distance in miles');
+  // PO, 2026-09-11: "default meters" — an erg reads metres, in either unit system. Storage stays miles.
+  assert.equal(distanceUnitFor('row', false), 'm', 'a rower defaults to metres');
+  assert.equal(distanceUnitFor('row', true), 'm');
+  assert.equal(distanceUnitFor('row', false, 'road'), 'mi', 'the Preferences opt-out is the athlete’s road unit');
+  assert.equal(distanceUnitFor('row', true, 'road'), 'km');
+  assert.equal(distanceUnitFor('run', false, 'm'), 'mi', 'the rower preference touches only the rower');
+  assert.equal(distanceUnitFor('swim', false, 'road'), 'yd', 'nor the pool');
+});
+
+test('a rower lands on 2000 m and can log a half-marathon row', () => {
+  assert.equal(Math.round(toDistanceIn(FIRST_TARGET.row.mi, 'm')), 2000, 'THE erg distance, not 1.5 mi = 2414 m');
+  assert.equal(Math.round(toDistanceIn(parseDistanceIn('21097', 'm'), 'm')), 21097, 'the old 10,000 cap threw this away');
+  assert.equal(parseDistanceIn('100001', 'm'), null, 'past the longest erg event');
+  assert.equal(parseDistanceIn('10001', 'yd'), null, 'the yard cap is still a pool’s');
+  assert.equal(Math.round(toDistanceIn(bumpDistanceUnit(null, 1, 'm', FIRST_TARGET.row.mi), 'm')), 2000);
+});
+
+test('pace is per mile or km — never per metre or yard', () => {
+  assert.equal(paceUnitFor(false), 'mi');
+  assert.equal(paceUnitFor(true), 'km');
+});
+
+test('a saved row reads in metres on the summaries; nothing else does', () => {
+  assert.equal(rowMetresText(2000 / 1609.344, true), '2000');
+  assert.equal(rowMetresText(1.5, true, 'road'), null, 'chose miles — the caller keeps its mi/km');
+  assert.equal(rowMetresText(3, false), null, 'a run is not a row');
+  assert.equal(rowMetresText(null, true), null);
 });
 
 // ── Log a Run stores what the athlete meant ─────────────────────────────────

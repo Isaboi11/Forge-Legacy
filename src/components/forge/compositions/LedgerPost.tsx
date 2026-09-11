@@ -47,6 +47,7 @@ import { ACK_LABEL, fmtDuration, type AckKind, type WorkoutSummary } from '@/dat
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { displayWeight, type UnitSystem } from '@/domain/settings/units';
 import { cardioMarkerLabel, cardioStats, liftsLabel } from '@/domain/share/recap-stats';
+import type { RowUnit } from '@/domain/workout/conditioning';
 import { SERVICE_LABEL, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { artLabel } from '@/domain/workout/playlist-art';
 import { usePlaylistArt } from '@/lib/usePlaylistArt';
@@ -170,9 +171,9 @@ export interface LedgerPostProps {
  * PRs are deliberately not a fourth stat: §2.6 caps the row at three, and "0 PRs" reads as a session
  * judged and found wanting when the honest statement is that this one was not about records.
  */
-export function workoutStats(summary: WorkoutSummary, units: UnitSystem): LedgerStat[] {
+export function workoutStats(summary: WorkoutSummary, units: UnitSystem, rowUnit?: RowUnit): LedgerStat[] {
   if (summary.lead === 'cardio' && summary.cardio) {
-    return cardioStats(summary.cardio, summary.durationSec, units);
+    return cardioStats(summary.cardio, summary.durationSec, units, rowUnit);
   }
   const v = displayWeight(summary.volume, units);
   return [

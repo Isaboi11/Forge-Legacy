@@ -26,6 +26,7 @@
 
 import { distanceLabel, fmtPace, toDistance, toPace } from '../run/run-core.ts';
 import type { UnitSystem } from '../settings/units.ts';
+import { DEFAULT_ROW_UNIT, rowMetresText, type RowUnit } from '../workout/conditioning.ts';
 
 /** One conditioning bout's share of the snapshot. Miles and seconds canonical, converted at draw. */
 export interface RecapCardio {
@@ -93,10 +94,14 @@ const fmtShareDuration = (sec: number): string => {
  * A stair bout has no distance and shows Floors instead; a pace the data cannot honestly support is
  * dropped, not zero-filled. Never more than three — §2.6's cap is the card's, whatever the sport.
  */
-export function cardioStats(cardio: RecapCardio, durationSec: number, units: UnitSystem): RecapStat[] {
+export function cardioStats(cardio: RecapCardio, durationSec: number, units: UnitSystem, rowUnit: RowUnit = DEFAULT_ROW_UNIT): RecapStat[] {
   const unit = distanceLabel(units);
   const out: RecapStat[] = [];
-  if (cardio.distanceMi != null) {
+  // A rowing session reads in metres, as the card it was logged on did (`rowUnit`). Pace stays per mi/km.
+  const metres = rowMetresText(cardio.distanceMi, cardio.activityType === 'rowing', rowUnit);
+  if (metres) {
+    out.push({ value: metres, label: 'Distance (m)' });
+  } else if (cardio.distanceMi != null) {
     out.push({ value: toDistance(cardio.distanceMi, units).toFixed(2).replace(/\.?0+$/, ''), label: `Distance (${unit})` });
   } else if (cardio.floors != null) {
     out.push({ value: String(cardio.floors), label: 'Floors' });

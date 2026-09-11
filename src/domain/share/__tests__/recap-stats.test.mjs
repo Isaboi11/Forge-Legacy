@@ -115,3 +115,10 @@ test('the marker names the activity, and an unknown one degrades to "Cardio" rat
   assert.equal(cardioMarkerLabel('something_new'), 'Cardio');
   assert.equal(cardioMarkerLabel(null), 'Cardio');
 });
+
+test('a rowing post leads with metres by default; the viewer’s miles choice is honoured', () => {
+  const row = { distanceMi: 2000 / 1609.344, floors: null, paceSecPerMi: 390, activityType: 'rowing' };
+  assert.deepEqual(cardioStats(row, 480, 'imperial')[0], { value: '2000', label: 'Distance (m)' });
+  assert.equal(cardioStats(row, 480, 'imperial', 'road')[0].label, 'Distance (mi)');
+  assert.equal(cardioStats(row, 480, 'imperial')[1].label, 'Pace /mi', 'pace stays per mile — no /500 m yet');
+});

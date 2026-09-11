@@ -1460,6 +1460,7 @@ function FeedCard({
   /** A tap on the media band — a video plays instead of opening the card's destination. */
   onMedia?: () => void;
 }) {
+  const { rowUnit } = useUnits();
   const summary = post.type === 'recap' ? post.workoutSummary : null;
 
   // The generated Weekly Summary KEEPS ITS CARD. It is a system artifact rather than a member post —
@@ -1540,7 +1541,7 @@ function FeedCard({
       marker={summary ? recapMarker(summary) : hasMedia ? null : SQUAD_MARKER[post.type] ?? null}
       title={summary ? summary.name ?? recapMarker(summary).label : post.type === 'pr' ? post.prExercise ?? 'A new best' : null}
       context={summary ? summary.context ?? null : post.type === 'pr' ? [post.prValue, post.prLabel].filter(Boolean).join(' · ') || null : null}
-      stats={summary ? workoutStats(summary, units) : []}
+      stats={summary ? workoutStats(summary, units, rowUnit) : []}
       playlist={summary?.playlist ?? null}
       onPlaylist={summary?.playlist ? () => void openPlaylist(summary.playlist!) : undefined}
       /* The member's own words. On a media post they move BELOW the image — `LedgerPost` places them,

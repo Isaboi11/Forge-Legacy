@@ -226,6 +226,8 @@ test('app prefs default to imperial, haptics/sound on, reduce-motion off, analyt
     // defaulting to Paper would re-theme the app under all of them for a preference none expressed.
     // It is also what absence means — every athlete's stored blob predates this field.
     theme: 'forge',
+    // PO, 2026-09-11: "default meters" — a rower reads metres unless the athlete chose miles.
+    rowUnit: 'm',
   });
 });
 
@@ -245,9 +247,16 @@ test('exactly the toggles with a real consumer today are marked live', () => {
 
 test('sanitizePrefs coerces each field and survives a malformed blob', () => {
   const p = sanitizePrefs({ units: 'metric', haptics: false, sound: 'loud', reduceMotion: true });
-  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge' });
+  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge', rowUnit: 'm' });
   assert.deepEqual(sanitizePrefs('nope'), APP_PREFS_DEFAULTS);
   assert.equal(sanitizePrefs({ units: 'stones' }).units, 'imperial', 'an unknown system falls back');
+});
+
+test('a stored rower unit is validated — and absence means metres', () => {
+  assert.equal(sanitizePrefs({ rowUnit: 'road' }).rowUnit, 'road');
+  assert.equal(sanitizePrefs({ rowUnit: 'm' }).rowUnit, 'm');
+  assert.equal(sanitizePrefs({ rowUnit: 'furlongs' }).rowUnit, 'm', 'an unknown unit falls back');
+  assert.equal(sanitizePrefs({}).rowUnit, 'm', 'every stored blob predates this field, and lands on metres');
 });
 
 test('a stored theme is validated, not trusted — and absence means Forge', () => {

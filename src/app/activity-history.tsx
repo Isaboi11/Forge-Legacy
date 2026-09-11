@@ -24,6 +24,7 @@ import {
   type Modality,
 } from '@/domain/activity/history-core';
 import { useQuery } from '@/lib/useQuery';
+import { useUnits } from '@/lib/settings';
 
 /**
  * W-18 Activity History (`Forge Activity History.dc.html`) — the read-only, reverse-chronological
@@ -167,7 +168,8 @@ function Chip({ label, on, onPress, icon }: { label: string; on: boolean; onPres
 }
 
 function SessionRow({ record, onPress }: { record: ActivityRecord; onPress: () => void }) {
-  const stat = statLine(record);
+  const { rowUnit } = useUnits();
+  const stat = statLine(record, rowUnit);
   const partners = partnersLabel(record.partners);
   const hasAttr = Boolean(record.chapterName) || partners.length > 0;
 

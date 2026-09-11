@@ -380,7 +380,9 @@ export const FIRST_TARGET: Record<CardioActivity, { mi: number; paceSec: number;
   bike: { mi: 10, paceSec: 495, spdMph: 17 },
   // The machines carry a distance seed but no rate — `RATE_KIND` says 'none', so the pace and speed
   // steppers never appear for them and these figures are never reached.
-  row: { mi: 1.5, paceSec: 495, spdMph: 17 },
+  /* 2000 m — THE erg distance, and the unit a rower now reads in by default (see `distanceUnitFor`). It
+     was 1.5 mi, which lands on 2414 m: a number nobody rows. */
+  row: { mi: 2000 / M_PER_MI, paceSec: 495, spdMph: 17 },
   elliptical: { mi: 2, paceSec: 495, spdMph: 17 },
   /* A POOL SESSION, IN THE UNIT A POOL SESSION IS WRITTEN IN — 1000 yd, which is 0.568 mi. The seed
      used to be half a mile because the scale was miles; see `POOL` below for why it no longer is. */
@@ -417,10 +419,52 @@ export const USES_POOL_UNITS: Record<CardioActivity, boolean> = {
   stair: false,
 };
 
-/** Which unit this activity's distance is displayed and stepped in, for this athlete's system. */
-export function distanceUnitFor(activity: CardioActivity, metric: boolean): DistanceUnit {
+/**
+ * How the athlete wants a ROWER's distance read — `AppPrefs.rowUnit`.
+ *
+ * `'m'` (the default) is metres whatever the unit system: PO, 2026-09-11, *"default meters"* — every erg
+ * on earth displays metres, and a 2000 m piece typed as "1.24 mi" is a conversion nobody should be asked
+ * to do. `'road'` is the opt-out to miles (or kilometres on metric), from Preferences.
+ */
+export type RowUnit = 'm' | 'road';
+export const DEFAULT_ROW_UNIT: RowUnit = 'm';
+
+/**
+ * Which unit this activity's distance is displayed and stepped in, for this athlete's system.
+ *
+ * ⚠ `rowUnit` DEFAULTS TO METRES, so a caller that has no preference to hand still shows a rower in
+ * metres — the default the PO chose — rather than silently in miles.
+ */
+export function distanceUnitFor(activity: CardioActivity, metric: boolean, rowUnit: RowUnit = DEFAULT_ROW_UNIT): DistanceUnit {
   if (USES_POOL_UNITS[activity]) return metric ? 'm' : 'yd';
+  if (activity === 'row' && rowUnit === 'm') return 'm';
   return metric ? 'km' : 'mi';
+}
+
+/**
+ * The unit a PACE is read per, which is never a pool length or a metre.
+ *
+ * ⚠ `/${distanceUnit}` WAS WRONG FOR EVERY METRE AND YARD ACTIVITY. `toPace` only converts to per-mile or
+ * per-km, so a swim's pace printed a per-mile figure under a "/yd" label. A rower in metres would have
+ * inherited the same lie; pace stays per mile or km (a /500 m split is EPS-D12's, and not built).
+ */
+export const paceUnitFor = (metric: boolean): 'mi' | 'km' => (metric ? 'km' : 'mi');
+
+/**
+ * A SAVED rowing distance, as the summaries show it — "2000 m" — or null when this isn't a metre reading
+ * (not a row, or the athlete chose miles), so the caller keeps its own mi/km formatting.
+ *
+ * Only rowing: the summaries (The Record, the share card, Activity Detail and History) have always read
+ * swims in road units, and moving those is not what was asked. The canonical mile figure is untouched —
+ * goals, honors and squad totals keep summing miles.
+ */
+export function rowMetresText(
+  distanceMi: number | null | undefined,
+  isRow: boolean,
+  rowUnit: RowUnit = DEFAULT_ROW_UNIT,
+): string | null {
+  if (!isRow || rowUnit !== 'm' || distanceMi == null) return null;
+  return String(Math.round(distanceMi * M_PER_MI));
 }
 
 /**
@@ -464,8 +508,15 @@ export function fmtDistanceIn(mi: number, unit: DistanceUnit): string {
   return unit === 'yd' || unit === 'm' ? String(Math.round(v)) : v.toFixed(1);
 }
 
-/** The pool stepper: hundreds, because that is the grain every swim set in every plan is written on. */
+/**
+ * The metre/yard stepper: hundreds, because that is the grain every swim set and erg piece is written on.
+ *
+ * ⚠ THE METRE CEILING IS A ROWER'S, NOT A POOL'S. 10,000 is generous for a swim and stays the yard cap
+ * (past any pool session, so a typo is likelier) — but metres are also the rower's scale now, and 10,000
+ * would have thrown away a half-marathon row (21,097 m). 100 km covers the longest erg event there is.
+ */
 const POOL = { step: 100, min: 100, max: 10_000 };
+const poolMax = (unit: DistanceUnit): number => (unit === 'm' ? 100_000 : POOL.max);
 
 /**
  * A TYPED distance, in its own unit, back to canonical miles.
@@ -482,7 +533,7 @@ export function parseDistanceIn(raw: string, unit: DistanceUnit): number | null 
   if (!/^\d*\.?\d+$/.test(cleaned)) return null;
   const n = Number(cleaned);
   if (!Number.isFinite(n) || n <= 0) return null;
-  const max = unit === 'yd' || unit === 'm' ? POOL.max : 500;
+  const max = unit === 'yd' || unit === 'm' ? poolMax(unit) : 500;
   if (n > max) return null;
   return fromDistanceIn(n, unit);
 }
@@ -510,7 +561,7 @@ export function bumpDistanceUnit(
   if (currentMi == null) return dir > 0 ? fromDistanceIn(Math.round(toDistanceIn(seedMi, unit)), unit) : null;
   const next = Math.round(toDistanceIn(currentMi, unit)) + dir * POOL.step;
   if (next < POOL.min) return null;
-  return fromDistanceIn(Math.min(POOL.max, next), unit);
+  return fromDistanceIn(Math.min(poolMax(unit), next), unit);
 }
 
 // ── FLOORS ──────────────────────────────────────────────────────────────────

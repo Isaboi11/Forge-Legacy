@@ -48,6 +48,8 @@ export interface CompletionCardio {
   inclinePct: number | null;
   /** Where it was actually done, as recorded — never the toggle's last position (0097). */
   modality: 'outdoor' | 'indoor' | null;
+  /** A rower's distance reads in metres by default (`rowUnit`), so the Record has to know it was one. */
+  isRow: boolean;
 }
 /**
  * What a run beat — ported from the retired Active Run screen, which owned this and nothing else does.
@@ -187,6 +189,8 @@ interface ExRow {
   id: string;
   name: string;
   position: number;
+  /** `cardio:<activity>` on a conditioning block — how the Record knows a bout was a row. */
+  catalog_key: string | null;
 }
 interface SetRow {
   workout_exercise_id: string;
@@ -280,7 +284,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
 
   const { data: exRows, error: ee } = await supabase
     .from('workout_exercises')
-    .select('id, name, position')
+    .select('id, name, position, catalog_key')
     .eq('workout_id', workoutId)
     .order('position', { ascending: true });
   if (ee) throw ee;
@@ -514,6 +518,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
           // is noise, so it reads as absent. Outdoors it is meaningless and stays null.
           inclinePct: bout.incline_pct != null && bout.incline_pct > 0 ? Number(bout.incline_pct) : null,
           modality: bout.modality === 'indoor' || bout.modality === 'outdoor' ? bout.modality : null,
+          isRow: ex.catalog_key === 'cardio:row',
         }
       : null;
 

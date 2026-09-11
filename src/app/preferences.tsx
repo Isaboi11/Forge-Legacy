@@ -14,6 +14,7 @@ import { APP_PREFS_DEFAULTS, EXPERIENCE_TOGGLES, type AppPrefs, type ExperienceK
 import { INTENSITY_LEVELS, type IntensityLevel } from '@/domain/coach/rulebook/intensity';
 import { applyThemeAndReload, THEME_OPTIONS, type ThemeName } from '@/constants/theme-choice';
 import { previewSquat, type UnitSystem } from '@/domain/settings/units';
+import type { RowUnit } from '@/domain/workout/conditioning';
 import { useAppPrefs } from '@/lib/settings';
 import { useToast } from '@/hooks/useCeremony';
 import { useQuery } from '@/lib/useQuery';
@@ -33,6 +34,9 @@ const UNIT_OPTIONS: { id: UnitSystem; label: string }[] = [
   { id: 'imperial', label: 'Lbs' },
   { id: 'metric', label: 'Kgs' },
 ];
+
+/** Labelled at draw time — "Miles" or "Kilometers" depends on Units. */
+const ROW_OPTIONS: { id: RowUnit }[] = [{ id: 'm' }, { id: 'road' }];
 
 /**
  * ⚠ EACH LEVEL IS DESCRIBED BY WHAT IT DOES, NOT BY WHERE IT SITS ON A SCALE.
@@ -86,6 +90,7 @@ export default function PreferencesScreen() {
   };
 
   const setUnits = (units: UnitSystem) => commit({ ...prefs, units });
+  const setRowUnit = (rowUnit: RowUnit) => commit({ ...prefs, rowUnit });
   const setToggle = (key: ExperienceKey, on: boolean) => commit({ ...prefs, [key]: on });
   const setIntensity = (coachIntensity: IntensityLevel) => commit({ ...prefs, coachIntensity });
 
@@ -159,6 +164,31 @@ export default function PreferencesScreen() {
               <Text style={styles.previewValue}>
                 Best squat <Text style={styles.previewMono}>{previewSquat(prefs.units)}</Text>
               </Text>
+            </View>
+
+            {/* The one distance that doesn't follow Units. PO, 2026-09-11: *"default meters"* — an erg
+                reads metres — with miles (km on metric) one tap away for anyone who thinks in road units. */}
+            <View style={styles.rowerBlock}>
+              <Text style={styles.rowLabel}>Rower distance</Text>
+              <Text style={styles.rowHint}>What a row machine reads in. Everything else follows Units.</Text>
+              <View style={styles.segment}>
+                {ROW_OPTIONS.map((o) => {
+                  const on = prefs.rowUnit === o.id;
+                  const label = o.id === 'm' ? 'Meters' : prefs.units === 'metric' ? 'Kilometers' : 'Miles';
+                  return (
+                    <Pressable
+                      key={o.id}
+                      onPress={() => setRowUnit(o.id)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: on }}
+                      accessibilityLabel={`Rower distance in ${label}`}
+                      style={[styles.seg, on && styles.segOn]}
+                    >
+                      <Text style={[styles.segText, on && styles.segTextOn]}>{label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
           </View>
 
@@ -286,6 +316,7 @@ const styles = StyleSheet.create({
   nativeNote: { fontSize: 10.5, color: flColor.bronze600, marginTop: 4 },
 
   segment: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  rowerBlock: { marginTop: 14, paddingTop: 13, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   seg: {
     flex: 1,
     paddingVertical: 10,
