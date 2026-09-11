@@ -927,6 +927,23 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 > ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
 > Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
 
+### 0. ⭐ Active Workout layout: All Exercises at the top, bare prev/next arrows, one count on screen (2026-09-11, Active Workout — PO layout brief · commit `0b33510` on `feat/route-map` · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a0903a-6aab-750d-876c-16f60d750640` on runtime `47944f2e…` (fingerprint MATCHED build `3f67281b…` first; manifest returned it to a build-8 iOS client), Android `01a0903a-6aab-7440…`; picked as `c2573cb` on `ota/build8-js` (tsc 0; 254/254 related tests there) · ⛔ **WEB NOT DEPLOYED** — PO asked for OTA only · ⏳ **NOT SEEN BY A HUMAN**)
+
+PO: *"This is just a layout change. And some word changes."* No logging, timer, Finish or save behaviour moved —
+the footer still reads **Next Exercise** until the last exercise, then **Finish Workout**, exactly as before.
+"View Plan · 1 / 3" under the note became an **All Exercises ›** text row directly under the progress bar
+(outside the pager, so it holds still while exercises swipe); its sheet is titled **All Exercises** (was
+"Workout Plan"). Dot strip removed, and every position count with it — including the "2 / 3" on the mid-swipe
+peek — so "0 / 3 Done" is the only count on screen. Prev/next are two bare chevrons, a centred pair, 48pt targets.
+**Discoverability (PO: testers hadn't noticed the arrows):** (1) the next arrow nudges right once when the card
+above it is fully logged (after the exercise seal clears; a fused superset waits for every member) and thickens
+while it stays done — transition only, revisiting a finished exercise is quiet; (2) the first time on a workout
+with somewhere to swipe to, the pager slides 40pt toward the next exercise and springs back — once per
+device+account (`lib/swipe-hint.ts`, cleared by `first-run.ts`), and it waits for the walkthrough overlay
+(`ScreenTour` gained an optional `onShowingChange`, because `shouldShow` goes false at step two while the overlay
+is still drawn). ⚠ The OTA audit still shows `a814feb`'s JS half (`settings/notifications.ts` +
+`visibility.ts`, the 0188 testing posture) absent from `ota/build8-js` — left as found, not this pass's call.
+
 ### 0. ⭐ Tap any rank rung: when it was earned and what it took; unreached rungs grayed out (2026-09-10, Progress Hub — RSA-A3-D5 follow-up · commit `3e4709f` (pushed) · ✅ **WEB** `index-04094f6a53633026d6374c5233690f19.js` (200, MATCH, sheet copy in bundle) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a08d93-5c11-7aa7-a6a7-5e4921e1bfc3` (fingerprint MATCHED; manifest returned it), Android `01a08d93-5c11-70a7…`; picked as `bf15945` on `ota/build8-js` (pushed; tsc 0; rank tests 54/54 there) · ⏳ **NOT SEEN BY A HUMAN**)
 
 PO: *"Let's make them tapable, and then make sure the ones not earned yet are grayed out."* No rank history is stored,
