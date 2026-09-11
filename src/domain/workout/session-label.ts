@@ -66,8 +66,16 @@ export const MUSCLE_GROUP: Record<string, string> = {
 /**
  * The label for a set of exercises, given each one's muscle display names.
  *
- * One group is that group. Two is "A & B", most-worked first. Three or more is `Full Body` — deliberately
+ * One group is that group. Two is "A & B", most-worked first. Three or more is a region — deliberately
  * not "Chest, Back & Legs", which is a list rather than a name and does not fit anywhere it is shown.
+ *
+ * ⚠ THREE GROUPS IS NOT "FULL BODY" UNLESS BOTH HALVES OF THE BODY ARE IN IT. PO, 2026-09-11, on a
+ * session of lateral raises, curls, overhead presses, a floor press and renegade rows: *"This doesn't
+ * feel like full body, just upper body."* The upper body is FOUR groups here (Chest, Back, Shoulders,
+ * Arms) and the lower body is ONE (Legs), so the old "3+ is Full Body" called every balanced upper day
+ * full-body and could never say "Upper Body" at all. Now: Legs plus anything from the upper four is
+ * `Full Body`; three or more with no Legs is `Upper Body` (Core rides along with either — a plank on a
+ * push day doesn't make it full-body). Legs & Core stays two groups and names itself.
  *
  * ⚠ RANKED BY HOW OFTEN A GROUP APPEARS, not by the order the exercises sit in. A session that opens
  * with one curl and then does five back movements is a back session, and naming it "Arms & Back" because
@@ -108,8 +116,14 @@ export function groupLabel(muscleLists: readonly (readonly string[] | undefined)
   if (groups.length === 0) return '';
   if (groups.length === 1) return groups[0];
   if (groups.length === 2) return `${groups[0]} & ${groups[1]}`;
-  return 'Full Body';
+  const upper = groups.some((g) => UPPER_GROUPS.has(g));
+  if (groups.includes('Legs') && upper) return 'Full Body';
+  // 3+ primaries without Legs are necessarily upper groups plus, at most, Core.
+  return 'Upper Body';
 }
+
+/** The four groups the upper body is split into. Legs is the only lower-body group. */
+const UPPER_GROUPS: ReadonlySet<string> = new Set(['Chest', 'Back', 'Shoulders', 'Arms']);
 
 /** The primary-muscle descriptor a stretching movement carries — `region: 'System'`, not a body part. */
 const MOBILITY_MUSCLE = 'Mobility';
@@ -126,8 +140,8 @@ const MOBILITY_MUSCLE = 'Mobility';
  * from the name entirely, so twenty minutes of work the athlete actually did left no trace in what the
  * session was called. A session that was both says both.
  *
- * `Chest & Back + Cardio` rather than treating Cardio as a third group, because a third group triggers
- * `Full Body` — and a chest-and-back day with a warm-up walk on it is not a full-body day. Cardio is a
+ * `Chest & Back + Cardio` rather than treating Cardio as a third group, because a third group turns the
+ * name into a region — and a chest-and-back day with a warm-up walk on it is not a full-body day. Cardio is a
  * different axis from which muscles were trained, so it is appended rather than counted.
  *
  * Mobility is answered here for the same reason: 48 movements carry `Mobility` as their primary and no

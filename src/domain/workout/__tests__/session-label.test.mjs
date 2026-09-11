@@ -67,8 +67,32 @@ test('two groups are joined, most-worked first', () => {
   assert.equal(groupLabel([['Latissimus Dorsi'], ['Latissimus Dorsi'], ['Chest']]), 'Back & Chest');
 });
 
-test('three or more is Full Body — a name, not a list', () => {
+test('three or more with legs AND upper body is Full Body — a name, not a list', () => {
   assert.equal(groupLabel([['Chest'], ['Latissimus Dorsi'], ['Quadriceps']]), 'Full Body');
+  assert.equal(groupLabel([['Quadriceps'], ['Rectus Abdominis'], ['Biceps']]), 'Full Body');
+});
+
+test('⚠ Kim’s session: all upper body is "Upper Body", not "Full Body"', () => {
+  /*
+   * PO, 2026-09-11: *"This doesn't feel like full body, just upper body."* The real primaries, from
+   * `exercise_muscles.json`: lateral raise → Lateral Deltoids, biceps curl → Biceps, overhead press →
+   * Front Deltoids, concentration curl → Biceps, floor press → Chest, renegade row → Upper Back,
+   * single-arm overhead press → Front Deltoids. Four upper groups, no legs.
+   */
+  const kim = [
+    ['Lateral Deltoids'], ['Biceps'], ['Front Deltoids', 'Triceps'], ['Biceps'],
+    ['Chest', 'Triceps'], ['Upper Back', 'Latissimus Dorsi', 'Biceps', 'Rear Deltoids'], ['Front Deltoids', 'Triceps'],
+  ];
+  assert.equal(groupLabel(kim), 'Upper Body', 'the old rule called this "Full Body"');
+  assert.equal(sessionLabel(kim, { cardio: true }), 'Upper Body + Cardio');
+});
+
+test('a plank on a push-pull day does not make it full-body', () => {
+  assert.equal(groupLabel([['Chest'], ['Upper Back'], ['Rectus Abdominis']]), 'Upper Body');
+});
+
+test('legs and core alone are still two groups, named as such', () => {
+  assert.equal(groupLabel([['Quadriceps'], ['Quadriceps'], ['Rectus Abdominis']]), 'Legs & Core');
 });
 
 test('⚠ the PO’s session: a row is BACK, so this is not "Chest"', () => {
