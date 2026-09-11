@@ -111,6 +111,8 @@ import { resolveAsset } from '@/domain/home-artwork/manifest';
 import { resolveArtworkSource } from '@/domain/home-artwork/artwork-source';
 import { getRestMode, nextRestMode, setRestMode, type RestMode } from '@/lib/rest-timer-pref';
 import { getWheelInput, setWheelInput } from '@/lib/set-input-pref';
+import { getSwipeHintSeen, markSwipeHintSeen } from '@/lib/swipe-hint';
+import { useScreenPrompt, useTour } from '@/hooks/useTour';
 import { useKeyboardInset } from '@/lib/useKeyboardInset';
 import { clearExerciseInbox, readExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
 import type { ActiveSession, SessionExercise, SessionSet, WorkoutSectionKind } from '@/domain/workout/types';
@@ -665,6 +667,8 @@ export default function WorkoutScreen() {
   const [durMin, setDurMin] = useState(1);
   const [durSec, setDurSec] = useState(30);
   const [overviewOpen, setOverviewOpen] = useState(false);
+  // The first-visit walkthrough is on screen — the swipe hint waits for it (see `SwipeHint`).
+  const [tourShowing, setTourShowing] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [wNameOpen, setWNameOpen] = useState(false);
   const [wNameDraft, setWNameDraft] = useState('');
@@ -1187,7 +1191,7 @@ export default function WorkoutScreen() {
   /*
    * The scroll position follows `exerciseIndex`, never the other way round.
    *
-   * Four things move that index without touching the pager: the arrows, the dot strip, "Next Exercise",
+   * Four things move that index without touching the pager: the arrows, All Exercises, "Next Exercise",
    * and the Picker's inbox draining after an add or a swap (which jumps to the new lift). Each one has
    * to carry the page with it, and the alternative — having every caller remember to scroll — is the
    * kind of rule that holds until somebody adds a fifth caller.
@@ -3132,12 +3136,17 @@ export default function WorkoutScreen() {
 
   const isLastEx = exIdx >= session.exercises.length - 1;
   const primaryLabel = isLastEx ? 'Finish Workout' : 'Next Exercise';
+  /* Everything on this card is logged and there is somewhere to go — the next arrow's cue to nudge. A
+     fused superset is one card over several lifts, so it is ready when every member is, not just the
+     first. Held back while the exercise seal is up, so the nudge plays where it can be seen. */
+  const cardExercises = block && ssFused ? session.exercises.slice(block.start, block.start + block.count) : [ex];
+  const nextReady = !isLastEx && seal == null && cardExercises.every((e) => e.sets.length > 0 && e.sets.every((s) => s.done));
   const goExercise = (idx: number) => {
     /* Moving OUT of the block closes the expansion. Without this, walking away and coming back would
        land you on a member's own card instead of the pairing, which is not where you left off. */
     const target = blockAt(session?.exercises ?? [], idx);
     if (!target || target.kind !== 'superset' || target.start !== block?.start) setSsOpen(null);
-    // Guards the dot strip too, which jumps straight here without passing through onPrimary.
+    // Guards the arrows and All Exercises too, which jump straight here without passing through onPrimary.
     if (idx !== exIdx && blockedByBout()) return;
     /* A goal panel opened by hand belongs to the card it was opened on. Left set, it would spring back
        open the next time the athlete walked past that lift, with no tap to explain it. (The QUEUED ask is
@@ -3485,6 +3494,35 @@ export default function WorkoutScreen() {
       </TourAnchor>
 
       {/*
+        ══ ALL EXERCISES — THE WAY TO THE WHOLE WORKOUT, AT THE TOP ══
+
+        This was "View Plan · 1 / 3" under the note field, below the fold on any exercise with more
+        than three sets — the one control that shows the whole session was the one nobody found.
+
+        ⚠ OUTSIDE THE PAGER. It is about the workout, not about this exercise, so it holds still while
+        the exercises swipe underneath it. Inside a page it would slide off with the current card and
+        be missing from every peek.
+
+        ⚠ NO COUNT. "0 / 3 Done" directly above already says how far through the workout they are; a
+        second "1 / 3" here is the same number in a different meaning, and people read it as the first.
+      */}
+      <Pressable
+        onPress={() => setOverviewOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel="All exercises in this workout"
+        hitSlop={{ top: 4, bottom: 4, right: 12 }}
+        style={({ pressed }) => [styles.allExRow, pressed && styles.ctlPressed]}
+      >
+        <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+        </Svg>
+        <Text style={styles.allExText}>All Exercises</Text>
+        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M9 6l6 6-6 6" />
+        </Svg>
+      </Pressable>
+
+      {/*
         ══ A REAL PAGER, ONE PAGE PER EXERCISE ══
 
         PO: *"be able to swipe from exercise to exercise. And then going back. Needs to be smooth."*
@@ -3519,7 +3557,7 @@ export default function WorkoutScreen() {
         {session.exercises.map((pe, pi) => (
           <View key={pi} style={[{ width: pageW }, pagerH > 0 ? { height: pagerH } : null]}>
             {pi !== exIdx ? (
-              <ExercisePeek ex={pe} index={pi} total={session.exercises.length} />
+              <ExercisePeek ex={pe} />
             ) : (
             <ScrollView
               ref={tourScroller}
@@ -4328,37 +4366,16 @@ export default function WorkoutScreen() {
                 </Pressable>
               )}
 
-              {/* exercise nav dots */}
+              {/* Previous / next — bare arrows, the fallback for anyone who hasn't found the swipe. No dots
+                  and no count between them: position lives in All Exercises, progress in "Done". */}
               <View style={styles.nav}>
-                <Pressable disabled={exIdx === 0} onPress={() => goExercise(exIdx - 1)} accessibilityLabel="Previous exercise" style={({ pressed }) => [styles.navArrow, pressed && styles.ctlPressed]}>
-                  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={exIdx === 0 ? flColor.charcoal500 : flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <Pressable disabled={exIdx === 0} onPress={() => goExercise(exIdx - 1)} accessibilityRole="button" accessibilityLabel="Previous exercise" style={({ pressed }) => [styles.navArrow, pressed && styles.ctlPressed]}>
+                  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={exIdx === 0 ? flColor.charcoal500 : flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <Path d="M15 6l-6 6 6 6" />
                   </Svg>
                 </Pressable>
-                <View style={styles.dots}>
-                  {session.exercises.map((e, i) => {
-                    const eDone = e.sets.every((s) => s.done);
-                    const isCur = i === exIdx;
-                    const skipped = !isCur && !eDone && i < exIdx; // passed it by without finishing
-                    return (
-                      <Pressable key={i} onPress={() => goExercise(i)} accessibilityLabel={e.name} hitSlop={6}>
-                        <View style={[styles.dot, isCur ? styles.dotCurrent : eDone ? styles.dotDone : skipped ? styles.dotSkipped : null]} />
-                      </Pressable>
-                    );
-                  })}
-                </View>
-                <Pressable disabled={isLastEx} onPress={() => goExercise(exIdx + 1)} accessibilityLabel="Next exercise" style={({ pressed }) => [styles.navArrow, pressed && styles.ctlPressed]}>
-                  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={isLastEx ? flColor.charcoal500 : flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <Path d="M9 6l6 6-6 6" />
-                  </Svg>
-                </Pressable>
+                <NextArrow disabled={isLastEx} ready={nextReady} onPress={() => goExercise(exIdx + 1)} />
               </View>
-              <Pressable onPress={() => setOverviewOpen(true)} accessibilityRole="button" accessibilityLabel="View full workout plan" style={({ pressed }) => [styles.overviewBtn, pressed && styles.ctlPressed]}>
-                <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-                  <Path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
-                </Svg>
-                <Text style={styles.overviewText}>View Plan · {exIdx + 1} / {session.exercises.length}</Text>
-              </Pressable>
 
               {error ? <Text style={styles.err}>Couldn’t save — {error}. Try again.</Text> : null}
             </ScrollView>
@@ -4366,6 +4383,7 @@ export default function WorkoutScreen() {
           </View>
         ))}
       </ScrollView>
+      <SwipeHint pagerRef={pagerRef} pageW={pageW} index={exIdx} count={session.exercises.length} blocked={pagerLocked || tourShowing} />
 
       {/* bottom actions */}
       <View style={styles.bottom}>
@@ -5008,7 +5026,7 @@ export default function WorkoutScreen() {
         <View style={styles.pickerWrap}>
           <Pressable style={styles.pickerBackdrop} onPress={() => setOverviewOpen(false)} accessibilityLabel="Close" />
           <View style={[styles.picker, styles.overviewSheet]}>
-            <Text style={styles.pickerTitle}>Workout Plan</Text>
+            <Text style={styles.pickerTitle}>All Exercises</Text>
             <ScrollView style={styles.overviewList} contentContainerStyle={styles.overviewListContent} showsVerticalScrollIndicator={false}>
               {session.exercises.map((e, i) => {
                 const total = e.sets.length;
@@ -5350,7 +5368,7 @@ export default function WorkoutScreen() {
         </View>
       ) : null}
 
-      <ScreenTour screenKey="workout" />
+      <ScreenTour screenKey="workout" onShowingChange={setTourShowing} />
     </Shell>
   );
 }
@@ -5574,10 +5592,11 @@ function swapExercise(ex: SessionExercise, p: PickedExercise): SessionExercise {
  * from hooks that cannot be run once per page. Rendering every exercise for real would also put an
  * animated demonstration on screen for every lift in the session simultaneously.
  *
- * So it shows what is knowable from the session row alone and stays quiet about the rest: position,
- * name, and what the sets ask for. It fills in the moment the page settles.
+ * So it shows what is knowable from the session row alone and stays quiet about the rest: name and
+ * what the sets ask for. It fills in the moment the page settles. No "2 / 3" — position lives in
+ * All Exercises, not repeated on every surface that can see it.
  */
-function ExercisePeek({ ex, index, total }: { ex: SessionExercise; index: number; total: number }) {
+function ExercisePeek({ ex }: { ex: SessionExercise }) {
   const done = ex.sets.filter((s) => s.done).length;
   const progress =
     ex.kind === 'cardio'
@@ -5590,12 +5609,106 @@ function ExercisePeek({ ex, index, total }: { ex: SessionExercise; index: number
   const sub = ex.section === 'main' ? progress : `${SECTION_LABEL[ex.section]} · ${progress}`;
   return (
     <View style={styles.peek} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Text style={styles.peekPos}>{index + 1} / {total}</Text>
       <Text style={styles.peekName} numberOfLines={2}>{ex.name}</Text>
       <Text style={styles.peekSub}>{sub}</Text>
       <View style={styles.peekRule} />
     </View>
   );
+}
+
+/**
+ * The next-exercise arrow — quiet, except at the one moment it is the answer.
+ *
+ * Testers didn't notice the arrows, and making them bigger would put a permanent second "next" beside
+ * the footer's. Instead the arrow nudges right — twice, a few points, once — when the card it sits under
+ * is fully logged, and thickens its stroke while it stays that way.
+ *
+ * ⚠ ON THE TRANSITION, NOT ON MOUNT. `was` starts at the mounted value, so walking back to a finished
+ * exercise doesn't replay it; only logging the last set (or the seal clearing after it) does.
+ */
+function NextArrow({ disabled, ready, onPress }: { disabled: boolean; ready: boolean; onPress: () => void }) {
+  const x = useState(() => new Animated.Value(0))[0];
+  const was = useRef(ready);
+  useEffect(() => {
+    if (ready && !was.current) {
+      Animated.sequence([
+        Animated.timing(x, { toValue: 5, duration: 140, useNativeDriver: true }),
+        Animated.timing(x, { toValue: 0, duration: 160, useNativeDriver: true }),
+        Animated.timing(x, { toValue: 5, duration: 140, useNativeDriver: true }),
+        Animated.timing(x, { toValue: 0, duration: 200, useNativeDriver: true }),
+      ]).start();
+    }
+    was.current = ready;
+  }, [ready, x]);
+  return (
+    <Pressable disabled={disabled} onPress={onPress} accessibilityRole="button" accessibilityLabel="Next exercise" style={({ pressed }) => [styles.navArrow, pressed && styles.ctlPressed]}>
+      <Animated.View style={{ transform: [{ translateX: x }] }}>
+        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={disabled ? flColor.charcoal500 : flColor.bronze400} strokeWidth={ready ? 2.6 : 2} strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M9 6l6 6-6 6" />
+        </Svg>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+/** How far the hint slides — enough to show the edge of the next exercise, not enough to read as a move. */
+const SWIPE_HINT_PX = 40;
+
+/**
+ * THE SWIPE, SHOWN ONCE.
+ *
+ * Exercises page horizontally and nothing on screen says so. The first time an athlete is standing on a
+ * workout with somewhere to swipe to, the pager slides a little toward the next exercise and springs
+ * back — the edge of the next card is the explanation. Then never again on this device and account.
+ *
+ * ⚠ IT WAITS FOR THE WALKTHROUGH, and not just for "the walkthrough is owed": `shouldShow` goes false at
+ * step two while the overlay is still drawn, so the screen also reports when the overlay is up
+ * (`blocked` carries it). Motion under a spotlight is motion nobody sees, and the flag would be burnt.
+ *
+ * ⚠ THE BOUNCE CANNOT MOVE THE WORKOUT. A 40pt offset rounds back to the same page, which
+ * `onPagerSettle` treats as a cancelled drag.
+ *
+ * ⚠ IF IT IS INTERRUPTED MID-SLIDE, THE CLEANUP PUTS THE PAGE BACK. Otherwise a sheet opening in that
+ * 400ms would leave the pager 40pt off, showing a sliver of the wrong exercise until the next swipe.
+ */
+function SwipeHint({ pagerRef, pageW, index, count, blocked }: { pagerRef: RefObject<ScrollView | null>; pageW: number; index: number; count: number; blocked: boolean }) {
+  const { shouldShow: tourOwed } = useScreenPrompt('workout');
+  const { seenLoaded, status } = useTour();
+  const [seen, setSeen] = useState<boolean | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void getSwipeHintSeen().then((v) => alive && setSeen(v));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const tourSettled = seenLoaded && status !== 'loading' && status !== 'running' && !tourOwed;
+  useEffect(() => {
+    if (seen !== false || !tourSettled || blocked || !pageW || count < 2 || index >= count - 1) return;
+    const pager = pagerRef.current; // the one horizontal ScrollView — it outlives every page change
+    if (!pager) return;
+    const base = index * pageW;
+    let back: ReturnType<typeof setTimeout> | null = null;
+    let out = false;
+    const go = setTimeout(() => {
+      out = true;
+      pager.scrollTo({ x: base + SWIPE_HINT_PX, animated: true });
+      back = setTimeout(() => {
+        out = false;
+        pager.scrollTo({ x: base, animated: true });
+        void markSwipeHintSeen();
+        setSeen(true);
+      }, 420);
+    }, 1400);
+    return () => {
+      clearTimeout(go);
+      if (back) clearTimeout(back);
+      if (out) pager.scrollTo({ x: base, animated: false });
+    };
+  }, [seen, tourSettled, blocked, pageW, count, index, pagerRef]);
+
+  return null;
 }
 
 function Toast({ msg }: { msg: string }) {
@@ -5816,7 +5929,6 @@ const styles = StyleSheet.create({
      screen wide, which is what makes `pagingEnabled` snap to an exercise rather than to a fraction. */
   pager: { flex: 1 },
   peek: { flex: 1, paddingHorizontal: SCREEN_GUTTER, paddingTop: 18, gap: 10, opacity: 0.55 },
-  peekPos: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
   peekName: { fontSize: 21, fontWeight: '600', color: flColor.cream100 },
   peekSub: { fontSize: 12.5, color: flColor.gray400 },
   peekRule: { height: 1, backgroundColor: flColor.charcoal700, marginTop: 4 },
@@ -6352,15 +6464,13 @@ const styles = StyleSheet.create({
   exerciseNoteTextSet: { color: flColor.cream100, fontStyle: 'italic' },
 
   // exercise nav
-  nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  navArrow: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  dots: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: flColor.charcoal600 },
-  dotCurrent: { width: 22, backgroundColor: flColor.bronze400 },
-  dotDone: { backgroundColor: flColor.greenMuted },
-  dotSkipped: { backgroundColor: flColor.emberFlame },
-  overviewBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, alignSelf: 'center', paddingVertical: 5, paddingHorizontal: 12 },
-  overviewText: { fontSize: 10, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
+  /* A pair, not a spread to the edges — close enough to read as one control, far enough apart that a
+     thumb never lands on the wrong one. */
+  nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 56, paddingVertical: 6 },
+  navArrow: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  /* Text-level, left-aligned with the band's gutter; `minHeight` is the tap target, not visual weight. */
+  allExRow: { flexDirection: 'row', alignItems: 'center', gap: 9, alignSelf: 'flex-start', minHeight: 44, marginTop: 4, paddingHorizontal: 18 },
+  allExText: { fontSize: 11, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray400 },
   err: { fontFamily: flFont.sans, fontSize: 13, color: flColor.redMuted, textAlign: 'center' },
 
   // bottom actions
