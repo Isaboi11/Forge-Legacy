@@ -11,6 +11,7 @@ import {
   sessionSetsFor,
   sessionToTemplateExercises,
   supersetRounds,
+  syncSupersetRounds,
 } from '../session-core.ts';
 
 const targets = (sets) => sets.map((s) => s.targetReps);
@@ -146,6 +147,23 @@ test('superset rounds come from the LONGEST member, so logged work is never hidd
   assert.equal(b.rounds, 4);
   assert.equal(b.kind, 'superset');
   assert.equal(b.name, 'Superset');
+});
+
+test('one member gaining or losing a set re-states the SAVED round count on every member (W9-A14)', () => {
+  const list = makeSuperset([exOf('Press', 3), exOf('Row', 3)], 0, 2, 'g1');
+  // Add Set inside the pairing card: the row goes to four.
+  const grown = list.map((e, i) => (i === 1 ? { ...e, sets: [...e.sets, { ...e.sets[0], setIndex: 3 }] } : e));
+  const synced = syncSupersetRounds(grown, 1);
+  assert.deepEqual(synced.map((e) => e.groupRounds), [4, 4], 'saved as three rounds while four were drawn');
+  // …and back down when that set is trashed.
+  assert.deepEqual(syncSupersetRounds(list, 1).map((e) => e.groupRounds), [3, 3]);
+});
+
+test('syncSupersetRounds leaves circuits and loose lifts alone', () => {
+  const circuit = [exOf('A', 2, { groupId: 'c1', groupRounds: 5 }), exOf('B', 2, { groupId: 'c1', groupRounds: 5 })];
+  assert.deepEqual(syncSupersetRounds(circuit, 0).map((e) => e.groupRounds), [5, 5], 'a circuit round is not a set count');
+  const loose = [exOf('Solo', 3)];
+  assert.equal(syncSupersetRounds(loose, 0)[0].groupRounds, undefined);
 });
 
 test('a superset advances ROUND-MAJOR — A1, B1, A2, B2 — which is what makes it a superset', () => {

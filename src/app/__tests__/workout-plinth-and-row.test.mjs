@@ -121,14 +121,17 @@ test('⚠ Prev fills the weight with the figure it SHOWS — not the pounds unde
 });
 
 test('⚠ the fill writes the WEIGHT and nothing else', () => {
-  const from = WORKOUT.indexOf('const fillFromPrev =');
+  // `fillWeight(ei, si, w)` since W9-A14 — by exercise index, so a superset member's table can use it.
+  const from = WORKOUT.indexOf('const fillWeight =');
   const to = WORKOUT.indexOf('const bestFigure =');
-  assert.ok(from !== -1 && to > from, 'fillFromPrev is gone');
+  assert.ok(from !== -1 && to > from, 'fillWeight is gone');
   const fn = WORKOUT.slice(from, to);
-  assert.match(fn, /patchSet\(s, exIdx, setI, \(set\) => \(\{ \.\.\.set, weight: w \}\)\)/, 'the fill writes more than the weight');
+  assert.match(fn, /patchSet\(s, ei, si, \(set\) => \(\{ \.\.\.set, weight: w \}\)\)/, 'the fill writes more than the weight');
   for (const forbidden of ['done: true', 'actualReps', 'saved:']) {
-    assert.ok(!fn.includes(forbidden), `fillFromPrev is writing \`${forbidden}\` — a tap on Prev must not log a set`);
+    assert.ok(!fn.includes(forbidden), `fillWeight is writing \`${forbidden}\` — a tap on Prev must not log a set`);
   }
+  // …and the row's Prev button still hands it the converted figure it shows.
+  assert.match(WORKOUT, /onPress=\{\(\) => onFillWeight\(ei, si, prevWeight\)\}/, 'Prev no longer fills from prevWeightAt');
   // The guarantee that makes the above safe, asserted at its source rather than assumed.
   assert.match(SAVE, /\.filter\(\(s\) => s\.done\)/, 'un-done sets are no longer filtered out of the save');
 });
@@ -203,7 +206,9 @@ test('the three in-row controls stay a full 44pt', () => {
 test('the animations and the auto-collapse are untouched', () => {
   // PO: "Keep the animations and the way the card closes after the first set the same."
   assert.match(WORKOUT, /if \(!autoCollapsed\[ei\]\)/, 'the hero no longer auto-collapses on the first resolved set');
-  assert.match(WORKOUT, /flash && flash\.ei === exIdx && flash\.si === si \? <FuseFlash/, 'the green fuse is gone from the row');
+  // Matched on the TABLE's exercise (`ei`) since W9-A14, so a superset member's row fuses too.
+  assert.match(WORKOUT, /flash && flash\.ei === ei && flash\.si === si \? <FuseFlash/, 'the green fuse is gone from the row');
+  assert.match(WORKOUT, /pop && pop\.ei === ei && pop\.si === rowSi/, 'the value-pop is keyed to the pager\'s exercise again — a member\'s row will not pop');
   assert.match(WORKOUT, /popCell\(si, 'weight'/, 'the weight cell lost its value-pop');
   assert.match(WORKOUT, /popCell\(si, 'reps'/, 'the reps cell lost its value-pop');
   assert.match(WORKOUT, /styles\.checkCurrentPressed/, 'the check lost its press answer');

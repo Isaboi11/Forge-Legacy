@@ -87,6 +87,8 @@ Rules:
 - **Rounds = the LONGEST member's set count.** A 3-set press paired with a 4-set row gives four rounds,
   and the fourth simply has one lift in it. Taking the minimum would hide work already logged.
 - Tapping a member's name opens that exercise on its own; the nav dots treat the block as one stop.
+  > **Amended by W9-A14 (2026-09-12):** a tap on a member's row opens its set table *inside* the
+  > superset card; the member's own card is one link further in ("Open full card").
 - **Circuits and AMRAPs are unchanged** — they keep §4.3's banner and their clock.
 
 ### W9-A4-D5 — Supersets are created in three places and mean the same thing in all of them

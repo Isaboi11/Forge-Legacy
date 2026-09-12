@@ -248,6 +248,22 @@ export function makeSuperset(exercises: readonly SessionExercise[], start: numbe
   );
 }
 
+/**
+ * Re-state a superset's `groupRounds` after one member's set count changed.
+ *
+ * `supersetRounds` reads the live set counts, so the logger never needs this — but `groupRounds` is what
+ * `save_workout` writes as `group_rounds` and what a template carries, and W9-A14 put Add Set and the
+ * row trash inside the pairing card, where they change ONE member. Left alone, a row taken to four sets
+ * beside a three-set press would save as a three-round superset. Same rule as `makeSuperset`: the
+ * longest member. Anything that is not a superset — a circuit, an AMRAP, a lone lift — is returned as is.
+ */
+export function syncSupersetRounds(exercises: readonly SessionExercise[], index: number): SessionExercise[] {
+  const b = blockAt(exercises, index);
+  if (!b || b.kind !== 'superset') return exercises.slice();
+  const rounds = supersetRounds(exercises, b);
+  return exercises.map((e, i) => (i >= b.start && i < b.start + b.count && e.groupRounds !== rounds ? { ...e, groupRounds: rounds } : e));
+}
+
 /** Dissolve the block containing `index` back into ordinary exercises. Logged sets are untouched. */
 export function breakBlock(exercises: readonly SessionExercise[], index: number): SessionExercise[] {
   const b = blockAt(exercises, index);
