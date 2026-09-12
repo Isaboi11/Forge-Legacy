@@ -18,7 +18,7 @@
 > 7. Update **Last Updated** and the **Dashboard** on every edit.
 
 **Type:** Living Project Dashboard + Documentation Completion Audit
-**Last Updated:** 2026-09-10 (**A SQUAD GOAL ENDS NOW.** `Squad-Architecture-Amendment-006` LOCKED (D1 goal pushes ON · D2 extend before the deadline only · D3 members get no control); client built for all three states + owner actions + inbox; `0200` (close job every 15 min, post + push + inbox, closures log) **WRITTEN NOT APPLIED — deploy first, then paste**. Squad photo tap now opens the whole post with every photo. 3,420/3,420. ⛔ Not committed, not deployed, not seen. Prior entry follows.) 2026-09-09 (**FEATURE DISCOVERY — TEN EXPERT REVIEWS, AND THE FEATURE WE WERE ABOUT TO BUILD ALREADY SHIPPED.** `Docs/Coach-Holt-Feature-Discovery-System-v1.0.md` **PROPOSAL** — a 170-feature inventory over 88 routes, 28 of them ≥3 taps deep; **127 findings** from ten parallel lenses against a fixed schema; and the v2 design: MOMENTS · INVITATIONS · WAYFINDING, one surface, one budget, three reply pills in Holt's chat. ⚠ **THE FIRST FINDING WAS THAT THE NUDGE SYSTEM EXISTS** — its plan doc read *"not yet built"* for **15 days after it shipped** (`0179` applied, bug-fixed in production), and two of ten reviewers filed the missing doc as their top blocker. *Built but never recorded* — the mirror of "locked but never applied". ⛔ **THREE LIVE DEFECTS, NONE ABOUT NUDGES:** `save_workout` **stores every first-ever mark as a personal record** and `isFirst` is in none of 198 migrations, so the weekly review and the Legacy timeline already call a beginner's first bench a PR; the **one-shot iOS push permission is spent at account creation**, before onboarding, with no explainer; and the shipped `program` nudge **walks athletes into M-7 at Phase F**. ⚠ **THE REVIEW DID NOT RATIFY THE BRIEF** — moments cut 7→4, a finished block points at the shelf not a chart, **push left the design entirely** (the ceremony specs refuse recognition-class push by name), two lines a week not three, and *"Take me there"* does not arrive today for 9 destinations **including the PO's own bench-chart example** (`MetricDetail` opens from local state; there is no `?metric=`). **NO CODE, NO MIGRATION, NOTHING PUBLISHED** — `0198` was taken by a parallel session mid-pass, so this needs **`0199`**. The doc's own checker walks it: 75 routes resolve, 14 citations resolve, 7 Holt lines clear the guards — ⚠ and the checker's **first version passed vacuously**, matching the table of contents instead of §4, caught by a control run that now fails on five checks. **Decision Queue #33 carries the eight decisions; Stage 0 needs none of them.** Prior entry follows.) 2026-09-09 (**THE ORDER OF YOUR WEEK IS YOURS TO CHANGE.** A tester took up Saturday soccer and wanted legs off it — and Forge programs are SEQUENTIAL by three locked documents, so the answer is to move the session in the ORDER and keep the change, which the pairwise swap could not do. New Reorder sheet on Program Detail (drag **and** chevrons), scope chosen by which Save is pressed, touched sessions PINNED because `program_sessions` is keyed by position. **Skip stops being a one-way door** — a confirmation, distinct copy on the last session (which graduates the program permanently), and `unskip_program_session` (**`0198`, AUTHORED NOT APPLIED**), which also narrows a `for all` policy that let the client delete a `completed` mark. ⭐ **Three reproduced P0s from the 08-12 audit closed** — the progress bar could not see a skip (P0-22), the log filed every session after one under the wrong day (P0-23), and four screens named a session already trained, one of them inside a Train-Together invite (P0-24). ⚠ **A latent bug found on the way:** `swapSessionOrder` indexed the RAW day array with SCHEDULE indices — harmless only because no authored week has a gap in it. tsc 0 · **3,377/3,377** · lint at baseline. ⛔ **NOT APPLIED, NOT DEPLOYED, NOT SEEN WORKING.** Weekday anchoring is **Decision Queue #32**, deliberately not decided.)
+**Last Updated:** 2026-09-12 (**A SUPERSET EXERCISE'S SETS OPEN IN PLACE** (W9-Amendment-014, amends W9-A4-D4). The name-tap drill-down had shipped Aug 9 and was unusable — only the name text was a target, and the card it opened had no set table. Now the whole row opens the member's `SetTable` inside the pairing card; the table is one component in both places; one-member Add Set/trash keep `groupRounds` true. OTA to build 8 verified `01a0958c-cd98-75ff…`; 3,456/3,456; web not deployed; not seen. Prior entry follows.) 2026-09-10 (**A SQUAD GOAL ENDS NOW.** `Squad-Architecture-Amendment-006` LOCKED (D1 goal pushes ON · D2 extend before the deadline only · D3 members get no control); client built for all three states + owner actions + inbox; `0200` (close job every 15 min, post + push + inbox, closures log) **WRITTEN NOT APPLIED — deploy first, then paste**. Squad photo tap now opens the whole post with every photo. 3,420/3,420. ⛔ Not committed, not deployed, not seen. Prior entry follows.) 2026-09-09 (**FEATURE DISCOVERY — TEN EXPERT REVIEWS, AND THE FEATURE WE WERE ABOUT TO BUILD ALREADY SHIPPED.** `Docs/Coach-Holt-Feature-Discovery-System-v1.0.md` **PROPOSAL** — a 170-feature inventory over 88 routes, 28 of them ≥3 taps deep; **127 findings** from ten parallel lenses against a fixed schema; and the v2 design: MOMENTS · INVITATIONS · WAYFINDING, one surface, one budget, three reply pills in Holt's chat. ⚠ **THE FIRST FINDING WAS THAT THE NUDGE SYSTEM EXISTS** — its plan doc read *"not yet built"* for **15 days after it shipped** (`0179` applied, bug-fixed in production), and two of ten reviewers filed the missing doc as their top blocker. *Built but never recorded* — the mirror of "locked but never applied". ⛔ **THREE LIVE DEFECTS, NONE ABOUT NUDGES:** `save_workout` **stores every first-ever mark as a personal record** and `isFirst` is in none of 198 migrations, so the weekly review and the Legacy timeline already call a beginner's first bench a PR; the **one-shot iOS push permission is spent at account creation**, before onboarding, with no explainer; and the shipped `program` nudge **walks athletes into M-7 at Phase F**. ⚠ **THE REVIEW DID NOT RATIFY THE BRIEF** — moments cut 7→4, a finished block points at the shelf not a chart, **push left the design entirely** (the ceremony specs refuse recognition-class push by name), two lines a week not three, and *"Take me there"* does not arrive today for 9 destinations **including the PO's own bench-chart example** (`MetricDetail` opens from local state; there is no `?metric=`). **NO CODE, NO MIGRATION, NOTHING PUBLISHED** — `0198` was taken by a parallel session mid-pass, so this needs **`0199`**. The doc's own checker walks it: 75 routes resolve, 14 citations resolve, 7 Holt lines clear the guards — ⚠ and the checker's **first version passed vacuously**, matching the table of contents instead of §4, caught by a control run that now fails on five checks. **Decision Queue #33 carries the eight decisions; Stage 0 needs none of them.** Prior entry follows.) 2026-09-09 (**THE ORDER OF YOUR WEEK IS YOURS TO CHANGE.** A tester took up Saturday soccer and wanted legs off it — and Forge programs are SEQUENTIAL by three locked documents, so the answer is to move the session in the ORDER and keep the change, which the pairwise swap could not do. New Reorder sheet on Program Detail (drag **and** chevrons), scope chosen by which Save is pressed, touched sessions PINNED because `program_sessions` is keyed by position. **Skip stops being a one-way door** — a confirmation, distinct copy on the last session (which graduates the program permanently), and `unskip_program_session` (**`0198`, AUTHORED NOT APPLIED**), which also narrows a `for all` policy that let the client delete a `completed` mark. ⭐ **Three reproduced P0s from the 08-12 audit closed** — the progress bar could not see a skip (P0-22), the log filed every session after one under the wrong day (P0-23), and four screens named a session already trained, one of them inside a Train-Together invite (P0-24). ⚠ **A latent bug found on the way:** `swapSessionOrder` indexed the RAW day array with SCHEDULE indices — harmless only because no authored week has a gap in it. tsc 0 · **3,377/3,377** · lint at baseline. ⛔ **NOT APPLIED, NOT DEPLOYED, NOT SEEN WORKING.** Weekday anchoring is **Decision Queue #32**, deliberately not decided.)
 **Audit Basis:** Live repository scan, 2026-08-01. `git ls-files` (430 TS/TSX · 40 `*.test.mjs` · 257 `Docs/**/*.md` · 97 migrations), `git ls-files src/app` (72 screens, excl. layouts + `+html`), `git rev-list --count` (210), `node --test` (508 pass / 0 fail), `npx tsc --noEmit` (0), `npx eslint src` (1 pre-existing error + 13 warnings), `npx expo export --platform web` (clean, 11.11 MB entry), `wc -l` (87,450 LOC). Data-layer contract checked mechanically across 53 RPC names · 61 call sites · 434 select columns · 119 write payloads · 35 tables for RLS · 52 `SECURITY DEFINER` functions. Prior basis 2026-07-15 (227 TS/TSX · 33,229 LOC · 176 tests) retained in the Change Log.
 
 ---
@@ -32,14 +32,14 @@
 | **Content Authoring** | **Coaching 92% · Programs REFRAMED** | **Coaching: 735 of 797 exercises Published, 62 Needs Review.** **Honors: 179 awardable** across 14 categories. ⚠ **THE 24-PROGRAM CATALOGUE IS NO LONGER THE TARGET (PO, 2026-08-12): *"We are no longer doing 24 programs. That is least of ours right now since we have Coach Holt."*** This board previously read **8% programs** and called 7-of-24 *"the largest remaining gap"*; that measured against a goal the product no longer has, and the number was misleading in the direction that matters — it described a shelf as unfinished while the thing that replaced it shipped. **Holt generates a program per athlete from `rulebook/`, deterministically, across 10 goals** — so the catalogue is now a DISCOVER shelf rather than the supply of training, and **14 shipped definitions populate it adequately**. ⚠ **THE CONTENT INVESTMENT MOVED, IT DID NOT DISAPPEAR.** `rulebook/skeletons.ts` says it in its own header — *"THIS FILE IS THE COACHING"* — so the tables in `domain/coach/rulebook/` (skeletons, volume, preferences, limitations, cues, endurance) are now the authored content, and their quality is the product. `limitations.ts` in particular is flagged in its own file as the closest thing to health guidance in the app and **not yet reviewed by anyone**. **Exercise media: 703 loops + 703 posters live in the `exercise-media` bucket** (`project_exercise_media_animations`) — the older *"0 of 797"* on this row was stale. **Day-workout templates: 81 shipped**, 579 rows, audited clean |
 | **Backend / Data** | **BUILT (Supabase) — 189 migration files on `main`, `0001`–`0191`; `0185` `0186` `0187` `0189` `0190` APPLIED AND VERIFIED 2026-09-03, `0191` (weekly-review story fields) applied 2026-09-03 (v1.35 — this row had gone stale); ✅ **`0192` (posted workouts) and `0197` (transformation frames) APPLIED 2026-09-10**, confirmed by a live schema probe; ✅ **`0198` (un-skip a session + `program_sessions` narrowed to select/insert) APPLIED AND VERIFIED 2026-09-09**, all 8 assertions PASS.** On `feat/forge-coach`: `0182` `0183` `0193` APPLIED AND VERIFIED, `0195` (coaching notifications) and `0196` (trainer messages) authored NOT applied — the PO's clear-first list from 2026-09-03, `0188` **APPLIED THEN ROLLED BACK** (it privatised `chapter-photos` while its reader sat undeployed on a branch, taking 21 photos off the live app), `0194` in flight. ⚠ **THE LEDGER IS THE FILENAMES — THERE IS NO MIGRATION HISTORY TABLE**, and two long-running branches cannot see each other’s reservations: `0189`, `0190` and `0191` were each claimed twice in 2026-09-03 alone. `ls supabase/migrations | tail` before writing a number, every time. Prior text follows: **BUILT (Supabase) — 171 migration files, 0001–0171; `0170` and `0171` APPLIED AND VERIFIED 2026-08-19 via `supabase/apply/verify-017*.sql` (one row, every answer — the editor shows only the LAST statement's result, which is how two security checks once ran unread).** Prior text follows: **158 migration files, 0001–0158. ✅ APPLIED AND VERIFIED THROUGH 0158** (2026-08-13: `preflight-0146-0153.sql` **24/24 green** through 0154, `preflight-0155-0158.sql` **15/15 green** plus the config-row check; `0144` correctly absent by decision). ⚠ **THIS CELL WAS WRONG TWICE IN ONE DAY, IN BOTH DIRECTIONS** — it read "applied through 0143" while eleven more were in, was corrected to 0154, then read "`0155`–`0158` authored, NOT applied" while all four were already applied by a concurrent session. **The ledger is edited by hand and the schema is not, so any number written here is true only at the instant it is typed. Run the preflight; do not read this cell.** ⚠ **AND A STRUCTURAL PREFLIGHT IS NOT THE WHOLE ANSWER**: `entitlement_config` holds ONE row and a column DEFAULT does not touch it, so all fifteen 0158 checks can read APPLIED while every athlete — Premium included — is blocked from saving a week. That row is checked separately, by data, and returned free 3 / paid −1 | ⚠ **This row read "125 files, applied through 0125" while eighteen more had shipped** — the drift is recorded because it is the recurring failure of this board, not a one-off. 0137 signup alerts · 0138 substitution + avoidance capture · 0139 every athlete to imperial · 0140 athlete weekly reviews · 0141/0142 squad check-in video prune + orphan ledger · 0143 coach intensity signals. **Verified by the PO from the SQL editor**, not assumed: `exercise_avoidance`, `athlete_weekly_reviews` and `coach_intensity_signal` all return 0 rows without error, and `profiles` off imperial = **0**. ⚠ **0141 shipped able to run only ONCE** — `create or replace` cannot change a return type and 0142 changes it, so a re-run died on `42P13`; fixed to DROP first, because with no CLI and no history table, re-running from the top is the only recovery this project has. RLS on every table; every `SECURITY DEFINER` pins `search_path` |
 | **Code Implementation** | **~78%** *(77 screens + the coach chat sheet, essentially all backend-wired)* | **77 screens** — 71 plus `/workout-builder` (W-25) and `/squad/[id]/goal` (S-2b) shipped 2026-08-03, `/forge-templates` 2026-08-05, **`/workout-join` 2026-08-07** (batch 4 shipped it; this row was never updated for it) and **`/coach` 2026-08-08**, and 72 until `/active-run` was retired 2026-08-01 (one run surface, folded onto the workout card). **74 of 75 read real Supabase** — `/forge-templates` browses shipped definitions and reads the athlete’s own templates only to mark what they already own. The whole SOCIAL pillar — Squads · Squad Detail · Friends · Feed · Athlete Profile — is live, not mock; the old "fully MOCK, quarantined in `*-placeholder.ts`" reading was stale by weeks. Remaining: content, media production, and the deferred items in Current Sprint |
-| **Testing** | **3,377 tests green** *(coverage % not instrumented → not measured)* | ⚠ Newest: `schedule-edit` (26 — the week reorder: pinned sessions keep the object they had, an authored gap never travels, and the drag and the write agree) and `program-schedule-wiring` (22 — progress reads the marks, the pan handlers sit on the handle, 0198 redeclares no existing function). Before those: the theme guards — `paper-tokens` (10, parsing the DESIGN file so a hand-transcribed palette cannot drift from the artboards it came from), `paper-scrim` (5, the darkening→lightening flip, whose margin assertion CAUGHT a threshold that would have turned every modal backdrop cream) and `on-bronze` (4, asserting white-on-bronze clears AA and that the second bronze token is earning its place). Prior text: ⚠ Newest: `recommend` (19 — Holt reading the catalogue shelf, run against the REAL 16 program JSONs read off disk rather than a fixture, so a seventeenth program either keeps the assertions true or turns one red). Its load-bearing cases are the REFUSALS: every endurance goal refuses because the shelf has no Running family, and a cold-start race is proven to report ready with no experience recorded — the exact shape that crashed the first cut. ⚠ This row read **2,756**, and before that **1616**. Newest, all from the 2026-08-11/12 passes: `shared-session` (12 — a partner's workout counts toward YOUR program, matched by coverage of the prescribed main lifts and catalogue-key identity), `partner-credit` (15 — both athletes named from the one row both can read, and a removal that survives the second pass), `intensity` (21 — ⚠ the DIAGONAL invariant: `beginner@drive` is bounded by `intermediate@push` on every lever that touches training content, and `back_off` is identical across all twelve cells), `intra-set` (18 — the five gates on the mid-set nudge, and a grading regex over every in-workout line that **rejected one of my own**), `tour-phases` (14 — ⚠ every surface still teaches something at phase 1, which is what makes thinning safe rather than a slower version of gating), `review` (11 — a banned-word list so a weekly summary cannot drift into a scoreboard), `intensity-learning` (15 — up is offered, down applies itself, and nothing moves on one session), `superset-labels` (16) and `substitution-capture` (11). Behavioural coverage of built layers, NOT whole-app coverage |
+| **Testing** | **3,456 tests green** *(2026-09-12, every `src/**/__tests__/*.test.mjs`; coverage % not instrumented → not measured)* | ⚠ Newest: `workout-superset-open` (10 — the set table is one component drawn twice, keyed by its own exercise, and fits a 360pt phone inside the superset card by arithmetic on the live styles). Before it: `schedule-edit` (26 — the week reorder: pinned sessions keep the object they had, an authored gap never travels, and the drag and the write agree) and `program-schedule-wiring` (22 — progress reads the marks, the pan handlers sit on the handle, 0198 redeclares no existing function). Before those: the theme guards — `paper-tokens` (10, parsing the DESIGN file so a hand-transcribed palette cannot drift from the artboards it came from), `paper-scrim` (5, the darkening→lightening flip, whose margin assertion CAUGHT a threshold that would have turned every modal backdrop cream) and `on-bronze` (4, asserting white-on-bronze clears AA and that the second bronze token is earning its place). Prior text: ⚠ Newest: `recommend` (19 — Holt reading the catalogue shelf, run against the REAL 16 program JSONs read off disk rather than a fixture, so a seventeenth program either keeps the assertions true or turns one red). Its load-bearing cases are the REFUSALS: every endurance goal refuses because the shelf has no Running family, and a cold-start race is proven to report ready with no experience recorded — the exact shape that crashed the first cut. ⚠ This row read **2,756**, and before that **1616**. Newest, all from the 2026-08-11/12 passes: `shared-session` (12 — a partner's workout counts toward YOUR program, matched by coverage of the prescribed main lifts and catalogue-key identity), `partner-credit` (15 — both athletes named from the one row both can read, and a removal that survives the second pass), `intensity` (21 — ⚠ the DIAGONAL invariant: `beginner@drive` is bounded by `intermediate@push` on every lever that touches training content, and `back_off` is identical across all twelve cells), `intra-set` (18 — the five gates on the mid-set nudge, and a grading regex over every in-workout line that **rejected one of my own**), `tour-phases` (14 — ⚠ every surface still teaches something at phase 1, which is what makes thinning safe rather than a slower version of gating), `review` (11 — a banned-word list so a weekly summary cannot drift into a scoreboard), `intensity-learning` (15 — up is offered, down applies itself, and nothing moves on one session), `superset-labels` (16) and `substitution-capture` (11). Behavioural coverage of built layers, NOT whole-app coverage |
 
 | Snapshot | Value |
 |---|---|
 | **Current Phase** | **Post-audit hardening.** 72 screens on a live Supabase backend (97 migrations), 508 tests, live at forgelegacy.expo.app. The 2026-08-01 audit found the build materially healthier than this board claimed — and one class of defect it did not: values displayed from columns nothing writes |
 | **Current Focus** | **Coach Holt is the product; the catalogue is a shelf.** Closed 2026-08-11/12: the shared-workout program credit and partner symmetry, the Log-Set double tap, coach intensity + the mid-set nudge, the coin as the single coaching surface, tutorial phasing (23 steps → 11 on day one) with the first tour telemetry, the weekly review, swap/intensity capture, sharing discoverability, and every athlete back on imperial. **Next: the avoidance surface** — CL-D3 makes a visible, reversible list a PRECONDITION of `assemble()` reading the signals now being captured, so Holt records swaps and avoidances and is forbidden to use them until it exists |
 | **Biggest Blocker** | **⚠ REFRAMED 2026-08-09 by PO decision: "we don’t need that many programs now that we have Coach Holt." The 24-program catalogue target is no longer the blocker it was.** Holt builds a program for any goal, room, session length and limitation, plus five race distances — so nobody is waiting on authored content to get a block. Authored catalogue programs remain valuable as *curated, named* work with Forge’s voice on them, and the locked roster still stands, but the COUNT stops being the critical path. The next real gap is the AI layer (the Edge Function that lets Holt read a sentence), which is what the paid tier is actually selling. Historical note: **Programs content — 7 of 24 authored** (Body Recomposition Foundation added 2026-08-06; Wave 2 of the Stage-2 plan is otherwise untouched). The old entry here ("the Social backend") has been wrong for weeks: Squads, Friends, Squad Detail and the feed are all Supabase-backed. Secondary: 0 of 797 exercises have media |
-| **Last Updated** | 2026-09-10 (**Squad goal close + squad photo tap OTA'd to build 8** (`01a08c4d-9e0f-74d3…`); `0200` written, **paste pending**; web not deployed.** Earlier today: **Four passes committed, pushed and OTA'd to build 8** (`01a08bf3-e5ee-750c…`): schedule reorder + un-skip, photo save + line-up, posted workouts client half, onboarding's real first week. The branch tip compiles again. ✅ `0192` and `0197` APPLIED the same day; web not deployed.) |
+| **Last Updated** | 2026-09-12 (**A superset exercise's sets open in place** — tap the row in the superset card, see and change every set; W9-Amendment-014. OTA'd to build 8 and verified (`01a0958c-cd98-75ff…`); web not deployed; not seen by a human. Recently Completed trimmed to 15, 8 entries archived to `Docs/Status-Archive-2026-09.md`.) 2026-09-10 (**Squad goal close + squad photo tap OTA'd to build 8** (`01a08c4d-9e0f-74d3…`); `0200` written, **paste pending**; web not deployed.** Earlier today: **Four passes committed, pushed and OTA'd to build 8** (`01a08bf3-e5ee-750c…`): schedule reorder + un-skip, photo save + line-up, posted workouts client half, onboarding's real first week. The branch tip compiles again. ✅ `0192` and `0197` APPLIED the same day; web not deployed.) |
  |
 
 > **30-second read:** Forge Legacy is a fully-architected fitness-legacy app (257 docs, ~208 mentioning LOCKED) with **a real, backend-wired product** live at forgelegacy.expo.app: **72 screens, 71 of them reading real Supabase data**, over **97 migrations (0001–0098, all applied)** with RLS on all 35 tables. 430 TS/TSX · 87,450 LOC · **508 `node --test` green** · tsc 0 · lint at baseline. *(Two readings that were stale for weeks and are now corrected: the social pillar is NOT placeholder — Squads, Squad Detail, Friends, the feed and Athlete Profile are all live; and this app is Supabase, not the Firebase the design doc ratifies.)* **Content is the critical path now, not plumbing:** exercise coaching is 735 of 797 published (92%) and honors are real data (139 awardable rows), but **programs are 7 of 24** and **exercise media is 0 of 797**. **Open, deliberately deferred** (reasons in Current Sprint): `chapters.workout_count` is a stored counter that is correct only until a delete-workout path ships; ~~`rank-progression` is built but orphaned~~ (**false — corrected 2026-08-02**: the Progress Hub links to it); the dead `chapters.honor_count` column awaits a change that already touches onboarding. **A standing lesson from the 2026-08-01 audit, worth keeping in view: a value that is only ever its default is worse than an absent one — absent renders nothing, a stale default renders a confident, specific, false claim about the athlete.** **The Backend/Data-Model architecture is now LOCKED** (`Backend-Data-Model-Architecture-v1.0.1` — Firebase stack, 12 runtime services, all entity schemas canonical). **Global Search is now also LOCKED** (`Global-Search-Architecture-v1.0.md` — Catalog Search/Discovery Search category split, Never-Searchable list, Performance Firewall-extended ranking/display rules, full reconciliation with both Backend §14 and `Community-Discovery-and-Search-v1.0`). The project can begin implementation as soon as the remaining Freeze rows resolve (Rest Timer, Component Library). **Rank is now ✅ Complete** — all 16 TBDs resolved/closed; RSA, RCM, Calibration Decisions, M-1, P-1, P-2 all LOCKED. Content authoring (programs/exercises) is also early (~12%). **New this session:** the Homepage Principles system is now fully architected and LOCKED — a quiet, rotating "digital inscription" of original Forge Legacy principles and reflection questions on Home (H-1), governed by `Homepage-Principles-Architecture-v1.0` with its canonical content in `Homepage-Principles-Library-v1.0`; the architecture states no fixed entry count so it cannot go stale as the library changes. **Also new this session:** the Communities subsystem (the fourth relationship pillar — Legacy/Friends/Squads/**Communities**) is now fully architected and LOCKED, with `Community-System-Architecture-v1.0`, `Community-Feed-Specification-v1.0`, `Community-Discovery-and-Search-v1.0`, `Community-Roles-and-Moderation-v1.0`, and a complete downstream reconciliation across Social, Challenge, Honor, Notification, Monetization, and Navigation architecture. **Also new this session:** the Squad System Architecture is LOCKED — Goals, Missions, daily Check-ins, a shared Streak, Momentum, a Weekly Summary, a Squad Feed, Honors integration (new `SQUAD` catalog category), inline Competition standings, and Analytics, all scoped to Squad-internal surfaces only. This **deliberately lifts the Performance Firewall for Squad surfaces alone** — Friends Feed, Communities, and Calendar keep the original no-comparison Firewall unchanged — superseding `Squad-Architecture-Amendment-001`/`002` and WSR-001's bounded Check-ins model for those surfaces. **Also new this session:** Exercise Library Phase 4 (Media Architecture & Standards) is LOCKED — new governing doc `Exercise-Media-Architecture-v1.0.md` adds `muscleTargetImageUrl` as a new "Exercise Anatomy" schema group and defines production standards for all 5 media/anatomy fields, including mandatory consistency rules for looping animations (neutral-stance start/end) and muscle target images (fixed model/pose/camera template). This is standards and schema only — media production itself remains entirely unstarted for all 195 exercises. **Also new this session:** the Exercise Library's 5 flagged naming-duplicate pairs are fully resolved (Phase 5) — one canonical V1 name locked per pair (Box Step-Up, Back Squat, Front Plank, Barbell Romanian Deadlift, Barbell Bench Press), catalog reduced from 200 to 195 exercises (44 anchors, down from 45), and a new `Exercise-Naming-Standard-v1.0.md` locks the naming principles and an immutability-after-publication governance rule for future authoring. **Also new this session:** the Honors System Final V1 Architecture is LOCKED — reconciled two previously-parallel, never-merged catalog lineages (the locked 82-type catalog and six unmerged Expansion Pass documents) into one coherent system, merged Endurance/Consistency/Prestige, and added a new Hidden category, reaching **167 honor types across 13 categories**; two brand-new Strength honor families (Sex-Specific Milestones, Relative Strength Milestones — 24 types) were designed in full and then deferred to V2 by PO decision before final lock; also discovered and fixed significant pre-existing staleness in `Honors-Spec-L10.md` (still showing the original 7 categories from before this project's own prior Competition/Communities/Squad work). Architecture and schema only — the full L-11 descriptive-content catalog pass remains a separate, future task.
@@ -861,71 +861,18 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
-> **✅ DEPLOYED 2026-08-20 — BOTH SURFACES.** Web: `entry-83197669fb7e246e1c801dae902ba7fe.js` —
-> `forgelegacy.expo.app` returned **200** twice with a matching hash, and the live bundle was searched for
-> five strings only this pass's code contains (`podium-grain`, `podium-halo`, `podium-ambient`,
-> `podium-flash`, `podium-tint-`). All PRESENT. Commit `dfce07b` on `feat/route-map`.
-> **OTA published to `production`, commit `7d038cc`, iOS update `01a02139-abe9-7dcb-8fc8-78fdac1d9fb3`,
-> runtime `411fd2b68cbe11016f037dd7881b3fe813a1e148`** — `fingerprint:compare --build-id 078d2838…`
-> matched **build 6 exactly** BEFORE publishing, and the manifest endpoint was then queried as an iOS
-> client on that runtime and returned the new update id. **Deliverable, not merely published.**
-> (Android also published: runtime `a8afa07c…`, update `01a02139-abe9-7c0b-93a7-5be0d5d34dbb`. No Android
-> build exists, so it reaches nobody — recorded only so the id is not mistaken for the iOS one.)
-> ⚠ **`fingerprint:compare` needs `--build-id` in non-interactive mode** — bare `--non-interactive`
-> exits 1 with "Insufficent arguments", which reads like a failed comparison rather than a missing flag.
-> ⚠ **`dist/` now holds the OTA's export (`entry-f3654904…`), NOT what the web is serving.** Same commit,
-> different hash. Re-export before any `eas deploy --export-dir dist`, or verify the hash after.
-> ⏳ Not yet confirmed on a device.
-> ✅ **`0172` + `0173` APPLIED 2026-08-20**, pasted as `supabase/apply/pending-0172-0173.sql`. §3 matched
-> all six predicted numbers (46 · 13 · 33 · 0 · 37 · **0 profiles now failing**).
-> ⚠ **This deploy had already shipped `0169`'s client half** — `coach-profile-live.ts` was in the tree, so
-> the podium publish carried it out before `0172` made its read legal. Degraded, not broken (`42501` →
-> `EMPTY_COACH_PROFILE` by design), and now closed: **`0169` is applied AND deployed.**
-> ⚠ **A tree-wide publish ships every undeployed client half in the tree.** Check for pending migrations
-> before publishing anything, not just before publishing the feature that needs them.
+### 0. ⭐ Tap a superset exercise and its sets open right there — see and change every set without leaving the pairing (2026-09-12, Active Workout — **W9-Amendment-014 LOCKED** (amends W9-A4-D4) · commit `c1fed35` on `feat/route-map` (**not pushed**) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a0958c-cd98-75ff-9e41-dfd6e0fe3ae0` on runtime `47944f2e…` (fingerprint MATCHED `3f67281b…` first; manifest returned it to a build-8 iOS client), Android `01a0958c-cd98-7510…`; picked as `e585d7b` on `ota/build8-js` (**not pushed**; tsc 0; 3,407/3,407 there, 3,456/3,456 on main) · no migration · ⛔ **WEB NOT DEPLOYED** · ⏳ **NOT SEEN BY A HUMAN**)
 
-> **✅ DEPLOYED 2026-08-25 — BOTH SURFACES, AND BOTH MIGRATIONS APPLIED FIRST.**
-> Web: `entry-3a0a84f8218e98874aea6eb8d971a0fe.js` — `forgelegacy.expo.app` returned **200 twice** with a
-> hash matching `dist/index.html`, and the live bundle was searched for **nine** strings only this pass's
-> code contains (`Add a note for next time`, `that holds for every set`, `Add a coaching note`,
-> `Underhand close grip`, `Measured by GPS as you go`, `rank building whether you look at it`,
-> `Minimise`, `Say it better`, `built something real`). **All nine PRESENT.**
-> **iOS OTA `01a039a8-f8d2-74e9-a13e-79dd7fc490cf`** on runtime `411fd2b68cbe11016f037dd7881b3fe813a1e148`,
-> commit `0db5868`. `fingerprint:compare --build-id 078d2838-ce5c-476a-8527-35d186343bf5` returned an
-> **exact match** BEFORE publishing, and the manifest endpoint was then queried as a build-6 iOS client
-> and returned this update's id. **Deliverable, not merely published.**
-> (Android also published — runtime `a8afa07c…`, update `01a039a8-f8d2-774c-93e7-74d765955f99`. No Android
-> build exists, so it reaches nobody; recorded only so the id is not mistaken for the iOS one.)
-> ✅ **`0178` + `0179` APPLIED AND VERIFIED BY THE PO BEFORE THE DEPLOY**, which was the required order:
-> the squad post screen reads `squad_post_comments.edited_at` and `squad_post_reactions.kind`, so shipping
-> first would have made every post read "Post not found". `0178` reported **10 acknowledgements, all
-> `respect`** (so `non_respect_kinds: 0`, exactly as predicted); `0179` reported `policies: 3`,
-> `signals_ok: true`, `nudge_rows: 0`.
-> ⚠ **`my_signals` CAME BACK ALL ZEROS AND THAT IS NOT A DEFECT — THE PREDICTION WAS WRONG.** The bundle
-> said `sessions` would roughly match the PO's finished workouts. The Supabase SQL editor has no
-> authenticated user, so `auth.uid()` is NULL and every `athlete_id = auth.uid()` matches nothing. The
-> check was designed wrong and told us nothing. What it was meant to prove is verified by a better route:
-> §2 **called** `coach_nudge_signals()` and got all eight keys back, and a mistyped column would have
-> raised there rather than returning a zero. **Do not repeat this shape of sanity check in a paste bundle.**
-> ⚠ **`fingerprint:compare` STILL NEEDS `--build-id` IN NON-INTERACTIVE MODE** — bare `--non-interactive`
-> exits 1 with "Insufficent arguments", which reads exactly like a failed comparison.
-> ✅ **`0177` APPLIED 2026-08-25, AFTER the deploy** — `fn_exists: true`, **`guard_present: true`**, which is
-> the assertion that matters: it reads `pg_get_functiondef` on the LIVE function rather than the file, so
-> the consent check is genuinely in the database. ⭐ **AND THE HOLE WAS NEVER USED** —
-> `requests_approved_historically: 0` across 4 squads and 16 memberships, so every membership that exists
-> was somebody adding themselves. No client change was needed: `approveSquadJoinRequest` already surfaces
-> an unrecognised `ok:false` as a plain failure, and `squad_pending_requests` only ever hands the screen
-> ids that are already `pending`.
-> ⭐ **RSA AMENDMENT 002 — the rank card fires on EVERY rank and sub-rank, all 28 steps** (PO, 2026-08-25:
-> *"Yes I want the card to fire off on every rank and subrank"*). ⚠ **NO CODE CHANGED, AND THAT IS WHY THE
-> AMENDMENT EXISTS.** `useEarnedMoments` has always enqueued on `promotedFamily || promotedSubTier`, while
-> RSA §13.2 said *"There is no ceremony for sub-tier advancement"* — the DOCUMENT was the stale half, and a
-> future reader finding that clause would have deleted the branch as a defect. §13.2 and §5 now carry the
-> amendment pointer, **TBD-2 is resolved** (M-1 + the Progress Hub Rank Journey are the surfaces) and §22's
-> C-3 is closed. ⚠ **§13.1 stays locked** — sub-tiers are not separate identities, so the card shows the
-> FAMILY's §2.2 statement and per-sub-tier statements must never be authored.
-> ⏳ **NOT YET CONFIRMED ON A DEVICE**, and most of this pass is visual — the cue lines, the note row, the
-> Stay control, the rank badge, the acknowledgement sheet and the nudge have never been seen by a human.
+PO, mid-superset: *"touch one of the workouts and it expands into the full card … so I can see and adjust all sets"*;
+asked in place vs its own card, chose **in place**. ⚠ **THE FEATURE ALREADY EXISTED AND WAS UNUSABLE TWICE OVER** — since
+`260e7f3` (Aug 9) only the member's *name text* opened it, with nothing drawn to say so, and the card it opened showed **no
+set table**: the table's guard was still `isSuperset` (`4fb0ae4`, Aug 3) when `260e7f3` moved the hero's to `ssFused`.
+Now the whole row (tag, name, goal) toggles the member's table open inside the superset card; chevron turns; Log Set stays
+its own tap; one member at a time; "Open full card" keeps the old drill-down (which now shows its sets). The table is one
+component, `SetTable`, drawn in both places and keyed by exercise index throughout (the value-pop and fuse had closed over
+`exIdx`); the inline copy drops its own card + the tour anchors and borrows 10pt of card padding so six fixed cells fit at
+360pt (a test does that arithmetic on the live styles). ⚠ **One-member Add Set / trash now re-state `groupRounds`**
+(`syncSupersetRounds`) — only "+ Round" did, so a 4-set row beside a 3-set press would have saved and templated as 3 rounds.
 
 ### 0. ⭐ A rower reads in metres by default — Preferences: Meters | Miles (2026-09-11, cardio units · commit `05e5a0b` on `feat/route-map` (pushed) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a09197-b488-7f40-a937-43472e255a23` on runtime `47944f2e…` (fingerprint MATCHED `3f67281b…`; manifest returned it), Android `01a09197-b488-730c…`; picked onto `ota/build8-js` (pushed; tsc 0; 3,395/3,395 there, 3,441/3,441 on main) · no migration (`app_prefs` is jsonb) · ⛔ **WEB NOT DEPLOYED** · ⏳ **NOT SEEN BY A HUMAN**)
 
@@ -1181,369 +1128,6 @@ Three causes, none of them the missing-clip case: (1) the 09-07 `MEDIA_REV=2` bu
 > swallow the cell's press. The header guard now asserts header and row insets are **equal to each
 > other** rather than pinning a number, so the pair cannot drift.
 > tsc **0** · lint clean · **30 pass** (2 A12 guards rewritten, +2 new) · all 14 files green.
-
-### 0. The Option 5a card keeps its old colours, and Alabaster needed nothing (2026-09-09, Active Workout hero — **no migration**, ✅ **OTA PUBLISHED TO BUILD 8 AND VERIFIED DELIVERABLE** iOS `01a0863f-637c-7964-a0c0-dbac3acf8f48` — commit `d6e44cb` on `feat/route-map` (**pushed**), cherry-picked as `b97f765` on `ota/build8-js`. ⛔ **WEB NOT DEPLOYED** · ⛔ **NOT SEEN ON A DEVICE OR IN ALABASTER**)
-
-> PO on the published A12 build: *"All the coloring we should keep as before. **No coloring changes.**
-> Do the same layout changes for the alabaster side. If it's the same animation size then that's fine."*
-> **A12 is a LAYOUT pass — it keeps the geometry and hands the palette back.** Five reverts: card ground
-> `charcoal800` → **`charcoal900`**; plate ground `surfaceRecessed` → **`charcoal600`**; plate shadow
-> `borderInset` → **the bronze glow**; fallback glyph `charcoal500` → **`bronze400` @ 0.14**; and the How
-> To bar loses the tint it briefly gained on every face, so **`howToFirst` comes back**.
-> ⚠ **SIZE IS LAYOUT, INK IS NOT** — the line the revert draws. The glyph keeps the spec's 50pt/1.25
-> stroke with its old bronze; the bar keeps its new full-width shape without the fill.
-> ✅ **AUDITED, NOT ASSERTED.** Every colour token in the diff vs the pre-A12 build (`ae31923`) was
-> enumerated and normalised for role aliases that resolve identically in both palettes. **Five net deltas
-> remain, none a colour change**: `gray400` −1 and `bronze400` −3 are role-token swaps of identical
-> value; `bronze300` −1 is the deleted `Read note` link; `charcoal500` −1 is the deleted middot span;
-> `bronzeBorder` +1 is the new hairline.
-> ✅ **ALABASTER NEEDED NO SEPARATE PASS, AND THAT WAS CHECKED.** `workout.tsx` has one `StyleSheet` and
-> **no `IS_PAPER` branch** — every geometry change was already live in both themes. And the clips are the
-> same shape: `deliver_alabaster.py` and `deliver_forge.py` both normalise to `LOOP_H = 300`, verified
-> against the live bucket over 34 ids in both prefixes — **all 300 tall in both**, widths differing 1–2px
-> from independent rounding, invisible under `contain`.
-> ⚠ **`tsc` CAUGHT A REAL BREAK MID-PASS** — a `{/* … */}` JSX comment inside `fallback={…}`, which is an
-> expression slot, and then a comment whose own text contained the close-comment marker. Both fixed;
-> recorded because the second one closes a block comment early and the error lands lines away from it.
-> tsc **0** · lint clean · **28 pass** · W9-A12 amended with **D7** (colour revert) and **D8** (Alabaster).
-
-### 0. The hero card, built to Option 5a (2026-09-09, Active Workout hero — **no migration**, ✅ **OTA PUBLISHED TO BUILD 8 AND VERIFIED DELIVERABLE** iOS `01a08630-e9d4-7135-aac1-ad7e146e9a7d` on runtime `47944f2e…` — commits `b053be7` + `615f5dc` on `feat/route-map` (**pushed**), cherry-picked as `2a7d294` + `2ab8cbd` on `ota/build8-js`. ⛔ **WEB NOT DEPLOYED** · ⛔ **NOT SEEN ON A DEVICE OR IN ALABASTER** — **W9-Amendment-012 LOCKED**)
-
-> PO handed over a full literal spec for the card — *"every number below is literal; do not round,
-> rescale, or 'improve' spacing"* and *"don't change any of the functionality. Just layout."* Built to it.
-> **Plate 112 × 148 stretching → 150 × 212 FIXED**, `contain` → **`cover`**, bronze glow → `border-inset`.
-> **How To leaves the text rail and becomes a full-width bar** (row 2 of the upper block). New 34 × 1
-> bronze hairline. Meta becomes **two lines** (equipment / muscles) instead of one wrapping `·` run.
-> Strip goes **0.85 / 0.85 / 1.3** with per-cell padding; figures **17 → 19 and lose their spaces**;
-> note **11.5pt, `Read note` deleted, `Last Note` → `Note`**.
-> ⚠ **THIS BREAKS A11's BINDING CONSTRAINT AND THE PO SHOULD KNOW.** A11-D1 made the plate stretch
-> precisely so a bigger picture cost the set table nothing. A fixed 212 makes the plate set the row
-> height: **the card goes ~240pt → ~363pt**. Mitigated only by existing behaviour — the hero
-> auto-collapses the moment the first set resolves, so the tall card is what you see BEFORE set 1 and
-> never again. **If the first set must be visible before it is logged, the plate is where the height is.**
-> ⚠ **ONE NUMBER DECLINED, ON A CONTRAST MEASUREMENT.** The spec asks for `--fl-text-tertiary` on the
-> meta lines and strip sub-lines. W9-A7-D5/A8-D4 already measured it: **Alabaster's `gray600` is 3.15:1**,
-> which fails the 4.5:1 that 12.5pt/10pt running text needs. Forge fine, **Paper unreadable**. Held at
-> `gray400`. Reaching tertiary is a **ramp change, not a token change** — PO's call.
-> ⚠ **THE SPEC'S `cover` WAS REVERSED TO `contain` BEFORE PUBLISHING**, PO: *"I want the full animation
-> in there."* **Measured 96 clips**: `deliver_forge.py` normalises every loop to height 300 and lets the
-> WIDTH land where it lands, so aspect is per-clip — **min 0.327 (`ring-muscle-up`), median 0.800, max
-> 3.640 (`foam-roll-lats`), an 11× spread**. `cover` on the 0.708 plate cropped a ring muscle-up to ~46%
-> of its width and a foam roll to ~19%. ⚠ **No plate size fixes that** — no single aspect contains an
-> 11× spread, so the fit was the bug, not the dimensions. ⚠ **And the plate's SHAPE barely matters**:
-> average area filled under `contain` is 150×212 → **69.1%**, 150×181 → 69.6%, 150×150 → 64.9% — the
-> spec's number is within half a point of the best, so it was kept. **OPEN: 150×181 is equal on fill and
-> 31pt shorter**, the cheapest answer to the height problem above — PO's call.
-> ⚠ **REVERSES A10-D1a** (spaced figures) and **narrows A10-D2** (the note loses its third line, the two
-> figure cells keep theirs). `spacedFigure` **deleted, not left uncalled**. Thresholds re-measured for
-> unspaced strings — `102.5×5`, which has needed a fallback since A9, now fits at full size.
-> ⚠ **A10's hierarchy guard survived all four resizes** (24→21→17→19): the plinth figure still sits
-> under the set row's 20pt, now at −1. ⚠ **The How To COPY variant was kept** while its STYLE variant went
-> — the words are behaviour, the face was layout.
-> tsc **0** · lint clean · `workout-plinth-and-row` **28 pass** (5 A10/A11 guards rewritten to the A12
-> truths, +2 new) · all 14 files reading `workout.tsx` green.
-
-### 0. The hero becomes a stage, and the plinth steps back again (2026-09-09, Active Workout hero + set table + rest overlay — **no migration**, ✅ **OTA PUBLISHED TO BUILD 8 AND VERIFIED DELIVERABLE** iOS `01a085fb-f3df-71cf-b7a3-4bf1b90b4f0d` on runtime `47944f2e…` — commit `ae31923` on `feat/route-map` (**pushed to origin**), cherry-picked as `52551ec` on `ota/build8-js`. ⛔ **WEB NOT DEPLOYED** (OTA-only by request) · ⛔ **NOT SEEN ON A DEVICE OR IN ALABASTER** — **W9-Amendment-011 LOCKED**)
-
-> ✅ **DELIVERABLE, NOT MERELY PUBLISHED.** `fingerprint:compare --build-id 3f67281b-48b3-4048-adf2-a16b20ad0aa8`
-> matched **build 8 exactly** (`47944f2eea0b6bc314118d59fe087bcd5a652aca`) BEFORE publishing, and the
-> manifest endpoint was then queried as an iOS client on that runtime and returned **this update's id**.
-> ⚠ **`--build-id 078d2838…` in the older entries is BUILD 6 and no longer exists** — it fails with
-> *"Build with id … does not exist"*, which reads like a broken fingerprint rather than a stale id.
-> Build 8's FINISHED id is `3f67281b-48b3-4048-adf2-a16b20ad0aa8`; the three others on build 8 ERRORED.
-> ⚠ **PUBLISHED FROM `forge-ota8-wt`, NOT THE MAIN TREE.** The main tree had **48 dirty files** from a
-> parallel session (`ExerciseLoop.tsx`, `useWorkoutSession.tsx`, `demo-loop-prefetch.ts` and a new
-> `exercise-loop-retry` test), and `expo export` bundles the WORKING TREE — publishing from it would have
-> shipped that session's in-progress work. The cherry-pick conflicted only in this dashboard (divergent
-> doc history, resolved to the `feat/route-map` version); `workout.tsx` auto-merged and all six values
-> plus 27 guards were re-verified in the OTA worktree before publishing.
-> ⚠ **`AlignEditor.tsx`'s deletion was already staged by the parallel session and got swept into the
-> first commit attempt.** Amended out — the file is back to an unstaged deletion for that session to
-> commit under its own message.
-> (Android also published: `01a085fb-f3df-7d00-a572-c588f9a96ef1`, runtime `03dd1291…`. No Android build
-> exists, so it reaches nobody — recorded only so the id is not mistaken for the iOS one.)
-
-> PO looked at the A10 build on the phone and **revised A10's own compression note**: *"I would make the
-> hero/exercise card larger, but use that additional space primarily for the exercise animation/image —
-> not for more information. Then I would substantially reduce the Goal/Best area."*
-> ⚠ **THIS PARTLY UNDOES W9-A10-D3**, which cut the art `104 × 145 → 104 × 130` yesterday on the PO's own
-> *"compress ~10%"* note. Both calls are the PO's; the later one governs. Recorded so nobody "restores"
-> the 130 off A10's table.
-> **The art:** `104 × 130` fixed → **`112 × 148` minimum, stretching** (+22.6% of area, more portrait).
-> ⚠ **`minHeight` + stretch, not a taller fixed box — that is what makes it free.** `alignSelf: 'flex-start'`
-> pinned a 130pt box beside a ~141–165pt meta column, so the slot sat in a well of its own dead space;
-> inheriting `heroUpper`'s `stretch` spends height the text column already held. ⚠ **Both axes had to
-> move** — `ExerciseLoop` is `contentFit:'contain'`, so growing one axis is a change that renders and does
-> nothing once the other becomes the limiter.
-> **The plinth:** figure **21 → 17** (−19%, measured off the 21 that was on the phone, not the original
-> 24) and column padding **10 → 8**. ⚠ **Label and sub-line deliberately UNCHANGED** — *"don't shrink the
-> entire cell… that preserves the premium feeling."* Thresholds re-cut with the narrower type: a spaced
-> `3 × 1:00` now fits the top step instead of being shrunk for a reason that stopped being true.
-> **`Prev` → `Previous`**, column `66 → 76` — `PREVIOUS` measures ~56pt at 9pt/1.1 tracking and would have
-> wrapped the heading out of line with its cells. The 10pt comes out of `space-between` slack, not another
-> column. ⚠ The value wanted it anyway: `102.5 × 8` at 14.5pt measured ~72pt and **was already overflowing
-> 66**. Renamed in the collapsed strip too, so one fact does not have two names.
-> **Rest panel `top` 118 → 200**, and **centring was declined** with reasons: it demotes into the band chip
-> directly above it, it is ~265pt tall so centred it covers set rows 3–8 rather than the first two, and
-> `restPinned` keeps it up all session. The move buys the one-handed reach the question was really about.
-> ⚠ **FOUR ITEMS OF THE CRITIQUE NEEDED NO CODE** — the `GOAL | BEST | NOTE` strip, the 2-column fallback
-> when there is no note, the two-line clamp and `Read note` all shipped in A9/A10 already.
-> ⚠ **The "animated exercise plate" (motion trail, muscle emphasis, idle movement) is DEFERRED** — that is
-> new motion design against 703 existing clips, not a sizing pass.
-> ⚠ **OPEN:** the design asks for `132 × 172` stretching; A11 took the mechanism at the PO's size. The
-> remaining **20pt of width** would cost the meta column 20pt and wrap long exercise names onto a third
-> line — **PO's call**, not taken unilaterally.
-> **Held the binding constraint:** *"don't let the larger hero push the sets too far down."* The plinth
-> loses ~7.5pt and the art costs nothing in the common case, so **the first set typically moves UP**.
-> tsc **0 errors** · lint clean · `workout-plinth-and-row` **27 pass** (+4 new guards: the art stretches
-> and has no fixed `height`, it grew in both axes by ≥20% area, only the figure shrank, the panel moved
-> without reaching the centre) · every one of the 14 test files that reads `workout.tsx` green.
-
-### 0. The plinth stops shouting, and the exercise card gives back 10% (2026-09-08, Active Workout hero + set row — **no migration**, ✅ **WEB DEPLOYED AND VERIFIED** `index-499ad53d71d0303ce5fdcb5ca73c0607` · ✅ **OTA PUBLISHED TO BUILD 8** iOS `01a085c4-3c01-7ed4-a749-fc1e7e923d80` — commit `7de548b` on `feat/route-map` (**pushed to origin**), cherry-picked as `486db40` on `ota/build8-js`. ⛔ **NOT SEEN ON A DEVICE OR IN ALABASTER** — **W9-Amendment-010 LOCKED**)
-
-**PO**, a numbered critique of A9 as built, with a hierarchy attached: *"Your current design is already very close to this hierarchy. The main adjustment is making Level 4 — the actual set logging — feel slightly more dominant than Levels 2 and 3."* **No element moves; this is a weight-and-spacing pass.**
-
-⭐ **THE FIGURES COME DOWN, AND THAT IS A HIERARCHY CHANGE NOT A TASTE ONE.** Goal and Best 24 → **21pt** (−12.5%) on *"they currently feel slightly too much like headline statistics."* The set row's own numerals are **20pt**, so at 24 the plinth was outranking the thing the athlete is actually doing by four points — Level 2 over Level 4. At 21 they are near peers and the active row wins on chrome (bronze border, tint, recessed fill) rather than on size. ⚠ **THE GUARD IS ON THE RELATIONSHIP, NOT THE NUMBER**: the test reads both sizes out of the source and fails if the plinth figure exceeds the row numeral by more than 1pt, so a future bump cannot silently re-invert it.
-
-⭐ **ONE STRUCTURE ACROSS THE THREE COLUMNS** — label / value / sub-line, no exceptions: `GOAL` · `3 × 8` + pencil · `Today`; `BEST` · `185 × 5` · `Aug 31`; `LAST NOTE` · `“Switched to underhand…”` · `Read note`. The figures are spaced at the RENDER (`spacedFigure`), so `goalTextFor` is untouched and the collapsed strip keeps the compact form — it has 11pt and no room for the spaces. ⚠ `plinthFigureStyle`'s thresholds count the **spaced** string, or `185 × 5` holds a size it no longer fits. The note is **quoted**, which says *a person wrote this* without spending a word — what stops a sentence in a row of figures reading as data.
-
-⚠ **`LAST NOTE`, AND THE PO'S OWN WORDING DID NOT FIT.** The critique asks for *"Note From Last Time"*; at 9.5pt with 1.3px tracking that measures ≈**142pt** against the ≈**100pt** the column has for label text, so it wraps to two lines and breaks the single baseline the whole change exists to create. `Last Note` carries the same claim — the label names what the value IS, which is what `Last Time` failed to do — at a width that fits. The room can be bought by dropping the label to 8.5pt and removing its icon; **that trade was not taken unilaterally**.
-
-⭐ **COMPRESSION IS TARGETED, NOT GLOBAL**, per *"I would not globally tighten the screen."* Hero padding 14→12, meta gap 10→7, art 145→130, attribute line-height 18→16, How To pill 8/12→6/11, plinth 12–13/5 → 10/4. ⚠ **THE EXERCISE NAME IS UNTOUCHED at 26/28** — it is Level 1, and shrinking it to save a few points would invert the top of the hierarchy to fix the middle. ⚠ **THE SET ROWS ARE UNTOUCHED** — rated *"very good"*, and a global tighten would have taken from the one region that was working.
-
-⛔ **ONE ITEM DECLINED AND LEFT OPEN (W9-A10-D3a).** `Add Set` is called *"slightly tall"*; it is `minHeight: 44`, the platform touch-target floor, tapped mid-set and one-handed. Dropping a frequently-used control below the floor is not a call to make silently on a spacing note. **40pt on the PO's explicit say-so, one line.**
-
-Smaller: an empty weight cell reads **`— lb`** — the unit is the cheapest affordance for *"I'd question whether a user immediately understands that this is tappable"*, set in `charcoal500` at 10.5pt so it stays **quieter than the faded ask beside it** and cannot read as an entered value (⚠ it knowingly repeats the `Weight · lb` header: the header is read once, the row every set). The **bottom bar** takes the card surface (`charcoal800` — in Alabaster `#F9F6EF` on a `#F6F2E8` page, exactly the "raised" reading), a harder rule (`charcoal600`) and a literal **upward** shadow, since every `flShadow` token throws downward. The hint is one clause: *"Tap weight or reps to edit."*
-
-**Gates:** tsc **0** · **3,301/3,301** (+6 guards, **empirically separated** — reverting the figure to 24, the label to `Last Time` and the bar to canvas colour produced exactly three failures, no collateral) · lint at baseline. ⚠ The A9 note-clamp guard was **relaxed off the exact child expression** — it broke on the quotation marks, and a test that fails on a change it does not care about teaches people to edit tests.
-
-✅ **BOTH SURFACES, AND THE FONT CHECK RAN FIRST THIS TIME.** Web `index-499ad53d71d0303ce5fdcb5ca73c0607` — the export was pre-flighted for the A9 failure (asset refs resolve on disk, no `*OneDrive*` directory anywhere in `dist`) BEFORE deploying, then both URLs 200 + hash-matched and **all nine referenced assets fetched live**, fonts included at 193 KB each. OTA iOS `01a085c4-3c01-7ed4-a749-fc1e7e923d80` on runtime `47944f2e…`, `fingerprint:compare --build-id 3f67281b…` **MATCH** before publishing, manifest then queried as an iOS client and returned the new id. The uploaded bundle still cannot be read back (`assets.eascdn.net` 403s), so the same tree was exported to a throwaway `dist-verify` and probed in **both** encodings — all five markers present, both retired strings gone.
-
-⛔ **STILL NOT SEEN.** Every judgement in this pass is about type size and spacing — precisely what no gate in this repo can look at.
-
-### 0. The exercise card gets a plinth back, and the set row loses a column so `Prev` can have one (2026-09-08, Active Workout hero + set table — **no migration**, ✅ **WEB DEPLOYED AND VERIFIED** `index-3ec3392daf15290241620ce96e8b1d3f` — commit `6c1256d` on `feat/route-map`; ⚠ **the first deploy of this pass shipped BROKEN and was replaced**, see below. ✅ **OTA PUBLISHED TO BUILD 8** iOS `01a08345-cee5-7de5-8f11-1defc33e1f0a` on runtime `47944f2e…`, cherry-picked as `82f6644` on `ota/build8-js`. ⛔ **NOT SEEN ON A DEVICE OR IN ALABASTER** — **W9-Amendment-009 LOCKED**)
-
-**PO**, handing over an Option-3A design handoff (README + a static HTML reference + four screenshots, chosen after four rounds of exploration): *"I want to adjust the active workout screen… Keep the animations and the way the card closes after the first set the same. We are just rearranging the screen basically. Functionally all the same."*
-
-⭐ **THE PLINTH RETURNS, AND ITS THIRD COLUMN IS THE NOTE — WHICH IS WHY THIS IS NOT A REVERSAL OF W9-A8, WRITTEN THIS MORNING.** A8 deleted a three-column band six hours ago. What the PO objected to then was a **duplicate**, not a band: the hero's `Last` was the top set of the last saved session, and W9-A7 had just re-printed that same figure under every row as `Prev`. A8 removed the duplicate and, with only two figures left to align, removed the band that aligned them. A9's band is `Goal · Best · Last Time`, and `Last Time` is **the athlete's own note from last session** — prose, not a number, and the one fact on the card that exists nowhere else on the screen. Every A8 decision about the two surviving figures is kept verbatim: Goal keeps its bronze figure, its pencil and `SetGoalPanel` (A8-D1a); Best keeps em-dash-means-never and its local-midnight date (A8-D2/D5); the sub-lines take `gray400`, because Alabaster's `gray600` measures 3.15:1 and fails the 4.5 text floor (A8-D4). The note is clamped to two lines with a **`Read note`** tap that opens it in full — a 280-character note behind a third of a card is only an honest truncation if the rest is reachable — and the whole column is **not drawn at all** when there is no note, rather than standing as a labelled em-dash.
-
-⭐ **`Target` IS NOT DELETED, IT IS FOLDED INTO `Reps` — AND ALL FOUR THINGS IT CARRIED HAVE A NEW HOME.** On a set nobody has done yet the ask and the answer are the same number, so they share one slot and three inks carry the state: `gray600` = what was **asked**, `bronze300` = what **you said**, `cream100` = **logged**. ⚠ That colour difference is now load-bearing — with no Target column beside it, ink weight plus the check circle is the entire distinction between a pending set and a finished one. The other three: `toFailure` reads **`MAX`** and never `0` (which `targetReps` literally is); `targetSec` keeps its clock (and `HoldTimer` still replaces the field outright on the live row); **`per leg` moves to the Goal sub-line** — `Today · per leg` — because it describes the exercise, not a set, and `per-side-core`'s own header warns its absence leaves "a different, complete-looking prescription" an athlete does thirty reps against where sixty were meant; and a percentage program's **prescribed bar becomes a faded numeral inside the Weight field**, shown and still never written, because `prefillWeight`'s rule has not changed — a weight on an untouched set records a lift nobody made and can announce a PR for it.
-
-⭐ **`Prev` IS A COLUMN NOW, AND ON THE LIVE ROW IT IS A ONE-TAP FILL.** W9-A7-D2 put it under the cells because there was no room beside `Target`; there is now, and the row drops from ~110pt to ~58pt. A7-D3's rule is untouched (the same set POSITION from the last SAVED session). ⚠ **The fill writes the weight and NOTHING else** — `buildSaveExercises` filters on `s.done`, so a weight on an unlogged row is never persisted and can never announce a record, the identical guarantee pending rows already had through the sheet — and it writes through **`exactWeight`**, the same converter the display uses, so a metric athlete gets the 102.5 they are reading rather than the 225 underneath it. **One-way**: the reference prototype toggles, but an athlete who has since typed 155 and taps `Prev` to re-read the number must not have their own figure silently reverted. ⚠ **This is the one BEHAVIOUR added by a change billed as a rearrangement**, it is in the handoff, and it is called out rather than folded in silently.
-
-✅ **W9-A8-D3a IS CLOSED.** A8 wanted the design's equipment + muscle tags on the section line and could not build them: `muscles.json` renders `lats` as *Latissimus Dorsi*, and `MAIN LIFT · LATISSIMUS DORSI` at 12pt uppercase overflowed a ≈194pt column. A8 called it "a layout question of its own". 3A answers the layout question — its own line, sentence case, 12.5pt, wrapping allowed — so the data lands unchanged: equipment, then the two muscles the catalogue lists first, omitted entirely for a lift it does not cover.
-
-⚠ **WHAT DID NOT CHANGE, BECAUSE THE PO ASKED:** the auto-collapse (`autoCollapsed` in `completeSet`), the collapsed strip byte-for-byte, `FuseFlash`, the value-`Pop` (now on a `Prev` fill too), the `scale: 0.96` press depth, the set-entry sheet and wheel, `HoldTimer`, `SetGoalPanel`, the rest timer, the coach coin, supersets, cardio blocks, the note row, Add Set. The **green DONE language is kept rather than replaced** with the handoff's cream-on-pending — 3A does not prototype a completed row, and green is what tap-to-uncomplete reads from. Two deliberate deltas from the handoff, each protecting an existing decision: **Add Set keeps its dashed bronze border** (the treatment is what distinguishes it from the exercise-note row below it) and the **cards keep `charcoal900`** rather than the design's `surface-card` gradient, which would be a two-theme colour change outside this rearrangement.
-
-⚠ **THE ACCEPTED COST, stated because the handoff states it (A9-D2d):** there is no longer a place to compare per-set targets *at a glance*. Each row still shows its OWN target, so a descending scheme reads correctly row by row, and `goalTextFor` already renders a ladder as `4×6-6-4-4` so the plinth's summary stays honest — but if per-set targets ever need to be read side by side, 3A is the wrong row.
-
-**Gates:** tsc **0** · full suite **3,295/3,295** (+17 new `workout-plinth-and-row` guards, one per landing above, **empirically separated** — three deliberate breakages, three targeted failures, no collateral) · lint **at baseline** (1 pre-existing unused-import warning). The tour was corrected with the screen: `w-hero` had been teaching a `Last` column A8 deleted this morning, and `w-sets` taught `Target` vs `Actual`, which is the pair A9 folds into one.
-
-✅ **WEB DEPLOYED AND VERIFIED** — `index-3ec3392daf15290241620ce96e8b1d3f` (deployment `forgelegacy--bgyzvz0a3v`). The deployment's own URL and the production alias both returned **200** and hash-matched on the FIRST probe, and the **live** bundle was then fetched and searched for seven strings only this pass's code contains (`Read note`, `No record yet`, `Last time you wrote`, `Use that weight`, `Today · per `, `Weight · `, `The faded number in Reps`) — all **PRESENT** — and for the two retired tour lines (`Target is the plan`, `Last is what you lifted here last time`) — both **GONE**. ⚠ The minifier escapes `·` as `·`, so a search for the literal character reports a false MISSING; the first check did exactly that.
-
-⛔ **THE FIRST DEPLOY OF THIS PASS TOOK THE PREVIEW DOWN, AND EVERY GATE PASSED ON IT.** PO: *"https://forgelegacy.expo.app is not loading."* The worktree's `node_modules` was a **junction** to the main checkout, and Metro resolves an asset outside the project root through the link and writes that path into the export — so both Playfair faces shipped as `/assets/_OneDrive - qest4.com/ForgeLegacy/node_modules/@expo-google-fonts/…ttf` and **404'd**. `_layout.tsx` holds `<ForgeSplash/>` while `!fontsLoaded && !fontError`, so the app never got past the splash. ⚠ **THE VERIFICATION SAID GREEN**: both URLs returned 200, the hash matched on the first probe, and all seven marker strings were in the live bundle — because the BUNDLE was perfect and the FONTS were the casualty. The check now fetches **every `src`/`href` the shell references** (9 on this app) and fails on any 404 or any path containing `OneDrive`. Rebuilt with a real `npm ci` (934 packages, ~75 s); the fonts now serve 193 KB each from `/assets/node_modules/…` and nothing in the shell or bundle mentions OneDrive. Roughly 25 minutes of preview downtime. **`project_web_preview_deployment` corrected — it had just been written saying a junction was safe for web because the fingerprint ban did not apply. It is not fingerprint-only.**
-
-⚠ **PUBLISHED FROM A CLEAN WORKTREE** (`C:/Users/isaia/forge-deploy-wt`, detached at `6c1256d`, REAL `npm ci`) because the main checkout carries three passes' uncommitted work — the photo/share pass, the transformation pass, and an unrecorded ~400-line onboarding pass (`first-week.ts`, `intake-seed.ts`, `tourMayStart`). `expo export` bundles the working tree, so deploying from here would have put another session's in-flight onboarding rewrite in front of the PO. Only this pass shipped.
-
-⛔ **AND THE BRANCH TIP DOES NOT COMPILE ON ITS OWN — A REAL DEFECT, NOT A WORKTREE PROBLEM.** `src/app/squad/[id].tsx` was committed in `7934dd0` importing `takePostedWorkout`, but that function exists only in an **uncommitted** `src/data/planned-workout-live.ts`. A fresh checkout of `feat/route-map` fails `tsc` with three errors. The deploy worktree was repaired with that one file (self-contained — it imports only `supabase` and a type) so the exported bundle matches what the committed consumer expects; the function handles its unapplied migration itself (`0192` → `NOT_MIGRATED`). **The repair was deploy-only and is NOT on the branch** — whoever owns the posted-workouts pass still needs to commit `planned-workout-live.ts`.
-
-✅ **OTA PUBLISHED AND PROVED DELIVERABLE TO BUILD 8** — iOS `01a08345-cee5-7de5-8f11-1defc33e1f0a`, group `c60185db-18d1-4a58-a936-32066012aba5`, runtime `47944f2eea0b6bc314118d59fe087bcd5a652aca`, from `82f6644` on `ota/build8-js` (a clean cherry-pick of `6c1256d`, no conflicts). `fingerprint:compare --build-id 3f67281b…` printed **MATCH** before publishing; the manifest endpoint was then queried as an iOS client on that runtime and returned the new update id. ⚠ **The uploaded bundle itself cannot be read back** — `assets.eascdn.net` answers an unauthenticated request with 403 *"Unauthorized asset request"*, so the web pass's fetch-and-grep has no OTA equivalent; the same tree was exported to a throwaway `dist-verify` instead and its Hermes bundle carries every marker. **⚠ HERMES STORES ANY STRING CONTAINING A NON-ASCII CHARACTER AS UTF-16**, so a UTF-8 grep reported `Today · per `, `Weight · ` and the whole tour body as MISSING on a bundle that contains all three — the same trap as the web minifier's `·`, one layer down. Probe both encodings or the check lies. (Android also published — runtime `03dd1291…`, update `01a08345-cee5-7d11-9c4d-f0edde81f781`. No Android build exists, so it reaches nobody; recorded only so the id is not mistaken for the iOS one.)
-
-⚠ **THIS REACHES BUILD 8 ONLY.** Anyone still on build 7 (runtime `4d728d16…`) gets nothing from this update.
-
-⛔ **STILL NOT SEEN.** Both surfaces carry it and neither has been looked at. This is a pure layout pass — exactly the category tsc and a source-guard suite cannot look at — so nothing here is confirmed until it has been looked at on the preview AND in Alabaster.
-
-### 0. Save actually saves, and the photos line up where you can see them lining up (2026-09-08, Share card export / Transformation Compare — ✅ **`0197` APPLIED 2026-09-10**, ✅ **OTA PUBLISHED TO BUILD 8 2026-09-10** iOS `01a08bf3-e5ee-750c…` — commit `f60084a` (**pushed**), cherry-picked as `9c41d8b` on `ota/build8-js`. ⛔ **WEB NOT DEPLOYED · NOT SEEN ON A DEVICE**)
-
-**PO:** *"I tried saving this with the save photo button and it didn't work."* And, from the Compare screen: *"It would be easier to adjust the photos like this somehow. You see how I can see them lining up? What would be the simplest and most effective process for users?"*
-
-⭐ **SAVE IMAGE NEVER SAVED, AND TWO THIRDS OF THE REASON WRITTEN IN THE FILE WAS WRONG.** `share-image.ts` composed the card and put it on the CLIPBOARD, with a header explaining that a real save needs `expo-media-library` and a share sheet needs `expo-sharing` + `expo-file-system`, all of which move the fingerprint. ⚠ **`expo-file-system` was already in the binary** — it ships as a dependency of `expo` itself, so autolinking put it in build 8 whether or not this project named it — **and the share sheet needs no library at all**: React Native's own `Share` takes a `url` on iOS, and a `file://` PNG opens the sheet with **Save Image** at the front of it. New `src/lib/save-image-file.ts` writes the PNG to cache and hands it over; the clipboard is the fallback now rather than the ceiling. Both exporters go through it (`share-image.ts`, `progress-image.ts`). ⚠ **The Instagram and Facebook tiles still COPY on purpose** (`prefer: 'clipboard'`) — a paste is what happens after a deep link, and a sheet followed by a jump is two hand-offs for one tap. ⚠ **And the toast now says nothing on success**: the sheet is its own receipt and nothing in the app is told which button was pressed in it, so claiming "Saved" would be the same false claim in a new place.
-
-⚠ **DECLARING `expo-file-system` IS FINGERPRINT-NEUTRAL, AND THAT WAS PROVED, NOT ASSUMED.** `@expo/fingerprint` hashes `packageJson:scripts` and the autolinking result — **not `dependencies`** — so naming a package that already resolves at the same version changes nothing. `fingerprint:generate` returned `01c4abb2a3de709737d9b2c8fb20a66a475a48f5` with and without the declaration, and again after the whole pass. **Everything here delivers over the air.**
-
-⭐ **THE LINE-UP CAME OUT OF THE MODAL.** `AlignEditor` is **RETIRED** — it ghosted one photo over the other, asked Before or After, and offered a zoom slider: three decisions to move one picture, taken away from the comparison that was the only reason to move it. New `src/hooks/useFrameAdjust.ts` puts the gesture on the photograph. In Adjust mode a drag moves the photo under the finger — **on the slider, the side you touch is the one that moves**, so there is no which-photo control — and a two-finger pinch sizes it. ⚠ **Responder props and hand-rolled pinch, not `GestureDetector`**: `react-native-gesture-handler` wants a `GestureHandlerRootView` at the app root and this app still has none. ⚠ **Nothing re-renders while you drag** — the live frame is a Reanimated shared value and React hears about the gesture once, on release, which is the fault `BeforeAfterSlider` was rewritten twice to remove.
-
-⚠ **THE BIGGER HALF: THE ALIGNMENT WAS BEING THROWN AWAY.** It lived in a `useState` on the Compare screen, so an athlete lined two photographs up, left, and did it again next time — every time, forever. **`0197_transformation_frames.sql`** adds `transformation_entries.frames jsonb` (poseKey → `{tx, ty, scale}`, fractions of the frame so the same numbers draw correctly in the slider, a side-by-side cell and the 1080px export), mirroring `photos` in key space, lifetime and RLS. A photograph is lined up ONCE and every comparison it appears in inherits it. ✅ **`supabase/apply/pending-0197.sql` PASTED 2026-09-10.**
-
-⚠ **THE CLIENT SURVIVES BEING SHIPPED FIRST.** Selecting a column that is not there fails the WHOLE query, which would have rendered six irreplaceable photographs as "no entries" over a cosmetic feature — so `transformation-live.ts` downgrades its selection permanently on PostgREST's `42703` and carries on. Safe in both orders; still worth pasting promptly, because alignments made in that window are lost.
-
-⚠ **THREE REACT-COMPILER RULES SHAPED THIS HOOK AND ARE WORTH KNOWING.** A responder built in a `useState` initializer counts as render: handing it a **ref** fails `react-hooks/refs`, handing it a **mutable object** fails `react-hooks/immutability`, and anything it writes is frozen — which is why the committed frame goes back to JS through a `useAnimatedReaction` + `runOnJS`, and why the stored frame is an INITIAL value with the Compare row keyed on both entry ids so a changed pair REMOUNTS instead of syncing.
-
-**Gates:** tsc **0** · lint **at baseline** (the one pre-existing `use-color-scheme.web.ts` error, 14 warnings, none in this pass's files) · **3,278/3,278** tests (was 3,274 — six new alignment guards, the two `AlignEditor` guards retired with the file). ✅ **OTA'd 2026-09-10 (`01a08bf3-e5ee-750c…`); ⛔ NOT ON THE WEB AND NOT SEEN ON A DEVICE.** Every user-visible part of this — the share sheet, the drag, the pinch — is exactly the category tsc and the suite cannot see.
-
-
-### 0. The pictures move under your thumb, the cards hold still, the capture date is a day you pick — and three passes the doc called shipped were not on the branch the phone updates from (2026-09-08, Transformation Gallery / New Progress Set / gallery ordering — **no migration**, ✅ **TWO OTAs PUBLISHED TO BUILD 8** iOS `01a0814d-c611-7bad-ac8e-255fc7120f51` then `01a081c3-904e-7eb0-a8b4-554c2d0ba96b` on runtime `47944f2e…` — commits `8f05e4c` `dbc111f` on `feat/route-map`, cherry-picked as `6c70a0a` `1febcf3` on `ota/build8-js`. ⛔ **WEB NOT DEPLOYED · NOT SEEN ON A DEVICE OR IN ALABASTER**)
-
-PO: *"I like the way the cards are. Keep the shape and size. But have it be able to scroll like a carousel
-with my thumb through the pictures. Then when I click into the card, give me options to have it show as a
-grid or the way that it current is."* And: *"On the capture date, we need to make it easier. Default to
-today's date… then put a calendar icon that we can click on if needed to change the date."* Then, on
-seeing the first cut: *"I don't want the cards to be carousels. Just the pictures in the cards we have in
-the screenshot. Also, let's have the add progress pics at the top of the cards and not the bottom."*
-
-⛔ **THE FIRST TWO WERE BUILT ON 2026-09-01 AND HAD NEVER REACHED THE PHONE.** The PO's screenshot shows
-the pre-`729a944` screen: a vertical stack of cards, no shelf, no layout chooser. `ota/build8-js` — the
-branch every OTA since 09-03 has been cut from — contains no `snapToInterval`, no `poseGrid` and no
-`'single' | 'grid'`, checked by reading the files out of the branch rather than by SHA (a cherry-pick
-renames the commit, so `--contains` proves nothing either way). **Three milestones are missing from it**:
-`fix(legacy)` (the shelf + the entry-detail layouts, Recently Completed below), `fix(compare)` (claim the
-touch on touch-down) and `fix(ux)` (the sheet handle at the foot). All three are recorded here as
-✅ **OTA PUBLISHED TO BUILD 8** — published they were, on 09-01; every OTA since replaced that bundle with
-one built from a branch that never carried them. **An OTA is the whole JS bundle: a later publish from a
-shorter branch is a silent rollback.** The next OTA must carry all three before it goes out, and the ledger
-below is annotated rather than rewritten.
-
-✅ **AND THE BRANCH IS REPAIRED.** All three were cherry-picked onto `ota/build8-js` in commit order
-(`1e9d5a1` → `729a944` → `d47471e`) ahead of this pass's `8f05e4c`, all four clean, and the branch is
-pushed. ⚠ **`729a944` is half wanted and half superseded** — its entry-detail layout chooser is the PO's
-ask, its card shelf is what this pass reverses — which is why the ORDER matters: cherry-picking it alone
-would have put the shelf back on the phone.
-
-⛔ **THE BRANCH IS STILL CARRYING SOMEBODY ELSE'S HALF-SHIPPED PAIR, AND THIS PASS DID NOT TOUCH IT.**
-`ota/build8-js` fails `tsc` with three errors in `src/app/squad/[id].tsx` — `takePostedWorkout` is imported
-from `planned-workout-live`, which has no such export on this branch, and `PlannedWorkout.source` does not
-exist — all from `7ad824b` (posted workouts, client half only, no `0192`). Three tests fail with it
-(`transformation-post-controls` ×2, `sheet-drag-wiring` ×1). **Verified pre-existing**: the identical three
-fail at `8aa3712`, before any of this pass's cherry-picks, so the OTA already on the PO's phone has them
-too. The missing data half is UNCOMMITTED IN THE MAIN TREE (another session's work in progress), so
-completing the pair is that session's to finish, not this one's to ship.
-
-⭐ **THE PICTURES MOVE; THE CARDS HOLD STILL.** ⚠ **THE 09-01 SHELF IS REVERSED, AND IT WAS THE ROOT OF
-BOTH OF THE LAST TWO PASSES HERE.** *"I should be able to carousel scroll on those cards quickly"* was read
-as *make the cards a horizontal shelf*; a card carries its own pose strip, so that put **two horizontal
-scrollers on one axis**, and everything since was an attempt to divide one drag between them — first by
-flattening the six poses into a 3-column grid (which roughly **doubled the card's height**), then by
-putting the strip back and chaining the drag out of it with `bounces={false}`. The PO's answer: *"I don't
-want the cards to be carousels."* The cards are a plain vertical `cardStack` again, exactly the screenshot,
-and there is now **exactly one horizontal scroller on the screen — the one holding the photographs.** Both
-workarounds are deleted rather than left standing, and so is the machinery that only ever sized a carousel
-page (`CARD_PEEK`, `cardW`, `useWindowDimensions`). The strip is on the `.dc`'s `fl-strip` numbers
-(76×100, 8 apart) and snaps on the pose pitch; no `disableIntervalMomentum`, which would cap a flick at one
-76pt tile and make the last pose three flicks away. **Seeing all six at once was never dropped** — it is
-the Entry Detail's **One at a time / Grid** chooser, built on 09-01, which is the second half of the PO's
-first message and needed no code at all.
-
-⭐ **AND “TAKE PROGRESS PICS” MOVED TO THE TOP.** PO: *"let's have the add progress pics at the top of the
-cards and not the bottom."* It sat after the last chapter, so the one action this screen exists to make
-easy got further from the thumb with every entry added. The empty state keeps its own centred call.
-
-⭐ **THE CAPTURE DATE IS A DAY, PICKED.** It was a bare `TextInput` placeheld "e.g. Mar 6, 2026", and
-leaving it blank does not leave the date empty: `addTransformationEntry` substitutes the literal string
-`Today`, which `elapsedBetween` resolves to *now* every time it is read — so the fastest path through the
-form produced an entry that claims to have been captured this morning **and goes on claiming it forever**.
-The inconvenience and the defect were the same line. New sets now open already dated today, on
-`CalendarField` — calendar icon, tap, inline month grid. ⚠ **Not `@react-native-community/datetimepicker`**
-(nor `ForgeDateInput`, which wraps it): it does not render on the web, which is the surface these get
-tested on. Same finding and same substitution as `accomplishments.tsx`. `label` stays free text — no
-migration can guess what somebody's `Today` meant — so the picker writes a spelling the app reads back
-(`September 8, 2026`, long month, matching the labels already on the shelf), and **a legacy label that is
-not a date is held aside and saved back untouched.** Opening an old entry to fix a typo must not restamp
-it with a date nobody chose.
-
-⚠ **AND THE GALLERY NOW ORDERS BY THE DAY CAPTURED.** The list was ordered by `created_at`, which was
-indistinguishable from capture order only for as long as typing a date was tedious enough that nobody
-backdated anything. `sortByCapture` reads the day out of the label and falls back to `created_at` for the
-labels that are not dates; the server's `order()` stays, because it is what breaks ties inside a day.
-⚠ Dates are built from local parts throughout — `new Date('2026-08-31')` is UTC midnight, which is the
-evening before anywhere west of Greenwich.
-
-⭐ **SECOND PASS THE SAME DAY, ON THE FIRST ONE'S FEEDBACK (`dbc111f`, OTA `01a081c3…`).** PO: *"On this
-card I should be able to scroll left to right through the photos. And then if there isn't a picture for a
-certain pose don't show me that empty spot."*
-
-— **THE EMPTY SLOTS ARE OFF THE CARD.** It drew all six `XFORM_POSES` with a camera glyph standing in for
-the misses; the `.dc` draws it that way and this file's own header called it *a capture checklist*. On the
-PO's four-pose entries that is two dead tiles past the right edge, and because the misses are always the
-LAST poses, **the strip permanently looked like it had more to show and permanently scrolled to nothing.**
-`filledPoses(entry)` now sources it. The checklist is not lost — it lives on the capture form, where an
-empty slot is the control that fills it, and all six are still drawn there. A card is a record. An entry
-with no photographs at all (video-only, or a reflection) draws no strip rather than an empty one.
-⚠ **A DELIBERATE DIVERGENCE FROM `Forge Transformation.dc.html`**, recorded rather than silently taken.
-
-— **AND THE STRIP WAS NEVER ACTUALLY BROKEN — THE PAGE WAS EATING THE DRAG.** A vertical `ScrollView`
-claims a gesture on the first movement in ANY direction, so a swipe across a photograph a few degrees off
-horizontal scrolled the page and the strip read as *"doesn't scroll"*. `directionalLockEnabled` on the page
-scroller. iOS-only prop, harmless elsewhere. ⚠ **This is why "it doesn't scroll" survived three different
-layouts of this row** — every pass rebuilt the strip, and none of them was where the fault was.
-
-— **THE SLIDER GRABBER NEEDED NO CHANGE.** PO asked for it at the foot so a thumb stays off the picture;
-`BeforeAfterSlider` has had `bottom: 10` since `1e9d5a1` on 09-01, guarded by `transformation-post-controls`.
-It was one of the three passes `ota/build8-js` had lost, which is the only reason it still looked centred —
-it reached the phone this morning in `01a0814d…`. **A third symptom of the branch drift, reported as a bug.**
-
-**Gates (first pass):** tsc 0 · lint at baseline (1 error, 14 warnings, none in touched files) · **3,272/3,272** — new:
-`capture-date` (8, real unit tests on the parser and the ordering) and `capture-date-field` (6, source
-assertions — the screen cannot be mounted under `node --test`). `gallery-video-grid` was rewritten twice where
-it locked decisions this pass reverses, and now guards the vertical stack, the CTA above it, the card's kept
-dimensions, and that the shelf left nothing behind. ⏳ **NOT SEEN RENDERED, ON EITHER SURFACE** — all of this is layout and gesture, which is
-exactly the category the gates cannot see. **Gates (second pass):** tsc 0 · lint at baseline ·
-**3,274/3,274**. ✅ **BOTH DELIVERABLE, NOT MERELY PUBLISHED**: `fingerprint:compare --build-id
-3f67281b…` matched build 8 exactly before each publish, and `u.expo.dev` then returned `01a0814d…` and
-`01a081c3…` in turn to a build-8 iOS client on runtime `47944f2e…`. ⚠ The pre-OTA branch audit ran on
-the second publish and found one commit missing, `436dc90` — **SQL only** (`repair-rank-share-posts.sql`,
-already applied), so no bundle impact and correctly skipped. Audit by commit SUBJECT, never by SHA: a
-cherry-pick renames the commit, so `--contains` answers "no" for work that IS on the branch.
-
-### 0. The active workout card stops saying the same number twice (2026-09-08, Active Workout hero — **no migration**, ✅ **OTA PUBLISHED TO BUILD 8** iOS `01a080dd-5d96-77e9-aa8e-6fdea3ad19e0` on runtime `47944f2e…` — commit `c78af25` on `feat/route-map`, cherry-picked as `8aa3712` on `ota/build8-js`. ⛔ **WEB NOT DEPLOYED · NOT SEEN ON A DEVICE OR IN ALABASTER** — **W9-Amendment-008 LOCKED**)
-
-PO: *"With the previous being under each set, as well as in the hero card, it feels repetitive. I would
-want to keep under each set."*
-
-**W9-A7 created this and did not clear it.** A7 put `Prev` under every not-done set on 2026-09-04 and
-left the hero's `Last` column standing — both read `liftHistory.sessions[0]`, so the card said
-`LAST 185 × 8` and set 2 said `PREV 185 × 8`, four inches apart.
-
-**Only `Last` was repeating, and only `Last` is deleted.** The other two figures are not the same kind
-of thing: `Goal` is the one thing on the card that is a DECISION, so it moves up beside the name where
-the eye lands — same 22/24 bronze figure, same pencil, `setGoalOpen` untouched. `Best` is the only
-figure on the plinth that appears **nowhere else on this screen**, and the only record surface an
-athlete sees *while under the bar* — Progress Hub, Workout Complete, the Legacy timeline and the squad
-recap are all read after the session or away from it, and Exercise Detail's `best` is "best substitute",
-a different thing. It stays, as a line rather than a column.
-
-⚠ **`Best` was never the weaker lift — it is a different measurement.** `PR_MAX_REPS = 5` and
-`fetchBests` filters `load_reps <= 5`, so `185 × 5` beside a `185 × 8` working set was a 1–5 rep mark
-printed in an identical format, which is what made the row read as broken. Deleting `Last` removes the
-collision by itself; the record's definition is unchanged. It now carries the `achieved_on` date
-`fetchBests` has always selected and this hero has always discarded — parsed at **local midnight**,
-because a bare `YYYY-MM-DD` is UTC and would show every athlete west of Greenwich the day *before* their
-own PR.
-
-⚠ **The `Strength` pill was a hardcoded literal and is deleted, not merged** — `<Pill size="sm">Strength</Pill>`,
-the same word under a mobility cool-down as under a bench press, which is the defect fixed one line
-above it when the literal `Main lift` became `SECTION_LABEL[ex.section]`. A row that says one word on all
-721 visible exercises is furniture. **A real muscle name was NOT put in its place**: the cached catalogue
-index carries `primaryMuscleIds`, but `muscles.json` renders `lats` as *Latissimus Dorsi*, which
-overflows a ≈194pt meta column at 12pt uppercase. **OPEN follow-on.**
-
-**The card is 270pt → 204pt, −24%** — and the saving is the whole plinth, because the card is floored by
-the media slot (`minHeight: 172`): trimming text rows alone buys nothing, so `Goal` and `Best` both land
-inside height the card was already spending. The set table rises by 66pt.
-
-The `.dc` is **not** edited — W9-A8-D6 records the divergence the way W9-A7-D6 did, so a `design-gate`
-run on W-9 reports it as **DEFERRED-HONEST, not a regression**.
-
-**Gates:** `tsc --noEmit` clean · `expo lint` on `workout.tsx` **1 warning, 0 errors** (the pre-existing
-unused `displayWeight` import, present on `HEAD`, left as out of scope) · **3,256 tests pass, 0 fail**.
-⚠ **This is a layout change, so it lands in BOTH themes and the compiler only catches colour** — it has
-not been seen rendered in Forge or Alabaster, on web or on a device.
-
-✅ **OTA DELIVERABLE, NOT MERELY PUBLISHED.** `fingerprint:compare --build-id 3f67281b…` returned an
-**exact match** against build 8 BEFORE publishing (`47944f2eea0b6bc314118d59fe087bcd5a652aca`), and the
-manifest endpoint was then queried as a build-8 iOS client on that runtime and returned this update's
-id. Published with **eas-cli pinned to 22.3.0**. ⚠ `eas update` also needs `--environment` in
-non-interactive mode, or it exits with "update command failed" — a new flag since the last pass.
-
-⛔ **AND THE CHERRY-PICK FOUND `ota/build8-js` ALREADY BROKEN — BY THE PASS BEFORE THIS ONE.** `tsc` on
-that branch fails with three errors in `src/app/squad/[id].tsx`: `takePostedWorkout` is imported from
-`planned-workout-live` which does not export it there, and `PlannedWorkout.source` does not exist.
-**`7ad824b` (the rank-up pass) cherry-picked the posted-workouts CLIENT half onto a branch that never
-got its data half** — that work is still uncommitted on `feat/route-map`, alongside an unapplied
-`0192_posted_workouts.sql`. **This is the third time a half-shipped pair has reached the OTA branch**
-(see the 2026-09-06 entry, same shape). Not introduced here and not fixed here: `doTake` is inside a
-try/catch so the failure is a toast rather than a crash, and the posted-workout UI needs `0192` to be
-reachable at all — but **the branch does not typecheck, and it was published in that state on
-2026-09-07 before this pass ever touched it.** Owed to whoever lands the posted-workouts pair.
 
 ### Older entries — `Docs/Status-Archive-2026-09.md` (archived in September) · `Docs/Status-Archive-2026-08.md` (archived in August)
 
