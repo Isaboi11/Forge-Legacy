@@ -38,7 +38,7 @@ import { useToast } from '@/hooks/useCeremony';
 import { useAuth } from '@/lib/auth';
 import { useAppPrefs, useCoachIntensity, useHaptics, useSoundEnabled, useUnits } from '@/lib/settings';
 import { loadContextFor } from '@/domain/program/percent-max';
-import { displayWeight, exactWeight, unitLabel, weightInExact } from '@/domain/settings/units';
+import { displayWeight, exactWeight, unitLabel, weightInExact, type UnitSystem } from '@/domain/settings/units';
 import { playRestDing, primeDing } from '@/lib/ding';
 import { CardioBlockCard } from '@/components/workout/CardioBlockCard';
 import { HoldTimer } from '@/components/workout/HoldTimer';
@@ -83,7 +83,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/domain/workout/autosave';
 import { publishLiveSession } from '@/data/live-session-live';
 import { liveSessionSnapshot } from '@/domain/workout/live-session';
-import { blockAt, breakBlock, endsSupersetRound, indexAfterRemoval, makeSuperset, nextInSuperset, nextPosition, removeExerciseAt, sessionToTemplateExercises, supersetRounds } from '@/domain/workout/session-core';
+import { blockAt, breakBlock, endsSupersetRound, indexAfterRemoval, makeSuperset, nextInSuperset, nextPosition, removeExerciseAt, sessionToTemplateExercises, supersetRounds, syncSupersetRounds } from '@/domain/workout/session-core';
 import { setWeightLabel, setWeightLabelLb } from '@/domain/workout/set-load';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
@@ -261,6 +261,17 @@ function weightText(set: SessionSet): string {
   // The rule itself now lives in `domain/workout/set-load.ts` — see that file for why zero is never
   // shown as a number. Session sets hold what the athlete typed, so this is the no-conversion form.
   return setWeightLabel(set.weight);
+}
+
+/**
+ * A figure from the athlete's own HISTORY — `185 × 5` — converted out of canonical pounds.
+ *
+ * Module-level because two places print it: the screen (the hero's last-time line) and `SetTable` (each
+ * row's `Prev`). ⚠ `setWeightLabelLb`, not `weightText`: history is stored in POUNDS since
+ * `canonicalizeWeights`, where a live set holds what was typed. See the note on `wxr` in the screen.
+ */
+function prevFigure(weight: number, reps: number, units: UnitSystem): string {
+  return `${setWeightLabelLb(weight, units)} × ${reps}`;
 }
 
 /**
@@ -679,6 +690,14 @@ export default function WorkoutScreen() {
    * happened. Intended behaviour, described in a comment, never wired.
    */
   const [ssOpen, setSsOpen] = useState<number | null>(null);
+  /*
+   * Which superset member has its SETS open inside the pairing card (W9-A14) — the default thing a tap
+   * on a member does now. `ssOpen` above is the full card, one link further in, for the demonstration.
+   *
+   * One at a time, by exercise index. Two open tables stacked in one card is a scroll the athlete has
+   * to fight to get back to Log Set, which is the card's whole job.
+   */
+  const [ssSetsOpen, setSsSetsOpen] = useState<number | null>(null);
   const [noteOpen, setNoteOpen] = useState<number | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
   /**
@@ -1707,7 +1726,10 @@ export default function WorkoutScreen() {
         actualReps: null,
         done: false,
       };
-      return replaceExercise(s, ei, { ...ex, sets: [...ex.sets, next] });
+      /* Inside a superset this changes ONE member's count, so the block's saved round count follows it.
+         `supersetRounds` already reads the live counts; `groupRounds` is what gets written. */
+      const added = replaceExercise(s, ei, { ...ex, sets: [...ex.sets, next] });
+      return { ...added, exercises: syncSupersetRounds(added.exercises, ei) };
     });
   /**
    * Remove ONE set — the one whose trash was tapped, not the last one. PO: *"take out the 'remove set'
@@ -1728,7 +1750,8 @@ export default function WorkoutScreen() {
       const ex = s.exercises[ei];
       if (ex.sets.length <= 1 || si < 0 || si >= ex.sets.length) return s;
       const sets = ex.sets.filter((_, i) => i !== si).map((set, i) => ({ ...set, setIndex: i }));
-      return replaceExercise(s, ei, { ...ex, sets });
+      const next = replaceExercise(s, ei, { ...ex, sets });
+      return { ...next, exercises: syncSupersetRounds(next.exercises, ei) }; // see `syncSupersetRounds`
     });
 
   /**
@@ -2381,34 +2404,10 @@ export default function WorkoutScreen() {
      back to them — last time, and their best ever. Rendering a dip PR as `0 × 12` was the app telling
      someone their record was nothing.
      No unit label, deliberately: these sit under their own "Last"/"Best" captions and always have. */
-  const wxr = (weight: number, reps: number): string => `${setWeightLabelLb(weight, units)} × ${reps}`;
+  const wxr = (weight: number, reps: number): string => prevFigure(weight, reps, units);
   /**
-   * What they did at THIS set position last time — the per-row `Prev` (W9-Amendment-007).
-   *
-   * `sessions[0]` is the most recent SAVED session, so today's work in progress never appears here and a
-   * set cannot end up compared against itself. Indexed to the same position rather than to the best set
-   * of that day: set 3 answers to last week's set 3, which is the comparison an athlete is actually
-   * making when they load the bar.
-   */
-  const prevAtIndex = (setI: number): string | null => {
-    const p = liftHist?.sessions[0]?.sets[setI];
-    return p?.weight != null && p.reps != null ? wxr(p.weight, p.reps) : null;
-  };
-  /**
-   * The same figure as `prevAtIndex`, as a NUMBER in the athlete's own units — what the live row's
-   * `Prev` button writes into the weight field (W9-A9-D2).
-   *
-   * ⚠ `exactWeight`, so the number that lands is the number that was on screen. `liftHistory` holds
-   * canonical POUNDS (`canonicalizeWeights`) while a live session's `set.weight` holds whatever the
-   * athlete typed — mixing the two domains is how a metric athlete's 102.5 kg becomes 225. `wxr` above
-   * converts for display through `setWeightLabelLb`; this is the same conversion, undecorated.
-   */
-  const prevWeightAt = (setI: number): number | null => {
-    const p = liftHist?.sessions[0]?.sets[setI];
-    return p?.weight != null ? exactWeight(p.weight, units).value : null;
-  };
-  /**
-   * "Same as last time", in one tap.
+   * "Same as last time", in one tap — the live row's `Prev` button (W9-A9-D2). `SetTable` works out the
+   * figure (see `prevWeightAt` there); this writes it.
    *
    * ⚠ IT WRITES THE WEIGHT AND NOTHING ELSE, AND THAT IS WHAT MAKES IT SAFE. `buildSaveExercises`
    * filters on `s.done`, so a weight sitting on an unlogged row is never persisted and can never
@@ -2418,14 +2417,15 @@ export default function WorkoutScreen() {
    * One-way, deliberately: the reference prototype toggles it for demo purposes, but an athlete who
    * has since typed 155 and taps `Prev` again to check the number must not have their own figure
    * silently reverted. Editing after a fill is what the weight field is for.
+   *
+   * Takes the exercise index rather than closing over `exIdx`, because a superset member's table is
+   * drawn inside the pairing card while `exIdx` points at whichever member the pager is on (W9-A14).
    */
-  const fillFromPrev = (setI: number) => {
-    const w = prevWeightAt(setI);
-    if (w == null) return;
+  const fillWeight = (ei: number, si: number, w: number) => {
     const token = nextAnimationToken();
-    setPop({ ei: exIdx, si: setI, field: 'weight', token }); // the same value-pop an edit gets
+    setPop({ ei, si, field: 'weight', token }); // the same value-pop an edit gets
     setTimeout(() => setPop((p) => (p && p.token === token ? null : p)), 340);
-    mutate((s) => patchSet(s, exIdx, setI, (set) => ({ ...set, weight: w })));
+    mutate((s) => patchSet(s, ei, si, (set) => ({ ...set, weight: w })));
   };
   /**
    * The plinth's `Best`, set tight — `185×5`, which W9-A12 makes the format for BOTH plinth figures.
@@ -3059,7 +3059,10 @@ export default function WorkoutScreen() {
     /* Moving OUT of the block closes the expansion. Without this, walking away and coming back would
        land you on a member's own card instead of the pairing, which is not where you left off. */
     const target = blockAt(session?.exercises ?? [], idx);
-    if (!target || target.kind !== 'superset' || target.start !== block?.start) setSsOpen(null);
+    if (!target || target.kind !== 'superset' || target.start !== block?.start) {
+      setSsOpen(null);
+      setSsSetsOpen(null);
+    }
     // Guards the arrows and All Exercises too, which jump straight here without passing through onPrimary.
     if (idx !== exIdx && blockedByBout()) return;
     /* A goal panel opened by hand belongs to the card it was opened on. Left set, it would spring back
@@ -3097,8 +3100,21 @@ export default function WorkoutScreen() {
     } else goExercise(exIdx + 1);
   };
   const primaryDisabled = isLastEx && !hasLoggedSet(session);
-  const popCell = (rowSi: number, field: 'weight' | 'reps', node: ReactNode) =>
-    pop && pop.ei === exIdx && pop.si === rowSi && pop.field === field ? <Pop key={pop.token}>{node}</Pop> : node;
+  /* Everything the two set tables — the exercise's own and a superset member's opened under its row —
+     take from the screen and share. Every handler is keyed by exercise index, so one bundle serves both. */
+  const setTableShared = {
+    units,
+    soundOn,
+    flash,
+    pop,
+    onEdit: openSheet,
+    onFillWeight: fillWeight,
+    onComplete: completeSet,
+    onUncomplete: uncompleteSet,
+    onHold: logHold,
+    onRemove: removeSet,
+    onAdd: addSet,
+  };
   /**
    * NAME THE SESSION WHILE IT IS STILL HAPPENING.
    *
@@ -3563,41 +3579,84 @@ export default function WorkoutScreen() {
                     const round = ssNext?.round ?? ssRounds - 1;
                     const mset = mex.sets[round];
                     const isNext = ssNext?.exIdx === mi;
+                    const setsOpen = ssSetsOpen === mi;
                     return (
-                      <View key={mi} style={[styles.ssRow, isNext && styles.ssRowNext]}>
-                        <View style={[styles.ssTag, isNext && styles.ssTagNext]}>
-                          <Text style={[styles.ssTagText, isNext && styles.ssTagTextNext]}>{ssLabels[mi] ?? `A${m + 1}`}</Text>
-                        </View>
-                        <View style={styles.ssBody}>
+                      <View key={mi} style={styles.ssMember}>
+                        <View style={[styles.ssRow, isNext && styles.ssRowNext]}>
+                          {/* ⚠ THE WHOLE ROW OPENS THE MEMBER'S SETS, RIGHT HERE (W9-A14). For a month only
+                              the name text was a target, with nothing to say it was one, and it navigated
+                              AWAY to a card that showed no sets. PO (2026-09-12): tap one and it expands,
+                              without leaving the pairing. The chevron turns to say which way it goes; the
+                              tag, the name and the goal line are all the target. Log Set stays its own tap. */}
                           <Pressable
-                            onPress={() => {
-                              goExercise(mi);
-                              setSsOpen(mi);
-                            }}
+                            onPress={() => setSsSetsOpen(setsOpen ? null : mi)}
                             accessibilityRole="button"
-                            accessibilityLabel={`Open ${mex.name} on its own`}
+                            accessibilityLabel={setsOpen ? `Hide the sets for ${mex.name}` : `Show every set for ${mex.name}`}
+                            accessibilityState={{ expanded: setsOpen }}
+                            style={({ pressed }) => [styles.ssOpenHit, pressed && styles.ctlPressed]}
                           >
-                            <Text style={styles.ssName} numberOfLines={1}>{mex.name}</Text>
+                            <View style={[styles.ssTag, isNext && styles.ssTagNext]}>
+                              <Text style={[styles.ssTagText, isNext && styles.ssTagTextNext]}>{ssLabels[mi] ?? `A${m + 1}`}</Text>
+                            </View>
+                            <View style={styles.ssBody}>
+                              <View style={styles.ssNameRow}>
+                                <Text style={styles.ssName} numberOfLines={1}>{mex.name}</Text>
+                                <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={isNext || setsOpen ? flColor.bronze400 : flColor.gray600} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                                  <Path d={setsOpen ? 'M6 9l6 6 6-6' : 'M9 6l6 6-6 6'} />
+                                </Svg>
+                              </View>
+                              {mset ? (
+                                <Text style={[styles.ssSet, mset.done && styles.ssSetDone]}>
+                                  {mset.done
+                                    ? `${weightText(mset)} × ${actualText(mset)}  ✓`
+                                    : `Goal ${mset.toFailure ? 'max' : mset.targetSec != null ? durText(mset.targetSec) : `${targetRepsText(mset)} reps`}${mex.per ? ` per ${mex.per}` : ''}`}
+                                </Text>
+                              ) : (
+                                <Text style={styles.ssSetNone}>— no set this round</Text>
+                              )}
+                            </View>
                           </Pressable>
-                          {mset ? (
-                            <Text style={[styles.ssSet, mset.done && styles.ssSetDone]}>
-                              {mset.done
-                                ? `${weightText(mset)} × ${actualText(mset)}  ✓`
-                                : `Goal ${mset.toFailure ? 'max' : mset.targetSec != null ? durText(mset.targetSec) : `${targetRepsText(mset)} reps`}${mex.per ? ` per ${mex.per}` : ''}`}
-                            </Text>
-                          ) : (
-                            <Text style={styles.ssSetNone}>— no set this round</Text>
-                          )}
+                          {mset && !mset.done ? (
+                            <Pressable
+                              onPress={() => openSheet(mi, round, 'weight')}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Log ${mex.name}, round ${round + 1}`}
+                              style={[styles.ssLog, isNext && styles.ssLogNext]}
+                            >
+                              <Text style={[styles.ssLogText, isNext && styles.ssLogTextNext]}>Log Set</Text>
+                            </Pressable>
+                          ) : null}
                         </View>
-                        {mset && !mset.done ? (
-                          <Pressable
-                            onPress={() => openSheet(mi, round, 'weight')}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Log ${mex.name}, round ${round + 1}`}
-                            style={[styles.ssLog, isNext && styles.ssLogNext]}
-                          >
-                            <Text style={[styles.ssLogText, isNext && styles.ssLogTextNext]}>Log Set</Text>
-                          </Pressable>
+                        {/* The member's own table, the same component the exercise card draws — so every
+                            rule it carries (Prev, the faded goal, holds, the trash) is the same here. Add Set
+                            and the trash change this member's count and so the pairing's round count, which
+                            is what `syncSupersetRounds` keeps honest on save. The demonstration stays one
+                            link further in, on the full card, which is still where the note row lives. */}
+                        {setsOpen ? (
+                          <View style={styles.ssSets}>
+                            <SetTable
+                              inline
+                              exercise={mex}
+                              ei={mi}
+                              liftHist={liftHistory?.get(liftId(mex)) ?? null}
+                              showHint={setsDone === 0}
+                              {...setTableShared}
+                            />
+                            <Pressable
+                              onPress={() => {
+                                goExercise(mi);
+                                setSsOpen(mi);
+                              }}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Open ${mex.name} on its own, with its demonstration and notes`}
+                              style={({ pressed }) => [styles.ssFullCard, pressed && styles.ctlPressed]}
+                            >
+                              <Text style={styles.ssFullCardText}>Open full card</Text>
+                              <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                                <Path d="M9 6l6 6-6 6" />
+                              </Svg>
+                            </Pressable>
+                          </View>
                         ) : null}
                       </View>
                     );
@@ -3630,7 +3689,7 @@ export default function WorkoutScreen() {
                   it left two headers stacked on one exercise. The block's own card is the whole surface. */}
               {/* In a superset the merged card above IS the surface — the hero names one member and the
                   table logs one member, and both would be arguing with a card whose whole point is that the
-                  pairing is a single thing you do. Tapping a member's name in the card opens it on its own. */}
+                  pairing is a single thing you do. Tapping a member's row in the card opens it on its own. */}
               {isCardio || ssFused ? null : heroExpanded ? (
                 <TourAnchor id="workout-hero" style={styles.hero}>
                   <View style={styles.heroUpper}>
@@ -3965,7 +4024,10 @@ export default function WorkoutScreen() {
 
               {/* The block stands where the hero AND the table would: same position in the session, entirely
                   different measurement. Sets of reps have nothing to say about three miles. */}
-              {isSuperset ? null : isCardio ? (
+              {/* ⚠ `ssFused`, NOT `isSuperset`. This guard predates opening a member (4fb0ae4, Aug 3); when
+                  that landed six days later the hero's guard moved to `ssFused` and this one didn't — so an
+                  opened member showed its demonstration and NO SETS, the one thing it was opened to see. */}
+              {ssFused ? null : isCardio ? (
                 <CardioBlockCard
                   exercise={ex}
                   index={exIdx}
@@ -3979,264 +4041,7 @@ export default function WorkoutScreen() {
                   onLiveChange={(live) => setLiveBoutIdx(live ? exIdx : null)}
                 />
               ) : (
-              <TourAnchor id="workout-sets" style={styles.table}>
-                {/*
-                  ══ SIX CELLS, AND `Target` IS NOT ONE OF THEM ANY MORE (W9-A9-D2) ══
-
-                  The column is not deleted, it is FOLDED INTO THE REPS FIELD as a faded numeral — the
-                  ask and the answer occupying one slot, because on a set you have not done yet they are
-                  the same number. Grey ink means "this is what was asked", bronze means "this is what
-                  you said", cream means "this is logged". That colour difference is now carrying a state
-                  distinction on its own, which is why nothing below is allowed to weaken it.
-
-                  What the old column also carried has been rehomed rather than dropped: `per leg` to the
-                  Goal plinth (it describes the exercise, not a set), and a percentage program's
-                  prescribed load into the Weight field as the same kind of faded numeral. A to-failure
-                  set reads `MAX` and a timed one reads its clock, for the reason `actualText` gives —
-                  a hold showing `0` is the app telling an athlete they did nothing.
-
-                  In exchange `Prev` is promoted out of the subline W9-A7 put it in and becomes a real
-                  left-aligned column, which is what the whole rearrangement buys: ~110pt rows become
-                  ~58pt ones and the table stops scrolling on a three-set exercise.
-                */}
-                <View style={styles.headRow}>
-                  {/* Centred, because the set-number ring it labels is centred in the same 30pt cell.
-                      Each heading takes the alignment of the content under it — `Prev` stays left
-                      because its figure is left-aligned in `prevCell`. */}
-                  <Text style={[styles.h, styles.cSet, styles.hCentered]}>Set</Text>
-                  {/* ⚠ BACK TO `Prev` (W9-A13), REVERSING W9-A11-D4's spelling — but NOT its column
-                      width. A11 widened `cPrev` 66 → 76 for two reasons and only one of them was the
-                      heading: `prevVal` is 14.5pt display, so a metric athlete's `102.5 × 8` measures
-                      ~72pt and was overflowing 66. The word shrinks; the column stays 76, or that
-                      figure clips again. See `cPrev`. */}
-                  <Text style={[styles.h, styles.cPrev]}>Prev</Text>
-                  {/* ⚠ NO `· LB`. The unit prints inside every weight field already (W9-A10-D4's
-                      `— lb` affordance), so in the heading it was a duplicate that cost a second line:
-                      `WEIGHT · LB` at 9pt/1.1 tracking measures ~76pt against this column's 70. */}
-                  <Text style={[styles.h, styles.cWeight, styles.hCentered]}>Weight</Text>
-                  <Text style={[styles.h, styles.cReps, styles.hCentered]}>Reps</Text>
-                  <View style={styles.cCheck} />
-                  <View style={styles.cTrash} />
-                </View>
-                <View style={styles.rows}>
-                  {ex.sets.map((set, si) => {
-                    const isDone = set.done;
-                    const isCurrent = !isDone && si === currentSetIdx;
-                    const ringColor = isDone ? flColor.greenMuted : isCurrent ? flColor.bronze400 : flColor.charcoal600;
-                    const numColor = isDone ? flColor.greenMuted : isCurrent ? flColor.bronze300 : flColor.gray400;
-                    const valColor = isDone || isCurrent ? flColor.cream100 : flColor.gray600;
-                    /* Null on a first-ever lift, and on any set position last session did not reach. */
-                    const rowPrev = prevAtIndex(si);
-                    const prevWeight = prevWeightAt(si);
-                    const weightShown = weightText(set);
-                    /*
-                     * ══ ONE SLOT FOR THE ASK AND THE ANSWER (W9-A9-D2) ══
-                     *
-                     * On a set nobody has done yet they are the same number, so the Reps field shows the
-                     * prescription in faded ink and recolours the moment the athlete says otherwise. The
-                     * three inks are the state, and nothing else on the row distinguishes them:
-                     *
-                     *   gray600  — this is what was ASKED. Nobody has answered.
-                     *   bronze300 — this is what YOU said, and the set is not logged yet.
-                     *   cream100 — logged.
-                     *
-                     * ⚠ `MAX`, NOT `0`, AND A CLOCK, NOT A REP COUNT — the same two rules the retired
-                     * Target column obeyed and `actualText` still documents. A to-failure set carries
-                     * `targetReps: 0` by construction, and printing that tells an athlete they did nothing;
-                     * a timed set has no rep count to report at all.
-                     */
-                    const repsAnswered = set.actualReps != null || set.durationSec != null;
-                    const repsShown = isDone || repsAnswered
-                      ? actualText(set)
-                      : set.toFailure
-                        ? 'MAX'
-                        : set.targetSec != null
-                          ? durText(set.targetSec) || '—'
-                          : targetRepsText(set);
-                    const repsColor = isDone ? flColor.cream100 : repsAnswered ? flColor.bronze300 : flColor.gray600;
-                    /*
-                     * ══ THE GOAL READS AS A SUGGESTION, NOT AN ENTRY (W9-A13) ══
-                     *
-                     * PO: the reps field prints the goal before anything is entered, *"at the same
-                     * strength as a real entry, so there is no visual difference between suggested and
-                     * logged."* True: the ink ladder separated ASKED from ANSWERED from LOGGED, but all
-                     * three rendered at full strength, so an untouched `8` looked typed.
-                     *
-                     * ⚠ OPACITY, NOT A COLOUR — and that is the whole reason this is a one-line change.
-                     * The brief is explicit twice over: *"opacity is the only difference"* and *"do not
-                     * change any color, token…"*. So the three inks are untouched and 0.35 rides on top
-                     * of the faded one. ⚠ The spec's §4.3 says the digit "stays `--fl-text-primary`" —
-                     * it never was; the pending digit is `gray600` by the W9-A9 ladder, and moving it to
-                     * primary would be exactly the token change the same brief forbids.
-                     *
-                     * It lands where the weight field already is: `emDashUnit` draws its placeholder at
-                     * `charcoal500` (~1.45:1), and `gray600` at 0.35 measures ~1.60:1 on `charcoal900` —
-                     * a shade MORE visible than the placeholder beside it, which is the point. Faint
-                     * means waiting and full means logged, in both columns.
-                     */
-                    const repsSuggested = !isDone && !repsAnswered;
-                    return (
-                      <View key={si} style={[styles.row, si > 0 && !isDone && !isCurrent && styles.rowRuled, isDone && styles.rowDone, isCurrent && styles.rowCurrent]}>
-                        {flash && flash.ei === exIdx && flash.si === si ? <FuseFlash key={flash.token} /> : null}
-                        {/* ⚠ THE CELLS ARE STILL A ROW INSIDE THE ROW. `styles.row` stays a column so the
-                            fuse can lie over the whole thing on its own layer; `rowCells` is the six-cell
-                            grid, and `justifyContent: 'space-between'` is what spreads the slack EVENLY
-                            between all six rather than letting it pool at one end. */}
-                        <View style={styles.rowCells}>
-                          {/* ⚠ NO SECOND TICK BESIDE THE NUMBER. A done row used to carry a green check here
-                              AND a green check circle in the Check column, three cells apart, saying the same
-                              thing twice. The 30pt column has no room for it and never needed it. */}
-                          <View style={[styles.cSet, styles.setNum, { borderColor: ringColor, borderWidth: isDone || isCurrent ? 1.5 : 1 }]}>
-                            <Text style={[styles.setNumText, { color: numColor }]}>{si + 1}</Text>
-                          </View>
-                          {/*
-                            ══ `Prev` — PROMOTED FROM A SUBLINE TO A COLUMN (W9-A9-D2) ══
-
-                            W9-A7-D2 put it under the cells because there was no room for a sixth column
-                            beside `Target`. `Target` is gone, so there is, and the row loses the ~52pt of
-                            height the subline cost it. The rule W9-A7-D3 set is untouched: the same set
-                            POSITION from the last SAVED session, so set 3 answers to last week's set 3.
-
-                            ⚠ AND ON THE LIVE ROW IT IS A BUTTON — the one-tap "same as last time". It writes
-                            the weight and nothing else: `save-core` only ever persists sets with `done`, so
-                            filling a row that is not logged records no lift, exactly as pre-filling one
-                            through the sheet already did. The figure it writes is the figure it SHOWS
-                            (`exactWeight`, the same converter `wxr` uses), so a metric athlete gets the
-                            kilos they are reading rather than the pounds underneath them.
-                          */}
-                          {isCurrent && prevWeight != null ? (
-                            <Pressable
-                              onPress={() => fillFromPrev(si)}
-                              accessibilityRole="button"
-                              accessibilityLabel={`Last time, set ${si + 1}, ${rowPrev}. Use that weight.`}
-                              style={({ pressed }) => [styles.cPrev, styles.prevCell, pressed && styles.prevCellPressed]}
-                            >
-                              <Text style={[styles.prevVal, styles.prevValLive]} numberOfLines={1}>{rowPrev}</Text>
-                            </Pressable>
-                          ) : (
-                            <View style={[styles.cPrev, styles.prevCell]}>
-                              {rowPrev ? (
-                                <Text style={styles.prevVal} numberOfLines={1} accessibilityLabel={`Last time, set ${si + 1}, ${rowPrev}`}>{rowPrev}</Text>
-                              ) : null}
-                            </View>
-                          )}
-                          {/*
-                            ⚠ AN EM-DASH BAR, NEVER A `0`, and a percentage program's prescribed bar shown
-                            FADED rather than filled in. `prefillWeight`'s header has the reason and it has
-                            not changed: a weight written onto an untouched set records a lift nobody made
-                            and can announce a personal record for it. Faded ink is the ask; only the
-                            athlete's own tap turns it into an answer.
-                          */}
-                          <Pressable style={({ pressed }) => [styles.cWeight, styles.fieldBox, isCurrent && styles.fieldBoxLive, pressed && styles.cellBtnPressed]} onPress={() => openSheet(exIdx, si, 'weight')} accessibilityRole="button" accessibilityLabel={`Edit weight, set ${si + 1}`}>
-                            {set.weight != null ? (
-                              popCell(si, 'weight', <Text style={[styles.fieldNum, weightShown.length > 4 ? styles.fieldNumSm : null, { color: valColor }]} numberOfLines={1}>{weightShown}</Text>)
-                            ) : set.targetWeight != null ? (
-                              <Text style={[styles.fieldNum, styles.fieldNumFaded, String(set.targetWeight).length > 4 ? styles.fieldNumSm : null]} numberOfLines={1}>{set.targetWeight}</Text>
-                            ) : (
-                              /* ⚠ `— lb`, NOT A BARE DASH (W9-A10-D4). PO: *"I'd question whether a user
-                                 immediately understands that this is tappable."* The unit is the cheapest
-                                 affordance available — it says the box expects a number from you, which a
-                                 rule on its own does not, and it costs no height. ⚠ It DOES repeat the
-                                 `Weight · lb` column header; that is the trade, and the header is read
-                                 once while the row is read every set. */
-                              <View style={styles.emDashRow}>
-                                <View style={styles.emDash} />
-                                <Text style={styles.emDashUnit}>{unitLabel(units)}</Text>
-                              </View>
-                            )}
-                          </Pressable>
-                          {/* ══ A HOLD GETS A CLOCK, NOT A REPS BOX ══
-                              The field-and-tick pair asks "how many did you get". For a plank the question
-                              is "how long did you last", and until the timer existed the app had no way to
-                              ask it — the athlete timed themselves on their phone and pressed a check. The
-                              timer records what it actually watched, so stopping at forty of a prescribed
-                              sixty logs a forty-second set rather than a failure or a lie. It stands in for
-                              the Reps field AND the Check, because it is both. */}
-                          {isCurrent && set.targetSec != null ? (
-                            <View style={styles.holdCell}>
-                              <HoldTimer
-                                targetSec={set.targetSec}
-                                soundOn={soundOn}
-                                label={ex.name}
-                                onDone={(held) => logHold(exIdx, si, held)}
-                              />
-                            </View>
-                          ) : (
-                            <>
-                              {/* A pending row is tappable too — so you can put set 3's numbers in before you
-                                  get there. It writes only: sets still resolve top-down (see `commitSheet`). */}
-                              <Pressable
-                                style={({ pressed }) => [styles.cReps, styles.fieldBox, isCurrent && styles.fieldBoxLive, isCurrent && styles.fieldBoxReps, pressed && styles.cellBtnPressed]}
-                                onPress={() => openSheet(exIdx, si, 'reps')}
-                                accessibilityRole="button"
-                                accessibilityLabel={isDone ? `Edit actual reps, set ${si + 1}` : repsAnswered ? `Reps for set ${si + 1}, ${repsShown}` : `Set ${si + 1} asks for ${repsShown} reps. Change it.`}
-                              >
-                                {popCell(si, 'reps', <Text style={[styles.fieldNum, repsShown.length > 2 ? styles.fieldNumSm : null, { color: repsColor }, repsSuggested && styles.fieldNumSuggested]} numberOfLines={1}>{repsShown}</Text>)}
-                              </Pressable>
-                              {isDone ? (
-                                <Pressable onPress={() => uncompleteSet(exIdx, si)} accessibilityRole="button" accessibilityLabel={`Mark set ${si + 1} incomplete`} style={({ pressed }) => [styles.cCheck, styles.checkDoneBtn, pressed && styles.checkDoneBtnPressed]}>
-                                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.greenMuted} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-                                    <Path d="M5 13l4 4 10-11" />
-                                  </Svg>
-                                </Pressable>
-                              ) : isCurrent ? (
-                                <Pressable onPress={() => completeSet(exIdx, si)} accessibilityRole="button" accessibilityLabel={`Complete set ${si + 1}`} style={({ pressed }) => [styles.cCheck, styles.checkCurrent, pressed && styles.checkCurrentPressed]}>
-                                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                                    <Path d="M5 13l4 4 10-11" />
-                                  </Svg>
-                                </Pressable>
-                              ) : (
-                                <View style={[styles.cCheck, styles.checkPending]} />
-                              )}
-                            </>
-                          )}
-                          {/* The way a set leaves the table. The smallest target on the row on purpose — it
-                              is destructive, and a red control at full weight beside every set would
-                              out-rank the two numbers that are the row's business. It sits in a fixed
-                              trailing column so the data cells keep their widths, and it is absent (not
-                              greyed) when this is the only set — see `removeSet`. `hitSlop` gives the 14pt
-                              glyph a 44pt target without drawing one. */}
-                          <View style={styles.cTrash}>
-                            {ex.sets.length > 1 ? (
-                              <Pressable
-                                onPress={() => removeSet(exIdx, si)}
-                                hitSlop={14}
-                                accessibilityRole="button"
-                                accessibilityLabel={`Remove set ${si + 1}`}
-                                style={({ pressed }) => [styles.trashBtn, pressed && styles.trashBtnPressed]}
-                              >
-                                <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.redMuted} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-                                  <Path d="M4 7h16" />
-                                  <Path d="M9 7V5h6v2" />
-                                  <Path d="M6.5 7l1 13h9l1-13" />
-                                </Svg>
-                              </Pressable>
-                            ) : null}
-                          </View>
-                        </View>
-                      </View>
-                    );
-                  })}
-                  <TourAnchor id="workout-addset" style={styles.setBtns}>
-                    <Pressable onPress={() => addSet(exIdx)} accessibilityRole="button" accessibilityLabel="Add set" style={({ pressed }) => [styles.addSet, pressed && styles.ctlPressed]}>
-                      <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round">
-                        <Path d="M12 5v14M5 12h14" />
-                      </Svg>
-                      <Text style={styles.addSetText}>Add Set</Text>
-                    </Pressable>
-                    {/* Full width again. This used to be one of two halves — Add Set / Remove Set, split
-                        down the middle by PO decision — until the PO moved removal onto the rows
-                        themselves, where the set being removed is the one you are looking at. */}
-                  </TourAnchor>
-                  {/* Says the one thing the table does not say about itself, and stops saying it the moment
-                      it stops being news. Derived from the session rather than a stored "seen" flag — there
-                      is nothing to persist, nothing to clear on account switch, and no effect to get wrong. */}
-                  {setsDone === 0 ? (
-                    <Text style={styles.tableHint}>Tap weight or reps to edit.</Text>
-                  ) : null}
-
-                </View>
-              </TourAnchor>
+              <SetTable exercise={ex} ei={exIdx} liftHist={liftHist} showHint={setsDone === 0} {...setTableShared} />
               )}
 
               {/*
@@ -5510,6 +5315,352 @@ function swapExercise(ex: SessionExercise, p: PickedExercise): SessionExercise {
  * what the sets ask for. It fills in the moment the page settles. No "2 / 3" — position lives in
  * All Exercises, not repeated on every surface that can see it.
  */
+/**
+ * ══ THE SET TABLE — ONE COMPONENT, TWO PLACES (W9-A14) ══
+ *
+ * It used to be inline JSX in the screen, which was fine while there was exactly one of it. W9-A14 puts a
+ * second one inside the superset card — a member's sets, opened under its row without leaving the pairing
+ * — and a copy-paste of 250 lines is how two tables drift apart one fix at a time. So it moved here, and
+ * every rule the comments below record now holds in both places by construction.
+ *
+ * ⚠ EVERYTHING IS BY EXERCISE INDEX, NEVER BY `exIdx`. The screen's handlers all take `ei` already
+ * (`completeSet`, `openSheet`, `removeSet`…) because the fused card logs members the pager is not on.
+ * The two things that closed over `exIdx` — the value pop and the fuse flash — are matched on `ei` here.
+ *
+ * ⚠ `inline` DROPS THE TABLE'S OWN CARD, AND THE TOUR ANCHORS. Inside the superset card a second border
+ * and ground would be a card in a card, and it would not fit: the six fixed cells need ~308pt, which a
+ * 375pt phone does not have inside the card's padding. The anchors belong to the ONE table the
+ * walkthrough points at — registering the same id twice would aim the spotlight at whichever mounted last.
+ */
+type SetTableProps = {
+  exercise: SessionExercise;
+  ei: number;
+  units: UnitSystem;
+  soundOn: boolean;
+  liftHist: LiftHistory | null;
+  flash: { ei: number; si: number; token: number } | null;
+  pop: { ei: number; si: number; field: 'weight' | 'reps'; token: number } | null;
+  /** "Tap weight or reps to edit." — the screen decides, because it is about the SESSION, not this lift. */
+  showHint: boolean;
+  inline?: boolean;
+  onEdit: (ei: number, si: number, field: 'weight' | 'reps') => void;
+  onFillWeight: (ei: number, si: number, w: number) => void;
+  onComplete: (ei: number, si: number) => void;
+  onUncomplete: (ei: number, si: number) => void;
+  onHold: (ei: number, si: number, heldSec: number) => void;
+  onRemove: (ei: number, si: number) => void;
+  onAdd: (ei: number) => void;
+};
+
+function SetTable({ exercise: ex, ei, units, soundOn, liftHist, flash, pop, showHint, inline, onEdit, onFillWeight, onComplete, onUncomplete, onHold, onRemove, onAdd }: SetTableProps) {
+  const currentSetIdx = ex.sets.findIndex((s) => !s.done); // -1 = all done
+  /**
+   * What they did at THIS set position last time — the per-row `Prev` (W9-Amendment-007).
+   *
+   * `sessions[0]` is the most recent SAVED session, so today's work in progress never appears here and a
+   * set cannot end up compared against itself. Indexed to the same position rather than to the best set
+   * of that day: set 3 answers to last week's set 3, which is the comparison an athlete is actually
+   * making when they load the bar.
+   */
+  const prevAtIndex = (setI: number): string | null => {
+    const p = liftHist?.sessions[0]?.sets[setI];
+    return p?.weight != null && p.reps != null ? prevFigure(p.weight, p.reps, units) : null;
+  };
+  /**
+   * The same figure as `prevAtIndex`, as a NUMBER in the athlete's own units — what the live row's
+   * `Prev` button writes into the weight field (W9-A9-D2).
+   *
+   * ⚠ `exactWeight`, so the number that lands is the number that was on screen. `liftHistory` holds
+   * canonical POUNDS (`canonicalizeWeights`) while a live session's `set.weight` holds whatever the
+   * athlete typed — mixing the two domains is how a metric athlete's 102.5 kg becomes 225. `prevFigure`
+   * converts for display through `setWeightLabelLb`; this is the same conversion, undecorated.
+   */
+  const prevWeightAt = (setI: number): number | null => {
+    const p = liftHist?.sessions[0]?.sets[setI];
+    return p?.weight != null ? exactWeight(p.weight, units).value : null;
+  };
+  const popCell = (rowSi: number, field: 'weight' | 'reps', node: ReactNode) =>
+    pop && pop.ei === ei && pop.si === rowSi && pop.field === field ? <Pop key={pop.token}>{node}</Pop> : node;
+
+  const body = (
+    <>
+      {/*
+        ══ SIX CELLS, AND `Target` IS NOT ONE OF THEM ANY MORE (W9-A9-D2) ══
+
+        The column is not deleted, it is FOLDED INTO THE REPS FIELD as a faded numeral — the
+        ask and the answer occupying one slot, because on a set you have not done yet they are
+        the same number. Grey ink means "this is what was asked", bronze means "this is what
+        you said", cream means "this is logged". That colour difference is now carrying a state
+        distinction on its own, which is why nothing below is allowed to weaken it.
+
+        What the old column also carried has been rehomed rather than dropped: `per leg` to the
+        Goal plinth (it describes the exercise, not a set), and a percentage program's
+        prescribed load into the Weight field as the same kind of faded numeral. A to-failure
+        set reads `MAX` and a timed one reads its clock, for the reason `actualText` gives —
+        a hold showing `0` is the app telling an athlete they did nothing.
+
+        In exchange `Prev` is promoted out of the subline W9-A7 put it in and becomes a real
+        left-aligned column, which is what the whole rearrangement buys: ~110pt rows become
+        ~58pt ones and the table stops scrolling on a three-set exercise.
+      */}
+      <View style={styles.headRow}>
+        {/* Centred, because the set-number ring it labels is centred in the same 30pt cell.
+            Each heading takes the alignment of the content under it — `Prev` stays left
+            because its figure is left-aligned in `prevCell`. */}
+        <Text style={[styles.h, styles.cSet, styles.hCentered]}>Set</Text>
+        {/* ⚠ BACK TO `Prev` (W9-A13), REVERSING W9-A11-D4's spelling — but NOT its column
+            width. A11 widened `cPrev` 66 → 76 for two reasons and only one of them was the
+            heading: `prevVal` is 14.5pt display, so a metric athlete's `102.5 × 8` measures
+            ~72pt and was overflowing 66. The word shrinks; the column stays 76, or that
+            figure clips again. See `cPrev`. */}
+        <Text style={[styles.h, styles.cPrev]}>Prev</Text>
+        {/* ⚠ NO `· LB`. The unit prints inside every weight field already (W9-A10-D4's
+            `— lb` affordance), so in the heading it was a duplicate that cost a second line:
+            `WEIGHT · LB` at 9pt/1.1 tracking measures ~76pt against this column's 70. */}
+        <Text style={[styles.h, styles.cWeight, styles.hCentered]}>Weight</Text>
+        <Text style={[styles.h, styles.cReps, styles.hCentered]}>Reps</Text>
+        <View style={styles.cCheck} />
+        <View style={styles.cTrash} />
+      </View>
+      <View style={styles.rows}>
+        {ex.sets.map((set, si) => {
+          const isDone = set.done;
+          const isCurrent = !isDone && si === currentSetIdx;
+          const ringColor = isDone ? flColor.greenMuted : isCurrent ? flColor.bronze400 : flColor.charcoal600;
+          const numColor = isDone ? flColor.greenMuted : isCurrent ? flColor.bronze300 : flColor.gray400;
+          const valColor = isDone || isCurrent ? flColor.cream100 : flColor.gray600;
+          /* Null on a first-ever lift, and on any set position last session did not reach. */
+          const rowPrev = prevAtIndex(si);
+          const prevWeight = prevWeightAt(si);
+          const weightShown = weightText(set);
+          /*
+           * ══ ONE SLOT FOR THE ASK AND THE ANSWER (W9-A9-D2) ══
+           *
+           * On a set nobody has done yet they are the same number, so the Reps field shows the
+           * prescription in faded ink and recolours the moment the athlete says otherwise. The
+           * three inks are the state, and nothing else on the row distinguishes them:
+           *
+           *   gray600  — this is what was ASKED. Nobody has answered.
+           *   bronze300 — this is what YOU said, and the set is not logged yet.
+           *   cream100 — logged.
+           *
+           * ⚠ `MAX`, NOT `0`, AND A CLOCK, NOT A REP COUNT — the same two rules the retired
+           * Target column obeyed and `actualText` still documents. A to-failure set carries
+           * `targetReps: 0` by construction, and printing that tells an athlete they did nothing;
+           * a timed set has no rep count to report at all.
+           */
+          const repsAnswered = set.actualReps != null || set.durationSec != null;
+          const repsShown = isDone || repsAnswered
+            ? actualText(set)
+            : set.toFailure
+              ? 'MAX'
+              : set.targetSec != null
+                ? durText(set.targetSec) || '—'
+                : targetRepsText(set);
+          const repsColor = isDone ? flColor.cream100 : repsAnswered ? flColor.bronze300 : flColor.gray600;
+          /*
+           * ══ THE GOAL READS AS A SUGGESTION, NOT AN ENTRY (W9-A13) ══
+           *
+           * PO: the reps field prints the goal before anything is entered, *"at the same
+           * strength as a real entry, so there is no visual difference between suggested and
+           * logged."* True: the ink ladder separated ASKED from ANSWERED from LOGGED, but all
+           * three rendered at full strength, so an untouched `8` looked typed.
+           *
+           * ⚠ OPACITY, NOT A COLOUR — and that is the whole reason this is a one-line change.
+           * The brief is explicit twice over: *"opacity is the only difference"* and *"do not
+           * change any color, token…"*. So the three inks are untouched and 0.35 rides on top
+           * of the faded one. ⚠ The spec's §4.3 says the digit "stays `--fl-text-primary`" —
+           * it never was; the pending digit is `gray600` by the W9-A9 ladder, and moving it to
+           * primary would be exactly the token change the same brief forbids.
+           *
+           * It lands where the weight field already is: `emDashUnit` draws its placeholder at
+           * `charcoal500` (~1.45:1), and `gray600` at 0.35 measures ~1.60:1 on `charcoal900` —
+           * a shade MORE visible than the placeholder beside it, which is the point. Faint
+           * means waiting and full means logged, in both columns.
+           */
+          const repsSuggested = !isDone && !repsAnswered;
+          return (
+            <View key={si} style={[styles.row, si > 0 && !isDone && !isCurrent && styles.rowRuled, isDone && styles.rowDone, isCurrent && styles.rowCurrent]}>
+              {flash && flash.ei === ei && flash.si === si ? <FuseFlash key={flash.token} /> : null}
+              {/* ⚠ THE CELLS ARE STILL A ROW INSIDE THE ROW. `styles.row` stays a column so the
+                  fuse can lie over the whole thing on its own layer; `rowCells` is the six-cell
+                  grid, and `justifyContent: 'space-between'` is what spreads the slack EVENLY
+                  between all six rather than letting it pool at one end. */}
+              <View style={styles.rowCells}>
+                {/* ⚠ NO SECOND TICK BESIDE THE NUMBER. A done row used to carry a green check here
+                    AND a green check circle in the Check column, three cells apart, saying the same
+                    thing twice. The 30pt column has no room for it and never needed it. */}
+                <View style={[styles.cSet, styles.setNum, { borderColor: ringColor, borderWidth: isDone || isCurrent ? 1.5 : 1 }]}>
+                  <Text style={[styles.setNumText, { color: numColor }]}>{si + 1}</Text>
+                </View>
+                {/*
+                  ══ `Prev` — PROMOTED FROM A SUBLINE TO A COLUMN (W9-A9-D2) ══
+
+                  W9-A7-D2 put it under the cells because there was no room for a sixth column
+                  beside `Target`. `Target` is gone, so there is, and the row loses the ~52pt of
+                  height the subline cost it. The rule W9-A7-D3 set is untouched: the same set
+                  POSITION from the last SAVED session, so set 3 answers to last week's set 3.
+
+                  ⚠ AND ON THE LIVE ROW IT IS A BUTTON — the one-tap "same as last time". It writes
+                  the weight and nothing else: `save-core` only ever persists sets with `done`, so
+                  filling a row that is not logged records no lift, exactly as pre-filling one
+                  through the sheet already did. The figure it writes is the figure it SHOWS
+                  (`exactWeight`, the same converter `prevFigure` uses), so a metric athlete gets the
+                  kilos they are reading rather than the pounds underneath them.
+                */}
+                {isCurrent && prevWeight != null ? (
+                  <Pressable
+                    onPress={() => onFillWeight(ei, si, prevWeight)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Last time, set ${si + 1}, ${rowPrev}. Use that weight.`}
+                    style={({ pressed }) => [styles.cPrev, styles.prevCell, pressed && styles.prevCellPressed]}
+                  >
+                    <Text style={[styles.prevVal, styles.prevValLive]} numberOfLines={1}>{rowPrev}</Text>
+                  </Pressable>
+                ) : (
+                  <View style={[styles.cPrev, styles.prevCell]}>
+                    {rowPrev ? (
+                      <Text style={styles.prevVal} numberOfLines={1} accessibilityLabel={`Last time, set ${si + 1}, ${rowPrev}`}>{rowPrev}</Text>
+                    ) : null}
+                  </View>
+                )}
+                {/*
+                  ⚠ AN EM-DASH BAR, NEVER A `0`, and a percentage program's prescribed bar shown
+                  FADED rather than filled in. `prefillWeight`'s header has the reason and it has
+                  not changed: a weight written onto an untouched set records a lift nobody made
+                  and can announce a personal record for it. Faded ink is the ask; only the
+                  athlete's own tap turns it into an answer.
+                */}
+                <Pressable style={({ pressed }) => [styles.cWeight, styles.fieldBox, isCurrent && styles.fieldBoxLive, pressed && styles.cellBtnPressed]} onPress={() => onEdit(ei, si, 'weight')} accessibilityRole="button" accessibilityLabel={`Edit weight, set ${si + 1}`}>
+                  {set.weight != null ? (
+                    popCell(si, 'weight', <Text style={[styles.fieldNum, weightShown.length > 4 ? styles.fieldNumSm : null, { color: valColor }]} numberOfLines={1}>{weightShown}</Text>)
+                  ) : set.targetWeight != null ? (
+                    <Text style={[styles.fieldNum, styles.fieldNumFaded, String(set.targetWeight).length > 4 ? styles.fieldNumSm : null]} numberOfLines={1}>{set.targetWeight}</Text>
+                  ) : (
+                    /* ⚠ `— lb`, NOT A BARE DASH (W9-A10-D4). PO: *"I'd question whether a user
+                       immediately understands that this is tappable."* The unit is the cheapest
+                       affordance available — it says the box expects a number from you, which a
+                       rule on its own does not, and it costs no height. ⚠ It DOES repeat the
+                       `Weight · lb` column header; that is the trade, and the header is read
+                       once while the row is read every set. */
+                    <View style={styles.emDashRow}>
+                      <View style={styles.emDash} />
+                      <Text style={styles.emDashUnit}>{unitLabel(units)}</Text>
+                    </View>
+                  )}
+                </Pressable>
+                {/* ══ A HOLD GETS A CLOCK, NOT A REPS BOX ══
+                    The field-and-tick pair asks "how many did you get". For a plank the question
+                    is "how long did you last", and until the timer existed the app had no way to
+                    ask it — the athlete timed themselves on their phone and pressed a check. The
+                    timer records what it actually watched, so stopping at forty of a prescribed
+                    sixty logs a forty-second set rather than a failure or a lie. It stands in for
+                    the Reps field AND the Check, because it is both. */}
+                {isCurrent && set.targetSec != null ? (
+                  <View style={styles.holdCell}>
+                    <HoldTimer
+                      targetSec={set.targetSec}
+                      soundOn={soundOn}
+                      label={ex.name}
+                      onDone={(held) => onHold(ei, si, held)}
+                    />
+                  </View>
+                ) : (
+                  <>
+                    {/* A pending row is tappable too — so you can put set 3's numbers in before you
+                        get there. It writes only: sets still resolve top-down (see `commitSheet`). */}
+                    <Pressable
+                      style={({ pressed }) => [styles.cReps, styles.fieldBox, isCurrent && styles.fieldBoxLive, isCurrent && styles.fieldBoxReps, pressed && styles.cellBtnPressed]}
+                      onPress={() => onEdit(ei, si, 'reps')}
+                      accessibilityRole="button"
+                      accessibilityLabel={isDone ? `Edit actual reps, set ${si + 1}` : repsAnswered ? `Reps for set ${si + 1}, ${repsShown}` : `Set ${si + 1} asks for ${repsShown} reps. Change it.`}
+                    >
+                      {popCell(si, 'reps', <Text style={[styles.fieldNum, repsShown.length > 2 ? styles.fieldNumSm : null, { color: repsColor }, repsSuggested && styles.fieldNumSuggested]} numberOfLines={1}>{repsShown}</Text>)}
+                    </Pressable>
+                    {isDone ? (
+                      <Pressable onPress={() => onUncomplete(ei, si)} accessibilityRole="button" accessibilityLabel={`Mark set ${si + 1} incomplete`} style={({ pressed }) => [styles.cCheck, styles.checkDoneBtn, pressed && styles.checkDoneBtnPressed]}>
+                        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.greenMuted} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+                          <Path d="M5 13l4 4 10-11" />
+                        </Svg>
+                      </Pressable>
+                    ) : isCurrent ? (
+                      <Pressable onPress={() => onComplete(ei, si)} accessibilityRole="button" accessibilityLabel={`Complete set ${si + 1}`} style={({ pressed }) => [styles.cCheck, styles.checkCurrent, pressed && styles.checkCurrentPressed]}>
+                        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                          <Path d="M5 13l4 4 10-11" />
+                        </Svg>
+                      </Pressable>
+                    ) : (
+                      <View style={[styles.cCheck, styles.checkPending]} />
+                    )}
+                  </>
+                )}
+                {/* The way a set leaves the table. The smallest target on the row on purpose — it
+                    is destructive, and a red control at full weight beside every set would
+                    out-rank the two numbers that are the row's business. It sits in a fixed
+                    trailing column so the data cells keep their widths, and it is absent (not
+                    greyed) when this is the only set — see `removeSet`. `hitSlop` gives the 14pt
+                    glyph a 44pt target without drawing one. */}
+                <View style={styles.cTrash}>
+                  {ex.sets.length > 1 ? (
+                    <Pressable
+                      onPress={() => onRemove(ei, si)}
+                      hitSlop={14}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove set ${si + 1}`}
+                      style={({ pressed }) => [styles.trashBtn, pressed && styles.trashBtnPressed]}
+                    >
+                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.redMuted} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+                        <Path d="M4 7h16" />
+                        <Path d="M9 7V5h6v2" />
+                        <Path d="M6.5 7l1 13h9l1-13" />
+                      </Svg>
+                    </Pressable>
+                  ) : null}
+                </View>
+              </View>
+            </View>
+          );
+        })}
+        {inline ? (
+          <View style={styles.setBtns}>
+            <AddSetButton onPress={() => onAdd(ei)} />
+          </View>
+        ) : (
+          <TourAnchor id="workout-addset" style={styles.setBtns}>
+            <AddSetButton onPress={() => onAdd(ei)} />
+            {/* Full width again. This used to be one of two halves — Add Set / Remove Set, split
+                down the middle by PO decision — until the PO moved removal onto the rows
+                themselves, where the set being removed is the one you are looking at. */}
+          </TourAnchor>
+        )}
+        {/* Says the one thing the table does not say about itself, and stops saying it the moment
+            it stops being news. Derived from the session rather than a stored "seen" flag — there
+            is nothing to persist, nothing to clear on account switch, and no effect to get wrong. */}
+        {showHint ? (
+          <Text style={styles.tableHint}>Tap weight or reps to edit.</Text>
+        ) : null}
+      </View>
+    </>
+  );
+
+  return inline ? (
+    <View style={styles.tableInline}>{body}</View>
+  ) : (
+    <TourAnchor id="workout-sets" style={styles.table}>{body}</TourAnchor>
+  );
+}
+
+function AddSetButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Add set" style={({ pressed }) => [styles.addSet, pressed && styles.ctlPressed]}>
+      <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round">
+        <Path d="M12 5v14M5 12h14" />
+      </Svg>
+      <Text style={styles.addSetText}>Add Set</Text>
+    </Pressable>
+  );
+}
+
 function ExercisePeek({ ex }: { ex: SessionExercise }) {
   const done = ex.sets.filter((s) => s.done).length;
   const progress =
@@ -6230,6 +6381,9 @@ const styles = StyleSheet.create({
   /* ⚠ NARROW HORIZONTAL PADDING ON PURPOSE (8, not 14). Six cells and a 30pt slack budget do not fit at
      14, and the row needs the width more than the card needs the margin. */
   table: { backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.charcoal700, borderRadius: flRadius.xl, paddingHorizontal: 8, paddingTop: 14, paddingBottom: 12 },
+  /* The same table drawn inside the superset card: no second ground or border (a card in a card), and no
+     side padding, because every point of width goes to the six fixed cells. See `ssSets`. */
+  tableInline: { paddingTop: 6 },
   /**
    * ⚠ **THE HEADER ALREADY SHARES THE ROWS' COLUMN DEFINITION, AND THAT IS WHY THE HORIZONTAL PADDING
    * STAYS 4.** W9-A13 asks for `11px 14px 9px`. The vertical halves are taken; the 14 is not, and
@@ -6510,8 +6664,17 @@ const styles = StyleSheet.create({
   ssTagNext: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
   ssTagText: { fontFamily: flFont.display, fontSize: 13, fontWeight: '700', color: flColor.gray600 },
   ssTagTextNext: { color: flColor.bronze300 },
+  ssOpenHit: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 11 },
+  ssMember: { gap: 6 },
+  /* ⚠ -10 INTO THE CARD'S 14pt PADDING, ON PURPOSE. `SetTable`'s six fixed cells need ~308pt; inside the
+     card's padding a 375pt phone has ~309 and a 360pt Android ~294. Borrowing 10 a side buys ~20 and
+     still leaves the rows 4pt off the card's border. */
+  ssSets: { marginHorizontal: -10, gap: 2 },
+  ssFullCard: { flexDirection: 'row', alignSelf: 'flex-end', alignItems: 'center', gap: 4, minHeight: 36, paddingHorizontal: 12 },
+  ssFullCardText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.bronze400 },
   ssBody: { flex: 1, minWidth: 0, gap: 3 },
-  ssName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
+  ssNameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  ssName: { flexShrink: 1, fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   ssSet: { fontSize: 12, color: flColor.gray400 },
   ssSetDone: { color: flColor.greenMuted },
   ssSetNone: { fontSize: 12, color: flColor.gray600 },
