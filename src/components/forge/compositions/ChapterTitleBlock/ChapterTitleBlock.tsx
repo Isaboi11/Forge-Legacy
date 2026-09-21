@@ -40,6 +40,20 @@ export interface ChapterTitleBlockProps {
    * pending user-supplied cycling artwork (FORGE_DELTAS).
    */
   showRankMedallion?: boolean
+  /**
+   * One line saying what the word "Chapter" MEANS — `Onboarding-Amendment-005` ONB-A5-D4.
+   *
+   * ⚠ A DEFINITION, NOT ENCOURAGEMENT, and the distinction is the reason this prop exists rather than
+   * being folded into `principle`. "Chapter I" is the largest text on a brand-new athlete's first
+   * screen and the thing they understand least; this answers *what is this word*, once. `principle`
+   * answers *what should I carry into today*, every day, and rotates. Collapsing them would lose the
+   * definition on day two, which is the only day it is not needed.
+   *
+   * ⚠ IT DOES NOT DISPLACE ONB-D17's LOCKED ANTICIPATION COPY — *"The first page of your Chapter is
+   * waiting to be written."* lives on the hero and is untouched. Omit this prop and the block renders
+   * exactly as it always has.
+   */
+  meaning?: string
 }
 
 /** Top-right rank medallion — the vector RankSeal (transparent by construction), or a faint placeholder. */
@@ -71,7 +85,7 @@ function DiamondDivider() {
   )
 }
 
-export function ChapterTitleBlock({ chapterNumber, chapterName, weekDay, principle, rankFamily, rankLevel, showRankMedallion = true }: ChapterTitleBlockProps) {
+export function ChapterTitleBlock({ chapterNumber, chapterName, weekDay, principle, rankFamily, rankLevel, showRankMedallion = true, meaning }: ChapterTitleBlockProps) {
   return (
     <View style={styles.root}>
       {showRankMedallion ? <RankMedallion family={rankFamily} level={rankLevel} /> : null}
@@ -79,6 +93,7 @@ export function ChapterTitleBlock({ chapterNumber, chapterName, weekDay, princip
         <Text style={styles.chapterNumber}>{chapterNumber}</Text>
         <Text style={styles.chapterName}>{chapterName}</Text>
         <DiamondDivider />
+        {meaning ? <Text style={styles.meaning}>{meaning}</Text> : null}
         <Text style={styles.weekDay}>{weekDay}</Text>
         <View style={styles.principleRow}>
           <View style={styles.principleRule} />
@@ -156,6 +171,16 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     textTransform: 'uppercase',
     color: flColor.gray400,
+  },
+  /* Sentence case and unspaced, deliberately unlike `weekDay` and `chapterNumber` above it. Those are
+     labels; this is a sentence, and setting it in the same tracked uppercase would make a definition
+     read as another piece of chrome. */
+  meaning: {
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: '400',
+    color: flColor.gray400,
+    maxWidth: 260,
   },
   principleRow: {
     flexDirection: 'row',

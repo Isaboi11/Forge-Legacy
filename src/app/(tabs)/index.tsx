@@ -2,16 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { useFocusEffect, useRouter, type Href } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
-import { HoltMark } from '@/components/forge/HoltMark';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { NotificationBell } from '@/components/forge/compositions/NotificationBell';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
-import { ChevronRightIcon, PlanSheetIcon, BarbellIcon } from '@/components/forge/primitives/icons/HomeIcons';
-import { WorkoutsTabIcon, LegacyTabIcon, SquadsTabIcon } from '@/components/forge/primitives/icons/NavIcons';
+import { ChevronRightIcon, ForgeMarkIcon } from '@/components/forge/primitives/icons/HomeIcons';
+import { SectionHeader } from '@/components/forge/composites/SectionHeader/SectionHeader';
+import { LegacyTabIcon } from '@/components/forge/primitives/icons/NavIcons';
 import { ChapterTitleBlock } from '@/components/forge/compositions/ChapterTitleBlock';
 import { TodaysWorkoutCard } from '@/components/forge/compositions/TodaysWorkoutCard';
 import { ProgramMissionGrid } from '@/components/forge/compositions/ProgramMissionGrid';
@@ -27,7 +27,6 @@ import { useEntitlement } from '@/lib/entitlement';
 import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow';
 import { TrainingNowSheet } from '@/components/forge/TrainingNowSheet';
 import { todaysPrinciple } from '@/data/home-principles';
-import { fetchHomeGym, saveHomeGym } from '@/data/home-gym-live';
 import { fetchActiveChapterGoals } from '@/data/goals-live';
 import { goalSections } from '@/domain/goals/goals';
 import { fetchFriendsFeed } from '@/data/friends-feed-live';
@@ -41,24 +40,19 @@ import { useToast } from '@/hooks/useCeremony';
 import { fetchAwaitingChapter, fetchHomeChapter } from '@/data/home-live';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useProfile } from '@/lib/profile';
-import { ExperienceLevelCard, EXPERIENCE_FOR, LEVEL_FOR_EXPERIENCE, type IntakeResult, type IntakeSeed } from '@/components/forge/compositions/ExperienceLevelCard';
-import { fetchCoachProfile } from '@/data/coach-profile-live';
-import { getHomeLevel, setHomeLevel, clearHomeLevel } from '@/lib/home-level';
-import { getStartChoice, setStartChoice, type StartChoice } from '@/lib/program-intent';
-import { getHomeIntake, setHomeIntake, clearHomeIntake } from '@/lib/home-intake';
-import { claimInitiativeHonor } from '@/data/honors-live';
+import { EXPERIENCE_FOR } from '@/components/forge/compositions/ExperienceLevelCard';
+import { getHomeLevel } from '@/lib/home-level';
+import { getStartChoice } from '@/lib/program-intent';
+import { getHomeIntake } from '@/lib/home-intake';
 import { useTour } from '@/hooks/useTour';
 import { useCoachDoor } from '@/hooks/useCoachDoor';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { TourAnchor } from '@/components/tour/TourAnchor';
-import { adoptCatalogProgram, fetchAllProgramSessions, fetchMyPrograms, startProgram, updateProgram } from '@/data/programs-live';
+import { fetchAllProgramSessions, fetchMyPrograms, updateProgram } from '@/data/programs-live';
 import type { ProgramDay } from '@/data/programs-live';
 import type { SessionMark } from '@/domain/program/progress-core';
 import { WorkoutPreviewSheet } from '@/components/forge/WorkoutPreviewSheet';
 import { SwapWorkoutSheet, type SwapOption } from '@/components/forge/SwapWorkoutSheet';
-import { structureFromDefinition } from '@/domain/program/adopt-core';
-import { itemByName } from '@/domain/exercise-picker/data';
-import { getProgramDefinitions } from '@/domain/training/programs';
 import { dayLabel, nextOpenSlot, plannedDays, totalSessions, trainingDays } from '@/domain/program/progress-core';
 import { swapSessionOrder } from '@/domain/program/schedule-edit';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
@@ -68,7 +62,6 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgramById } from '@/domain/training/active-program';
 import { resolveRecommendationId } from '@/domain/onboarding/recommend-core';
-import { catalogCanRecommend } from '@/domain/onboarding/recommend';
 import { CARDIO_ACTIVITIES, CARDIO_DEFAULTS, OUTDOOR_CAPABLE, deriveName, type CardioActivity, type Modality } from '@/domain/workout/conditioning';
 import { loadSession, resumeSummary } from '@/domain/workout/autosave';
 import { composeHome, isHomeReady, selectHomePrograms, HOME_READY_CEILING_MS } from '@/domain/home/composition';
@@ -76,7 +69,7 @@ import { ForgeSplash } from '@/components/forge-splash';
 import { doneSetCount } from '@/domain/workout/metrics';
 import type { Program, Workout } from '@/domain/training/schema';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
-import { enrichSessionExercises, equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
+import { enrichSessionExercises } from '@/domain/home-artwork/catalog';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 
 /**
@@ -90,25 +83,30 @@ function splitChapterTitle(full: string): { number: string; name: string } {
   return { number: 'Chapter I', name: full.trim() };
 }
 
-/** Two overlapping figures — the "friends" mark (distinct from the Squads glyph). */
-function FriendsGlyph() {
+/** The goal mark — the same target the Mission column wears, so the row and the tile it becomes agree. */
+function GoalGlyph() {
   return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Circle cx={7.5} cy={8} r={2.7} />
-      <Circle cx={16.5} cy={8} r={2.7} />
-      <Path d="M3 19a4.5 4.5 0 0 1 9 0M12 19a4.5 4.5 0 0 1 9 0" />
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square">
+      <Circle cx={12} cy={12} r={8} />
+      <Circle cx={12} cy={12} r={3} />
+      <Path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
     </Svg>
   );
 }
 
-/** One "Explore Forge" tile — icon chip · label · one-line hint · chevron. */
-function ExploreTile({ label, sub, icon, onPress }: { label: string; sub: string; icon: ReactNode; onPress: () => void }) {
+/** One GET STARTED row — icon · title · one-line hint · chevron. Full width: three things, read in order. */
+function GetStartedRow({ label, sub, icon, onPress }: { label: string; sub: string; icon: ReactNode; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${label} — ${sub}`} style={styles.exploreTile}>
-      <View style={styles.exploreIcon}>{icon}</View>
-      <View style={styles.exploreTileText}>
-        <Text style={styles.exploreTileLabel}>{label}</Text>
-        <Text style={styles.exploreTileSub} numberOfLines={1}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label} — ${sub}`}
+      style={({ pressed }) => [styles.startedRow, pressed ? styles.pathPressed : null]}
+    >
+      <View style={styles.startedIcon}>{icon}</View>
+      <View style={styles.startedText}>
+        <Text style={styles.startedLabel}>{label}</Text>
+        <Text style={styles.startedSub} numberOfLines={1}>
           {sub}
         </Text>
       </View>
@@ -118,19 +116,22 @@ function ExploreTile({ label, sub, icon, onPress }: { label: string; sub: string
 }
 
 /**
- * "Explore Forge" — the fresh athlete's invitation to the app's four pillars (ONB-A2-D4a). Four tiles that
- * route to Programs / Legacy / Squads / Friends. Pure navigation; the destinations are the real tabs/routes.
+ * GET STARTED — the arrival Home's three quiet doors (`Onboarding-Amendment-006` ONB-A6-D2, PO mockup
+ * 2026-09-21). It replaced BOTH the "How do you want to start?" chooser and the four-tile Explore Forge
+ * grid: the chooser asked a question where the first workout belongs, and Explore Forge repeated the tab
+ * bar. These three are the things a tab bar cannot say — that goals exist, that there is a tour, and
+ * where programs live.
+ *
+ * They record nothing and ask nothing. The rows leave when Home settles (`composeHome().showGetStarted`).
  */
-function ExploreForgeSection({ onOpen }: { onOpen: (route: Href) => void }) {
+function GetStartedSection({ onGoal, onExplore, onPrograms }: { onGoal: () => void; onExplore: () => void; onPrograms: () => void }) {
   return (
-    <View style={styles.explore}>
-      <Text style={styles.exploreTitle}>Explore Forge</Text>
-      <Text style={styles.exploreSub}>Four corners of your legacy — wander in anytime.</Text>
-      <View style={styles.exploreGrid}>
-        <ExploreTile label="Programs" sub="Browse & build" icon={<WorkoutsTabIcon size={22} color={flColor.bronze300} />} onPress={() => onOpen('/workouts')} />
-        <ExploreTile label="Legacy" sub="Your record" icon={<LegacyTabIcon size={22} color={flColor.bronze300} />} onPress={() => onOpen('/legacy')} />
-        <ExploreTile label="Squads" sub="Train together" icon={<SquadsTabIcon size={22} color={flColor.bronze300} />} onPress={() => onOpen('/squads')} />
-        <ExploreTile label="Friends" sub="Your circle" icon={<FriendsGlyph />} onPress={() => onOpen('/friends')} />
+    <View>
+      <SectionHeader label="Get Started" />
+      <View style={styles.startedList}>
+        <GetStartedRow label="Set a goal" sub="Define what you’re working toward." icon={<GoalGlyph />} onPress={onGoal} />
+        <GetStartedRow label="Explore the app" sub="See what Forge Legacy is all about." icon={<ForgeMarkIcon width={14} height={21} />} onPress={onExplore} />
+        <GetStartedRow label="Programs" sub="Find a program or build your own." icon={<LegacyTabIcon size={22} color={flColor.bronze300} />} onPress={onPrograms} />
       </View>
     </View>
   );
@@ -154,159 +155,6 @@ function ExploreForgeSection({ onOpen }: { onOpen: (route: Href) => void }) {
  * The Home hero rank medallion is temporarily REMOVED (`showRankMedallion={false}`) pending user-supplied
  * cycling artwork — see FORGE_DELTAS §19. (Legacy's hero seal is a separate component and stays.)
  */
-
-/**
- * THE CHOICE COMES BEFORE THE QUESTIONS. "Build my own" used to be a secondary button on step 1 of the
- * intake stepper — so the app asked what your experience level was, and only then mentioned you might
- * already know what you want to do. Someone arriving with a program in mind was walked through a
- * recommendation they never asked for. Two doors, same weight, neither the default.
- *
- * Shared by the first-run gate and the established athlete who has no program, because those two are the
- * same question asked at different times — and the second one used to be answered with a demo program.
- *
- * THE FIRST DOOR IS FREESTYLE UNTIL THE CATALOG EARNS IT BACK. `onGuided` is undefined while
- * `catalogCanRecommend()` is false, and the slot that asked "Help me find one" offers to train today
- * instead. Two programs are authored, both Strength Foundation — so the intake's three questions about
- * goal, experience and equipment had one answer waiting whatever you said, and a runner with no barbell
- * got it too. Offering to train now is the honest thing this screen can do; offering to find you a
- * program is not, yet. The stepper, the recommendation and their tests are untouched and return on
- * their own when the families land — see `canRecommend`.
- */
-function ProgramPathChooser({
-  title,
-  subtitle,
-  onGuided,
-  onCoach,
-  onImport,
-  onBuild,
-  onBrowse,
-  onFreestyle,
-}: {
-  title: string;
-  subtitle?: string;
-  /** Undefined = the catalog cannot answer the intake's questions, so it is not asked. */
-  onGuided?: () => void;
-  /** Hand over to Coach Holt, who builds one rather than picking one off a shelf. */
-  onCoach: () => void;
-  /** Bring across a plan they already run. The door an experienced athlete is actually looking for. */
-  onImport: () => void;
-  onBuild: () => void;
-  onBrowse: () => void;
-  onFreestyle: () => void;
-}) {
-  return (
-    <View style={styles.pathBlock}>
-      <Text style={styles.pathTitle}>{title}</Text>
-      {subtitle ? <Text style={styles.pathCardSub}>{subtitle}</Text> : null}
-      {/*
-        ══ THREE DOORS, AND EACH ONE MATCHES SOMETHING THE ATHLETE ALREADY KNOWS ABOUT THEMSELVES ══
-
-        This card had drifted to SIX options: Build it with me · Help me find one · I've got a program
-        already · Build my own · Or browse everything · Or just train today. Two of them said the same
-        thing to the person reading — "Build it with me" and "Help me find one" both mean *help me get a
-        program*, and which one BUILDS versus which one PICKS OFF A SHELF is an implementation detail no
-        beginner should have to reason about. A fourteen-program shelf standing beside a coach who writes
-        to order is not a real choice; it is two doors to the same room.
-
-        So the question each door answers is now one the athlete can actually answer about themselves:
-        do I want one written for me, do I already have one, or do I just want to train today.
-
-        ⚠ THE LIBRARY IS DEMOTED, NOT DELETED. The quiet link below still opens the guided intake, which
-        is the thing that picks well and ends in a real recommendation. Named, authored programs are real
-        work and some athletes want to choose one — they are simply not the primary door.
-      */}
-      {/*
-        ⚠ THE RECOMMENDED PATH HAS TO LOOK RECOMMENDED, AND A BRONZE BORDER ALONE DID NOT DO IT.
-        Three cards of equal weight read as "three menu buttons", whichever one is outlined. The eyebrow
-        names the recommendation in words, the mark says WHO you are choosing rather than which setup
-        method, and the extra height and warmth carry it at a glance. Everything else on the card is
-        deliberately unchanged — the background is already doing the brand work, and more gold here would
-        read as theatrical rather than premium.
-      */}
-      <Pressable
-        onPress={onCoach}
-        accessibilityRole="button"
-        accessibilityLabel="Recommended — build a program with Coach Holt"
-        style={({ pressed }) => [styles.pathCard, styles.pathCardLead, pressed ? styles.pathPressed : null]}
-      >
-        <View style={styles.leadRow}>
-          <View style={styles.leadText}>
-            <Text style={styles.leadEyebrow}>
-              Recommended <Text style={styles.leadEyebrowDim}>· with Coach Holt</Text>
-            </Text>
-            <Text style={styles.pathCardTitle}>Build it with me</Text>
-            <Text style={styles.pathCardSub}>Coach Holt asks what you&apos;re after, then writes the block around it.</Text>
-          </View>
-          {/*
-            Low visual weight on purpose — it is a signature, not an illustration.
-
-            ⚠ 44, NOT 54. It was 54, which made this the LARGEST Holt in the app — bigger than the
-            floating coin that is his actual tap target — while its own comment called it low weight.
-            The 2026-08-26 artwork pass closed the medallion's 9% dead margin so the coin now fills its
-            frame, which made the same number read about a tenth larger again: at 54 the mark stood as
-            tall as the title and sub-line together and pushed the sub into a different wrap.
-
-            The ladder is now hierarchy rather than drift — 52 floating coin · 44 here · 40 chat gutter
-            · 34 session sheet header. Below 44 the row regains enough width that the sub-line reflows,
-            so this is also the smallest it can be without moving the copy.
-          */}
-          <View style={styles.leadMark}>
-            <HoltMark size={44} />
-          </View>
-          <ChevronRightIcon size={18} color={flColor.bronze400} />
-        </View>
-      </Pressable>
-      {/* ⚠ NO LONGER STRAIGHT TO THE PASTE SHEET. "I have a program" does not mean "I have a spreadsheet"
-          — it may be on a whiteboard, in a coach's message, or in their head. Holt asks which. */}
-      <Pressable
-        onPress={onImport}
-        accessibilityRole="button"
-        accessibilityLabel="Bring a program you already have"
-        style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
-      >
-        <View style={styles.pathRow}>
-          <View style={styles.pathIcon}>
-            <PlanSheetIcon size={22} color={flColor.gray400} />
-          </View>
-          <View style={styles.pathText}>
-            <Text style={styles.pathCardTitle}>I&apos;ve got a program already</Text>
-            <Text style={styles.pathCardSub}>Paste it in, build it here, or log it as you go.</Text>
-          </View>
-          <ChevronRightIcon size={18} color={flColor.gray600} />
-        </View>
-      </Pressable>
-      <Pressable
-        onPress={onFreestyle}
-        accessibilityRole="button"
-        accessibilityLabel="Just train today"
-        style={({ pressed }) => [styles.pathCard, pressed ? styles.pathPressed : null]}
-      >
-        <View style={styles.pathRow}>
-          <View style={styles.pathIcon}>
-            <BarbellIcon size={22} color={flColor.gray400} />
-          </View>
-          <View style={styles.pathText}>
-            <Text style={styles.pathCardTitle}>Just train today</Text>
-            {/* ⚠ NOT "nothing planned" — that phrasing made the option sound like the athlete had failed
-                to prepare, when choosing to train without a plan is a legitimate way to train. The tap
-                opens the Start a Workout sheet, so this is also the only door to cardio here. */}
-            <Text style={styles.pathCardSub}>No plan. Just start training and log as you go.</Text>
-          </View>
-          <ChevronRightIcon size={18} color={flColor.gray600} />
-        </View>
-      </Pressable>
-      {onGuided ? (
-        <Pressable onPress={onGuided} accessibilityRole="button" accessibilityLabel="Browse training programs" hitSlop={8} style={styles.pathQuiet}>
-          <Text style={styles.pathQuietText}>Browse training programs →</Text>
-        </Pressable>
-      ) : (
-        <Pressable onPress={onBrowse} accessibilityRole="button" accessibilityLabel="Browse programs" hitSlop={8} style={styles.pathQuiet}>
-          <Text style={styles.pathQuietText}>Or browse everything</Text>
-        </Pressable>
-      )}
-    </View>
-  );
-}
 
 export default function HomeScreen() {
   /*
@@ -441,7 +289,7 @@ export default function HomeScreen() {
   const [cardioAsk, setCardioAsk] = useState<CardioActivity | null>(null);
   const router = useRouter();
   const { startWorkout } = useWorkoutSession();
-  const { requestPrompt, markAnnounced, requestTour } = useTour();
+  const { requestPrompt, requestTour, startTour } = useTour();
   /* Holt is mounted outside the navigator, so opening him is a context call rather than a route
      push — the sheet grows out of the bubble instead of taking Home off the screen. */
   const { open: coachOpen, openCoach } = useCoachDoor();
@@ -514,7 +362,7 @@ export default function HomeScreen() {
   const builtMarks = useMemo<SessionMark[]>(() => (builtId ? (allMarks?.[builtId] ?? []) : []), [allMarks, builtId]);
   // Opt-in Home experience-level LENS (local only, ONB-Amendment-002) — undefined = loading, null = not
   // chosen (show the question), a level = show the suggested starting program. No DB write; re-askable.
-  const { data: homeLevel, refetch: refetchLevel, settled: levelSettled } = useQuery(getHomeLevel, []);
+  const { data: homeLevel, settled: levelSettled } = useQuery(getHomeLevel, []);
   // How they answered the starting-point question, if they have. Local; see `program-intent.ts`.
   /* The athlete's unit. Volume is stored canonical pounds everywhere in this app and converted at the
      moment of drawing — a friend's session on the circle row is no exception. */
@@ -522,12 +370,6 @@ export default function HomeScreen() {
   const { data: startChoice, refetch: refetchStartChoice, settled: startChoiceSettled } = useQuery(getStartChoice, []);
   // Goals + equipment intake (local only) — feeds the recommendation on the suggested face.
   const { data: homeIntake, refetch: refetchIntake, settled: intakeSettled } = useQuery(getHomeIntake, []);
-  /* ⚠ WHAT ONBOARDING ALREADY ASKED. The intake stepper below used to open blank and ask goal, level and
-     equipment a SECOND time, in different words, writing its answers only to AsyncStorage — which reads
-     to the athlete as the app not having listened. `fetchCoachProfile` is the same read `coach.tsx` uses
-     to skip questions Holt already knows the answer to; this is that, for the other surface. */
-  const { data: coachProfile, settled: coachProfileSettled } = useQuery(fetchCoachProfile, []);
-  const { data: homeGymData, refetch: refetchHomeGym, settled: homeGymSettled } = useQuery(fetchHomeGym, []);
   /* Your Circle's friend row, real since 0074 — the newest post from anyone the athlete is connected to.
      One ROW, not the feed: this is a doorway, and `/friends` is the room. Live presence is NOT read
      because there is nothing to read — an in-progress workout lives in a client-side session, not a
@@ -719,122 +561,7 @@ export default function HomeScreen() {
   const missionTarget = (primaryGoal ?? activeGoals[0])?.name ?? 'Set a chapter goal';
   const goalsRemaining = goalList.filter((g) => g.achievedAt == null).length;
 
-  /**
-   * The three doors off the starting-point chooser. Each RECORDS the choice before navigating.
-   *
-   * Walking through a door is the answer to "How do you want to start?" — so Home stops asking from that
-   * moment, not from the moment a workout is finally saved. Waiting for the save meant an athlete could
-   * be looking at their own half-logged session with the question still printed underneath it.
-   *
-   * `chooseStart` is called from the chooser only. The same two handlers are reused elsewhere on Home
-   * (the quiet program link, the suggestion card's "Explore") where there is no question to answer, so
-   * those pass the raw navigation and record nothing.
-   */
-  const chooseStart = (choice: StartChoice, go: () => void) => {
-    void setStartChoice(choice).finally(refetchStartChoice);
-    go();
-  };
   const openPrograms = () => router.push('/workouts');
-  const openBuilder = () => router.push('/program-builder');
-  /*
-   * ⚠ THE SUGGESTION CARD'S EXIT, NOT HOME'S DOOR — and the two are deliberately different.
-   *
-   * By the time somebody is looking at a recommendation they did not want, "bring your own" means the
-   * fastest route in, which is the paste sheet. On the CHOOSER, the same words mean something vaguer:
-   * *"I have a program"* does not say whether it is a spreadsheet, a whiteboard or a memory. That door
-   * opens Holt, who asks which — see `onImport` on the chooser.
-   */
-  const openImport = () => router.push('/program-builder?o=import');
-
-  /*
-   * ⭐ SO THE STEPPER STOPS ASKING WHAT ONBOARDING ALREADY WROTE DOWN.
-   *
-   * Level and goals come straight off the profile; the athlete sees them pre-selected and can still
-   * change any of them. Equipment is deliberately NOT seeded — the profile keeps the coach's coarse
-   * `environment`, where `home` means both "a home setup" and "dumbbells only", so mapping it back would
-   * be a guess, and a wrong pre-selection is worse than the question because nobody re-reads an answer
-   * the app appears to already know. `LEVEL_FOR_EXPERIENCE` carries the argument in full.
-   *
-   * Falls back to the device-local intake for an athlete who answered here before ever onboarding into
-   * the profile columns, and to nothing at all when neither knows — which is the blank stepper as it was.
-   */
-  const intakeSeed: IntakeSeed | null =
-    coachProfile?.experience || (coachProfile?.goalIds.length ?? 0) > 0 || homeLevel || homeIntake
-      ? {
-          level: coachProfile?.experience ? LEVEL_FOR_EXPERIENCE[coachProfile.experience] : homeLevel,
-          goals: coachProfile?.goalIds.length ? coachProfile.goalIds : (homeIntake?.goals ?? []),
-          primaryGoal: coachProfile?.goalIds[0] ?? homeIntake?.primaryGoal ?? null,
-          equipment: [],
-        }
-      : null;
-
-  const completeIntake = async (r: IntakeResult) => {
-    await setHomeLevel(r.level);
-    await setHomeIntake({ goals: r.goals, primaryGoal: r.primaryGoal, equipment: r.equipment });
-    // The quick-picked gym, when they trained one out. Absent = skipped, which must leave the profile
-    // UNSET rather than empty — "I didn't answer" and "I own nothing" mean different things downstream.
-    /*
-     * NOT `.catch(() => {})`. The comment above draws a real distinction — absent must leave the
-     * profile UNSET, because "I didn't answer" and "I own nothing" mean different things downstream —
-     * and a swallowed failure produced exactly the "didn't answer" state while the athlete believed
-     * they had answered. Their equipment then silently failed to filter the exercise list.
-     * Still non-fatal: the rest of the intake is already saved and must not be lost, so this reports
-     * and moves on rather than throwing the whole completion away.
-     */
-    if (r.homeGym) {
-      try {
-        await saveHomeGym(r.homeGym);
-      } catch (e) {
-        showToast(`Your gym setup didn’t save — ${errorMessage(e)}`);
-      }
-    }
-    // NO honor here. Answering three questions about yourself is not a first move — Initiative is
-    // earned by actually committing to a program (`acceptSuggestion`) or building one. Granting it at
-    // intake meant the ceremony fired before the athlete had chosen anything at all.
-    refetchLevel();
-    refetchIntake();
-    refetchHomeGym();
-  };
-  /**
-   * Accept the recommendation. It's a catalog definition, so adopt it into a real program row and start
-   * it — the same path as picking one from Discover. Without adoption the athlete would be "on" a program
-   * that has no record, no progress and nothing for their workouts to attach to.
-   */
-  const acceptSuggestion = async (defId: string) => {
-    const def = getProgramDefinitions().find((d) => d.id === defId);
-    if (!def) return;
-    try {
-      const equipFor = (key: string) => equipmentForCatalogKey(key) ?? undefined;
-      const adopted = await adoptCatalogProgram(def.id, structureFromDefinition(def, equipFor, (n) => itemByName(n)?.key));
-      await startProgram(adopted.id);
-      // NOW it's a first move: they picked a program and it's really started. Best-effort, DB dedupes
-      // to one row; if it was already held there is nothing to celebrate, so retire the ceremony
-      // rather than re-announcing an honor the athlete earned long ago.
-      void claimInitiativeHonor()
-        .then((newlyEarned) => {
-          if (!newlyEarned) markAnnounced();
-        })
-        .catch(() => {});
-      refetchPrograms();
-      refetchBuiltDone();
-    } catch (e) {
-      /*
-       * ⚠ STAYING PUT IS RIGHT. SAYING NOTHING IS NOT.
-       *
-       * Leaving them on the suggestion rather than dropping them somewhere unexplained is the correct
-       * call — but with no message the screen simply did not react to a tap, which reads as a dead
-       * button on the day-one onramp, the first thing a new athlete ever presses.
-       */
-      showToast(errorMessage(e) || 'Couldn’t start that program — check your connection and try again.');
-    }
-  };
-
-  const changeIntake = async () => {
-    await clearHomeLevel();
-    await clearHomeIntake();
-    refetchLevel();
-    refetchIntake();
-  };
   // Start the Home program's next workout (built / chosen / demo). When it's a program the athlete built,
   // stamp the launch context first so the finished session is attributed to it — without this the workout
   // saves unattributed and the program's progress never moves.
@@ -1053,52 +780,6 @@ export default function HomeScreen() {
       : { number: '', name: '', weekDay: '' };
 
   /**
-   * THE HOME GATE IS GONE. Full Home from the very first launch — chapter, circle, quick actions and all —
-   * with the starting-point question living IN it rather than INSTEAD of it.
-   *
-   * This is Onboarding-Amendment-002 finally being applied, not a new direction. Its own origin section
-   * names the behaviour that was here as the defect it was written to remove: *"First Home is a pure program
-   * funnel — the awaiting-first-workout Home surfaces only a program card and omits every social/explore
-   * surface, so a new athlete dead-ends at 'start a workout'."* ONB-D13 is blunter still: the recommendation
-   * is **"an offer, never a gate."** A full-screen takeover that will not let you past until you answer is a
-   * gate however gently it asks.
-   *
-   * So these three are no longer branches AROUND Home. They are the states of one slot ON it, sitting where
-   * the Program | Mission grid will eventually go. The first-workout ceremony (ONB-D18) is untouched — it
-   * lives in the workout-complete flow and never had anything to do with this.
-   *
-   * ══ AND THE SLOT IS FOR ARRIVING, NOT FOR LACKING ══
-   *
-   * It used to draw for anyone without a program, which meant an athlete who trains day to day and will
-   * never build one read **"You don't have a program yet"** on every launch of their lives. `awaiting` goes
-   * false the moment they log a session, so there was no exit from that sentence except to build a program
-   * they didn't want. That is the literal message `Home-Screen-Wireframe-Spec-H1.md` §6 forbids — *"No
-   * placeholder. No 'no program' message."* — on a screen whose own failure list ends with *"the screen
-   * communicates what the athlete has NOT done."*
-   *
-   * The question is now asked once, on arrival, and never again. Everyone past it gets the Tier 3 Workout
-   * CTA the same spec marks **Always** present and never disabled.
-   */
-  /**
-   * Whether the guided on-ramp is offered at all — false while the catalog cannot answer the questions
-   * the intake asks (`canRecommend`). Derived from the authored programs, so it turns itself back on.
-   *
-   * It also gates `hasSuggestion` below, so an athlete carrying a level in local storage from before this
-   * turned off is not left looking at a recommendation by a path nobody can reach. Nothing is cleared —
-   * their answers are still there when the on-ramp comes back.
-   */
-  const guidedOnRamp = catalogCanRecommend();
-  /** Null until they pick a door. Local: it decides what to draw now, not anything worth persisting. */
-  const [path, setPath] = useState<'guided' | null>(null);
-  /**
-   * Intake answered, but nothing chosen yet — show the recommendation and let the athlete decide.
-   * This step existed on the card (`mode="suggested"`) but was never rendered: finishing the intake
-   * dropped straight through to the full Home with a program silently assigned, so the athlete never
-   * saw what was picked for them or had any say in it.
-   */
-  const hasSuggestion = !hasProgram && homeLevel != null && guidedOnRamp;
-
-  /**
    * WHAT HOME DRAWS — one call, so the rules can be read and tested in one place (`src/domain/home`).
    *
    * `awaitingLoading` matters more than it looks: `useQuery` starts at `data: null`, so `awaiting` reads
@@ -1110,7 +791,7 @@ export default function HomeScreen() {
    *
    * The sheet is an OVERLAY, not a route — Home never loses focus while it is up, so the focus effect
    * that refreshes everything else never runs for it. And Holt now writes a start choice: "I'll log as I
-   * go" records `freestyle`. Without this, the athlete answered the question and watched the same chooser
+   * go" records `freestyle`. Without this, the athlete answered and watched the arrival rows (Get Started)
    * sit there behind him, which is the defect this closes.
    *
    * Keyed on the door SHUTTING rather than on every render, and `refetch` is idempotent, so a close that
@@ -1135,9 +816,6 @@ export default function HomeScreen() {
     hasProgramSession: home.workout != null,
     hasPlannedWorkout: planned != null,
     resumeSets,
-    guidedOnRamp,
-    hasSuggestion,
-    guidedPathOpen: path === 'guided',
   });
   /**
    * The hero's three faces, resolved to one set of props. Null = nothing to say yet (the loading frame).
@@ -1190,10 +868,12 @@ export default function HomeScreen() {
         : composition.hero === 'open'
           ? {
               eyebrow: 'Today',
-              title: 'Train Today',
+              /* ONB-A6-D1 — the arrival face, from the PO's mockup. Before the first workout the hero names
+                 it; after, it is the everyday "Train Today". Same button, same sheet behind it. */
+              title: awaiting ? 'Start Your First Workout' : 'Train Today',
               /* Was "Build it as you go." — true of one of the sheet's three rows, false of the template
                  and cardio rows beside it. The line only has to say the state; the sheet says the how. */
-              focus: 'Nothing planned. Train your way today.',
+              focus: awaiting ? 'No workout planned. Get after it.' : 'Nothing planned. Train your way today.',
               onStart: startFreestyleFromHome,
               resumeSets: null,
             }
@@ -1246,17 +926,15 @@ export default function HomeScreen() {
   }, []);
   const ready = isHomeReady(
     [
-      awaitingSettled, // chapter block, Explore Forge, and which face the hero wears
+      awaitingSettled, // chapter block, Get Started, and which face the hero wears
       chapterSettled, // the chapter's number, name and week/day
       programsSettled, // hero + Current Program tile
       marksSettled, // WHICH session of the program the hero offers
       plannedSettled, // the one-off built for later (0136)
       resumeSettled, // unfinished work in local storage — the loudest pop of the lot
       levelSettled, // ┐
-      startChoiceSettled, // ├ the starting-point slot: chooser / intake / suggestion
-      intakeSettled, // │
-      coachProfileSettled, // ┘ …and what onboarding already answered, so it stops re-asking
-      homeGymSettled, // ┘
+      startChoiceSettled, // ├ arrival vs settled — Get Started, and the program recommendation
+      intakeSettled, // ┘
       goalsSettled, // the Mission tile
       circleSettled, // ┐
       friendListsSettled, // ├ Your Circle
@@ -1411,70 +1089,14 @@ export default function HomeScreen() {
             </TourAnchor>
           ) : null}
 
-          {/*
-            THE STARTING-POINT SLOT — where the gate used to be a screen.
-
-            Three states of one card, sitting exactly where the Program | Mission grid will go once there
-            IS a program. Everything around it — chapter, circle, quick actions, Explore Forge — is on
-            screen the whole time, which is the point: the question is an offer beside the app, not a door
-            in front of it (ONB-D13, "an offer, never a gate").
-
-            IT IS ASKED ON ARRIVAL AND NEVER AGAIN. It used to draw for anyone without a program, so the
-            athlete who trains day to day and never wants one read "You don't have a program yet" on every
-            launch, permanently. They now get the Workout CTA above instead, which is what H-1 always said
-            they should have. "Or just train today" stays under the chooser — the answer to "how do you want
-            to start" is allowed to be "I don't" — EXCEPT where the chooser has already promoted freestyle
-            into the card slot (no guided on-ramp), because the same action twice on one card is not two
-            choices.
-          */}
-          {composition.startingPoint !== 'none' ? (
-            <>
-              {composition.startingPoint === 'suggestion' ? (
-                // Answered the questions — show WHAT was picked and why, with a real choice about it.
-                <ExperienceLevelCard
-                  mode="suggested"
-                  level={homeLevel!}
-                  intake={homeIntake ?? null}
-                  homeGym={homeGymData ?? null}
-                  onStart={(programId) => void acceptSuggestion(programId)}
-                  onExplore={openPrograms}
-                  onChange={changeIntake}
-                  onCoach={() => openCoach('build')}
-                  onImport={openImport}
-                />
-              ) : composition.startingPoint === 'intake' ? (
-                // Chose "Help me find one" — the intake stepper (level → goals → equipment), inline.
-                <ExperienceLevelCard mode="collect" onComplete={completeIntake} onBuild={openBuilder} seed={intakeSeed} />
-              ) : (
-                /* Only ever seen on arrival now, so the title no longer has a second, sadder variant for
-                   the athlete who had simply been here a while. */
-                <ProgramPathChooser
-                  title="How do you want to start?"
-                  /* ⚠ RECORDS NOTHING, for the same reason "Help me find one" does not: it opens a
-                     conversation that ends in a program, and settling the slot on the way in would take
-                     the question away from an athlete who then closed the sheet without building. */
-                  onCoach={() => openCoach('build')}
-                  /* "Help me find one" records nothing — it opens a stepper that lives on this same slot
-                     and ends in a program. The other three are exits, and an exit is an answer. */
-                  onGuided={guidedOnRamp ? () => setPath('guided') : undefined}
-                  onImport={() => openCoach('import')}
-                  onBuild={() => chooseStart('build_own', openBuilder)}
-                  onBrowse={() => chooseStart('browse', openPrograms)}
-                  onFreestyle={() => chooseStart('freestyle', startFreestyleFromHome)}
-                />
-              )}
-              {composition.showQuietFreestyle ? (
-                <Pressable
-                  onPress={() => chooseStart('freestyle', startFreestyleFromHome)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Start a workout without a program"
-                  hitSlop={8}
-                  style={styles.pathQuiet}
-                >
-                  <Text style={styles.pathQuietText}>Or just train today</Text>
-                </Pressable>
-              ) : null}
-            </>
+          {/* GET STARTED — the arrival rows, where the "How do you want to start?" chooser used to sit
+              (ONB-A6-D1/D2). The hero above is the offer; these only point. */}
+          {composition.showGetStarted ? (
+            <GetStartedSection
+              onGoal={() => router.push('/goals')}
+              onExplore={startTour}
+              onPrograms={() => router.push('/workouts')}
+            />
           ) : null}
 
           {/* THE MISSION TILE IS NOT THE PROGRAM'S. It reads live chapter goals and always did — but this
@@ -1492,15 +1114,9 @@ export default function HomeScreen() {
               total={home.total}
               missionTarget={missionTarget}
               goalsRemaining={goalsRemaining}
-              // Tap "Current Program": a fresh athlete's suggestion → re-pick (Change); a program the
-              // athlete built → its detail (schedule, progress, log); otherwise browse programs.
-              onProgram={
-                awaiting && homeLevel != null && !hasProgram
-                  ? changeIntake
-                  : builtId
-                    ? () => router.push({ pathname: '/program/[id]', params: { id: builtId } })
-                    : openPrograms
-              }
+              // Tap "Current Program": a program the athlete built → its detail (schedule, progress, log);
+              // otherwise browse programs.
+              onProgram={builtId ? () => router.push({ pathname: '/program/[id]', params: { id: builtId } }) : openPrograms}
               onMission={() => router.push('/goals')}
               programAnchor="current-program"
               missionAnchor="mission"
@@ -1596,6 +1212,14 @@ export default function HomeScreen() {
             </Pressable>
           ) : null}
 
+          {/* ⚠ BOTH SOCIAL CARDS ARE WITHHELD UNTIL THE FIRST WORKOUT — `Onboarding-Amendment-005`
+              ONB-A5-D2, which supersedes ONB-A3-D7's "full from the very first launch" for these two
+              cards ONLY. A3-D7's real prohibition — no gate, nothing standing in front of Home — is
+              untouched: the tab bar still reaches Friends and Squads. What is removed is a card whose day-one content is
+              "No friends yet" and a row offering to train with people who are not there.
+              `composeHome` owns the rule and a test holds it; this is only the call site. */}
+          {composition.showSocialCards ? (
+          <>
           <TourAnchor id="your-circle">
             <YourCircleCard
               liveUsers={live}
@@ -1627,10 +1251,8 @@ export default function HomeScreen() {
             trainAnchor="train-together"
             competitionsAnchor="competitions"
           />
-
-          {/* "Explore Forge" invitation (ONB-A2-D4a) — the fresh athlete's map to the four pillars. Shown
-              only while awaiting the first workout; a returning athlete has already found their way around. */}
-          {awaiting ? <ExploreForgeSection onOpen={(route) => router.push(route)} /> : null}
+          </>
+          ) : null}
         </View>
       </ScrollView>
 
@@ -2000,39 +1622,23 @@ const styles = StyleSheet.create({
   menuItem: { paddingVertical: 12, paddingHorizontal: 14 },
   menuItemText: { fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
 
-  // "Explore Forge" invitation grid
-  explore: { gap: 4 },
-  exploreTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
-  exploreSub: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 19, color: flColor.gray400, marginBottom: 12 },
-  exploreGrid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12 },
-  exploreTile: {
-    flexBasis: '47%',
-    flexGrow: 1,
+  // GET STARTED rows (ONB-A6-D2)
+  startedList: { gap: 10 },
+  startedRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 11,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
+    gap: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     borderRadius: flRadius.lg,
     borderWidth: 1,
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
-    boxShadow: flShadow.card,
   },
-  exploreIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.charcoal800,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  exploreTileText: { flex: 1, minWidth: 0, gap: 2 },
-  exploreTileLabel: { fontFamily: flFont.sans, fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
-  exploreTileSub: { fontFamily: flFont.sans, fontSize: 11.5, color: flColor.gray400 },
+  startedIcon: { width: 32, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  startedText: { flex: 1, minWidth: 0, gap: 3 },
+  startedLabel: { fontFamily: flFont.sans, fontSize: 15.5, fontWeight: '600', color: flColor.cream100 },
+  startedSub: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
 
   scrollContent: {
     paddingBottom: SCREEN_BOTTOM_GAP,

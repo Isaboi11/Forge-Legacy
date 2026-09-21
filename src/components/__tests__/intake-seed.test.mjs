@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 
 import { firstUnansweredStep, EXPERIENCE_FOR, LEVEL_FOR_EXPERIENCE } from '../../domain/onboarding/intake-seed.ts';
 
@@ -46,19 +45,9 @@ test('⚠ a fully seeded athlete still lands on EQUIPMENT rather than a complete
   assert.equal(firstUnansweredStep(full), 2);
 });
 
-test('⚠ equipment is never seeded from the profile — the source cannot answer it', () => {
-  /*
-   * The profile stores the COACH's coarse `environment`, where `home` covers both "a home setup" and
-   * "dumbbells only". Home builds the seed with `equipment: []` on purpose; this asserts the call site
-   * still does, because a future edit "helpfully" mapping it back would pre-select the wrong bucket for
-   * every dumbbells-only athlete, silently.
-   */
-  const home = readFileSync(new URL('../../app/(tabs)/index.tsx', import.meta.url), 'utf8');
-  const seedBlock = home.slice(home.indexOf('const intakeSeed'), home.indexOf('const completeIntake'));
-  assert.ok(seedBlock.length > 0, 'the intakeSeed block moved');
-  assert.match(seedBlock, /equipment:\s*\[\]/, 'equipment must stay unseeded — see LEVEL_FOR_EXPERIENCE');
-  assert.ok(
-    !/environment/.test(seedBlock),
-    'the coach environment must not be mapped back into equipment buckets',
-  );
-});
+/*
+ * ⚠ RETIRED 2026-09-21 — "equipment is never seeded from the profile". It read Home's `intakeSeed` block,
+ * and Home no longer carries the intake stepper at all (`Onboarding-Amendment-006` ONB-A6-D1 replaced
+ * the starting-point slot with GET STARTED). The rule it guarded still holds for any future caller that
+ * seeds this stepper: `equipment: []`, never mapped back from the coach's coarse `environment`.
+ */

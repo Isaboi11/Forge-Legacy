@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -10,6 +10,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { Pill } from '@/components/forge/composites/Pill';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
+import { LegacyTabIcon } from '@/components/forge/primitives/icons/NavIcons';
 import { flColor, flFont, flGradient, flRadius, flShadow, flText } from '@/constants/foundation';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { editorialRule, surfaceEditorial } from '@/constants/surfaces';
@@ -82,7 +83,7 @@ export default function WorkoutsScreen() {
 
   // The athlete's own programs. Refetched on focus so a program just built, duplicated, or ended shows
   // up the moment they come back to this tab.
-  const { data: myPrograms, refetch: refetchMine } = useQuery(fetchMyPrograms, []);
+  const { data: myPrograms, refetch: refetchMine, settled: mineSettled } = useQuery(fetchMyPrograms, []);
   /*
    * ⚠ **THIS READ ONCE PER TAB MOUNT AND NEVER AGAIN, DIRECTLY UNDER A COMMENT PROMISING THE OPPOSITE.**
    *
@@ -104,7 +105,7 @@ export default function WorkoutsScreen() {
    * saw the template in one place and not the other, which is what made it read as a delay rather than
    * as a screen that never looked again.
    */
-  const { data: templateData, refetch: refetchTemplates } = useQuery(fetchTemplates, []);
+  const { data: templateData, refetch: refetchTemplates, settled: templatesSettled } = useQuery(fetchTemplates, []);
   useFocusEffect(
     useCallback(() => {
       refetchMine();
@@ -187,6 +188,27 @@ export default function WorkoutsScreen() {
    */
   // The athlete's own active program wins over the built-in one — it's the thing actually tracking.
   const { active: myActive, planned, built, past } = useMemo(() => shelvePrograms(mine), [mine]);
+  /**
+   * Whether "My Workouts" has anything in it at all — the test for showing the tab control.
+   *
+   * ⚠ EVERY SECTION OF THAT TAB, NOT JUST THE ACTIVE PROGRAM. A saved template or a finished program
+   * is still work of the athlete's own, and hiding the control on somebody who owns twelve templates
+   * would strand them: `mine` is the only door back from Discover once the toggle is gone.
+   *
+   * ⚠ `built` IS DELIBERATELY EXCLUDED. It is the bundled demo program, present for everybody from the
+   * moment they install — counting it would make `hasOwnWork` permanently true and the whole gate a
+   * no-op that reads as working.
+   */
+  const hasOwnWork = myActive != null || planned.length > 0 || past.length > 0 || mine.length > 0 || templates.length > 0;
+  /**
+   * The arrival view — `Onboarding-Amendment-006` ONB-A6-D3, the PO's mockup (2026-09-21): a heading, a
+   * sentence, two doors and a tip, in place of a "My Workouts" tab whose every section was empty.
+   *
+   * ⚠ ONLY ONCE BOTH READS HAVE LANDED. `hasOwnWork` reads false while they are in flight, so keying on
+   * it alone would flash the arrival view at every returning athlete on a cold open. Until then the tab
+   * draws nothing rather than a guess it may have to take back.
+   */
+  const ownWorkKnown = mineSettled && templatesSettled;
   /** The design collapses Planned to a digest at 2+, so a queue never outweighs the program in flight. */
   const [plannedExpanded, setPlannedExpanded] = useState(false);
   const plannedCollapsed = planned.length >= 2 && !plannedExpanded;
@@ -270,13 +292,21 @@ export default function WorkoutsScreen() {
         }
       />
 
-      {/* segmented control — two mindsets: own/train vs. find new */}
-      <View style={styles.segWrap}>
-        <TourAnchor id="workouts-segments" style={styles.segTrack}>
-          <Segment label="My Workouts" active={tab === 'mine'} onPress={() => setTab('mine')} />
-          <Segment label="Discover" active={tab === 'discover'} onPress={() => setTab('discover')} />
-        </TourAnchor>
-      </View>
+      {/* segmented control — two mindsets: own/train vs. find new.
+          ⚠ HIDDEN WHILE "MY WORKOUTS" HOLDS NOTHING. The control defaults to `mine`, so on a brand-new
+          account it opens on the empty half of a two-way choice and asks the athlete to discover that
+          the other half is where everything is. A toggle between something and nothing is not a
+          choice, it is a wrong first guess with a fix hidden inside it. It returns permanently the
+          moment the athlete owns anything at all — see `hasOwnWork`. */}
+      {/* …and on Discover even then, so "Choose a Program" is never a one-way door back to nothing. */}
+      {hasOwnWork || tab === 'discover' ? (
+        <View style={styles.segWrap}>
+          <TourAnchor id="workouts-segments" style={styles.segTrack}>
+            <Segment label="My Workouts" active={tab === 'mine'} onPress={() => setTab('mine')} />
+            <Segment label="Discover" active={tab === 'discover'} onPress={() => setTab('discover')} />
+          </TourAnchor>
+        </View>
+      ) : null}
 
       <ScrollView
         ref={tourScroller}
@@ -285,7 +315,44 @@ export default function WorkoutsScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {tab === 'mine' ? (
+        {tab === 'mine' && !hasOwnWork ? (
+          ownWorkKnown ? (
+            <View style={styles.firstRun}>
+              <View style={styles.firstRunHead}>
+                <Text style={styles.anchorKicker}>Get started</Text>
+                <Text style={styles.firstRunTitle}>Build Your Training.</Text>
+                <Text style={styles.firstRunBody}>
+                  Create your own workouts and programs, or choose from templates to get started.
+                </Text>
+              </View>
+              {/* ⚠ "BUILD" GOES TO THE GUIDED LANE (PO, 2026-09-20) — one question per screen, with "I'll
+                  set it up myself" on every step, so the dense builder is still one tap away. */}
+              <View style={styles.firstRunDoors}>
+                <FirstRunDoor
+                  icon={<PlusIcon />}
+                  title="Build a Program"
+                  sub="Create your own program from scratch."
+                  onPress={() => router.push('/program-guided')}
+                />
+                <FirstRunDoor
+                  icon={<LegacyTabIcon size={22} color={flColor.bronze400} />}
+                  title="Choose a Program"
+                  sub="Browse Forge programs and templates."
+                  onPress={() => setTab('discover')}
+                />
+              </View>
+              <View style={styles.tip}>
+                <LightbulbIcon />
+                <View style={styles.tipText}>
+                  <Text style={styles.tipTitle}>Tip</Text>
+                  <Text style={styles.tipBody}>
+                    Not sure where to start? You can always build your own or choose a program and make it yours.
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ) : null
+        ) : tab === 'mine' ? (
           <View style={styles.stack}>
             {/* ACTIVE — the anchor */}
             {/*
@@ -359,22 +426,28 @@ export default function WorkoutsScreen() {
                     <Text style={styles.anchorKicker}>No active program</Text>
                     <Text style={styles.anchorTitle}>Forge Your Next Legacy</Text>
                     <Text style={styles.anchorMeta}>Build your own program, or find one built for your goals.</Text>
+                    {/* ⚠ "BUILD" GOES TO THE GUIDED LANE, NOT THE DENSE BUILDER — PO, 2026-09-20:
+                        *"If they say they'll build one I don't want it to go through coach holt, it
+                        should do the program build screens we just built."* `program-guided` asks one
+                        question per screen and carries "I'll set it up myself" on every step, so the
+                        express lane `Onboarding-Amendment-002` guarantees is one tap away rather than
+                        removed. Somebody who already knows what they want loses nothing. */}
                     <View style={styles.anchorActions}>
                       <Pressable
-                        onPress={() => router.push('/program-builder')}
+                        onPress={() => router.push('/program-guided')}
                         accessibilityRole="button"
-                        accessibilityLabel="Build a program"
+                        accessibilityLabel="Build my own program"
                         style={({ pressed }) => [styles.anchorCta, pressed ? styles.anchorPressed : null]}
                       >
-                        <Text style={styles.anchorCtaText}>Build a Program</Text>
+                        <Text style={styles.anchorCtaText}>Build My Own</Text>
                       </Pressable>
                       <Pressable
                         onPress={() => setTab('discover')}
                         accessibilityRole="button"
-                        accessibilityLabel="Discover programs"
+                        accessibilityLabel="Find a program built for your goals"
                         style={({ pressed }) => [styles.anchorCtaQuiet, pressed ? styles.anchorPressed : null]}
                       >
-                        <Text style={styles.anchorCtaQuietText}>Discover</Text>
+                        <Text style={styles.anchorCtaQuietText}>Find Me One</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -883,6 +956,31 @@ function FamilyChip({ label, active, onPress }: { label: string; active: boolean
 }
 
 // ── inline glyphs (Forged DNA: square caps / miter joins on structural marks) ──
+/** One of the arrival view's two doors — icon ring · title · one line · chevron. */
+function FirstRunDoor({ icon, title, sub, onPress }: { icon: ReactNode; title: string; sub: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${title} — ${sub}`}
+      style={({ pressed }) => [styles.door, pressed ? styles.anchorPressed : null]}
+    >
+      <View style={styles.doorRing}>{icon}</View>
+      <View style={styles.doorText}>
+        <Text style={styles.doorTitle}>{title}</Text>
+        <Text style={styles.doorSub}>{sub}</Text>
+      </View>
+      <ChevronRightIcon size={16} color={flColor.bronze400} />
+    </Pressable>
+  );
+}
+function LightbulbIcon() {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z" />
+    </Svg>
+  );
+}
 function PlusIcon({ color = flColor.bronze400 }: { color?: string }) {
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter">
@@ -988,6 +1086,55 @@ const styles = StyleSheet.create({
     paddingBottom: SCREEN_BOTTOM_GAP,
   },
   stack: { gap: 28 },
+  /* ── THE ARRIVAL VIEW (ONB-A6-D3) ─────────────────────────────────────────────────────────────── */
+  firstRun: { gap: 26 },
+  firstRunHead: { gap: 12 },
+  firstRunTitle: {
+    fontFamily: flFont.display,
+    fontSize: 40,
+    lineHeight: 44,
+    fontWeight: '600',
+    letterSpacing: -0.8,
+    color: flColor.cream100,
+  },
+  firstRunBody: { fontSize: 16, lineHeight: 23, color: flColor.gray400 },
+  firstRunDoors: { gap: 12 },
+  door: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal900,
+  },
+  doorRing: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  doorText: { flex: 1, minWidth: 0, gap: 4 },
+  doorTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
+  doorSub: { fontSize: 13.5, lineHeight: 19, color: flColor.gray400 },
+  tip: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 18,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: flColor.bronzeBorderSubtle,
+  },
+  tipText: { flex: 1, minWidth: 0, gap: 6 },
+  tipTitle: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.bronze400 },
+  tipBody: { fontSize: 14, lineHeight: 20, color: flColor.gray400 },
   stackTight: { gap: 10 },
   sectionBody: { marginTop: 12 },
 

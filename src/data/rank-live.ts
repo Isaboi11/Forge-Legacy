@@ -263,6 +263,19 @@ export async function refreshRank(): Promise<RankRefresh | null> {
   );
   await supabase.from('profiles').update({ rank_family: rank.family, rank_level: rank.subTier }).eq('id', uid);
 
+  /*
+   * ⚠ THE STARTING RANK IS WRITTEN, NOT ANNOUNCED. A brand-new account's first evaluation has no stored
+   * row, so it used to fall through here as a "promotion" into Foundation I — and the athlete's first
+   * sight of Home was a RANK ASCENDED card, with a Share button, for a rank they were handed at signup.
+   * Nothing ascended: the rank exists from account creation (P-2 §273), and O-2 deliberately ended the
+   * starting-rank reveal at onboarding (ONB-D16/D18). The first real ceremony is the first real step up.
+   * An account whose first evaluation lands ABOVE the starting rank (history imported before the row
+   * existed) still gets its ceremony.
+   */
+  if (storedRow == null && rank.rankLevel <= 1) {
+    return { rank, promotedFamily: null, promotedSubTier: null, previous: null };
+  }
+
   // Past the early return above, `rank.rankLevel > storedLevel` is established — this IS a promotion.
   // So the only question left is which kind, and the two are mutually exclusive.
   return {

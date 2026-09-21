@@ -73,7 +73,38 @@ import { errorMessage } from '@/lib/useQuery';
  * (`completeOnboarding`). On success `onboarded_at` flips and the boot router swaps to the app.
  * Welcome/Create/Sign-In are the auth route.
  */
-const BASE_SETUP: Step[] = ['account', 'username', 'goal', 'experience', 'equipment', 'schedule', 'chapter'];
+/**
+ * ⚠ HOLT NO LONGER BUILDS A WEEK AT SIGNUP — PO, 2026-09-21. FLIP THIS TO BRING IT BACK.
+ *
+ * > *"I don't think we want holt asking them how many days they can workout. We don't need them
+ * > feeling pressured into committing right there. So then let's take that out and not have holt build
+ * > a week."*
+ *
+ * ⚠ ONE CONSTANT FOR BOTH HALVES, BECAUSE THEY ARE ONE DECISION. The `schedule` step exists only to
+ *   feed `buildFirstWeek` — its answers are deliberately never persisted (see the note above
+ *   `DAY_CHOICES`). Removing the question while leaving the build would make the build a guaranteed
+ *   no-op that still runs; removing the build while leaving the question would ask something whose
+ *   answer is thrown away. So both are gated here, and flipping this restores both together.
+ *
+ * ⚠ AND THIS IS WHAT MADE THE FIRST-RUN WORKOUTS SCREEN LOOK UNCHANGED. With a program saved before
+ *   Home was ever seen, every new account arrived already owning one — so the "no program yet" state
+ *   that `Onboarding-Amendment-005` and the guided builder were built for was unreachable by design.
+ *   The two reports were one cause.
+ *
+ * Goal, experience and equipment stay: those ARE persisted to the profile, and `program-guided` and
+ * Holt both read them so they never have to ask again.
+ */
+const HOLT_FIRST_WEEK = false;
+
+const BASE_SETUP: Step[] = [
+  'account',
+  'username',
+  'goal',
+  'experience',
+  'equipment',
+  ...(HOLT_FIRST_WEEK ? (['schedule'] as Step[]) : []),
+  'chapter',
+];
 
 /** The 6 goals from the design `.dc` Goals screen, in its order. */
 const GOAL_OPTIONS: { id: GoalId; title: string; desc: string }[] = [
@@ -420,7 +451,9 @@ export default function Onboarding() {
        *   route out the instant `onboarded_at` lands, so calling it now would replace the reveal with
        *   Home mid-render. It moves to "Start Day 1" below.
        */
-      const built = await buildFirstWeek(data);
+      // Gated with the `schedule` step — see `HOLT_FIRST_WEEK`. Off, this falls straight through to the
+      // chooser on Home, which is the path every athlete took before the first-week build existed.
+      const built = HOLT_FIRST_WEEK ? await buildFirstWeek(data) : null;
       if (built) {
         setFirstWeek(built);
         setFinishing(false);
