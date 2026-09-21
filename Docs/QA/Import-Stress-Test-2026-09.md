@@ -125,7 +125,7 @@ Every FIXED row above is held by a test in `import-real-world.test.mjs`, `progra
 | `/program-import?m=photo` without Premium AI | opened a dead uploader — **FIXED** opens the paste screen |
 | Double-tap Preview | could run two read loops = every photo paid twice — **FIXED** ref guard |
 | Image type labelled wrong by a phone (`octet-stream`) | would have been sent/refused on the label — **FIXED** sniffed from bytes |
-| 5–7.5 MB image | passed the function's 10M-char check, spent a credit, failed upstream — **FIXED** in code (`MAX_BASE64_CHARS` 6.99M) — **needs function redeploy** |
+| 5–7.5 MB image | passed the function's 10M-char check, spent a credit, failed upstream — **FIXED** (`MAX_BASE64_CHARS` 6.99M), deployed and verified live |
 | Signed-out call | 503 `meter_unavailable` (screen itself is signed-in only) — PASS |
 | iPhone PNG screenshot | PASS — 5/5 exercises, 2 days, 3.4 s (sent as a 41 KB JPEG) |
 | Dark-mode screenshot | PASS |
@@ -212,7 +212,7 @@ server/format error reported as a connection problem; a double tap paying twice.
 | G-12 | Lost work | Create on the paste/photo screen overwrites any unsaved builder draft without asking | `program-import.tsx` `create` → `saveProgramDraft` | half-build a program, then import | Ask first? |
 | G-13 | Dead end | Photo misreads can't be edited as text on the new Upload Pictures screen (the old sheet put the transcript in an editable box) | `program-import.tsx` | — | Show the transcript? |
 | G-14 | Cosmetic | "Do this 3x per week:" becomes a day name | parser | — | — |
-| G-15 | Deploy | `MAX_BASE64_CHARS` change is committed but the function is not redeployed | `supabase/functions/program-photo-read` | — | PO deploys the function |
+| G-15 | Done | `program-photo-read` redeployed by the PO 2026-09-21; verified live: 7,000,000 chars → 400 `too_large`, 6,989,000 → passes the size check | — | — | — |
 | G-16 | Accessibility | The Premium AI switch has no on/off state for screen readers (`role=switch` with no checked state) | `app/subscription.tsx` | VoiceOver on Settings → Subscription | Small fix, not import |
 | G-17 | Money | Cancelling mid-read still pays for the read that was already sent | `program-import.tsx` | Cancel while "Reading…" | Accept? (cannot be recalled once sent) |
 | G-18 | Cosmetic | A sentence typed on the same line as a lift stays in its name ("Barbell Row with a long coaching note…") | parser | — | — |
