@@ -122,6 +122,28 @@ export default function LegacyScreen() {
       })),
     [accData],
   );
+  /*
+   * ── WHAT THIS ATHLETE STILL OWES THE RECORD — `Legacy-Amendment-001` LEG-A1-D5 ──
+   *
+   * ⚠ THREE SEPARATE FACTS, NOT ONE "IS NEW" FLAG, and that is the decision rather than a convenience.
+   * Each invitation retires the moment its own thing exists, so somebody who adds a photo keeps the
+   * other two and loses only the one they satisfied. A single flag would make the set all-or-nothing
+   * and would re-appear in full the day somebody deleted their last photo.
+   *
+   * ⚠ `archive` RESOLVES LATE, AND `null` MUST NOT READ AS ZERO. It loads beside the hero rather than
+   * inside `fetchLegacyData`, so while it is in flight `archive?.photos.count` is undefined — which
+   * `?? 1` deliberately treats as "has photos" so the invitation never flashes in and out on somebody
+   * who has fifty. The optimistic direction is the honest one here: a missing invitation costs a tap,
+   * a flashing one costs trust.
+   */
+  const needsPhoto = (archive?.photos.count ?? 1) === 0;
+  const needsAccomplishment = liveAccomplishments.length === 0;
+  /* ⚠ `data` IS STILL NULLABLE HERE — these are derived above the loading guard, because hooks below
+     it would be conditional. `!data` must read as "not yet known", never as "empty": an unguarded
+     `!data.standard` would make every athlete look quote-less for one frame. */
+  const needsQuote = data != null && !data.standard?.trim();
+  const firstRun = needsPhoto && needsAccomplishment && needsQuote;
+
   const [pinManager, setPinManager] = useState(false);
   const [stdOpen, setStdOpen] = useState(false);
   const tourScroller = useTourScroller();
@@ -268,10 +290,63 @@ export default function LegacyScreen() {
           </TourAnchor>
         </Animated.View>
 
-        {/* My Standard — the creed; tap opens the L-12 editor sheet */}
-        <TourAnchor id="legacy-standard">
-          <MyStandard standard={data.standard} onEdit={() => setStdOpen(true)} />
-        </TourAnchor>
+        {/*
+          ── FIRST RUN — `Legacy-Amendment-001` LEG-A1-D2 ──
+
+          Three invitations, and the one line that says what this tab IS. "Legacy" is the app's least
+          self-explanatory noun, and with the tour retired this screen is the only place it gets
+          defined without someone reading a tooltip.
+
+          ⚠ THIS OVERRULES L-1 §12.1's *"Not replaced with a prompt. Absent."* — knowingly, and the
+          amendment argues the distinction rather than waving it away. A PLACEHOLDER shows the shape of
+          content that is not there and says *you are missing something*; an INVITATION is a live
+          control that performs a real action. Nothing below draws a grey card where a photo will go.
+
+          ⚠ WHY `firstRun` AND NOT `awaiting`. Home's flag is about the first WORKOUT; this is about
+          the first ENTRY, which is a different fact — somebody can log a month of training and still
+          have written nothing here. Each invitation also retires on its own (LEG-A1-D5), so this
+          header is simply the state where all three are still owed.
+
+          ⚠ NO COUNTER, NO "1 OF 3", NO METER. `ONB-D22` binds here in full: three invitations under a
+          progress indicator is a completion meter whatever it is labelled.
+        */}
+        {firstRun ? (
+          <View style={styles.sectionPad}>
+            <Text style={styles.firstRunEyebrow}>Your Legacy</Text>
+            <Text style={styles.firstRunTitle}>Start Building{'\n'}Your Legacy.</Text>
+            <Text style={styles.firstRunBody}>
+              This is your profile, and the record it keeps. Capture the moments, milestones and progress
+              that make you, you.
+            </Text>
+          </View>
+        ) : null}
+
+        {needsPhoto ? (
+          <Invitation
+            title="Add Your First Progress Photo"
+            body="See how far you’ll come."
+            onPress={() => router.push('/photos')}
+          />
+        ) : null}
+        {needsAccomplishment ? (
+          <Invitation
+            title="Add an Accomplishment"
+            body="Big or small, it counts — and it doesn’t have to have happened in Forge."
+            onPress={() => router.push('/accomplishments')}
+          />
+        ) : null}
+
+        {/* My Standard — the creed; tap opens the L-12 editor sheet.
+            ⚠ ON FIRST RUN IT IS AN INVITATION LIKE THE OTHER TWO, so the three read as one set rather
+            than two prompts and a component. `MyStandard` keeps its own empty state for every other
+            day — this only changes which of the two is drawn. */}
+        {needsQuote ? (
+          <Invitation title="Add a Quote" body="The words that keep you going." onPress={() => setStdOpen(true)} />
+        ) : (
+          <TourAnchor id="legacy-standard">
+            <MyStandard standard={data.standard} onEdit={() => setStdOpen(true)} />
+          </TourAnchor>
+        )}
 
         {/* What I'm Building — current chapter + primary goal */}
         {chapter ? (
@@ -717,7 +792,76 @@ function PlusIcon({ color = flColor.bronze400 }: { color?: string }) {
     </Svg>
   );
 }
+/**
+ * One first-run invitation — `Legacy-Amendment-001` LEG-A1-D2.
+ *
+ * ⚠ A CARD, AND THAT IS THE CORRECT CONTAINER HERE. The house rule is that cards are for things you
+ * act INSIDE of and plain information gets a section label instead — which is exactly why the
+ * "what will be written" list drafted earlier was wrong. Every one of these is a control: it is
+ * pressable, it opens the real surface that creates the thing, and it disappears once that thing
+ * exists. Nothing on it is a preview of absent content.
+ */
+function Invitation({ title, body, onPress }: { title: string; body: string; onPress: () => void }) {
+  return (
+    <View style={styles.sectionPad}>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${title}. ${body}`}
+        style={({ pressed }) => [styles.invite, pressed ? styles.invitePressed : null]}
+      >
+        <View style={styles.inviteText}>
+          <Text style={styles.inviteHeading}>{title}</Text>
+          <Text style={styles.inviteSub}>{body}</Text>
+        </View>
+        <Text style={styles.inviteChevron}>›</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  // ── First run (Legacy-Amendment-001) ───────────────────────────────────────
+  firstRunEyebrow: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: flColor.bronze400,
+    marginBottom: 10,
+  },
+  firstRunTitle: {
+    fontFamily: flFont.display,
+    fontSize: 34,
+    fontWeight: '600',
+    lineHeight: 38,
+    letterSpacing: -0.4,
+    color: flColor.cream100,
+  },
+  firstRunBody: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: flColor.gray400,
+    marginTop: 12,
+    maxWidth: 300,
+  },
+  invite: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 15,
+    borderRadius: flRadius.md,
+    backgroundColor: flColor.charcoal800,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    marginTop: 10,
+  },
+  invitePressed: { backgroundColor: flColor.charcoal700 },
+  inviteText: { flex: 1, minWidth: 0 },
+  inviteHeading: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  inviteSub: { fontSize: 12, lineHeight: 17, color: flColor.gray600, marginTop: 3 },
+  inviteChevron: { fontSize: 18, color: flColor.bronze400 },
+
   root: { flex: 1 },
   scroll: { paddingBottom: SCREEN_BOTTOM_GAP },
 

@@ -74,6 +74,19 @@ export interface NotifSection {
 /**
  * Squad activity is ambient and stays off; a request is aimed at you, so it stays on (P-5 §3.2).
  *
+ * ⚠⚠ THAT SENTENCE IS THE LOCKED RULE AND IT IS CURRENTLY OVERRIDDEN. `0202` FLIPPED EVERY AMBIENT SQUAD
+ * DEFAULT TO ON FOR THE TESTING PHASE, on the same PO instruction and in the same posture as
+ * `0189_testing_defaults_open`: *"everyone's should be set to all notifications on as the default, so
+ * announcements and posts in the squad should be sending a notification."* `P-5 §3.1` is still the right
+ * answer for a public launch, and restoring it means writing `false` back into three `def:` fields here
+ * and three arms of `push_pref_default()`, together, or the parity test below fails loudly — which is
+ * the point of it.
+ *
+ * ⚠ AN ANNOUNCEMENT HAS NO KEY OF ITS OWN. Every post type — announcement, check-in, recap, PR,
+ * discussion — is a `squad_posts` row, and branch 10 of the union maps all of them to `squad_feed`. So
+ * that one toggle is the whole of "posts in the squad should send a notification"; there is nothing
+ * separate to turn on for an owner's announcement, and adding one would be a new branch, not a switch.
+ *
  * ⚠ `squad_training` below is not the gate that was actually shut. It already defaults ON here and in
  * `push_pref_default()`, and a squad-mate's start still reached nobody, because the two gates that
  * decide it live on the SQUAD: `squads.training_alerts` (the leader's) and `squad_members.notify_start`
@@ -84,16 +97,19 @@ export const NOTIF_SECTIONS: NotifSection[] = [
   {
     key: 'squad',
     label: 'Squad Activity',
-    blurb: 'The pulse of your squads. Off by default — turn on what you want to hear about.',
+    blurb: 'The pulse of your squads. On by default while we’re testing — silence anything you don’t want.',
     toggles: [
-      { key: 'squad_feed', label: 'Squad Posts & Activity', desc: 'New posts and workouts in your squads', def: false, icon: 'squad' },
-      { key: 'squad_reactions', label: 'Reactions & Mentions', desc: 'When someone reacts to or mentions you', def: false, icon: 'heart' },
-      /* 0200, and ON — the one default-ON row in this section, by PO decision (Amendment 006 D1). It fires
+      /* 0202, and ON. THE ASK: this is the key every squad post rides, an owner's announcement included. */
+      { key: 'squad_feed', label: 'Squad Posts & Activity', desc: 'New posts and workouts in your squads', def: true, icon: 'squad' },
+      { key: 'squad_reactions', label: 'Reactions & Mentions', desc: 'When someone reacts to or mentions you', def: true, icon: 'heart' },
+      /* 0200, and ON — this was the ONLY default-ON row in this section until 0202 turned the other three
+         on too, and it is the one that would still be on after the testing override is lifted. By PO
+         decision (Amendment 006 D1). It fires
          about once a month per squad, when a goal is met or closes, and it is the squad event every member
          signed up for. Off, it would have reproduced half of the report that asked for it: *"Didn't send a
          notification."* Its sender is `squad_goal_record_close`, not the union — see 0200's header. */
       { key: 'squad_goals', label: 'Squad Goals', desc: 'When a squad goal is met, or closes', def: true, icon: 'target' },
-      { key: 'squad_activity', label: 'Squad Membership', desc: 'Join requests, approvals, and new members', def: false, icon: 'motion' },
+      { key: 'squad_activity', label: 'Squad Membership', desc: 'Join requests, approvals, and new members', def: true, icon: 'motion' },
     ],
   },
   {
@@ -191,6 +207,12 @@ export const NOTIF_SECTIONS: NotifSection[] = [
    * people on two screens must opt in before it can fire at all. This one needs nobody's permission but
    * the athlete's, so the ambient default (P-5 §3.1) is the right one — and DNA §8's "always feel
    * invited, never pushed" is hard to square with a daily push somebody did not ask for.
+   *
+   * ⚠⚠ AND IT IS THE ONE KEY `0202` LEFT ALONE WHEN IT TURNED EVERYTHING ELSE ON. That is deliberate, not
+   * an oversight. Flipping it would change NOTHING: `briefing_send` (0159) walks `briefing_schedule`, and
+   * a row exists there only once the athlete has picked their days and their hour — so the default
+   * governs nobody. What it would change is 0159's own self-check, which RAISES if this default reads
+   * true, so a re-paste of 0159 after 0202 would fail over an inert toggle. Off, and said out loud.
    */
   {
     key: 'briefing',

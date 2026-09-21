@@ -309,6 +309,8 @@ function RootNavigator() {
         <Stack.Screen name="log-activity" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="exercise-picker" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="program-builder" options={{ presentation: 'fullScreenModal' }} />
+        {/* The guided lane into the same builder — same presentation, because it is the same job. */}
+        <Stack.Screen name="program-guided" options={{ presentation: 'fullScreenModal' }} />
         {/* The coach. Declared here because a route is gated by being DECLARED, not by existing — see the
             note below. It presents over the tabs: the bubble is reachable from every screen, so the thing
             it opens must not push a card onto whichever stack happened to be underneath. */}

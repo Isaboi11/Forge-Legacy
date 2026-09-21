@@ -395,7 +395,9 @@ function Ceremony({ result: r, onDone }: { result: ChallengeResultsDetail; onDon
       </Animated.View>
 
       {/* Top bar — Skip is live from the first frame, so the ceremony is never a trap. */}
-      <View style={styles.topBar}>
+      {/* Below the status bar: this route is a full-screen modal with swipe-back off, so a Skip hidden
+          under the Dynamic Island would make the ceremony the trap this bar promises it is not. */}
+      <View style={[styles.topBar, { marginTop: insets.top }]}>
         <Animated.Text style={[styles.eyebrow, { opacity: at(0, 800) }]} numberOfLines={1}>
           {r.name}
           {r.squadName ? ` · ${r.squadName}` : ''}

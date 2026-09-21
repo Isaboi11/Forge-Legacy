@@ -1,4 +1,5 @@
 import { Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { flColor, flFont } from '@/constants/foundation';
 import { ROUTE_STORED_NOTE, WHOLE_RUN_NOTE, type LatLng } from '@/domain/run/route-region';
@@ -38,11 +39,13 @@ interface Props {
 
 export function RouteSheet({ visible, onClose, points, summary, whole = false }: Props) {
   const { height } = useWindowDimensions();
+  /* A fixed 56 cleared a notch (47) but not a Dynamic Island (59). */
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="fullScreen">
       <View style={styles.root}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: Math.max(56, insets.top + 12) }]}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close the map" hitSlop={12} style={styles.close}>
             <Text style={styles.closeText}>Done</Text>
           </Pressable>

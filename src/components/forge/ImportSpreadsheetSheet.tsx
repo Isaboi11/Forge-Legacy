@@ -275,7 +275,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     <BottomSheet
       open={open}
       onClose={close}
-      title="Import from spreadsheet"
+      title="Import a program"
       scroll
       footer={
         preview == null ? undefined : (
@@ -329,13 +329,21 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
             value={pasteText}
             onChangeText={setPasteText}
             multiline
+            /* ⚠ THE PLACEHOLDER TEACHES THE SHAPE PEOPLE ACTUALLY HAVE, not the one easiest to parse.
+               It used to show a comma-separated header row, which is a spreadsheet export — and with the
+               .csv path gone (PO, 2026-09-20) that is no longer the shape anyone arrives with. A coach's
+               email, a PDF's text and a screenshot transcript all look like the lines below.
+
+               ⚠ TABULAR STILL PARSES AND MUST KEEP PARSING. `parseProgramTable` reads a header row, a
+               "Day 1 — Upper" heading and a "Monday" heading alike; all four shapes were run against it
+               before this line changed. This changes what we SUGGEST, never what we accept. */
             placeholder={
               scope === 'day'
-                ? 'Exercise, Sets, Reps\nBench Press, 3, 8\nIncline DB Press, 3, 10'
-                : 'Week, Day, Exercise, Sets, Reps\n1, Push A, Bench Press, 3, 8\n1, Push A, Incline DB Press, 3, 10'
+                ? 'Bench Press 4x8\nIncline DB Press 3x10\nLat Pulldown 3x12'
+                : 'Week 1\nDay 1 - Upper\nBench Press 4x8\nBarbell Row 4x8\n\nDay 2 - Lower\nBack Squat 4x6'
             }
             placeholderTextColor={flColor.gray600}
-            accessibilityLabel="Paste your spreadsheet rows"
+            accessibilityLabel="Paste your program"
             style={styles.impPaste}
           />
           {importError ? <Text style={styles.impError}>{importError}</Text> : null}
@@ -345,16 +353,18 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
           <Pressable
             onPress={() => void onPickFile()}
             accessibilityRole="button"
-            accessibilityLabel="Upload a file — a spreadsheet or a PDF"
+            accessibilityLabel="Upload a PDF"
             style={({ pressed }) => [styles.impFileBtn, pressed ? styles.impPressed : null]}
           >
             <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
               <Path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
               <Path d="M14 3v6h6" />
             </Svg>
-            {/* "PDF" is in the label because that is what a purchased program arrives as — PO, 2026-08-27.
-                The PDF's text goes into the box above like any paste; see `pick-text-file.web.ts`. */}
-            <Text style={styles.impFileText}>Or upload a file — .csv or PDF</Text>
+            {/* PDF and nothing else — that is what a purchased program arrives as (PO, 2026-08-27), and
+                the spreadsheet types came out on 2026-09-20: *"I don't think we're going to keep a csv
+                there. No need."* The PDF's text goes into the box above like any paste; see
+                `pick-text-file.web.ts`. ⚠ The two pickers' accept-lists are ONE decision in two files. */}
+            <Text style={styles.impFileText}>Or upload a PDF</Text>
           </Pressable>
           {/* ⚠ LIBRARY ONLY, AND THAT IS A DECISION — see `pickImageFromLibrary`. The label says
               "screenshot" rather than "photo" because that is both the real use case and the honest

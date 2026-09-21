@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { flColor, flFont } from '@/constants/foundation';
 
@@ -11,6 +12,7 @@ import { flColor, flFont } from '@/constants/foundation';
 export default function PinVideoScreen() {
   const { url } = useLocalSearchParams<{ url?: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const player = useVideoPlayer(url ?? '', (p) => {
     p.loop = true;
     p.play();
@@ -23,7 +25,7 @@ export default function PinVideoScreen() {
       ) : (
         <Text style={styles.err}>Video unavailable.</Text>
       )}
-      <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Close video" style={styles.close}>
+      <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Close video" style={[styles.close, { top: 12 + insets.top }]}>
         <Text style={styles.closeText}>Done</Text>
       </Pressable>
     </View>
@@ -36,7 +38,7 @@ const styles = StyleSheet.create({
   err: { color: flColor.gray400, fontFamily: flFont.sans, fontSize: 15 },
   close: {
     position: 'absolute',
-    top: 52,
+    // `top` is set inline from the safe-area inset — a fixed 52 sat under the Dynamic Island (59).
     right: 20,
     paddingVertical: 8,
     paddingHorizontal: 18,

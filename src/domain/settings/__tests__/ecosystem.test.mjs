@@ -149,10 +149,32 @@ test('a stored visibility map merges over defaults and drops junk', () => {
  * it is neither squad activity nor a request from another person — it is the only self-directed control
  * on the screen — and it defaults OFF, back on P-5 §3.1's ambient side.
  */
-test('twelve toggles across six sections, squad off / requests on / invites on / comments on', () => {
+/*
+ * ⚠⚠ THE SQUAD DEFAULTS BELOW ARE A TESTING OVERRIDE, NOT THE LOCKED ANSWER (0202).
+ *
+ * PO, 2026-09-20: *"Everyone's should be set to all notifications on as the default, so announcements
+ * and posts in the squad should be sending a notification."* An owner's announcement had a sender all
+ * along — every post type is a `squad_posts` row and branch 10 fans it out to every member — and
+ * `squad_feed` defaulting OFF discarded all of them before they reached a device.
+ *
+ * This is the same posture `0189_testing_defaults_open` took for training alerts: the DATA and the
+ * DEFAULTS move for the testing phase, the locked rule is recorded rather than deleted, and restoring
+ * it is one migration plus the three `def:` fields on the screen. `P-5 §3.1` (ambient is off) and
+ * `SOC-D11` (reaction pushes off) are still the launch answers — they are asserted here as the values to
+ * RETURN to, so lifting the override cannot quietly forget one of them.
+ */
+const LOCKED_LAUNCH_DEFAULTS = { squad_feed: false, squad_reactions: false, squad_activity: false };
+
+test('twelve toggles across six sections, squad ON for testing / requests on / invites on / comments on', () => {
   assert.equal(NOTIF_SECTIONS.flatMap((s) => s.toggles).length, 12);
   assert.equal(NOTIF_SECTIONS.length, 6);
-  assert.equal(NOTIF_DEFAULTS.squad_feed, false);
+  // 0202: on for testing. `LOCKED_LAUNCH_DEFAULTS` above names what this reverts to and why.
+  assert.equal(NOTIF_DEFAULTS.squad_feed, true, '0202: squad posts and announcements must reach a device');
+  assert.equal(NOTIF_DEFAULTS.squad_activity, true, '0202: join requests, approvals and new members');
+  assert.ok(
+    Object.keys(LOCKED_LAUNCH_DEFAULTS).every((k) => k in NOTIF_DEFAULTS),
+    'a key the override moved was deleted — restoring the locked defaults would now silently skip it',
+  );
   assert.equal(NOTIF_DEFAULTS.squad_invites, true);
   assert.equal(NOTIF_DEFAULTS.friend_requests, true, 'a direct request stays on (P-5 §3.2b)');
   /*
@@ -170,7 +192,10 @@ test('twelve toggles across six sections, squad off / requests on / invites on /
   assert.equal(NOTIF_DEFAULTS.challenge_invites, true, 'an invitation is aimed at you, so it stays on (P-5 §3.2b)');
   assert.ok(!('challenge_updates' in NOTIF_DEFAULTS), 'challenge_updates was retired by 0164 — it must not still be offerable');
   assert.equal(NOTIF_DEFAULTS.post_comments, true, 'a comment is aimed at you by name, so it stays on (SOC-D11, P-5 §3.2b)');
-  assert.equal(NOTIF_DEFAULTS.squad_reactions, false, 'SOC-D11 locks reaction pushes OFF — the inbox still shows them');
+  // ⚠ SOC-D11 locks reaction pushes OFF and that is still the launch answer — see LOCKED_LAUNCH_DEFAULTS
+  // above. 0202 overrides it for the testing phase on the PO's "all notifications on" instruction.
+  assert.equal(NOTIF_DEFAULTS.squad_reactions, true, '0202 testing override of SOC-D11 — the lock is recorded, not lost');
+  assert.equal(LOCKED_LAUNCH_DEFAULTS.squad_reactions, false, 'SOC-D11 is what this returns to at launch');
   /*
    * ⚠ ON, and the only ambient default in this file that is. It is not reachable without TWO deliberate
    * opt-ins on another screen — the squad leader's `squads.training_alerts` and the athlete's own

@@ -44,6 +44,16 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
  * two are the same source again. `SQL_PREFS` is kept as an alias rather than deleted, because every
  * assertion below that names it is making a statement about the preference map specifically, and losing
  * that distinction is how the next split gets missed.
+ *
+ * ⚠⚠ AND 0202 SPLIT THEM AGAIN — which is exactly what that last sentence was kept for. 0202 turns every
+ * ambient squad default ON for the testing phase and does NOT touch the union, so:
+ *
+ *   · `SQL`        stays 0164 — the union and `push_enqueue_for`
+ *   · `SQL_PREFS`  becomes 0202 — the newest body of BOTH preference functions
+ *
+ * 0202 restates `push_pref_key` unchanged rather than leaving it in 0164, so `SQL_PREFS` is one file
+ * again for both halves of the map. That is deliberate: a split where one preference function is read
+ * from one migration and the other from a different one is how a rebuild-from-stale-copy hides.
  */
 const SQL_BASE = readFileSync(resolve(ROOT, 'supabase/migrations/0120_push_notifications.sql'), 'utf8');
 const SQL_0121 = readFileSync(resolve(ROOT, 'supabase/migrations/0121_workout_join_requests.sql'), 'utf8');
@@ -75,13 +85,24 @@ const SQL_0163 = readFileSync(resolve(ROOT, 'supabase/migrations/0163_competitio
 // 0164 is the newest definition of the union, `push_enqueue_for`, and BOTH preference functions.
 const SQL = readFileSync(resolve(ROOT, 'supabase/migrations/0164_challenge_joined_and_invite_push.sql'), 'utf8');
 /*
- * 0187 owns the newest `push_register_token` and the newest `set_training_status` (0086's until now).
- * It is the duplicate-notification fix and touches neither the union nor the sender, so `SQL` stays
- * 0164's.
+ * 0187 owns the newest `push_register_token`. It is the duplicate-notification fix and touches neither
+ * the union nor the sender, so `SQL` stays 0164's.
+ *
+ * ⚠ IT NO LONGER OWNS `set_training_status`, AND THIS COMMENT CLAIMED IT DID FOR THREE MIGRATIONS. 0190
+ * rewrote that function the day after (0187's body verbatim, `security definer` instead of `invoker`,
+ * because 0187 made the body read a column 0149 had revoked and every call was raising 42501 into a
+ * `catch {}`). The assertions below stayed green only because 0190 copied the body byte-for-byte —
+ * precisely the accident this file's own header warns about. 0202 is the newest body now, and the
+ * presence assertions read it.
  */
 const SQL_0187 = readFileSync(resolve(ROOT, 'supabase/migrations/0187_one_notification_per_start.sql'), 'utf8');
+/* 0202 — the newest `set_training_status` AND the newest body of both preference functions. */
+const SQL_0202 = readFileSync(
+  resolve(ROOT, 'supabase/migrations/0202_one_start_per_session_and_prefs_on.sql'),
+  'utf8',
+);
 
-const SQL_PREFS = SQL;
+const SQL_PREFS = SQL_0202;
 
 /** Every migration paired with the bundle that gets pasted into the dashboard. */
 const BUNDLES = [
@@ -101,6 +122,7 @@ const BUNDLES = [
   ['0163_competition_invite_and_standings', 'pending-0163', SQL_0163],
   ['0164_challenge_joined_and_invite_push', 'pending-0164', SQL],
   ['0187_one_notification_per_start', 'pending-0187', SQL_0187],
+  ['0202_one_start_per_session_and_prefs_on', 'pending-0202', SQL_0202],
 ];
 
 /**
@@ -934,12 +956,12 @@ test('the two-argument push_register_token is dropped, not left beside the three
  * being killed — so the schema has to be the one that knows a repeated statement is one fact.
  */
 test('an active session keeps the stamp it already has, so a start is announced once', () => {
-  const body = fnBody('set_training_status', SQL_0187);
+  const body = fnBody('set_training_status', SQL_0202);
 
-  assert.match(body, /when not p_active then null/, 'a finish must still clear the column outright');
+  assert.match(body, /when not p_active then null/, 'a finish must still clear presence outright');
   assert.match(
     body,
-    /profiles\.training_since is not null\s*and profiles\.training_since > now\(\) - interval '4 hours'\s*then profiles\.training_since/,
+    /profiles\.training_announced_at is not null\s*and profiles\.training_announced_at > now\(\) - interval '4 hours'\s*then profiles\.training_announced_at/,
     'a re-announcement inside the presence window must KEEP the original stamp',
   );
   assert.match(body, /else now\(\)/, 'past the window, or after a finish, a start is news again');
@@ -951,12 +973,69 @@ test('an active session keeps the stamp it already has, so a start is announced 
    */
   assert.doesNotMatch(
     body,
-    /then\s+training_since\b/,
-    'the column must be qualified as `profiles.training_since` on the right-hand side',
+    /then\s+training_(since|announced_at)\b/,
+    'the columns must be qualified as `profiles.<column>` on the right-hand side',
   );
 
   // The stamp says WHEN this session began and must not move; the label says WHAT they are doing now.
   assert.match(body, /training_label = case when p_active then nullif\(btrim\(coalesce\(p_label, ''\)\), ''\)/);
+});
+
+/**
+ * ⚠ THE FIX 0187 COULD NOT REACH: A LEAVE IS NOT A FINISH.
+ *
+ * 0187 made `training_since` write-once per session, which closed the app-killed-mid-workout case. It
+ * cannot close the leave case, because leaving does not re-announce over a live stamp — it CLEARS one.
+ * `onLeave` in `workout.tsx` ends presence deliberately ("I am training right now" is false while you
+ * are looking at Home), so on resume the column is null, `else now()` fires, and a brand-new timestamp
+ * is a brand-new outbox key. The squad is told again, every round trip.
+ *
+ * `training_announced_at` is the identity `training_since` could not also carry. These three arms are
+ * the whole behaviour, so each is asserted separately rather than as one blob:
+ */
+test('a leave holds the announcement, a finish clears it', () => {
+  const body = fnBody('set_training_status', SQL_0202);
+
+  assert.match(
+    body,
+    /when p_done then null/,
+    'a finish or a discard must clear training_announced_at, or the athlete’s NEXT workout goes unannounced',
+  );
+  assert.match(
+    body,
+    /else profiles\.training_announced_at/,
+    'a leave must HOLD training_announced_at — this single arm is what stops the second push',
+  );
+  // Presence and identity are set from the same expression on a start, so a resumed session is restored
+  // to the time it really began rather than reading "0 min" to the whole squad.
+  assert.match(
+    fnBody('set_training_status', SQL_0202),
+    /training_since = case\s*when not p_active then null\s*when profiles\.training_announced_at/,
+    'a start must derive training_since from the announcement stamp, not from a fresh now()',
+  );
+
+  /*
+   * ⚠ TWO LIVE OVERLOADS IS THE `push_register_token` FAULT 0187 §A HAD TO CLEAN UP, ONE FILE LATER.
+   * `create or replace` cannot change an argument list, so without the drop both signatures stay
+   * callable and PostgREST picks between them by whichever named arguments a client happened to send.
+   */
+  assert.match(SQL_0202, /drop function if exists public\.set_training_status\(boolean, text\);/);
+  assert.match(SQL_0202, /grant execute on function public\.set_training_status\(boolean, text, boolean\) to authenticated;/);
+
+  /*
+   * ⚠ AND IT STAYS DEFINER. 0190's whole subject: the body reads a column `authenticated` cannot select,
+   * and as an invoker every call raises 42501 into a `catch {}` built to keep presence from blocking a
+   * workout — so the app silently stops announcing anything at all.
+   */
+  assert.match(
+    SQL_0202,
+    /create or replace function public\.set_training_status\([\s\S]*?security definer/,
+    '0190: set_training_status must be SECURITY DEFINER — it reads hidden presence columns',
+  );
+
+  // And the new column is hidden exactly as 0149 hid the other two, or profiles_read (`using (true)`)
+  // publishes when every athlete last trained to anyone holding the anon key.
+  assert.match(SQL_0202, /v_hidden text\[\] := array\['training_since', 'training_label', 'training_announced_at'\]/);
 });
 
 /**
@@ -965,6 +1044,6 @@ test('an active session keeps the stamp it already has, so a start is announced 
  * other window would either re-announce inside a live session or go silent on a genuinely new one.
  */
 test('the hold window is the presence ceiling the readers already use', () => {
-  assert.match(fnBody('set_training_status', SQL_0187), /interval '4 hours'/);
+  assert.match(fnBody('set_training_status', SQL_0202), /interval '4 hours'/);
   assert.match(branchOf(fnBody('notification_events_for'), 'squad_training_started'), /interval '4 hours'/);
 });

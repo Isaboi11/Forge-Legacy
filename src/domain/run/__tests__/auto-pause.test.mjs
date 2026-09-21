@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { acceptFix } from '../run-core.ts';
 import {
   AUTO_PAUSE_GRACE_SEC,
   autoResumeStep,
@@ -76,7 +77,7 @@ test('a shuffle is still moving', () => {
 });
 
 test('standing at a light pauses', () => {
-  assert.equal(shouldAutoPause(live(trackAt(6, 30, 20))), true);
+  assert.equal(shouldAutoPause(live(trackAt(6, 30, 20), { deviceSpeedMps: 0 })), true);
 });
 
 test('⛔ NO FIXES ARRIVING IS NOT STILLNESS — a tunnel must never pause the run', () => {
@@ -86,7 +87,7 @@ test('⛔ NO FIXES ARRIVING IS NOT STILLNESS — a tunnel must never pause the r
 });
 
 test('the opening seconds are exempt — Start is pressed standing still', () => {
-  const standing = live(trackAt(6, 30, 20), { elapsedSec: AUTO_PAUSE_GRACE_SEC - 1 });
+  const standing = live(trackAt(6, 30, 20), { elapsedSec: AUTO_PAUSE_GRACE_SEC - 1, deviceSpeedMps: 0 });
   assert.equal(shouldAutoPause(standing), false);
   assert.equal(shouldAutoPause({ ...standing, elapsedSec: AUTO_PAUSE_GRACE_SEC + 1 }), true);
 });
@@ -98,6 +99,56 @@ test('a session that has covered nothing has nothing to pause', () => {
 
 test('an empty track never pauses', () => {
   assert.equal(shouldAutoPause(live([])), false);
+});
+
+/* ── the gate-stepped track (the PO's walk, 2026-09-21) ────────────────────── */
+
+/**
+ * A walk folded through the REAL `acceptFix`, one fix a second, with seeded GPS scatter. The synthetic
+ * `trackAt` above grows smoothly; a real track grows in 10–25 m steps, and that is what paused walkers.
+ */
+const realWalk = (mph, accM, seconds = 300) => {
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647 - 0.5);
+  const t0 = NOW - seconds * 1000;
+  let track = [];
+  const ticks = [];
+  for (let s = 0; s < seconds; s++) {
+    const north = s * mph * 0.44704 + rnd() * accM * 0.6;
+    const fix = { lat: 40 + north / 111320, lon: -111 + (rnd() * accM * 0.6) / 85390, accuracy: accM, at: t0 + s * 1000, alt: null, altAccuracy: null };
+    track = acceptFix(track, fix, 'walk').track;
+    ticks.push({ track, nowMs: fix.at + 500, elapsedSec: s, receivingFixes: true });
+  }
+  return ticks;
+};
+
+test('⛔ REGRESSION: the old 10 s track window DID pause a real walk — the premise of the fix', () => {
+  // Proves the fixture reproduces the bug, so the two tests below are evidence and not a tautology.
+  const paused = realWalk(3, 35).filter((t) => windowSpeedMph(t.track, t.nowMs) < 0.8 && t.elapsedSec >= AUTO_PAUSE_GRACE_SEC);
+  assert.ok(paused.length > 20, `expected the old rule to misfire, got ${paused.length}`);
+});
+
+test('⛔ a 3 mph walk under ±35 m sky is never paused when the device reports no speed', () => {
+  assert.equal(realWalk(3, 35).filter((t) => shouldAutoPause(t)).length, 0);
+});
+
+test('⛔ a 2.2 mph stroll is never paused', () => {
+  assert.equal(realWalk(2.2, 15).filter((t) => shouldAutoPause(t)).length, 0);
+  assert.equal(realWalk(2.2, 35).filter((t) => shouldAutoPause(t)).length, 0);
+});
+
+test('⛔ the device saying they are moving overrules a stalled track', () => {
+  // The track reads a dead stop; the phone's Doppler speed reads a walk. The walk wins.
+  assert.equal(shouldAutoPause(live(trackAt(6, 30, 20), { deviceSpeedMps: 1.2 })), false);
+});
+
+test('a device reading a stop pauses on the short window', () => {
+  assert.equal(shouldAutoPause(live(trackAt(6, 30, 12), { deviceSpeedMps: 0.1 })), true);
+});
+
+test('with no device speed the track is read over the long window — a 12 s stall is not yet a stop', () => {
+  assert.equal(shouldAutoPause(live(trackAt(6, 60, 12))), false);
+  assert.equal(shouldAutoPause(live(trackAt(6, 60, 31))), true);
 });
 
 /* ── resuming ──────────────────────────────────────────────────────────────── */
@@ -143,6 +194,20 @@ test('⛔ a sloppy fix is IGNORED, not counted and not held against the athlete'
 test('a fix with no accuracy at all is still usable', () => {
   const one = autoResumeStep(anchor(), { lat: 40.0004, lon: -111 });
   assert.equal(autoResumeStep(one.probe, { lat: 40.0004, lon: -111 }).resume, true);
+});
+
+test('⛔ a device speed of a walk resumes even when every position is too sloppy to judge', () => {
+  // ±50 m sky: position can prove nothing, so without speed a walker stayed paused while walking.
+  const walking = { lat: 40.00001, lon: -111, accuracy: 50, speed: 1.3 };
+  const one = autoResumeStep(anchor(), walking);
+  assert.equal(one.resume, false);
+  assert.equal(autoResumeStep(one.probe, walking).resume, true);
+});
+
+test('a device speed of standing still does not resume', () => {
+  let step = { probe: anchor(), resume: false };
+  for (let i = 0; i < 20; i++) step = autoResumeStep(step.probe, { ...NEAR, speed: 0.2 });
+  assert.equal(step.resume, false);
 });
 
 test('⛔ A MANUAL PAUSE NEVER AUTO-RESUMES — no probe, no decision', () => {

@@ -25,6 +25,17 @@ export type WorkoutSessionContextValue = {
   startWorkout: (workoutName: string, lifts?: SessionLift[]) => void
   finishWorkout: () => void
   abandonWorkout: () => void
+  /**
+   * Walked away from a session that is still resumable — the header back arrow, not a finish.
+   *
+   * ⚠ THE THIRD EXIT, AND THE REASON IT EXISTS IS A NOTIFICATION. Presence ends identically to the other
+   * two: "I am training right now" is false the moment they leave the logger, which is the point of the
+   * `onLeave` fix in `workout.tsx`. What does NOT end is the record that the squad has already been told
+   * about THIS session, so resuming reuses the same outbox key instead of announcing a second start
+   * (0202). `finishWorkout` and `abandonWorkout` both clear that record, because both mean the session
+   * is over and the next one is genuinely news.
+   */
+  leaveWorkout: () => void
 }
 
 const WorkoutSessionContext = createContext<WorkoutSessionContextValue | null>(null)
@@ -51,8 +62,8 @@ const STALE_SESSION_TIMEOUT_MS = 4 * 60 * 60 * 1000
  *
  * Fire-and-forget: presence must never block starting or finishing a workout.
  */
-function setLiveWorkoutPresence(active: boolean, workoutName?: string): void {
-  void setTrainingStatus(active, workoutName)
+function setLiveWorkoutPresence(active: boolean, workoutName?: string, done = true): void {
+  void setTrainingStatus(active, workoutName, done)
 }
 
 export function WorkoutSessionProvider({ children }: { children: React.ReactNode }) {
@@ -73,15 +84,32 @@ export function WorkoutSessionProvider({ children }: { children: React.ReactNode
      throttled to once a minute — so without this, glancing at a tab shortly before training could
      swallow the promotion that training just earned. Dropping the gate here means the next tab the
      athlete lands on evaluates immediately. */
-  const endSession = useCallback(() => {
-    invalidateEarnedMoments()
-    clearStaleTimer()
-    setSession(null)
-    setLiveWorkoutPresence(false)
-    // The published plan-and-log (0181) goes with the presence. Finish, abandon and the stale timer all
-    // arrive here, so a row can only outlive its session by the read's own 4-hour ceiling.
-    void clearLiveSession()
-  }, [clearStaleTimer])
+  /**
+   * `done` is the ONE thing that differs between ending a session and stepping away from one.
+   *
+   * Everything else is identical — the stale timer, the in-memory session, the presence broadcast and
+   * the published plan-and-log all stop either way, because none of them is true while the athlete is
+   * looking at Home. Only the squad's memory of having been told differs (0202).
+   */
+  const stopSession = useCallback(
+    (done: boolean) => {
+      invalidateEarnedMoments()
+      clearStaleTimer()
+      setSession(null)
+      setLiveWorkoutPresence(false, undefined, done)
+      // The published plan-and-log (0181) goes with the presence. Finish, abandon, leave and the stale
+      // timer all arrive here, so a row can only outlive its session by the read's own 4-hour ceiling.
+      void clearLiveSession()
+    },
+    [clearStaleTimer],
+  )
+  const endSession = useCallback(() => stopSession(true), [stopSession])
+  /*
+   * ⚠ THE STALE TIMER IS A FINISH, NOT A LEAVE. Four hours with no explicit end is the ceiling every
+   * reader of `training_since` already applies, so by the time it fires the announcement stamp has aged
+   * out on the server too and holding it would buy nothing.
+   */
+  const leaveSession = useCallback(() => stopSession(false), [stopSession])
 
   const startWorkout = useCallback(
     (workoutName: string, lifts: SessionLift[] = []) => {
@@ -104,9 +132,16 @@ export function WorkoutSessionProvider({ children }: { children: React.ReactNode
   return (
     // Finish and abandon both end the session/presence immediately today;
     // exposed as two methods because they diverge once a real workout log
-    // exists (finish writes a record, abandon discards one).
+    // exists (finish writes a record, abandon discards one). `leaveWorkout`
+    // is the one that genuinely behaves differently today — see its type.
     <WorkoutSessionContext.Provider
-      value={{ session, startWorkout, finishWorkout: endSession, abandonWorkout: endSession }}
+      value={{
+        session,
+        startWorkout,
+        finishWorkout: endSession,
+        abandonWorkout: endSession,
+        leaveWorkout: leaveSession,
+      }}
     >
       {children}
     </WorkoutSessionContext.Provider>

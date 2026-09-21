@@ -3,12 +3,16 @@ import { extractPdfText } from './pdf-text';
 export const canPickFile = true;
 
 /**
- * Open the OS file chooser and read a .csv/.tsv/.txt as text — or a PDF, read out with `pdf-text.ts`.
+ * Open the OS file chooser and read a PDF out with `pdf-text.ts`.
  *
  * PO: *"make sure it can import files/pdfs. If someone purchases a program it's usually a pdf."* A PDF
- * arrives here as bytes and leaves as the same `{ text }` a spreadsheet does, so the sheet cannot tell
- * them apart and does not need to: one parser, one preview. A scanned PDF has no text and is refused
- * with a reason rather than handed over empty.
+ * arrives here as bytes and leaves as `{ text }`, which is the same thing the paste box hands over, so
+ * the sheet cannot tell them apart and does not need to: one parser, one preview. A scanned PDF has no
+ * text and is refused with a reason rather than handed over empty.
+ *
+ * ⚠ THE SPREADSHEET TYPES WERE REMOVED — PO, 2026-09-20: *"I don't think we're going to keep a csv
+ * there. No need."* `accept` and the NATIVE twin's `type` list are ONE decision in two files; changing
+ * one alone gives the two platforms different front doors.
  *
  * An input element created and clicked imperatively, rather than a hidden one rendered into the tree:
  * React Native Web has no `<input type="file">` primitive, and reaching into the DOM once at the moment
@@ -24,7 +28,7 @@ export async function pickTextFile(): Promise<{ ok: true; text: string; name: st
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.csv,.tsv,.txt,.pdf,text/csv,text/plain,application/pdf';
+    input.accept = '.pdf,application/pdf';
     input.style.position = 'fixed';
     input.style.opacity = '0';
     input.style.pointerEvents = 'none';
