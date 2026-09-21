@@ -140,6 +140,17 @@ export async function consumeHoltAllowance(
 }
 
 /**
+ * Switch the CALLER's own Premium AI on or off — `set_my_premium_ai` (0203).
+ *
+ * PO, 2026-09-21: an option on the Subscription page, for whatever account is signed in, during testing.
+ * Throws on failure so the switch can put itself back rather than showing a state the server refused.
+ */
+export async function setMyPremiumAi(on: boolean): Promise<void> {
+  const { error } = await supabase.rpc('set_my_premium_ai', { p_on: on });
+  if (error) throw new Error(error.message);
+}
+
+/**
  * Mark the one free lifetime import as spent.
  *
  * ⚠ CALL THIS ON W-IM-4 CONFIRMATION AND NOWHERE ELSE (Amendment 001 §8). A parse error, a bad file, or

@@ -23,6 +23,14 @@
 --      the one block marked 0203.
 --   2. Revokes `anon` on the four 0144 functions (the 0147 lesson: Supabase grants `anon` directly, so
 --      `revoke … from public` alone leaves it reachable).
+--   4. `set_my_premium_ai(on)` — PO, same day: *"Have it be as an option in the subscription page in
+--      settings to change to for whatever account I'm using. I'm not worried about anyone finding it for
+--      right now."* So ANY signed-in account can switch its OWN Premium AI on or off. ⚠ That means the
+--      gate in (1) protects against callers who never flipped it, not against someone who does — the
+--      PO accepted that for the testing phase. Before public release this must become a purchase
+--      (RevenueCat) or an admin-only write; see the Decision Queue.
+--      A new row copies the CURRENT default tier (never pins someone to Free), so flipping AI on changes
+--      nothing about their Premium/Free status today.
 --   3. Grants `coach_ai` to every account in `app_admins` (0129) — today, only the PO. Upserted:
 --      a PO with no entitlement row gets one (PREMIUM grant, as every tester holds); an existing row
 --      only has `coach_ai` switched on and nothing else touched.
@@ -120,5 +128,34 @@ select a.user_id, 'PREMIUM', 'GRANT', true,
   from public.app_admins a
 on conflict (athlete_id) do update
   set coach_ai = true, coach_ai_until = null, updated_at = now();
+
+-- (4) The self-serve switch. Zero-argument identity: it can only ever reach the caller's own row.
+create or replace function public.set_my_premium_ai(p_on boolean)
+returns boolean
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_uid uuid := auth.uid();
+begin
+  if v_uid is null then
+    raise exception 'set_my_premium_ai: no authenticated athlete' using errcode = '28000';
+  end if;
+
+  insert into public.athlete_entitlement (athlete_id, tier, coach_ai, grant_note)
+  select v_uid, c.default_tier, p_on, 'Premium AI self-serve switch (0203) - testing phase.'
+    from public.entitlement_config c
+   where c.id
+  on conflict (athlete_id) do update
+    set coach_ai = p_on, coach_ai_until = null, updated_at = now();
+
+  return p_on;
+end;
+$$;
+
+revoke all on function public.set_my_premium_ai(boolean) from public;
+revoke execute on function public.set_my_premium_ai(boolean) from anon;
+grant execute on function public.set_my_premium_ai(boolean) to authenticated;
 
 commit;

@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
--- PENDING — 0144 + 0174 + 0203: PREMIUM AI, ON FOR THE PO ONLY
+-- PENDING — 0144 + 0174 + 0203: PREMIUM AI (the gate, the PO grant, and the Settings switch)
 --
 -- PASTE THIS WHOLE FILE into the Supabase SQL editor for the FORGE project (ucqbzoeouvwoyfnnmqoo — NOT
 -- Ledger) and run it once. Safe to run twice: every statement is guarded, §2 raises, §3 is read-only.
@@ -12,9 +12,10 @@
 --         Edge Function calls before touching a model. Authored in August, deliberately never applied
 --         ("no AI spend before full release"). The PO has now lifted that for their own account only.
 --   0174  gives `photo_import` its credit weight (2). Without it the photo reader fails at the meter.
---   0203  THE GATE: `coach_ai_spend_credits` refuses anyone without `athlete_entitlement.coach_ai`, and
---         `coach_ai` is granted to `app_admins` — the PO. Nobody else can reach a model, whatever the
---         client shows.
+--   0203  THE GATE: `coach_ai_spend_credits` refuses anyone without `athlete_entitlement.coach_ai`;
+--         `coach_ai` is granted to `app_admins` (the PO); and `set_my_premium_ai` lets any signed-in
+--         account switch its OWN Premium AI on or off from Settings → Subscription (PO's call, testing
+--         phase only).
 --
 -- ⚠ ORDER MATTERS AND IS FIXED BY THIS FILE: 0144 creates what 0174 and 0203 alter.
 -- ⚠ NOTHING CHARGES ANYONE. `metering_only` stays TRUE. Spend is recorded, never billed.
@@ -27,6 +28,7 @@
 --   photo_import_credits   = 2
 --   anon_can_spend         = false
 --   gate_in_body           = true
+--   switch_exists          = true
 -- Anything else: stop and send the row back before using the feature.
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
 
@@ -505,6 +507,14 @@ commit;
 --      the one block marked 0203.
 --   2. Revokes `anon` on the four 0144 functions (the 0147 lesson: Supabase grants `anon` directly, so
 --      `revoke … from public` alone leaves it reachable).
+--   4. `set_my_premium_ai(on)` — PO, same day: *"Have it be as an option in the subscription page in
+--      settings to change to for whatever account I'm using. I'm not worried about anyone finding it for
+--      right now."* So ANY signed-in account can switch its OWN Premium AI on or off. ⚠ That means the
+--      gate in (1) protects against callers who never flipped it, not against someone who does — the
+--      PO accepted that for the testing phase. Before public release this must become a purchase
+--      (RevenueCat) or an admin-only write; see the Decision Queue.
+--      A new row copies the CURRENT default tier (never pins someone to Free), so flipping AI on changes
+--      nothing about their Premium/Free status today.
 --   3. Grants `coach_ai` to every account in `app_admins` (0129) — today, only the PO. Upserted:
 --      a PO with no entitlement row gets one (PREMIUM grant, as every tester holds); an existing row
 --      only has `coach_ai` switched on and nothing else touched.
@@ -603,6 +613,35 @@ select a.user_id, 'PREMIUM', 'GRANT', true,
 on conflict (athlete_id) do update
   set coach_ai = true, coach_ai_until = null, updated_at = now();
 
+-- (4) The self-serve switch. Zero-argument identity: it can only ever reach the caller's own row.
+create or replace function public.set_my_premium_ai(p_on boolean)
+returns boolean
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_uid uuid := auth.uid();
+begin
+  if v_uid is null then
+    raise exception 'set_my_premium_ai: no authenticated athlete' using errcode = '28000';
+  end if;
+
+  insert into public.athlete_entitlement (athlete_id, tier, coach_ai, grant_note)
+  select v_uid, c.default_tier, p_on, 'Premium AI self-serve switch (0203) - testing phase.'
+    from public.entitlement_config c
+   where c.id
+  on conflict (athlete_id) do update
+    set coach_ai = p_on, coach_ai_until = null, updated_at = now();
+
+  return p_on;
+end;
+$$;
+
+revoke all on function public.set_my_premium_ai(boolean) from public;
+revoke execute on function public.set_my_premium_ai(boolean) from anon;
+grant execute on function public.set_my_premium_ai(boolean) to authenticated;
+
 commit;
 
 -- ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -623,6 +662,9 @@ begin
   end if;
   if has_function_privilege('anon', 'public.coach_ai_spend_credits(text)', 'execute') then
     raise exception '0203 did not land: anon can still execute coach_ai_spend_credits';
+  end if;
+  if to_regprocedure('public.set_my_premium_ai(boolean)') is null then
+    raise exception '0203 did not land: set_my_premium_ai is missing';
   end if;
   if not exists (
     select 1 from public.app_admins a
@@ -646,4 +688,5 @@ select
   (select (c.action_credits ->> 'photo_import')::int from public.coach_ai_config c)     as photo_import_credits,
   has_function_privilege('anon', 'public.coach_ai_spend_credits(text)', 'execute')      as anon_can_spend,
   position('athlete_entitlement'
-    in pg_get_functiondef('public.coach_ai_spend_credits(text)'::regprocedure)) > 0     as gate_in_body;
+    in pg_get_functiondef('public.coach_ai_spend_credits(text)'::regprocedure)) > 0     as gate_in_body,
+  to_regprocedure('public.set_my_premium_ai(boolean)') is not null                      as switch_exists;

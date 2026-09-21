@@ -11,7 +11,7 @@ import { ForgeSymbol, type SymbolName } from '@/components/forge/ForgeSymbol';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { fetchCapConfig, fetchFounderSeatsRemaining } from '@/data/entitlement-live';
+import { fetchCapConfig, fetchFounderSeatsRemaining, setMyPremiumAi } from '@/data/entitlement-live';
 import {
   AI_DISCLOSURE,
   AUTO_RENEWAL_NOTE,
@@ -228,6 +228,28 @@ export default function SubscriptionScreen() {
     }
   };
 
+  /**
+   * PREMIUM AI — a free switch for the signed-in account during testing (PO, 2026-09-21: *"Have it be as
+   * an option in the subscription page… for whatever account I'm using."*). It never touches Premium or
+   * Free. Optimistic, and put back on failure, so the row never claims a state the server refused.
+   */
+  const serverAi = snapshot?.coachAi === true;
+  const [aiPending, setAiPending] = useState<boolean | null>(null);
+  const aiOn = aiPending ?? serverAi;
+  const onToggleAi = async () => {
+    const next = !aiOn;
+    setAiPending(next);
+    setNotice(null);
+    try {
+      await setMyPremiumAi(next);
+      refetch();
+    } catch {
+      setNotice('Couldn’t change Premium AI. Try again.');
+    } finally {
+      setAiPending(null);
+    }
+  };
+
   const onManage = async () => {
     const opened = await openManageSubscriptions();
     if (!opened) setNotice('Couldn’t open your subscription settings.');
@@ -315,6 +337,26 @@ export default function SubscriptionScreen() {
                 onRetryPlans={refetchPlans}
               />
             )}
+
+            <SectionLabel>Premium AI</SectionLabel>
+            <View style={[styles.card, styles.aiRow]}>
+              <View style={styles.aiText}>
+                <Text style={styles.benefitTitle}>Premium AI</Text>
+                <Text style={styles.benefitDetail}>
+                  Read a picture of a program into the builder. Testing only — no charge.
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => void onToggleAi()}
+                disabled={aiPending != null}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: aiOn }}
+                accessibilityLabel="Premium AI"
+                style={[styles.aiSwitch, aiOn ? styles.aiSwitchOn : styles.aiSwitchOff]}
+              >
+                <View style={[styles.aiKnob, aiOn ? styles.aiKnobOn : styles.aiKnobOff]} />
+              </Pressable>
+            </View>
           </ScrollView>
 
           {/*
@@ -664,6 +706,14 @@ function BenefitList({ benefits }: { benefits: BenefitLine[] }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: flColor.base },
+  aiRow: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 15 },
+  aiText: { flex: 1 },
+  aiSwitch: { width: 44, height: 26, borderRadius: flRadius.pill, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 2 },
+  aiSwitchOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder, alignItems: 'flex-end' },
+  aiSwitchOff: { backgroundColor: flColor.charcoal700, borderColor: flColor.charcoal600, alignItems: 'flex-start' },
+  aiKnob: { width: 18, height: 18, borderRadius: 9 },
+  aiKnobOn: { backgroundColor: flColor.bronze300 },
+  aiKnobOff: { backgroundColor: flColor.charcoal500 },
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30, gap: 16 },
   retryText: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400, textAlign: 'center' },
   retryBtn: { minWidth: 140 },
