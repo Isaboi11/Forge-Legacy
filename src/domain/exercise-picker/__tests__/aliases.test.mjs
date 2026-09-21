@@ -214,3 +214,16 @@ test('naming equipment yourself is still honoured over any convention', () => {
   assert.match(r('Dumbbell Shrug')?.name ?? '', /Dumbbell Shrug/);
   assert.match(r('Front Squat')?.name ?? '', /Front Squat/);
 });
+
+test('"Incline DB" is the incline dumbbell PRESS — it used to reach the Incline Curl (PO, 2026-09-21)', () => {
+  // The matcher refuses a name with no movement word when the candidates disagree on the movement
+  // (press, curl, fly, row), and the convention then says what the words mean in a gym.
+  for (const written of ['Incline DB', 'incline db', 'Incline Dumbbell', 'incline dumbbells']) {
+    assert.equal(r(written)?.key, 'dumbbell-incline-bench-press', written);
+  }
+  assert.equal(matchExercise('Incline DB', CATALOG), null, 'the matcher alone no longer guesses a movement');
+  // Naming the movement still reaches that movement.
+  assert.equal(r('Incline DB Curl')?.key, 'dumbbell-incline-curl');
+  assert.equal(r('Incline DB Fly')?.key, 'dumbbell-incline-chest-fly');
+  assert.equal(r('Incline DB Press')?.key, 'dumbbell-incline-bench-press');
+});

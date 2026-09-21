@@ -35,16 +35,15 @@ test('a seventh day in WEEK 2 is named — it was dropped without a word', () =>
   assert.equal(r.draft.weekPlans[1].days.length, 6);
 });
 
-test('sets and reps over the builder\'s cap are named before Create, not cut silently after it', () => {
+test('100 push-ups and 12 sets import as written — the old 8 × 60 cap is gone (PO: "don\'t limit amount")', () => {
   const weeks = weeksOf('Day 1\nPush-ups 5x100\nBench 12x3\nSquat 5x5');
-  const notes = importLimitNotes(weeks);
-  assert.equal(notes.length, 1);
-  assert.match(notes[0], /capped at 8 × 60 \(Push-ups 5×100, Bench 12×3\)/);
-
+  assert.deepEqual(importLimitNotes(weeks), []);
   const r = draftFromImport(newDraft(), weeks, { isWeek: false, resolveKey });
-  const main = r.draft.days[0].main;
-  assert.deepEqual(main.map((x) => [x.sets, x.reps]), [[5, 60], [8, 3], [5, 5]]);
-  assert.match(r.toast, /capped at 8 × 60/);
+  assert.deepEqual(r.draft.days[0].main.map((x) => [x.sets, x.reps]), [[5, 100], [12, 3], [5, 5]]);
+});
+
+test('only a number past the logger\'s own ceiling is still named', () => {
+  assert.match(importLimitNotes(weeksOf('Day 1\nAir squats 1x600')).join(' '), /capped at 50 × 500 \(Air squats 1×600\)/);
 });
 
 test('60 weeks is named in the preview and the plans stop at 52', () => {

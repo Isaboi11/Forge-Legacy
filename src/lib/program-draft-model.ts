@@ -82,10 +82,16 @@ export const WEEKS_MIN = 1;
 export const WEEKS_MAX = 52;
 export const DAYS_MIN = 2;
 export const DAYS_MAX = 6;
+/*
+ * ⚠ SETS AND REPS ARE NOT A DESIGN LIMIT ANY MORE — PO, 2026-09-21: *"Don't limit amount."* They were
+ * 8 × 60, which cut "Push-ups 5x100" to 5 × 60 on import. The ceilings left are only there so a stepper
+ * has an end: 500 reps is the most the logger's set goal carries (`GOAL_REPS_MAX` in `set-goal.ts`), so a
+ * program can never prescribe a number its own workout screen would show differently.
+ */
 export const SETS_MIN = 1;
-export const SETS_MAX = 8;
+export const SETS_MAX = 50;
 export const REPS_MIN = 1;
-export const REPS_MAX = 60;
+export const REPS_MAX = 500;
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 export const clampWeeks = (n: number) => clamp(Math.round(n), WEEKS_MIN, WEEKS_MAX);

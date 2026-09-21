@@ -113,6 +113,12 @@ const NOISE = new Set(['the', 'a', 'and', 'or', 'with', 'on', 'to', 'for', 'of',
  */
 const EQUIPMENT_PREFERENCE = ['barbell', 'dumbbell', 'cable', 'machine', 'smith', 'kettlebell', 'band'];
 
+/** The words that say what a lift DOES — see the "no movement named" rule in `matchExercise`. */
+const MOVEMENTS = new Set([
+  'press', 'curl', 'row', 'fly', 'raise', 'extension', 'squat', 'deadlift', 'lunge', 'pulldown', 'pushdown',
+  'pullup', 'pull', 'push', 'dip', 'shrug', 'crunch', 'bridge', 'thrust', 'kickback', 'pullover', 'carry',
+]);
+
 /**
  * Implements a bare exercise name never means.
  *
@@ -209,6 +215,21 @@ export function matchExercise(written: string, catalog: readonly CatalogEntry[])
         )
       : tied;
   if (usable.length === 0) return null;
+  /*
+   * ⚠ A NAME THAT NEVER SAYS WHAT THE MOVEMENT IS HAS NO NEAREST CANDIDATE.
+   *
+   * "Incline DB" is a press to anyone in a gym — and it reached Dumbbell Incline CURL, because the curl
+   * adds one word ("curl") where the press adds two ("bench press"). Word count cannot choose between a
+   * press, a curl, a fly and a row; every one of them is one movement word away. When the athlete wrote
+   * no movement and the candidates disagree on it, the matcher answers nothing, and the curated
+   * conventions in `aliases.ts` say what the words conventionally mean (PO, 2026-09-21: *"inclined
+   * dumbbell needs to match the right workout"*).
+   */
+  if (![...q].some((w) => MOVEMENTS.has(w))) {
+    const movementsAdded = new Set(candidates.flatMap((c) => [...c.tokens].filter((w) => MOVEMENTS.has(w) && !q.has(w))));
+    if (movementsAdded.size > 1) return null;
+  }
+
   if (usable.length === 1) {
     const only = usable[0];
     // Purely an implement choice the athlete never made, and an implement nobody means by a bare name.

@@ -239,6 +239,20 @@ test('a line that is only a scheme, or a day that came to nothing, is listed —
   assert.ok(!names(r).flat().includes('3x8'));
   assert.deepEqual(r.skipped, ['Week 1: 3x8', 'Week 2: 3x6']);
 
-  const c25k = ok(parseProgramTable('Week 1\nDay 1: Walk 20 minutes\nDay 2: Same as Day 1'));
-  assert.deepEqual(c25k.skipped, ['Day 2: Same as Day 1'], 'a day we could not copy is said, not silently lost');
+  const missing = ok(parseProgramTable('Day 1\nSquat 5x5\nDay 2: Same as Day 4'));
+  assert.deepEqual(missing.skipped, ['Day 2: Same as Day 4'], 'a day we could not copy is said, not silently lost');
+});
+
+test('"Same as Day 1" copies Day 1 — Couch-to-5K used to lose Days 2 and 3 (PO, 2026-09-21)', () => {
+  const c25k = ok(parseProgramTable('Week 1\nDay 1: Walk 20 minutes\nDay 2: Same as Day 1\nDay 3: Same as Day 1'));
+  assert.deepEqual(days(c25k), ['Day 1', 'Day 2', 'Day 3']);
+  assert.ok(c25k.weeks[0].days.every((d) => d.items[0].activity === 'walk' && d.items[0].targetSec === 1200));
+
+  const byWeekday = ok(parseProgramTable('Monday\nSquat 5x5\nBench 5x5\nWednesday\nDeadlift 3x5\nFriday\nSame as Monday'));
+  assert.deepEqual(names(byWeekday), [['Squat', 'Bench'], ['Deadlift'], ['Squat', 'Bench']]);
+
+  const repeat = ok(parseProgramTable('Day 1\nSquat 5x5\nDay 2: repeat Day 1'));
+  assert.deepEqual(names(repeat), [['Squat'], ['Squat']]);
+  // A copy, not the same object: a − / + on Day 2 in the preview must not change Day 1.
+  assert.notEqual(repeat.weeks[0].days[0].items[0], repeat.weeks[0].days[1].items[0]);
 });

@@ -52,7 +52,7 @@ function withMainOn(i) {
 
 // ── clamps (design §14) ───────────────────────────────────────────────────────
 
-test('clamps hold the design bounds: weeks 1–52, sets 1–8, reps 1–60', () => {
+test('clamps hold the bounds: weeks 1–52, sets 1–50, reps 1–500 (PO: “don’t limit amount”)', () => {
   // ⚠ The floor was 4 and is now 1 (PA2-D1). A 3-week block is a real thing an athlete can build; it
   // simply earns no rank credit, which is enforced at the seal and not by this clamp.
   assert.equal(clampWeeks(3), 3);
@@ -62,9 +62,11 @@ test('clamps hold the design bounds: weeks 1–52, sets 1–8, reps 1–60', () 
   assert.equal(clampWeeks(53), 52);
   assert.equal(clampWeeks(12), 12);
   assert.equal(clampSets(0), 1);
-  assert.equal(clampSets(9), 8);
+  assert.equal(clampSets(9), 9, '9 sets is no longer cut to 8');
+  assert.equal(clampSets(51), 50);
   assert.equal(clampReps(0), 1);
-  assert.equal(clampReps(61), 60);
+  assert.equal(clampReps(100), 100, '100 push-ups is no longer cut to 60');
+  assert.equal(clampReps(501), 500);
 });
 
 test('newDraft is the design default: 8 weeks · 4 days · repeat mode · empty', () => {

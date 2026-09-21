@@ -202,6 +202,11 @@ class Builder {
   }
 
   /** Whether a day was ever given anything. */
+  /** A day's items so far — what "Same as Day 1" copies. */
+  itemsOf(week: number, dayKey: string): readonly ParsedItem[] {
+    return this.weeks.get(week)?.get(dayKey)?.items ?? [];
+  }
+
   has(week: number, dayKey: string): boolean {
     return this.weeks.get(week)?.has(dayKey) ?? false;
   }
@@ -293,7 +298,7 @@ function parseFreeform(lines: string[]): ParseResult {
         hasScheme,
         cardio,
         /** "Mon: Squat 5x5, Bench 5x5" / "Monday: Easy run 3 miles" — a day label with its work after it. */
-        labelled: label && (label.rest && (hasWork(label.rest) || isRestEntry(label.rest))) ? label : null,
+        labelled: label && (label.rest && (hasWork(label.rest) || isRestEntry(label.rest) || sameAs(label.rest) != null)) ? label : null,
         /** Anything that prescribes something — the thing a heading sits above and chatter sits around. */
         isWork: hasScheme || cardio != null || loadedSetReps(line) != null,
       };
@@ -337,7 +342,7 @@ function parseFreeform(lines: string[]): ParseResult {
 
   /** Open a day, noticing a weekday that has come round again (see `seenDays`). */
   /** Every day heading opened, so one that ends up holding nothing can be reported rather than vanish. */
-  const opened: { week: number; key: string; line: string }[] = [];
+  const opened: { week: number; key: string; line: string; label: string }[] = [];
   const openDay = (rawName: string, line: string = rawName) => {
     const key = weekdayKey(rawName);
     if (key) {
@@ -350,7 +355,7 @@ function parseFreeform(lines: string[]): ParseResult {
     }
     day = cleanDayName(rawName);
     dayOrdinal++;
-    opened.push({ week, key: `${dayOrdinal}`, line });
+    opened.push({ week, key: `${dayOrdinal}`, line, label: dayLabelKey(rawName) });
   };
 
   /** Add the work in a piece of text — one exercise, several ("Bench 4x8, Row 4x8"), or a bout. */
@@ -418,7 +423,32 @@ function parseFreeform(lines: string[]): ParseResult {
     }
 
     // "Mon: Squat 5x5, Bench 5x5" / "Monday: Easy run 3 miles" / "Tuesday: Rest".
+    /*
+     * "Day 2: Same as Day 1", "Thursday — repeat Monday", or "Same as Day 1" on the line under a heading.
+     * A Couch-to-5K week is written exactly this way, and Days 2 and 3 used to vanish. The named day's
+     * work is COPIED into this one (PO, 2026-09-21) — the latest day by that name, this week first.
+     */
+    const copyFrom = (target: string) => {
+      const want = dayLabelKey(target);
+      const src = [...opened].reverse().find((o) => o.label === want && !(o.week === week && o.key === `${dayOrdinal}`));
+      const items = src ? b.itemsOf(src.week, src.key) : [];
+      if (!items.length) return false;
+      for (const it of items) b.add(week, `${dayOrdinal}`, day ?? 'Day 1', { ...it });
+      return true;
+    };
+    const sameLine = !row.hasScheme ? sameAs(row.line) : null;
+    if (sameLine != null && day != null) {
+      if (!copyFrom(sameLine)) skipped.push(row.line);
+      return;
+    }
+
     if (row.labelled) {
+      const target = sameAs(row.labelled.rest);
+      if (target != null) {
+        openDay(row.labelled.label, row.line);
+        copyFrom(target); // a day that could not be copied is listed at the end, like any empty day
+        return;
+      }
       openDay(row.labelled.label, row.line);
       if (!isRestEntry(row.labelled.rest)) addWork(row.labelled.rest, row.line);
       return;
@@ -542,6 +572,21 @@ function untab(line: string): string {
     return `${cells.slice(0, -2).join(' ')} ${sets}x${reps}`;
   }
   return cells.join(' ');
+}
+
+/** "Same as Day 1" / "Repeat Monday" / "Copy of Day 2" → the day it names ("Day 1"), or null. */
+function sameAs(text: string): string | null {
+  const m = text.trim().match(/^(?:same\s+as|repeat(?:\s+of)?|copy\s+of|as)\s+(.+?)[.!]*$/i);
+  if (!m) return null;
+  return dayLabelKey(m[1]) ? m[1].trim() : null;
+}
+
+/** A day label's identity — "Day 1", "day1", "DAY 1 - Push" → "day1"; "Monday", "Mon" → "mon". */
+function dayLabelKey(label: string): string {
+  const t = label.trim();
+  const numbered = t.match(/^(?:day|session|workout)\s*(\d{1,2})\b/i);
+  if (numbered) return `day${Number(numbered[1])}`;
+  return weekdayKey(t) ?? '';
 }
 
 /** Does this text carry a sets×reps of its own? */
