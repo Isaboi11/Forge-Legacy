@@ -1,4 +1,4 @@
-# Build a Program import — stress test (2026-09-21)
+| G-5 | ✅ Done | "Same as Day 1" / "Same as Monday" / "repeat Day 1" copy that day | — | — | **PO decided 2026-09-21 · fixed in `080480c`** || G-2 | ✅ Done | Limit raised from 8 × 60 to 50 sets × 500 reps (500 = what the workout screen carries) | — | — | **PO decided 2026-09-21 · fixed in `080480c`** || G-1 | ✅ Done | "Incline DB" now matches Dumbbell Incline Bench Press; naming the movement ("Incline DB Curl") still reaches that movement | — | — | **PO decided 2026-09-21 · fixed in `080480c`** |# Build a Program import — stress test (2026-09-21)
 
 **Scope:** Paste a program, Upload a PDF, Upload pictures, the preview, and the draft the import creates.
 **Method:** Every paste/PDF case was run through the real code (`parseProgramTable`, `extractPdfText`,
@@ -6,7 +6,7 @@
 (PyMuPDF / Pillow). The Edge Function was called directly on its free (pre-model) paths. The web preview
 was driven with Playwright for signed-out access.
 **Commits:** `4887b48` (parser, draft, photo errors), `2f623b3` (PDFs, function size cap).
-**Deployed:** web preview `index-8997df14f789375a137dfae509f2abc3.js`, hash verified live. No OTA.
+**Deployed:** web preview `index-e520f66248bf795434d03717c9ead805.js` (after the PO decisions, `080480c`), hash verified live. No OTA.
 **Tests:** 3,574 node tests pass (38 new); tsc and eslint clean.
 
 ## Status of this document
