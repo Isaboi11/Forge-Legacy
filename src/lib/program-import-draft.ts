@@ -6,26 +6,72 @@
  * builder's own import does. Two copies of these clamps would drift, and the drift would be a program
  * that imports one way from one door and another way from the other.
  *
- * The logic is unchanged from the builder's; only its home moved.
+ * ⚠ RELATIVE, EXTENSIONED IMPORTS so `node --test` can load this file — `program-import-draft.test.mjs`
+ * holds the limits below to what they say. `@/` would not resolve there.
  */
-import {
-  toProgramStructure,
-  unmatchedNames,
-  type ParsedWeek,
-} from '@/domain/program/import-parse';
+import { toProgramStructure, unmatchedNames, type ParsedWeek } from '../domain/program/import-parse.ts';
 import {
   DAYS_MAX,
+  REPS_MAX,
+  SETS_MAX,
+  WEEKS_MAX,
   clampDays,
   clampReps,
   clampSets,
   clampWeeks,
   type ProgramDraft,
-} from '@/lib/program-draft-model';
+} from './program-draft-model.ts';
 
 export interface ImportedDraft {
   draft: ProgramDraft;
   /** The toast: "Imported — review and save", or what was lost, leading with it. */
   toast: string;
+}
+
+/**
+ * ══ WHAT WILL NOT FIT, SAID BEFORE ANYTHING IS CREATED ══
+ *
+ * The draft has hard bounds (WEEKS 1–52, DAYS 2–6, SETS 1–8, REPS 1–60). This names every place a read
+ * goes past them, in the words the preview shows ABOVE the summary — so the athlete learns that Sunday
+ * is not coming, or that "Push-ups 5x100" will become 5 × 60, while they can still go back and change
+ * the paste, not from a toast after the program exists (stress test, 2026-09-21).
+ *
+ * Checked across EVERY week. It used to look at week 1 only, so a seventh day in week 2 vanished
+ * without a word.
+ */
+export function importLimitNotes(weeks: readonly ParsedWeek[], opts: { isWeek?: boolean } = {}): string[] {
+  const notes: string[] = [];
+
+  const dropped: string[] = [];
+  for (const w of weeks) {
+    for (const d of w.days.slice(DAYS_MAX)) dropped.push(weeks.length > 1 ? `week ${w.index} ${d.name}` : d.name);
+  }
+  if (dropped.length) {
+    notes.push(
+      `${dropped.length} day${dropped.length === 1 ? '' : 's'} over the ${DAYS_MAX}-day limit ${dropped.length === 1 ? 'is' : 'are'} dropped (${dropped.join(', ')})`,
+    );
+  }
+
+  if (!opts.isWeek && weeks.length > WEEKS_MAX) {
+    notes.push(`${weeks.length} weeks read — a program holds ${WEEKS_MAX}, so weeks after ${WEEKS_MAX} are dropped`);
+  }
+
+  const capped = new Set<string>();
+  for (const w of weeks) {
+    for (const d of w.days) {
+      for (const i of d.items) {
+        if (i.kind === 'cardio') continue;
+        if (i.sets > SETS_MAX || i.reps > REPS_MAX) capped.add(`${i.name} ${i.sets}×${i.reps}`);
+      }
+    }
+  }
+  if (capped.size) {
+    const list = [...capped];
+    notes.push(
+      `sets and reps are capped at ${SETS_MAX} × ${REPS_MAX} (${list.slice(0, 3).join(', ')}${list.length > 3 ? ` +${list.length - 3} more` : ''})`,
+    );
+  }
+  return notes;
 }
 
 export function draftFromImport(
@@ -40,44 +86,46 @@ export function draftFromImport(
   /*
    * FIT WHAT WAS PASTED INTO WHAT THE BUILDER CAN HOLD — and say so when it does not fit.
    *
-   * The draft has hard bounds (WEEKS 1–52, DAYS 2–6, SETS 1–8, REPS 1–60) and the import wrote
-   * straight past them: a seven-day program would have produced a seventh day the builder has no letter
-   * for and no chip to select. Every one of those is a draft that cannot be edited or trusted.
-   *
    * Clamping silently would be the worse fix. An athlete whose seventh day vanished must be told which
-   * day went, not left to discover it on a Thursday.
+   * day went, not left to discover it on a Thursday. `importLimitNotes` is the one list of what is cut.
    */
-  const days = imported.days.slice(0, DAYS_MAX);
-  const droppedDays = imported.days.slice(DAYS_MAX).map((d) => d.name);
-  const fit = (list: typeof days) =>
-    list.map((d) => ({
+  const fit = (list: typeof imported.days) =>
+    list.slice(0, DAYS_MAX).map((d) => ({
       ...d,
-      main: d.main.map((x) => ({ ...x, sets: clampSets(x.sets), reps: clampReps(x.reps) })),
+      // A cardio bout carries 1 × 0 on purpose (see `toProgramStructure`); clamping would invent a rep.
+      main: d.main.map((x) => (x.kind === 'cardio' ? x : { ...x, sets: clampSets(x.sets), reps: clampReps(x.reps) })),
     }));
 
   // A WEEK TEMPLATE IS ONE WEEK. The sheet has already cut the read to one (`scope="week"`) and said
   // so in its preview; this is the same rule written where the draft is built, so the two cannot drift.
   const weekCount = isWeek ? 1 : clampWeeks(imported.weeks);
-  // Only the CEILING can move a number (the floor is 1, PA2-D1), so the copy names that direction.
-  const clamped = !isWeek && weekCount !== imported.weeks;
+  const plans = !isWeek && imported.weekPlans ? imported.weekPlans.slice(0, weekCount).map((w) => ({ days: fit(w.days) })) : null;
 
   const draft: ProgramDraft = {
     ...base,
     name: base.name?.trim() ? base.name : imported.name,
     weeks: weekCount,
-    daysPerWeek: clampDays(days.length),
+    /*
+     * THE WIDEST WEEK, not week 1. A program whose week 2 adds days was created with week 1's count, so
+     * the builder's day chips stopped short of days the draft actually held.
+     */
+    daysPerWeek: clampDays(Math.max(imported.days.length, ...(plans ?? []).map((w) => w.days.length))),
     vary: isWeek ? false : imported.vary,
-    days: fit(days),
-    weekPlans: !isWeek && imported.weekPlans ? imported.weekPlans.map((w) => ({ days: fit(w.days.slice(0, DAYS_MAX)) })) : null,
+    days: fit(imported.days),
+    weekPlans: plans,
     openWeek: null,
     openDay: null,
   };
 
   // One line, and it leads with whatever was LOST — the part an athlete needs to know about.
+  const notes = importLimitNotes(weeks, { isWeek });
   const unmatched = unmatchedNames(weeks, resolveKey);
-  const notes: string[] = [];
-  if (droppedDays.length) notes.push(`${droppedDays.length} day${droppedDays.length === 1 ? '' : 's'} over the ${DAYS_MAX}-day limit dropped (${droppedDays.join(', ')})`);
-  if (clamped) notes.push(`set to ${weekCount} weeks — the longest a program can be`);
-  if (unmatched.length) notes.push(`${unmatched.length} name${unmatched.length === 1 ? '' : 's'} weren’t in the library and kept yours`);
+  if (unmatched.length) {
+    notes.push(
+      unmatched.length === 1
+        ? '1 name wasn’t in the library and kept yours'
+        : `${unmatched.length} names weren’t in the library and kept yours`,
+    );
+  }
   return { draft, toast: notes.length ? `Imported · ${notes.join(' · ')}` : 'Imported — review and save' };
 }

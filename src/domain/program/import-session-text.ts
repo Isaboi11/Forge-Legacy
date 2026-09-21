@@ -100,8 +100,14 @@ export function activityIn(text: string): CardioActivity | null {
 const HM = /(\d+)\s*h\s*(\d{1,2})\b/i;
 /** `2.5h`, `3 hrs`, `1 hour`. */
 const HOURS = /(\d+(?:\.\d+)?)\s*h(?:rs?|ours?)?\b/i;
-/** `75min`, `45 mins`, `20 minutes`. */
-const MINUTES = /(\d+)\s*m(?:in\w*)?\b/i;
+/**
+ * `75min`, `45 mins`, `20 minutes` — and a bare `45m`, but only under 100.
+ *
+ * ⚠ A BARE "m" OF 100 OR MORE IS METRES. "Row 2000m" read as a 2,000-MINUTE row and "4 x 800m" as
+ * eight hundred minutes (stress test, 2026-09-21); nobody prescribes a 100-minute anything as "100m",
+ * and every track and erg distance is written exactly that way. See `METRES`.
+ */
+const MINUTES = /(\d+)\s*(?:min\w*|m)\b/i;
 
 /**
  * The clock a phrase prescribes, in seconds — or null when it prescribes none.
@@ -127,6 +133,7 @@ export function durationIn(text: string): number | null {
   if (fromH != null) return fromH;
 
   const mi = MINUTES.exec(text);
+  if (mi && !/min/i.test(mi[0]) && Number(mi[1]) >= 100) return null; // metres, not minutes
   return claim(mi, mi ? Number(mi[1]) * 60 : 0);
 }
 
@@ -140,6 +147,15 @@ const YARDS = /(\d+)\s*(?:yd|yds|yard|yards)\b/i;
  */
 const MILES = /(\d+(?:\.\d+)?)\s*(?:-|–|—)?\s*(?:\d+(?:\.\d+)?)?\s*(?:mi|mile|miles)\b/i;
 
+/**
+ * `5k`, `10 km`, `21.1 kilometres` — converted to miles like yards are. "5k run" is how most of the
+ * world writes a run, and it read as nothing at all (stress test, 2026-09-21).
+ */
+const KILOMETRES = /(\d+(?:\.\d+)?)\s*(?:k|km|kms|kilomet(?:er|re)s?)\b/i;
+/** `2000m`, `800 meters`. A bare "m" only at 100 or more — below that it is minutes (see `MINUTES`). */
+const METRES = /(\d+(?:\.\d+)?)\s*(?:m|meters?|metres?)\b/i;
+const MI_PER_KM = 0.621371;
+
 /** The distance a phrase prescribes, in canonical MILES — or null when it prescribes none. */
 export function distanceIn(text: string): number | null {
   const mult = MULTIPLIER.exec(text);
@@ -149,6 +165,14 @@ export function distanceIn(text: string): number | null {
 
   const mi = MILES.exec(text);
   if (mi && !(mult && mult.index < mi.index)) return Number(mi[1]);
+
+  const km = KILOMETRES.exec(text);
+  if (km && !(mult && mult.index < km.index)) return Number(km[1]) * MI_PER_KM;
+
+  const m = METRES.exec(text);
+  if (m && !(mult && mult.index < m.index) && (/[a-z]{2}/i.test(m[0].replace(/[\d.\s]/g, '')) || Number(m[1]) >= 100)) {
+    return (Number(m[1]) / 1000) * MI_PER_KM;
+  }
 
   return null;
 }
@@ -189,6 +213,7 @@ export function nameFrom(part: string): string {
   s = s.replace(/^\d+\s*m(?:in\w*)?\b/i, '');
   s = s.replace(/^~?\d+\s*(?:yd|yds|yard|yards)\b/i, '');
   s = s.replace(/^~?\d+(?:\.\d+)?\s*(?:-|–|—)?\s*(?:\d+(?:\.\d+)?)?\s*(?:mi|mile|miles)\b/i, '');
+  s = s.replace(/^~?\d+(?:\.\d+)?\s*(?:k|km|kms|kilomet(?:er|re)s?|m|meters?|metres?)\b/i, '');
   /*
    * A TRAILING scheme — "overhead press 3x8", "plank 3x45s", "1-arm DB row 3x10/side". It is captured as
    * sets and reps, so leaving it in the name would state the prescription twice, once in words and once

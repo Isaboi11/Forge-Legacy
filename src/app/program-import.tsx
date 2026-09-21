@@ -32,7 +32,7 @@ import * as Clipboard from 'expo-clipboard';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
-import { ImportPreview, fitToScope } from '@/components/forge/ImportSpreadsheetSheet';
+import { ImportPreview, PHOTO_IMPORT_LIVE, fitToScope } from '@/components/forge/ImportSpreadsheetSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenBoundary } from '@/components/screen-boundary';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -44,6 +44,7 @@ import { mergeParsedWeeks } from '@/domain/program/import-merge';
 import { useToast } from '@/hooks/useCeremony';
 import { pickTextFile } from '@/lib/pick-text-file';
 import { newDraft, saveProgramDraft } from '@/lib/program-draft';
+import { usePremiumAi } from '@/lib/entitlement';
 import { draftFromImport } from '@/lib/program-import-draft';
 import { pickImagesFromLibrary } from '@/lib/useMediaPicker';
 
@@ -67,6 +68,12 @@ function photoError(r: Exclude<PhotoReadResult, { kind: 'ok' }>, n: number, tota
       return `${which}That image is too big to read. Try a screenshot rather than a full-size photo.`;
     case 'out_of_credits':
       return 'You’re out of Premium AI credits for this month.';
+    case 'not_entitled':
+      return 'Reading photos is part of Premium AI. Paste the program as text instead.';
+    case 'unsupported_format':
+      return `${which}That image type can’t be read. Take a screenshot of it and upload that instead.`;
+    case 'unavailable':
+      return 'Photo reading isn’t working right now. Try again in a bit, or paste the program as text.';
     default:
       return 'Couldn’t reach us to read that photo. Check your connection and try again.';
   }
@@ -86,7 +93,15 @@ function ProgramImport() {
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const { m } = useLocalSearchParams<{ m?: string }>();
-  const mode: 'paste' | 'photo' = m === 'photo' ? 'photo' : 'paste';
+  /*
+   * ⚠ THE PHOTO READER IS PREMIUM AI ONLY (0203), AND A LINK IS NOT A CARD. Build a Program hides the
+   * Upload pictures card from everyone else, but `/program-import?m=photo` still opened the uploader —
+   * and every read then failed at the server (stress test, 2026-09-21). Without the add-on this is the
+   * paste screen, which is what that athlete can actually use.
+   */
+  const premiumAi = usePremiumAi();
+  const photoOn = PHOTO_IMPORT_LIVE && premiumAi;
+  const mode: 'paste' | 'photo' = m === 'photo' && photoOn ? 'photo' : 'paste';
 
   const [text, setText] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
@@ -94,8 +109,10 @@ function ProgramImport() {
   const [busy, setBusy] = useState<string | null>(null);
   const [preview, setPreview] = useState<ParsedWeek[] | null>(null);
   const [scopeNote, setScopeNote] = useState<string | null>(null);
+  /** Lines the parser did not take as training — the preview lists them (`ParseResult.skipped`). */
+  const [skipped, setSkipped] = useState<string[]>([]);
   /** uri → what that photo read. See the file header: a read costs money, so it happens once. */
-  const reads = useRef(new Map<string, ParsedWeek[]>());
+  const reads = useRef(new Map<string, { weeks: ParsedWeek[]; skipped: string[] }>());
 
   const back = () => {
     if (preview) {
@@ -107,10 +124,11 @@ function ProgramImport() {
   /* Cancel leaves Build a Program altogether — back to Workouts, which is where every door into it is. */
   const cancel = () => router.dismissTo('/workouts');
 
-  const showPreview = (weeks: ParsedWeek[]) => {
+  const showPreview = (weeks: ParsedWeek[], notRead: string[] = []) => {
     const fit = fitToScope(weeks, 'program');
     setError(null);
     setScopeNote(fit.note);
+    setSkipped(notRead);
     setPreview(fit.weeks);
   };
 
@@ -121,7 +139,7 @@ function ProgramImport() {
       setError(r.error);
       return;
     }
-    showPreview(r.weeks);
+    showPreview(r.weeks, r.skipped);
   };
 
   const uploadPdf = async () => {
@@ -152,14 +170,31 @@ function ProgramImport() {
       return next;
     });
 
+  /*
+   * ⚠ ONE READ AT A TIME, HELD BY A REF. `busy` disables the button only once React re-renders, and a
+   * fast double tap lands both taps before that — two loops, and every photo paid for twice. A ref is
+   * set synchronously inside the first tap.
+   */
+  const reading = useRef(false);
   const previewPhotos = async () => {
+    if (reading.current) return;
+    reading.current = true;
+    try {
+      await readAllPhotos();
+    } finally {
+      reading.current = false;
+    }
+  };
+  const readAllPhotos = async () => {
     setError(null);
     const parts: ParsedWeek[][] = [];
+    const notRead: string[] = [];
     for (let i = 0; i < photos.length; i += 1) {
       const uri = photos[i];
       const cached = reads.current.get(uri);
       if (cached) {
-        parts.push(cached);
+        parts.push(cached.weeks);
+        notRead.push(...cached.skipped);
         continue;
       }
       setBusy(photos.length > 1 ? `Reading photo ${i + 1} of ${photos.length}…` : 'Reading your photo…');
@@ -175,11 +210,12 @@ function ProgramImport() {
         setError(photos.length > 1 ? `Photo ${i + 1}: ${parsed.error}` : parsed.error);
         return;
       }
-      reads.current.set(uri, parsed.weeks);
+      reads.current.set(uri, { weeks: parsed.weeks, skipped: parsed.skipped ?? [] });
       parts.push(parsed.weeks);
+      notRead.push(...(parsed.skipped ?? []));
     }
     setBusy(null);
-    showPreview(mergeParsedWeeks(parts));
+    showPreview(mergeParsedWeeks(parts), notRead);
   };
 
   // ── create ───────────────────────────────────────────────────────────────────────────────────────
@@ -217,7 +253,7 @@ function ProgramImport() {
       >
         <View style={styles.column}>
           {preview ? (
-            <ImportPreview weeks={preview} onChange={setPreview} scope="program" scopeNote={scopeNote} />
+            <ImportPreview weeks={preview} onChange={setPreview} scope="program" scopeNote={scopeNote} skipped={skipped} />
           ) : mode === 'paste' ? (
             <>
               <IconPlate>

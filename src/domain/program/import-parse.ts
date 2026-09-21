@@ -22,7 +22,14 @@
 // Relative and extensioned: `node --test` loads this file directly and cannot resolve the `@/` alias.
 // (`import-session-text` gets away with `@/` because it imports a TYPE, which is stripped before then.)
 import { deriveName, type CardioActivity } from '../workout/conditioning.ts';
-import { looksLikeSessionText, parseSessionCell, type SessionItem } from './import-session-text.ts';
+import {
+  activityIn,
+  distanceIn,
+  durationIn,
+  looksLikeSessionText,
+  parseSessionCell,
+  type SessionItem,
+} from './import-session-text.ts';
 import {
   afterWeekHeading,
   loadedSetReps,
@@ -31,11 +38,16 @@ import {
   dayHeadingRow,
   extractScheme,
   firstNumber,
+  hasQualifier,
   isAnnotation,
+  isChatter,
   isLabelContinuation,
   isPageFooter,
+  isRestEntry,
+  isRestInstruction,
   looksLikeDayHeading,
   splitDayHeading,
+  splitDayLabel,
   weekHeading,
   weekdayKey,
 } from './import-scheme.ts';
@@ -86,7 +98,18 @@ export interface ParsedWeek {
 }
 
 export type ParseResult =
-  | { ok: true; weeks: ParsedWeek[]; ignoredColumns: string[]; rowsRead: number }
+  | {
+      ok: true;
+      weeks: ParsedWeek[];
+      ignoredColumns: string[];
+      rowsRead: number;
+      /**
+       * Lines the reader decided were NOT training — a greeting, a caption, a disclaimer, a link, a
+       * "Rest 2 min between sets". Handed back so the preview can list them: a heuristic that drops text
+       * must show what it dropped, or a wrong guess is invisible (stress test, 2026-09-21).
+       */
+      skipped?: string[];
+    }
   | { ok: false; error: string };
 
 /** Defaults when a sheet omits them. Shown as assumed, and adjustable in the preview's steppers. */
@@ -178,6 +201,11 @@ class Builder {
     this.rowsRead++;
   }
 
+  /** Whether a day was ever given anything. */
+  has(week: number, dayKey: string): boolean {
+    return this.weeks.get(week)?.has(dayKey) ?? false;
+  }
+
   /** The item added most recently, so a loaded-set line can extend it. */
   last: ParsedItem | null = null;
 
@@ -236,6 +264,8 @@ function parseFreeform(lines: string[]): ParseResult {
   const seenDays = new Set<string>();
   /** True directly after a "FOCUS:" label, while a line wrapped off the end of it may still arrive. */
   let afterLabel = false;
+  /** Every line read as NOT training, in order — see `ParseResult.skipped`. */
+  const skipped: string[] = [];
 
   /*
    * Read every line's scheme up front, because deciding what a line IS needs its neighbours.
@@ -246,16 +276,73 @@ function parseFreeform(lines: string[]): ParseResult {
    * not a property of the line; it is a property of where it SITS.
    */
   const rows = lines
-    .map((l) => l.trim())
+    // "**Day 1: Upper Body**" — a chat answer bolds its headings, and the asterisks hid the "Day".
+    .map((l) => untab(l.replace(/\*\*|__/g, '').trim()))
     .filter(Boolean)
     .map((line) => {
       const wk = weekHeading(line);
       const { scheme, rest } = extractScheme(line);
-      return { line, wk, scheme, rest, hasScheme: scheme.sets != null || scheme.reps != null };
+      const hasScheme = scheme.sets != null || scheme.reps != null;
+      const label = wk == null ? splitDayLabel(line) : null;
+      const cardio = wk == null && !hasScheme ? cardioItems(line) : null;
+      return {
+        line,
+        wk,
+        scheme,
+        rest,
+        hasScheme,
+        cardio,
+        /** "Mon: Squat 5x5, Bench 5x5" / "Monday: Easy run 3 miles" — a day label with its work after it. */
+        labelled: label && (label.rest && (hasWork(label.rest) || isRestEntry(label.rest))) ? label : null,
+        /** Anything that prescribes something — the thing a heading sits above and chatter sits around. */
+        isWork: hasScheme || cardio != null || loadedSetReps(line) != null,
+      };
     });
+
+  /*
+   * ══ WHERE THE PROGRAM STARTS AND ENDS ══
+   *
+   * What sits above the first prescription and below the last one is where a title page, "Hi Jordan,"
+   * and "Sent from my iPhone" live. Lines there are held to a stricter test (`isPreamble`, and the
+   * chatter cut-off below) than lines in the middle of the work, which are taken as exercises.
+   */
+  const firstWork = rows.findIndex((r) => r.isWork || r.labelled != null);
+  let lastWork = -1;
+  rows.forEach((r, i) => {
+    if (r.isWork || r.labelled != null) lastWork = i;
+  });
+  /** From the first chatter line after the last prescription, everything is the sign-off. */
+  let tailFrom = rows.length;
+  if (lastWork >= 0) {
+    const k = rows.findIndex((r, i) => i > lastWork && !r.isWork && isChatter(r.line));
+    if (k >= 0) tailFrom = k;
+  }
 
   /** Scheme-only lines already claimed by the exercise named above them. */
   const consumed = new Set<(typeof rows)[number]>();
+
+  /** Open a day, noticing a weekday that has come round again (see `seenDays`). */
+  /** Every day heading opened, so one that ends up holding nothing can be reported rather than vanish. */
+  const opened: { week: number; key: string; line: string }[] = [];
+  const openDay = (rawName: string, line: string = rawName) => {
+    const key = weekdayKey(rawName);
+    if (key) {
+      if (seenDays.has(key)) {
+        week++;
+        seenDays.clear();
+        dayOrdinal = 0;
+      }
+      seenDays.add(key);
+    }
+    day = cleanDayName(rawName);
+    dayOrdinal++;
+    opened.push({ week, key: `${dayOrdinal}`, line });
+  };
+
+  /** Add the work in a piece of text — one exercise, several ("Bench 4x8, Row 4x8"), or a bout. */
+  const addWork = (text: string, source: string) => {
+    for (const it of workItems(text, source, skipped)) b.add(week, `${dayOrdinal}`, day ?? 'Day 1', it);
+  };
 
   rows.forEach((row, i) => {
     if (consumed.has(row)) return;
@@ -274,6 +361,23 @@ function parseFreeform(lines: string[]): ParseResult {
     }
     afterLabel = false;
 
+    /*
+     * "Warm-up:", "Main:", "Cool-down:" — sections OF a day, never days. Read as headings (they end in a
+     * colon) they split one training day into three called "Warm-up", "Main" and "Cool-down". The work
+     * under them stays in the day it belongs to; which section it lands in is `toProgramStructure`'s rule.
+     */
+    if (isSectionLabel(row.line)) return;
+
+    /*
+     * "Block 1", "Phase 2 - Hypertrophy", "Cycle 3" — a stretch of several weeks, not a week and not a
+     * lift. It imported as an exercise called "Block 1". Whether its weeks repeat is the program's to
+     * say, so it is listed as skipped rather than turned into weeks nobody wrote.
+     */
+    if (/^(?:block|phase|cycle|mesocycle|meso|stage)\s*\d{1,2}\b(?!\s*[x×])/i.test(row.line) && !row.hasScheme) {
+      skipped.push(row.line);
+      return;
+    }
+
     if (row.wk != null) {
       week = row.wk;
       day = null; // a new week starts its own days
@@ -283,13 +387,22 @@ function parseFreeform(lines: string[]): ParseResult {
        * "Week 1: Squat 5x5" carries work on the heading line. Consuming the whole line discarded it —
        * and for a program written one week per line, discarded every exercise in the program and then
        * reported that it found none.
+       *
+       * What follows the heading is only work when it prescribes something or names nothing but a lift.
+       * "Week 1: 15 miles" is the week's volume and "Week 4 — deload" is what the week is FOR; neither is
+       * an exercise.
        */
       const rest = afterWeekHeading(row.line);
-      if (rest) {
-        const { scheme, rest: named } = extractScheme(rest);
-        const name = cleanExerciseName(named || rest);
-        if (name) b.add(week, `${dayOrdinal}`, day ?? 'Day 1', item(name, scheme.sets, scheme.reps));
+      if (rest && (hasScheme(rest) || (activityIn(rest) != null && cardioItems(rest) != null) || (!/\d/.test(rest) && !isChatter(rest) && !isRestEntry(rest) && !/\bdeload\b/i.test(rest)))) {
+        addWork(rest, row.line);
       }
+      return;
+    }
+
+    // "Mon: Squat 5x5, Bench 5x5" / "Monday: Easy run 3 miles" / "Tuesday: Rest".
+    if (row.labelled) {
+      openDay(row.labelled.label, row.line);
+      if (!isRestEntry(row.labelled.rest)) addWork(row.labelled.rest, row.line);
       return;
     }
 
@@ -304,6 +417,18 @@ function parseFreeform(lines: string[]): ParseResult {
       b.last.setsAssumed = false;
       b.last.reps = setReps;
       b.last.repsAssumed = false;
+      return;
+    }
+
+    // A rest day written as an entry is the absence of a session, and a rest instruction is not a lift.
+    if (isRestEntry(row.line)) return;
+    if (!row.hasScheme && isRestInstruction(row.line)) {
+      skipped.push(row.line);
+      return;
+    }
+
+    if (row.cardio) {
+      for (const it of row.cardio) b.add(week, `${dayOrdinal}`, day ?? 'Day 1', it);
       return;
     }
 
@@ -326,48 +451,185 @@ function parseFreeform(lines: string[]): ParseResult {
        */
       if (next?.hasScheme && !next.rest) {
         const name = cleanExerciseName(row.line);
-        if (name) b.add(week, `${dayOrdinal}`, day ?? 'Day 1', item(name, next.scheme.sets, next.scheme.reps));
+        if (name) b.add(week, `${dayOrdinal}`, day ?? 'Day 1', noted(item(name, next.scheme.sets, next.scheme.reps), next.line));
         consumed.add(next);
         return;
       }
 
-      const atBoundary = next?.hasScheme === true && (prev == null || prev.hasScheme);
-      if (looksLikeDayHeading(row.line) || atBoundary) {
+      /*
+       * "Bench" then "135 x 5" / "185 x 3" — the lift named once, its sets written under it. The name
+       * is the exercise the sets belong to, never a heading above them.
+       */
+      if (next != null && loadedSetReps(next.line) != null) {
+        addWork(row.line, row.line);
+        return;
+      }
+
+      /*
+       * ⚠ NOT WHEN IT CARRIES A NUMBER. "Deadlift 70% 1RM" between two prescribed lifts is a lift with an
+       * intensity and no sets — a heading never says "70%". Read as a boundary it split the day in two and
+       * took the deadlift with it (stress test, 2026-09-21). "Day 2" and "Week 3" say what they are and
+       * never needed this rule.
+       */
+      const atBoundary = next?.isWork === true && (prev == null || prev.isWork) && !/\d/.test(row.line.replace(/^\s*\d{1,2}[.)]\s+/, ''));
+      if ((looksLikeDayHeading(row.line) || atBoundary) && !isChatter(row.line)) {
         // "SATURDAY Arms/Chest: Chair Dips" — the day, and the day's first exercise, on one line.
         const split = splitDayHeading(row.line);
+        openDay(split.name, row.line);
+        if (split.rest) addWork(split.rest, row.line);
+        return;
+      }
 
-        // A weekday already spent in this week means the program has come round to its next one.
-        const key = weekdayKey(split.name);
-        if (key) {
-          if (seenDays.has(key)) {
-            week++;
-            seenDays.clear();
-            dayOrdinal = 0;
-          }
-          seenDays.add(key);
-        }
-
-        day = cleanDayName(split.name);
-        dayOrdinal++;
-
-        if (split.rest) {
-          const { scheme, rest } = extractScheme(split.rest);
-          const name = cleanExerciseName(rest || split.rest);
-          if (name) b.add(week, `${dayOrdinal}`, day, item(name, scheme.sets, scheme.reps));
-        }
+      // What is NOT an exercise: chatter anywhere, the sign-off, and the title page above the program.
+      if (
+        isChatter(row.line) ||
+        i >= tailFrom ||
+        (firstWork >= 0 && i < firstWork && isPreamble(row.line))
+      ) {
+        skipped.push(row.line);
         return;
       }
     }
 
-    const name = cleanExerciseName(row.rest || row.line);
-    if (!name) return;
-    b.add(week, `${dayOrdinal}`, day ?? 'Day 1', item(name, row.scheme.sets, row.scheme.reps));
+    addWork(row.line, row.line);
   });
+
+  /*
+   * A DAY THAT CAME TO NOTHING. A rest day is meant to ("Wednesday - Rest"), but "Day 2: Same as Day 1"
+   * is a real session this reader cannot copy, and it used to vanish without a word.
+   */
+  for (const o of opened) {
+    if (!b.has(o.week, o.key) && !/\brest\b|\boff\b|recovery/i.test(o.line)) skipped.push(o.line);
+  }
 
   if (b.rowsRead === 0) {
     return { ok: false, error: 'No exercises found. Write one per line, like “Bench Press 3x8”.' };
   }
-  return { ok: true, weeks: b.done(), ignoredColumns: [], rowsRead: b.rowsRead };
+  return { ok: true, weeks: b.done(), ignoredColumns: [], rowsRead: b.rowsRead, skipped };
+}
+
+/**
+ * A row copied out of a sheet WITHOUT its header — "Bench Press⇥4⇥8". With no header there is no table to
+ * read it as, so it reached this reader with its numbers in cells of their own, where nothing looks for
+ * them: it imported as a lift called "Bench Press 4 8" at an invented 3×10 (stress test, 2026-09-21).
+ * The two trailing whole numbers are read as sets then reps — the order every sheet in this file keeps
+ * them in — and any other tabbed line simply has its tabs read as spaces.
+ */
+function untab(line: string): string {
+  if (!line.includes('\t')) return line;
+  const cells = line.split('\t').map((c) => c.trim()).filter(Boolean);
+  const reps = cells[cells.length - 1];
+  const sets = cells[cells.length - 2];
+  if (cells.length >= 3 && /^\d{1,2}$/.test(sets ?? '') && /^\d{1,3}(?:\s*[-–]\s*\d{1,3})?$/.test(reps ?? '') && /\p{L}/u.test(cells[0])) {
+    return `${cells.slice(0, -2).join(' ')} ${sets}x${reps}`;
+  }
+  return cells.join(' ');
+}
+
+/** Does this text carry a sets×reps of its own? */
+function hasScheme(text: string): boolean {
+  const { scheme } = extractScheme(text);
+  return scheme.sets != null || scheme.reps != null;
+}
+
+/** Does this text prescribe anything — a sets×reps, or a bout with a distance or a clock? */
+function hasWork(text: string): boolean {
+  const { scheme } = extractScheme(text);
+  return scheme.sets != null || scheme.reps != null || cardioItems(text) != null;
+}
+
+/**
+ * A line of text as a CARDIO bout, or null.
+ *
+ * ⚠ TYPED-OUT PLANS NEVER READ CARDIO AT ALL. The session reader (`parseSessionCell`) knew what "20 min
+ * bike" and "Run 3 miles" were, but only ever ran on a one-row-per-day TABLE; the same lines typed into
+ * Notes imported as exercises called "Run 3 miles easy" at an invented 3×10 (stress test, 2026-09-21).
+ *
+ * ⚠ A DISTANCE WITH NO ACTIVITY NAMED IS A RUN — "Mon: 3 mi easy", "Sat: 8 mi long". PO, 2026-09-21:
+ * *"Things that have a certain amount of miles for running … make sure it works."* Only miles and
+ * kilometres, which is how runs are written; yards and metres name a carry or a sled as often as a run,
+ * so those still need the activity said. The sentence stays on the bout as its note, and the preview
+ * shows "Outdoor Run", so a wrong reading is one tap from being seen.
+ */
+function cardioItems(text: string): ParsedItem[] | null {
+  const t = text.trim();
+  if (!t) return null;
+  const { scheme } = extractScheme(t);
+  if (scheme.sets != null || scheme.reps != null) return null;
+  if (looksLikeSessionText(t) && !isRestEntry(t)) {
+    const items = parseSessionCell(t).map(sessionItem);
+    return items.some((i) => i.kind === 'cardio') ? items : null;
+  }
+  if (!activityIn(t) && /\d\s*(?:mi|miles?|k|km|kms|kilomet(?:er|re)s?)\b/i.test(t)) {
+    const mi = distanceIn(t);
+    if (mi != null) {
+      return [sessionItem({ name: '', note: t, kind: 'cardio', activity: 'run', targetMi: mi, targetSec: durationIn(t) })];
+    }
+  }
+  return null;
+}
+
+/**
+ * Split one line into the exercises on it — "Bench 4x8, Row 4x8, Squat 5x5", "SS: Curl 3x12 / Pushdown
+ * 3x12", "Lateral Raise 3x15 + Rear Delt Fly 3x15".
+ *
+ * ⚠ ONE LINE, SEVERAL LIFTS, USED TO BE ONE LIFT with a name like "Bench , Row 4x8, Squat 5x5" (stress
+ * test, 2026-09-21). Split only when EVERY piece carries its own prescription, so "Squat 5x5, 3 min
+ * rest" stays one lift and "90/90 hip switch" is never cut (the slash needs spaces round it).
+ */
+function workItems(text: string, source: string, skipped: string[]): ParsedItem[] {
+  const parts = text
+    .split(/\s*(?:[,;]|\s[/+&]\s|\s+and\s+|\s+then\s+)\s*/i)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const pieces = parts.length >= 2 && parts.every(hasWork) ? parts : [text];
+
+  const out: ParsedItem[] = [];
+  for (const piece of pieces) {
+    const cardio = cardioItems(piece);
+    if (cardio) {
+      out.push(...cardio);
+      continue;
+    }
+    const { scheme, rest } = extractScheme(piece);
+    const hasNumbers = scheme.sets != null || scheme.reps != null;
+    const name = cleanExerciseName(hasNumbers ? rest : rest || piece);
+    /*
+     * A line that is NOTHING but a prescription has no exercise to give it to — "Week 1: 3x8" under a
+     * lift named once. It used to become an exercise called "3x8".
+     */
+    // "Week 4: deload 2x5" says what the week is FOR; there is no lift called "deload".
+    if (!name || !/\p{L}/u.test(name) || /^deload(?:\s+week)?$/i.test(name)) {
+      skipped.push(source);
+      continue;
+    }
+    out.push(noted(item(name, scheme.sets, scheme.reps), pieces.length > 1 ? piece : source));
+  }
+  return out;
+}
+
+/** Keep the source line as the item's note when it said something the name and numbers cannot hold. */
+function noted(it: ParsedItem, source: string): ParsedItem {
+  return hasQualifier(source) ? { ...it, note: source.trim() } : it;
+}
+
+/** "Warm-up:", "Main", "Cool down:", "Finisher" — a section of a day, not a day. */
+function isSectionLabel(line: string): boolean {
+  return /^(?:warm\s*-?\s*ups?|main(?:\s+(?:work|lifts?|sets?|workout))?|cool\s*-?\s*downs?|finishers?|accessor(?:y|ies)(?:\s+work)?)\s*:?$/i.test(
+    line.replace(/\*\*|__/g, '').trim(),
+  );
+}
+
+/**
+ * A line ABOVE the first prescription that is a title or an introduction rather than a lift — "🔥 MY 4
+ * DAY SPLIT 🔥", "ok heres ur workout for this week", "By Coach Alex". An exercise name is short and
+ * names a movement; these are long, or name the program itself.
+ */
+function isPreamble(line: string): boolean {
+  const words = line.split(/\s+/).filter((w) => /\p{L}/u.test(w)).length;
+  if (words >= 6) return true;
+  if (/\b(?:program|programme|plan|split|routine|guide|challenge|phase|ebook|edition)\b/i.test(line)) return true;
+  return /^by\s+\p{L}/iu.test(line.trim());
 }
 
 /**
@@ -434,13 +696,20 @@ const STRENGTH_HEADERS = /strength|mobility|lift|gym|accessor/;
 function findSessionHeader(
   lines: readonly string[],
   delimiter: '\t' | ';' | ',',
-): { index: number; cells: string[]; dayAt: number | undefined; columns: { index: number; strengthOnly: boolean }[] } | null {
+): {
+  index: number;
+  cells: string[];
+  dayAt: number | undefined;
+  weekAt: number | undefined;
+  columns: { index: number; strengthOnly: boolean }[];
+} | null {
   for (let i = 0; i < Math.min(lines.length, HEADER_SCAN_LIMIT); i++) {
     const cells = splitLine(lines[i], delimiter);
     const norm = cells.map((h) => h.toLowerCase().replace(/[^a-z]/g, ''));
 
     const dayAt = norm.findIndex((h) => h === 'day');
     const dateAt = norm.findIndex((h) => h === 'date');
+    const weekAt = norm.findIndex((h) => h === 'week' || h === 'wk');
     if (dayAt < 0 && dateAt < 0) continue;
 
     const columns = norm
@@ -459,7 +728,15 @@ function findSessionHeader(
      */
     const body = lines.slice(i + 1);
     const speaks = body.some((line) => splitLine(line, delimiter).some((c) => looksLikeSessionText(c)));
-    if (speaks) return { index: i, cells, dayAt: dayAt >= 0 ? dayAt : dateAt >= 0 ? dateAt : undefined, columns };
+    if (speaks) {
+      return {
+        index: i,
+        cells,
+        dayAt: dayAt >= 0 ? dayAt : dateAt >= 0 ? dateAt : undefined,
+        weekAt: weekAt >= 0 ? weekAt : undefined,
+        columns,
+      };
+    }
   }
   return null;
 }
@@ -508,12 +785,13 @@ function parseSessionTable(
   headerCells: readonly string[],
   columns: { index: number; strengthOnly: boolean }[],
   dayAt: number | undefined,
+  weekAt?: number,
 ): ParseResult {
   const b = new Builder();
   let week = 1;
   let dayOrdinal = 0;
   const ignoredColumns = headerCells.filter(
-    (h, i) => h && !columns.some((c) => c.index === i) && i !== dayAt,
+    (h, i) => h && !columns.some((c) => c.index === i) && i !== dayAt && i !== weekAt,
   );
 
   /*
@@ -559,7 +837,8 @@ function parseSessionTable(
    */
   let offset: number | null = null;
   for (const line of rows) {
-    const at = splitLine(line, delimiter).findIndex((c) => weekdayKey(c) != null);
+    // A cell that IS a weekday — not a date that starts with one ("Mon, Jun 1"), which sits in its own column.
+    const at = splitLine(line, delimiter).findIndex((c) => weekdayKey(c) != null && !DATE_CELL.test(c.trim()));
     if (at >= 0 && dayAt !== undefined) {
       offset = at - dayAt;
       break;
@@ -590,8 +869,19 @@ function parseSessionTable(
     }
     if (banner) continue;
 
+    /*
+     * A WEEK COLUMN. It was treated as metadata and never read, so a two-week running table filed week 2's
+     * runs as more days of week 1 (stress test, 2026-09-21). Read like the banner: a new number is a new week.
+     */
+    const wkCell = weekAt !== undefined ? firstNumber(cells[dataAt(weekAt)]) : undefined;
+    if (wkCell != null && wkCell !== week) {
+      week = wkCell;
+      dayOrdinal = 0;
+    }
+
     const items = columns.flatMap(({ index, strengthOnly }) =>
-      parseSessionCell(cells[dataAt(index)] ?? '', { strengthOnly }).map(sessionItem),
+      (!strengthOnly ? cardioItems(cells[dataAt(index)] ?? '') : null) ??
+        parseSessionCell(cells[dataAt(index)] ?? '', { strengthOnly }).map(sessionItem),
     );
     if (!items.length) continue;
 
@@ -724,7 +1014,7 @@ export function parseProgramTable(raw: string): ParseResult {
      */
     const session = findSessionHeader(lines, delimiter);
     if (session) {
-      return parseSessionTable(lines, delimiter, session.index, session.cells, session.columns, session.dayAt);
+      return parseSessionTable(lines, delimiter, session.index, session.cells, session.columns, session.dayAt, session.weekAt);
     }
 
     /*
@@ -831,6 +1121,17 @@ export function parseProgramTable(raw: string): ParseResult {
     // The header, come round again for the next week.
     if (isHeaderWord(rawName)) {
       inPreamble = false;
+      continue;
+    }
+
+    /*
+     * "Tuesday | Rest" — a rest day on a row of its own. It imported as an exercise called "Rest" at
+     * 3×10, which turned every rest day into a training day (stress test, 2026-09-21). Nothing is created;
+     * the Day cell still moves on, so a blank-Day row below is not filed under the day before.
+     */
+    if (isRestEntry(cleanExerciseName(rawName))) {
+      const restDay = at.day !== undefined ? (cells[at.day] ?? '').trim() : '';
+      if (restDay) day = restDay;
       continue;
     }
 
@@ -1010,6 +1311,8 @@ export function unmatchedNames(
   resolveKey: (name: string) => string | undefined,
 ): string[] {
   const out = new Set<string>();
-  for (const w of weeks) for (const d of w.days) for (const i of d.items) if (!resolveKey(i.name)) out.add(i.name);
+  // A cardio bout is never looked up (see `toProgramStructure`), so it is never "not in the library" —
+  // counting "Outdoor Run" here told a runner their runs had not been recognised.
+  for (const w of weeks) for (const d of w.days) for (const i of d.items) if (i.kind !== 'cardio' && !resolveKey(i.name)) out.add(i.name);
   return [...out];
 }

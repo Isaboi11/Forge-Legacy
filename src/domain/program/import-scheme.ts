@@ -15,8 +15,59 @@ export interface Scheme {
   reps?: number;
 }
 
-/** `3x8`, `3 x 8`, `3×8`, `5X5`, `4x8-10` → the sets and the FLOOR of the rep range. */
-const COMPACT = /(?<![\d.])(\d{1,2})\s*[x×]\s*(\d{1,3})(?![\d.])/i;
+/**
+ * `3x8`, `3 x 8`, `3×8`, `5X5`, `4x8-10` → the sets and the FLOOR of the rep range.
+ *
+ * ⚠ THE RANGE'S TOP AND A UNIT ARE CONSUMED WITH IT (stress test, 2026-09-21). The match used to stop
+ * at the floor, so "Lateral Raise 3x8-10" left "Lateral Raise -10" as the name and "Plank 3x30s" left
+ * "Plank s" — neither of which is in the catalogue, so a perfectly ordinary line imported unmatched. The
+ * unit itself is not lost: the line is kept as the item's note (`hasQualifier`).
+ */
+const COMPACT_UNIT = '(?:\\s*(?:s|secs?|seconds?|m|meters?|metres?|yds?|yards?|ft|feet|mins?|minutes?)\\b)?';
+const COMPACT = new RegExp(`(?<![\\d.])(\\d{1,2})\\s*[x×]\\s*(\\d{1,3})(?![\\d.])${COMPACT_UNIT}`, 'i');
+/**
+ * The same with a range's top — "3x8-10". Only a PLAUSIBLE top counts: "4x8 - 90s rest" is four sets of
+ * eight and a rest, not a range of eight to ninety.
+ */
+const COMPACT_RANGE = new RegExp(`(?<![\\d.])(\\d{1,2})\\s*[x×]\\s*(\\d{1,3})\\s*[-–—]\\s*(\\d{1,3})(?![\\d.])${COMPACT_UNIT}`, 'i');
+
+function compactMatch(text: string): RegExpMatchArray | null {
+  const ranged = text.match(COMPACT_RANGE);
+  if (ranged) {
+    const lo = Number(ranged[2]);
+    const hi = Number(ranged[3]);
+    if (hi > lo && hi <= lo * 3 + 2) return ranged;
+  }
+  return text.match(COMPACT);
+}
+/**
+ * "3x AMRAP", "4 x max", "3xF", "3 x failure" — the SETS are stated, the reps are "as many as you can".
+ *
+ * Unread, the line had no scheme at all, and a line with no scheme sitting between two that have one is
+ * read as a DAY HEADING by the boundary rule — so "Pull Ups – 3 x AMRAP" split a real training day in two
+ * and became the name of the second half. The reps stay unstated and are shown as assumed.
+ */
+const SETS_TO_FAILURE = /(?<![\d.])(\d{1,2})\s*[x×]\s*(?:amrap|max|failure|f)\b/i;
+/**
+ * Number words next to a sets/reps word — "three sets of eight", "five by five". Only ADJACENT to one,
+ * so "One-arm DB row" keeps its name: a word is only a number when it is plainly counting sets or reps.
+ */
+const NUMBER_WORDS: Record<string, string> = {
+  one: '1', two: '2', three: '3', four: '4', five: '5', six: '6', seven: '7', eight: '8', nine: '9', ten: '10',
+  eleven: '11', twelve: '12', fifteen: '15', twenty: '20',
+};
+const NUMBER_WORD = `(${Object.keys(NUMBER_WORDS).join('|')})`;
+const WORD_BEFORE = new RegExp(`\\b${NUMBER_WORD}(?=\\s+(?:sets?|reps?|by|x|×)\\b)`, 'gi');
+const WORD_AFTER = new RegExp(`(?<=\\b(?:of|by|x|×)\\s+)${NUMBER_WORD}\\b`, 'gi');
+/** "5 by 5" → "5x5", once the words are digits. */
+const BY = /(?<![\d.])(\d{1,2})\s+by\s+(\d{1,3})(?![\d.])/i;
+
+function numberWordsToDigits(text: string): string {
+  return text
+    .replace(WORD_BEFORE, (w) => NUMBER_WORDS[w.toLowerCase()] ?? w)
+    .replace(WORD_AFTER, (w) => NUMBER_WORDS[w.toLowerCase()] ?? w)
+    .replace(BY, '$1x$2');
+}
 /**
  * "4/8" — sets over reps, which is how a split gets texted.
  *
@@ -63,12 +114,64 @@ const ORPHAN_UNIT = /\s+(?:reps?|sets?)\b/gi;
 /** The same debris, collapsed when it ends up mid-name: "Bench press - - reps" → "Bench press". */
 const INNER_DEBRIS = /\s*[-–—:|,]\s*(?=[-–—:|,]|$)/g;
 
+/**
+ * ══ WHAT PEOPLE ACTUALLY PASTE AROUND A NAME (stress test, 2026-09-21) ══
+ *
+ * Every one of these reached the catalogue matcher glued to the name and made an ordinary lift
+ * unmatchable — "RDL @RPE8", "Bench 100kg", "Lunges each side", "**Bench Press:**" out of a chat answer,
+ * "▪️ Deadlifts" out of an Instagram caption. None of them is part of what the exercise is CALLED, and
+ * the line they came from is kept whole as the item's note, so stripping them loses nothing.
+ */
+/** Markdown emphasis — a chat answer bolds every name. */
+const MARKDOWN = /\*\*|__|^#+\s+/g;
+/** A name wrapped in quotes, straight or smart. */
+const WRAPPING_QUOTES = /^["“”'‘’]+|["“”'‘’]+$/g;
+/** Emoji and symbol bullets — "▪️", "👉", "✅", "🔹" — at either end. Nobody names a lift with one. */
+const EMOJI_EDGES = /^[\p{Extended_Pictographic}\p{So}️‍\s]+|[\s\p{Extended_Pictographic}\p{So}️‍]+$/gu;
+/** A load anywhere in the line — "100kg", "30lb", "135 lbs". */
+const LOAD_TOKEN = /\s*\b\d+(?:\.\d+)?\s*(?:kgs?|kilos?|lbs?|pounds?)\b/gi;
+/** "@RPE8", "RPE 8-9", "@ 8 RPE", "RIR 2". */
+const EFFORT = /\s*@?\s*\b(?:rpe|rir)\s*\d+(?:\.\d+)?(?:\s*[-–—]\s*\d+(?:\.\d+)?)?|\s*@?\s*\b\d+(?:\.\d+)?\s*(?:rpe|rir)\b/gi;
+/** "70% 1RM", "@75%", "80% of max". */
+const PERCENT = /\s*@?\s*\d{1,3}(?:\.\d+)?\s*%(?:\s*(?:of\s+)?(?:1\s*rm|max|tm|training max))?/gi;
+/** "each side", "per leg", "/side", "ea". */
+const PER_SIDE = /\s*(?:\/\s*(?:side|leg|arm)|\b(?:each|per)\s+(?:side|leg|arm)s?\b|\bea\b\.?)/gi;
+/** "to failure", "till failure", "AMRAP". */
+const TO_FAILURE = /\s*\b(?:(?:to|till|until)\s+failure|amrap)\b/gi;
+/** "rest 60 sec", "(rest 2 min)" — the rest note written the other way round from `REST_NOTE`. */
+const REST_FIRST = /\s*\(?\s*\brest\s*:?\s*\d+\s*(?:s|secs?|seconds?|m|mins?|minutes?)\b\s*\)?/gi;
+/** A lone "x" left at either end once its numbers were taken — "Squat x". */
+const DANGLING_X = /^\s*[x×]\s+|\s+[x×]\s*$/gi;
+/** A superset label in front of the name — "SS:", "Superset -", "Tri-set:". */
+const SUPERSET_LABEL = /^\s*(?:ss|super\s*-?\s*set|tri\s*-?\s*set|giant\s*set)\s*\d*\s*[:\-–—]\s*/i;
+
+/**
+ * Does a line carry anything the name and a plain sets×reps cannot hold — a load, an effort target, a
+ * unit, a side, a rest? When it does, the whole line becomes the item's note so the athlete still has it.
+ */
+export function hasQualifier(line: string): boolean {
+  return /@|%|\/\s*side|\b(?:rpe|rir|amrap|failure|each|per|ea|rest|tempo|kg|kgs|lbs?|sec|secs|seconds?|mins?|minutes?|yds?|yards?|ft|meters?|metres?)\b|\d\s*(?:s|m)\b/i.test(
+    line,
+  );
+}
+
 /** Strip decoration, a trailing load and dangling separators — what the exercise is actually called. */
 export function cleanExerciseName(raw: string): string {
   return raw
+    .replace(MARKDOWN, '')
+    .replace(EMOJI_EDGES, '')
     .replace(LEADING_DECORATION, '')
+    .replace(SUPERSET_LABEL, '')
+    .replace(WRAPPING_QUOTES, '')
     .replace(TRAILING_LOAD, '')
     .replace(REST_NOTE, '')
+    .replace(REST_FIRST, '')
+    .replace(LOAD_TOKEN, '')
+    .replace(EFFORT, '')
+    .replace(PERCENT, '')
+    .replace(PER_SIDE, '')
+    .replace(TO_FAILURE, '')
+    .replace(DANGLING_X, ' ')
     .replace(EMPTY_PAREN, '')
     .replace(TRAILING_PAREN, '')
     .replace(ORPHAN_UNIT, '')
@@ -116,13 +219,21 @@ function cut(text: string, spans: [number, number][]): string {
  * is read as sets-then-reps rather than throwing away the first, because the intent is not in doubt.
  */
 export function extractScheme(raw: string): { scheme: Scheme; rest: string } {
-  const text = raw.replace(TRAILING_LOAD, '');
+  const text = numberWordsToDigits(raw.replace(TRAILING_LOAD, ''));
 
-  const compact = text.match(COMPACT) ?? text.match(SLASHED);
+  const compact = compactMatch(text) ?? text.match(SLASHED);
   if (compact?.index != null) {
     return {
       scheme: { sets: num(compact[1]), reps: num(compact[2]) },
       rest: cut(text, [[compact.index, compact.index + compact[0].length]]),
+    };
+  }
+
+  const toFailure = text.match(SETS_TO_FAILURE);
+  if (toFailure?.index != null) {
+    return {
+      scheme: { sets: num(toFailure[1]) },
+      rest: cut(text, [[toFailure.index, toFailure.index + toFailure[0].length]]),
     };
   }
 
@@ -176,16 +287,129 @@ export function firstNumber(cell: string | undefined): number | undefined {
 
 // ── recognising the lines that are not exercises ────────────────────────────
 
-const WEEKDAYS = /^(mon|tues?|wednes|thurs?|fri|satur|sun)day\b/i;
+/**
+ * A weekday, full or abbreviated — "Monday", "Mon", "Tues", "Thurs", "Sat".
+ *
+ * ⚠ THE ABBREVIATIONS ARE NOT A NICETY (stress test, 2026-09-21). A running table with a Day column of
+ * "Mon / Wed / Sat" had no row the session reader recognised as starting a row, so it glued all six rows
+ * onto the first and imported ONE run out of six; a texted "mon - chest n tris" was an exercise.
+ */
+/**
+ * The full names always count. An abbreviation only counts standing ALONE or before a separator, so
+ * "Sun salutation" and "Sat on bench" stay exercises while "Mon", "Wed:" and "fri - legs" are days.
+ */
+const WEEKDAY_SRC =
+  '(?:(?:mon|tues|wednes|thurs|fri|satur|sun)day\\b|(?:mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\\.?(?=\\s*(?:$|[-–—:|,(/])))';
+const WEEKDAYS = new RegExp(`^${WEEKDAY_SRC}`, 'i');
 const DAY_WORD = /^(day|session|workout)\b/i;
-const WEEK_WORD = /^week\s*(\d{1,2})/i;
+/** Numbers a week is written with in words — "Week One". Twelve covers every block anyone texts. */
+const WEEK_NUMBER_WORDS: Record<string, number> = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
+};
+/**
+ * "Week 3", "Wk2", "W3", "Week One", "Weeks 1-4" → the (first) week number.
+ *
+ * ⚠ "Wk2" AND "W3" WERE EXERCISES, and a three-week program imported as one week of four "Day 1"s with
+ * three lifts called "Wk2", "W3" and "Block 1" (stress test, 2026-09-21). "Wk" was already a Week COLUMN
+ * alias in `import-parse.ts`; a typed heading simply never learned it.
+ *
+ * A RANGE ("Weeks 1-4") names its first week. Whether weeks 2–4 repeat week 1 is the program's to say,
+ * and filling them in would be writing weeks nobody wrote — so they are not.
+ */
+const WEEK_WORD = new RegExp(
+  `^(?:weeks?|wks?|w)\\s*\\.?\\s*#?(\\d{1,2}|${Object.keys(WEEK_NUMBER_WORDS).join('|')})\\b(?:\\s*[-–—]\\s*\\d{1,2}\\b)?`,
+  'i',
+);
 
 /** "WEEK 3", "Week 3 — deload" → 3. Null when the line is not a week heading. */
 export function weekHeading(line: string): number | null {
   const m = line.trim().match(WEEK_WORD);
   if (!m) return null;
-  const n = Number(m[1]);
+  const n = WEEK_NUMBER_WORDS[m[1].toLowerCase()] ?? Number(m[1]);
   return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/**
+ * A rest day written as an entry — "Rest", "Rest day", "Off", "Day off", "Recovery day".
+ *
+ * ⚠ IT IMPORTED AS AN EXERCISE CALLED "REST" AT AN INVENTED 3×10, which made the rest day a training
+ * day — and in a Monday-to-Sunday week that pushed a real day past the builder's six-day limit, where it
+ * was dropped (stress test, 2026-09-21). A rest day is the absence of a session: nothing is created.
+ * Strict on purpose; "Rest, then a 20 min walk" is not rest.
+ */
+const REST_ENTRY = /^(?:full\s+|complete\s+)?(?:rest|off|recovery)(?:\s+day)?(?:\s*\/\s*(?:rest|off|recovery))?[.!]*$|^day\s+off[.!]*$/i;
+
+export function isRestEntry(text: string): boolean {
+  return REST_ENTRY.test(text.trim());
+}
+
+/** "Rest 3 min between sets", "Rest 90s" — an instruction about the gaps, on a line of its own. */
+export function isRestInstruction(text: string): boolean {
+  return /^rest\b[^a-z]*\d+\s*(?:s|secs?|seconds?|m|mins?|minutes?)\b/i.test(text.trim());
+}
+
+/**
+ * A DAY LABEL at the front of a line that carries the day's work — "Mon: Squat 5x5, Bench 5x5",
+ * "Day 1 - Push: Bench 4x8", "Monday: Easy run 3 miles".
+ *
+ * ⚠ THESE LINES WERE READ AS ONE EXERCISE, OR AS A DAY WITH NOTHING IN IT. "Mon: Squat 5x5, Bench 5x5,
+ * Row 5x5" became a single lift of that name, so a three-day week imported as one day of three junk
+ * rows; "Monday: Easy run 3 miles" became a day NAME with no work under it, which is dropped, so a
+ * running week lost every run that was not written with an "x" in it (stress test, 2026-09-21).
+ *
+ * Returns the label (for the day's name) and the work after it, or null. The caller decides whether the
+ * remainder is really work — a day called "Monday: Chest" is still just a name.
+ */
+const DAY_LABEL_PREFIX = new RegExp(`^(${WEEKDAY_SRC}|(?:day|session|workout)\\s*\\d{1,2}\\b)\\s*(?:[-–—:|)]\\s*|\\s+)(.+)$`, 'i');
+
+export function splitDayLabel(line: string): { label: string; rest: string } | null {
+  const m = line.trim().match(DAY_LABEL_PREFIX);
+  if (!m) return null;
+  let label = m[1];
+  let rest = m[2].trim();
+  // "Day 1 - Push: Bench 4x8" — a name for the day between the label and the work.
+  const named = rest.match(/^([^:]{2,30}):\s*(.+)$/);
+  if (named && !/\d\s*[x×]\s*\d/.test(named[1])) {
+    label = `${label} - ${named[1].trim()}`;
+    rest = named[2].trim();
+  }
+  return { label, rest };
+}
+
+/**
+ * ══ THE LINES AROUND A PROGRAM THAT ARE NOT THE PROGRAM ══
+ *
+ * A PDF opens with a title page, a copyright line and a disclaimer; an Instagram caption ends in "Save
+ * this for later 📌" and a row of hashtags; an email starts "Hi Jordan," and ends with a phone number and
+ * "Sent from my iPhone". Every one of them imported as an exercise at an invented 3×10 (stress test,
+ * 2026-09-21), and the PDF's "INTRODUCTION", "NUTRITION" and "FAQ" became training days.
+ *
+ * This only ever answers for a line that has NO sets×reps and is not cardio — anything with a
+ * prescription on it is work, whatever else it says. And nothing it catches is thrown away quietly: the
+ * parser hands every skipped line back and the preview lists them.
+ */
+export function isChatter(line: string): boolean {
+  const t = line.trim();
+  if (!t) return true;
+  if (/https?:\/\/|\bwww\.|\.(?:com|net|org|io|co|app)\b/i.test(t)) return true; // a link
+  if (/\S+@\S+\.\S+/.test(t)) return true; // an email address
+  if (/^[@#]\S+/.test(t) || /(?:^|\s)#\w+\s+#\w+/.test(t) || /\bfollow\s+@/i.test(t)) return true; // handles, hashtags
+  if (/©|\ball rights reserved\b|\bdisclaimer\b|\bcopyright\b/i.test(t)) return true;
+  if (/\(?\b\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b/.test(t)) return true; // a phone number
+  if (/^(?:hi|hey|hello|dear|thanks|thank you|thx|cheers|best|regards|sincerely|lmk|let me know|sent from)\b/i.test(t)) return true;
+  if (/^[QA]\s*:/i.test(t)) return true; // an FAQ
+  // A date on a line of its own — "September 20, 2026", "9/20/26".
+  if (/^(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{2,4}|\d{1,2}\/\d{1,2}\/\d{2,4})$/i.test(t)) return true;
+  /*
+   * A SENTENCE: long, or finished with sentence punctuation. Exercise names are short and unpunctuated.
+   * A parenthetical is a coaching aside on a real lift — "Chair Dips (use sturdy chair, feet closer =
+   * easier)" — so it is not counted.
+   */
+  const bare = t.replace(/\([^)]*\)/g, ' ').trim();
+  const words = bare.split(/\s+/).filter((w) => /[a-z]/i.test(w)).length;
+  if (words >= 9) return true;
+  if (words >= 4 && /[.!?]["')\]]*[\s\p{Extended_Pictographic}️]*$/u.test(bare)) return true;
+  return false;
 }
 
 /**
@@ -212,6 +436,10 @@ export function looksLikeDayHeading(line: string): boolean {
   if (!t) return false;
   if (WEEKDAYS.test(t) || DAY_WORD.test(t)) return true;
   if (t.endsWith(':')) return true;
+  // "Sept 22", "Oct 3rd", "9/22" — a plan written against the calendar names its days by date.
+  if (/^(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?|\d{1,2}\/\d{1,2})$/i.test(t)) return true;
+  // "Push Day", "Leg Day 🦵", "Upper Body Day" — named for what the day IS. A rest day never gets here.
+  if (/^[\p{L}&/ -]{2,24}\s+day[\s\p{Extended_Pictographic}️]*$/iu.test(t)) return true;
   // ALL CAPS and short — "PUSH", "UPPER BODY". Long shouted lines are usually notes, not headings.
   if (t.length <= 28 && t === t.toUpperCase() && /[A-Z]/.test(t) && !/\d/.test(t)) return true;
   return false;
@@ -254,7 +482,7 @@ export function isPageFooter(line: string): boolean {
 /** Monday → "mon". The identity of a weekday, so a week can notice one coming round again. */
 export function weekdayKey(line: string): string | null {
   const m = line.trim().match(WEEKDAYS);
-  return m ? m[1].slice(0, 3).toLowerCase() : null;
+  return m ? m[0].slice(0, 3).toLowerCase() : null;
 }
 
 /**
@@ -294,7 +522,7 @@ export function splitDayHeading(line: string): { name: string; rest: string } {
  * days — and every one of them is short, shouted and digit-free. Promoting those turned the same sheet's
  * four training days into twenty-three. So here a day must SAY it is one: a weekday, or Day/Session N.
  */
-const DAY_ROW = /^(?:(?:mon|tues?|wednes|thurs?|fri|satur|sun)day\b|(?:day|session|workout)\s*\d+\b)/i;
+const DAY_ROW = new RegExp(`^(?:${WEEKDAY_SRC}|(?:day|session|workout)\\s*\\d+\\b)`, 'i');
 
 /** The heading text when a cell on this row names a day, or null when none does. */
 export function dayHeadingRow(cells: readonly string[]): string | null {
@@ -310,11 +538,13 @@ export function cleanDayName(line: string): string {
   return (
     line
       .trim()
+      // "**Day 1: Upper Body**" out of a chat answer.
+      .replace(/\*\*|__/g, '')
       // "1) Push" and "- Push" are numbered days, not days called "1) Push".
       .replace(LEADING_DECORATION, '')
       .replace(/:$/, '')
-      // "Day 1 - Push" / "Monday — Push" → "Push", but "Push" alone survives.
-      .replace(/^(?:(?:mon|tues?|wednes|thurs?|fri|satur|sun)day|day|session|workout)\s*\d*\s*[-–—:]\s*/i, '')
+      // "Day 1 - Push" / "Monday — Push" / "mon - chest" → "Push", but "Push" alone survives.
+      .replace(/^(?:(?:mon|tues?|wednes|thurs?|fri|satur|sun)day|(?:mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\.?|day|session|workout)\s*\d*\s*[-–—:]\s*/i, '')
       .replace(/\s+/g, ' ')
       .trim() || line.trim()
   );
@@ -331,7 +561,9 @@ export function cleanDayName(line: string): string {
  * athlete logs on the day, and inventing a target load from somebody else's percentages would be
  * prescribing a number nobody wrote.
  */
-const LOAD_SET = /^(\d{1,3}(?:\.\d+)?)\s*(?:%|lbs?|kgs?)?\s*[x×]\s*(\d{1,3})\s*\+?$/i;
+/* The optional "Set 1:" in front is how a workout SHARED out of a logging app (Hevy, Strong) writes each
+   set — "Set 1: 135 lbs x 10". Without it, every set of a shared workout imported as an exercise. */
+const LOAD_SET = /^(?:set\s*\d{1,2}\s*[:.)-]?\s*)?(\d{1,3}(?:\.\d+)?)\s*(?:%|lbs?|kgs?)?\s*[x×]\s*(\d{1,3})\s*\+?$/i;
 
 /** The rep count when a line is one loaded set, or null when the line is something else. */
 export function loadedSetReps(line: string): number | null {

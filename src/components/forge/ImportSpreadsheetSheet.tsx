@@ -10,6 +10,8 @@ import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { parseProgramTable, summarize, type ParsedWeek } from '@/domain/program/import-parse';
 import { distanceUnitFor, fmtDistanceIn, fmtDuration, type CardioActivity } from '@/domain/workout/conditioning';
 import { pickTextFile } from '@/lib/pick-text-file';
+import { REPS_MAX, SETS_MAX } from '@/lib/program-draft-model';
+import { importLimitNotes } from '@/lib/program-import-draft';
 import { pickImageFromLibrary } from '@/lib/useMediaPicker';
 import { usePremiumAi } from '@/lib/entitlement';
 
@@ -142,6 +144,8 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
   const [preview, setPreview] = useState<ParsedWeek[] | null>(null);
   /** What `fitToScope` cut, so the preview can say it. */
   const [scopeNote, setScopeNote] = useState<string | null>(null);
+  /** Lines the parse did not take as training — listed in the preview. */
+  const [skipped, setSkipped] = useState<string[]>([]);
 
   /*
    * A photo read that was in flight when the sheet closed must not land in a sheet that has since been
@@ -157,6 +161,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     setImportError(null);
     setPreview(null);
     setScopeNote(null);
+    setSkipped([]);
     setPhotoBusy(false);
     onClose();
   };
@@ -173,6 +178,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     setImportError(null);
     setPreview(fit.weeks);
     setScopeNote(fit.note);
+    setSkipped(r.skipped ?? []);
   };
 
   const onPickFile = async () => {
@@ -221,7 +227,16 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
           setImportError('That image is too big to read. Try a screenshot rather than a full-size photo.');
           break;
         case 'out_of_credits':
-          setImportError('You’re out of Coach AI credits for this month.');
+          setImportError('You’re out of Premium AI credits for this month.');
+          break;
+        case 'not_entitled':
+          setImportError('Reading photos is part of Premium AI. Paste the program as text instead.');
+          break;
+        case 'unsupported_format':
+          setImportError('That image type can’t be read. Take a screenshot of it and upload that instead.');
+          break;
+        case 'unavailable':
+          setImportError('Photo reading isn’t working right now. Try again in a bit, or paste the program as text.');
           break;
         default:
           setImportError('Couldn’t reach us to read that photo. Check your connection and try again.');
@@ -366,7 +381,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
           ) : null}
         </View>
       ) : (
-        <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} />
+        <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} />
       )}
     </BottomSheet>
   );
@@ -384,14 +399,23 @@ export function ImportPreview({
   onChange,
   scope,
   scopeNote,
+  skipped,
 }: {
   weeks: ParsedWeek[];
   onChange: (weeks: ParsedWeek[]) => void;
   scope: ImportScope;
   scopeNote: string | null;
+  /** Lines the reader did not take as training (`ParseResult.skipped`), listed so nothing vanishes unseen. */
+  skipped?: readonly string[];
 }) {
   /** The SAME resolver the preview renders and the callers commit — two resolvers would drift. */
   const resolveName = (n: string) => resolveExerciseName(n);
+  /*
+   * WHAT WILL NOT FIT, while it can still be changed — a seventh day, a 53rd week, "5x100". Recomputed
+   * from the preview itself, so a − tap that brings 100 reps down to 60 takes the warning away with it.
+   * A day template has its own ceilings and keeps its own messages.
+   */
+  const limitNotes = scope === 'day' ? [] : importLimitNotes(preview, { isWeek: scope === 'week' });
 
   /** Adjust a parsed set/rep count before creating. The design's − / + on every preview row. */
   const bumpPreview = (wi: number, di: number, ii: number, field: 'sets' | 'reps', delta: number) =>
@@ -411,7 +435,9 @@ export function ImportPreview({
                           ? it
                           : {
                               ...it,
-                              [field]: Math.max(1, Math.min(field === 'sets' ? 20 : 100, it[field] + delta)),
+                              // The builder's own ceilings — a stepper that climbs past them offers a
+                              // number the program would silently cut on Create.
+                              [field]: Math.max(1, Math.min(field === 'sets' ? SETS_MAX : REPS_MAX, it[field] + delta)),
                               // Adjusting a value makes it authored, not assumed — the flag stops
                               // claiming the sheet was silent once the athlete has spoken.
                               [field === 'sets' ? 'setsAssumed' : 'repsAssumed']: false,
@@ -435,6 +461,25 @@ export function ImportPreview({
           {/* What the scope cut, said BEFORE the summary — the athlete should learn that three of their
               four days are not coming while they can still go back, not from the draft afterwards. */}
           {scopeNote ? <Text style={styles.impScopeNote}>{scopeNote}</Text> : null}
+          {limitNotes.map((n) => (
+            <Text key={n} style={styles.impScopeNote}>
+              {n.charAt(0).toUpperCase() + n.slice(1)}.
+            </Text>
+          ))}
+          {skipped?.length ? (
+            <View style={styles.impSkipped} accessibilityRole="summary">
+              <Text style={styles.impSkippedHead}>
+                {skipped.length === 1 ? '1 line wasn’t' : `${skipped.length} lines weren’t`} read as training
+                {scope === 'program' ? ' — go Back and edit the text if any of it belongs.' : '.'}
+              </Text>
+              {skipped.slice(0, 6).map((line, i) => (
+                <Text key={`${i}-${line}`} style={styles.impSkippedLine} numberOfLines={1}>
+                  {line}
+                </Text>
+              ))}
+              {skipped.length > 6 ? <Text style={styles.impSkippedLine}>+{skipped.length - 6} more</Text> : null}
+            </View>
+          ) : null}
           <View style={styles.impSummary}>
             <Text style={styles.impSummaryLabel}>Here&apos;s what we read</Text>
             <Text style={styles.impSummaryText}>{summarize(preview)}</Text>
@@ -574,6 +619,9 @@ const styles = StyleSheet.create({
 
   /* The scope's cut, in the same voice as the error line but not its colour: nothing went wrong. */
   impScopeNote: { fontFamily: flFont.sans, fontSize: 12, lineHeight: 17, color: flColor.bronze300 },
+  impSkipped: { gap: 3, paddingVertical: 8, paddingHorizontal: 10, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.charcoal700 },
+  impSkippedHead: { fontFamily: flFont.sans, fontSize: 11.5, lineHeight: 16, color: flColor.gray400, marginBottom: 2 },
+  impSkippedLine: { fontFamily: flFont.sans, fontSize: 11, lineHeight: 15, color: flColor.gray600 },
   impSummary: { padding: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
   impSummaryLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 5 },
   impSummaryText: { fontFamily: flFont.sans, fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },

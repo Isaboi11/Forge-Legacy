@@ -1,4 +1,10 @@
 import { supabase } from '@/lib/supabase';
+import {
+  READABLE_MEDIA,
+  photoResultFrom,
+  sniffMediaType,
+  type PhotoReadResult,
+} from '@/domain/program/photo-read-result';
 
 /**
  * READING A PHOTOGRAPHED PROGRAM — the client half.
@@ -32,19 +38,7 @@ import { supabase } from '@/lib/supabase';
  * never left the building.
  */
 
-export type PhotoReadResult =
-  /** Tab-separated rows, ready for `parseProgramTable()`. Never prose — the function's guard drops it. */
-  | { kind: 'ok'; tsv: string; rows: number; remaining: number | null }
-  /** Read fine; it is not a training table. */
-  | { kind: 'not_a_program' }
-  /** We looked and could not get rows out of it. A clearer photo may work. */
-  | { kind: 'unreadable' }
-  /** Bigger than the function accepts — only reachable if the downscale was skipped. */
-  | { kind: 'too_large' }
-  /** The month's credits are gone. A commercial state, not a verdict on the photo. */
-  | { kind: 'out_of_credits'; remaining: number; allowance: number }
-  /** The app failed. Never conflate with the two above. */
-  | { kind: 'offline' };
+export type { PhotoReadResult };
 
 /**
  * `useMediaPicker` has already downscaled and re-encoded to JPEG by the time we see a uri, so this is a
@@ -63,9 +57,9 @@ async function readAsBase64(uri: string): Promise<{ data: string; mediaType: str
       reader.readAsDataURL(blob);
     });
 
-    const match = /^data:([^;]+);base64,(.*)$/s.exec(dataUri);
+    const match = /^data:([^;]*);base64,(.*)$/s.exec(dataUri);
     if (!match) return null;
-    return { data: match[2], mediaType: match[1] };
+    return { data: match[2], mediaType: sniffMediaType(match[2]) ?? match[1] };
   } catch {
     return null;
   }
@@ -83,45 +77,31 @@ export async function readProgramPhoto(uri: string): Promise<PhotoReadResult> {
   // otherwise be told to retake a picture that was never looked at.
   if (!file) return { kind: 'offline' };
 
+  // Refused by the function before any model call; saying so here saves the round trip and a credit.
+  if (!READABLE_MEDIA.includes(file.mediaType)) return { kind: 'unsupported_format' };
+
   try {
     const { data, error } = await supabase.functions.invoke('program-photo-read', {
       body: { image: file.data, mediaType: file.mediaType },
     });
 
-    if (error || !data) return { kind: 'offline' };
-
-    const d = data as {
-      ok?: boolean;
-      tsv?: string;
-      rows?: number;
-      reason?: string;
-      remaining?: number;
-      allowance?: number;
-    };
-
-    if (d.ok && typeof d.tsv === 'string' && d.tsv.length > 0) {
-      return {
-        kind: 'ok',
-        tsv: d.tsv,
-        rows: typeof d.rows === 'number' ? d.rows : 0,
-        remaining: typeof d.remaining === 'number' ? d.remaining : null,
-      };
+    /*
+     * ⚠ A NON-2xx IS NOT "OFFLINE". The function answers `too_large` and `bad_request` with a 400 and
+     * `unconfigured` / `meter_unavailable` / `upstream_error` with a 503 — and `functions.invoke` hands
+     * every one of those back as an `error` with `data` null. Treated as offline, a photo that was too big
+     * told the athlete to check their connection (stress test, 2026-09-21). The body is still there, on
+     * the error's `context` (the Response); only a request that never got an answer is offline.
+     */
+    let body: unknown = data;
+    if (error) {
+      const ctx = (error as { context?: unknown }).context;
+      if (!(ctx instanceof Response)) return { kind: 'offline' };
+      body = await ctx.json().catch(() => null);
+      if (!body) return { kind: 'unavailable' };
     }
+    if (!body) return { kind: 'offline' };
 
-    switch (d.reason) {
-      case 'not_a_program':
-        return { kind: 'not_a_program' };
-      case 'unreadable':
-        return { kind: 'unreadable' };
-      case 'too_large':
-        return { kind: 'too_large' };
-      case 'out_of_credits':
-        return { kind: 'out_of_credits', remaining: d.remaining ?? 0, allowance: d.allowance ?? 0 };
-      default:
-        // `unconfigured`, `meter_unavailable`, `upstream_error`, `bad_request`, or a reason this build
-        // does not know. Every one of them is the app failing, and none is a statement about the photo.
-        return { kind: 'offline' };
-    }
+    return photoResultFrom(body);
   } catch {
     return { kind: 'offline' };
   }
