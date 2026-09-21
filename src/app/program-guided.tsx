@@ -75,6 +75,7 @@ import {
   dayCountOptions,
   daysBlurb,
   daysTitle,
+  recommendedDays,
   remindDefault,
   stepsFor,
   weekPresets,
@@ -380,6 +381,7 @@ function Guided() {
                   <DayTile
                     key={n}
                     n={n}
+                    recommended={n === recommendedDays(known.experience)}
                     selected={days === n}
                     onPress={() => {
                       setDays(n);
@@ -713,8 +715,8 @@ function StartCard({
   );
 }
 
-/** A day-count tile: the number, DAYS, a glyph, what it gets you. Three days carries RECOMMENDED. */
-function DayTile({ n, selected, onPress }: { n: number; selected: boolean; onPress: () => void }) {
+/** A day-count tile: the number, DAYS, a glyph, what it gets you. `recommended` follows experience. */
+function DayTile({ n, recommended, selected, onPress }: { n: number; recommended: boolean; selected: boolean; onPress: () => void }) {
   const tint = selected ? flColor.bronze300 : flColor.gray400;
   const glyph =
     n === 2 ? <BarbellGlyph color={tint} /> : n === 3 ? <BarsGlyph color={tint} /> : n === 4 ? <LayersGlyph color={tint} /> : n === 5 ? <TrendGlyph color={tint} /> : <BoltGlyph color={tint} />;
@@ -728,7 +730,7 @@ function DayTile({ n, selected, onPress }: { n: number; selected: boolean; onPre
     >
       <Text style={styles.dayNum}>{n}</Text>
       <Text style={styles.dayWord}>DAYS</Text>
-      {n === 3 ? <Text style={styles.dayBadge}>RECOMMENDED</Text> : null}
+      {recommended ? <Text style={styles.dayBadge}>RECOMMENDED</Text> : null}
       <View style={styles.dayGlyph}>{glyph}</View>
       <Text style={styles.dayTitle}>{daysTitle(n)}</Text>
       <Text style={styles.daySub}>{daysBlurb(n)}</Text>

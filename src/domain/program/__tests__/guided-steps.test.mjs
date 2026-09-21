@@ -112,3 +112,16 @@ test('an out-of-range day count still returns something usable', () => {
   assert.ok(remindDefault(0).length > 0);
   assert.ok(remindDefault(99).length > 0);
 });
+
+test('the recommended day count follows experience, and unknown stays at the easiest to keep', async () => {
+  const { recommendedDays, dayCountOptions } = await import('../guided-steps.ts');
+  assert.equal(recommendedDays('beginner'), 3);
+  assert.equal(recommendedDays('intermediate'), 4);
+  assert.equal(recommendedDays('advanced'), 5);
+  assert.equal(recommendedDays(null), 3);
+  assert.equal(recommendedDays(undefined), 3);
+  // Every recommendation must be a tile that exists, or the badge silently draws nowhere.
+  for (const e of ['beginner', 'intermediate', 'advanced', null]) {
+    assert.ok(dayCountOptions().includes(recommendedDays(e)), `${e} recommends a day count with no tile`);
+  }
+});

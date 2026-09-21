@@ -72,6 +72,26 @@ export function daysBlurb(days: number): string {
   }
 }
 
+/**
+ * Which day count wears RECOMMENDED — from the experience onboarding already asked (PO, 2026-09-21).
+ *
+ *   beginner → 3 · intermediate → 4 · advanced → 5 · unknown → 3
+ *
+ * ⚠ UNKNOWN IS 3, NOT A GUESS UPWARD. A failed profile read resolves to "no experience", and the safe
+ * suggestion for somebody we know nothing about is the one that is easiest to keep.
+ * The string union is spelled out rather than imported: this module imports nothing (see the header).
+ */
+export function recommendedDays(experience: 'beginner' | 'intermediate' | 'advanced' | null | undefined): number {
+  switch (experience) {
+    case 'intermediate':
+      return 4;
+    case 'advanced':
+      return 5;
+    default:
+      return 3;
+  }
+}
+
 /** The tile's headline for each day count — the PO's mockup (2026-09-21). Pairs with `daysBlurb`. */
 export function daysTitle(days: number): string {
   switch (days) {
