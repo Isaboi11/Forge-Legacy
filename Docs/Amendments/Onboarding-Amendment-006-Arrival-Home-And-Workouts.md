@@ -38,8 +38,8 @@ arrive (`showGetStarted === !showMissionTile`, held by a test).
 **ONB-A6-D3 — The arrival Workouts tab is two doors, a sentence and a tip.** While the athlete owns
 nothing (no program in any state, no template), "My Workouts" is replaced by: GET STARTED · **"Build
 Your Training."** · one sentence · **Build a Program** (the guided lane, `/program-guided`) · **Choose a
-Program** (Discover) · a dashed Tip. The My Workouts / Discover control stays hidden, as it already was,
-except while on Discover, so "Choose a Program" can always be undone.
+Program** (Discover) · a dashed Tip. The My Workouts / Discover control stays hidden, as it already was
+(Discover gets a Back button instead — D7).
 
 **ONB-A6-D4 — The chapter line from ONB-A5-D4 comes off.** The mockup's chapter block is eyebrow, title,
 rule and the daily principle. "Written by the workouts you do." is no longer drawn. The `meaning` prop on
@@ -83,5 +83,5 @@ launch, 2026-08-21). A tab that fails every tap is the Guideline 1.2 defect that
 - Choosing, training or holding a program removes GET STARTED and brings the mission tile and social
   cards together, in the same render.
 - A brand-new account's Workouts tab shows the arrival view, with no segmented control. "Choose a
-  Program" opens Discover with the control visible, and "My Workouts" returns to the arrival view.
+  Program" opens Discover with a Back button (no tabs), and Back returns to the arrival view.
 - A returning athlete never sees the arrival Workouts view flash while their programs load.
