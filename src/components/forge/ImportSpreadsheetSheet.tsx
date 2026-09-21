@@ -54,7 +54,7 @@ import { pickImageFromLibrary } from '@/lib/useMediaPicker';
  * TO RE-ENABLE: apply `supabase/apply/pending-0174.sql`, deploy `program-photo-read`, then flip this to
  * `true`. Nothing else. Do not flip it before both are true — that is what this constant is for.
  */
-const PHOTO_IMPORT_ENABLED = false;
+export const PHOTO_IMPORT_ENABLED = false;
 
 /**
  * How much of a paste the surface can hold.

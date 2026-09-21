@@ -78,7 +78,8 @@ import {
   weekPresets,
   type GuidedStep,
 } from '@/domain/program/guided-steps';
-import { draftFromStructure } from '@/lib/program-draft-model';
+import { draftFromStructure, makeDays, newDraft } from '@/lib/program-draft-model';
+import { PHOTO_IMPORT_ENABLED } from '@/components/forge/ImportSpreadsheetSheet';
 import { saveProgramDraft } from '@/lib/program-draft';
 import { useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
@@ -89,6 +90,25 @@ import { useToast } from '@/hooks/useCeremony';
  * react-compiler flags, and it is right to. One frozen empty array, reused.
  */
 const NO_DAYS: readonly IsoDay[] = [];
+
+/**
+ * THE THREE WAYS IN — PO, 2026-09-21: *"there should be tabs after I click build my own that give me the
+ * option to paste text, upload pictures, or build from scratch."*
+ *
+ * ⚠ PASTE AND PICTURES ARE NOT REBUILT HERE. Both already live in the one import sheet
+ * (`ImportSpreadsheetSheet`), mounted by the full builder and opened on arrival by `?o=import`. These
+ * tabs are doors to it, so there is still exactly one parser and one preview.
+ *
+ * ⚠ PICTURES FOLLOWS THE SHEET'S OWN FLAG. It is hidden until the photo reader's server half is live
+ * (see `PHOTO_IMPORT_ENABLED`): a tab that fails on every tap is the Guideline 1.2 defect that flag
+ * exists to prevent, so the tab appears the moment the flag flips and not before.
+ */
+type Source = 'scratch' | 'paste' | 'photo';
+const SOURCES: { key: Source; label: string }[] = [
+  { key: 'paste', label: 'Paste text' },
+  ...(PHOTO_IMPORT_ENABLED ? [{ key: 'photo' as const, label: 'Upload pictures' }] : []),
+  { key: 'scratch', label: 'From scratch' },
+];
 
 export default function ProgramGuidedScreen() {
   const router = useRouter();
@@ -110,7 +130,15 @@ function Guided() {
   const known = profileQ.data ?? EMPTY_COACH_PROFILE;
   const briefingQ = useQuery(fetchBriefing, []);
 
+  const [source, setSource] = useState<Source>('scratch');
   const [index, setIndex] = useState(0);
+  /**
+   * "I'll build my own days" — PO, 2026-09-21: *"the days, the weeks, that's totally fine. But after
+   * that I should be able to just say 'I'll build my own days' and be able to do one day at a time."*
+   * Chosen on the style step, in place of a split; it hands a blank program of the chosen shape to the
+   * Day Builder, which already walks Day A → the last day one at a time (`nextDayStop`).
+   */
+  const [ownDays, setOwnDays] = useState(false);
   const [goal, setGoal] = useState<Goal | null>(null);
   const [days, setDays] = useState<number | null>(null);
   const [weeks, setWeeks] = useState<number | null>(null);
@@ -178,7 +206,7 @@ function Guided() {
       case 'weeks':
         return effWeeks >= GUIDED_MIN_WEEKS;
       case 'style':
-        return effStyle != null;
+        return ownDays || effStyle != null;
       case 'remind':
         return true; // skippable by design — reminders are an offer
       case 'name':
@@ -195,7 +223,32 @@ function Guided() {
     else setIndex((i) => i - 1);
   };
 
-  const next = () => setIndex((i) => Math.min(steps.length - 1, i + 1));
+  /**
+   * A blank program of exactly the shape they chose — `days` × `weeks`, every day empty — opened on Day A.
+   *
+   * ⚠ REPEAT MODE (`vary: false`), SO "ONE DAY AT A TIME" MEANS `days` DAYS, NOT `days × weeks`. The same
+   * week runs every week, which is what "build my own days" asks for; the full builder's Customize
+   * control is still there for anyone who wants a different Week 3.
+   */
+  const buildOwnDays = async () => {
+    if (days == null) return;
+    await saveProgramDraft({
+      ...newDraft(),
+      weeks: effWeeks,
+      daysPerWeek: days,
+      days: makeDays(days, []),
+      openDay: 0,
+    });
+    router.replace('/program-builder');
+  };
+
+  const next = () => {
+    if (step === 'style' && ownDays) {
+      void buildOwnDays();
+      return;
+    }
+    setIndex((i) => Math.min(steps.length - 1, i + 1));
+  };
 
   /** Hand the finished answers to the dense builder instead of saving — the express lane, mid-flight. */
   const openInBuilder = async () => {
@@ -247,6 +300,45 @@ function Guided() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* The three ways in, on arrival only — once somebody is answering questions they have chosen. */}
+        {index === 0 ? (
+          <View style={styles.tabs} accessibilityRole="tablist">
+            {SOURCES.map((t) => {
+              const on = source === t.key;
+              return (
+                <Pressable
+                  key={t.key}
+                  onPress={() => setSource(t.key)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: on }}
+                  style={[styles.tab, on ? styles.tabOn : null]}
+                >
+                  <Text style={[styles.tabText, on ? styles.tabTextOn : null]}>{t.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+
+        {source !== 'scratch' ? (
+          <Question
+            title={source === 'paste' ? 'Paste your program' : 'Upload a picture of your program'}
+            help={
+              source === 'paste'
+                ? 'From a spreadsheet, a notes app or an email. We read the days, exercises, sets and reps, and you check every line before anything is saved.'
+                : 'A screenshot or photo of the table. We read it into text you can check and fix before anything is saved.'
+            }
+          >
+            <Button
+              variant="primary"
+              fullWidth
+              onPress={() => router.replace('/program-builder?o=import')}
+            >
+              {source === 'paste' ? 'Paste text' : 'Choose a picture'}
+            </Button>
+          </Question>
+        ) : (
+        <>
         <View style={styles.dots}>
           {steps.map((s, i) => (
             <View key={s} style={[styles.dot, i === index ? styles.dotOn : i < index ? styles.dotDone : null]} />
@@ -360,10 +452,19 @@ function Guided() {
                 title={SPLIT_STYLE_LABEL[s]}
                 sub={SPLIT_STYLE_BLURB[s]}
                 tag={i === 0 ? 'Suggested' : undefined}
-                selected={effStyle === s}
-                onPress={() => setStyle(s)}
+                selected={!ownDays && effStyle === s}
+                onPress={() => {
+                  setStyle(s);
+                  setOwnDays(false);
+                }}
               />
             ))}
+            <Choice
+              title="I’ll build my own days"
+              sub={days != null ? `${days} empty days. You fill them in, one at a time.` : 'You fill in each day, one at a time.'}
+              selected={ownDays}
+              onPress={() => setOwnDays(true)}
+            />
           </Question>
         ) : null}
 
@@ -453,6 +554,8 @@ function Guided() {
             {error ? <Text style={styles.error}>{error}</Text> : null}
           </Question>
         ) : null}
+        </>
+        )}
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
@@ -465,10 +568,10 @@ function Guided() {
               <Text style={styles.quiet}>Change exercises in the full builder</Text>
             </Pressable>
           </>
-        ) : (
+        ) : source !== 'scratch' ? null : (
           <>
             <Button variant="primary" fullWidth onPress={next} disabled={!canAdvance(step)}>
-              Continue
+              {step === 'style' && ownDays ? 'Build my days' : 'Continue'}
             </Button>
             {/* The express lane, reachable from every step — `Onboarding-Amendment-002`. */}
             <Pressable onPress={() => router.replace('/program-builder')} accessibilityRole="button">
@@ -560,6 +663,20 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingTop: 8 },
 
+  tabs: {
+    flexDirection: 'row',
+    gap: 4,
+    padding: 4,
+    marginBottom: 18,
+    borderRadius: flRadius.md,
+    backgroundColor: flColor.charcoal800,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+  },
+  tab: { flex: 1, paddingVertical: 10, borderRadius: flRadius.sm, alignItems: 'center' },
+  tabOn: { backgroundColor: flColor.charcoal600 },
+  tabText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
+  tabTextOn: { color: flColor.cream100 },
   dots: { flexDirection: 'row', gap: 6, paddingBottom: 10 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: flColor.charcoal600 },
   dotOn: { backgroundColor: flColor.bronze400 },

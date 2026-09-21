@@ -298,14 +298,29 @@ export default function WorkoutsScreen() {
           the other half is where everything is. A toggle between something and nothing is not a
           choice, it is a wrong first guess with a fix hidden inside it. It returns permanently the
           moment the athlete owns anything at all — see `hasOwnWork`. */}
-      {/* …and on Discover even then, so "Choose a Program" is never a one-way door back to nothing. */}
-      {hasOwnWork || tab === 'discover' ? (
+      {hasOwnWork ? (
         <View style={styles.segWrap}>
           <TourAnchor id="workouts-segments" style={styles.segTrack}>
             <Segment label="My Workouts" active={tab === 'mine'} onPress={() => setTab('mine')} />
             <Segment label="Discover" active={tab === 'discover'} onPress={() => setTab('discover')} />
           </TourAnchor>
         </View>
+      ) : tab === 'discover' ? (
+        /* ⚠ A BACK BUTTON, NOT THE TABS — PO, 2026-09-21: *"there should just be a back button for right
+           now and not those two tabs."* With nothing owned, "My Workouts" is only the arrival view, so
+           the way back to it is Back. The tabs arrive with the first thing they own. */
+        <Pressable
+          onPress={() => setTab('mine')}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          hitSlop={8}
+          style={({ pressed }) => [styles.discoverBack, pressed ? styles.anchorPressed : null]}
+        >
+          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="square">
+            <Path d="M15 5l-7 7 7 7" />
+          </Svg>
+          <Text style={styles.discoverBackText}>Back</Text>
+        </Pressable>
       ) : null}
 
       <ScrollView
@@ -1086,6 +1101,8 @@ const styles = StyleSheet.create({
     paddingBottom: SCREEN_BOTTOM_GAP,
   },
   stack: { gap: 28 },
+  discoverBack: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 18, paddingVertical: 10 },
+  discoverBackText: { fontSize: 14, fontWeight: '600', color: flColor.bronze400 },
   /* ── THE ARRIVAL VIEW (ONB-A6-D3) ─────────────────────────────────────────────────────────────── */
   firstRun: { gap: 26 },
   firstRunHead: { gap: 12 },

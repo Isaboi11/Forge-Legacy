@@ -54,6 +54,20 @@ Foundation I is written silently. Nobody ascends into the rank they were given a
 button over it had nothing to share. The first M-1 is the first real promotion. An account whose first
 evaluation lands above Foundation I (imported history) still gets its ceremony.
 
+**ONB-A6-D7 — Discover from the arrival view has a Back button, not the tabs** (PO, same day). With
+nothing owned, "My Workouts" is only the arrival view. The My Workouts / Discover control arrives with
+the first thing the athlete owns.
+
+**ONB-A6-D8 — "I'll build my own days."** On the guided builder's split step, after days and weeks, a
+fourth choice opens a blank program of that shape (repeat mode, every day empty) in the Day Builder on
+Day A, which then walks one day at a time.
+
+**ONB-A6-D9 — Three ways in: Paste text · Upload pictures · From scratch.** Tabs on the guided builder's
+first screen. Paste and Pictures open the existing import sheet (`?o=import`), so there is still one
+parser and one preview. **Upload pictures appears only when `PHOTO_IMPORT_ENABLED` is true.** The reader
+is built but its server half is off (0174 unapplied, `program-photo-read` undeployed, AI spend held for
+launch, 2026-08-21). A tab that fails every tap is the Guideline 1.2 defect that flag prevents.
+
 ## 3. What this does NOT change
 
 - **No gate, ever** (ONB-A3-D7's core). Nothing stands in front of Home, and the Start button is never
