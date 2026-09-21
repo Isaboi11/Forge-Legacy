@@ -1,4 +1,4 @@
-| G-5 | ✅ Done | "Same as Day 1" / "Same as Monday" / "repeat Day 1" copy that day | — | — | **PO decided 2026-09-21 · fixed in `080480c`** || G-2 | ✅ Done | Limit raised from 8 × 60 to 50 sets × 500 reps (500 = what the workout screen carries) | — | — | **PO decided 2026-09-21 · fixed in `080480c`** || G-1 | ✅ Done | "Incline DB" now matches Dumbbell Incline Bench Press; naming the movement ("Incline DB Curl") still reaches that movement | — | — | **PO decided 2026-09-21 · fixed in `080480c`** |# Build a Program import — stress test (2026-09-21)
+# Build a Program import — stress test (2026-09-21)
 
 **Scope:** Paste a program, Upload a PDF, Upload pictures, the preview, and the draft the import creates.
 **Method:** Every paste/PDF case was run through the real code (`parseProgramTable`, `extractPdfText`,
@@ -7,7 +7,7 @@
 was driven with Playwright for signed-out access.
 **Commits:** `4887b48` (parser, draft, photo errors), `2f623b3` (PDFs, function size cap).
 **Deployed:** web preview `index-e520f66248bf795434d03717c9ead805.js` (after the PO decisions, `080480c`), hash verified live. No OTA.
-**Tests:** 3,574 node tests pass (38 new); tsc and eslint clean.
+**Tests:** 3,577 node tests pass (41 new); tsc and eslint clean.
 
 ## Status of this document
 
@@ -67,7 +67,7 @@ Legend: **PASS** works as a person would expect · **FIXED** failed, fixed in th
 | 12 weeks × 6 days (432 rows) | PASS | PASS |
 | 7+ days | dropped, said only in the toast after Create | **FIXED** said in the preview before Create, and in week 2+ too |
 | 60+ weeks | clamped, said only after Create | **FIXED** said in the preview |
-| Sets/reps over 8 × 60 ("Push-ups 5x100") | **silently cut to 5×60 on Create** | **FIXED** named in the preview; steppers stop at the cap |
+| Sets/reps over 8 × 60 ("Push-ups 5x100") | **silently cut to 5×60 on Create** | **FIXED** limit raised to 50 × 500 (`080480c`); anything past it is named in the preview |
 | Pure prose | imported as ONE exercise with a 150-char name | **FIXED** refused |
 | A pasted URL | imported as an exercise | **FIXED** refused |
 | Email with greeting + signature | "Hi Jordan", phone number, "Sent from my iPhone" as exercises | **FIXED** skipped + listed |
@@ -89,7 +89,7 @@ Legend: **PASS** works as a person would expect · **FIXED** failed, fixed in th
 | Workout shared from Hevy/Strong ("Set 1: 135 lbs x 10") | every set an exercise | **FIXED** 3 sets of the lift |
 | 5/3/1 ("65% x 5 / 75% x 5 / 85% x 5+") | PASS | PASS |
 | Same day name repeated ("Full Body" ×3) | PASS | PASS |
-| Couch-to-5K ("Day 2: Same as Day 1") | Day 2 and 3 **silently vanished** | listed as not read — **GAP** G-5 |
+| Couch-to-5K ("Day 2: Same as Day 1") | Day 2 and 3 **silently vanished** | **FIXED** Days 2–3 copy Day 1 (`080480c`) |
 | Per-lift progression ("Squat / Week 1: 3x8 / Week 2: 3x6") | exercise called "3x8" | no fake exercise; lines listed — **GAP** G-6 |
 | Intervals ("4 x 800m intervals", "6x400m") | lift "m intervals" | lift "intervals" 4×800, note kept — **GAP** G-3 |
 | EMOM / AMRAP circuits / "3 rounds:" | junk | still junk — **GAP** G-9 |
@@ -161,11 +161,11 @@ server/format error reported as a connection problem; a double tap paying twice.
 
 | # | Severity | Gap | Where | Repro | Needs |
 |---|---|---|---|---|---|
-| G-1 | Wrong data, visible | "Incline DB" resolves to **Dumbbell Incline Curl**; the resolver picks the fewest-extra-words match for an incomplete name | `domain/program/exercise-match.ts` `matchExercise` | paste "Incline DB 3x12" | Should ambiguous partial names stay unmatched? (Resolver change, own test suite) |
-| G-2 | Wrong data, visible | Builder caps are 8 sets × 60 reps; "Push-ups 5x100" becomes 5×60 (now said up front) | `program-draft-model.ts` `REPS_MAX` | paste "Push-ups 5x100" | Raise the caps, or keep them? |
+| G-1 | Done | "Incline DB" now matches Dumbbell Incline Bench Press; naming the movement ("Incline DB Curl") still reaches that movement | — | — | PO decided 2026-09-21 · fixed in `080480c` |
+| G-2 | Done | Limit raised from 8 × 60 to 50 sets × 500 reps (500 = what the workout screen carries) | — | — | PO decided 2026-09-21 · fixed in `080480c` |
 | G-3 | Wrong data, visible | Interval runs ("4 x 800m", "6x400m") import as a lift "intervals" 4×800 | `import-parse.ts` `workItems` | paste "Wednesday: 4 x 800m intervals" | Should N×distance be a run with the reps as a note? |
 | G-4 | Judgement made | A distance with no activity word ("3 mi easy") is read as a run | `import-parse.ts` `cardioItems` | — | Confirm (made on your "miles for running" instruction; easy to revert) |
-| G-5 | Lost work, now visible | "Day 2: Same as Day 1" is listed, not copied | `import-parse.ts` | paste C25K | Copy the referenced day? |
+| G-5 | Done | "Same as Day 1" / "Same as Monday" / "repeat Day 1" copy that day | — | — | PO decided 2026-09-21 · fixed in `080480c` |
 | G-6 | Lost work, now visible | Per-lift weekly progression lists aren't supported | same | "Squat / Week 1: 3x8 / Week 2: 3x6" | Support this format? |
 | G-7/8 | Dead end, visible | "Block 1" / "Weeks 1-4" don't repeat weeks | same | — | Expand ranges into repeated weeks? |
 | G-9 | Wrong data, visible | EMOM / AMRAP / "3 rounds" circuits | same | — | Circuit support is a model change |
