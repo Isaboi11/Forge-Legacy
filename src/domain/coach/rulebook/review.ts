@@ -31,7 +31,7 @@
  * Pure and node-testable: no React, no RN, no storage, no runtime `@` imports.
  */
 
-import { pickFrom, type Chooser } from './voice.ts';
+import { oneExclamation, pickFrom, type Chooser } from './voice.ts';
 
 /** The shape 0140 stores in `athlete_weekly_reviews.review`. */
 export interface WeeklyReviewData {
@@ -153,10 +153,46 @@ export function shapeOf(d: Pick<WeeklyReviewData, 'workouts'>): WeekShape {
 }
 
 const OPENER: Record<WeekShape, readonly string[]> = {
-  single: ['One session in the book.', 'You got one in.', 'A single session this week.'],
-  steady: ['{n} sessions this week.', '{n} times in the gym.', 'You trained {n} times.'],
-  full: ['{n} sessions — a full week.', '{n} times in, across {d} days.', 'A full week: {n} sessions.'],
-  heavy: ['{n} sessions. That is a heavy week.', '{n} times in the gym this week.', '{n} sessions across {d} days.'],
+  single: [
+    'One session in the book.',
+    'You got one in.',
+    'One session this week. That counts.',
+    'One workout logged. Every streak starts exactly like this.',
+    'You showed up this week.',
+    'One session, and it is on the record.',
+    'One in the bank this week.',
+    'A session in the book. That is the habit being built.',
+  ],
+  steady: [
+    '{n} sessions this week.',
+    '{n} times in the gym.',
+    'You trained {n} times.',
+    '{n} sessions in the book this week.',
+    '{n} workouts logged. Solid.',
+    'You showed up {n} times this week.',
+    '{n} sessions across {d} days. Good rhythm.',
+    '{n} times in. That is steady work.',
+  ],
+  full: [
+    '{n} sessions — a full week!',
+    '{n} times in, across {d} days.',
+    'A full week: {n} sessions.',
+    '{n} sessions this week! That is how it is done.',
+    '{n} workouts across {d} days. That is a real week of training.',
+    'You trained {n} times this week. That is commitment.',
+    '{n} sessions in the book. Proud of that one.',
+    'Full week — {n} sessions, {d} days!',
+  ],
+  heavy: [
+    '{n} sessions. That is a big week!',
+    '{n} times in the gym this week.',
+    '{n} sessions across {d} days.',
+    '{n} workouts this week. You were locked in.',
+    '{n} sessions! That is serious work.',
+    'You trained {n} times this week. Huge.',
+    '{n} sessions in seven days. That is dedication.',
+    'A {n}-session week. Impressive.',
+  ],
 };
 
 /**
@@ -164,18 +200,93 @@ const OPENER: Record<WeekShape, readonly string[]> = {
  *
  * ⚠ ORDERED BY WHAT IS RAREST, not by what is biggest. An honor is rarer than a PR and a PR is rarer
  * than a heavy top set, so the line names the least ordinary true thing rather than the largest number.
+ *
+ * ⭐ THESE ARE THE WINS (Holt-Voice-Amendment-001 HV-D4), and they are where he is allowed to be pumped.
+ * A PR used to read "A personal record on Bench Press." — true, and said the way a receipt says it.
  */
-const HONOR_LINE: readonly string[] = ['You earned {honor} along the way.', '{honor} came out of it.', 'And {honor} with it.'];
-const PR_ONE: readonly string[] = ['A personal record on {lift}.', 'You set a record on {lift}.', '{lift} went to a new best.'];
-const PR_MANY: readonly string[] = ['{n} personal records in it.', '{n} new bests this week.', 'You set {n} records.'];
-const TOP_LINE: readonly string[] = ['Heaviest was {lift} at {weight}.', 'Your top set was {weight} on {lift}.', '{weight} on {lift} was the heaviest of it.'];
+const HONOR_LINE: readonly string[] = [
+  'You earned {honor} along the way!',
+  '{honor} came out of it!',
+  'And {honor} with it!',
+  '{honor} is yours now.',
+  'You picked up {honor} this week!',
+  'Plus {honor}. Earned, not given.',
+  '{honor} earned. That one goes on the wall.',
+  'And you walked away with {honor}!',
+];
+const PR_ONE: readonly string[] = [
+  'A personal record on {lift}!',
+  'New best on {lift}! That is the work showing up.',
+  '{lift} went to a new best!',
+  'You set a record on {lift}.',
+  'New personal record on {lift}. That is what consistency buys.',
+  '{lift} hit a new high this week!',
+  'A new {lift} best. You earned that one.',
+  'PR on {lift}! Remember this one.',
+];
+const PR_MANY: readonly string[] = [
+  '{n} personal records in it!',
+  '{n} new bests this week!',
+  'You set {n} records.',
+  '{n} PRs this week. That is progress you can see.',
+  '{n} new personal records! The work is paying off.',
+  '{n} records broken this week.',
+  'Not one PR — {n} of them!',
+  '{n} new bests. What a week.',
+];
+const TOP_LINE: readonly string[] = [
+  'Heaviest was {lift} at {weight}.',
+  'Your top set was {weight} on {lift}.',
+  '{weight} on {lift} was the heaviest of it.',
+  'Top lift: {lift} at {weight}.',
+  'You moved {weight} on {lift} this week.',
+  '{lift} at {weight} led the week.',
+  'The big one: {weight} on {lift}.',
+  '{weight} on {lift}. Solid work.',
+];
 
 /** The close — forward-looking, never a verdict on what just happened. */
 const CLOSE: Record<WeekShape, readonly string[]> = {
-  single: ['Same again this week and it starts to be a habit.', 'Put another beside it.', 'One more like it and it is a pattern.'],
-  steady: ['Keep it there.', 'That is the rhythm — hold it.', 'Same again this week.'],
-  full: ['That is a week that moves things.', 'Hold that and the numbers follow.', 'Keep that up.'],
-  heavy: ['Make sure the rest matches the work.', 'That is plenty — let it settle in.', 'Recovery earns that back.'],
+  single: [
+    'Same again this week and it starts to be a habit.',
+    'Put another beside it.',
+    'One more like it and it is a pattern.',
+    "Let's make it two this week.",
+    'The next one is where momentum starts.',
+    'Build on it this week. I will be here.',
+    'Keep that door open. The next session is waiting.',
+    'The first one is the hardest. The next one comes easier.',
+  ],
+  steady: [
+    'Keep it there.',
+    'That is the rhythm — hold it.',
+    'Same again this week.',
+    'That rhythm is how progress happens. Keep it going.',
+    'Steady wins. Same again.',
+    'You are building something. Keep showing up.',
+    'Hold that pace and watch what happens.',
+    'Keep stacking weeks like this.',
+  ],
+  full: [
+    'That is a week that moves things.',
+    'Hold that and the numbers follow.',
+    'Keep that up.',
+    'Weeks like this add up fast.',
+    'Stack a few more of these and look out.',
+    'That kind of consistency changes everything. Keep going.',
+    'This is what progress looks like. Again this week.',
+    "Proud of this one. Let's do it again.",
+  ],
+  heavy: [
+    'Make sure the rest matches the work.',
+    'That is plenty — let it settle in.',
+    'Recovery earns that back.',
+    'Sleep and food are training too this week.',
+    'Great work. Now let your body catch up.',
+    'Big weeks need real rest. Take it.',
+    'You put the work in. Recover like you mean it.',
+    'Rest is where that work turns into strength.',
+  ],
 };
 
 const fill = (line: string, tokens: Record<string, string | number>): string =>
@@ -232,7 +343,8 @@ export function reviewNote(d: WeeklyReviewData, choose?: Chooser): string {
    */
   const setsUp = setsUpLine(d, firsts, choose ?? rand);
   parts.push(setsUp ?? pickFrom(`wr:close:${shape}`, CLOSE[shape], choose ?? rand));
-  return parts.join(' ');
+  // Three table lines can each be a win; one exclamation lands, three reads as shouting (HV-D3).
+  return oneExclamation(parts.join(' '));
 }
 
 function setsUpLine(d: WeeklyReviewData, firsts: readonly { exercise: string }[], choose: Chooser): string | null {
@@ -251,15 +363,25 @@ function setsUpLine(d: WeeklyReviewData, firsts: readonly { exercise: string }[]
  * never done is a bigger event than lifting the most you lifted that week.
  */
 const FIRST_ONE: readonly string[] = [
-  'You did your first {lift}.',
+  'You did your first {lift}!',
   'First {lift} in the book.',
   'New movement this week — {lift}.',
+  'You added {lift} to your training.',
+  'First time on {lift}. Now there is a number to beat.',
+  '{lift} for the first time this week!',
+  'You tried {lift} for the first time. Good on you.',
+  'First {lift} logged.',
 ];
 
 const FIRST_MANY: readonly string[] = [
-  '{n} movements you had never done before.',
+  '{n} movements you had never done before!',
   'You tried {n} new things this week.',
   '{n} firsts in there.',
+  '{n} new movements in your training this week.',
+  'You took on {n} new exercises!',
+  '{n} first-evers this week. That takes some nerve.',
+  '{n} new lifts, each one a new number to beat.',
+  'You grew the toolbox: {n} new movements.',
 ];
 
 /* ⚠ FORWARD, NEVER BACKWARD. Each of these says what is now possible. None of them ranks the week,
@@ -268,18 +390,33 @@ const SETS_UP_FIRST: readonly string[] = [
   'That is a movement you have now — see what it does with a few weeks on it.',
   '{lift} is in your training now. Give it room to develop.',
   'Something new went into the training this week. Keep it there.',
+  '{lift} gets stronger from here. Stick with it.',
+  'Now {lift} has a starting number. Next week we build on it.',
+  'New movements are where new progress comes from. Keep {lift} around.',
+  'Give {lift} a few weeks — that is when it gets fun.',
+  'You have a baseline on {lift}. Everything from here is progress.',
 ];
 
 const SETS_UP_PR: readonly string[] = [
   'That is the floor now. Build on it.',
   'The {lift} has more in it. You found where it starts.',
   'You know what that lift can do now. Take it from there.',
+  'That record is the new starting point on {lift}.',
+  'Records like that are built, and you are building. Keep going.',
+  'The next {lift} record is already on its way.',
+  'Remember how that felt. There is more where it came from.',
+  "{lift} is moving. Let's keep it moving.",
 ];
 
 const SETS_UP_LIFT: readonly string[] = [
   'There is more in that {lift} when you come back to it.',
   'The {lift} is ready for more next time.',
   'That is a solid place to start the {lift} next time.',
+  '{lift} is set up nicely for next week.',
+  'Next time on {lift}, we build from there.',
+  'Keep showing up for {lift}. It is heading the right way.',
+  '{lift} has momentum. Keep feeding it.',
+  'That {lift} is going somewhere. Stay with it.',
 ];
 
 const rand: Chooser = (n) => Math.floor(Math.random() * n);

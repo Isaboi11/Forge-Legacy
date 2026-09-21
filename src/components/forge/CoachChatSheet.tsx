@@ -38,7 +38,6 @@ import {
   dayPreamble,
   INTRO,
   MEDICAL_STOP,
-  NOT_UNDERSTOOD,
   OPENERS,
   STOP_KICKER,
   WALL,
@@ -621,7 +620,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
 
           setBuilt(null);
           say(
-            { kind: 'holt', text: pick('ack') + " Here's the one I'd put you on." },
+            { kind: 'holt', text: `${pick('ack')} ${pick('pick_one_for_you')}` },
             { kind: 'pick', card: pickCardFor(answer.best, answer.runnerUp) },
             /* ⚠ SAID EVERY TIME, NOT ONLY WHEN SOMETHING LOOKS WRONG. It is the standing limit of this
                whole flow — he did not write these and cannot bend one around anybody — and it doubles as
@@ -1363,7 +1362,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     if (!patch) {
       /* He asks again rather than guessing. A coach who mishears and proceeds is worse than one who
          checks — and until the model lands, this is the honest edge of what he understands. */
-      say({ kind: 'holt', text: NOT_UNDERSTOOD });
+      say({ kind: 'holt', text: pick('not_understood') });
       if (q) say({ kind: 'chips', chips: q.chips, ctl: q.ctl });
       return;
     }

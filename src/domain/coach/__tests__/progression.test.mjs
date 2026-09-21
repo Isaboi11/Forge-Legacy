@@ -12,6 +12,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { backOffTo, incrementFor, loadableStep, progressionFor, sessionPerformance } from '../progression.ts';
+import { resetVoice } from '../rulebook/voice.ts';
 
 const session = (weight, reps, startedAt = '2026-08-01T10:00:00Z') => ({
   startedAt,
@@ -308,4 +309,50 @@ test('the engine uses the equipment it is given', () => {
   );
   assert.equal(p.action, 'add_weight');
   assert.equal(p.suggestedWeight, 145, 'not 142.5');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE WORDS — Holt-Voice-Amendment-001: varied week to week, fixed within a session
+// ─────────────────────────────────────────────────────────────────────────────
+
+const topped = (when, weight = 135) => ({ startedAt: when, sets: [{ weight, reps: 10 }, { weight, reps: 10 }, { weight, reps: 10 }] });
+const rx3x8to10 = { sets: 3, reps: 8, repsMax: 10 };
+const benchFor = (history, register) =>
+  progressionFor({ exerciseName: 'Bench Press', pattern: 'Horizontal Push', experience: 'intermediate', prescription: rx3x8to10, history, register });
+
+test('⚠ the line holds for the whole session — logging a set cannot rewrite the coach', () => {
+  resetVoice();
+  const h = [topped('2026-09-01T10:00:00Z')];
+  const first = benchFor(h).message;
+  for (let i = 0; i < 25; i++) assert.equal(benchFor(h).message, first, 'the screen re-derives this on every logged set');
+});
+
+test('⭐ the same verdict on the same lift is worded differently the next week', () => {
+  resetVoice();
+  const seen = new Set();
+  for (let w = 1; w <= 8; w++) seen.add(benchFor([topped(`2026-09-${String(w).padStart(2, '0')}T10:00:00Z`)]).message);
+  assert.ok(seen.size >= 6, `eight weeks of "go up" produced only ${seen.size} different sentences`);
+});
+
+test('every wording carries the numbers — the verdict never changes with the words', () => {
+  for (const register of ['quiet', 'plain', 'direct']) {
+    for (let w = 1; w <= 12; w++) {
+      resetVoice();
+      const p = benchFor([topped(`2026-08-${String(w).padStart(2, '0')}T10:00:00Z`)], register);
+      assert.equal(p.action, 'add_weight');
+      assert.equal(p.suggestedWeight, 140);
+      assert.match(p.message, /140 lb/, `${register}: "${p.message}" does not say what to load`);
+      assert.match(p.message, /Bench Press|\b8\b/, `${register}: "${p.message}"`);
+    }
+  }
+});
+
+test('⚠ a short session is never described as short', () => {
+  for (let w = 1; w <= 12; w++) {
+    resetVoice();
+    const p = benchFor([{ startedAt: `2026-07-${String(w).padStart(2, '0')}T10:00:00Z`, sets: [{ weight: 135, reps: 6 }, { weight: 135, reps: 5 }, { weight: 135, reps: 5 }] }]);
+    assert.equal(p.action, 'hold');
+    assert.doesNotMatch(p.message, /\b(short|missed|fail|only)\b/i, p.message);
+    assert.match(p.message, /135 lb/, p.message);
+  }
 });

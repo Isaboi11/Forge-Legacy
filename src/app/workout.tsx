@@ -1891,7 +1891,7 @@ export default function WorkoutScreen() {
       );
     });
     return out;
-  }, [session, liftHistory, experience]);
+  }, [session, liftHistory, experience, coachProfile.register]);
 
   /**
    * What the weight box opens showing, when the athlete has not put a number in this set yet.
@@ -1929,6 +1929,9 @@ export default function WorkoutScreen() {
 
   const openSheet = (exI: number, setI: number, focus: 'weight' | 'reps') => {
     const set = session?.exercises[exI]?.sets[setI];
+          /* The intensity dial's volume (Holt-Voice-Amendment-001 HV-D6). Wording only — the verdict and
+             every number are identical at every register. */
+          register: coachProfile.register,
     if (!set) return;
     /* Seeded from what is THERE, and from what they did last time when there is nothing there. A set
        already carrying 135 lb opens showing 135, so confirming without touching anything keeps 135 — the
