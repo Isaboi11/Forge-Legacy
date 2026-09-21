@@ -1,4 +1,4 @@
-import { extractPdfText } from './pdf-text';
+import { extractPdfText, pdfErrorReason } from './pdf-text';
 
 /**
  * "Or upload a PDF", on the phone.
@@ -61,8 +61,8 @@ export async function pickTextFile(): Promise<PickResult> {
       const text = await extractPdfText(bytes);
       if (!text.trim()) return { ok: false, reason: 'That PDF has no text to read — it’s probably a scan. Paste the program instead.' };
       return { ok: true, text, name: asset.name };
-    } catch {
-      return { ok: false, reason: 'Couldn’t read that PDF on this phone. Paste it instead, or import it on the web.' };
+    } catch (e) {
+      return { ok: false, reason: pdfErrorReason(e) ?? 'Couldn’t read that PDF on this phone. Paste it instead, or import it on the web.' };
     }
   }
   return { ok: true, text: new TextDecoder().decode(bytes), name: asset.name };

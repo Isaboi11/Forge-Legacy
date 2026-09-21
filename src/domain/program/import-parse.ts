@@ -306,6 +306,20 @@ function parseFreeform(lines: string[]): ParseResult {
    * and "Sent from my iPhone" live. Lines there are held to a stricter test (`isPreamble`, and the
    * chatter cut-off below) than lines in the middle of the work, which are taken as exercises.
    */
+  /*
+   * A PDF's RUNNING HEADER — "THE 12 WEEK HYPERTROPHY BLUEPRINT" at the top of every page. It imported as
+   * an exercise in every week (stress test, 2026-09-21). A line of three words or more that comes back
+   * word for word three times, and prescribes nothing, is the page, not the program.
+   */
+  const seen = new Map<string, number>();
+  for (const r of rows) if (!r.isWork && r.wk == null) seen.set(r.line, (seen.get(r.line) ?? 0) + 1);
+  const furniture = new Set(
+    [...seen]
+      // A day heading repeats every week on purpose — "Day 1 - Upper" twelve times is twelve days.
+      .filter(([line, count]) => count >= 3 && line.split(/\s+/).length >= 3 && !looksLikeDayHeading(line) && splitDayLabel(line) == null)
+      .map(([line]) => line),
+  );
+
   const firstWork = rows.findIndex((r) => r.isWork || r.labelled != null);
   let lastWork = -1;
   rows.forEach((r, i) => {
@@ -349,6 +363,10 @@ function parseFreeform(lines: string[]): ParseResult {
 
     // Document furniture from a PDF paste. Nobody trained a page number.
     if (isPageFooter(row.line)) return;
+    if (furniture.has(row.line)) {
+      if (!skipped.includes(row.line)) skipped.push(row.line);
+      return;
+    }
 
     // A label naming what the day is for, and whatever wrapped off the end of it.
     if (isAnnotation(row.line)) {
@@ -913,13 +931,26 @@ const DAYISH = /^(?:day|d|workout|session|w)\s*\d+|^(push|pull|legs?|upper|lower
  * each cell in it an exercise.
  */
 function parseColumnPerDay(lines: string[], delimiter: '\t' | ';' | ','): ParseResult | null {
-  const header = splitLine(lines[0], delimiter);
+  /*
+   * ⚠ THE DAY ROW IS SEARCHED FOR, NOT ASSUMED TO BE LINE ONE. A designed PDF (Canva, a coach's
+   * template) sets two days side by side under a title — "SUMMER SHRED — 4 DAY SPLIT", then "DAY 1 -
+   * PUSH⇥DAY 2 - PULL". Only line one was tried, so the columns were read across and a day came out with
+   * lifts called "Bench Press Deadlift" (stress test, 2026-09-21). The lines above the day row are the
+   * title; they are listed as skipped.
+   */
+  const isDayRow = (line: string) => {
+    const cells = splitLine(line, delimiter);
+    const dayish = cells.filter((h) => h && DAYISH.test(h)).length;
+    return dayish >= 2 && dayish >= cells.filter(Boolean).length - 1;
+  };
+  const at = lines.slice(0, 10).findIndex(isDayRow);
+  if (at < 0) return null;
+  const header = splitLine(lines[at], delimiter);
   const dayCols = header.map((h, i) => [i, h] as const).filter(([, h]) => h && DAYISH.test(h));
-  if (dayCols.length < 2 || dayCols.length < header.filter(Boolean).length - 1) return null;
 
   const b = new Builder();
   for (const [col, label] of dayCols) {
-    for (const line of lines.slice(1)) {
+    for (const line of lines.slice(at + 1)) {
       const cell = (splitLine(line, delimiter)[col] ?? '').trim();
       if (!cell) continue;
       const { scheme, rest } = extractScheme(cell);
@@ -927,7 +958,7 @@ function parseColumnPerDay(lines: string[], delimiter: '\t' | ';' | ','): ParseR
       if (name) b.add(1, label, cleanDayName(label), item(name, scheme.sets, scheme.reps));
     }
   }
-  return b.rowsRead ? { ok: true, weeks: b.done(), ignoredColumns: [], rowsRead: b.rowsRead } : null;
+  return b.rowsRead ? { ok: true, weeks: b.done(), ignoredColumns: [], rowsRead: b.rowsRead, skipped: lines.slice(0, at) } : null;
 }
 
 /** Read one row as a header: which known column sits where, first match wins, no column claimed twice. */

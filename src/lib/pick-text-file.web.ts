@@ -1,4 +1,4 @@
-import { extractPdfText } from './pdf-text';
+import { extractPdfText, pdfErrorReason } from './pdf-text';
 
 export const canPickFile = true;
 
@@ -54,7 +54,7 @@ export async function pickTextFile(): Promise<{ ok: true; text: string; name: st
               ? done({ ok: true, text, name: file.name })
               : done({ ok: false, reason: 'That PDF has no text to read — it’s probably a scan. Paste the rows instead.' }),
           )
-          .catch(() => done({ ok: false, reason: 'Couldn’t read that PDF. If it opens elsewhere, try pasting its rows instead.' }));
+          .catch((e) => done({ ok: false, reason: pdfErrorReason(e) ?? 'Couldn’t read that PDF. If it opens elsewhere, try pasting its rows instead.' }));
         return;
       }
       file
