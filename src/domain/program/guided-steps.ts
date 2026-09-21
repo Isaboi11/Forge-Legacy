@@ -55,17 +55,36 @@ export const dayCountOptions = (): readonly number[] => [2, 3, 4, 5, 6];
  * phone, not in a paragraph.
  */
 export function daysBlurb(days: number): string {
+  /* The PO's mockup copy (2026-09-21), under each tile's title — see `daysTitle`. */
   switch (days) {
     case 2:
-      return 'Full body both days. Still works.';
+      return 'Great if you’re short on time.';
     case 3:
-      return 'Enough to make progress, easy enough to keep';
+      return 'A great starting point for most people.';
     case 4:
-      return 'Splits the body in half — upper and lower';
+      return 'Builds strength and muscle effectively.';
     case 5:
-      return 'More volume, less room to miss one';
+      return 'More training, more progress.';
     case 6:
-      return 'A lot of training. Best once the habit is set.';
+      return 'Best for experienced lifters.';
+    default:
+      return '';
+  }
+}
+
+/** The tile's headline for each day count — the PO's mockup (2026-09-21). Pairs with `daysBlurb`. */
+export function daysTitle(days: number): string {
+  switch (days) {
+    case 2:
+      return 'Full-body focus';
+    case 3:
+      return 'Balanced training';
+    case 4:
+      return 'More training volume';
+    case 5:
+      return 'Higher frequency';
+    case 6:
+      return 'Advanced schedule';
     default:
       return '';
   }

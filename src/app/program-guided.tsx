@@ -34,7 +34,8 @@
  *   the same way `coach.tsx` derives `effGoal` from the profile.
  */
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -73,6 +74,7 @@ import {
   clampWeeks,
   dayCountOptions,
   daysBlurb,
+  daysTitle,
   remindDefault,
   stepsFor,
   weekPresets,
@@ -93,22 +95,15 @@ import { useToast } from '@/hooks/useCeremony';
 const NO_DAYS: readonly IsoDay[] = [];
 
 /**
- * THE THREE WAYS IN — PO, 2026-09-21: *"there should be tabs after I click build my own that give me the
- * option to paste text, upload pictures, or build from scratch."*
+ * THE THREE WAYS IN — "How do you want to start?", the first screen of the PO's mockup (2026-09-21).
  *
  * ⚠ PASTE AND PICTURES ARE NOT REBUILT HERE. Both already live in the one import sheet
- * (`ImportSpreadsheetSheet`), mounted by the full builder and opened on arrival by `?o=import`. These
- * tabs are doors to it, so there is still exactly one parser and one preview.
+ * (`ImportSpreadsheetSheet`: paste, PDF, and the photo reader), opened on arrival by
+ * `/program-builder?o=import`. These cards are doors to it, so there is still one parser and one preview.
  *
- * ⚠ PICTURES FOLLOWS THE SHEET'S OWN RULE: the photo reader's server half is live AND the athlete
- * holds Premium AI (0203 — today, only the PO). Anyone else sees two tabs, never a third that fails.
+ * ⚠ PICTURES FOLLOWS THE SHEET'S OWN RULE: the photo reader's server half is live AND the athlete holds
+ * Premium AI (0203). Anyone else sees two cards, never a third that fails.
  */
-type Source = 'scratch' | 'paste' | 'photo';
-const sourcesFor = (photo: boolean): { key: Source; label: string }[] => [
-  { key: 'paste', label: 'Paste text' },
-  ...(photo ? [{ key: 'photo' as const, label: 'Upload pictures' }] : []),
-  { key: 'scratch', label: 'From scratch' },
-];
 
 export default function ProgramGuidedScreen() {
   const router = useRouter();
@@ -131,8 +126,11 @@ function Guided() {
   const briefingQ = useQuery(fetchBriefing, []);
 
   const premiumAi = usePremiumAi();
-  const SOURCES = sourcesFor(PHOTO_IMPORT_LIVE && premiumAi);
-  const [source, setSource] = useState<Source>('scratch');
+  const photoOn = PHOTO_IMPORT_LIVE && premiumAi;
+  /** False = the "How do you want to start?" chooser; true = the from-scratch questions. */
+  const [started, setStarted] = useState(false);
+  /** The mockup's "Want full control?" confirmation behind "I'll set it up myself". */
+  const [confirmManual, setConfirmManual] = useState(false);
   const [index, setIndex] = useState(0);
   /**
    * "I'll build my own days" — PO, 2026-09-21: *"the days, the weeks, that's totally fine. But after
@@ -220,8 +218,9 @@ function Guided() {
     }
   };
 
+  /* The header's back chevron: a step back, and from the first question back to the chooser. */
   const back = () => {
-    if (index === 0) router.back();
+    if (index === 0) setStarted(false);
     else setIndex((i) => i - 1);
   };
 
@@ -296,59 +295,54 @@ function Guided() {
     <View style={styles.screen}>
       {/* A sibling, not a wrapper — `ScreenBackground` paints behind and takes no children. */}
       <ScreenBackground image={SCREEN_BG.bg2} overlay={{ flat: 'rgba(6,7,8,0.3)' }} />
-      <AppBar title="Build a Program" onClose={() => router.back()} />
+      {started ? <AppBar title="Build a Program" onBack={back} /> : <AppBar title="Build a Program" onClose={() => router.back()} />}
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 120 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* The three ways in, on arrival only — once somebody is answering questions they have chosen. */}
-        {index === 0 ? (
-          <View style={styles.tabs} accessibilityRole="tablist">
-            {SOURCES.map((t) => {
-              const on = source === t.key;
-              return (
-                <Pressable
-                  key={t.key}
-                  onPress={() => setSource(t.key)}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: on }}
-                  style={[styles.tab, on ? styles.tabOn : null]}
-                >
-                  <Text style={[styles.tabText, on ? styles.tabTextOn : null]}>{t.label}</Text>
-                </Pressable>
-              );
-            })}
+        {!started ? (
+          <View style={styles.chooser}>
+            <View style={styles.chooserRule} />
+            <Text style={styles.chooserTitle}>How do you want to start?</Text>
+            <Text style={styles.chooserSub}>Choose the option that works best for you.</Text>
+            <View style={styles.chooserCards}>
+              <StartCard
+                icon={<DocGlyph />}
+                title="Paste a program"
+                sub="Already have a workout written somewhere? Paste it or upload a PDF and Forge will build it for you."
+                onPress={() => router.replace('/program-builder?o=import')}
+              />
+              {photoOn ? (
+                <StartCard
+                  icon={<CameraGlyph />}
+                  title="Upload pictures"
+                  sub="Have screenshots or photos of a program? Upload them and Forge will convert it."
+                  onPress={() => router.replace('/program-builder?o=import')}
+                />
+              ) : null}
+              <StartCard
+                icon={<BarbellGlyph color={flColor.bronze300} />}
+                title="Build from scratch"
+                sub="Answer a few questions and Forge will help build your program."
+                featured
+                onPress={() => {
+                  setIndex(0);
+                  setStarted(true);
+                }}
+              />
+            </View>
           </View>
-        ) : null}
-
-        {source !== 'scratch' ? (
-          <Question
-            title={source === 'paste' ? 'Paste your program' : 'Upload a picture of your program'}
-            help={
-              source === 'paste'
-                ? 'From a spreadsheet, a notes app or an email. We read the days, exercises, sets and reps, and you check every line before anything is saved.'
-                : 'A screenshot or photo of the table. We read it into text you can check and fix before anything is saved.'
-            }
-          >
-            <Button
-              variant="primary"
-              fullWidth
-              onPress={() => router.replace('/program-builder?o=import')}
-            >
-              {source === 'paste' ? 'Paste text' : 'Choose a picture'}
-            </Button>
-          </Question>
         ) : (
         <>
-        <View style={styles.dots}>
-          {steps.map((s, i) => (
-            <View key={s} style={[styles.dot, i === index ? styles.dotOn : i < index ? styles.dotDone : null]} />
-          ))}
-        </View>
         <Text style={styles.stepLabel}>
           STEP {stepNumber} OF {steps.length}
         </Text>
+        <View style={styles.segments}>
+          {steps.map((s, i) => (
+            <View key={s} style={[styles.segment, i <= index ? styles.segmentOn : null]} />
+          ))}
+        </View>
 
         {step === 'goal' ? (
           <Question
@@ -369,25 +363,27 @@ function Guided() {
         {step === 'days' ? (
           <Question
             title="How many days a week can you train?"
-            help="Be honest about a normal week, not your best one. You can change this later."
+            help="Pick what you can consistently maintain. You can change this later."
           >
-            {dayCountOptions().map((n) => (
-              <Choice
-                key={n}
-                lead={String(n)}
-                title={n === 1 ? 'One day' : `${['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'][n]} days`}
-                sub={daysBlurb(n)}
-                tag={n === 3 ? 'Suggested' : undefined}
-                selected={days === n}
-                onPress={() => {
-                  setDays(n);
-                  /* ⚠ A STYLE THAT NO LONGER FITS MUST NOT SURVIVE THE DAY CHANGE. Push/pull/legs is
-                     legal at three days and not at two; leaving it set would send an illegal pair into
-                     `assemble`, which silently falls back to the goal default and builds something the
-                     athlete never chose. */
-                  if (style != null && !stylesForDays(n).includes(style)) setStyle(null);
-                }}
-              />
+            {/* The mockup's grid: three tiles, then two. */}
+            {[dayCountOptions().slice(0, 3), dayCountOptions().slice(3)].map((row, r) => (
+              <View key={r} style={styles.dayRow}>
+                {row.map((n) => (
+                  <DayTile
+                    key={n}
+                    n={n}
+                    selected={days === n}
+                    onPress={() => {
+                      setDays(n);
+                      /* ⚠ A STYLE THAT NO LONGER FITS MUST NOT SURVIVE THE DAY CHANGE. Push/pull/legs is
+                         legal at three days and not at two; leaving it set would send an illegal pair into
+                         `assemble`, which silently falls back to the goal default and builds something the
+                         athlete never chose. */
+                      if (style != null && !stylesForDays(n).includes(style)) setStyle(null);
+                    }}
+                  />
+                ))}
+              </View>
             ))}
           </Question>
         ) : null}
@@ -560,6 +556,7 @@ function Guided() {
         )}
       </ScrollView>
 
+      {started ? (
       <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
         {step === 'review' ? (
           <>
@@ -570,21 +567,56 @@ function Guided() {
               <Text style={styles.quiet}>Change exercises in the full builder</Text>
             </Pressable>
           </>
-        ) : source !== 'scratch' ? null : (
+        ) : (
           <>
-            <Button variant="primary" fullWidth onPress={next} disabled={!canAdvance(step)}>
+            <Button variant="primary" fullWidth onPress={next} disabled={!canAdvance(step)} trailingIcon={<ArrowGlyph />}>
               {step === 'style' && ownDays ? 'Build my days' : 'Continue'}
             </Button>
-            {/* The express lane, reachable from every step — `Onboarding-Amendment-002`. */}
-            <Pressable onPress={() => router.replace('/program-builder')} accessibilityRole="button">
-              <Text style={styles.quiet}>I’ll set it up myself</Text>
+            {/* The express lane, reachable from every step — `Onboarding-Amendment-002`. It asks once
+                first (the mockup's "Want full control?"), and the answer is still one tap. */}
+            <Pressable onPress={() => setConfirmManual(true)} accessibilityRole="button">
+              <Text style={[styles.quiet, styles.quietUnderline]}>I’ll set it up myself</Text>
             </Pressable>
           </>
         )}
-        <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back">
-          <Text style={styles.backLink}>{index === 0 ? 'Cancel' : 'Back'}</Text>
-        </Pressable>
       </View>
+      ) : null}
+
+      <Modal visible={confirmManual} transparent animationType="fade" onRequestClose={() => setConfirmManual(false)}>
+        <View style={styles.modalScrim}>
+          <View style={styles.modalCard}>
+            <Pressable
+              onPress={() => setConfirmManual(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              hitSlop={8}
+              style={styles.modalClose}
+            >
+              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round">
+                <Path d="M6 6l12 12M18 6L6 18" />
+              </Svg>
+            </Pressable>
+            <SlidersGlyph />
+            <Text style={styles.modalTitle}>Want full control?</Text>
+            <Text style={styles.modalBody}>You can skip the guided setup and build your program manually.</Text>
+            <View style={styles.modalActions}>
+              <Button
+                variant="primary"
+                fullWidth
+                onPress={() => {
+                  setConfirmManual(false);
+                  router.replace('/program-builder');
+                }}
+              >
+                Set it up myself
+              </Button>
+              <Button variant="secondary" fullWidth onPress={() => setConfirmManual(false)}>
+                Continue guided setup
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -636,6 +668,134 @@ function Choice({
   );
 }
 
+/** One of the three ways in — icon plate · title · one line · chevron. `featured` is the mockup's bronze edge. */
+function StartCard({
+  icon,
+  title,
+  sub,
+  featured,
+  onPress,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  sub: string;
+  featured?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${sub}`}
+      style={({ pressed }) => [styles.startCard, featured ? styles.startCardFeatured : null, pressed ? styles.pressed : null]}
+    >
+      <View style={styles.startIcon}>{icon}</View>
+      <View style={styles.startText}>
+        <Text style={styles.startTitle}>{title}</Text>
+        <Text style={styles.startSub}>{sub}</Text>
+      </View>
+      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round">
+        <Path d="M9 5l7 7-7 7" />
+      </Svg>
+    </Pressable>
+  );
+}
+
+/** A day-count tile: the number, DAYS, a glyph, what it gets you. Three days carries RECOMMENDED. */
+function DayTile({ n, selected, onPress }: { n: number; selected: boolean; onPress: () => void }) {
+  const tint = selected ? flColor.bronze300 : flColor.gray400;
+  const glyph =
+    n === 2 ? <BarbellGlyph color={tint} /> : n === 3 ? <BarsGlyph color={tint} /> : n === 4 ? <LayersGlyph color={tint} /> : n === 5 ? <TrendGlyph color={tint} /> : <BoltGlyph color={tint} />;
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={`${n} days. ${daysTitle(n)}. ${daysBlurb(n)}`}
+      style={[styles.dayTile, selected ? styles.dayTileOn : null]}
+    >
+      <Text style={styles.dayNum}>{n}</Text>
+      <Text style={styles.dayWord}>DAYS</Text>
+      {n === 3 ? <Text style={styles.dayBadge}>RECOMMENDED</Text> : null}
+      <View style={styles.dayGlyph}>{glyph}</View>
+      <Text style={styles.dayTitle}>{daysTitle(n)}</Text>
+      <Text style={styles.daySub}>{daysBlurb(n)}</Text>
+    </Pressable>
+  );
+}
+
+const G = { fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
+function DocGlyph() {
+  return (
+    <Svg width={26} height={26} viewBox="0 0 24 24" {...G} stroke={flColor.gray400}>
+      <Rect x={5} y={3} width={14} height={18} rx={2} />
+      <Path d="M9 8h6M9 12h6M9 16h4" />
+    </Svg>
+  );
+}
+function CameraGlyph() {
+  return (
+    <Svg width={26} height={26} viewBox="0 0 24 24" {...G} stroke={flColor.gray400}>
+      <Path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+      <Circle cx={12} cy={13} r={3.5} />
+    </Svg>
+  );
+}
+function BarbellGlyph({ color }: { color: string }) {
+  return (
+    <Svg width={26} height={26} viewBox="0 0 24 24" {...G} stroke={color}>
+      <Path d="M3 10v4M6 8v8M18 8v8M21 10v4M6 12h12" />
+    </Svg>
+  );
+}
+function BarsGlyph({ color }: { color: string }) {
+  return (
+    <Svg width={24} height={24} viewBox="0 0 24 24" {...G} stroke={color}>
+      <Path d="M6 20v-6M12 20V9M18 20V4" />
+    </Svg>
+  );
+}
+function LayersGlyph({ color }: { color: string }) {
+  return (
+    <Svg width={24} height={24} viewBox="0 0 24 24" {...G} stroke={color}>
+      <Path d="M12 4l9 5-9 5-9-5z" />
+      <Path d="M3 14l9 5 9-5" />
+    </Svg>
+  );
+}
+function TrendGlyph({ color }: { color: string }) {
+  return (
+    <Svg width={24} height={24} viewBox="0 0 24 24" {...G} stroke={color}>
+      <Path d="M3 17l6-6 4 4 8-8" />
+      <Path d="M15 7h6v6" />
+    </Svg>
+  );
+}
+function BoltGlyph({ color }: { color: string }) {
+  return (
+    <Svg width={24} height={24} viewBox="0 0 24 24" {...G} stroke={color}>
+      <Path d="M13 3L5 14h6l-1 7 8-11h-6z" />
+    </Svg>
+  );
+}
+function ArrowGlyph() {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" {...G} stroke={flColor.onBronze} strokeWidth={2}>
+      <Path d="M5 12h14M13 6l6 6-6 6" />
+    </Svg>
+  );
+}
+function SlidersGlyph() {
+  return (
+    <Svg width={34} height={34} viewBox="0 0 24 24" {...G} stroke={flColor.gray400}>
+      <Path d="M4 7h16M4 12h16M4 17h16" />
+      <Circle cx={9} cy={7} r={1.8} />
+      <Circle cx={15} cy={12} r={1.8} />
+      <Circle cx={8} cy={17} r={1.8} />
+    </Svg>
+  );
+}
+
 function StepBtn({
   label,
   sign,
@@ -665,31 +825,97 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingTop: 8 },
 
-  tabs: {
+  pressed: { opacity: 0.86 },
+
+  /* ── "How do you want to start?" ── */
+  chooser: { alignItems: 'center', paddingTop: 14 },
+  chooserRule: { width: 40, height: 2, borderRadius: 1, backgroundColor: flColor.bronze400, marginBottom: 22 },
+  chooserTitle: { fontFamily: flFont.display, fontSize: 26, fontWeight: '600', letterSpacing: -0.3, color: flColor.cream100, textAlign: 'center' },
+  chooserSub: { fontSize: 14, color: flColor.gray400, marginTop: 8, textAlign: 'center' },
+  chooserCards: { alignSelf: 'stretch', gap: 14, marginTop: 28 },
+  startCard: {
     flexDirection: 'row',
-    gap: 4,
-    padding: 4,
-    marginBottom: 18,
-    borderRadius: flRadius.md,
-    backgroundColor: flColor.charcoal800,
+    alignItems: 'center',
+    gap: 16,
+    padding: 18,
+    borderRadius: flRadius.lg,
     borderWidth: 1,
     borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal900,
   },
-  tab: { flex: 1, paddingVertical: 10, borderRadius: flRadius.sm, alignItems: 'center' },
-  tabOn: { backgroundColor: flColor.charcoal600 },
-  tabText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
-  tabTextOn: { color: flColor.cream100 },
-  dots: { flexDirection: 'row', gap: 6, paddingBottom: 10 },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: flColor.charcoal600 },
-  dotOn: { backgroundColor: flColor.bronze400 },
-  dotDone: { backgroundColor: flColor.bronzeSolid },
+  startCardFeatured: { borderColor: flColor.bronze400 },
+  startIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: flRadius.md,
+    backgroundColor: flColor.charcoal800,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  startText: { flex: 1, minWidth: 0, gap: 5 },
+  startTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
+  startSub: { fontSize: 13.5, lineHeight: 19, color: flColor.gray400 },
+
+  /* ── the step bar ── */
   stepLabel: {
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 1.3,
-    color: flColor.gray600,
-    marginBottom: 14,
+    color: flColor.gray400,
+    marginBottom: 8,
   },
+  segments: { flexDirection: 'row', gap: 6, marginBottom: 20 },
+  segment: { flex: 1, height: 5, borderRadius: 3, backgroundColor: flColor.charcoal600 },
+  segmentOn: { backgroundColor: flColor.bronze400 },
+
+  /* ── day tiles ── */
+  dayRow: { flexDirection: 'row', gap: 10 },
+  dayTile: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal900,
+  },
+  dayTileOn: { borderColor: flColor.bronze400, backgroundColor: flColor.charcoal800 },
+  dayNum: { fontFamily: flFont.display, fontSize: 32, fontWeight: '600', color: flColor.cream100 },
+  dayWord: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: flColor.cream100, marginTop: 2 },
+  dayBadge: {
+    marginTop: 8,
+    fontSize: 8.5,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    color: flColor.onBronze,
+    backgroundColor: flColor.bronze400,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  dayGlyph: { marginTop: 14, marginBottom: 10 },
+  dayTitle: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100, textAlign: 'center' },
+  daySub: { fontSize: 11, lineHeight: 15, color: flColor.gray400, textAlign: 'center', marginTop: 6 },
+
+  /* ── "Want full control?" ── */
+  modalScrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  modalCard: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    padding: 26,
+    paddingTop: 36,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal900,
+  },
+  modalClose: { position: 'absolute', top: 16, right: 16 },
+  modalTitle: { fontFamily: flFont.display, fontSize: 24, fontWeight: '600', color: flColor.cream100, marginTop: 16, textAlign: 'center' },
+  modalBody: { fontSize: 14, lineHeight: 20, color: flColor.gray400, marginTop: 10, textAlign: 'center' },
+  modalActions: { alignSelf: 'stretch', gap: 10, marginTop: 24 },
 
   question: { gap: 8 },
   qTitle: { fontFamily: flFont.display, fontSize: 25, fontWeight: '600', letterSpacing: -0.3, color: flColor.cream100 },
@@ -825,5 +1051,5 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.surfaceNav,
   },
   quiet: { textAlign: 'center', fontSize: 12.5, fontWeight: '600', color: flColor.bronze400, paddingVertical: 4 },
-  backLink: { textAlign: 'center', fontSize: 12.5, color: flColor.gray600, paddingVertical: 2 },
+  quietUnderline: { textDecorationLine: 'underline' },
 });
