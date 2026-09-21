@@ -217,6 +217,52 @@ export async function pickImageFromLibrary(): Promise<string | null> {
   }
 }
 
+/** What the photo reader (`program-photo-read`) accepts. Anything else is re-encoded below. */
+const READABLE_IMAGE = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+/**
+ * SEVERAL SCREENSHOTS AT ONCE — the Upload Pictures screen (PO mockup, 2026-09-21). Same rules as
+ * `pickImageFromLibrary` above, which it mirrors on purpose: LIBRARY ONLY (read that function's note on
+ * the camera and the age floor before changing this), and every image goes through `downscalePhoto`.
+ *
+ * ⚠ AND EVERY IMAGE LEAVES AS A TYPE THE READER TAKES. `downscalePhoto` passes a small image through
+ * untouched, so a small HEIC reached the Edge Function as `image/heic` — which it refuses as a bad
+ * request, and the athlete was told the connection failed. A small image in any other format is now
+ * re-encoded to JPEG at its own size, so "HEIC" on the screen is a true claim.
+ *
+ * Returns uris in the order picked (the order the days will run), or [] when cancelled.
+ */
+export async function pickImagesFromLibrary(limit: number): Promise<string[]> {
+  if (limit <= 0) return [];
+  try {
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      selectionLimit: limit,
+      orderedSelection: true,
+      quality: 1,
+    });
+    if (res.canceled || !res.assets?.length) return [];
+    const out: string[] = [];
+    for (const picked of res.assets.slice(0, limit)) {
+      let asset = await downscalePhoto(picked);
+      if (asset.mimeType && !READABLE_IMAGE.includes(asset.mimeType)) {
+        try {
+          const rendered = await ImageManipulator.manipulate(asset.uri).renderAsync();
+          const saved = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: DOWNSCALE_COMPRESS });
+          asset = { ...asset, uri: saved.uri, mimeType: 'image/jpeg' };
+        } catch {
+          // Left as it was — the read will say it could not use it, which is the honest outcome.
+        }
+      }
+      out.push(asset.uri);
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Cap a picked VIDEO's size before anyone can upload it — the other half of the resize above, and the
  * half that was missing entirely.

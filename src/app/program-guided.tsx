@@ -83,6 +83,7 @@ import {
 import { draftFromStructure, makeDays, newDraft } from '@/lib/program-draft-model';
 import { PHOTO_IMPORT_LIVE } from '@/components/forge/ImportSpreadsheetSheet';
 import { usePremiumAi } from '@/lib/entitlement';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { saveProgramDraft } from '@/lib/program-draft';
 import { useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
@@ -127,6 +128,14 @@ function Guided() {
 
   const premiumAi = usePremiumAi();
   const photoOn = PHOTO_IMPORT_LIVE && premiumAi;
+  /* An import spends the one free import AND a program slot — both checked BEFORE the screen opens, the
+     same two gates the builder's own import button runs, so nobody pastes a whole block into a refusal. */
+  const guard = usePremiumGate();
+  const openImport = (m: 'paste' | 'photo') => {
+    if (!guard('imports')) return;
+    if (!guard('programs')) return;
+    router.push({ pathname: '/program-import', params: { m } });
+  };
   /** False = the "How do you want to start?" chooser; true = the from-scratch questions. */
   const [started, setStarted] = useState(false);
   /** The mockup's "Want full control?" confirmation behind "I'll set it up myself". */
@@ -311,21 +320,20 @@ function Guided() {
                 icon={<DocGlyph />}
                 title="Paste a program"
                 sub="Already have a workout written somewhere? Paste it or upload a PDF and Forge will build it for you."
-                onPress={() => router.replace('/program-builder?o=import')}
+                onPress={() => openImport('paste')}
               />
               {photoOn ? (
                 <StartCard
                   icon={<CameraGlyph />}
                   title="Upload pictures"
                   sub="Have screenshots or photos of a program? Upload them and Forge will convert it."
-                  onPress={() => router.replace('/program-builder?o=import')}
+                  onPress={() => openImport('photo')}
                 />
               ) : null}
               <StartCard
                 icon={<BarbellGlyph color={flColor.bronze300} />}
                 title="Build from scratch"
                 sub="Answer a few questions and Forge will help build your program."
-                featured
                 onPress={() => {
                   setIndex(0);
                   setStarted(true);
@@ -673,13 +681,11 @@ function StartCard({
   icon,
   title,
   sub,
-  featured,
   onPress,
 }: {
   icon: React.ReactNode;
   title: string;
   sub: string;
-  featured?: boolean;
   onPress: () => void;
 }) {
   return (
@@ -687,7 +693,13 @@ function StartCard({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title}. ${sub}`}
-      style={({ pressed }) => [styles.startCard, featured ? styles.startCardFeatured : null, pressed ? styles.pressed : null]}
+      /* Navigation, not a selection — no card is ever "on". The bronze edge answers the pointer (web hover)
+         and the press, and nothing else. `hovered` is react-native-web's; native never sets it. */
+      style={(state) => [
+        styles.startCard,
+        (state as { hovered?: boolean }).hovered || state.pressed ? styles.startCardActive : null,
+        state.pressed ? styles.pressed : null,
+      ]}
     >
       <View style={styles.startIcon}>{icon}</View>
       <View style={styles.startText}>
@@ -828,7 +840,7 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.86 },
 
   /* ── "How do you want to start?" ── */
-  chooser: { alignItems: 'center', paddingTop: 14 },
+  chooser: { alignItems: 'center', paddingTop: 14, width: '100%', maxWidth: 820, alignSelf: 'center' },
   chooserRule: { width: 40, height: 2, borderRadius: 1, backgroundColor: flColor.bronze400, marginBottom: 22 },
   chooserTitle: { fontFamily: flFont.display, fontSize: 26, fontWeight: '600', letterSpacing: -0.3, color: flColor.cream100, textAlign: 'center' },
   chooserSub: { fontSize: 14, color: flColor.gray400, marginTop: 8, textAlign: 'center' },
@@ -843,7 +855,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
   },
-  startCardFeatured: { borderColor: flColor.bronze400 },
+  startCardActive: { borderColor: flColor.bronze400 },
   startIcon: {
     width: 64,
     height: 64,

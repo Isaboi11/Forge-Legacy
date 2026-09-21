@@ -12,7 +12,8 @@ import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
-import { toProgramStructure, unmatchedNames, type ParsedWeek } from '@/domain/program/import-parse';
+import { type ParsedWeek } from '@/domain/program/import-parse';
+import { draftFromImport } from '@/lib/program-import-draft';
 import { ImportSpreadsheetSheet } from '@/components/forge/ImportSpreadsheetSheet';
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
@@ -81,7 +82,6 @@ import {
   applyWeeks,
   clampReps,
   clampSets,
-  clampDays,
   clampWeeks,
   clearProgramDraft,
   clearWeek,
@@ -308,58 +308,15 @@ function ProgramBuilderScreen() {
    * wrong is one Back away from being fixed, not a program row to go and delete.
    */
   const confirmImport = (weeks: ParsedWeek[]) => {
-    if (!weeks.length) return;
-    const imported = toProgramStructure(weeks, draft?.name?.trim() || 'Imported Program', (n) => resolveName(n)?.key);
-
-    /*
-     * FIT WHAT WAS PASTED INTO WHAT THE BUILDER CAN HOLD — and say so when it does not fit.
-     *
-     * The draft has hard bounds (WEEKS 4–52, DAYS 2–6, SETS 1–8, REPS 1–60) and the import wrote
-     * straight past them: a single-week paste produced `weeks: 1`, below the minimum, and a seven-day
-     * program would have produced a seventh day the builder has no letter for and no chip to select.
-     * Every one of those is a draft that cannot be edited or trusted.
-     *
-     * Clamping silently would be the worse fix. An athlete whose seventh day vanished must be told which
-     * day went, not left to discover it on a Thursday.
-     */
-    const days = imported.days.slice(0, DAYS_MAX);
-    const droppedDays = imported.days.slice(DAYS_MAX).map((d) => d.name);
-    const fit = (list: typeof days) =>
-      list.map((d) => ({
-        ...d,
-        main: d.main.map((x) => ({ ...x, sets: clampSets(x.sets), reps: clampReps(x.reps) })),
-      }));
-
-    // A WEEK TEMPLATE IS ONE WEEK. The sheet has already cut the read to one (`scope="week"`) and said
-    // so in its preview; this is the same rule written where the draft is built, so the two cannot drift.
-    const weekCount = isWeek ? 1 : clampWeeks(imported.weeks);
-    // ⚠ THIS USED TO FIRE THE OTHER WAY. With a floor of 4, a single-week paste was silently stretched
-    // to 4 and the toast said so. The floor is 1 (PA2-D1), so a one-week paste now imports as one week
-    // and says nothing — the stretch was the bug, and the note explaining it was the apology.
-    // Only the CEILING can still move a number, so the copy has to name that direction instead.
-    const clamped = !isWeek && weekCount !== imported.weeks;
-
-    mutate((d) => ({
-      ...d,
-      name: d.name?.trim() ? d.name : imported.name,
-      weeks: weekCount,
-      daysPerWeek: clampDays(days.length),
-      vary: isWeek ? false : imported.vary,
-      days: fit(days),
-      weekPlans: !isWeek && imported.weekPlans ? imported.weekPlans.map((w) => ({ days: fit(w.days.slice(0, DAYS_MAX)) })) : null,
-      openWeek: null,
-      openDay: null,
-    }));
+    if (!draft) return;
+    // The fitting, the clamps and the toast live in `draftFromImport` — shared with the Build a Program
+    // paste and photo screens so both doors produce the same draft (2026-09-21).
+    const r = draftFromImport(draft, weeks, { isWeek, resolveKey: (n) => resolveName(n)?.key });
+    if (!r) return;
+    mutate(() => r.draft);
     setImportOpen(false);
     setFromImport(true);
-
-    // One line, and it leads with whatever was LOST — the part an athlete needs to know about.
-    const unmatched = unmatchedNames(weeks, (n) => resolveName(n)?.key);
-    const notes: string[] = [];
-    if (droppedDays.length) notes.push(`${droppedDays.length} day${droppedDays.length === 1 ? '' : 's'} over the ${DAYS_MAX}-day limit dropped (${droppedDays.join(', ')})`);
-    if (clamped) notes.push(`set to ${weekCount} weeks — the longest a program can be`);
-    if (unmatched.length) notes.push(`${unmatched.length} name${unmatched.length === 1 ? '' : 's'} weren’t in the library and kept yours`);
-    showToast(notes.length ? `Imported · ${notes.join(' · ')}` : 'Imported — review and save');
+    showToast(r.toast);
   };
   /**
    * This draft came from a PASTE, so a successful save spends the free import.
@@ -479,6 +436,10 @@ function ProgramBuilderScreen() {
         }
         await saveProgramDraft(d, draftKind);
         if (active) setDraft(d);
+        /* ⚠ `o=imported`: the Build a Program paste/photo screens confirmed an import and saved it as the
+           draft (`draftFromImport`) before navigating here. It came from an import, so a successful Save
+           spends the free import exactly as the sheet's does — see `fromImport` below. */
+        if (active && entryMode === 'imported') setFromImport(true);
         /* ⚠ `o=import` OPENS THE PASTE SHEET ON ARRIVAL. Coach Holt sends people here when they say they
            already have a plan, and "we take you to the Builder, now find the import button yourself" is
            not taking them anywhere. Only on a fresh entry — landing back here from the Picker mid-edit

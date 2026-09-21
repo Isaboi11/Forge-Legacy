@@ -68,6 +68,17 @@ parser and one preview. **Upload pictures appears only when `PHOTO_IMPORT_ENABLE
 is built but its server half is off (0174 unapplied, `program-photo-read` undeployed, AI spend held for
 launch, 2026-08-21). A tab that fails every tap is the Guideline 1.2 defect that flag prevents.
 
+**ONB-A6-D10 — Paste and Upload Pictures are dedicated screens, not a bottom sheet** (PO mockup,
+2026-09-21). Build a Program opens on three cards (no permanent highlight). **Paste a program** → a
+screen with one prompt, a "We'll look for" card, the text box, a quiet "Upload a PDF instead", an example,
+and PREVIEW IMPORT. **Upload pictures** → a dashed drop zone, then numbered thumbnails (remove, move
+earlier, add more, up to 6), then PREVIEW IMPORT. Both land on the existing preview (`ImportPreview`,
+extracted from the sheet) and create through the builder's own conversion (`draftFromImport`) via
+`/program-builder?o=imported`, which still spends the free import on Save. Several photos are read and
+parsed one at a time and joined in thumbnail order (`mergeParsedWeeks`), and each read is cached for the
+screen, so going back never pays for the same photo twice. The sheet stays for the week and day template
+builders and for the full builder's own Import button.
+
 ## 3. What this does NOT change
 
 - **No gate, ever** (ONB-A3-D7's core). Nothing stands in front of Home, and the Start button is never

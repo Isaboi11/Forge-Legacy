@@ -311,6 +311,9 @@ function RootNavigator() {
         <Stack.Screen name="program-builder" options={{ presentation: 'fullScreenModal' }} />
         {/* The guided lane into the same builder — same presentation, because it is the same job. */}
         <Stack.Screen name="program-guided" options={{ presentation: 'fullScreenModal' }} />
+        {/* Build a Program → Paste a program / Upload pictures (ONB-A6-D10). Opened from program-guided, so it
+            presents the same way and stacks on top of it. */}
+        <Stack.Screen name="program-import" options={{ presentation: 'fullScreenModal' }} />
         {/* The coach. Declared here because a route is gated by being DECLARED, not by existing — see the
             note below. It presents over the tabs: the bubble is reachable from every screen, so the thing
             it opens must not push a card onto whichever stack happened to be underneath. */}

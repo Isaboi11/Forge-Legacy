@@ -92,7 +92,7 @@ type Props = {
  * Cut a read down to what the scope can hold, and say what was cut. Returns the note the preview shows
  * ABOVE the summary, or null when nothing was lost.
  */
-function fitToScope(weeks: ParsedWeek[], scope: ImportScope): { weeks: ParsedWeek[]; note: string | null } {
+export function fitToScope(weeks: ParsedWeek[], scope: ImportScope): { weeks: ParsedWeek[]; note: string | null } {
   if (scope === 'program' || weeks.length === 0) return { weeks, note: null };
   const first = weeks[0];
   if (scope === 'week') {
@@ -149,9 +149,6 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
    * one is dropped. A ref rather than state because it is read from an async handler, never in render.
    */
   const gen = useRef(0);
-
-  /** The SAME resolver the preview renders and the callers commit — two resolvers would drift. */
-  const resolveName = (n: string) => resolveExerciseName(n);
 
   /** Closing clears everything: the next open starts from an empty box, which is the whole contract. */
   const close = () => {
@@ -235,46 +232,6 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
       if (mine === gen.current) setPhotoBusy(false);
     }
   };
-
-  /** Adjust a parsed set/rep count before creating. The design's − / + on every preview row. */
-  const bumpPreview = (wi: number, di: number, ii: number, field: 'sets' | 'reps', delta: number) =>
-    setPreview((cur) =>
-      !cur
-        ? cur
-        : cur.map((w, a) =>
-            a !== wi
-              ? w
-              : {
-                  ...w,
-                  days: w.days.map((d, b) =>
-                    b !== di
-                      ? d
-                      : {
-                          ...d,
-                          items: d.items.map((it, c) =>
-                            c !== ii
-                              ? it
-                              : {
-                                  ...it,
-                                  [field]: Math.max(1, Math.min(field === 'sets' ? 20 : 100, it[field] + delta)),
-                                  // Adjusting a value makes it authored, not assumed — the flag stops
-                                  // claiming the sheet was silent once the athlete has spoken.
-                                  [field === 'sets' ? 'setsAssumed' : 'repsAssumed']: false,
-                                },
-                          ),
-                        },
-                  ),
-                },
-          ),
-    );
-
-  /** "Add another week" — copies the last week forward, which is how a block is usually extended. */
-  const addPreviewWeek = () =>
-    setPreview((cur) => {
-      if (!cur?.length) return cur;
-      const last = cur[cur.length - 1];
-      return [...cur, { index: last.index + 1, days: last.days.map((d) => ({ ...d, items: d.items.map((i) => ({ ...i })) })) }];
-    });
 
   const confirm = () => {
     if (!preview?.length) return;
@@ -409,6 +366,71 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
           ) : null}
         </View>
       ) : (
+        <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} />
+      )}
+    </BottomSheet>
+  );
+}
+
+/**
+ * THE PREVIEW — "Here's what we read", with − / + on every set and rep, and "Add another week".
+ *
+ * Extracted from the sheet (2026-09-21) so the Build a Program paste and photo SCREENS show the exact
+ * same confirmation the sheet does: one preview, one set of corrections, two hosts. It owns no state —
+ * the host holds `weeks` and gets every correction back through `onChange`.
+ */
+export function ImportPreview({
+  weeks: preview,
+  onChange,
+  scope,
+  scopeNote,
+}: {
+  weeks: ParsedWeek[];
+  onChange: (weeks: ParsedWeek[]) => void;
+  scope: ImportScope;
+  scopeNote: string | null;
+}) {
+  /** The SAME resolver the preview renders and the callers commit — two resolvers would drift. */
+  const resolveName = (n: string) => resolveExerciseName(n);
+
+  /** Adjust a parsed set/rep count before creating. The design's − / + on every preview row. */
+  const bumpPreview = (wi: number, di: number, ii: number, field: 'sets' | 'reps', delta: number) =>
+    onChange(
+      preview.map((w, a) =>
+        a !== wi
+          ? w
+          : {
+              ...w,
+              days: w.days.map((d, b) =>
+                b !== di
+                  ? d
+                  : {
+                      ...d,
+                      items: d.items.map((it, c) =>
+                        c !== ii
+                          ? it
+                          : {
+                              ...it,
+                              [field]: Math.max(1, Math.min(field === 'sets' ? 20 : 100, it[field] + delta)),
+                              // Adjusting a value makes it authored, not assumed — the flag stops
+                              // claiming the sheet was silent once the athlete has spoken.
+                              [field === 'sets' ? 'setsAssumed' : 'repsAssumed']: false,
+                            },
+                      ),
+                    },
+              ),
+            },
+      ),
+    );
+
+  /** "Add another week" — copies the last week forward, which is how a block is usually extended. */
+  const addPreviewWeek = () => {
+    if (!preview.length) return;
+    const last = preview[preview.length - 1];
+    onChange([...preview, { index: last.index + 1, days: last.days.map((d) => ({ ...d, items: d.items.map((i) => ({ ...i })) })) }]);
+  };
+
+  return (
         <View style={styles.impCol}>
           {/* What the scope cut, said BEFORE the summary — the athlete should learn that three of their
               four days are not coming while they can still go back, not from the draft afterwards. */}
@@ -511,8 +533,6 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
             </Pressable>
           ) : null}
         </View>
-      )}
-    </BottomSheet>
   );
 }
 
