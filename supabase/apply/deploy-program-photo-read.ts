@@ -221,13 +221,17 @@ const CORS = {
 };
 
 /**
- * Request ceiling, in base64 characters (~7.5 MB of image).
+ * Request ceiling, in base64 characters — 5 MB of image, the Messages API's own per-image limit.
  *
  * `useMediaPicker` already downscales before upload, so anything near this is a client that skipped the
  * resize rather than a legitimately large photo. Refused before the model call, because the cheapest
  * request is the one not made.
+ *
+ * ⚠ IT WAS 10,000,000 (~7.5 MB), ABOVE THE API'S LIMIT (stress test, 2026-09-21). An image between 5 and
+ * 7.5 MB passed this check, spent its reserved credit, and failed upstream as `upstream_error` — so the
+ * athlete paid and was told the service was down, when the true answer was "too large".
  */
-const MAX_BASE64_CHARS = 10_000_000;
+const MAX_BASE64_CHARS = 6_990_000;
 
 const ALLOWED_MEDIA = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
