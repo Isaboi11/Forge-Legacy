@@ -863,7 +863,11 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
-### 0. ⭐ Walking out of a workout and coming back stops telling the whole squad you started again — and every squad notification is on by default (2026-09-20, Presence / Notifications — **`0202` AUTHORED, NOT APPLIED** · ⛔ **NOT COMMITTED · WEB NOT DEPLOYED · NO OTA · NOT SEEN BY A HUMAN**)
+### 0. ⭐ The arrival Home and Workouts, drawn from the PO's mockups (2026-09-21, Onboarding — `Onboarding-Amendment-006` LOCKED · ✅ **COMMITTED `4621d3b` + `39a338f` · WEB DEPLOYED `index-d22ada79…` (hash-matched, new copy verified in the live bundle) · NO OTA · NOT YET SEEN BY THE PO**)
+
+A brand-new account's Home is now: chapter block · **"Start Your First Workout"** hero · **GET STARTED** (Set a goal / Explore the app / Programs). The "How do you want to start?" chooser, its intake stepper, its suggestion card and Explore Forge are gone from Home. The rows leave in the same render the mission tile and social cards arrive (test-held). Workouts with nothing owned: **"Build Your Training."**, Build a Program (guided lane) / Choose a Program (Discover), and a Tip, with no segmented control. Holt's coin says nothing until the first logged workout. A first-ever rank evaluation landing on Foundation I no longer plays **RANK ASCENDED** with a Share button (ONB-A6-D6). The same deploy shipped the **held 09-21 fixes** (back arrows, walk auto-pause, Holt superset offer) and the 0202 client, **PO-approved**. 3,513 tests · lint and tsc clean. Signup confirmed working on a fresh account by the PO (0199, applied 09-10).
+
+### 0b. ⭐ Walking out of a workout and coming back stops telling the whole squad you started again — and every squad notification is on by default (2026-09-20, Presence / Notifications — **`0202` AUTHORED, NOT APPLIED** · ⛔ **NOT COMMITTED · WEB NOT DEPLOYED · NO OTA · NOT SEEN BY A HUMAN**)
 
 PO, two things in one message: *"If I leave the workout and go to the home screen or do anything that makes me need to
 resume the workout, it notifies everyone again that I'm starting a workout. Just want the first initial notification."*
