@@ -5,18 +5,18 @@
 `draftFromImport`, the real exercise resolver) under `node`. PDFs and images are real generated files
 (PyMuPDF / Pillow). The Edge Function was called directly on its free (pre-model) paths. The web preview
 was driven with Playwright for signed-out access.
-**Commits:** `4887b48` (parser, draft, photo errors), `2f623b3` (PDFs, function size cap).
-**Deployed:** web preview `index-e520f66248bf795434d03717c9ead805.js` (after the PO decisions, `080480c`), hash verified live. No OTA.
+**Commits:** `4887b48` (parser, draft, photo errors), `2f623b3` (PDFs, function size cap), `080480c` (PO decisions: Incline DB, no 8×60 cap, Same as Day 1), `34697c2` (HEIC pick did nothing).
+**Deployed:** web preview `index-fd64a031b253673045019e17f34eea7e.js`, hash verified live, all fonts 200. No OTA. (One intermediate deploy, `index-e520f662…`, served two 404 title fonts for ~20 minutes — built from a worktree whose node_modules was a junction; fixed by a real install.)
 **Tests:** 3,577 node tests pass (41 new); tsc and eslint clean.
 
 ## Status of this document
 
-Sections A and B are complete. Section C is complete for everything that costs no model read. **The
-signed-in UI checks (C paid reads, D, E, F, G) have not been run yet** — they need a signed-in test
-account token, which the PO chose to paste (not yet received). They are listed as NOT RUN below, never
-as passes.
+All sections were run. The signed-in checks used the test account the PO supplied
+(`claudetest@test.com`), driven with Playwright on the live web preview in Chromium and in WebKit
+(Safari's engine, iPhone 13 profile). What still needs a physical phone is in §3.
 
-**Model reads used: 0 of 60.**
+**Model reads used: 25 of 60** (logged per read in the run notes; the account's own spend total also
+includes Coach Holt messages from a parallel session, which are not import reads).
 
 ---
 
@@ -127,10 +127,28 @@ Every FIXED row above is held by a test in `import-real-world.test.mjs`, `progra
 | Image type labelled wrong by a phone (`octet-stream`) | would have been sent/refused on the label — **FIXED** sniffed from bytes |
 | 5–7.5 MB image | passed the function's 10M-char check, spent a credit, failed upstream — **FIXED** in code (`MAX_BASE64_CHARS` 6.99M) — **needs function redeploy** |
 | Signed-out call | 503 `meter_unavailable` (screen itself is signed-in only) — PASS |
-| Fixtures built: 12MP JPEG, rotated EXIF, iPhone PNG screenshot, dark-mode screenshot, Android WebP, AVIF, tiny 220px, 48MP PNG/JPEG, animated GIF, blank, handwritten at an angle, receipt, person figure | built; **model reads NOT RUN** (token pending) |
-| HEIC, Live Photo, ProRAW/DNG, panorama | cannot be produced here (no HEIF encoder) — see §3 |
-| Multi-photo (1/3/6/7, duplicates, reorder, remove, back = no re-read, one bad among good) | code-reviewed (see G-11, G-12); **browser NOT RUN** |
-| Person photo must never be described | guard is `sanitizeTranscript` (tab-only), covered by existing tests; live read NOT RUN |
+| iPhone PNG screenshot | PASS — 5/5 exercises, 2 days, 3.4 s (sent as a 41 KB JPEG) |
+| Dark-mode screenshot | PASS |
+| Android WebP | PASS (re-encoded to JPEG before sending) |
+| 12 MP photo | PASS (downscaled to 90 KB) |
+| Photo stored sideways with rotate-EXIF | PASS |
+| 48 MP photo (8000 × 6000) | PASS (downscaled to 93 KB — nowhere near any limit) |
+| Tiny 220 px | PASS (sent as-is, read correctly) |
+| Animated GIF | PASS |
+| AVIF | PASS (Chrome decodes it; re-encoded to JPEG) |
+| Handwritten on paper, photographed at an angle | PASS |
+| Blank page | PASS — "That doesn't look like a training program" |
+| Receipt | PASS — same refusal |
+| A person | PASS — same refusal; the function returned nothing about the person |
+| HEIC the browser can't open (desktop Chrome) | **was: nothing happened at all** — no thumbnail, no message, and good photos picked alongside it vanished too — **FIXED `34697c2`**, now says so and suggests a screenshot; 0 reads |
+| Real iPhone HEIC / Live Photo / ProRAW / panorama | cannot be produced here — see §3 |
+| 3 photos | PASS — numbered 1-2-3, "Days run in this order" |
+| Back from preview, preview again | PASS — **no re-read** (3 calls stayed 3) |
+| Reorder, remove, add one more | PASS — only the new photo read |
+| Pick 7 (cap 6) | PASS — keeps 6, "Add more photos" disappears |
+| One bad photo among good | PASS — "Photo 2: That doesn't look like…", the good read is reused after removing it |
+| Same table photographed 3 times | 6 days, repeated — **GAP** G-11 |
+| Chromium and WebKit (Safari engine) | PASS in both |
 
 ### D. Failure & state
 
@@ -141,12 +159,32 @@ Every FIXED row above is held by a test in `import-real-world.test.mjs`, `progra
 | Out of credits | report-only per PO: mapping unit-tested (`out_of_credits` with allowance > 0) |
 | Expired/removed key (`unconfigured`) | now "isn't working right now" (unit-tested) |
 | Free user out of imports / at program cap | **cannot be tested in production**: `default_tier = PREMIUM`, so every gate passes — see G-10 |
-| Airplane mode / slow 3G / leave mid-read / background mid-read | NOT RUN (token pending) |
+| Premium AI switch (Settings → Subscription) | PASS — turns on and survives a reload. ⚠ it has no on/off state for screen readers (see G-16) |
+| Triple-tap Preview | PASS — one read (fix `4887b48`) |
+| Offline mid-read | PASS — "Couldn't reach us… Check your connection"; tapping again once online works |
+| Slow 3G (50 KB/s, 400 ms) | PASS — 4.1 s |
+| Cancel mid-read | PASS — lands on Workouts, no errors. The read still completes and is paid (G-17) |
+| Background the app mid-read | NOT RUN — needs a phone (§3) |
 
 ### E. After preview · F. From scratch + entry · G. Devices & layout
 
-**NOT RUN** — all need a signed-in session. Code review found G-12 (a Create silently replaces any
-unsaved draft). RECOMMENDED = 3/4/5/3 is unit-level in `3f1cbcc` and was not re-run here.
+| Case | Result |
+|---|---|
+| Preview lists the lines it skipped | PASS — caption title and hashtags listed |
+| "Incline DB" → Dumbbell Incline Bench Press | PASS live (≈, the convention mark) |
+| − / + edits carry into the draft | PASS — Incline DB 4 → 5 sets, still 5 in the builder and in the workout |
+| Add another week | PASS — 2 weeks |
+| Create → builder with the draft | PASS — 4 days · 6 exercises, "Same as Day 1" copied |
+| Save creates the program | PASS — program page "Imported Program · 2 weeks · 4 days / week" |
+| Free import spent only on Save | PASS — `athlete_usage.has_used_free_import = true` after Save, not before |
+| The program runs | PASS — Start program → Home "Push · 2 exercises" → workout shows Incline DB 5×8 and Push-ups 5 sets |
+| Unmatched names kept and flagged | PASS — "not in the library · kept as written" |
+| 3 cards, none highlighted | PASS |
+| RECOMMENDED follows experience | PASS — this account is stored as `advanced` → 5 |
+| "I'll build my own days" | PASS — blank Day A, "Save & go to Day B" |
+| "Want full control?" both buttons | PASS — Continue closes it; Set it up myself opens the builder |
+| 360 / 390 / 430 / 768 / 1440 px | PASS — no sideways scroll on Build a Program, Paste, or Preview; Create pinned in the footer; content column capped on desktop |
+| Keyboard over the paste box, VoiceOver, Android Chrome, Firefox | NOT RUN — §3 |
 
 ---
 
@@ -175,6 +213,10 @@ server/format error reported as a connection problem; a double tap paying twice.
 | G-13 | Dead end | Photo misreads can't be edited as text on the new Upload Pictures screen (the old sheet put the transcript in an editable box) | `program-import.tsx` | — | Show the transcript? |
 | G-14 | Cosmetic | "Do this 3x per week:" becomes a day name | parser | — | — |
 | G-15 | Deploy | `MAX_BASE64_CHARS` change is committed but the function is not redeployed | `supabase/functions/program-photo-read` | — | PO deploys the function |
+| G-16 | Accessibility | The Premium AI switch has no on/off state for screen readers (`role=switch` with no checked state) | `app/subscription.tsx` | VoiceOver on Settings → Subscription | Small fix, not import |
+| G-17 | Money | Cancelling mid-read still pays for the read that was already sent | `program-import.tsx` | Cancel while "Reading…" | Accept? (cannot be recalled once sent) |
+| G-18 | Cosmetic | A sentence typed on the same line as a lift stays in its name ("Barbell Row with a long coaching note…") | parser | — | — |
+| G-19 | Privacy, outside import | Any signed-in account can read every other account's experience and training goals from `profiles` | RLS on `profiles` | query `profiles?select=experience,training_goals` | Check the policy is meant to expose these |
 
 ---
 
@@ -186,8 +228,10 @@ server/format error reported as a connection problem; a double tap paying twice.
 | PDF from Files / iCloud / Google Drive / Android | Needs the device pickers | Paste a program → Upload a PDF → pick a program PDF from Files, then one from Google Drive. Expect the text in the box. |
 | 60 MB PDF on a phone | Native reads it as one base64 string; may run out of memory | Same, with the largest PDF you own. Report a crash or hang. |
 | Keyboard covering the paste box, screen reader | Needs a device | Paste screen: tap the box with a long paste — can you still reach PREVIEW IMPORT? VoiceOver: swipe through the preview. |
-| Every signed-in check (C reads, D, E, F, G) | Waiting on the test-account token | Paste the token in chat; the runs take ~30 minutes and ≤ 60 reads. |
+| Backgrounding the app mid-read | Needs a phone | Upload pictures → Preview → switch apps for 10 s → come back. Expect the preview or a clear error, not a frozen "Reading…". |
+| Android Chrome, Firefox | Not installed here | Open forgelegacy.expo.app, paste the example, Preview, Create. |
 
 ## 4. Budget
 
-Model reads used: **0 / 60**. Every function call made was refused before the model (size, type, auth).
+Model reads used: **25 / 60** — 13 single-photo formats, 4 multi-photo, 3 bad-among-good, 4 failure cases (the offline attempt never left the browser), 1 WebKit. Every refused probe (size, type,
+auth, HEIC) cost nothing.
