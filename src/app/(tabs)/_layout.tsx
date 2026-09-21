@@ -1,4 +1,6 @@
 import AppTabs from '@/components/app-tabs';
+// Holt's place in every deck of lines, kept across launches so he does not start every list over.
+import '@/lib/voice-memory';
 
 /**
  * `(tabs)` group layout — the 4-tab bronze shell (expo-router/ui headless Tabs, in

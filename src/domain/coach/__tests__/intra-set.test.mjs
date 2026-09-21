@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 
 import { intraSetSuggestion, OVERSHOOT_REPS } from '../intra-set.ts';
 import { INTENSITY } from '../rulebook/intensity.ts';
-import { IN_WORKOUT_LINES, say } from '../rulebook/in-workout-voice.ts';
+import { IN_WORKOUT_LINES, WIN_KEYS, say } from '../rulebook/in-workout-voice.ts';
+
+/** HV-D2 — the same list `voice.test.mjs` holds the conversation to. */
+const CHEESE = /\b(crush(ing|ed)? it|beast( mode)?|let'?s go{3,}|no days off|champ|buddy|king|queen|killing it|slay(ing)?|rock ?star|superstar|legend|great question|you got this bro|grind never stops)\b/i;
 import { resetVoice } from '../rulebook/voice.ts';
 
 const first = () => 0; // deterministic variant choice
@@ -98,13 +101,14 @@ test('mobility adds nothing at any intensity', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ⚠ THE COPY RULE — names the next action, never grades the set
+// ⚠ THE COPY RULE — names the next action, may celebrate what went right, never grades what went wrong
 // ─────────────────────────────────────────────────────────────────────────────
 
-test('no in-workout line characterises the set just logged', () => {
-  /* W9-A-005 D-3: "a scoreboard tells you how you did, and a coach tells you what to do next."
-     Any assessment must be a conditional handed to the athlete, never an assertion by Holt. */
-  const GRADING = /\b(easy|light|weak|slow|strong|good rep|nailed|crushed|behind|ahead of)\b/i;
+test('no in-workout line characterises what went wrong', () => {
+  /* W9-A-005 D-3, as amended by Holt-Voice-Amendment-001 HV-D4: he may now be glad about a set that went
+     well ("every rep, every set"), so "strong" left this list. What stays is every word that grades a
+     set DOWN or names the shortfall — the half of the rule anti-shame depends on. */
+  const GRADING = /\b(easy|light|weak|slow|sloppy|ugly|bad|failed|fail|short of|missed|behind|ahead of|crushed)\b/i;
   for (const [key, table] of Object.entries(IN_WORKOUT_LINES)) {
     for (const [register, lines] of Object.entries(table)) {
       for (const line of lines) {
@@ -122,18 +126,41 @@ test('every register of every key has at least three variants', () => {
   }
 });
 
-test('no exclamation marks — he is a coach, not a cheerleader', () => {
-  for (const table of Object.values(IN_WORKOUT_LINES)) {
-    for (const lines of Object.values(table)) {
-      for (const line of lines) assert.ok(!line.includes('!'), line);
+test('an exclamation mark is for a win, and there is at most one (HV-D3)', () => {
+  for (const [key, table] of Object.entries(IN_WORKOUT_LINES)) {
+    for (const [register, lines] of Object.entries(table)) {
+      for (const line of lines) {
+        const marks = (line.match(/!/g) ?? []).length;
+        if (!WIN_KEYS.includes(key)) assert.equal(marks, 0, `${key}/${register} is not a win: "${line}"`);
+        assert.ok(marks <= 1, `${key}/${register} shouts: "${line}"`);
+        assert.doesNotMatch(line, CHEESE, `${key}/${register} is cheesy: "${line}"`);
+      }
     }
   }
 });
 
+test('⭐ the weight going up is celebrated at every register — the dial sets the volume, never whether he cares', () => {
+  /* HV-D6. The quietest setting is warm, not silent about a win: every register's add-weight lines must
+     say the athlete EARNED it or that it is progress, not merely state the new number. */
+  const GLAD = /(earned|nice work|progress|every rep|every set|let's go|look at that|well earned|you owned|topped|going up|prove it|attack|make it yours|strong|you hit|last time|ready for)/i;
+  for (const [register, lines] of Object.entries(IN_WORKOUT_LINES.prog_add_weight)) {
+    const glad = lines.filter((l) => GLAD.test(l)).length;
+    assert.ok(glad >= Math.ceil(lines.length * 0.75), `${register}: only ${glad} of ${lines.length} add-weight lines sound glad`);
+  }
+});
+
+test('⚠ backing off never names the drop as a loss', () => {
+  for (const line of IN_WORKOUT_LINES.prog_back_off.plain) {
+    assert.doesNotMatch(line, /\b(came down|dropped|down from|lost|regress)/i, line);
+  }
+});
+
 test('⚠ backing off reads identically at every register — the rescue is never delivered hard', () => {
-  const b = IN_WORKOUT_LINES.set_back_off;
-  assert.deepEqual(b.quiet, b.plain);
-  assert.deepEqual(b.plain, b.direct);
+  for (const key of ['set_back_off', 'prog_back_off', 'effort_heavy_next', 'effort_heavy_min']) {
+    const b = IN_WORKOUT_LINES[key];
+    assert.deepEqual(b.quiet, b.plain, key);
+    assert.deepEqual(b.plain, b.direct, key);
+  }
 });
 
 test('a missing token silences the line rather than printing a brace', () => {

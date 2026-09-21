@@ -14,6 +14,7 @@
  *
  * ⚠ PURE, AND RELATIVE `.ts` IMPORTS ONLY — `node --test` cannot resolve `@/`.
  */
+import { pickFrom } from './rulebook/voice.ts';
 
 export type NudgeId = 'photos' | 'progress' | 'honors' | 'goals' | 'squads' | 'templates' | 'program' | 'metrics';
 
@@ -64,6 +65,73 @@ const DAY_MS = 86_400_000;
 const daysSince = (iso: string | null | undefined, now: number): number =>
   iso ? (now - new Date(iso).getTime()) / DAY_MS : Infinity;
 
+/* ── WHAT HE SAYS ────────────────────────────────────────────────────────────────────────────────
+ *
+ * ⚠ FRAMED AS WHAT HE SEES IN THEM, NEVER AS WHAT THEY HAVE NOT DONE (Holt-Voice-Amendment-001 HV-D5).
+ * "You've been consistent for a month — a photo now would show it" is a coach who noticed; "You haven't
+ * taken a photo" is an app keeping score. Every line is still a question, because each one is an offer.
+ *
+ * Several ways each: a nudge is shown rarely, but an athlete who says "not now" meets it again three
+ * weeks later, and the second asking should not be word for word the first.
+ *
+ * `{honors}`, `{honorWord}` and `{sessions}` are filled from the signals.
+ */
+export const NUDGE_LINES: Record<NudgeId, readonly string[]> = {
+  photos: [
+    'Most people can’t see their own progress week to week. A photo can. Want to start?',
+    'You’re putting the work in. Want a photo to show it later?',
+    'Progress is easy to miss up close. Want to start a photo record?',
+    'Future you will want to see where this started. Take a first photo?',
+  ],
+  goals: [
+    'Training without a target works. Training with one works better. Want to set one?',
+    'You’re showing up consistently. Want to point that at a goal?',
+    'You’ve got momentum. Want to give it a target?',
+    'Want to pick a goal we can chase together?',
+  ],
+  honors: [
+    'You’ve earned {honors} {honorWord}. Want to see them?',
+    '{honors} {honorWord} earned so far. Want to take a look?',
+    '{honors} {honorWord} in the collection so far. Want to see what they’re for?',
+  ],
+  program: [
+    'You’ve been going session to session. Want me to build you a program?',
+    'You’re training consistently. Want a plan that builds week to week?',
+    'You clearly show up. Want me to give all that work a direction?',
+    'Want me to map out the next few weeks for you?',
+  ],
+  templates: [
+    'You’ve trained {sessions} sessions. Want to save one as a template so you’re not rebuilding it?',
+    '{sessions} sessions in. Want to save a favourite so it’s one tap next time?',
+    'You’ve got a routine forming. Want to save it as a template?',
+  ],
+  progress: [
+    'You’ve got a rank building whether you look at it or not. Want to see where you are?',
+    'Your rank has been moving. Want to see where you stand?',
+    'All this work is adding up. Want to see your progress?',
+    'Curious how far you’ve come? Want to look?',
+  ],
+  squads: [
+    'Training alone is harder than it needs to be. Want to find a squad?',
+    'People who train together keep showing up. Want to find your crew?',
+    'There are squads out there training right now. Want some people in your corner?',
+  ],
+  metrics: [
+    'Want to track your weight alongside the lifting?',
+    'Want to log your bodyweight too, so we can see the whole picture?',
+    'Want to add weigh-ins to the story your training is telling?',
+  ],
+};
+
+function nudgeLine(id: NudgeId, s: NudgeSignals): string {
+  return pickFrom(`nudge:${id}`, NUDGE_LINES[id]).replace(/\{(\w+)\}/g, (_m, k: string) =>
+    k === 'honors' ? String(s.honors)
+      : k === 'honorWord' ? (s.honors === 1 ? 'honor' : 'honors')
+      : k === 'sessions' ? String(s.sessions)
+      : '',
+  );
+}
+
 /* ── THE CATALOGUE ───────────────────────────────────────────────────────────────────────────────── */
 
 /**
@@ -82,13 +150,13 @@ export const NUDGES: readonly NudgeDef[] = [
   {
     id: 'photos',
     eligible: (s) => s.photos === 0,
-    line: () => 'Most people can’t see their own progress week to week. A photo can. Want to start?',
+    line: (s) => nudgeLine('photos', s),
     route: '/transformation-add',
   },
   {
     id: 'goals',
     eligible: (s) => s.goals === 0,
-    line: () => 'Training without a target works. Training with one works better. Want to set one?',
+    line: (s) => nudgeLine('goals', s),
     route: '/goals',
   },
   {
@@ -97,38 +165,38 @@ export const NUDGES: readonly NudgeDef[] = [
        database knows, and inventing that tracking for one nudge is not worth a table. The shown-once
        rule below does the rest of the job: he mentions it a single time, ever. */
     eligible: (s) => s.honors > 0,
-    line: (s) => `You’ve earned ${s.honors} ${s.honors === 1 ? 'honor' : 'honors'}. Want to see them?`,
+    line: (s) => nudgeLine('honors', s),
     route: '/honors',
   },
   {
     id: 'program',
     eligible: (s) => s.programs === 0,
-    line: () => 'You’ve been going session to session. Want me to build you a program?',
+    line: (s) => nudgeLine('program', s),
     route: '/coach',
   },
   {
     id: 'templates',
     /* Five sessions in: they have a shape they repeat, and rebuilding it by hand is the cost. */
     eligible: (s) => s.templates === 0 && s.sessions >= 5,
-    line: (s) => `You’ve trained ${s.sessions} sessions. Want to save one as a template so you’re not rebuilding it?`,
+    line: (s) => nudgeLine('templates', s),
     route: '/templates',
   },
   {
     id: 'progress',
     eligible: () => true,
-    line: () => 'You’ve got a rank building whether you look at it or not. Want to see where you are?',
+    line: (s) => nudgeLine('progress', s),
     route: '/progress-hub',
   },
   {
     id: 'squads',
     eligible: (s) => s.squads === 0,
-    line: () => 'Training alone is harder than it needs to be. Want to find a squad?',
+    line: (s) => nudgeLine('squads', s),
     route: '/discover-squads',
   },
   {
     id: 'metrics',
     eligible: (s) => s.weighIns === 0,
-    line: () => 'Want to track your weight alongside the lifting?',
+    line: (s) => nudgeLine('metrics', s),
     route: '/progress-hub',
   },
 ];

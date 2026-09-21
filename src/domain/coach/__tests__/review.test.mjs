@@ -46,17 +46,45 @@ test('no line grades the week or compares it to another', () => {
   }
 });
 
-test('no exclamation marks — the same rule the rest of his voice holds', () => {
-  for (const table of Object.values(REVIEW_LINES)) {
-    const lines = Array.isArray(table) ? table : Object.values(table).flat();
-    for (const line of lines) assert.ok(!line.includes('!'), line);
+test('an exclamation mark is for a win, and at most one per line (HV-D3)', () => {
+  /* The wins: an honor, a PR, a first-ever lift, a full or big week. The heaviest set, the close and the
+     sets-up line are not wins in themselves, so they never exclaim. */
+  const CHEESE = /\b(crush(ing|ed)? it|beast( mode)?|let'?s go{3,}|no days off|champ|buddy|king|queen|killing it|slay(ing)?|rock ?star|superstar|legend|great question|you got this bro|grind never stops)\b/i;
+  const WINS = new Set(['HONOR_LINE', 'PR_ONE', 'PR_MANY', 'FIRST_ONE', 'FIRST_MANY', 'OPENER.full', 'OPENER.heavy']);
+  for (const [name, table] of Object.entries(REVIEW_LINES)) {
+    const groups = Array.isArray(table) ? [[name, table]] : Object.entries(table).map(([k, v]) => [`${name}.${k}`, v]);
+    for (const [label, lines] of groups) {
+      for (const line of lines) {
+        const marks = (line.match(/!/g) ?? []).length;
+        if (!WINS.has(label)) assert.equal(marks, 0, `${label} is not a win: "${line}"`);
+        assert.ok(marks <= 1, `${label}: "${line}"`);
+        assert.doesNotMatch(line, CHEESE, `${label} is cheesy: "${line}"`);
+      }
+    }
   }
 });
 
-test('every table has at least three variants', () => {
+test('⚠ a composed note carries one exclamation at most, however many wins the week had', () => {
+  const big = week({ workouts: 5, days_trained: 5, honors: [{ honor: 'Century Club' }], first_time: [{ exercise: 'Dip' }] });
+  for (let i = 0; i < 200; i++) {
+    resetVoice();
+    const note = reviewNote(big);
+    assert.ok((note.match(/!/g) ?? []).length <= 1, note);
+  }
+});
+
+test('⭐ a PR is celebrated, not filed', () => {
+  resetVoice();
+  const notes = new Set();
+  for (let i = 0; i < 40; i++) notes.add(reviewNote(week({ prs: [{ exercise: 'Back Squat', value: 315 }] })));
+  const glad = [...notes].filter((n) => /!|earned|showing up|consistency|remember/i.test(n));
+  assert.ok(glad.length >= notes.size / 2, `most PR notes should sound glad: ${[...notes].join(' | ')}`);
+});
+
+test('every table has at least eight variants — a weekly card is read every week for years', () => {
   for (const [name, table] of Object.entries(REVIEW_LINES)) {
     const groups = Array.isArray(table) ? [table] : Object.values(table);
-    for (const g of groups) assert.ok(g.length >= 3, `${name} has ${g.length}`);
+    for (const g of groups) assert.ok(g.length >= 8, `${name} has ${g.length}`);
   }
 });
 

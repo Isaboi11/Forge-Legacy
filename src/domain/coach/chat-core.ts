@@ -910,11 +910,17 @@ export const NOT_UNDERSTOOD = "I didn't catch that one. Tap it, or say it anothe
 // THE OPENING
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** The first-run introduction, verbatim from the design. Shown once. */
+/**
+ * The first-run introduction. Shown once.
+ *
+ * Warmed 2026-09-21 (Holt-Voice-Amendment-001 HV-D1) — the design's version was accurate and cold, and
+ * this is the first thing the coach they will train with for months ever says to them. The promise in the
+ * middle is unchanged: he builds around them, and nothing is saved until they have seen it.
+ */
 export const INTRO: string[] = [
-  "I'm Holt.",
+  "I'm Holt. I'll be your coach.",
   "I don't pick a program off a shelf and put your name on it. You tell me what you're chasing and what your week actually looks like, and I build the block around that.",
-  "Nothing gets saved until you've seen every week of it. Start wherever you like.",
+  "Nothing gets saved until you've seen every week of it. Glad you're here — start wherever you like.",
 ];
 
 /**
@@ -1253,12 +1259,38 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
  * announce that nobody is home. He knows your name by the second visit, and he opens the way a person
  * does — greeting, then the actual question.
  */
-export function greetReturning(firstName: string | null | undefined): Turn[] {
+export function greetReturning(
+  firstName: string | null | undefined,
+  now: Date = new Date(),
+  roll: () => number = Math.random,
+): Turn[] {
   return [
-    { kind: 'holt', text: firstName?.trim() ? pickNamed('greet_return', firstName) : pick('greet_return_anon') },
-    { kind: 'holt', text: pick('greet_return_second') },
+    { kind: 'holt', text: greetingFor(firstName, now, roll) },
+    { kind: 'holt', text: secondLineFor(now, roll) },
     { kind: 'chips', chips: OPENERS.map((label) => ({ label, patch: {} })) },
   ];
+}
+
+/**
+ * ══ THE GREETING KNOWS WHAT TIME IT IS ══
+ *
+ * Half the visits draw from the time-of-day pool and half from the general one, so neither is worn
+ * through quickly and "Morning" never turns up at nine at night. The hour is the device's local hour —
+ * the athlete's own morning, which is the only one that matters.
+ */
+function greetingFor(firstName: string | null | undefined, now: Date, roll: () => number): string {
+  const named = !!firstName?.trim();
+  if (roll() < 0.5) return named ? pickNamed('greet_return', firstName) : pick('greet_return_anon');
+  const h = now.getHours();
+  const key = h < 5 ? 'greet_late' : h < 12 ? 'greet_morning' : h < 17 ? 'greet_afternoon' : h < 22 ? 'greet_evening' : 'greet_late';
+  return pickNamed(key, firstName);
+}
+
+/** One visit in three on a Monday, a Friday or a weekend says so. Never on any other day. */
+function secondLineFor(now: Date, roll: () => number): string {
+  const d = now.getDay();
+  const key = d === 1 ? 'greet_second_monday' : d === 5 ? 'greet_second_friday' : d === 0 || d === 6 ? 'greet_second_weekend' : null;
+  return key && roll() < 1 / 3 ? pick(key) : pick('greet_return_second');
 }
 
 /**

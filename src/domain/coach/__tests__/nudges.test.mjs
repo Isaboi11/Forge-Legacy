@@ -7,7 +7,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { chooseNudge, NUDGES, MIN_SESSIONS, GAP_DAYS, DISMISS_COOLDOWN_DAYS, MAX_DISMISSALS } from '../nudges.ts';
+import { chooseNudge, NUDGES, NUDGE_LINES, MIN_SESSIONS, GAP_DAYS, DISMISS_COOLDOWN_DAYS, MAX_DISMISSALS } from '../nudges.ts';
 
 const NOW = Date.parse('2026-08-25T12:00:00Z');
 const daysAgo = (n) => new Date(NOW - n * 86_400_000).toISOString();
@@ -97,6 +97,23 @@ test('every line is a question, and every route is a real path', () => {
   for (const n of NUDGES) {
     assert.match(n.line(s), /\?$/, `${n.id} must invite, not instruct`);
     assert.match(n.route, /^\//, `${n.id} route must be a path`);
+  }
+  // Every variant, not just the one dealt — a line that is not a question would reach somebody eventually.
+  for (const [id, lines] of Object.entries(NUDGE_LINES)) {
+    assert.ok(lines.length >= 3, `${id} has ${lines.length} — the second asking should not be the first`);
+    for (const line of lines) {
+      assert.match(line, /\?$/, `${id}: "${line}"`);
+      assert.doesNotMatch(line, /\b(haven.t|never|still not|yet to)\b/i, `${id} keeps score (HV-D5): "${line}"`);
+    }
+  }
+});
+
+test('the honors count is filled in every wording', () => {
+  const some = fresh({ honors: 1 });
+  for (let i = 0; i < NUDGE_LINES.honors.length * 2; i++) {
+    const line = NUDGES.find((n) => n.id === 'honors').line(some);
+    assert.match(line, /1 honor\b/, line);
+    assert.doesNotMatch(line, /\{/, line);
   }
 });
 

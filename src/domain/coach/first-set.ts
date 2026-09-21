@@ -35,6 +35,8 @@
  */
 
 import { incrementFor, loadableStep } from './progression.ts';
+import { say, type InWorkoutKey } from './rulebook/in-workout-voice.ts';
+import type { Chooser } from './rulebook/voice.ts';
 
 /** What the athlete says about the set they just did. Their words, not an inference. */
 export type EffortAnswer = 'easy' | 'right' | 'heavy';
@@ -101,14 +103,12 @@ export function weightAfterEffort(a: FirstSetAsk, answer: EffortAnswer): number 
  * defect the PO reported once already ("Holt is talking in KG and I have it set to lbs"), from the other
  * direction, and the fix was to make every weight the coach speaks go through the same converter.
  */
-export function effortReply(answer: EffortAnswer, next: number | null): string {
-  if (answer === 'right') return 'Good — stay there for the rest of them.';
-  if (answer === 'easy') {
-    return next == null
-      ? "Good. Add a little next time — there's nothing left to put on this one."
-      : `Right, put it up to ${next} lb for the next one.`;
-  }
-  return next == null
-    ? "Then that's your set — stay there and let it get easier. Nothing to come off."
-    : `Take it down to ${next} lb and finish the rest there. Nobody's watching.`;
+export function effortReply(answer: EffortAnswer, next: number | null, choose?: Chooser): string {
+  /* Said once, when the athlete taps an answer — so a fresh deal each time is right, and the tone is
+     the same at every register (`same()` in the table): "take it down" is never delivered hard. */
+  const key: InWorkoutKey =
+    answer === 'right' ? 'effort_right'
+      : answer === 'easy' ? (next == null ? 'effort_easy_max' : 'effort_easy_next')
+      : next == null ? 'effort_heavy_min' : 'effort_heavy_next';
+  return say(key, 'plain', { next }, choose) ?? '';
 }

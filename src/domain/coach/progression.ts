@@ -26,6 +26,8 @@
  * Pure: history in, a recommendation out. No Supabase, no catalogue.
  */
 
+import { sayOnce, type InWorkoutKey, type Register, type SayTokens } from './rulebook/in-workout-voice.ts';
+
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // INPUT
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -335,6 +337,11 @@ export interface ProgressionInput {
    * back to the safe 5 lb notch rather than inventing a weight the rack does not have.
    */
   equipment?: string | null;
+  /**
+   * How loud Holt is — `profileFor(level, experience).register`. Absent reads as `plain`, the default
+   * dial. ⚠ WORDING ONLY: the verdict, the weight and the reps are identical at every register.
+   */
+  register?: Register;
 }
 
 /**
@@ -348,13 +355,26 @@ export function progressionFor(input: ProgressionInput): Progression {
   const { prescription: rx, pattern, experience } = input;
   const top = rx.repsMax ?? rx.reps;
 
+  const register = input.register ?? 'plain';
+  /*
+   * ⚠ PINNED TO THE MOMENT, NOT DEALT PER CALL. The workout screen recomputes this every time a set is
+   * logged; a fresh line each time would rewrite the coach mid-exercise. Keyed by the lift, the session
+   * the verdict reads, and the verdict itself, the line holds for the whole session and the NEXT session
+   * — a different `when` — gets a new one. That is where the variety is felt: week to week on one lift.
+   */
+  const line = (action: string, key: InWorkoutKey, tokens: SayTokens): string =>
+    sayOnce(`prog:${input.exerciseName}:${input.history[0]?.startedAt ?? 'none'}:${action}`, key, register, {
+      lift: input.exerciseName,
+      ...tokens,
+    }) ?? '';
+
   const last = input.history[0] ? workingSets(input.history[0]) : [];
   if (last.length === 0) {
     return {
       action: 'no_history',
       suggestedWeight: null,
       suggestedReps: rx.reps,
-      message: `First time on ${input.exerciseName} — pick a weight you could do a couple more reps with, and note what you land on.`,
+      message: line('first', 'prog_first', {}),
       basis: null,
     };
   }
@@ -374,7 +394,7 @@ export function progressionFor(input: ProgressionInput): Progression {
       action: 'back_off',
       suggestedWeight: weight,
       suggestedReps: rx.reps,
-      message: `${input.exerciseName} came down from ${fmt(priorWeight)} to ${fmt(weight)} — stay at ${fmt(weight)} and rebuild from there.`,
+      message: line('back_off', 'prog_back_off', { from: fmt(priorWeight), weight: fmt(weight) }),
       basis,
     };
   }
@@ -402,8 +422,8 @@ export function progressionFor(input: ProgressionInput): Progression {
       suggestedWeight: 0,
       suggestedReps: target,
       message: everySetAtBottom
-        ? `You got ${best} on ${input.exerciseName} — go for ${target} this time.`
-        : `${input.exerciseName} was short of ${rx.reps} last time — same again, get all ${rx.sets} sets.`,
+        ? line('bw_up', 'prog_bw_up', { best, target })
+        : line('bw_hold', 'prog_bw_hold', { reps: rx.reps, sets: rx.sets }),
       basis,
     };
   }
@@ -415,7 +435,7 @@ export function progressionFor(input: ProgressionInput): Progression {
       action: 'add_weight',
       suggestedWeight: next,
       suggestedReps: rx.reps,
-      message: `You hit ${at.length} × ${top} at ${fmt(weight)} on ${input.exerciseName} — go to ${fmt(next)} and start back at ${rx.reps}.`,
+      message: line('add_weight', 'prog_add_weight', { sets: at.length, top, weight: fmt(weight), next: fmt(next), reps: rx.reps }),
       basis,
     };
   }
@@ -430,8 +450,8 @@ export function progressionFor(input: ProgressionInput): Progression {
       suggestedReps: target,
       message:
         target > best
-          ? `Stay at ${fmt(weight)} on ${input.exerciseName} and go for ${target} — one more than last time.`
-          : `Stay at ${fmt(weight)} on ${input.exerciseName} and hold ${target}.`,
+          ? line('add_rep', 'prog_add_rep', { weight: fmt(weight), target })
+          : line('hold_top', 'prog_hold_top', { weight: fmt(weight), target }),
       basis,
     };
   }
@@ -441,7 +461,7 @@ export function progressionFor(input: ProgressionInput): Progression {
     action: 'hold',
     suggestedWeight: weight,
     suggestedReps: rx.reps,
-    message: `${input.exerciseName} was short of ${rx.reps} last time — same ${fmt(weight)}, get all ${rx.sets} sets this time.`,
+    message: line('hold_short', 'prog_hold_short', { weight: fmt(weight), reps: rx.reps, sets: rx.sets }),
     basis,
   };
 }
