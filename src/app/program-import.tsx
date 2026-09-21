@@ -156,6 +156,14 @@ function ProgramImport() {
   // ── photos ───────────────────────────────────────────────────────────────────────────────────────
   const addPhotos = async () => {
     const picked = await pickImagesFromLibrary(MAX_PHOTOS - photos.length);
+    if (picked === 'failed') {
+      // The browser could not open one of them — on a computer that is nearly always an iPhone HEIC —
+      // and the picker drops the whole selection when that happens. See `pickImagesFromLibrary`.
+      setError(
+        'One of those photos couldn’t be opened here — iPhone photos (HEIC) don’t open in every browser. Take a screenshot of it and upload that, or pick the others again without it.',
+      );
+      return;
+    }
     if (!picked.length) return; // Cancelled — not an error.
     setError(null);
     setPhotos((cur) => [...cur, ...picked].slice(0, MAX_PHOTOS));

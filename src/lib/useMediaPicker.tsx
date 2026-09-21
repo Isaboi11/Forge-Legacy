@@ -230,9 +230,16 @@ const READABLE_IMAGE = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
  * request, and the athlete was told the connection failed. A small image in any other format is now
  * re-encoded to JPEG at its own size, so "HEIC" on the screen is a true claim.
  *
- * Returns uris in the order picked (the order the days will run), or [] when cancelled.
+ * Returns uris in the order picked (the order the days will run) — `[]` when cancelled, and `'failed'`
+ * when the picker itself threw.
+ *
+ * ⚠ A THROW IS NOT A CANCEL (stress test, 2026-09-21). On the web, `expo-image-picker` rejects the WHOLE
+ * selection when any one file has a type it does not recognise — an iPhone HEIC on desktop Chrome
+ * arrives with no type at all. Caught as "cancelled", the athlete picked their photos and nothing
+ * happened: no thumbnail, no message. The picker cannot hand back the good files from a failed
+ * selection, so the caller says what went wrong and what to do instead.
  */
-export async function pickImagesFromLibrary(limit: number): Promise<string[]> {
+export async function pickImagesFromLibrary(limit: number): Promise<string[] | 'failed'> {
   if (limit <= 0) return [];
   try {
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -259,7 +266,7 @@ export async function pickImagesFromLibrary(limit: number): Promise<string[]> {
     }
     return out;
   } catch {
-    return [];
+    return 'failed';
   }
 }
 
