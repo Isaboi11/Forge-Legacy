@@ -79,7 +79,8 @@ import {
   type GuidedStep,
 } from '@/domain/program/guided-steps';
 import { draftFromStructure, makeDays, newDraft } from '@/lib/program-draft-model';
-import { PHOTO_IMPORT_ENABLED } from '@/components/forge/ImportSpreadsheetSheet';
+import { PHOTO_IMPORT_LIVE } from '@/components/forge/ImportSpreadsheetSheet';
+import { usePremiumAi } from '@/lib/entitlement';
 import { saveProgramDraft } from '@/lib/program-draft';
 import { useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
@@ -99,14 +100,13 @@ const NO_DAYS: readonly IsoDay[] = [];
  * (`ImportSpreadsheetSheet`), mounted by the full builder and opened on arrival by `?o=import`. These
  * tabs are doors to it, so there is still exactly one parser and one preview.
  *
- * ⚠ PICTURES FOLLOWS THE SHEET'S OWN FLAG. It is hidden until the photo reader's server half is live
- * (see `PHOTO_IMPORT_ENABLED`): a tab that fails on every tap is the Guideline 1.2 defect that flag
- * exists to prevent, so the tab appears the moment the flag flips and not before.
+ * ⚠ PICTURES FOLLOWS THE SHEET'S OWN RULE: the photo reader's server half is live AND the athlete
+ * holds Premium AI (0203 — today, only the PO). Anyone else sees two tabs, never a third that fails.
  */
 type Source = 'scratch' | 'paste' | 'photo';
-const SOURCES: { key: Source; label: string }[] = [
+const sourcesFor = (photo: boolean): { key: Source; label: string }[] => [
   { key: 'paste', label: 'Paste text' },
-  ...(PHOTO_IMPORT_ENABLED ? [{ key: 'photo' as const, label: 'Upload pictures' }] : []),
+  ...(photo ? [{ key: 'photo' as const, label: 'Upload pictures' }] : []),
   { key: 'scratch', label: 'From scratch' },
 ];
 
@@ -130,6 +130,8 @@ function Guided() {
   const known = profileQ.data ?? EMPTY_COACH_PROFILE;
   const briefingQ = useQuery(fetchBriefing, []);
 
+  const premiumAi = usePremiumAi();
+  const SOURCES = sourcesFor(PHOTO_IMPORT_LIVE && premiumAi);
   const [source, setSource] = useState<Source>('scratch');
   const [index, setIndex] = useState(0);
   /**

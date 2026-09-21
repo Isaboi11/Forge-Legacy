@@ -11,6 +11,7 @@ import { parseProgramTable, summarize, type ParsedWeek } from '@/domain/program/
 import { distanceUnitFor, fmtDistanceIn, fmtDuration, type CardioActivity } from '@/domain/workout/conditioning';
 import { pickTextFile } from '@/lib/pick-text-file';
 import { pickImageFromLibrary } from '@/lib/useMediaPicker';
+import { usePremiumAi } from '@/lib/entitlement';
 
 /**
  * ══ IMPORT FROM A SPREADSHEET — the ONE sheet, wherever a plan gets built ══
@@ -34,7 +35,16 @@ import { pickImageFromLibrary } from '@/lib/useMediaPicker';
  */
 
 /**
- * ⛔ PHOTO IMPORT IS HIDDEN FOR LAUNCH — A DECISION, NOT A BUG (PO, 2026-08-21).
+ * ⭐ PHOTO IMPORT IS ON — FOR PREMIUM AI ONLY (PO, 2026-09-21). History of the flag follows.
+ *
+ * *"I want this turned on for just me. So anything AI is going to be another tier that will only have me
+ * on it."* The server half is `supabase/apply/pending-0144-0174-0203.sql` (the credit meter, the
+ * `photo_import` weight, and 0203's gate in `coach_ai_spend_credits`, which refuses anyone without the
+ * Premium AI add-on) plus the `program-photo-read` Edge Function. The per-athlete half is
+ * `PHOTO_IMPORT_ENABLED` inside the component: this server switch AND `usePremiumAi()`. So a reviewer's
+ * account — or any account but the PO's — never sees the control, and could not use it if it did.
+ *
+ * ⛔ WAS: PHOTO IMPORT IS HIDDEN FOR LAUNCH — A DECISION, NOT A BUG (PO, 2026-08-21).
  *
  * The feature is BUILT and its code below is untouched. What is missing is the two things it needs to
  * actually run: migration `0174` (the credit weight for `photo_import`) is not applied, and the
@@ -54,7 +64,7 @@ import { pickImageFromLibrary } from '@/lib/useMediaPicker';
  * TO RE-ENABLE: apply `supabase/apply/pending-0174.sql`, deploy `program-photo-read`, then flip this to
  * `true`. Nothing else. Do not flip it before both are true — that is what this constant is for.
  */
-export const PHOTO_IMPORT_ENABLED = false;
+export const PHOTO_IMPORT_LIVE = true;
 
 /**
  * How much of a paste the surface can hold.
@@ -119,6 +129,11 @@ function cardioTargetText(it: { activity?: string; targetSec?: number | null; ta
 }
 
 export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }: Props) {
+  /* The photo control for THIS athlete: the server half is live (`PHOTO_IMPORT_LIVE`, which needs `0174`
+     applied and `program-photo-read` deployed) AND they hold Premium AI (0203). Both halves of the UI —
+     the button and the copy promising it — read this one value. */
+  const premiumAi = usePremiumAi();
+  const PHOTO_IMPORT_ENABLED = PHOTO_IMPORT_LIVE && premiumAi;
   const [pasteText, setPasteText] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
   /** A photo read is a network round-trip to a vision model — seconds, not milliseconds. It needs to say so. */

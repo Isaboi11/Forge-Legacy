@@ -161,6 +161,20 @@ export function useEntitlementState(): EntitlementState {
   return ctx ?? { snapshot: null, status: 'unknown', refetch: () => {} };
 }
 
+/**
+ * PREMIUM AI — the Coach AI add-on (`athlete_entitlement.coach_ai`, returned as `coachAi`), under the
+ * display name the PO chose on 2026-09-21. Today only the PO holds it (migration 0203).
+ *
+ * ⚠ FAILS CLOSED, THE OPPOSITE OF `useEntitlement`. That hook reads an unknown tier as entitled, because
+ * wrongly gating a paying athlete is the worse error there. Here the worse error is showing a control
+ * that spends money — and the server refuses anyone without the add-on anyway (0203), so an optimistic
+ * guess would only ever put a button on screen that fails. Unknown or loading reads as no.
+ */
+export function usePremiumAi(): boolean {
+  const { snapshot, status } = useEntitlementState();
+  return status === 'ready' && snapshot?.coachAi === true;
+}
+
 // ── feature display ──────────────────────────────────────────────────────────
 
 /** Features gated by tier rather than by a count. Named so the seam stays greppable. */
