@@ -726,6 +726,41 @@ const sameFocus = (a: FocusPick, b: FocusPick): boolean =>
  */
 export const hasFocus = (picks: readonly FocusPick[], p: FocusPick): boolean => picks.some((x) => sameFocus(x, p));
 
+/**
+ * A day focus said in words — "back and bis", "pull no wait legs", "chest and arms" — as the same
+ * `DayFocus` the taps produce.
+ *
+ * The model returns `dayFocus` as the athlete's own phrase (it never writes training, so it cannot hand
+ * back a `DayFocus` object). Folding it through `mergeFocus` keeps the one split/parts rule: picks are
+ * taken in the ORDER THEY WERE SAID, so the last split named wins, exactly as the last split tapped does.
+ * `null` when nothing recognisable was named — the caller asks, it does not default to full body.
+ */
+const FOCUS_WORDS: readonly [RegExp, FocusPick[]][] = [
+  [/\b(full[\s-]?body|total[\s-]?body|whole[\s-]?body|everything)\b/, [{ kind: 'split', split: 'full_body' }]],
+  [/\bpush\b/, [{ kind: 'split', split: 'push' }]],
+  [/\bpull\b/, [{ kind: 'split', split: 'pull' }]],
+  [/\b(legs?|leg\s+day|lower(\s+body)?|glutes?|quads?|hamstrings?|hammies)\b/, [{ kind: 'split', split: 'legs' }]],
+  [/\bupper(\s+body)?\b/, [{ kind: 'split', split: 'upper' }]],
+  [/\b(chest|pecs?)\b/, [{ kind: 'part', part: 'chest' }]],
+  [/\b(back|lats?)\b/, [{ kind: 'part', part: 'back' }]],
+  [/\b(shoulders?|delts?)\b/, [{ kind: 'part', part: 'shoulders' }]],
+  [/\b(biceps?|bis|by\s*sips?)\b/, [{ kind: 'part', part: 'biceps' }]],
+  [/\b(triceps?|tris|try\s*sips?)\b/, [{ kind: 'part', part: 'triceps' }]],
+  [/\barms?\b/, [{ kind: 'part', part: 'biceps' }, { kind: 'part', part: 'triceps' }]],
+  [/\b(core|abs|stomach|midsection)\b/, [{ kind: 'part', part: 'core' }]],
+  [/\b(cardio|conditioning|hiit|intervals)\b/, [{ kind: 'cardio' }]],
+];
+
+export function focusFromText(text: string): DayFocus | null {
+  const t = text.toLowerCase();
+  const found: { at: number; picks: FocusPick[] }[] = [];
+  for (const [re, picks] of FOCUS_WORDS) {
+    const g = new RegExp(re.source, 'g');
+    for (let m = g.exec(t); m; m = g.exec(t)) found.push({ at: m.index, picks });
+  }
+  return mergeFocus(found.sort((a, b) => a.at - b.at).flatMap((f) => f.picks));
+}
+
 /** Selecting a split replaces everything; selecting anything else drops the split. Used by the control. */
 export function toggleFocus(picks: readonly FocusPick[], next: FocusPick): FocusPick[] {
   if (hasFocus(picks, next)) return picks.filter((p) => !sameFocus(p, next));

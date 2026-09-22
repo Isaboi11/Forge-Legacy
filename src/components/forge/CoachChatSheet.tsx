@@ -27,6 +27,8 @@ import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { HoltMark } from '@/components/forge/HoltMark';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { usePremiumAi } from '@/lib/entitlement';
+import { interpretTyped } from '@/data/coach-interpret-live';
 import { launchRowsFor, templateRowsFor } from '@/domain/coach/save-shapes';
 import { saveTemplate } from '@/data/templates-live';
 import { saveWeekTemplate, startWeekTemplate } from '@/data/week-templates-live';
@@ -56,6 +58,7 @@ import {
   isHomeTurn,
   TYPING_ENABLED,
   interpret,
+  focusFromText,
   isMedical,
   LEVEL_CHIPS,
   nextQuestion,
@@ -113,7 +116,8 @@ import type { SessionMark } from '@/domain/program/progress-core';
 import { contextFrom } from '@/domain/coach/candidates';
 import { setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
 import { limitationPatterns } from '@/domain/coach/rulebook/limitations';
-import type { Limitation } from '@/domain/coach/constraints';
+import { isEnduranceGoal, type Limitation } from '@/domain/coach/constraints';
+import { RACE_SPEC } from '@/domain/coach/rulebook/endurance';
 import {
   changesFor,
   editableSessions,
@@ -190,6 +194,10 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
    * possible order to do it in.
    */
   const guard = usePremiumGate();
+  /* Typing to Holt is the Premium AI add-on — the PO only, for now (`coach_ai`, fails closed). Everyone
+     else keeps the taps; `TYPING_ENABLED` stays the public switch. */
+  const premiumAi = usePremiumAi();
+  const canType = TYPING_ENABLED || premiumAi;
 
   /*
    * §2.9 — the sheet RISES: translateY 100% → 0 over 250ms with the system's ease-out, and reverses in
@@ -696,7 +704,14 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
           return;
         }
 
-        const res = assemble({ ...c, learned, recent }, PICKER_DB, canDoExercise);
+        /* ⚠ A RACE THE ATHLETE ASKED FOR IS BUILT (PO, 2026-09-21: *"holt shouldn't really say no to a race.
+           Maybe suggest, but then just have him do what they say"*). `buildAnyway` turns the endurance
+           refusal into `assembly.concern`, said once below the card with the suggestion as one tap. */
+        const res = assemble(
+          { ...c, learned, recent, ...(isEnduranceGoal(c.goal) ? { buildAnyway: true } : {}) },
+          PICKER_DB,
+          canDoExercise,
+        );
         setBusy(null);
 
         if (!res.ok) {
@@ -742,6 +757,18 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
           ...(load ? [{ kind: 'holt' as const, text: load }] : []),
           { kind: 'program', card: programCard },
         );
+        /* The concern, once — after the card, so the plan they asked for is what they see first. The
+           suggestion is a chip, never a wall: tapping it rebuilds for that race with every other answer kept. */
+        const concern = res.assembly.concern;
+        if (concern) {
+          const alt = concern.altGoal;
+          say(
+            { kind: 'holt', text: concern.message },
+            ...(alt && alt !== c.goal
+              ? [{ kind: 'chips' as const, chips: [{ label: `Build the ${RACE_SPEC[alt].label} instead`, patch: { goal: alt } }] }]
+              : []),
+          );
+        }
       } catch (e) {
         /*
          * ⚠ **THE SHEET FREEZING WAS THIS, AND THE FAILURE CARD BELOW HAD NO CALLER.**
@@ -1352,17 +1379,77 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     process(text);
   };
 
+  /**
+   * ══ PREMIUM AI: THE MODEL READS THE SENTENCE ══
+   *
+   * `interpretTyped` (the one place the app talks to a model) runs the code guard, then the free local
+   * matcher, then `coach-interpret`. What comes back is the same `Partial<CoachConstraints>` a tap fills,
+   * so everything after this — the questions still missing, the engine, the card — is unchanged.
+   *
+   * Before a conversation has a mode, a sentence IS the request ("4 days, an hour, at the gym, I want to
+   * get stronger"): it opens a build — a day when the athlete named what to train today — through the same
+   * allowance gate the door uses, starting from the athlete's facts, never from the last request.
+   */
+  const understand = async (text: string) => {
+    const m: ChatMode = mode ?? 'program';
+    const q = mode ? nextQuestion(constraints, m) : null;
+    setBusy('thinking');
+    const r = await interpretTyped(text, q, m === 'day' ? 'day' : 'program', constraints);
+    setBusy(null);
+    switch (r.kind) {
+      case 'crisis':
+        return say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
+      case 'urgent':
+        return say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
+      case 'care':
+        return say({ kind: 'stop', text: CARE_STOP, kicker: CARE_KICKER });
+      case 'medical':
+        return say({ kind: 'stop', text: MEDICAL_STOP });
+      case 'out_of_credits':
+        return say({ kind: 'holt', text: pick('allowance_program') });
+      case 'offline':
+        return say({
+          kind: 'error',
+          text: "I couldn't reach my notes just then.",
+          sub: 'The connection dropped before I heard back.',
+          action: 'Tap an answer, or send it again in a moment.',
+        });
+      case 'unclear':
+        say({ kind: 'holt', text: pick('not_understood') });
+        if (q) say({ kind: 'chips', chips: q.chips, ctl: q.ctl });
+        return;
+      case 'patch': {
+        /* The model hands back the athlete's own words for a day focus; the engine needs a `DayFocus`. */
+        const { dayFocus: said, ...rest } = r.patch as Partial<ChatState> & { dayFocus?: unknown };
+        const focus = typeof said === 'string' ? focusFromText(said) ?? focusFromText(text) : null;
+        const patch: Partial<ChatState> = { ...rest, ...(focus ? { dayFocus: focus } : {}) };
+        if (r.say) say({ kind: 'holt', text: r.say });
+        if (mode) return void advance({ ...constraints, ...patch }, m);
+        const opens: ChatMode = focus ? 'day' : 'program';
+        if (!guard(opens === 'day' ? 'holt_days_per_month' : 'holt_programs')) {
+          return say({ kind: 'holt', text: pick(opens === 'day' ? 'allowance_day' : 'allowance_program') });
+        }
+        setMode(opens);
+        if (opens === 'program' && !(await guardActiveProgram())) return;
+        return void advance({ ...athleteFacts(constraints), ...patch }, opens);
+      }
+    }
+  };
+
   /** Everything that happens to a message after it is on screen. */
   const process = (text: string) => {
     /* ⚠ CHECKED BEFORE ANYTHING ELSE, and before any attempt to understand the sentence as training.
        Someone describing an injury is not answering the question on the table, and treating their knee
        as an answer to "how many days a week" would be the worst possible reading of it. */
     /* ⛔ A person in danger first — before the injury check, whose copy is a physio referral. */
-    const guard = medicalRoute(text);
-    if (guard === 'crisis') return void say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
-    if (guard === 'urgent') return void say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
-    if (guard === 'care') return void say({ kind: 'stop', text: CARE_STOP, kicker: CARE_KICKER });
-    if (isMedical(text)) {
+    const danger = medicalRoute(text);
+    if (danger === 'crisis') return void say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
+    if (danger === 'urgent') return void say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
+    if (danger === 'care') return void say({ kind: 'stop', text: CARE_STOP, kicker: CARE_KICKER });
+    /* The broad word list stops "my shoulder hurts, swap it" — right for a string matcher, wrong once the
+       model reads the sentence (the PO's action-is-fine rule). With Premium AI, `interpretTyped` runs the
+       narrow code guard and the model's own medical routing instead. */
+    if (!premiumAi && isMedical(text)) {
       say({ kind: 'stop', text: MEDICAL_STOP });
       return;
     }
@@ -1373,6 +1460,11 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     if (opener?.kind === 'build') {
       setMode(opener.mode);
       void advance({ ...athleteFacts(constraints), ...opener.patch }, opener.mode);
+      return;
+    }
+
+    if (premiumAi) {
+      void understand(text);
       return;
     }
 
@@ -1802,7 +1894,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
           */}
         {/* The inset below is for the day this returns rather than something anyone can see now — fixed
             alongside the two visible ones so all three stop guessing at the home indicator together. */}
-        {preview || !TYPING_ENABLED ? null : (
+        {preview || !canType ? null : (
         <View style={[styles.composer, { paddingBottom: 12 + insets.bottom }, busy ? styles.composerBusy : null]}>
           <TextInput
             value={draft}

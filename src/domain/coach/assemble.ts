@@ -68,7 +68,7 @@ import {
   type DaySkeleton,
 } from './rulebook/skeletons.ts';
 import { bandFor, deloadWeeks, GOAL_CATEGORY, type PasCategory } from './rulebook/volume.ts';
-import { assembleEndurance } from './rulebook/endurance.ts';
+import { assembleEndurance, type EnduranceConcern } from './rulebook/endurance.ts';
 import { cueFor } from './rulebook/cues.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -109,6 +109,11 @@ export interface Assembly {
   deloadWeeks: number[];
   /** Set when Holt overrode the requested split because the room could not support it. */
   restructured?: Restructure;
+  /**
+   * A race built on `buildAnyway`: what Holt would have refused, for the chat to say ONCE with its
+   * suggestion (CA-D12). Absent on every other build.
+   */
+  concern?: EnduranceConcern | null;
 }
 
 export type AssembleResult = { ok: true; assembly: Assembly } | { ok: false; refusal: CoachRefusal };
@@ -182,7 +187,11 @@ export function refusalFor(c: CoachConstraints): CoachRefusal | null {
   // A running goal for someone who cannot run is not a plan to be improvised around — it is a
   // contradiction, and building a marathon block out of bike intervals would be answering a question
   // nobody asked.
-  if (isEnduranceGoal(c.goal) && forbidsRunning(c.limitations)) {
+  //
+  // ⚠ UNLESS THEY ASKED ANYWAY (CA-D12, PO 2026-09-21). With `buildAnyway` the race is built WITH running,
+  // for this build only, and the conflict comes back as the plan's `concern` rather than as a no. It is
+  // still a running plan, never the bike-interval improvisation above.
+  if (isEnduranceGoal(c.goal) && forbidsRunning(c.limitations) && !c.buildAnyway) {
     return {
       reason: 'limitation_conflicts_with_goal',
       message:
@@ -584,6 +593,7 @@ function assembleEnduranceGoal(c: CoachConstraints, pool: readonly CatalogExerci
       // Endurance recovery is the step-down week inside the volume curve, not a separate deload table —
       // PAS-D8 generalised to mileage: keep the frequency, cut the distance.
       deloadWeeks: result.volume.filter((v) => v.isDeload).map((v) => v.weekIndex),
+      ...(result.concern ? { concern: result.concern } : {}),
     },
   };
 }

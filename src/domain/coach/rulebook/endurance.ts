@@ -28,7 +28,9 @@ import {
   type EnduranceGoal,
   type Experience,
   type Goal,
+  type Limitation,
 } from '../constraints.ts';
+import { forbidsRunning } from './limitations.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE DECISIONS
@@ -297,6 +299,12 @@ const OFFER_PHRASE: Record<EnduranceRefusal['reason'], (altLabel: string) => str
   not_enough_base: (l) => `Let me build the ${l} first`,
 };
 
+/**
+ * The sentence in a CONCERN that makes the suggestion — read back by `counterOfferIn` the same way, so a
+ * chat that lifts a concern onto a card gets the race the words named and no other.
+ */
+const SUGGEST_PHRASE = (altLabel: string) => `If you'd rather, the ${altLabel}`;
+
 type RefusalOpts = { weeksAvailable: number; currentWeeklyMi: number; canRunContinuously?: boolean };
 
 /**
@@ -325,6 +333,7 @@ export function counterOfferIn(message: string): EnduranceGoal | null {
   for (const g of Object.keys(RACE_SPEC) as EnduranceGoal[]) {
     const label = RACE_SPEC[g].label;
     if (Object.values(OFFER_PHRASE).some((phrase) => message.includes(phrase(label)))) return g;
+    if (message.includes(SUGGEST_PHRASE(label))) return g;
   }
   return null;
 }
@@ -389,6 +398,114 @@ export function enduranceRefusalFor(goal: EnduranceGoal, opts: RefusalOpts): End
   }
 
   return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// CONCERNS — the refusal, said once, when the athlete wants the race anyway (CA-D12)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * What Holt would have refused, carried beside a plan he built anyway.
+ *
+ * ⚠ SAME REASONS, SAME ALTERNATIVE, DIFFERENT SENTENCE. The refusal said "no, build this instead"; the
+ * concern says "here is what you asked for, here is what it costs, and here is the other road if you
+ * want it". `altGoal` is still a race that builds PROPERLY for this athlete — the suggestion is worthless
+ * if it would itself need overriding — and it is still read off the words by `counterOfferIn`.
+ *
+ * `no_running` is the one reason the rulebook never refused itself: `assemble()` did, off the athlete's
+ * limitations. It lives here so the chat has one field to read, whatever the concern was.
+ */
+export interface EnduranceConcern {
+  reason: EnduranceRefusal['reason'] | 'no_running';
+  message: string;
+  altGoal: EnduranceGoal | null;
+}
+
+/** Miles as Holt says them: tenths under ten, whole miles above — "around 12 miles", not "12.4". */
+const saidMi = (mi: number): string => String(mi >= 10 ? Math.round(mi) : Math.round(mi * 10) / 10);
+
+const weeksYouHave = (w: number): string =>
+  w <= 0 ? 'the race is this week' : `you've got ${w} week${w === 1 ? '' : 's'}`;
+
+/**
+ * The limitation that ruled running out, in the athlete's own terms. First match wins, most explicit
+ * first — someone who said "no running" said it more plainly than someone who said "knees".
+ */
+const STILL_STANDS = "If that still stands, say so and I'll build you something without it.";
+const NO_RUNNING_LEAD: readonly [Limitation, string, string][] = [
+  ['no_running', 'You told me to keep running out', STILL_STANDS],
+  [
+    'knees',
+    'You told me to look after your knees, and running is the hardest thing in this plan on them',
+    "Keep the easy days easy, and if they complain, tell me and I'll change it.",
+  ],
+  ['no_jumping', 'You told me no jumping, and running lands on every stride', STILL_STANDS],
+];
+
+/**
+ * The concern sentence for a plan built anyway.
+ *
+ * `topLongMi` is read off the BUILT structure, not predicted: the concern names the long run the athlete
+ * will actually meet, and a prediction that drifted from the plan would be Holt misdescribing his own
+ * work. Null means the plan holds no continuous long run at all (run/walk, triathlon, a one-week block).
+ */
+export function enduranceConcernFor(
+  goal: EnduranceGoal,
+  refusal: EnduranceRefusal | null,
+  opts: RefusalOpts & { topLongMi: number | null; limitations?: readonly Limitation[] },
+): EnduranceConcern | null {
+  const spec = RACE_SPEC[goal];
+  const limits = opts.limitations ?? [];
+  const lead = forbidsRunning(limits)
+    ? (NO_RUNNING_LEAD.find(([l]) => limits.includes(l)) ?? NO_RUNNING_LEAD[0])
+    : null;
+
+  // What the short or thin build costs, in the one number an athlete can picture.
+  const runsLong = goal !== 'triathlon' && opts.canRunContinuously !== false;
+  const shortfall =
+    goal === 'triathlon'
+      ? ", but it's a compressed build, with less swim, bike and brick work than a full one gives you"
+      : !runsLong
+        ? ''
+        : opts.topLongMi == null
+          ? ", but there's no room for a long run before race day"
+          : spec.raceMi != null && opts.topLongMi < spec.raceMi
+            ? `, but the long run tops out around ${saidMi(opts.topLongMi)} miles`
+            : '';
+
+  let body: string | null = null;
+  if (refusal) {
+    const alt = refusal.altGoal ? RACE_SPEC[refusal.altGoal] : null;
+    const five = RACE_SPEC.run_5k;
+    switch (refusal.reason) {
+      case 'cannot_run':
+        body = alt
+          ? `Running continuously is usually the thing to build first, and the 5K is the race built for that. I've built the ${spec.label} as run/walk all the way to race day, so expect to walk parts of it. ${SUGGEST_PHRASE(alt.label)} fits where you are now.`
+          : `Running continuously is usually the thing to build first. I've built the ${spec.label} as run/walk all the way to race day, so expect to walk parts of it. If the date can move, give me ${five.minWeeks} weeks and a 5K builds properly first.`;
+        break;
+      case 'not_enough_time':
+        body = alt
+          ? `A ${spec.label} usually takes about ${spec.idealWeeks} weeks and ${weeksYouHave(opts.weeksAvailable)} — I've built it${shortfall}. ${SUGGEST_PHRASE(alt.label)} fits your calendar properly.`
+          : `A ${spec.label} usually takes about ${spec.idealWeeks} weeks and ${weeksYouHave(opts.weeksAvailable)} — I've built it${shortfall}. If the date can move, give me ${spec.minWeeks} weeks and I'll build it properly.`;
+        break;
+      case 'not_enough_base': {
+        const where = opts.currentWeeklyMi <= 0 ? "you're not running yet" : `you're at ${opts.currentWeeklyMi}`;
+        body = alt
+          ? `A ${spec.label} build usually starts from about ${spec.minBaseMi} miles a week and ${where}. I've built it from where you are, with the weekly increases kept inside the usual limits${shortfall}. ${SUGGEST_PHRASE(alt.label)} builds that base first.`
+          : `A ${spec.label} build usually starts from about ${spec.minBaseMi} miles a week and ${where}. I've built it from where you are, with the weekly increases kept inside the usual limits${shortfall}. If the date can move, a base block first is the better road.`;
+        break;
+      }
+    }
+  }
+
+  if (lead) {
+    return {
+      reason: 'no_running',
+      altGoal: refusal?.altGoal ?? null,
+      message: `${lead[1]} — I've built it with running because you asked for a race. ${lead[2]}${body ? ` ${body}` : ''}`,
+    };
+  }
+  return refusal && body ? { reason: refusal.reason, altGoal: refusal.altGoal, message: body } : null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -867,6 +984,11 @@ export interface EnduranceAssembly {
   volume: WeekVolume[];
   paces: TrainingPaces | null;
   refusal: EnduranceRefusal | null;
+  /**
+   * What Holt would have refused, when the athlete asked to build anyway (`buildAnyway`) — said once,
+   * with the suggestion. Always null without `buildAnyway`: then a concern is a refusal, as before.
+   */
+  concern: EnduranceConcern | null;
 }
 
 export const isEndurance = (g: Goal): g is EnduranceGoal => isEnduranceGoal(g);
@@ -897,11 +1019,31 @@ export function assembleEndurance(
 
   const paces = pacesFrom(opts.recentRaceMi, opts.recentRaceSec);
 
-  if (refusal) {
-    return { structure: emptyStructure(spec, 0), volume: [], paces, refusal };
+  /*
+   * ══ CA-D12 — THE ATHLETE'S RACE IS THE ATHLETE'S ══
+   *
+   * PO, 2026-09-21: *"Holt shouldn't really say no to a race. Maybe suggest, but then just have him do
+   * what they say."* With `buildAnyway` nothing below refuses. It does not lift a single cap: the 10%
+   * ramp, the long-run spike cap and the distance cap bind exactly as they do for a full build, because
+   * they are what keeps a compressed block from hurting the person who asked for it. What gives instead
+   * is how far the block gets — a six-week marathon's long run stops well short of 26.2, and the concern
+   * says so in miles rather than pretending otherwise.
+   *
+   *   too few weeks  → the block is the weeks there are, ≥1; `weeklyVolumePlan` already shrinks the taper
+   *                    to fit and the final week is always race week.
+   *   too little base → the curve starts from where they are (its own 3 mi floor for a true zero).
+   *   can't run yet  → run/walk to the start line, the 5K's machinery, whatever the distance.
+   */
+  const buildAnyway = c.buildAnyway === true;
+
+  if (refusal && !buildAnyway) {
+    return { structure: emptyStructure(spec, 0), volume: [], paces, refusal, concern: null };
   }
 
-  const weeks = Math.min(weeksAvailable, spec.idealWeeks + 8);
+  // ⚠ The upper clamp is the old one, untouched — a race further out than the plan cap keeps today's
+  // placement (a separate open decision). `max(1, …)` only matters under `buildAnyway`: without it a
+  // plan this short was refused above.
+  const weeks = Math.max(1, Math.min(weeksAvailable, spec.idealWeeks + 8));
   const volume = weeklyVolumePlan({ goal, weeks, startMi: currentWeeklyMi });
 
   // EPS-D7 — a beginner gets three days whatever they asked for. Fewer cannot carry a base; more, before
@@ -957,7 +1099,23 @@ export function assembleEndurance(
     weekPlans,
   };
 
-  return { structure, volume, paces, refusal: null };
+  // The longest continuous run the athlete will actually meet — read off the built days, so the
+  // sentence can never describe a plan other than this one.
+  const longRuns = weekPlans
+    .flatMap((w) => w.days)
+    .filter((d) => d.name === 'Long Run')
+    .map((d) => d.main[0]?.targetMi ?? 0);
+  const concern = buildAnyway
+    ? enduranceConcernFor(goal, refusal, {
+        weeksAvailable,
+        currentWeeklyMi,
+        canRunContinuously: canRun,
+        topLongMi: longRuns.length ? Math.max(...longRuns) : null,
+        limitations: c.limitations,
+      })
+    : null;
+
+  return { structure, volume, paces, refusal: null, concern };
 }
 
 function emptyStructure(spec: RaceSpec, weeks: number): ProgramStructure {

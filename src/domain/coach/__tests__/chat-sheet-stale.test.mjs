@@ -49,3 +49,9 @@ test('⚠ a new request starts from the athlete, not from the last request', () 
   assert.match(sheet, /advance\(athleteFacts\(constraints\), 'pick'\)/);
   assert.doesNotMatch(sheet, /advance\(\{ \.\.\.constraints, \.\.\.opener\.patch \}/);
 });
+
+test('⚠ a race the athlete asked for is built, and the concern is said once with the suggestion as a tap', () => {
+  assert.match(sheet, /\.\.\.\(isEnduranceGoal\(c\.goal\) \? \{ buildAnyway: true \} : \{\}\)/);
+  assert.match(sheet, /const concern = res\.assembly\.concern;/);
+  assert.match(sheet, /label: `Build the \$\{RACE_SPEC\[alt\]\.label\} instead`, patch: \{ goal: alt \}/);
+});

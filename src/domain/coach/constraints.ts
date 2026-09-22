@@ -229,6 +229,7 @@ export const DEFAULT_DAYS_PER_WEEK = 4;
  * ⚠ Endurance keeps its OWN, higher floors — 6 weeks for a 5K up to 12 for a marathon — and they are not
  * this constant. `rulebook/endurance.ts` refuses below them in terms rather than compressing a plan that
  * cannot honestly be compressed (PAS-A7-D3). Lowering this must never be read as overturning that.
+ * (`buildAnyway` is the one door past those floors, and it is the athlete's to open, not this constant's.)
  */
 export const MIN_WEEKS = 1;
 export const MAX_WEEKS = 52;
@@ -275,6 +276,20 @@ export interface CoachConstraints {
    * I have taken three months off", and those two people need completely different first weeks.
    */
   canRunContinuously?: boolean | null;
+  /**
+   * The athlete has heard the concern and wants their race anyway — CA-D12, PO 2026-09-21: *"Holt
+   * shouldn't really say no to a race. Maybe suggest, but then just have him do what they say."*
+   *
+   * With it, `assembleEndurance` never refuses: too few weeks compresses, too little base starts from
+   * where they are, a non-continuous runner gets run/walk to the race, and a limitation that rules out
+   * running is overridden for this build only. What would have been the refusal comes back as
+   * `concern` — said once, with the suggestion, and then dropped. The caps (10%/week, the long-run spike
+   * and distance caps) still bind: they protect the athlete, and the honest consequence of a short or
+   * thin build is a long run that stops short of race distance, which the concern names in miles.
+   *
+   * Absent or false is the behaviour before this existed, exactly — every refusal unchanged.
+   */
+  buildAnyway?: boolean;
 
   /**
    * How the athlete wants the week carved up. `null` takes the goal's default.
