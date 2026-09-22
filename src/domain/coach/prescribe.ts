@@ -24,6 +24,7 @@
 
 import type { Experience, Goal, SessionMinutes } from './constraints.ts';
 import { DELOAD_MARKER, deloadSets, SHORT_BLOCK_WEEKS, type PasCategory } from './rulebook/volume.ts';
+import { CARDIO_ACTIVITIES, cardioKey, type CardioActivity } from '../workout/conditioning.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // ROLES
@@ -235,6 +236,10 @@ export const nameForWeek = (base: string, isDeload: boolean): string =>
  */
 export interface CardioPrescription {
   kind: 'cardio';
+  /** `cardio:<activity>` — the key convention every other cardio row in the app carries (`schema.ts`). */
+  catalogKey: string;
+  /** What the row is called on the card. See the note in `prescribeCardio`. */
+  name: string;
   activity: string;
   modality: 'outdoor' | 'indoor';
   targetMi?: number | null;
@@ -264,8 +269,22 @@ export function prescribeCardio(opts: {
   rateKind: 'pace' | 'speed' | 'none';
   tracksDistance: boolean;
 }): CardioPrescription {
+  /*
+   * ⚠ A ROW WITH NO NAME RENDERS AS A BLANK LINE, and this one did — on every day of every conditioning
+   * and weight-loss block, 750 of 750 in the stress sweep. The program card and the day card both read
+   * `name`, and the finisher was the only row in `main` that did not have one: the endurance rulebook's
+   * bouts are named ("Easy Run", "Ride"), the catalogue's lifts are named, and the one thing the goal is
+   * actually FOR arrived as an empty row with "20 min" hanging off the end of it.
+   *
+   * The name is the activity's own, from `CARDIO_ACTIVITIES` — the same word the logger, the picker's
+   * cardio section and the onboarding first-week preview (`first-week.ts`) already use, so the finisher is
+   * called "Ride" on the card and "Ride" when the athlete opens it. The key follows the `cardio:<activity>`
+   * convention so the Builder reads it back as a bout rather than a catalogue lookup that misses.
+   */
   const out: CardioPrescription = {
     kind: 'cardio',
+    catalogKey: cardioKey(opts.activity as CardioActivity),
+    name: CARDIO_ACTIVITIES.find((a) => a.key === opts.activity)?.name ?? 'Cardio',
     activity: opts.activity,
     modality: opts.modality,
   };

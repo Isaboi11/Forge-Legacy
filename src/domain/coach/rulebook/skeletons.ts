@@ -445,19 +445,53 @@ const SPLITS: Partial<Record<Goal, Record<number, DaySkeleton[]>>> = {
 };
 
 /**
+ * What a chosen split style MEANS for each goal — a table, like everything else in this file.
+ *
+ *   · `as_chosen`     — the style's week, exactly. Strength, muscle and health are lifting weeks, and
+ *                       which lifting week is the athlete's call.
+ *   · `with_finisher` — the style's week with the cardio finisher put back on top, because for these
+ *                       goals the finisher is the goal rather than a feature of the split, and a
+ *                       "conditioning block" with no conditioning in it would be the coach agreeing to
+ *                       something it knows is wrong.
+ *   · `ignored`       — the goal owns its shape and a style has nothing to say about it.
+ *
+ * ⚠ MOBILITY IS `ignored`, AND THE ABSENCE OF THIS TABLE IS WHY IT SHIPPED A BARBELL PROGRAM. The four
+ * styles are all LIFTING weeks — push, pull, squat, hinge — and a style used to win over the goal's
+ * default unconditionally. So mobility + full body read the Full Body A/B/C lifting skeleton, the
+ * MOBILITY category then prescribed every slot as a hold, and the athlete got "Barbell Back Squat 2×45s"
+ * under a block called Mobility: 225 of 300 styled mobility builds in the stress sweep (2026-09-21). It
+ * was reachable on every guided build, because `program-guided.tsx` always sends a style — it defaults
+ * to the first legal one. No lifting split is a mobility week, so the style is set aside, not mapped.
+ *
+ * ⚠ A GOAL MISSING FROM HERE HONOURS THE STYLE (`as_chosen`), which is what every lifting goal wants.
+ * A new goal whose week is not a lifting week must add its row, the way mobility has.
+ */
+type StyleUse = 'as_chosen' | 'with_finisher' | 'ignored';
+
+const GOAL_STYLE_USE: Partial<Record<Goal, StyleUse>> = {
+  strength: 'as_chosen',
+  muscle: 'as_chosen',
+  health: 'as_chosen',
+  conditioning: 'with_finisher',
+  weight_loss: 'with_finisher',
+  mobility: 'ignored',
+};
+
+/** Whether a chosen split style shapes this goal's week at all — the rationale reads it too. */
+export const honoursSplitStyle = (goal: Goal): boolean => (GOAL_STYLE_USE[goal] ?? 'as_chosen') !== 'ignored';
+
+/**
  * The week's plan, or null when this goal has no authored rulebook yet.
  *
- * A `style` the athlete chose wins over the goal's default — with one exception that is worth stating:
- * conditioning and weight loss keep their cardio finishers regardless, because the finisher is the goal
- * rather than a feature of the split, and a "conditioning block" with no conditioning in it would be the
- * coach agreeing to something it knows is wrong.
+ * A `style` the athlete chose wins over the goal's default, in whatever sense `GOAL_STYLE_USE` gives it
+ * for this goal.
  */
 export function skeletonFor(goal: Goal, daysPerWeek: number, style?: SplitStyle | null): DaySkeleton[] | null {
-  if (style) {
+  const use = GOAL_STYLE_USE[goal] ?? 'as_chosen';
+  if (style && use !== 'ignored') {
     const chosen = STYLE_SPLITS[style]?.[daysPerWeek];
     if (chosen) {
-      const wantsCardio = goal === 'conditioning' || goal === 'weight_loss';
-      return wantsCardio ? chosen.map((d, i) => cond(d, i === chosen.length - 1 ? 25 : 15)) : chosen;
+      return use === 'with_finisher' ? chosen.map((d, i) => cond(d, i === chosen.length - 1 ? 25 : 15)) : chosen;
     }
   }
   return SPLITS[goal]?.[daysPerWeek] ?? null;

@@ -280,6 +280,53 @@ export function pacesFrom(raceMi: number | null | undefined, raceSec: number | n
 export interface EnduranceRefusal {
   reason: 'not_enough_time' | 'not_enough_base' | 'cannot_run';
   message: string;
+  /**
+   * The race the message offers instead — and ONLY a race that would itself build for this athlete.
+   * `null` when nothing smaller fits, and then the message offers nothing either.
+   */
+  altGoal: EnduranceGoal | null;
+}
+
+/**
+ * The sentence in each refusal that makes the offer — one place, so the message and the card read it
+ * from the same words (`counterOfferIn`).
+ */
+const OFFER_PHRASE: Record<EnduranceRefusal['reason'], (altLabel: string) => string> = {
+  cannot_run: (l) => `I'll build the ${l} block`,
+  not_enough_time: (l) => `That's a ${l} build`,
+  not_enough_base: (l) => `Let me build the ${l} first`,
+};
+
+type RefusalOpts = { weeksAvailable: number; currentWeeklyMi: number; canRunContinuously?: boolean };
+
+/**
+ * The first race down the fallback chain that would actually BUILD for this athlete, or null.
+ *
+ * ⚠ ONE STEP DOWN IS NOT ENOUGH, and taking one step is what the counter-offer used to do. A 10K with
+ * five weeks to go offered the 5K — which needs six and refused in turn; a half for someone who cannot
+ * yet run continuously offered the 10K, which refuses for exactly the same reason the half did. An
+ * alternative that says no when accepted is not an alternative, it is a second refusal with a button.
+ */
+function buildableFrom(first: EnduranceGoal | null, opts: RefusalOpts): EnduranceGoal | null {
+  for (let g = first; g; g = RACE_SPEC[g].fallback) if (!enduranceRefusalFor(g, opts)) return g;
+  return null;
+}
+
+/**
+ * Which race a refusal message offers, read back off the words the athlete is shown.
+ *
+ * ⚠ READ OFF THE TEXT ON PURPOSE. The chat sheet hands the card the message and nothing else, and the
+ * card used to pick its race from `RACE_SPEC.fallback` on its own — so the text said "Let's start with
+ * the 5K" while the button under it said "Build the 10K" (every one of 14,976 swept cannot-run
+ * refusals), and the 10K refused too. Taking the race FROM the sentence is what makes it impossible for
+ * the two to disagree: no offer phrase in the text, no card.
+ */
+export function counterOfferIn(message: string): EnduranceGoal | null {
+  for (const g of Object.keys(RACE_SPEC) as EnduranceGoal[]) {
+    const label = RACE_SPEC[g].label;
+    if (Object.values(OFFER_PHRASE).some((phrase) => message.includes(phrase(label)))) return g;
+  }
+  return null;
 }
 
 const weeksBetween = (fromISO: string, toISO: string): number => {
@@ -299,35 +346,44 @@ export const weeksUntilRace = (raceDateISO: string, todayISO: string): number =>
  * broken rather than upheld (Product DNA): the athlete asked for the right thing at the wrong time, and
  * the useful answer names the race that fits and says the bigger one is still there afterwards.
  */
-export function enduranceRefusalFor(
-  goal: EnduranceGoal,
-  opts: { weeksAvailable: number; currentWeeklyMi: number; canRunContinuously?: boolean },
-): EnduranceRefusal | null {
+export function enduranceRefusalFor(goal: EnduranceGoal, opts: RefusalOpts): EnduranceRefusal | null {
   const spec = RACE_SPEC[goal];
 
   if (goal !== 'triathlon' && goal !== 'run_5k' && opts.canRunContinuously === false) {
+    /* The 5K is the answer for a non-continuous runner whatever the goal — it is the only race built as
+       run/walk — but only if the 5K itself fits the calendar. When it does not, the sentence stops
+       promising it and says what it needs instead, and no card follows. */
+    const altGoal = buildableFrom('run_5k', opts);
+    const five = RACE_SPEC.run_5k;
     return {
       reason: 'cannot_run',
-      message: `Let's start with the 5K. Running continuously is the thing to build first, and once you can hold twenty minutes the ${spec.label} is a straightforward step up. I'll build the 5K block — the ${spec.label} is still there afterwards.`,
+      altGoal,
+      message: altGoal
+        ? `Let's start with the 5K. Running continuously is the thing to build first, and once you can hold twenty minutes the ${spec.label} is a straightforward step up. ${OFFER_PHRASE.cannot_run(five.label)} — the ${spec.label} is still there afterwards.`
+        : `Running continuously is the thing to build first, and once you can hold twenty minutes the ${spec.label} is a straightforward step up. The place to start is a 5K, and even that needs about ${five.idealWeeks} weeks — you've got ${opts.weeksAvailable}. Give me ${five.minWeeks} and I'll build it properly.`,
     };
   }
 
   if (opts.weeksAvailable < spec.minWeeks) {
-    const alt = spec.fallback ? RACE_SPEC[spec.fallback] : null;
+    const altGoal = buildableFrom(spec.fallback, opts);
+    const alt = altGoal ? RACE_SPEC[altGoal] : null;
     return {
       reason: 'not_enough_time',
+      altGoal,
       message: alt
-        ? `A ${spec.label} needs about ${spec.idealWeeks} weeks and you've got ${opts.weeksAvailable}. That's a ${alt.label} build — and it's the right way to get to the ${spec.label} later, not a consolation. Want me to build that instead?`
+        ? `A ${spec.label} needs about ${spec.idealWeeks} weeks and you've got ${opts.weeksAvailable}. ${OFFER_PHRASE.not_enough_time(alt.label)} — and it's the right way to get to the ${spec.label} later, not a consolation. Want me to build that instead?`
         : `A ${spec.label} needs about ${spec.idealWeeks} weeks and you've got ${opts.weeksAvailable}. Give me ${spec.minWeeks} and I'll build it properly.`,
     };
   }
 
   if (opts.currentWeeklyMi < spec.minBaseMi) {
-    const alt = spec.fallback ? RACE_SPEC[spec.fallback] : null;
+    const altGoal = buildableFrom(spec.fallback, opts);
+    const alt = altGoal ? RACE_SPEC[altGoal] : null;
     return {
       reason: 'not_enough_base',
+      altGoal,
       message: alt
-        ? `A ${spec.label} build starts from about ${spec.minBaseMi} miles a week and you're at ${opts.currentWeeklyMi}. I'd be stacking volume on a base that isn't there yet, which is how people get hurt. Let me build the ${alt.label} first — that's how you get the base.`
+        ? `A ${spec.label} build starts from about ${spec.minBaseMi} miles a week and you're at ${opts.currentWeeklyMi}. I'd be stacking volume on a base that isn't there yet, which is how people get hurt. ${OFFER_PHRASE.not_enough_base(alt.label)} — that's how you get the base.`
         : `A ${spec.label} build starts from about ${spec.minBaseMi} miles a week and you're at ${opts.currentWeeklyMi}. Let's build that base first.`,
     };
   }

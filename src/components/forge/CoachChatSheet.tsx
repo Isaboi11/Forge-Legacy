@@ -831,6 +831,17 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
    * remembered it. Same for having met him: a new conversation does not make him a stranger again, so he
    * greets rather than re-introducing himself.
    */
+  /**
+   * The facts about the ATHLETE that outlive one request — their level and the kit in their garage.
+   * Everything else in `constraints` describes the request just made, and carrying it into the next one
+   * is how "What should I train today?" after a marathon build came back as *Bench 1×1* (stress test
+   * 2026-09-21): the race goal was still set, so the day was prescribed as race work.
+   */
+  const athleteFacts = (c: ChatState): ChatState => ({
+    ...(c.experience ? { experience: c.experience } : {}),
+    ...(c.ownedEquipment ? { ownedEquipment: c.ownedEquipment } : {}),
+  });
+
   const newChat = () => {
     void clearThread();
     setEdit(null);
@@ -843,10 +854,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     /* Facts about the ATHLETE survive a new conversation; everything situational deliberately does not.
        Their skill level and the kit in their garage did not change because they tapped New chat, and
        making them re-answer either would defeat the point of having read it. */
-    setConstraints((c) => ({
-      ...(c.experience ? { experience: c.experience } : {}),
-      ...(c.ownedEquipment ? { ownedEquipment: c.ownedEquipment } : {}),
-    }));
+    setConstraints(athleteFacts);
     setIntroStep(INTRO.length + 1);
     setThread(stamped(greetReturning(firstName)));
   };
@@ -893,10 +901,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     setEdit(null);
     setDraft('');
     askedAboutReplacing.current = false;
-    const kept: ChatState = {
-      ...(constraints.experience ? { experience: constraints.experience } : {}),
-      ...(constraints.ownedEquipment ? { ownedEquipment: constraints.ownedEquipment } : {}),
-    };
+    const kept = athleteFacts(constraints);
     setConstraints(kept);
     setMode('program');
     say({ kind: 'holt', text: pick('rebuild_open') });
@@ -1240,7 +1245,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
        */
       if (opener.kind === 'pick') {
         setMode('pick');
-        void advance({ ...constraints }, 'pick');
+        void advance(athleteFacts(constraints), 'pick');
         return;
       }
 
@@ -1278,7 +1283,9 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
            after the goal, so a race can skip it instead of having its answer overruled by the calendar.
            See the note on `sizeQuestion`. Nothing special happens at this door any more. */
         if (opener.mode === 'program' && !(await guardActiveProgram())) return;
-        await advance({ ...constraints, ...opener.patch }, opener.mode);
+        /* A door is a NEW request: only the athlete's facts come with them, never the last request's
+           answers — otherwise a second "Build me something" asks nothing and rebuilds the same block. */
+        await advance({ ...athleteFacts(constraints), ...opener.patch }, opener.mode);
       })();
       return;
     }
@@ -1365,7 +1372,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
        question for the model, not for a string match — see TYPING_ENABLED. */
     if (opener?.kind === 'build') {
       setMode(opener.mode);
-      void advance({ ...constraints, ...opener.patch }, opener.mode);
+      void advance({ ...athleteFacts(constraints), ...opener.patch }, opener.mode);
       return;
     }
 
@@ -1521,7 +1528,17 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
      * to ask again while opening an editor would be worse than the blunt one it replaced. */
   const isNewToTraining = constraints.experience?.lifting === 'beginner';
   const rebuildable = built?.kind === 'program' && isNewToTraining;
+  /*
+   * ⚠ ONLY THE NEWEST CARD IS LIVE (stress test 2026-09-21). Every card's buttons called the same
+   * `startNow`/`saveForLater`, which act on `built` — the LAST build. So "Start it now" on the first of
+   * two cards started the second, and after leaving and returning (`built` is not persisted) every card's
+   * buttons did nothing at all. The card that is still on the table keeps its buttons; the rest say so.
+   */
+  const liveCard: Turn | null = built
+    ? ([...thread].reverse().find((t) => t.kind === 'program' || t.kind === 'day') ?? null)
+    : null;
   const handoff: Handoff = {
+    liveCard,
     onPreview: () => setPreview(true),
     onStart: startNow,
     onSave: rebuildable ? rebuild : saveForLater,
@@ -2443,6 +2460,8 @@ function ThinkingDot({ delay }: { delay: number }) {
 
 /** Everything a card's buttons need, passed as one object so a new card cannot forget half of it. */
 interface Handoff {
+  /** The one card whose buttons act. Any other program/day card is history. */
+  liveCard: Turn | null;
   onPreview: () => void;
   onStart: () => void;
   onSave: () => void;
@@ -2482,11 +2501,20 @@ function TurnView({
           onStart={handoff.onStart}
           onSave={handoff.onSave}
           saveLabel={handoff.saveLabel}
+          retired={handoff.liveCard !== turn}
         />
       );
 
     case 'day':
-      return <DayCardView card={turn.card} onPreview={handoff.onPreview} onStart={handoff.onStart} onSave={handoff.onSave} />;
+      return (
+        <DayCardView
+          card={turn.card}
+          onPreview={handoff.onPreview}
+          onStart={handoff.onStart}
+          onSave={handoff.onSave}
+          retired={handoff.liveCard !== turn}
+        />
+      );
 
     case 'pick':
       return <PickCardView card={turn.card} onChip={onChip} />;
@@ -2569,6 +2597,13 @@ function Answers({
   onChip: (c: Chip) => void;
 }) {
   const chosen = (c: Chip) => answer != null && c.label === answer;
+  /*
+   * ⚠ AN ANSWERED QUESTION IS A RECORD, NOT A CONTROL (stress test 2026-09-21). Every earlier set of
+   * chips stayed tappable forever, and a stale tap re-ran `advance` with that answer — silently rewriting
+   * something the athlete had moved past, and rebuilding without passing the allowance gate at the door.
+   * The two multi-select questions already worked this way (`settled`); now every shape does.
+   */
+  const settled = answer != null;
 
   /* The two questions you answer more than once — see `CONTROL_FOR.day_focus` / `.limits`. */
   if (ctl === 'multi') return <MultiAnswers chips={chips} answer={answer ?? null} onChip={onChip} />;
@@ -2583,10 +2618,11 @@ function Answers({
         {chips.map((c) => (
           <Pressable
             key={c.label}
-            onPress={() => onChip(c)}
+            onPress={() => (settled ? undefined : onChip(c))}
+            disabled={settled}
             accessibilityRole="button"
             accessibilityLabel={c.label}
-            accessibilityState={{ selected: chosen(c) }}
+            accessibilityState={{ selected: chosen(c), disabled: settled }}
             style={({ pressed }) => [styles.seg, (pressed || chosen(c)) && styles.ctlOn]}
           >
             <Text style={[styles.segText, chosen(c) && styles.segTextOn]} numberOfLines={1}>{c.label}</Text>
@@ -2608,10 +2644,11 @@ function Answers({
           return (
             <Pressable
               key={c.label}
-              onPress={() => onChip(c)}
+              onPress={() => (settled ? undefined : onChip(c))}
+            disabled={settled}
               accessibilityRole="button"
               accessibilityLabel={c.label}
-              accessibilityState={{ selected: chosen(c) }}
+              accessibilityState={{ selected: chosen(c), disabled: settled }}
               style={({ pressed }) => [styles.optCard, (pressed || chosen(c)) && styles.ctlOn]}
             >
               <View style={styles.optCardText}>
@@ -2636,10 +2673,11 @@ function Answers({
         {chips.map((c) => (
           <Pressable
             key={c.label}
-            onPress={() => onChip(c)}
+            onPress={() => (settled ? undefined : onChip(c))}
+            disabled={settled}
             accessibilityRole="button"
             accessibilityLabel={c.label}
-            accessibilityState={{ selected: chosen(c) }}
+            accessibilityState={{ selected: chosen(c), disabled: settled }}
             style={({ pressed }) => [styles.gridCell, (pressed || chosen(c)) && styles.ctlOn]}
           >
             <Text style={[styles.gridText, chosen(c) && styles.ctlTextOn]} numberOfLines={2}>{c.label}</Text>
@@ -2658,7 +2696,8 @@ function Answers({
         {chips.map((c) => (
           <Pressable
             key={c.label}
-            onPress={() => onChip(c)}
+            onPress={() => (settled ? undefined : onChip(c))}
+            disabled={settled}
             accessibilityRole="button"
             accessibilityLabel={c.label}
             style={({ pressed }) => [styles.importRow, pressed && styles.ctlOn]}
@@ -2679,10 +2718,11 @@ function Answers({
       {chips.map((c) => (
         <Pressable
           key={c.label}
-          onPress={() => onChip(c)}
+          onPress={() => (settled ? undefined : onChip(c))}
+          disabled={settled}
           accessibilityRole="button"
           accessibilityLabel={c.label}
-          accessibilityState={{ selected: chosen(c) }}
+          accessibilityState={{ selected: chosen(c), disabled: settled }}
           style={({ pressed }) => [styles.chipCell, (pressed || chosen(c)) && styles.ctlOn]}
         >
           <Text style={[styles.chipCellText, chosen(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
@@ -3113,12 +3153,15 @@ function ProgramCardView({
   onStart,
   onSave,
   saveLabel,
+  retired,
 }: {
   card: ProgramCard;
   onPreview: () => void;
   onStart: () => void;
   onSave: () => void;
   saveLabel: string;
+  /** Not the newest card — its buttons would act on a different build. */
+  retired?: boolean;
 }) {
   return (
     <View style={styles.artifactWrap}>
@@ -3167,6 +3210,8 @@ function ProgramCardView({
             to see the WHOLE thing before deciding whether it needs changing. Sending them straight to
             the Builder made the review step the editing step, which is the wrong order: you cannot judge
             a block from inside the tool for altering it. */}
+        {/* The preview shows the NEWEST build, so an older card must not open it. */}
+        {retired ? null : (
         <Pressable
           onPress={onPreview}
           accessibilityRole="button"
@@ -3178,9 +3223,10 @@ function ProgramCardView({
             <Path d="M9 6l6 6-6 6" />
           </Svg>
         </Pressable>
+        )}
       </CardSurface>
 
-      <ArtifactActions onStart={onStart} onSave={onSave} saveLabel={saveLabel} />
+      <ArtifactActions onStart={onStart} onSave={onSave} saveLabel={saveLabel} retired={retired} />
     </View>
   );
 }
@@ -3243,7 +3289,22 @@ function WeekRow({ week }: { week: ProgramCard['weeks'][number] }) {
  * template. The design system's own Button for both; rolling my own Pressable is what lost the
  * forged-bronze fill, the machined rim and the glow.
  */
-function ArtifactActions({ onStart, onSave, saveLabel }: { onStart: () => void; onSave: () => void; saveLabel: string }) {
+function ArtifactActions({
+  onStart,
+  onSave,
+  saveLabel,
+  retired,
+}: {
+  onStart: () => void;
+  onSave: () => void;
+  saveLabel: string;
+  retired?: boolean;
+}) {
+  /* An earlier build. No buttons rather than dead ones — a button that starts a different program than
+     the card above it, or nothing at all, is the defect this replaces. */
+  if (retired) {
+    return <Text style={styles.retiredNote}>From earlier in this chat. Ask me to build it again to start it.</Text>;
+  }
   return (
     <View style={styles.artifactActions}>
       <View style={styles.ctaGrow}>
@@ -3263,11 +3324,13 @@ function DayCardView({
   onPreview,
   onStart,
   onSave,
+  retired,
 }: {
   card: DayCard;
   onPreview: () => void;
   onStart: () => void;
   onSave: () => void;
+  retired?: boolean;
 }) {
   return (
     <View style={styles.artifactWrap}>
@@ -3289,6 +3352,8 @@ function DayCardView({
             ))}
           </View>
         </View>
+        {/* The preview shows the NEWEST build, so an older card must not open it. */}
+        {retired ? null : (
         <Pressable
           onPress={onPreview}
           accessibilityRole="button"
@@ -3300,8 +3365,9 @@ function DayCardView({
             <Path d="M9 6l6 6-6 6" />
           </Svg>
         </Pressable>
+        )}
       </CardSurface>
-      <ArtifactActions onStart={onStart} onSave={onSave} saveLabel="Save for later" />
+      <ArtifactActions onStart={onStart} onSave={onSave} saveLabel="Save for later" retired={retired} />
     </View>
   );
 }
@@ -3862,6 +3928,7 @@ const styles = StyleSheet.create({
   previewRowPressed: { backgroundColor: bronzeWash(0.06) },
   previewRowText: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   artifactActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  retiredNote: { color: flColor.gray600, fontSize: 13, lineHeight: 18, fontStyle: 'italic', paddingTop: 4 },
   previewWrap: { flex: 1 },
   previewBar: {
     flexDirection: 'row',

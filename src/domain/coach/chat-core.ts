@@ -27,6 +27,8 @@ import {
   ENDURANCE_GOALS,
   STRENGTH_GOALS,
   isEnduranceGoal,
+  isCount,
+  DEFAULT_DAYS_PER_WEEK,
   GOAL_LABEL,
   type CoachConstraints,
   type Experience,
@@ -37,7 +39,7 @@ import { AUTHORED_GOALS } from './rulebook/skeletons.ts';
 /* Type-only — the shelf is passed IN by the caller, exactly like `learned`. `domain/coach/**` reads no
    database and this does not change that. */
 import type { Recommendation as ShelfRecommendation } from './recommend.ts';
-import { RACE_SPEC, weeklyVolumePlan } from './rulebook/endurance.ts';
+import { RACE_SPEC, counterOfferIn, weeklyVolumePlan } from './rulebook/endurance.ts';
 import { pick, pickNamed } from './rulebook/voice.ts';
 import { BODY_PART_LABEL, BODY_PARTS, SPLIT_LABEL, type BodyPart, type DayFocus, type SplitName } from './day.ts';
 import { plannedDays, trainingDays } from '../program/progress-core.ts';
@@ -393,7 +395,7 @@ function askShelf(c: ChatState): Question | null {
 
   if (c.experience == null) return experienceQuestion(c);
 
-  if (c.daysPerWeek == null) {
+  if (!isCount(c.daysPerWeek)) {
     return {
       id: 'days',
       /* The build flow's own line. It is the same question about the same diary, and two phrasings of it
@@ -592,7 +594,7 @@ function askProgram(c: ChatState): Question | null {
     };
   }
 
-  if (c.daysPerWeek == null) {
+  if (!isCount(c.daysPerWeek)) {
     return {
       id: 'days',
       /* The PO's own words, kept verbatim — this line already ships in the wizard. A one-week build gets
@@ -1572,16 +1574,22 @@ function prescriptionText(e: { sets?: number; reps?: number | null; per?: string
  */
 export function refusalCardFor(goal: Goal, weeksAvailable: number, daysPerWeek: number, message: string): RefusalCard | null {
   if (!isEnduranceGoal(goal)) return null;
-  const spec = RACE_SPEC[goal];
-  if (!spec.fallback) return null;
-  const alt = RACE_SPEC[spec.fallback];
+  /* ⚠ THE RACE COMES OUT OF THE MESSAGE, NOT OUT OF `RACE_SPEC[goal].fallback`. The card used to take
+     one step down the table by itself, so under "Let's start with the 5K" it offered the 10K — and the
+     10K refused when tapped, for the same reason the half had (14,976 of 14,976 cannot-run refusals in
+     the 2026-09-21 sweep). The rulebook only writes an offer for a race that would build, and
+     `counterOfferIn` reads that offer back — so a message that offers nothing (a no-running refusal, a
+     calendar too short for anything) gets no card, and a card never names a race the text did not. */
+  const altGoal = counterOfferIn(message);
+  if (!altGoal || altGoal === goal) return null;
+  const alt = RACE_SPEC[altGoal];
   return {
     title: capitalise(alt.label),
     meta: `${weeksAvailable} weeks · ${daysPerWeek} days · race day intact`,
     body: message,
     primary: `Build the ${alt.label}`,
     secondary: 'Pick another race',
-    altGoal: spec.fallback,
+    altGoal,
   };
 }
 
@@ -1799,7 +1807,8 @@ export function completeFor(c: Partial<CoachConstraints>, mode: 'program' | 'day
     ...c,
     goal: c.goal ?? 'strength',
     experience: c.experience ?? { lifting: 'intermediate', running: 'intermediate' },
-    daysPerWeek: c.daysPerWeek ?? 4,
+    // `isCount`, not `??` — NaN is not nullish, and it reached the preamble as "NaN days" (`constraints.ts`).
+    daysPerWeek: isCount(c.daysPerWeek) ? c.daysPerWeek : DEFAULT_DAYS_PER_WEEK,
     // A race never asks this — a long run is as long as it is. 60 keeps the validator honest.
     sessionMinutes: c.sessionMinutes ?? 60,
     environment: c.environment ?? (mode === 'program' && c.goal && isEnduranceGoal(c.goal) ? 'outdoor' : 'full_gym'),

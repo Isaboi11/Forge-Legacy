@@ -295,16 +295,24 @@ test('every authored goal × experience × schedule × room × limitation builds
   const broken = [];
   let built = 0;
 
+  /*
+   * ⚠ 75 MINUTES AS WELL AS 60, because 60 could not see the one failure the longest session has. At 75
+   * the exercise budget reaches HYPERTROPHY's ceiling of eight, and an advanced lifter's four sets on
+   * each came to 32 against PAS-D11's 30 — the builder wrote a day its own validator rejected, in 75 of
+   * 125 advanced 75-minute muscle builds (stress sweep, 2026-09-21), and this matrix passed throughout
+   * because it only ever asked for an hour.
+   */
+  for (const sessionMinutes of [60, 75]) {
   for (const goal of SPLIT_GOALS) {
     for (const experience of EXPERIENCES) {
       for (const daysPerWeek of DAYS) {
         for (const room of Object.keys(ROOMS)) {
           for (const limitations of Object.keys(LIMITATION_SETS)) {
-            const c = constraintsFor(goal, experience, daysPerWeek, room, limitations);
+            const c = constraintsFor(goal, experience, daysPerWeek, room, limitations, sessionMinutes);
             const res = build(c);
 
             if (!res.ok) {
-              refusals.push({ goal, experience, daysPerWeek, room, limitations, reason: res.refusal.reason });
+              refusals.push({ goal, experience, daysPerWeek, room, limitations, sessionMinutes, reason: res.refusal.reason });
               continue;
             }
 
@@ -312,7 +320,7 @@ test('every authored goal × experience × schedule × room × limitation builds
             const v = validate(res.assembly.structure, goal);
             if (!v.ok) {
               broken.push({
-                where: `${goal}/${experience}/${daysPerWeek}d/${room}/${limitations}`,
+                where: `${goal}/${experience}/${daysPerWeek}d/${room}/${limitations}/${sessionMinutes}min`,
                 // First three is enough to diagnose; the whole list would bury the signal.
                 failures: v.failures.slice(0, 3).map((f) => `${f.code}: ${f.message}`),
               });
@@ -321,6 +329,7 @@ test('every authored goal × experience × schedule × room × limitation builds
         }
       }
     }
+  }
   }
 
   assert.ok(built > 0, 'nothing built at all');
@@ -414,7 +423,11 @@ test('a running goal now BUILDS, and refuses only when it should', () => {
   assert.match(res.assembly.structure.name, /Marathon/i);
 
   // And the refusal that remains is about time and base, not about the rulebook being missing.
-  const rushed = build({ ...withRace, raceDate: '2026-09-06' });
+  /* Eleven weeks out, relative to today: a marathon needs twelve, the half it offers needs ten and so
+     genuinely builds. (This was a fixed date that has since passed — and zero weeks fits no race, so the
+     offer it asserted was a race that refused in turn.) */
+  const elevenWeeks = new Date(Date.now() + 80 * 86400000).toISOString().slice(0, 10);
+  const rushed = build({ ...withRace, raceDate: elevenWeeks });
   assert.equal(rushed.ok, false);
   assert.match(rushed.refusal.message, /half marathon/i, 'a refusal still has to offer the alternative');
 });

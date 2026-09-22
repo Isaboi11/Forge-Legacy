@@ -18,7 +18,7 @@
  */
 
 import type { Goal } from '../constraints.ts';
-import type { SplitStyle } from './skeletons.ts';
+import { honoursSplitStyle, type SplitStyle } from './skeletons.ts';
 
 const FREQUENCY: Record<number, string> = {
   2: 'Two days means every session has to earn its place, so both are full-body and nothing gets skipped.',
@@ -62,7 +62,10 @@ export function rationaleFor(input: RationaleInput): string {
   const parts: string[] = [];
 
   if (input.restructuredBecause) parts.push(input.restructuredBecause);
-  else if (input.splitStyle && SPLIT_NOTE[input.splitStyle]) parts.push(SPLIT_NOTE[input.splitStyle]!);
+  /* Only when the style actually shaped the week — a mobility block sets the style aside
+     (`GOAL_STYLE_USE`), and "push, pull and legs kept apart" over a list of holds would be a reason
+     for a decision that was never taken. */
+  else if (input.splitStyle && honoursSplitStyle(input.goal) && SPLIT_NOTE[input.splitStyle]) parts.push(SPLIT_NOTE[input.splitStyle]!);
 
   parts.push(FREQUENCY[input.daysPerWeek] ?? '');
 

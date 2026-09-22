@@ -220,6 +220,8 @@ export const SESSION_LENGTHS: readonly SessionMinutes[] = [30, 45, 60, 75];
 /** The Program Builder's own clamps, so nothing the coach builds is un-editable in the screen that opens it. */
 export const MIN_DAYS_PER_WEEK = 2;
 export const MAX_DAYS_PER_WEEK = 6;
+/** What a program is built on when the day count is absent — or arrived as something that is not one. */
+export const DEFAULT_DAYS_PER_WEEK = 4;
 /**
  * 1, not 4 — PA2-D1. Holt may author a single week, and the rulebook makes one coherent rather than
  * shipping the opening week of a mesocycle that does not exist (PAS-A7-D2, `rulebook/volume.ts`).
@@ -307,6 +309,18 @@ export interface CoachConstraints {
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(n)));
 
+/**
+ * A number that can actually be counted with.
+ *
+ * ⚠ `NaN` IS NOT ABSENT TO `??`, AND `clamp` PASSES IT STRAIGHT THROUGH — `Math.max(2, NaN)` is `NaN`.
+ * So a `daysPerWeek: NaN` (a parsed-empty field, a bad restore) sailed past every default and every
+ * bound: a race goal came back `ok` with ZERO sessions in the whole plan and "NaN days" in Holt's
+ * preamble, a strength goal was refused as "no plan for that goal", and `weeks: NaN` built an array of
+ * length NaN and crashed on `weekPlans[0].days`. A value that is not a finite number is treated as not
+ * given, which lands it on the same default or question an absent one gets.
+ */
+export const isCount = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
+
 /** Equipment actually available for this block: what the environment gives, minus nothing. */
 export function effectiveEquipment(c: CoachConstraints): readonly string[] {
   return equipmentForEnvironment(c.environment, c.ownedEquipment);
@@ -323,13 +337,14 @@ export function effectiveEquipment(c: CoachConstraints): readonly string[] {
 export function normalise(c: CoachConstraints): CoachConstraints {
   const out: CoachConstraints = {
     ...c,
-    daysPerWeek: clamp(c.daysPerWeek, MIN_DAYS_PER_WEEK, MAX_DAYS_PER_WEEK),
+    daysPerWeek: clamp(isCount(c.daysPerWeek) ? c.daysPerWeek : DEFAULT_DAYS_PER_WEEK, MIN_DAYS_PER_WEEK, MAX_DAYS_PER_WEEK),
     limitations: [...new Set(c.limitations)],
     excludeExercises: [...new Set(c.excludeExercises)],
     ownedEquipment: [...new Set(c.ownedEquipment)],
   };
-  if (out.weeks != null) out.weeks = clamp(out.weeks, MIN_WEEKS, MAX_WEEKS);
-  if (out.currentWeeklyMi != null) out.currentWeeklyMi = Math.max(0, out.currentWeeklyMi);
+  // Non-finite reads as absent — `undefined`, so `weeks ?? defaultWeeksFor(goal)` supplies the length.
+  if (out.weeks != null) out.weeks = isCount(out.weeks) ? clamp(out.weeks, MIN_WEEKS, MAX_WEEKS) : undefined;
+  if (out.currentWeeklyMi != null) out.currentWeeklyMi = isCount(out.currentWeeklyMi) ? Math.max(0, out.currentWeeklyMi) : null;
   return out;
 }
 
@@ -350,12 +365,13 @@ export type MissingField = 'daysPerWeek' | 'sessionMinutes' | 'raceDate' | 'curr
  */
 export function missingFor(c: Partial<CoachConstraints>): MissingField[] {
   const out: MissingField[] = [];
-  if (c.daysPerWeek == null) out.push('daysPerWeek');
+  // `isCount`, not `== null` — a NaN day count is a question still to ask, not an answer (see `isCount`).
+  if (!isCount(c.daysPerWeek)) out.push('daysPerWeek');
   if (c.sessionMinutes == null) out.push('sessionMinutes');
   if (c.goal != null && isEnduranceGoal(c.goal)) {
     if (!c.raceDate) out.push('raceDate');
     // `!= null` and not a truthiness test: 0 weekly miles is a legitimate, common starting point.
-    if (c.currentWeeklyMi == null) out.push('currentWeeklyMi');
+    if (!isCount(c.currentWeeklyMi)) out.push('currentWeeklyMi');
   }
   return out;
 }

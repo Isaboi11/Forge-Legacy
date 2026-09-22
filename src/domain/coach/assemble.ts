@@ -235,6 +235,8 @@ function buildDay(
     totalWeeks: number;
     isDeload: boolean;
     budget: number;
+    /** PAS-D11's per-session set ceiling for this week — `null` where the category states none. */
+    maxSets: number | null;
     owned: readonly string[];
     bannedActivities: ReadonlySet<string>;
   },
@@ -243,9 +245,16 @@ function buildDay(
   const main: ProgramExercise[] = [];
   const used = new Set<string>(baseCtx.used);
   const cardioSlots = skeleton.cardioFinisher ? 1 : 0;
+  let sets = 0;
 
   for (const pattern of skeleton.slots) {
     if (main.length >= opts.budget - cardioSlots) break;
+    /* ⚠ THE SET CEILING IS HELD HERE, NOT ONLY IN THE VALIDATOR. The budget counts EXERCISES and PAS-D11
+       caps both: an advanced lifter's 75-minute hypertrophy day is eight exercises at four sets each —
+       32 against HYPERTROPHY's 30 — so the builder wrote a day its own validator rejects (75 of 125
+       advanced 75-minute muscle builds in the stress sweep, 2026-09-21). A slot that cannot carry a real
+       dose of at least two sets inside the ceiling is not started. */
+    if (opts.maxSets != null && opts.maxSets - sets < 2) break;
 
     const found = fillSlot(pattern, pool, { ...baseCtx, used });
     if (!found) {
@@ -295,10 +304,13 @@ function buildDay(
       });
     } else {
       const rx = prescribeReps(role, pctx);
+      // The last slot takes what the ceiling leaves — the day keeps its length and its tail is lighter.
+      const dose = opts.maxSets != null ? Math.min(rx.sets, opts.maxSets - sets) : rx.sets;
+      sets += dose;
       main.push({
         catalogKey: found.exercise.key,
         name: found.exercise.name,
-        sets: rx.sets,
+        sets: dose,
         reps: rx.reps,
         repsMax: rx.repsMax,
         ...(cue ? { coachNote: cue } : {}),
@@ -467,6 +479,7 @@ export function assemble(
           totalWeeks: weeks,
           isDeload,
           budget,
+          maxSets: band.maxSets,
           owned,
           bannedActivities,
         }, notes),
