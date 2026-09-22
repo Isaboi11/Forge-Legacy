@@ -47,7 +47,7 @@ Explicitly, by name, in the Product DNA: a social network; a leaderboard platfor
 
 Explicitly prohibited interaction patterns: public leaderboards, workout feeds, like systems, follower systems, comment systems, public workout statistics, streak pressure systems, "days since workout" shame mechanics, rank comparisons, public goal progress, public body metrics. *(Source: FORGE_LEGACY_PRODUCT_DNA.md §10)*
 
-Who it is not for: people wanting a pure performance-analytics dashboard; athletes seeking social-media-style public feeds/follower counts; users wanting community forums, public comments, or content-creation tools; people wanting coach/trainer account management; anyone wanting a calorie/macro/nutrition tracker. *(Source: Forge-Legacy-Master-PRD.md §3)*
+Who it is not for: people wanting a pure performance-analytics dashboard; athletes seeking social-media-style public feeds/follower counts; users wanting community forums, public comments, or content-creation tools; people wanting coach/trainer account management; ~~anyone wanting a calorie/macro/nutrition tracker~~ *(retired 2026-09-21 — `Nutrition-Architecture-v1.0.md` NUT-D2)*. *(Source: Forge-Legacy-Master-PRD.md §3)*
 
 **Product feel target: "70% Luxury Legacy / 30% Performance Tool."** "The product should feel like it belongs in the same drawer as a journal you keep for years — not the same folder as a habit-tracking app." *(Source: Forge-Legacy-Master-PRD.md §4)*
 

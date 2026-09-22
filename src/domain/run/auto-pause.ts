@@ -49,6 +49,32 @@ export const AUTO_PAUSE_GRACE_SEC = 25;
 export const AUTO_PAUSE_MIN_MI = 0.01;
 
 /**
+ * ══ ⚠ THE TRACK CANNOT SEE A WALK, AND THIS IS WHAT PAUSED WALKERS MID-STRIDE ══
+ *
+ * `acceptFix` credits distance in STEPS — nothing until the estimate clears a gate of 10–25 m, scaled to
+ * the fix's accuracy — so the track grows in jumps, not smoothly. A 2 mph walk takes 11 s to cross even
+ * the 10 m floor, and a 3 mph walk under ±35 m sky takes 13 s to cross the 18 m gate that sets. Both are
+ * longer than the 10 s window, so the window regularly read ZERO on someone still walking and the clock
+ * stopped under them. Reported by the PO on an outdoor walk, 2026-09-21; reproduced by folding a
+ * simulated walk through the real `acceptFix`, which paused a ±35 m, 3 mph walk on 159 ticks of 600.
+ *
+ * So the track is not asked on its own any more. The device's own ground speed is — iOS derives it from
+ * Doppler shift, not from position, so it is accurate at a walk even when the position is not. At or
+ * above this, the athlete is moving and the run does not pause, whatever the track says.
+ *
+ * 0.5 m/s is ~1.1 mph: under the slowest deliberate walk, over the zero-to-a-few-tenths a phone reports
+ * standing still.
+ */
+export const AUTO_PAUSE_MOVING_MPS = 0.5;
+
+/**
+ * When the device reports no speed at all, the track is all there is — so it is read over a window long
+ * enough that the coarsest gate (25 m) is crossed inside it by anyone walking: 25 m at 2 mph is 28 s.
+ * Slower to pause at a light, which is the right way round for the failure this file is designed against.
+ */
+export const AUTO_PAUSE_BLIND_WINDOW_SEC = 30;
+
+/**
  * Miles gained inside the trailing window, expressed as mph.
  *
  * ⚠ MEASURED AGAINST THE WALL CLOCK, NOT AGAINST THE LAST FIX. That distinction is the whole function.
@@ -91,12 +117,22 @@ export function shouldAutoPause(o: {
   nowMs: number;
   elapsedSec: number;
   receivingFixes: boolean;
+  /**
+   * The fastest ground speed the DEVICE reported over the last `AUTO_PAUSE_WINDOW_SEC`, in m/s — or
+   * null when it reported none (the web, or a fix too poor for the OS to vouch for). See
+   * `AUTO_PAUSE_MOVING_MPS`.
+   */
+  deviceSpeedMps?: number | null;
 }): boolean {
   if (!o.receivingFixes) return false;
   if (o.elapsedSec < AUTO_PAUSE_GRACE_SEC) return false;
   const last = o.track[o.track.length - 1];
   if (!last || last.mi < AUTO_PAUSE_MIN_MI) return false;
-  return windowSpeedMph(o.track, o.nowMs) < AUTO_PAUSE_BELOW_MPH;
+  const speed = o.deviceSpeedMps ?? null;
+  /* The phone says they are moving. Nothing the track says overrules that — see the constant. */
+  if (speed != null && speed >= AUTO_PAUSE_MOVING_MPS) return false;
+  const window = speed != null ? AUTO_PAUSE_WINDOW_SEC : AUTO_PAUSE_BLIND_WINDOW_SEC;
+  return windowSpeedMph(o.track, o.nowMs, window) < AUTO_PAUSE_BELOW_MPH;
 }
 
 // ── resuming: read off the raw fix stream ────────────────────────────────────
@@ -109,6 +145,13 @@ export const AUTO_RESUME_METERS = 15;
 
 /** Consecutive far fixes required. One is a jitter spike; two in a row is a person walking away. */
 export const AUTO_RESUME_FIXES = 2;
+
+/**
+ * A device-reported ground speed at or above this counts as a departure on its own, however poor the
+ * POSITION is. Without it a walker under ±35 m sky — every fix too sloppy for `AUTO_RESUME_ACCURACY_M`
+ * — could not be seen leaving, and stayed paused while they walked. ~1.6 mph: clear of standing noise.
+ */
+export const AUTO_RESUME_MPS = 0.7;
 
 /**
  * Fixes sloppier than this are ignored for the resume decision — not counted, and not held against the
@@ -141,16 +184,20 @@ export function probeAt(lat: number, lon: number): AutoResumeProbe {
  */
 export function autoResumeStep(
   probe: AutoResumeProbe | null,
-  fix: { lat: number; lon: number; accuracy?: number | null },
+  fix: { lat: number; lon: number; accuracy?: number | null; speed?: number | null },
 ): { probe: AutoResumeProbe | null; resume: boolean } {
   if (!probe) return { probe, resume: false };
 
-  /* Too sloppy to mean anything. Left untouched rather than reset: a single bad fix in the middle of a
-     genuine departure must not put the count back to zero and hold the athlete paused while they run. */
-  if (fix.accuracy != null && fix.accuracy > AUTO_RESUME_ACCURACY_M) return { probe, resume: false };
+  /* The device measured them moving. That is a departure whatever the position says — see `AUTO_RESUME_MPS`. */
+  const moving = fix.speed != null && fix.speed >= AUTO_RESUME_MPS;
+  if (!moving) {
+    /* Too sloppy to mean anything. Left untouched rather than reset: a single bad fix in the middle of a
+       genuine departure must not put the count back to zero and hold the athlete paused while they run. */
+    if (fix.accuracy != null && fix.accuracy > AUTO_RESUME_ACCURACY_M) return { probe, resume: false };
 
-  const meters = haversineMi(probe, fix) * METERS_PER_MI;
-  if (meters < AUTO_RESUME_METERS) return { probe: { ...probe, away: 0 }, resume: false };
+    const meters = haversineMi(probe, fix) * METERS_PER_MI;
+    if (meters < AUTO_RESUME_METERS) return { probe: { ...probe, away: 0 }, resume: false };
+  }
 
   const away = probe.away + 1;
   if (away >= AUTO_RESUME_FIXES) return { probe: null, resume: true };

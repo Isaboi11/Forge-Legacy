@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#08090C; color:#EFE9E0; font-family:'Playfair Display',Georgia,serif; -webkit-font-smoothing:antialiased; }
+  .fn-sans { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+  a { color:#CDA063; }
+  a:hover { color:#E4C88E; }
+</style>
+</helmet>
+<div style="min-height:100vh; background:radial-gradient(120% 52% at 50% -6%, rgba(191,143,79,0.10) 0%, rgba(191,143,79,0) 46%), #08090C; padding:64px 40px 90px; display:flex; flex-direction:column; align-items:center;">
+
+  <!-- ══ MASTHEAD ══ -->
+  <header style="display:flex; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:1120px;">
+    <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:5px; text-transform:uppercase; color:#8A6B41; margin-bottom:18px;">Forge Legacy · Illustration System · Source of Truth</span>
+    <h1 style="margin:0; font-size:52px; font-weight:700; letter-spacing:8px; text-indent:8px; line-height:1.06; background:linear-gradient(180deg,#EFD3A0,#93693B); -webkit-background-clip:text; background-clip:text; color:transparent;">MASTER ARTWORK<br>REFERENCE</h1>
+    <div style="display:flex; align-items:center; gap:16px; width:min(560px,82%); margin:26px 0 16px;">
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(191,143,79,0.7));"></span>
+      <span style="width:8px; height:8px; flex:none; transform:rotate(45deg); border:1px solid #BF8F4F;"></span>
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.7),transparent);"></span>
+    </div>
+    <span class="fn-sans" style="font-size:13px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#B08A55;">One artist · one language · built to grow</span>
+    <p class="fn-sans" style="max-width:700px; margin:22px 0 0; font-size:13.5px; line-height:1.75; color:#9A938A;">This document is the permanent reference for every illustration used throughout Forge Legacy. It defines the artistic direction, the composition rules, and the organizational buckets future artwork lives inside. Nothing is generated until its category is actively being worked — this page is where each category's direction, prompts, and status are recorded as it matures.</p>
+    <div class="fn-sans" style="display:flex; gap:10px; margin-top:26px; flex-wrap:wrap; justify-content:center;">
+      <span style="padding:7px 14px; border-radius:var(--fl-radius-pill); border:1px solid #1C150E; background:#100C08; font-size:10.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#6C5A41;">Living document · v0.2</span>
+      <span style="padding:7px 14px; border-radius:var(--fl-radius-pill); border:1px solid #1C150E; background:#100C08; font-size:10.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#6C5A41;">10 collections · 5 activated</span>
+      <span style="padding:7px 14px; border-radius:var(--fl-radius-pill); border:1px solid #1C150E; background:#100C08; font-size:10.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#6C5A41;">See the full artwork sheet</span>
+    </div>
+  </header>
+
+  <!-- ══ SYSTEMS ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:44px;">
+    <a href="Forge Home Artwork Resolver.dc.html" style="display:flex; align-items:center; gap:20px; padding:22px 28px; border-radius:var(--fl-radius-xl); background:linear-gradient(180deg, rgba(198,156,100,0.06) 0%, rgba(198,156,100,0) 60%), #100C08; border:1px solid #241B10; text-decoration:none;">
+      <span style="width:44px; height:44px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); border:1px solid rgba(191,143,79,0.4); background:radial-gradient(circle at 50% 34%, rgba(191,143,79,0.16), transparent 72%); font-family:var(--fl-font-display); font-weight:700; color:#CDA063;">⚙</span>
+      <div style="flex:1; min-width:0;">
+        <span class="fn-sans" style="display:block; font-size:10px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:4px;">Systems &amp; Specs</span>
+        <span style="font-size:19px; font-weight:600; color:#E4C88E;">Home Workout Artwork Resolver</span>
+        <span class="fn-sans" style="display:block; font-size:12px; line-height:1.55; color:#8F877C; margin-top:4px;">The deterministic resolver that chooses today’s Start-Workout artwork — precedence, contracts, manifest, edge cases, data-model audit.</span>
+      </div>
+      <span class="fn-sans" style="flex:none; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#CDA063;">Open spec →</span>
+    </a>
+  </section>
+
+  <!-- ══ PURPOSE ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:76px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 01 · Purpose</span>
+    <h2 style="margin:0 0 14px; font-size:30px; font-weight:600; letter-spacing:0.3px; color:#E4C88E;">Forge Legacy should feel like one handcrafted product.</h2>
+    <p class="fn-sans" style="max-width:760px; margin:0 0 28px; font-size:13.5px; line-height:1.75; color:#9A938A;">Every illustration should feel as though it came from the same artist, working in the same material, over many years. The moment a viewer sees any image, it should communicate:</p>
+    <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:12px;">
+      <sc-for list="{{ feelings }}" as="w" hint-placeholder-count="6">
+        <div style="padding:20px 12px; border-radius:var(--fl-radius-lg); background:linear-gradient(180deg,#141009,#0C0906); border:1px solid #1C150E; text-align:center;">
+          <span style="font-family:var(--fl-font-display); font-style:italic; font-size:17px; color:#D8B981;">{{ w }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <p class="fn-sans" style="max-width:760px; margin:26px 0 0; font-size:12.5px; line-height:1.7; color:#7C7469;">Nothing should ever read as modern, cartoon, comic-book, or overtly digital. If an illustration feels energetic or trendy, it does not belong in the system.</p>
+  </section>
+
+  <!-- ══ VISUAL LANGUAGE ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 02 · Visual Language</span>
+    <h2 style="margin:0 0 14px; font-size:30px; font-weight:600; letter-spacing:0.3px; color:#E4C88E;">Carved into metal, not painted onto canvas.</h2>
+    <p class="fn-sans" style="max-width:760px; margin:0 0 28px; font-size:13.5px; line-height:1.75; color:#9A938A;">The established Forge illustration language. Every future piece inherits these characteristics without exception.</p>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;">
+      <sc-for list="{{ language }}" as="c" hint-placeholder-count="9">
+        <div style="display:flex; gap:14px; align-items:flex-start; padding:18px 20px; border-radius:var(--fl-radius-lg); background:#100C08; border:1px solid #1C150E;">
+          <span style="width:9px; height:9px; flex:none; margin-top:5px; transform:rotate(45deg); border:1px solid #BF8F4F; background:rgba(191,143,79,0.14);"></span>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <span style="font-size:16px; font-weight:600; color:#D8CBB8;">{{ c.t }}</span>
+            <span class="fn-sans" style="font-size:11.5px; line-height:1.6; color:#7C7469;">{{ c.d }}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ══ UI PHILOSOPHY ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 03 · UI Philosophy</span>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:stretch;">
+      <div style="padding:32px 34px; border-radius:var(--fl-radius-xl); background:linear-gradient(180deg, rgba(198,156,100,0.06) 0%, rgba(198,156,100,0) 50%), #100C08; border:1px solid #241B10; box-shadow:inset 0 1px 0 rgba(198,156,100,0.18);">
+        <h2 style="margin:0 0 14px; font-size:26px; font-weight:600; color:#E4C88E;">Artwork supports. It never competes.</h2>
+        <p class="fn-sans" style="margin:0; font-size:13px; line-height:1.75; color:#9A938A;">Illustrations exist to add atmosphere and identity. They are the backdrop, not the subject. The interface — its titles, actions, and information — always remains the primary focus of the screen.</p>
+      </div>
+      <div style="padding:28px 32px; border-radius:var(--fl-radius-xl); background:#0C0906; border:1px solid #1C150E; display:flex; flex-direction:column; justify-content:center;">
+        <span class="fn-sans" style="font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:16px;">Artwork must never compete with</span>
+        <div style="display:flex; flex-direction:column; gap:0;">
+          <sc-for list="{{ neverCompete }}" as="n" hint-placeholder-count="4">
+            <div class="fn-sans" style="display:flex; align-items:center; gap:12px; padding:11px 0; border-top:1px solid #17110A;">
+              <span style="color:#7A4A42; font-size:13px;">✕</span>
+              <span style="font-size:13.5px; color:#C6BEB2;">{{ n }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ COMPOSITION RULES ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:72px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 04 · Composition Rules</span>
+    <h2 style="margin:0 0 26px; font-size:30px; font-weight:600; letter-spacing:0.3px; color:#E4C88E;">Subjects emerge from darkness.</h2>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+      <div>
+        <span class="fn-sans" style="display:block; font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#B08A55; margin-bottom:16px;">Principles — always</span>
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <sc-for list="{{ principles }}" as="p" hint-placeholder-count="5">
+            <div class="fn-sans" style="display:flex; gap:13px; padding:13px 2px; border-top:1px solid #17110A;">
+              <span style="width:6px; height:6px; flex:none; margin-top:6px; border-radius:50%; background:#BF8F4F;"></span>
+              <span style="font-size:13px; line-height:1.6; color:#C6BEB2;">{{ p }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div>
+        <span class="fn-sans" style="display:block; font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#7A4A42; margin-bottom:16px;">Prohibitions — never</span>
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <sc-for list="{{ prohibitions }}" as="p" hint-placeholder-count="6">
+            <div class="fn-sans" style="display:flex; gap:13px; padding:13px 2px; border-top:1px solid #17110A;">
+              <span style="color:#7A4A42; font-size:12px; margin-top:1px;">✕</span>
+              <span style="font-size:13px; line-height:1.6; color:#8F877C;">{{ p }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ COLLECTIONS DIVIDER ══ -->
+  <div style="width:100%; max-width:1120px; margin-top:88px; text-align:center;">
+    <div style="display:flex; align-items:center; gap:18px; width:100%;">
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(191,143,79,0.5));"></span>
+      <span class="fn-sans" style="font-size:11px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:#8A6B41;">§ 05 · Artwork Collections</span>
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.5),transparent);"></span>
+    </div>
+    <p class="fn-sans" style="max-width:680px; margin:22px auto 0; font-size:12.5px; line-height:1.7; color:#7C7469;">Ten organizational buckets. The subjects listed under each are candidate examples, not requests. Beneath every collection is a specification scaffold — <span style="color:#B08A55;">Visual Direction · Required Illustrations · Approved Prompts · Notes · Status</span> — filled in only when that category is activated.</p>
+  </div>
+
+  <!-- ══ COLLECTIONS ══ -->
+  <div style="width:100%; max-width:1120px; margin-top:40px; display:flex; flex-direction:column; gap:22px;">
+    <sc-for list="{{ collections }}" as="c" hint-placeholder-count="10">
+      <div style="border-radius:var(--fl-radius-xl); background:linear-gradient(180deg,#131017,#0C0906); border:1px solid #1C150E; overflow:hidden;">
+
+        <!-- collection head -->
+        <div style="display:flex; gap:22px; align-items:flex-start; padding:26px 30px 22px;">
+          <span style="font-family:var(--fl-font-display); font-size:30px; font-weight:700; line-height:1; color:{{ c.numInk }}; flex:none; width:58px;">{{ c.num }}</span>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+              <h3 style="margin:0; font-size:25px; font-weight:600; letter-spacing:0.3px; color:#E4C88E;">{{ c.name }}</h3>
+              <span class="fn-sans" style="display:inline-flex; align-items:center; gap:7px; padding:5px 12px; border-radius:var(--fl-radius-pill); border:1px solid {{ c.statusBorder }}; background:#0A0805; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:{{ c.statusInk }}; white-space:nowrap;"><span style="width:6px; height:6px; border-radius:50%; background:{{ c.dotColor }};"></span>{{ c.status }}</span>
+            </div>
+            <p class="fn-sans" style="margin:8px 0 0; font-size:12.5px; line-height:1.65; color:#8F877C;">{{ c.purpose }}</p>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;">
+              <sc-for list="{{ c.subjects }}" as="s" hint-placeholder-count="8">
+                <span class="fn-sans" style="padding:6px 12px; border-radius:var(--fl-radius-sm); border:1px solid #241B10; background:#0E0B07; font-size:10.5px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#B0A390;">{{ s }}</span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <!-- specification scaffold — pending -->
+        <sc-if value="{{ c.pending }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:20px 30px 26px; margin:0 8px 8px; border-radius:var(--fl-radius-lg); background:#08060B; border:1px solid #17110A; box-shadow:var(--fl-border-inset);">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;">
+            <span style="width:7px; height:7px; transform:rotate(45deg); border:1px solid #574029;"></span>
+            <span class="fn-sans" style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#574029;">Specification — awaiting activation</span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px 40px;">
+            <sc-for list="{{ specFields }}" as="f" hint-placeholder-count="4">
+              <div class="fn-sans" style="display:flex; flex-direction:column; gap:7px; padding:14px 0; border-top:1px solid #140F09;">
+                <span style="font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:#6C5A41;">{{ f.label }}</span>
+                <span style="font-size:11.5px; line-height:1.55; color:#4A4238; font-style:italic;">{{ f.hint }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div class="fn-sans" style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:16px; padding-top:16px; border-top:1px solid #140F09; flex-wrap:wrap;">
+            <span style="font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:#6C5A41;">Implementation status</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="display:flex; height:6px; width:140px; border-radius:var(--fl-radius-pill); background:#140F09; overflow:hidden;"><span style="width:0%; background:#BF8F4F;"></span></span>
+              <span style="font-size:11px; font-weight:600; color:#5F5648;">Not started · 0 of 0 finalized</span>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- specification — finalized -->
+        <sc-if value="{{ c.active }}">
+        <div style="padding:20px 30px 26px; margin:0 8px 8px; border-radius:var(--fl-radius-lg); background:#08060B; border:1px solid #241B10; box-shadow:var(--fl-border-inset);">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:16px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="width:7px; height:7px; transform:rotate(45deg); border:1px solid #BF8F4F; background:rgba(191,143,79,0.15);"></span>
+              <span class="fn-sans" style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#B08A55;">Specification — finalized</span>
+            </div>
+            <a class="fn-sans" href="{{ c.link }}" style="font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#CDA063; text-decoration:none;">Open collection →</a>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat({{ c.thumbCols }},1fr); gap:8px;">
+            <sc-for list="{{ c.thumbs }}" as="t" hint-placeholder-count="8">
+              <div style="border-radius:var(--fl-radius-sm); overflow:hidden; border:1px solid #17171B; aspect-ratio:{{ c.thumbAspect }}; background:#0A0A0C;">
+                <img src="{{ t.src }}" alt="{{ t.name }}" style="width:100%; height:100%; object-fit:contain; object-position:center bottom;">
+              </div>
+            </sc-for>
+          </div>
+          <div class="fn-sans" style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:18px; padding-top:16px; border-top:1px solid #140F09; flex-wrap:wrap;">
+            <span style="font-size:11.5px; line-height:1.5; color:#8F877C;">{{ c.blurb }}</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="display:flex; height:6px; width:140px; border-radius:var(--fl-radius-pill); background:#140F09; overflow:hidden;"><span style="width:100%; background:linear-gradient(90deg,#7A6040,#BF8F4F);"></span></span>
+              <span style="font-size:11px; font-weight:700; color:#BF8F4F;">{{ c.pairLabel }}</span>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ══ FUTURE WORKFLOW ══ -->
+  <section style="width:100%; max-width:1120px; margin-top:88px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">§ 06 · Future Workflow</span>
+    <h2 style="margin:0 0 14px; font-size:30px; font-weight:600; letter-spacing:0.3px; color:#E4C88E;">We work one category at a time.</h2>
+    <p class="fn-sans" style="max-width:760px; margin:0 0 30px; font-size:13.5px; line-height:1.75; color:#9A938A;">Nothing is generated until its category is actively being worked. For each category, the process runs in order — and approved specifications are recorded back into the scaffold above, so this document is always the source of truth.</p>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+      <sc-for list="{{ workflow }}" as="w" hint-placeholder-count="6">
+        <div style="display:flex; flex-direction:column; gap:12px; padding:22px 24px; border-radius:var(--fl-radius-lg); background:#100C08; border:1px solid #1C150E;">
+          <span style="font-family:var(--fl-font-display); font-size:24px; font-weight:700; color:#BF8F4F;">{{ w.n }}</span>
+          <span style="font-size:16px; font-weight:600; color:#D8CBB8;">{{ w.t }}</span>
+          <span class="fn-sans" style="font-size:11.5px; line-height:1.65; color:#7C7469;">{{ w.d }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ══ FOOTER NOTE ══ -->
+  <p class="fn-sans" style="max-width:820px; text-align:center; margin:72px 0 0; font-size:12px; line-height:1.85; color:#5F5648;">This is a living document. As each collection is activated, its visual direction, required illustration list, approved prompts, working notes, and implementation status are recorded into that collection's scaffold above — never in a separate file. <span style="color:#8A6B41;">One artist, one material, one language.</span> Every illustration created for Forge Legacy, forever, traces back to this page. — Master Artwork Reference · v0.1</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    var feelings = ['Premium', 'Timeless', 'Forged', 'Engraved', 'Disciplined', 'Elegant'];
+
+    var language = [
+      { t: 'Engraved line', d: 'Artwork reads as carved line work, not painting or rendering.' },
+      { t: 'Dark steel & stone', d: 'A cold iron / weathered stone base material throughout.' },
+      { t: 'Bronze highlights only', d: 'Warmth appears solely as restrained bronze accents.' },
+      { t: 'Nearly monochromatic', d: 'A single tonal family; colour is the rare exception.' },
+      { t: 'Low contrast', d: 'Soft tonal range — nothing harsh, nothing blown out.' },
+      { t: 'Heavy negative space', d: 'Emptiness is the composition, not a leftover.' },
+      { t: 'Dramatic rim lighting', d: 'A single subtle light defines the edge of the form.' },
+      { t: 'Museum / sculpture quality', d: 'Reads as a photographed relief or cast object.' },
+      { t: 'Timeless, not energetic', d: 'Still, weighty, permanent — never in motion or loud.' },
+    ];
+
+    var neverCompete = ['Titles', 'Buttons & actions', 'Navigation', 'Statistics'];
+
+    var principles = [
+      'Subjects generally occupy one side of the composition.',
+      'Leave intentional negative space for the UI to sit in.',
+      'Subjects emerge from darkness, lit by a single subtle source.',
+      'Backgrounds stay dark, minimal, and uncluttered.',
+      'Lighting is quiet — rim light and shadow, never a spotlight.',
+    ];
+
+    var prohibitions = [
+      'No busy or detailed backgrounds.',
+      'No glowing fantasy or magic effects.',
+      'No high saturation or vivid colour.',
+      'No unnecessary visual noise or clutter.',
+      'No modern, cartoon, or comic-book styling.',
+      'No artwork that pulls focus from the interface.',
+    ];
+
+    var specFields = [
+      { label: 'Visual Direction', hint: 'To be defined — composition, subject treatment, lighting notes for this category.' },
+      { label: 'Required Illustrations', hint: 'To be decided — the finalized list of pieces this category needs.' },
+      { label: 'Approved Prompts', hint: 'Empty — locked generation prompts are recorded here once reviewed.' },
+      { label: 'Notes & Decisions', hint: 'Empty — working notes, rejected directions, and rationale live here.' },
+    ];
+
+    var C = [
+      ['01', 'Training Splits',
+        'Primarily supports the Home-screen workout card.',
+        ['Push', 'Pull', 'Legs', 'Upper', 'Lower', 'Full Body', 'Core', 'Conditioning']],
+      ['02', 'Workout Modalities',
+        'The distinct disciplines an athlete trains in.',
+        ['Strength', 'Running', 'Walking', 'Sprinting', 'Cycling', 'Swimming', 'Rowing', 'Mobility', 'Stretching', 'Yoga', 'Recovery']],
+      ['03', 'Program Themes',
+        'Represents the identity of an entire training program.',
+        ['Powerbuilding', 'Bodybuilding', 'Strength', 'Athletic Performance', 'Beginner', 'Hypertrophy', 'Cutting', 'Offseason']],
+      ['04', 'Exercise Families',
+        'Supports the Exercise Library — movement patterns at a glance.',
+        ['Pressing', 'Pulling', 'Squatting', 'Hip Hinge', 'Carry', 'Rotation', 'Isolation', 'Machines', 'Bodyweight']],
+      ['05', 'Legacy',
+        'Reinforces the Legacy side of Forge — permanence and craft.',
+        ['Statues', 'Anvils', 'Hammers', 'Broken Chains', 'Torches', 'Ancient Pillars', 'Forged Armor', 'Laurels']],
+      ['06', 'Honors',
+        'Artwork supporting the honor categories.',
+        ['Consistency', 'Strength', 'Endurance', 'Leadership', 'Transformation', 'Completion', 'Community', 'Milestones']],
+      ['07', 'Chapters',
+        'Artwork representing the seasons of an athlete\u2019s life.',
+        ['Foundation', 'Rebuild', 'Growth', 'Discipline', 'Peak', 'Recovery', 'New Beginning']],
+      ['08', 'Community & Squads',
+        'The shared, human side of training together.',
+        ['Spotters', 'Training Partners', 'High Five', 'Group Run', 'Captain', 'Team Formation', 'Shared Victory']],
+      ['09', 'Competition',
+        'The arena — rivalry, standing, and the win.',
+        ['Podium', 'Champion', 'Crown', 'Shield', 'Banner', 'Arena', 'Victory Pose']],
+      ['10', 'Utility / Empty States',
+        'Empty-state art that must still feel premium, never generic.',
+        ['No Workouts', 'No Goals', 'No Photos', 'No Programs', 'No Friends', 'No Challenges', 'No Honors']],
+    ];
+    var collections = C.map(function (r) {
+      return {
+        key: r[0], num: r[0], name: r[1], purpose: r[2], subjects: r[3],
+        status: 'Not started', active: false, pending: true,
+        numInk: '#3E3222', dotColor: '#3E3222', statusInk: '#6C5A41', statusBorder: '#241B10',
+        link: '', thumbs: [], thumbCols: 8,
+      };
+    });
+
+    function activate(c, opts) {
+      c.active = true; c.pending = false;
+      c.status = opts.status;
+      c.numInk = '#8A6B41'; c.dotColor = '#BF8F4F'; c.statusInk = '#B08A55'; c.statusBorder = 'rgba(191,143,79,0.35)';
+      c.link = opts.link; c.purpose = opts.purpose;
+      c.thumbCols = opts.keys.length;
+      c.thumbAspect = opts.aspect || '300/400';
+      var count = opts.shared ? opts.keys.length : opts.keys.length * 2;
+      c.pairLabel = count + ' of ' + count;
+      c.blurb = opts.shared
+        ? 'Engraved forge artefacts · one shared set used on both sides. Recorded in the collection.'
+        : 'Engraved figures · male + female sets · the master style benchmark. Direction, pose list & locked prompt recorded in the collection.';
+      c.thumbs = opts.keys.map(function (k) { return { name: k.n, src: opts.base + k.f + '.png' }; });
+    }
+    function keyset(names) {
+      return names.map(function (n) { return { n: n, f: n.toLowerCase().replace(/ /g, '-') }; });
+    }
+
+    // ── Activated: Collection 01 · Training Splits ──
+    activate(collections[0], {
+      status: 'Finalized \u00b7 16 of 16',
+      link: 'Forge Training Splits Collection.dc.html',
+      purpose: 'Primarily supports the Home-screen workout card \u2014 the first activated collection and the master style benchmark; male + female sets, selected by the athlete\u2019s chosen sex.',
+      base: 'assets/artwork/training-splits/male/',
+      keys: keyset(['Push', 'Pull', 'Legs', 'Upper', 'Lower', 'Full Body', 'Core', 'Conditioning']),
+    });
+
+    // ── Activated: Collection 02 · Workout Modalities ──
+    activate(collections[1], {
+      status: 'Finalized \u00b7 22 of 22',
+      link: 'Forge Workout Modalities Collection.dc.html',
+      purpose: 'The distinct disciplines an athlete trains in \u2014 male + female sets, selected by the athlete\u2019s chosen sex. One prop at most, etched in the same line.',
+      base: 'assets/artwork/workout-modalities/male/',
+      keys: keyset(['Strength', 'Running', 'Walking', 'Sprinting', 'Cycling', 'Swimming', 'Rowing', 'Mobility', 'Stretching', 'Yoga', 'Recovery']),
+    });
+
+    // ── Activated: Collection 03 · Program Themes ──
+    activate(collections[2], {
+      status: 'Finalized \u00b7 16 of 16',
+      link: 'Forge Workout Modalities Collection.dc.html',
+      purpose: 'The identity of an entire training program \u2014 male + female sets, selected by the athlete\u2019s chosen sex. Full-figure, at-rest stances that read the program\u2019s character.',
+      base: 'assets/artwork/program-themes/male/',
+      keys: keyset(['Powerbuilding', 'Bodybuilding', 'Strength', 'Athletic Performance', 'Beginner', 'Hypertrophy', 'Cutting', 'Offseason']),
+    });
+
+    // ── Activated: Collection 04 · Exercise Families ──
+    activate(collections[3], {
+      status: 'Finalized \u00b7 18 of 18',
+      link: 'Forge Workout Modalities Collection.dc.html',
+      purpose: 'Supports the Exercise Library \u2014 male + female sets, selected by the athlete\u2019s chosen sex. Movement patterns shown in action, one etched implement where the pattern needs it.',
+      base: 'assets/artwork/exercise-families/male/',
+      aspect: '440/303',
+      keys: keyset(['Pressing', 'Pulling', 'Squatting', 'Hip Hinge', 'Carry', 'Rotation', 'Isolation', 'Machines', 'Bodyweight']),
+    });
+
+    // ── Activated: Collection 05 · Legacy (shared both sides) ──
+    activate(collections[4], {
+      status: 'Finalized \u00b7 8 of 8',
+      link: 'Forge Workout Modalities Collection.dc.html',
+      purpose: 'Reinforces the Legacy side of Forge \u2014 forged artefacts and monuments. One shared set, used identically on both the male and female sides.',
+      base: 'assets/artwork/legacy/',
+      shared: true,
+      keys: keyset(['Statues', 'Anvils', 'Hammers', 'Broken Chains', 'Torches', 'Ancient Pillars', 'Forged Armor', 'Laurels']),
+    });
+
+    // ── Activated: Collection 06 · Honors (shared both sides) ──
+    activate(collections[5], {
+      status: 'Finalized \u00b7 8 of 8',
+      link: 'Forge Workout Modalities Collection.dc.html',
+      purpose: 'Artwork supporting the honor categories \u2014 emblems and figures for earned distinctions. One shared set, used identically on both the male and female sides.',
+      base: 'assets/artwork/honors/',
+      shared: true,
+      keys: keyset(['Consistency', 'Strength', 'Endurance', 'Leadership', 'Transformation', 'Completion', 'Community', 'Milestones']),
+    });
+
+    var workflow = [
+      { n: '1', t: 'Define the direction', d: 'Establish the visual direction for the category within the rules above.' },
+      { n: '2', t: 'Decide the list', d: 'Determine exactly which illustrations the category requires.' },
+      { n: '3', t: 'Review concepts', d: 'Explore and critique concepts before any final generation.' },
+      { n: '4', t: 'Finalize prompts', d: 'Lock the exact generation prompts for each approved piece.' },
+      { n: '5', t: 'Generate artwork', d: 'Produce the artwork only once the category is fully specified.' },
+      { n: '6', t: 'Record it back', d: 'Add approved specs and prompts back into this reference.' },
+    ];
+
+    return { feelings: feelings, language: language, neverCompete: neverCompete, principles: principles, prohibitions: prohibitions, specFields: specFields, collections: collections, workflow: workflow };
+  }
+}
+</script>
+</body>
+</html>

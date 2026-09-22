@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-accomplishments.js"></script>
+  <script>
+    (function () {
+      var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+      function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+      if (window.React && window.ReactDOM) { inject(); return; }
+      var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+    })();
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    a { color: var(--fl-bronze-bright); text-decoration: none; }
+    a:hover { color: var(--fl-bronze-primary); }
+    .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+    .fl-scroll { scrollbar-width: none; }
+    .ac-date { width:100%; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-family:var(--fl-font-sans); font-size:15px; padding:13px 14px; outline:none; }
+    .ac-date:focus { border-color:var(--fl-bronze-primary); }
+    .ac-date::-webkit-calendar-picker-indicator { filter: invert(0.7) sepia(0.4) saturate(3) hue-rotate(2deg); cursor:pointer; }
+    .ac-input { width:100%; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-family:var(--fl-font-sans); font-size:15px; padding:13px 14px; outline:none; }
+    .ac-input:focus { border-color:var(--fl-bronze-primary); }
+    .ac-input::placeholder { color:var(--fl-text-tertiary); }
+    .ac-note { width:100%; min-height:72px; resize:none; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-family:var(--fl-font-sans); font-size:14px; line-height:1.5; padding:12px 14px; outline:none; }
+    .ac-note:focus { border-color:var(--fl-bronze-primary); }
+    .ac-note::placeholder { color:var(--fl-text-tertiary); }
+    @keyframes acRise { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+    @keyframes acFade { from { opacity:0; } to { opacity:1; } }
+    @keyframes acScrim { from { opacity:0; } to { opacity:1; } }
+    @keyframes acSheet { from { transform: translateY(24px); opacity:0; } to { transform:none; opacity:1; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; } }
+  </style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="Accomplishments" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(6,7,8,0.34), rgba(6,7,8,0.34)), #060708 url('assets/forge-bg-2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"></path><path d="M7.6 7.1L9.6 5.8V15H7.6Z"></path><path d="M16.4 7.1L14.4 5.8V15H16.4Z"></path><path d="M6.8 15.4H17.2V16.2H6.8Z"></path><path d="M5.6 16.6H18.4V17.4H5.6Z"></path><path d="M4.4 17.8H19.6V18.6H4.4Z"></path></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <!-- ═══════════ L-12 · LIST ═══════════ -->
+      <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute; inset:0; display:flex; flex-direction:column; animation:acFade 220ms var(--fl-ease-out, ease-out) both;">
+          <div style="flex:none; height:56px; display:flex; align-items:center; gap:2px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-700); position:relative; z-index:10;">
+            <button type="button" onClick="{{ onExit }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+            <span style="flex:1; font-size:16px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-primary);">Accomplishments</span>
+            <button type="button" onClick="{{ onAdd }}" aria-label="Add accomplishment" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-bronze-bright);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+          </div>
+
+          <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px 40px; gap:18px;">
+              <span style="width:56px; height:56px; border-radius:50%; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-bronze-tint); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-primary);"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z"></path></svg></span>
+              <span style="font-size:14.5px; line-height:1.5; color:var(--fl-text-secondary); max-width:230px;">Add your first accomplishment — a milestone you're proud of, in your own words.</span>
+              <button type="button" onClick="{{ onAdd }}" style="display:inline-flex; align-items:center; gap:8px; padding:13px 22px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-metal-border); background:var(--fl-bronze-fill); color:#F7F5F1; font-size:14px; font-weight:700; letter-spacing:0.4px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>Add Accomplishment</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ hasItems }}" hint-placeholder-val="{{ true }}">
+            <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:12px 16px 28px; position:relative; z-index:1; animation:acRise 340ms var(--fl-ease-out, ease-out) both;">
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <sc-for list="{{ items }}" as="a" hint-placeholder-count="5">
+                  <button type="button" onClick="{{ a.onOpen }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:13px 14px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset); cursor:pointer; text-align:left;">
+                    <span style="position:relative; flex:none; width:36px; height:36px; border-radius:var(--fl-radius-md); overflow:hidden; border:1px solid var(--fl-charcoal-700); background:var(--fl-surface-recessed); display:flex; align-items:center; justify-content:center;">
+                      <sc-if value="{{ a.hasPhoto }}" hint-placeholder-val="{{ false }}">{{ a.photoEl }}</sc-if>
+                      <sc-if value="{{ a.showFeaturedStar }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="var(--fl-bronze-primary)"><path d="M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z"></path></svg></sc-if>
+                      <sc-if value="{{ a.showPlainStar }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z"></path></svg></sc-if>
+                    </span>
+                    <span style="flex:1; min-width:0; font-size:15px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ a.name }}</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ═══════════ L-13 · DETAIL ═══════════ -->
+      <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; display:flex; flex-direction:column; animation:acFade 220ms var(--fl-ease-out, ease-out) both;">
+          <div style="flex:none; height:56px; display:flex; align-items:center; gap:2px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-700); position:relative; z-index:10;">
+            <button type="button" onClick="{{ onBackToList }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+            <span style="flex:1;"></span>
+            <button type="button" onClick="{{ onEdit }}" style="padding:8px 14px; background:transparent; border:none; cursor:pointer; color:var(--fl-bronze-bright); font-size:14px; font-weight:600;">Edit</button>
+          </div>
+
+          <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:30px 24px 24px; position:relative; z-index:1; animation:acRise 340ms var(--fl-ease-out, ease-out) both;">
+            <sc-if value="{{ selHasPhoto }}" hint-placeholder-val="{{ false }}">
+              <div style="width:100%; height:230px; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); margin-bottom:22px;">
+                {{ selPhotoEl }}
+              </div>
+            </sc-if>
+            <sc-if value="{{ selFeatured }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex; align-items:center; gap:6px; margin-bottom:12px; padding:5px 11px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-bronze-tint); color:var(--fl-bronze-primary); font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z"></path></svg>Featured</span></sc-if>
+            <h1 style="margin:0; font-family:var(--fl-font-display); font-size:30px; font-weight:700; letter-spacing:-0.3px; line-height:1.08; color:var(--fl-text-primary); text-wrap:pretty;">{{ selName }}</h1>
+            <span style="display:block; margin-top:10px; font-size:13px; color:var(--fl-text-tertiary);">{{ selDateLabel }}</span>
+            <sc-if value="{{ selHasChapter }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:18px; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Chapter</span>
+                <span style="font-size:14px; font-weight:600; color:var(--fl-bronze-primary);">{{ selChapterLabel }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ selHasNote }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:20px 0 0; font-family:var(--fl-font-display); font-style:italic; font-size:17px; line-height:1.5; color:var(--fl-text-secondary); text-wrap:pretty;">“{{ selNote }}”</p>
+            </sc-if>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:30px; padding:18px 0; border-top:1px solid var(--fl-charcoal-700); border-bottom:1px solid var(--fl-charcoal-700);">
+              <div style="display:flex; flex-direction:column; gap:3px;">
+                <span style="font-size:15px; font-weight:600; color:var(--fl-text-primary);">Featured on Profile</span>
+                <span style="font-size:12px; color:var(--fl-text-tertiary);">Show among your top 3 · {{ featuredCount }}/3</span>
+              </div>
+              <button type="button" onClick="{{ onToggleFeatured }}" aria-label="Toggle featured" style="flex:none; background:transparent; border:none; cursor:pointer; padding:0; display:flex; align-items:center;">
+                <sc-if value="{{ selFeatured }}" hint-placeholder-val="{{ false }}">
+                  <span style="width:46px; height:28px; border-radius:999px; background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:flex-end; padding:0 3px; box-shadow:inset 0 1px 3px rgba(0,0,0,.4);"><span style="width:22px; height:22px; border-radius:50%; background:var(--fl-bronze-metallic); box-shadow:0 1px 3px rgba(0,0,0,.5);"></span></span>
+                </sc-if>
+                <sc-if value="{{ selNotFeatured }}" hint-placeholder-val="{{ true }}">
+                  <span style="width:46px; height:28px; border-radius:999px; background:var(--fl-charcoal-700); border:1px solid var(--fl-charcoal-600); display:flex; align-items:center; justify-content:flex-start; padding:0 3px; box-shadow:inset 0 1px 3px rgba(0,0,0,.4);"><span style="width:22px; height:22px; border-radius:50%; background:var(--fl-charcoal-500); box-shadow:0 1px 3px rgba(0,0,0,.5);"></span></span>
+                </sc-if>
+              </button>
+            </div>
+
+            <button type="button" onClick="{{ onShareSel }}" style="width:100%; margin-top:26px; display:flex; align-items:center; justify-content:center; gap:9px; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); color:var(--fl-bronze-bright); font-size:14px; font-weight:600; cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.4"></circle><circle cx="17" cy="6" r="2.4"></circle><circle cx="17" cy="18" r="2.4"></circle><path d="M8.1 10.9l6.8-3.8M8.1 13.1l6.8 3.8"></path></svg>Share</button>
+            <button type="button" onClick="{{ onDelete }}" style="width:100%; margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-red-metal-border); background:rgba(190,90,76,0.1); color:var(--fl-red-muted); font-size:14px; font-weight:600; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M9 7V5h6v2M8 7l1 13h6l1-13"></path></svg>Delete Accomplishment</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ═══════════ L-14 · ADD / EDIT ═══════════ -->
+      <sc-if value="{{ isForm }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; display:flex; flex-direction:column; animation:acFade 220ms var(--fl-ease-out, ease-out) both;">
+          <div style="flex:none; height:56px; display:flex; align-items:center; gap:2px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-700); position:relative; z-index:10;">
+            <button type="button" onClick="{{ onCancelForm }}" aria-label="Cancel" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+            <span style="flex:1; font-size:16px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-primary);">{{ formTitle }}</span>
+          </div>
+
+          <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:20px 20px 28px; position:relative; z-index:1; animation:acRise 340ms var(--fl-ease-out, ease-out) both;">
+            <div style="margin-bottom:22px;">
+              <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:10px;">Accomplishment</span>
+              <div style="position:relative;">
+                <input class="ac-input" type="text" value="{{ formName }}" placeholder="e.g. Marathon Finisher" maxlength="60" onInput="{{ onFormName }}" style="padding-right:54px;">
+                <span style="position:absolute; right:13px; top:50%; transform:translateY(-50%); font-size:11px; color:var(--fl-text-tertiary); pointer-events:none;">{{ formNameCount }}</span>
+              </div>
+            </div>
+
+            <div style="margin-bottom:22px;">
+              <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:10px;">Photo <span style="color:var(--fl-text-tertiary); font-weight:600;">· optional</span></span>
+              <input ref="{{ setFileEl }}" type="file" accept="image/*" onChange="{{ onFile }}" style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;">
+              <sc-if value="{{ formHasPhoto }}" hint-placeholder-val="{{ false }}">
+                <div style="position:relative; width:100%; height:190px; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-charcoal-600); box-shadow:var(--fl-border-inset);">
+                  {{ formPhotoEl }}
+                  <button type="button" onClick="{{ onRemovePhoto }}" aria-label="Remove photo" style="position:absolute; top:10px; right:10px; width:32px; height:32px; border-radius:50%; border:1px solid var(--fl-charcoal-500); background:rgba(8,11,14,0.72); color:var(--fl-text-primary); cursor:pointer; display:flex; align-items:center; justify-content:center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+                  <button type="button" onClick="{{ onPickPhoto }}" style="position:absolute; left:10px; bottom:10px; display:inline-flex; align-items:center; gap:7px; padding:8px 13px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border-subtle); background:rgba(8,11,14,0.72); color:var(--fl-bronze-bright); font-size:12px; font-weight:600; cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"></path><circle cx="12" cy="13" r="3.2"></circle></svg>Change</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ formNoPhoto }}" hint-placeholder-val="{{ true }}">
+                <button type="button" onClick="{{ onPickPhoto }}" style="width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:26px 16px; border-radius:var(--fl-radius-lg); border:1px dashed var(--fl-bronze-border); background:var(--fl-bronze-tint); color:var(--fl-bronze-bright); cursor:pointer;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"></path><circle cx="12" cy="13" r="3.4"></circle></svg>
+                  <span style="font-size:13px; font-weight:600;">Add a photo</span>
+                </button>
+              </sc-if>
+            </div>
+
+            <div style="margin-bottom:22px;">
+              <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:10px;">Date</span>
+              <input class="ac-date" type="date" value="{{ formDate }}" onChange="{{ onFormDate }}">
+            </div>
+
+            <div style="margin-bottom:22px;">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px;">
+                <span style="font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Why it mattered <span style="color:var(--fl-text-tertiary); font-weight:600;">· optional</span></span>
+                <span style="font-size:11px; color:var(--fl-text-tertiary);">{{ noteCount }}</span>
+              </div>
+              <textarea class="ac-note" placeholder="What made this accomplishment meaningful?" value="{{ formNote }}" maxlength="150" onInput="{{ onFormNote }}"></textarea>
+            </div>
+
+            <sc-if value="{{ showChapterPicker }}" hint-placeholder-val="{{ true }}">
+              <div style="margin-bottom:8px;">
+                <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px;">
+                  <span style="font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Chapter</span>
+                  <span style="font-size:11px; color:var(--fl-text-tertiary);">Optional</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  <sc-for list="{{ chapterOptions }}" as="c" hint-placeholder-count="4">
+                    <button type="button" onClick="{{ c.onTap }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:var(--fl-radius-lg); border:1px solid {{ c.border }}; background:{{ c.bg }}; cursor:pointer; text-align:left;">
+                      <span style="flex:none; width:18px; height:18px; border-radius:50%; border:2px solid {{ c.dot }}; display:flex; align-items:center; justify-content:center;"><sc-if value="{{ c.selected }}" hint-placeholder-val="{{ false }}"><span style="width:8px; height:8px; border-radius:50%; background:var(--fl-bronze-bright);"></span></sc-if></span>
+                      <span style="flex:1; min-width:0; font-size:14px; font-weight:600; color:{{ c.ink }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.label }}</span>
+                      <sc-if value="{{ c.isActive }}" hint-placeholder-val="{{ false }}"><span style="flex:none; font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-primary); padding:3px 8px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-bronze-tint);">Active</span></sc-if>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="flex:none; padding:12px 18px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(6,7,8,0.4), rgba(6,7,8,0.86)); position:relative; z-index:5;">
+            <sc-if value="{{ saveDisabled }}" hint-placeholder-val="{{ true }}">
+              <span style="display:flex; align-items:center; gap:8px; margin-bottom:11px; font-size:12px; color:var(--fl-text-tertiary);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>Add a name and a date to save.</span>
+            </sc-if>
+            <button type="button" onClick="{{ onSave }}" disabled="{{ saveDisabled }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:9px; padding:15px; border-radius:var(--fl-radius-md); border:1px solid {{ saveBorder }}; background:{{ saveBg }}; color:{{ saveColor }}; font-size:14px; font-weight:700; letter-spacing:0.5px; cursor:{{ saveCursor }}; box-shadow:{{ saveShadow }}; text-shadow:0 1px 1px rgba(8,5,2,0.5);">{{ saveLabel }}</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- delete confirm -->
+      <sc-if value="{{ deleteOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ onCancelDelete }}" style="position:absolute; inset:0; z-index:40; background:rgba(4,5,7,0.66); backdrop-filter:blur(2px); animation:acScrim 180ms ease-out;"></div>
+        <div style="position:absolute; left:0; right:0; bottom:0; z-index:41; background:var(--fl-surface-panel, #12100d); border:1px solid var(--fl-charcoal-600); border-bottom:none; border-radius:24px 24px 0 0; box-shadow:0 -24px 60px rgba(0,0,0,0.5); padding:22px 24px calc(24px + env(safe-area-inset-bottom)); animation:acSheet 260ms var(--fl-ease-out, ease-out);">
+          <div style="display:flex; justify-content:center; margin-bottom:16px;"><span style="width:44px; height:5px; border-radius:99px; background:var(--fl-charcoal-500);"></span></div>
+          <h2 style="margin:0 0 8px; font-family:var(--fl-font-display); font-size:21px; font-weight:700; color:var(--fl-text-primary);">Delete this accomplishment?</h2>
+          <p style="margin:0 0 20px; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary);">{{ deleteMsg }}</p>
+          <div style="display:flex; gap:10px;">
+            <button type="button" onClick="{{ onCancelDelete }}" style="flex:1; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer;">Cancel</button>
+            <button type="button" onClick="{{ onConfirmDelete }}" style="flex:1; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-red-metal-border); background:rgba(190,90,76,0.14); color:var(--fl-red-muted); font-size:14px; font-weight:700; cursor:pointer;">Delete</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- featured replace prompt (at the max of 3) -->
+      <sc-if value="{{ replaceOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ onCancelReplace }}" style="position:absolute; inset:0; z-index:42; background:rgba(4,5,7,0.66); backdrop-filter:blur(2px); animation:acScrim 180ms ease-out;"></div>
+        <div style="position:absolute; left:0; right:0; bottom:0; z-index:43; background:var(--fl-surface-panel, #12100d); border:1px solid var(--fl-charcoal-600); border-bottom:none; border-radius:24px 24px 0 0; box-shadow:0 -24px 60px rgba(0,0,0,0.5); padding:22px 22px calc(22px + env(safe-area-inset-bottom)); animation:acSheet 260ms var(--fl-ease-out, ease-out);">
+          <div style="display:flex; justify-content:center; margin-bottom:16px;"><span style="width:44px; height:5px; border-radius:99px; background:var(--fl-charcoal-500);"></span></div>
+          <h2 style="margin:0 0 6px; font-family:var(--fl-font-display); font-size:21px; font-weight:700; color:var(--fl-text-primary);">You can feature 3</h2>
+          <p style="margin:0 0 18px; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary);">Choose one to replace with <span style="color:var(--fl-text-primary); font-weight:600;">{{ pendingName }}</span>.</p>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <sc-for list="{{ replaceItems }}" as="r" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; gap:11px; padding:12px 13px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card);">
+                <span style="flex:none; display:inline-flex; color:var(--fl-bronze-primary);"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z"></path></svg></span>
+                <span style="flex:1; min-width:0; font-size:14px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.name }}</span>
+                <button type="button" onClick="{{ r.onReplace }}" style="flex:none; padding:8px 15px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-metal-border); background:var(--fl-bronze-fill); color:#F7F5F1; font-size:12.5px; font-weight:700; letter-spacing:0.3px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim);">Replace</button>
+              </div>
+            </sc-for>
+          </div>
+          <button type="button" onClick="{{ onCancelReplace }}" style="width:100%; margin-top:14px; padding:13px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer;">Keep current three</button>
+        </div>
+      </sc-if>
+
+      <div aria-hidden="true" style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;demoState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;populated&quot;,&quot;empty&quot;],&quot;default&quot;:&quot;populated&quot;,&quot;tsType&quot;:&quot;'populated' | 'empty'&quot;,&quot;section&quot;:&quot;Preview&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, view: 'list', selId: null, form: null, deleteOpen: false, replaceOpen: false, pendingId: null };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const store = typeof window !== 'undefined' && window.ForgeAccomplishments;
+      if (r && ns && store) { this._route(store); this.setState({ ready: true }); }
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  _route(store) {
+    // Deep links from the Legacy Hub: ?id=<accId> -> detail, ?new=1 -> add form.
+    let p = {};
+    try { new URLSearchParams(window.location.search).forEach((v, k) => { p[k] = v; }); } catch (e) {}
+    if (p.new === '1') { this.state.view = 'form'; this.state.form = { id: null, name: '', date: this._todayISO(), chapterId: null, featured: false, photo: null, note: '' }; return; }
+    if (p.id && store.get(p.id)) { this.state.view = 'detail'; this.state.selId = p.id; }
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  _store() { return window.ForgeAccomplishments; }
+  _todayISO() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  _fmtDate(iso) { try { const d = new Date(iso + 'T00:00:00'); if (isNaN(d)) return iso; return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }); } catch (e) { return iso; } }
+  _val(e) { return (e && e.target && typeof e.target.value === 'string') ? e.target.value : e; }
+
+  openDetail = (id) => this.setState({ view: 'detail', selId: id });
+  backToList = () => this.setState({ view: 'list', selId: null });
+  openCreate = () => this.setState({ view: 'form', form: { id: null, name: '', date: this._todayISO(), chapterId: null, featured: false, photo: null, note: '' } });
+  openEdit = () => {
+    const r = this._store().get(this.state.selId);
+    if (!r) return this.backToList();
+    this.setState({ view: 'form', form: { id: r.id, name: r.name, date: r.date, chapterId: r.chapterId || null, featured: !!r.featured, photo: r.photo || null, note: r.note || '' } });
+  };
+  cancelForm = () => {
+    const f = this.state.form;
+    if (f && f.id) this.setState({ view: 'detail', form: null });
+    else this.setState({ view: 'list', form: null, selId: null });
+  };
+  saveForm = () => {
+    const f = this.state.form; if (!f) return;
+    if (!f.name.trim() || !f.date) return;
+    const saved = this._store().save({ id: f.id || undefined, name: f.name.trim(), date: f.date, chapterId: f.chapterId || null, featured: !!f.featured, photo: f.photo || null, note: (f.note || '').trim() });
+    // Create -> back to list; Edit -> back to detail.
+    if (f.id) this.setState({ view: 'detail', selId: saved.id, form: null });
+    else this.setState({ view: 'list', selId: null, form: null });
+  };
+  _setFileEl = (el) => { this._fileEl = el; };
+  pickPhoto = () => { if (this._fileEl) this._fileEl.click(); };
+  removePhoto = () => this.setState((s) => ({ form: Object.assign({}, s.form, { photo: null }) }));
+  onFile = (e) => {
+    const file = e.target && e.target.files && e.target.files[0]; if (!file) { return; }
+    const rd = new FileReader();
+    rd.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1000; let w = img.width, h = img.height;
+        if (w > h && w > max) { h = Math.round(h * max / w); w = max; }
+        else if (h >= w && h > max) { w = Math.round(w * max / h); h = max; }
+        let url;
+        try { const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h); url = c.toDataURL('image/jpeg', 0.82); }
+        catch (err) { url = rd.result; }
+        this.setState((s) => ({ form: Object.assign({}, s.form, { photo: url }) }));
+      };
+      img.src = rd.result;
+    };
+    rd.readAsDataURL(file);
+    e.target.value = '';
+  };
+  toggleFeatured = () => {
+    const id = this.state.selId;
+    const r = this._store().get(id); if (!r) return;
+    if (!r.featured) {
+      const feat = this._store().featured();
+      if (feat.length >= 3) { this.setState({ replaceOpen: true, pendingId: id }); return; }
+    }
+    this._store().setFeatured(id, !r.featured);
+    this.forceUpdate();
+  };
+  doReplace = (targetId) => {
+    this._store().setFeatured(targetId, false);
+    if (this.state.pendingId) this._store().setFeatured(this.state.pendingId, true);
+    this.setState({ replaceOpen: false, pendingId: null });
+  };
+  confirmDelete = () => {
+    if (this.state.selId) this._store().remove(this.state.selId);
+    this.setState({ deleteOpen: false, view: 'list', selId: null });
+  };
+  exit = () => { if ((function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})()) window.history.back(); else window.location.href = 'Forge%20Legacy.dc.html'; };
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) return { ready: false, notReady: true };
+    const store = this._store();
+    const view = this.state.view;
+    const demoEmpty = (this.props.demoState === 'empty');
+
+    const vals = {
+      ready: true, notReady: false,
+      isList: view === 'list', isDetail: view === 'detail', isForm: view === 'form',
+      onExit: this.exit,
+      onAdd: this.openCreate,
+      deleteOpen: this.state.deleteOpen,
+      onCancelDelete: () => this.setState({ deleteOpen: false }),
+      onConfirmDelete: this.confirmDelete,
+      replaceOpen: this.state.replaceOpen,
+      onCancelReplace: () => this.setState({ replaceOpen: false, pendingId: null }),
+    };
+
+    // ── L-12 list ──
+    const all = demoEmpty ? [] : store.all();
+    const imgNode = (src) => React.createElement('img', { src: src, style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' } });
+    vals.items = all.map((a) => ({ id: a.id, name: a.name, hasPhoto: !!a.photo, showFeaturedStar: !a.photo && !!a.featured, showPlainStar: !a.photo && !a.featured, photoEl: a.photo ? imgNode(a.photo) : null, onOpen: () => this.openDetail(a.id) }));
+    vals.isEmpty = all.length === 0;
+    vals.hasItems = all.length > 0;
+    vals.featuredCount = store.featured().length;
+
+    // ── L-13 detail ──
+    const sel = this.state.selId ? store.get(this.state.selId) : null;
+    if (sel) {
+      const ch = sel.chapterId ? store.chapter(sel.chapterId) : null;
+      vals.selName = sel.name;
+      vals.selHasPhoto = !!sel.photo;
+      vals.selPhotoEl = sel.photo ? imgNode(sel.photo) : null;
+      vals.selDateLabel = this._fmtDate(sel.date);
+      vals.selHasChapter = !!ch;
+      vals.selChapterLabel = ch ? ch.label : '';
+      vals.selNote = sel.note || '';
+      vals.selHasNote = !!(sel.note && sel.note.trim());
+      vals.selFeatured = !!sel.featured;
+      vals.selNotFeatured = !sel.featured;
+      vals.onEdit = this.openEdit;
+      vals.onBackToList = this.backToList;
+      vals.onToggleFeatured = this.toggleFeatured;
+      vals.onDelete = () => this.setState({ deleteOpen: true });
+      vals.deleteMsg = '“' + sel.name + '” will be removed. This can’t be undone.';
+      vals.onShareSel = () => {
+        const c = { kind: 'accomplishment', id: sel.id, title: sel.name, athlete: 'Ada Ridge', rank: 'Architect · IV', back: 'Forge%20Accomplishments.dc.html?id=' + encodeURIComponent(sel.id) };
+        if (ch) c.chapter = ch.label;
+        if (sel.date) c.date = this._fmtDate(sel.date);
+        if (sel.photo) c.photo = sel.photo;
+        try { localStorage.setItem('forge_share_ctx_v1', JSON.stringify(c)); } catch (e) {}
+        window.location.href = 'Forge%20Share%20Configuration.dc.html';
+      };
+    } else {
+      vals.selName = ''; vals.selDateLabel = ''; vals.selHasChapter = false; vals.selChapterLabel = '';
+      vals.selNote = ''; vals.selHasNote = false;
+      vals.selHasPhoto = false; vals.selPhotoEl = null;
+      vals.selFeatured = false; vals.selNotFeatured = true;
+      vals.onEdit = this.openEdit; vals.onBackToList = this.backToList; vals.onToggleFeatured = this.toggleFeatured;
+      vals.onDelete = () => this.setState({ deleteOpen: true }); vals.deleteMsg = 'This can’t be undone.'; vals.onShareSel = () => {};
+    }
+
+    // ── L-14 form ──
+    const f = this.state.form;
+    if (f) {
+      const nameOk = !!f.name.trim();
+      const dateOk = !!f.date;
+      const ok = nameOk && dateOk;
+      const chapters = store.CHAPTERS || [];
+      const opts = [{ id: null, label: 'No Chapter', active: false }].concat(chapters.map((c) => ({ id: c.id, label: c.label, active: !!c.active })));
+      vals.formTitle = f.id ? 'Edit Accomplishment' : 'New Accomplishment';
+      vals.formName = f.name;
+      vals.formNameCount = (f.name || '').length + '/60';
+      vals.formNote = f.note || '';
+      vals.noteCount = (f.note || '').length + '/150';
+      vals.onFormNote = (e) => this.setState((s) => ({ form: Object.assign({}, s.form, { note: this._val(e).slice(0, 150) }) }));
+      vals.formHasPhoto = !!f.photo;
+      vals.formNoPhoto = !f.photo;
+      vals.formPhotoEl = f.photo ? imgNode(f.photo) : null;
+      vals.setFileEl = this._setFileEl;
+      vals.onFile = this.onFile;
+      vals.onPickPhoto = this.pickPhoto;
+      vals.onRemovePhoto = this.removePhoto;
+      vals.onFormName = (e) => this.setState((s) => ({ form: Object.assign({}, s.form, { name: this._val(e) }) }));
+      vals.formDate = f.date;
+      vals.onFormDate = (e) => this.setState((s) => ({ form: Object.assign({}, s.form, { date: this._val(e) }) }));
+      vals.showChapterPicker = chapters.length > 0;
+      vals.chapterOptions = opts.map((o) => {
+        const on = (f.chapterId || null) === (o.id || null);
+        return {
+          id: o.id, label: o.label, isActive: o.active, selected: on,
+          onTap: () => this.setState((s) => ({ form: Object.assign({}, s.form, { chapterId: o.id }) })),
+          border: on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+          bg: on ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+          dot: on ? 'var(--fl-bronze-primary)' : 'var(--fl-charcoal-500)',
+          ink: on ? 'var(--fl-text-primary)' : 'var(--fl-text-secondary)',
+        };
+      });
+      vals.saveDisabled = !ok;
+      vals.saveLabel = f.id ? 'Save Changes' : 'Add Accomplishment';
+      vals.saveBg = ok ? 'var(--fl-bronze-fill)' : 'var(--fl-bronze-fill-disabled)';
+      vals.saveBorder = ok ? 'var(--fl-bronze-metal-border)' : 'var(--fl-bronze-border-disabled)';
+      vals.saveColor = ok ? '#F7F5F1' : 'var(--fl-text-tertiary)';
+      vals.saveCursor = ok ? 'pointer' : 'default';
+      vals.saveShadow = ok ? 'var(--fl-bronze-metal-top-rim), var(--fl-shadow-card)' : 'none';
+      vals.onSave = this.saveForm;
+      vals.onCancelForm = this.cancelForm;
+    } else {
+      vals.formTitle = 'New Accomplishment'; vals.formName = ''; vals.onFormName = () => {};
+      vals.formNameCount = '0/60'; vals.formNote = ''; vals.noteCount = '0/150'; vals.onFormNote = () => {};
+      vals.formHasPhoto = false; vals.formNoPhoto = true; vals.formPhotoEl = null; vals.setFileEl = this._setFileEl; vals.onFile = this.onFile; vals.onPickPhoto = () => {}; vals.onRemovePhoto = () => {};
+      vals.formDate = ''; vals.onFormDate = () => {}; vals.showChapterPicker = true; vals.chapterOptions = [];
+      vals.saveDisabled = true; vals.saveLabel = 'Add Accomplishment';
+      vals.saveBg = 'var(--fl-bronze-fill-disabled)'; vals.saveBorder = 'var(--fl-bronze-border-disabled)';
+      vals.saveColor = 'var(--fl-text-tertiary)'; vals.saveCursor = 'default'; vals.saveShadow = 'none';
+      vals.onSave = () => {}; vals.onCancelForm = this.cancelForm;
+    }
+
+    // ── replace prompt ──
+    const pending = this.state.pendingId ? store.get(this.state.pendingId) : null;
+    vals.pendingName = pending ? pending.name : '';
+    vals.replaceItems = store.featured().map((r) => ({ id: r.id, name: r.name, onReplace: () => this.doReplace(r.id) }));
+
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

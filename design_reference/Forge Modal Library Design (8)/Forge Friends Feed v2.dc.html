@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&amp;display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  image-slot::part(ring) { border-color: var(--fl-bronze-border-subtle); }
+  image-slot::part(empty) { color: var(--fl-text-tertiary); font-size: 8px; letter-spacing: 0.6px; }
+  image-slot::part(frame) { background: rgba(191,143,79,0.05); }
+  @keyframes ffRise { from { opacity:0; transform: translateY(9px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Friends" style="width:404px; max-width:100%; height:868px; position:relative; transform:translate3d(0,0,0); border-radius:32px; border:1px solid var(--fl-charcoal-600); background:radial-gradient(120% 44% at 50% -4%, rgba(191,143,79,0.05) 0%, transparent 60%), var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"></path><path d="M7.6 7.1L9.6 5.8V15H7.6Z"></path><path d="M16.4 7.1L14.4 5.8V15H16.4Z"></path><path d="M6.8 15.4H17.2V16.2H6.8Z"></path><path d="M5.6 16.6H18.4V17.4H5.6Z"></path><path d="M4.4 17.8H19.6V18.6H4.4Z"></path></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <div style="flex:none; position:relative; z-index:6; display:flex; align-items:center; gap:8px; height:56px; padding:0 8px 0 6px; border-bottom:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(12,12,12,0.7), rgba(9,9,9,0.5)); backdrop-filter:blur(8px);">
+      <button type="button" onClick="{{ noop }}" aria-label="Back" style="width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+      <span style="flex:1; min-width:0; font-family:var(--fl-font-display); font-size:21px; font-weight:600; letter-spacing:0.2px;">Friends</span>
+      <button type="button" onClick="{{ noop }}" aria-label="Friends" style="width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-icon-bronze);"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="8" r="2.7"></circle><circle cx="16.5" cy="8" r="2.7"></circle><path d="M3 19a4.5 4.5 0 0 1 9 0"></path><path d="M12 19a4.5 4.5 0 0 1 9 0"></path></svg></button>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto;">
+
+      <!-- ═══ COMPOSER · one flat row ═══ -->
+      <button type="button" onClick="{{ noop }}" style="width:100%; height:68px; display:flex; align-items:center; gap:12px; padding:0 18px; background:linear-gradient(180deg, rgba(191,143,79,0.035), transparent); border:none; border-bottom:1px solid var(--fl-charcoal-700); cursor:pointer; text-align:left; font-family:inherit;">
+        <span style="width:38px; height:38px; flex:none; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:var(--fl-bronze-primary);">Y</span>
+        <span style="flex:1; min-width:0; font-size:15px; color:var(--fl-text-tertiary);">What did you forge today?</span>
+        <span style="width:30px; height:30px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-primary);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 6v12M6 12h12"></path></svg></span>
+      </button>
+
+      <!-- ═══ THE LEDGER ═══ -->
+      <sc-for list="{{ posts }}" as="p" hint-placeholder-count="3">
+        <div style="padding:22px 0 14px; border-bottom:1px solid var(--fl-charcoal-700); background:{{ p.bg }};">
+
+          <div style="display:flex; align-items:center; gap:10px; padding:0 18px;">
+            <span style="width:34px; height:34px; flex:none; border-radius:var(--fl-radius-round); border:1px solid var(--fl-charcoal-600); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:14px; font-weight:600; color:var(--fl-bronze-primary);">{{ p.initials }}</span>
+            <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+              <span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary); line-height:1.2;">{{ p.author }}</span>
+              <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ p.audience }}</span>
+            </span>
+            <span style="flex:none; font-size:12px; color:var(--fl-text-tertiary);">{{ p.time }}</span>
+          </div>
+
+          <!-- PHOTO POST · the image is the content: full-bleed, no chrome above it -->
+          <sc-if value="{{ p.hasPhoto }}" hint-placeholder-val="{{ false }}">
+            <div style="position:relative; margin-top:15px; width:100%; aspect-ratio:4 / 5; background:var(--fl-charcoal-800); overflow:hidden;">
+              <x-import component-from-global-scope="image-slot" id="{{ p.photoId }}" radius="0" placeholder="Progress photo" hint-size="100%,100%"></x-import>
+              <span style="position:absolute; inset:0; pointer-events:none; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 -70px 70px -50px rgba(6,7,9,0.85);"></span>
+              <sc-if value="{{ p.hasPhotoCount }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute; right:12px; bottom:12px; padding:4px 9px; border-radius:var(--fl-radius-pill); background:rgba(6,7,9,0.62); border:1px solid rgba(255,255,255,0.09); backdrop-filter:blur(6px); font-size:11px; font-weight:600; letter-spacing:0.4px; color:var(--fl-text-primary);">{{ p.photoCount }}</span>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ p.hasHeadline }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:0 18px;">
+            <div style="display:flex; align-items:center; gap:7px; margin-top:17px; color:var(--fl-bronze-primary);">
+              <span style="flex:none; display:flex;">{{ p.typeIcon }}</span>
+              <span style="font-size:10px; font-weight:700; letter-spacing:2.2px; text-transform:uppercase;">{{ p.typeLabel }}</span>
+            </div>
+
+            <h3 style="margin:7px 0 0; font-family:var(--fl-font-display); font-size:22px; font-weight:600; line-height:1.15; color:var(--fl-text-primary); letter-spacing:0.2px; text-wrap:pretty;">{{ p.title }}</h3>
+            <sc-if value="{{ p.hasSub }}" hint-placeholder-val="{{ true }}">
+              <span style="display:block; margin-top:4px; font-size:12.5px; color:var(--fl-text-tertiary);">{{ p.sub }}</span>
+            </sc-if>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ p.hasStats }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; gap:26px; margin-top:15px; padding:0 18px;">
+              <sc-for list="{{ p.stats }}" as="s" hint-placeholder-count="3">
+                <div style="display:flex; flex-direction:column; gap:3px;">
+                  <span style="font-family:var(--fl-font-display); font-size:21px; font-weight:600; line-height:1; color:var(--fl-text-primary);">{{ s.v }}</span>
+                  <span style="font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ s.l }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- rich music attachment -->
+          <sc-if value="{{ p.hasMusic }}" hint-placeholder-val="{{ true }}">
+            <button type="button" onClick="{{ noop }}" style="width:calc(100% - 36px); margin:16px 18px 0; display:flex; align-items:center; gap:12px; padding:9px 12px 9px 9px; border-radius:10px; border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); cursor:pointer; text-align:left; font-family:inherit; box-shadow:var(--fl-border-inset);">
+              <span style="width:52px; height:52px; flex:none; border-radius:8px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(145deg, rgba(191,143,79,0.14), rgba(191,143,79,0.03)); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-primary); box-shadow:var(--fl-border-inset);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"></path><circle cx="6.5" cy="18" r="2.5"></circle><circle cx="16.5" cy="16" r="2.5"></circle></svg></span>
+              <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ p.musicName }}</span>
+                <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ p.musicMeta }}</span>
+              </span>
+              <span style="flex:none; color:var(--fl-text-tertiary); display:flex;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></span>
+            </button>
+          </sc-if>
+
+          <sc-if value="{{ p.hasCaption }}" hint-placeholder-val="{{ false }}">
+            <p style="margin:14px 18px 0; font-size:14px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">{{ p.caption }}</p>
+          </sc-if>
+
+          <div style="display:flex; align-items:center; gap:4px; margin-top:16px; padding:0 18px 0 10px;">
+            <button type="button" onClick="{{ p.ack }}" style="min-height:44px; display:flex; align-items:center; gap:8px; padding:0 8px; background:transparent; border:none; cursor:pointer; font-family:inherit;">
+              <span style="flex:none; display:flex; color:{{ p.ackColor }};">{{ p.ackIcon }}</span>
+              <span style="font-size:13.5px; font-weight:600; color:{{ p.ackColor }};">Acknowledge</span>
+              <sc-if value="{{ p.hasAckCount }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:13px; color:var(--fl-text-tertiary);">{{ p.ackCount }}</span>
+              </sc-if>
+            </button>
+            <button type="button" onClick="{{ noop }}" style="min-height:44px; display:flex; align-items:center; gap:7px; padding:0 8px; background:transparent; border:none; cursor:pointer; font-family:inherit; color:var(--fl-text-tertiary);">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4H4v12h5l4 3.5V16h7z"></path></svg>
+              <sc-if value="{{ p.hasComments }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:13px;">{{ p.commentCount }}</span>
+              </sc-if>
+            </button>
+          </div>
+        </div>
+      </sc-for>
+
+      <div style="padding:26px 0 34px; display:flex; align-items:center; justify-content:center; gap:10px;">
+        <span style="width:4px; height:4px; transform:rotate(45deg); background:var(--fl-bronze-border);"></span>
+        <span style="font-size:10.5px; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-tertiary);">End of the ledger</span>
+        <span style="width:4px; height:4px; transform:rotate(45deg); background:var(--fl-bronze-border);"></span>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false, acked: {} };
+
+  componentDidMount() {
+    this._poll = () => {
+      if (typeof React !== 'undefined' && React.createElement && window.ForgeSymbols) this.setState({ ready: true });
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  icon(d, size) {
+    return React.createElement('svg', { width: size || 15, height: size || 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' },
+      d.split('|').map((p, i) => React.createElement('path', { key: i, d: p })));
+  }
+
+  renderVals() {
+    if (!this.state.ready) return { ready: false, notReady: true };
+
+    const FS = window.ForgeSymbols;
+    const flame = 'M12 3c1.5 3.2-.8 4.6 0 7 1-1 2.4-1.4 2.4-1.4-.4 2.6 2.6 3.6 2.6 6.6a5 5 0 0 1-10 0c0-3.4 3-4.6 5-12.2z';
+    const dumbbell = 'M4 9v6|M7 7v10|M17 7v10|M20 9v6|M7 12h10';
+    const target = 'M12 3v4|M12 17v4|M3 12h4|M17 12h4';
+
+    const SEED = [
+      { id: 'a', author: 'You', initials: 'Y', audience: 'Friends & Squad', time: '12h', type: 'workout',
+        title: 'Push — Chest & Shoulders', sub: 'Foundation · Week 4 · Day 2',
+        stats: [{ v: '11,935', l: 'Volume' }, { v: '1:36:55', l: 'Time' }, { v: '7', l: 'Lifts' }],
+        music: { name: 'Heavy Lifts', meta: 'Spotify · 42 tracks' }, ack: 4, comments: 2 },
+      { id: 'b', author: 'You', initials: 'Y', audience: 'Friends', time: '23h', type: 'goal',
+        title: 'Bench Press · 225 lb', sub: 'Target established Aug 11, 2026',
+        caption: 'A new target has been set.', ack: 3, comments: 0 },
+      { id: 'ph', author: 'Elena Ruiz', initials: 'ER', audience: 'Friends', time: '19h', type: 'photo',
+        photos: 3, caption: 'Chalk, coffee, and a quiet platform. Best kind of Saturday.', ack: 9, comments: 3 },
+      { id: 'c', author: 'You', initials: 'Y', audience: 'Friends & Squad', time: '23h', type: 'workout',
+        title: 'Pull — Back & Biceps', sub: 'Foundation · Week 4 · Day 1',
+        stats: [{ v: '26,620', l: 'Volume' }, { v: '2:49:49', l: 'Time' }, { v: '9', l: 'Lifts' }],
+        music: { name: 'Sunday Lift', meta: 'Spotify · 31 tracks' }, ack: 6, comments: 1 },
+    ];
+
+    const TYPE = {
+      workout: { label: 'Workout', icon: dumbbell },
+      goal: { label: 'Goal', icon: target },
+    };
+
+    const posts = SEED.map((p, i) => {
+      const t = TYPE[p.type] || { label: '', icon: '' };
+      const isPhoto = p.type === 'photo';
+      const on = !!this.state.acked[p.id];
+      const n = p.ack + (on ? 1 : 0);
+      return {
+        slotId: 'ff2-av-' + p.id,
+        artId: 'ff2-art-' + p.id,
+        author: p.author, initials: p.initials, audience: p.audience, time: p.time,
+        typeLabel: t.label, typeIcon: t.icon ? this.icon(t.icon, 15) : null,
+        title: p.title, sub: p.sub, hasSub: !!p.sub,
+        // A photo post carries no type label, title, or stat row — the image announces itself.
+        hasHeadline: !isPhoto,
+        hasPhoto: isPhoto,
+        photoId: 'ff2-photo-' + p.id,
+        photoCount: '1 / ' + (p.photos || 1),
+        hasPhotoCount: (p.photos || 1) > 1,
+        // alternating hairline-thin surface variation keeps the ledger from reading as one slab
+        bg: i % 2 === 1 ? 'rgba(255,255,255,0.012)' : 'transparent',
+        hasStats: !!p.stats, stats: p.stats || [],
+        hasMusic: !!p.music, musicName: p.music ? p.music.name : '', musicMeta: p.music ? p.music.meta : '',
+        hasCaption: !!p.caption, caption: p.caption || '',
+        ack: () => this.setState(s => ({ acked: { ...s.acked, [p.id]: !s.acked[p.id] } })),
+        ackIcon: this.icon(flame, 17),
+        ackColor: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)',
+        ackCount: n, hasAckCount: n > 0,
+        commentCount: p.comments, hasComments: p.comments > 0,
+      };
+    });
+
+    return { ready: true, notReady: false, posts, noop: () => {} };
+  }
+}
+</script>
+</body>
+</html>

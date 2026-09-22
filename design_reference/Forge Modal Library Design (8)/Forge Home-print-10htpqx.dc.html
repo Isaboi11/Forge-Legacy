@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style data-omelette-print-defaults>
+@media print {
+  @page { margin: 0.5in; }
+  h1, h2, h3, h4, h5, h6 { break-after: avoid; }
+  figure, table, pre, blockquote, img, svg, tr, [class~="card" i] { break-inside: avoid; }
+  img, svg { max-width: 100%; }
+  p { orphans: 3; widows: 3; }
+}
+</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&amp;display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script src="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js"></script>
+<script src="forge-symbols.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  @keyframes flRiseIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <!-- Loading splash (pre-mount) -->
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <!-- H-1 Home -->
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="{{ logo }}" avatar="{{ avatarEl }}" hint-size="100%,56px"></x-import>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto;">
+
+        <!-- Forge Principle · opens the screen (engraved inscription) — ceremonial breathing room -->
+        <div style="padding:44px 34px 30px; display:flex; flex-direction:column; align-items:center; gap:38px;">
+          <span style="width:230px; height:1px; background:linear-gradient(90deg, transparent 0%, var(--fl-bronze-border) 50%, transparent 100%); animation: flRiseIn 1500ms var(--fl-ease-out, ease-out) both; animation-delay:250ms;"></span>
+          <span style="font-family: var(--fl-font-display); font-size: 19px; line-height: 1.5; font-weight: 500; color: var(--fl-bronze-primary); letter-spacing: -0.2px; text-align: center; text-wrap: pretty; animation: flRiseIn 2100ms var(--fl-ease-out, ease-out) both; animation-delay:650ms;">{{ principle }}</span>
+          <span style="width:230px; height:1px; background:linear-gradient(90deg, transparent 0%, var(--fl-bronze-border) 50%, transparent 100%); animation: flRiseIn 1500ms var(--fl-ease-out, ease-out) both; animation-delay:1050ms;"></span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; padding:0 18px 44px;">
+
+          <!-- H-1 Mission Card · one composed Home-only experience (Chapter · Goal · Program · Today · Start) -->
+          <div style="background:linear-gradient(180deg, rgba(202,162,106,0.07) 0%, rgba(202,162,106,0) 42%), var(--fl-bg-primary); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); padding:26px 22px 22px; margin-bottom:52px; box-shadow: inset 0 1px 0 rgba(198,156,100,0.30), 0 18px 40px -24px rgba(0,0,0,0.82), 0 0 18px -6px rgba(186,146,92,0.11);">
+            <div style="display:flex; flex-direction:column; gap:18px;">
+
+              <!-- Chapter header -->
+              <div style="display:flex; flex-direction:column; gap:16px;">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                  <span style="font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Mission</span>
+                  <span style="font-size:13px; color:var(--fl-text-tertiary);">Week 6</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                  <span style="font-family:var(--fl-font-display); font-size:25px; font-weight:600; letter-spacing:-0.2px; line-height:1.12;">Chapter III · The Rebuild</span>
+                  <span style="font-size:13px; color:var(--fl-text-secondary);">Forging since March 2026</span>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" size="sm" hint-size="auto,26px">Powerbuilding</x-import>
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" size="sm" tone="muted" hint-size="auto,26px">2 Goals</x-import>
+                </div>
+                <!-- Primary Goal · folded into the mission header, no icon -->
+                <div style="display:flex; align-items:baseline; gap:10px; padding-top:2px;">
+                  <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); opacity:0.7; flex:none;">Primary Goal</span>
+                  <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">Squat 405 lb</span>
+                </div>
+              </div>
+
+              <!-- divider -->
+              <div style="height:1px; margin:2px 0; background:linear-gradient(90deg, transparent, var(--fl-bronze-border-subtle) 12%, var(--fl-bronze-border-subtle) 88%, transparent);"></div>
+
+              <!-- Program -->
+              <div style="display:flex; align-items:center; gap:15px;">
+                <span style="width:46px; height:46px; flex:none; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg></span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                  <div style="display:flex; flex-direction:column; gap:3px; min-width:0;">
+                    <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); opacity:0.7;">Program</span>
+                    <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; line-height:1.2;">Powerbuilding · Intermediate</span>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="align-self:flex-end; font-size:13px; font-weight:600; color:var(--fl-bronze-primary); letter-spacing:-0.1px;">12 of 32</span>
+                    <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="12" max="32" hint-size="100%,8px"></x-import>
+                  </div>
+                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+              </div>
+
+              <!-- divider -->
+              <div style="height:1px; margin:2px 0; background:linear-gradient(90deg, transparent, var(--fl-bronze-border-subtle) 12%, var(--fl-bronze-border-subtle) 88%, transparent);"></div>
+
+              <!-- Today's Session -->
+              <div style="display:flex; align-items:center; gap:15px;">
+                <span style="width:46px; height:46px; flex:none; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter"><path d="M4.5 6.5h15v13h-15z"></path><path d="M4.5 10h15"></path><path d="M8.5 4v4M15.5 4v4"></path></svg></span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                  <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); opacity:0.7;">Today’s Session</span>
+                  <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; letter-spacing:-0.2px;">Push Day A</span>
+                  <span style="font-size:12.5px; color:var(--fl-text-secondary);">6 exercises · Chest &amp; Shoulders</span>
+                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+              </div>
+
+              <!-- Start Workout -->
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" style="margin-top:6px;" hint-size="100%,52px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E0913F" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" style="flex:none;"><path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z"></path></svg>Start Workout</x-import>
+
+            </div>
+          </div>
+
+          <!-- TRAIN TOGETHER · the only secondary section on Home -->
+          <div>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Train Together" hint-size="100%,20px"></x-import>
+            <div style="background:var(--fl-bg-primary); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); padding:8px 16px; box-shadow: inset 0 1px 0 rgba(198,156,100,0.22), 0 12px 30px -24px rgba(0,0,0,0.72), 0 0 15px -6px rgba(186,146,92,0.09);">
+              <div style="display:flex; flex-direction:column;">
+
+                <!-- Your Squad -->
+                <div style="display:flex; align-items:center; gap:15px; padding:14px 0;">
+                  <span style="width:54px; height:54px; flex:none; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); box-shadow:var(--fl-glow-subtle); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6c-2.3.3-3.1 2-3.1 3.6"></path><path d="M12 3.6c2.3.3 3.1 2 3.1 3.6"></path><path d="M6 13a6 6 0 0 1 12 0"></path><path d="M6 13v2.4a4 4 0 0 0 2.6 3.7"></path><path d="M18 13v2.4a4 4 0 0 1-2.6 3.7"></path><path d="M12 7.2v9.3"></path><path d="M9 12.6h6"></path></svg></span>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                    <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px;">Iron Legacy</span>
+                    <span style="font-size:13px; color:var(--fl-bronze-primary);">Your Squad</span>
+                    <span style="display:flex; align-items:center; gap:7px; margin-top:1px;">
+                      <span style="width:7px; height:7px; border-radius:50%; background:#4CAF6E; box-shadow:0 0 6px rgba(76,175,110,0.6); flex:none;"></span>
+                      <span style="font-size:12.5px; color:var(--fl-text-secondary);">2 training now</span>
+                    </span>
+                  </div>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+                </div>
+
+                <span style="height:1px; background:var(--fl-charcoal-600);"></span>
+
+                <!-- Friends -->
+                <div style="display:flex; align-items:center; gap:15px; padding:14px 0;">
+                  <span style="width:54px; height:54px; flex:none; border-radius:var(--fl-radius-round); border:1px solid var(--fl-charcoal-600); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-text-tertiary);"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M3 20a6 6 0 0 1 12 0"></path><path d="M16 6a3 3 0 0 1 0 6"></path><path d="M17.5 20a6 6 0 0 0-2-4.5"></path></svg></span>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                    <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px;">Friends</span>
+                    <span style="font-size:12.5px; color:var(--fl-text-secondary);">Train together or challenge your friends</span>
+                  </div>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.TabBar" items="{{ tabItems }}" active-id="{{ activeTab }}" on-change="{{ setTab }}" hint-size="100%,74px"></x-import>
+
+    </sc-if>
+
+    <!-- Forged grain · barely-there tooth so surfaces don't read as flat digital fills -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { ready: false, activeTab: 'home' };
+  componentDidMount() {
+    // Claude Design preview-runtime shim only (see CLAUDE.md): defer mounting the
+    // bound components to one clean post-stream render. Not a production pattern.
+    this.setState({ ready: true });
+  }
+
+  renderVals() {
+    const NS = (typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2) || {};
+    const Avatar = NS.Avatar;
+
+    const ic = (paths) => React.createElement('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, ...paths.map((d, i) => React.createElement('path', { key: i, d })));
+
+    // AppBar logo — Forge Legacy pillar mark + serif wordmark, left-aligned
+    const forgeMark = React.createElement('svg', { width: 19, height: 28, viewBox: '16 0 68 102', style: { flex: 'none', display: 'block' }, 'aria-hidden': true },
+      React.createElement('defs', null,
+        React.createElement('linearGradient', { id: 'forgeMarkGrad', x1: '0', y1: '0', x2: '0', y2: '1' },
+          React.createElement('stop', { offset: '0%', stopColor: '#DCB57A' }),
+          React.createElement('stop', { offset: '52%', stopColor: '#BF8F4F' }),
+          React.createElement('stop', { offset: '100%', stopColor: '#835F32' }))),
+      React.createElement('g', { fill: 'url(#forgeMarkGrad)' },
+        React.createElement('polygon', { points: '43,6 57,6 57,96 43,96' }),
+        React.createElement('polygon', { points: '23,42 37,27 37,96 23,96' }),
+        React.createElement('polygon', { points: '63,27 77,42 77,96 63,96' })));
+
+    const logo = React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '8px' } },
+      forgeMark,
+      React.createElement('span', { style: { fontFamily: 'var(--fl-font-display)', fontSize: '16px', fontWeight: 600, letterSpacing: '-0.2px', color: 'var(--fl-text-primary)' } }, 'Forge Legacy'));
+
+    const avatarEl = Avatar ? React.createElement(Avatar, { name: 'Ada Ridge', size: 'appBar' }) : null;
+
+    const navIcon = (id) => (window.ForgeSymbols && window.ForgeSymbols.create(React, id, { size: 22, strokeWidth: 2 })) || null;
+    const tabItems = [
+      { id: 'home', label: 'Home', icon: navIcon('home') },
+      { id: 'workouts', label: 'Workouts', icon: navIcon('workouts') },
+      { id: 'legacy', label: 'Legacy', emphasized: true, icon: navIcon('legacy') },
+      { id: 'squads', label: 'Squads', icon: navIcon('squads') },
+    ];
+
+    // Forge Principles — original, unattributed; rotates at most once per day.
+    const principles = [
+      'You are not counting workouts. You are becoming someone.',
+      'History is permanent. Memories can be added. Outcomes cannot change.',
+      'Train for the person you intend to become.',
+      'The number fades. The discipline remains.',
+      'A legacy is built in the sessions no one applauds.',
+      'You are the protagonist. This is only the record.',
+      'Strength is the habit that outlives the motivation.',
+      'What you forge today, you carry for years.',
+    ];
+    const dayIndex = Math.floor(Date.now() / 86400000);
+    const principle = principles[dayIndex % principles.length];
+
+    return {
+      ready: this.state.ready,
+      notReady: !this.state.ready,
+      logo, avatarEl, tabItems,
+      activeTab: this.state.activeTab,
+      setTab: (id) => this.setState({ activeTab: id }),
+      principle,
+    };
+  }
+}
+</script>
+<script>
+(async () => {
+  if (!document.title || !document.title.trim()) document.title = "Forge Home";
+  // Prepend so page-supplied @page / break rules (deck-stage's margin:0,
+  // author CSS) keep source-order precedence over the baseline.
+  const baseCss = document.createElement('style');
+  baseCss.textContent = "@media print {\n  figure, table { break-inside: avoid; }\n  *, *::before, *::after {\n    print-color-adjust: exact; -webkit-print-color-adjust: exact;\n    backdrop-filter: none !important; -webkit-backdrop-filter: none !important;\n    animation-delay: -99s !important; animation-duration: .001s !important;\n    animation-iteration-count: 1 !important; animation-fill-mode: both !important;\n    animation-play-state: running !important; transition-duration: 0s !important;\n  }\n}";
+  document.head.prepend(baseCss);
+  if (document.readyState === 'loading') {
+    await new Promise((r) => document.addEventListener('DOMContentLoaded', r, { once: true }));
+  }
+  let ds = document.querySelector('deck-stage');
+  // whenDefined never resolves when nothing registers the element, so only
+  // await it when a <deck-stage> tag exists (and race a timeout regardless).
+  if (ds && !customElements.get('deck-stage')) {
+    try {
+      await Promise.race([
+        customElements.whenDefined('deck-stage'),
+        new Promise((r) => setTimeout(r, 3000)),
+      ]);
+    } catch (e) {}
+    ds = document.querySelector('deck-stage');
+  }
+  // dc-runtime assigns window.DCLogic at init and mounts into #dc-root on
+  // DOMContentLoaded; settle on that subtree so React has rendered before
+  // print(). Non-DC pages fall through to weighing body.
+  const isDc = !ds && 'DCLogic' in window;
+  const settleRoot = ds || (isDc ? document.getElementById('dc-root') : null) || document.body;
+  if (settleRoot) {
+    // Weigh only content children — skip script/style/template so inline
+    // Babel/CSS doesn't register as stable "content" before the framework
+    // has mounted anything.
+    const MEDIA = 'img,svg,canvas,video,picture,iframe,embed,object';
+    const weigh = () => {
+      let text = 0, media = 0;
+      for (const c of settleRoot.children) {
+        const t = c.tagName;
+        if (t === 'SCRIPT' || t === 'STYLE' || t === 'TEMPLATE') continue;
+        text += (c.textContent || '').trim().length;
+        media += c.querySelectorAll(MEDIA).length + (c.matches(MEDIA) ? 1 : 0);
+      }
+      return text + media * 100;
+    };
+    // "Non-zero and stable" alone is not sufficient to mean rendered: generic
+    // body can carry a static shell while async main content is pending, and
+    // #dc-root can carry the root DC's static text while child refs are still
+    // .sc-placeholder boxes. Gate generic on readyState 'complete', and never
+    // accept stability while a dc-runtime placeholder is present.
+    const isGeneric = settleRoot === document.body;
+    const deadline = Date.now() + 15000;
+    let last = -1, stable = 0;
+    while (Date.now() < deadline) {
+      const n = weigh();
+      const ready =
+        (!isGeneric || document.readyState === 'complete') &&
+        !settleRoot.querySelector('.sc-placeholder');
+      if (n > 0 && n === last && ready) { if (++stable >= 2) break; } else { stable = 0; }
+      last = n;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+  }
+  // Project support.js may predate runtime default-seeding; push via bridge.
+  if (isDc && window.__dcSetProps && window.__dcRootName) {
+    try {
+      const dpEl = document.querySelector('script[data-dc-script]');
+      const meta = JSON.parse((dpEl && dpEl.getAttribute('data-props')) || '{}');
+      const bag = {};
+      for (const k in meta)
+        if (k[0] !== '$' && meta[k] && meta[k].default !== undefined)
+          bag[k] = meta[k].default;
+      if (Object.keys(bag).length) {
+        window.__dcSetProps(window.__dcRootName(), bag);
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    } catch (e) {}
+  }
+  // Reveal content gated on scroll or visibility before printing. Lazy <img>,
+  // IntersectionObserver fade-ins, and collapsed <details> don't render while
+  // off-screen, so a long page would print with them blank or closed. Open
+  // every <details>, force native-lazy images eager, and scroll the document
+  // through its full height to trip lazy-load + IO; then wait (bounded) for the
+  // newly-triggered images. Inert for deck-stage (slides aren't scroll-gated).
+  try {
+    for (const d of document.querySelectorAll('details')) d.open = true;
+    for (const img of document.querySelectorAll('img[loading="lazy"]'))
+      img.loading = 'eager';
+    const scroller = document.scrollingElement || document.documentElement;
+    const full = Math.max(scroller.scrollHeight, document.body.scrollHeight);
+    const step = window.innerHeight || 800;
+    for (let y = 0; y <= full; y += step) {
+      window.scrollTo(0, y);
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+    window.scrollTo(0, 0);
+    await Promise.race([
+      Promise.all(
+        [...document.images].map((img) =>
+          img.complete
+            ? null
+            : new Promise((res) => {
+                img.addEventListener('load', res, { once: true });
+                img.addEventListener('error', res, { once: true });
+              })
+        )
+      ),
+      new Promise((r) => setTimeout(r, 4000)),
+    ]);
+  } catch (e) {}
+  try { await document.fonts.ready; } catch (e) {}
+  // Jump every animation to its end state so print() never captures a slide
+  // mid-entrance. Ordering matters: the 0s-transition style must be live
+  // BEFORE data-deck-active is set so attribute-keyed transitions don't
+  // start a (now-0s) run from the pre-active base.
+  const st = document.createElement('style');
+  st.textContent = '*,*::before,*::after{animation-delay:-99s !important;animation-duration:.001s !important;animation-iteration-count:1 !important;animation-fill-mode:both !important;animation-play-state:running !important;transition-duration:0s !important}';
+  document.head.appendChild(st);
+  for (const d of document.querySelectorAll('deck-stage')) {
+    for (const c of d.children) {
+      const t = c.tagName;
+      if (t === 'SCRIPT' || t === 'STYLE' || t === 'TEMPLATE') continue;
+      c.setAttribute('data-deck-active', '');
+    }
+  }
+  // Re-append deck-stage's @page last so no author @page can add a margin and
+  // spill each full-bleed slide onto two sheets. Backstop for old copies.
+  if (ds) {
+    let pg = document.getElementById('deck-stage-print-page');
+    if (!pg) {
+      pg = document.createElement('style');
+      pg.textContent = '@page{size:' + (+ds.getAttribute('width') || 1920) +
+        'px ' + (+ds.getAttribute('height') || 1080) + 'px;margin:0}';
+    }
+    document.body.appendChild(pg);
+  }
+  try {
+    const sweep = () => {
+      for (const a of document.getAnimations()) {
+        try { a.finish(); } catch (e) {
+          try { a.currentTime = (a.effect && a.effect.getComputedTiming().duration) || 0; a.pause(); } catch (e2) {}
+        }
+      }
+    };
+    sweep();
+    await new Promise((r) => requestAnimationFrame(r));
+    sweep();
+    await new Promise((r) => requestAnimationFrame(r));
+  } catch (e) {}
+  // Size the PDF page to the rendered design unless the file opted into
+  // standard paper via @page{size:letter|A4|…}. Decks own their own @page.
+  // Wrappers (body, …) lose padding+margin so the frame sits at (0,0); the
+  // frame itself loses only margin — its padding is INSIDE the measured
+  // rect and must stay, or content shifts and leaves a gap at bottom/right.
+  var __m = null;
+  try { __m = (() => {
+  var STAMP = true;
+  var docEl = document.documentElement;
+  var doc = { width: docEl.scrollWidth, height: docEl.scrollHeight };
+
+  var ds = document.querySelector('deck-stage');
+  if (ds) {
+    var dw = Number(ds.getAttribute('width')) || 1920;
+    var dh = Number(ds.getAttribute('height')) || 1080;
+    var n = typeof ds.length === 'number' ? ds.length : ds.children.length;
+    var idx = typeof ds.index === 'number' ? ds.index : 0;
+    var frames = [];
+    for (var i = 0; i < n; i++) frames.push({ left: 0, top: 0, width: dw, height: dh });
+    return { kind: 'deck', source: 'declared', doc: doc, frames: frames,
+      authored: frames.map(function(){return{width:true,height:true}}),
+      deck: { width: dw, height: dh, slideCount: n, index: idx },
+      signals: { paperPage: false, pxPage: false } };
+  }
+
+  // Declared kind: a doc-page tag names the kind outright, so no signal
+  // heuristics run (like the deck branch above, signals report false —
+  // they describe inferred classifications only). The tag alone is not
+  // trusted: the element must have upgraded (shadowRoot present), so a
+  // leftover tag whose script was deleted falls through to the heuristics
+  // that handle plain markup.
+  var stageSx = window.scrollX || 0, stageSy = window.scrollY || 0;
+  var dp = document.querySelector('doc-page');
+  if (dp && dp.shadowRoot) {
+    // Crop to the sheet, not the host — the desk around it is screen-only
+    // chrome that must not land in PNG exports.
+    var sheet = dp.shadowRoot.querySelector('.sheet');
+    var sr = (sheet || dp).getBoundingClientRect();
+    return { kind: 'paper-doc', source: 'declared', doc: doc,
+      frames: [{ left: sr.left + stageSx, top: sr.top + stageSy,
+        width: sr.width, height: sr.height }],
+      authored: [{ width: false, height: false }],
+      signals: { paperPage: false, pxPage: false } };
+  }
+  var paperPage = false, pxPage = false;
+  var eachRule = function (fn) {
+    for (var s = 0; s < document.styleSheets.length; s++) {
+      var rs; try { rs = document.styleSheets[s].cssRules; } catch (e) { continue; }
+      for (var r = 0; r < rs.length; r++) {
+        fn(rs[r]);
+        if (rs[r].cssRules) for (var n = 0; n < rs[r].cssRules.length; n++) fn(rs[r].cssRules[n]);
+      }
+    }
+  };
+  eachRule(function (r) {
+    if (r.type !== 6) return;
+    var m = /\bsize\s*:\s*([^;}]+)/i.exec(r.cssText || '');
+    if (!m) return;
+    if (/\b(letter|a[3-5]|legal|ledger)\b/i.test(m[1])) paperPage = true;
+    if (/\d+(?:\.\d+)?px\b/i.test(m[1])) pxPage = true;
+  });
+  var signals = { paperPage: paperPage, pxPage: pxPage };
+
+  var pxVal = function (v) {
+    var m = /^(\d+(?:\.\d+)?)px$/.exec(v || ''); return m ? +m[1] : 0;
+  };
+  var authoredPx = function (el, prop) {
+    if (pxVal(el.style[prop])) return true;
+    var attr = el.getAttribute(prop);
+    if (attr && /^\d+$/.test(attr)) return true;
+    var hit = false;
+    eachRule(function (r) {
+      if (hit || r.type !== 1 || !r.style) return;
+      try { if (el.matches(r.selectorText) && pxVal(r.style[prop])) hit = true; } catch (e) {}
+    });
+    return hit;
+  };
+
+  var el = document.body, rootPxW = false;
+  for (;;) {
+    var kids = [];
+    for (var c = 0; c < el.children.length; c++) {
+      var t = el.children[c].tagName;
+      if (t !== 'SCRIPT' && t !== 'STYLE' && t !== 'TEMPLATE') kids.push(el.children[c]);
+    }
+    if (kids.length !== 1 || !(kids[0] instanceof HTMLElement)) break;
+    if (STAMP) el.setAttribute('data-om-frame-wrap', '');
+    el = kids[0];
+    rootPxW = authoredPx(el, 'width');
+    if (rootPxW) break;
+  }
+  if (!rootPxW) rootPxW = authoredPx(el, 'width');
+
+  // @page{size:letter} alone is a flowing doc; with a px-width root it's a
+  // fixed sheet pretending to be paper — fall through and size to render.
+  if (paperPage && !rootPxW) {
+    return { kind: 'paper-doc', source: 'inferred', doc: doc, signals: signals,
+      frames: [{ left: 0, top: 0, width: doc.width, height: doc.height }],
+      authored: [{ width: false, height: false }] };
+  }
+
+  var sx = window.scrollX || 0, sy = window.scrollY || 0;
+  var rectOf = function (e) {
+    var r = e.getBoundingClientRect();
+    var oy; try { oy = getComputedStyle(e).overflowY; } catch (err) {}
+    var h = oy === 'visible' ? Math.max(r.height, e.scrollHeight || 0) : r.height;
+    return { left: r.left + sx, top: r.top + sy, width: r.width, height: h };
+  };
+
+  // Multi-frame: ≥2 visible non-fixed children, each with authored px width
+  // AND height, all within ±2px of each other. Off unless the page opts in
+  // via data-om-multi-frame on the stop element — guards against card grids
+  // and pricing tables that match the geometry but aren't separate canvases.
+  if (el.hasAttribute('data-om-multi-frame')) {
+    var cands = [];
+    for (var k = 0; k < el.children.length; k++) {
+      var ch = el.children[k];
+      var cs; try { cs = getComputedStyle(ch); } catch (e) { continue; }
+      if (cs.display === 'none' || cs.visibility === 'hidden' || cs.position === 'fixed') continue;
+      var rc = rectOf(ch);
+      if (rc.width < 2 || rc.height < 2) continue;
+      if (!authoredPx(ch, 'width') || !authoredPx(ch, 'height')) continue;
+      cands.push(rc);
+    }
+    if (cands.length >= 2) {
+      var w0 = cands[0].width, h0 = cands[0].height, ok = true;
+      for (var q = 1; q < cands.length; q++)
+        if (Math.abs(cands[q].width - w0) > 2 || Math.abs(cands[q].height - h0) > 2) ok = false;
+      if (ok) return { kind: 'multi-frame', source: 'inferred', doc: doc, signals: signals,
+        frames: cands, authored: cands.map(function(){return{width:true,height:true}}) };
+    }
+  }
+
+  if (STAMP) el.setAttribute('data-om-frame', '');
+  return { kind: 'single-canvas', source: 'inferred', doc: doc, signals: signals,
+    frames: [rectOf(el)],
+    authored: [{ width: rootPxW, height: authoredPx(el, 'height') }] };
+})(); } catch (e) {}
+  var frame = null;
+  if (__m && __m.kind === 'single-canvas') {
+    var f = __m.frames && __m.frames[0];
+    if (f && f.width >= 200 && f.height >= 200) {
+      frame = f;
+      var fst = document.createElement('style');
+      fst.textContent = '@media print{@page{size:' + Math.ceil(f.width) + 'px ' +
+        Math.ceil(f.height) + 'px;margin:0}' +
+        'html,body,[data-om-frame-wrap]{padding:0!important;margin:0!important;background:none!important}' +
+        '[data-om-frame]{margin:0!important}}';
+      document.body.appendChild(fst);
+    }
+  }
+  // Relax break-inside on oversized elements. An element taller than a
+  // printable page can't honor break-inside: avoid — browsers either overflow
+  // it or push it whole to the next page, leaving a blank gap, then break it
+  // anyway at an arbitrary point. After the final layout (content revealed,
+  // animations jumped), find elements taller than a page that still compute
+  // break-inside: avoid and reset them to auto, so the browser breaks them at
+  // their children's boundaries instead (children keep their own avoid). PAGE_PX
+  // is a conservative portrait estimate at 96 CSS px/in — Letter/A4 usable
+  // height minus our 0.5in margins — so only clearly-oversized elements are
+  // touched and under-page elements still stay whole. Skipped for decks (slides
+  // are sized to the page) and for fixed-size canvases (frame set, or an author
+  // px-based @page) — runs as before for flowing docs on letter/A4.
+  try {
+    if (!ds && !frame && !(__m && __m.signals && __m.signals.pxPage)) {
+      const PAGE_PX = 1024;
+      // Our print defaults add a real @page margin only when the source has
+      // no @page of its own; computed style can't tell us (it reports screen
+      // media), so read the injected rule directly.
+      const defaults = document.querySelector('style[data-omelette-print-defaults]');
+      const pageInset = /@page\s*\{[^}]*margin/.test(defaults ? defaults.textContent || '' : '');
+      const SEL = 'section,article,figure,table,pre,blockquote,[class~="card" i],[class~="page" i],[class~="sheet" i]';
+      for (const el of document.body.querySelectorAll(SEL)) {
+        if (el instanceof HTMLElement && el.offsetHeight > PAGE_PX) {
+          el.setAttribute('data-om-oversized', '');
+          // Fake-paged docs simulate sheets with over-tall break-after:page
+          // boxes; honoring the break spills half-blank pages and ends a
+          // colored box mid-sheet. Flow them, and (only when we own the page
+          // inset) drop the redundant padding/background via the rule below.
+          const cs = getComputedStyle(el);
+          if (cs.breakAfter === 'page' || cs.pageBreakAfter === 'always') {
+            el.setAttribute('data-om-fakepage', '');
+          }
+        }
+      }
+      const ost = document.createElement('style');
+      ost.textContent = '@media print{' +
+        '[data-om-oversized]{break-inside:auto !important;page-break-inside:auto !important}' +
+        '[data-om-fakepage]{break-after:auto !important;page-break-after:auto !important}' +
+        (pageInset ? '[data-om-fakepage]{padding:0 !important;background:none !important}' : '') +
+        '}';
+      document.head.appendChild(ost);
+    }
+  } catch (e) {}
+  // macOS Preview renders Skia-PDF Luminosity soft-masks as opaque grey boxes;
+  // swap the CSS that triggers them for Preview-safe forms.
+  try {
+    for (const el of document.body.querySelectorAll('*')) {
+      const cs = getComputedStyle(el);
+
+      if (cs.boxShadow !== 'none' && cs.filter === 'none') {
+        const outs = [], kept = [];
+        for (const s of cs.boxShadow.split(/,(?![^(]*[)])/)) {
+          const t = s.trim();
+          const m = t.match(/^(rgba?[(][^)]+[)]) (-?[0-9.]+px) (-?[0-9.]+px) ([0-9.]+px) -?[0-9.]+px$/);
+          if (m && parseFloat(m[4]) > 0) outs.push('drop-shadow(' + m[2] + ' ' + m[3] + ' ' + m[4] + ' ' + m[1] + ')');
+          else kept.push(t);
+        }
+        if (outs.length) {
+          el.style.setProperty('filter', outs.join(' '), 'important');
+          el.style.setProperty('box-shadow', kept.join(', ') || 'none', 'important');
+        }
+      }
+
+      const mask = cs.maskImage && cs.maskImage !== 'none' ? cs.maskImage : cs.webkitMaskImage;
+      if (mask && mask !== 'none' && cs.filter === 'none') el.style.setProperty('filter', 'opacity(1)', 'important');
+    }
+  } catch (e) {}
+  setTimeout(() => { try { window.print(); } catch (e) {} }, 200);
+})();
+</script>
+</body>
+</html>

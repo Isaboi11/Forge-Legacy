@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<script src="forge-symbols.js"></script>
+<script src="forge-user.js"></script>
+<script src="forge-honors.js"></script>
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#08090C; color:#EFE9E0; font-family:'Playfair Display',Georgia,serif; -webkit-font-smoothing:antialiased; }
+  .fn-sans { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+</style>
+</helmet>
+<div style="min-height:100vh; background:radial-gradient(120% 54% at 50% -6%, rgba(191,143,79,0.10) 0%, rgba(191,143,79,0) 46%), #08090C; padding:60px 40px 80px; display:flex; flex-direction:column; align-items:center;">
+
+  <!-- ══ MASTHEAD ══ -->
+  <header style="display:flex; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:1180px;">
+    <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:5px; text-transform:uppercase; color:#8A6B41; margin-bottom:16px;">The Full Catalog</span>
+    <h1 style="margin:0; font-size:58px; font-weight:700; letter-spacing:13px; text-indent:13px; background:linear-gradient(180deg,#EFD3A0,#93693B); -webkit-background-clip:text; background-clip:text; color:transparent;">HONORS</h1>
+    <div style="display:flex; align-items:center; gap:16px; width:min(560px,82%); margin:22px 0 14px;">
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(191,143,79,0.7));"></span>
+      <span style="width:8px; height:8px; flex:none; transform:rotate(45deg); border:1px solid #BF8F4F;"></span>
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.7),transparent);"></span>
+    </div>
+    <span class="fn-sans" style="font-size:13px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#B08A55;">{{ total }} marks · {{ catCount }} categories · earned, never bought</span>
+  </header>
+
+  <!-- ══ CATEGORY SECTIONS ══ -->
+  <div style="width:100%; max-width:1180px; margin-top:56px; display:flex; flex-direction:column; gap:46px;">
+    <sc-for list="{{ cats }}" as="c" hint-placeholder-count="13">
+      <section>
+        <div style="display:flex; align-items:center; gap:14px; padding-bottom:18px; border-bottom:1px solid #241B12;">
+          <span style="width:38px; height:38px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:radial-gradient(circle at 50% 34%, rgba(191,143,79,0.18), transparent 72%); color:#CDA063;">{{ c.icon }}</span>
+          <span style="font-size:24px; font-weight:600; letter-spacing:0.4px; background:linear-gradient(180deg,#EAD09B,#B98F4E); -webkit-background-clip:text; background-clip:text; color:transparent;">{{ c.name }}</span>
+          <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:#6C5A41;">{{ c.countLabel }}</span>
+          <span style="flex:1;"></span>
+          <span class="fn-sans" style="font-size:11px; font-weight:500; letter-spacing:0.3px; color:#5F5648; font-style:italic;">{{ c.note }}</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:2px 30px; margin-top:20px;">
+          <sc-for list="{{ c.honors }}" as="h" hint-placeholder-count="6">
+            <div style="display:flex; flex-direction:column; gap:2px; padding:11px 0; border-bottom:1px solid #16110B;">
+              <span style="font-size:15.5px; font-weight:600; letter-spacing:0.1px; color:#D8B981;">{{ h.name }}</span>
+              <span class="fn-sans" style="font-size:12px; line-height:1.5; color:#8F877C;">{{ h.trigger }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-for>
+  </div>
+
+  <!-- ══ NOTE ══ -->
+  <p class="fn-sans" style="max-width:760px; text-align:center; margin:56px 0 0; font-size:12.5px; line-height:1.8; color:#5F5648;">The complete honors table — the single source is <span style="color:#B08A55;">forge-honors.js</span> (<span style="color:#B08A55;">ForgeHonors.ALL</span>). Each honor's trigger is descriptive data; the actual earn-evaluation runs server-side in the app engine. The <span style="color:#8A6B41;">Honors Hub</span> shows only the honors an athlete has <em>earned</em>; this catalog shows every mark that exists.</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { ready: false };
+  componentDidMount() {
+    this._poll = () => {
+      if (typeof React !== 'undefined' && React.createElement && window.ForgeSymbols && window.ForgeHonors) {
+        this.setState({ ready: true });
+      } else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+  renderVals() {
+    if (!this.state.ready) return { total: '\u2014', catCount: '', cats: [] };
+    const FH = window.ForgeHonors, FS = window.ForgeSymbols;
+    const ico = (id, s, w) => FS.create(React, id, { size: s || 17, strokeWidth: w || 1.8 });
+    const cats = FH.CATEGORIES.map((c) => {
+      const items = FH.byCategory(c.id);
+      return {
+        key: c.id, name: c.name, icon: ico(c.glyph, 18, 1.8),
+        countLabel: items.length + (items.length === 1 ? ' honor' : ' honors'),
+        note: c.id === 'hidden' ? 'Never surfaced until earned' : '',
+        honors: items.map((h) => ({ key: h.id, name: h.name, trigger: h.trigger })),
+      };
+    });
+    return { total: FH.total, catCount: FH.CATEGORIES.length, cats };
+  }
+}
+</script>
+</body>
+</html>

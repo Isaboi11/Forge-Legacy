@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-theme.js"></script>
+<script src="forge-user.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+  .fl-scroll { scrollbar-width: none; }
+  @keyframes hcRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="C-5 Hall of Champions" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.32), rgba(5,5,5,0.32)), #050505 url('assets/forge-slate2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <!-- header -->
+    <div style="flex:none; position:relative; z-index:6; background:linear-gradient(180deg, #0a0b0c, rgba(10,11,12,0.86)); border-bottom:1px solid var(--fl-charcoal-700);">
+      <div style="height:56px; display:flex; align-items:center; gap:6px; padding:0 8px;">
+        <button onClick="{{ back }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+        <span style="flex:1; font-size:11px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-primary);">Hall of Champions</span>
+        <span style="width:44px;"></span>
+      </div>
+      <!-- squad identity -->
+      <div style="display:flex; align-items:center; gap:13px; padding:2px 22px 18px;">
+        <span style="width:44px; height:44px; flex:none; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; box-shadow:var(--fl-border-inset), 0 0 10px rgba(191,143,79,0.20);"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4 7l3.4 2.8L12 4.2l4.6 5.6L20 7l-1.5 11H5.5L4 7z"></path></svg></span>
+        <div style="flex:1; min-width:0;">
+          <span style="display:block; font-family:var(--fl-font-display); font-size:21px; font-weight:600; letter-spacing:-0.3px; color:var(--fl-text-primary); line-height:1.1;">{{ squadName }}</span>
+          <span style="display:block; font-size:11.5px; color:var(--fl-text-tertiary); margin-top:3px;">{{ subLine }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- scroll body -->
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; position:relative; animation:hcRise 420ms var(--fl-ease-out, ease-out) both;">
+
+      <sc-for list="{{ yearGroups }}" as="yr" hint-placeholder-count="3">
+        <div style="position:sticky; top:0; z-index:3; background:#070808; padding:15px 24px 9px; display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+          <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">{{ yr.year }}</span>
+          <span style="font-size:10.5px; letter-spacing:0.3px; color:var(--fl-text-tertiary); white-space:nowrap;">{{ yr.count }}</span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px; padding:2px 20px 8px;">
+          <sc-for list="{{ yr.rows }}" as="e" hint-placeholder-count="3">
+            <div role="button" tabindex="0" onClick="{{ e.open }}" style="position:relative; overflow:hidden; border-radius:var(--fl-radius-xl); border:{{ e.cardBorder }}; background:{{ e.cardBg }}; box-shadow:var(--fl-border-inset), var(--fl-shadow-card); cursor:pointer; transition:transform 200ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.99);">
+
+              <!-- entry header -->
+              <div style="display:flex; align-items:center; gap:9px; padding:13px 15px 0;">
+                <span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ e.typeIcon }}</span>
+                <span style="font-size:9.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ e.type }}</span>
+                <span style="margin-left:auto; font-size:10.5px; font-weight:600; letter-spacing:0.4px; color:var(--fl-text-tertiary); white-space:nowrap;">{{ e.date }}</span>
+              </div>
+
+              <span style="display:block; font-family:var(--fl-font-display); font-size:17px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary); line-height:1.15; padding:7px 15px 0;">{{ e.name }}</span>
+
+              <!-- champion -->
+              <div style="display:flex; align-items:center; gap:13px; padding:12px 15px 13px;">
+                <span style="position:relative; width:46px; height:46px; flex:none;">
+                  <span style="position:absolute; inset:0; border-radius:50%; background:{{ e.tint }}; border:1px solid var(--fl-bronze-primary); display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:16px; font-weight:700; color:var(--fl-bronze-bright); box-shadow:inset 0 1px 4px rgba(0,0,0,0.55), 0 0 11px rgba(191,143,79,0.26);">{{ e.initials }}</span>
+                  <span style="position:absolute; top:-10px; left:50%; transform:translateX(-50%); display:inline-flex; color:var(--fl-bronze-bright); filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z"></path></svg></span>
+                </span>
+                <div style="flex:1; min-width:0;">
+                  <div style="display:flex; align-items:center; gap:7px; min-width:0;">
+                    <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary); line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ e.champion }}</span>
+                    {{ e.youTag }}
+                    {{ e.streakTag }}
+                  </div>
+                  <span style="display:block; font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-bright); margin-top:5px;">{{ e.champLabel }}</span>
+                  <span style="display:block; font-size:10px; font-weight:500; letter-spacing:0.2px; color:var(--fl-text-tertiary); margin-top:3px;">{{ e.fieldLine }}</span>
+                </div>
+                <div style="flex:none; display:flex; flex-direction:column; align-items:flex-end;">
+                  <span style="font-family:var(--fl-font-display); font-size:21px; font-weight:700; letter-spacing:-0.4px; color:var(--fl-bronze-bright); line-height:1;">{{ e.score }}</span>
+                  <span style="font-size:8.5px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-top:3px;">{{ e.unit }}</span>
+                </div>
+              </div>
+
+              <!-- subtle podium -->
+              <div style="display:flex; align-items:center; gap:18px; padding:9px 16px; border-top:1px solid var(--fl-charcoal-700); background:rgba(0,0,0,0.16);">
+                <sc-for list="{{ e.runners }}" as="r" hint-placeholder-count="2">
+                  <span style="display:inline-flex; align-items:center; gap:6px; min-width:0;">
+                    <span style="width:15px; height:15px; flex:none; border-radius:50%; border:1px solid {{ r.ring }}; display:inline-flex; align-items:center; justify-content:center; font-size:8px; font-weight:700; color:{{ r.color }};">{{ r.place }}</span>
+                    <span style="font-size:11px; color:{{ r.nameColor }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.name }}</span>
+                    {{ r.youMark }}
+                  </span>
+                </sc-for>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-left:auto;"><path d="M9 6l6 6-6 6"></path></svg>
+              </div>
+
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+
+      <p style="margin:12px 24px 0; font-size:11px; line-height:1.55; color:var(--fl-text-tertiary); text-wrap:pretty;">Every finished squad competition is recorded here for good. Tap any to see the full final standings.</p>
+      <div style="height:26px;"></div>
+    </div>
+
+    <!-- grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  _tint(seed) {
+    const T = [
+      'radial-gradient(circle at 42% 32%, #4a3826, #1c1510)',
+      'radial-gradient(circle at 45% 35%, #34302a, #17130f)',
+      'radial-gradient(circle at 40% 30%, #40301f, #17120c)',
+      'radial-gradient(circle at 48% 38%, #2d2822, #141210)',
+      'radial-gradient(circle at 44% 34%, #453322, #1a140e)',
+    ];
+    return T[seed % T.length];
+  }
+  _initials(name) { return name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase(); }
+
+  renderVals() {
+    const h = React.createElement;
+    const VIEWER = 'Ada Ridge';
+    const _fu = window.ForgeUser ? window.ForgeUser.get() : null;
+    const dispName = (nm) => (nm === VIEWER && _fu && _fu.name) ? _fu.name : nm;
+
+    const TYPE_PATHS = {
+      'Most Workouts': ['M6.5 9v6', 'M17.5 9v6', 'M4 10.5v3', 'M20 10.5v3', 'M6.5 12h11'],
+      'Most Volume': ['M4 20V10', 'M9 20V4', 'M14 20v-8', 'M19 20v-5'],
+      'Most Duration': ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M12 7.5V12l3 2'],
+      'Max Lift': ['M12 20V6', 'M6 12l6-6 6 6'],
+      'Most PRs': ['M12 3.4l2.1 4.7 5.1.5-3.8 3.4 1.1 5L12 14l-4.6 2.4 1.1-5-3.8-3.4 5.1-.5z'],
+    };
+    const typeIcon = (type) => h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, (TYPE_PATHS[type] || ['M12 4v16']).map((d, i) => h('path', { key: i, d })));
+
+    const youTag = h('span', { style: { flex: 'none', display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 'var(--fl-radius-pill)', background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border)', fontSize: '8.5px', fontWeight: 700, letterSpacing: '1.1px', textTransform: 'uppercase', color: 'var(--fl-bronze-bright)' } }, 'You');
+    const streakTag = (n) => h('span', { style: { flex: 'none', display: 'inline-flex', alignItems: 'center', padding: '1px 5px', borderRadius: 'var(--fl-radius-pill)', border: '1px solid var(--fl-charcoal-600)', fontSize: '7px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: 'var(--fl-text-tertiary)', whiteSpace: 'nowrap' } }, n + '\u00D7 Champion');
+    const runnerYou = h('span', { style: { flex: 'none', display: 'inline-flex', alignItems: 'center', padding: '1px 5px', borderRadius: 'var(--fl-radius-pill)', border: '1px solid var(--fl-bronze-border)', fontSize: '7.5px', fontWeight: 700, letterSpacing: '0.7px', textTransform: 'uppercase', color: 'var(--fl-bronze-bright)' } }, 'You');
+
+    // newest-first; each is one finished squad competition. standings: [name, score] rank order.
+    const RAW = [
+      { key: 'fl3', type: 'Most Workouts', name: 'Forge League \u00B7 Season 3', unit: 'wkts', field: 12, date: 'Jul 2026', year: '2026',
+        standings: [['Marcus Vale', '7'], ['Ada Ridge', '5'], ['Dana Cole', '4']] },
+      { key: 'wvw', type: 'Most Volume', name: 'Winter Volume War', unit: 'k lb', field: 6, date: 'Feb 2026', year: '2026',
+        standings: [['Ada Ridge', '86.4'], ['Marcus Vale', '82.1'], ['Theo Brandt', '79.3']] },
+      { key: 'jb', type: 'Most PRs', name: 'January Breakthroughs', unit: 'PRs', field: 8, date: 'Jan 2026', year: '2026',
+        standings: [['Ada Ridge', '9'], ['Theo Brandt', '7'], ['Marcus Vale', '6']] },
+      { key: 'dg', type: 'Most Workouts', name: 'December Grind', unit: 'wkts', field: 11, date: 'Dec 2025', year: '2025',
+        standings: [['Marcus Vale', '23'], ['Lena Cross', '21'], ['Theo Brandt', '19']] },
+      { key: 'fvc', type: 'Most Volume', name: 'Fall Volume Clash', unit: 'k lb', field: 10, date: 'Oct 2025', year: '2025',
+        standings: [['Theo Brandt', '88.2'], ['Ada Ridge', '84.1'], ['Marcus Vale', '80.0']] },
+      { key: 'pt', type: 'Max Lift', name: 'The Proving Trial', unit: 'lb', field: 8, date: 'Jun 2025', year: '2025',
+        standings: [['Theo Brandt', '435'], ['Marcus Vale', '405'], ['Ada Ridge', '385']] },
+      { key: 'fc', type: 'Most Workouts', name: 'Founders Cup', unit: 'wkts', field: 14, date: 'Jul 2024', year: '2024',
+        standings: [['Ada Ridge', '30'], ['Marcus Vale', '28'], ['Dana Cole', '21']] },
+      { key: 'io', type: 'Most Volume', name: 'Iron Open', unit: 'k lb', field: 9, date: 'Nov 2024', year: '2024',
+        standings: [['Marcus Vale', '70.0'], ['Theo Brandt', '66.4'], ['Ada Ridge', '60.2']] },
+    ];
+
+    // cumulative titles per champion, chronological (oldest-first) — history is not rewritten
+    const _cum = {};
+    let _prevChamp = null;
+    RAW.slice().reverse().forEach((c) => { const w = c.standings[0][0]; _cum[w] = (_cum[w] || 0) + 1; c._titleNo = _cum[w]; c._defending = (w === _prevChamp); _prevChamp = w; });
+
+    const goResults = () => { window.location.href = 'Forge%20Challenge%20Results.dc.html'; };
+    const RUNNER_META = [
+      { place: '2', color: '#C7CAD0', ring: 'rgba(199,202,208,0.55)' },
+      { place: '3', color: '#C08A54', ring: 'rgba(176,124,78,0.6)' },
+    ];
+
+    // group by year (RAW already newest-first)
+    const order = [];
+    const byYear = {};
+    RAW.forEach((r) => { if (!byYear[r.year]) { byYear[r.year] = []; order.push(r.year); } byYear[r.year].push(r); });
+
+    const yearGroups = order.map((y) => ({
+      key: y, year: y,
+      count: byYear[y].length + (byYear[y].length === 1 ? ' competition' : ' competitions'),
+      rows: byYear[y].map((c) => {
+        const champ = c.standings[0];
+        const isViewer = champ[0] === VIEWER;
+        return {
+          key: c.key,
+          type: c.type, typeIcon: typeIcon(c.type), name: c.name, date: c.date,
+          initials: this._initials(dispName(champ[0])), tint: this._tint(champ[0].length + c.type.length),
+          champion: dispName(champ[0]), youTag: isViewer ? youTag : '',
+          streakTag: c._titleNo > 1 ? streakTag(c._titleNo) : '',
+          champLabel: c._defending ? 'Defending Champion' : 'Champion',
+          fieldLine: c.field + ' Competitors',
+          score: champ[1], unit: c.unit,
+          cardBorder: isViewer ? '1px solid var(--fl-bronze-primary)' : '1px solid var(--fl-bronze-border-subtle)',
+          cardBg: isViewer
+            ? 'linear-gradient(180deg, rgba(191,143,79,0.13), rgba(191,143,79,0.03) 60%), var(--fl-surface-card)'
+            : 'linear-gradient(180deg, rgba(191,143,79,0.06), transparent 55%), var(--fl-surface-card)',
+          runners: c.standings.slice(1, 3).map((s, i) => ({
+            key: s[0], place: RUNNER_META[i].place, color: RUNNER_META[i].color, ring: RUNNER_META[i].ring,
+            name: dispName(s[0]),
+            nameColor: s[0] === VIEWER ? 'var(--fl-text-secondary)' : 'var(--fl-text-tertiary)',
+            youMark: s[0] === VIEWER ? runnerYou : '',
+          })),
+          open: goResults,
+        };
+      }),
+    }));
+
+    const champWins = {};
+    RAW.forEach((c) => { const w = c.standings[0][0]; champWins[w] = (champWins[w] || 0) + 1; });
+
+    return {
+      back: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Squad%20Detail.dc.html'); },
+      squadName: 'Iron Vigil',
+      subLine: RAW.length + ' Champions Crowned \u00B7 Est. May 2024',
+      yearGroups,
+    };
+  }
+}
+</script>
+</body>
+</html>

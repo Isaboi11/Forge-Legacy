@@ -120,6 +120,17 @@ test('the full menu carries all three settings screens in the design’s order',
   assert.deepEqual(full[1].rows.map((r) => r.key), ['gym', 'prefs']);
 });
 
+test('What Holt Remembers sits under Training, after Preferences, and only when switched on', () => {
+  // CA-D2: Holt's notes are visible, editable and deletable by the athlete — this row is how they get there.
+  const on = settingsSections({ hasPreferences: true, hasHoltMemory: true });
+  const training = on.find((s) => s.key === 'training');
+  assert.deepEqual(training.rows.map((r) => r.key), ['gym', 'prefs', 'holt']);
+  const holt = training.rows.find((r) => r.key === 'holt');
+  assert.equal(holt.label, 'What Holt Remembers');
+  assert.deepEqual(holt.action, { type: 'route', path: '/holt-memory' });
+  assert.ok(!settingsSections({}).flatMap((s) => s.rows).some((r) => r.key === 'holt'), 'gated off by default');
+});
+
 // ── Send Feedback (the support-URL obligation) ──────────────────────────────
 
 test('Send Feedback is reachable from settings, for every athlete, with no flag', () => {

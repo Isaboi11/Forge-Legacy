@@ -288,11 +288,20 @@ test('a beginner gets at least the minimum days, and is not run into the ground'
 // REFUSALS — and each one carries the alternative
 // ─────────────────────────────────────────────────────────────────────────────
 
-test('a marathon in four weeks from nothing is refused, and offered something real', () => {
-  const r = enduranceRefusalFor('run_marathon', { weeksAvailable: 4, currentWeeklyMi: 0, canRunContinuously: true });
+test('a marathon in eleven weeks is refused, and offered something real', () => {
+  /* ⚠ THIS WAS "FOUR WEEKS FROM NOTHING", and it asserted the half marathon was offered — a race that
+     needs ten weeks and refused the moment it was accepted. "Something real" means a race that BUILDS;
+     four weeks fits nothing, and that case now says so plainly (below). */
+  const r = enduranceRefusalFor('run_marathon', { weeksAvailable: 11, currentWeeklyMi: 10, canRunContinuously: true });
   assert.ok(r, 'this must not build');
   assert.equal(r.reason, 'not_enough_time');
   assert.match(r.message, /half marathon/i, 'a refusal without an alternative is the anti-shame principle broken');
+  assert.equal(r.altGoal, 'run_half');
+  assert.equal(enduranceRefusalFor(r.altGoal, { weeksAvailable: 11, currentWeeklyMi: 10, canRunContinuously: true }), null);
+
+  const nothing = enduranceRefusalFor('run_marathon', { weeksAvailable: 4, currentWeeklyMi: 0, canRunContinuously: true });
+  assert.equal(nothing.altGoal, null, 'four weeks fits no race at all, so nothing is offered');
+  assert.match(nothing.message, /Give me 12/);
 });
 
 test('every refusal names something the athlete can do instead', () => {

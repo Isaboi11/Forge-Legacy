@@ -3,6 +3,7 @@ import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, T
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReducedMotion } from 'react-native-reanimated';
 
 import { Button } from '@/components/forge/composites/Button';
@@ -1004,6 +1005,7 @@ export default function WorkoutComplete() {
     const volUp = data.volumeDelta != null && data.volumeDelta > 0;
     return (
       <Shell>
+        <SafeTop />
         <View style={styles.recHeader}>
           <Pressable onPress={() => setStage(from)} accessibilityRole="button" accessibilityLabel="Back" style={styles.recBack}>
             <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
@@ -1246,6 +1248,17 @@ export default function WorkoutComplete() {
 
 // ── pieces ──
 /** One destination in the share sheet. Disabled rows stay visible and carry their reason. */
+
+/**
+ * The status bar's height, as space. ⚠ The Record's back arrow sat UNDER the status bar / Dynamic Island
+ * — hidden and untappable — because this route is a `fullScreenModal` with no header, and nothing above
+ * The Record's own header reserved the inset. The other stages centre their content and clear it by
+ * padding; the Record is the one that puts a control at the very top.
+ */
+function SafeTop() {
+  const insets = useSafeAreaInsets();
+  return <View style={{ height: insets.top }} />;
+}
 
 function Shell({ children }: { children: ReactNode }) {
   return (

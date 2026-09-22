@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-theme.js"></script>
+<script src="forge-transformation.js"></script>
+<script src="forge-squad-posts.js"></script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+  .fl-scroll { scrollbar-width: none; }
+  image-slot::part(ring) { border-color: var(--fl-bronze-border-subtle); }
+  image-slot::part(empty) { color: var(--fl-text-tertiary); font-size: 10px; }
+  @keyframes ppRise { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+  @keyframes ppSwap { from { opacity:0; transform: scale(0.985); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; transition-duration:0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Progress Photo Post" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(6,7,8,0.36), rgba(6,7,8,0.36)), #060708 url('assets/forge-bg-2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"></path><path d="M7.6 7.1L9.6 5.8V15H7.6Z"></path><path d="M16.4 7.1L14.4 5.8V15H16.4Z"></path><path d="M6.8 15.4H17.2V16.2H6.8Z"></path><path d="M5.6 16.6H18.4V17.4H5.6Z"></path><path d="M4.4 17.8H19.6V18.6H4.4Z"></path></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <!-- APP BAR -->
+    <div style="flex:none; z-index:6; display:flex; align-items:center; gap:10px; padding:14px 14px 12px; border-bottom:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(9,9,9,0.9), rgba(7,7,7,0.8));">
+      <button type="button" onClick="{{ onBack }}" aria-label="Back" style="width:36px; height:36px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); color:var(--fl-text-primary); cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+      <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+        <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600; color:var(--fl-text-primary); line-height:1.15;">Progress Photos</span>
+        <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ barSub }}</span>
+      </div>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:16px 20px 22px;">
+
+      <!-- FORMAT CHIPS -->
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+        <span style="flex:none; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Format</span>
+        <div style="flex:1; display:flex; gap:8px; justify-content:flex-end;">
+          <sc-for list="{{ formats }}" as="f" hint-placeholder-count="2">
+            <button type="button" onClick="{{ f.onPick }}" style="display:flex; align-items:center; gap:8px; padding:7px 12px 7px 9px; border-radius:var(--fl-radius-pill); border:1px solid {{ f.border }}; background:{{ f.bg }}; cursor:pointer; transition:border-color 160ms var(--fl-ease-out, ease-out);">
+              <span style="flex:none; display:block; width:{{ f.glyphW }}px; height:{{ f.glyphH }}px; border-radius:3px; border:1.5px solid {{ f.ink }};"></span>
+              <span style="font-size:12px; font-weight:600; color:{{ f.ink }}; font-family:var(--fl-font-mono); letter-spacing:0.3px;">{{ f.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ═══ LIVE PREVIEW ═══ -->
+      <div style="display:flex; justify-content:center; margin-bottom:20px;">
+        <div style="position:relative; width:300px; height:{{ cardH }}px; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-bronze-border); background:linear-gradient(168deg, var(--fl-bronze-tint) 0%, transparent 46%), #0A0A0B; box-shadow:var(--fl-border-inset), var(--fl-shadow-card-hero); display:flex; flex-direction:column; animation:ppSwap 220ms var(--fl-ease-out, ease-out);">
+
+          <!-- GRID STYLE -->
+          <sc-if value="{{ isGrid }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1; min-height:0; display:flex; flex-direction:column; padding:16px;">
+              <div style="flex:none; display:flex; align-items:center; gap:7px; margin-bottom:12px;">
+                <span style="width:17px; height:17px; flex:none; border-radius:4px; background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206;"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"></path><path d="M7.6 7.1L9.6 5.8V15H7.6Z"></path><path d="M16.4 7.1L14.4 5.8V15H16.4Z"></path><path d="M6.8 15.4H17.2V16.2H6.8Z"></path><path d="M5.6 16.6H18.4V17.4H5.6Z"></path><path d="M4.4 17.8H19.6V18.6H4.4Z"></path></svg></span>
+                <span style="flex:1; font-size:8.5px; font-weight:700; letter-spacing:2.2px; text-transform:uppercase; color:var(--fl-text-secondary);">Forge Legacy</span>
+                <sc-if value="{{ inclDate }}" hint-placeholder-val="{{ true }}"><span style="font-size:9px; font-weight:600; letter-spacing:0.9px; text-transform:uppercase; color:var(--fl-bronze-bright);">{{ entryDate }}</span></sc-if>
+              </div>
+
+              <div style="flex:1; min-height:0; display:grid; grid-template-columns:{{ gridCols }}; gap:6px;">
+                <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="4">
+                  <div style="position:relative; min-height:0; border-radius:8px; overflow:hidden; border:1px solid var(--fl-charcoal-700); background:var(--fl-surface-recessed);">
+                    <image-slot id="{{ t.slotId }}" flat nocap shape="rect" placeholder="{{ t.short }}" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                    <sc-if value="{{ inclPose }}" hint-placeholder-val="{{ false }}">
+                      <span style="position:absolute; left:6px; bottom:5px; padding:2px 6px; border-radius:99px; background:rgba(6,6,7,0.72); font-size:7.5px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-secondary);">{{ t.short }}</span>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="flex:none; margin-top:12px; display:flex; align-items:flex-end; gap:10px;">
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                  <sc-if value="{{ inclName }}" hint-placeholder-val="{{ true }}"><span style="font-family:var(--fl-font-display); font-size:14px; font-weight:700; letter-spacing:-0.2px; color:var(--fl-text-primary);">{{ athlete }}</span></sc-if>
+                  <sc-if value="{{ inclMeta }}" hint-placeholder-val="{{ true }}"><span style="font-size:9.5px; color:var(--fl-text-tertiary); text-wrap:pretty;">{{ entryMeta }}</span></sc-if>
+                </div>
+                <sc-if value="{{ inclChapter }}" hint-placeholder-val="{{ true }}"><span style="flex:none; font-size:8.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-primary);">{{ entryChapter }}</span></sc-if>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- HERO STYLE -->
+          <sc-if value="{{ isHero }}" hint-placeholder-val="{{ false }}">
+            <div class="fl-scroll pp-track" onScroll="{{ onHeroScroll }}" style="position:absolute; inset:0; display:flex; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;">
+              <sc-for list="{{ heroSlides }}" as="s" hint-placeholder-count="3">
+                <div style="position:relative; flex:0 0 100%; width:100%; height:100%; scroll-snap-align:center; scroll-snap-stop:always;">
+                  <image-slot id="{{ s.slotId }}" flat nocap shape="rect" placeholder="{{ s.short }}" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                  <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(6,6,7,0.62) 0%, rgba(6,6,7,0) 30%, rgba(6,6,7,0.18) 52%, rgba(6,6,7,0.9) 100%); pointer-events:none;"></div>
+                  <div style="position:absolute; top:16px; left:16px; right:16px; display:flex; align-items:center; gap:7px; pointer-events:none;">
+                    <span style="width:17px; height:17px; flex:none; border-radius:4px; background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206;"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"></path><path d="M7.6 7.1L9.6 5.8V15H7.6Z"></path><path d="M16.4 7.1L14.4 5.8V15H16.4Z"></path><path d="M6.8 15.4H17.2V16.2H6.8Z"></path><path d="M5.6 16.6H18.4V17.4H5.6Z"></path><path d="M4.4 17.8H19.6V18.6H4.4Z"></path></svg></span>
+                    <span style="flex:1; font-size:8.5px; font-weight:700; letter-spacing:2.2px; text-transform:uppercase; color:rgba(240,238,234,0.82); text-shadow:0 1px 4px rgba(0,0,0,0.6);">Forge Legacy</span>
+                    <sc-if value="{{ inclPose }}" hint-placeholder-val="{{ false }}"><span style="padding:2px 7px; border-radius:99px; background:rgba(6,6,7,0.6); border:1px solid rgba(255,255,255,0.14); font-size:7.5px; font-weight:700; letter-spacing:0.9px; text-transform:uppercase; color:rgba(240,238,234,0.9);">{{ s.short }}</span></sc-if>
+                    <sc-if value="{{ multiSlide }}" hint-placeholder-val="{{ true }}"><span style="flex:none; padding:2px 7px; border-radius:99px; background:rgba(6,6,7,0.62); font-family:var(--fl-font-mono); font-size:8px; font-weight:600; letter-spacing:0.4px; color:rgba(240,238,234,0.92);">{{ s.counter }}</span></sc-if>
+                  </div>
+                  <div style="position:absolute; left:18px; right:18px; bottom:30px; display:flex; flex-direction:column; gap:4px; pointer-events:none;">
+                    <sc-if value="{{ inclDate }}" hint-placeholder-val="{{ true }}"><span style="font-family:var(--fl-font-display); font-size:27px; font-weight:700; letter-spacing:-0.6px; line-height:1; color:#F7F5F1; text-shadow:0 2px 14px rgba(0,0,0,0.7);">{{ entryDate }}</span></sc-if>
+                    <sc-if value="{{ inclMeta }}" hint-placeholder-val="{{ true }}"><span style="font-size:10px; color:rgba(240,238,234,0.72); text-shadow:0 1px 6px rgba(0,0,0,0.7); text-wrap:pretty;">{{ entryMeta }}</span></sc-if>
+                    <span style="display:flex; align-items:center; gap:7px; margin-top:4px;">
+                      <sc-if value="{{ inclName }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px; font-weight:600; color:#F0EEEA; text-shadow:0 1px 6px rgba(0,0,0,0.7);">{{ athlete }}</span></sc-if>
+                      <sc-if value="{{ inclChapter }}" hint-placeholder-val="{{ true }}"><span style="width:3px; height:3px; border-radius:50%; background:rgba(240,238,234,0.45);"></span><span style="font-size:8.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-bright); text-shadow:0 1px 6px rgba(0,0,0,0.7);">{{ entryChapter }}</span></sc-if>
+                    </span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ multiSlide }}" hint-placeholder-val="{{ true }}">
+              <div style="position:absolute; left:0; right:0; bottom:12px; display:flex; align-items:center; justify-content:center; gap:5px; pointer-events:none;">
+                <sc-for list="{{ heroDots }}" as="d" hint-placeholder-count="3">
+                  <span style="display:block; width:5px; height:5px; border-radius:50%; background:{{ d.fill }}; box-shadow:0 1px 3px rgba(0,0,0,0.6); transition:background 180ms var(--fl-ease-out, ease-out);"></span>
+                </sc-for>
+              </div>
+            </sc-if>
+          </sc-if>
+        </div>
+      </div>
+
+      <!-- STYLE -->
+      <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:0 2px 10px;">Style</span>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:20px;">
+        <sc-for list="{{ styles }}" as="s" hint-placeholder-count="2">
+          <button type="button" onClick="{{ s.onPick }}" style="display:flex; align-items:center; gap:11px; padding:12px 13px; border-radius:var(--fl-radius-lg); border:1px solid {{ s.border }}; background:{{ s.bg }}; cursor:pointer; text-align:left; transition:border-color 160ms var(--fl-ease-out, ease-out);">
+            <span style="flex:none; display:grid; width:26px; height:26px; gap:2px; grid-template-columns:{{ s.diagramCols }}; grid-template-rows:{{ s.diagramRows }};">{{ s.diagram }}</span>
+            <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+              <span style="font-size:13px; font-weight:600; color:{{ s.ink }};">{{ s.label }}</span>
+              <span style="font-size:10px; color:var(--fl-text-tertiary);">{{ s.sub }}</span>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+
+      <!-- PHOTOS -->
+      <div style="display:flex; align-items:baseline; gap:8px; margin:0 2px 10px;">
+        <span style="flex:1; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Photos</span>
+        <span style="font-size:10.5px; color:var(--fl-text-tertiary);">{{ selHint }}</span>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:7px; margin-bottom:20px;">
+        <sc-for list="{{ poseTiles }}" as="p" hint-placeholder-count="6">
+          <button type="button" onClick="{{ p.onTap }}" style="position:relative; display:flex; flex-direction:column; gap:5px; padding:0; background:transparent; border:none; cursor:pointer;">
+            <span style="position:relative; display:block; width:100%; aspect-ratio:3/4; border-radius:7px; overflow:hidden; border:1.5px solid {{ p.border }}; background:var(--fl-surface-recessed); box-shadow:{{ p.glow }};">
+              {{ p.thumb }}
+              <sc-if value="{{ p.sel }}" hint-placeholder-val="{{ true }}">
+                <span style="position:absolute; top:3px; right:3px; width:14px; height:14px; border-radius:50%; background:var(--fl-bronze-metallic); color:#1A1206; display:flex; align-items:center; justify-content:center;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>
+              </sc-if>
+            </span>
+            <span style="font-size:8px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:{{ p.ink }}; text-align:center;">{{ p.short }}</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <!-- ENTRY -->
+      <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:0 2px 10px;">From entry</span>
+      <div class="fl-scroll" style="display:flex; gap:7px; overflow-x:auto; margin-bottom:20px; padding-bottom:2px;">
+        <sc-for list="{{ entryChips }}" as="e" hint-placeholder-count="3">
+          <button type="button" onClick="{{ e.onPick }}" style="flex:none; padding:8px 14px; border-radius:var(--fl-radius-pill); border:1px solid {{ e.border }}; background:{{ e.bg }}; color:{{ e.ink }}; font-size:12px; font-weight:600; cursor:pointer;">{{ e.label }}</button>
+        </sc-for>
+      </div>
+
+      <!-- ON THE CARD -->
+      <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:0 2px 10px;">On the card</span>
+      <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:20px;">
+        <sc-for list="{{ inclChips }}" as="c" hint-placeholder-count="5">
+          <button type="button" onClick="{{ c.onToggle }}" style="display:inline-flex; align-items:center; gap:7px; padding:8px 13px 8px 10px; border-radius:var(--fl-radius-pill); border:1px solid {{ c.border }}; background:{{ c.bg }}; color:{{ c.ink }}; font-size:12px; font-weight:600; cursor:pointer;">
+            <span style="flex:none; display:inline-flex;">{{ c.icon }}</span>{{ c.label }}
+          </button>
+        </sc-for>
+      </div>
+
+      <!-- CAPTION -->
+      <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:0 2px 10px;">Caption</span>
+      <textarea rows="2" placeholder="Say something about this one…" value="{{ caption }}" onInput="{{ onCaption }}" style="width:100%; font-family:var(--fl-font-sans); font-size:14px; line-height:1.5; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); padding:12px 13px; outline:none; resize:none;"></textarea>
+      <span style="display:block; margin:8px 2px 0; font-size:10.5px; color:var(--fl-text-tertiary); text-wrap:pretty;">{{ captionNote }}</span>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="flex:none; padding:12px 20px calc(16px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(6,7,8,0.35), rgba(6,7,8,0.75)); display:flex; flex-direction:column; gap:11px;">
+      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;">
+        <sc-for list="{{ sendTargets }}" as="d" hint-placeholder-count="4">
+          <button type="button" onClick="{{ d.onTap }}" style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 4px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); cursor:pointer;">
+            <span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ d.icon }}</span>
+            <span style="font-size:10.5px; font-weight:600; color:var(--fl-text-secondary);">{{ d.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+      <button type="button" onClick="{{ onPrimary }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:9px; padding:15px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-metal-border); background:var(--fl-bronze-fill); color:#F7F5F1; font-size:14px; font-weight:700; letter-spacing:0.4px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">{{ primaryIcon }}{{ primaryLabel }}</button>
+    </div>
+
+    <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; left:50%; bottom:150px; z-index:40; transform:translateX(-50%); display:flex; align-items:center; gap:9px; padding:12px 18px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-elevated); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-shadow-float); animation:ppRise 220ms var(--fl-ease-out, ease-out) both; white-space:nowrap;">
+        <span style="display:inline-flex; color:var(--fl-bronze-bright);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>
+        <span style="font-size:13.5px; font-weight:600; color:var(--fl-text-primary);">{{ toast }}</span>
+      </div>
+    </sc-if>
+
+  </sc-if>
+
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:30; opacity:0.05; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;origin&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;transformation&quot;,&quot;squad&quot;],&quot;default&quot;:&quot;transformation&quot;,&quot;tsType&quot;:&quot;'transformation' | 'squad'&quot;,&quot;section&quot;:&quot;Context&quot;,&quot;label&quot;:&quot;Opened from&quot;},&quot;defaultFormat&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;1x1&quot;,&quot;4x5&quot;],&quot;default&quot;:&quot;4x5&quot;,&quot;tsType&quot;:&quot;'1x1' | '4x5'&quot;,&quot;section&quot;:&quot;Defaults&quot;,&quot;label&quot;:&quot;Format&quot;},&quot;defaultStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;grid&quot;,&quot;hero&quot;],&quot;default&quot;:&quot;grid&quot;,&quot;tsType&quot;:&quot;'grid' | 'hero'&quot;,&quot;section&quot;:&quot;Defaults&quot;,&quot;label&quot;:&quot;Style&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, entryId: null, fmt: null, style: null, sel: null, heroIdx: 0, incl: {}, caption: null, toast: null };
+
+  componentDidMount() {
+    try { this._ctx = JSON.parse(localStorage.getItem('forge_progress_post_ctx_v1') || 'null'); if (this._ctx) localStorage.removeItem('forge_progress_post_ctx_v1'); } catch (e) { this._ctx = null; }
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      if (r && window.ForgeLegacyVisualFoundation_5368b2 && window.ForgeTransformation && window.ForgeSymbols) this.setState({ ready: true });
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+    this._tick = setInterval(() => { if (this.state.ready) this.forceUpdate(); }, 900);
+  }
+  componentWillUnmount() { [this._t, this._toastT, this._doneT].forEach(t => t && clearTimeout(t)); if (this._tick) clearInterval(this._tick); }
+
+  _origin() { return (this._ctx && this._ctx.origin) || this.props.origin || 'transformation'; }
+  _toast(m) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toast: m }); this._toastT = setTimeout(() => this.setState({ toast: null }), 2400); }
+  _incl(k, d) { const c = this.state.incl; return (k in c) ? c[k] : d; }
+  _toggle(k, d) { this.setState(s => { const cur = (k in s.incl) ? s.incl[k] : d; return { incl: Object.assign({}, s.incl, { [k]: !cur }) }; }); }
+  _photo(id) { try { const m = JSON.parse(localStorage.getItem('.image-slots.state.json') || '{}'); const s = m[id]; return (s && s.u) ? s.u : null; } catch (e) { return null; } }
+  _back() {
+    const o = this._origin();
+    if (o === 'squad') { window.location.href = 'Squad%20Composer.dc.html'; return; }
+    if ((function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})()) window.history.back();
+    else window.location.href = 'Forge%20Transformation.dc.html';
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) return { ready: false, notReady: true };
+    const h = React.createElement, S = this.state;
+    const T = window.ForgeTransformation, FS = window.ForgeSymbols;
+    const P = (d) => h('path', { key: d, d: d });
+    const ic = (kids, size, sw) => h('svg', { width: size || 17, height: size || 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, kids);
+    const w = (el) => h('span', { style: { display: 'inline-flex' } }, el);
+
+    // ── source entry ──
+    const entries = T.entries();
+    const entryId = S.entryId || (this._ctx && this._ctx.entryId) || (entries[0] && entries[0].id) || 'xf-seed-3';
+    const entry = entries.find(e => e.id === entryId) || entries[0] || {};
+    const POSES = T.POSES;
+
+    // ── format ──
+    const fmt = S.fmt || this.props.defaultFormat || '4x5';
+    const FMTS = [
+      { id: '1x1', label: '1:1', h: 300, gw: 13, gh: 13 },
+      { id: '4x5', label: '4:5', h: 375, gw: 11, gh: 13.75 },
+    ];
+    const F = FMTS.find(f => f.id === fmt) || FMTS[1];
+    const formats = FMTS.map(f => {
+      const on = f.id === F.id;
+      return { key: f.id, label: f.label, glyphW: f.gw, glyphH: f.gh, onPick: () => this.setState({ fmt: f.id }),
+        border: on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)', bg: on ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+        ink: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)' };
+    });
+
+    // ── style ──
+    const style = S.style || this.props.defaultStyle || 'grid';
+    const isGrid = style === 'grid', isHero = style === 'hero';
+    const cell = (bg) => (i) => h('span', { key: i, style: { display: 'block', borderRadius: '2px', background: bg } });
+    const diagramFor = (id, ink) => {
+      const c = cell(ink);
+      return id === 'grid' ? [c(0), c(1), c(2), c(3)] : [c(0)];
+    };
+    const STYLES = [
+      { id: 'grid', label: 'Grid', sub: 'Up to 4 poses', cols: '1fr 1fr', rows: '1fr 1fr' },
+      { id: 'hero', label: 'Hero', sub: 'Swipeable, date stamped', cols: '1fr', rows: '1fr' },
+    ];
+    const styles = STYLES.map(s => {
+      const on = s.id === style;
+      const ink = on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)';
+      return { key: s.id, label: s.label, sub: s.sub, diagramCols: s.cols, diagramRows: s.rows,
+        diagram: diagramFor(s.id, on ? 'var(--fl-bronze-primary)' : 'var(--fl-charcoal-500)'),
+        onPick: () => this.setState({ style: s.id }),
+        border: on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)', bg: on ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)', ink };
+    });
+
+    // ── selection (grid ≤ 4 tiles on one card; hero ≤ 6 swipeable slides) ──
+    const cap = isHero ? 6 : 4;
+    let sel = S.sel;
+    if (!sel) {
+      const filled = POSES.filter(p => this._photo(entryId + '-' + p.key)).map(p => p.key);
+      sel = (filled.length ? filled : POSES.map(p => p.key)).slice(0, 4);
+    }
+    sel = sel.filter(k => POSES.some(p => p.key === k)).slice(0, cap);
+    if (!sel.length) sel = [POSES[0].key];
+
+    const tapPose = (k) => {
+      const has = sel.indexOf(k) >= 0;
+      let next;
+      if (has) { next = sel.filter(x => x !== k); if (!next.length) next = [k]; }
+      else if (sel.length >= cap) { this._toast(isHero ? 'Six slides max' : 'Four photos max in a grid'); return; }
+      else next = sel.concat([k]);
+      this.setState({ sel: next, heroIdx: Math.min(this.state.heroIdx || 0, next.length - 1) });
+    };
+
+    const camGlyph = h('span', { style: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fl-charcoal-500)' } }, FS.create(React, 'camera', { size: 14, strokeWidth: 1.6 }));
+    const poseTiles = POSES.map(p => {
+      const on = sel.indexOf(p.key) >= 0;
+      const src = this._photo(entryId + '-' + p.key);
+      return { key: p.key, short: p.short, sel: on, onTap: () => tapPose(p.key),
+        thumb: src ? h('img', { src: src, style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: on ? 1 : 0.42 } }) : camGlyph,
+        border: on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-700)',
+        glow: on ? 'var(--fl-glow-subtle)' : 'none',
+        ink: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)' };
+    });
+
+    const shortOf = (k) => (POSES.find(p => p.key === k) || {}).short || '';
+    const tiles = sel.map(k => ({ key: k, slotId: entryId + '-' + k, short: shortOf(k) }));
+    const gridCols = sel.length >= 4 ? '1fr 1fr' : (sel.length === 3 ? '1fr 1fr 1fr' : (sel.length === 2 ? '1fr 1fr' : '1fr'));
+
+    // ── hero carousel: one slide per selected photo, swipe + dots ──
+    const heroIdx = Math.min(S.heroIdx || 0, sel.length - 1);
+    const heroSlides = sel.map((k, i) => ({ key: k, slotId: entryId + '-' + k, short: shortOf(k), counter: (i + 1) + '/' + sel.length }));
+    const heroDots = sel.map((k, i) => ({ key: k, fill: i === heroIdx ? 'var(--fl-bronze-bright)' : 'rgba(240,238,234,0.34)' }));
+    const onHeroScroll = (e) => {
+      const el = e.currentTarget; if (!el || !el.clientWidth) return;
+      const i = Math.round(el.scrollLeft / el.clientWidth);
+      if (i !== heroIdx) this.setState({ heroIdx: i });
+    };
+
+    // ── entries ──
+    const entryChips = entries.slice(0, 6).map(e => {
+      const on = e.id === entryId;
+      return { key: e.id, label: e.label, onPick: () => this.setState({ entryId: e.id, sel: null }),
+        border: on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)', bg: on ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+        ink: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)' };
+    });
+
+    // ── card content toggles ──
+    const CH = [
+      { key: 'date', label: 'Date', def: true, icon: ic([P('M4.5 6.5h15v13h-15z'), P('M4.5 10.5h15M8.5 4v4M15.5 4v4')], 14) },
+      { key: 'meta', label: 'Stats', def: true, icon: ic([P('M5 19V11M10 19V6M15 19v-6M20 19V9')], 14, 2) },
+      { key: 'chapter', label: 'Chapter', def: true, icon: ic([P('M5 4.5h11l3 3v12H5z'), P('M9 11h6M9 14.5h4')], 14) },
+      { key: 'name', label: 'Name', def: true, icon: ic([h('circle', { key: 'c', cx: 12, cy: 8, r: 3.2 }), P('M5 20a7 7 0 0 1 14 0')], 14) },
+      { key: 'pose', label: 'Pose labels', def: false, icon: ic([P('M4 8h16M4 12h10M4 16h7')], 14) },
+    ];
+    const inclChips = CH.map(c => {
+      const on = this._incl(c.key, c.def);
+      return { key: c.key, label: c.label, icon: w(c.icon), onToggle: () => this._toggle(c.key, c.def),
+        border: on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)', bg: on ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+        ink: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)' };
+    });
+
+    // ── destinations ──
+    const origin = this._origin();
+    const squadName = (window.ForgeSquadPosts && window.ForgeSquadPosts.meta(window.ForgeSquadPosts.activeId()).name) || 'your squad';
+    const sendTargets = [
+      { key: 'ig', label: 'Instagram', icon: w(ic([h('rect', { key: 'r', x: 4, y: 4, width: 16, height: 16, rx: 4.5 }), h('circle', { key: 'c', cx: 12, cy: 12, r: 3.6 }), h('circle', { key: 'd', cx: 16.6, cy: 7.4, r: 0.9, fill: 'currentColor', stroke: 'none' })], 19)), onTap: () => this._toast('Opening Instagram…') },
+      { key: 'fb', label: 'Facebook', icon: w(ic([h('rect', { key: 'r', x: 4, y: 4, width: 16, height: 16, rx: 4 }), P('M14.6 8.2h-1.3c-1 0-1.5.5-1.5 1.5V11h2.7l-.4 2.6h-2.3V20')], 19)), onTap: () => this._toast('Opening Facebook…') },
+      { key: 'save', label: 'Save', icon: w(ic([P('M12 3.5v11M8 11l4 4 4-4'), P('M5 20h14')], 19)), onTap: () => this._toast('Saved to your photos') },
+      { key: 'more', label: 'More', icon: w(ic([h('circle', { key: 'a', cx: 6, cy: 12, r: 1.5, fill: 'currentColor', stroke: 'none' }), h('circle', { key: 'b', cx: 12, cy: 12, r: 1.5, fill: 'currentColor', stroke: 'none' }), h('circle', { key: 'c', cx: 18, cy: 12, r: 1.5, fill: 'currentColor', stroke: 'none' })], 19)), onTap: () => this._system() },
+    ];
+
+    const caption = (S.caption != null) ? S.caption : (entry.caption || '');
+    const postToSquad = () => {
+      const SP = window.ForgeSquadPosts;
+      try {
+        const p = SP.add(SP.activeId(), { type: 'progress', author: 'You', role: null, body: caption.trim(), progress: { entryId: entryId, date: entry.label, format: F.id, style: style, poses: sel } });
+        localStorage.setItem('forge.justPosted', p.id);
+      } catch (e) {}
+      this._toast('Posted to ' + squadName);
+      this._doneT = setTimeout(() => { window.location.href = 'Squad%20Detail.dc.html'; }, 800);
+    };
+
+    return {
+      ready: true, notReady: false,
+      onBack: () => this._back(),
+      barSub: entry.label + (entry.chapter ? ' · ' + entry.chapter : ''),
+      formats, cardH: F.h,
+      styles, isGrid, isHero,
+      tiles, gridCols,
+      heroSlides, heroDots, multiSlide: sel.length > 1, onHeroScroll: onHeroScroll,
+      poseTiles, selHint: isHero ? (sel.length + (sel.length === 1 ? ' slide' : ' slides')) : (sel.length + ' of 4'),
+      entryChips,
+      entryDate: entry.label || '', entryMeta: entry.meta || '', entryChapter: entry.chapter || '', athlete: 'Ada Ridge',
+      inclDate: this._incl('date', true), inclMeta: this._incl('meta', true), inclChapter: this._incl('chapter', true), inclName: this._incl('name', true), inclPose: this._incl('pose', false),
+      inclChips,
+      caption, onCaption: (e) => this.setState({ caption: e.target.value }),
+      captionNote: origin === 'squad' ? 'Posts with the card to ' + squadName + '.' : 'Copied alongside the image when you share out.',
+      sendTargets,
+      primaryLabel: origin === 'squad' ? ('Post to ' + squadName) : 'Share',
+      primaryIcon: w(ic([h('circle', { key: 'a', cx: 6, cy: 12, r: 2.4 }), h('circle', { key: 'b', cx: 17, cy: 6, r: 2.4 }), h('circle', { key: 'c', cx: 17, cy: 18, r: 2.4 }), P('M8.1 10.9l6.8-3.8M8.1 13.1l6.8 3.8')], 16)),
+      onPrimary: () => { if (origin === 'squad') postToSquad(); else this._system(); },
+      toast: S.toast,
+    };
+  }
+
+  _system() {
+    try { if (navigator.share) { navigator.share({ title: 'Forge Legacy', text: 'Progress photos.' }).catch(function () {}); this._toast('Opening share…'); return; } } catch (e) {}
+    this._toast('Opening share…');
+  }
+}
+
+</script>
+</body>
+</html>

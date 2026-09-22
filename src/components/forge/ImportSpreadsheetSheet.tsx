@@ -6,11 +6,15 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { readProgramPhoto } from '@/data/program-photo-live';
-import { resolveExerciseName } from '@/domain/exercise-picker/data';
+import { catalogForMatching, resolveExerciseName } from '@/domain/exercise-picker/data';
+import { suggestExercises } from '@/domain/program/exercise-match';
 import { parseProgramTable, summarize, type ParsedWeek } from '@/domain/program/import-parse';
 import { distanceUnitFor, fmtDistanceIn, fmtDuration, type CardioActivity } from '@/domain/workout/conditioning';
 import { pickTextFile } from '@/lib/pick-text-file';
+import { REPS_MAX, SETS_MAX } from '@/lib/program-draft-model';
+import { importLimitNotes } from '@/lib/program-import-draft';
 import { pickImageFromLibrary } from '@/lib/useMediaPicker';
+import { usePremiumAi } from '@/lib/entitlement';
 
 /**
  * ══ IMPORT FROM A SPREADSHEET — the ONE sheet, wherever a plan gets built ══
@@ -34,7 +38,16 @@ import { pickImageFromLibrary } from '@/lib/useMediaPicker';
  */
 
 /**
- * ⛔ PHOTO IMPORT IS HIDDEN FOR LAUNCH — A DECISION, NOT A BUG (PO, 2026-08-21).
+ * ⭐ PHOTO IMPORT IS ON — FOR PREMIUM AI ONLY (PO, 2026-09-21). History of the flag follows.
+ *
+ * *"I want this turned on for just me. So anything AI is going to be another tier that will only have me
+ * on it."* The server half is `supabase/apply/pending-0144-0174-0203.sql` (the credit meter, the
+ * `photo_import` weight, and 0203's gate in `coach_ai_spend_credits`, which refuses anyone without the
+ * Premium AI add-on) plus the `program-photo-read` Edge Function. The per-athlete half is
+ * `PHOTO_IMPORT_ENABLED` inside the component: this server switch AND `usePremiumAi()`. So a reviewer's
+ * account — or any account but the PO's — never sees the control, and could not use it if it did.
+ *
+ * ⛔ WAS: PHOTO IMPORT IS HIDDEN FOR LAUNCH — A DECISION, NOT A BUG (PO, 2026-08-21).
  *
  * The feature is BUILT and its code below is untouched. What is missing is the two things it needs to
  * actually run: migration `0174` (the credit weight for `photo_import`) is not applied, and the
@@ -54,7 +67,7 @@ import { pickImageFromLibrary } from '@/lib/useMediaPicker';
  * TO RE-ENABLE: apply `supabase/apply/pending-0174.sql`, deploy `program-photo-read`, then flip this to
  * `true`. Nothing else. Do not flip it before both are true — that is what this constant is for.
  */
-const PHOTO_IMPORT_ENABLED = false;
+export const PHOTO_IMPORT_LIVE = true;
 
 /**
  * How much of a paste the surface can hold.
@@ -82,7 +95,7 @@ type Props = {
  * Cut a read down to what the scope can hold, and say what was cut. Returns the note the preview shows
  * ABOVE the summary, or null when nothing was lost.
  */
-function fitToScope(weeks: ParsedWeek[], scope: ImportScope): { weeks: ParsedWeek[]; note: string | null } {
+export function fitToScope(weeks: ParsedWeek[], scope: ImportScope): { weeks: ParsedWeek[]; note: string | null } {
   if (scope === 'program' || weeks.length === 0) return { weeks, note: null };
   const first = weeks[0];
   if (scope === 'week') {
@@ -119,6 +132,11 @@ function cardioTargetText(it: { activity?: string; targetSec?: number | null; ta
 }
 
 export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }: Props) {
+  /* The photo control for THIS athlete: the server half is live (`PHOTO_IMPORT_LIVE`, which needs `0174`
+     applied and `program-photo-read` deployed) AND they hold Premium AI (0203). Both halves of the UI —
+     the button and the copy promising it — read this one value. */
+  const premiumAi = usePremiumAi();
+  const PHOTO_IMPORT_ENABLED = PHOTO_IMPORT_LIVE && premiumAi;
   const [pasteText, setPasteText] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
   /** A photo read is a network round-trip to a vision model — seconds, not milliseconds. It needs to say so. */
@@ -127,6 +145,8 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
   const [preview, setPreview] = useState<ParsedWeek[] | null>(null);
   /** What `fitToScope` cut, so the preview can say it. */
   const [scopeNote, setScopeNote] = useState<string | null>(null);
+  /** Lines the parse did not take as training — listed in the preview. */
+  const [skipped, setSkipped] = useState<string[]>([]);
 
   /*
    * A photo read that was in flight when the sheet closed must not land in a sheet that has since been
@@ -135,9 +155,6 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
    */
   const gen = useRef(0);
 
-  /** The SAME resolver the preview renders and the callers commit — two resolvers would drift. */
-  const resolveName = (n: string) => resolveExerciseName(n);
-
   /** Closing clears everything: the next open starts from an empty box, which is the whole contract. */
   const close = () => {
     gen.current += 1;
@@ -145,6 +162,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     setImportError(null);
     setPreview(null);
     setScopeNote(null);
+    setSkipped([]);
     setPhotoBusy(false);
     onClose();
   };
@@ -161,6 +179,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     setImportError(null);
     setPreview(fit.weeks);
     setScopeNote(fit.note);
+    setSkipped(r.skipped ?? []);
   };
 
   const onPickFile = async () => {
@@ -209,7 +228,19 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
           setImportError('That image is too big to read. Try a screenshot rather than a full-size photo.');
           break;
         case 'out_of_credits':
-          setImportError('You’re out of Coach AI credits for this month.');
+          setImportError('You’re out of Premium AI credits for this month.');
+          break;
+        case 'daily_limit':
+          setImportError('That’s a lot of photos for one day. Try again tomorrow, or paste the program as text.');
+          break;
+        case 'not_entitled':
+          setImportError('Reading photos is part of Premium AI. Paste the program as text instead.');
+          break;
+        case 'unsupported_format':
+          setImportError('That image type can’t be read. Take a screenshot of it and upload that instead.');
+          break;
+        case 'unavailable':
+          setImportError('Photo reading isn’t working right now. Try again in a bit, or paste the program as text.');
           break;
         default:
           setImportError('Couldn’t reach us to read that photo. Check your connection and try again.');
@@ -220,46 +251,6 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
       if (mine === gen.current) setPhotoBusy(false);
     }
   };
-
-  /** Adjust a parsed set/rep count before creating. The design's − / + on every preview row. */
-  const bumpPreview = (wi: number, di: number, ii: number, field: 'sets' | 'reps', delta: number) =>
-    setPreview((cur) =>
-      !cur
-        ? cur
-        : cur.map((w, a) =>
-            a !== wi
-              ? w
-              : {
-                  ...w,
-                  days: w.days.map((d, b) =>
-                    b !== di
-                      ? d
-                      : {
-                          ...d,
-                          items: d.items.map((it, c) =>
-                            c !== ii
-                              ? it
-                              : {
-                                  ...it,
-                                  [field]: Math.max(1, Math.min(field === 'sets' ? 20 : 100, it[field] + delta)),
-                                  // Adjusting a value makes it authored, not assumed — the flag stops
-                                  // claiming the sheet was silent once the athlete has spoken.
-                                  [field === 'sets' ? 'setsAssumed' : 'repsAssumed']: false,
-                                },
-                          ),
-                        },
-                  ),
-                },
-          ),
-    );
-
-  /** "Add another week" — copies the last week forward, which is how a block is usually extended. */
-  const addPreviewWeek = () =>
-    setPreview((cur) => {
-      if (!cur?.length) return cur;
-      const last = cur[cur.length - 1];
-      return [...cur, { index: last.index + 1, days: last.days.map((d) => ({ ...d, items: d.items.map((i) => ({ ...i })) })) }];
-    });
 
   const confirm = () => {
     if (!preview?.length) return;
@@ -275,7 +266,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     <BottomSheet
       open={open}
       onClose={close}
-      title="Import from spreadsheet"
+      title="Import a program"
       scroll
       footer={
         preview == null ? undefined : (
@@ -329,13 +320,21 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
             value={pasteText}
             onChangeText={setPasteText}
             multiline
+            /* ⚠ THE PLACEHOLDER TEACHES THE SHAPE PEOPLE ACTUALLY HAVE, not the one easiest to parse.
+               It used to show a comma-separated header row, which is a spreadsheet export — and with the
+               .csv path gone (PO, 2026-09-20) that is no longer the shape anyone arrives with. A coach's
+               email, a PDF's text and a screenshot transcript all look like the lines below.
+
+               ⚠ TABULAR STILL PARSES AND MUST KEEP PARSING. `parseProgramTable` reads a header row, a
+               "Day 1 — Upper" heading and a "Monday" heading alike; all four shapes were run against it
+               before this line changed. This changes what we SUGGEST, never what we accept. */
             placeholder={
               scope === 'day'
-                ? 'Exercise, Sets, Reps\nBench Press, 3, 8\nIncline DB Press, 3, 10'
-                : 'Week, Day, Exercise, Sets, Reps\n1, Push A, Bench Press, 3, 8\n1, Push A, Incline DB Press, 3, 10'
+                ? 'Bench Press 4x8\nIncline DB Press 3x10\nLat Pulldown 3x12'
+                : 'Week 1\nDay 1 - Upper\nBench Press 4x8\nBarbell Row 4x8\n\nDay 2 - Lower\nBack Squat 4x6'
             }
             placeholderTextColor={flColor.gray600}
-            accessibilityLabel="Paste your spreadsheet rows"
+            accessibilityLabel="Paste your program"
             style={styles.impPaste}
           />
           {importError ? <Text style={styles.impError}>{importError}</Text> : null}
@@ -345,16 +344,18 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
           <Pressable
             onPress={() => void onPickFile()}
             accessibilityRole="button"
-            accessibilityLabel="Upload a file — a spreadsheet or a PDF"
+            accessibilityLabel="Upload a PDF"
             style={({ pressed }) => [styles.impFileBtn, pressed ? styles.impPressed : null]}
           >
             <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
               <Path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
               <Path d="M14 3v6h6" />
             </Svg>
-            {/* "PDF" is in the label because that is what a purchased program arrives as — PO, 2026-08-27.
-                The PDF's text goes into the box above like any paste; see `pick-text-file.web.ts`. */}
-            <Text style={styles.impFileText}>Or upload a file — .csv or PDF</Text>
+            {/* PDF and nothing else — that is what a purchased program arrives as (PO, 2026-08-27), and
+                the spreadsheet types came out on 2026-09-20: *"I don't think we're going to keep a csv
+                there. No need."* The PDF's text goes into the box above like any paste; see
+                `pick-text-file.web.ts`. ⚠ The two pickers' accept-lists are ONE decision in two files. */}
+            <Text style={styles.impFileText}>Or upload a PDF</Text>
           </Pressable>
           {/* ⚠ LIBRARY ONLY, AND THAT IS A DECISION — see `pickImageFromLibrary`. The label says
               "screenshot" rather than "photo" because that is both the real use case and the honest
@@ -384,16 +385,163 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
           ) : null}
         </View>
       ) : (
+        <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} />
+      )}
+    </BottomSheet>
+  );
+}
+
+/**
+ * THE PREVIEW — "Here's what we read", with − / + on every set and rep, and "Add another week".
+ *
+ * Extracted from the sheet (2026-09-21) so the Build a Program paste and photo SCREENS show the exact
+ * same confirmation the sheet does: one preview, one set of corrections, two hosts. It owns no state —
+ * the host holds `weeks` and gets every correction back through `onChange`.
+ */
+export function ImportPreview({
+  weeks: preview,
+  onChange,
+  scope,
+  scopeNote,
+  skipped,
+}: {
+  weeks: ParsedWeek[];
+  onChange: (weeks: ParsedWeek[]) => void;
+  scope: ImportScope;
+  scopeNote: string | null;
+  /** Lines the reader did not take as training (`ParseResult.skipped`), listed so nothing vanishes unseen. */
+  skipped?: readonly string[];
+}) {
+  /** The SAME resolver the preview renders and the callers commit — two resolvers would drift. */
+  const resolveName = (n: string) => resolveExerciseName(n);
+  /*
+   * WHAT WILL NOT FIT, while it can still be changed — a seventh day, a 53rd week, "5x100". Recomputed
+   * from the preview itself, so a − tap that brings 100 reps down to 60 takes the warning away with it.
+   * A day template has its own ceilings and keeps its own messages.
+   */
+  const limitNotes = scope === 'day' ? [] : importLimitNotes(preview, { isWeek: scope === 'week' });
+
+  /** Adjust a parsed set/rep count before creating. The design's − / + on every preview row. */
+  const bumpPreview = (wi: number, di: number, ii: number, field: 'sets' | 'reps', delta: number) =>
+    onChange(
+      preview.map((w, a) =>
+        a !== wi
+          ? w
+          : {
+              ...w,
+              days: w.days.map((d, b) =>
+                b !== di
+                  ? d
+                  : {
+                      ...d,
+                      items: d.items.map((it, c) =>
+                        c !== ii
+                          ? it
+                          : {
+                              ...it,
+                              // The builder's own ceilings — a stepper that climbs past them offers a
+                              // number the program would silently cut on Create.
+                              [field]: Math.max(1, Math.min(field === 'sets' ? SETS_MAX : REPS_MAX, it[field] + delta)),
+                              // Adjusting a value makes it authored, not assumed — the flag stops
+                              // claiming the sheet was silent once the athlete has spoken.
+                              [field === 'sets' ? 'setsAssumed' : 'repsAssumed']: false,
+                            },
+                      ),
+                    },
+              ),
+            },
+      ),
+    );
+
+  /**
+   * "Did you mean…" — link a name the library did not recognise to an exercise it has.
+   *
+   * Every row with that written name changes, in every week: a 12-week program says "one arm row" 36
+   * times, and fixing it once should fix it everywhere. What they wrote is kept as the note, so the
+   * athlete's own words still reach the workout (PO, 2026-09-22).
+   */
+  const linkName = (written: string, to: string) =>
+    onChange(
+      preview.map((w) => ({
+        ...w,
+        days: w.days.map((d) => ({
+          ...d,
+          items: d.items.map((i) => (i.name === written ? { ...i, name: to, note: i.note ?? written } : i)),
+        })),
+      })),
+    );
+
+  /** Change one item, wherever it sits. The host holds the weeks; this hands back a new list. */
+  const editItem = (wi: number, di: number, ii: number, change: ((it: ParsedWeek['days'][number]['items'][number]) => ParsedWeek['days'][number]['items'][number]) | null) =>
+    onChange(
+      preview.map((w, a) =>
+        a !== wi
+          ? w
+          : {
+              ...w,
+              days: w.days.map((d, b) =>
+                b !== di
+                  ? d
+                  : {
+                      ...d,
+                      items: change
+                        ? d.items.map((it, c) => (c === ii ? change(it) : it))
+                        : d.items.filter((_, c) => c !== ii),
+                    },
+              ),
+            },
+      ),
+    );
+
+  /**
+   * ⚠ A ROW YOU CAN REMOVE AND RENAME, not only re-count.
+   *
+   * The preview could fix a number and nothing else, so a line the reader should not have kept — a
+   * caption, a note, a lift you do not do — could only be dealt with by going back to the text, and a
+   * photo has no text to go back to (PO, 2026-09-22). Both edits are local to the preview: nothing has
+   * been created yet, and Back still throws the whole read away.
+   */
+  const removeItem = (wi: number, di: number, ii: number) => editItem(wi, di, ii, null);
+  const renameItem = (wi: number, di: number, ii: number, name: string) =>
+    editItem(wi, di, ii, (it) => ({ ...it, name, note: it.note ?? it.name }));
+
+  /** "Add another week" — copies the last week forward, which is how a block is usually extended. */
+  const addPreviewWeek = () => {
+    if (!preview.length) return;
+    const last = preview[preview.length - 1];
+    onChange([...preview, { index: last.index + 1, days: last.days.map((d) => ({ ...d, items: d.items.map((i) => ({ ...i })) })) }]);
+  };
+
+  return (
         <View style={styles.impCol}>
           {/* What the scope cut, said BEFORE the summary — the athlete should learn that three of their
               four days are not coming while they can still go back, not from the draft afterwards. */}
           {scopeNote ? <Text style={styles.impScopeNote}>{scopeNote}</Text> : null}
+          {limitNotes.map((n) => (
+            <Text key={n} style={styles.impScopeNote}>
+              {n.charAt(0).toUpperCase() + n.slice(1)}.
+            </Text>
+          ))}
+          {skipped?.length ? (
+            <View style={styles.impSkipped} accessibilityRole="summary">
+              <Text style={styles.impSkippedHead}>
+                {skipped.length === 1 ? '1 line wasn’t' : `${skipped.length} lines weren’t`} read as training
+                {scope === 'program' ? ' — go Back and edit the text if any of it belongs.' : '.'}
+              </Text>
+              {skipped.slice(0, 6).map((line, i) => (
+                <Text key={`${i}-${line}`} style={styles.impSkippedLine} numberOfLines={1}>
+                  {line}
+                </Text>
+              ))}
+              {skipped.length > 6 ? <Text style={styles.impSkippedLine}>+{skipped.length - 6} more</Text> : null}
+            </View>
+          ) : null}
           <View style={styles.impSummary}>
             <Text style={styles.impSummaryLabel}>Here&apos;s what we read</Text>
             <Text style={styles.impSummaryText}>{summarize(preview)}</Text>
           </View>
           <Text style={styles.impNote}>
-            Tap − / + to fix any sets × reps now. Grey text is the sentence we read it from — it is kept
+            Tap − / + to fix any sets × reps, edit a name, or remove a row with ✕. Grey text is the sentence we read it from — it is kept
             as a coaching note, so anything we couldn&rsquo;t turn into a number still reaches you. You can
             rename, reorder and add exercises after{scope === 'program' ? ' you create the program' : 'wards'}.
           </Text>
@@ -413,9 +561,16 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
                     {d.items.map((it, ii) => (
                       <View key={`${it.name}-${ii}`} style={styles.impItemRow}>
                         <View style={styles.impItemText}>
-                          <Text style={styles.impItemName} numberOfLines={1}>
-                            {it.name}
-                          </Text>
+                          <View style={styles.impNameRow}>
+                            {it.section ? <Text style={styles.impSectionTag}>{it.section === 'warmup' ? 'WARM-UP' : 'COOL-DOWN'}</Text> : null}
+                            <TextInput
+                              value={it.name}
+                              onChangeText={(v) => renameItem(wi, di, ii, v)}
+                              accessibilityLabel={`Name of exercise ${ii + 1} in ${d.name}`}
+                              style={styles.impItemNameInput}
+                              numberOfLines={1}
+                            />
+                          </View>
                           {/*
                             ══ THE SENTENCE IT CAME FROM ══
 
@@ -438,7 +593,33 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
                             // A bout is not looked up: its key is the `cardio:<activity>` convention.
                             if (it.kind === 'cardio') return null;
                             const hit = resolveName(it.name);
-                            if (!hit) return <Text style={styles.impItemUnmatched}>not in the library · kept as written</Text>;
+                            if (!hit) {
+                              const guesses = suggestExercises(it.name, libraryCatalog());
+                              return (
+                                <>
+                                  <Text style={styles.impItemUnmatched}>not in the library · kept as written</Text>
+                                  {guesses.length ? (
+                                    <View style={styles.impGuesses}>
+                                      <Text style={styles.impGuessLabel}>Did you mean</Text>
+                                      {guesses.map((g) => (
+                                        <Pressable
+                                          key={g.key}
+                                          onPress={() => linkName(it.name, g.name)}
+                                          accessibilityRole="button"
+                                          accessibilityLabel={`Use ${g.name} for ${it.name}`}
+                                          hitSlop={4}
+                                          style={({ pressed }) => [styles.impGuess, pressed ? styles.impPressed : null]}
+                                        >
+                                          <Text style={styles.impGuessText} numberOfLines={1}>
+                                            {g.name}
+                                          </Text>
+                                        </Pressable>
+                                      ))}
+                                    </View>
+                                  ) : null}
+                                </>
+                              );
+                            }
                             if (hit.name.toLowerCase() === it.name.trim().toLowerCase()) return null;
                             return (
                               <Text style={styles.impItemMatched} numberOfLines={1}>
@@ -463,6 +644,19 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
                           <ImpStep label={`More reps of ${it.name}`} glyph="+" onPress={() => bumpPreview(wi, di, ii, 'reps', 1)} />
                         </View>
                         )}
+                        {/* ⚠ LAST IN THE ROW, not inside the name. Tucked beside the name it sat UNDER the
+                            steppers, which take the row's right-hand side — visible, and untappable. */}
+                        <Pressable
+                          onPress={() => removeItem(wi, di, ii)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove ${it.name}`}
+                          hitSlop={10}
+                          style={({ pressed }) => [styles.impRemove, pressed ? styles.impPressed : null]}
+                        >
+                          <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2.6} strokeLinecap="round">
+                            <Path d="M6 6l12 12M18 6L6 18" />
+                          </Svg>
+                        </Pressable>
                       </View>
                     ))}
                   </View>
@@ -486,9 +680,14 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
             </Pressable>
           ) : null}
         </View>
-      )}
-    </BottomSheet>
   );
+}
+
+/** The library as the matcher sees it — built once, on first need, not on every render. */
+let catalogCache: ReturnType<typeof catalogForMatching> | null = null;
+function libraryCatalog() {
+  catalogCache ??= catalogForMatching();
+  return catalogCache;
 }
 
 function ImpStep({ glyph, label, onPress }: { glyph: string; label: string; onPress: () => void }) {
@@ -529,6 +728,9 @@ const styles = StyleSheet.create({
 
   /* The scope's cut, in the same voice as the error line but not its colour: nothing went wrong. */
   impScopeNote: { fontFamily: flFont.sans, fontSize: 12, lineHeight: 17, color: flColor.bronze300 },
+  impSkipped: { gap: 3, paddingVertical: 8, paddingHorizontal: 10, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.charcoal700 },
+  impSkippedHead: { fontFamily: flFont.sans, fontSize: 11.5, lineHeight: 16, color: flColor.gray400, marginBottom: 2 },
+  impSkippedLine: { fontFamily: flFont.sans, fontSize: 11, lineHeight: 15, color: flColor.gray600 },
   impSummary: { padding: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
   impSummaryLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 5 },
   impSummaryText: { fontFamily: flFont.sans, fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
@@ -545,9 +747,18 @@ const styles = StyleSheet.create({
   impItemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   impItemText: { flex: 1, gap: 1 },
   impItemName: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
+  impNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  /* An input rather than text, because a misread name is the one thing the steppers could never fix. */
+  impItemNameInput: { flex: 1, fontFamily: flFont.sans, fontSize: 12.5, color: flColor.cream100, paddingVertical: 2 },
+  impRemove: { width: 20, height: 20, marginLeft: 2, alignItems: 'center', justifyContent: 'center' },
+  impSectionTag: { fontFamily: flFont.sans, fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, color: flColor.bronze400 },
   impItemSource: { fontFamily: flFont.sans, fontSize: 10.5, lineHeight: 14, color: flColor.gray600 },
   impItemMatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.bronze400 },
   impItemUnmatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray600 },
+  impGuesses: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 5, marginTop: 4 },
+  impGuessLabel: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray400 },
+  impGuess: { paddingVertical: 3, paddingHorizontal: 8, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, maxWidth: 220 },
+  impGuessText: { fontFamily: flFont.sans, fontSize: 10.5, fontWeight: '600', color: flColor.bronze300 },
   impTarget: { fontFamily: flFont.sans, fontSize: 12, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
   impSteppers: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   impStep: { width: 22, height: 22, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.charcoal500, alignItems: 'center', justifyContent: 'center' },

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--fl-bg-atmospheric);
+    background-attachment: fixed;
+    color: var(--fl-text-primary);
+    font-family: var(--fl-font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--fl-charcoal-600); border-radius: 99px; }
+  .fl-navlink { color: var(--fl-text-secondary); text-decoration: none; }
+  .fl-navlink:hover { color: var(--fl-text-primary); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="display:flex; min-height:100vh; max-width:1240px; margin:0 auto;">
+
+  <!-- ══ LEFT NAV RAIL ══ -->
+  <aside style="position:sticky; top:0; align-self:flex-start; height:100vh; width:262px; flex:none; border-right:1px solid var(--fl-charcoal-600); padding:28px 20px; display:flex; flex-direction:column; gap:22px; overflow-y:auto; background:var(--fl-surface-nav);">
+    <div style="display:flex; flex-direction:column; gap:6px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:28px; height:28px; border-radius:var(--fl-radius-sm); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; box-shadow:var(--fl-glow-subtle);">
+          <span style="color:#1A1206; display:inline-flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" style="width:18px;height:18px;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+        </div>
+        <span style="font-size:17px; font-weight:600; letter-spacing:0.2px;">Forge Legacy</span>
+      </div>
+      <span style="font-size:12px; color:var(--fl-text-tertiary); padding-left:38px;">Modal &amp; Overlay Library</span>
+    </div>
+    <nav style="display:flex; flex-direction:column; gap:2px;">
+      <sc-for list="{{ nav }}" as="item" hint-placeholder-count="8">
+        <a class="fl-navlink" href="{{ item.href }}" style="display:flex; align-items:baseline; gap:10px; padding:8px 10px; border-radius:var(--fl-radius-xs); font-size:14px;">
+          <span style="color:var(--fl-text-tertiary); font-size:11px; font-family:var(--fl-font-mono); width:18px; flex:none;">{{ item.num }}</span>
+          <span>{{ item.title }}</span>
+        </a>
+      </sc-for>
+    </nav>
+    <div style="margin-top:auto; padding:12px 10px; border-top:1px solid var(--fl-charcoal-600); font-size:11px; line-height:1.5; color:var(--fl-text-tertiary);">Every overlay here is a live instance of the bound design-system component.</div>
+  </aside>
+
+  <!-- ══ MAIN COLUMN ══ -->
+  <main style="flex:1; min-width:0; padding:0 0 120px;">
+
+    <!-- Masthead -->
+    <header style="position:relative; padding:66px 48px 46px; border-bottom:1px solid var(--fl-charcoal-600); overflow:hidden;">
+      <div style="position:absolute; inset:0; background:var(--fl-bg-smoke); pointer-events:none;"></div>
+      <div style="position:relative; display:flex; flex-direction:column; gap:16px;">
+        <span style="font-size:11px; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label); font-weight:600;">Forge Legacy · Visual Foundation</span>
+        <h1 style="margin:0; font-family:var(--fl-font-display); font-size:46px; line-height:1.04; font-weight:600; letter-spacing:-0.5px; max-width:680px;">Modal &amp; Overlay Library</h1>
+        <p style="margin:0; max-width:600px; font-size:15px; line-height:1.55; color:var(--fl-text-secondary);">The reconciled overlay system, built on the bound design system. Centered <span style="color:var(--fl-text-primary);">Modals</span> are reserved for ceremonies; every utility flow is a <span style="color:var(--fl-text-primary);">BottomSheet</span>; loading defaults to <span style="color:var(--fl-text-primary);">Skeleton</span>; and <span style="color:var(--fl-text-primary);">Toast</span> is transient and positive. Each demo below opens a real component instance — nothing here is a restyled mock.</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
+          <span style="display:inline-flex; align-items:center; gap:7px; padding:7px 13px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-600); font-size:12px; color:var(--fl-text-secondary);"><span style="width:6px;height:6px;border-radius:99px;background:var(--fl-green-muted);"></span>Reconciled to Blueprint v1.3</span>
+          <span style="display:inline-flex; align-items:center; gap:7px; padding:7px 13px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-600); font-size:12px; color:var(--fl-text-secondary);">Composes the bound components</span>
+          <span style="display:inline-flex; align-items:center; gap:7px; padding:7px 13px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-600); font-size:12px; color:var(--fl-text-secondary);">Dark-only · Mobile-first</span>
+        </div>
+      </div>
+    </header>
+
+    <div style="padding:0 48px;">
+
+      <!-- ═══ 01 · PRINCIPLES ═══ -->
+      <section id="sec-01" style="padding:64px 0; border-bottom:1px solid var(--fl-charcoal-600);">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <span style="font-size:11px; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); font-weight:600;">Section 01</span>
+          <span style="height:1px; flex:1; background:var(--fl-charcoal-600);"></span>
+        </div>
+        <h2 style="margin:0 0 10px; font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.2px;">Overlay Principles</h2>
+        <p style="margin:0 0 26px; max-width:620px; font-size:15px; line-height:1.55; color:var(--fl-text-secondary);">Eight rules the overlay components already enforce. They are the contract, not a suggestion.</p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px;">
+          <sc-for list="{{ principles }}" as="p" hint-placeholder-count="8">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Card" hint-size="100%,150px">
+              <div style="display:flex; flex-direction:column; gap:9px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <span style="width:24px; height:24px; flex:none; border-radius:var(--fl-radius-xs); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-primary); font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-mono);">{{ p.n }}</span>
+                  <span style="font-size:15px; font-weight:600; color:var(--fl-text-primary);">{{ p.title }}</span>
+                </div>
+                <p style="margin:0; font-size:13px; line-height:1.5; color:var(--fl-text-secondary);">{{ p.text }}</p>
+              </div>
+            </x-import>
+          </sc-for>
+        </div>
+      </section>
+
+      <!-- ═══ 02 · CEREMONY MODAL ═══ -->
+      <section id="sec-02" style="padding:64px 0; border-bottom:1px solid var(--fl-charcoal-600);">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <span style="font-size:11px; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); font-weight:600;">Section 02 · Modal (CLA-C20)</span>
+          <span style="height:1px; flex:1; background:var(--fl-charcoal-600);"></span>
+        </div>
+        <h2 style="margin:0 0 10px; font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.2px;">Ceremony Modal</h2>
+        <p style="margin:0 0 22px; max-width:640px; font-size:15px; line-height:1.55; color:var(--fl-text-secondary);">The <span style="color:var(--fl-text-primary);">only</span> centered-modal class — reserved for earned moments (M-1–M-9). No tap-outside dismiss; the athlete must act. The celebration mark is an <span style="color:var(--fl-text-primary);">Insignia artwork slot</span> (bespoke badge art mounts here), never a generic icon, and the copy is the locked ceremony line.</p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" on-click="{{ openCeremony }}" hint-size="auto,48px">Open ceremony modal</x-import>
+          <span style="font-size:13px; color:var(--fl-text-tertiary);">Honor Earned · artwork slot · locked line · Continue / Share</span>
+        </div>
+      </section>
+
+      <!-- ═══ 03 · BOTTOM SHEETS ═══ -->
+      <section id="sec-03" style="padding:64px 0; border-bottom:1px solid var(--fl-charcoal-600);">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <span style="font-size:11px; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); font-weight:600;">Section 03 · BottomSheet (CLA-C21)</span>
+          <span style="height:1px; flex:1; background:var(--fl-charcoal-600);"></span>
+        </div>
+        <h2 style="margin:0 0 10px; font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.2px;">Bottom Sheets · the utility surface</h2>
+        <p style="margin:0 0 24px; max-width:640px; font-size:15px; line-height:1.55; color:var(--fl-text-secondary);">Everything that is not a ceremony is a bottom sheet: confirmations, forms, action menus, pickers, filters, set input. Slides up, drag handle, tap-outside dismiss by default. Destructive confirmations require an explicit choice.</p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:14px;">
+          <div style="display:flex; flex-direction:column; gap:12px; padding:18px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-card);">
+            <span style="font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Confirmation · M-6</span>
+            <p style="margin:0; font-size:13px; line-height:1.5; color:var(--fl-text-secondary);">One decision, danger tone on the icon and primary only.</p>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" full-width="{{ true }}" on-click="{{ openConfirm }}" hint-size="100%,48px">Open confirmation</x-import>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px; padding:18px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-card);">
+            <span style="font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Form</span>
+            <p style="margin:0; font-size:13px; line-height:1.5; color:var(--fl-text-secondary);">Short input task with inline validation — never a centered modal.</p>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" full-width="{{ true }}" on-click="{{ openForm }}" hint-size="100%,48px">Open form sheet</x-import>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px; padding:18px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-card);">
+            <span style="font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Action menu</span>
+            <p style="margin:0; font-size:13px; line-height:1.5; color:var(--fl-text-secondary);">Operations on one object; destructive row sits last.</p>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" full-width="{{ true }}" on-click="{{ openAction }}" hint-size="100%,48px">Open action sheet</x-import>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px; padding:18px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-card);">
+            <span style="font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Picker</span>
+            <p style="margin:0; font-size:13px; line-height:1.5; color:var(--fl-text-secondary);">Search, filter, select — confirm counts the selection.</p>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" full-width="{{ true }}" on-click="{{ openPicker }}" hint-size="100%,48px">Open picker</x-import>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ 04 · TOAST ═══ -->
+      <section id="sec-04" style="padding:64px 0; border-bottom:1px solid var(--fl-charcoal-600);">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <span style="font-size:11px; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); font-weight:600;">Section 04 · Toast (CLA-C22)</span>
+          <span style="height:1px; flex:1; background:var(--fl-charcoal-600);"></span>
+        </div>
+        <h2 style="margin:0 0 10px; font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.2px;">Toast</h2>
+        <p style="margin:0 0 22px; max-width:640px; font-size:15px; line-height:1.55; color:var(--fl-text-secondary);">Transient and non-modal — it marks something that already succeeded, then auto-dismisses after 3 seconds (announced via <span style="color:var(--fl-text-primary);">aria-live=&quot;polite&quot;</span>). Positive or neutral only; failures are native alerts, never a toast.</p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" on-click="{{ showToast }}" hint-size="auto,48px">Show toast</x-import>
+          <span style="font-size:13px; color:var(--fl-text-tertiary);">&ldquo;Chapter I has started.&rdquo; · 3s auto-dismiss</span>
+        </div>
+      </section>
+
+      <!-- ═══ 05 · LOADING & SKELETONS ═══ -->
+      <section id="sec-05" style="padding:64px 0; border-bottom:1px solid var(--fl-charcoal-600);">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <span style="font-size:11px; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); font-weight:600;">Section 05 · Skeleton (CLA-C23)</span>
+          <span style="height:1px; flex:1; background:var(--fl-charcoal-600);"></span>
+        </div>
+        <h2 style="margin:0 0 10px; font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.2px;">Loading &amp; Skeletons</h2>
+        <p style="margin:0 0 24px; max-width:640px; font-size:15px; line-height:1.55; color:var(--fl-text-secondary);">Skeleton placeholders are the default wait state — they hold the layout and are suppressed under 200ms. A blocking loading modal is the rare exception, only for user-initiated waits with no partial UI to show. Under Reduce Motion the shimmer becomes a static block.</p>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:18px; margin-bottom:22px;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="padding:18px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-card);">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Skeleton" variant="row" count="2" hint-size="100%,120px"></x-import>
+            </div>
+            <span style="font-size:13px; font-weight:600; text-align:center; color:var(--fl-text-secondary);">Row</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Skeleton" variant="card" hint-size="100%,150px"></x-import>
+            <span style="font-size:13px; font-weight:600; text-align:center; color:var(--fl-text-secondary);">Card</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="padding:18px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-card);">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Skeleton" variant="section" hint-size="100%,120px"></x-import>
+            </div>
+            <span style="font-size:13px; font-weight:600; text-align:center; color:var(--fl-text-secondary);">Section</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:12px; padding:16px 18px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); max-width:660px;">
+          <span style="width:6px; height:6px; margin-top:7px; flex:none; border-radius:99px; background:var(--fl-bronze-primary);"></span>
+          <span style="font-size:13.5px; color:var(--fl-text-secondary); line-height:1.55;">Blocking overlay is the exception — a fixed panel whose indicator swaps between loading, success and failure in place. Never a fake progress bar; a determinate bar only when progress is truly measurable.</span>
+        </div>
+      </section>
+
+      <!-- ═══ 06 · ERRORS ═══ -->
+      <section id="sec-06" style="padding:64px 0; border-bottom:1px solid var(--fl-charcoal-600);">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <span style="font-size:11px; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); font-weight:600;">Section 06</span>
+          <span style="height:1px; flex:1; background:var(--fl-charcoal-600);"></span>
+        </div>
+        <h2 style="margin:0 0 10px; font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.2px;">Error Handling</h2>
+        <p style="margin:0 0 24px; max-width:640px; font-size:15px; line-height:1.55; color:var(--fl-text-secondary);">There is no custom error modal. Account-level failures (sign-in lockout, session expiry, delete) use the platform&rsquo;s <span style="color:var(--fl-text-primary);">native alert</span>. In-context, recoverable failures resolve <span style="color:var(--fl-text-primary);">inline</span> — a quiet muted-red edge on the field, never an alarming fill.</p>
+        <div style="max-width:420px; padding:20px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-card);">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.InputField" label="Squad Handle" default-value="ab" error="Handle must be at least 3 characters." hint-size="100%,96px"></x-import>
+        </div>
+      </section>
+
+      <!-- ═══ 07 · BUILDING BLOCKS ═══ -->
+      <section id="sec-07" style="padding:64px 0; border-bottom:1px solid var(--fl-charcoal-600);">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <span style="font-size:11px; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); font-weight:600;">Section 07</span>
+          <span style="height:1px; flex:1; background:var(--fl-charcoal-600);"></span>
+        </div>
+        <h2 style="margin:0 0 10px; font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.2px;">Building Blocks</h2>
+        <p style="margin:0 0 24px; max-width:640px; font-size:15px; line-height:1.55; color:var(--fl-text-secondary);">The pieces overlays assemble from — real components, one bronze primary per surface. Destructive is the forged red model; text is the low-emphasis affordance.</p>
+        <div style="display:flex; flex-direction:column; gap:24px;">
+          <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" hint-size="auto,48px">Start Workout</x-import>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" hint-size="auto,48px">Save</x-import>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="destructive" hint-size="auto,48px">End Workout</x-import>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" hint-size="auto,32px">View all</x-import>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" hint-size="auto,32px">Compound</x-import>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" hint-size="auto,32px">Push</x-import>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" tone="muted" hint-size="auto,32px">Optional</x-import>
+          </div>
+          <div style="max-width:420px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-card);">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.EmptyState" title="No active program" message="Browse Forge programs or build your own to start training." hint-size="100%,200px"></x-import>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ 08 · ELEVATION, MOTION & A11Y ═══ -->
+      <section id="sec-08" style="padding:64px 0 40px;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <span style="font-size:11px; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); font-weight:600;">Section 08</span>
+          <span style="height:1px; flex:1; background:var(--fl-charcoal-600);"></span>
+        </div>
+        <h2 style="margin:0 0 10px; font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.2px;">Elevation, Motion &amp; Accessibility</h2>
+        <p style="margin:0 0 24px; max-width:640px; font-size:15px; line-height:1.55; color:var(--fl-text-secondary);">The contract every overlay in this library already satisfies, straight from the foundation tokens.</p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:14px;">
+          <sc-for list="{{ specs }}" as="s" hint-placeholder-count="6">
+            <div style="display:flex; flex-direction:column; gap:8px; padding:18px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-card);">
+              <span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ s.title }}</span>
+              <span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary);">{{ s.text }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="margin-top:48px; padding-top:26px; border-top:1px solid var(--fl-charcoal-600); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <span style="font-size:15px; font-weight:600;">Modal &amp; Overlay Library v2.0</span>
+            <span style="font-size:13px; color:var(--fl-text-tertiary);">Built on Forge Legacy Visual Foundation · reconciled to Blueprint v1.3</span>
+          </div>
+          <span style="display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border); font-size:13px; color:var(--fl-bronze-primary);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11V8a6 6 0 0112 0v3"/><rect x="4" y="11" width="16" height="10" rx="2"/></svg>Locked</span>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- ══ LIVE OVERLAY MOUNTS (fixed; render only when open) ══ -->
+<div style="position:absolute; width:0; height:0; overflow:visible;">
+  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Modal" open="{{ ceremonyOpen }}" on-close="{{ close }}" eyebrow="Honor Earned" title="Century Club" artwork="{{ honorArtwork }}" footer="{{ ceremonyFooter }}" hint-size="1px,1px">A permanent part of your legacy.</x-import>
+
+  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ confirmOpen }}" on-close="{{ close }}" title="Delete Workout" footer="{{ confirmFooter }}" hint-size="1px,1px">
+    <div style="font-size:14.5px; line-height:1.6; color:var(--fl-text-secondary);">This permanently removes &ldquo;Push Day A&rdquo; and its history. This cannot be undone.</div>
+  </x-import>
+
+  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ formOpen }}" on-close="{{ close }}" title="Create Squad" footer="{{ formFooter }}" hint-size="1px,1px">
+    <div style="display:flex; flex-direction:column; gap:18px;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.InputField" label="Squad Name" placeholder="Name your training group" default-value="Iron Legacy" max-length="30" show-count="{{ true }}" hint-size="100%,84px"></x-import>
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.InputField" label="Handle" default-value="@ironlegacy" error="That handle is already taken." hint-size="100%,90px"></x-import>
+    </div>
+  </x-import>
+
+  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ actionOpen }}" on-close="{{ close }}" title="Push Day A" footer="{{ actionFooter }}" hint-size="1px,1px">
+    <div style="display:flex; flex-direction:column; gap:2px;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ListRow" title="Share" trailing="" hint-size="100%,48px"></x-import>
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ListRow" title="Duplicate" trailing="" hint-size="100%,48px"></x-import>
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ListRow" title="Edit Details" trailing="" hint-size="100%,48px"></x-import>
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ListRow" title="Archive" trailing="" hint-size="100%,48px"></x-import>
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ListRow" title="{{ deleteTitle }}" trailing="" hint-size="100%,48px"></x-import>
+    </div>
+  </x-import>
+
+  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ pickerOpen }}" on-close="{{ close }}" title="Add Exercises" footer="{{ pickerFooter }}" hint-size="1px,1px">
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.InputField" placeholder="Search movements" leading-icon="{{ searchIcon }}" hint-size="100%,54px"></x-import>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" hint-size="auto,30px">All</x-import>
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" tone="muted" hint-size="auto,30px">Chest</x-import>
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" tone="muted" hint-size="auto,30px">Back</x-import>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ListRow" title="Barbell Bench Press" subtitle="Chest · Barbell" trailing="{{ tick }}" hint-size="100%,56px"></x-import>
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ListRow" title="Incline Dumbbell Press" subtitle="Chest · Dumbbell" trailing="{{ tick }}" hint-size="100%,56px"></x-import>
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ListRow" title="Cable Fly" subtitle="Chest · Cable" trailing="" hint-size="100%,56px"></x-import>
+      </div>
+    </div>
+  </x-import>
+
+  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Toast" open="{{ toastOpen }}" message="Chapter I has started." icon="{{ toastIcon }}" on-dismiss="{{ hideToast }}" hint-size="1px,1px"></x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { overlay: null, toast: false };
+
+  componentDidMount() {
+    // The DS bundle loads from <helmet>; re-render once it is present so the
+    // node props (footers/artwork built from the DS namespace) populate.
+    this._raf = requestAnimationFrame(() => this.forceUpdate());
+  }
+  componentWillUnmount() { if (this._raf) cancelAnimationFrame(this._raf); }
+
+  renderVals() {
+    const NS = (typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2) || {};
+    const Button = NS.Button;
+    const Insignia = NS.Insignia;
+
+    const setOverlay = (name) => this.setState({ overlay: name });
+    const close = () => this.setState({ overlay: null });
+    const showToast = () => this.setState({ toast: true });
+    const hideToast = () => this.setState({ toast: false });
+
+    const svg = (paths, opts) => React.createElement('svg', Object.assign({
+      width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none',
+      stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round',
+    }, opts || {}), ...paths.map((d, i) => React.createElement('path', { key: i, d })));
+
+    const btn = (props, label) => Button ? React.createElement(Button, props, label) : null;
+
+    // ── Ceremony artwork slot (Insignia) + footer ──
+    const honorArtwork = Insignia
+      ? React.createElement(Insignia, { variant: 'honor', size: 'xl', placeholderLabel: 'CC' })
+      : null;
+    const ceremonyFooter = Button ? [
+      btn({ key: 'a', variant: 'primary', fullWidth: true, onClick: close }, 'View Honor'),
+      btn({ key: 'b', variant: 'secondary', fullWidth: true, onClick: close }, 'Share'),
+    ] : null;
+
+    // ── BottomSheet footers ──
+    const confirmFooter = Button ? [
+      btn({ key: 'a', variant: 'destructive', fullWidth: true, onClick: close }, 'Delete Workout'),
+      btn({ key: 'b', variant: 'secondary', fullWidth: true, onClick: close }, 'Cancel'),
+    ] : null;
+    const formFooter = Button ? [
+      btn({ key: 'a', variant: 'primary', fullWidth: true, onClick: close }, 'Create Squad'),
+      btn({ key: 'b', variant: 'text', fullWidth: true, onClick: close }, 'Cancel'),
+    ] : null;
+    const actionFooter = Button ? [
+      btn({ key: 'a', variant: 'secondary', fullWidth: true, onClick: close }, 'Cancel'),
+    ] : null;
+    const pickerFooter = Button ? [
+      btn({ key: 'a', variant: 'primary', fullWidth: true, onClick: close }, 'Add 2 Exercises'),
+    ] : null;
+
+    // ── Node props for nested rows / inputs ──
+    const deleteTitle = React.createElement('span', { style: { color: 'var(--fl-red-muted)', fontWeight: 600 } }, 'Delete');
+    const tick = svg(['M20 6L9 17l-5-5'], { stroke: 'var(--fl-bronze-primary)', strokeWidth: 2.4, style: { flex: 'none' } });
+    const searchIcon = React.createElement('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' },
+      React.createElement('circle', { cx: 11, cy: 11, r: 7 }),
+      React.createElement('path', { d: 'M21 21l-4-4' }));
+    const toastIcon = svg(['M20 6L9 17l-5-5'], { strokeWidth: 2.4 });
+
+    const nav = [
+      ['01', 'Overlay Principles'], ['02', 'Ceremony Modal'], ['03', 'Bottom Sheets'],
+      ['04', 'Toast'], ['05', 'Loading & Skeletons'], ['06', 'Error Handling'],
+      ['07', 'Building Blocks'], ['08', 'Elevation & Motion'],
+    ].map(([num, title]) => ({ num, title, href: '#sec-' + num }));
+
+    const principles = [
+      ['Modal = ceremony only', 'Centered modals are reserved for earned ceremony moments (M-1–M-9). Nothing utilitarian opens as a centered modal.'],
+      ['Sheets carry utility', 'Every non-ceremony flow — confirmation, form, picker, filter, action menu, set input — is a BottomSheet.'],
+      ['Never stack', 'One overlay at a time. Dismiss the current surface before presenting the next.'],
+      ['Skeleton is the default wait', 'Loading shows a skeleton, suppressed under 200ms. A blocking spinner is the rare exception.'],
+      ['Toast is positive & transient', '3 seconds, non-modal, announced politely. Never an error or an urgency signal.'],
+      ['Errors stay calm & scoped', 'Account-level failures use the native alert; in-context failures resolve inline. No custom error modal.'],
+      ['Bronze marks the earned', 'Full-surface bronze appears only on the ceremony artwork slot. Everywhere else bronze is a restrained accent.'],
+      ['Reduce Motion is first-class', 'Every overlay ships its instant / no-slide fallback from the start, not as a later pass.'],
+    ].map(([title, text], i) => ({ n: String(i + 1).padStart(2, '0'), title, text }));
+
+    const specs = [
+      ['Elevation stack', 'Canvas → Card → Sheet → Modal, each a distinct forged surface token (surface-card / elevated / modal).'],
+      ['Backdrop', 'Modals dim to overlay-dark with a 6px blur; sheets use a lighter 4px blur — the overlay is the only lit surface.'],
+      ['Motion', 'Ceremony reveal 500ms, standard 250ms, on the ease-out curve. Deliberate and heavy — never bouncy.'],
+      ['Reduce Motion', 'Scale/slide/shimmer collapse to instant or static. Built into every overlay component, not retrofitted.'],
+      ['Focus & dismissal', 'role="dialog", aria-modal, focus returns to the trigger. Ceremonies need an explicit action; sheets allow tap-outside.'],
+      ['Safe areas', 'Sheets and footers inset past the home indicator via env(safe-area-inset-bottom); 44dp minimum touch targets.'],
+    ].map(([title, text]) => ({ title, text }));
+
+    return {
+      nav, principles, specs,
+      ceremonyOpen: this.state.overlay === 'ceremony',
+      confirmOpen: this.state.overlay === 'confirm',
+      formOpen: this.state.overlay === 'form',
+      actionOpen: this.state.overlay === 'action',
+      pickerOpen: this.state.overlay === 'picker',
+      toastOpen: this.state.toast,
+      openCeremony: () => setOverlay('ceremony'),
+      openConfirm: () => setOverlay('confirm'),
+      openForm: () => setOverlay('form'),
+      openAction: () => setOverlay('action'),
+      openPicker: () => setOverlay('picker'),
+      close, showToast, hideToast,
+      honorArtwork, ceremonyFooter, confirmFooter, formFooter, actionFooter, pickerFooter,
+      deleteTitle, tick, searchIcon, toastIcon,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,2010 @@
+{
+"45-degree-leg-press": [
+428,
+300
+],
+"90-90-hip-stretch": [
+289,
+300
+],
+"90-90-hip-switch": [
+311,
+300
+],
+"ab-wheel-rollout": [
+612,
+300
+],
+"active-hang": [
+202,
+300
+],
+"adductor-rock-back": [
+642,
+300
+],
+"air-bike": [
+652,
+300
+],
+"alternating-dumbbell-bench-press": [
+238,
+300
+],
+"alternating-dumbbell-curl": [
+152,
+300
+],
+"alternating-lunge-jump": [
+184,
+300
+],
+"ankle-dorsiflexion-mobilization": [
+190,
+300
+],
+"arc-trainer": [
+266,
+300
+],
+"archer-pull-up": [
+248,
+300
+],
+"archer-push-up": [
+514,
+300
+],
+"arm-circles": [
+258,
+300
+],
+"assisted-dip-machine": [
+198,
+300
+],
+"assisted-nordic-curl": [
+362,
+300
+],
+"assisted-pistol-squat": [
+187,
+300
+],
+"assisted-pull-up": [
+168,
+300
+],
+"assisted-pull-up-machine": [
+168,
+300
+],
+"axle-deadlift": [
+166,
+300
+],
+"back-extension": [
+408,
+300
+],
+"band-anti-rotation-hold": [
+374,
+300
+],
+"band-assisted-dip": [
+184,
+300
+],
+"band-assisted-pull-up": [
+214,
+300
+],
+"band-biceps-curl": [
+134,
+300
+],
+"band-calf-raise": [
+100,
+300
+],
+"band-chest-fly": [
+254,
+300
+],
+"band-chest-press": [
+252,
+300
+],
+"band-dead-bug": [
+896,
+300
+],
+"band-face-pull": [
+296,
+300
+],
+"band-front-raise": [
+150,
+300
+],
+"band-front-squat": [
+142,
+300
+],
+"band-glute-bridge": [
+676,
+300
+],
+"band-glute-kickback": [
+200,
+300
+],
+"band-goblet-squat": [
+110,
+300
+],
+"band-good-morning": [
+166,
+300
+],
+"band-hammer-curl": [
+120,
+300
+],
+"band-hip-abduction": [
+284,
+300
+],
+"band-hip-adduction": [
+254,
+300
+],
+"band-hip-thrust": [
+416,
+300
+],
+"band-lat-pulldown": [
+224,
+300
+],
+"band-lateral-raise": [
+212,
+300
+],
+"band-lateral-walk": [
+422,
+300
+],
+"band-leg-curl": [
+114,
+300
+],
+"band-leg-extension": [
+248,
+300
+],
+"band-monster-walk": [
+180,
+300
+],
+"band-overhead-press": [
+122,
+300
+],
+"band-overhead-triceps-extension": [
+224,
+300
+],
+"band-pallof-press": [
+228,
+300
+],
+"band-pull-apart": [
+184,
+300
+],
+"band-push-up": [
+456,
+300
+],
+"band-rear-delt-fly": [
+318,
+300
+],
+"band-reverse-curl": [
+136,
+300
+],
+"band-romanian-deadlift": [
+144,
+300
+],
+"band-seated-row": [
+312,
+300
+],
+"band-shoulder-dislocate": [
+200,
+300
+],
+"band-shoulder-external-rotation": [
+134,
+300
+],
+"band-shoulder-internal-rotation": [
+137,
+300
+],
+"band-shrug": [
+98,
+300
+],
+"band-split-squat": [
+164,
+300
+],
+"band-squat": [
+142,
+300
+],
+"band-straight-arm-pulldown": [
+232,
+300
+],
+"band-triceps-kickback": [
+222,
+300
+],
+"band-triceps-pushdown": [
+188,
+300
+],
+"band-upright-row": [
+154,
+300
+],
+"band-wood-chop": [
+281,
+300
+],
+"barbell-back-squat": [
+364,
+300
+],
+"barbell-behind-the-neck-press": [
+202,
+300
+],
+"barbell-bench-press": [
+302,
+300
+],
+"barbell-bent-over-row": [
+232,
+300
+],
+"barbell-biceps-curl": [
+228,
+300
+],
+"barbell-block-pull": [
+165,
+300
+],
+"barbell-board-press": [
+222,
+300
+],
+"barbell-box-squat": [
+276,
+300
+],
+"barbell-bulgarian-split-squat": [
+278,
+300
+],
+"barbell-calf-raise": [
+252,
+300
+],
+"barbell-close-grip-bench-press": [
+316,
+300
+],
+"barbell-deadlift": [
+246,
+300
+],
+"barbell-decline-bench-press": [
+330,
+300
+],
+"barbell-deficit-deadlift": [
+164,
+300
+],
+"barbell-drag-curl": [
+226,
+300
+],
+"barbell-floor-press": [
+446,
+300
+],
+"barbell-front-squat": [
+264,
+300
+],
+"barbell-glute-bridge": [
+372,
+300
+],
+"barbell-good-morning": [
+220,
+300
+],
+"barbell-guillotine-press": [
+318,
+300
+],
+"barbell-hack-squat": [
+224,
+300
+],
+"barbell-high-bar-back-squat": [
+233,
+300
+],
+"barbell-hip-thrust": [
+432,
+300
+],
+"barbell-incline-bench-press": [
+228,
+300
+],
+"barbell-jm-press": [
+360,
+300
+],
+"barbell-larsen-press": [
+414,
+300
+],
+"barbell-low-bar-back-squat": [
+185,
+300
+],
+"barbell-overhead-carry": [
+102,
+300
+],
+"barbell-overhead-press": [
+258,
+300
+],
+"barbell-overhead-triceps-extension": [
+214,
+300
+],
+"barbell-pause-deadlift": [
+246,
+300
+],
+"barbell-pause-squat": [
+258,
+300
+],
+"barbell-pendlay-row": [
+266,
+300
+],
+"barbell-pin-press": [
+254,
+300
+],
+"barbell-pin-squat": [
+218,
+300
+],
+"barbell-preacher-curl": [
+284,
+300
+],
+"barbell-pullover": [
+344,
+300
+],
+"barbell-push-press": [
+164,
+300
+],
+"barbell-rack-pull": [
+178,
+300
+],
+"barbell-reverse-curl": [
+286,
+300
+],
+"barbell-rollout": [
+488,
+300
+],
+"barbell-romanian-deadlift": [
+216,
+300
+],
+"barbell-seal-row": [
+338,
+300
+],
+"barbell-seated-good-morning": [
+300,
+300
+],
+"barbell-seated-overhead-press": [
+258,
+300
+],
+"barbell-shrug": [
+320,
+300
+],
+"barbell-skull-crusher": [
+342,
+300
+],
+"barbell-split-squat": [
+240,
+300
+],
+"barbell-step-up": [
+166,
+300
+],
+"barbell-stiff-leg-deadlift": [
+194,
+300
+],
+"barbell-sumo-deadlift": [
+216,
+300
+],
+"barbell-tempo-deadlift": [
+232,
+300
+],
+"barbell-tempo-squat": [
+261,
+300
+],
+"barbell-thruster": [
+210,
+300
+],
+"barbell-upright-row": [
+158,
+300
+],
+"barbell-walking-lunge": [
+406,
+300
+],
+"barbell-yates-row": [
+266,
+300
+],
+"barbell-zercher-squat": [
+258,
+300
+],
+"battle-rope-alternating-waves": [
+482,
+300
+],
+"battle-rope-circles": [
+482,
+300
+],
+"battle-rope-double-waves": [
+482,
+300
+],
+"battle-rope-lateral-waves": [
+482,
+300
+],
+"battle-rope-slams": [
+385,
+300
+],
+"bayesian-cable-curl": [
+169,
+300
+],
+"bear-crawl": [
+914,
+300
+],
+"behind-the-back-cable-lateral-raise": [
+271,
+300
+],
+"belt-squat-machine": [
+259,
+300
+],
+"bench-dip": [
+300,
+300
+],
+"bicycle-crunch": [
+696,
+300
+],
+"bird-dog": [
+738,
+300
+],
+"bird-dog-mobility": [
+738,
+300
+],
+"bodyweight-good-morning": [
+148,
+300
+],
+"bodyweight-row": [
+268,
+300
+],
+"bodyweight-squat": [
+210,
+300
+],
+"box-jump": [
+212,
+300
+],
+"box-jump-over": [
+220,
+300
+],
+"box-squat-to-bench": [
+265,
+300
+],
+"box-step-off-landing": [
+155,
+300
+],
+"broad-jump": [
+540,
+300
+],
+"bulgarian-split-squat": [
+228,
+300
+],
+"burpee": [
+188,
+300
+],
+"burpee-box-jump": [
+318,
+300
+],
+"cable-anti-rotation-hold": [
+198,
+300
+],
+"cable-belt-squat": [
+204,
+300
+],
+"cable-biceps-curl": [
+222,
+300
+],
+"cable-bulgarian-split-squat": [
+228,
+300
+],
+"cable-calf-raise": [
+194,
+300
+],
+"cable-chest-fly": [
+300,
+300
+],
+"cable-chest-press": [
+242,
+300
+],
+"cable-chop": [
+186,
+300
+],
+"cable-cross-body-triceps-extension": [
+190,
+300
+],
+"cable-crossover": [
+208,
+300
+],
+"cable-crunch": [
+264,
+300
+],
+"cable-dead-bug": [
+768,
+300
+],
+"cable-decline-chest-press": [
+259,
+300
+],
+"cable-donkey-kick": [
+307,
+300
+],
+"cable-external-rotation": [
+172,
+300
+],
+"cable-face-pull": [
+292,
+300
+],
+"cable-front-squat": [
+170,
+300
+],
+"cable-glute-kickback": [
+302,
+300
+],
+"cable-goblet-squat": [
+180,
+300
+],
+"cable-hip-abduction": [
+250,
+300
+],
+"cable-hip-adduction": [
+230,
+300
+],
+"cable-hip-thrust": [
+416,
+300
+],
+"cable-internal-rotation": [
+196,
+300
+],
+"cable-lat-pulldown": [
+244,
+300
+],
+"cable-lateral-raise": [
+326,
+300
+],
+"cable-leg-extension": [
+282,
+300
+],
+"cable-lift": [
+280,
+300
+],
+"cable-overhead-triceps-extension": [
+232,
+300
+],
+"cable-pallof-press": [
+198,
+300
+],
+"cable-preacher-curl": [
+200,
+300
+],
+"cable-pull-through": [
+254,
+300
+],
+"cable-pullover": [
+320,
+300
+],
+"cable-rear-delt-fly": [
+278,
+300
+],
+"cable-reverse-crunch": [
+294,
+300
+],
+"cable-reverse-curl": [
+156,
+300
+],
+"cable-reverse-fly": [
+240,
+300
+],
+"cable-reverse-lunge": [
+294,
+300
+],
+"cable-romanian-deadlift": [
+270,
+300
+],
+"cable-rope-hammer-curl": [
+150,
+300
+],
+"cable-rope-pushdown": [
+222,
+300
+],
+"cable-rotation": [
+196,
+300
+],
+"cable-seated-row": [
+268,
+300
+],
+"cable-shrug": [
+142,
+300
+],
+"cable-side-bend": [
+258,
+300
+],
+"cable-skull-crusher": [
+264,
+300
+],
+"cable-squat": [
+204,
+300
+],
+"cable-standing-leg-curl": [
+202,
+300
+],
+"cable-step-up": [
+184,
+300
+],
+"cable-straight-bar-curl": [
+178,
+300
+],
+"cable-triceps-pushdown": [
+200,
+300
+],
+"cable-upright-row": [
+192,
+300
+],
+"cable-wood-chop": [
+265,
+300
+],
+"cable-y-raise": [
+230,
+300
+],
+"calf-raise": [
+242,
+300
+],
+"calf-wall-stretch": [
+190,
+300
+],
+"cat-cow": [
+370,
+300
+],
+"chin-up": [
+210,
+300
+],
+"clap-push-up": [
+354,
+300
+],
+"close-grip-cable-lat-pulldown": [
+220,
+300
+],
+"close-grip-push-up": [
+400,
+300
+],
+"commando-pull-up": [
+210,
+300
+],
+"converging-chest-press": [
+227,
+300
+],
+"cossack-squat": [
+262,
+300
+],
+"couch-stretch": [
+282,
+300
+],
+"countermovement-jump": [
+124,
+300
+],
+"crab-walk": [
+626,
+300
+],
+"cross-body-hammer-curl": [
+370,
+300
+],
+"cross-body-shoulder-stretch": [
+123,
+300
+],
+"crunch": [
+424,
+300
+],
+"curtsy-lunge": [
+198,
+300
+],
+"dead-bug": [
+768,
+300
+],
+"dead-hang": [
+202,
+300
+],
+"decline-push-up": [
+832,
+300
+],
+"deep-squat-hold": [
+130,
+300
+],
+"depth-jump": [
+254,
+300
+],
+"diamond-push-up": [
+418,
+300
+],
+"dive-bomber-push-up": [
+602,
+300
+],
+"doorway-chest-stretch": [
+238,
+300
+],
+"double-kettlebell-press": [
+128,
+300
+],
+"double-under": [
+234,
+300
+],
+"dragon-flag": [
+272,
+300
+],
+"dumbbell-arnold-press": [
+164,
+300
+],
+"dumbbell-bench-press": [
+242,
+300
+],
+"dumbbell-bent-over-row": [
+228,
+300
+],
+"dumbbell-biceps-curl": [
+152,
+300
+],
+"dumbbell-bulgarian-split-squat": [
+582,
+300
+],
+"dumbbell-calf-raise": [
+124,
+300
+],
+"dumbbell-chest-fly": [
+256,
+300
+],
+"dumbbell-chest-supported-row": [
+323,
+300
+],
+"dumbbell-concentration-curl": [
+190,
+300
+],
+"dumbbell-cuban-press": [
+152,
+300
+],
+"dumbbell-curtsy-lunge": [
+139,
+300
+],
+"dumbbell-decline-bench-press": [
+284,
+300
+],
+"dumbbell-decline-chest-fly": [
+311,
+300
+],
+"dumbbell-drag-curl": [
+146,
+300
+],
+"dumbbell-floor-press": [
+310,
+300
+],
+"dumbbell-forward-lunge": [
+229,
+300
+],
+"dumbbell-front-raise": [
+150,
+300
+],
+"dumbbell-front-squat": [
+534,
+300
+],
+"dumbbell-glute-bridge": [
+632,
+300
+],
+"dumbbell-goblet-squat": [
+110,
+300
+],
+"dumbbell-gorilla-row": [
+180,
+300
+],
+"dumbbell-hammer-curl": [
+154,
+300
+],
+"dumbbell-hip-thrust": [
+422,
+300
+],
+"dumbbell-incline-bench-press": [
+198,
+300
+],
+"dumbbell-incline-bench-row": [
+276,
+300
+],
+"dumbbell-incline-chest-fly": [
+241,
+300
+],
+"dumbbell-incline-curl": [
+234,
+300
+],
+"dumbbell-lateral-lunge": [
+446,
+300
+],
+"dumbbell-lateral-raise": [
+248,
+300
+],
+"dumbbell-overhead-carry": [
+104,
+300
+],
+"dumbbell-overhead-press": [
+120,
+300
+],
+"dumbbell-preacher-curl": [
+188,
+300
+],
+"dumbbell-pullover": [
+316,
+300
+],
+"dumbbell-push-press": [
+110,
+300
+],
+"dumbbell-rear-delt-fly": [
+369,
+300
+],
+"dumbbell-renegade-row": [
+372,
+300
+],
+"dumbbell-reverse-curl": [
+158,
+300
+],
+"dumbbell-reverse-lunge": [
+168,
+300
+],
+"dumbbell-romanian-deadlift": [
+140,
+300
+],
+"dumbbell-russian-twist": [
+496,
+300
+],
+"dumbbell-shrug": [
+132,
+300
+],
+"dumbbell-side-bend": [
+158,
+300
+],
+"dumbbell-skull-crusher": [
+510,
+300
+],
+"dumbbell-spider-curl": [
+390,
+300
+],
+"dumbbell-split-squat": [
+158,
+300
+],
+"dumbbell-squeeze-press": [
+250,
+300
+],
+"dumbbell-step-up": [
+130,
+300
+],
+"dumbbell-stiff-leg-deadlift": [
+162,
+300
+],
+"dumbbell-suitcase-carry": [
+134,
+300
+],
+"dumbbell-sumo-deadlift": [
+130,
+300
+],
+"dumbbell-sumo-squat": [
+136,
+300
+],
+"dumbbell-swing": [
+206,
+300
+],
+"dumbbell-tate-press": [
+278,
+300
+],
+"dumbbell-thruster": [
+122,
+300
+],
+"dumbbell-triceps-kickback": [
+336,
+300
+],
+"dumbbell-upright-row": [
+156,
+300
+],
+"dumbbell-waiter-carry": [
+104,
+300
+],
+"dumbbell-walking-lunge": [
+340,
+300
+],
+"dumbbell-z-press": [
+212,
+300
+],
+"dumbbell-zottman-curl": [
+148,
+300
+],
+"elliptical": [
+216,
+300
+],
+"explosive-push-up": [
+388,
+300
+],
+"farmer-carry": [
+120,
+300
+],
+"feet-elevated-inverted-row": [
+294,
+300
+],
+"foam-roll-lats": [
+1092,
+300
+],
+"foam-roll-upper-back": [
+777,
+300
+],
+"forward-lunge": [
+236,
+300
+],
+"frog-stretch": [
+610,
+300
+],
+"glute-bridge": [
+632,
+300
+],
+"glute-ham-developer-raise": [
+187,
+300
+],
+"hack-squat-machine": [
+453,
+300
+],
+"half-kneeling-hip-flexor-stretch": [
+318,
+300
+],
+"half-kneeling-pallof-press": [
+194,
+300
+],
+"half-kneeling-single-arm-lat-pulldown": [
+237,
+300
+],
+"hamstring-stretch": [
+442,
+300
+],
+"hanging-knee-raise": [
+270,
+300
+],
+"hanging-leg-raise": [
+330,
+300
+],
+"high-cable-row": [
+250,
+300
+],
+"high-to-low-cable-fly": [
+362,
+300
+],
+"high-to-low-cable-wood-chop": [
+217,
+300
+],
+"hill-sprint": [
+228,
+300
+],
+"hindu-push-up": [
+392,
+300
+],
+"hip-thrust-machine": [
+416,
+300
+],
+"hollow-rock": [
+762,
+300
+],
+"horizontal-leg-press": [
+332,
+300
+],
+"hurdle-jump": [
+136,
+300
+],
+"inchworm": [
+338,
+300
+],
+"incline-dumbbell-rear-delt-fly": [
+369,
+300
+],
+"incline-push-up": [
+316,
+300
+],
+"inverted-row": [
+278,
+300
+],
+"jump-rope": [
+244,
+300
+],
+"jump-rope-intervals": [
+244,
+300
+],
+"jump-squat": [
+112,
+300
+],
+"kettlebell-bulgarian-split-squat": [
+228,
+300
+],
+"kettlebell-deadlift": [
+130,
+300
+],
+"kettlebell-farmer-carry": [
+120,
+300
+],
+"kettlebell-figure-eight": [
+248,
+300
+],
+"kettlebell-floor-press": [
+340,
+300
+],
+"kettlebell-goblet-squat": [
+124,
+300
+],
+"kettlebell-gorilla-row": [
+180,
+300
+],
+"kettlebell-halo": [
+188,
+300
+],
+"kettlebell-high-pull": [
+142,
+300
+],
+"kettlebell-overhead-carry": [
+102,
+300
+],
+"kettlebell-press": [
+120,
+300
+],
+"kettlebell-pullover": [
+346,
+300
+],
+"kettlebell-push-press": [
+128,
+300
+],
+"kettlebell-reverse-lunge": [
+194,
+300
+],
+"kettlebell-romanian-deadlift": [
+148,
+300
+],
+"kettlebell-row": [
+206,
+300
+],
+"kettlebell-russian-twist": [
+418,
+300
+],
+"kettlebell-split-squat": [
+158,
+300
+],
+"kettlebell-sumo-deadlift": [
+130,
+300
+],
+"kettlebell-sumo-squat": [
+126,
+300
+],
+"kettlebell-swing": [
+186,
+300
+],
+"kettlebell-thruster": [
+136,
+300
+],
+"kettlebell-turkish-get-up": [
+202,
+300
+],
+"kettlebell-walking-lunge": [
+340,
+300
+],
+"kettlebell-windmill": [
+132,
+300
+],
+"knee-push-up": [
+382,
+300
+],
+"kneeling-cable-crunch": [
+242,
+300
+],
+"l-sit": [
+192,
+300
+],
+"lacrosse-ball-glute-release": [
+417,
+300
+],
+"lateral-lunge": [
+446,
+300
+],
+"low-to-high-cable-fly": [
+314,
+300
+],
+"lying-leg-curl-machine": [
+462,
+300
+],
+"machine-abdominal-crunch": [
+252,
+300
+],
+"machine-back-extension": [
+269,
+300
+],
+"machine-biceps-curl": [
+238,
+300
+],
+"machine-chest-press": [
+227,
+300
+],
+"machine-high-row": [
+250,
+300
+],
+"machine-lat-pulldown": [
+212,
+300
+],
+"machine-lateral-raise": [
+197,
+300
+],
+"machine-leg-press": [
+226,
+300
+],
+"machine-preacher-curl": [
+197,
+300
+],
+"machine-seated-row": [
+244,
+300
+],
+"machine-squat": [
+210,
+300
+],
+"machine-t-bar-row": [
+334,
+300
+],
+"machine-triceps-extension": [
+260,
+300
+],
+"medicine-ball-burpee": [
+218,
+300
+],
+"medicine-ball-chest-pass": [
+328,
+300
+],
+"medicine-ball-dead-bug": [
+525,
+300
+],
+"medicine-ball-mountain-climber": [
+400,
+300
+],
+"medicine-ball-overhead-throw": [
+366,
+300
+],
+"medicine-ball-rotational-throw": [
+402,
+300
+],
+"medicine-ball-russian-twist": [
+388,
+300
+],
+"medicine-ball-side-slam": [
+196,
+300
+],
+"medicine-ball-slam": [
+162,
+300
+],
+"medicine-ball-squat-to-throw": [
+148,
+300
+],
+"medicine-ball-v-up-pass": [
+495,
+300
+],
+"medicine-ball-wall-ball": [
+148,
+300
+],
+"mountain-climber": [
+622,
+300
+],
+"negative-pull-up": [
+204,
+300
+],
+"neutral-grip-cable-lat-pulldown": [
+158,
+300
+],
+"nordic-hamstring-curl": [
+334,
+300
+],
+"one-arm-pull-up": [
+92,
+300
+],
+"parallel-bar-dip": [
+300,
+300
+],
+"pec-deck-fly": [
+186,
+300
+],
+"pendulum-squat": [
+364,
+300
+],
+"pigeon-stretch": [
+478,
+300
+],
+"pike-push-up": [
+340,
+300
+],
+"pistol-squat": [
+252,
+300
+],
+"plank": [
+854,
+300
+],
+"plate-loaded-chest-press": [
+222,
+300
+],
+"plate-loaded-incline-chest-press": [
+270,
+300
+],
+"plate-loaded-seated-row": [
+304,
+300
+],
+"plate-loaded-shoulder-press": [
+232,
+300
+],
+"pogo-jump": [
+116,
+300
+],
+"prisoner-squat": [
+130,
+300
+],
+"pull-up": [
+214,
+300
+],
+"push-up": [
+342,
+300
+],
+"renegade-kettlebell-row": [
+314,
+300
+],
+"reverse-crunch": [
+348,
+300
+],
+"reverse-hack-squat": [
+408,
+300
+],
+"reverse-lunge": [
+298,
+300
+],
+"reverse-pec-deck": [
+186,
+300
+],
+"reverse-plank": [
+534,
+300
+],
+"ring-push-up": [
+286,
+300
+],
+"scapular-pull-up": [
+174,
+300
+],
+"scapular-push-up": [
+874,
+300
+],
+"scapular-wall-slide": [
+170,
+300
+],
+"seated-calf-raise-machine": [
+370,
+300
+],
+"seated-dumbbell-shoulder-press": [
+166,
+300
+],
+"seated-leg-curl-machine": [
+275,
+300
+],
+"shoulder-rolls": [
+1056,
+300
+],
+"shrimp-squat": [
+188,
+300
+],
+"side-plank": [
+602,
+300
+],
+"single-arm-band-chest-press": [
+215,
+300
+],
+"single-arm-band-overhead-press": [
+106,
+300
+],
+"single-arm-band-row": [
+326,
+300
+],
+"single-arm-cable-chest-press": [
+236,
+300
+],
+"single-arm-cable-curl": [
+166,
+300
+],
+"single-arm-cable-fly": [
+228,
+300
+],
+"single-arm-cable-front-raise": [
+188,
+300
+],
+"single-arm-cable-overhead-triceps-extension": [
+246,
+300
+],
+"single-arm-cable-pushdown": [
+210,
+300
+],
+"single-arm-cable-row": [
+224,
+300
+],
+"single-arm-dumbbell-bench-press": [
+340,
+300
+],
+"single-arm-dumbbell-floor-press": [
+340,
+300
+],
+"single-arm-dumbbell-incline-press": [
+187,
+300
+],
+"single-arm-dumbbell-lateral-raise": [
+198,
+300
+],
+"single-arm-dumbbell-row": [
+230,
+300
+],
+"single-arm-kettlebell-floor-press": [
+383,
+300
+],
+"single-arm-kettlebell-press": [
+134,
+300
+],
+"single-arm-kettlebell-row": [
+226,
+300
+],
+"single-arm-kettlebell-swing": [
+148,
+300
+],
+"single-leg-broad-jump": [
+337,
+300
+],
+"single-leg-calf-raise": [
+174,
+300
+],
+"single-leg-dumbbell-calf-raise": [
+174,
+300
+],
+"single-leg-dumbbell-romanian-deadlift": [
+140,
+300
+],
+"single-leg-glute-bridge": [
+644,
+300
+],
+"single-leg-hop": [
+136,
+300
+],
+"single-leg-kettlebell-romanian-deadlift": [
+293,
+300
+],
+"single-leg-leg-extension": [
+246,
+300
+],
+"single-leg-leg-press": [
+384,
+300
+],
+"single-leg-seated-leg-curl": [
+275,
+300
+],
+"single-leg-sit-to-stand": [
+156,
+300
+],
+"sissy-squat": [
+246,
+300
+],
+"sit-up": [
+580,
+300
+],
+"ski-erg": [
+181,
+300
+],
+"smith-machine-back-squat": [
+235,
+300
+],
+"smith-machine-bent-over-row": [
+241,
+300
+],
+"smith-machine-box-squat": [
+235,
+300
+],
+"smith-machine-calf-raise": [
+242,
+300
+],
+"smith-machine-deadlift": [
+223,
+300
+],
+"smith-machine-romanian-deadlift": [
+223,
+300
+],
+"smith-machine-shoulder-press": [
+231,
+300
+],
+"split-squat": [
+204,
+300
+],
+"split-squat-jump": [
+197,
+300
+],
+"sprint": [
+228,
+300
+],
+"squat-jump": [
+112,
+300
+],
+"standing-hip-flexor-stretch": [
+206,
+300
+],
+"standing-long-jump": [
+416,
+300
+],
+"stationary-bike": [
+186,
+300
+],
+"step-up": [
+130,
+300
+],
+"stepmill": [
+172,
+300
+],
+"straight-arm-cable-pulldown": [
+348,
+300
+],
+"strides": [
+254,
+300
+],
+"suitcase-carry": [
+134,
+300
+],
+"superman-hold": [
+648,
+300
+],
+"suspension-trainer-biceps-curl": [
+221,
+300
+],
+"suspension-trainer-high-row": [
+223,
+300
+],
+"suspension-trainer-pike": [
+332,
+300
+],
+"suspension-trainer-push-up": [
+279,
+300
+],
+"suspension-trainer-row": [
+245,
+300
+],
+"suspension-trainer-side-plank": [
+602,
+300
+],
+"suspension-trainer-single-leg-squat": [
+281,
+300
+],
+"suspension-trainer-squat": [
+125,
+300
+],
+"suspension-trainer-t-raise": [
+396,
+300
+],
+"suspension-trainer-y-raise": [
+222,
+300
+],
+"tall-kneeling-pallof-press": [
+194,
+300
+],
+"thread-the-needle": [
+238,
+300
+],
+"tibialis-raise": [
+364,
+300
+],
+"toe-touch": [
+194,
+300
+],
+"toes-to-bar": [
+224,
+300
+],
+"trap-bar-farmer-carry": [
+216,
+300
+],
+"triceps-stretch": [
+186,
+300
+],
+"tuck-jump": [
+188,
+300
+],
+"two-hand-dumbbell-overhead-triceps-extension": [
+169,
+300
+],
+"underhand-inverted-row": [
+278,
+300
+],
+"v-sit": [
+272,
+300
+],
+"v-up": [
+556,
+300
+],
+"vertical-leg-press": [
+240,
+300
+],
+"walking-lunge": [
+346,
+300
+],
+"wall-angel": [
+154,
+300
+],
+"wall-sit": [
+212,
+300
+],
+"wall-walk": [
+254,
+300
+],
+"wide-grip-cable-lat-pulldown": [
+155,
+300
+],
+"wide-grip-cable-seated-row": [
+258,
+300
+],
+"wide-grip-pull-up": [
+212,
+300
+],
+"wide-push-up": [
+356,
+300
+],
+"windshield-wiper": [
+392,
+300
+],
+"wrist-car": [
+140,
+300
+]
+}

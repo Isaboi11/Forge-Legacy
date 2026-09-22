@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script>
+    (function () {
+      var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+      function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+      if (window.React && window.ReactDOM) { inject(); return; }
+      var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+    })();
+  </script>
+  <script src="forge-symbols.js"></script>
+  <script src="forge-user.js"></script>
+  <script src="forge-friends.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .afh-input { width:100%; font-family:var(--fl-font-mono, ui-monospace, monospace); font-size:15px; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); padding:13px 13px 13px 38px; outline:none; transition:border-color 160ms ease; }
+  .afh-input:focus { border-color:var(--fl-bronze-border); }
+  .afh-input::placeholder { color:var(--fl-text-tertiary); font-family:var(--fl-font-sans); }
+  @keyframes afhRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Add Friend by Handle" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);">F</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none; position:relative; z-index:5;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Add a Friend" on-back="{{ goBack }}" hint-size="100%,56px"></x-import>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:14px 20px 28px;">
+
+      <p style="margin:2px 2px 0; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Find someone by their handle and send a friend request. Friends can see what you choose to share &mdash; nothing is public.</p>
+
+      <!-- ADD FIELD -->
+      <div style="margin:22px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Add by handle</span></div>
+      <div style="display:flex; gap:10px;">
+        <div style="position:relative; flex:1; min-width:0;">
+          <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-family:var(--fl-font-mono, monospace); font-size:16px; color:{{ atColor }}; pointer-events:none;">@</span>
+          <input class="afh-input" type="text" value="{{ query }}" placeholder="handle" autocapitalize="none" autocorrect="off" spellcheck="false" onInput="{{ onInput }}" onKeyDown="{{ onKey }}">
+        </div>
+        <button type="button" onClick="{{ addCurrent }}" disabled="{{ addDisabled }}" style="{{ addBtnStyle }}">Add</button>
+      </div>
+      <sc-if value="{{ hasStatus }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; align-items:center; gap:8px; margin:10px 4px 0; font-size:12px; line-height:1.4; color:{{ statusColor }};"><span style="display:inline-flex; flex:none;">{{ statusIcon }}</span>{{ statusText }}</div>
+      </sc-if>
+
+      <!-- SUGGESTED -->
+      <sc-if value="{{ hasSuggestions }}" hint-placeholder-val="{{ true }}">
+        <div style="margin:26px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">People you may know</span></div>
+        <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+          <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="3">
+            <div style="display:flex; align-items:center; gap:13px; padding:12px 14px; border-top:{{ s.divider }};">
+              <span style="width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:{{ s.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55); color:#1A1206; font-family:var(--fl-font-display); font-size:14px; font-weight:700;">{{ s.initials }}</span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:14.5px; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ s.name }}</span>
+                <span style="font-size:12px; font-family:var(--fl-font-mono, monospace); color:var(--fl-text-tertiary);">{{ s.handle }}</span>
+              </div>
+              <button type="button" onClick="{{ s.add }}" style="flex:none; display:inline-flex; align-items:center; gap:6px; padding:7px 13px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-fill); color:var(--fl-bronze-bright); font-size:12px; font-weight:600; cursor:pointer;" style-active="transform:scale(0.96);">{{ plusIcon }}Add</button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- REQUESTS SENT -->
+      <sc-if value="{{ hasRequests }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; margin:26px 4px 12px;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Requests sent</span>
+          <span style="display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px; padding:0 8px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); color:#1A1206; font-size:12px; font-weight:700;">{{ requestCount }}</span>
+        </div>
+        <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+          <sc-for list="{{ requestRows }}" as="r" hint-placeholder-count="1">
+            <div style="display:flex; align-items:center; gap:13px; padding:12px 14px; border-top:{{ r.divider }}; animation:afhRise 220ms var(--fl-ease-out) both;">
+              <span style="width:38px; height:38px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:{{ r.tint }}; border:1px solid var(--fl-bronze-border-subtle); color:#1A1206; font-family:var(--fl-font-display); font-size:13px; font-weight:700;">{{ r.initials }}</span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:14.5px; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ r.name }}</span>
+                <span style="font-size:12px; font-family:var(--fl-font-mono, monospace); color:var(--fl-text-tertiary);">{{ r.handle }}</span>
+              </div>
+              <span style="flex:none; display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-600); color:var(--fl-text-tertiary); font-size:11.5px; font-weight:600;">Pending</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <div style="margin-top:26px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+        <span style="font-family:var(--fl-font-display); font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-charcoal-500);">Forge Legacy</span>
+        <span style="font-size:10px; letter-spacing:0.8px; color:var(--fl-charcoal-500);">They'll appear in your friends once they accept.</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:34px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:afhRise 260ms var(--fl-ease-out) both;">
+      <span style="display:inline-flex; color:{{ toastIconColor }}; flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false, query: '', toastMsg: null, toastTone: 'bronze', tick: 0 };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      const fr = typeof window !== 'undefined' && window.ForgeFriends;
+      if (r && ns && fs && fr) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); }
+
+  _toast(msg, tone) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastTone: tone || 'bronze' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2600); }
+  _initials(name) { return String(name || '').split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase(); }
+  _tint(seed) {
+    const T = ['radial-gradient(circle at 42% 32%, #C9A15E, #7A5C30)', 'radial-gradient(circle at 45% 35%, #CDA063, #835F32)', 'radial-gradient(circle at 40% 30%, #DDB578, #8A6C46)', 'radial-gradient(circle at 48% 38%, #BF8F4F, #6A5334)'];
+    return T[seed % T.length];
+  }
+
+  _add(handle) {
+    const FR = window.ForgeFriends;
+    const res = FR.addByHandle(handle);
+    if (res.ok) { this._toast('Request sent to ' + res.name, 'positive'); this.setState((s) => ({ query: '', tick: s.tick + 1 })); }
+    else if (res.status === 'already') this._toast(res.name + ' is already your friend', 'bronze');
+    else if (res.status === 'pending') this._toast('Request already pending', 'bronze');
+    else if (res.status === 'self') this._toast("That's your own handle", 'bronze');
+    else this._toast('Enter a valid handle', 'bronze');
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) return { ready: false, notReady: true };
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const FR = window.ForgeFriends;
+    const S = this.state;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.8 });
+    const svg = (d, size, sw) => h('svg', { width: size || 14, height: size || 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(d) ? d : [d]).map((p, i) => h('path', { key: i, d: p })));
+    const checkIcon = svg('M5 12.5l4 4 10-10', 14, 2.4);
+    const infoIcon = h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 12, r: 8.5 }), h('path', { d: 'M12 11v5' }), h('circle', { cx: 12, cy: 7.6, r: 0.6, fill: 'currentColor' }));
+    const warnIcon = h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M12 4l9 15H3z' }), h('path', { d: 'M12 10v4' }), h('circle', { cx: 12, cy: 16.6, r: 0.6, fill: 'currentColor' }));
+    const plusIcon = h('span', { style: { display: 'inline-flex' } }, h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M12 5v14M5 12h14' })));
+
+    const raw = (S.query || '').trim().replace(/^@+/, '').toLowerCase();
+    const valid = /^[a-z0-9._]{2,}$/.test(raw);
+    const existing = raw && FR.isFriend(raw) ? FR.findByHandle(raw) : null;
+    const reqs = FR.requestsOut();
+    const pending = raw && reqs.some((r) => r.handle === raw);
+
+    let statusText = 'Enter a handle to send a friend request.', statusColor = 'var(--fl-text-tertiary)', statusIcon = infoIcon;
+    if (raw && !valid) { statusText = 'Handles are letters, numbers, dots and underscores.'; statusColor = 'var(--fl-red-muted)'; statusIcon = warnIcon; }
+    else if (existing) { statusText = existing.name + ' is already your friend.'; statusColor = 'var(--fl-text-tertiary)'; statusIcon = infoIcon; }
+    else if (pending) { statusText = 'A request to @' + raw + ' is already pending.'; statusColor = 'var(--fl-text-tertiary)'; statusIcon = infoIcon; }
+    else if (valid) { statusText = 'Send a friend request to @' + raw + '.'; statusColor = '#8FB295'; statusIcon = checkIcon; }
+
+    const addEnabled = valid && !existing && !pending;
+    const addBtnStyle = { flex: 'none', padding: '0 18px', borderRadius: 'var(--fl-radius-md)', fontSize: '13.5px', fontWeight: 600, border: '1px solid ' + (addEnabled ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: addEnabled ? 'var(--fl-bronze-fill)' : 'var(--fl-charcoal-800)', color: addEnabled ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', cursor: addEnabled ? 'pointer' : 'not-allowed', boxShadow: addEnabled ? 'var(--fl-glow-subtle)' : 'none' };
+
+    // Discoverable athletes (not already friends / pending)
+    const POOL = [
+      { handle: 'nora.idris', name: 'Nora Idris' },
+      { handle: 'juno.park', name: 'Juno Park' },
+      { handle: 'wes.aldrin', name: 'Wes Aldrin' },
+      { handle: 'cyrus.bell', name: 'Cyrus Bell' },
+    ];
+    const suggestions = POOL.filter((p) => !FR.isFriend(p.handle) && !reqs.some((r) => r.handle === p.handle)).map((p, i) => ({
+      key: p.handle, name: p.name, handle: '@' + p.handle, initials: this._initials(p.name), tint: this._tint(p.name.length + i),
+      divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)', add: () => this._add(p.handle),
+    }));
+
+    const requestRows = reqs.map((r, i) => ({
+      key: r.handle, name: r.name, handle: '@' + r.handle, initials: this._initials(r.name), tint: this._tint(r.name.length + i + 2),
+      divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)',
+    }));
+
+    return {
+      ready: true, notReady: false,
+      query: S.query,
+      atColor: addEnabled ? 'var(--fl-icon-bronze)' : 'var(--fl-text-tertiary)',
+      onInput: (e) => this.setState({ query: e.target.value }),
+      onKey: (e) => { if (e.key === 'Enter') { e.preventDefault(); if (addEnabled) this._add(S.query); } },
+      addCurrent: () => { if (addEnabled) this._add(S.query); },
+      addDisabled: !addEnabled, addBtnStyle: addBtnStyle,
+      hasStatus: true, statusText: statusText, statusColor: statusColor, statusIcon: h('span', { style: { display: 'inline-flex' } }, statusIcon),
+      hasSuggestions: suggestions.length > 0, suggestions: suggestions, plusIcon: plusIcon,
+      hasRequests: requestRows.length > 0, requestCount: requestRows.length, requestRows: requestRows,
+      goBack: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Forge%20Friends%20Feed.dc.html'); },
+      toastOpen: !!S.toastMsg, toastMsg: S.toastMsg || '', toastIcon: ic('invite', 18, 1.7), toastIconColor: S.toastTone === 'positive' ? '#6E8E74' : 'var(--fl-icon-bronze)',
+    };
+  }
+}
+</script>
+</body>
+</html>

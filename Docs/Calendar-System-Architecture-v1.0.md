@@ -305,7 +305,7 @@ The protected property in §4/§10 was never "a record of which days you trained
 The Calendar deliberately does **not** introduce, in V1 or as part of this architecture:
 
 - **No hour-by-hour / time-of-day scheduling** — the Calendar schedules *what* (date), never *what-o'clock*. Day Detail is a sequence timeline, not a clock grid (§7).
-- **No meal planning** — out of product scope (DNA §4; Master PRD: not a nutrition tracker).
+- ~~**No meal planning** — out of product scope (DNA §4; Master PRD: not a nutrition tracker).~~ ⚠ **RETIRED 2026-09-21** — meal planning is a product feature (`Nutrition-Architecture-v1.0.md` NUT-D2). It lives in the Nutrition tab, not the Calendar; whether a plan's meals ever appear in Calendar day cells is an open question for Phase 3.
 - **No sleep tracking** — out of scope.
 - **No habit tracking outside existing systems** — the Calendar adds no new habit/streak primitive; the only writes are workout / milestone / rest (§5). Consistency is *visualized as history*, never enforced as a habit loop (§19).
 - **No daily notes / journaling** — reflection lives in the Legacy/Chapter systems (L-6), not in calendar day cells. Search is by date, not by note (§18).

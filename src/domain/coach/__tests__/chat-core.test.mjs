@@ -44,6 +44,7 @@ import {
 import { AUTHORED_GOALS, isAuthored } from '../rulebook/skeletons.ts';
 import { isEnduranceGoal } from '../constraints.ts';
 import { VOICE } from '../rulebook/voice.ts';
+import { enduranceRefusalFor } from '../rulebook/endurance.ts';
 
 /**
  * An athlete who has already given a level, so a test about a LATER question is not answered by the
@@ -218,7 +219,7 @@ test('every opener is a real thing Holt can do', () => {
   for (const label of OPENERS) {
     const r = fromOpener(label);
     assert.ok(r, `"${label}" is offered but leads nowhere`);
-    assert.ok(['build', 'import', 'edit', 'pick', 'help'].includes(r.kind), `"${label}" has no action`);
+    assert.ok(['build', 'import', 'edit', 'pick', 'help', 'form'].includes(r.kind), `"${label}" has no action`);
     if (r.kind === 'build') assert.ok(r.mode === 'program' || r.mode === 'day');
   }
 });
@@ -420,7 +421,10 @@ test('the day card prescribes what the row actually says', () => {
 });
 
 test('a refusal card always names the race it is offering instead', () => {
-  const card = refusalCardFor('run_marathon', 7, 4, "A marathon build is about sixteen weeks and you've got seven.");
+  /* The rulebook's own message, not a hand-written one: the card reads its race OFF the offer in that
+     message (`counterOfferIn`), so a sentence that offers nothing correctly gets no card at all. */
+  const refusal = enduranceRefusalFor('run_marathon', { weeksAvailable: 11, currentWeeklyMi: 10, canRunContinuously: true });
+  const card = refusalCardFor('run_marathon', 7, 4, refusal.message);
   assert.ok(card);
   assert.match(card.title, /Half marathon/i);
   assert.match(card.primary, /Build the half marathon/i);
@@ -457,7 +461,8 @@ test('⚠ the refusal card names the goal its button builds, not just the words 
    * impossible: "Build the half marathon" is a sentence, and the sheet had no way to turn it back into
    * a goal key. The one card whose entire purpose is that the alternative is a THING WITH A BUTTON.
    */
-  const card = refusalCardFor('run_marathon', 8, 4, 'msg');
+  const refusal = enduranceRefusalFor('run_marathon', { weeksAvailable: 11, currentWeeklyMi: 10, canRunContinuously: true });
+  const card = refusalCardFor('run_marathon', 11, 4, refusal.message);
   assert.ok(card.altGoal, 'the counter-offer must carry the goal it counter-offers');
   assert.ok(AUTHORED_GOALS.includes(card.altGoal), 'it must be a goal the engine can actually build');
   assert.match(card.primary.toLowerCase(), new RegExp(card.altGoal.replace(/^run_/, '').replace(/_/g, ' ')), 'the label and the key must name the same race');

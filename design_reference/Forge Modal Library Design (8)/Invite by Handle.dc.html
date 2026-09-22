@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .ib-input { width:100%; font-family:var(--fl-font-sans); font-size:14.5px; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); padding:12px 13px 12px 40px; outline:none; transition:border-color 160ms ease; }
+  .ib-input:focus { border-color:var(--fl-bronze-border); }
+  .ib-input::placeholder { color:var(--fl-text-tertiary); }
+  @keyframes ibRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes ibChip { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Invite by Handle" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <div style="flex:none; position:relative; z-index:5;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Invite by Username or Email" on-back="{{ goBack }}" hint-size="100%,56px"></x-import>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:10px 20px 28px;">
+
+      <!-- ═══ SQUAD HEADER ═══ -->
+      <div style="display:flex; align-items:center; gap:12px; padding:2px 2px 0; animation:ibRise 380ms var(--fl-ease-out) both;">
+        <div style="position:relative; width:42px; height:42px; flex:none; border-radius:var(--fl-radius-round); box-shadow:0 0 0 2px var(--fl-bronze-primary), 0 4px 12px rgba(0,0,0,0.55), 0 0 10px rgba(191,143,79,0.2);">
+          <image-slot id="squad-ib-avatar" shape="circle" placeholder="Add" style="position:absolute; inset:0; width:100%; height:100%; border-radius:var(--fl-radius-round); overflow:hidden;"></image-slot>
+        </div>
+        <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+          <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">{{ squadName }}</span>
+          <span style="font-size:11.5px; letter-spacing:0.3px; color:var(--fl-text-tertiary);">{{ metaLine }}</span>
+        </div>
+      </div>
+
+      <!-- ═══ ADD FIELD ═══ -->
+      <div style="margin:22px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Add People</span></div>
+      <div style="display:flex; gap:10px;">
+        <div style="position:relative; flex:1; min-width:0;">
+          <span style="position:absolute; left:13px; top:50%; transform:translateY(-50%); display:inline-flex; color:{{ fieldIconColor }}; pointer-events:none; transition:color 160ms ease;">{{ fieldIcon }}</span>
+          <input class="ib-input" type="text" value="{{ query }}" placeholder="@username or email" autocapitalize="none" autocorrect="off" spellcheck="false" onInput="{{ onInput }}" onKeyDown="{{ onKey }}">
+        </div>
+        <button type="button" onClick="{{ addCurrent }}" disabled="{{ addDisabled }}" style="{{ addBtnStyle }}">Add</button>
+      </div>
+      <sc-if value="{{ hasStatus }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; align-items:center; gap:8px; margin:10px 4px 0; font-size:12px; line-height:1.4; color:{{ statusColor }};"><span style="display:inline-flex; flex:none;">{{ statusIcon }}</span>{{ statusText }}</div>
+      </sc-if>
+
+      <!-- ═══ SUGGESTIONS ═══ -->
+      <sc-if value="{{ hasSuggestions }}" hint-placeholder-val="{{ true }}">
+        <div style="margin:26px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Suggested</span></div>
+        <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+          <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="3">
+            <div style="display:flex; align-items:center; gap:13px; padding:12px 14px; border-top:{{ s.divider }};">
+              <span style="width:40px; height:40px; flex:none; border-radius:var(--fl-radius-round); background:{{ s.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:14.5px; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ s.name }}</span>
+                <span style="font-size:12px; font-family:var(--fl-font-mono, ui-monospace, monospace); color:var(--fl-text-tertiary);">{{ s.handle }}</span>
+              </div>
+              <button type="button" onClick="{{ s.add }}" style="flex:none; display:inline-flex; align-items:center; gap:6px; padding:7px 13px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-fill); color:var(--fl-bronze-bright); font-size:12px; font-weight:600; cursor:pointer; transition:transform 120ms var(--fl-ease-out), opacity 120ms ease;" style-active="transform:scale(0.96); opacity:0.9;"><span style="display:inline-flex;">{{ plusIcon }}</span>Add</button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- ═══ RECIPIENTS ═══ -->
+      <sc-if value="{{ hasRecipients }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; margin:26px 4px 12px;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">To Invite</span>
+          <span style="display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px; padding:0 8px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); color:#1A1206; font-size:12px; font-weight:700; box-shadow:var(--fl-glow-subtle);">{{ recipientCount }}</span>
+        </div>
+        <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+          <sc-for list="{{ recipients }}" as="r" hint-placeholder-count="2">
+            <div style="display:flex; align-items:center; gap:13px; padding:12px 14px; border-top:{{ r.divider }}; animation:ibChip 220ms var(--fl-ease-out) both;">
+              <span style="width:38px; height:38px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:{{ r.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55); color:var(--fl-icon-bronze);">{{ r.avatarIcon }}</span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:14.5px; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ r.title }}</span>
+                <span style="font-size:12px; font-family:{{ r.subFont }}; color:var(--fl-text-tertiary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ r.subtitle }}</span>
+              </div>
+              <button type="button" onClick="{{ r.remove }}" aria-label="Remove" style="flex:none; width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:transparent; border:none; color:var(--fl-icon-inactive); cursor:pointer; transition:color 160ms ease, background 160ms ease;" style-active="color:var(--fl-red-muted); background:var(--fl-charcoal-800);">{{ removeIcon }}</button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- footer note -->
+      <div style="margin-top:26px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+        <span style="font-family:var(--fl-font-display); font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-charcoal-500);">Forge Legacy</span>
+        <span style="font-size:10px; letter-spacing:0.8px; color:var(--fl-charcoal-500);">Email invites include a link to join {{ squadName }}.</span>
+      </div>
+
+    </div>
+
+    <!-- ═══ COMMIT BAR ═══ -->
+    <div style="flex:none; position:relative; z-index:5; padding:14px 20px calc(16px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(9,9,9,0.4), rgba(9,9,9,0.72));">
+      <button type="button" onClick="{{ send }}" disabled="{{ sendDisabled }}" style="{{ sendStyle }}"><span style="display:inline-flex;">{{ sendIcon }}</span>{{ sendLabel }}</button>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:96px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:ibRise 260ms var(--fl-ease-out) both;">
+      <span style="display:inline-flex; color:{{ toastIconColor }}; flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+
+  <!-- Forged grain -->
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;squadName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Iron Giants&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Content&quot;},&quot;memberCount&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:12,&quot;min&quot;:1,&quot;max&quot;:99,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Content&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, toastMsg: null, query: '', recipients: [] };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); if (this._navT) clearTimeout(this._navT); }
+
+  _toast(msg, tone) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastTone: tone || 'bronze' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2600); }
+
+  _tint(seed) {
+    const T = [
+      'radial-gradient(circle at 42% 32%, #4a3826, #1c1510)',
+      'radial-gradient(circle at 45% 35%, #34302a, #17130f)',
+      'radial-gradient(circle at 40% 30%, #40301f, #17120c)',
+      'radial-gradient(circle at 48% 38%, #2d2822, #141210)',
+      'radial-gradient(circle at 44% 34%, #453322, #1a140e)',
+    ];
+    return T[seed % T.length];
+  }
+
+  // known athletes searchable by @handle
+  _known() {
+    return {
+      nora: { name: 'Nora Idris' }, silas: { name: 'Silas Vance' }, juno: { name: 'Juno Park' },
+      wes: { name: 'Wes Aldrin' }, cyrus: { name: 'Cyrus Bell' }, dana: { name: 'Dana Cole' },
+    };
+  }
+
+  _classify(raw) {
+    const q = (raw || '').trim();
+    if (!q) return { kind: 'empty' };
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailRe.test(q)) return { kind: 'email', value: q.toLowerCase() };
+    if (q.indexOf('@') > 0) return { kind: 'bad-email', value: q };  // looks like an email but malformed
+    const handle = q.replace(/^@+/, '').toLowerCase();
+    if (!handle) return { kind: 'empty' };
+    const known = this._known()[handle];
+    if (known) return { kind: 'user', handle: handle, name: known.name };
+    return { kind: 'unknown-user', handle: handle };
+  }
+
+  _addRecipient(rec) {
+    this.setState(s => {
+      const exists = s.recipients.some(r => r.dedupe === rec.dedupe);
+      if (exists) return null;
+      return { recipients: s.recipients.concat([rec]), query: '' };
+    });
+  }
+
+  _addFromQuery() {
+    const c = this._classify(this.state.query);
+    if (c.kind === 'email') {
+      this._addRecipient({ id: 'e-' + c.value, dedupe: 'email:' + c.value, kind: 'email', title: c.value });
+      this._toast('Added ' + c.value, 'bronze');
+    } else if (c.kind === 'user') {
+      this._addRecipient({ id: 'u-' + c.handle, dedupe: 'user:' + c.handle, kind: 'user', title: c.name, handle: '@' + c.handle });
+      this._toast('Added ' + c.name, 'bronze');
+    }
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const S = this.state;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.8 });
+    const svg = (d, size, sw) => h('svg', { width: size || 17, height: size || 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(d) ? d : [d]).map((p, i) => h('path', { key: i, d: p })));
+
+    const squadName = this.props.squadName ?? 'Iron Giants';
+    const memberCount = this.props.memberCount ?? 12;
+
+    const atIcon = h('svg', { width: 17, height: 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 12, r: 4 }), h('path', { d: 'M16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-3.5 7.1' }));
+    const mailIcon = h('svg', { width: 17, height: 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 3.5, y: 5.5, width: 17, height: 13, rx: 2 }), h('path', { d: 'M4 7l8 6 8-6' }));
+    const checkIcon = h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M5 12.5l4 4 10-10' }));
+    const infoIcon = h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 12, r: 8.5 }), h('path', { d: 'M12 11v5' }), h('circle', { cx: 12, cy: 7.6, r: 0.6, fill: 'currentColor' }));
+    const warnIcon = h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M12 4l9 15H3z' }), h('path', { d: 'M12 10v4' }), h('circle', { cx: 12, cy: 16.6, r: 0.6, fill: 'currentColor' }));
+    const plusIcon = h('span', { style: { display: 'inline-flex' } }, h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M12 5v14M5 12h14' })));
+    const removeIcon = svg(['M6 6l12 12', 'M18 6L6 18'], 16, 2);
+
+    // ── Field classification / validation ──
+    const c = this._classify(S.query);
+    const isEmailMode = c.kind === 'email' || c.kind === 'bad-email';
+    const fieldIcon = isEmailMode ? mailIcon : atIcon;
+    const canAdd = c.kind === 'email' || c.kind === 'user';
+    const already = (c.kind === 'email') ? S.recipients.some(r => r.dedupe === 'email:' + c.value)
+      : (c.kind === 'user') ? S.recipients.some(r => r.dedupe === 'user:' + c.handle) : false;
+
+    let statusText = '', statusColor = 'var(--fl-text-tertiary)', statusIcon = infoIcon, hasStatus = true;
+    if (c.kind === 'empty') { statusText = 'Add athletes by @username or email address.'; statusColor = 'var(--fl-text-tertiary)'; statusIcon = infoIcon; }
+    else if (c.kind === 'email') { statusText = already ? (c.value + ' is already on the list.') : ('Invite ' + c.value + ' by email.'); statusColor = already ? 'var(--fl-text-tertiary)' : '#8FB295'; statusIcon = already ? infoIcon : checkIcon; }
+    else if (c.kind === 'bad-email') { statusText = 'Enter a valid email address.'; statusColor = 'var(--fl-red-muted)'; statusIcon = warnIcon; }
+    else if (c.kind === 'user') { statusText = already ? (c.name + ' is already on the list.') : ('Invite ' + c.name + ' (@' + c.handle + ').'); statusColor = already ? 'var(--fl-text-tertiary)' : '#8FB295'; statusIcon = already ? infoIcon : checkIcon; }
+    else if (c.kind === 'unknown-user') { statusText = 'No athlete found for @' + c.handle + '. Try their email.'; statusColor = 'var(--fl-red-muted)'; statusIcon = warnIcon; }
+
+    const addEnabled = canAdd && !already;
+    const addBtnStyle = { flex: 'none', padding: '0 18px', borderRadius: 'var(--fl-radius-md)', fontSize: '13.5px', fontWeight: 600, border: '1px solid ' + (addEnabled ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: addEnabled ? 'var(--fl-bronze-fill)' : 'var(--fl-charcoal-800)', color: addEnabled ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', cursor: addEnabled ? 'pointer' : 'not-allowed', boxShadow: addEnabled ? 'var(--fl-glow-subtle)' : 'none', transition: 'background 160ms ease, opacity 120ms ease' };
+
+    // ── Suggestions (known handles not yet added) ──
+    const SUGGEST = [
+      { handle: 'nora', name: 'Nora Idris' },
+      { handle: 'juno', name: 'Juno Park' },
+      { handle: 'wes', name: 'Wes Aldrin' },
+    ];
+    const suggestFiltered = SUGGEST.filter(s => !S.recipients.some(r => r.dedupe === 'user:' + s.handle));
+    const suggestions = suggestFiltered.map((s, i) => ({
+      key: s.handle, name: s.name, handle: '@' + s.handle, tint: this._tint(s.name.length + i),
+      divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)',
+      add: () => { this._addRecipient({ id: 'u-' + s.handle, dedupe: 'user:' + s.handle, kind: 'user', title: s.name, handle: '@' + s.handle }); this._toast('Added ' + s.name, 'bronze'); },
+    }));
+
+    // ── Recipients ──
+    const recipients = S.recipients.map((r, i) => ({
+      key: r.id, title: r.title,
+      subtitle: r.kind === 'user' ? r.handle : 'Email invite',
+      subFont: r.kind === 'user' ? 'var(--fl-font-mono, ui-monospace, monospace)' : 'var(--fl-font-sans)',
+      tint: r.kind === 'user' ? this._tint(r.title.length + i) : 'var(--fl-bronze-tint)',
+      avatarIcon: r.kind === 'user' ? null : h('span', { style: { display: 'inline-flex' } }, mailIcon),
+      divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)',
+      remove: () => this.setState(st => ({ recipients: st.recipients.filter(x => x.id !== r.id) })),
+    }));
+
+    const n = S.recipients.length;
+    const sendEnabled = n > 0;
+    const sendStyle = { width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '9px', padding: '15px', borderRadius: 'var(--fl-radius-md)', fontSize: '15px', fontWeight: 600, border: '1px solid ' + (sendEnabled ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: sendEnabled ? 'var(--fl-bronze-fill)' : 'var(--fl-charcoal-800)', color: sendEnabled ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', boxShadow: sendEnabled ? 'var(--fl-glow-subtle)' : 'none', cursor: sendEnabled ? 'pointer' : 'not-allowed', opacity: sendEnabled ? 1 : 0.75, transition: 'background 180ms ease, opacity 160ms ease' };
+
+    const toastColor = S.toastTone === 'positive' ? '#6E8E74' : 'var(--fl-icon-bronze)';
+
+    return {
+      ready: true, notReady: false,
+      squadName: squadName, metaLine: 'Private \u00B7 ' + memberCount + ' Members',
+
+      query: S.query, onInput: (e) => this.setState({ query: e.target.value }),
+      onKey: (e) => { if (e.key === 'Enter') { e.preventDefault(); this._addFromQuery(); } },
+      fieldIcon: fieldIcon, fieldIconColor: (c.kind === 'bad-email' || c.kind === 'unknown-user') ? 'var(--fl-red-muted)' : (addEnabled ? 'var(--fl-icon-bronze)' : 'var(--fl-text-tertiary)'),
+      addCurrent: () => this._addFromQuery(), addDisabled: !addEnabled, addBtnStyle: addBtnStyle,
+      hasStatus: hasStatus, statusText: statusText, statusColor: statusColor, statusIcon: h('span', { style: { display: 'inline-flex' } }, statusIcon),
+
+      hasSuggestions: suggestions.length > 0, suggestions: suggestions, plusIcon: plusIcon,
+
+      hasRecipients: n > 0, recipientCount: n, recipients: recipients, removeIcon: removeIcon,
+
+      sendIcon: h('span', { style: { display: 'inline-flex' } }, ic('invite', 17, 1.9)),
+      sendDisabled: !sendEnabled, sendStyle: sendStyle,
+      sendLabel: sendEnabled ? ('Send ' + n + (n === 1 ? ' Invite' : ' Invites')) : 'Add Someone to Invite',
+      send: () => {
+        if (!sendEnabled) return;
+        this._toast(n + (n === 1 ? ' invite sent' : ' invites sent'), 'positive');
+        if (this._navT) clearTimeout(this._navT);
+        this._navT = setTimeout(() => { window.location.href = 'Squad%20Invite.dc.html'; }, 1100);
+      },
+
+      goBack: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Squad%20Invite.dc.html'); },
+      toastOpen: !!S.toastMsg, toastMsg: S.toastMsg || '', toastIcon: ic('invite', 18, 1.7), toastIconColor: toastColor,
+    };
+  }
+}
+</script>
+</body>
+</html>

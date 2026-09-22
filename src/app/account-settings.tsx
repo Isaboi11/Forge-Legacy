@@ -37,6 +37,7 @@ import { fetchExportWorkouts } from '@/data/export-live';
 import { countSets, exportBaseName, toCsv } from '@/domain/settings/export-core';
 import { saveTextFile } from '@/lib/save-file';
 import { useTour } from '@/hooks/useTour';
+import { TOUR_RETIRED } from '@/lib/screen-prompts';
 
 /**
  * Account Settings — the settings home (`Forge Account Settings.dc.html`).
@@ -166,6 +167,7 @@ export default function AccountSettingsScreen() {
     hasVisibility: true,
     hasNotifications: true,
     hasPreferences: true,
+    hasHoltMemory: true,
     isAdmin: isAdmin === true,
     /* `null` while entitlement is loading or unverifiable, which the row reads as "say nothing". */
     tier: useTier() ?? undefined,
@@ -224,26 +226,30 @@ export default function AccountSettingsScreen() {
             <Glyph d={CHEVRON} size={18} color={flColor.gray600} />
           </Pressable>
 
-          {/* guided tips */}
-          <Text style={styles.sectionLabel}>Onboarding</Text>
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <View style={styles.iconTile}>
-                <Glyph d={BULB} size={18} color={flColor.bronze300} />
+          {/* guided tips — hidden while the tour is retired; see `TOUR_RETIRED` for how to bring it back */}
+          {TOUR_RETIRED ? null : (
+            <>
+              <Text style={styles.sectionLabel}>Onboarding</Text>
+              <View style={styles.card}>
+                <View style={styles.row}>
+                  <View style={styles.iconTile}>
+                    <Glyph d={BULB} size={18} color={flColor.bronze300} />
+                  </View>
+                  <View style={styles.rowText}>
+                    <Text style={styles.rowLabel}>Guided Tips</Text>
+                    <Text style={styles.rowHint}>A short spotlight walkthrough the first time you open each screen.</Text>
+                  </View>
+                  <SettingsToggle value={tipsEnabled} onChange={setTipsEnabled} accessibilityLabel="Guided tips" />
+                </View>
+                <View style={[styles.row, styles.rowBorder]}>
+                  <Text style={styles.rowMuted}>Seen them all?</Text>
+                  <Pressable onPress={startTour} accessibilityRole="button" accessibilityLabel="Replay all tips">
+                    <Text style={styles.rowAction}>Replay all tips</Text>
+                  </Pressable>
+                </View>
               </View>
-              <View style={styles.rowText}>
-                <Text style={styles.rowLabel}>Guided Tips</Text>
-                <Text style={styles.rowHint}>A short spotlight walkthrough the first time you open each screen.</Text>
-              </View>
-              <SettingsToggle value={tipsEnabled} onChange={setTipsEnabled} accessibilityLabel="Guided tips" />
-            </View>
-            <View style={[styles.row, styles.rowBorder]}>
-              <Text style={styles.rowMuted}>Seen them all?</Text>
-              <Pressable onPress={startTour} accessibilityRole="button" accessibilityLabel="Replay all tips">
-                <Text style={styles.rowAction}>Replay all tips</Text>
-              </Pressable>
-            </View>
-          </View>
+            </>
+          )}
 
           {/* the category map */}
           {sections.map((sec) => (

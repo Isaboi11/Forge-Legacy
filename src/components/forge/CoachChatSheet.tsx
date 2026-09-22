@@ -27,6 +27,17 @@ import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { HoltMark } from '@/components/forge/HoltMark';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { usePremiumAi } from '@/lib/entitlement';
+import { interpretTyped, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
+import { addNotes, fetchNotes } from '@/data/holt-notes-live';
+import { askBriefLive } from '@/data/holt-training-live';
+import { gapReplyLive, isGapQuestion } from '@/data/training-gaps-live';
+import { useUnits } from '@/lib/settings';
+import { askHolt, askSourcesLive, type AskTurn } from '@/data/coach-ask-live';
+import { buildAskContext } from '@/domain/coach/ask-context';
+import { resolveEditIntent, type EditIntentResolution } from '@/domain/coach/edit-intent';
+import { resolveAvoid } from '@/domain/coach/avoid';
+import { useDictation } from '@/hooks/useDictation';
 import { launchRowsFor, templateRowsFor } from '@/domain/coach/save-shapes';
 import { saveTemplate } from '@/data/templates-live';
 import { saveWeekTemplate, startWeekTemplate } from '@/data/week-templates-live';
@@ -38,6 +49,12 @@ import {
   dayPreamble,
   INTRO,
   MEDICAL_STOP,
+  CRISIS_KICKER,
+  CRISIS_STOP,
+  URGENT_KICKER,
+  URGENT_STOP,
+  CARE_KICKER,
+  CARE_STOP,
   OPENERS,
   STOP_KICKER,
   WALL,
@@ -50,6 +67,8 @@ import {
   isHomeTurn,
   TYPING_ENABLED,
   interpret,
+  focusFromText,
+  looksLikeQuestion,
   isMedical,
   LEVEL_CHIPS,
   nextQuestion,
@@ -77,6 +96,7 @@ import {
   type RefusalCard,
   type Turn,
 } from '@/domain/coach/chat-core';
+import { medicalRoute } from '@/domain/coach/medical-routing';
 import { pick } from '@/domain/coach/rulebook/voice';
 import { setStartChoice } from '@/lib/program-intent';
 import type { CoachIntent } from '@/hooks/useCoachDoor';
@@ -98,6 +118,7 @@ import {
   fetchProgramSessions,
   startProgram,
   updateProgram,
+  skipProgramSession,
   type ProgramDay,
   type ProgramStructure,
   type SavedProgram,
@@ -106,7 +127,8 @@ import type { SessionMark } from '@/domain/program/progress-core';
 import { contextFrom } from '@/domain/coach/candidates';
 import { setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
 import { limitationPatterns } from '@/domain/coach/rulebook/limitations';
-import type { Limitation } from '@/domain/coach/constraints';
+import { isEnduranceGoal, type Limitation } from '@/domain/coach/constraints';
+import { RACE_SPEC } from '@/domain/coach/rulebook/endurance';
 import {
   changesFor,
   editableSessions,
@@ -183,6 +205,11 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
    * possible order to do it in.
    */
   const guard = usePremiumGate();
+  /* Typing to Holt is the Premium AI add-on — the PO only, for now (`coach_ai`, fails closed). Everyone
+     else keeps the taps; `TYPING_ENABLED` stays the public switch. */
+  const premiumAi = usePremiumAi();
+  const { units } = useUnits();
+  const canType = TYPING_ENABLED || premiumAi;
 
   /*
    * §2.9 — the sheet RISES: translateY 100% → 0 over 250ms with the system's ease-out, and reverses in
@@ -689,7 +716,14 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
           return;
         }
 
-        const res = assemble({ ...c, learned, recent }, PICKER_DB, canDoExercise);
+        /* ⚠ A RACE THE ATHLETE ASKED FOR IS BUILT (PO, 2026-09-21: *"holt shouldn't really say no to a race.
+           Maybe suggest, but then just have him do what they say"*). `buildAnyway` turns the endurance
+           refusal into `assembly.concern`, said once below the card with the suggestion as one tap. */
+        const res = assemble(
+          { ...c, learned, recent, ...(isEnduranceGoal(c.goal) ? { buildAnyway: true } : {}) },
+          PICKER_DB,
+          canDoExercise,
+        );
         setBusy(null);
 
         if (!res.ok) {
@@ -735,6 +769,50 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
           ...(load ? [{ kind: 'holt' as const, text: load }] : []),
           { kind: 'program', card: programCard },
         );
+        /* The concern, once — after the card, so the plan they asked for is what they see first. The
+           suggestion is a chip, never a wall: tapping it rebuilds for that race with every other answer kept. */
+        const concern = res.assembly.concern;
+        if (concern) {
+          const alt = concern.altGoal;
+          say(
+            { kind: 'holt', text: concern.message },
+            ...(alt && alt !== c.goal
+              ? [{ kind: 'chips' as const, chips: [{ label: `Build the ${RACE_SPEC[alt].label} instead`, patch: { goal: alt } }] }]
+              : []),
+          );
+        }
+        /*
+         * ⚠ WHAT THE ATHLETE ASKED FOR THAT DID NOT LAND IS SAID, NEVER DROPPED (Coach-AI-Amendment-001 §4.2).
+         * A name the catalogue could not place is asked back; an exercise held out for a limitation or missing
+         * kit is named with the reason and one tap to put it in anyway (CA-D12 — a stated limitation is never
+         * silently overridden, and never silently obeyed against their explicit ask either). Concerns about
+         * the week (seven days, no rest, a leg day before the long run) are said once.
+         */
+        const asm = res.assembly;
+        const list = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+        for (const line of asm.concerns ?? []) say({ kind: 'holt', text: line });
+        if (asm.unresolved?.length) {
+          say({
+            kind: 'holt',
+            text: `I couldn't find ${list(asm.unresolved)} in the exercise library. Tell me what you meant and I'll put ${asm.unresolved.length > 1 ? 'them' : 'it'} in.`,
+          });
+        }
+        const held = (asm.held ?? []).filter((h) => h.reason === 'limitation' || h.reason === 'equipment');
+        if (held.length && merged.pinned?.length) {
+          const why = held.some((h) => h.reason === 'limitation') ? 'because of what you asked me to work around' : "because it needs kit you haven't got";
+          say(
+            { kind: 'holt', text: `I left ${list(held.map((h) => h.name))} out ${why}. Your call.` },
+            {
+              kind: 'chips',
+              chips: [
+                {
+                  label: 'Put it in anyway',
+                  patch: { pinned: merged.pinned.map((p) => (held.some((h) => h.asked === p.name) ? { ...p, confirmed: true } : p)) },
+                },
+              ],
+            },
+          );
+        }
       } catch (e) {
         /*
          * ⚠ **THE SHEET FREEZING WAS THIS, AND THE FAILURE CARD BELOW HAD NO CALLER.**
@@ -824,6 +902,17 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
    * remembered it. Same for having met him: a new conversation does not make him a stranger again, so he
    * greets rather than re-introducing himself.
    */
+  /**
+   * The facts about the ATHLETE that outlive one request — their level and the kit in their garage.
+   * Everything else in `constraints` describes the request just made, and carrying it into the next one
+   * is how "What should I train today?" after a marathon build came back as *Bench 1×1* (stress test
+   * 2026-09-21): the race goal was still set, so the day was prescribed as race work.
+   */
+  const athleteFacts = (c: ChatState): ChatState => ({
+    ...(c.experience ? { experience: c.experience } : {}),
+    ...(c.ownedEquipment ? { ownedEquipment: c.ownedEquipment } : {}),
+  });
+
   const newChat = () => {
     void clearThread();
     setEdit(null);
@@ -836,10 +925,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     /* Facts about the ATHLETE survive a new conversation; everything situational deliberately does not.
        Their skill level and the kit in their garage did not change because they tapped New chat, and
        making them re-answer either would defeat the point of having read it. */
-    setConstraints((c) => ({
-      ...(c.experience ? { experience: c.experience } : {}),
-      ...(c.ownedEquipment ? { ownedEquipment: c.ownedEquipment } : {}),
-    }));
+    setConstraints(athleteFacts);
     setIntroStep(INTRO.length + 1);
     setThread(stamped(greetReturning(firstName)));
   };
@@ -886,10 +972,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     setEdit(null);
     setDraft('');
     askedAboutReplacing.current = false;
-    const kept: ChatState = {
-      ...(constraints.experience ? { experience: constraints.experience } : {}),
-      ...(constraints.ownedEquipment ? { ownedEquipment: constraints.ownedEquipment } : {}),
-    };
+    const kept = athleteFacts(constraints);
     setConstraints(kept);
     setMode('program');
     say({ kind: 'holt', text: pick('rebuild_open') });
@@ -1078,7 +1161,130 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     }
   };
 
-  const tapChip = (chip: Chip) => {
+  /* ── a change the athlete typed ────────────────────────────────────────────────────────────────── */
+
+  /** The plan waiting for "Do it", and the question waiting for an answer. Refs: a plan holds a function. */
+  const pendingEdit = useRef<{ programId: string; plan: Extract<EditIntentResolution, { ok: true }>['plan'] } | null>(null);
+  const pendingEditAsk = useRef<{ intent: EditIntent; ask: string } | null>(null);
+
+  /**
+   * Resolve "swap bench for dumbbell press on Monday" against the running program and confirm it.
+   *
+   * `resolveEditIntent` never guesses between two plausible matches — it asks, with the options as chips —
+   * and it applies through `edit-ops`, so every invariant (a trained session is never touched, the session
+   * count never moves) holds exactly as it does in the tapped flow. Nothing saves until they say so.
+   */
+  const editByWords = async (intent: EditIntent) => {
+    setBusy('thinking');
+    const active = await Promise.race([
+      fetchActiveProgram().catch(() => null),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
+    ]);
+    if (!active) {
+      setBusy(null);
+      say({ kind: 'holt', text: pick('no_active_program') }, { kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] });
+      return;
+    }
+    const marks = await fetchProgramSessions(active.id).catch(() => [] as SessionMark[]);
+    setBusy(null);
+    const res = resolveEditIntent(intent, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx() });
+    if (!res.ok) {
+      pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent, ask: res.ask };
+      say(
+        { kind: 'holt', text: res.message },
+        ...(res.ask !== 'not_editable' && res.options.length
+          ? [{ kind: 'chips' as const, chips: res.options.map((o) => ({ label: o, patch: {}, typedEdit: 'answer' as const })) }]
+          : []),
+      );
+      return;
+    }
+    pendingEdit.current = { programId: active.id, plan: res.plan };
+    pendingEditAsk.current = null;
+    say(
+      { kind: 'holt', text: `${res.plan.label}. Want it?` },
+      {
+        kind: 'chips',
+        chips: res.plan.scope
+          ? [
+              { label: 'Do it', patch: {}, typedEdit: 'apply' },
+              { label: 'Leave it', patch: {}, typedEdit: 'cancel' },
+            ]
+          : [
+              { label: 'Just this week', patch: {}, typedEdit: 'this_week' },
+              { label: 'The rest of the block', patch: {}, typedEdit: 'rest_of_block' },
+              { label: 'Leave it', patch: {}, typedEdit: 'cancel' },
+            ],
+      },
+    );
+  };
+
+  const finishTypedEdit = async (chip: Chip) => {
+    if (chip.typedEdit === 'answer') {
+      const p = pendingEditAsk.current;
+      if (!p) return say({ kind: 'holt', text: 'I lost the thread on that one. Tell me the change again.' });
+      const n = Number(chip.label.replace(/[^0-9.]/g, ''));
+      const next: EditIntent =
+        p.ask === 'which_day'
+          ? { ...p.intent, day: chip.label }
+          : p.ask === 'which_exercise'
+            ? { ...p.intent, exercise: chip.label }
+            : p.ask === 'which_replacement'
+              ? { ...p.intent, to: chip.label }
+              : p.intent.op === 'distance'
+                ? { ...p.intent, miles: n }
+                : p.intent.op === 'duration'
+                  ? { ...p.intent, minutes: n }
+                  : p.intent.op === 'reps'
+                    ? { ...p.intent, reps: n }
+                    : { ...p.intent, sets: n };
+      return editByWords(next);
+    }
+    if (chip.typedEdit === 'cancel') {
+      pendingEdit.current = null;
+      return say({ kind: 'holt', text: 'Left it as it was.' });
+    }
+    const pe = pendingEdit.current;
+    if (!pe) return say({ kind: 'holt', text: "That change went stale. Tell me again and I'll set it up." });
+    const scope: EditScope | undefined =
+      chip.typedEdit === 'this_week' ? 'this_week' : chip.typedEdit === 'rest_of_block' ? 'rest_of_block' : undefined;
+    const res = pe.plan.apply(scope);
+    if (!res.ok) {
+      pendingEdit.current = null;
+      return say({ kind: 'holt', text: res.refusal.message });
+    }
+    setBusy('thinking');
+    try {
+      /* A skip is a MARK on each session, never a structure change — saving the unchanged structure and
+         saying "done" is the defect this branch exists to prevent. The RPC ignores a session already done. */
+      if (pe.plan.kind === 'skip') {
+        for (const at of pe.plan.sessions) await skipProgramSession(pe.programId, at.weekIndex, at.dayIndex);
+      } else {
+        await updateProgram(pe.programId, res.structure);
+      }
+      pendingEdit.current = null;
+      say(
+        { kind: 'holt', text: pick('edit_done') },
+        { kind: 'chips', chips: [{ label: 'Change something else', patch: {} }, { label: 'Show me the program', patch: {}, goTo: '/(tabs)' }] },
+      );
+    } catch (e) {
+      say({
+        kind: 'error',
+        text: 'That did not save.',
+        sub: e instanceof Error ? e.message : String(e),
+        action: 'Your program is unchanged. Try again in a moment.',
+      });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+
+  const tapChip = (chip: Chip, echo = true) => {
+    if (chip.typedEdit) {
+      if (echo) say({ kind: 'me', text: chip.label });
+      void finishTypedEdit(chip);
+      return;
+    }
     if (chip.label === 'Change the one I have') {
       say({ kind: 'me', text: chip.label });
       handOff();
@@ -1192,7 +1398,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
 
     const opener = fromOpener(chip.label);
     if (opener) {
-      say({ kind: 'me', text: chip.label });
+      if (echo) say({ kind: 'me', text: chip.label });
 
       if (opener.kind === 'import') {
         /* ⚠ THE IMPORTER ALREADY EXISTS AND HE HANDS OVER TO IT rather than growing a second one. The
@@ -1206,14 +1412,24 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
                sheet — see `import_later`. The second door is also the only one that fits an athlete
                whose program is in their head rather than written down. */
             chips: [
-              { label: 'Paste it in', patch: {}, goTo: '/program-builder?o=import' },
-              /* The builder WITHOUT the paste sheet — an empty week grid to lay it out by hand. Same
-                 screen, different door, because they have nothing to paste. */
-              { label: BUILD_IT_OUT, patch: {}, goTo: '/program-builder' },
+              /* ⚠ BOTH OF THESE OPEN BUILD A PROGRAM'S CHOOSER, NOT THE BUILDER (PO, 2026-09-22): *"make
+                 sure [the text / picture / from scratch page] happens every time someone goes to build a
+                 program."* They went straight to the dense builder — one with its paste sheet up, one
+                 empty. The chooser has both of those and the photo read besides, so the chips keep their
+                 words and lose nothing; they just arrive where every other Build a Program door does. */
+              { label: 'Paste it in', patch: {}, goTo: '/program-guided' },
+              { label: BUILD_IT_OUT, patch: {}, goTo: '/program-guided' },
               { label: DECLINE_IMPORT, patch: {} },
             ],
           },
         );
+        return;
+      }
+
+      /* Out to the screen with the camera on it — a hand-off, so the conversation survives coming back. */
+      if (opener.kind === 'form') {
+        handOff();
+        router.push('/form-check' as Parameters<typeof router.push>[0]);
         return;
       }
 
@@ -1233,7 +1449,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
        */
       if (opener.kind === 'pick') {
         setMode('pick');
-        void advance({ ...constraints }, 'pick');
+        void advance(athleteFacts(constraints), 'pick');
         return;
       }
 
@@ -1271,7 +1487,9 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
            after the goal, so a race can skip it instead of having its answer overruled by the calendar.
            See the note on `sizeQuestion`. Nothing special happens at this door any more. */
         if (opener.mode === 'program' && !(await guardActiveProgram())) return;
-        await advance({ ...constraints, ...opener.patch }, opener.mode);
+        /* A door is a NEW request: only the athlete's facts come with them, never the last request's
+           answers — otherwise a second "Build me something" asks nothing and rebuilds the same block. */
+        await advance({ ...athleteFacts(constraints), ...opener.patch }, opener.mode);
       })();
       return;
     }
@@ -1328,6 +1546,10 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     const text = draft.trim();
     if (!text) return;
     setDraft('');
+    sendText(text);
+  };
+
+  const sendText = (text: string) => {
     /* The echo happens exactly once, HERE, whether the message is handled now or held. Putting it inside
        `process` instead is what made a queued message show up twice — once on send, once on drain. */
     say({ kind: 'me', text });
@@ -1338,12 +1560,274 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     process(text);
   };
 
+  /* Talking to Holt: the phone hears it, and the words go through `sendText` exactly as typed ones do. */
+  const dictation = useDictation(sendText);
+  const micShown = dictation.available && !draft.trim();
+
+  /**
+   * ══ PREMIUM AI: THE MODEL READS THE SENTENCE ══
+   *
+   * `interpretTyped` (the one place the app talks to a model) runs the code guard, then the free local
+   * matcher, then `coach-interpret`. What comes back is the same `Partial<CoachConstraints>` a tap fills,
+   * so everything after this — the questions still missing, the engine, the card — is unchanged.
+   *
+   * Before a conversation has a mode, a sentence IS the request ("4 days, an hour, at the gym, I want to
+   * get stronger"): it opens a build — a day when the athlete named what to train today — through the same
+   * allowance gate the door uses, starting from the athlete's facts, never from the last request.
+   */
+  /**
+   * The last eight spoken turns, as the two AI jobs take them.
+   *
+   * ⚠ THE `'holt'` ARM IS LOAD-BEARING FOR A FEATURE THAT IS NOT IN THIS FILE. The Training Gaps answer
+   * (`isGapQuestion` below) is produced locally and never goes to a model, so the ONLY way a follow-up —
+   * "why?", "what do I do about it" — reaches the same numbers is as a `holt` turn in this history.
+   * Drop that arm and the follow-up degrades silently into a general answer.
+   *
+   * `domain/coach/__tests__/training-gaps.test.mjs` pins this filter for exactly that reason and will go
+   * red if it changes. That test is in another module's suite on purpose; read its comment before
+   * "fixing" the failure.
+   */
+  const historyFrom = (t: Turn[]): AskTurn[] =>
+    t
+      .filter((x): x is Extract<Turn, { kind: 'me' | 'holt' }> => (x.kind === 'me' || x.kind === 'holt') && x.text.trim() !== '')
+      .slice(-8)
+      .map((x) => ({ role: x.kind === 'me' ? 'athlete' : 'holt', text: x.text }));
+
+  /**
+   * ══ HOLT ANSWERS, WORD BY WORD (CA-D10, §4.3 streaming) ══
+   *
+   * The reply is ONE Holt turn that grows as the stream arrives (`streaming` until it is complete), so the
+   * first words land in about a second instead of after the whole paragraph. The active program and any
+   * exercise he is asked about travel as context — the coaching records, not his memory.
+   */
+  const askAloud = async (text: string, history: AskTurn[], q: ReturnType<typeof nextQuestion>) => {
+    /**
+     * ══ "WHAT DO I NEED TO WORK ON?" IS ANSWERED HERE, WITHOUT A MODEL ══
+     *
+     * `Coach-Holt-Training-Gaps-v1.0` (LOCKED). The answer is arithmetic over the athlete's own logged
+     * sets — Preflight Gates §2.2 green-tier data — so there is nothing for a model to add and a good
+     * deal for it to get wrong. Short-circuiting here means the question costs nothing, cannot be
+     * steered by a crafted sentence, and works on any tier (TG-D4 is still open; this is the cheap side
+     * of that decision).
+     *
+     * ⚠ TG-D2 — PULL, NEVER PUSH. This fires only when the athlete ASKS, and `isGapQuestion` is
+     * deliberately much narrower than `isTrainingQuestion`: volunteering a list of what someone is
+     * neglecting is the same shape as an unasked remark about their body, which is the thing this whole
+     * feature exists to avoid.
+     */
+    if (isGapQuestion(text)) {
+      setBusy('thinking');
+      const reply = await gapReplyLive().catch(() => null);
+      setBusy(null);
+      if (reply) {
+        say({ kind: 'holt', text: reply });
+        return;
+      }
+      /* Fall through to the ordinary ask only if the local answer failed outright. */
+    }
+    setBusy('thinking');
+    const active = await Promise.race([
+      fetchActiveProgram().catch(() => null),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
+    ]);
+    /* Notes always; the training summary only for a progress/weights question — `askBriefLive` decides, so
+       an ordinary question pays nothing for history it does not need. */
+    const brief = await askBriefLive(text, units).catch(() => ({ notes: [] as string[], training: null }));
+    const context = buildAskContext(
+      {
+        question: text,
+        history,
+        program: active ? { structure: { ...active.structure, name: active.name } } : null,
+        notes: brief.notes,
+        training: brief.training,
+      },
+      askSourcesLive(),
+    );
+    let started = false;
+    const r = await askHolt(text, history, context, (acc) => {
+      if (!started) {
+        started = true;
+        setBusy(null);
+        say({ kind: 'holt', text: acc, streaming: true });
+        return;
+      }
+      setThread((t) => {
+        const i = t.length - 1;
+        const last = t[i];
+        return last?.kind === 'holt' && last.streaming ? [...t.slice(0, i), { ...last, text: acc }] : t;
+      });
+    });
+    setBusy(null);
+    setThread((t) => t.map((x) => (x.kind === 'holt' && x.streaming ? { ...x, streaming: undefined } : x)));
+    switch (r.kind) {
+      case 'answer':
+        if (!started) say({ kind: 'holt', text: r.text });
+        /* Asked mid-build: the question on the table comes back. Asked about a program with none open: the
+           door to build one, since the coach-ask prompt has him offer to build it. */
+        if (q) say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+        else if (/\b(program|plan|routine|workout|split)\b/i.test(text)) say({ kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] });
+        return;
+      case 'crisis':
+        return say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
+      case 'urgent':
+        return say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
+      case 'care':
+        return say({ kind: 'stop', text: CARE_STOP, kicker: CARE_KICKER });
+      case 'medical':
+        return say({ kind: 'stop', text: MEDICAL_STOP });
+      case 'out_of_credits':
+        return say({ kind: 'holt', text: pick('allowance_program') });
+      case 'offline':
+        return say({
+          kind: 'error',
+          text: started ? 'I lost the line partway through.' : "I couldn't reach my notes just then.",
+          sub: 'The connection dropped before I finished.',
+          action: 'Ask me again in a moment.',
+        });
+    }
+  };
+
+  /**
+   * ══ WHAT HOLT KNOWS ABOUT THEM (CA-D2) ══
+   *
+   * The notes the athlete can see and delete in What Holt Remembers — read once per sheet, refreshed after
+   * he saves one. They travel with every typed message so "build me a leg day" already avoids the lunges
+   * they said they hate. `remember` is what the athlete SAID this turn, never what the model inferred.
+   */
+  const notesRef = useRef<string[] | null>(null);
+  const loadNotes = async (): Promise<string[]> => {
+    if (notesRef.current) return notesRef.current;
+    const rows = await fetchNotes().catch(() => []);
+    notesRef.current = rows.map((n) => n.text);
+    return notesRef.current;
+  };
+  const rememberSaid = async (lines: string[]) => {
+    const res = await addNotes(lines, 'chat').catch(() => null);
+    if (!res) return;
+    notesRef.current = null;
+    /* Full notebook: he says so once, rather than silently dropping what they told him. */
+    if (res.skipped.some((x) => x.reason === 'cap')) {
+      say({ kind: 'holt', text: "My notes on you are full. Clear one in What Holt Remembers and I'll keep that too." });
+    }
+  };
+
+  /** One understood step — a single reply, or one part of a message that asked for several things. */
+  const respondTo = async (r: InterpretStep | InterpretResult, text: string, q: ReturnType<typeof nextQuestion>, m: ChatMode) => {
+    switch (r.kind) {
+      case 'crisis':
+        return say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
+      case 'urgent':
+        return say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
+      case 'care':
+        return say({ kind: 'stop', text: CARE_STOP, kicker: CARE_KICKER });
+      case 'medical':
+        return say({ kind: 'stop', text: MEDICAL_STOP });
+      case 'out_of_credits':
+        return say({ kind: 'holt', text: pick('allowance_program') });
+      case 'offline':
+        return say({
+          kind: 'error',
+          text: "I couldn't reach my notes just then.",
+          sub: 'The connection dropped before I heard back.',
+          action: 'Tap an answer, or send it again in a moment.',
+        });
+      case 'unclear':
+        /* With a question on the table, "didn't catch that" and the choices again is right. With nothing on
+           the table (an emoji, "ok", a stray line) it reads as a coach who is not listening — he offers the
+           doors instead (live run 2026-09-22: 23 small-talk lines got "didn't catch that"). */
+        if (q) {
+          say({ kind: 'holt', text: pick('not_understood') }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+          return;
+        }
+        say(
+          { kind: 'holt', text: "I'm here. What are we working on?" },
+          { kind: 'chips', chips: OPENERS.slice(0, 4).map((label) => ({ label, patch: {} })) },
+        );
+        return;
+      /* A question mid-conversation is answered, and the question that was on the table comes back —
+         asking "what's RPE?" while he wants to know your days should not lose the build. */
+      case 'answer':
+        say({ kind: 'holt', text: r.text });
+        if (q) say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+        return;
+      /* A door the app already has. Opened exactly as the matching opener chip opens it, minus the echo —
+         the athlete's own sentence is already in the thread. */
+      case 'door':
+        /* "Swap bench for dumbbell press on Monday" carries the change itself — resolve and confirm it
+           rather than walking them through five taps to say what they already said. */
+        if (r.to === 'edit' && r.edit) return editByWords(r.edit);
+        return tapChip(
+          {
+            label:
+              r.to === 'edit'
+                ? 'Change my program'
+                : r.to === 'import'
+                  ? "I've got a program already"
+                  : r.to === 'build'
+                    ? 'Build me something'
+                    : r.to === 'build_day'
+                      ? 'What should I train today?'
+                      : 'Which one should I pick?',
+            patch: {},
+          },
+          false,
+        );
+      case 'patch': {
+        /* The model hands back the athlete's own words for a day focus; the engine needs a `DayFocus`. */
+        const { dayFocus: said, avoid, ...rest } = r.patch as Partial<ChatState> & { dayFocus?: unknown; avoid?: unknown };
+        /* What they said to leave out is removed by the ENGINE, so Holt's "no lunges" is a fact on the card. */
+        const avoidKeys = Array.isArray(avoid) ? resolveAvoid(avoid.filter((x): x is string => typeof x === 'string'), PICKER_DB) : [];
+        if (avoidKeys.length) {
+          (rest as Partial<ChatState>).excludeExercises = [...new Set([...(constraints.excludeExercises ?? []), ...avoidKeys])];
+        }
+        const focus = typeof said === 'string' ? focusFromText(said) ?? focusFromText(text) : null;
+        const patch: Partial<ChatState> = { ...rest, ...(focus ? { dayFocus: focus } : {}) };
+        if (r.say) say({ kind: 'holt', text: r.say });
+        if (mode) return void advance({ ...constraints, ...patch }, m);
+        const opens: ChatMode = focus ? 'day' : 'program';
+        if (!guard(opens === 'day' ? 'holt_days_per_month' : 'holt_programs')) {
+          return say({ kind: 'holt', text: pick(opens === 'day' ? 'allowance_day' : 'allowance_program') });
+        }
+        setMode(opens);
+        if (opens === 'program' && !(await guardActiveProgram())) return;
+        return void advance({ ...athleteFacts(constraints), ...patch }, opens);
+      }
+    }
+  };
+
+  const understand = async (text: string) => {
+    const m: ChatMode = mode ?? 'program';
+    const q = mode ? nextQuestion(constraints, m) : null;
+    /* This conversation's own recent words (CA-D1) — the current message is not in `thread` yet. */
+    const history = historyFrom(thread);
+    /* A question streams from coach-ask in Holt's words; everything else is parsed for the engine. */
+    if (looksLikeQuestion(text)) return askAloud(text, history, q);
+    setBusy('thinking');
+    const r = await interpretTyped(text, q, m === 'day' ? 'day' : 'program', constraints, history, await loadNotes());
+    setBusy(null);
+    if (r.remember?.length) void rememberSaid(r.remember);
+    /* "Build me a 3 day program and also what's RPE?" — each part answered, in the order it was said. */
+    if (r.kind === 'multi') {
+      for (const step of r.steps) await respondTo(step, text, q, m);
+      return;
+    }
+    return respondTo(r, text, q, m);
+  };
+
   /** Everything that happens to a message after it is on screen. */
   const process = (text: string) => {
     /* ⚠ CHECKED BEFORE ANYTHING ELSE, and before any attempt to understand the sentence as training.
        Someone describing an injury is not answering the question on the table, and treating their knee
        as an answer to "how many days a week" would be the worst possible reading of it. */
-    if (isMedical(text)) {
+    /* ⛔ A person in danger first — before the injury check, whose copy is a physio referral. */
+    const danger = medicalRoute(text);
+    if (danger === 'crisis') return void say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
+    if (danger === 'urgent') return void say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
+    if (danger === 'care') return void say({ kind: 'stop', text: CARE_STOP, kicker: CARE_KICKER });
+    /* The broad word list stops "my shoulder hurts, swap it" — right for a string matcher, wrong once the
+       model reads the sentence (the PO's action-is-fine rule). With Premium AI, `interpretTyped` runs the
+       narrow code guard and the model's own medical routing instead. */
+    if (!premiumAi && isMedical(text)) {
       say({ kind: 'stop', text: MEDICAL_STOP });
       return;
     }
@@ -1353,7 +1837,12 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
        question for the model, not for a string match — see TYPING_ENABLED. */
     if (opener?.kind === 'build') {
       setMode(opener.mode);
-      void advance({ ...constraints, ...opener.patch }, opener.mode);
+      void advance({ ...athleteFacts(constraints), ...opener.patch }, opener.mode);
+      return;
+    }
+
+    if (premiumAi) {
+      void understand(text);
       return;
     }
 
@@ -1509,7 +1998,17 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
      * to ask again while opening an editor would be worse than the blunt one it replaced. */
   const isNewToTraining = constraints.experience?.lifting === 'beginner';
   const rebuildable = built?.kind === 'program' && isNewToTraining;
+  /*
+   * ⚠ ONLY THE NEWEST CARD IS LIVE (stress test 2026-09-21). Every card's buttons called the same
+   * `startNow`/`saveForLater`, which act on `built` — the LAST build. So "Start it now" on the first of
+   * two cards started the second, and after leaving and returning (`built` is not persisted) every card's
+   * buttons did nothing at all. The card that is still on the table keeps its buttons; the rest say so.
+   */
+  const liveCard: Turn | null = built
+    ? ([...thread].reverse().find((t) => t.kind === 'program' || t.kind === 'day') ?? null)
+    : null;
   const handoff: Handoff = {
+    liveCard,
     onPreview: () => setPreview(true),
     onStart: startNow,
     onSave: rebuildable ? rebuild : saveForLater,
@@ -1773,19 +2272,60 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
           */}
         {/* The inset below is for the day this returns rather than something anyone can see now — fixed
             alongside the two visible ones so all three stop guessing at the home indicator together. */}
-        {preview || !TYPING_ENABLED ? null : (
+        {preview || !canType ? null : (
         <View style={[styles.composer, { paddingBottom: 12 + insets.bottom }, busy ? styles.composerBusy : null]}>
           <TextInput
-            value={draft}
+            /* While listening, the words so far — read-only — so the athlete can see they are being heard. */
+            value={dictation.listening ? dictation.heard : draft}
+            editable={!dictation.listening}
             onChangeText={setDraft}
-            placeholder={busy ? 'Holt is working — go ahead, he’ll get it' : 'Tap an answer, or type it'}
+            placeholder={
+              dictation.listening
+                ? 'Listening…'
+                : dictation.problem === 'denied'
+                  ? 'The mic is off for Forge — turn it on in Settings'
+                  : dictation.problem === 'no_speech'
+                    ? 'Didn’t catch that — tap the mic and try again'
+                    : busy
+                      ? 'Holt is working — go ahead, he’ll get it'
+                      : dictation.available
+                        ? 'Tap an answer, type, or talk'
+                        : 'Tap an answer, or type it'
+            }
             placeholderTextColor={flColor.gray600}
             style={[styles.input, draft.trim() ? styles.inputTyping : null]}
             multiline
-            maxLength={280}
+            /* 280 cut off the detailed requests — a fifth of what real people type is a paragraph (stress test
+               2026-09-21). coach-interpret accepts 2,000; 1,000 keeps a paste from becoming an essay. */
+            maxLength={1000}
             onSubmitEditing={send}
             accessibilityLabel="Message Holt"
           />
+          {micShown ? (
+            <Pressable
+              onPress={dictation.listening ? dictation.stop : () => void dictation.start()}
+              accessibilityRole="button"
+              accessibilityLabel={dictation.listening ? 'Stop listening' : 'Talk to Holt'}
+              accessibilityState={{ busy: dictation.listening }}
+              style={styles.sendWrap}
+            >
+              {dictation.listening ? (
+                <LinearGradient
+                  colors={flGradient.bronzeFill.colors}
+                  locations={flGradient.bronzeFill.locations}
+                  start={flGradient.bronzeFill.start}
+                  end={flGradient.bronzeFill.end}
+                  style={styles.sendOn}
+                >
+                  <StopGlyph color={flColor.bronze300} />
+                </LinearGradient>
+              ) : (
+                <View style={styles.sendOff}>
+                  <MicGlyph color={flColor.bronze400} />
+                </View>
+              )}
+            </Pressable>
+          ) : (
           <Pressable
             onPress={send}
             disabled={!draft.trim()}
@@ -1809,6 +2349,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
               </View>
             )}
           </Pressable>
+          )}
         </View>
         )}
       </LinearGradient>
@@ -1948,7 +2489,12 @@ function CoachHome({ onOpener }: { onOpener: (opener: string) => void }) {
                 rest. */}
             <View style={[styles.homeGlyph, r.icon === 'question' && styles.homeGlyphRound]}>
               <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                {r.icon === 'document' ? (
+                {r.icon === 'camera' ? (
+                  <>
+                    <Path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h2L9 4h6l1.5 2h2A2.5 2.5 0 0 1 21 8.5v9A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z" />
+                    <Path d="M12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+                  </>
+                ) : r.icon === 'document' ? (
                   <>
                     <Path d="M6.5 3.5h7L18 8v12.5h-11.5z" />
                     <Path d="M13.5 3.5V8H18" />
@@ -2290,6 +2836,23 @@ function MenuRow({ label, onPress, divided = false }: { label: string; onPress: 
   );
 }
 
+function MicGlyph({ color }: { color: string }) {
+  return (
+    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z" />
+      <Path d="M19 11a7 7 0 0 1-14 0M12 18v3" />
+    </Svg>
+  );
+}
+
+function StopGlyph({ color }: { color: string }) {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill={color}>
+      <Path d="M6 6h12v12H6z" />
+    </Svg>
+  );
+}
+
 function SendGlyph({ color }: { color: string }) {
   return (
     <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
@@ -2431,6 +2994,8 @@ function ThinkingDot({ delay }: { delay: number }) {
 
 /** Everything a card's buttons need, passed as one object so a new card cannot forget half of it. */
 interface Handoff {
+  /** The one card whose buttons act. Any other program/day card is history. */
+  liveCard: Turn | null;
   onPreview: () => void;
   onStart: () => void;
   onSave: () => void;
@@ -2470,11 +3035,20 @@ function TurnView({
           onStart={handoff.onStart}
           onSave={handoff.onSave}
           saveLabel={handoff.saveLabel}
+          retired={handoff.liveCard !== turn}
         />
       );
 
     case 'day':
-      return <DayCardView card={turn.card} onPreview={handoff.onPreview} onStart={handoff.onStart} onSave={handoff.onSave} />;
+      return (
+        <DayCardView
+          card={turn.card}
+          onPreview={handoff.onPreview}
+          onStart={handoff.onStart}
+          onSave={handoff.onSave}
+          retired={handoff.liveCard !== turn}
+        />
+      );
 
     case 'pick':
       return <PickCardView card={turn.card} onChip={onChip} />;
@@ -2489,7 +3063,7 @@ function TurnView({
       /* Anything medical stops flat. Recessed and quiet — NO red, because nothing has gone wrong. */
       return (
         <View style={styles.stop}>
-          <Text style={styles.stopKicker}>{STOP_KICKER}</Text>
+          <Text style={styles.stopKicker}>{turn.kicker ?? STOP_KICKER}</Text>
           <Text style={styles.stopText}>{turn.text}</Text>
         </View>
       );
@@ -2557,6 +3131,13 @@ function Answers({
   onChip: (c: Chip) => void;
 }) {
   const chosen = (c: Chip) => answer != null && c.label === answer;
+  /*
+   * ⚠ AN ANSWERED QUESTION IS A RECORD, NOT A CONTROL (stress test 2026-09-21). Every earlier set of
+   * chips stayed tappable forever, and a stale tap re-ran `advance` with that answer — silently rewriting
+   * something the athlete had moved past, and rebuilding without passing the allowance gate at the door.
+   * The two multi-select questions already worked this way (`settled`); now every shape does.
+   */
+  const settled = answer != null;
 
   /* The two questions you answer more than once — see `CONTROL_FOR.day_focus` / `.limits`. */
   if (ctl === 'multi') return <MultiAnswers chips={chips} answer={answer ?? null} onChip={onChip} />;
@@ -2571,10 +3152,11 @@ function Answers({
         {chips.map((c) => (
           <Pressable
             key={c.label}
-            onPress={() => onChip(c)}
+            onPress={() => (settled ? undefined : onChip(c))}
+            disabled={settled}
             accessibilityRole="button"
             accessibilityLabel={c.label}
-            accessibilityState={{ selected: chosen(c) }}
+            accessibilityState={{ selected: chosen(c), disabled: settled }}
             style={({ pressed }) => [styles.seg, (pressed || chosen(c)) && styles.ctlOn]}
           >
             <Text style={[styles.segText, chosen(c) && styles.segTextOn]} numberOfLines={1}>{c.label}</Text>
@@ -2596,10 +3178,11 @@ function Answers({
           return (
             <Pressable
               key={c.label}
-              onPress={() => onChip(c)}
+              onPress={() => (settled ? undefined : onChip(c))}
+            disabled={settled}
               accessibilityRole="button"
               accessibilityLabel={c.label}
-              accessibilityState={{ selected: chosen(c) }}
+              accessibilityState={{ selected: chosen(c), disabled: settled }}
               style={({ pressed }) => [styles.optCard, (pressed || chosen(c)) && styles.ctlOn]}
             >
               <View style={styles.optCardText}>
@@ -2624,10 +3207,11 @@ function Answers({
         {chips.map((c) => (
           <Pressable
             key={c.label}
-            onPress={() => onChip(c)}
+            onPress={() => (settled ? undefined : onChip(c))}
+            disabled={settled}
             accessibilityRole="button"
             accessibilityLabel={c.label}
-            accessibilityState={{ selected: chosen(c) }}
+            accessibilityState={{ selected: chosen(c), disabled: settled }}
             style={({ pressed }) => [styles.gridCell, (pressed || chosen(c)) && styles.ctlOn]}
           >
             <Text style={[styles.gridText, chosen(c) && styles.ctlTextOn]} numberOfLines={2}>{c.label}</Text>
@@ -2646,7 +3230,8 @@ function Answers({
         {chips.map((c) => (
           <Pressable
             key={c.label}
-            onPress={() => onChip(c)}
+            onPress={() => (settled ? undefined : onChip(c))}
+            disabled={settled}
             accessibilityRole="button"
             accessibilityLabel={c.label}
             style={({ pressed }) => [styles.importRow, pressed && styles.ctlOn]}
@@ -2667,10 +3252,11 @@ function Answers({
       {chips.map((c) => (
         <Pressable
           key={c.label}
-          onPress={() => onChip(c)}
+          onPress={() => (settled ? undefined : onChip(c))}
+          disabled={settled}
           accessibilityRole="button"
           accessibilityLabel={c.label}
-          accessibilityState={{ selected: chosen(c) }}
+          accessibilityState={{ selected: chosen(c), disabled: settled }}
           style={({ pressed }) => [styles.chipCell, (pressed || chosen(c)) && styles.ctlOn]}
         >
           <Text style={[styles.chipCellText, chosen(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
@@ -3101,12 +3687,15 @@ function ProgramCardView({
   onStart,
   onSave,
   saveLabel,
+  retired,
 }: {
   card: ProgramCard;
   onPreview: () => void;
   onStart: () => void;
   onSave: () => void;
   saveLabel: string;
+  /** Not the newest card — its buttons would act on a different build. */
+  retired?: boolean;
 }) {
   return (
     <View style={styles.artifactWrap}>
@@ -3155,6 +3744,8 @@ function ProgramCardView({
             to see the WHOLE thing before deciding whether it needs changing. Sending them straight to
             the Builder made the review step the editing step, which is the wrong order: you cannot judge
             a block from inside the tool for altering it. */}
+        {/* The preview shows the NEWEST build, so an older card must not open it. */}
+        {retired ? null : (
         <Pressable
           onPress={onPreview}
           accessibilityRole="button"
@@ -3166,9 +3757,10 @@ function ProgramCardView({
             <Path d="M9 6l6 6-6 6" />
           </Svg>
         </Pressable>
+        )}
       </CardSurface>
 
-      <ArtifactActions onStart={onStart} onSave={onSave} saveLabel={saveLabel} />
+      <ArtifactActions onStart={onStart} onSave={onSave} saveLabel={saveLabel} retired={retired} />
     </View>
   );
 }
@@ -3231,7 +3823,22 @@ function WeekRow({ week }: { week: ProgramCard['weeks'][number] }) {
  * template. The design system's own Button for both; rolling my own Pressable is what lost the
  * forged-bronze fill, the machined rim and the glow.
  */
-function ArtifactActions({ onStart, onSave, saveLabel }: { onStart: () => void; onSave: () => void; saveLabel: string }) {
+function ArtifactActions({
+  onStart,
+  onSave,
+  saveLabel,
+  retired,
+}: {
+  onStart: () => void;
+  onSave: () => void;
+  saveLabel: string;
+  retired?: boolean;
+}) {
+  /* An earlier build. No buttons rather than dead ones — a button that starts a different program than
+     the card above it, or nothing at all, is the defect this replaces. */
+  if (retired) {
+    return <Text style={styles.retiredNote}>From earlier in this chat. Ask me to build it again to start it.</Text>;
+  }
   return (
     <View style={styles.artifactActions}>
       <View style={styles.ctaGrow}>
@@ -3251,11 +3858,13 @@ function DayCardView({
   onPreview,
   onStart,
   onSave,
+  retired,
 }: {
   card: DayCard;
   onPreview: () => void;
   onStart: () => void;
   onSave: () => void;
+  retired?: boolean;
 }) {
   return (
     <View style={styles.artifactWrap}>
@@ -3277,6 +3886,8 @@ function DayCardView({
             ))}
           </View>
         </View>
+        {/* The preview shows the NEWEST build, so an older card must not open it. */}
+        {retired ? null : (
         <Pressable
           onPress={onPreview}
           accessibilityRole="button"
@@ -3288,8 +3899,9 @@ function DayCardView({
             <Path d="M9 6l6 6-6 6" />
           </Svg>
         </Pressable>
+        )}
       </CardSurface>
-      <ArtifactActions onStart={onStart} onSave={onSave} saveLabel="Save for later" />
+      <ArtifactActions onStart={onStart} onSave={onSave} saveLabel="Save for later" retired={retired} />
     </View>
   );
 }
@@ -3850,6 +4462,7 @@ const styles = StyleSheet.create({
   previewRowPressed: { backgroundColor: bronzeWash(0.06) },
   previewRowText: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   artifactActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  retiredNote: { color: flColor.gray600, fontSize: 13, lineHeight: 18, fontStyle: 'italic', paddingTop: 4 },
   previewWrap: { flex: 1 },
   previewBar: {
     flexDirection: 'row',

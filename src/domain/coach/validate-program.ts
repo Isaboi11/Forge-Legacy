@@ -31,9 +31,9 @@ import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/progr
 import { scheduleSlots, totalSessions } from '../program/progress-core.ts';
 
 import {
-  MAX_DAYS_PER_WEEK,
+  ATHLETE_MAX_DAYS_PER_WEEK,
+  ATHLETE_MIN_DAYS_PER_WEEK,
   MAX_WEEKS,
-  MIN_DAYS_PER_WEEK,
   MIN_WEEKS,
 } from './constraints.ts';
 import { isCompound } from './candidates.ts';
@@ -145,10 +145,13 @@ function checkStructure(structure: ProgramStructure, out: Failure[]): void {
       message: `${structure.weeks} weeks is outside the Builder's ${MIN_WEEKS}–${MAX_WEEKS}`,
     });
   }
-  if (structure.daysPerWeek < MIN_DAYS_PER_WEEK || structure.daysPerWeek > MAX_DAYS_PER_WEEK) {
+  /* ⚠ THE BUILDER'S RANGE, 1–7 — NOT HOLT'S OWN 2–6. This gate asks "can the screen that opens this render
+     it", and since CA §4.5 it can render a single day and a seven-day week. Whether Holt should WRITE one
+     unprompted is `normalise`'s question, not the validator's. */
+  if (structure.daysPerWeek < ATHLETE_MIN_DAYS_PER_WEEK || structure.daysPerWeek > ATHLETE_MAX_DAYS_PER_WEEK) {
     out.push({
       code: 'days_out_of_range',
-      message: `${structure.daysPerWeek} days a week is outside the Builder's ${MIN_DAYS_PER_WEEK}–${MAX_DAYS_PER_WEEK}`,
+      message: `${structure.daysPerWeek} days a week is outside the Builder's ${ATHLETE_MIN_DAYS_PER_WEEK}–${ATHLETE_MAX_DAYS_PER_WEEK}`,
     });
   }
 
@@ -307,6 +310,9 @@ function checkPolicy(
     const during = weekDays(structure, w);
     const setsBefore = before.reduce((n, d) => n + setsOf(d), 0);
     const setsDuring = during.reduce((n, d) => n + setsOf(d), 0);
+    /* A week with no counted sets at all — a run-only week — has nothing PAS-D8 can cut: the rule is about
+       sets on compounds, and 0 against 0 is not a heavier deload, it is a rule with nothing to measure. */
+    if (setsBefore === 0) continue;
     if (setsDuring >= setsBefore) {
       out.push({
         code: 'deload_not_lighter',

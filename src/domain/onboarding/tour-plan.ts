@@ -47,7 +47,7 @@ export type TourAnchorId =
   // Workouts tab
   | 'workouts-segments'
   | 'workouts-active'
-  | 'workouts-planned'
+  | 'workouts-create'
   | 'workouts-programs'
   | 'workouts-templates'
   | 'workouts-reference'
@@ -360,43 +360,48 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
    */
   home: [],
 
+  /* ⚠ REWRITTEN FOR THE WORKOUTS RESTRUCTURE (2026-09-22). The hub lost its Planned section (now inside
+     `/programs`) and its `+` stopped tracking and logging runs (Create New is about making things), so
+     the Planned step and the TRACK-vs-LOG step would have spotlit nothing and described a sheet that no
+     longer exists. Reading order still encodes depth: what the screen is, then what you're doing and how
+     to make something, then the rest. */
   workouts: [
     {
       key: 'wk-segments',
       title: 'Two ways to look at this',
-      body: '“My Workouts” is everything you own and train today. “Discover” is for finding something new. Nothing you build ever hides in Discover — it lands here, on your side.',
+      body: '“My Workouts” is your own training — what you’re following and what you’ve made. “Discover” is for finding something new: a single session for today, or a Forge program. Nothing you build ever hides in Discover.',
       anchor: 'workouts-segments',
       pad: 6,
       radius: 12,
     },
     {
       key: 'wk-active',
-      title: 'Active',
-      body: 'One program is active at a time — the one Home starts today’s session from. Ending or starting another moves this, and nothing you’ve already logged is affected.',
+      title: 'Active Program',
+      body: 'One program is active at a time — the one Home starts today’s session from. Tap it for the whole plan. Ending or starting another moves this, and nothing you’ve already logged is affected.',
       anchor: 'workouts-active',
       pad: 8,
       radius: 18,
     },
     {
-      key: 'wk-planned',
-      title: 'Planned',
-      body: 'Programs you’ve queued but haven’t started. When the active one ends you begin the next from here, so there’s no gap in the work. Nothing lands here by being looked at — only by your pressing Start.',
-      anchor: 'workouts-planned',
-      pad: 8,
+      key: 'wk-create',
+      title: 'One place to make anything',
+      body: 'Create New — and the + at the top, which opens the same sheet — starts a freestyle workout, builds a workout template or a program, or imports a plan you already follow.',
+      anchor: 'workouts-create',
+      pad: 6,
       radius: 18,
     },
     {
       key: 'wk-programs',
       title: 'Your Programs',
-      body: 'The ones you built yourself. Forge programs live in Discover until you take one on, and go back there once you’ve finished with them — a program you graduated is on the shelf again, not gone. “Build a Program” designs one from scratch, week by week.',
+      body: 'Every program you’ve built, imported or planned, and the Forge programs you’ve finished — a program you graduated stays readable here. Forge’s full shelf lives in Discover.',
       anchor: 'workouts-programs',
       pad: 8,
       radius: 18,
     },
     {
       key: 'wk-templates',
-      title: 'A template is a session you can run again',
-      body: 'Most arrive by capture: you train, and afterwards The Record offers to keep the shape — a workout you’ve already done is one you know you can do. “Build a Template” is the other way in, for when you want to plan it first. “Build a Week” makes several days you run in order. Tap any of them to open it.',
+      title: 'A workout template is a session you can run again',
+      body: 'Most arrive by capture: you train, and afterwards The Record offers to keep the shape — a workout you’ve already done is one you know you can do. You can also build one first from Create New.',
       anchor: 'workouts-templates',
       pad: 8,
       radius: 18,
@@ -404,18 +409,10 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
     {
       key: 'wk-reference',
       title: 'Reference',
-      body: 'The Exercise Library is every lift in the app, searchable and bookmarkable. Activity History answers “what did I actually lift on Tuesday” — set by set, month by month.',
+      body: 'The Exercise Library is every lift in the app, searchable and bookmarkable. Activity History answers “what did I actually lift on Tuesday” — and it’s where you log a run or swim you already finished.',
       anchor: 'workouts-reference',
       pad: 8,
       radius: 18,
-    },
-    {
-      key: 'wk-start',
-      title: 'Start anything from here',
-      body: 'Today’s session, a freestyle log, or a program to build. Two of the doors look alike and aren’t: TRACK a run measures it as you go, LOG a run records one you already finished. A treadmill run has nothing for GPS to measure — and a run you forgot to start still counts.',
-      anchor: 'workouts-start',
-      pad: 6,
-      radius: 999,
     },
   ],
 
@@ -623,8 +620,8 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
     },
     {
       key: 'tp-new',
-      title: 'Two sizes: a day, or a week',
-      body: 'Build a template for a single session. Build a week for several days you run in order — and a saved week can be dropped straight into a week of any program you build. You can also keep a session after training it, from The Record.',
+      title: 'Build one, or keep one',
+      body: 'Build a template for a single session you can start any time. You can also keep a session after training it, from The Record.',
       anchor: 'templates-new',
       pad: 8,
       radius: 14,

@@ -108,7 +108,7 @@ main{max-width:1180px;margin:0 auto;padding:1.2rem}
 .ex.done{opacity:.5}
 /* ⚠ AN APPROXIMATE ROW IS DECIDED BUT NOT FADED. '.done' dims a finished card to get it out of the
    way, which is right when there is nothing left to read — but this one carries a note you are still
-   writing and will want to re-read. Decided for the counter and the Hide-decided filter, legible on
+   writing and will want to re-read. Decided for the counter and the decided view, legible on
    screen, and marked with a bronze edge so it is findable at a glance among the exact picks. */
 .ex.approx{opacity:1;border-color:var(--lift);box-shadow:inset 3px 0 0 var(--lift)}
 /* ⚠ A DROPPED CARD HIDES ITS CANDIDATES, it does not just dim them. "Not needed" is the one
@@ -153,6 +153,55 @@ main{max-width:1180px;margin:0 auto;padding:1.2rem}
 .none{padding:0 1.1rem 1.1rem;color:var(--bad);font-size:.9rem}
 .status{font-size:.8rem;color:var(--faint)}
 kbd{font:inherit;font-size:.74rem;border:1px solid var(--rule);border-radius:4px;padding:0 .3rem;color:var(--soft)}
+
+/* ══ THE QUEUE ══
+   One undecided row on screen at a time. Everything below exists because the page stopped being a
+   list you scroll and became a thing you answer. */
+
+.prog{flex:1 0 100%;height:3px;background:var(--rule);border-radius:2px;overflow:hidden;margin:.1rem 0 -.2rem}
+.prog i{display:block;height:100%;width:0;background:var(--bronze);transition:width .25s ease}
+
+/* ⚠ THE CARD DOES NOT DIM ITSELF WHILE YOU ARE ANSWERING IT. '.done' is what the list view uses to
+   push a finished row into the background, and a pending answer sets the same flag so the status
+   line and the tier badge read correctly — but this is the row you are looking at, so the queue
+   takes the dimming back off. */
+.queue .ex{margin:0}
+.queue .ex.done{opacity:1}
+.queue .cands{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.queue .cand[aria-pressed="true"]{box-shadow:0 0 0 2px var(--bronze)}
+.queue .exname{font-size:1.3rem}
+
+/* The digit that answers this tile. Sits on the clip rather than under it, because the number is
+   only useful while your eye is on the picture. */
+.cand{position:relative}
+.cand .num{position:absolute;top:.4rem;left:.4rem;z-index:2;font-size:.7rem;font-weight:700;
+  line-height:1;padding:.24rem .38rem;border-radius:5px;background:rgba(10,9,8,.78);color:var(--soft)}
+.cand[aria-pressed="true"] .num{background:var(--bronze);color:#181008}
+
+/* "No good match" and "Not needed" are options too, and are selected the same way a clip is — the
+   submit bar is the only thing that writes a decision. Styling them as tiles rather than as the
+   plain buttons they were is what makes that one rule visible. */
+.opts{display:flex;gap:.6rem;padding:0 1.1rem 1.1rem;flex-wrap:wrap;align-items:center}
+.opt{font:inherit;cursor:pointer;border-radius:9px;padding:.55rem .9rem;border:1px solid var(--rule);
+  background:var(--panel2);color:var(--soft);display:flex;gap:.5rem;align-items:center}
+.opt:hover{border-color:var(--faint)}
+.opt[aria-pressed="true"]{border-color:var(--bronze);box-shadow:0 0 0 1px var(--bronze);color:var(--ink)}
+.opt.drop[aria-pressed="true"]{border-color:#8a5a4e;box-shadow:0 0 0 1px #8a5a4e;color:#d8b3a6}
+.opt .num{position:static;background:none;padding:0;color:inherit;opacity:.7}
+
+/* ⚠ STICKY, AND AT THE FOOT. Six clips on a wide card push the answer off the bottom of the screen,
+   and an answer you have to scroll to find is one you stop giving. */
+.subbar{position:sticky;bottom:0;z-index:4;margin-top:1rem;display:flex;gap:.75rem;align-items:center;
+  flex-wrap:wrap;padding:.8rem 1.1rem;background:rgba(10,9,8,.96);border:1px solid var(--rule);
+  border-radius:12px;backdrop-filter:blur(6px)}
+.subbar .willbe{font-size:.84rem;color:var(--soft);min-width:12rem}
+.subbar .willbe em{font-style:normal;color:var(--lift)}
+.subbar .hint{margin-left:auto;font-size:.76rem;color:var(--faint)}
+button.act.big{padding:.62rem 1.5rem;font-size:1rem}
+
+.empty{text-align:center;padding:4rem 1.1rem;color:var(--soft)}
+.empty h2{font-size:1.15rem;font-weight:600;margin:0 0 .5rem;color:var(--ink)}
+.empty p{margin:.3rem 0;font-size:.9rem;color:var(--faint)}
 </style>
 
 <header>
@@ -166,11 +215,18 @@ kbd{font:inherit;font-size:.74rem;border:1px solid var(--rule);border-radius:4px
   <button class="pill" data-tier="review" aria-pressed="false">Needs a look ${counts.review}</button>
   <button class="pill" data-tier="weak" aria-pressed="false">Weak ${counts.weak}</button>
   <button class="pill" data-tier="none" aria-pressed="false">Nothing found ${counts.none}</button>
-  <button class="pill" id="hidedone" aria-pressed="false">Hide decided</button>
   ${recCount ? `<button class="pill" id="onlyrec" aria-pressed="false">Recommended ${recCount}</button>` : ""}
+  <span style="width:1px;height:20px;background:var(--rule)"></span>
+  <!-- ⚠ THE ONLY WAY BACK TO A ROW THAT HAS SCROLLED PAST. The queue shows undecided rows and nothing
+       else, so without these two an answer given by accident is unreachable: the card is gone the
+       instant it is submitted and no filter brings it back. Undo takes the last one; the pill opens
+       every decision made so far. -->
+  <button class="act" id="undo" disabled>Undo</button>
+  <button class="pill" id="decided" aria-pressed="false">Decided <span id="ndecided">0</span></button>
   <span class="count" id="count"></span>
   <span class="count" id="sync" style="margin-left:0"></span>
-  <button class="act primary" id="export">Download decisions</button>
+  <button class="act" id="export">Download decisions</button>
+  <span class="prog"><i id="progbar"></i></span>
 </header>
 
 <main id="list"></main>
@@ -216,19 +272,97 @@ function setSync(msg) {
 }
 const keyOf = (r) => r.sex + '::' + r.id;
 
-let sex = 'all', tier = 'all', hideDone = false, onlyRec = false;
+let sex = 'all', tier = 'all', onlyRec = false;
+
+/*
+ * ══ ⚠ THE PAGE ANSWERS ONE ROW AT A TIME, AND A DECIDED ROW IS GONE ══
+ *
+ * PO: *"update it so I don't see the ones I already decided. pick an option, submit. Gone. And then
+ * it goes to the next one. One at a time."*
+ *
+ * So 'Hide decided' is no longer a filter you can turn off — it is what the queue IS. The list view
+ * survives as 'mode', because the one thing a disappearing card cannot do is let you fix an answer
+ * you got wrong an hour ago.
+ *
+ * ⚠ AND SELECTING IS NOT DECIDING. Every handler below used to write straight into 'decisions' and
+ * save on the click. That was right for a list — the card stayed put and you could see what you had
+ * done — and it is wrong here, because the card VANISHES the moment a decision exists for it. A
+ * mis-click would file an answer and remove the evidence in the same frame. The click therefore only
+ * fills 'pending'; the submit bar is the only thing that writes.
+ */
+let mode = 'queue';
+let pending = null;          // { k, d } — the answer being assembled for the row on screen
+const skipped = new Set();   // session-only: 'come back to this', so one hard row cannot block the rest
+const undoStack = [];        // keys, most recent last
+
+/** The answer that should be drawn for a row — the pending one on the queue card, else what is filed. */
+const shownFor = (k) => (pending && pending.k === k ? pending.d : decisions[k]);
 
 function visible() {
+  /* Every decision ever made, newest work first is not knowable here — file order is stable and that
+     is enough to find a row by name. Filters still apply, so 'male + decided' is a readable slice. */
+  if (mode === 'decided') {
+    return ROWS.filter((r) =>
+      decisions[keyOf(r)] &&
+      (sex === 'all' || r.sex === sex) &&
+      (tier === 'all' || r.confidence === tier));
+  }
   return ROWS.filter((r) =>
     (sex === 'all' || r.sex === sex) &&
     (tier === 'all' || r.confidence === tier) &&
-    (!hideDone || !decisions[keyOf(r)]) &&
+    !decisions[keyOf(r)] &&
+    !skipped.has(keyOf(r)) &&
     (!onlyRec || RECS[keyOf(r)]));
+}
+
+/**
+ * The one place an answer is recorded, and the only thing that knows the difference between the two
+ * modes: on the queue a choice is PENDING until Submit, in the list it is filed on the click exactly
+ * as it always was. Every handler below goes through here so that rule cannot be forgotten in one of
+ * them.
+ */
+function choose(k, d) {
+  if (mode === 'queue') { pending = { k: k, d: d }; render(); return; }
+  decisions[k] = d;
+  save();
+  render();
+}
+
+/** Writes the pending answer, remembers it for Undo, and lets 'visible()' drop the row. */
+function submit() {
+  if (!pending) return;
+  decisions[pending.k] = pending.d;
+  undoStack.push(pending.k);
+  pending = null;
+  save();
+  render();
+  window.scrollTo(0, 0);
+}
+
+/** Takes the last submitted row back off the pile. It returns to the head of the queue on its own,
+    because 'visible()' walks ROWS in order and the row we just left is behind the one now showing. */
+function undoLast() {
+  const k = undoStack.pop();
+  if (!k) return;
+  delete decisions[k];
+  pending = null;
+  mode = 'queue';
+  document.getElementById('decided').setAttribute('aria-pressed', 'false');
+  save();
+  render();
+  window.scrollTo(0, 0);
 }
 
 function render() {
   const list = document.getElementById('list');
   const rows = visible();
+  /*
+   * ⚠ A PENDING ANSWER BELONGS TO THE ROW ON SCREEN AND TO NO OTHER. Change a filter, or open the
+   * decided list, and the card it was assembled for is gone — but 'submit()' would still write it,
+   * so Enter could file an answer against a row that had scrolled out of the session. Dropping it
+   * here is the only place that catches every route out of the card.
+   */
+  if (pending && !(mode === 'queue' && rows.length && keyOf(rows[0]) === pending.k)) pending = null;
   const decided = ROWS.filter((r) => decisions[keyOf(r)]).length;
   /* Counted apart from 'decided' on purpose: these are rows that will never be animated, and that is a
      number worth being able to read off the header rather than reconstructing from the file later. */
@@ -241,19 +375,50 @@ function render() {
     const d = decisions[keyOf(r)];
     return d && d.approximate && !(d.note && d.note.trim());
   }).length;
+  const left = mode === 'queue' ? rows.length : ROWS.filter((r) => !decisions[keyOf(r)] && !skipped.has(keyOf(r))).length;
   document.getElementById('count').textContent =
-    rows.length + ' shown · ' + decided + ' of ' + ROWS.length + ' decided' +
+    left + ' left · ' + decided + ' of ' + ROWS.length + ' decided' +
+    (skipped.size ? ' · ' + skipped.size + ' skipped' : '') +
     (unexplained ? ' · ' + unexplained + ' close, note still needed' : '') +
     (dropped ? ' · ' + dropped + ' not needed' : '') +
     (pendingRec ? ' · ' + pendingRec + ' recommended' : '');
+  document.getElementById('ndecided').textContent = decided;
+  document.getElementById('progbar').style.width = (100 * decided / ROWS.length).toFixed(2) + '%';
+  const undoBtn = document.getElementById('undo');
+  undoBtn.disabled = undoStack.length === 0;
+  undoBtn.textContent = undoStack.length ? 'Undo last' : 'Undo';
 
+  list.className = mode === 'queue' ? 'queue' : '';
   list.innerHTML = '';
-  /* ⚠ CAPPED AT 120 ROWS. Each card mounts up to six <video> elements off an external drive; rendering
-     900 at once is thousands of file handles and the page stops responding. Filter to narrow it. */
-  for (const r of rows.slice(0, 120)) {
-    const k = keyOf(r), d = decisions[k];
+
+  /*
+   * ⚠ THE END OF THE QUEUE IS A STATE, NOT AN EMPTY PAGE. Filters can empty it while hundreds of rows
+   * remain, so it has to say WHICH of the two happened — otherwise narrowing to 'Likely' and clearing
+   * its four rows looks exactly like finishing the job.
+   */
+  if (mode === 'queue' && !rows.length) {
+    const done = document.createElement('div');
+    done.className = 'empty';
+    const narrowed = sex !== 'all' || tier !== 'all' || onlyRec;
+    done.innerHTML =
+      '<h2>' + (narrowed ? 'Nothing left in this filter.' : 'Every row is answered.') + '</h2>' +
+      '<p>' + decided + ' of ' + ROWS.length + ' decided' + (skipped.size ? ' · ' + skipped.size + ' skipped' : '') + '.</p>' +
+      (narrowed ? '<p>Widen the filters above to keep going.</p>' : '') +
+      (skipped.size ? '<p><button class="act" id="unskip">Bring back the ' + skipped.size + ' skipped</button></p>' : '');
+    list.appendChild(done);
+    const un = document.getElementById('unskip');
+    if (un) un.addEventListener('click', () => { skipped.clear(); render(); });
+    return;
+  }
+  /* ⚠ CAPPED AT 120 ROWS IN THE LIST, AND AT ONE IN THE QUEUE. Each card mounts up to six <video>
+     elements off an external drive; rendering 900 at once is thousands of file handles and the page
+     stops responding. The queue's cap of 1 is the feature, not a performance guard — but it is also
+     why the clips on it can afford to load a frame each without being hovered. */
+  const cap = mode === 'queue' ? 1 : 120;
+  for (const r of rows.slice(0, cap)) {
+    const k = keyOf(r), d = shownFor(k);
     const el = document.createElement('section');
-    /* 'done' still applies so the counter and Hide-decided treat it as answered; 'approx' undoes the
+    /* 'done' still applies so the counter and the decided view treat it as answered; 'approx' undoes the
        dimming, because this card is still being read. See the stylesheet. */
     el.className = 'ex' + (d ? (d.dropped ? ' done dropped' : d.approximate ? ' done approx' : ' done') : '');
     el.innerHTML =
@@ -263,19 +428,38 @@ function render() {
       (r.candidates.length
         ? '<div class="cands">' + r.candidates.map((c, i) =>
             '<button class="cand" data-i="' + i + '" aria-pressed="' + (d && d.path === c.path ? 'true' : 'false') + '">' +
-            '<video src="' + c.url + '" muted loop preload="none" playsinline></video>' +
+            (mode === 'queue' ? '<span class="num">' + (i + 1) + '</span>' : '') +
+            /* ⚠ '#t=0.1' IS WHAT PUTS A PICTURE IN THE TILE. 'preload="metadata"' fetches the header
+               and shows a black box; the media fragment makes the browser seek and paint that frame,
+               which is the whole difference between six clips you can compare at a glance and six
+               clips you have to hover one at a time. Affordable only because the queue mounts one
+               card — the list keeps 'none' and its hover-to-load. */
+            '<video src="' + c.url + (mode === 'queue' ? '#t=0.1' : '') + '" muted loop preload="' +
+              (mode === 'queue' ? 'metadata' : 'none') + '" playsinline></video>' +
             '<div class="cn">' + esc(c.name) + '<br>' +
             c.missing.map((t) => '<span class="tok m">missing ' + esc(t) + '</span>').join('') +
             c.extra.map((t) => '<span class="tok x">+' + esc(t) + '</span>').join('') +
             '</div></button>').join('') + '</div>'
         : '<div class="none">No clip in the library covers this name. Likely genuinely absent — most of these are field or cardio movements the 3D library never rendered.</div>') +
-      '<div class="foot">' +
-        '<button class="act" data-act="none">No good match</button>' +
-        '<button class="act" data-act="close">Close — needs a note</button>' +
-        '<button class="act drop" data-act="drop">Not needed</button>' +
-        '<button class="act" data-act="clear">Clear</button>' +
-        '<span class="status">' + statusOf(d) + '</span>' +
-      '</div>' +
+      (mode === 'queue'
+        ? '<div class="opts">' +
+            '<button class="opt" data-act="none" aria-pressed="' + (d && !d.path && !d.dropped ? 'true' : 'false') + '">' +
+              '<span class="num">N</span> No good match</button>' +
+            '<button class="opt drop" data-act="drop" aria-pressed="' + (d && d.dropped ? 'true' : 'false') + '">' +
+              '<span class="num">D</span> Not needed</button>' +
+            '<button class="act" data-act="close">Close — needs a note</button>' +
+            /* Not an answer, and deliberately not styled as one: it files nothing and the row comes
+               back at the end. Without it a single unanswerable clip stops the whole queue. */
+            '<button class="act" data-act="skip">Skip for now</button>' +
+            '<span class="status">' + statusOf(d) + '</span>' +
+          '</div>'
+        : '<div class="foot">' +
+            '<button class="act" data-act="none">No good match</button>' +
+            '<button class="act" data-act="close">Close — needs a note</button>' +
+            '<button class="act drop" data-act="drop">Not needed</button>' +
+            '<button class="act" data-act="clear">Clear</button>' +
+            '<span class="status">' + statusOf(d) + '</span>' +
+          '</div>') +
       /*
        * ⚠ THE NOTE IS ONLY DRAWN ONCE THE ROW IS MARKED APPROXIMATE. A textarea under every one of the
        * 120 rendered cards would be 120 empty boxes inviting a note nobody needs, and the whole point
@@ -287,8 +471,12 @@ function render() {
           esc(d.note || '') + '</textarea></div>'
         : '');
 
-    /* The proposal, above the answers it is proposing. */
-    const rec = decisions[k] ? null : RECS[k];
+    /* The proposal, above the answers it is proposing.
+       ⚠ IT STAYS PUT ON THE QUEUE once accepted, rather than vanishing the way it does in the list.
+       There, Accept files the decision and the panel has nothing left to propose; here Accept only
+       fills the pending answer, and pulling the panel out from under the pointer would move Submit
+       up the page in the instant before it is pressed. */
+    const rec = mode === 'queue' ? RECS[k] : (decisions[k] ? null : RECS[k]);
     if (rec) {
       const low = rec.confidence === 'low';
       const what = rec.none
@@ -304,11 +492,10 @@ function render() {
         '<div class="recwhy">' + esc(rec.why) + '</div>' +
         '<button class="act primary" data-act="accept">Accept</button>';
       panel.querySelector('[data-act="accept"]').addEventListener('click', () => {
-        decisions[k] = rec.none
+        choose(k, rec.none
           ? { id: r.id, sex: r.sex, path: null }
           : { id: r.id, sex: r.sex, path: rec.path, name: rec.name,
-              ...(rec.approximate ? { approximate: true, note: rec.note || '' } : {}) };
-        save(); render();
+              ...(rec.approximate ? { approximate: true, note: rec.note || '' } : {}) });
       });
       el.insertBefore(panel, el.querySelector('.foot'));
     }
@@ -324,27 +511,25 @@ function render() {
          — and silently dropping a note the moment you compare two clips would lose the sentence you
          had just written. 'Clear' is how you say exact, and it is one button away. */
       b.addEventListener('click', () => {
-        const prev = decisions[k] || {};
-        decisions[k] = { id: r.id, sex: r.sex, path: c.path, name: c.name };
-        if (prev.approximate) { decisions[k].approximate = true; decisions[k].note = prev.note || ''; }
-        save(); render();
+        const prev = shownFor(k) || {};
+        const next = { id: r.id, sex: r.sex, path: c.path, name: c.name };
+        if (prev.approximate) { next.approximate = true; next.note = prev.note || ''; }
+        choose(k, next);
       });
     });
-    el.querySelector('[data-act="none"]').addEventListener('click', () => { decisions[k] = { id: r.id, sex: r.sex, path: null }; save(); render(); });
+    el.querySelector('[data-act="none"]').addEventListener('click', () => choose(k, { id: r.id, sex: r.sex, path: null }));
     /*
      * ⚠ CLOSE REQUIRES A CLIP, AND SAYS SO RATHER THAN DOING NOTHING. "Close" means "this one, but it
      * is not exact", so there has to be a 'this one'. Pressed on an undecided row it used to be a
      * no-op, which reads as a broken button — the status line now names the missing step instead.
      */
     el.querySelector('[data-act="close"]').addEventListener('click', () => {
-      const cur = decisions[k];
+      const cur = shownFor(k);
       if (!cur || !cur.path) {
         el.querySelector('.status').textContent = 'pick the closest clip first, then mark it close';
         return;
       }
-      cur.approximate = true;
-      if (cur.note == null) cur.note = '';
-      save(); render();
+      choose(k, { ...cur, approximate: true, note: cur.note == null ? '' : cur.note });
       const box = document.getElementById('n-' + k);
       if (box) { box.focus(); box.setSelectionRange(box.value.length, box.value.length); }
     });
@@ -364,11 +549,16 @@ function render() {
      * the candidate-click handler above.
      */
     el.querySelector('[data-act="drop"]').addEventListener('click', () => {
-      const prev = decisions[k] || {};
-      decisions[k] = { id: r.id, sex: r.sex, path: null, dropped: true, note: prev.note || '' };
-      save(); render();
+      const prev = shownFor(k) || {};
+      choose(k, { id: r.id, sex: r.sex, path: null, dropped: true, note: prev.note || '' });
     });
-    el.querySelector('[data-act="clear"]').addEventListener('click', () => { delete decisions[k]; save(); render(); });
+    /* Both are mode-only — Clear belongs to the list, Skip to the queue — so neither can be assumed
+       to be in the card. Querying for an absent button and calling addEventListener on null is how
+       this file would break the OTHER mode while looking correct in the one being tested. */
+    const clearBtn = el.querySelector('[data-act="clear"]');
+    if (clearBtn) clearBtn.addEventListener('click', () => { delete decisions[k]; save(); render(); });
+    const skipBtn = el.querySelector('[data-act="skip"]');
+    if (skipBtn) skipBtn.addEventListener('click', () => { skipped.add(k); pending = null; render(); window.scrollTo(0, 0); });
     /*
      * ⚠ SAVED ON 'input', WITHOUT A 'render()'. Re-rendering on every keystroke would tear the textarea
      * out from under the cursor. The status line above it therefore goes stale while you type and is
@@ -377,12 +567,35 @@ function render() {
      */
     const noteBox = el.querySelector('.note');
     if (noteBox) {
-      noteBox.addEventListener('input', () => { decisions[k].note = noteBox.value; save(); });
+      /* ⚠ IT WRITES TO WHICHEVER ANSWER IS ON SCREEN. Reaching straight into 'decisions[k]' was safe
+         while every visible row was a filed one; on the queue the row being noted has no entry there
+         yet, and the old line threw on the first keystroke. Nothing is saved for a pending note —
+         Submit is what puts it on disk. */
+      noteBox.addEventListener('input', () => {
+        const target = shownFor(k);
+        if (!target) return;
+        target.note = noteBox.value;
+        if (target === decisions[k]) save();
+      });
       noteBox.addEventListener('blur', () => render());
     }
     list.appendChild(el);
+
+    /* ⚠ THE SUBMIT BAR IS BUILT PER CARD, not once in the header, because it describes THIS row's
+       pending answer and has to disappear with it. */
+    if (mode === 'queue') {
+      const bar = document.createElement('div');
+      bar.className = 'subbar';
+      bar.innerHTML =
+        '<button class="act primary big" id="submit"' + (d ? '' : ' disabled') + '>Submit</button>' +
+        '<span class="willbe">' + (d ? 'Will record: <em>' + statusOf(d).replace(/^[✓✗≈—]\\s*/, '') + '</em>' : 'Pick an option to submit.') + '</span>' +
+        '<span class="hint"><kbd>1</kbd>–<kbd>' + Math.max(r.candidates.length, 1) + '</kbd> pick · ' +
+          '<kbd>N</kbd> none · <kbd>D</kbd> not needed · <kbd>S</kbd> skip · <kbd>Enter</kbd> submit</span>';
+      bar.querySelector('#submit').addEventListener('click', submit);
+      list.appendChild(bar);
+    }
   }
-  if (rows.length > 120) {
+  if (mode !== 'queue' && rows.length > 120) {
     const more = document.createElement('p');
     more.className = 'status';
     more.style.padding = '0 1.1rem';
@@ -398,7 +611,7 @@ function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
  *
  * ⚠ AN APPROXIMATE PICK WITH NO NOTE YET IS CALLED OUT, because the note IS the decision. A clip
  * marked close and left unexplained is worse than no pick at all: it looks answered to the counter and
- * to Hide-decided, and whoever reads 'decisions.json' later has a stand-in with nothing saying what is
+ * to the decided view, and whoever reads 'decisions.json' later has a stand-in with nothing saying what is
  * wrong with it. Naming it here is what stops it disappearing into the done pile.
  */
 function statusOf(d) {
@@ -424,10 +637,36 @@ document.querySelectorAll('[data-tier]').forEach((b) => b.addEventListener('clic
   document.querySelectorAll('[data-tier]').forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
   render();
 }));
-document.getElementById('hidedone').addEventListener('click', (e) => {
-  hideDone = !hideDone;
-  e.target.setAttribute('aria-pressed', String(hideDone));
+document.getElementById('decided').addEventListener('click', (e) => {
+  mode = mode === 'queue' ? 'decided' : 'queue';
+  e.currentTarget.setAttribute('aria-pressed', String(mode === 'decided'));
   render();
+  window.scrollTo(0, 0);
+});
+document.getElementById('undo').addEventListener('click', undoLast);
+
+/*
+ * ⚠ THE KEYBOARD IS THE POINT OF A QUEUE, and it is the reason for the two-beat answer. 755 rows at
+ * two clicks each is a mouse journey to the tile and back to Submit; digit-then-Enter never leaves
+ * the home row. The shortcuts are inert in the decided list, where there is no single row they could
+ * mean, and while a note has focus, where every one of them is a character somebody is typing.
+ */
+document.addEventListener('keydown', (e) => {
+  if (mode !== 'queue') return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const t = e.target;
+  if (t && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT')) return;
+  const card = document.querySelector('#list .ex');
+  if (!card) return;
+  if (e.key === 'Enter') { e.preventDefault(); submit(); return; }
+  const press = (sel) => { const b = card.querySelector(sel); if (b) { e.preventDefault(); b.click(); } };
+  if (e.key >= '1' && e.key <= '9') return press('.cand[data-i="' + (+e.key - 1) + '"]');
+  const k = e.key.toLowerCase();
+  if (k === 'n') return press('[data-act="none"]');
+  if (k === 'd') return press('[data-act="drop"]');
+  if (k === 's') return press('[data-act="skip"]');
+  if (k === 'c') return press('[data-act="close"]');
+  if (k === 'u') { e.preventDefault(); undoLast(); }
 });
 const onlyRecBtn = document.getElementById('onlyrec');
 if (onlyRecBtn) onlyRecBtn.addEventListener('click', (e) => {

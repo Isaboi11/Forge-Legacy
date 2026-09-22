@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type { HistorySession } from '@/domain/coach/progression';
 import { PR_MAX_REPS } from '@/domain/workout/metrics';
+import type { TrainingSession } from '@/domain/coach/training-summary';
 
 /**
  * What the athlete has actually lifted — the ONE lift-history read in the app.
@@ -225,4 +226,78 @@ async function fetchBests(
   }
 
   return out;
+}
+
+/**
+ * EVERY LIFT, OVER A WINDOW — what Coach Holt reads to answer "am I getting stronger?".
+ *
+ * The two reads above answer a question about lifts the caller already names, and read two sessions
+ * because that is what a card on the logger needs. Holt's training summary (`domain/coach/training-summary.ts`)
+ * asks the other question — *which* lifts has this athlete been doing, and how are they going — so it
+ * needs every lift across a few weeks. It lives HERE, beside the other two, so the identity rule stays
+ * in one place: each lift is filed under {@link liftId}, and a movement done twice in a session (warm-up
+ * and work) is described by its main-section sets only.
+ *
+ * ⚠ POUNDS OUT. A row stamped `weight_unit = 'kg'` is converted, the same guard `progress-hub-live` has,
+ *   so a legacy kilo row cannot read as a collapse. Display conversion is the summary's job, not this.
+ *
+ * Fails SILENT to `[]`, like every history read on this path: a missing history makes Holt answer from
+ * general knowledge, which is what he did before he could see it.
+ */
+export async function fetchRecentTraining(weeks = 8): Promise<TrainingSession[]> {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const since = new Date(Date.now() - Math.max(1, weeks) * 7 * 86_400_000).toISOString();
+    // `athlete_id` filtered explicitly, not left to RLS — see the warning in `fetchSessions`.
+    const { data, error } = await supabase
+      .from('workouts')
+      .select('started_at, workout_exercises(name, catalog_key, section, workout_sets(set_index, weight, weight_unit, reps))')
+      .eq('athlete_id', user.id)
+      .eq('state', 'saved')
+      .gte('started_at', since)
+      .order('started_at', { ascending: false })
+      .limit(80);
+    if (error || !data) return [];
+
+    type Row = {
+      started_at: string;
+      workout_exercises:
+        | {
+            name: string;
+            catalog_key: string | null;
+            section: string | null;
+            workout_sets: { set_index: number; weight: number | null; weight_unit: string | null; reps: number | null }[] | null;
+          }[]
+        | null;
+    };
+
+    const out: TrainingSession[] = [];
+    for (const w of data as unknown as Row[]) {
+      const lifts = new Map<string, TrainingSession['lifts'][number]>();
+      for (const ex of w.workout_exercises ?? []) {
+        if (ex.section === 'warmup' || ex.section === 'cooldown') continue;
+        const name = ex.name?.trim();
+        if (!name) continue;
+        const id = liftId({ catalogKey: ex.catalog_key, name });
+        const sets = [...(ex.workout_sets ?? [])]
+          .sort((a, b) => a.set_index - b.set_index)
+          .map((s) => ({
+            weight: s.weight == null ? null : s.weight_unit === 'kg' ? Number(s.weight) * 2.2046226 : Number(s.weight),
+            reps: s.reps,
+          }));
+        if (sets.length === 0) continue;
+        const held = lifts.get(id);
+        if (held) held.sets.push(...sets);
+        else lifts.set(id, { id, name, sets });
+      }
+      if (lifts.size) out.push({ startedAt: w.started_at, lifts: [...lifts.values()] });
+    }
+    return out;
+  } catch {
+    return [];
+  }
 }

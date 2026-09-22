@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script>
+    (function () {
+      var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+      function inject() {
+        if (window.__flBundleInjected) return;
+        window.__flBundleInjected = true;
+        var s = document.createElement("script");
+        s.src = SRC;
+        document.head.appendChild(s);
+      }
+      if (window.React && window.ReactDOM) { inject(); return; }
+      var tries = 0;
+      var iv = setInterval(function () {
+        if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); }
+      }, 25);
+    })();
+  </script>
+  <script src="forge-symbols.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    ::selection { background: rgba(191,143,79,0.28); }
+    @keyframes flRiseIn { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+  </style>
+</helmet>
+
+<div style="position:relative; min-height:100vh; padding:60px 32px 110px;">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:fixed; inset:0; display:flex; align-items:center; justify-content:center;">
+      <span style="width:44px; height:44px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:24px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+  <div style="max-width:1120px; margin:0 auto; animation: flRiseIn 700ms var(--fl-ease-out, ease-out) both;">
+
+    <!-- ============ HEADER ============ -->
+    <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:32px;">
+      <span style="font-size:12px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--fl-bronze-primary);">Forge Legacy · Design System</span>
+      <h1 style="margin:0; font-family:var(--fl-font-display); font-size:46px; font-weight:700; letter-spacing:0.4px; color:var(--fl-text-primary);">Symbol Library</h1>
+      <p style="margin:0; max-width:600px; font-size:15px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">One forged hand. Every mark is cut on the same 24-unit grid, the same stroke weight, the same machined joins — so any symbol can stand beside another in a single navigation bar and belong.</p>
+      <div style="display:flex; align-items:center; gap:12px; margin-top:4px; flex-wrap:wrap;">
+        <span style="display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-bronze-bright); flex:none; white-space:nowrap;">Forged Set</span>
+        <span style="font-size:13px; color:var(--fl-text-tertiary);">Forty-five marks across six categories — one grid, one weight, one forged hand.</span>
+      </div>
+    </div>
+
+    <!-- ============ CONTROLS ============ -->
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; padding:14px 0 20px; border-top:1px solid var(--fl-bronze-border-subtle); border-bottom:1px solid var(--fl-bronze-border-subtle); margin-bottom:40px;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <span style="font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Preview Size</span>
+        <div style="display:flex; align-items:center; gap:4px; padding:4px; border-radius:var(--fl-radius-lg); background:var(--fl-charcoal-800); border:1px solid var(--fl-charcoal-600);">
+          <div role="button" tabindex="0" aria-label="Preview at 18 pixels" onClick="{{ setSm }}" style="{{ seg18 }}">18</div>
+          <div role="button" tabindex="0" aria-label="Preview at 20 pixels" onClick="{{ setMd }}" style="{{ seg20 }}">20</div>
+          <div role="button" tabindex="0" aria-label="Preview at 48 pixels" onClick="{{ setLg }}" style="{{ seg48 }}">48</div>
+        </div>
+        <span style="font-size:11px; color:var(--fl-text-tertiary);">px · nav scale is 18–20</span>
+      </div>
+      <span style="display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--fl-text-secondary);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--fl-icon-bronze)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M4 16V4h12"></path></svg>Click any symbol to copy its SVG</span>
+    </div>
+
+    <!-- ============ ACTIVITIES ============ -->
+    <section style="margin-bottom:40px;">
+      <div style="margin-bottom:18px;">
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Activities" hint-size="100%,20px"></x-import>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px;">
+        <sc-for list="{{ itemsActivities }}" as="it" hint-placeholder-count="1">
+          <div role="button" tabindex="0" aria-label="Copy SVG" onClick="{{ it.onCopy }}" onKeyDown="{{ it.onKey }}" style="position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:16px; padding:24px 16px 15px; min-height:134px; background:var(--fl-bg-primary); border:var(--fl-border-subtle); border-radius:var(--fl-radius-xl); box-shadow:var(--fl-shadow-card-soft); cursor:pointer; transition:transform 220ms var(--fl-ease-out, ease-out), border-color 220ms var(--fl-ease-out, ease-out), box-shadow 220ms var(--fl-ease-out, ease-out), background 220ms var(--fl-ease-out, ease-out);" style-hover="transform:translateY(-3px); border-color:var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle); background:var(--fl-hover-wash);">
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ it.glyph }}</div>
+            <span style="font-size:12px; letter-spacing:0.2px; color:var(--fl-text-secondary);">{{ it.name }}</span>
+            <sc-if value="{{ it.copied }}" hint-placeholder-val="{{ false }}">
+              <span style="position:absolute; top:10px; right:10px; display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Copied</span>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ============ PROGRESS ============ -->
+    <section style="margin-bottom:40px;">
+      <div style="margin-bottom:18px;">
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Progress" hint-size="100%,20px"></x-import>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px;">
+        <sc-for list="{{ itemsProgress }}" as="it" hint-placeholder-count="2">
+          <div role="button" tabindex="0" aria-label="Copy SVG" onClick="{{ it.onCopy }}" onKeyDown="{{ it.onKey }}" style="position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:16px; padding:24px 16px 15px; min-height:134px; background:var(--fl-bg-primary); border:var(--fl-border-subtle); border-radius:var(--fl-radius-xl); box-shadow:var(--fl-shadow-card-soft); cursor:pointer; transition:transform 220ms var(--fl-ease-out, ease-out), border-color 220ms var(--fl-ease-out, ease-out), box-shadow 220ms var(--fl-ease-out, ease-out), background 220ms var(--fl-ease-out, ease-out);" style-hover="transform:translateY(-3px); border-color:var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle); background:var(--fl-hover-wash);">
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ it.glyph }}</div>
+            <span style="font-size:12px; letter-spacing:0.2px; color:var(--fl-text-secondary);">{{ it.name }}</span>
+            <sc-if value="{{ it.copied }}" hint-placeholder-val="{{ false }}">
+              <span style="position:absolute; top:10px; right:10px; display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Copied</span>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ============ SOCIAL ============ -->
+    <section style="margin-bottom:40px;">
+      <div style="margin-bottom:18px;">
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Social" hint-size="100%,20px"></x-import>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px;">
+        <sc-for list="{{ itemsSocial }}" as="it" hint-placeholder-count="2">
+          <div role="button" tabindex="0" aria-label="Copy SVG" onClick="{{ it.onCopy }}" onKeyDown="{{ it.onKey }}" style="position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:16px; padding:24px 16px 15px; min-height:134px; background:var(--fl-bg-primary); border:var(--fl-border-subtle); border-radius:var(--fl-radius-xl); box-shadow:var(--fl-shadow-card-soft); cursor:pointer; transition:transform 220ms var(--fl-ease-out, ease-out), border-color 220ms var(--fl-ease-out, ease-out), box-shadow 220ms var(--fl-ease-out, ease-out), background 220ms var(--fl-ease-out, ease-out);" style-hover="transform:translateY(-3px); border-color:var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle); background:var(--fl-hover-wash);">
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ it.glyph }}</div>
+            <span style="font-size:12px; letter-spacing:0.2px; color:var(--fl-text-secondary);">{{ it.name }}</span>
+            <sc-if value="{{ it.copied }}" hint-placeholder-val="{{ false }}">
+              <span style="position:absolute; top:10px; right:10px; display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Copied</span>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ============ NAVIGATION ============ -->
+    <section style="margin-bottom:40px;">
+      <div style="margin-bottom:18px;">
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Navigation" hint-size="100%,20px"></x-import>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px;">
+        <sc-for list="{{ itemsNavigation }}" as="it" hint-placeholder-count="1">
+          <div role="button" tabindex="0" aria-label="Copy SVG" onClick="{{ it.onCopy }}" onKeyDown="{{ it.onKey }}" style="position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:16px; padding:24px 16px 15px; min-height:134px; background:var(--fl-bg-primary); border:var(--fl-border-subtle); border-radius:var(--fl-radius-xl); box-shadow:var(--fl-shadow-card-soft); cursor:pointer; transition:transform 220ms var(--fl-ease-out, ease-out), border-color 220ms var(--fl-ease-out, ease-out), box-shadow 220ms var(--fl-ease-out, ease-out), background 220ms var(--fl-ease-out, ease-out);" style-hover="transform:translateY(-3px); border-color:var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle); background:var(--fl-hover-wash);">
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ it.glyph }}</div>
+            <span style="font-size:12px; letter-spacing:0.2px; color:var(--fl-text-secondary);">{{ it.name }}</span>
+            <sc-if value="{{ it.copied }}" hint-placeholder-val="{{ false }}">
+              <span style="position:absolute; top:10px; right:10px; display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Copied</span>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ============ UTILITY ============ -->
+    <section style="margin-bottom:40px;">
+      <div style="margin-bottom:18px;">
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Utility" hint-size="100%,20px"></x-import>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px;">
+        <sc-for list="{{ itemsUtility }}" as="it" hint-placeholder-count="1">
+          <div role="button" tabindex="0" aria-label="Copy SVG" onClick="{{ it.onCopy }}" onKeyDown="{{ it.onKey }}" style="position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:16px; padding:24px 16px 15px; min-height:134px; background:var(--fl-bg-primary); border:var(--fl-border-subtle); border-radius:var(--fl-radius-xl); box-shadow:var(--fl-shadow-card-soft); cursor:pointer; transition:transform 220ms var(--fl-ease-out, ease-out), border-color 220ms var(--fl-ease-out, ease-out), box-shadow 220ms var(--fl-ease-out, ease-out), background 220ms var(--fl-ease-out, ease-out);" style-hover="transform:translateY(-3px); border-color:var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle); background:var(--fl-hover-wash);">
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ it.glyph }}</div>
+            <span style="font-size:12px; letter-spacing:0.2px; color:var(--fl-text-secondary);">{{ it.name }}</span>
+            <sc-if value="{{ it.copied }}" hint-placeholder-val="{{ false }}">
+              <span style="position:absolute; top:10px; right:10px; display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Copied</span>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ============ HEALTH ============ -->
+    <section style="margin-bottom:44px;">
+      <div style="margin-bottom:18px;">
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Health" hint-size="100%,20px"></x-import>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px;">
+        <sc-for list="{{ itemsHealth }}" as="it" hint-placeholder-count="1">
+          <div role="button" tabindex="0" aria-label="Copy SVG" onClick="{{ it.onCopy }}" onKeyDown="{{ it.onKey }}" style="position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:16px; padding:24px 16px 15px; min-height:134px; background:var(--fl-bg-primary); border:var(--fl-border-subtle); border-radius:var(--fl-radius-xl); box-shadow:var(--fl-shadow-card-soft); cursor:pointer; transition:transform 220ms var(--fl-ease-out, ease-out), border-color 220ms var(--fl-ease-out, ease-out), box-shadow 220ms var(--fl-ease-out, ease-out), background 220ms var(--fl-ease-out, ease-out);" style-hover="transform:translateY(-3px); border-color:var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle); background:var(--fl-hover-wash);">
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ it.glyph }}</div>
+            <span style="font-size:12px; letter-spacing:0.2px; color:var(--fl-text-secondary);">{{ it.name }}</span>
+            <sc-if value="{{ it.copied }}" hint-placeholder-val="{{ false }}">
+              <span style="position:absolute; top:10px; right:10px; display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Copied</span>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ============ APPLIED TREATMENT ============ -->
+    <section style="padding:30px 30px 32px; background:var(--fl-bg-secondary); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-xl); box-shadow:var(--fl-shadow-card-soft);">
+      <div style="margin-bottom:8px;">
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Applied Treatment" hint-size="100%,20px"></x-import>
+      </div>
+      <p style="margin:0 0 22px; max-width:560px; font-size:13.5px; line-height:1.5; color:var(--fl-text-secondary);">In product, each mark is engraved into a circular container cut from the surrounding surface — never floating above it. Bronze stroke, no bright fill.</p>
+      <div style="display:flex; gap:24px; flex-wrap:wrap;">
+        <sc-for list="{{ applied }}" as="it" hint-placeholder-count="5">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:11px;">
+            <div style="width:56px; height:56px; border-radius:50%; background:var(--fl-icon-container-bg); border:1px solid var(--fl-icon-container-border); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ it.glyph }}</div>
+            <span style="font-size:11px; color:var(--fl-text-tertiary);">{{ it.name }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+  </div>
+  </sc-if>
+
+  <!-- forged grain -->
+  <div style="position:fixed; inset:0; pointer-events:none; z-index:40; opacity:0.05; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;strokeWidth&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:2.0,&quot;min&quot;:1.2,&quot;max&quot;:2.8,&quot;step&quot;:0.1,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Symbols&quot;,&quot;label&quot;:&quot;Stroke weight&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, size: 20, copiedId: null };
+
+  componentDidMount() {
+    // Preview-runtime stability shim (see CLAUDE.md): defer until React AND the
+    // design-system bundle are on window so the SectionHeaders can't lose the load race.
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) this.setState({ ready: true });
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+
+  componentWillUnmount() {
+    if (this._t) clearTimeout(this._t);
+    if (this._ct) clearTimeout(this._ct);
+  }
+
+  _copy(id, text) {
+    const done = () => {
+      this.setState({ copiedId: id });
+      if (this._ct) clearTimeout(this._ct);
+      this._ct = setTimeout(() => this.setState({ copiedId: null }), 1600);
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, () => this._fallbackCopy(text, done));
+      } else {
+        this._fallbackCopy(text, done);
+      }
+    } catch (e) {
+      this._fallbackCopy(text, done);
+    }
+  }
+
+  _fallbackCopy(text, done) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch (e) {}
+    done();
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true };
+    }
+
+    const size = this.state.size;
+    const sw = (this.props && this.props.strokeWidth) || 2.0;
+
+    // ---- shared symbol engine: one grid, one stroke, one set of joins ----
+    const mk = (inner, px) => React.createElement('svg', {
+      viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
+      strokeWidth: sw, strokeLinecap: 'square', strokeLinejoin: 'miter', strokeMiterlimit: 8,
+      style: { width: px + 'px', height: px + 'px', display: 'block', overflow: 'visible' },
+      dangerouslySetInnerHTML: { __html: inner },
+    });
+    const str = (inner) => '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + sw + '" stroke-linecap="square" stroke-linejoin="miter" stroke-miterlimit="8">' + inner + '</svg>';
+
+    // ---- the family (proof set) ----
+    const DATA = window.ForgeSymbols.grouped();
+
+    const build = (arr) => arr.map((it) => ({
+      id: it.id,
+      name: it.name,
+      glyph: mk(it.inner, size),
+      copied: this.state.copiedId === it.id,
+      onCopy: () => this._copy(it.id, str(it.inner)),
+      onKey: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this._copy(it.id, str(it.inner)); } },
+    }));
+
+    const flat = [].concat.apply([], Object.keys(DATA).map((k) => DATA[k]));
+
+    const applied = ['home', 'dumbbell', 'shield', 'flame', 'squad'].map((id) => {
+      const it = flat.find((x) => x.id === id);
+      return { id: it.id, name: it.name, glyph: mk(it.inner, 24) };
+    });
+
+    // ---- segmented size control ----
+    const segBase = {
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      minWidth: '42px', padding: '8px 15px', fontSize: '12px', fontWeight: 700,
+      letterSpacing: '0.5px', fontFamily: 'var(--fl-font-sans)',
+      borderRadius: 'var(--fl-radius-md)', border: '1px solid transparent',
+      cursor: 'pointer', userSelect: 'none',
+      transition: 'background 200ms var(--fl-ease-out, ease-out), color 200ms var(--fl-ease-out, ease-out), border-color 200ms var(--fl-ease-out, ease-out)',
+    };
+    const seg = (active) => active
+      ? Object.assign({}, segBase, { background: 'var(--fl-bronze-tint)', color: 'var(--fl-bronze-bright)', borderColor: 'var(--fl-bronze-border)' })
+      : Object.assign({}, segBase, { background: 'transparent', color: 'var(--fl-text-tertiary)' });
+
+    return {
+      ready: true,
+      notReady: false,
+      itemsActivities: build(DATA.Activities),
+      itemsProgress: build(DATA.Progress),
+      itemsSocial: build(DATA.Social),
+      itemsNavigation: build(DATA.Navigation),
+      itemsUtility: build(DATA.Utility),
+      itemsHealth: build(DATA.Health),
+      applied,
+      seg18: seg(size === 18),
+      seg20: seg(size === 20),
+      seg48: seg(size === 48),
+      setSm: () => this.setState({ size: 18 }),
+      setMd: () => this.setState({ size: 20 }),
+      setLg: () => this.setState({ size: 48 }),
+    };
+  }
+}
+</script>
+</body>
+</html>

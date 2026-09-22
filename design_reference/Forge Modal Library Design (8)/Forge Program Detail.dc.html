@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script>
+    (function () {
+      var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+      function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+      if (window.React && window.ReactDOM) { inject(); return; }
+      var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+    })();
+  </script>
+  <script src="forge-symbols.js"></script>
+  <script src="forge-programs.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background:#07090C; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+    .fl-scroll { scrollbar-width: none; }
+  </style>
+</helmet>
+
+<sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+  <div style="min-height:100vh; display:flex; align-items:center; justify-content:center;">
+    <span style="width:44px; height:44px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:24px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+  </div>
+</sc-if>
+
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+<div style="padding:52px 60px 90px; min-height:100vh;">
+
+  <div style="max-width:960px; margin:0 0 26px;">
+    <span style="font-size:12px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--fl-bronze-primary);">Forge Legacy · W-3</span>
+    <h1 style="margin:12px 0 10px; font-family:var(--fl-font-display); font-size:40px; font-weight:700; letter-spacing:0.3px;">Program Detail — two directions</h1>
+    <p style="margin:0 0 18px; max-width:660px; font-size:15px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;"><strong style="color:var(--fl-text-primary); font-weight:600;">2A · Editorial</strong> leads with the program as a story; <strong style="color:var(--fl-text-primary); font-weight:600;">2B · Operational</strong> leads with the plan as a tool. Use the switcher to see how each handles all five states. Schedule rows expand to exercises. (Start + conflict sheet get wired into the real screen once you pick.)</p>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <sc-for list="{{ stateChips }}" as="ch" hint-placeholder-count="5">
+        <span role="button" tabindex="0" onClick="{{ ch.onTap }}" style="padding:9px 15px; border-radius:var(--fl-radius-pill); border:1px solid {{ ch.border }}; background:{{ ch.bg }}; color:{{ ch.ink }}; font-size:12.5px; font-weight:600; cursor:pointer;">{{ ch.label }}</span>
+      </sc-for>
+    </div>
+  </div>
+
+  <section>
+    <div style="display:flex; gap:48px; flex-wrap:wrap; align-items:flex-start;">
+
+      <!-- ══════ 2A · EDITORIAL ══════ -->
+      <div id="2a" style="display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; align-items:center; gap:11px;">
+          <span style="display:inline-flex; align-items:center; justify-content:center; min-width:32px; height:24px; padding:0 9px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); color:#1A1206; font-size:12px; font-weight:800; letter-spacing:1px;">2A</span>
+          <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600;">Editorial</span>
+          <span style="font-size:12.5px; color:var(--fl-text-tertiary);">— the program as a story</span>
+        </div>
+
+        <div data-screen-label="Program Detail" style="width:404px; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+          <div style="height:56px; flex:none; display:flex; align-items:center; gap:6px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-600);">
+            <button onClick="{{ back }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+            <span style="flex:1;"></span>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" size="sm" tone="{{ pillTone }}" hint-size="auto,26px">{{ pill }}</x-import>
+            <span style="width:8px;"></span>
+          </div>
+
+          <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:26px 22px 24px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-bronze-primary);">{{ family }}</span>
+            <h2 style="margin:9px 0 8px; font-family:var(--fl-font-display); font-size:34px; font-weight:700; letter-spacing:-0.3px; line-height:1.02; color:var(--fl-text-primary);">{{ name }}</h2>
+            <span style="font-size:13.5px; color:var(--fl-text-secondary);">{{ difficulty }} · {{ durationWeeks }} weeks · {{ wpw }} days / week</span>
+
+            <sc-if value="{{ showProgress }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:18px; padding:16px 16px 18px; border-radius:var(--fl-radius-xl); background:var(--fl-card-hero-wash), var(--fl-bg-primary); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-shadow-card-hero); display:flex; flex-direction:column; gap:11px;">
+                <div style="display:flex; align-items:baseline; justify-content:space-between;"><span style="font-size:12.5px; font-weight:600; color:var(--fl-text-secondary);">{{ wkLabel }}</span><span style="font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-bronze-bright);">{{ pct }}</span></div>
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="{{ progVal }}" max="{{ progMax }}" hint-size="100%,10px"></x-import>
+                <span style="font-size:12px; color:var(--fl-text-tertiary);">{{ workoutLabel }}</span>
+                <sc-if value="{{ hasNext }}" hint-placeholder-val="{{ false }}"><div style="display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--fl-bronze-primary);"><span style="width:5px; height:5px; flex:none; transform:rotate(45deg); background:var(--fl-bronze-primary);"></span>Next · {{ nextName }}</div></sc-if>
+              </div>
+            </sc-if>
+
+            <p style="margin:18px 0 0; font-size:14.5px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">{{ description }}</p>
+            <div style="display:flex; align-items:center; gap:8px; margin-top:14px; font-size:12.5px; color:var(--fl-text-tertiary);"><span style="font-weight:600; color:var(--fl-text-secondary);">Equipment</span>· {{ equip }}</div>
+
+            <sc-if value="{{ showSuccessor }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:22px; padding:15px 16px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-bg-primary);">
+                <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-primary); margin-bottom:6px;">What's Next</span>
+                <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600; color:var(--fl-text-primary);">{{ successorName }}</span>
+                <span style="display:block; font-size:12.5px; color:var(--fl-text-secondary); margin-top:2px;">{{ successorMeta }}</span>
+              </div>
+            </sc-if>
+
+            <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:26px 0 4px;">The Schedule</span>
+            <span style="display:block; font-size:12px; color:var(--fl-text-tertiary); margin-bottom:12px;">A typical week · repeats across {{ durationWeeks }} weeks</span>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <sc-for list="{{ workouts }}" as="w" hint-placeholder-count="4">
+                <div style="border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); overflow:hidden; background:var(--fl-bg-primary);">
+                  <div role="button" tabindex="0" onClick="{{ w.onTap }}" style="display:flex; align-items:center; gap:12px; padding:14px 15px; cursor:pointer;">
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">{{ w.name }}</span><span style="font-size:12px; color:var(--fl-text-tertiary);">{{ w.focus }}</span></div>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; transform:{{ w.chevron }};"><path d="M6 9l6 6 6-6"></path></svg>
+                  </div>
+                  <sc-if value="{{ w.open }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:2px 15px 13px;">
+                      <sc-for list="{{ w.exercises }}" as="ex" hint-placeholder-count="4">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--fl-charcoal-700);"><span style="font-size:13px; color:var(--fl-text-secondary);">{{ ex.n }}</span><span style="font-size:12px; font-family:var(--fl-font-mono); color:var(--fl-text-tertiary);">{{ ex.s }}</span></div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="flex:none; padding:14px 18px; border-top:1px solid var(--fl-charcoal-600); background:var(--fl-surface-nav); display:flex; flex-direction:column; gap:8px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ onPrimary }}" hint-size="100%,52px">{{ cta }}</x-import>
+            <div style="display:flex; justify-content:center;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" on-click="{{ startTogether }}" hint-size="auto,36px">Start Together</x-import></div>
+            <sc-if value="{{ hasSecondary }}" hint-placeholder-val="{{ false }}"><div style="display:flex; justify-content:center;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" on-click="{{ onSecondary }}" hint-size="auto,36px">{{ secondary }}</x-import></div></sc-if>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ 2B · OPERATIONAL ══════ -->
+      <div id="2b" style="display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; align-items:center; gap:11px;">
+          <span style="display:inline-flex; align-items:center; justify-content:center; min-width:32px; height:24px; padding:0 9px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); color:#1A1206; font-size:12px; font-weight:800; letter-spacing:1px;">2B</span>
+          <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600;">Operational</span>
+          <span style="font-size:12.5px; color:var(--fl-text-tertiary);">— the plan as a tool</span>
+        </div>
+
+        <div data-screen-label="Program Detail" style="width:404px; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+          <div style="height:56px; flex:none; display:flex; align-items:center; gap:8px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-600);">
+            <button onClick="{{ back }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+            <span style="flex:1; font-size:14px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ name }}</span>
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Pill" size="sm" tone="{{ pillTone }}" hint-size="auto,26px">{{ pill }}</x-import>
+            <span style="width:6px;"></span>
+          </div>
+
+          <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:20px 18px 22px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ metaLine }}</span>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:14px;">
+              <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+                <div style="border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); padding:12px 13px; background:var(--fl-bg-primary); display:flex; flex-direction:column; gap:3px;"><span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; color:var(--fl-text-primary);">{{ s.value }}</span><span style="font-size:9.5px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ s.label }}</span></div>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ showProgress }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:14px; padding:14px 15px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); display:flex; flex-direction:column; gap:9px;">
+                <div style="display:flex; align-items:baseline; justify-content:space-between;"><span style="font-size:12px; font-weight:600; color:var(--fl-text-secondary);">{{ wkLabel }} · {{ workoutLabel }}</span><span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; color:var(--fl-bronze-bright);">{{ pct }}</span></div>
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="{{ progVal }}" max="{{ progMax }}" hint-size="100%,8px"></x-import>
+                <sc-if value="{{ hasNext }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px; color:var(--fl-bronze-primary); font-weight:600;">Next up · {{ nextName }}</span></sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showSuccessor }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:14px; display:flex; align-items:center; gap:11px; padding:13px 14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-bg-primary);">
+                <span style="font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-primary); flex:none;">Next</span>
+                <div style="flex:1; min-width:0;"><span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ successorName }}</span><span style="display:block; font-size:12px; color:var(--fl-text-tertiary);">{{ successorMeta }}</span></div>
+              </div>
+            </sc-if>
+
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin:22px 0 10px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Workouts</span><span style="font-size:11.5px; color:var(--fl-text-tertiary);">Week 1 · ×{{ durationWeeks }}</span></div>
+            <div style="display:flex; flex-direction:column; gap:2px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); overflow:hidden; background:var(--fl-bg-primary);">
+              <sc-for list="{{ workouts }}" as="w" hint-placeholder-count="4">
+                <div style="border-bottom:1px solid var(--fl-charcoal-700);">
+                  <div role="button" tabindex="0" onClick="{{ w.onTap }}" style="display:flex; align-items:center; gap:11px; padding:13px 14px; cursor:pointer;">
+                    <span style="width:24px; height:24px; flex:none; border-radius:var(--fl-radius-sm); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--fl-text-tertiary);">{{ w.num }}</span>
+                    <div style="flex:1; min-width:0;"><span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ w.name }}</span><span style="display:block; font-size:11.5px; color:var(--fl-text-tertiary);">{{ w.focus }}</span></div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; transform:{{ w.chevron }};"><path d="M6 9l6 6 6-6"></path></svg>
+                  </div>
+                  <sc-if value="{{ w.open }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:0 14px 12px 49px;">
+                      <sc-for list="{{ w.exercises }}" as="ex" hint-placeholder-count="4">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0;"><span style="font-size:13px; color:var(--fl-text-secondary);">{{ ex.n }}</span><span style="font-size:12px; font-family:var(--fl-font-mono); color:var(--fl-text-tertiary);">{{ ex.s }}</span></div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="flex:none; padding:12px 16px; border-top:1px solid var(--fl-charcoal-600); background:var(--fl-surface-nav); display:flex; align-items:center; gap:10px;">
+            <sc-if value="{{ hasSecondary }}" hint-placeholder-val="{{ false }}"><div style="flex:none; width:120px;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" full-width="{{ true }}" on-click="{{ onSecondary }}" hint-size="120px,48px">{{ secondaryShort }}</x-import></div></sc-if>
+            <div style="flex:1;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ onPrimary }}" hint-size="100%,48px">{{ cta }}</x-import></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { ready: false, sampleState: 'active', openWorkout: 0 };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      const fp = typeof window !== 'undefined' && window.ForgePrograms;
+      if (r && ns && fs && fp) this.setState({ ready: true });
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  setSample = (s) => this.setState({ sampleState: s, openWorkout: 0 });
+  toggleWorkout = (i) => this.setState((st) => ({ openWorkout: st.openWorkout === i ? null : i }));
+  back = () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Forge%20Programs%20Catalog.dc.html'); };
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true };
+    }
+    const FP = window.ForgePrograms;
+    const st = this.state.sampleState;
+    const SAMPLE = { preview: 'strength-powerbuilding-1', planned: 'usr-future-hypertrophy', active: 'usr-active-powerbuilding', graduated: 'usr-grad-foundation', ended: 'usr-ended-ppl' };
+    const p = FP.byId(SAMPLE[st]) || FP.active() || FP.forgeCatalog()[0];
+
+    const V = {
+      preview: { pill: 'Preview', tone: 'muted', cta: 'Start Program', secondary: null, secondaryShort: null },
+      planned: { pill: 'Planned', tone: 'muted', cta: 'Start Program', secondary: 'Remove from Planned', secondaryShort: 'Remove' },
+      active: { pill: 'Active', tone: 'bronze', cta: 'Continue Training', secondary: 'End Program', secondaryShort: 'End' },
+      graduated: { pill: 'Graduated', tone: 'muted', cta: 'Run Again', secondary: null, secondaryShort: null },
+      ended: { pill: 'Ended early', tone: 'muted', cta: 'Restart Program', secondary: null, secondaryShort: null },
+    }[st];
+
+    const showProgress = (st === 'active' || st === 'ended') && !!p.progress;
+    const wk = p.progress ? Math.min(p.durationWeeks, Math.floor(p.progress.completed / p.workoutsPerWeek) + 1) : 1;
+    const pct = p.progress ? Math.round(p.progress.completed / p.progress.total * 100) : 0;
+    const showSuccessor = st === 'graduated';
+    const successor = showSuccessor ? FP.successorOf(p.id) : null;
+
+    const EX = {
+      'Strength': [{ n: 'Back Squat', s: '4 × 5' }, { n: 'Bench Press', s: '4 × 6' }, { n: 'Deadlift', s: '3 × 5' }, { n: 'Accessory superset', s: '3 × 12' }],
+      'Muscle Building': [{ n: 'Incline DB Press', s: '4 × 10' }, { n: 'Cable Row', s: '4 × 12' }, { n: 'Lateral Raise', s: '3 × 15' }, { n: 'Arm superset', s: '3 × 12' }],
+      'Running': [{ n: 'Warm-up jog', s: '10 min' }, { n: 'Main effort', s: 'per plan' }, { n: 'Cooldown', s: '8 min' }],
+      'Conditioning': [{ n: 'Row intervals', s: '6 × 250m' }, { n: 'Kettlebell circuit', s: '3 rounds' }, { n: 'Finisher', s: '5 min' }],
+      'Full Body & Home': [{ n: 'Goblet Squat', s: '3 × 12' }, { n: 'Push-up', s: '3 × 15' }, { n: 'Dumbbell Row', s: '3 × 12' }, { n: 'Plank', s: '3 × 45s' }],
+      'Mobility': [{ n: 'Hip flow', s: '5 min' }, { n: 'Spine mobility', s: '5 min' }, { n: 'Breathing', s: '3 min' }],
+    };
+    const exList = EX[p.family] || EX['Strength'];
+    const openW = this.state.openWorkout;
+    const workouts = (p.schedule || []).map((w, i) => ({
+      name: w.name, focus: w.focus, num: String(i + 1),
+      open: openW === i, chevron: openW === i ? 'rotate(180deg)' : 'rotate(0deg)',
+      exercises: exList, onTap: () => this.toggleWorkout(i),
+    }));
+
+    const stats = [
+      { label: 'Weeks', value: String(p.durationWeeks) },
+      { label: 'Days / wk', value: String(p.workoutsPerWeek) },
+      { label: 'Level', value: p.difficulty },
+      { label: 'Workouts', value: String(p.totalWorkouts) },
+    ];
+
+    const chipStyle = (on) => ({ bg: on ? 'var(--fl-bronze-tint)' : 'transparent', ink: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)', border: on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)' });
+    const stateChips = [['preview', 'Preview'], ['planned', 'Planned'], ['active', 'Active'], ['graduated', 'Graduated'], ['ended', 'Ended early']].map(([k, l]) => Object.assign({ label: l, onTap: () => this.setSample(k) }, chipStyle(k === st)));
+
+    return {
+      ready: true,
+      notReady: false,
+      name: p.name,
+      family: p.family,
+      difficulty: p.difficulty,
+      durationWeeks: p.durationWeeks,
+      wpw: p.workoutsPerWeek,
+      description: p.description,
+      metaLine: p.family + ' · ' + p.difficulty + ' · ' + p.durationWeeks + ' wk',
+      equip: (p.equipment || []).join(' · '),
+      pill: V.pill,
+      pillTone: V.tone,
+      cta: V.cta,
+      secondary: V.secondary,
+      secondaryShort: V.secondaryShort,
+      hasSecondary: !!V.secondary,
+      showProgress,
+      wkLabel: 'Week ' + wk + ' of ' + p.durationWeeks,
+      pct: pct + '%',
+      progVal: p.progress ? p.progress.completed : 0,
+      progMax: p.progress ? p.progress.total : 1,
+      workoutLabel: p.progress ? ('Workout ' + p.progress.completed + ' of ' + p.progress.total) : '',
+      hasNext: !!p.nextWorkout,
+      nextName: p.nextWorkout ? p.nextWorkout.name : '',
+      showSuccessor,
+      successorName: successor ? successor.name : '',
+      successorMeta: successor ? (successor.family + ' · ' + successor.durationWeeks + ' wk') : '',
+      workouts,
+      stats,
+      stateChips,
+      startTogether: () => { window.location.href = 'Forge%20Programs%20Catalog.dc.html?train=1'; },
+      onPrimary: () => { window.location.href = 'Forge%20Active%20Workout.dc.html'; },
+      onSecondary: () => { window.location.href = 'Forge%20Programs%20Catalog.dc.html'; },
+      back: this.back,
+    };
+  }
+}
+</script>
+</body>
+</html>

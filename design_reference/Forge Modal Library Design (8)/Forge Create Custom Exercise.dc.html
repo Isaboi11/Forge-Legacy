@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-custom-exercises.js"></script>
+  <script>
+    (function () {
+      var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+      function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+      if (window.React && window.ReactDOM) { inject(); return; }
+      var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+    })();
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    a { color: var(--fl-bronze-bright); text-decoration: none; }
+    a:hover { color: var(--fl-bronze-primary); }
+    .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+    .fl-scroll { scrollbar-width: none; }
+    .ce-ta { width:100%; min-height:88px; resize:none; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-family:var(--fl-font-sans); font-size:14px; line-height:1.5; padding:12px; outline:none; }
+    .ce-ta::placeholder { color:var(--fl-text-tertiary); }
+    .ce-ta:focus { border-color:var(--fl-bronze-primary); }
+    @keyframes ceRise { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+    @keyframes ceScrim { from { opacity:0; } to { opacity:1; } }
+    @keyframes ceSheet { from { transform: translateY(24px); opacity:0; } to { transform:none; opacity:1; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; } }
+  </style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="W-28 Create Custom Exercise" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(6,7,8,0.32), rgba(6,7,8,0.32)), #060708 url('assets/forge-bg-2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <!-- app bar -->
+      <div style="flex:none; height:56px; display:flex; align-items:center; gap:2px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-700); position:relative; z-index:10;">
+        <button type="button" onClick="{{ onCancel }}" aria-label="Cancel" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+        <span style="flex:1; font-size:16px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-primary);">{{ headerTitle }}</span>
+      </div>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:16px 20px 28px; position:relative; z-index:1; animation:ceRise 360ms var(--fl-ease-out, ease-out) both;">
+
+        <div style="margin-bottom:22px;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.InputField" label="Exercise name" placeholder="e.g. Sled Push" value="{{ name }}" max-length="40" show-count="{{ true }}" on-change="{{ onName }}" hint-size="100%,74px"></x-import>
+        </div>
+
+        <div style="margin-bottom:22px;">
+          <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:11px;">Category</span>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <sc-for list="{{ catChips }}" as="c" hint-placeholder-count="6">
+              <button type="button" onClick="{{ c.onTap }}" style="padding:8px 14px; border-radius:var(--fl-radius-pill); border:1px solid {{ c.border }}; background:{{ c.bg }}; color:{{ c.ink }}; font-size:12.5px; font-weight:600; white-space:nowrap; cursor:pointer;">{{ c.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="margin-bottom:22px;">
+          <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:11px;">Equipment</span>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <sc-for list="{{ equipChips }}" as="c" hint-placeholder-count="5">
+              <button type="button" onClick="{{ c.onTap }}" style="padding:8px 14px; border-radius:var(--fl-radius-pill); border:1px solid {{ c.border }}; background:{{ c.bg }}; color:{{ c.ink }}; font-size:12.5px; font-weight:600; white-space:nowrap; cursor:pointer;">{{ c.label }}</button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ showCustomEquip }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:11px;">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.InputField" label="Name the equipment" placeholder="e.g. Sled, Sandbag, Rings" value="{{ equipCustom }}" max-length="28" on-change="{{ onEquipCustom }}" hint-size="100%,74px"></x-import>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="margin-bottom:22px;">
+          <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:11px;">Movement type</span>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <sc-for list="{{ typeChips }}" as="c" hint-placeholder-count="2">
+              <button type="button" onClick="{{ c.onTap }}" style="padding:8px 14px; border-radius:var(--fl-radius-pill); border:1px solid {{ c.border }}; background:{{ c.bg }}; color:{{ c.ink }}; font-size:12.5px; font-weight:600; white-space:nowrap; cursor:pointer;">{{ c.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="margin-bottom:22px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:11px;">
+            <span style="font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Muscles worked</span>
+            <span style="font-size:11px; color:var(--fl-text-tertiary);">Select any</span>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <sc-for list="{{ muscleChips }}" as="c" hint-placeholder-count="8">
+              <button type="button" onClick="{{ c.onTap }}" style="padding:8px 13px; border-radius:var(--fl-radius-pill); border:1px solid {{ c.border }}; background:{{ c.bg }}; color:{{ c.ink }}; font-size:12px; font-weight:600; white-space:nowrap; cursor:pointer;">{{ c.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="margin-bottom:22px;">
+          <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:11px;">Training environment</span>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <sc-for list="{{ envChips }}" as="c" hint-placeholder-count="3">
+              <button type="button" onClick="{{ c.onTap }}" style="padding:8px 14px; border-radius:var(--fl-radius-pill); border:1px solid {{ c.border }}; background:{{ c.bg }}; color:{{ c.ink }}; font-size:12.5px; font-weight:600; white-space:nowrap; cursor:pointer;">{{ c.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:11px;">Notes <span style="color:var(--fl-text-tertiary); font-weight:600;">· optional</span></span>
+          <textarea class="ce-ta" placeholder="Setup, cues, how you run it…" value="{{ notes }}" onInput="{{ onNotes }}"></textarea>
+        </div>
+
+        <sc-if value="{{ isEdit }}" hint-placeholder-val="{{ false }}">
+          <button type="button" onClick="{{ onDelete }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:13px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-red-metal-border); background:rgba(190,90,76,0.1); color:var(--fl-red-muted); font-size:13.5px; font-weight:600; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M9 7V5h6v2M8 7l1 13h6l1-13"></path></svg>Delete exercise</button>
+        </sc-if>
+      </div>
+
+      <!-- footer · save -->
+      <div style="flex:none; padding:12px 18px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(6,7,8,0.4), rgba(6,7,8,0.86)); position:relative; z-index:5;">
+        <sc-if value="{{ saveDisabled }}" hint-placeholder-val="{{ true }}">
+          <span style="display:flex; align-items:center; gap:8px; margin-bottom:11px; font-size:12px; color:var(--fl-text-tertiary);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>Give your exercise a name to save.</span>
+        </sc-if>
+        <button type="button" onClick="{{ onSave }}" disabled="{{ saveDisabled }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:9px; padding:15px; border-radius:var(--fl-radius-md); border:1px solid {{ saveBorder }}; background:{{ saveBg }}; color:{{ saveColor }}; font-size:14px; font-weight:700; letter-spacing:0.5px; cursor:{{ saveCursor }}; box-shadow:{{ saveShadow }}; text-shadow:0 1px 1px rgba(8,5,2,0.5);">{{ saveLabel }}</button>
+      </div>
+
+      <!-- delete confirm -->
+      <sc-if value="{{ deleteOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ onCancelDelete }}" style="position:absolute; inset:0; z-index:40; background:rgba(4,5,7,0.66); backdrop-filter:blur(2px); animation:ceScrim 180ms ease-out;"></div>
+        <div style="position:absolute; left:0; right:0; bottom:0; z-index:41; background:var(--fl-surface-panel, #12100d); border:1px solid var(--fl-charcoal-600); border-bottom:none; border-radius:24px 24px 0 0; box-shadow:0 -24px 60px rgba(0,0,0,0.5); padding:22px 24px calc(24px + env(safe-area-inset-bottom)); animation:ceSheet 260ms var(--fl-ease-out, ease-out);">
+          <div style="display:flex; justify-content:center; margin-bottom:16px;"><span style="width:44px; height:5px; border-radius:99px; background:var(--fl-charcoal-500);"></span></div>
+          <h2 style="margin:0 0 8px; font-family:var(--fl-font-display); font-size:21px; font-weight:700; color:var(--fl-text-primary);">Delete this exercise?</h2>
+          <p style="margin:0 0 20px; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary);">{{ deleteMsg }}</p>
+          <div style="display:flex; gap:10px;">
+            <button type="button" onClick="{{ onCancelDelete }}" style="flex:1; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer;">Cancel</button>
+            <button type="button" onClick="{{ onConfirmDelete }}" style="flex:1; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-red-metal-border); background:rgba(190,90,76,0.14); color:var(--fl-red-muted); font-size:14px; font-weight:700; cursor:pointer;">Delete</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <div aria-hidden="true" style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { ready: false, form: null, deleteOpen: false };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const store = typeof window !== 'undefined' && window.ForgeCustomExercises;
+      if (r && ns && store) { this._boot(); this.setState({ ready: true }); }
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  _id() { try { return new URLSearchParams(window.location.search).get('id') || ''; } catch (e) { return ''; } }
+  _boot() {
+    const id = this._id();
+    const STD = ['Barbell', 'Dumbbell', 'Kettlebell', 'Cable', 'Machine', 'Band', 'Bodyweight', 'Custom'];
+    let form = { id: null, name: '', cat: 'Other', equip: 'Custom', equipCustom: '', type: 'Compound', muscles: [], env: ['Gym'], notes: '' };
+    if (id) {
+      const r = window.ForgeCustomExercises.get(id);
+      if (r) {
+        const stdEquip = STD.indexOf(r.equip) >= 0;
+        form = { id: r.id, name: r.name, cat: r.cat || 'Other', equip: stdEquip ? r.equip : 'Custom', equipCustom: stdEquip ? '' : (r.equip || ''), type: r.type || 'Compound', muscles: (r.muscles || []).slice(), env: (r.env || []).slice(), notes: r.notes || '' };
+      }
+    }
+    this.setState({ form });
+  }
+  _set(patch) { this.setState((s) => ({ form: Object.assign({}, s.form, patch) })); }
+  _val(e) { return (e && e.target && typeof e.target.value === 'string') ? e.target.value : e; }
+  _toggle(list, v) { return list.indexOf(v) >= 0 ? list.filter((x) => x !== v) : list.concat([v]); }
+
+  renderVals() {
+    if (!this.state.ready || !this.state.form) return { ready: false, notReady: true };
+    const f = this.state.form;
+
+    const chip = (v, active, onTap, label) => ({
+      label: label || v, onTap,
+      border: active ? 'var(--fl-bronze-metal-border)' : 'var(--fl-charcoal-600)',
+      bg: active ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-recessed)',
+      ink: active ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)',
+    });
+    const CATS = ['Chest', 'Back', 'Shoulders', 'Legs', 'Arms', 'Core', 'Conditioning', 'Full Body', 'Other'];
+    const EQUIP = ['Barbell', 'Dumbbell', 'Kettlebell', 'Cable', 'Machine', 'Band', 'Bodyweight', 'Custom'];
+    const TYPES = ['Compound', 'Isolation', 'Other'];
+    const MUSCLES = ['Chest', 'Upper Chest', 'Back', 'Lats', 'Shoulders', 'Side Delts', 'Rear Delts', 'Biceps', 'Triceps', 'Forearms', 'Traps', 'Quads', 'Glutes', 'Hamstrings', 'Core', 'Abs'];
+    const ENV = ['Gym', 'Home', 'Outside'];
+
+    const catChips = CATS.map((v) => chip(v, f.cat === v, () => this._set({ cat: v })));
+    const equipChips = EQUIP.map((v) => chip(v, f.equip === v, () => this._set({ equip: v })));
+    const typeChips = TYPES.map((v) => chip(v, f.type === v, () => this._set({ type: v })));
+    const muscleChips = MUSCLES.map((v) => chip(v, f.muscles.indexOf(v) >= 0, () => this._set({ muscles: this._toggle(f.muscles, v) })));
+    const envChips = ENV.map((v) => chip(v, f.env.indexOf(v) >= 0, () => this._set({ env: this._toggle(f.env, v) })));
+
+    const nameOk = !!f.name.trim();
+
+    return {
+      ready: true, notReady: false,
+      headerTitle: f.id ? 'Edit Exercise' : 'New Exercise',
+      isEdit: !!f.id,
+      name: f.name, onName: (e) => this._set({ name: this._val(e) }),
+      notes: f.notes, onNotes: (e) => this._set({ notes: this._val(e) }),
+      showCustomEquip: f.equip === 'Custom',
+      equipCustom: f.equipCustom || '', onEquipCustom: (e) => this._set({ equipCustom: this._val(e) }),
+      catChips, equipChips, typeChips, muscleChips, envChips,
+      saveDisabled: !nameOk,
+      saveLabel: f.id ? 'Save Changes' : 'Create Exercise',
+      saveBg: nameOk ? 'var(--fl-bronze-fill)' : 'var(--fl-bronze-fill-disabled)',
+      saveBorder: nameOk ? 'var(--fl-bronze-metal-border)' : 'var(--fl-bronze-border-disabled)',
+      saveColor: nameOk ? '#F7F5F1' : 'var(--fl-text-tertiary)',
+      saveCursor: nameOk ? 'pointer' : 'default',
+      saveShadow: nameOk ? 'var(--fl-bronze-metal-top-rim), var(--fl-shadow-card)' : 'none',
+      onSave: () => {
+        if (!nameOk) return;
+        const equip = f.equip === 'Custom' ? (f.equipCustom.trim() || 'Custom') : f.equip;
+        window.ForgeCustomExercises.save({ id: f.id || undefined, name: f.name.trim(), cat: f.cat, equip: equip, type: f.type, muscles: f.muscles, env: f.env.length ? f.env : ['Gym'], notes: f.notes.trim() });
+        window.location.href = 'Forge%20Exercise%20Library.dc.html';
+      },
+      onCancel: () => { if ((function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})()) window.history.back(); else window.location.href = 'Forge%20Exercise%20Library.dc.html'; },
+      onDelete: () => this.setState({ deleteOpen: true }),
+      deleteOpen: this.state.deleteOpen,
+      deleteMsg: '“' + (f.name || 'This exercise') + '” will be removed from your custom exercises. This can’t be undone.',
+      onCancelDelete: () => this.setState({ deleteOpen: false }),
+      onConfirmDelete: () => { if (f.id) window.ForgeCustomExercises.remove(f.id); window.location.href = 'Forge%20Exercise%20Library.dc.html'; },
+    };
+  }
+}
+</script>
+</body>
+</html>

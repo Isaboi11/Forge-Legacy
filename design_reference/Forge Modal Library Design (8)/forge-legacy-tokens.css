@@ -1,0 +1,239 @@
+/**
+ * Forge Legacy Design System — CSS Custom Properties
+ * Generated from src/constants/tokens.ts (CLA-D11 canonical token layer)
+ * Dark-only V1 (CLA-D12). All components and screens inherit from this file.
+ */
+
+:root {
+
+  /* ── PALETTE (raw) ──────────────────────────────────────────────────── */
+  --fl-palette-base:           #09090C;
+  --fl-palette-charcoal-900:   #0E0E12;
+  --fl-palette-charcoal-800:   #111118;
+  --fl-palette-charcoal-700:   #18181F;
+  --fl-palette-charcoal-600:   #222229;
+  --fl-palette-charcoal-500:   #2C2C36;
+  --fl-palette-cream-100:      #F0EDE8;
+  --fl-palette-gray-400:       #9E9890;
+  --fl-palette-gray-600:       #666060;
+  --fl-palette-bronze-300:     #DFC49A;
+  --fl-palette-bronze-400:     #C8A97E;
+  --fl-palette-bronze-600:     #7A6040;
+  --fl-palette-bronze-glow:    rgba(200, 169, 126, 0.10);
+  --fl-palette-green-muted:    #5A9E68;
+  --fl-palette-red-muted:      #A85252;
+  --fl-palette-blue-muted:     #4A7CA0;
+  --fl-palette-overlay-dark:   rgba(0, 0, 0, 0.75);
+  --fl-palette-inner-hl:       rgba(255, 255, 255, 0.04);
+  --fl-palette-inner-hl-md:    rgba(255, 255, 255, 0.07);
+
+  /* ── COLOR — BACKGROUND ─────────────────────────────────────────────── */
+  --fl-color-bg-primary:   #0E0E12;   /* Main canvas — near-black charcoal */
+  --fl-color-bg-surface:   #111118;   /* Card surface */
+  --fl-color-bg-elevated:  #18181F;   /* Modal / sheet surface */
+  --fl-color-bg-overlay:   rgba(0, 0, 0, 0.75); /* Dimming backdrop */
+
+  /* ── COLOR — TEXT ───────────────────────────────────────────────────── */
+  --fl-color-text-primary:   #F0EDE8; /* High-contrast body text — warm near-white */
+  --fl-color-text-secondary: #9E9890; /* Supporting text — muted warm gray */
+  --fl-color-text-tertiary:  #666060; /* Section labels, placeholders, chevrons */
+  --fl-color-text-inverse:   #09090C; /* Dark text for accent surfaces */
+
+  /* ── COLOR — ACCENT (Bronze / warm gold) ────────────────────────────── */
+  --fl-color-accent-primary:   #C4984F; /* Forged bronze — deep, saturated amber */
+  --fl-color-accent-muted:     #6E5230; /* Progress track tint, ambient glow bg */
+  --fl-color-accent-highlight: #E3C486; /* Hover / pressed / illuminated edge */
+  --fl-color-accent-glow:      rgba(196, 152, 79, 0.12); /* Ambient amber wash */
+
+  /* ── BRONZE MATERIAL (forged surfaces, glow, edge lighting) ─────────── */
+  /* Forged bronze — vertical sheen: top highlight, richer core, dark bottom edge */
+  --fl-bronze-surface:        linear-gradient(180deg, #D8B461 0%, #C4984F 52%, #8E672E 100%);
+  --fl-bronze-surface-hover:  linear-gradient(180deg, #E4C071 0%, #D0A459 52%, #9A7336 100%);
+  --fl-bronze-radial:         radial-gradient(120% 130% at 50% 6%, #E4C079 0%, #C4984F 52%, #835D2A 100%);
+  /* Edge lighting — thin, low-opacity bronze outlines that support depth */
+  --fl-bronze-edge:           rgba(196, 152, 79, 0.20);
+  --fl-bronze-edge-strong:    rgba(227, 196, 134, 0.50);
+  /* Soft restrained bloom (never neon, never oversized) */
+  --fl-glow-bronze-sm:        0 0 10px rgba(196, 152, 79, 0.22);
+  --fl-glow-bronze-md:        0 0 20px rgba(196, 152, 79, 0.28);
+  --fl-glow-bronze-lg:        0 0 40px rgba(196, 152, 79, 0.30);
+  /* Forged button — top highlight, dark bottom edge, warm bloom underneath */
+  --fl-shadow-bronze-btn:     inset 0 1px 0 rgba(255,244,214,0.55), inset 0 -1px 1px rgba(74,49,18,0.45), 0 3px 10px rgba(0,0,0,0.35), 0 6px 20px rgba(196,152,79,0.22);
+  --fl-inner-hl-bronze:       inset 0 1px 0 rgba(255, 244, 214, 0.45);
+  /* Ambient bronze wash for canvas depth */
+  --fl-ambient-wash:          radial-gradient(150% 90% at 50% -6%, rgba(196, 152, 79, 0.075), transparent 48%), radial-gradient(120% 70% at 50% 108%, rgba(0, 0, 0, 0.38), transparent 55%);
+  /* Cinematic stage backdrop — modal shown inside Forge (bloom + vignette) */
+  --fl-stage-bg:              radial-gradient(115% 80% at 50% -14%, rgba(196,152,79,0.08), transparent 52%), radial-gradient(100% 85% at 50% 128%, rgba(0,0,0,0.5), transparent 52%), var(--fl-palette-base);
+  --fl-stage-atmos:           radial-gradient(100% 85% at 50% 128%, rgba(0,0,0,0.5), transparent 50%), radial-gradient(55% 45% at 68% 120%, rgba(196,152,79,0.05), transparent 60%);
+
+  /* ── COLOR — DIFFICULTY ─────────────────────────────────────────────── */
+  --fl-color-difficulty-beginner:     #55785C; /* Muted green */
+  --fl-color-difficulty-intermediate: #C4984F; /* Amber (same as accent) */
+  --fl-color-difficulty-advanced:     #8E5251; /* Muted crimson */
+
+  /* ── COLOR — SEMANTIC ───────────────────────────────────────────────── */
+  --fl-color-destructive: #8E5251; /* M-6 Destructive Confirm + L-13 Delete ONLY */
+  --fl-color-success:     #55785C;
+  --fl-color-warning:     #C4984F; /* Amber — same family as accent */
+  --fl-color-danger:      #8E5251;
+  --fl-color-info:        #4A7CA0;
+
+  /* ── COLOR — PRESENCE (Squad surfaces only) ─────────────────────────── */
+  --fl-color-presence-active:   #C8A97E; /* Trained today */
+  --fl-color-presence-recent:   #9E9890; /* Trained this week */
+  --fl-color-presence-inactive: #666060; /* Not yet this week */
+
+  /* ── COLOR — BORDER / UTIL ──────────────────────────────────────────── */
+  --fl-color-border-subtle:    rgba(210, 182, 143, 0.07); /* Thin bronze edge lighting — barely-there */
+  --fl-color-progress-track:   #211E1A; /* Unfilled ProgressBar track — warm charcoal */
+  --fl-color-skeleton:         #18181F; /* Skeleton shimmer base */
+  --fl-color-inner-highlight:  rgba(255, 240, 220, 0.05); /* Warm top-edge card glow */
+  --fl-color-inner-hl-md:      rgba(255, 240, 220, 0.08); /* Warm modal top-edge glow */
+
+  /* ── ELEVATION (surface color steps, dark-first) ────────────────────── */
+  --fl-elevation-none:  #0E0E12; /* Flat — same as canvas */
+  --fl-elevation-card:  #111118; /* Card surface */
+  --fl-elevation-sheet: #18181F; /* BottomSheet / profile modal */
+  --fl-elevation-modal: #1F1F28; /* Ceremony modals (M1–M9) */
+
+  /* ── SPACING ─────────────────────────────────────────────────────────── */
+  --fl-space-xs:  4px;   /* Element gap within dense contexts */
+  --fl-space-sm:  8px;   /* Internal element gap within cards */
+  --fl-space-md:  12px;  /* Card-to-card gap in scroll lists */
+  --fl-space-lg:  16px;  /* Screen horizontal margin; card inner padding */
+  --fl-space-xl:  24px;  /* Section gap: SectionHeader → content below */
+  --fl-space-2xl: 32px;  /* Major section breaks */
+
+  /* ── RADIUS ──────────────────────────────────────────────────────────── */
+  --fl-radius-card:   8px;    /* Card containers, Surface containers */
+  --fl-radius-chip:   99px;   /* Chips, ProgressBar ends, Badge pill */
+  --fl-radius-image:  4px;    /* Exercise thumbnails, photo thumbnails */
+  --fl-radius-avatar: 9999px; /* Full circle — Avatars */
+
+  /* ── SIZE — TOUCH TARGETS ───────────────────────────────────────────── */
+  --fl-size-tap-min:          44px; /* Minimum for all interactive elements */
+  --fl-size-tap-row:          48px; /* Standard list rows */
+  --fl-size-tap-row-tall:     56px; /* Tall rows (primary + secondary line) */
+  --fl-size-tap-row-exercise: 72px; /* Exercise rows */
+
+  /* ── SIZE — AVATARS ─────────────────────────────────────────────────── */
+  --fl-size-avatar-squad-stack:  28px; /* Squad card member cluster */
+  --fl-size-avatar-app-bar:      36px; /* AppBar trailing avatar */
+  --fl-size-avatar-list-row:     40px; /* Member list rows */
+  --fl-size-avatar-profile:      88px; /* Profile header (P-1) */
+  --fl-size-avatar-modal:        96px; /* Limited athlete profile modal */
+  --fl-size-avatar-overlap:       8px; /* Overlap in AvatarStack */
+
+  /* ── SIZE — ICONS ───────────────────────────────────────────────────── */
+  --fl-size-icon-inline:      16px; /* Inline affordances (dense contexts) */
+  --fl-size-icon-card:        20px; /* Decorative icons in card content */
+  --fl-size-icon-standard:    24px; /* Standard interactive icons */
+  --fl-size-icon-featured:    32px; /* Prominent action icons */
+  --fl-size-icon-empty-state: 48px; /* EmptyState section glyph */
+  --fl-size-icon-badge:       72px; /* Honor badge ceremonial display (L-11) */
+
+  /* ── SIZE — LAYOUT ──────────────────────────────────────────────────── */
+  --fl-size-progress-bar-h:  6px;   /* ProgressBar canonical height */
+  --fl-size-card-gap:        12px;  /* Gap between sibling Cards in scroll lists */
+  --fl-size-screen-padding-h: 16px; /* Horizontal screen margin */
+  --fl-size-modal-max-width: 340px; /* Ceremony modal max width */
+  --fl-size-max-content-w:   800px; /* Max content width on larger screens */
+
+  /* ── TYPOGRAPHY — SCALE ─────────────────────────────────────────────── */
+  --fl-font-family-system: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+
+  /* exerciseTitle — 28sp Semibold */
+  --fl-type-exercise-title-size:    28px;
+  --fl-type-exercise-title-weight:  600;
+  --fl-type-exercise-title-lh:      34px;
+  --fl-type-exercise-title-ls:      -0.3px;
+
+  /* screenSectionHeading — 24sp Semibold */
+  --fl-type-section-heading-size:   24px;
+  --fl-type-section-heading-weight: 600;
+  --fl-type-section-heading-lh:     30px;
+  --fl-type-section-heading-ls:     -0.2px;
+
+  /* largeHeading — 22sp Semibold */
+  --fl-type-large-heading-size:     22px;
+  --fl-type-large-heading-weight:   600;
+  --fl-type-large-heading-lh:       28px;
+  --fl-type-large-heading-ls:       -0.2px;
+
+  /* screenTitle — 20sp Semibold */
+  --fl-type-screen-title-size:      20px;
+  --fl-type-screen-title-weight:    600;
+  --fl-type-screen-title-lh:        26px;
+  --fl-type-screen-title-ls:        -0.2px;
+
+  /* primaryCardContent — 18sp Semibold */
+  --fl-type-card-title-size:        18px;
+  --fl-type-card-title-weight:      600;
+  --fl-type-card-title-lh:          24px;
+  --fl-type-card-title-ls:          -0.1px;
+
+  /* wordmark — 17sp Medium */
+  --fl-type-wordmark-size:          17px;
+  --fl-type-wordmark-weight:        500;
+  --fl-type-wordmark-lh:            22px;
+  --fl-type-wordmark-ls:            0px;
+
+  /* standardCardName — 16sp Medium */
+  --fl-type-card-name-size:         16px;
+  --fl-type-card-name-weight:       500;
+  --fl-type-card-name-lh:           22px;
+  --fl-type-card-name-ls:           0px;
+
+  /* secondaryContent — 15sp Regular */
+  --fl-type-secondary-size:         15px;
+  --fl-type-secondary-weight:       400;
+  --fl-type-secondary-lh:           21px;
+  --fl-type-secondary-ls:           0px;
+
+  /* supportingMeta — 14sp Regular */
+  --fl-type-meta-size:              14px;
+  --fl-type-meta-weight:            400;
+  --fl-type-meta-lh:                20px;
+  --fl-type-meta-ls:                0px;
+
+  /* mutedSecondary — 13sp Regular */
+  --fl-type-muted-size:             13px;
+  --fl-type-muted-weight:           400;
+  --fl-type-muted-lh:               18px;
+  --fl-type-muted-ls:               0px;
+
+  /* smallLabel — 12sp Regular */
+  --fl-type-small-label-size:       12px;
+  --fl-type-small-label-weight:     400;
+  --fl-type-small-label-lh:         16px;
+  --fl-type-small-label-ls:         0px;
+
+  /* sectionHeader — 11sp Regular ALL-CAPS (CLA-D14) */
+  --fl-type-section-header-size:    11px;
+  --fl-type-section-header-weight:  400;
+  --fl-type-section-header-lh:      14px;
+  --fl-type-section-header-ls:      0.8px;
+  --fl-type-section-header-transform: uppercase;
+
+  /* ── SHADOW ──────────────────────────────────────────────────────────── */
+  --fl-shadow-card:     0px 2px 10px rgba(0, 0, 0, 0.45), 0px 12px 30px rgba(0, 0, 0, 0.28);
+  --fl-shadow-elevated: 0px 6px 20px rgba(0, 0, 0, 0.55), 0px 18px 44px rgba(0, 0, 0, 0.35);
+  --fl-shadow-modal:    0px 10px 30px rgba(0, 0, 0, 0.70), 0px 26px 64px rgba(0, 0, 0, 0.48);
+
+  /* ── MOTION ──────────────────────────────────────────────────────────── */
+  --fl-motion-toggle:          50ms;
+  --fl-motion-section-collapse: 150ms;
+  --fl-motion-skeleton-resolve: 150ms;
+  --fl-motion-image-crossfade: 200ms;
+  --fl-motion-sheet-slide-up:  250ms;
+  --fl-motion-toast-fade-out:  300ms;
+  --fl-motion-ceremony-reveal: 500ms;
+
+  /* ── Z-INDEX ─────────────────────────────────────────────────────────── */
+  --fl-z-content:       0;
+  --fl-z-app-bar:       10;
+  --fl-z-tab-bar:       20;
+  --fl-z-toast:         30;
+  --fl-z-bottom-sheet:  40;
+  --fl-z-modal:         50;
+}

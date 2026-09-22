@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Inter+Tight:wght@400;500;600;700&display=swap">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#efece6;font-family:'Inter Tight',system-ui,sans-serif;color:#1a1a1a}
+  a{color:#2a78d6;text-decoration:none}
+  a:hover{color:#1b5aa8}
+  .dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+  .dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+  .dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+  .dv-tname{font:600 13px/1.2 'Inter Tight',system-ui,sans-serif;color:#1a1a1a}
+  .dv-opts{display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start}
+  .dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+  .dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+  .dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 'Inter Tight',system-ui,sans-serif;color:rgba(0,0,0,.55)}
+  .dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.12);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+  .dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+  .dv-next{margin:22px 0 0;font:12px/1.5 'Inter Tight',system-ui,sans-serif;color:rgba(0,0,0,.5)}
+  .note{font-family:'Caveat',cursive;font-size:15px;color:#b06a2c;line-height:1.15}
+  .rail{width:172px;flex:none;border-right:1.5px solid #d8d4cc;background:#f6f4f0;display:flex;flex-direction:column;padding:14px 12px}
+  .nv{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:5px;font-size:11.5px;font-weight:500;color:#4a4a4a}
+  .nv.on{background:#e6e1d8;color:#1a1a1a;font-weight:600}
+  .ct{margin-left:auto;font:600 10px ui-monospace,Menlo,monospace;color:#8a8378}
+  .lbl{font:600 9px ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:#8a8378}
+  .bx{border:1.5px solid #cfcbc2;border-radius:5px;background:#fbfaf8}
+  .ph{background:repeating-linear-gradient(135deg,#e9e5dd 0 6px,#f3f0ea 6px 12px);border:1.5px solid #cfcbc2;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#9a9288;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .ln{height:7px;border-radius:3px;background:#e2ded6}
+  .btn{display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;border-radius:5px;border:1.5px solid #b9b3a8;background:#f0ede7;font-size:11px;font-weight:600;color:#33302b}
+  .chip{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:99px;border:1.5px solid #cfcbc2;background:#fbfaf8;font-size:10.5px;font-weight:500;color:#4a4a4a}
+  .chip.on{border-color:#8a8378;background:#eae5db;color:#1a1a1a;font-weight:600}
+  .dot{width:7px;height:7px;border-radius:50%;flex:none}
+  .dot.need{background:#8a6a3e}
+  .dot.draft{background:transparent;border:1.5px solid #8a6a3e}
+  .dot.quiet{background:transparent;border:1.5px solid #c3bdb2}
+  .tr{display:grid;grid-template-columns:22px 1.5fr 1.4fr 90px 78px;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid #eae6de;font-size:11.5px;color:#33302b}
+  .av{width:20px;height:20px;border-radius:50%;background:#ddd8ce;border:1.5px solid #cfcbc2;flex:none}
+  .cb{width:13px;height:13px;border-radius:3px;border:1.5px solid #b9b3a8;background:#fff}
+  .hdr{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1.5px solid #d8d4cc}
+  .ttl{font:700 15px 'Inter Tight',system-ui,sans-serif;color:#1a1a1a}
+  .sec{padding:12px 16px}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Forge Coach · desktop map — four screens, structure only</span></div>
+<div class="dv-opts">
+
+<!-- ══════════════════ 1a · ROSTER ══════════════════ -->
+<div class="dv-opt" id="1a">
+  <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Roster — dense list, filters, bulk actions</div>
+  <div class="dv-card" style="width:1080px; display:flex; height:660px;">
+
+    <div class="rail">
+      <div style="display:flex; align-items:center; gap:7px; padding:2px 6px 14px;">
+        <span style="width:18px;height:18px;border-radius:4px;background:#8a6a3e;flex:none;"></span>
+        <span style="font:700 11px 'Inter Tight';letter-spacing:.08em;">FORGE COACH</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <span class="nv">Today<span class="ct">7</span></span>
+        <span class="nv on">Roster<span class="ct">43</span></span>
+        <span class="nv">Programs</span>
+        <span class="nv">Messages<span class="ct">2</span></span>
+      </div>
+      <div style="margin-top:auto; display:flex; flex-direction:column; gap:8px;">
+        <div class="bx" style="padding:9px 10px; display:flex; flex-direction:column; gap:5px;">
+          <span class="lbl">Plan</span>
+          <span style="font-size:11px; font-weight:600;">43 of 50 active</span>
+          <span style="height:4px; border-radius:2px; background:#e2ded6; overflow:hidden;"><span style="display:block; width:86%; height:100%; background:#8a6a3e;"></span></span>
+          <span style="font-size:9.5px; color:#8a8378;">7 left before the next bracket</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:2px 4px;">
+          <span class="av"></span><span style="font-size:11px; font-weight:600;">Coach</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+      <div class="hdr">
+        <span class="ttl">Roster</span>
+        <span class="bx" style="flex:1; max-width:260px; padding:6px 10px; font-size:11px; color:#9a9288;">Search clients</span>
+        <span style="flex:1;"></span>
+        <span class="btn">Invite client</span>
+      </div>
+
+      <div class="sec" style="display:flex; align-items:center; gap:7px; flex-wrap:wrap; border-bottom:1px solid #eae6de;">
+        <span class="chip on">Needs response<span style="font-family:ui-monospace;font-size:9.5px;">7</span></span>
+        <span class="chip">No check-in this week</span>
+        <span class="chip">Program ending soon</span>
+        <span class="chip">New this month</span>
+        <span class="chip">Archived</span>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:12px; padding:9px 16px; background:#efe9dd; border-bottom:1.5px solid #d8d4cc;">
+        <span style="font-size:11.5px; font-weight:600;">12 selected</span>
+        <span class="btn" style="padding:4px 10px;">Assign program</span>
+        <span class="btn" style="padding:4px 10px;">Message</span>
+        <span class="btn" style="padding:4px 10px;">Archive</span>
+        <span class="note" style="margin-left:6px;">bulk is a real workflow, not an edge case</span>
+      </div>
+
+      <div style="display:grid; grid-template-columns:22px 1.5fr 1.4fr 90px 78px; gap:10px; padding:7px 14px; border-bottom:1.5px solid #d8d4cc;">
+        <span class="cb"></span><span class="lbl">Client</span><span class="lbl">Program</span><span class="lbl">Last check-in</span><span class="lbl">Status</span>
+      </div>
+
+      <div style="flex:1; min-height:0; overflow:hidden;">
+        <div class="tr"><span class="cb"></span><span style="display:flex;align-items:center;gap:8px;"><span class="av"></span><span style="font-weight:600;">Sarah Vance</span></span><span style="color:#6a655d;">Powerbuilding II · W7</span><span style="color:#6a655d;">2d ago</span><span style="display:flex;align-items:center;gap:6px;"><span class="dot need"></span><span style="font-size:10.5px;font-weight:600;">Needs you</span></span></div>
+        <div class="tr"><span class="cb"></span><span style="display:flex;align-items:center;gap:8px;"><span class="av"></span><span style="font-weight:600;">Marcus Hale</span></span><span style="color:#6a655d;">Powerbuilding II · W7</span><span style="color:#6a655d;">1d ago</span><span style="display:flex;align-items:center;gap:6px;"><span class="dot need"></span><span style="font-size:10.5px;font-weight:600;">Needs you</span></span></div>
+        <div class="tr"><span class="cb"></span><span style="display:flex;align-items:center;gap:8px;"><span class="av"></span><span style="font-weight:600;">Dana Okafor</span></span><span style="color:#6a655d;">Base Build · W3</span><span style="color:#6a655d;">1d ago</span><span style="display:flex;align-items:center;gap:6px;"><span class="dot draft"></span><span style="font-size:10.5px;">Draft saved</span></span></div>
+        <div class="tr"><span class="cb"></span><span style="display:flex;align-items:center;gap:8px;"><span class="av"></span><span style="font-weight:600;">Ben Iyer</span></span><span style="color:#6a655d;">Base Build · W3</span><span style="color:#6a655d;">3d ago</span><span style="color:#9a9288;font-size:10.5px;">Replied</span></div>
+        <div class="tr"><span class="cb"></span><span style="display:flex;align-items:center;gap:8px;"><span class="av"></span><span style="font-weight:600;">Priya Raman</span></span><span style="color:#6a655d;">Hypertrophy A · W11</span><span style="color:#6a655d;">4d ago</span><span style="color:#9a9288;font-size:10.5px;">Replied</span></div>
+        <div class="tr"><span class="cb"></span><span style="display:flex;align-items:center;gap:8px;"><span class="av"></span><span style="font-weight:600;">Tom Bright</span></span><span style="color:#6a655d;">Hypertrophy A · W11</span><span style="color:#6a655d;">12d ago</span><span style="display:flex;align-items:center;gap:6px;"><span class="dot quiet"></span><span style="font-size:10.5px;color:#6a655d;">Quiet 12d</span></span></div>
+        <div class="tr"><span class="cb"></span><span style="display:flex;align-items:center;gap:8px;"><span class="av"></span><span style="font-weight:600;">Alicia Fenn</span></span><span style="color:#6a655d;">Base Build · W1</span><span style="color:#6a655d;">Never</span><span style="display:flex;align-items:center;gap:6px;"><span class="dot quiet"></span><span style="font-size:10.5px;color:#6a655d;">Not started</span></span></div>
+        <div class="tr"><span class="cb"></span><span style="display:flex;align-items:center;gap:8px;"><span class="av"></span><span style="font-weight:600;">Jonah Pike</span></span><span style="color:#6a655d;">Powerbuilding II · W12</span><span style="color:#6a655d;">2d ago</span><span style="color:#9a9288;font-size:10.5px;">Replied</span></div>
+        <div class="tr"><span class="cb"></span><span style="display:flex;align-items:center;gap:8px;"><span class="av"></span><span style="font-weight:600;">Rosa Delgado</span></span><span style="color:#6a655d;">Base Build · W6</span><span style="color:#6a655d;">1d ago</span><span style="display:flex;align-items:center;gap:6px;"><span class="dot need"></span><span style="font-size:10.5px;font-weight:600;">Needs you</span></span></div>
+        <div class="tr"><span class="cb"></span><span style="display:flex;align-items:center;gap:8px;"><span class="av"></span><span style="font-weight:600;">Elliot Shaw</span></span><span style="color:#6a655d;">Hypertrophy A · W4</span><span style="color:#6a655d;">5d ago</span><span style="color:#9a9288;font-size:10.5px;">Replied</span></div>
+        <div class="tr"><span class="cb"></span><span style="display:flex;align-items:center;gap:8px;"><span class="av"></span><span style="font-weight:600;">Nia Brooks</span></span><span style="color:#6a655d;">Base Build · W9</span><span style="color:#6a655d;">2d ago</span><span style="color:#9a9288;font-size:10.5px;">Replied</span></div>
+        <div class="tr"><span class="cb"></span><span style="display:flex;align-items:center;gap:8px;"><span class="av"></span><span style="font-weight:600;">Owen Castle</span></span><span style="color:#6a655d;">Powerbuilding II · W2</span><span style="color:#6a655d;">3d ago</span><span style="color:#9a9288;font-size:10.5px;">Replied</span></div>
+        <div class="tr"><span class="cb"></span><span style="display:flex;align-items:center;gap:8px;"><span class="av"></span><span style="font-weight:600;">Mira Sandoval</span></span><span style="color:#6a655d;">Base Build · W8</span><span style="color:#6a655d;">9d ago</span><span style="display:flex;align-items:center;gap:6px;"><span class="dot quiet"></span><span style="font-size:10.5px;color:#6a655d;">Quiet 9d</span></span></div>
+        <div class="tr" style="border-bottom:none;"><span class="cb"></span><span style="display:flex;align-items:center;gap:8px;"><span class="av"></span><span style="font-weight:600;">Kai Whitmore</span></span><span style="color:#6a655d;">Hypertrophy A · W5</span><span style="color:#6a655d;">1d ago</span><span style="display:flex;align-items:center;gap:6px;"><span class="dot need"></span><span style="font-size:10.5px;font-weight:600;">Needs you</span></span></div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:14px; padding:9px 16px; border-top:1.5px solid #d8d4cc; font-size:10.5px; color:#8a8378;">
+        <span>43 active · 6 archived</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span class="dot need"></span>needs you</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span class="dot draft"></span>draft in progress</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span class="dot quiet"></span>quiet</span>
+        <span class="note">one dot vocabulary, no hue — weight and fill carry it</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ 1b · CHECK-IN REVIEW ══════════════════ -->
+<div class="dv-opt" id="1b">
+  <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Check-in review — the screen the product lives on</div>
+  <div class="dv-card" style="width:1080px; display:flex; height:660px;">
+
+    <div class="rail" style="width:132px;">
+      <div style="display:flex; align-items:center; gap:7px; padding:2px 6px 14px;">
+        <span style="width:18px;height:18px;border-radius:4px;background:#8a6a3e;flex:none;"></span>
+        <span style="font:700 10px 'Inter Tight';letter-spacing:.08em;">COACH</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <span class="nv on">Today<span class="ct">7</span></span>
+        <span class="nv">Roster<span class="ct">43</span></span>
+        <span class="nv">Programs</span>
+        <span class="nv">Messages<span class="ct">2</span></span>
+      </div>
+    </div>
+
+    <div style="width:216px; flex:none; border-right:1.5px solid #d8d4cc; display:flex; flex-direction:column;">
+      <div style="padding:12px 14px 10px; border-bottom:1.5px solid #d8d4cc;">
+        <span class="lbl">Needs response</span>
+        <div style="margin-top:5px; font:700 14px 'Inter Tight';">7 check-ins</div>
+      </div>
+      <div style="flex:1; min-height:0; overflow:hidden;">
+        <div style="display:flex; gap:9px; padding:10px 13px; background:#efe9dd; border-left:3px solid #8a6a3e; border-bottom:1px solid #eae6de;">
+          <span class="ph" style="width:34px;height:44px;flex:none;font-size:8px;">vid</span>
+          <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+            <span style="font-size:11.5px; font-weight:700;">Sarah Vance</span>
+            <span style="font-size:10px; color:#6a655d;">Week 7 · Sun</span>
+            <span style="font-size:9.5px; color:#8a6a3e; font-weight:600;">Reviewing</span>
+          </span>
+        </div>
+        <div style="display:flex; gap:9px; padding:10px 13px; border-bottom:1px solid #eae6de;">
+          <span class="ph" style="width:34px;height:44px;flex:none;font-size:8px;">vid</span>
+          <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+            <span style="font-size:11.5px; font-weight:600;">Marcus Hale</span>
+            <span style="font-size:10px; color:#6a655d;">Week 7 · Sun</span>
+          </span>
+          <span class="dot need" style="margin-top:4px;"></span>
+        </div>
+        <div style="display:flex; gap:9px; padding:10px 13px; border-bottom:1px solid #eae6de;">
+          <span class="ph" style="width:34px;height:44px;flex:none;font-size:8px;">vid</span>
+          <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+            <span style="font-size:11.5px; font-weight:600;">Dana Okafor</span>
+            <span style="font-size:10px; color:#6a655d;">Week 3 · Sat</span>
+            <span style="font-size:9.5px; color:#6a655d;">Draft saved</span>
+          </span>
+          <span class="dot draft" style="margin-top:4px;"></span>
+        </div>
+        <div style="display:flex; gap:9px; padding:10px 13px; border-bottom:1px solid #eae6de;">
+          <span class="ph" style="width:34px;height:44px;flex:none;font-size:8px;">vid</span>
+          <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+            <span style="font-size:11.5px; font-weight:600;">Rosa Delgado</span>
+            <span style="font-size:10px; color:#6a655d;">Week 6 · Sat</span>
+          </span>
+          <span class="dot need" style="margin-top:4px;"></span>
+        </div>
+        <div style="display:flex; gap:9px; padding:10px 13px; border-bottom:1px solid #eae6de;">
+          <span class="ph" style="width:34px;height:44px;flex:none;font-size:8px;">vid</span>
+          <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+            <span style="font-size:11.5px; font-weight:600;">Kai Whitmore</span>
+            <span style="font-size:10px; color:#6a655d;">Week 5 · Fri</span>
+          </span>
+          <span class="dot need" style="margin-top:4px;"></span>
+        </div>
+      </div>
+      <div style="padding:10px 13px; border-top:1.5px solid #d8d4cc;">
+        <span class="lbl">Then</span>
+        <div style="margin-top:6px; display:flex; flex-direction:column; gap:5px; font-size:10.5px; color:#6a655d;">
+          <span>New pulses · 9</span>
+          <span>Flagged · 3</span>
+          <span>Quiet · 4</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+      <div class="hdr" style="gap:10px;">
+        <span class="av" style="width:30px;height:30px;"></span>
+        <span style="display:flex; flex-direction:column; gap:2px;">
+          <span class="ttl">Sarah Vance</span>
+          <span style="font-size:10.5px; color:#6a655d;">Powerbuilding II · Week 7 of 12 · checked in Sun</span>
+        </span>
+        <span style="flex:1;"></span>
+        <span style="font:600 10.5px ui-monospace,Menlo,monospace; color:#8a8378;">3 of 12</span>
+        <span class="btn" style="padding:6px 9px;">Prev</span>
+        <span class="btn" style="padding:6px 14px; background:#e6ddcc; border-color:#8a6a3e;">Next client</span>
+      </div>
+
+      <div style="flex:1; min-height:0; overflow:hidden; padding:14px 16px; display:flex; flex-direction:column; gap:13px;">
+
+        <div style="display:flex; gap:13px;">
+          <div style="flex:1.55; min-width:0; display:flex; flex-direction:column; gap:7px;">
+            <span class="lbl">Recap · 0:45</span>
+            <div class="ph" style="aspect-ratio:16/9; font-size:11px;">recap video — plays inline, scrubable</div>
+          </div>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:7px;">
+            <div style="display:flex; align-items:baseline; gap:7px;">
+              <span class="lbl">Photos</span>
+              <span style="margin-left:auto;" class="chip on">vs Week 1</span>
+            </div>
+            <div style="display:flex; gap:7px;">
+              <div style="flex:1; display:flex; flex-direction:column; gap:4px;"><div class="ph" style="aspect-ratio:3/4; font-size:9px;">Week 1</div><span style="font-size:9px; color:#8a8378; text-align:center;">195 lb</span></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:4px;"><div class="ph" style="aspect-ratio:3/4; font-size:9px;">Week 7</div><span style="font-size:9px; color:#8a8378; text-align:center;">183 lb</span></div>
+            </div>
+            <span class="note">compare is one tap, never a separate screen</span>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:9px;">
+          <div class="bx" style="flex:1; padding:9px 11px; display:flex; flex-direction:column; gap:3px;"><span class="lbl">Weight</span><span style="font-size:14px; font-weight:700;">183 lb</span><span style="font-size:10px; color:#6a655d;">↓ 2 lb this week</span></div>
+          <div class="bx" style="flex:1; padding:9px 11px; display:flex; flex-direction:column; gap:3px;"><span class="lbl">Sessions</span><span style="font-size:14px; font-weight:700;">4 of 4</span><span style="font-size:10px; color:#6a655d;">→ held</span></div>
+          <div class="bx" style="flex:1; padding:9px 11px; display:flex; flex-direction:column; gap:3px;"><span class="lbl">Squat</span><span style="font-size:14px; font-weight:700;">315 × 5</span><span style="font-size:10px; color:#6a655d;">↑ 10 lb</span></div>
+          <div class="bx" style="flex:1; padding:9px 11px; display:flex; flex-direction:column; gap:3px;"><span class="lbl">Bench</span><span style="font-size:14px; font-weight:700;">205 × 5</span><span style="font-size:10px; color:#6a655d;">→ stalled 3w</span></div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:7px;">
+          <span class="lbl">Her answers</span>
+          <div class="bx" style="background:#f4f1ea; padding:11px 13px; display:flex; flex-direction:column; gap:9px;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <span style="font-size:10px; font-weight:700; color:#8a6a3e; letter-spacing:.04em;">How did the week feel?</span>
+              <span class="ln" style="width:96%"></span><span class="ln" style="width:78%"></span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <span style="font-size:10px; font-weight:700; color:#8a6a3e; letter-spacing:.04em;">Anything hurting?</span>
+              <span class="ln" style="width:62%"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bx" style="display:flex; align-items:center; gap:11px; padding:9px 12px;">
+          <span style="font-size:11.5px; font-weight:600;">Powerbuilding II · Week 8 is next</span>
+          <span style="flex:1;"></span>
+          <span class="btn" style="padding:5px 11px;">Open her program</span>
+          <span class="note">watch → adjust is the most common pair</span>
+        </div>
+      </div>
+
+      <div style="flex:none; border-top:1.5px solid #d8d4cc; padding:11px 16px; background:#f6f4f0; display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="chip" style="border-style:dashed; border-color:#8a6a3e; color:#8a6a3e; font-weight:700;">Draft · written by assist</span>
+          <span class="btn" style="padding:4px 9px;">Use it</span>
+          <span class="btn" style="padding:4px 9px;">Write my own</span>
+          <span class="note" style="margin-left:4px;">obvious it's a draft until she edits it</span>
+        </div>
+        <div class="bx" style="padding:10px 12px; display:flex; flex-direction:column; gap:6px; min-height:52px;">
+          <span class="ln" style="width:88%; background:#e9e4da;"></span><span class="ln" style="width:54%; background:#e9e4da;"></span>
+        </div>
+        <div style="display:flex; align-items:center; gap:9px;">
+          <span style="font-size:10px; color:#8a8378;">Draft saves as you go</span>
+          <span style="flex:1;"></span>
+          <span class="btn">Attach</span>
+          <span class="btn" style="background:#e6ddcc; border-color:#8a6a3e;">Send &amp; next</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ 1c · CLIENT DETAIL · PHOTOS ══════════════════ -->
+<div class="dv-opt" id="1c">
+  <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Client detail — the photo timeline, gridded by week</div>
+  <div class="dv-card" style="width:1080px; display:flex; height:660px;">
+
+    <div class="rail" style="width:132px;">
+      <div style="display:flex; align-items:center; gap:7px; padding:2px 6px 14px;">
+        <span style="width:18px;height:18px;border-radius:4px;background:#8a6a3e;flex:none;"></span>
+        <span style="font:700 10px 'Inter Tight';letter-spacing:.08em;">COACH</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <span class="nv">Today<span class="ct">7</span></span>
+        <span class="nv on">Roster<span class="ct">43</span></span>
+        <span class="nv">Programs</span>
+        <span class="nv">Messages<span class="ct">2</span></span>
+      </div>
+    </div>
+
+    <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+      <div class="hdr" style="gap:11px;">
+        <span class="av" style="width:34px;height:34px;"></span>
+        <span style="display:flex; flex-direction:column; gap:2px;">
+          <span class="ttl">Sarah Vance</span>
+          <span style="font-size:10.5px; color:#6a655d;">Powerbuilding II · Week 7 · coached since Jan 2026</span>
+        </span>
+        <span style="flex:1;"></span>
+        <span class="btn">Message</span>
+        <span class="btn">Program</span>
+      </div>
+
+      <div style="display:flex; gap:2px; padding:0 16px; border-bottom:1.5px solid #d8d4cc;">
+        <span style="padding:9px 11px; font-size:11.5px; color:#6a655d;">Overview</span>
+        <span style="padding:9px 11px; font-size:11.5px; color:#6a655d;">Check-ins</span>
+        <span style="padding:9px 11px; font-size:11.5px; font-weight:700; border-bottom:2.5px solid #8a6a3e;">Photos</span>
+        <span style="padding:9px 11px; font-size:11.5px; color:#6a655d;">Program</span>
+        <span style="padding:9px 11px; font-size:11.5px; color:#6a655d;">Messages</span>
+        <span style="padding:9px 11px; font-size:11.5px; color:#6a655d;">Settings</span>
+      </div>
+
+      <div style="flex:1; min-height:0; display:flex;">
+        <div style="flex:1; min-width:0; padding:14px 16px; display:flex; flex-direction:column; gap:12px; overflow:hidden;">
+          <div style="display:flex; align-items:center; gap:9px;">
+            <span class="lbl">28 weeks</span>
+            <span style="flex:1;"></span>
+            <span class="chip on">All poses</span>
+            <span class="chip">Front</span>
+            <span class="chip">Side</span>
+            <span class="chip">Back</span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:11px;">
+            <div style="display:flex; align-items:flex-start; gap:11px;">
+              <span style="width:62px; flex:none; display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; font-weight:700;">Week 7</span><span style="font-size:9.5px; color:#8a8378;">Mar 6</span><span style="font-size:9.5px; color:#8a8378;">183 lb</span></span>
+              <div style="flex:1; display:grid; grid-template-columns:repeat(6,1fr); gap:7px;">
+                <div class="ph" style="aspect-ratio:3/4; font-size:8px; border-color:#8a6a3e;">sel</div><div class="ph" style="aspect-ratio:3/4;"></div><div class="ph" style="aspect-ratio:3/4;"></div><div class="ph" style="aspect-ratio:3/4;"></div><div class="ph" style="aspect-ratio:3/4;"></div><div class="ph" style="aspect-ratio:3/4;"></div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:11px;">
+              <span style="width:62px; flex:none; display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; font-weight:700;">Week 4</span><span style="font-size:9.5px; color:#8a8378;">Feb 13</span><span style="font-size:9.5px; color:#8a8378;">188 lb</span></span>
+              <div style="flex:1; display:grid; grid-template-columns:repeat(6,1fr); gap:7px;">
+                <div class="ph" style="aspect-ratio:3/4;"></div><div class="ph" style="aspect-ratio:3/4;"></div><div class="ph" style="aspect-ratio:3/4;"></div><div class="ph" style="aspect-ratio:3/4;"></div><div class="ph" style="aspect-ratio:3/4;"></div><div class="ph" style="aspect-ratio:3/4;"></div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:11px;">
+              <span style="width:62px; flex:none; display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; font-weight:700;">Week 1</span><span style="font-size:9.5px; color:#8a8378;">Jan 23</span><span style="font-size:9.5px; color:#8a8378;">195 lb</span></span>
+              <div style="flex:1; display:grid; grid-template-columns:repeat(6,1fr); gap:7px;">
+                <div class="ph" style="aspect-ratio:3/4; font-size:8px; border-color:#8a6a3e;">sel</div><div class="ph" style="aspect-ratio:3/4;"></div><div class="ph" style="aspect-ratio:3/4;"></div><div class="ph" style="aspect-ratio:3/4;"></div><div class="ph" style="aspect-ratio:3/4;"></div><div class="ph" style="aspect-ratio:3/4;"></div>
+              </div>
+            </div>
+          </div>
+          <span class="note">gridded by week, weight on the spine — this is the surface coaches screenshot and send</span>
+        </div>
+
+        <div style="width:262px; flex:none; border-left:1.5px solid #d8d4cc; padding:14px; display:flex; flex-direction:column; gap:10px; background:#f6f4f0;">
+          <span class="lbl">Compare</span>
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1; display:flex; flex-direction:column; gap:5px;"><div class="ph" style="aspect-ratio:3/4; font-size:9px;">Week 1</div><span style="font-size:9.5px; color:#8a8378; text-align:center;">Jan 23 · 195 lb</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:5px;"><div class="ph" style="aspect-ratio:3/4; font-size:9px;">Week 7</div><span style="font-size:9.5px; color:#8a8378; text-align:center;">Mar 6 · 183 lb</span></div>
+          </div>
+          <div class="bx" style="padding:9px 10px; display:flex; flex-direction:column; gap:3px;">
+            <span class="lbl">Across 6 weeks</span>
+            <span style="font-size:13px; font-weight:700;">−12 lb</span>
+            <span style="font-size:10px; color:#6a655d;">24 sessions logged</span>
+          </div>
+          <span class="btn" style="justify-content:center;">Send to Sarah</span>
+          <span class="btn" style="justify-content:center;">Save image</span>
+          <span class="note" style="margin-top:2px;">same card the client can post</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ 1d · PROGRAM EDITOR ══════════════════ -->
+<div class="dv-opt" id="1d">
+  <div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Program editor — scope is the whole design problem</div>
+  <div class="dv-card" style="width:1080px; display:flex; height:660px;">
+
+    <div class="rail" style="width:132px;">
+      <div style="display:flex; align-items:center; gap:7px; padding:2px 6px 14px;">
+        <span style="width:18px;height:18px;border-radius:4px;background:#8a6a3e;flex:none;"></span>
+        <span style="font:700 10px 'Inter Tight';letter-spacing:.08em;">COACH</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <span class="nv">Today<span class="ct">7</span></span>
+        <span class="nv">Roster<span class="ct">43</span></span>
+        <span class="nv on">Programs</span>
+        <span class="nv">Messages<span class="ct">2</span></span>
+      </div>
+      <div style="margin-top:auto; display:flex; flex-direction:column; gap:5px;">
+        <span class="lbl">Templates</span>
+        <span style="font-size:10.5px; color:#6a655d;">Powerbuilding II · 31</span>
+        <span style="font-size:10.5px; color:#6a655d;">Base Build · 12</span>
+        <span style="font-size:10.5px; color:#6a655d;">Hypertrophy A · 8</span>
+      </div>
+    </div>
+
+    <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+
+      <div style="display:flex; align-items:center; gap:11px; padding:10px 16px; background:#efe9dd; border-bottom:2.5px solid #8a6a3e;">
+        <span style="width:22px;height:22px;border-radius:5px;border:1.5px solid #8a6a3e;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#8a6a3e;flex:none;">!</span>
+        <span style="display:flex; flex-direction:column; gap:2px;">
+          <span style="font-size:12px; font-weight:700;">Editing Sarah's copy — changes reach her only</span>
+          <span style="font-size:10.5px; color:#6a655d;">The Powerbuilding II template and the other 30 clients on it are untouched.</span>
+        </span>
+        <span style="flex:1;"></span>
+        <span class="btn" style="padding:5px 11px;">Switch to template</span>
+      </div>
+
+      <div class="hdr" style="gap:11px; border-bottom-width:1.5px;">
+        <span style="display:flex; flex-direction:column; gap:2px;">
+          <span class="ttl">Powerbuilding II</span>
+          <span style="font-size:10.5px; color:#6a655d;">Sarah's copy · 12 weeks · she is mid-Week 7</span>
+        </span>
+        <span style="flex:1;"></span>
+        <span class="btn">Copy week forward</span>
+        <span class="btn">Duplicate day</span>
+        <span class="btn" style="background:#e6ddcc; border-color:#8a6a3e;">Save</span>
+      </div>
+
+      <div style="flex:1; min-height:0; display:flex;">
+        <div style="width:84px; flex:none; border-right:1.5px solid #d8d4cc; padding:11px 8px; display:flex; flex-direction:column; gap:3px;">
+          <span class="lbl" style="padding:0 4px 4px;">Weeks</span>
+          <span style="padding:5px 8px; border-radius:4px; font-size:11px; color:#6a655d;">W1–W6</span>
+          <span style="padding:5px 8px; border-radius:4px; font-size:11px; font-weight:700; background:#efe9dd; border-left:2.5px solid #8a6a3e;">W7 · live</span>
+          <span style="padding:5px 8px; border-radius:4px; font-size:11px; font-weight:600;">W8</span>
+          <span style="padding:5px 8px; border-radius:4px; font-size:11px; color:#6a655d;">W9</span>
+          <span style="padding:5px 8px; border-radius:4px; font-size:11px; color:#6a655d;">W10</span>
+          <span style="padding:5px 8px; border-radius:4px; font-size:11px; color:#6a655d;">W11</span>
+          <span style="padding:5px 8px; border-radius:4px; font-size:11px; color:#6a655d;">W12</span>
+          <span class="note" style="margin-top:6px; font-size:13px;">W7 is live — edits land under her feet</span>
+        </div>
+
+        <div style="flex:1; min-width:0; padding:11px 12px; display:flex; gap:9px; overflow:hidden;">
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:7px;">
+            <span class="lbl">Mon · Lower</span>
+            <div class="bx" style="padding:8px 9px; display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; font-weight:600;">Back Squat</span><span style="font-size:9.5px; color:#6a655d;">4 × 5 · 315 · RPE 8</span></div>
+            <div class="bx" style="padding:8px 9px; display:flex; flex-direction:column; gap:4px; border-left:3px solid #b9b3a8;"><span style="font-size:11px; font-weight:600;">RDL</span><span style="font-size:9.5px; color:#6a655d;">3 × 8 · 225</span></div>
+            <div class="bx" style="padding:8px 9px; display:flex; flex-direction:column; gap:4px; border-left:3px solid #b9b3a8;"><span style="font-size:11px; font-weight:600;">Leg Curl</span><span style="font-size:9.5px; color:#6a655d;">3 × 12</span></div>
+            <span style="font-size:9px; color:#8a8378; padding-left:4px;">superset</span>
+            <span class="bx" style="padding:7px; text-align:center; font-size:10.5px; color:#8a8378; border-style:dashed;">+ exercise</span>
+          </div>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:7px;">
+            <span class="lbl">Tue · Upper</span>
+            <div class="bx" style="padding:8px 9px; display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; font-weight:600;">Bench Press</span><span style="font-size:9.5px; color:#6a655d;">4 × 5 · 205</span><span style="font-size:9px; color:#8a6a3e; font-weight:600;">stalled 3w</span></div>
+            <div class="bx" style="padding:8px 9px; display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; font-weight:600;">Row</span><span style="font-size:9.5px; color:#6a655d;">4 × 8</span></div>
+            <span class="bx" style="padding:7px; text-align:center; font-size:10.5px; color:#8a8378; border-style:dashed;">+ exercise</span>
+          </div>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:7px;">
+            <span class="lbl">Wed · Rest</span>
+            <span class="bx" style="padding:7px; text-align:center; font-size:10.5px; color:#8a8378; border-style:dashed;">+ exercise</span>
+          </div>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:7px;">
+            <span class="lbl">Thu · Lower</span>
+            <div class="bx" style="padding:8px 9px; display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; font-weight:600;">Deadlift</span><span style="font-size:9.5px; color:#6a655d;">3 × 3 · 405</span></div>
+            <span class="bx" style="padding:7px; text-align:center; font-size:10.5px; color:#8a8378; border-style:dashed;">+ exercise</span>
+          </div>
+        </div>
+
+        <div style="width:212px; flex:none; border-left:1.5px solid #d8d4cc; padding:12px; display:flex; flex-direction:column; gap:9px; background:#f6f4f0;">
+          <span class="lbl">Back Squat</span>
+          <div style="display:flex; gap:7px;">
+            <div style="flex:1;"><span class="lbl">Sets</span><div class="bx" style="padding:6px 8px; font-size:11px; margin-top:3px;">4</div></div>
+            <div style="flex:1;"><span class="lbl">Reps</span><div class="bx" style="padding:6px 8px; font-size:11px; margin-top:3px;">5</div></div>
+          </div>
+          <div style="display:flex; gap:7px;">
+            <div style="flex:1;"><span class="lbl">Load</span><div class="bx" style="padding:6px 8px; font-size:11px; margin-top:3px;">315 lb</div></div>
+            <div style="flex:1;"><span class="lbl">Rest</span><div class="bx" style="padding:6px 8px; font-size:11px; margin-top:3px;">3:00</div></div>
+          </div>
+          <div><span class="lbl">Tempo</span><div class="bx" style="padding:6px 8px; font-size:11px; margin-top:3px;">3-1-1</div></div>
+          <div><span class="lbl">Note to Sarah</span><div class="bx" style="padding:8px; margin-top:3px; min-height:46px; display:flex; flex-direction:column; gap:5px;"><span class="ln" style="width:90%"></span><span class="ln" style="width:60%"></span></div></div>
+          <div class="bx" style="padding:8px 9px; border-style:dashed;"><span style="font-size:10px; color:#6a655d;">Search the Forge catalog to swap this out</span></div>
+        </div>
+      </div>
+
+      <div style="flex:none; padding:9px 16px; border-top:1.5px solid #d8d4cc; display:flex; align-items:center; gap:11px;">
+        <span style="font-size:10.5px; color:#8a8378;">Assign to · Sarah only</span>
+        <span class="btn" style="padding:4px 10px;">Assign to more</span>
+        <span style="flex:1;"></span>
+        <span class="note">mobile shows this read-only, and says so</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "hi-fi <a class="dv-oid" href="#1b">1b</a>" · "<a class="dv-oid" href="#1a">1a</a> is too wide, tighten the columns" · "show me Today and the mobile triage pass"</p>
+</section>
+
+</x-dc>
+</body>
+</html>

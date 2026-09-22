@@ -27,6 +27,8 @@ import {
   ENDURANCE_GOALS,
   STRENGTH_GOALS,
   isEnduranceGoal,
+  isCount,
+  DEFAULT_DAYS_PER_WEEK,
   GOAL_LABEL,
   type CoachConstraints,
   type Experience,
@@ -37,7 +39,7 @@ import { AUTHORED_GOALS } from './rulebook/skeletons.ts';
 /* Type-only — the shelf is passed IN by the caller, exactly like `learned`. `domain/coach/**` reads no
    database and this does not change that. */
 import type { Recommendation as ShelfRecommendation } from './recommend.ts';
-import { RACE_SPEC, weeklyVolumePlan } from './rulebook/endurance.ts';
+import { RACE_SPEC, counterOfferIn, weeklyVolumePlan } from './rulebook/endurance.ts';
 import { pick, pickNamed } from './rulebook/voice.ts';
 import { BODY_PART_LABEL, BODY_PARTS, SPLIT_LABEL, type BodyPart, type DayFocus, type SplitName } from './day.ts';
 import { plannedDays, trainingDays } from '../program/progress-core.ts';
@@ -55,7 +57,8 @@ export type Turn =
   /** `at` is epoch ms, stamped when the turn is appended. Absent on threads stored before v2. */
   | { kind: 'me'; text: string; at?: number }
   /** `live` types itself out, character by character. Exactly one turn at a time may be live. */
-  | { kind: 'holt'; text: string; live?: boolean; at?: number }
+  /** `streaming` while a coach-ask reply is still arriving; cleared when it is complete. */
+  | { kind: 'holt'; text: string; live?: boolean; at?: number; streaming?: boolean }
   /** `ctl` is how they are DRAWN (v2 layer 2). Absent → the 2-col chip grid, which is what every
    *  answer used to be. The openers and the help menu carry none, and correctly render as chips. */
   | { kind: 'chips'; chips: Chip[]; ctl?: QuestionControl }
@@ -66,7 +69,8 @@ export type Turn =
   | { kind: 'edit'; card: EditCard }
   | { kind: 'refusal'; card: RefusalCard }
   | { kind: 'explain'; name: string; catalogKey: string | null }
-  | { kind: 'stop'; text: string }
+  /** `kicker` absent → STOP_KICKER. Crisis, emergency and care stops carry their own. */
+  | { kind: 'stop'; text: string; kicker?: string }
   | { kind: 'error'; text: string; sub: string; action: string }
   | { kind: 'saved'; text: string }
   | { kind: 'wall' };
@@ -194,6 +198,13 @@ export interface Chip {
    */
   startsBuild?: boolean;
   levelOnly?: boolean;
+  /**
+   * One step of a change the athlete TYPED ("swap bench for dumbbell press on Monday"): answering what
+   * Holt asked back, applying it for this week or the rest of the block, or leaving it. A string, not the
+   * plan itself — the thread is persisted as JSON, so the pending plan lives in the sheet and a chip
+   * restored after a reload finds nothing and says so.
+   */
+  typedEdit?: 'answer' | 'this_week' | 'rest_of_block' | 'apply' | 'cancel';
   label: string;
   /** What tapping it fills in. The typed path resolves to the same thing — see `interpret`. */
   /* Widened to ChatState so a chip can carry `dayFocus`, which describes one WORKOUT rather than the
@@ -392,7 +403,7 @@ function askShelf(c: ChatState): Question | null {
 
   if (c.experience == null) return experienceQuestion(c);
 
-  if (c.daysPerWeek == null) {
+  if (!isCount(c.daysPerWeek)) {
     return {
       id: 'days',
       /* The build flow's own line. It is the same question about the same diary, and two phrasings of it
@@ -591,7 +602,9 @@ function askProgram(c: ChatState): Question | null {
     };
   }
 
-  if (c.daysPerWeek == null) {
+  /* A week described day by day ("run Tuesday and Thursday, lift the other three") already says how many
+     days — asking again would be the coach not listening, and a chip answer would contradict the week. */
+  if (!isCount(c.daysPerWeek) && !c.days?.length) {
     return {
       id: 'days',
       /* The PO's own words, kept verbatim — this line already ships in the wizard. A one-week build gets
@@ -722,6 +735,41 @@ const sameFocus = (a: FocusPick, b: FocusPick): boolean =>
  * parts, so Push and Pull would both draw as chosen while neither was.
  */
 export const hasFocus = (picks: readonly FocusPick[], p: FocusPick): boolean => picks.some((x) => sameFocus(x, p));
+
+/**
+ * A day focus said in words — "back and bis", "pull no wait legs", "chest and arms" — as the same
+ * `DayFocus` the taps produce.
+ *
+ * The model returns `dayFocus` as the athlete's own phrase (it never writes training, so it cannot hand
+ * back a `DayFocus` object). Folding it through `mergeFocus` keeps the one split/parts rule: picks are
+ * taken in the ORDER THEY WERE SAID, so the last split named wins, exactly as the last split tapped does.
+ * `null` when nothing recognisable was named — the caller asks, it does not default to full body.
+ */
+const FOCUS_WORDS: readonly [RegExp, FocusPick[]][] = [
+  [/\b(full[\s-]?body|total[\s-]?body|whole[\s-]?body|everything)\b/, [{ kind: 'split', split: 'full_body' }]],
+  [/\bpush\b/, [{ kind: 'split', split: 'push' }]],
+  [/\bpull\b/, [{ kind: 'split', split: 'pull' }]],
+  [/\b(legs?|leg\s+day|lower(\s+body)?|glutes?|quads?|hamstrings?|hammies)\b/, [{ kind: 'split', split: 'legs' }]],
+  [/\bupper(\s+body)?\b/, [{ kind: 'split', split: 'upper' }]],
+  [/\b(chest|pecs?)\b/, [{ kind: 'part', part: 'chest' }]],
+  [/\b(back|lats?)\b/, [{ kind: 'part', part: 'back' }]],
+  [/\b(shoulders?|delts?)\b/, [{ kind: 'part', part: 'shoulders' }]],
+  [/\b(biceps?|bis|by\s*sips?)\b/, [{ kind: 'part', part: 'biceps' }]],
+  [/\b(triceps?|tris|try\s*sips?)\b/, [{ kind: 'part', part: 'triceps' }]],
+  [/\barms?\b/, [{ kind: 'part', part: 'biceps' }, { kind: 'part', part: 'triceps' }]],
+  [/\b(core|abs|stomach|midsection)\b/, [{ kind: 'part', part: 'core' }]],
+  [/\b(cardio|conditioning|hiit|intervals)\b/, [{ kind: 'cardio' }]],
+];
+
+export function focusFromText(text: string): DayFocus | null {
+  const t = text.toLowerCase();
+  const found: { at: number; picks: FocusPick[] }[] = [];
+  for (const [re, picks] of FOCUS_WORDS) {
+    const g = new RegExp(re.source, 'g');
+    for (let m = g.exec(t); m; m = g.exec(t)) found.push({ at: m.index, picks });
+  }
+  return mergeFocus(found.sort((a, b) => a.at - b.at).flatMap((f) => f.picks));
+}
 
 /** Selecting a split replaces everything; selecting anything else drops the split. Used by the control. */
 export function toggleFocus(picks: readonly FocusPick[], next: FocusPick): FocusPick[] {
@@ -872,35 +920,87 @@ export function interpret(text: string, q: Question): Partial<CoachConstraints> 
    * would fall through "One week" (no digit in it), past "4 weeks" and "8 weeks", and land on "12 weeks"
    * — a twelve-week block from an athlete who asked for one. Snapped to the nearest rung instead.
    */
-  if (q.id === 'size') {
-    const w = Number(t.replace(/[^0-9.]/g, ''));
-    if (Number.isFinite(w) && w > 0) {
-      return { weeks: BLOCK_LENGTHS.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a)) };
-    }
+  /*
+   * ⚠ EXACT OR NOTHING (stress test 2026-09-21). This runs BEFORE the model, so anything it places the
+   * model never sees — and it placed 163 of 756 short probes wrongly: "0" weekly miles → 8 (a substring of
+   * "5 to 10 miles"), "no" → advanced, "not sure" → no limitations, "1 hour" → 30 minutes, "in 3 months"
+   * → a race in 3 weeks, and a typed date crashed `isoInWeeks`. So it now places only what cannot be
+   * misread, and hands everything else to the model (or asks again, offline).
+   */
+  // Two numbers ("3-4", "45 to 60", "2 or 3") is a question back, not an answer.
+  if (/\d\s*(-|–|to|or)\s*\d/.test(t)) return null;
+  // A date ("11/15", "2026-11-01") is not a count of anything.
+  if (/\d+\s*[/-]\s*\d+/.test(t)) return null;
+  const numMatch = t.match(/^(?:about\s+|like\s+|maybe\s+|~)?(\d+(?:\.\d+)?)\s*([a-z]*)\s*[.!]*$/);
+  const n = numMatch ? Number(numMatch[1]) : NaN;
+  const unit = numMatch?.[2] ?? '';
+
+  if (q.id === 'size' && Number.isFinite(n) && n > 0 && /^(|w|wk|wks|week|weeks)$/.test(unit)) {
+    return { weeks: BLOCK_LENGTHS.reduce((a, b) => (Math.abs(b - n) < Math.abs(a - n) ? b : a)) };
   }
 
-  // An exact or contained chip label is the common case: people type what they see.
+  // The label typed as shown, or a sentence that contains it. NOT the label containing what was typed —
+  // that direction is how "a" became "General health" and "0" became "5 to 10 miles".
+  // "Shoulders and knees" is two answers to a question that takes several. Hand it over whole.
+  const several = /,|&|\+|\band\b|\balso\b|\bplus\b/.test(t);
   for (const c of q.chips) {
+    // A chip whose meaning is not in its patch (the day-focus taps carry `focus`, "Run a race" narrows
+    // the question) cannot be answered by typing its name: `{}` advances nothing and re-asks forever.
+    if (Object.keys(c.patch).length === 0) continue;
     const label = c.label.toLowerCase();
-    if (t === label || label.includes(t) || t.includes(label)) return c.patch;
+    // …and only when little else was said. "4 days, about an hour, at the Y" is three answers; taking one
+    // and dropping two is worse than letting the model hear all of it.
+    if (t === label || (!several && label.length >= 4 && t.includes(label) && t.length <= label.length + 10)) return c.patch;
   }
 
-  // A bare number answers the two questions that are counts, and nothing else. Scoped to the question on
-  // the table so "4" cannot mean four days on one turn and four miles on the next.
-  const n = Number(t.replace(/[^0-9.]/g, ''));
-  if (Number.isFinite(n) && n > 0) {
-    if (q.id === 'days' && n >= 2 && n <= 6) return { daysPerWeek: Math.round(n) };
-    if (q.id === 'time') {
-      const nearest = [30, 45, 60, 75].reduce((a, b) => (Math.abs(b - n) < Math.abs(a - n) ? b : a));
-      return { sessionMinutes: nearest as CoachConstraints['sessionMinutes'] };
+  // A bare number, scoped to the question on the table so "4" cannot mean four days on one turn and four
+  // miles on the next. A unit the question does not use (hours on a miles question) is not an answer.
+  if (Number.isFinite(n)) {
+    if (q.id === 'days' && n >= 2 && n <= 6 && /^(|d|day|days|x)$/.test(unit)) return { daysPerWeek: Math.round(n) };
+    if (q.id === 'time' && n > 0) {
+      // A bare 1 or 1.5 is hours; a bare 7 or 10 is neither an hour count nor a real session length.
+      const bareHours = unit === '' && n <= 3;
+      const bareUnclear = unit === '' && n > 3 && n < 15;
+      const minutes = /^(h|hr|hrs|hour|hours)$/.test(unit) || bareHours ? n * 60
+        : bareUnclear ? NaN
+        : /^(|m|min|mins|minute|minutes)$/.test(unit) ? n : NaN;
+      if (Number.isFinite(minutes)) {
+        const nearest = [30, 45, 60, 75].reduce((a, b) => (Math.abs(b - minutes) < Math.abs(a - minutes) ? b : a));
+        return { sessionMinutes: nearest as CoachConstraints['sessionMinutes'] };
+      }
     }
-    if (q.id === 'race_base') return { currentWeeklyMi: n };
-    if (q.id === 'race_when') return { raceDate: isoInWeeks(Math.round(n)) };
+    // 0 is a real answer here — the one question where it is the most common one.
+    if (q.id === 'race_base' && n >= 0 && n <= 150 && /^(|mi|mile|miles)$/.test(unit)) return { currentWeeklyMi: n };
+    if (q.id === 'race_when' && n > 0 && n <= 104 && /^(|w|wk|wks|week|weeks)$/.test(unit)) return { raceDate: isoInWeeks(Math.round(n)) };
   }
 
-  if (q.id === 'limits' && /^(no|none|nothing|nope|all good|i'm fine)/.test(t)) return { limitations: [] };
+  // The WHOLE answer is a no. "no running" starts with "no" and means the opposite of nothing, and "not
+  // sure" is not an answer at all.
+  if (q.id === 'limits' && /^(no|none|nothing|nope|nah|all good|i'?m fine|i'?m good|n\/a)[.! ]*$/.test(t)) return { limitations: [] };
 
   return null;
+}
+
+/**
+ * Is this a question to ANSWER, rather than a request to build or change something?
+ *
+ * Decides which Holt a typed line reaches: a question streams from `coach-ask` in his own words; anything
+ * else goes to `coach-interpret`, which fills fields for the engine. One call either way — routing a
+ * question through the parser first and then asking would pay twice for every "how much should I bench?".
+ *
+ * ⚠ A request phrased as a question ("can you make me a 4 day program?", "could you swap my bench?") is a
+ * REQUEST — the build and edit verbs win over the question mark.
+ */
+const BUILD_OR_CHANGE =
+  /\b(make|build|create|write|design|give|put\s+together)\s+(me\s+)?([\w-]+\s+){0,4}(program|plan|routine|split|block|workout|session)s?\b|\b(swap|replace|switch|change|move|skip|add|remove|drop|shorten|extend|reschedule)\b/i;
+const QUESTION_START =
+  /^(how|what|what's|whats|why|when|where|which|who|should|shall|can|could|is|are|am|do|does|did|will|would|was|were|explain|tell me|help me understand|any tips|thoughts on)\b/i;
+
+export function looksLikeQuestion(text: string): boolean {
+  const t = text.trim();
+  if (!t) return false;
+  if (BUILD_OR_CHANGE.test(t)) return false;
+  return /\?\s*$/.test(t) || QUESTION_START.test(t);
 }
 
 /** Holt's line when he could not place an answer. Asks again; never guesses. */
@@ -953,6 +1053,14 @@ export const OPENERS: string[] = [
    * what the app does; this is the thing somebody is about to say.
    */
   'Which one should I pick?',
+  /*
+   * ⚠ A SEVENTH DOOR, AND IT LEAVES THE CONVERSATION (2026-09-22). Filming a set needs the camera, and
+   * `useMediaPicker` cannot present over a sheet that is still dismissing — so this one hands off to
+   * `/form-check` rather than growing a camera inside Holt. It is an opener like the rest because
+   * `chat-core.test.mjs` holds Home's tiles and OPENERS equal: a capability with no door on Home is a
+   * capability nobody finds.
+   */
+  'Check my form',
   'How do I…?',
 ];
 
@@ -963,6 +1071,8 @@ export type OpenerAction =
   | { kind: 'edit' }
   /** Read the shelf. Ends in somebody else's program, or in an honest no — never in a build. */
   | { kind: 'pick' }
+  /** Film a set. Leaves for `/form-check` — the camera cannot open over this sheet. */
+  | { kind: 'form' }
   | { kind: 'help' };
 
 export function fromOpener(label: string): OpenerAction | null {
@@ -981,6 +1091,8 @@ export function fromOpener(label: string): OpenerAction | null {
       return { kind: 'import' };
     case 'Which one should I pick?':
       return { kind: 'pick' };
+    case 'Check my form':
+      return { kind: 'form' };
     case 'How do I…?':
       return { kind: 'help' };
     default:
@@ -1102,7 +1214,7 @@ export const HOME_CARDS: readonly HomeCard[] = [
 /** The two quiet rows under the cards. Same contract: `opener` must be an `OPENERS` member. */
 export interface HomeRow {
   /** Which glyph the 26×26 outlined container holds — a rounded square, a circle, or the shelf. */
-  icon: 'document' | 'question' | 'shelf';
+  icon: 'document' | 'question' | 'shelf' | 'camera';
   label: string;
   opener: string;
 }
@@ -1124,6 +1236,7 @@ export const HOME_ROWS: readonly HomeRow[] = [
   /* ⚠ IT SAYS THE QUESTION, NOT A DESCRIPTION OF THE QUESTION (PO, 2026-08-14). "Ask Holt something"
      is a category; "How do I…" is the sentence somebody is actually about to finish, and it is the same
      words the topics themselves answer. */
+  { icon: 'camera', label: 'Check my form', opener: 'Check my form' },
   { icon: 'question', label: 'How do I…', opener: 'How do I…?' },
 ];
 
@@ -1193,8 +1306,9 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
   },
   {
     q: 'Import a program',
-    a: "Paste it into the Program Builder — a table, a spreadsheet, a plan somebody wrote out. I'll read the weeks out of it and show you what I found before anything is saved.",
-    route: '/program-builder?o=import',
+    a: "Open Build a Program and paste it in — a table, a spreadsheet, a plan somebody wrote out — or upload pictures of it. I'll read the weeks out of it and show you what I found before anything is saved.",
+    /* Build a Program's chooser, like every other door into building (PO, 2026-09-22). */
+    route: '/program-guided',
     cta: 'Import one',
   },
   /*
@@ -1439,7 +1553,7 @@ function daysOfWeek(structure: Partial<ProgramStructure> & { daysPerWeek: number
 export function programCardFor(
   c: CoachConstraints,
   structure: Partial<ProgramStructure> & { name: string; weeks: number; daysPerWeek: number },
-  volume: { mileage: number; longRunMi: number }[],
+  volume: { mileage: number; longRunMi: number; minutes?: number }[],
   rationale: string,
 ): ProgramCard {
   const endurance = isEnduranceGoal(c.goal);
@@ -1451,7 +1565,13 @@ export function programCardFor(
   ];
 
   if (endurance && c.raceDate) stats.push({ value: shortDate(c.raceDate), label: 'RACE DAY' });
-  if (volume.length) {
+  /* A triathlon is measured in TIME — its week is swim, bike and run, and a run-mileage peak on its card
+     described a curve the plan does not follow (the week composer reads `minutes`). */
+  const triMinutes = volume.map((v) => v.minutes).filter((m): m is number => m != null);
+  if (triMinutes.length) {
+    const peak = Math.max(...triMinutes);
+    stats.push({ value: `${Math.floor(peak / 60)}h ${String(Math.round(peak % 60)).padStart(2, '0')}m`, label: 'PEAK WEEK' });
+  } else if (volume.length) {
     stats.push({ value: `${Math.round(Math.max(...volume.map((v) => v.mileage)))} mi`, label: 'PEAK WEEK' });
     stats.push({ value: `${Math.max(...volume.map((v) => v.longRunMi))} mi`, label: 'LONGEST RUN' });
   }
@@ -1541,16 +1661,22 @@ function prescriptionText(e: { sets?: number; reps?: number | null; per?: string
  */
 export function refusalCardFor(goal: Goal, weeksAvailable: number, daysPerWeek: number, message: string): RefusalCard | null {
   if (!isEnduranceGoal(goal)) return null;
-  const spec = RACE_SPEC[goal];
-  if (!spec.fallback) return null;
-  const alt = RACE_SPEC[spec.fallback];
+  /* ⚠ THE RACE COMES OUT OF THE MESSAGE, NOT OUT OF `RACE_SPEC[goal].fallback`. The card used to take
+     one step down the table by itself, so under "Let's start with the 5K" it offered the 10K — and the
+     10K refused when tapped, for the same reason the half had (14,976 of 14,976 cannot-run refusals in
+     the 2026-09-21 sweep). The rulebook only writes an offer for a race that would build, and
+     `counterOfferIn` reads that offer back — so a message that offers nothing (a no-running refusal, a
+     calendar too short for anything) gets no card, and a card never names a race the text did not. */
+  const altGoal = counterOfferIn(message);
+  if (!altGoal || altGoal === goal) return null;
+  const alt = RACE_SPEC[altGoal];
   return {
     title: capitalise(alt.label),
     meta: `${weeksAvailable} weeks · ${daysPerWeek} days · race day intact`,
     body: message,
     primary: `Build the ${alt.label}`,
     secondary: 'Pick another race',
-    altGoal: spec.fallback,
+    altGoal,
   };
 }
 
@@ -1634,6 +1760,24 @@ export const STOP_KICKER = 'OUT OF MY LANE';
 export const MEDICAL_STOP =
   "That's a physio's job, not mine. Get it looked at — I'll still be here after.";
 
+/*
+ * ⛔ THREE STOPS THAT ARE NOT A PHYSIO REFERRAL (stress test 2026-09-21). "That's a physio's job" was the
+ * only stop copy, and it went to "I want to hurt myself" and to chest pain mid-set. Routed by
+ * `medicalRoute()` — 'crisis', 'urgent', 'care' — in code, before any model.
+ *
+ * ⚠ DRAFT COPY, AWAITING PO SIGN-OFF. 988 is the US Suicide & Crisis Lifeline and 911 US emergency; an
+ * athlete outside the US needs their local numbers, which the app does not yet know.
+ */
+export const CRISIS_KICKER = 'I HEAR YOU';
+export const CRISIS_STOP =
+  "I'm really glad you told me. This is bigger than training, and you deserve support right now. In the US you can call or text 988, any time, free. If you're in danger, call 911. I'll be here when you're ready.";
+export const URGENT_KICKER = 'STOP TRAINING';
+export const URGENT_STOP =
+  "Stop now. Chest pain, fainting, trouble breathing, a sudden bad headache — that needs help right away. Call 911 or get to an emergency room. Don't wait on it.";
+export const CARE_KICKER = 'NOT THIS ONE';
+export const CARE_STOP =
+  "I can't build around that one safely. A doctor or a registered dietitian is the right person for it, and I'd want them in your corner. When you're ready, I'll build you training that makes you stronger.";
+
 /**
  * ⛔ THE CHAT IS UNLIMITED. PO decision, 2026-08-09.
  *
@@ -1704,11 +1848,12 @@ const capitalise = (t: string) => t.replace(/^./, (ch) => ch.toUpperCase());
  */
 
 /** The weekly mileage curve behind an endurance card. Empty for everything else, which is not a failure. */
-export function volumeFor(c: CoachConstraints, weeks: number): { mileage: number; longRunMi: number }[] {
+export function volumeFor(c: CoachConstraints, weeks: number): { mileage: number; longRunMi: number; minutes?: number }[] {
   if (!isEnduranceGoal(c.goal)) return [];
   return weeklyVolumePlan({ goal: c.goal, weeks, startMi: c.currentWeeklyMi ?? 0 }).map((v) => ({
     mileage: v.mileage,
     longRunMi: v.longRunMi,
+    ...(v.minutes != null ? { minutes: v.minutes } : {}),
   }));
 }
 
@@ -1750,7 +1895,8 @@ export function completeFor(c: Partial<CoachConstraints>, mode: 'program' | 'day
     ...c,
     goal: c.goal ?? 'strength',
     experience: c.experience ?? { lifting: 'intermediate', running: 'intermediate' },
-    daysPerWeek: c.daysPerWeek ?? 4,
+    // `isCount`, not `??` — NaN is not nullish, and it reached the preamble as "NaN days" (`constraints.ts`).
+    daysPerWeek: isCount(c.daysPerWeek) ? c.daysPerWeek : DEFAULT_DAYS_PER_WEEK,
     // A race never asks this — a long run is as long as it is. 60 keeps the validator honest.
     sessionMinutes: c.sessionMinutes ?? 60,
     environment: c.environment ?? (mode === 'program' && c.goal && isEnduranceGoal(c.goal) ? 'outdoor' : 'full_gym'),

@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, SectionList, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -68,7 +68,10 @@ function TypeIcon({ type, size = 22, color }: { type: Modality; size?: number; c
 export default function ActivityHistoryScreen() {
   const router = useRouter();
   const [filter, setFilter] = useState<ActivityFilter>('all');
-  const { data, loading, error } = useQuery(() => fetchActivityHistory(), []);
+  const { data, settled, error, refetch } = useQuery(() => fetchActivityHistory(), []);
+  /* Refetched on focus: "Log" below opens `/log-activity` over this screen, and the bout it records has
+     to be in the list the moment it closes — a `[]` query would show it next time the screen mounts. */
+  useFocusEffect(useCallback(() => refetch(), [refetch]));
 
   const records = data ?? [];
   const groups = groupByMonth(records, filter);
@@ -78,7 +81,26 @@ export default function ActivityHistoryScreen() {
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate2} overlay={{ flat: 'rgba(0,0,0,0.5)' }} />
 
-      <AppBar title="Activity History" onBack={() => router.back()} />
+      {/* ⚠ "LOG" LIVES HERE NOW (Workouts restructure, 2026-09-22). Recording a run, walk, ride, row or
+          swim you ALREADY did was a row in the Workouts `+` sheet — the only door to `/log-activity` in
+          the app. That sheet became Create New, which is about making things, so the door moved to the
+          screen that lists what you've logged rather than being dropped with the sheet. */}
+      <AppBar
+        title="Activity History"
+        onBack={() => router.back()}
+        actions={
+          <Pressable
+            onPress={() => router.push('/log-activity')}
+            accessibilityRole="button"
+            accessibilityLabel="Log an activity you already did"
+            hitSlop={8}
+            style={({ pressed }) => [styles.logBtn, pressed ? { opacity: 0.7 } : null]}
+          >
+            <Glyph size={16} color={flColor.bronze400}><Path d="M12 5v14M5 12h14" /></Glyph>
+            <Text style={styles.logBtnText}>Log</Text>
+          </Pressable>
+        }
+      />
 
       {/* type filter — All + every modality the app can actually log, single-select */}
       <View style={styles.chipStrip}>
@@ -96,7 +118,7 @@ export default function ActivityHistoryScreen() {
         </ScrollView>
       </View>
 
-      {loading ? (
+      {!settled ? (
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -232,6 +254,8 @@ function SessionRow({ record, onPress }: { record: ActivityRecord; onPress: () =
 }
 
 const styles = StyleSheet.create({
+  logBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 6 },
+  logBtnText: { fontSize: 14, fontWeight: '600', color: flColor.bronze400 },
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34 },
 

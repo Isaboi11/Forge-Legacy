@@ -83,6 +83,8 @@ Plus one informational, non-toggle line (squad members always have visibility wi
 
 ## Section 4 — Visibility Rules Matrix
 
+> ⚠ **AMENDED 2026-09-21 — nutrition rows added** by `Amendments/P-6-Amendment-002-Nutrition-Data.md` § 3: food log, targets, preferences, meal photos (in a private bucket) and the athlete's own recipes are private, controlled by schema, with no toggle.
+
 | Content | Default Visibility | Squad Members See | Outside Users See | Controlled By |
 |---|---|---|---|---|
 | Username / search (non-squad) | Searchable | N/A — always visible to squad regardless of setting | Per setting #1 | P-6 (Identity-owned field) |

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="forge-user.js"></script>
+<script src="forge-chapters.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  @keyframes flRise { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="L-2 Legacy Timeline" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/legacy-bg.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Timeline" serif="{{ true }}" on-back="{{ goLegacy }}" hint-size="100%,56px"></x-import>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:0 24px 8px;">
+
+        <!-- intro -->
+        <div style="padding:12px 2px 2px;">
+          <span style="display:block; font-size:12px; font-weight:600; letter-spacing:2.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Every mark. In order.</span>
+        </div>
+
+        <!-- the timeline · one continuous rail -->
+        <div style="position:relative; padding:22px 0 8px;">
+          <span aria-hidden="true" style="position:absolute; left:15px; top:10px; bottom:24px; width:1px; background:linear-gradient(180deg, var(--fl-bronze-border) 0%, var(--fl-bronze-border-subtle) 88%, transparent 100%);"></span>
+
+          <div style="position:relative; display:flex; flex-direction:column;">
+            <sc-for list="{{ nodes }}" as="n" hint-placeholder-count="10">
+              <sc-if value="{{ n.isYear }}" hint-placeholder-val="{{ false }}">
+                <div style="position:sticky; top:0; z-index:6; display:flex; align-items:center; gap:14px; padding:12px 0 8px; background:linear-gradient(180deg, rgba(8,10,12,0.94) 60%, rgba(8,10,12,0));">
+                  <span style="width:31px; flex:none; display:flex; justify-content:center;"><span style="width:9px; height:9px; transform:rotate(45deg); border:1px solid var(--fl-bronze-border); background:var(--fl-bg-primary); box-shadow:0 0 0 4px rgba(8,11,14,0.7);"></span></span>
+                  <span style="font-family:var(--fl-font-display); font-size:14px; font-weight:700; letter-spacing:3px; color:var(--fl-text-secondary);">{{ n.year }}</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ n.isHeader }}" hint-placeholder-val="{{ true }}">
+                <div role="button" tabindex="0" onClick="{{ n.open }}" style="display:flex; align-items:center; gap:14px; padding:16px 2px 12px; cursor:pointer; transition:opacity 200ms var(--fl-ease-out, ease-out);" style-hover="opacity:0.82;">
+                  <span style="width:31px; height:31px; flex:none; z-index:1; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; background:var(--fl-bronze-metallic); box-shadow:0 0 0 4px rgba(8,11,14,0.7), var(--fl-glow-badge); color:#160f06;">{{ n.marker }}</span>
+                  <div style="flex:0 1 auto; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                    <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ n.name }}</span>
+                    <span style="display:inline-flex; align-items:center; gap:8px; font-size:11px; color:var(--fl-text-tertiary);">
+                      <span style="display:inline-flex; align-items:center; gap:5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:{{ n.statusColor }};">{{ n.statusDot }}{{ n.status }}</span>
+                      <span>{{ n.range }}</span>
+                    </span>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-left:4px;"><path d="M9 5l7 7-7 7"></path></svg>
+                </div>
+              </sc-if>
+              <sc-if value="{{ n.isEvent }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; align-items:center; gap:14px; padding:7px 2px;">
+                  <sc-if value="{{ n.isMedia }}" hint-placeholder-val="{{ false }}">
+                    <span style="position:relative; width:31px; height:31px; flex:none; z-index:1; border-radius:var(--fl-radius-sm); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle); box-shadow:0 0 0 4px rgba(8,11,14,0.7);">
+                      <image-slot id="{{ n.mediaId }}" shape="rect" placeholder="" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                      <sc-if value="{{ n.isVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(8,11,14,0.35);"><svg width="10" height="10" viewBox="0 0 24 24" style="margin-left:1px;"><path d="M9 7.5l8 4.5-8 4.5z" fill="var(--fl-bronze-bright)"></path></svg></span></sc-if>
+                    </span>
+                  </sc-if>
+                  <sc-if value="{{ n.isGlyph }}" hint-placeholder-val="{{ true }}">
+                    <span style="width:31px; height:31px; flex:none; z-index:1; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; border:1px solid {{ n.nodeBorder }}; background:var(--fl-surface-recessed); color:{{ n.nodeColor }}; box-shadow:0 0 0 4px rgba(8,11,14,0.7){{ n.nodeGlow }};">{{ n.glyph }}</span>
+                  </sc-if>
+                  <div style="flex:0 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:14px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ n.title }}</span>
+                    <sc-if value="{{ n.hasSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:11.5px; color:var(--fl-text-tertiary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ n.sub }}</span></sc-if>
+                  </div>
+                  <span style="flex:none; margin-left:auto; font-size:11px; color:var(--fl-text-tertiary);">{{ n.date }}</span>
+                </div>
+              </sc-if>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- origin cap -->
+        <div style="display:flex; align-items:center; gap:14px; padding:4px 2px 10px;">
+          <span style="width:31px; display:flex; justify-content:center; flex:none;"><span style="width:7px; height:7px; border-radius:50%; background:var(--fl-charcoal-500);"></span></span>
+          <span style="font-size:11.5px; font-style:italic; font-family:var(--fl-font-display); color:var(--fl-text-tertiary);">Where it began.</span>
+        </div>
+
+        <div style="padding:20px 2px 24px; display:flex; flex-direction:column; align-items:center; gap:14px;">
+          <div style="display:flex; align-items:center; gap:14px; width:100%; max-width:220px;">
+            <span style="flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--fl-bronze-border));"></span>
+            <span style="width:6px; height:6px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary);"></span>
+            <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-border), transparent);"></span>
+          </div>
+          <span style="font-family:var(--fl-font-display); font-style:italic; font-size:15px; line-height:1.45; text-align:center; color:var(--fl-bronze-bright); max-width:250px; text-wrap:pretty;">History cannot be rewritten.</span>
+        </div>
+
+      </div>
+
+    </sc-if>
+
+    <!-- grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      const cd = typeof window !== 'undefined' && window.ForgeChapters;
+      if (r && ns && fs && cd) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  _openChapter(id, stateVal) {
+    try {
+      window.localStorage.setItem('forge.chapter.id', id);
+      window.localStorage.setItem('forge.chapter.state', stateVal);
+    } catch (e) {}
+    window.location.href = 'Forge%20Chapter%20Detail.dc.html';
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true };
+    }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const ico = (id, size, sw) => FS.create(React, id, { size: size || 15, strokeWidth: sw || 1.7 });
+    // custom glyphs for the event types ForgeSymbols doesn't cover
+    const goalGlyph = h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 12, r: 8 }), h('circle', { cx: 12, cy: 12, r: 3.5 }));
+    const photoGlyph = h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 3.5, y: 6, width: 17, height: 13, rx: 2 }), h('circle', { cx: 12, cy: 12.5, r: 3 }), h('path', { d: 'M8 6l1.3-2h5.4L16 6' }));
+    const starGlyph = h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M12 3l2.6 5.8 6.4.6-4.8 4.3 1.4 6.3L12 19.4 6.4 20.3l1.4-6.3L3 9.7l6.4-.6z' }));
+
+    // 10 canonical event types → glyph
+    const GLYPH = {
+      'chapter-open': ico('book', 15, 1.7),
+      'chapter-seal': ico('flame', 15, 1.7),
+      'rank': ico('shield', 15, 1.7),
+      'honor': ico('laurel', 15, 1.7),
+      'goal': goalGlyph,
+      'pr': ico('spark', 15, 1.7),
+      'program-start': ico('dumbbell', 15, 1.7),
+      'program-grad': ico('medal', 15, 1.7),
+      'accomplishment': starGlyph,
+      'photo': photoGlyph,
+    };
+    const gl = (t) => GLYPH[t] || GLYPH['pr'];
+    const onlineDot = h('span', { style: { width: '6px', height: '6px', borderRadius: '50%', background: 'var(--fl-status-online)', boxShadow: 'var(--fl-status-online-glow)', display: 'inline-block' } });
+
+    const MAJOR = { 'chapter-open': true, 'chapter-seal': true, 'goal': true, 'rank': true };
+    const tenure = window.ForgeUser ? window.ForgeUser.tenure() : 'y3';
+    const raw = window.ForgeChapters.timelineFor(tenure);
+
+    const mkEvent = (e, k) => {
+      const major = !!MAJOR[e.type];
+      const isMedia = e.type === 'photo' || e.type === 'video';
+      return { key: k, isEvent: true, isHeader: false, isYear: false, title: e.title, sub: e.sub || '', hasSub: !!(e.sub && e.sub.length), date: e.date, year: e.year,
+        glyph: gl(e.type), isMedia, isGlyph: !isMedia, isVideo: e.type === 'video', mediaId: e.mediaId || '',
+        nodeColor: major ? 'var(--fl-bronze-bright)' : 'var(--fl-icon-bronze)', nodeBorder: major ? 'var(--fl-bronze-border)' : 'var(--fl-bronze-border-subtle)', nodeGlow: major ? ', var(--fl-glow-subtle)' : '' };
+    };
+    // Flatten to a scroll-ordered node stream, dropping a sticky year divider the first
+    // time the year changes — the read-only multi-year scroll affordance.
+    let lastYear = null;
+    const nodes = [];
+    raw.forEach((g, gi) => {
+      const evs = g.events.map((e, j) => mkEvent(e, 'e' + gi + '-' + j));
+      const headYear = evs.length ? evs[0].year : null;
+      if (headYear != null && headYear !== lastYear) { nodes.push({ key: 'yh' + gi, isYear: true, isHeader: false, isEvent: false, year: String(headYear) }); lastYear = headYear; }
+      nodes.push({ key: 'h' + gi, isHeader: true, isYear: false, isEvent: false, name: g.name, status: g.status, range: g.summary,
+        statusColor: g.active ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)',
+        statusDot: g.active ? onlineDot : h('span', { style: { display: 'inline-flex' } }, ico('flame', 10, 1.9)),
+        marker: g.active ? h('span', { style: { display: 'inline-flex' } }, ico('book', 15, 1.9)) : h('span', { style: { display: 'inline-flex' } }, ico('flame', 15, 1.9)),
+        open: () => this._openChapter(g.id, g.active ? 'active' : 'archived') });
+      evs.forEach((e) => {
+        if (e.year !== lastYear) { nodes.push({ key: 'y' + e.key, isYear: true, isHeader: false, isEvent: false, year: String(e.year) }); lastYear = e.year; }
+        nodes.push(e);
+      });
+    });
+
+    return {
+      ready: true, notReady: false,
+      nodes,
+      goLegacy: () => { window.location.href = 'Forge%20Legacy.dc.html'; },
+    };
+  }
+}
+</script>
+</body>
+</html>

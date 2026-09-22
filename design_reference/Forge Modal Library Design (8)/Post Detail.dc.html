@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-communities.js"></script>
+  <script src="forge-community-posts.js"></script>
+  <script src="forge-squad-posts.js"></script>
+  <script src="forge-friends-posts.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .pd-input { width:100%; font-family:var(--fl-font-sans); font-size:14px; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-pill); padding:11px 15px; outline:none; transition:border-color 160ms ease; }
+  .pd-input:focus { border-color:var(--fl-bronze-border); background:var(--fl-charcoal-800); }
+  .pd-input::placeholder { color:var(--fl-text-tertiary); }
+  image-slot::part(ring) { border-color: var(--fl-bronze-border); }
+  image-slot::part(empty) { color: var(--fl-text-tertiary); font-size: 10px; }
+  @keyframes pdRise { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+  @keyframes pdFade { from { opacity:0; } to { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="{{ screenLabel }}" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.32), rgba(5,5,5,0.32)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <!-- APP BAR -->
+    <div style="flex:none; position:relative; z-index:6; display:flex; align-items:center; gap:10px; padding:14px 14px; border-bottom:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(9,9,9,0.9), rgba(7,7,7,0.82));">
+      <button type="button" onClick="{{ goBack }}" aria-label="Back" style="width:36px; height:36px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); color:var(--fl-text-primary); cursor:pointer;">{{ backIcon }}</button>
+      <span style="flex:1; min-width:0; font-family:var(--fl-font-display); font-size:17px; font-weight:600; color:var(--fl-text-primary);">{{ title }}</span>
+      <button type="button" onClick="{{ openOverflow }}" aria-label="Post options" style="width:36px; height:36px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); color:var(--fl-text-primary); cursor:pointer;">{{ overflowIcon }}</button>
+    </div>
+
+    <!-- SOURCE CONTEXT BAR -->
+    <div style="flex:none; display:flex; align-items:center; gap:11px; padding:11px 15px; border-bottom:1px solid var(--fl-charcoal-800); background:{{ srcBg }};">
+      <span style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:{{ srcRadius }}; background:{{ srcTint }}; border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright); box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);">{{ srcIcon }}</span>
+      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+        <span style="font-size:13.5px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ srcName }}</span>
+        <span style="font-size:11px; color:var(--fl-text-tertiary);">{{ srcSub }}</span>
+      </div>
+      <span style="flex:none; padding:3px 9px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700); font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ srcTag }}</span>
+    </div>
+
+    <!-- SCROLL -->
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto;">
+
+      <div style="padding:16px 18px 4px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="width:44px; height:44px; flex:none; border-radius:var(--fl-radius-round); background:{{ post.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; gap:7px;">
+              <span style="font-size:15px; font-weight:500; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ post.author }}</span>
+              <sc-if value="{{ post.hasRole }}" hint-placeholder-val="{{ false }}">
+                <span style="{{ post.roleStyle }}">{{ post.roleIcon }}{{ post.roleLabel }}</span>
+              </sc-if>
+            </div>
+            <span style="font-size:12px; color:var(--fl-text-tertiary);">{{ post.time }}</span>
+          </div>
+          <sc-if value="{{ post.showTypePill }}" hint-placeholder-val="{{ true }}">
+            <span style="flex:none; display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700); font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ post.typeIcon }}</span>{{ post.typeLabel }}</span>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ post.hasChallengeLine }}" hint-placeholder-val="{{ false }}">
+          <div style="display:inline-flex; align-items:center; gap:6px; margin-top:12px; padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:11px; font-weight:600; color:var(--fl-bronze-bright);">{{ challengeIcon }}{{ post.challengeText }}</div>
+        </sc-if>
+
+        <sc-if value="{{ post.hasBody }}" hint-placeholder-val="{{ true }}">
+          <span style="display:block; font-size:15.5px; line-height:1.55; color:var(--fl-text-primary); margin-top:13px;">{{ post.body }}</span>
+        </sc-if>
+
+        <!-- ACHIEVEMENT / PR -->
+        <sc-if value="{{ post.hasAchievement }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px; position:relative; height:220px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); overflow:hidden; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle at 50% 42%, rgba(191,143,79,0.32), rgba(23,17,11,0.96) 68%), var(--fl-surface-recessed);">
+            <div style="position:absolute; inset:0; opacity:0.5; background:radial-gradient(circle at 50% 42%, transparent 34%, rgba(0,0,0,0.5) 72%);"></div>
+            <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
+              <span style="font-family:var(--fl-font-display); font-size:64px; font-weight:700; letter-spacing:1px; color:var(--fl-bronze-bright); line-height:1; text-shadow:0 3px 26px rgba(191,143,79,0.55), 0 1px 0 rgba(0,0,0,0.5);">{{ post.achValue }}</span>
+              <span style="margin-top:10px; font-family:var(--fl-font-display); font-size:18px; font-weight:600; color:var(--fl-text-primary);">{{ post.achExercise }}</span>
+              <span style="margin-top:9px; font-size:10px; font-weight:600; letter-spacing:2.5px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ post.achLabel }}</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- HONOR / PROGRAM PLATE (friend milestone) -->
+        <sc-if value="{{ post.hasHonor }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px; position:relative; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); overflow:hidden; background:radial-gradient(130% 110% at 12% 0%, rgba(191,143,79,0.14), transparent 60%), var(--fl-surface-recessed);">
+            <div style="display:flex; align-items:center; gap:14px; padding:18px 16px;">
+              <span style="width:56px; height:56px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 50% 32%, rgba(191,143,79,0.26), transparent 72%), var(--fl-charcoal-900); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright); box-shadow:var(--fl-glow-subtle);">{{ post.honorIcon }}</span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-size:9.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ post.honorLabel }}</span>
+                <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-text-primary); line-height:1.1;">{{ post.honorTitle }}</span>
+                <sc-if value="{{ post.hasHonorSub }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size:12px; color:var(--fl-text-secondary);">{{ post.honorSub }}</span>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- MEDIA -->
+        <sc-if value="{{ post.hasMedia }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px; position:relative; height:230px; border-radius:var(--fl-radius-md); overflow:hidden; border:1px solid var(--fl-charcoal-700);">
+            <image-slot id="{{ post.mediaId }}" shape="rect" placeholder="{{ post.mediaPlaceholder }}" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+            <sc-if value="{{ post.isVideo }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; background:linear-gradient(180deg, rgba(5,5,5,0.1), rgba(5,5,5,0.35));">
+                <span style="width:56px; height:56px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.55); border:1px solid rgba(255,255,255,0.25); color:#fff;">{{ playIcon }}</span>
+              </div>
+              <span style="position:absolute; top:11px; left:11px; display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.6); border:1px solid var(--fl-charcoal-600); font-size:10px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; color:var(--fl-bronze-bright);">Video · {{ post.mediaDur }}</span>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- EVENT -->
+        <sc-if value="{{ post.hasEvent }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border-subtle); background:radial-gradient(130% 100% at 12% 0%, rgba(191,143,79,0.08), transparent 60%), var(--fl-surface-recessed); overflow:hidden;">
+            <div style="display:flex; align-items:center; gap:13px; padding:14px;">
+              <span style="width:52px; height:56px; flex:none; display:inline-flex; flex-direction:column; align-items:center; justify-content:center; border-radius:var(--fl-radius-sm); background:var(--fl-charcoal-900); border:1px solid var(--fl-bronze-border);"><span style="font-size:9px; font-weight:700; letter-spacing:1px; color:var(--fl-bronze-bright); text-transform:uppercase;">{{ post.evMonth }}</span><span style="font-family:var(--fl-font-display); font-size:23px; font-weight:700; color:var(--fl-text-primary); line-height:1;">{{ post.evDay }}</span></span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary);">{{ post.evTitle }}</span>
+                <span style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--fl-text-secondary);"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ clockIcon }}</span>{{ post.evWhen }}</span>
+                <span style="font-size:11.5px; color:var(--fl-text-tertiary); margin-top:1px;">{{ post.evGoing }} going</span>
+              </div>
+            </div>
+            <button type="button" onClick="{{ post.onRsvp }}" style="{{ post.rsvpStyle }}">{{ post.rsvpLabel }}</button>
+          </div>
+        </sc-if>
+
+        <!-- POLL -->
+        <sc-if value="{{ post.hasPoll }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px; display:flex; flex-direction:column; gap:9px;">
+            <sc-for list="{{ post.pollOptions }}" as="o" hint-placeholder-count="3">
+              <button type="button" onClick="{{ o.vote }}" style="{{ o.style }}">
+                <span style="position:absolute; inset:0; width:{{ o.pct }}; background:var(--fl-bronze-tint); border-right:1px solid var(--fl-bronze-border-subtle); transition:width 320ms var(--fl-ease-out);"></span>
+                <span style="position:relative; display:flex; align-items:center; gap:8px; z-index:1;"><sc-if value="{{ o.chosen }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex; color:var(--fl-bronze-bright);">{{ checkIcon }}</span></sc-if>{{ o.text }}</span>
+                <span style="position:relative; z-index:1; font-size:12.5px; font-weight:700; color:{{ o.pctColor }};">{{ o.pctLabel }}</span>
+              </button>
+            </sc-for>
+            <span style="font-size:11.5px; color:var(--fl-text-tertiary); margin-top:2px;">{{ post.pollFoot }}</span>
+          </div>
+        </sc-if>
+
+        <!-- PROGRAM -->
+        <sc-if value="{{ post.hasProgram }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:radial-gradient(130% 110% at 12% 0%, rgba(191,143,79,0.1), transparent 58%), var(--fl-surface-recessed); overflow:hidden;">
+            <div style="display:flex; align-items:center; gap:7px; padding:8px 14px; border-bottom:1px solid var(--fl-bronze-border-subtle); background:rgba(191,143,79,0.05);">
+              <span style="display:inline-flex; color:var(--fl-bronze-bright);">{{ post.programKindIcon }}</span>
+              <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ post.programKindLabel }}</span>
+              <sc-if value="{{ post.hasPrice }}" hint-placeholder-val="{{ false }}">
+                <span style="margin-left:auto; display:inline-flex; align-items:center; padding:2px 9px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:10.5px; font-weight:700; color:var(--fl-bronze-bright);">{{ post.price }}</span>
+              </sc-if>
+            </div>
+            <div style="display:flex; align-items:center; gap:13px; padding:13px 14px;">
+              <span style="width:46px; height:46px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:radial-gradient(circle at 50% 32%, rgba(191,143,79,0.22), transparent 72%), var(--fl-charcoal-900); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright);">{{ dumbbellIcon }}</span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-family:var(--fl-font-display); font-size:15.5px; font-weight:600; color:var(--fl-text-primary);">{{ post.programTitle }}</span>
+                <span style="font-size:12px; color:var(--fl-text-secondary);">{{ post.programMeta }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- MILESTONE (community goal bar) -->
+        <sc-if value="{{ post.hasMilestone }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px;">
+            <div style="height:9px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);">
+              <div style="width:{{ post.milePct }}; height:100%; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); box-shadow:var(--fl-glow-subtle);"></div>
+            </div>
+            <span style="display:block; font-size:12px; font-weight:600; letter-spacing:0.3px; color:var(--fl-text-tertiary); margin-top:9px;">{{ post.mileLabel }}</span>
+          </div>
+        </sc-if>
+
+        <!-- ENGAGEMENT -->
+        <div style="display:flex; align-items:center; gap:20px; margin-top:15px; padding-top:14px; border-top:1px solid var(--fl-charcoal-700);">
+          <button type="button" onClick="{{ post.onRespect }}" style="{{ post.respectStyle }}"><span style="display:inline-flex;">{{ post.respectIcon }}</span>{{ post.respectLabel }}</button>
+          <span style="display:inline-flex; align-items:center; gap:7px; color:var(--fl-text-tertiary); font-size:13px; font-weight:600;"><span style="display:inline-flex;">{{ commentIcon }}</span>{{ commentCount }}</span>
+          <button type="button" onClick="{{ post.onSave }}" aria-label="Save" style="display:inline-flex; align-items:center; background:transparent; border:none; padding:0; cursor:pointer; color:{{ post.saveColor }};"><span style="display:inline-flex;">{{ post.saveIcon }}</span></button>
+          <button type="button" onClick="{{ post.onShare }}" aria-label="Share" style="margin-left:auto; display:inline-flex; align-items:center; background:transparent; border:none; padding:0; cursor:pointer; color:var(--fl-text-tertiary);"><span style="display:inline-flex;">{{ shareIcon }}</span></button>
+        </div>
+
+        <sc-if value="{{ post.hasReactorSummary }}" hint-placeholder-val="{{ false }}">
+          <span style="display:block; font-size:11.5px; color:var(--fl-text-tertiary); margin-top:11px;">{{ post.reactorSummary }}</span>
+        </sc-if>
+      </div>
+
+      <!-- COMMENTS -->
+      <div style="padding:8px 18px 18px; border-top:8px solid var(--fl-charcoal-900);">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin:10px 0 12px;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ commentCount }} Comments</span>
+          <div style="display:flex; gap:3px; background:var(--fl-charcoal-800); border-radius:var(--fl-radius-pill); padding:3px;">
+            <sc-for list="{{ sortTabs }}" as="t" hint-placeholder-count="2">
+              <button type="button" onClick="{{ t.select }}" style="{{ t.style }}">{{ t.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <sc-for list="{{ comments }}" as="c" hint-placeholder-count="3">
+            <div style="animation:pdRise 300ms var(--fl-ease-out) both;">
+              <div style="display:flex; gap:11px;">
+                <span style="width:34px; height:34px; flex:none; border-radius:var(--fl-radius-round); background:{{ c.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+                <div style="flex:1; min-width:0;">
+                  <div style="display:inline-flex; align-items:center; gap:7px; flex-wrap:wrap;">
+                    <span style="font-size:13.5px; font-weight:500; color:var(--fl-text-primary); white-space:nowrap;">{{ c.author }}</span>
+                    <sc-if value="{{ c.hasRole }}" hint-placeholder-val="{{ false }}">
+                      <span style="{{ c.roleStyle }}">{{ c.roleIcon }}{{ c.roleLabel }}</span>
+                    </sc-if>
+                    <span style="font-size:11px; color:var(--fl-text-tertiary);">{{ c.time }}</span>
+                  </div>
+                  <span style="display:block; font-size:13.5px; line-height:1.5; color:var(--fl-text-secondary); margin-top:4px;">{{ c.body }}</span>
+                  <div style="display:flex; align-items:center; gap:18px; margin-top:7px;">
+                    <button type="button" onClick="{{ c.onRespect }}" style="{{ c.respectStyle }}"><span style="display:inline-flex;">{{ c.respectIcon }}</span>{{ c.respectCount }}</button>
+                    <button type="button" onClick="{{ c.onReply }}" style="background:transparent; border:none; padding:0; cursor:pointer; font-size:12px; font-weight:600; color:var(--fl-text-tertiary);">Reply</button>
+                  </div>
+
+                  <sc-if value="{{ c.hasReplies }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top:12px; padding-left:14px; border-left:1px solid var(--fl-charcoal-700); display:flex; flex-direction:column; gap:12px;">
+                      <sc-for list="{{ c.replies }}" as="r" hint-placeholder-count="1">
+                        <div style="display:flex; gap:10px;">
+                          <span style="width:28px; height:28px; flex:none; border-radius:var(--fl-radius-round); background:{{ r.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+                          <div style="flex:1; min-width:0;">
+                            <div style="display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                              <span style="font-size:13px; font-weight:500; color:var(--fl-text-primary); white-space:nowrap;">{{ r.author }}</span>
+                              <sc-if value="{{ r.hasRole }}" hint-placeholder-val="{{ false }}">
+                                <span style="{{ r.roleStyle }}">{{ r.roleIcon }}{{ r.roleLabel }}</span>
+                              </sc-if>
+                              <span style="font-size:10.5px; color:var(--fl-text-tertiary);">{{ r.time }}</span>
+                            </div>
+                            <span style="display:block; font-size:13px; line-height:1.5; color:var(--fl-text-secondary); margin-top:3px;">{{ r.body }}</span>
+                          </div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- STICKY COMMENT COMPOSER -->
+    <div style="flex:none; position:relative; z-index:6; border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(9,9,9,0.92), rgba(6,6,6,0.98)); backdrop-filter:blur(8px); padding:10px 14px calc(10px + env(safe-area-inset-bottom));">
+      <sc-if value="{{ isReplying }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; align-items:center; gap:8px; margin:0 2px 8px;">
+          <span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ replyIcon }}</span>
+          <span style="flex:1; min-width:0; font-size:11.5px; color:var(--fl-text-tertiary);">Replying to {{ replyToName }}</span>
+          <button type="button" onClick="{{ cancelReply }}" aria-label="Cancel reply" style="background:transparent; border:none; padding:0; cursor:pointer; color:var(--fl-text-tertiary); display:inline-flex;">{{ closeIcon }}</button>
+        </div>
+      </sc-if>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="width:34px; height:34px; flex:none; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 44% 34%, #453322, #1a140e); border:1px solid var(--fl-bronze-border-subtle);"></span>
+        <input class="pd-input" type="text" value="{{ draft }}" placeholder="{{ inputPlaceholder }}" onInput="{{ onDraft }}" onKeyDown="{{ onKey }}">
+        <button type="button" onClick="{{ submitComment }}" aria-label="Post comment" style="{{ sendStyle }}">{{ sendIcon }}</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- OVERFLOW SHEET -->
+  <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" style="position:absolute; inset:0; z-index:1200; background:var(--fl-overlay-dark); backdrop-filter:blur(2px); animation:pdFade 180ms ease both;"></div>
+    <div style="position:absolute; left:0; right:0; bottom:0; z-index:1210; border-top-left-radius:var(--fl-radius-xl); border-top-right-radius:var(--fl-radius-xl); border:1px solid var(--fl-charcoal-500); border-bottom:none; background:var(--fl-surface-modal); box-shadow:var(--fl-shadow-float); padding:8px 20px calc(22px + env(safe-area-inset-bottom)); animation:pdRise 240ms var(--fl-ease-out);">
+      <div style="width:40px; height:5px; border-radius:3px; background:var(--fl-charcoal-500); margin:6px auto 8px;"></div>
+      <span style="display:block; text-align:center; font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:6px;">{{ sheetHint }}</span>
+      <sc-for list="{{ overflowRows }}" as="o" hint-placeholder-count="3">
+        <button type="button" onClick="{{ o.action }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:13px 4px; background:transparent; border:none; border-top:{{ o.divider }}; cursor:pointer; text-align:left;"><span style="display:inline-flex; color:{{ o.color }};">{{ o.icon }}</span><span style="font-size:14.5px; color:{{ o.color }};">{{ o.label }}</span></button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:88px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:12px 19px; color:var(--fl-text-primary); font-size:13.5px; font-weight:500; white-space:nowrap; animation:pdRise 240ms var(--fl-ease-out);">
+      <span style="display:inline-flex; color:{{ toastIconColor }}; flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false, notReady: true, origin: 'community', sid: null, pid: null, respected: false, saved: false, cRespect: {}, sort: 'top', draft: '', replyTo: null, replyName: '', sessionReplies: {}, rsvp: false, pollVote: null, sheetOpen: false, toastMsg: null, toastTone: 'bronze', bump: 0 };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = window.ForgeLegacyVisualFoundation_5368b2;
+      const ok = r && ns && window.ForgeSymbols && window.ForgeCommunityPosts && window.ForgeSquadPosts && window.ForgeFriendsPosts && window.ForgeCommunities;
+      if (ok) {
+        let origin = 'community', sid = null, pid = null;
+        try {
+          const q = location.search || '';
+          const mo = q.match(/[?&]origin=(community|squad|friend)/); if (mo) origin = mo[1];
+          const mp = q.match(/[?&]post=([^&]+)/); if (mp) pid = decodeURIComponent(mp[1]);
+          origin = localStorage.getItem('forge.postOrigin') || origin;
+          pid = pid || localStorage.getItem('forge.post');
+          if (origin === 'community') sid = localStorage.getItem('forge.community') || 'ironcollective';
+          else if (origin === 'squad') sid = localStorage.getItem('forge.squad') || 'iron';
+        } catch (e) {}
+        if (origin === 'community') { sid = sid || 'ironcollective'; pid = pid || (window.ForgeCommunityPosts.list(sid)[0] || {}).id; }
+        else if (origin === 'squad') { sid = sid || 'iron'; pid = pid || (window.ForgeSquadPosts.list(sid)[0] || {}).id; }
+        else { pid = pid || (window.ForgeFriendsPosts.list()[0] || {}).id; }
+        this.setState({ ready: true, notReady: false, origin, sid, pid });
+      } else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); }
+
+  _cfg() {
+    const o = this.state.origin;
+    if (o === 'squad') return {
+      key: 'squad', title: 'Squad Post', showTypePill: true, showRole: true, reactMode: 'count',
+      typeOf: (t) => window.ForgeSquadPosts.type(t),
+      getPost: () => window.ForgeSquadPosts.get(this.state.sid, this.state.pid),
+      addComment: (c) => window.ForgeSquadPosts.addComment(this.state.sid, this.state.pid, c),
+      back: 'Squad%20Detail.dc.html', sheetHint: 'Squad · internal',
+      reportDone: 'Report sent to your squad captain', shareMsg: 'Share within your squad',
+      overflow: ['save', 'share', 'report']
+    };
+    if (o === 'friend') return {
+      key: 'friend', title: 'Friend Post', showTypePill: false, showRole: false, reactMode: 'acknowledge',
+      typeOf: () => null,
+      getPost: () => window.ForgeFriendsPosts.get(this.state.pid),
+      addComment: (c) => window.ForgeFriendsPosts.addComment(this.state.pid, c),
+      back: 'Forge%20Friends%20Feed.dc.html', sheetHint: 'Personal · no moderators',
+      reportDone: 'Report sent to Forge', shareMsg: 'Share to a friend or your squad',
+      overflow: ['save', 'share', 'hide', 'report']
+    };
+    return {
+      key: 'community', title: 'Community Post', showTypePill: true, showRole: true, reactMode: 'count',
+      typeOf: (t) => window.ForgeCommunityPosts.type(t),
+      getPost: () => window.ForgeCommunityPosts.get(this.state.sid, this.state.pid),
+      addComment: (c) => window.ForgeCommunityPosts.addComment(this.state.sid, this.state.pid, c),
+      back: 'Community%20Home.dc.html', sheetHint: 'Community · moderated',
+      reportDone: 'Report submitted to moderators', shareMsg: 'Share to your squad or friends',
+      overflow: ['save', 'share', 'report']
+    };
+  }
+
+  _toast(msg, tone) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastTone: tone || 'bronze' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2200); }
+  _back() { const b = this._cfg().back; if ((function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})()) window.history.back(); else window.location.href = b; }
+
+  _tint(seed) {
+    const T = ['radial-gradient(circle at 42% 32%, #4a3826, #1c1510)','radial-gradient(circle at 45% 35%, #34302a, #17130f)','radial-gradient(circle at 40% 30%, #40301f, #17120c)','radial-gradient(circle at 48% 38%, #2d2822, #141210)','radial-gradient(circle at 44% 34%, #453322, #1a140e)','radial-gradient(circle at 41% 33%, #3a2c1c, #191309)','radial-gradient(circle at 46% 36%, #2b2620, #131210)'];
+    return T[Math.abs(seed) % T.length];
+  }
+
+  _submit() {
+    const draft = (this.state.draft || '').trim();
+    if (!draft) return;
+    const S = this.state, cfg = this._cfg();
+    if (S.replyTo) {
+      const sr = Object.assign({}, S.sessionReplies);
+      sr[S.replyTo] = (sr[S.replyTo] || []).concat([{ id: 'sr_' + Date.now(), author: 'You', role: null, time: 'Just now', body: draft }]);
+      this.setState({ sessionReplies: sr, draft: '', replyTo: null });
+      this._toast('Reply posted', 'positive');
+    } else {
+      try { cfg.addComment({ author: 'You', role: null, body: draft }); } catch (e) {}
+      this.setState(st => ({ draft: '', bump: st.bump + 1 }));
+      this._toast('Comment posted', 'positive');
+    }
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) return { ready: false, notReady: true };
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const S = this.state, cfg = this._cfg();
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.9 });
+    const sv = (d, size, sw, fill) => h('svg', { width: size || 18, height: size || 18, viewBox: '0 0 24 24', fill: fill || 'none', stroke: fill ? 'none' : 'currentColor', strokeWidth: sw || 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(d) ? d : [d]).map((p, i) => h('path', { key: i, d: p })));
+    const w = (el) => h('span', { style: { display: 'inline-flex' } }, el);
+    const flame = (sw, sz) => FS.create(React, 'flame', { size: sz || 15, strokeWidth: sw || 1.9 });
+
+    const backIcon = w(sv('M15 5l-7 7 7 7', 19, 2));
+    const overflowIcon = w(h('svg', { width: 19, height: 19, viewBox: '0 0 24 24', fill: 'currentColor' }, h('circle', { cx: 12, cy: 5, r: 1.7 }), h('circle', { cx: 12, cy: 12, r: 1.7 }), h('circle', { cx: 12, cy: 19, r: 1.7 })));
+    const commentIcon = w(sv('M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4 19.5l1.3-4A7.5 7.5 0 1 1 20 11.5z', 15, 1.9));
+    const shareIcon = w(ic('share', 16, 1.9));
+    const clockIcon = w(FS.create(React, 'clock', { size: 13, strokeWidth: 1.9 }));
+    const playIcon = w(h('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M8 5.5v13l11-6.5z' })));
+    const checkIcon = w(sv('M5 12.5l4 4 10-10', 14, 2.3));
+    const replyIcon = w(sv(['M9 7L4 12l5 5', 'M4 12h11a5 5 0 0 1 5 5v1'], 15, 1.9));
+    const closeIcon = w(sv('M6 6l12 12M18 6L6 18', 15, 2));
+    const dumbbellIcon = w(ic('dumbbell', 22, 1.7));
+    const challengeIcon = w(ic('swords', 12, 1.9));
+    const bookmark = (on) => w(sv('M6 4h12v16l-6-4-6 4z', 17, 1.9, on ? 'currentColor' : null));
+    const reportIcon = w(sv(['M5 21V4', 'M5 5h11l-1.6 3.2L16 12H5'], 18, 1.9));
+    const hideIcon = w(sv(['M3 3l18 18', 'M10.6 5.1A9 9 0 0 1 21 12a9.3 9.3 0 0 1-2.1 3', 'M6.3 6.4A9.2 9.2 0 0 0 3 12a9 9 0 0 0 12 6.6'], 18, 1.9));
+
+    const roleBadge = (kind) => {
+      const base = { flex: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 7px', borderRadius: 'var(--fl-radius-pill)', fontSize: '9px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' };
+      if (kind === 'owner') return { style: Object.assign({}, base, { background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border)', color: 'var(--fl-bronze-bright)' }), icon: w(h('svg', { width: 9, height: 9, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z' }))), label: 'Owner' };
+      if (kind === 'captain') return { style: Object.assign({}, base, { background: 'rgba(191,143,79,0.08)', border: '1px solid var(--fl-bronze-border-subtle)', color: 'var(--fl-bronze-primary)' }), icon: w(ic('shield', 9, 2)), label: 'Captain' };
+      if (kind === 'mod') return { style: Object.assign({}, base, { background: 'rgba(191,143,79,0.08)', border: '1px solid var(--fl-bronze-border-subtle)', color: 'var(--fl-bronze-primary)' }), icon: w(ic('shield', 9, 2)), label: 'Mod' };
+      return null;
+    };
+
+    const post = cfg.getPost();
+    if (!post) {
+      return { ready: true, notReady: false, screenLabel: cfg.title, title: cfg.title, backIcon, overflowIcon, goBack: () => this._back(),
+        srcBg: 'transparent', srcRadius: 'var(--fl-radius-md)', srcTint: 'var(--fl-charcoal-900)', srcIcon: '', srcName: '', srcSub: '', srcTag: '',
+        post: { showTypePill: false }, comments: [], sortTabs: [], commentCount: 0, openOverflow: () => {}, sheetOpen: false, toastOpen: false,
+        draft: '', inputPlaceholder: 'Add a comment\u2026', onDraft: () => {}, onKey: () => {}, submitComment: () => {} };
+    }
+
+    // ── source bar ──
+    let src;
+    if (cfg.key === 'community') {
+      const c = window.ForgeCommunities.get(S.sid) || {};
+      src = { icon: w(ic(c.crest || 'dumbbell', 18, 1.8)), name: c.name || 'Community', sub: (c.category || 'Community') + ' · ' + (c.members ? c.members.toLocaleString() : '0') + ' members', tag: 'Community', radius: 'var(--fl-radius-md)', tint: 'var(--fl-charcoal-900)', bg: 'linear-gradient(180deg, rgba(191,143,79,0.05), transparent)' };
+    } else if (cfg.key === 'squad') {
+      var sm = window.ForgeSquadPosts.meta(S.sid);
+      src = { icon: w(ic('swords', 18, 1.8)), name: sm.name, sub: 'Squad · ' + sm.members + ' members · training-only', tag: 'Squad', radius: 'var(--fl-radius-md)', tint: 'var(--fl-charcoal-900)', bg: 'linear-gradient(180deg, rgba(191,143,79,0.05), transparent)' };
+    } else {
+      src = { icon: '', name: post.author, sub: (post.rel || 'Friend') + (post.rank ? ' · ' + post.rank.charAt(0) + post.rank.slice(1).toLowerCase() : ''), tag: 'Friend', radius: 'var(--fl-radius-round)', tint: this._tint((post.author || '').length), bg: 'transparent' };
+    }
+
+    const TYPE = cfg.typeOf(post.type) || { label: 'Post', icon: 'message' };
+    const prole = (cfg.showRole && post.role) ? roleBadge(post.role) : null;
+
+    // ── engagement ──
+    const rOn = S.respected;
+    let respectLabel, respectStyle, hasReactorSummary = false, reactorSummary = '';
+    if (cfg.reactMode === 'acknowledge') {
+      const rx = post.reactions || {};
+      const total = Object.keys(rx).reduce((a, k) => a + (rx[k] || 0), 0) + (rOn ? 1 : 0);
+      respectLabel = rOn ? 'Acknowledged' : 'Acknowledge';
+      const names = (post.comments || []).map(c => (c.author || '').split(' ')[0]).filter(Boolean);
+      const head = (rOn ? ['You'] : []).concat(names).slice(0, 2);
+      const rest = Math.max(0, total - head.length);
+      hasReactorSummary = total > 0;
+      reactorSummary = head.length ? ('Acknowledged by ' + head.join(', ') + (rest > 0 ? ' and ' + rest + ' others' : '')) : (total + ' acknowledgements');
+      respectStyle = { display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '7px 14px', borderRadius: 'var(--fl-radius-pill)', border: '1px solid ' + (rOn ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: rOn ? 'var(--fl-bronze-fill)' : 'transparent', color: rOn ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' };
+    } else {
+      respectLabel = String((post.respect || 0) + (rOn ? 1 : 0));
+      respectStyle = { display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', color: rOn ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', fontSize: '13px', fontWeight: 600 };
+    }
+    const saveOn = S.saved;
+
+    // ── type blocks ──
+    const ach = post.achievement || {};
+    const ev = post.event || {};
+    const isVideo = post.type === 'formcheck' || post.kind === 'video' || (post.media && post.media.dur);
+    const hasMedia = post.type === 'photo' || post.kind === 'photo' || isVideo;
+    const prog = post.program || {};
+    const mile = post.milestone || {};
+    const isHonor = post.kind === 'milestone';
+    const rsvpOn = S.rsvp;
+
+    let pollOptions = [], pollFoot = '';
+    if (post.type === 'poll' && post.poll && post.poll.options) {
+      const opts = post.poll.options;
+      const base = opts.reduce((a, o) => a + (o.votes || 0), 0);
+      const voted = S.pollVote != null;
+      const total = base + (voted ? 1 : 0);
+      pollOptions = opts.map((o, i) => {
+        const votes = (o.votes || 0) + (S.pollVote === i ? 1 : 0);
+        const pct = total > 0 && voted ? Math.round(votes / total * 100) : 0;
+        const chosen = S.pollVote === i;
+        return { key: i, text: o.text, chosen, vote: () => { if (S.pollVote == null) this.setState({ pollVote: i }); },
+          pct: (voted ? pct : 0) + '%', pctLabel: voted ? pct + '%' : '', pctColor: chosen ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)',
+          style: { position: 'relative', overflow: 'hidden', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '12px 14px', borderRadius: 'var(--fl-radius-md)', border: '1px solid ' + (chosen ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: 'var(--fl-surface-recessed)', color: 'var(--fl-text-primary)', fontSize: '13.5px', fontWeight: 600, cursor: voted ? 'default' : 'pointer', textAlign: 'left' } };
+      });
+      pollFoot = (voted ? total : base) + ' votes' + (voted ? '' : ' \u00b7 tap to vote');
+    }
+
+    // ── comments ──
+    let comments = (post.comments || []).map(c => {
+      const sr = S.sessionReplies[c.id] || [];
+      return Object.assign({}, c, { replies: sr.concat(c.replies || []) });
+    });
+    if (S.sort === 'top') comments = comments.slice().sort((a, b) => (b.respect || 0) - (a.respect || 0));
+    const commentCount = comments.reduce((a, c) => a + 1 + (c.replies ? c.replies.length : 0), 0);
+
+    const mkComment = (c) => {
+      const role = (cfg.showRole && c.role) ? roleBadge(c.role) : null;
+      const on = !!S.cRespect[c.id];
+      return {
+        key: c.id, author: c.author, tint: this._tint((c.author || '').length + (c.id || '').length), time: c.time,
+        hasRole: !!role, roleStyle: role ? role.style : null, roleIcon: role ? role.icon : null, roleLabel: role ? role.label : '',
+        body: c.body,
+        respectStyle: { display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', color: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', fontSize: '12px', fontWeight: 600 },
+        respectIcon: w(flame(on ? 2.2 : 1.8, 13)), respectCount: (c.respect || 0) + (on ? 1 : 0),
+        onRespect: () => this.setState(st => ({ cRespect: Object.assign({}, st.cRespect, { [c.id]: !st.cRespect[c.id] }) })),
+        onReply: () => this.setState({ replyTo: c.id, replyName: c.author }),
+        hasReplies: (c.replies || []).length > 0,
+        replies: (c.replies || []).map((r, ri) => { const rr = (cfg.showRole && r.role) ? roleBadge(r.role) : null; return { key: r.id || ri, author: r.author, tint: this._tint((r.author || '').length + ri + 5), time: r.time, body: r.body, hasRole: !!rr, roleStyle: rr ? rr.style : null, roleIcon: rr ? rr.icon : null, roleLabel: rr ? rr.label : '' }; })
+      };
+    };
+
+    const sortTabStyle = (on) => ({ padding: '5px 12px', borderRadius: 'var(--fl-radius-pill)', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: on ? '#1A1206' : 'var(--fl-text-secondary)', background: on ? 'var(--fl-bronze-metallic)' : 'transparent' });
+    const sortTabs = [['top', 'Top'], ['newest', 'Newest']].map(([id, label]) => ({ key: id, label, style: sortTabStyle(S.sort === id), select: () => this.setState({ sort: id }) }));
+
+    const sendReady = (S.draft || '').trim().length > 0;
+    const sendStyle = { width: '40px', height: '40px', flex: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--fl-radius-round)', border: '1px solid ' + (sendReady ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: sendReady ? 'var(--fl-bronze-fill)' : 'var(--fl-charcoal-800)', color: sendReady ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', cursor: sendReady ? 'pointer' : 'default', boxShadow: sendReady ? 'var(--fl-glow-subtle)' : 'none' };
+
+    // ── overflow rows ──
+    const OVR = {
+      save: { color: 'var(--fl-text-primary)', icon: bookmark(saveOn), label: saveOn ? 'Remove Bookmark' : 'Save Post', act: () => { const nx = !S.saved; this.setState({ saved: nx, sheetOpen: false }); this._toast(nx ? 'Saved to your bookmarks' : 'Removed from bookmarks', 'bronze'); } },
+      share: { color: 'var(--fl-text-primary)', icon: shareIcon, label: 'Share Post', act: () => { this.setState({ sheetOpen: false }); this._toast(cfg.shareMsg, 'bronze'); } },
+      hide: { color: 'var(--fl-text-primary)', icon: hideIcon, label: 'Hide from feed', act: () => { this.setState({ sheetOpen: false }); this._toast('You won\u2019t see posts like this', 'bronze'); } },
+      report: { color: 'var(--fl-red-muted)', icon: reportIcon, label: cfg.key === 'squad' ? 'Report to Captain' : (cfg.key === 'friend' ? 'Report to Forge' : 'Report Post'), act: () => { this.setState({ sheetOpen: false }); this._toast(cfg.reportDone, 'bronze'); } }
+    };
+    const overflowRows = cfg.overflow.map((k, i) => ({ key: k, label: OVR[k].label, color: OVR[k].color, icon: OVR[k].icon, divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)', action: OVR[k].act }));
+
+    const toastColor = S.toastTone === 'positive' ? '#6E8E74' : 'var(--fl-icon-bronze)';
+
+    return {
+      ready: true, notReady: false, screenLabel: cfg.title, title: cfg.title,
+      backIcon, overflowIcon, commentIcon, shareIcon, clockIcon, playIcon, checkIcon, replyIcon, closeIcon, dumbbellIcon, challengeIcon,
+      commentCount,
+      srcBg: src.bg, srcRadius: src.radius, srcTint: src.tint, srcIcon: src.icon, srcName: src.name, srcSub: src.sub, srcTag: src.tag,
+      post: {
+        tint: this._tint((post.author || '').length + 2), author: post.author, time: post.time,
+        hasRole: !!prole, roleStyle: prole ? prole.style : null, roleIcon: prole ? prole.icon : null, roleLabel: prole ? prole.label : '',
+        showTypePill: cfg.showTypePill,
+        typeIcon: w(ic(TYPE.icon === 'message' ? 'flame' : (TYPE.icon === 'check' ? 'shield' : (TYPE.icon === 'help' ? 'shield' : (TYPE.icon === 'poll' ? 'shield' : (TYPE.icon === 'external' ? 'share' : (TYPE.icon === 'flag' ? 'flame' : (TYPE.icon === 'image' ? 'camera' : TYPE.icon)))))), 11, 1.9)), typeLabel: TYPE.label,
+        hasChallengeLine: !!post.challengeContext, challengeText: post.challengeContext || '',
+        hasBody: !!post.body, body: post.body,
+        hasAchievement: (post.type === 'achievement' || post.type === 'pr') && !!ach.value, achValue: ach.value, achExercise: ach.exercise, achLabel: ach.label || 'Personal Record',
+        hasHonor: isHonor, honorIcon: w(ic(post.mileKind === 'program' ? 'shield' : 'laurel', 26, 1.6)), honorLabel: post.mileHead || 'Honor earned', honorTitle: post.mileTitle || '', hasHonorSub: !!post.mileSub, honorSub: post.mileSub || '',
+        hasMedia, isVideo, mediaId: 'pd-media-' + post.id, mediaDur: (post.media && post.media.dur) || '', mediaPlaceholder: isVideo ? 'Video' : 'Photo',
+        hasEvent: post.type === 'event' && !!ev.title, evMonth: ev.month, evDay: ev.day, evTitle: ev.title, evWhen: ev.when, evGoing: (ev.going || 0) + (rsvpOn ? 1 : 0),
+        rsvpLabel: rsvpOn ? 'Going \u2713' : 'RSVP', onRsvp: () => this.setState(st => ({ rsvp: !st.rsvp })),
+        rsvpStyle: { width: 'calc(100% - 28px)', margin: '0 14px 14px', padding: '11px', borderRadius: 'var(--fl-radius-md)', border: '1px solid var(--fl-bronze-border)', background: rsvpOn ? 'var(--fl-charcoal-800)' : 'var(--fl-bronze-fill)', color: rsvpOn ? 'var(--fl-text-secondary)' : 'var(--fl-bronze-bright)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', boxShadow: rsvpOn ? 'none' : 'var(--fl-glow-subtle)' },
+        hasPoll: post.type === 'poll' && pollOptions.length > 0, pollOptions, pollFoot,
+        hasProgram: (post.type === 'forgeprogram' || post.type === 'paidprogram') && !!prog.title,
+        programKindIcon: w(ic(post.type === 'paidprogram' ? 'share' : 'dumbbell', 13, 1.8)), programKindLabel: post.type === 'paidprogram' ? 'Paid Program' : 'Forge Program',
+        hasPrice: !!prog.price, price: prog.price || '', programTitle: prog.title, programMeta: prog.meta,
+        hasMilestone: post.type === 'milestone' && !!mile.pct, milePct: mile.pct, mileLabel: mile.label,
+        onRespect: () => this.setState(st => ({ respected: !st.respected })), respectStyle, respectIcon: w(flame(rOn ? 2.2 : 1.9, cfg.reactMode === 'acknowledge' ? 16 : 15)), respectLabel,
+        hasReactorSummary, reactorSummary,
+        onSave: () => { const nx = !S.saved; this.setState({ saved: nx }); this._toast(nx ? 'Saved to your bookmarks' : 'Removed from bookmarks', 'bronze'); }, saveColor: saveOn ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', saveIcon: bookmark(saveOn),
+        onShare: () => this._toast(cfg.shareMsg, 'bronze')
+      },
+      comments: comments.map(mkComment), sortTabs,
+      isReplying: !!S.replyTo, replyToName: S.replyName || '', cancelReply: () => this.setState({ replyTo: null }),
+      draft: S.draft, inputPlaceholder: S.replyTo ? ('Reply to ' + (S.replyName || '') + '\u2026') : 'Add a comment\u2026',
+      onDraft: (e) => this.setState({ draft: e.target.value }), onKey: (e) => { if (e.key === 'Enter') { e.preventDefault(); this._submit(); } },
+      submitComment: () => this._submit(), sendStyle, sendIcon: w(sv('M5 12h13M12 5l7 7-7 7', 18, 2)),
+      openOverflow: () => this.setState({ sheetOpen: true }), sheetOpen: S.sheetOpen, closeSheet: () => this.setState({ sheetOpen: false }), sheetHint: cfg.sheetHint, overflowRows,
+      goBack: () => this._back(),
+      toastOpen: !!S.toastMsg, toastMsg: S.toastMsg || '', toastIcon: w(flame(1.9, 17)), toastIconColor: toastColor
+    };
+  }
+}
+</script>
+</body>
+</html>

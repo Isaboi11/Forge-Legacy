@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#0b0a09; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; transition-duration:0.001ms !important; } }
+</style>
+</helmet>
+
+<section style="display:flex; flex-direction:column; gap:20px; padding:40px 44px 64px;">
+
+  <div style="display:flex; flex-direction:column; gap:6px;">
+    <span style="font-size:10px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Turn 1 · What Endures — archive block</span>
+    <h1 style="margin:0; font-family:var(--fl-font-display); font-size:26px; font-weight:600; letter-spacing:-0.3px; color:var(--fl-text-primary);">Show the legacy instead of linking to it</h1>
+    <p style="margin:0; max-width:640px; font-size:13px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">Same three destinations, same tap targets. Current list is on the left for reference — <a href="#1a">1a</a> is the compact gallery band, <a href="#1b">1b</a> leads with the diptych.</p>
+  </div>
+
+  <div style="display:flex; flex-wrap:nowrap; gap:26px; align-items:flex-start; width:min-content;">
+
+    <!-- ══════════ REFERENCE · current ══════════ -->
+    <div style="display:flex; flex-direction:column; gap:11px; width:404px;">
+      <div style="display:flex; align-items:center; gap:9px; white-space:nowrap;">
+        <span style="display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:4px; border:1px solid var(--fl-charcoal-600); background:transparent; font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">Current</span>
+        <span style="font-size:12.5px; color:var(--fl-text-tertiary);">216px · three nouns</span>
+      </div>
+      <div data-screen-label="Current" style="position:relative; border-radius:28px; border:1px solid var(--fl-charcoal-600); overflow:hidden; background:linear-gradient(rgba(5,5,5,0.34), rgba(5,5,5,0.34)), #050505 url('assets/legacy-bg.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); padding:24px 0 30px;">
+        <div style="padding:0 24px 14px;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="What Endures" hint-size="100%,22px"></x-import>
+        </div>
+        <div style="padding:0 18px;">
+          <sc-for list="{{ oldRows }}" as="r" hint-placeholder-count="3">
+            <div style="display:flex; flex-direction:column;">
+              <div style="display:flex; align-items:center; gap:14px; padding:14px 8px; border-radius:var(--fl-radius-lg);">
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                  <span style="font-size:15px; font-weight:600; color:var(--fl-text-primary);">{{ r.name }}</span>
+                  <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ r.sub }}</span>
+                </div>
+                <span style="flex:none; font-size:12.5px; font-weight:600; color:var(--fl-bronze-primary);">{{ r.count }}</span>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+              </div>
+              <sc-if value="{{ r.rule }}" hint-placeholder-val="{{ true }}">
+                <div style="height:1px; background:var(--fl-bronze-border-subtle); margin:0 8px;"></div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 1a · ARCHIVE BAND ══════════ -->
+    <div id="1a" style="display:flex; flex-direction:column; gap:11px; width:404px;">
+      <div style="display:flex; align-items:center; gap:9px; white-space:nowrap;">
+        <span style="display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:4px; border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-bright);">1a</span>
+        <span style="font-size:12.5px; color:var(--fl-text-secondary); font-weight:600;">Archive Band</span>
+        <span style="font-size:12.5px; color:var(--fl-text-tertiary);">· 196px · three windows</span>
+      </div>
+      <div data-screen-label="1a Archive Band" style="position:relative; border-radius:28px; border:1px solid var(--fl-charcoal-600); overflow:hidden; background:linear-gradient(rgba(5,5,5,0.34), rgba(5,5,5,0.34)), #050505 url('assets/legacy-bg.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); padding:24px 0 30px;">
+        <div style="padding:0 24px 14px;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="What Endures" hint-size="100%,22px"></x-import>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:0 18px;">
+
+          <!-- Transformation · diptych -->
+          <div role="button" tabindex="0" style="position:relative; height:158px; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-charcoal-600); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); cursor:pointer; transition:transform 200ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.975);">
+            <div style="position:absolute; inset:0; display:flex;">
+              <div style="flex:1; background:#0b0a09 url('assets/media/transformation-before.png') 50% 18% / 210% auto no-repeat; filter:grayscale(0.55) sepia(0.2) saturate(0.85) contrast(1.06) brightness(0.5);"></div>
+              <div style="width:1px; flex:none; background:var(--fl-bronze-border);"></div>
+              <div style="flex:1; background:#0b0a09 url('assets/media/transformation-after.png') 50% 18% / 210% auto no-repeat; filter:grayscale(0.42) sepia(0.2) saturate(0.95) contrast(1.08) brightness(0.62);"></div>
+            </div>
+            <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(5,5,5,0.1) 0%, rgba(5,5,5,0.42) 52%, rgba(5,5,5,0.93) 100%);"></div>
+            <div style="position:absolute; left:9px; right:9px; bottom:9px; display:flex; flex-direction:column; gap:3px;">
+              <span style="font-size:9px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-text-primary);">Transformation</span>
+              <sc-if value="{{ showCounts }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:10px; font-weight:600; color:var(--fl-bronze-primary);">4 entries</span>
+              </sc-if>
+            </div>
+          </div>
+
+          <!-- Photos -->
+          <div role="button" tabindex="0" style="position:relative; height:158px; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-charcoal-600); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); cursor:pointer; transition:transform 200ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.975);">
+            <div style="position:absolute; inset:0; background:#0b0a09 url('assets/media/pr-deadlift-485.png') center 42% / cover no-repeat; filter:grayscale(0.55) sepia(0.34) saturate(1) contrast(1.1) brightness(0.56);"></div>
+            <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(5,5,5,0.1) 0%, rgba(5,5,5,0.42) 52%, rgba(5,5,5,0.93) 100%);"></div>
+            <div style="position:absolute; left:9px; right:9px; bottom:9px; display:flex; flex-direction:column; gap:3px;">
+              <span style="font-size:9px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-text-primary);">Photos</span>
+              <sc-if value="{{ showCounts }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:10px; font-weight:600; color:var(--fl-bronze-primary);">12 photos</span>
+              </sc-if>
+            </div>
+          </div>
+
+          <!-- Trophy Case -->
+          <div role="button" tabindex="0" style="position:relative; height:158px; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); background:radial-gradient(120% 90% at 50% 8%, rgba(191,143,79,0.16), transparent 62%), #100e0b; cursor:pointer; transition:transform 200ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.975);">
+            <div style="position:absolute; left:0; right:0; top:14px; height:96px; background:url('assets/competition-crown.png') center 46% / 152% auto no-repeat; mix-blend-mode:screen; opacity:0.95;"></div>
+            <div style="position:absolute; inset:0; background:linear-gradient(180deg, transparent 0%, rgba(5,5,5,0.3) 62%, rgba(5,5,5,0.9) 100%);"></div>
+            <div style="position:absolute; left:9px; right:9px; bottom:9px; display:flex; flex-direction:column; gap:3px;">
+              <span style="font-size:9px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-text-primary);">Trophy Case</span>
+              <sc-if value="{{ showCounts }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:10px; font-weight:600; color:var(--fl-bronze-primary);">3 gold · 6 podium</span>
+              </sc-if>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 1b · FEATURED DIPTYCH ══════════ -->
+    <div id="1b" style="display:flex; flex-direction:column; gap:11px; width:404px;">
+      <div style="display:flex; align-items:center; gap:9px; white-space:nowrap;">
+        <span style="display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:4px; border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-bright);">1b</span>
+        <span style="font-size:12.5px; color:var(--fl-text-secondary); font-weight:600;">Featured Diptych</span>
+        <span style="font-size:12.5px; color:var(--fl-text-tertiary);">· 301px · one hero, two shelves</span>
+      </div>
+      <div data-screen-label="1b Featured Diptych" style="position:relative; border-radius:28px; border:1px solid var(--fl-charcoal-600); overflow:hidden; background:linear-gradient(rgba(5,5,5,0.34), rgba(5,5,5,0.34)), #050505 url('assets/legacy-bg.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); padding:24px 0 30px;">
+        <div style="padding:0 24px 14px;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="What Endures" hint-size="100%,22px"></x-import>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:11px; padding:0 18px;">
+
+          <!-- hero diptych -->
+          <div role="button" tabindex="0" style="position:relative; height:172px; border-radius:var(--fl-radius-xl); overflow:hidden; border:1px solid var(--fl-charcoal-600); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); cursor:pointer; transition:transform 220ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.985);">
+            <div style="position:absolute; inset:0; display:flex;">
+              <div style="flex:1; background:#0b0a09 url('assets/media/transformation-before.png') 50% 16% / auto 165% no-repeat; filter:grayscale(0.55) sepia(0.2) saturate(0.85) contrast(1.06) brightness(0.48);"></div>
+              <div style="width:1px; flex:none; background:linear-gradient(180deg, transparent, var(--fl-bronze-primary) 22%, var(--fl-bronze-primary) 78%, transparent);"></div>
+              <div style="flex:1; background:#0b0a09 url('assets/media/transformation-after.png') 50% 16% / auto 165% no-repeat; filter:grayscale(0.4) sepia(0.2) saturate(0.95) contrast(1.08) brightness(0.64);"></div>
+            </div>
+            <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(5,5,5,0.34) 0%, rgba(5,5,5,0.06) 34%, rgba(5,5,5,0.5) 72%, rgba(5,5,5,0.95) 100%);"></div>
+            <sc-if value="{{ showEdgeLabels }}" hint-placeholder-val="{{ true }}">
+              <div style="position:absolute; top:11px; left:0; right:0; display:flex; justify-content:space-between; padding:0 13px;">
+                <span style="font-size:8.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Jan 2023</span>
+                <span style="font-size:8.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-primary);">Jul 2026</span>
+              </div>
+            </sc-if>
+            <div style="position:absolute; left:14px; right:14px; bottom:13px; display:flex; align-items:flex-end; justify-content:space-between; gap:12px;">
+              <div style="display:flex; flex-direction:column; gap:2px; min-width:0;">
+                <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; letter-spacing:-0.2px; line-height:1.1; color:var(--fl-text-primary);">Transformation</span>
+                <sc-if value="{{ showCounts }}" hint-placeholder-val="{{ true }}">
+                  <span style="font-size:11px; font-weight:600; color:var(--fl-bronze-primary);">4 entries · 42 months apart</span>
+                </sc-if>
+              </div>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-bottom:2px;"><path d="M9 5l7 7-7 7"></path></svg>
+            </div>
+          </div>
+
+          <!-- two shelves -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:11px;">
+            <div role="button" tabindex="0" style="position:relative; height:124px; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-charcoal-600); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); cursor:pointer; transition:transform 200ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.975);">
+              <div style="position:absolute; inset:0; background:#0b0a09 url('assets/media/pr-deadlift-485.png') center 40% / cover no-repeat; filter:grayscale(0.55) sepia(0.34) saturate(1) contrast(1.1) brightness(0.58);"></div>
+              <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(5,5,5,0.06) 0%, rgba(5,5,5,0.44) 50%, rgba(5,5,5,0.94) 100%);"></div>
+              <div style="position:absolute; left:12px; right:12px; bottom:11px; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:13.5px; font-weight:600; color:var(--fl-text-primary);">Photos</span>
+                <sc-if value="{{ showCounts }}" hint-placeholder-val="{{ true }}">
+                  <span style="font-size:10.5px; font-weight:600; color:var(--fl-bronze-primary);">12 across 5 chapters</span>
+                </sc-if>
+              </div>
+            </div>
+
+            <div role="button" tabindex="0" style="position:relative; height:124px; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); background:radial-gradient(130% 100% at 50% 4%, rgba(191,143,79,0.18), transparent 60%), #100e0b; cursor:pointer; transition:transform 200ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.975);">
+              <div style="position:absolute; left:0; right:0; top:2px; height:88px; background:url('assets/competition-crown.png') center 44% / 118% auto no-repeat; mix-blend-mode:screen; opacity:0.95;"></div>
+              <div style="position:absolute; inset:0; background:linear-gradient(180deg, transparent 0%, rgba(5,5,5,0.26) 58%, rgba(5,5,5,0.92) 100%);"></div>
+              <div style="position:absolute; left:12px; right:12px; bottom:11px; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:13.5px; font-weight:600; color:var(--fl-text-primary);">Trophy Case</span>
+                <sc-if value="{{ showCounts }}" hint-placeholder-val="{{ true }}">
+                  <span style="font-size:10.5px; font-weight:600; color:var(--fl-bronze-primary);">3 championships</span>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showCounts&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Archive band&quot;},&quot;showEdgeLabels&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Archive band&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      showCounts: this.props.showCounts !== false,
+      showEdgeLabels: this.props.showEdgeLabels !== false,
+      oldRows: [
+        { key: 'x', name: 'Transformation', sub: 'Physique & progress footage', count: '4 entries', rule: true },
+        { key: 'p', name: 'Photos', sub: 'Every chapter, one archive', count: '12 photos', rule: true },
+        { key: 't', name: 'Trophy Case', sub: 'Championships & podium finishes', count: '9 trophies', rule: false },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

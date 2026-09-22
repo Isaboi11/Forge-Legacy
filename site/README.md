@@ -20,7 +20,68 @@ pointed at it. Name it *before* dragging the folder in.
 | `assets/landing/*` | ✅ **DONE** — 328 KB WebP, generated from repo art (see below) |
 | `index.html` | ✅ **DONE** — 169 KB, **restructured 2026-08-18 to Landing v6** (was 152 KB / v5) |
 | `favicon.png` | ✅ **DONE** — 64 px, from the wordmark mark |
+| `exercises/index.html` | ✅ **GENERATED** — the filterable catalogue index, 735 rows, 220 KB raw / 21 KB gzipped |
+| `exercises/<id>/index.html` | ✅ **GENERATED** — 735 pages, ~9 KB each, 6.6 MB total |
+| `exercises/{muscle,equipment,pattern}/<slug>/` | ✅ **GENERATED** — 53 facet pages (23 muscle, 14 equipment, 16 pattern) |
+| `assets/catalogue.css` | ✅ **GENERATED** — one stylesheet for all 789 catalogue pages |
+| `assets/exercise/*.webp` + `manifest.json` | ✅ **GENERATED** — 283 stills, 4 MB, frame 0 of each demo loop. **Bundled, never hotlinked** |
+| `sitemap.xml` · `robots.txt` | ✅ **GENERATED** — 793 URLs; `robots.txt` **overrides Cloudflare's injected one** to add the `Sitemap:` line, carrying its content signals forward |
 | `_exported-bundle.html` | reference only, **git-ignored**. See "Why not this" |
+
+---
+
+## The exercise catalogue
+
+`node scripts/build-exercise-pages.mjs` — regenerate after any change to the coaching content.
+`--only <id>` builds one page for review; `--dry` reports and writes nothing.
+
+**Source:** `src/domain/exercise-coaching/content/coaching_content.json` (797 rows), joined to the
+relationship source for taxonomy, muscles, equipment and alternatives. The generator **only reads** those
+files; they are append- and annotate-only.
+
+**Only `Published` ships** — 735 of 797. The other 62 sit at *Needs Review* and are deliberately absent;
+the script refuses to build if it meets a `contentStatus` it does not recognise, and refuses if any
+coaching row has no taxonomy entry.
+
+**`Docs/Exercise-Detail-Wireframe-Spec-W22.md` (LOCKED) owns the vocabulary** — the section labels
+(W22-D7), the em dash marker (W22-D8), the single bronze rule on WHY IT MATTERS (W22-D6), the absolute
+order (§ 4.3) and hide-when-empty (§ 4.2). Two deliberate divergences, both because W-22 specifies an
+*app screen*:
+
+1. **A bundled still, not the autoplaying loop.** W22-D1 makes it a full-bleed autoplaying hero and
+   ED-5 calls W-22 the only surface where GIF media autoplays — both statements about the app. Measured
+   against the bucket: the loops average **928 KB**, run to **2.29 MB**, and only **283 of 735 (39 %)**
+   published exercises have one. The row above in this very table had already settled the question for
+   the landing page — *"hotlinking Supabase storage from marketing traffic is a live backend dependency
+   with no upside"* — and the catalogue's first build did it from all 735 pages anyway. Corrected:
+   `scripts/animation-processing/build_site_stills.py` extracts frame 0 to `site/assets/exercise/`
+   (**9.3 KB mean, 4 MB for the set**), served from this origin, `loading="lazy"`, below the identity
+   block. **No still, no `<figure>`** — there is no placeholder and no `onerror` handler.
+   ⚠ The stills are ~300 px tall with widths from 152 to 652 in **144 distinct combinations**, so each
+   `<img>` takes its real `width`/`height` from `manifest.json`. The first build hardcoded `600x600`,
+   which both upscaled and shifted layout.
+2. **WATCH OUT FOR carries the correction**, not just the mistake — `mistakeCorrections` already holds
+   the why and the fix, and on a page read *before* training the fix is the point.
+
+### Facet pages
+
+53 pages at `/exercises/muscle/<slug>/`, `/exercises/equipment/<slug>/`, `/exercises/pattern/<slug>/`.
+These are the queries people type — "chest exercises" outranks any single exercise name by an order of
+magnitude — and they are **indexes over content that already exists**, not the thin doorway pages Hevy's
+`/use-cases/` section is made of. Their value is the links; there is deliberately no invented prose,
+because no per-muscle editorial has been written and fabricating some would be the wrong trade.
+
+- **Muscle pages carry both roles**, split into *Trains it directly* / *Works it as support*. That is how
+  a lifter asks the question, and it is what makes Hip Flexors (1 primary, 37 secondary) a real page
+  instead of a thin one.
+- **A facet below 5 exercises is not published**, and the `Other` movement pattern is skipped entirely —
+  a junk-drawer label makes a page that helps nobody. Four facets are dropped by these rules.
+- **Slugged URLs**, so `front_deltoids` → `/muscle/front-deltoids/`.
+
+**The link graph is the point.** Muscle, equipment and pattern chips on every exercise page link to their
+facet, and each facet links back to its siblings. Measured on the built output: **11,421 internal links,
+0 broken, 0 orphans**, and every exercise page carries 3–57 inbound links (median 9). Before this, the
+catalogue would have been 735 pages reachable only from one index.
 
 ---
 
@@ -138,6 +199,7 @@ qualifier or hold the section. The gate is in a comment above the section.
 | The bench demo stays a **still** | The animated original is 960 KB, larger than this whole page's budget. Subsampled to 14 frames it is still 194 KB against a 17.5 KB still. In the app the loop is resolved live by `domain/exercise-detail/media.ts`; a static page cannot do that, and hotlinking Supabase storage from marketing traffic is a live backend dependency with no upside |
 | Every mock frame carries `role="img"` + `aria-label` | Otherwise a screen reader wades through ~200 spans of mock app UI as though it were body copy |
 | All `width`/`height` attrs are each file's real intrinsic size | The brief's no-layout-shift rule. Several in the design were wrong |
+| **A footer link to `/exercises/`**, which is in no design file | The catalogue (below) is 735 pages generated after v6 was drawn. The footer's own rule — *"a new page is not shipped until something links to it"*, written after `/support` sat orphaned for two days — applies to a whole section far more than it did to one page |
 | **`--fl-gray-600` is `#888282` here, not the design's `#666060`** | **A measured WCAG AA failure, 2026-08-27.** `#666060` is the only consumer of `--fl-text-tertiary`, and it renders on four grounds: `surface-card` top `#181A1C` **2.83:1**, `surface-card` bottom `#131517` **2.97:1**, `charcoal-900` **3.10:1**, `charcoal-700` **2.81:1**. All nine usages are 11–14.5 px, so none is "large text" and every one requires **4.5:1** — and two pairs sat below even the **3.0** floor for non-text. `#888282` is the first step clearing 4.5:1 on all four (worst 4.60:1) while keeping the +6 red offset that makes it a warm grey. ⚠ **Do not let a regeneration from the `.dc` put `#666060` back.** ⚠ **The app still has it** — `foundation.forge.ts` `gray600:'#666060'` serves both `text.tertiary` and `inactive`; unchanged, because that token is `.dc`-governed and reaches 277 stylesheets. PO's call. |
 
 ### Verified by rendering, not by reading

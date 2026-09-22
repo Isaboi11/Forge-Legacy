@@ -68,6 +68,36 @@ const send = (res, code, body, headers = {}) => {
   res.end(body);
 };
 
+/**
+ * ⚠ EVERY READ STREAM MUST BE DESTROYED WHEN THE RESPONSE CLOSES, AND THIS IS NOT A TIDINESS RULE —
+ * IT IS WHY THE SERVER DIED MID-REVIEW.
+ *
+ * `.pipe(res)` was the whole of the old body. Pipe does not close the source when the DESTINATION
+ * goes away, and on this page the destination goes away constantly: the queue mounts six <video>
+ * elements, and moving to the next row tears all six off the document with their requests still in
+ * flight. Each abandoned request left an open handle on the Seagate. Nothing ever closed them, so
+ * they accumulated one card at a time until the process hit its descriptor ceiling and node threw
+ * `EMFILE: too many open files` from an 'error' event with no listener — which does not fail the
+ * request, it kills the server. It ran for 795 decisions and stopped in the middle of the pass.
+ *
+ * ⚠ AND THE 'error' LISTENER IS THE OTHER HALF. An unhandled 'error' on a ReadStream is a process
+ * kill regardless of the cause — a yanked drive, a file being rewritten, a descriptor ceiling. This
+ * is a tool someone is three hundred clicks into; a failed clip has to cost that clip and nothing
+ * more.
+ */
+function pipeClip(stream, res) {
+  const stop = () => stream.destroy();
+  res.on('close', stop);
+  res.on('error', stop);
+  stream.on('error', (e) => {
+    stream.destroy();
+    console.error('  clip failed:', e.code || e.message);
+    if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.end();
+  });
+  stream.pipe(res);
+}
+
 /** Range-aware so the browser can seek and loop without refetching the whole file. */
 function streamClip(req, res, file) {
   const stat = fs.statSync(file);
@@ -83,10 +113,10 @@ function streamClip(req, res, file) {
       'Content-Length': end - start + 1,
       'Content-Type': 'video/mp4',
     });
-    return fs.createReadStream(file, { start, end }).pipe(res);
+    return pipeClip(fs.createReadStream(file, { start, end }), res);
   }
   res.writeHead(200, { 'Content-Length': stat.size, 'Content-Type': 'video/mp4', 'Accept-Ranges': 'bytes' });
-  fs.createReadStream(file).pipe(res);
+  pipeClip(fs.createReadStream(file), res);
 }
 
 const server = http.createServer((req, res) => {
@@ -152,6 +182,23 @@ const server = http.createServer((req, res) => {
   }
 
   send(res, 404, 'not found');
+});
+
+/*
+ * ⚠ THE LAST LINE OF DEFENCE, AND DELIBERATELY A BLUNT ONE.
+ *
+ * `pipeClip` fixes the leak that actually happened; this is here because of what it COST. The
+ * decisions live in a file this process writes, the reviewer is hundreds of rows into a pass, and
+ * the browser only finds out the server is gone when a save fails — so any uncaught throw, from any
+ * source, ends a session's worth of momentum. On a localhost tool driven by one person, staying up
+ * with a logged error beats exiting cleanly every time.
+ *
+ * It logs loudly rather than silently swallowing: a crash that stops being fatal must not also stop
+ * being visible, or the next leak like the descriptor one goes unnoticed for a whole pass.
+ */
+process.on('uncaughtException', (e) => {
+  console.error('\n  ⚠ SURVIVED AN UNCAUGHT ERROR — the server is still up and your picks are safe:');
+  console.error('   ', e && e.stack ? e.stack.split('\n').slice(0, 3).join('\n    ') : e, '\n');
 });
 
 server.listen(port, '127.0.0.1', () => {

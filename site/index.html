@@ -1333,7 +1333,7 @@
       </details>
       <details data-analytics="faq-open" style="border-top:1px solid var(--fl-charcoal-600);">
         <summary style="display:flex; align-items:center; gap:16px; min-height:44px; padding:16px 0; cursor:pointer; list-style:none; font-size:16.5px; font-weight:600;"><span style="flex:1;">Does it track calories?</span><span aria-hidden="true" style="flex:none; color:var(--fl-bronze-primary);">+</span></summary>
-        <p style="margin:0 0 20px; font-size:15px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">No, and it isn't going to. Nutrition is a different product. This one does training and what training builds.</p>
+        <p style="margin:0 0 20px; font-size:15px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">Not yet. Food logging and barcode scanning are coming, with meal plans and grocery lists after — built the same way as the rest of Forge.</p>
       </details>
       <!-- ⚠ RE-MEASURED 2026-08-18 on feat/route-map: `ls supabase/migrations/*.sql | wc -l` = 167 files
            (0001–0167; 0002 was never used and 0152 is used twice), and
@@ -1385,6 +1385,9 @@
        promise. -->
   <footer style="background:var(--fl-base); padding:22px var(--gut) 40px; border-top:1px solid var(--fl-charcoal-600);">
     <div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px 22px; max-width:1180px; margin:0 auto; font-size:13px; color:var(--fl-gray-400);">
+      <!-- The catalogue. Listed first because it is the only one of these a visitor comes here to read,
+           and because of the rule above: 735 pages that nothing links to are 735 pages nobody finds. -->
+      <a href="/exercises/">Exercise Library</a>
       <a href="/privacy">Privacy</a>
       <a href="/terms">Terms</a>
       <a href="/support">Support</a>

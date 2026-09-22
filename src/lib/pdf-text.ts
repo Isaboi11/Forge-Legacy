@@ -166,6 +166,24 @@ function clone(v: unknown, seen: Map<object, unknown>): unknown {
 }
 
 /**
+ * Why a PDF could not be read, in words the athlete can act on — or null to use the caller's own.
+ *
+ * A password-protected PDF and a file that is not a PDF at all (a .docx renamed, a download that went
+ * wrong) both got "Couldn't read that PDF", which sends somebody to try the same file again (stress test,
+ * 2026-09-21). `pdf.js` names both failures; this reads the name.
+ */
+export function pdfErrorReason(e: unknown): string | null {
+  const name = (e as { name?: string } | null)?.name;
+  if (name === 'PasswordException') {
+    return 'That PDF is password-protected. Open it, copy the program’s text and paste it here instead.';
+  }
+  if (name === 'InvalidPDFException') {
+    return 'That file isn’t a readable PDF. If it opens somewhere else, copy the text and paste it here.';
+  }
+  return null;
+}
+
+/**
  * Every page's text, top to bottom, one line per row, columns tab-separated, pages joined by a newline.
  * Rejects on an unreadable file; resolves to an empty string for a PDF with no text (a scan).
  */

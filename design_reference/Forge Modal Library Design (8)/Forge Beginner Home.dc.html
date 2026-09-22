@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-theme.js"></script>
+<script src="forge-gate.js"></script>
+<script src="forge-coach.js"></script>
+<script src="forge-programs.js"></script>
+<script src="forge-user.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+  .fl-scroll { scrollbar-width: none; }
+  a { color: var(--fl-bronze-primary); }
+  a:hover { color: var(--fl-bronze-bright); }
+  @keyframes bhRise { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform:none; } }
+  @keyframes bhToast { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes bhSheet { from { opacity:0; transform: translateY(28px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="Beginner Home (Sealed)" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(6,7,8,0.3), rgba(6,7,8,0.3)), #060708 url('assets/forge-bg-2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <!-- app bar -->
+    <div style="height:56px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 18px; position:relative; z-index:5;">
+      <span style="display:inline-flex; align-items:center; gap:8px;">
+        <svg width="17" height="25" viewBox="16 0 68 102" style="display:block;" aria-hidden="true"><defs><linearGradient id="bhMark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#DCB57A"></stop><stop offset="52%" stop-color="#BF8F4F"></stop><stop offset="100%" stop-color="#835F32"></stop></linearGradient></defs><g fill="url(#bhMark)"><polygon points="43,6 57,6 57,96 43,96"></polygon><polygon points="23,42 37,27 37,96 23,96"></polygon><polygon points="63,27 77,42 77,96 63,96"></polygon></g></svg>
+        <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">Forge Legacy</span>
+      </span>
+      <button type="button" onClick="{{ goAccount }}" aria-label="Account settings" style="width:34px; height:34px; border-radius:50%; background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-family:var(--fl-font-display); font-size:14px; font-weight:700; box-shadow:var(--fl-glow-subtle); border:none; padding:0; cursor:pointer;">{{ avatarInitials }}</button>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:0 0 28px;">
+
+      <!-- welcome · the sealing -->
+      <div style="padding:18px 24px 6px; animation:bhRise 600ms var(--fl-ease-out, ease-out) both;">
+        <span style="display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+          Chapter I · Sealed
+        </span>
+        <h1 style="margin:10px 0 0; font-family:var(--fl-font-display); font-size:29px; font-weight:600; letter-spacing:-0.4px; line-height:1.08; color:var(--fl-text-primary);">Your first move opens the forge.</h1>
+        <p style="margin:12px 0 0; font-size:14px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty; max-width:332px;">Train a session, follow a program, or find your people. The moment you take your first step you earn the <span style="color:var(--fl-bronze-bright); font-weight:600;">Initiative</span> honor — and your full legacy unlocks.</p>
+      </div>
+
+      <!-- primary action · first workout -->
+      <div style="padding:18px 22px 4px; animation:bhRise 700ms var(--fl-ease-out, ease-out) both; animation-delay:80ms;">
+        <div data-coach="bh-workout" style="position:relative; overflow:hidden; border-radius:var(--fl-radius-xl); border:1px solid var(--fl-bronze-border); background:linear-gradient(180deg, rgba(191,143,79,0.10), transparent 60%), var(--fl-surface-card); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-elevated), var(--fl-glow-subtle); padding:20px;">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <span style="width:50px; height:50px; flex:none; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); box-shadow:var(--fl-glow-subtle); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg></span>
+            <div style="flex:1; min-width:0;">
+              <span style="display:block; font-size:10.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Recommended first session</span>
+              <span style="display:block; font-family:var(--fl-font-display); font-size:24px; font-weight:600; letter-spacing:-0.3px; line-height:1.05; color:var(--fl-text-primary); margin-top:3px;">{{ firstSessionName }}</span>
+              <span style="display:block; font-size:12.5px; color:var(--fl-text-secondary); margin-top:4px;">{{ firstSessionSub }}</span>
+            </div>
+          </div>
+          <button onClick="{{ startWorkout }}" style="display:flex; align-items:center; justify-content:center; gap:9px; width:100%; margin-top:18px; padding:16px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); color:#F7F5F1; font-size:15px; font-weight:700; letter-spacing:0.5px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="square" style="stroke:var(--fl-ember-flame, #E7C98E);"><path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z"></path></svg>Start Your First Workout
+          </button>
+          <div style="display:flex; align-items:center; justify-content:center; gap:6px; margin-top:12px;">
+            <span role="button" tabindex="0" onClick="{{ browse }}" style="font-size:12.5px; font-weight:600; color:var(--fl-bronze-primary); cursor:pointer;">Choose a different workout</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- programs · two open paths -->
+      <div style="padding:16px 22px 4px; display:flex; gap:12px; animation:bhRise 760ms var(--fl-ease-out, ease-out) both; animation-delay:130ms;">
+        <div role="button" tabindex="0" onClick="{{ browse }}" style="flex:1; display:flex; flex-direction:column; gap:9px; padding:16px 15px; border:1px solid var(--fl-charcoal-700); border-radius:var(--fl-radius-lg); background:var(--fl-bg-primary); cursor:pointer;" style-hover="border-color:var(--fl-bronze-border-subtle);">
+          <span style="width:38px; height:38px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M4 9h16M9 9v11"></path></svg></span>
+          <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary); line-height:1.15;">Browse Programs</span>
+          <span style="font-size:12px; line-height:1.4; color:var(--fl-text-secondary);">Find a plan to follow.</span>
+        </div>
+        <div role="button" tabindex="0" onClick="{{ build }}" style="flex:1; display:flex; flex-direction:column; gap:9px; padding:16px 15px; border:1px solid var(--fl-charcoal-700); border-radius:var(--fl-radius-lg); background:var(--fl-bg-primary); cursor:pointer;" style-hover="border-color:var(--fl-bronze-border-subtle);">
+          <span style="width:38px; height:38px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+          <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary); line-height:1.15;">Build a Program</span>
+          <span style="font-size:12px; line-height:1.4; color:var(--fl-text-secondary);">Design your own.</span>
+        </div>
+      </div>
+
+      <!-- take the first step · social entry points -->
+      <div style="padding:20px 24px 4px; animation:bhRise 820ms var(--fl-ease-out, ease-out) both; animation-delay:180ms;">
+        <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:0 2px 10px;">Take the first step</span>
+        <div data-coach="bh-social" style="border:1px solid var(--fl-charcoal-700); border-radius:var(--fl-radius-lg); background:var(--fl-bg-primary); overflow:hidden;">
+          <div role="button" tabindex="0" onClick="{{ findSquad }}" style="display:flex; align-items:center; gap:13px; padding:15px 16px; cursor:pointer;" style-hover="background:var(--fl-surface-elevated);">
+            <span style="width:36px; height:36px; flex:none; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="9" r="2.6"></circle><path d="M3 18a5 5 0 0 1 10 0"></path><circle cx="17" cy="9" r="2.6"></circle><path d="M14 18a5 5 0 0 1 7-4.3"></path></svg></span>
+            <div style="flex:1; min-width:0;"><span style="display:block; font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Find a squad</span><span style="display:block; font-size:12px; color:var(--fl-text-secondary); margin-top:1px;">Train alongside a small, private group.</span></div>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+          </div>
+          <div style="height:1px; background:var(--fl-charcoal-700); margin:0 16px;"></div>
+          <div role="button" tabindex="0" onClick="{{ exploreCommunities }}" style="display:flex; align-items:center; gap:13px; padding:15px 16px; cursor:pointer;" style-hover="background:var(--fl-surface-elevated);">
+            <span style="width:36px; height:36px; flex:none; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><path d="M4 12h16M12 4c2.4 2.3 2.4 13.7 0 16M12 4c-2.4 2.3-2.4 13.7 0 16"></path></svg></span>
+            <div style="flex:1; min-width:0;"><span style="display:block; font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Explore communities</span><span style="display:block; font-size:12px; color:var(--fl-text-secondary); margin-top:1px;">Join a larger circle around your training.</span></div>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- sealed until first move -->
+      <div style="padding:22px 24px 8px; animation:bhRise 880ms var(--fl-ease-out, ease-out) both; animation-delay:230ms;">
+        <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-tertiary); padding:0 2px 10px;">Sealed until your first move</span>
+        <div data-coach="bh-sealed" style="border:1px dashed var(--fl-bronze-border); border-radius:var(--fl-radius-xl); background:var(--fl-bronze-tint); overflow:hidden;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--fl-charcoal-700);">
+            <div role="button" tabindex="0" onClick="{{ openChapter }}" style="display:flex; align-items:center; gap:11px; padding:15px 16px; background:var(--fl-bg-primary); opacity:0.82; cursor:pointer;" style-hover="opacity:1;">
+              <span style="flex:none; color:var(--fl-bronze-primary);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16l-7-4-7 4z"></path></svg></span>
+              <span style="flex:1; font-size:13px; font-weight:600; color:var(--fl-text-secondary);">Your Legacy</span>
+              <span style="flex:none; color:var(--fl-text-tertiary);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></span>
+            </div>
+            <div style="display:flex; align-items:center; gap:11px; padding:15px 16px; background:var(--fl-bg-primary); opacity:0.62;">
+              <span style="flex:none; color:var(--fl-text-tertiary);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6z"></path></svg></span>
+              <span style="flex:1; font-size:13px; font-weight:600; color:var(--fl-text-secondary);">Your Standing</span>
+              <span style="flex:none; color:var(--fl-text-tertiary);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></span>
+            </div>
+            <div style="display:flex; align-items:center; gap:11px; padding:15px 16px; background:var(--fl-bg-primary); opacity:0.62;">
+              <span style="flex:none; color:var(--fl-text-tertiary);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v3a5 5 0 0 1-10 0z"></path><path d="M8 20h8M12 12v8"></path></svg></span>
+              <span style="flex:1; font-size:13px; font-weight:600; color:var(--fl-text-secondary);">Honors</span>
+              <span style="flex:none; color:var(--fl-text-tertiary);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></span>
+            </div>
+            <div style="display:flex; align-items:center; gap:11px; padding:15px 16px; background:var(--fl-bg-primary); opacity:0.62;">
+              <span style="flex:none; color:var(--fl-text-tertiary);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14M5 12h14M5 19h9"></path></svg></span>
+              <span style="flex:1; font-size:13px; font-weight:600; color:var(--fl-text-secondary);">Chapters</span>
+              <span style="flex:none; color:var(--fl-text-tertiary);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></span>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:13px; padding:16px 18px; border-top:1px solid var(--fl-bronze-border-subtle);">
+            <span style="position:relative; width:44px; height:44px; flex:none; border-radius:var(--fl-radius-round); background:var(--fl-bronze-metallic); box-shadow:var(--fl-border-inset), var(--fl-glow-subtle); display:flex; align-items:center; justify-content:center;">
+              <span style="width:36px; height:36px; border-radius:var(--fl-radius-round); background:var(--fl-surface-recessed); border:1px solid rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; color:var(--fl-text-tertiary);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></span>
+            </span>
+            <div style="flex:1; min-width:0;">
+              <span style="display:block; font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:var(--fl-bronze-bright); line-height:1.15;">Initiative</span>
+              <span style="display:block; font-size:12px; line-height:1.45; color:var(--fl-text-secondary); margin-top:2px;">Your first honor, waiting. Make any move above to claim it — and open everything.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- locked tab bar -->
+    <div data-coach="bh-tabs" style="flex:none; display:flex; padding:8px 8px calc(8px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(6,7,8,0.4), rgba(6,7,8,0.85)); position:relative; z-index:5;">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+        <button type="button" onClick="{{ t.go }}" aria-label="{{ t.label }}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:5px 2px; background:transparent; border:none; cursor:pointer; color:{{ t.color }};">
+          <span style="display:inline-flex;">{{ t.icon }}</span>
+          <span style="font-size:9.5px; font-weight:600; letter-spacing:0.4px; color:{{ t.color }};">{{ t.label }}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <!-- nudge toast -->
+    <sc-if value="{{ nudgeOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; left:16px; right:16px; bottom:82px; z-index:30; display:flex; align-items:center; gap:11px; padding:13px 16px; border-radius:var(--fl-radius-md); background:#17130d; border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-shadow-float); animation:bhToast 220ms var(--fl-ease-out, ease-out) both;">
+        <span style="flex:none; color:var(--fl-bronze-primary); display:inline-flex;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></span>
+        <span style="flex:1; font-size:13px; line-height:1.4; color:var(--fl-text-secondary);">{{ nudgeMsg }}</span>
+      </div>
+    </sc-if>
+
+    <!-- welcome · tour or explore (one-time) -->
+    <sc-if value="{{ tourPromptOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ chooseSolo }}" style="position:absolute; inset:0; z-index:40; background:rgba(4,6,8,0.66); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); animation:bhToast 200ms var(--fl-ease-out, ease-out) both;"></div>
+      <div style="position:absolute; left:0; right:0; bottom:0; z-index:41; padding:12px 22px calc(26px + env(safe-area-inset-bottom)); background:#141009; border-top:1px solid var(--fl-charcoal-600); border-radius:22px 22px 0 0; box-shadow:0 -18px 50px rgba(0,0,0,0.5); animation:bhSheet 300ms var(--fl-ease-out, ease-out) both;">
+        <div style="display:flex; justify-content:center; padding:2px 0 16px;"><span style="width:42px; height:5px; border-radius:99px; background:var(--fl-charcoal-500);"></span></div>
+        <span style="display:inline-flex; align-items:center; gap:7px; font-size:10.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8.5v.01"></path></svg>
+          Getting started
+        </span>
+        <h2 style="margin:11px 0 0; font-family:var(--fl-font-display); font-size:24px; font-weight:600; letter-spacing:-0.3px; color:var(--fl-text-primary); line-height:1.1;">Want a quick tour?</h2>
+        <p style="margin:10px 0 0; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty; max-width:320px;">Either way, we'll point things out the first time you open each part — nothing goes unexplained. Want a guided look now, or prefer to dive in?</p>
+        <div style="display:flex; flex-direction:column; gap:11px; margin-top:22px;">
+          <button onClick="{{ chooseTour }}" style="display:flex; align-items:center; justify-content:center; gap:9px; width:100%; padding:15px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); color:#F7F5F1; font-size:15px; font-weight:700; letter-spacing:0.4px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-ember-flame, #E7C98E)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5.2 5.5.8-4 3.9 1 5.6L12 21l-5 2.5 1-5.6-4-3.9 5.5-.8z"></path></svg>
+            Show me around
+          </button>
+          <button onClick="{{ chooseSolo }}" style="width:100%; padding:13px; border-radius:var(--fl-radius-md); background:transparent; border:1px solid var(--fl-charcoal-600); color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer;">I'll explore on my own</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- begin your legacy · name your first chapter -->
+    <sc-if value="{{ chapterFlowOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeChapter }}" style="position:absolute; inset:0; z-index:44; background:rgba(4,6,8,0.72); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); animation:bhToast 200ms var(--fl-ease-out, ease-out) both;"></div>
+      <div style="position:absolute; left:0; right:0; bottom:0; z-index:45; padding:12px 24px calc(26px + env(safe-area-inset-bottom)); background:#141009; border-top:1px solid var(--fl-charcoal-600); border-radius:24px 24px 0 0; box-shadow:0 -20px 55px rgba(0,0,0,0.55); animation:bhSheet 320ms var(--fl-ease-out, ease-out) both;">
+        <div style="display:flex; justify-content:center; padding:2px 0 14px;"><span style="width:42px; height:5px; border-radius:99px; background:var(--fl-charcoal-500);"></span></div>
+
+        <!-- step · name -->
+        <sc-if value="{{ chapterNaming }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column;">
+            <span style="display:inline-flex; align-items:center; gap:7px; font-size:10.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16l-7-4-7 4z"></path></svg>
+              Begin your Legacy
+            </span>
+            <h2 style="margin:11px 0 0; font-family:var(--fl-font-display); font-size:24px; font-weight:600; letter-spacing:-0.3px; color:var(--fl-text-primary); line-height:1.1;">Name your first chapter</h2>
+            <p style="margin:10px 0 0; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Your Legacy is the record of who you're becoming — written one chapter at a time. A chapter is a season: a fresh start, a comeback, a new city. Name yours to open it.</p>
+
+            <label style="display:block; margin:20px 0 8px; font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Chapter name</label>
+            <input value="{{ chapterName }}" onChange="{{ onChapterInput }}" placeholder="The Foundation" maxlength="28" autocomplete="off" spellcheck="false" style="width:100%; padding:14px 15px; border:1.5px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-size:15px; font-family:var(--fl-font-display); font-weight:600; outline:none; box-shadow:inset 0 2px 6px rgba(0,0,0,.45);">
+
+            <span style="display:block; margin:16px 0 10px; font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Or choose a season</span>
+            <div style="display:flex; flex-wrap:wrap; gap:9px;">
+              <sc-for list="{{ chapterSug }}" as="c" hint-placeholder-count="5">
+                <div onClick="{{ c.pick }}" role="button" tabindex="0" style="position:relative; padding:10px 16px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-500); background:var(--fl-surface-elevated); font-size:13px; font-weight:500; color:var(--fl-text-secondary); cursor:pointer;" style-hover="border-color:var(--fl-bronze-border); color:var(--fl-text-primary); background:var(--fl-bronze-tint);">
+                  <sc-if value="{{ c.sel }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute; inset:-1px; border:1.5px solid var(--fl-bronze-primary); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-glow-subtle); pointer-events:none;"></span></sc-if>
+                  <span style="position:relative;">{{ c.name }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:11px; margin-top:24px;">
+              <button onClick="{{ beginChapter }}" style="display:flex; align-items:center; justify-content:center; gap:9px; width:100%; padding:15px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); color:#F7F5F1; font-size:15px; font-weight:700; letter-spacing:0.4px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-ember-flame, #E7C98E)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16l-7-4-7 4z"></path></svg>
+                Begin Chapter
+              </button>
+              <button onClick="{{ closeChapter }}" style="width:100%; padding:12px; border-radius:var(--fl-radius-md); background:transparent; border:1px solid var(--fl-charcoal-600); color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer;">Not now</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- step · celebrate -->
+        <sc-if value="{{ chapterCelebrate }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-direction:column; align-items:center; text-align:center; padding:8px 4px 2px;">
+            <div style="position:relative; width:88px; height:88px; border-radius:50%; padding:7px; box-sizing:border-box; background:var(--fl-bronze-metallic); box-shadow:var(--fl-border-inset), var(--fl-shadow-image), var(--fl-glow-badge); animation:bhSheet 500ms var(--fl-ease-out, ease-out) both;">
+              <div style="width:100%; height:100%; border-radius:50%; background:var(--fl-surface-recessed); border:1px solid rgba(0,0,0,.5); box-shadow:inset 0 2px 6px rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16l-7-4-7 4z"></path><path d="M9 9h6M9 12.5h6"></path></svg></div>
+            </div>
+            <span style="margin-top:20px; font-size:11px; font-weight:600; letter-spacing:2.6px; text-transform:uppercase; color:var(--fl-bronze-primary);">Chapter I</span>
+            <h2 style="margin:9px 0 0; font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.3px; color:var(--fl-text-primary); line-height:1.08;">{{ chapterName }}</h2>
+            <div style="display:flex; align-items:center; gap:12px; width:160px; margin:15px 0;">
+              <span style="flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--fl-bronze-border));"></span>
+              <span style="width:6px; height:6px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary);"></span>
+              <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-border), transparent);"></span>
+            </div>
+            <p style="margin:0; max-width:290px; font-size:14px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">Your Legacy begins. Every workout, honor, and milestone from here is written into it — and the full forge is open.</p>
+            <button onClick="{{ enterLegacy }}" style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; margin-top:24px; padding:16px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); color:#F7F5F1; font-size:15px; font-weight:700; letter-spacing:0.4px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-elevated); text-shadow:0 1px 1px rgba(8,5,2,0.5);">
+              Enter your Legacy
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+            </button>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { nudge: null, tourPrompt: false, chapterFlow: null, chapterName: '' };
+
+  componentDidMount() {
+    // If the forge is already open (unlocked on a prior visit), skip the gate.
+    try { if (window.ForgeGate && window.ForgeGate.guardBeginner()) return; } catch (e) {}
+    // First visit only: offer the tour-vs-explore choice once.
+    try { if (!localStorage.getItem('forge_tour_choice')) this._promptT = setTimeout(() => this.setState({ tourPrompt: true }), 650); } catch (e) {}
+  }
+  componentWillUnmount() { if (this._nudgeT) clearTimeout(this._nudgeT); if (this._promptT) clearTimeout(this._promptT); }
+
+  _chooseTour() {
+    try { if (window.ForgeCoach) window.ForgeCoach.setEnabled(true); localStorage.setItem('forge_tour_choice', 'tour'); } catch (e) {}
+    this.setState({ tourPrompt: false });
+    this._startHomeTour();
+  }
+  _startHomeTour() {
+    try {
+      if (!window.ForgeCoach) return;
+      window.ForgeCoach.replay({
+        page: 'beginner-home',
+        delay: 420,
+        doneLabel: 'Start training',
+        steps: [
+          { target: '[data-coach="bh-workout"]', title: 'Start here', body: 'Your recommended first session is ready. Finish any workout to take your first step — and open the forge.', pad: 10 },
+          { target: '[data-coach="bh-social"]', title: 'Or find your people', body: 'Joining a squad or a community counts as your first move too. Begin however you like.', pad: 8 },
+          { target: '[data-coach="bh-sealed"]', title: 'Sealed for now', body: 'Your Legacy, Standing, Honors, and Chapters stay sealed until your first move — then they all unlock at once.', pad: 8 },
+          { target: '[data-coach="bh-tabs"]', title: 'The five pillars', body: 'These are the pillars of Forge Legacy. The locked ones open the moment you earn the Initiative honor.', pad: 6, radius: 12 },
+        ],
+      });
+    } catch (e) {}
+  }
+  _chooseSolo() {
+    // Learn-as-you-go stays ON either way: contextual tips still appear the first time
+    // each surface is opened, so nothing goes unexplained. Only Settings turns tips off.
+    try { if (window.ForgeCoach) window.ForgeCoach.setEnabled(true); localStorage.setItem('forge_tour_choice', 'solo'); } catch (e) {}
+    this.setState({ tourPrompt: false });
+  }
+
+  // Legacy is sealed until you name your first chapter — the act that begins it.
+  _openChapter() { this.setState({ chapterFlow: 'name' }); }
+  _closeChapter() { this.setState({ chapterFlow: null }); }
+  _pickChapter(name) { this.setState({ chapterName: name }); }
+  _onChapterInput(v) { this.setState({ chapterName: (v || '').slice(0, 28) }); }
+  _beginChapter() {
+    const name = (this.state.chapterName || '').trim() || 'The Foundation';
+    // Naming your first chapter is a first move: it opens the whole forge AND begins your Legacy.
+    try { localStorage.setItem('forge_chapter', name); if (window.ForgeGate) { window.ForgeGate.unlock('first_chapter'); window.ForgeGate.consumePending(); } } catch (e) {}
+    this.setState({ chapterFlow: 'celebrate', chapterName: name });
+  }
+  _enterLegacy() { window.location.href = 'Forge%20Legacy.dc.html'; }
+
+  _nudge(msg) {
+    this.setState({ nudge: msg });
+    if (this._nudgeT) clearTimeout(this._nudgeT);
+    this._nudgeT = setTimeout(() => this.setState({ nudge: null }), 2600);
+  }
+
+  renderVals() {
+    const h = React.createElement;
+    const nav = (id) => h('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, ({
+      home: [h('path', { key: 1, d: 'M4 11.5L12 4l8 7.5' }), h('path', { key: 2, d: 'M6 10v9h12v-9' })],
+      workouts: [h('path', { key: 1, d: 'M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11' })],
+      legacy: [h('path', { key: 1, d: 'M5 4h14v16l-7-4-7 4z' })],
+      squads: [h('circle', { key: 1, cx: 8, cy: 9, r: 2.6 }), h('path', { key: 2, d: 'M3 18a5 5 0 0 1 10 0' }), h('circle', { key: 3, cx: 17, cy: 9, r: 2.6 }), h('path', { key: 4, d: 'M14 18a5 5 0 0 1 7-4.3' })],
+      community: [h('circle', { key: 1, cx: 12, cy: 12, r: 8 }), h('path', { key: 2, d: 'M4 12h16M12 4c2.4 2.3 2.4 13.7 0 16M12 4c-2.4 2.3-2.4 13.7 0 16' })],
+    })[id]);
+    const lockMini = h('svg', { width: 11, height: 11, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { key: 'r', x: 5, y: 11, width: 14, height: 9, rx: 2 }), h('path', { key: 'p', d: 'M8 11V8a4 4 0 0 1 8 0v3' }));
+    const wrap = (el, locked) => h('span', { style: { position: 'relative', display: 'inline-flex' } }, el, locked ? h('span', { key: 'lk', style: { position: 'absolute', right: '-8px', top: '-6px', display: 'inline-flex', color: 'var(--fl-text-tertiary)' } }, lockMini) : null);
+
+    const activeC = 'var(--fl-bronze-bright)';
+    const idleC = 'var(--fl-icon-inactive)';
+    const lockedC = 'var(--fl-text-tertiary)';
+    const go = (url) => () => { window.location.href = url; };
+
+    const tabs = [
+      { key: 'home', label: 'Home', icon: wrap(nav('home'), false), color: activeC, go: () => {} },
+      { key: 'workouts', label: 'Workouts', icon: wrap(nav('workouts'), false), color: idleC, go: go('Forge%20Programs%20Catalog.dc.html') },
+      { key: 'legacy', label: 'Legacy', icon: wrap(nav('legacy'), true), color: lockedC, go: () => this._openChapter() },
+      { key: 'squads', label: 'Squads', icon: wrap(nav('squads'), false), color: idleC, go: go('Squads%20Hub.dc.html') },
+      { key: 'community', label: 'Community', icon: wrap(nav('community'), false), color: idleC, go: go('Community%20Home.dc.html') },
+    ];
+
+    // First-session context — reflects the program chosen in onboarding (On-2 / Ho-1).
+    const FP = window.ForgePrograms;
+    let _pid = null; try { _pid = localStorage.getItem('forge.onboarding.programId'); } catch (e) {}
+    const prog = (FP && _pid) ? FP.byId(_pid) : null;
+    const isRun = !!(prog && prog.family === 'Running');
+    const firstSessionName = prog ? (prog.name + (isRun ? ' \u00b7 Run 1' : ' \u00b7 Day 1')) : 'Full Body \u00b7 Day 1';
+    const firstSessionSub = isRun ? 'First run \u00b7 beginner-friendly' : '6 exercises \u00b7 about 45 min \u00b7 beginner-friendly';
+    // A real beginner full-body day with NO prior history — the day-one user must see "\u2014", not seed data (Wk-1).
+    const FIRST_DAY = [
+      { name: 'Goblet Squat', equip: 'Dumbbell', muscles: ['Quads', 'Glutes'], type: 'Compound', sets: 3, reps: 10 },
+      { name: 'Dumbbell Bench Press', equip: 'Dumbbell', muscles: ['Chest', 'Triceps'], type: 'Compound', sets: 3, reps: 10 },
+      { name: 'Bent-Over Row', equip: 'Barbell', muscles: ['Back', 'Biceps'], type: 'Compound', sets: 3, reps: 10 },
+      { name: 'Overhead Press', equip: 'Dumbbell', muscles: ['Shoulders'], type: 'Compound', sets: 3, reps: 10 },
+      { name: 'Romanian Deadlift', equip: 'Barbell', muscles: ['Hamstrings', 'Glutes'], type: 'Compound', sets: 3, reps: 10 },
+      { name: 'Plank', equip: 'Bodyweight', muscles: ['Core'], type: 'Isolation', sets: 3, reps: 12 },
+    ];
+
+    const _FU = window.ForgeUser ? window.ForgeUser.get() : null;
+    const avatarInitials = (_FU && _FU.initials) ? _FU.initials : 'A';
+
+    return {
+      goAccount: go('Forge%20Account%20Settings.dc.html'),
+      avatarInitials: avatarInitials,
+      firstSessionName: firstSessionName,
+      firstSessionSub: firstSessionSub,
+      startWorkout: () => {
+        try {
+          if (isRun) { localStorage.setItem('forge_workout_launch_context_v1', JSON.stringify({ version: 1, sourceType: 'program', name: firstSessionName, at: Date.now() })); window.location.href = 'Forge%20Active%20Run.dc.html'; return; }
+          localStorage.setItem('forge_workout_launch_context_v1', JSON.stringify({ version: 1, sourceType: 'program', name: firstSessionName, exercises: FIRST_DAY, launchId: 'bh-first-' + Date.now(), at: Date.now() }));
+        } catch (e) {}
+        window.location.href = 'Forge%20Active%20Workout.dc.html';
+      },
+      browse: go('Forge%20Programs%20Catalog.dc.html'),
+      build: go('Forge%20Program%20Builder.dc.html'),
+      findSquad: go('Squads%20Hub.dc.html'),
+      exploreCommunities: go('Discover%20Communities.dc.html'),
+      tabs: tabs,
+      nudgeOpen: !!this.state.nudge,
+      nudgeMsg: this.state.nudge || '',
+      tourPromptOpen: this.state.tourPrompt,
+      chooseTour: () => this._chooseTour(),
+      chooseSolo: () => this._chooseSolo(),
+
+      openChapter: () => this._openChapter(),
+      closeChapter: () => this._closeChapter(),
+      chapterFlowOpen: this.state.chapterFlow != null,
+      chapterNaming: this.state.chapterFlow === 'name',
+      chapterCelebrate: this.state.chapterFlow === 'celebrate',
+      chapterName: this.state.chapterName,
+      onChapterInput: (e) => this._onChapterInput(e.target.value),
+      beginChapter: () => this._beginChapter(),
+      enterLegacy: () => this._enterLegacy(),
+      chapterSug: ['The Foundation', 'New Beginning', 'Comeback', 'Discipline', 'Marathon Prep'].map(name => ({ name, sel: this.state.chapterName === name, pick: () => this._pickChapter(name) })),
+    };
+  }
+}
+</script>
+</body>
+</html>

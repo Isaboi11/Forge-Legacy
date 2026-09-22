@@ -363,7 +363,11 @@ as $$
          round(sum(s.cost_usd), 4)
     from public.coach_ai_spend s
    where s.occurred_at >= p_since
-     and public.admin_guard();
+     -- ⚠ `is_app_admin()`, NOT `admin_guard()` — fixed 2026-09-21 before this was ever applied. This file
+     -- was written when `admin_guard()` returned boolean; 0176 redefined it to `returns void` (it raises
+     -- instead), so `and public.admin_guard()` failed with 42804 on the first paste. `is_app_admin()`
+     -- (0129) is the boolean it wraps, and gives the same zero-for-non-admins result the note below says.
+     and public.is_app_admin();
 $$;
 
 revoke all on function public.coach_ai_cache_health(timestamptz) from public;
@@ -379,4 +383,4 @@ commit;
 --   select * from public.coach_ai_spend_credits('nonsense'); -- ERROR 22023, as intended
 --
 -- ⚠ The `coach_ai_cache_health` line returns zero rows unless you are in `app_admins` — that is
--- `admin_guard()` doing its job, not a failure. Same by-design behaviour recorded for 0130.
+-- `is_app_admin()` doing its job, not a failure. Same by-design behaviour recorded for 0130.

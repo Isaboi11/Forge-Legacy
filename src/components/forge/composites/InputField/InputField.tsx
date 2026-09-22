@@ -10,7 +10,7 @@
  */
 
 import React, { useState } from 'react'
-import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native'
+import { Platform, StyleSheet, Text, TextInput, View, type TextInputProps, type TextStyle } from 'react-native'
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation'
 
 export interface InputFieldProps extends Omit<TextInputProps, 'onChange' | 'onChangeText' | 'style'> {
@@ -26,6 +26,17 @@ export interface InputFieldProps extends Omit<TextInputProps, 'onChange' | 'onCh
 }
 
 const WELL_INSET = 'inset 0 2px 6px rgba(0,0,0,0.45)'
+
+/*
+ * ⚠ ON WEB THE BROWSER DRAWS ITS OWN FOCUS RING INSIDE THE FIELD — a white rounded box sitting inside
+ * our bronze one, which the PO spotted on the Log Food search bar. The field already signals focus (its
+ * border turns bronze), so the native ring is duplicate chrome rather than the only affordance, and
+ * removing it costs keyboard users nothing.
+ *
+ * It is cast rather than added to the StyleSheet because `outlineStyle` is a react-native-web style that
+ * React Native's own `TextStyle` does not declare — putting it in `StyleSheet.create` fails to compile.
+ */
+const NO_WEB_OUTLINE = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as unknown as TextStyle) : null
 
 export function InputField({
   label,
@@ -65,7 +76,7 @@ export function InputField({
           onBlur={() => setFocus(false)}
           placeholderTextColor={flColor.gray600}
           accessibilityLabel={label}
-          style={styles.input}
+          style={[styles.input, NO_WEB_OUTLINE]}
           {...rest}
         />
       </View>

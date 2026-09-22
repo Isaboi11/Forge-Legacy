@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js"></script>
+<script src="forge-honors.js"></script>
+<script src="forge-honor-art.js"></script>
+<style>
+  body { margin: 0; background: var(--fl-bg-primary); }
+  a { color: var(--fl-bronze-bright); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-primary); }
+</style>
+</helmet>
+
+<div style="min-height:100vh; background:var(--fl-bg-primary); font-family:var(--fl-font-sans); padding:56px 40px 96px; display:flex; flex-direction:column; align-items:center; gap:44px;">
+
+  <header style="width:100%; max-width:1180px; display:flex; flex-direction:column; gap:14px;">
+    <div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--fl-text-bronze-label);">Honor artwork · symbol language</div>
+    <h1 style="margin:0; font-family:var(--fl-font-display); font-size:40px; line-height:1.1; color:var(--fl-text-primary); font-weight:600;">Five ways to draw the symbol</h1>
+    <p style="margin:0; max-width:70ch; font-size:15px; line-height:1.75; color:var(--fl-text-secondary); text-wrap:pretty;">Not the finish this time — the form. Every symbol is redrawn from nothing in five different vocabularies: what a mark is made of, how literal it is, how many strokes it gets, whether it is line or mass. Same bezel, same disc, same engraved cut, same five ideas, five entirely different alphabets.</p>
+  </header>
+
+  <section style="width:100%; max-width:1180px; display:flex; flex-direction:column; gap:14px;">
+    <div style="display:flex; align-items:baseline; gap:12px;">
+      <span style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--fl-text-secondary);">The five ideas · drawn as they ship today</span>
+      <span style="flex:1; height:1px; background:var(--fl-charcoal-600);"></span>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; align-items:flex-start; gap:26px;">
+      <sc-for list="{{ current }}" as="m" hint-placeholder-count="5">{{ m }}</sc-for>
+    </div>
+  </section>
+
+  <sc-for list="{{ rows }}" as="row" hint-placeholder-count="5">
+    <section style="width:100%; max-width:1180px; background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:34px 36px; display:flex; gap:40px; align-items:flex-start; flex-wrap:wrap;">
+
+      <div style="display:flex; flex-direction:column; align-items:center; gap:16px; flex:none;">
+        {{ row.hero }}
+        <span style="font-family:var(--fl-font-display); font-size:34px; line-height:1; color:var(--fl-bronze-primary);">{{ row.letter }}</span>
+      </div>
+
+      <div style="flex:1 1 420px; min-width:340px; display:flex; flex-direction:column; gap:18px;">
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <h2 style="margin:0; font-family:var(--fl-font-display); font-size:25px; line-height:1.2; color:var(--fl-text-primary); font-weight:600;">{{ row.name }}</h2>
+          <p style="margin:0; max-width:58ch; font-size:14.5px; line-height:1.7; color:var(--fl-text-secondary); text-wrap:pretty;">{{ row.note }}</p>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:20px; padding-top:4px;">
+          <sc-for list="{{ row.strip }}" as="m" hint-placeholder-count="4">{{ m }}</sc-for>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:8px; padding-top:2px;">
+          <sc-for list="{{ row.tags }}" as="t" hint-placeholder-count="3">
+            <span style="font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; white-space:nowrap; color:var(--fl-text-secondary); border:1px solid var(--fl-charcoal-600); border-radius:999px; padding:5px 11px;">{{ t }}</span>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+  </sc-for>
+
+  <footer style="width:100%; max-width:1180px; padding-top:26px; border-top:1px solid var(--fl-charcoal-600); display:flex; flex-direction:column; gap:10px;">
+    <p style="margin:0; max-width:80ch; font-size:13.5px; line-height:1.85; color:var(--fl-text-secondary); text-wrap:pretty;">{{ recommendation }}</p>
+    <p style="margin:0; max-width:80ch; font-size:13.5px; line-height:1.85; color:var(--fl-text-secondary); text-wrap:pretty;">{{ mixNote }}</p>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = { ready: false };
+  componentDidMount() {
+    this._poll = () => {
+      const ns = window.ForgeLegacyVisualFoundation_5368b2;
+      // the DS bundle captures `const React = window.React` at evaluation time; if
+      // that ran early, Insignia exists but throws. Gate on it actually running.
+      let usable = false;
+      if (ns && typeof ns.Insignia === 'function') {
+        try { ns.Insignia({ variant: 'honor', size: 40 }); usable = true; } catch (e) { usable = false; }
+      }
+      if (typeof React !== 'undefined' && window.ForgeHonorArt && usable) this.setState({ ready: true });
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { clearTimeout(this._t); }
+
+  // The five ideas every language has to say. Same meanings, five alphabets.
+  ideas() {
+    return [
+      { key: 'press',    label: 'Press' },
+      { key: 'break',    label: 'Break' },
+      { key: 'standard', label: 'Standard' },
+      { key: 'aim',      label: 'Aim' },
+      { key: 'merge',    label: 'Merge' },
+    ];
+  }
+
+  languages() {
+    return [
+      {
+        letter: 'A', key: 'heraldic', name: 'Heraldic mass',
+        note: 'No lines at all — solid devices, the way a coin or a coat of arms carries its charge. Weight and silhouette do the work, so the mark survives being shrunk, cast in shadow, or printed on a shirt. The furthest thing from a stock icon set.',
+        tags: ['solid mass', 'blazon', 'reads tiny'],
+        mode: 'fill',
+        caps: 'square',
+        glyphs: {
+          press: '<path d="M2 10.5h20v3H2z"/><path d="M3.5 5h4v14h-4z"/><path d="M16.5 5h4v14h-4z"/>',
+          break: '<path d="M12 2.4 21 12h-5.4v4.4H8.4V12H3z"/><path d="M2 19.4h7.6V22H2z"/><path d="M14.4 19.4H22V22h-7.6z"/>',
+          standard: '<path d="M4.4 2H7v20H4.4z"/><path d="M8.2 3.2H21.6L18 8.2l3.6 5H8.2z"/>',
+          aim: '<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 3.4a6.6 6.6 0 1 0 0 13.2 6.6 6.6 0 0 0 0-13.2z"/><circle cx="12" cy="12" r="3.1"/>',
+          merge: '<path d="M2 4.4h8.2V7H2z"/><path d="M2 10.7h8.2v2.6H2z"/><path d="M2 17h8.2v2.6H2z"/><path d="M11.6 4.9 22 12l-10.4 7.1z"/>',
+        },
+      },
+      {
+        letter: 'B', key: 'constructed', name: 'Constructed geometry',
+        note: 'Compass and straightedge only: circles, arcs and one axis. Nothing is a picture of a thing — a press is a bar held above a circle, a break is a ring pulled apart. Abstract, systematic, and endlessly extensible to 179 without repeating itself.',
+        tags: ['compass-built', 'abstract', 'systematic'],
+        mode: 'stroke', sw: 2.1, caps: 'square',
+        glyphs: {
+          press: '<circle cx="12" cy="12" r="9"/><path d="M4.35 8.4h15.3"/><path d="M8.4 8.4V3.9"/><path d="M15.6 8.4V3.9"/>',
+          break: '<path d="M3 9.6a9 9 0 0 1 18 0"/><path d="M3 14.4a9 9 0 0 0 18 0"/>',
+          standard: '<path d="M5 2v20"/><path d="M5 3.4 18.2 8.6 5 13.8z"/>',
+          aim: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+          merge: '<circle cx="6.6" cy="12" r="4.4"/><circle cx="12" cy="12" r="4.4"/><circle cx="17.4" cy="12" r="4.4"/>',
+        },
+      },
+      {
+        letter: 'C', key: 'pictorial', name: 'Pictorial engraving',
+        note: 'The opposite bet: draw the actual thing, finely and with detail — plates and collars on the bar, a fly that waves, three rings on the target. Fine line, rounded ends, the language of banknote vignettes and old medal reverses.',
+        tags: ['literal', 'fine line', 'illustrative'],
+        mode: 'stroke', sw: 1.35, caps: 'round',
+        glyphs: {
+          press: '<path d="M2 12h20"/><path d="M5 6.6v10.8"/><path d="M7.1 8.2v7.6"/><path d="M16.9 8.2v7.6"/><path d="M19 6.6v10.8"/><path d="M9.4 10.2v3.6"/><path d="M14.6 10.2v3.6"/>',
+          break: '<path d="M2 16h8.1l1.3-2.6 1.1 4.2 1.5-3.3 1 1.7H22"/><path d="M12 10.6V3.2"/><path d="m8.5 6.7 3.5-3.5 3.5 3.5"/>',
+          standard: '<path d="M5 22V4.6"/><circle cx="5" cy="2.7" r="1.5"/><path d="M5 5.4h6.3c2.4 0 2.9 1.7 5.3 1.7 2 0 3-.8 5.4-1.5v7c-2.4.7-3.4 1.5-5.4 1.5-2.4 0-2.9-1.7-5.3-1.7H5z"/>',
+          aim: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.6"/><circle cx="12" cy="12" r="2.2"/><path d="M12 1.4v3.3"/><path d="M12 19.3v3.3"/><path d="M1.4 12h3.3"/><path d="M19.3 12h3.3"/>',
+          merge: '<path d="M2 5h7"/><path d="M2 12h7"/><path d="M2 19h7"/><path d="m9 5 5 7-5 7"/><path d="M14 12h8"/><path d="m18.7 8.7 3.3 3.3-3.3 3.3"/>',
+        },
+      },
+      {
+        letter: 'D', key: 'runic', name: 'Runic cut',
+        note: 'Straight cuts only — no curve anywhere, two to four strokes each, built like staves and twigs. What you carve into stone or strike into a billet when the tool cannot make an arc. Brutally simple, ancient, and unmistakably not generated.',
+        tags: ['straight cuts', 'two to four strokes', 'stonecut'],
+        mode: 'stroke', sw: 2.3, caps: 'square',
+        glyphs: {
+          press: '<path d="M12 22V9"/><path d="M12 9 4.5 2.6"/><path d="M12 9l7.5-6.4"/><path d="M5 22h14"/>',
+          break: '<path d="M12 2v20"/><path d="M3.6 16.4 20.4 7.6"/>',
+          standard: '<path d="M5.6 22V2"/><path d="M5.6 3 19.6 8.4 5.6 13.8"/>',
+          aim: '<path d="M12 2.6 21.4 12 12 21.4 2.6 12z"/><path d="M12 8v8"/><path d="M8 12h8"/>',
+          merge: '<path d="M22 12H9.6"/><path d="M9.6 12 2 4"/><path d="M9.6 12 2 20"/><path d="M9.6 12H2"/>',
+        },
+      },
+      {
+        letter: 'E', key: 'counter', name: 'Counter-relief punch',
+        note: 'Figure and ground swapped: a struck field of bronze with the symbol removed from it. The mark is the absence. Gives every honor the same punched-tablet footprint, so a wall of them reads as one set before you read any single one.',
+        tags: ['negative space', 'punched field', 'unified footprint'],
+        mode: 'fill', caps: 'square', evenodd: true,
+        field: 'M4.6 2h14.8A2.6 2.6 0 0 1 22 4.6v14.8a2.6 2.6 0 0 1-2.6 2.6H4.6A2.6 2.6 0 0 1 2 19.4V4.6A2.6 2.6 0 0 1 4.6 2z',
+        glyphs: {
+          press: 'M8 10.8h8v2.4H8zM4.4 6.6h3.2v10.8H4.4zM16.4 6.6h3.2v10.8h-3.2z',
+          break: 'M12 4.4 18.9 12h-3.3v3.4H8.4V12H5.1zM4.4 17.9h6.4v2.5H4.4zM13.2 17.9h6.4v2.5h-6.4z',
+          standard: 'M4.8 3.6h2.3v16.8H4.8zM8.3 4.6h11.4l-2.9 4.1 2.9 4.1H8.3z',
+          aim: 'M12 5.3a6.7 6.7 0 1 0 0 13.4 6.7 6.7 0 0 0 0-13.4zm0 3.2a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7z',
+          merge: 'M4.4 5.2h6.2v2.4H4.4zM4.4 10.8h6.2v2.4H4.4zM4.4 16.4h6.2v2.4H4.4zM11.9 5.7 19.6 12l-7.7 6.3z',
+        },
+      },
+    ];
+  }
+
+  // one offset pass of a whole glyph, in 64-space
+  pass(lang, ideaKey, dy, color, opacity) {
+    const s = 34 / 24;
+    const t = Math.round((32 - 12 * s) * 100) / 100;
+    let body;
+    if (lang.key === 'counter') {
+      body = '<path fill-rule="evenodd" d="' + lang.field + lang.glyphs[ideaKey] + '"/>';
+    } else {
+      body = lang.glyphs[ideaKey];
+    }
+    const paint = lang.mode === 'fill'
+      ? 'fill="' + color + '" stroke="none"'
+      : 'fill="none" stroke="' + color + '" stroke-width="' + lang.sw + '" stroke-linecap="'
+        + lang.caps + '" stroke-linejoin="' + (lang.caps === 'round' ? 'round' : 'miter')
+        + '" stroke-miterlimit="8"';
+    return '<g transform="translate(0,' + dy + ')" opacity="' + opacity + '">'
+      + '<g transform="translate(' + t + ',' + t + ') scale(' + Math.round(s * 1000) / 1000 + ')" ' + paint + '>'
+      + body + '</g></g>';
+  }
+
+  // the shipping engraved finish: shadow on the upper wall, warm catch on the lower lip
+  art(lang, ideaKey, px) {
+    const html = this.pass(lang, ideaKey, -0.58, 'rgba(0,0,0,0.66)', 0.85)
+      + this.pass(lang, ideaKey, 0.58, 'rgb(214,176,124)', 0.62)
+      + this.pass(lang, ideaKey, 0, '#BF8F4F', 1);
+    return React.createElement('svg', {
+      viewBox: '0 0 64 64', width: px, height: px, 'aria-hidden': 'true', focusable: 'false',
+      dangerouslySetInnerHTML: { __html: html },
+    });
+  }
+
+  medal(lang, ideaKey, px, label) {
+    const NS = window.ForgeLegacyVisualFoundation_5368b2;
+    return React.createElement(NS.Insignia, {
+      key: lang.key + '-' + ideaKey + '-' + px,
+      variant: 'honor', size: px, label: label,
+      artwork: this.art(lang, ideaKey, Math.round(px * 0.8)),
+    });
+  }
+
+  renderVals() {
+    if (!this.state.ready) return { rows: [], current: [], recommendation: '', mixNote: '' };
+    const FA = window.ForgeHonorArt;
+    const NS = window.ForgeLegacyVisualFoundation_5368b2;
+    const ideas = this.ideas();
+    // what ships today, for honest comparison
+    const SHIPPING = { press: 'str-ohp', break: 'org-first-pr', standard: 'org-standard', aim: 'org-first-goal', merge: 'sqd-volume' };
+
+    const current = ideas.map((idea) => React.createElement(NS.Insignia, {
+      key: 'cur-' + idea.key, variant: 'honor', size: 84,
+      label: idea.label,
+      artwork: this.shipping(SHIPPING[idea.key], 68),
+    }));
+
+    const rows = this.languages().map((lang) => ({
+      letter: lang.letter, name: lang.name, note: lang.note, tags: lang.tags,
+      hero: this.medal(lang, 'press', 176),
+      strip: ideas.slice(1).map((idea) => this.medal(lang, idea.key, 88)),
+    }));
+
+    return {
+      rows, current,
+      recommendation: 'My call: A, heraldic mass. The complaint about the current set is exactly the complaint about line icons — thin outlined pictograms are the house style of every app, which is why they read as generated. A solid device does not; coins and arms have used filled charges for a thousand years because mass is what survives being struck into metal and shrunk to 44px. It is also the hardest to draw badly at scale, because a bad silhouette is obvious immediately.',
+      mixNote: 'If A feels too heavy across 179, D is the sharper minority pick — straight cuts only, nothing a drawing tool would default to, and it stays distinct at any size. B is the safe systematic answer, C the most beautiful and the least scalable, E the boldest and the most restrictive.',
+    };
+  }
+
+  shipping(markId, px) {
+    const FA = window.ForgeHonorArt;
+    const b = FA.FIT[markId] || [0, 0, 24, 24];
+    const s = Math.min(34 / b[2], 34 / b[3], 2.6);
+    const inner = '<g transform="translate(' + (32 - s * (b[0] + b[2] / 2)) + ',' + (32 - s * (b[1] + b[3] / 2))
+      + ') scale(' + s + ')" stroke-width="' + (3.1 / s) + '">' + FA.MARKS[markId].d + '</g>';
+    return React.createElement('svg', {
+      viewBox: '0 0 64 64', width: px, height: px, 'aria-hidden': 'true', focusable: 'false',
+      dangerouslySetInnerHTML: { __html: FA.preview(inner, 2) },
+    });
+  }
+}
+</script>
+</body>
+</html>

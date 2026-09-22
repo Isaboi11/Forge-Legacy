@@ -305,10 +305,18 @@ function RootNavigator() {
         {/* W-28, both modes off one route: `?id` present is EDIT, absent is CREATE. */}
         <Stack.Screen name="custom-exercise" />
         <Stack.Screen name="templates" />
+        {/* Workouts restructure (2026-09-22): the athlete's own program library, and the full Forge catalogue. */}
+        <Stack.Screen name="programs" />
+        <Stack.Screen name="program-catalog" />
         <Stack.Screen name="workout" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="log-activity" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="exercise-picker" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="program-builder" options={{ presentation: 'fullScreenModal' }} />
+        {/* The guided lane into the same builder — same presentation, because it is the same job. */}
+        <Stack.Screen name="program-guided" options={{ presentation: 'fullScreenModal' }} />
+        {/* Build a Program → Paste a program / Upload pictures (ONB-A6-D10). Opened from program-guided, so it
+            presents the same way and stacks on top of it. */}
+        <Stack.Screen name="program-import" options={{ presentation: 'fullScreenModal' }} />
         {/* The coach. Declared here because a route is gated by being DECLARED, not by existing — see the
             note below. It presents over the tabs: the bubble is reachable from every screen, so the thing
             it opens must not push a card onto whichever stack happened to be underneath. */}
@@ -353,6 +361,12 @@ function RootNavigator() {
         <Stack.Screen name="week-template/[id]" />
         <Stack.Screen name="forge-templates" />
         <Stack.Screen name="home-gym" />
+        {/* Nutrition (Phase 1). A food diary is health information — P-6-Amendment-002 P6-A2-D1 makes
+            every nutrition table owner-only, and these two screens must be inside the guard for the
+            same reason: a signed-out visitor should meet sign-in, not a chromed empty diary. */}
+        <Stack.Screen name="log-food" />
+        <Stack.Screen name="food-detail" />
+        <Stack.Screen name="nutrition-targets" />
         <Stack.Screen name="account-settings" />
         {/* P-8. A plain push in BOTH entry contexts, deliberately: the spec's two contexts differ only in
             the dismiss affordance (§2.3), which `?from=gate` switches, and M-7 dismisses before routing —
@@ -361,6 +375,12 @@ function RootNavigator() {
         <Stack.Screen name="subscription" />
         <Stack.Screen name="edit-profile" />
         <Stack.Screen name="preferences" />
+        {/* What Holt Remembers (0204, CA-D2). Account Settings → Training — Holt's notes, each editable
+            and deletable by the athlete. */}
+        <Stack.Screen name="holt-memory" />
+        {/* Form check (2026-09-22) — film a set, Holt reads the frames. Its own screen because the camera
+            cannot be presented over Holt's sheet. */}
+        <Stack.Screen name="form-check" />
         <Stack.Screen name="profile-visibility" />
         <Stack.Screen name="notifications" />
         {/* Blocked People (0171). Account Settings → Privacy & Alerts, and the ONLY way to undo a block:

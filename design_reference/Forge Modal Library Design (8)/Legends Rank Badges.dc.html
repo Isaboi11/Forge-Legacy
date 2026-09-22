@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&amp;display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#09070A; color:#EFE9E0; font-family:'Playfair Display',Georgia,serif; -webkit-font-smoothing:antialiased; }
+  a { color:#C9A45A; } a:hover { color:#E7C983; }
+  .fn-sans { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+</style>
+</helmet>
+<div style="min-height:100vh; background:radial-gradient(120% 58% at 50% -6%, rgba(214,170,90,0.11) 0%, rgba(214,170,90,0) 48%), radial-gradient(90% 46% at 50% 118%, rgba(201,128,44,0.07) 0%, rgba(0,0,0,0) 62%), #09070A; padding:58px 40px 60px; display:flex; flex-direction:column; align-items:center;">
+
+  <!-- ══ MASTHEAD ══ -->
+  <header style="display:flex; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:1180px;">
+    <h1 style="margin:0; font-size:60px; font-weight:700; letter-spacing:16px; text-indent:16px; background:linear-gradient(180deg,#F4DCA6,#9A7038); -webkit-background-clip:text; background-clip:text; color:transparent;">Legends Rank<br></h1>
+    <span class="fn-sans" style="margin-top:16px; font-size:13px; font-weight:600; letter-spacing:3.5px; text-transform:uppercase; color:#C6BEB2;">You have earned your place among the legends.</span>
+    <div style="display:flex; align-items:center; gap:16px; width:min(560px,82%); margin:20px 0 14px;">
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(214,170,90,0.75));"></span>
+      <span style="width:8px; height:8px; flex:none; transform:rotate(45deg); border:1px solid #D6AA5A;"></span>
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(214,170,90,0.75),transparent);"></span>
+    </div>
+    <span class="fn-sans" style="font-size:12px; font-weight:600; letter-spacing:4px; text-transform:uppercase; color:#B98F4D;">Few enter. Fewer are chosen.</span>
+  </header>
+
+  <!-- ══ FOUR BADGES · each a separate artboard ══ -->
+  <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:28px; width:100%; max-width:1180px; margin-top:56px;">
+    <sc-for list="{{ items }}" as="it" hint-placeholder-count="4">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#8C6E42; margin-bottom:16px;">Hall of Legends {{ it.roman }}</span>
+        <div style="width:100%; max-width:250px;">
+          <dc-import name="FoundationBadge" rank="hall" tier="{{ it.tier }}" hint-size="250px,283px"></dc-import>
+        </div>
+        <div style="text-align:center; margin-top:26px; display:flex; flex-direction:column; align-items:center; gap:13px;">
+          <span style="font-size:20px; font-weight:600; letter-spacing:2.5px; text-transform:uppercase; color:#E4C489;">{{ it.name }}</span>
+          <span style="width:7px; height:7px; flex:none; transform:rotate(45deg); border:1px solid rgba(214,170,90,0.6);"></span>
+          <p class="fn-sans" style="margin:0; font-size:13.5px; line-height:1.95; color:#9A938A;">{{ it.l1 }}<br>{{ it.l2 }}<br>{{ it.l3 }}</p>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ══ REFERENCE ROW ══ -->
+  <div style="display:flex; flex-direction:column; align-items:center; width:100%; max-width:1180px; margin-top:74px; padding-top:42px; border-top:1px solid #241B12;">
+    <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#6C5A41; margin-bottom:30px;">Reference · the ascent, together</span>
+    <div style="display:flex; align-items:flex-end; justify-content:center; gap:38px;">
+      <sc-for list="{{ items }}" as="it" hint-placeholder-count="4">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:11px;">
+          <div style="width:112px;"><dc-import name="FoundationBadge" rank="hall" tier="{{ it.tier }}" hint-size="112px,127px"></dc-import></div>
+          <span class="fn-sans" style="font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:#7A674C;">{{ it.roman }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ══ CLOSING BAND ══ -->
+  <div style="display:flex; align-items:center; gap:18px; width:min(720px,88%); margin-top:60px;">
+    <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(214,170,90,0.5));"></span>
+    <span class="fn-sans" style="font-size:12px; font-weight:600; letter-spacing:3.5px; text-transform:uppercase; color:#B98F4D; white-space:nowrap;">Legends remain.</span>
+    <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(214,170,90,0.5),transparent);"></span>
+  </div>
+
+  <!-- ══ ASSET NOTE ══ -->
+  <p class="fn-sans" style="max-width:720px; text-align:center; margin:34px 0 0; font-size:12.5px; line-height:1.75; color:#5F5648;">Badge cutouts · <span style="color:#B98F4D;">assets/hall-1–4.png</span>. Mount anywhere with <span style="color:#B98F4D;">&lt;dc-import name="FoundationBadge" rank="hall" tier="1–4"&gt;</span>. The hall opens, deepens, reveals, and receives.</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      items: [
+        { tier: '1', roman: 'I',   name: 'The Threshold',  l1: 'The invitation',        l2: 'has been earned.',        l3: 'The door is open.' },
+        { tier: '2', roman: 'II',  name: 'The Passage',    l1: 'You walk the path',     l2: 'few ever reach. Discipline', l3: 'brings you deeper.' },
+        { tier: '3', roman: 'III', name: 'The Revelation', l1: 'You discover',          l2: 'the legacy you',          l3: 'are meant to join.' },
+        { tier: '4', roman: 'IV',  name: 'Among Legends',  l1: 'You have earned',       l2: 'your place. One among',   l3: 'the legends. Yours to uphold.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

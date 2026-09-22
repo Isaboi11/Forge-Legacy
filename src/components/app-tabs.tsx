@@ -8,6 +8,7 @@ import { useQuery } from '@/lib/useQuery';
 import {
   HomeTabIcon,
   LegacyTabIcon,
+  NutritionTabIcon,
   SquadsTabIcon,
   WorkoutsTabIcon,
 } from '@/components/forge/primitives/icons/NavIcons';
@@ -16,9 +17,14 @@ import {
  * App shell — the Forge Legacy bronze TabBar (Claude Design's canonical bottom
  * nav), built on `expo-router/ui`'s headless Tabs/TabList/TabTrigger/TabSlot.
  *
- * Four tabs, in order — Home · Workouts · Legacy · Squads — with "Workouts" plural,
+ * FIVE tabs, in order — Home · Workouts · Legacy · Squads · Nutrition — with "Workouts" plural,
  * Legacy the emphasized bronze tile in the centre, and the icons ported 1:1 from the
- * dc `ForgeSymbols` glyphs. This matches the design system's finalized 4-tab TabBar.
+ * dc `ForgeSymbols` glyphs.
+ *
+ * ⚠ NUTRITION TOOK THE FIFTH SLOT, NOT COMMUNITIES. `Community-Architecture-Amendment-002` reserved it
+ * for Communities; `Nutrition-Architecture-v1.0` NUT-D1 (PO, 2026-09-21: *"farthest right"*) gives it to
+ * Nutrition and leaves Communities without a tab. Legacy stays the centre tile — which is why Nutrition
+ * is appended rather than inserted, per `Nutrition Home.dc.html`'s own `tabItems`.
  *
  * Community is a fifth surface that is SHELVED until launch: its tab is intentionally
  * omitted here, its screen is preserved (non-routed) at `src/deferred/community.tsx`,
@@ -57,6 +63,9 @@ export default function AppTabs() {
           </TabTrigger>
           <TabTrigger name="squads" href="/squads" asChild>
             <TabBarButton label="Squads" badge={pendingRequests} renderIcon={(color) => <SquadsTabIcon color={color} />} />
+          </TabTrigger>
+          <TabTrigger name="nutrition" href="/nutrition" asChild>
+            <TabBarButton label="Nutrition" renderIcon={(color) => <NutritionTabIcon color={color} />} />
           </TabTrigger>
         </TabBar>
       </TabList>

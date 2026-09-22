@@ -24,6 +24,8 @@ This amendment promotes Communities to the 5th bottom-navigation tab and retires
 
 ## Decision 1 — Bottom navigation is now exactly 5 tabs
 
+> ⚠ **AMENDED 2026-09-21 — the 5th slot is Nutrition, not Communities** (`Nutrition-Architecture-v1.0.md` NUT-D1, PO decision). Bottom navigation is now **Home · Workouts · Legacy · Squads · Nutrition**. Communities was never shipped (shelved in `src/deferred/community.tsx`) and has no tab; where it lives if re-enabled is a new decision — a sixth tab is not assumed. The text below is kept as the historical decision.
+
 **Locked.** Bottom navigation is: **Home, Workouts, Legacy, Squads, Communities** (in that order — Communities appended last, preserving the existing order of the first four). Profile remains reached only via the App Bar avatar — never a tab. This reverses Amendment 001's Decision 1 ("Bottom navigation is confirmed as exactly 4 tabs").
 
 ## Decision 2 — Communities qualifies for a tab on frequency-of-use grounds, not domain size alone

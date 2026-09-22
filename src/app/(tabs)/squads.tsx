@@ -309,15 +309,40 @@ function SquadsEmptyState({ onCreate, onJoin }: { onCreate: () => void; onJoin: 
       <View style={styles.emptyCrest}>
         <PeopleGlyph size={38} color={flColor.bronze300} />
       </View>
-      <Text style={styles.emptyHeadline}>Training alongside someone changes how it feels to show up.</Text>
+      {/* ⚠ THE TITLE IS THE PROMISE, THE BODY IS THE MECHANISM. This headline was the mechanism
+          sentence doing both jobs, which left the screen selling the word "squad" rather than the
+          reason to want one. S1 §6 asks for "an explanation of what squads are and a clear path to
+          forming one" — that is two things, and they now read as two. */}
+      <Text style={styles.emptyHeadline}>Train Together.</Text>
       <Text style={styles.emptyBody}>
-        A squad is a small, private group that trains together. Follow each other’s progress, celebrate wins, and take on shared challenges. Build lasting friendships, stay accountable, and discover how much easier consistency becomes when you’re not training alone.
+        Invite your friends, stay accountable, and build something bigger. Training alongside someone
+        changes how it feels to show up.
       </Text>
       <View style={styles.emptyCta}>
         <Button variant="primary" fullWidth icon={<PlusIcon size={18} stroke="#F7F5F1" />} onPress={onCreate} accessibilityLabel="Create a squad">
           Create a Squad
         </Button>
-        <JoinCodeLink onPress={onJoin} />
+        {/* ⚠ SECONDARY, AND THAT IS S1 §6 BEING KEPT RATHER THAN BENT. That section allows exactly one
+            Primary-class CTA in this state, and Create is it. Joining is promoted from a text link to
+            a real control because `Squad-Architecture-Amendment-003` made the invite-code door real —
+            S1's own §14 already strikes its "squads are private, no join" line as FALSE since Discover
+            shipped. Two doors, one of them clearly the main one. */}
+        <Button variant="secondary" fullWidth onPress={onJoin} accessibilityLabel="Join a squad with an invite code">
+          Join a Squad
+        </Button>
+      </View>
+
+      {/* ⚠ WHAT A SQUAD DOES, BEFORE ASKING SOMEBODY TO MAKE ONE. Four lines, each a thing that
+          actually happens — not benefits. The empty state's job is to make the ask make sense, and
+          somebody with no squad has no other way to learn what one is for. */}
+      <View style={styles.whyCard}>
+        <Text style={styles.whyTitle}>Why Squads?</Text>
+        {['Train together', 'Share progress and wins', 'Stay accountable', 'Push each other further'].map((line) => (
+          <View key={line} style={styles.whyRow}>
+            <Text style={styles.whyTick}>✓</Text>
+            <Text style={styles.whyText}>{line}</Text>
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -501,5 +526,19 @@ const styles = StyleSheet.create({
   },
   emptyHeadline: { marginTop: 24, textAlign: 'center', fontFamily: flFont.display, fontSize: 22, fontWeight: '600', lineHeight: 28, letterSpacing: -0.2, color: flColor.cream100, maxWidth: 300 },
   emptyBody: { marginTop: 13, textAlign: 'center', fontSize: 13.5, lineHeight: 22, color: flColor.gray400, maxWidth: 270 },
-  emptyCta: { marginTop: 28, width: '100%' },
+  emptyCta: { marginTop: 28, width: '100%', gap: 10 },
+  whyCard: {
+    marginTop: 24,
+    width: '100%',
+    padding: 16,
+    borderRadius: flRadius.md,
+    backgroundColor: flColor.charcoal800,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    gap: 10,
+  },
+  whyTitle: { fontSize: 14, fontWeight: '700', color: flColor.cream100, marginBottom: 2 },
+  whyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  whyTick: { fontSize: 13, fontWeight: '700', color: flColor.bronze400, width: 14 },
+  whyText: { flex: 1, fontSize: 13, color: flColor.gray400 },
 });

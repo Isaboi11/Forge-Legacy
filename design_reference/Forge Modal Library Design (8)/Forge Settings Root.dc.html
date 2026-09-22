@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+  .fl-scroll { scrollbar-width: none; }
+  @keyframes seRise { from { opacity:0; transform: translateY(9px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="P-4 Settings Root" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/forge-slate2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+      <!-- AppBar -->
+      <div style="height:56px; flex:none; display:flex; align-items:center; gap:6px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-600);">
+        <button onClick="{{ back }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+        <span style="flex:1; font-size:13px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-primary);">Settings</span>
+        <span style="width:44px;"></span>
+      </div>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:26px 20px 34px; display:flex; flex-direction:column; animation:seRise 380ms var(--fl-ease-out, ease-out) both;">
+
+        <!-- Account & controls -->
+        <div style="border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-xl); background:var(--fl-bg-primary); overflow:hidden; box-shadow:var(--fl-border-inset);">
+          <sc-for list="{{ accountCategories }}" as="c" hint-placeholder-count="3">
+            <div role="button" tabindex="0" onClick="{{ c.go }}" style="display:flex; align-items:center; gap:14px; padding:16px 16px; cursor:pointer; border-top:{{ c.border }};" style-hover="background:var(--fl-hover-wash);">
+              <span style="width:36px; height:36px; flex:none; border-radius:var(--fl-radius-md); background:var(--fl-icon-container-bg); border:1px solid var(--fl-icon-container-border); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ c.icon }}</span>
+              <span style="flex:1; font-size:15.5px; font-weight:500; color:var(--fl-text-primary);">{{ c.label }}</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- Billing — a separate mental model from account controls -->
+        <div style="margin-top:16px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-xl); background:var(--fl-bg-primary); overflow:hidden; box-shadow:var(--fl-border-inset);">
+          <sc-for list="{{ billingCategories }}" as="c" hint-placeholder-count="1">
+            <div role="button" tabindex="0" onClick="{{ c.go }}" style="display:flex; align-items:center; gap:14px; padding:16px 16px; cursor:pointer;" style-hover="background:var(--fl-hover-wash);">
+              <span style="width:36px; height:36px; flex:none; border-radius:var(--fl-radius-md); background:var(--fl-icon-container-bg); border:1px solid var(--fl-icon-container-border); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ c.icon }}</span>
+              <span style="flex:1; font-size:15.5px; font-weight:500; color:var(--fl-text-primary);">{{ c.label }}</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 6l6 6-6 6"></path></svg>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- Sign Out — standalone, non-destructive -->
+        <div style="margin-top:26px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-xl); background:var(--fl-bg-primary); overflow:hidden; box-shadow:var(--fl-border-inset);">
+          <div role="button" tabindex="0" onClick="{{ signOut }}" style="display:flex; align-items:center; gap:14px; padding:16px 16px; cursor:pointer;" style-hover="background:var(--fl-hover-wash);">
+            <span style="width:36px; height:36px; flex:none; border-radius:var(--fl-radius-md); background:var(--fl-icon-container-bg); border:1px solid var(--fl-icon-container-border); display:flex; align-items:center; justify-content:center; color:var(--fl-text-secondary);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 8V6.5A2.5 2.5 0 0 0 12 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20H12a2.5 2.5 0 0 0 2.5-2.5V16"></path><path d="M10 12h10"></path><path d="M17 9l3 3-3 3"></path></svg></span>
+            <span style="flex:1; font-size:15.5px; font-weight:500; color:var(--fl-text-secondary);">Sign Out</span>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="margin-top:auto; padding-top:34px; display:flex; flex-direction:column; align-items:center; gap:9px;">
+          <div style="display:flex; align-items:center; gap:9px; font-size:11.5px;">
+            <span role="button" tabindex="0" onClick="{{ openTerms }}" style="color:var(--fl-text-tertiary); cursor:pointer;" style-hover="color:var(--fl-text-secondary);">Terms of Service</span>
+            <span style="color:var(--fl-charcoal-500);">&middot;</span>
+            <span role="button" tabindex="0" onClick="{{ openPrivacy }}" style="color:var(--fl-text-tertiary); cursor:pointer;" style-hover="color:var(--fl-text-secondary);">Privacy Policy</span>
+          </div>
+          <span style="font-size:10.5px; letter-spacing:0.4px; color:var(--fl-charcoal-500);">{{ version }}</span>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <!-- Legal webview sheet -->
+    <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeSheet }}" style="position:absolute; inset:0; z-index:70; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:seRise 220ms var(--fl-ease-out, ease-out) both;">
+        <div onClick="{{ stopProp }}" style="width:100%; height:88%; display:flex; flex-direction:column; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient);">
+          <div style="flex:none; display:flex; align-items:center; gap:6px; padding:14px 12px 12px; border-bottom:1px solid var(--fl-charcoal-700);">
+            <span style="flex:1; font-size:11px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-secondary); padding-left:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ sheetHost }}</span>
+            <button onClick="{{ closeSheet }}" aria-label="Close" style="width:40px; height:40px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-tertiary);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+          </div>
+          <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:26px 24px 40px;">
+            <span style="display:block; font-family:var(--fl-font-display); font-size:26px; font-weight:600; color:var(--fl-text-primary); letter-spacing:-0.3px;">{{ sheetTitle }}</span>
+            <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-top:8px;">{{ sheetUpdated }}</span>
+            <sc-for list="{{ sheetBody }}" as="p" hint-placeholder-count="4">
+              <p style="margin:18px 0 0; font-size:13.5px; line-height:1.62; color:var(--fl-text-secondary); text-wrap:pretty;">{{ p }}</p>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false, sheet: null };
+
+  // Settings Root has been merged into Account Settings — redirect any lingering entry there.
+  componentDidMount() {
+    try { window.location.replace('Forge%20Account%20Settings.dc.html'); return; } catch (e) {}
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  back = () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Forge%20Legacy.dc.html'); };
+
+  signOut = () => {
+    const ok = window.confirm("Sign Out?\n\nYou'll need to sign back in to reach your Legacy on this device.");
+    if (ok) { /* logged-out destination owned by P-9 */ }
+  };
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const FS = window.ForgeSymbols;
+    const h = React.createElement;
+    const ico = (id, sw) => FS.create(React, id, { size: 19, strokeWidth: sw || 1.8 });
+    const cardIcon = h('svg', { width: 19, height: 19, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' },
+      h('rect', { x: 3, y: 6, width: 18, height: 12, rx: 2 }), h('path', { d: 'M3 10h18' }), h('path', { d: 'M6.5 14.5h4' }));
+
+    const go = (file) => () => { window.location.href = file; };
+    const div0 = 'none';
+    const divT = '1px solid var(--fl-charcoal-700)';
+    // Your account, top to bottom. Billing is a different mental model — it lives below.
+    const accountCategories = [
+      { key: 'acct', label: 'Account', icon: ico('profile'), go: go('Forge%20Account%20Settings.dc.html'), border: div0 },
+      { key: 'priv', label: 'Privacy', icon: ico('shield'), go: go('Forge%20Profile%20Visibility.dc.html'), border: divT },
+      { key: 'notif', label: 'Notifications', icon: ico('bell'), go: go('Forge%20Notifications.dc.html'), border: divT },
+      { key: 'prefs', label: 'Preferences', icon: ico('settings'), go: go('Forge%20Preferences.dc.html'), border: divT },
+    ];
+    const billingCategories = [
+      { key: 'sub', label: 'Subscription', icon: cardIcon, go: () => { window.location.href = 'Forge%20Subscription.dc.html'; } },
+    ];
+
+    const LEGAL = {
+      subscription: {
+        host: 'forgelegacy.app/membership',
+        title: 'Membership',
+        updated: 'Forge Legacy · Founder',
+        body: [
+          'You hold Founder access — every training, Legacy, and competition feature is unlocked, with no tier above it.',
+          'Forge is not pay-to-win. Ranks, records, and honors are earned in the work and can never be purchased. Membership keeps the forge lit; it never buys a place on the podium.',
+          'Your plan renews yearly. Billing is handled through your app store, where you can review the next charge or cancel at any time — your Legacy remains yours either way.',
+          'Questions about membership? Reach us at forgelegacy.app/membership.',
+        ],
+      },
+      terms: {
+        host: 'forgelegacy.app/terms',
+        title: 'Terms of Service',
+        updated: 'Last updated · Feb 2026',
+        body: [
+          'Welcome to Forge Legacy. By creating an account and using the app you agree to train responsibly and to the terms set out below.',
+          'Your Legacy — your ranks, records, and honors — belongs to you. We store it so it follows you across devices, and you may export or delete it at any time from Account settings.',
+          'Forge Legacy is a training companion, not medical advice. Consult a qualified professional before beginning any new program, and stop if something hurts.',
+          'These terms may change as the app grows. We\u2019ll surface material changes in-app before they take effect.',
+        ],
+      },
+      privacy: {
+        host: 'forgelegacy.app/privacy',
+        title: 'Privacy Policy',
+        updated: 'Last updated · Feb 2026',
+        body: [
+          'We collect only what the app needs to work: your workouts, the goals you set, and the squads you join.',
+          'You control what others see. Profile visibility is set per-section, and nothing you mark private is shared beyond you.',
+          'We never sell your data. Aggregate, de-identified trends may inform product decisions, but your individual records stay yours.',
+          'Questions about your data? Reach us any time from Account \u203a Privacy.',
+        ],
+      },
+    };
+    const sheet = this.state.sheet ? LEGAL[this.state.sheet] : null;
+
+    return {
+      ready: true, notReady: false,
+      back: this.back,
+      accountCategories,
+      billingCategories,
+      signOut: this.signOut,
+      version: 'Forge Legacy 2.4.1 (build 318)',
+      openTerms: () => this.setState({ sheet: 'terms' }),
+      openPrivacy: () => this.setState({ sheet: 'privacy' }),
+      closeSheet: () => this.setState({ sheet: null }),
+      stopProp: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+      sheetOpen: !!sheet,
+      sheetHost: sheet ? sheet.host : '',
+      sheetTitle: sheet ? sheet.title : '',
+      sheetUpdated: sheet ? sheet.updated : '',
+      sheetBody: sheet ? sheet.body : [],
+    };
+  }
+}
+</script>
+</body>
+</html>

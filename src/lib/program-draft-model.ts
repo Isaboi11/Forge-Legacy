@@ -58,7 +58,7 @@ export interface LiveEditGuard {
   sessions: number;
 }
 
-export const DAY_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
+export const DAY_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 
 // Clamps — design §14 / `setWeeks`,`setDays`,`bumpSets`,`bumpReps`.
 /**
@@ -80,12 +80,28 @@ export const DAY_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
  */
 export const WEEKS_MIN = 1;
 export const WEEKS_MAX = 52;
-export const DAYS_MIN = 2;
-export const DAYS_MAX = 6;
+/*
+ * ⚠ 1–7, NOT 2–6 — Coach-AI Amendment 001 §4.5 / CA-D12. The PO's own example is *"run 1 mile a day and
+ * lift on Wednesday"*: seven days, and the athlete's program is the athlete's. 2–6 was the design HTML's
+ * stepper, and nothing downstream ever depended on it — the schedule walk (`scheduleSlots`), graduation
+ * (`totalSessions`, and its SQL twin in 0104/0119) and the day card all read the days that exist, and the
+ * segmented control below the length stepper is `flex: 1` per chip, so seven fit where five did. What
+ * Holt writes ON HIS OWN is still 2–6 (`MIN/MAX_DAYS_PER_WEEK` in `domain/coach/constraints.ts`); this
+ * is what the athlete may build, by hand or by telling him — `ATHLETE_MIN/MAX_DAYS_PER_WEEK`, which must
+ * agree with these two.
+ */
+export const DAYS_MIN = 1;
+export const DAYS_MAX = 7;
+/*
+ * ⚠ SETS AND REPS ARE NOT A DESIGN LIMIT ANY MORE — PO, 2026-09-21: *"Don't limit amount."* They were
+ * 8 × 60, which cut "Push-ups 5x100" to 5 × 60 on import. The ceilings left are only there so a stepper
+ * has an end: 500 reps is the most the logger's set goal carries (`GOAL_REPS_MAX` in `set-goal.ts`), so a
+ * program can never prescribe a number its own workout screen would show differently.
+ */
 export const SETS_MIN = 1;
-export const SETS_MAX = 8;
+export const SETS_MAX = 50;
 export const REPS_MIN = 1;
-export const REPS_MAX = 60;
+export const REPS_MAX = 500;
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 export const clampWeeks = (n: number) => clamp(Math.round(n), WEEKS_MIN, WEEKS_MAX);

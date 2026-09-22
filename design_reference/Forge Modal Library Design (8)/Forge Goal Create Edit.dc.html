@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .cs-input { width:100%; font-family:var(--fl-font-sans); font-size:14.5px; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); padding:12px 13px; outline:none; transition:border-color 160ms ease; }
+  .cs-input:focus { border-color:var(--fl-bronze-border); }
+  .cs-input::placeholder { color:var(--fl-text-tertiary); }
+  .cs-num { font-variant-numeric:tabular-nums; }
+  @keyframes csRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes csFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes csField { from { opacity:0; transform: translateY(-6px); max-height:0; } to { opacity:1; transform:none; max-height:200px; } }
+  @keyframes flScrim { from { opacity:0; } to { opacity:1; } }
+  @keyframes flSheet { from { opacity:0; transform: translateY(24px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; flex-direction:column; align-items:center; gap:16px; padding:26px 16px 40px;">
+
+  <!-- ─── review-only state switcher (scaffolding, outside the device) ─── -->
+  <div style="display:flex; flex-direction:column; align-items:center; gap:8px; width:404px; max-width:100%;">
+    <span style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-tertiary);">G-3 · states (review)</span>
+    <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:6px;">
+      <sc-for list="{{ viewChips }}" as="c" hint-placeholder-count="4">
+        <button type="button" onClick="{{ c.set }}" style="padding:6px 12px; border-radius:999px; border:1px solid {{ c.border }}; background:{{ c.bg }}; color:{{ c.ink }}; font-size:11px; font-weight:600; font-family:var(--fl-font-sans); cursor:pointer; transition:all 140ms ease;">{{ c.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+
+  <div data-screen-label="G-3 Goal Create / Edit" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/legacy-bg.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <!-- app bar -->
+      <div style="height:56px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 16px 0 6px; border-bottom:1px solid var(--fl-charcoal-700);">
+        <button type="button" onClick="{{ goBack }}" aria-label="Back" style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; background:transparent; border:none; color:var(--fl-text-secondary); cursor:pointer;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+        <span style="font-size:15px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-primary);">{{ appTitle }}</span>
+        <span style="width:44px;"></span>
+      </div>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:22px 20px 30px;">
+
+        <!-- ═══ SLOT IDENTITY (from entry point, not editable) ═══ -->
+        <div style="display:flex; flex-direction:column; align-items:center; text-align:center; animation:csFade 380ms var(--fl-ease-out) both;">
+          <span style="display:inline-flex; align-items:center; gap:7px; padding:6px 13px; border-radius:999px; background:{{ slotBg }}; border:1px solid {{ slotBorder }}; font-size:10px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:{{ slotInk }};">
+            <span style="display:inline-flex;">{{ slotIcon }}</span>{{ slotLabel }}
+          </span>
+          <span style="display:block; margin-top:12px; font-size:12.5px; line-height:1.55; color:var(--fl-text-tertiary); max-width:280px; text-wrap:pretty;">{{ slotHint }}</span>
+        </div>
+
+        <!-- ═══ THE GOAL ═══ -->
+        <div style="margin:26px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">The Goal</span></div>
+        <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:18px 15px; display:flex; flex-direction:column; gap:20px;">
+
+          <!-- name (required) -->
+          <label style="display:flex; flex-direction:column; gap:7px;">
+            <span style="display:flex; align-items:baseline; justify-content:space-between;">
+              <span style="display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Goal Name<span style="display:inline-flex; align-items:center;">{{ nameMarker }}</span></span>
+              <span style="font-size:11px; color:{{ nameCountColor }};">{{ nameCount }}</span>
+            </span>
+            <input class="cs-input" type="text" value="{{ name }}" placeholder="{{ namePlaceholder }}" maxlength="{{ nameMax }}" onInput="{{ onName }}" />
+          </label>
+
+          <!-- target (optional) -->
+          <label style="display:flex; flex-direction:column; gap:7px;">
+            <span style="display:flex; align-items:baseline; justify-content:space-between;">
+              <span style="font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Target Value</span>
+              <span style="font-size:11px; color:var(--fl-text-tertiary);">Optional</span>
+            </span>
+            <input class="cs-input cs-num" type="text" inputmode="decimal" value="{{ target }}" placeholder="Leave blank for a narrative goal" onInput="{{ onTarget }}" />
+          </label>
+
+          <!-- unit (progressive disclosure — only once target has a value) -->
+          <sc-if value="{{ showUnit }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; flex-direction:column; gap:10px; animation:csField 260ms var(--fl-ease-out) both; overflow:hidden;">
+              <span style="font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Unit</span>
+              <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;">
+                <sc-for list="{{ unitChips }}" as="u" hint-placeholder-count="7">
+                  <button type="button" onClick="{{ u.select }}" style="padding:8px 4px; border-radius:var(--fl-radius-md); border:1px solid {{ u.border }}; background:{{ u.bg }}; color:{{ u.ink }}; font-size:12.5px; font-weight:600; font-family:var(--fl-font-sans); cursor:pointer; text-align:center; white-space:nowrap; transition:all 140ms ease;">{{ u.label }}</button>
+                </sc-for>
+              </div>
+              <sc-if value="{{ customUnit }}" hint-placeholder-val="{{ false }}">
+                <input class="cs-input" type="text" value="{{ unit }}" placeholder="Type a unit — min/side, rooms, books…" maxlength="{{ unitMax }}" onInput="{{ onUnit }}" style="animation:csField 220ms var(--fl-ease-out) both;" />
+              </sc-if>
+            </div>
+          </sc-if>
+
+        </div>
+
+        <!-- ═══ LIVE TYPE HINT ═══ -->
+        <div style="margin-top:16px; display:flex; align-items:flex-start; gap:11px; padding:14px 15px; border-radius:var(--fl-radius-lg); background:{{ typeBg }}; border:1px solid {{ typeBorder }}; transition:background 200ms ease, border-color 200ms ease;">
+          <span style="flex:none; display:inline-flex; margin-top:1px; color:{{ typeIconColor }};">{{ typeIcon }}</span>
+          <span style="flex:1; min-width:0;">
+            <span style="display:block; font-size:12.5px; font-weight:700; color:var(--fl-text-secondary);">{{ typeTitle }}</span>
+            <span style="display:block; margin-top:3px; font-size:12px; line-height:1.5; color:var(--fl-text-tertiary); text-wrap:pretty;">{{ typeBody }}</span>
+          </span>
+        </div>
+
+        <!-- ═══ PREVIEW ═══ -->
+        <sc-if value="{{ showPreview }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:22px; animation:csFade 300ms var(--fl-ease-out) both;">
+            <span style="display:block; margin:0 4px 10px; font-size:10px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">How it will appear</span>
+            <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:16px;">
+              <span style="display:block; font-family:var(--fl-font-display); font-size:19px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary); text-wrap:pretty;">{{ previewName }}</span>
+              <!-- quantifiable preview -->
+              <sc-if value="{{ isQuant }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:12px;">
+                  <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+                    <span style="font-size:12px; font-weight:600; color:var(--fl-bronze-bright);">0%</span>
+                    <span style="font-size:12px; color:var(--fl-text-tertiary); font-variant-numeric:tabular-nums;">{{ previewValue }}</span>
+                  </div>
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="{{ zero }}" max="{{ previewMax }}" hint-size="100%,8px"></x-import>
+                </div>
+              </sc-if>
+              <!-- narrative preview -->
+              <sc-if value="{{ isNarrative }}" hint-placeholder-val="{{ false }}">
+                <span style="display:inline-flex; align-items:center; gap:8px; margin-top:12px; padding:7px 14px; border-radius:999px; background:rgba(196,142,74,0.1); border:1px solid var(--fl-bronze-border-subtle); font-size:13px; font-weight:600; color:var(--fl-bronze-bright);"><span style="width:6px; height:6px; border-radius:50%; background:var(--fl-bronze-bright); box-shadow:0 0 8px var(--fl-bronze-bright);"></span>In Progress</span>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+
+      <!-- ═══ COMMIT BAR ═══ -->
+      <div style="flex:none; position:relative; z-index:5; padding:14px 20px calc(16px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(9,9,9,0.4), rgba(9,9,9,0.72));">
+        <button type="button" onClick="{{ commit }}" disabled="{{ commitDisabled }}" style="{{ commitStyle }}"><span style="display:inline-flex;">{{ forgeIcon }}</span>{{ commitLabel }}</button>
+      </div>
+
+      <!-- ═══ DISCARD CONFIRM (dirty back-out) ═══ -->
+      <sc-if value="{{ discardOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeDiscard }}" style="position:absolute; inset:0; z-index:45; background:rgba(0,0,0,0.55); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:flScrim 200ms ease both;"></div>
+        <div role="dialog" aria-modal="true" style="position:absolute; left:0; right:0; bottom:0; z-index:46; padding:12px 22px 26px; border-radius:24px 24px 0 0; background:#17130d; border:1px solid var(--fl-bronze-border-subtle); border-bottom:none; box-shadow:var(--fl-shadow-float); animation:flSheet 260ms var(--fl-ease-out) both;">
+          <div style="width:36px; height:4px; border-radius:999px; background:var(--fl-charcoal-600); margin:0 auto 18px;"></div>
+          <span style="display:block; font-family:var(--fl-font-display); font-size:20px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">{{ discardTitle }}</span>
+          <p style="margin:12px 0 0; font-size:13.5px; line-height:1.55; color:var(--fl-text-tertiary); text-wrap:pretty;">Nothing is saved as a draft — leaving now discards it.</p>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:22px;">
+            <button type="button" onClick="{{ confirmDiscard }}" style="width:100%; padding:15px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-500); background:transparent; color:var(--fl-text-secondary); font-size:14px; font-weight:600; font-family:var(--fl-font-sans); cursor:pointer;">{{ discardConfirmLabel }}</button>
+            <button type="button" onClick="{{ closeDiscard }}" style="width:100%; padding:15px; border-radius:var(--fl-radius-pill); border:none; background:var(--fl-bronze-metallic); color:#1A1206; font-size:14.5px; font-weight:700; letter-spacing:0.3px; font-family:var(--fl-font-sans); cursor:pointer; box-shadow:var(--fl-glow-subtle);">Keep Editing</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- toast -->
+      <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; left:50%; bottom:96px; transform:translateX(-50%); z-index:52; display:inline-flex; align-items:center; gap:11px; padding:13px 20px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); box-shadow:var(--fl-shadow-float); color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:csRise 240ms var(--fl-ease-out) both;">
+          <span style="display:inline-flex; color:var(--fl-icon-bronze); flex:none;">{{ forgeIcon }}</span>{{ toastMsg }}
+        </div>
+      </sc-if>
+
+    </sc-if>
+
+    <!-- forged grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:436,&quot;height&quot;:940},&quot;screenState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;create-primary&quot;,&quot;create-secondary&quot;,&quot;edit&quot;],&quot;default&quot;:&quot;create-primary&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Review&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, view: null, name: '', target: '', unit: '', unitCustom: false, toast: null, discard: false, seeded: false };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      if (r && ns) {
+        let v = this.props.screenState || 'create-primary';
+        try {
+          const p = new URLSearchParams(window.location.search);
+          const mode = p.get('mode'), slot = p.get('slot');
+          if (mode === 'edit') v = 'edit';
+          else if (slot === 'secondary') v = 'create-secondary';
+          else if (slot === 'primary') v = 'create-primary';
+        } catch (e) {}
+        this.setState(Object.assign({ ready: true }, this._seed(v)));
+      } else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentDidUpdate(prev) {
+    if (this.state.ready && prev.screenState !== this.props.screenState && this.props.screenState && this.props.screenState !== this.state.view) {
+      this.setState(this._seed(this.props.screenState));
+    }
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); if (this._navT) clearTimeout(this._navT); }
+
+  _seed(view) {
+    // edit mode arrives pre-filled from an existing quantifiable goal; create modes start blank
+    if (view === 'edit') return { view, name: 'Squat 405 lb', target: '405', unit: 'lb', unitCustom: false, toast: null, discard: false };
+    return { view, name: '', target: '', unit: '', unitCustom: false, toast: null, discard: false };
+  }
+  _setView(v) { this.setState(this._seed(v)); }
+  _toast(msg) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toast: msg }); this._toastT = setTimeout(() => this.setState({ toast: null }), 2400); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) return { ready: false, notReady: true };
+    const h = React.createElement;
+    const S = this.state;
+    const view = S.view || 'create-primary';
+    const isEdit = view === 'edit';
+    const isSecondary = view === 'create-secondary';
+    const isPrimary = !isSecondary; // edit here demonstrates the primary goal
+
+    // ── review switcher ──
+    const VIEWS = [
+      { id: 'create-primary', label: 'Create \u00b7 primary' },
+      { id: 'create-secondary', label: 'Create \u00b7 supporting' },
+      { id: 'edit', label: 'Edit mode' },
+    ];
+    const viewChips = VIEWS.map((v) => {
+      const on = v.id === view;
+      return { key: v.id, label: v.label, set: () => this._setView(v.id),
+        bg: on ? 'var(--fl-bronze-tint)' : 'transparent',
+        border: on ? 'var(--fl-bronze-metal-border)' : 'var(--fl-charcoal-600)',
+        ink: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)' };
+    });
+
+    // ── icons ──
+    const svg = (paths, size, sw) => h('svg', { width: size || 15, height: size || 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(paths) ? paths : [paths]).map((d, i) => h('path', { key: i, d })));
+    const forge = (size) => h('svg', { width: size || 17, height: size || 17, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z' }));
+    const starIcon = h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z' }));
+    const barIcon = svg(['M4 20V10', 'M10 20V4', 'M16 20v-7', 'M4 20h16'], 16, 2);
+    const emberIcon = svg(['M12 3c1 3-1 4-1 6a3 3 0 0 0 6 0c0-1-.4-2-1-2.6 2 1.4 3 3.6 3 6.1a6 6 0 1 1-12 0c0-3.2 2.5-5.2 5-9.5z'], 16, 1.7);
+    const reqMark = h('span', { style: { color: 'var(--fl-bronze-primary)', fontWeight: 700, fontSize: '12px', lineHeight: 1 } }, '\u2217');
+    const okMark = h('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: '#6E8E74', strokeWidth: 2.6, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M5 12.5l4 4 10-10' }));
+
+    // ── slot identity ──
+    const slotLabel = isPrimary ? 'Primary Goal' : 'Supporting Goal';
+    const slotHint = isPrimary
+      ? 'The defining goal of this chapter. Every chapter has one.'
+      : 'A goal that rounds out the chapter. Keep as many as you like.';
+    const namePlaceholder = isPrimary ? 'e.g. Run your first marathon' : 'e.g. Train 4\u00d7 every week';
+
+    // ── fields ──
+    const nameMax = 60, unitMax = 12;
+    const nameLen = S.name.length;
+    const nameTrim = S.name.trim();
+    const nameOk = nameTrim.length >= 2;
+    const nameNearMax = nameLen >= nameMax - 6;
+
+    // target: numeric only, allow one decimal point
+    const onTarget = (e) => { let v = (e.target.value || '').replace(/[^0-9.]/g, ''); const parts = v.split('.'); if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join(''); this.setState({ target: v }); };
+    const targetTrim = S.target.trim();
+    const hasTarget = targetTrim !== '' && !isNaN(parseFloat(targetTrim)) && parseFloat(targetTrim) > 0;
+
+    // ── unit chips: smart-ordered by goal name, + Custom (reveals a field) ──
+    const UNITS = ['lb', 'kg', 'reps', 'mi', 'min', '\u00d7 / week'];
+    const nl = nameTrim.toLowerCase();
+    let boost = [];
+    if (/(run|jog|marathon|\d+ ?k\b|mile|\bwalk|ride|bike|cycl|swim|row)/.test(nl)) boost = ['mi', 'min'];
+    else if (/(lose|gain|weigh|bodyweight|body ?fat|bulk|\bcut)/.test(nl)) boost = ['lb', 'kg'];
+    else if (/(consistent|every|weekly|\bweek|\bdays?\b|streak|habit)/.test(nl)) boost = ['\u00d7 / week'];
+    else if (/(push.?up|pull.?up|chin.?up|\bdip|\brep|\bset)/.test(nl)) boost = ['reps'];
+    else if (/(squat|bench|deadlift|press|\blift|curl|\bpr\b|1rm|snatch|clean|jerk)/.test(nl)) boost = ['lb', 'kg'];
+    const ordered = boost.concat(UNITS.filter((u) => boost.indexOf(u) === -1));
+
+    const customUnit = !!S.unitCustom;
+    const isPreset = UNITS.indexOf(S.unit) !== -1;
+    const chipStyle = (on) => ({ bg: on ? 'var(--fl-bronze-tint)' : 'var(--fl-charcoal-800)', border: on ? 'var(--fl-bronze-metal-border)' : 'var(--fl-charcoal-600)', ink: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)' });
+    const unitChips = ordered.map((u) => {
+      const on = !customUnit && S.unit === u;
+      const st = chipStyle(on);
+      return { key: u, label: u, select: () => this.setState({ unit: on ? '' : u, unitCustom: false }), bg: st.bg, border: st.border, ink: st.ink };
+    });
+    // Custom chip appended last — selecting it reveals the freeform field
+    const cst = chipStyle(customUnit);
+    unitChips.push({ key: '__custom', label: 'Custom', bg: cst.bg, border: cst.border, ink: cst.ink,
+      select: () => this.setState({ unitCustom: true, unit: isPreset ? '' : S.unit }) });
+
+    // ── live type hint ──
+    const isQuant = hasTarget;
+    const typeTitle = isQuant ? 'Tracked goal' : 'Narrative goal';
+    const typeBody = isQuant
+      ? 'You\u2019ll update a number over time — shown as a progress bar and percentage on the goal.'
+      : 'No number to chase — it simply reads \u201cIn Progress\u201d until you mark it achieved.';
+
+    // ── preview ──
+    const previewName = nameTrim || (isQuant ? 'Your tracked goal' : 'Your narrative goal');
+    const unitOut = S.unit.trim();
+    const previewValue = '0 / ' + (hasTarget ? parseFloat(targetTrim) : 0) + (unitOut ? ' ' + unitOut : '');
+
+    // ── commit ──
+    const commitEnabled = nameOk;
+    const commitStyle = { width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '9px', padding: '15px', borderRadius: 'var(--fl-radius-md)', fontSize: '15px', fontWeight: 600, fontFamily: 'var(--fl-font-sans)', border: '1px solid ' + (commitEnabled ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: commitEnabled ? 'var(--fl-bronze-fill)' : 'var(--fl-charcoal-800)', color: commitEnabled ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', boxShadow: commitEnabled ? 'var(--fl-glow-subtle)' : 'none', cursor: commitEnabled ? 'pointer' : 'not-allowed', opacity: commitEnabled ? 1 : 0.75, transition: 'background 180ms ease, opacity 160ms ease' };
+
+    // ── dirty tracking for discard confirm ──
+    const dirty = isEdit
+      ? (S.name !== 'Squat 405 lb' || S.target !== '405' || S.unit !== 'lb')
+      : (nameTrim !== '' || targetTrim !== '' || S.unit.trim() !== '');
+
+    const doExit = () => { if ((function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})()) window.history.back(); else window.location.href = 'Forge%20Goal%20Hub.dc.html'; };
+
+    return {
+      ready: true, notReady: false,
+      viewChips,
+
+      appTitle: isEdit ? 'Edit Goal' : 'New Goal',
+
+      // slot identity
+      slotLabel, slotHint,
+      slotIcon: isPrimary ? starIcon : forge(12),
+      slotBg: isPrimary ? 'rgba(196,142,74,0.12)' : 'var(--fl-surface-recessed)',
+      slotBorder: isPrimary ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+      slotInk: isPrimary ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)',
+
+      // name
+      name: S.name, nameMax, namePlaceholder, onName: (e) => this.setState({ name: e.target.value.slice(0, nameMax) }),
+      nameCount: nameLen === 0 ? '' : nameLen + '/' + nameMax, nameCountColor: nameNearMax ? 'var(--fl-bronze-primary)' : 'var(--fl-text-tertiary)',
+      nameMarker: nameOk ? okMark : reqMark,
+
+      // target + unit
+      target: S.target, onTarget,
+      showUnit: hasTarget,
+      customUnit,
+      unit: S.unit, unitMax, unitChips, onUnit: (e) => this.setState({ unit: e.target.value.slice(0, unitMax), unitCustom: true }),
+
+      // type hint
+      typeTitle, typeBody,
+      typeIcon: isQuant ? barIcon : emberIcon,
+      typeIconColor: 'var(--fl-icon-bronze)',
+      typeBg: isQuant ? 'rgba(196,142,74,0.06)' : 'var(--fl-surface-recessed)',
+      typeBorder: isQuant ? 'var(--fl-bronze-border-subtle)' : 'var(--fl-charcoal-700)',
+
+      // preview
+      showPreview: nameOk,
+      isQuant, isNarrative: !isQuant,
+      previewName, previewValue, previewMax: hasTarget ? parseFloat(targetTrim) : 1, zero: 0,
+
+      // commit
+      forgeIcon: forge(17),
+      commitDisabled: !commitEnabled, commitStyle,
+      commitLabel: isEdit ? 'Save Changes' : 'Create Goal',
+      commit: () => {
+        if (!commitEnabled) return;
+        if (isEdit) { this._toast('Changes saved'); }
+        else { this._toast((isPrimary ? 'Primary goal set' : 'Supporting goal added') + ' \u00b7 ' + nameTrim); }
+        if (this._navT) clearTimeout(this._navT);
+        this._navT = setTimeout(doExit, 1150);
+      },
+
+      // back / discard
+      goBack: () => { if (dirty) this.setState({ discard: true }); else doExit(); },
+      discardOpen: S.discard,
+      discardTitle: isEdit ? 'Discard changes?' : 'Discard this goal?',
+      discardConfirmLabel: isEdit ? 'Discard Changes' : 'Discard',
+      closeDiscard: () => this.setState({ discard: false }),
+      confirmDiscard: () => { this.setState({ discard: false }); doExit(); },
+
+      toastOpen: !!S.toast, toastMsg: S.toast || '',
+    };
+  }
+}
+</script>
+</body>
+</html>

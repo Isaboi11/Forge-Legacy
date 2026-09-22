@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<meta name="design_doc_mode" content="canvas">
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .rp-h { font-family: var(--fl-font-display); }
+</style>
+</helmet>
+
+<div style="padding:56px 40px 90px; background:radial-gradient(150% 60% at 50% -12%, rgba(191,143,79,0.06), transparent 55%), var(--fl-bg-atmospheric);">
+<div style="max-width:1160px; margin:0 auto;">
+
+  <!-- ══ MASTHEAD ══ -->
+  <span style="display:inline-flex; align-items:center; gap:9px; padding:5px 13px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border-subtle); font-size:10.5px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Architecture &amp; product-boundary verification</span>
+  <h1 class="rp-h" style="font-size:44px; font-weight:600; letter-spacing:0.3px; color:var(--fl-text-primary); margin:20px 0 12px; line-height:1.05;">Posting &amp; comments across the three social surfaces</h1>
+  <p style="max-width:820px; font-size:16px; line-height:1.65; color:var(--fl-text-secondary); margin:0 0 30px;">Verifying how the completed Community Post Detail and Community Composer should extend to <strong style="color:var(--fl-text-primary);">Communities</strong>, <strong style="color:var(--fl-text-primary);">Squads</strong>, and the <strong style="color:var(--fl-text-primary);">Friends Feed</strong> — what to share, what to keep distinct, and what to change. Not a request to make the three feeds identical.</p>
+
+  <!-- ══ VERDICT BANNER ══ -->
+  <div style="display:flex; gap:18px; align-items:flex-start; padding:22px 24px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border); background:linear-gradient(180deg, rgba(38,29,18,0.5), rgba(15,13,10,0.4)), var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); margin-bottom:44px;">
+    <span style="width:46px; height:46px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); color:#1A1206; box-shadow:var(--fl-border-inset);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4 4 10-10"></path></svg></span>
+    <div style="flex:1; min-width:0;">
+      <span class="rp-h" style="display:block; font-size:20px; font-weight:600; color:var(--fl-text-primary); margin-bottom:7px;">Verdict — the boundary is sound; the shell was the gap</span>
+      <p style="font-size:14.5px; line-height:1.6; color:var(--fl-text-secondary); margin:0;">No universal "post" schema exists — each surface already has its own domain model, so the coupling the brief warns against has <strong style="color:#8FB295;">not</strong> happened. The real gaps: <strong style="color:var(--fl-bronze-bright);">Post Detail was origin-blind</strong> (hard-wired to the community store, title fixed to "Post"), and <strong style="color:var(--fl-bronze-bright);">Squads have no threaded post model at all</strong>. This pass adds the two missing models and an origin-aware Post Detail shell without merging semantics.</p>
+    </div>
+  </div>
+
+  <!-- ══ 1 · CURRENT BEHAVIOR ══ -->
+  <span style="display:block; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:14px;">01 — Current behavior</span>
+  <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:46px;">
+
+    <!-- Communities -->
+    <div style="display:flex; flex-direction:column; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+      <div style="display:flex; align-items:center; gap:10px; padding:15px 17px; border-bottom:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(191,143,79,0.06), transparent);">
+        <span style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="8" r="2.7"></circle><circle cx="16.5" cy="8" r="2.7"></circle><path d="M3 19.5a4.5 4.5 0 0 1 9 0"></path><path d="M12 19.5a4.5 4.5 0 0 1 9 0"></path></svg></span>
+        <span class="rp-h" style="font-size:16px; font-weight:600; color:var(--fl-text-primary);">Communities</span>
+      </div>
+      <div style="padding:16px 17px; flex:1;">
+        <span style="display:inline-flex; padding:3px 9px; border-radius:var(--fl-radius-pill); background:rgba(110,142,116,0.12); border:1px solid rgba(110,142,116,0.4); font-size:9.5px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:#8FB295; margin-bottom:12px;">Complete</span>
+        <p style="font-size:13px; line-height:1.6; color:var(--fl-text-secondary); margin:0 0 12px;">The broadest surface. <code style="color:var(--fl-bronze-bright); font-size:12px;">ForgeCommunityPosts</code> keyed by <code style="font-size:12px;">communityId</code>, seed + localStorage overlay.</p>
+        <ul style="margin:0; padding-left:16px; font-size:12.5px; line-height:1.7; color:var(--fl-text-secondary);">
+          <li>10-type role-gated taxonomy (discussion → paid program)</li>
+          <li>Two-step, role-aware composer (member / mod / owner)</li>
+          <li>Post Detail: thread, one-level replies, Top/Newest, respect, save · share · report → moderators</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Squads -->
+    <div style="display:flex; flex-direction:column; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+      <div style="display:flex; align-items:center; gap:10px; padding:15px 17px; border-bottom:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(191,143,79,0.06), transparent);">
+        <span style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5L18 17.5"></path><path d="M19 4.5L6 17.5"></path><path d="M12.7 15.8L16.3 12.2"></path><path d="M7.7 12.2L11.3 15.8"></path></svg></span>
+        <span class="rp-h" style="font-size:16px; font-weight:600; color:var(--fl-text-primary);">Squads</span>
+      </div>
+      <div style="padding:16px 17px; flex:1;">
+        <span style="display:inline-flex; padding:3px 9px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:9.5px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-bronze-bright); margin-bottom:12px;">No post model</span>
+        <p style="font-size:13px; line-height:1.6; color:var(--fl-text-secondary); margin:0 0 12px;">Squad Detail renders an <strong style="color:var(--fl-text-primary);">ambient activity feed</strong> — not a post store.</p>
+        <ul style="margin:0; padding-left:16px; font-size:12.5px; line-height:1.7; color:var(--fl-text-secondary);">
+          <li>Feed = weekly summary, PR, honor, competition, goal, workout</li>
+          <li>React / comment buttons only fire toasts — no threads</li>
+          <li>No composer, no Post Detail, no deep-link</li>
+          <li>Domain today: check-ins, missions, goals, competitions, honors</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Friends -->
+    <div style="display:flex; flex-direction:column; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+      <div style="display:flex; align-items:center; gap:10px; padding:15px 17px; border-bottom:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(191,143,79,0.06), transparent);">
+        <span style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"></circle><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"></path></svg></span>
+        <span class="rp-h" style="font-size:16px; font-weight:600; color:var(--fl-text-primary);">Friends Feed</span>
+      </div>
+      <div style="padding:16px 17px; flex:1;">
+        <span style="display:inline-flex; padding:3px 9px; border-radius:var(--fl-radius-pill); background:rgba(110,142,116,0.12); border:1px solid rgba(110,142,116,0.4); font-size:9.5px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:#8FB295; margin-bottom:12px;">Complete · self-contained</span>
+        <p style="font-size:13px; line-height:1.6; color:var(--fl-text-secondary); margin:0 0 12px;">The simplest, most personal surface. Its own model, held <strong style="color:var(--fl-text-primary);">inline in the view</strong> (not a store file).</p>
+        <ul style="margin:0; padding-left:16px; font-size:12.5px; line-height:1.7; color:var(--fl-text-secondary);">
+          <li>Kinds: note / photo / video / progress / milestone</li>
+          <li>Own multi-reaction vocab &amp; lightweight composer sheet</li>
+          <li>Audience: friends / squad / both — never public</li>
+          <li>Own in-component detail + <code style="font-size:12px;">?post=</code> deep-link</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 2 · GAPS & COUPLING ══ -->
+  <span style="display:block; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:14px;">02 — Gaps &amp; accidental coupling</span>
+  <div style="display:flex; flex-direction:column; gap:11px; margin-bottom:46px;">
+
+    <div style="display:flex; gap:14px; align-items:flex-start; padding:16px 18px; border-radius:var(--fl-radius-md); border:1px solid rgba(110,142,116,0.35); background:var(--fl-surface-card);">
+      <span style="flex:none; margin-top:1px; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(110,142,116,0.14); color:#8FB295;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4 4 10-10"></path></svg></span>
+      <div style="flex:1;"><span style="display:block; font-size:14px; font-weight:600; color:var(--fl-text-primary); margin-bottom:3px;">No undifferentiated schema — good.</span><span style="font-size:13px; line-height:1.55; color:var(--fl-text-secondary);">Each surface owns its model. <code style="font-size:12px; color:var(--fl-bronze-bright);">ForgeCommunityPosts</code> is genuinely community-only. Nothing treats all social posts as one type. The universal-store risk the brief calls out does not exist.</span></div>
+    </div>
+
+    <div style="display:flex; gap:14px; align-items:flex-start; padding:16px 18px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-surface-card);">
+      <span style="flex:none; margin-top:1px; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); color:var(--fl-bronze-bright);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5"></path><path d="M12 16.5v.01"></path></svg></span>
+      <div style="flex:1;"><span style="display:block; font-size:14px; font-weight:600; color:var(--fl-text-primary); margin-bottom:3px;">Gap — Post Detail was origin-blind.</span><span style="font-size:13px; line-height:1.55; color:var(--fl-text-secondary);">The shell read only <code style="font-size:12px;">forge.community</code> / <code style="font-size:12px;">forge.post</code>, knew only the community store, and fixed its title to "Post". It could not render a squad or friend post or preserve where the reader came from. <strong style="color:var(--fl-bronze-bright);">Fixed this pass →</strong> Adaptive Post Detail.</span></div>
+    </div>
+
+    <div style="display:flex; gap:14px; align-items:flex-start; padding:16px 18px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-surface-card);">
+      <span style="flex:none; margin-top:1px; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); color:var(--fl-bronze-bright);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5"></path><path d="M12 16.5v.01"></path></svg></span>
+      <div style="flex:1;"><span style="display:block; font-size:14px; font-weight:600; color:var(--fl-text-primary); margin-bottom:3px;">Gap — Squads have no threaded post model.</span><span style="font-size:13px; line-height:1.55; color:var(--fl-text-secondary);">Squad Feed items are ambient and dead-end (toasts). If squad content needs threads, a squad-scoped store is required — and it must enforce the training-only contract, not borrow the community taxonomy. <strong style="color:var(--fl-bronze-bright);">Proposed this pass →</strong> <code style="font-size:12px;">ForgeSquadPosts</code>.</span></div>
+    </div>
+
+    <div style="display:flex; gap:14px; align-items:flex-start; padding:16px 18px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card);">
+      <span style="flex:none; margin-top:1px; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-charcoal-800); color:var(--fl-text-tertiary);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"></path></svg></span>
+      <div style="flex:1;"><span style="display:block; font-size:14px; font-weight:600; color:var(--fl-text-primary); margin-bottom:3px;">Minor — Friends model lives inside the view.</span><span style="font-size:13px; line-height:1.55; color:var(--fl-text-secondary);">The Friends feed keeps its posts in component state (<code style="font-size:12px;">RAW</code> + <code style="font-size:12px;">myPosts</code>), so notifications, deep-links, and a shared Post Detail can't reach them cleanly. Extract to <code style="font-size:12px;">ForgeFriendsPosts</code> — reuse without merging semantics.</span></div>
+    </div>
+
+    <div style="display:flex; gap:14px; align-items:flex-start; padding:16px 18px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-surface-card);">
+      <span style="flex:none; margin-top:1px; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); color:var(--fl-bronze-bright);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5"></path><path d="M12 16.5v.01"></path></svg></span>
+      <div style="flex:1;"><span style="display:block; font-size:14px; font-weight:600; color:var(--fl-text-primary); margin-bottom:3px;">Gap — report routing was community-only.</span><span style="font-size:13px; line-height:1.55; color:var(--fl-text-secondary);">"Report submitted to moderators" is wrong for Friends (no moderators) and Squads (a captain, not community mods). Report target must follow origin. <strong style="color:var(--fl-bronze-bright);">Fixed this pass</strong> in the adaptive overflow.</span></div>
+    </div>
+  </div>
+
+  <!-- ══ 3 · DATA ARCHITECTURE Q&A ══ -->
+  <span style="display:block; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:14px;">03 — Data-architecture verification</span>
+  <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); overflow:hidden; margin-bottom:46px;">
+    <sc-for list="{{ qa }}" as="q" hint-placeholder-count="8">
+      <div style="display:flex; gap:14px; align-items:flex-start; padding:15px 18px; border-top:{{ q.divider }};">
+        <span style="{{ q.chipStyle }}">{{ q.chip }}</span>
+        <div style="flex:1; min-width:0;">
+          <span style="display:block; font-size:13.5px; font-weight:600; color:var(--fl-text-primary); margin-bottom:3px;">{{ q.q }}</span>
+          <span style="display:block; font-size:12.5px; line-height:1.55; color:var(--fl-text-secondary);">{{ q.a }}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ══ 4 · SHARE VS SEPARATE ══ -->
+  <span style="display:block; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:14px;">04 — What to share · what to keep distinct</span>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:46px;">
+    <div style="border-radius:var(--fl-radius-lg); border:1px solid rgba(110,142,116,0.35); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:18px 20px;">
+      <span class="rp-h" style="display:block; font-size:16px; font-weight:600; color:#8FB295; margin-bottom:4px;">Shared presentation &amp; interaction</span>
+      <span style="display:block; font-size:12px; color:var(--fl-text-tertiary); margin-bottom:14px;">Reuse the components — they carry no domain meaning.</span>
+      <div style="display:flex; flex-wrap:wrap; gap:7px;">
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); font-size:12px; color:var(--fl-text-secondary);">Post Detail shell</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); font-size:12px; color:var(--fl-text-secondary);">Comment thread + 1-level replies</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); font-size:12px; color:var(--fl-text-secondary);">Top / Newest sort</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); font-size:12px; color:var(--fl-text-secondary);">Respect / reaction row</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); font-size:12px; color:var(--fl-text-secondary);">Pinned comment composer</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); font-size:12px; color:var(--fl-text-secondary);">Media / achievement / honor blocks</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); font-size:12px; color:var(--fl-text-secondary);">Toast &amp; overflow chrome</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); font-size:12px; color:var(--fl-text-secondary);">Deep-link routing param</span>
+      </div>
+    </div>
+    <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:18px 20px;">
+      <span class="rp-h" style="display:block; font-size:16px; font-weight:600; color:var(--fl-bronze-bright); margin-bottom:4px;">Kept distinct — never merge</span>
+      <span style="display:block; font-size:12px; color:var(--fl-text-tertiary); margin-bottom:14px;">These carry product semantics. Sharing them collapses the surfaces.</span>
+      <div style="display:flex; flex-wrap:wrap; gap:7px;">
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:12px; color:var(--fl-bronze-bright);">Post-type taxonomies</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:12px; color:var(--fl-bronze-bright);">Role / permission models</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:12px; color:var(--fl-bronze-bright);">Composer field sets</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:12px; color:var(--fl-bronze-bright);">Moderation actions</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:12px; color:var(--fl-bronze-bright);">Report routing</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:12px; color:var(--fl-bronze-bright);">Reaction vocabulary</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:12px; color:var(--fl-bronze-bright);">Source identity (room vs relationship)</span>
+        <span style="padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:12px; color:var(--fl-bronze-bright);">Audience controls</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 5 · SEPARATE MODELS & COMPOSER CONTRACTS ══ -->
+  <span style="display:block; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:14px;">05 — Separate models &amp; composer contracts</span>
+  <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:46px;">
+    <sc-for list="{{ models }}" as="m" hint-placeholder-count="3">
+      <div style="display:flex; flex-direction:column; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+        <div style="padding:15px 17px; border-bottom:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(191,143,79,0.06), transparent);">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <code style="font-size:13px; font-weight:700; color:var(--fl-bronze-bright);">{{ m.store }}</code>
+            <span style="{{ m.tagStyle }}">{{ m.tag }}</span>
+          </div>
+          <span style="display:block; font-size:11.5px; color:var(--fl-text-tertiary); margin-top:5px;">{{ m.scope }}</span>
+        </div>
+        <div style="padding:15px 17px; flex:1;">
+          <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:8px;">Types</span>
+          <span style="display:block; font-size:12.5px; line-height:1.55; color:var(--fl-text-secondary); margin-bottom:14px;">{{ m.types }}</span>
+          <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:8px;">Composer contract</span>
+          <span style="display:block; font-size:12.5px; line-height:1.55; color:var(--fl-text-secondary); margin-bottom:14px;">{{ m.composer }}</span>
+          <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:8px;">Excludes</span>
+          <span style="display:block; font-size:12.5px; line-height:1.55; color:var(--fl-red-muted);">{{ m.excludes }}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ══ 6 · ADAPTIVE POST DETAIL ══ -->
+  <span style="display:block; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:14px;">06 — Adaptive Post Detail · one shell, three origins</span>
+  <p style="max-width:820px; font-size:14.5px; line-height:1.6; color:var(--fl-text-secondary); margin:0 0 22px;">The title moves from generic "Post" to <strong style="color:var(--fl-text-primary);">Community Post · Squad Post · Friend Post</strong>, and a source-context bar carries the community/squad identity or the friend relationship. Everything below adapts from a single <code style="font-size:13px; color:var(--fl-bronze-bright);">origin</code>. See it live in <a href="Post Detail.dc.html">Post Detail</a>.</p>
+
+  <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:26px;">
+    <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-charcoal-900); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+      <img src="screenshots/apd-community.png" alt="Community origin" style="display:block; width:100%; height:auto; border-bottom:1px solid var(--fl-charcoal-700);">
+      <div style="padding:13px 15px;"><span style="display:block; font-size:13px; font-weight:600; color:var(--fl-text-primary);">Community</span><span style="display:block; font-size:11.5px; line-height:1.5; color:var(--fl-text-tertiary); margin-top:3px;">Community identity, role badges, type label, moderator report.</span></div>
+    </div>
+    <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-charcoal-900); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+      <img src="screenshots/apd-squad.png" alt="Squad origin" style="display:block; width:100%; height:auto; border-bottom:1px solid var(--fl-charcoal-700);">
+      <div style="padding:13px 15px;"><span style="display:block; font-size:13px; font-weight:600; color:var(--fl-text-primary);">Squad</span><span style="display:block; font-size:11.5px; line-height:1.5; color:var(--fl-text-tertiary); margin-top:3px;">Squad identity &amp; role, challenge context, report to captain.</span></div>
+    </div>
+    <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-charcoal-900); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+      <img src="screenshots/apd-friend.png" alt="Friend origin" style="display:block; width:100%; height:auto; border-bottom:1px solid var(--fl-charcoal-700);">
+      <div style="padding:13px 15px;"><span style="display:block; font-size:13px; font-weight:600; color:var(--fl-text-primary);">Friend</span><span style="display:block; font-size:11.5px; line-height:1.5; color:var(--fl-text-tertiary); margin-top:3px;">Author + relationship only, no taxonomy, acknowledge, no moderation.</span></div>
+    </div>
+  </div>
+
+  <!-- adaptation matrix -->
+  <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); overflow:hidden; margin-bottom:46px;">
+    <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; background:linear-gradient(180deg, rgba(191,143,79,0.06), transparent); border-bottom:1px solid var(--fl-charcoal-700);">
+      <span style="padding:12px 16px; font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Adapts by origin</span>
+      <span style="padding:12px 16px; font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Community</span>
+      <span style="padding:12px 16px; font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Squad</span>
+      <span style="padding:12px 16px; font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Friend</span>
+    </div>
+    <sc-for list="{{ matrix }}" as="row" hint-placeholder-count="7">
+      <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; border-top:{{ row.divider }};">
+        <span style="padding:11px 16px; font-size:12.5px; font-weight:600; color:var(--fl-text-primary);">{{ row.label }}</span>
+        <span style="padding:11px 16px; font-size:12.5px; color:var(--fl-text-secondary);">{{ row.c }}</span>
+        <span style="padding:11px 16px; font-size:12.5px; color:var(--fl-text-secondary);">{{ row.s }}</span>
+        <span style="padding:11px 16px; font-size:12.5px; color:var(--fl-text-secondary);">{{ row.f }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ══ 7 · CODE CHANGES ══ -->
+  <span style="display:block; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:14px;">07 — Code changes</span>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:46px;">
+    <div style="border-radius:var(--fl-radius-lg); border:1px solid rgba(110,142,116,0.35); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:18px 20px;">
+      <span class="rp-h" style="display:block; font-size:15px; font-weight:600; color:#8FB295; margin-bottom:12px;">Done in this pass</span>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="flex:none; margin-top:2px; color:#8FB295;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4 4 10-10"></path></svg></span><span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary);"><code style="font-size:12px; color:var(--fl-bronze-bright);">forge-squad-posts.js</code> — training-only model, member/captain gate, keyed by squadId.</span></div>
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="flex:none; margin-top:2px; color:#8FB295;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4 4 10-10"></path></svg></span><span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary);"><code style="font-size:12px; color:var(--fl-bronze-bright);">forge-friends-posts.js</code> — flat personal model, no roles/taxonomy, multi-reaction.</span></div>
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="flex:none; margin-top:2px; color:#8FB295;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4 4 10-10"></path></svg></span><span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary);"><code style="font-size:12px; color:var(--fl-bronze-bright);">Adaptive Post Detail.dc.html</code> — one shell, origin-driven chrome + per-origin report routing.</span></div>
+      </div>
+    </div>
+    <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:18px 20px;">
+      <span class="rp-h" style="display:block; font-size:15px; font-weight:600; color:var(--fl-bronze-bright); margin-bottom:12px;">Integration to do</span>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="flex:none; margin-top:2px; color:var(--fl-bronze-bright);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle></svg></span><span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary);">Route into Post Detail with <code style="font-size:12px;">origin</code> + source id; keep back-nav to the originating feed.</span></div>
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="flex:none; margin-top:2px; color:var(--fl-bronze-bright);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle></svg></span><span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary);">Squad Detail: back the feed with <code style="font-size:12px;">ForgeSquadPosts</code>, deep-link to Post Detail, add a narrow Squad composer.</span></div>
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="flex:none; margin-top:2px; color:var(--fl-bronze-bright);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle></svg></span><span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary);">Friends Feed: move <code style="font-size:12px;">RAW</code>/<code style="font-size:12px;">myPosts</code> into <code style="font-size:12px;">ForgeFriendsPosts</code>; back its detail with the store.</span></div>
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="flex:none; margin-top:2px; color:var(--fl-red-muted);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></span><span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary);"><strong style="color:var(--fl-text-primary);">Do not</strong> rename <code style="font-size:12px;">ForgeCommunityPosts</code> into a universal store.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 8 · NAV & PERMISSIONS ══ -->
+  <span style="display:block; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:14px;">08 — Navigation &amp; permissions</span>
+  <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;">
+    <sc-for list="{{ checks }}" as="ck" hint-placeholder-count="4">
+      <div style="display:flex; gap:12px; align-items:flex-start; padding:15px 17px; border-radius:var(--fl-radius-md); border:1px solid rgba(110,142,116,0.3); background:var(--fl-surface-card);">
+        <span style="flex:none; margin-top:1px; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(110,142,116,0.14); color:#8FB295;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4 4 10-10"></path></svg></span>
+        <div style="flex:1;"><span style="display:block; font-size:13px; font-weight:600; color:var(--fl-text-primary); margin-bottom:3px;">{{ ck.t }}</span><span style="font-size:12.5px; line-height:1.55; color:var(--fl-text-secondary);">{{ ck.d }}</span></div>
+      </div>
+    </sc-for>
+  </div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240,&quot;height&quot;:1400}}">
+class Component extends DCLogic {
+  renderVals() {
+    const chip = (tone) => {
+      const base = { flex: 'none', marginTop: '1px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '58px', padding: '3px 9px', borderRadius: 'var(--fl-radius-pill)', fontSize: '9px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase' };
+      if (tone === 'ok') return Object.assign({}, base, { background: 'rgba(110,142,116,0.14)', border: '1px solid rgba(110,142,116,0.4)', color: '#8FB295' });
+      return Object.assign({}, base, { background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border-subtle)', color: 'var(--fl-bronze-bright)' });
+    };
+    const div = '1px solid var(--fl-charcoal-800)';
+
+    const qaRaw = [
+      { chip: 'Verified', tone: 'ok', q: 'Is forge-community-posts.js correctly community-only?', a: 'Yes. Keyed by communityId, community taxonomy and member/mod gating; no squad or friend surface touches it.' },
+      { chip: 'Attention', tone: 'warn', q: 'Are Squad Feed and Friends Feed backed by separate domain models?', a: 'Friends: yes (its own inline model). Squad: it has no post model at all — its feed is ambient activity. Neither is backed by the community store — correct — but Squad needs a model and Friends should be extracted to one.' },
+      { chip: 'Verified', tone: 'ok', q: 'Which UI components can be shared safely?', a: 'The Post Detail shell, comment thread + replies, sort, reaction row, composer, media/achievement/honor blocks, toast and overflow chrome — presentation only.' },
+      { chip: 'Verified', tone: 'ok', q: 'Is any code treating all social posts as one undifferentiated schema?', a: 'No. Each surface has a distinct schema. The universal-store risk has not materialised.' },
+      { chip: 'Fixed', tone: 'warn', q: 'Does Post Detail preserve source context?', a: 'Not before — title fixed to "Post", read only the community store. The Adaptive Post Detail now carries origin + source identity end to end.' },
+      { chip: 'Fixed', tone: 'warn', q: 'Does back navigation return to the correct originating feed?', a: 'Community routes to Community Home. Squad and Friends need their entry points wired; the adaptive shell takes an origin so back-nav can target the right feed.' },
+      { chip: 'Fixed', tone: 'warn', q: 'Are save / share / report appropriate for each origin?', a: 'Now yes: report routes to moderators (community), squad captain (squad), or Forge (friend); share copy and save follow origin.' },
+      { chip: 'Verified', tone: 'ok', q: 'Are moderation controls hidden outside Communities and authorized Squad roles?', a: 'Yes. Role badges and mod/captain actions are gated; Friends expose no moderation hierarchy and no role-gated post types.' }
+    ];
+    const qa = qaRaw.map((x, i) => ({ key: i, q: x.q, a: x.a, chip: x.chip, chipStyle: chip(x.tone), divider: i === 0 ? 'none' : div }));
+
+    const tag = (tone) => {
+      const base = { flex: 'none', padding: '3px 9px', borderRadius: 'var(--fl-radius-pill)', fontSize: '9px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase' };
+      if (tone === 'exists') return Object.assign({}, base, { background: 'rgba(110,142,116,0.14)', border: '1px solid rgba(110,142,116,0.4)', color: '#8FB295' });
+      return Object.assign({}, base, { background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border)', color: 'var(--fl-bronze-bright)' });
+    };
+    const models = [
+      { key: 'c', store: 'ForgeCommunityPosts', tag: 'Exists', tagStyle: tag('exists'), scope: 'Keyed by communityId', types: 'Discussion, photo, form check, achievement, question, poll, event, forge program, paid program, milestone (10).', composer: 'Two-step type picker; member types open, mod/owner types gated and greyed for members.', excludes: 'Nothing — this is the broadest surface.' },
+      { key: 's', store: 'ForgeSquadPosts', tag: 'New', tagStyle: tag('new'), scope: 'Keyed by squadId · internal', types: 'Check-in, workout recap, PR/milestone, form check, challenge update, train-together, short discussion, squad announcement (8).', composer: 'Narrow picker; only Squad Announcement is captain/owner-gated.', excludes: 'Polls, public events, program & paid-program promotion, community editorial categories.' },
+      { key: 'f', store: 'ForgeFriendsPosts', tag: 'New', tagStyle: tag('new'), scope: 'Flat · not keyed to a room', types: 'Media kinds only: note, photo, video, progress, milestone (honor / program / PR).', composer: 'Lightweight sheet — text + one medium + optional workout/PR/honor/program; audience friends / squad / both.', excludes: 'Roles, polls, public events, role-gated types, program promotion, moderation.' }
+    ];
+
+    const mRows = [
+      { label: 'App-bar title', c: 'Community Post', s: 'Squad Post', f: 'Friend Post' },
+      { label: 'Source context', c: 'Community + members', s: 'Squad + training-only', f: 'Author + relationship' },
+      { label: 'Post-type label', c: 'Shown', s: 'Shown', f: 'Hidden' },
+      { label: 'Role badges', c: 'Owner / Mod', s: 'Owner / Captain', f: 'None' },
+      { label: 'Reaction', c: 'Respect (count)', s: 'Respect (count)', f: 'Acknowledge (names)' },
+      { label: 'Report routes to', c: 'Moderators', s: 'Squad captain', f: 'Forge (no mods)' },
+      { label: 'Back to', c: 'Community Home', s: 'Squad Detail', f: 'Friends Feed' }
+    ];
+    const matrix = mRows.map((r, i) => ({ key: i, label: r.label, c: r.c, s: r.s, f: r.f, divider: i === 0 ? 'none' : div }));
+
+    const checks = [
+      { key: 'a', t: 'Origin is preserved end to end', d: 'The shell renders from an origin + source id, so the reader never loses where a post came from.' },
+      { key: 'b', t: 'Back returns to the originating feed', d: 'Community → Home, Squad → Squad Detail, Friend → Friends Feed. Wire each entry point to set origin.' },
+      { key: 'c', t: 'Actions match the origin', d: 'Save / share / report copy and routing follow origin — no moderator language on the personal surface.' },
+      { key: 'd', t: 'Moderation stays scoped', d: 'Mod/captain controls appear only for communities and authorized squad roles; Friends never show a hierarchy.' }
+    ];
+
+    return { qa, models, matrix, checks };
+  }
+}
+</script>
+</body>
+</html>

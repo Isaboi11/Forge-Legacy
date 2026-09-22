@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#08090C; color:#EFE9E0; font-family:'Playfair Display',Georgia,serif; -webkit-font-smoothing:antialiased; }
+  a { color:#BF8F4F; } a:hover { color:#CDA063; }
+  .fn-sans { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+</style>
+</helmet>
+<div style="min-height:100vh; background:radial-gradient(120% 58% at 50% -6%, rgba(191,143,79,0.12) 0%, rgba(191,143,79,0) 46%), radial-gradient(90% 46% at 50% 118%, rgba(120,150,80,0.06) 0%, rgba(0,0,0,0) 62%), #08090C; padding:58px 40px 60px; display:flex; flex-direction:column; align-items:center;">
+
+  <!-- ══ MASTHEAD ══ -->
+  <header style="display:flex; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:1160px;">
+    <h1 style="margin:0; font-size:62px; font-weight:700; letter-spacing:15px; text-indent:15px; background:linear-gradient(180deg,#EFD3A0,#93693B); -webkit-background-clip:text; background-clip:text; color:transparent;">ESTABLISHED</h1>
+    <span class="fn-sans" style="margin-top:16px; font-size:13px; font-weight:600; letter-spacing:3.5px; text-transform:uppercase; color:#C6BEB2;">What I built becomes more than me.</span>
+    <div style="display:flex; align-items:center; gap:16px; width:min(560px,82%); margin:20px 0 14px;">
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(191,143,79,0.7));"></span>
+      <span style="width:8px; height:8px; flex:none; transform:rotate(45deg); border:1px solid #BF8F4F;"></span>
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.7),transparent);"></span>
+    </div>
+    <span class="fn-sans" style="font-size:12px; font-weight:600; letter-spacing:4px; text-transform:uppercase; color:#B08A55;">The oak keeper · from building to becoming</span>
+  </header>
+
+  <!-- ══ MALE ROW ══ -->
+  <div style="display:flex; align-items:center; gap:14px; width:100%; max-width:1160px; margin:56px 0 4px;">
+    <span class="fn-sans" style="font-size:11px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:#8A6B41;">Male</span>
+    <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.5),transparent);"></span>
+  </div>
+  <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:28px; width:100%; max-width:1160px; margin-top:22px;">
+    <sc-for list="{{ items }}" as="it" hint-placeholder-count="4">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#8A6B41; margin-bottom:16px;">Established {{ it.roman }}</span>
+        <div style="width:100%; max-width:236px;">
+          <dc-import name="FoundationBadge" rank="established" sex="m" tier="{{ it.tier }}" hint-size="236px,329px"></dc-import>
+        </div>
+        <div style="text-align:center; margin-top:24px; display:flex; flex-direction:column; align-items:center; gap:12px;">
+          <span style="font-size:19px; font-weight:600; letter-spacing:2.4px; text-transform:uppercase; color:#D8B981;">{{ it.name }}</span>
+          <span style="width:7px; height:7px; flex:none; transform:rotate(45deg); border:1px solid rgba(191,143,79,0.55);"></span>
+          <span class="fn-sans" style="font-size:12px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#B08A55;">{{ it.creed }}</span>
+          <p class="fn-sans" style="margin:0; font-size:13px; line-height:1.9; color:#9A938A;">{{ it.l1 }}<br>{{ it.l2 }}</p>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ══ FEMALE ROW ══ -->
+  <div style="display:flex; align-items:center; gap:14px; width:100%; max-width:1160px; margin:64px 0 4px;">
+    <span class="fn-sans" style="font-size:11px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:#8A6B41;">Female</span>
+    <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.5),transparent);"></span>
+  </div>
+  <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:28px; width:100%; max-width:1160px; margin-top:22px;">
+    <sc-for list="{{ items }}" as="it" hint-placeholder-count="4">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#8A6B41; margin-bottom:16px;">Established {{ it.roman }}</span>
+        <div style="width:100%; max-width:236px;">
+          <dc-import name="FoundationBadge" rank="established" sex="f" tier="{{ it.tier }}" hint-size="236px,329px"></dc-import>
+        </div>
+        <div style="text-align:center; margin-top:24px; display:flex; flex-direction:column; align-items:center; gap:12px;">
+          <span style="font-size:19px; font-weight:600; letter-spacing:2.4px; text-transform:uppercase; color:#D8B981;">{{ it.name }}</span>
+          <span style="width:7px; height:7px; flex:none; transform:rotate(45deg); border:1px solid rgba(191,143,79,0.55);"></span>
+          <span class="fn-sans" style="font-size:12px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#B08A55;">{{ it.creed }}</span>
+          <p class="fn-sans" style="margin:0; font-size:13px; line-height:1.9; color:#9A938A;">{{ it.l1 }}<br>{{ it.l2 }}</p>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ══ ASSET NOTE ══ -->
+  <p class="fn-sans" style="max-width:760px; text-align:center; margin:66px 0 0; font-size:12.5px; line-height:1.75; color:#5F5648;">Transparent badge cutouts · <span style="color:#B08A55;">assets/established-m-1–4.png</span> and <span style="color:#B08A55;">assets/established-f-1–4.png</span>. Mount anywhere with <span style="color:#B08A55;">&lt;dc-import name="FoundationBadge" rank="established" sex="m|f" tier="1–4"&gt;</span> — sex defaults to the athlete's own (ForgeUser). The rank sits between Architect and Legend, numbered I–IV.</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      items: [
+        { tier: '1', roman: 'I',   name: 'The Builder',        creed: 'I Built.',         l1: 'I built something real.', l2: 'It started with me.' },
+        { tier: '2', roman: 'II',  name: 'The Caretaker',      creed: 'I Nurture.',       l1: 'I invest in what I built.', l2: 'I protect its growth.' },
+        { tier: '3', roman: 'III', name: 'The Oak Stands',     creed: 'It Endures.',      l1: 'It no longer needs me.', l2: 'It stands on its own.' },
+        { tier: '4', roman: 'IV',  name: 'The Established Oak', creed: 'It Is Established.', l1: 'It outlives me.', l2: 'It is part of who I am.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

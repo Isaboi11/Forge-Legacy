@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-theme.js"></script>
+<script src="forge-friends-posts.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  image-slot::part(ring) { border-color: var(--fl-bronze-border); }
+  image-slot::part(empty) { color: var(--fl-text-tertiary); font-size: 10px; }
+  image-slot::part(frame) { background: rgba(191,143,79,0.05); }
+  @keyframes ffRise { from { opacity:0; transform: translateY(9px); } to { opacity:1; transform:none; } }
+  @keyframes ffFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes ffView { from { opacity:0; transform: translateX(22px); } to { opacity:1; transform:none; } }
+  @keyframes ffSheet { from { transform: translateY(100%); } to { transform:none; } }
+  @keyframes ffPop { from { opacity:0; transform: translateY(6px) scale(0.96); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Friends" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:radial-gradient(120% 44% at 50% -4%, rgba(191,143,79,0.05) 0%, transparent 60%), var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <!-- ═══ APP BAR ═══ -->
+    <div style="flex:none; position:relative; z-index:6; display:flex; align-items:center; gap:8px; height:56px; padding:0 8px 0 6px; border-bottom:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(12,12,12,0.7), rgba(9,9,9,0.5)); backdrop-filter:blur(8px);">
+      <button type="button" onClick="{{ goHome }}" aria-label="Back to Home" style="width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary); border-radius:var(--fl-radius-round);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+      <span style="flex:1; min-width:0; font-family:var(--fl-font-display); font-size:21px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-primary);">Friends</span>
+      <button type="button" onClick="{{ openFriendsHub }}" aria-label="Friends" style="position:relative; width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-icon-bronze); border-radius:var(--fl-radius-round);">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="8" r="2.7"></circle><circle cx="16.5" cy="8" r="2.7"></circle><path d="M3 19a4.5 4.5 0 0 1 9 0"></path><path d="M12 19a4.5 4.5 0 0 1 9 0"></path></svg>
+        <sc-if value="{{ hasRequests }}" hint-placeholder-val="{{ true }}">
+          <span style="position:absolute; top:4px; right:4px; min-width:16px; height:16px; padding:0 4px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-metallic); color:#1A1206; font-size:9.5px; font-weight:800; border:1.5px solid var(--fl-bg-atmospheric);">{{ requestCount }}</span>
+        </sc-if>
+      </button>
+    </div>
+
+
+    <!-- ═══ SCROLL AREA ═══ -->
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto;">
+
+      <!-- EMPTY STATE -->
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 34px 60px; text-align:center; animation:ffFade 300ms var(--fl-ease-out) both;">
+          <span style="width:74px; height:74px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 50% 34%, rgba(191,143,79,0.16), transparent 72%); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright); box-shadow:var(--fl-glow-subtle);"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="8" r="2.7"></circle><circle cx="16.5" cy="8" r="2.7"></circle><path d="M3 19a4.5 4.5 0 0 1 9 0"></path><path d="M12 19a4.5 4.5 0 0 1 9 0"></path></svg></span>
+          <span style="display:block; font-family:var(--fl-font-display); font-size:22px; font-weight:600; color:var(--fl-text-primary); margin-top:22px;">Your feed is quiet</span>
+          <span style="display:block; font-size:14px; line-height:1.55; color:var(--fl-text-secondary); margin-top:11px; max-width:280px;">When a friend shares a moment — a lift, a milestone, a progress photo — it shows up here. Nothing posts automatically. Being friends never exposes anyone's workouts.</span>
+          <div style="display:flex; flex-direction:column; gap:10px; width:100%; max-width:280px; margin-top:26px;">
+            <button type="button" onClick="{{ openFriendsHub }}" style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:9px; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-fill); color:var(--fl-bronze-bright); font-size:14px; font-weight:700; letter-spacing:0.4px; cursor:pointer; box-shadow:var(--fl-glow-subtle);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.3"></circle><path d="M3 19a6 6 0 0 1 12 0"></path><path d="M18.5 7v6M15.5 10h6"></path></svg>Find Friends</button>
+            <button type="button" onClick="{{ inviteByHandle }}" style="width:100%; padding:13px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:13.5px; font-weight:600; cursor:pointer;">Invite by handle</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- FEED -->
+      <sc-if value="{{ hasFeed }}" hint-placeholder-val="{{ true }}">
+
+        <!-- composer prompt -->
+        <div style="padding:14px 16px 4px;">
+          <button type="button" onClick="{{ openComposer }}" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-700); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); cursor:pointer; text-align:left; transition:border-color 160ms ease;" style-active="border-color:var(--fl-bronze-border);">
+            <span style="width:38px; height:38px; flex:none; border-radius:var(--fl-radius-round); background:{{ meTint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+            <span style="flex:1; min-width:0; font-size:13.5px; color:var(--fl-text-tertiary);">What's worth remembering today?</span>
+            <span style="flex:none; display:inline-flex; color:var(--fl-icon-bronze);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v12H4z"></path><path d="M4 15l4.5-4 3.5 3 3.5-3.5L20 14"></path><circle cx="8.5" cy="9" r="1.4"></circle></svg></span>
+          </button>
+        </div>
+
+        <!-- ── LEDGER LAYOUT (A) ── -->
+        <sc-if value="{{ isLedger }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:8px 16px 30px; display:flex; flex-direction:column; gap:12px;">
+            <sc-for list="{{ posts }}" as="p" hint-placeholder-count="4">
+              <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:13px 14px; animation:ffRise 400ms var(--fl-ease-out) both;">
+                <!-- author -->
+                <div style="display:flex; align-items:center; gap:11px;">
+                  <button type="button" onClick="{{ p.openAuthor }}" aria-label="View profile" style="position:relative; width:42px; height:42px; flex:none; background:transparent; border:none; padding:0; cursor:pointer;">
+                    <span style="position:absolute; inset:0; border-radius:var(--fl-radius-round); background:{{ p.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+                  </button>
+                  <div style="flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="font-size:14.5px; font-weight:500; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ p.author }}</span>
+                      <sc-if value="{{ p.hasRank }}" hint-placeholder-val="{{ false }}">
+                        <span style="flex:none; font-size:9px; font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-bronze-primary);">{{ p.rank }}</span>
+                      </sc-if>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
+                      <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ p.time }}</span>
+                      <span style="width:2.5px; height:2.5px; border-radius:var(--fl-radius-round); background:var(--fl-charcoal-500);"></span>
+                      <span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--fl-text-tertiary);"><span style="display:inline-flex;">{{ p.audienceIcon }}</span>{{ p.audienceLabel }}</span>
+                    </div>
+                  </div>
+                  <button type="button" onClick="{{ p.openPostOptions }}" aria-label="Post options" style="flex:none; width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-tertiary);"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="19" cy="12" r="1.7"></circle></svg></button>
+                </div>
+
+                <!-- caption -->
+                <sc-if value="{{ p.hasCaption }}" hint-placeholder-val="{{ true }}">
+                  <span onClick="{{ p.openDetail }}" style="display:block; font-size:14px; line-height:1.5; color:var(--fl-text-primary); margin-top:11px; cursor:pointer;">{{ p.caption }}</span>
+                </sc-if>
+
+                <!-- photo -->
+                <sc-if value="{{ p.isPhoto }}" hint-placeholder-val="{{ false }}">
+                  <div onClick="{{ p.openDetail }}" style="margin-top:12px; position:relative; height:210px; border-radius:var(--fl-radius-md); overflow:hidden; border:1px solid var(--fl-charcoal-700); cursor:pointer;">
+                    <image-slot id="{{ p.mediaId }}" shape="rect" placeholder="{{ p.mediaPlaceholder }}" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                  </div>
+                </sc-if>
+
+                <!-- progress photo (opt-in) -->
+                <sc-if value="{{ p.isProgress }}" hint-placeholder-val="{{ false }}">
+                  <div onPointerDown="{{ p.cmpDown }}" onPointerMove="{{ p.cmpMove }}" onPointerUp="{{ p.cmpUp }}" onPointerCancel="{{ p.cmpUp }}" style="margin-top:12px; position:relative; aspect-ratio:4/5; border-radius:var(--fl-radius-md); overflow:hidden; border:1px solid var(--fl-charcoal-700); touch-action:none; cursor:ew-resize; user-select:none;">
+                    <image-slot id="{{ p.mediaId }}" shape="rect" placeholder="Week 1" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                    <div style="position:absolute; inset:0; clip-path:{{ p.cmpClip }}; -webkit-clip-path:{{ p.cmpClip }};"><image-slot id="{{ p.mediaId2 }}" shape="rect" placeholder="Week 12" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot></div>
+                    <span style="position:absolute; top:9px; left:9px; padding:2px 8px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.62); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(4px); font-size:9.5px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-secondary); pointer-events:none;">{{ p.beforeLabel }}</span>
+                    <span style="position:absolute; top:9px; right:9px; padding:2px 8px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.62); border:1px solid var(--fl-bronze-border); backdrop-filter:blur(4px); font-size:9.5px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-bronze-bright); pointer-events:none;">{{ p.afterLabel }}</span>
+                    <span style="position:absolute; bottom:9px; left:9px; display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.6); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(4px); font-size:9.5px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-secondary); pointer-events:none;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V4"></path><path d="M6 10l6-6 6 6"></path></svg>Progress</span>
+                    <div style="position:absolute; top:0; bottom:0; left:{{ p.cmpPos }}; width:2px; background:rgba(255,255,255,0.9); box-shadow:0 0 10px rgba(0,0,0,0.6); transform:translateX(-1px); pointer-events:none;"><span style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.72); border:1px solid rgba(255,255,255,0.55); backdrop-filter:blur(3px); color:#fff;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7l-4 5 4 5"></path><path d="M15 7l4 5-4 5"></path></svg></span></div>
+                  </div>
+                  <span style="display:block; font-size:10.5px; color:var(--fl-text-tertiary); text-align:center; margin-top:8px;">Drag to compare · tap to open · double-click a photo to reposition</span>
+                </sc-if>
+
+                <!-- video / PR -->
+                <sc-if value="{{ p.isVideo }}" hint-placeholder-val="{{ false }}">
+                  <div onClick="{{ p.openDetail }}" style="margin-top:12px; position:relative; height:220px; border-radius:var(--fl-radius-md); overflow:hidden; border:1px solid var(--fl-charcoal-700); cursor:pointer;">
+                    <image-slot id="{{ p.mediaId }}" shape="rect" placeholder="Lift clip" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; background:linear-gradient(180deg, rgba(5,5,5,0.08), rgba(5,5,5,0.4));"><span style="width:56px; height:56px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.55); border:1px solid rgba(255,255,255,0.25); backdrop-filter:blur(3px); color:#fff;"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></span></div>
+                    <span style="position:absolute; top:11px; left:11px; display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.6); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(4px); font-size:10px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; color:var(--fl-bronze-bright);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11v10H4z"></path><path d="M15 10l5-3v10l-5-3z"></path></svg>{{ p.videoDur }}</span>
+                    <sc-if value="{{ p.hasWorkoutLabel }}" hint-placeholder-val="{{ false }}">
+                      <span style="position:absolute; top:11px; right:11px; display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.6); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(4px); font-size:9.5px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-text-secondary);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg>{{ p.workoutLabel }}</span>
+                    </sc-if>
+                    <sc-if value="{{ p.hasPrTag }}" hint-placeholder-val="{{ false }}">
+                      <span style="position:absolute; bottom:11px; left:11px; display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle); font-size:10.5px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-bronze-bright);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v3.5a4 4 0 0 1-8 0z"></path><path d="M8 5.5H5.3c0 2.4 1 3.6 2.9 3.9"></path><path d="M16 5.5h2.7c0 2.4-1 3.6-2.9 3.9"></path><path d="M12 11.4v3.6"></path><path d="M8.5 18.5h7"></path></svg>{{ p.prLabel }}</span>
+                    </sc-if>
+                  </div>
+                </sc-if>
+
+                <!-- milestone share (opt-in) -->
+                <sc-if value="{{ p.isMilestone }}" hint-placeholder-val="{{ false }}">
+                  <div onClick="{{ p.openDetail }}" style="margin-top:12px; position:relative; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); overflow:hidden; background:radial-gradient(150% 100% at 15% 0%, rgba(191,143,79,0.14), transparent 58%), var(--fl-surface-recessed); box-shadow:0 0 32px rgba(191,143,79,0.17), 0 6px 20px rgba(0,0,0,0.35); cursor:pointer;">
+                    <div style="display:flex; align-items:center; gap:7px; padding:8px 14px; border-bottom:1px solid var(--fl-bronze-border-subtle); background:rgba(191,143,79,0.05);">
+                      <span style="display:inline-flex; color:var(--fl-bronze-bright);">{{ p.mileKindIcon }}</span>
+                      <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ p.mileKindLabel }}</span>
+                    </div>
+                    <div style="padding:16px 15px;">
+                      <span style="display:block; font-family:var(--fl-font-display); font-size:21px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-primary); line-height:1.15;">{{ p.mileTitle }}</span>
+                      <sc-if value="{{ p.hasMileSub }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:block; font-size:12.5px; color:var(--fl-text-secondary); margin-top:6px;">{{ p.mileSub }}</span>
+                      </sc-if>
+                      <sc-if value="{{ p.hasMileItems }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex; flex-wrap:wrap; gap:7px; margin-top:12px;">
+                          <sc-for list="{{ p.mileItems }}" as="mi" hint-placeholder-count="2">
+                            <span style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px 5px 9px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:11.5px; font-weight:600; color:var(--fl-bronze-bright);"><span style="display:inline-flex;">{{ mi.icon }}</span>{{ mi.label }}</span>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <!-- reactions row -->
+                <div style="position:relative; display:flex; align-items:center; gap:16px; margin-top:13px;">
+                  <button type="button" onClick="{{ p.togglePicker }}" style="{{ p.reactBtnStyle }}"><span style="display:inline-flex;">{{ p.reactIcon }}</span>{{ p.reactLabel }}</button>
+                  <button type="button" onClick="{{ p.openDetail }}" style="display:inline-flex; align-items:center; gap:7px; background:transparent; border:none; padding:0; cursor:pointer; color:var(--fl-text-tertiary); font-size:12.5px; font-weight:600;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4 19.5l1.3-4A7.5 7.5 0 1 1 20 11.5z"></path></svg>{{ p.commentCount }}</button>
+                  <button type="button" onClick="{{ p.onShare }}" aria-label="Share" style="margin-left:auto; display:inline-flex; align-items:center; background:transparent; border:none; padding:0; cursor:pointer; color:var(--fl-text-tertiary);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.4"></circle><circle cx="17" cy="6" r="2.4"></circle><circle cx="17" cy="18" r="2.4"></circle><path d="M8.1 10.9l6.8-3.8M8.1 13.1l6.8 3.8"></path></svg></button>
+                  <!-- reaction picker -->
+                  <sc-if value="{{ p.pickerOpen }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute; bottom:34px; left:0; z-index:20; display:flex; gap:4px; padding:6px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); box-shadow:var(--fl-shadow-float); animation:ffPop 160ms var(--fl-ease-out) both;">
+                      <sc-for list="{{ p.reactionOptions }}" as="ro" hint-placeholder-count="4">
+                        <button type="button" onClick="{{ ro.pick }}" aria-label="{{ ro.name }}" style="{{ ro.style }}">{{ ro.icon }}</button>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+
+                <!-- reactor summary -->
+                <sc-if value="{{ p.hasReactors }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; align-items:center; gap:9px; margin-top:11px; padding-top:11px; border-top:1px solid var(--fl-charcoal-800);">
+                    <div style="display:flex; align-items:center;">
+                      <sc-for list="{{ p.reactorAvatars }}" as="ra" hint-placeholder-count="3">
+                        <span style="width:20px; height:20px; flex:none; border-radius:var(--fl-radius-round); background:{{ ra.tint }}; border:2px solid var(--fl-surface-card); margin-left:{{ ra.ml }};"></span>
+                      </sc-for>
+                    </div>
+                    <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ p.reactorSummary }}</span>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- ── REEL LAYOUT (B) ── -->
+        <sc-if value="{{ isReel }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:6px 0 30px;">
+            <sc-for list="{{ posts }}" as="p" hint-placeholder-count="4">
+              <div style="padding:14px 0 4px; border-top:{{ p.reelDivider }}; animation:ffRise 400ms var(--fl-ease-out) both;">
+                <!-- author -->
+                <div style="display:flex; align-items:center; gap:10px; padding:0 16px 11px;">
+                  <span style="width:36px; height:36px; flex:none; border-radius:var(--fl-radius-round); background:{{ p.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+                  <div style="flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:7px;">
+                      <span style="font-size:14px; font-weight:500; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ p.author }}</span>
+                      <span style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:var(--fl-text-tertiary);"><span style="display:inline-flex;">{{ p.audienceIcon }}</span>{{ p.audienceLabel }}</span>
+                    </div>
+                    <span style="display:block; font-size:11px; color:var(--fl-text-tertiary); margin-top:1px;">{{ p.time }}</span>
+                  </div>
+                  <button type="button" onClick="{{ p.openPostOptions }}" aria-label="Post options" style="flex:none; width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-tertiary);"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="19" cy="12" r="1.7"></circle></svg></button>
+                </div>
+
+                <!-- full-bleed media -->
+                <sc-if value="{{ p.isPhoto }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:relative; height:300px; overflow:hidden; border-top:1px solid var(--fl-charcoal-800); border-bottom:1px solid var(--fl-charcoal-800);"><image-slot id="{{ p.reelMediaId }}" shape="rect" placeholder="{{ p.mediaPlaceholder }}" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot></div>
+                </sc-if>
+                <sc-if value="{{ p.isProgress }}" hint-placeholder-val="{{ false }}">
+                  <div onPointerDown="{{ p.cmpDown }}" onPointerMove="{{ p.cmpMove }}" onPointerUp="{{ p.cmpUp }}" onPointerCancel="{{ p.cmpUp }}" style="position:relative; height:340px; overflow:hidden; border-top:1px solid var(--fl-charcoal-800); border-bottom:1px solid var(--fl-charcoal-800); touch-action:none; cursor:ew-resize; user-select:none;">
+                    <image-slot id="{{ p.reelMediaId }}" shape="rect" placeholder="Week 1" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                    <div style="position:absolute; inset:0; clip-path:{{ p.cmpClip }}; -webkit-clip-path:{{ p.cmpClip }};"><image-slot id="{{ p.reelMediaId2 }}" shape="rect" placeholder="Week 12" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot></div>
+                    <span style="position:absolute; top:11px; left:11px; padding:2px 8px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.62); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(4px); font-size:9.5px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-secondary); pointer-events:none;">{{ p.beforeLabel }}</span>
+                    <span style="position:absolute; top:11px; right:11px; padding:2px 8px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.62); border:1px solid var(--fl-bronze-border); backdrop-filter:blur(4px); font-size:9.5px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-bronze-bright); pointer-events:none;">{{ p.afterLabel }}</span>
+                    <span style="position:absolute; bottom:11px; left:11px; display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.6); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(4px); font-size:9.5px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-secondary); pointer-events:none;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V4"></path><path d="M6 10l6-6 6 6"></path></svg>Progress</span>
+                    <div style="position:absolute; top:0; bottom:0; left:{{ p.cmpPos }}; width:2px; background:rgba(255,255,255,0.9); box-shadow:0 0 10px rgba(0,0,0,0.6); transform:translateX(-1px); pointer-events:none;"><span style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.72); border:1px solid rgba(255,255,255,0.55); backdrop-filter:blur(3px); color:#fff;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7l-4 5 4 5"></path><path d="M15 7l4 5-4 5"></path></svg></span></div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ p.isVideo }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:relative; height:320px; overflow:hidden; border-top:1px solid var(--fl-charcoal-800); border-bottom:1px solid var(--fl-charcoal-800);">
+                    <image-slot id="{{ p.reelMediaId }}" shape="rect" placeholder="Lift clip" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; background:linear-gradient(180deg, rgba(5,5,5,0.08), rgba(5,5,5,0.4));"><span style="width:60px; height:60px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.55); border:1px solid rgba(255,255,255,0.25); backdrop-filter:blur(3px); color:#fff;"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></span></div>
+                    <span style="position:absolute; top:12px; left:12px; display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.6); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(4px); font-size:10px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; color:var(--fl-bronze-bright);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11v10H4z"></path><path d="M15 10l5-3v10l-5-3z"></path></svg>{{ p.videoDur }}</span>
+                    <sc-if value="{{ p.hasWorkoutLabel }}" hint-placeholder-val="{{ false }}">
+                      <span style="position:absolute; top:12px; right:12px; display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.6); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(4px); font-size:9.5px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-text-secondary);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg>{{ p.workoutLabel }}</span>
+                    </sc-if>
+                    <sc-if value="{{ p.hasPrTag }}" hint-placeholder-val="{{ false }}">
+                      <span style="position:absolute; bottom:12px; left:12px; display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle); font-size:10.5px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-bronze-bright);">{{ p.prLabel }}</span>
+                    </sc-if>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ p.isMilestone }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:relative; min-height:280px; overflow:hidden; border-top:1px solid var(--fl-bronze-border-subtle); border-bottom:1px solid var(--fl-bronze-border-subtle); display:flex; align-items:center; justify-content:center; padding:34px 24px; background:radial-gradient(circle at 50% 40%, rgba(191,143,79,0.3), rgba(20,15,10,0.96) 70%), var(--fl-surface-recessed);">
+                    <div style="position:absolute; inset:0; opacity:0.5; background:radial-gradient(circle at 50% 40%, transparent 32%, rgba(0,0,0,0.55) 74%);"></div>
+                    <div style="position:relative; display:flex; flex-direction:column; align-items:center; text-align:center;">
+                      <span style="display:inline-flex; align-items:center; gap:6px; font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-bronze-label);"><span style="display:inline-flex; color:var(--fl-bronze-bright);">{{ p.mileKindIcon }}</span>{{ p.mileKindLabel }}</span>
+                      <span style="font-family:var(--fl-font-display); font-size:30px; font-weight:700; letter-spacing:0.3px; color:var(--fl-bronze-bright); line-height:1.1; margin-top:16px; text-shadow:0 3px 22px rgba(191,143,79,0.5);">{{ p.mileTitle }}</span>
+                      <sc-if value="{{ p.hasMileSub }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:13px; color:var(--fl-text-secondary); margin-top:10px; max-width:260px;">{{ p.mileSub }}</span>
+                      </sc-if>
+                      <sc-if value="{{ p.hasMileItems }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:7px; margin-top:16px;">
+                          <sc-for list="{{ p.mileItems }}" as="mi" hint-placeholder-count="2">
+                            <span style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px 5px 9px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.5); border:1px solid var(--fl-bronze-border); font-size:11.5px; font-weight:600; color:var(--fl-bronze-bright);"><span style="display:inline-flex;">{{ mi.icon }}</span>{{ mi.label }}</span>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <!-- caption + reactions -->
+                <div style="padding:12px 16px 4px;">
+                  <div style="position:relative; display:flex; align-items:center; gap:16px;">
+                    <button type="button" onClick="{{ p.togglePicker }}" style="{{ p.reactBtnStyle }}"><span style="display:inline-flex;">{{ p.reactIcon }}</span>{{ p.reactLabel }}</button>
+                    <button type="button" onClick="{{ p.openDetail }}" style="display:inline-flex; align-items:center; gap:7px; background:transparent; border:none; padding:0; cursor:pointer; color:var(--fl-text-tertiary); font-size:12.5px; font-weight:600;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4 19.5l1.3-4A7.5 7.5 0 1 1 20 11.5z"></path></svg>{{ p.commentCount }}</button>
+                    <button type="button" onClick="{{ p.onShare }}" aria-label="Share" style="margin-left:auto; display:inline-flex; align-items:center; background:transparent; border:none; padding:0; cursor:pointer; color:var(--fl-text-tertiary);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.4"></circle><circle cx="17" cy="6" r="2.4"></circle><circle cx="17" cy="18" r="2.4"></circle><path d="M8.1 10.9l6.8-3.8M8.1 13.1l6.8 3.8"></path></svg></button>
+                    <sc-if value="{{ p.pickerOpen }}" hint-placeholder-val="{{ false }}">
+                      <div style="position:absolute; bottom:34px; left:0; z-index:20; display:flex; gap:4px; padding:6px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); box-shadow:var(--fl-shadow-float); animation:ffPop 160ms var(--fl-ease-out) both;">
+                        <sc-for list="{{ p.reactionOptions }}" as="ro" hint-placeholder-count="4">
+                          <button type="button" onClick="{{ ro.pick }}" aria-label="{{ ro.name }}" style="{{ ro.style }}">{{ ro.icon }}</button>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+                  <sc-if value="{{ p.hasCaption }}" hint-placeholder-val="{{ true }}">
+                    <span style="display:block; font-size:14px; line-height:1.5; color:var(--fl-text-primary); margin-top:11px;"><span style="font-weight:600;">{{ p.author }}</span>  {{ p.caption }}</span>
+                  </sc-if>
+                  <sc-if value="{{ p.hasReactors }}" hint-placeholder-val="{{ false }}">
+                    <span style="display:block; font-size:11.5px; color:var(--fl-text-tertiary); margin-top:8px;">{{ p.reactorSummary }}</span>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ═══ COMPOSER SHEET ═══ -->
+  <sc-if value="{{ composerOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeComposer }}" style="position:absolute; inset:0; z-index:1100; background:var(--fl-overlay-dark); backdrop-filter:blur(3px); animation:ffFade 180ms ease both;"></div>
+    <div style="position:absolute; left:0; right:0; bottom:0; z-index:1110; max-height:92%; display:flex; flex-direction:column; border-top-left-radius:var(--fl-radius-xl); border-top-right-radius:var(--fl-radius-xl); border:1px solid var(--fl-charcoal-500); border-bottom:none; background:var(--fl-surface-modal); box-shadow:var(--fl-shadow-float); transform:{{ sheetTransform }}; transition:{{ sheetTransition }};">
+      <div onPointerDown="{{ onDragDown }}" onPointerMove="{{ onDragMove }}" onPointerUp="{{ onDragUp }}" onPointerCancel="{{ onDragUp }}" style="flex:none; padding:8px 0 6px; touch-action:none; cursor:grab;"><div style="width:40px; height:5px; border-radius:3px; background:var(--fl-charcoal-500); margin:0 auto;"></div></div>
+      <div style="flex:none; display:flex; align-items:center; justify-content:space-between; padding:4px 18px 12px; border-bottom:1px solid var(--fl-charcoal-700);">
+        <button type="button" onClick="{{ closeComposer }}" style="background:transparent; border:none; padding:0; cursor:pointer; font-size:14px; color:var(--fl-text-tertiary);">Cancel</button>
+        <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary);">New Post</span>
+        <button type="button" onClick="{{ submitPost }}" style="padding:7px 16px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-fill); color:var(--fl-bronze-bright); font-size:13px; font-weight:700; letter-spacing:0.3px; cursor:pointer; box-shadow:var(--fl-glow-subtle);">Post</button>
+      </div>
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:16px 18px calc(20px + env(safe-area-inset-bottom));">
+        <!-- audience -->
+        <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:0 2px 9px;">Who can see this</span>
+        <div style="display:flex; gap:4px; background:var(--fl-charcoal-800); border-radius:var(--fl-radius-pill); padding:3px;">
+          <sc-for list="{{ audienceOptions }}" as="a" hint-placeholder-count="3">
+            <button type="button" onClick="{{ a.select }}" style="{{ a.style }}"><span style="display:inline-flex;">{{ a.icon }}</span>{{ a.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:8px; margin-top:11px; padding:10px 12px; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700);">
+          <span style="flex:none; display:inline-flex; margin-top:1px; color:var(--fl-icon-bronze);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10V8a6 6 0 0 1 12 0v2"></path><path d="M5 10h14v10H5z"></path></svg></span>
+          <span style="flex:1; min-width:0; font-size:11.5px; line-height:1.5; color:var(--fl-text-secondary);">{{ audienceNote }}</span>
+        </div>
+        <!-- text -->
+        <div style="display:flex; gap:11px; margin-top:16px;">
+          <span style="width:38px; height:38px; flex:none; border-radius:var(--fl-radius-round); background:{{ meTint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+          <div style="flex:1; min-width:0; min-height:70px; font-size:14.5px; line-height:1.5; color:var(--fl-text-tertiary); padding-top:8px;">What did you forge today?</div>
+        </div>
+        <!-- media add -->
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:16px;">
+          <sc-for list="{{ mediaChoices }}" as="m" hint-placeholder-count="3">
+            <button type="button" onClick="{{ m.action }}" style="display:flex; flex-direction:column; align-items:center; gap:7px; padding:14px 6px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-700); cursor:pointer;" style-active="border-color:var(--fl-bronze-border);"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ m.icon }}</span><span style="font-size:11px; font-weight:600; color:var(--fl-text-secondary);">{{ m.label }}</span></button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ composerPhoto }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:12px; position:relative; height:200px; border-radius:var(--fl-radius-md); overflow:hidden; border:1px solid var(--fl-charcoal-700);">
+            <image-slot id="ff-composer-photo" shape="rect" fit="cover" placeholder="Add a photo" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+          </div>
+          <span style="display:block; font-size:10.5px; color:var(--fl-text-tertiary); margin-top:7px;">Drop a photo, then tap Adjust (or double-tap) to reposition and zoom.</span>
+        </sc-if>
+        <sc-if value="{{ composerProgress }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:12px;">
+            <div onPointerDown="{{ composerCmpDown }}" onPointerMove="{{ composerCmpMove }}" onPointerUp="{{ composerCmpUp }}" onPointerCancel="{{ composerCmpUp }}" style="position:relative; aspect-ratio:4/5; border-radius:var(--fl-radius-md); overflow:hidden; border:1px solid var(--fl-charcoal-700); touch-action:none; user-select:none;">
+              <image-slot id="ff-composer-before" shape="rect" fit="cover" placeholder="Add your ‘before’ photo" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:{{ composerBeforePE }};"></image-slot>
+              <div style="position:absolute; inset:0; clip-path:{{ composerAfterClip }}; -webkit-clip-path:{{ composerAfterClip }}; opacity:{{ composerAfterOpacity }}; pointer-events:{{ composerAfterPE }};">
+                <image-slot id="ff-composer-after" shape="rect" fit="cover" placeholder="Add your ‘after’ photo" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+              </div>
+              <div style="position:absolute; inset:0; pointer-events:none; z-index:20;">
+                <div style="position:absolute; left:50%; top:5%; bottom:5%; border-left:1px dashed rgba(255,255,255,0.3);"></div>
+                <div style="position:absolute; left:6%; right:6%; top:12%; border-top:1px dashed rgba(205,160,99,0.8);"></div>
+                <div style="position:absolute; left:6%; right:6%; bottom:6%; border-top:1px dashed rgba(205,160,99,0.8);"></div>
+                <div style="position:absolute; left:50%; top:12%; width:26%; height:15%; transform:translateX(-50%); border:1px dashed rgba(255,255,255,0.32); border-radius:50%;"></div>
+                <div style="position:absolute; left:32%; right:32%; top:12%; bottom:6%; border:1px dashed rgba(255,255,255,0.22); border-radius:28px;"></div>
+                <span style="position:absolute; top:12%; right:6%; transform:translateY(-125%); font-size:8px; font-weight:700; letter-spacing:1px; color:rgba(205,160,99,0.9);">HEAD</span>
+                <span style="position:absolute; bottom:6%; right:6%; transform:translateY(115%); font-size:8px; font-weight:700; letter-spacing:1px; color:rgba(205,160,99,0.9);">FEET</span>
+              </div>
+              <span style="position:absolute; top:9px; left:9px; z-index:21; padding:2px 8px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.62); border:1px solid var(--fl-charcoal-600); font-size:9px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-secondary); pointer-events:none;">Before</span>
+              <span style="position:absolute; top:9px; right:9px; z-index:21; padding:2px 8px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.62); border:1px solid var(--fl-bronze-border); font-size:9px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-bronze-bright); pointer-events:none;">After</span>
+              <sc-if value="{{ composerCompareMode }}" hint-placeholder-val="{{ true }}">
+                <div style="position:absolute; top:0; bottom:0; left:{{ composerCmpPos }}; width:2px; background:rgba(255,255,255,0.9); box-shadow:0 0 10px rgba(0,0,0,0.6); transform:translateX(-1px); z-index:24; pointer-events:none;"><span style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.72); border:1px solid rgba(255,255,255,0.55); color:#fff;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7l-4 5 4 5"></path><path d="M15 7l4 5-4 5"></path></svg></span></div>
+              </sc-if>
+              <sc-if value="{{ composerAdjusting }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute; top:9px; left:50%; transform:translateX(-50%); z-index:25; padding:3px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-border); font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-bright); pointer-events:none;">Adjusting {{ composerAdjustSide }}</span>
+              </sc-if>
+            </div>
+            <sc-if value="{{ composerCompareMode }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex; gap:8px; margin-top:8px;">
+                <button type="button" onClick="{{ adjustBefore }}" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:11px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); color:var(--fl-text-secondary); font-size:12.5px; font-weight:600; cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"></path></svg>Adjust Before</button>
+                <button type="button" onClick="{{ adjustAfter }}" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:11px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); color:var(--fl-text-secondary); font-size:12.5px; font-weight:600; cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"></path></svg>Adjust After</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ composerAdjusting }}" hint-placeholder-val="{{ false }}">
+              <button type="button" onClick="{{ composerDone }}" style="width:100%; margin-top:8px; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-fill); color:var(--fl-bronze-bright); font-size:13px; font-weight:700; letter-spacing:0.4px; cursor:pointer; box-shadow:var(--fl-glow-subtle);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4 4 10-10"></path></svg>Done — back to compare</button>
+            </sc-if>
+            <div style="display:flex; align-items:flex-start; gap:8px; margin-top:10px; padding:9px 11px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle);">
+              <span style="flex:none; display:inline-flex; margin-top:1px; color:var(--fl-bronze-bright);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5"></path><path d="M12 16h.01"></path></svg></span>
+              <span style="flex:1; min-width:0; font-size:11px; line-height:1.5; color:var(--fl-text-secondary);">Drop your <b style="color:var(--fl-text-primary); font-weight:600;">before</b> photo, then <b style="color:var(--fl-text-primary); font-weight:600;">Adjust Before</b> to position it. Tap <b style="color:var(--fl-text-primary); font-weight:600;">Adjust After</b> to add and place the second — the first shows through so you line it up to the actual body. Slide the divider to compare.</span>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ composerVideo }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:12px; position:relative; height:200px; border-radius:var(--fl-radius-md); overflow:hidden; border:1px solid var(--fl-charcoal-700);">
+            <image-slot id="ff-composer-video" shape="rect" fit="cover" placeholder="Add a video" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+          </div>
+        </sc-if>
+        <!-- share an achievement (opt-in) -->
+        <div style="display:flex; align-items:center; gap:8px; margin:22px 2px 4px;">
+          <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Add an achievement</span>
+          <span style="flex:1; height:1px; background:var(--fl-charcoal-700);"></span>
+          <span style="font-size:10px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Optional</span>
+        </div>
+        <span style="display:block; font-size:11.5px; line-height:1.5; color:var(--fl-text-tertiary); margin:0 2px 12px;">Nothing here is shared unless you choose it. Honors and finished programs are yours to post — or keep private.</span>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <sc-for list="{{ shareables }}" as="s" hint-placeholder-count="2">
+            <button type="button" onClick="{{ s.toggle }}" style="{{ s.rowStyle }}">
+              <span style="width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-md); background:radial-gradient(circle at 50% 32%, rgba(191,143,79,0.2), transparent 72%), var(--fl-charcoal-900); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright);">{{ s.icon }}</span>
+              <div style="flex:1; min-width:0; text-align:left; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:13.5px; font-weight:500; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ s.title }}</span>
+                <span style="font-size:11px; color:var(--fl-text-tertiary);">{{ s.meta }}</span>
+              </div>
+              <span style="{{ s.checkStyle }}">{{ s.checkIcon }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ═══ SETTINGS SHEET (milestone sharing) ═══ -->
+  <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSettings }}" style="position:absolute; inset:0; z-index:1120; background:var(--fl-overlay-dark); backdrop-filter:blur(3px); animation:ffFade 180ms ease both;"></div>
+    <div style="position:absolute; left:0; right:0; bottom:0; z-index:1130; border-top-left-radius:var(--fl-radius-xl); border-top-right-radius:var(--fl-radius-xl); border:1px solid var(--fl-charcoal-500); border-bottom:none; background:var(--fl-surface-modal); box-shadow:var(--fl-shadow-float); padding:8px 20px calc(22px + env(safe-area-inset-bottom)); transform:{{ sheetTransform }}; transition:{{ sheetTransition }};">
+      <div onPointerDown="{{ onDragDown }}" onPointerMove="{{ onDragMove }}" onPointerUp="{{ onDragUp }}" onPointerCancel="{{ onDragUp }}" style="padding:6px 0 14px; touch-action:none; cursor:grab;"><div style="width:40px; height:5px; border-radius:3px; background:var(--fl-charcoal-500); margin:0 auto;"></div></div>
+      <span style="display:block; font-family:var(--fl-font-display); font-size:18px; font-weight:600; color:var(--fl-text-primary); margin:2px 2px 4px;">Sharing</span>
+      <span style="display:block; font-size:12.5px; line-height:1.55; color:var(--fl-text-secondary); margin:0 2px 16px;">You're always in control of what your friends see. Nothing posts to your feed on its own.</span>
+      <div style="display:flex; flex-direction:column; gap:2px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-700); background:var(--fl-surface-card); overflow:hidden;">
+        <sc-for list="{{ settingRows }}" as="r" hint-placeholder-count="3">
+          <button type="button" onClick="{{ r.toggle }}" style="display:flex; align-items:center; gap:13px; padding:14px 15px; background:transparent; border:none; border-top:{{ r.divider }}; cursor:pointer; text-align:left;">
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+              <span style="font-size:14px; font-weight:500; color:var(--fl-text-primary);">{{ r.title }}</span>
+              <span style="font-size:11.5px; line-height:1.45; color:var(--fl-text-tertiary);">{{ r.desc }}</span>
+            </div>
+            <span style="{{ r.trackStyle }}"><span style="{{ r.knobStyle }}"></span></span>
+          </button>
+        </sc-for>
+      </div>
+      <span style="display:block; font-size:11.5px; line-height:1.5; color:var(--fl-text-tertiary); margin:14px 2px 0;">Progress photos are never prompted — you add those yourself, whenever you want.</span>
+    </div>
+  </sc-if>
+
+  <!-- ═══ POST DETAIL + COMMENTS ═══ -->
+  <sc-if value="{{ detailOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; inset:0; z-index:900; display:flex; flex-direction:column; background:var(--fl-bg-atmospheric); animation:ffView 280ms var(--fl-ease-out) both;">
+      <div style="flex:none; display:flex; align-items:center; gap:8px; height:56px; padding:0 10px 0 6px; border-bottom:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(12,12,12,0.7), rgba(9,9,9,0.5)); backdrop-filter:blur(8px);">
+        <button type="button" onClick="{{ closeDetail }}" aria-label="Back" style="width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+        <span style="flex:1; min-width:0; font-family:var(--fl-font-display); font-size:17px; font-weight:600; color:var(--fl-text-primary);">Post</span>
+      </div>
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:16px 16px 20px;">
+        <!-- the post -->
+        <div style="display:flex; align-items:center; gap:11px;">
+          <span style="width:42px; height:42px; flex:none; border-radius:var(--fl-radius-round); background:{{ dTint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; gap:8px;"><span style="font-size:14.5px; font-weight:500; color:var(--fl-text-primary);">{{ dAuthor }}</span><span style="font-size:9px; font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-bronze-primary);">{{ dRank }}</span></div>
+            <div style="display:flex; align-items:center; gap:8px; margin-top:2px;"><span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ dTime }}</span><span style="width:2.5px; height:2.5px; border-radius:var(--fl-radius-round); background:var(--fl-charcoal-500);"></span><span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--fl-text-tertiary);"><span style="display:inline-flex;">{{ dAudienceIcon }}</span>{{ dAudienceLabel }}</span></div>
+          </div>
+        </div>
+        <span style="display:block; font-size:14.5px; line-height:1.55; color:var(--fl-text-primary); margin-top:12px;">{{ dCaption }}</span>
+        <sc-if value="{{ dIsPhoto }}" hint-placeholder-val="{{ true }}">
+          <div style="margin:13px -16px 0; position:relative; height:300px; overflow:hidden; border-top:1px solid var(--fl-charcoal-800); border-bottom:1px solid var(--fl-charcoal-800);">
+            <image-slot id="{{ dMediaId }}" shape="rect" fit="cover" placeholder="Photo" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+          </div>
+          <span style="display:block; font-size:10.5px; color:var(--fl-text-tertiary); text-align:center; margin-top:8px;">Double-click the photo to reposition and zoom</span>
+        </sc-if>
+        <sc-if value="{{ dIsVideo }}" hint-placeholder-val="{{ false }}">
+          <div style="margin:13px -16px 0; position:relative; height:320px; overflow:hidden; border-top:1px solid var(--fl-charcoal-800); border-bottom:1px solid var(--fl-charcoal-800);">
+            <image-slot id="{{ dMediaId }}" shape="rect" fit="cover" placeholder="Lift clip" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; background:linear-gradient(180deg, rgba(5,5,5,0.08), rgba(5,5,5,0.42));"><span style="width:62px; height:62px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.55); border:1px solid rgba(255,255,255,0.25); backdrop-filter:blur(3px); color:#fff;"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></span></div>
+            <span style="position:absolute; top:12px; left:12px; display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.6); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(4px); font-size:10px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; color:var(--fl-bronze-bright);">{{ dVideoDur }}</span>
+            <sc-if value="{{ dHasWorkout }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; top:12px; right:12px; padding:3px 9px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.6); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(4px); font-size:9.5px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-text-secondary);">{{ dWorkout }}</span></sc-if>
+            <sc-if value="{{ dHasPr }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; bottom:12px; left:12px; display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle); font-size:10.5px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-bronze-bright);">{{ dPr }}</span></sc-if>
+          </div>
+        </sc-if>
+        <sc-if value="{{ dIsProgress }}" hint-placeholder-val="{{ false }}">
+          <div onPointerDown="{{ dCmpDown }}" onPointerMove="{{ dCmpMove }}" onPointerUp="{{ dCmpUp }}" onPointerCancel="{{ dCmpUp }}" style="margin:13px -16px 0; position:relative; aspect-ratio:4/5; overflow:hidden; border-top:1px solid var(--fl-charcoal-800); border-bottom:1px solid var(--fl-charcoal-800); touch-action:none; cursor:ew-resize; user-select:none;">
+            <image-slot id="{{ dMediaId }}" shape="rect" fit="cover" placeholder="Week 1" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+            <div style="position:absolute; inset:0; clip-path:{{ dCmpClip }}; -webkit-clip-path:{{ dCmpClip }};"><image-slot id="{{ dMediaId2 }}" shape="rect" fit="cover" placeholder="Week 12" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot></div>
+            <span style="position:absolute; top:11px; left:11px; padding:2px 8px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.62); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(4px); font-size:9.5px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-secondary); pointer-events:none;">{{ dBefore }}</span>
+            <span style="position:absolute; top:11px; right:11px; padding:2px 8px; border-radius:var(--fl-radius-pill); background:rgba(10,10,10,0.62); border:1px solid var(--fl-bronze-border); backdrop-filter:blur(4px); font-size:9.5px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-bronze-bright); pointer-events:none;">{{ dAfter }}</span>
+            <div style="position:absolute; top:0; bottom:0; left:{{ dCmpPos }}; width:2px; background:rgba(255,255,255,0.9); box-shadow:0 0 10px rgba(0,0,0,0.6); transform:translateX(-1px); pointer-events:none;"><span style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.72); border:1px solid rgba(255,255,255,0.55); backdrop-filter:blur(3px); color:#fff;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7l-4 5 4 5"></path><path d="M15 7l4 5-4 5"></path></svg></span></div>
+          </div>
+          <span style="display:block; font-size:10.5px; color:var(--fl-text-tertiary); text-align:center; margin-top:8px;">Drag the divider to compare · double-click a photo to reposition</span>
+        </sc-if>
+        <sc-if value="{{ dIsMilestone }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:13px; position:relative; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); overflow:hidden; background:radial-gradient(150% 100% at 15% 0%, rgba(191,143,79,0.14), transparent 58%), var(--fl-surface-recessed); box-shadow:0 0 32px rgba(191,143,79,0.17);">
+            <div style="display:flex; align-items:center; gap:7px; padding:8px 14px; border-bottom:1px solid var(--fl-bronze-border-subtle); background:rgba(191,143,79,0.05);"><span style="display:inline-flex; color:var(--fl-bronze-bright);">{{ dMileKindIcon }}</span><span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ dMileKindLabel }}</span></div>
+            <div style="padding:16px 15px;">
+              <span style="display:block; font-family:var(--fl-font-display); font-size:21px; font-weight:600; color:var(--fl-text-primary); line-height:1.15;">{{ dMileTitle }}</span>
+              <sc-if value="{{ dHasMileSub }}" hint-placeholder-val="{{ false }}"><span style="display:block; font-size:12.5px; color:var(--fl-text-secondary); margin-top:6px;">{{ dMileSub }}</span></sc-if>
+              <sc-if value="{{ dHasMileItems }}" hint-placeholder-val="{{ false }}"><div style="display:flex; flex-wrap:wrap; gap:7px; margin-top:12px;"><sc-for list="{{ dMileItems }}" as="mi" hint-placeholder-count="2"><span style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px 5px 9px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:11.5px; font-weight:600; color:var(--fl-bronze-bright);"><span style="display:inline-flex;">{{ mi.icon }}</span>{{ mi.label }}</span></sc-for></div></sc-if>
+            </div>
+          </div>
+        </sc-if>
+        <!-- reactions -->
+        <div style="display:flex; align-items:center; gap:9px; margin-top:15px; padding-bottom:15px; border-bottom:1px solid var(--fl-charcoal-800);">
+          <div style="display:flex; align-items:center;">
+            <sc-for list="{{ dReactorAvatars }}" as="ra" hint-placeholder-count="3">
+              <span style="width:24px; height:24px; flex:none; border-radius:var(--fl-radius-round); background:{{ ra.tint }}; border:2px solid var(--fl-bg-atmospheric); margin-left:{{ ra.ml }};"></span>
+            </sc-for>
+          </div>
+          <span style="flex:1; min-width:0; font-size:12px; color:var(--fl-text-tertiary);">{{ dReactorSummary }}</span>
+          <button type="button" onClick="{{ dToggleReact }}" style="{{ dReactBtnStyle }}"><span style="display:inline-flex;">{{ dReactIcon }}</span>{{ dReactLabel }}</button>
+        </div>
+        <!-- comments -->
+        <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:16px 2px 4px;">{{ dCommentHeader }}</span>
+        <div style="display:flex; flex-direction:column;">
+          <sc-for list="{{ dComments }}" as="c" hint-placeholder-count="3">
+            <div style="display:flex; gap:11px; padding:12px 0; border-bottom:{{ c.divider }};">
+              <span style="width:34px; height:34px; flex:none; border-radius:var(--fl-radius-round); background:{{ c.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:baseline; gap:8px;"><span style="font-size:13.5px; font-weight:500; color:var(--fl-text-primary);">{{ c.author }}</span><span style="font-size:11px; color:var(--fl-text-tertiary);">{{ c.time }}</span></div>
+                <span style="display:block; font-size:13.5px; line-height:1.5; color:var(--fl-text-secondary); margin-top:3px;">{{ c.body }}</span>
+                <button type="button" onClick="{{ c.react }}" style="display:inline-flex; align-items:center; gap:6px; margin-top:7px; background:transparent; border:none; padding:0; cursor:pointer; color:{{ c.reactColor }}; font-size:11.5px; font-weight:600;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z"></path></svg>{{ c.reactLabel }}</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <!-- comment input -->
+      <div style="flex:none; display:flex; align-items:center; gap:10px; padding:10px 14px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:var(--fl-surface-modal);">
+        <span style="width:34px; height:34px; flex:none; border-radius:var(--fl-radius-round); background:{{ meTint }}; border:1px solid var(--fl-bronze-border-subtle);"></span>
+        <div style="flex:1; min-width:0; padding:10px 15px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-800); border:1px solid var(--fl-charcoal-600); font-size:13.5px; color:var(--fl-text-tertiary);">Add a comment…</div>
+        <button type="button" onClick="{{ sendComment }}" aria-label="Send" style="width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright); cursor:pointer; box-shadow:var(--fl-glow-subtle);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-3-6z"></path></svg></button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ═══ FRIENDS + REQUESTS ═══ -->
+  <sc-if value="{{ friendsOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; inset:0; z-index:950; display:flex; flex-direction:column; background:var(--fl-bg-atmospheric); animation:ffView 280ms var(--fl-ease-out) both;">
+      <div style="flex:none; display:flex; align-items:center; gap:8px; height:56px; padding:0 8px 0 6px; border-bottom:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(12,12,12,0.7), rgba(9,9,9,0.5)); backdrop-filter:blur(8px);">
+        <button type="button" onClick="{{ closeFriends }}" aria-label="Back" style="width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+        <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+          <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600; color:var(--fl-text-primary); line-height:1.1;">Friends</span>
+          <span style="font-size:10.5px; color:var(--fl-text-tertiary); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">The people you've chosen to build with</span>
+        </div>
+        <button type="button" onClick="{{ openFriendsMenu }}" aria-label="Manage friends" style="width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-icon-bronze);"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg></button>
+      </div>
+      <div style="flex:none; padding:12px 16px 10px;">
+        <div style="display:flex; gap:4px; background:var(--fl-charcoal-800); border-radius:var(--fl-radius-pill); padding:3px;">
+          <sc-for list="{{ friendTabs }}" as="t" hint-placeholder-count="2">
+            <button type="button" onClick="{{ t.select }}" style="{{ t.style }}">{{ t.label }}<sc-if value="{{ t.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="{{ t.badgeStyle }}">{{ t.badge }}</span></sc-if></button>
+          </sc-for>
+        </div>
+      </div>
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:2px 16px 24px;">
+        <!-- friends list -->
+        <sc-if value="{{ isFriendsTab }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:var(--fl-radius-md); background:var(--fl-charcoal-800); border:1px solid var(--fl-charcoal-700); margin:4px 0 12px;">
+            <span style="display:inline-flex; color:var(--fl-text-tertiary);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6"></circle><path d="M15 15l5 5"></path></svg></span>
+            <span style="flex:1; min-width:0; font-size:13.5px; color:var(--fl-text-tertiary);">Search friends</span>
+          </div>
+          <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+            <sc-for list="{{ friendsList }}" as="f" hint-placeholder-count="5">
+              <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-top:{{ f.divider }};">
+                <div role="button" tabindex="0" aria-label="{{ f.a11y }}" onClick="{{ f.open }}" style="display:flex; align-items:center; gap:12px; flex:1; min-width:0; cursor:pointer;">
+                <span style="width:44px; height:44px; flex:none; border-radius:var(--fl-radius-round); background:{{ f.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                  <div style="display:flex; align-items:center; gap:7px;"><span style="font-size:14.5px; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ f.name }}</span><span style="font-size:9px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-primary);">{{ f.rank }}</span></div>
+                  <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ f.context }}</span>
+                  <span style="display:inline-flex; align-items:center; gap:5px; font-size:10px; color:var(--fl-text-tertiary); opacity:0.72; letter-spacing:0.2px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5v5l3 2"></path></svg>{{ f.history }}</span>
+                </div>
+                </div>
+                <button type="button" onClick="{{ f.action }}" aria-label="Options" style="flex:none; width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-tertiary);"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg></button>
+              </div>
+            </sc-for>
+          </div>
+          <button type="button" onClick="{{ inviteByHandle }}" style="width:100%; margin-top:12px; display:flex; align-items:center; gap:13px; padding:14px; border-radius:var(--fl-radius-md); background:transparent; border:1px dashed var(--fl-charcoal-500); cursor:pointer; text-align:left;" style-active="border-color:var(--fl-bronze-border);">
+            <span style="width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); color:var(--fl-bronze-bright);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"></circle><path d="M3 19a6 6 0 0 1 12 0"></path><path d="M18.5 7v6M15.5 10h6"></path></svg></span>
+            <span style="flex:1; min-width:0; font-size:14px; font-weight:600; color:var(--fl-text-primary);">Add a friend by handle</span>
+            <span style="flex:none; display:inline-flex; color:var(--fl-text-tertiary);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></span>
+          </button>
+        </sc-if>
+        <!-- requests -->
+        <sc-if value="{{ isRequestsTab }}" hint-placeholder-val="{{ false }}">
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:10px 4px 12px;">Incoming</span>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <sc-for list="{{ requestList }}" as="r" hint-placeholder-count="2">
+              <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:13px 14px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <span style="width:46px; height:46px; flex:none; border-radius:var(--fl-radius-round); background:{{ r.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                    <span style="font-size:14.5px; font-weight:500; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ r.name }}</span>
+                    <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ r.context }}</span>
+                  </div>
+                </div>
+                <sc-if value="{{ r.pending }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex; gap:9px; margin-top:12px;">
+                    <button type="button" onClick="{{ r.accept }}" style="flex:1; padding:10px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-fill); color:var(--fl-bronze-bright); font-size:13px; font-weight:700; letter-spacing:0.3px; cursor:pointer; box-shadow:var(--fl-glow-subtle);">Accept</button>
+                    <button type="button" onClick="{{ r.decline }}" style="flex:1; padding:10px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:13px; font-weight:600; cursor:pointer;">Decline</button>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ r.resolved }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:inline-flex; align-items:center; gap:7px; margin-top:12px; font-size:12.5px; font-weight:600; color:{{ r.resolvedColor }};"><span style="display:inline-flex;">{{ r.resolvedIcon }}</span>{{ r.resolvedLabel }}</div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <span style="display:block; font-size:11.5px; line-height:1.5; color:var(--fl-text-tertiary); text-align:center; margin-top:20px;">Requests are always mutual. No one is suggested to you, and your friend list is never public.</span>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ═══ FRIENDS MANAGEMENT MENU ═══ -->
+  <sc-if value="{{ friendsMenuOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeFriendsMenu }}" style="position:absolute; inset:0; z-index:1140; background:var(--fl-overlay-dark); backdrop-filter:blur(3px); animation:ffFade 180ms ease both;"></div>
+    <div style="position:absolute; left:0; right:0; bottom:0; z-index:1150; border-top-left-radius:var(--fl-radius-xl); border-top-right-radius:var(--fl-radius-xl); border:1px solid var(--fl-charcoal-500); border-bottom:none; background:var(--fl-surface-modal); box-shadow:var(--fl-shadow-float); padding:8px 16px calc(20px + env(safe-area-inset-bottom)); transform:{{ sheetTransform }}; transition:{{ sheetTransition }};">
+      <div onPointerDown="{{ onDragDown }}" onPointerMove="{{ onDragMove }}" onPointerUp="{{ onDragUp }}" onPointerCancel="{{ onDragUp }}" style="padding:6px 0 8px; touch-action:none; cursor:grab;"><div style="width:40px; height:5px; border-radius:3px; background:var(--fl-charcoal-500); margin:0 auto;"></div></div>
+      <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:4px 8px 4px;">Manage</span>
+      <sc-for list="{{ friendsMenuRows }}" as="m" hint-placeholder-count="3">
+        <button type="button" onClick="{{ m.action }}" style="width:100%; display:flex; align-items:center; gap:14px; padding:14px 8px; background:transparent; border:none; border-top:{{ m.divider }}; cursor:pointer; text-align:left;">
+          <span style="display:inline-flex; flex:none; color:{{ m.color }};">{{ m.icon }}</span>
+          <span style="flex:1; min-width:0; font-size:15px; color:{{ m.color }};">{{ m.label }}</span>
+          <span style="flex:none; display:inline-flex; color:var(--fl-text-tertiary);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></span>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:34px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; max-width:340px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:12px 20px; color:var(--fl-text-primary); font-size:13.5px; font-weight:500; animation:ffRise 260ms var(--fl-ease-out) both;">
+      <span style="display:inline-flex; color:{{ toastColor }}; flex:none;">{{ toastIcon }}</span><span style="min-width:0;">{{ toastMsg }}</span>
+    </div>
+  </sc-if>
+
+  <!-- forged grain -->
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:40; opacity:0.045; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;empty&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Feed&quot;}}">
+class Component extends DCLogic {
+  state = {
+    ready: false, toastMsg: null, toastTone: 'bronze',
+    layout: 'ledger', empty: false,
+    reacts: {}, pickerId: null,
+    composerOpen: false, audience: 'friends', shares: {}, composerMedia: null, composerAdjust: null, myPosts: [],
+    settingsOpen: false, prompt: { honors: true, programs: true },
+    detailId: null, dReacted: false, dCommentReacts: {},
+    friendsOpen: false, friendsTab: 'friends', friendsMenuOpen: false, friendsOrigin: null, requests: {},
+    cmp: {}, dragY: 0,
+  };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && fs && window.ForgeFriendsPosts && (ns || true)) { let deep = null, view = null; try { const q = location.search || ''; const m = q.match(/[?&]post=([^&]+)/); if (m) deep = decodeURIComponent(m[1]); const vm = q.match(/[?&]view=(friends|requests)/); if (vm) view = vm[1]; } catch (e) {} const init = { ready: true }; if (deep) init.detailId = deep; if (view) { init.friendsOpen = true; init.friendsTab = view; init.friendsOrigin = 'home'; } this.setState(init); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); }
+
+  _toast(msg, tone) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastTone: tone || 'bronze' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2400); }
+
+  _dragDown(e) { this._ds = e.clientY; this._dragging = true; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {} }
+  _dragMove(e) { if (!this._dragging) return; const dy = e.clientY - this._ds; if (dy > 0) this.setState({ dragY: dy }); }
+  _dragUp() { if (!this._dragging) return; this._dragging = false; const dy = this.state.dragY; this.setState({ dragY: 0 }); if (dy > 80) this.setState({ composerOpen: false, settingsOpen: false, friendsMenuOpen: false }); }
+
+  _cmpFromEvent(e) { const el = this._cmpEl; if (!el) return null; const r = el.getBoundingClientRect(); const p = ((e.clientX - r.left) / r.width) * 100; return Math.max(2, Math.min(98, p)); }
+  _cmpDown(id, e) { this._cmpEl = e.currentTarget; this._cmpId = id; this._cmpStartX = e.clientX; this._cmpMoved = false; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {} }
+  _cmpMove(id, e) { if (this._cmpId !== id) return; if (Math.abs(e.clientX - (this._cmpStartX || 0)) > 5) this._cmpMoved = true; const p = this._cmpFromEvent(e); if (p != null) this.setState(st => ({ cmp: Object.assign({}, st.cmp, { [id]: p }) })); }
+  _cmpUp() { const id = this._cmpId, moved = this._cmpMoved; this._cmpId = null; this._cmpEl = null; if (id && !moved) this.setState({ detailId: id, pickerId: null }); }
+
+  _ccDown(e) { if (this.state.composerAdjust) return; this._ccEl = e.currentTarget; this._ccOn = true; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {} this._ccMove(e); }
+  _ccMove(e) { if (!this._ccOn) return; const r = this._ccEl.getBoundingClientRect(); let p = ((e.clientX - r.left) / r.width) * 100; p = Math.max(3, Math.min(97, p)); this.setState(st => ({ cmp: Object.assign({}, st.cmp, { composer: p }) })); }
+  _ccUp() { this._ccOn = false; }
+
+  _tint(seed) {
+    const T = [
+      'radial-gradient(circle at 42% 32%, #4a3826, #1c1510)',
+      'radial-gradient(circle at 45% 35%, #34302a, #17130f)',
+      'radial-gradient(circle at 40% 30%, #40301f, #17120c)',
+      'radial-gradient(circle at 48% 38%, #2d2822, #141210)',
+      'radial-gradient(circle at 44% 34%, #453322, #1a140e)',
+      'radial-gradient(circle at 41% 33%, #3a2c1c, #191309)',
+      'radial-gradient(circle at 46% 36%, #2b2620, #131210)',
+      'radial-gradient(circle at 43% 31%, #4d3a24, #1b140d)',
+    ];
+    return T[Math.abs(seed) % T.length];
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const S = this.state;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.9 });
+    const sv = (d, size, sw, fill) => h('svg', { width: size || 16, height: size || 16, viewBox: '0 0 24 24', fill: fill || 'none', stroke: fill ? 'none' : 'currentColor', strokeWidth: sw || 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(d) ? d : [d]).map((p, i) => h('path', { key: i, d: p })));
+    const wrap = (el) => h('span', { style: { display: 'inline-flex' } }, el);
+
+    const meTint = this._tint(3);
+
+    // ── reaction system ──
+    const REACTIONS = [
+      { key: 'respect', name: 'Respect', glyph: 'flame' },
+      { key: 'honor', name: 'Honor', glyph: 'laurel' },
+      { key: 'support', name: 'Support', glyph: 'heart' },
+      { key: 'strong', name: 'Strength', glyph: 'dumbbell' },
+    ];
+    const reactionGlyph = (key, size, sw) => { const r = REACTIONS.find(x => x.key === key) || REACTIONS[0]; return ic(r.glyph, size || 17, sw || 1.9); };
+
+    // ── audience chip ──
+    const friendGlyph = (sz) => sv(['M12 8.4a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'M6 19a6 6 0 0 1 12 0'], sz || 12, 1.7);
+    const bothGlyph = (sz) => sv(['M8 8.4a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2z', 'M16 8.4a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2z', 'M3 18.5a4 4 0 0 1 8 0', 'M13 18.5a4 4 0 0 1 8 0'], sz || 13, 1.6);
+    const audienceMeta = (aud) => aud === 'both'
+      ? { label: 'Friends · Squad', icon: wrap(bothGlyph(13)) }
+      : { label: 'Friends', icon: wrap(friendGlyph(12)) };
+
+    // ── POSTS (reverse-chronological) ──
+    const RAW = [
+      { id: 'p1', author: 'Diego Salas', rank: 'CRAFTSMAN', time: '18m', aud: 'friends', caption: '12 weeks apart. Same shorts, different engine. Showed up on the days I didn\u2019t want to — that\u2019s the whole secret.', kind: 'progress', reactors: ['Priya', 'Sam'], more: 4, comments: 6 },
+      { id: 'p2', author: 'Priya Nandakumar', rank: 'ARCHITECT', time: '1h', aud: 'friends', caption: 'Didn\u2019t see these coming today. Chose to share because you all pushed me here.', kind: 'milestone', mileKind: 'honor', mileHead: 'Shared 2 Honors', mileTitle: 'The Unbroken', mileItems: [{ g: 'medal', l: 'The Unbroken' }, { g: 'flame', l: 'Century Club' }], reactors: ['Diego', 'Elena', 'Marcus'], more: 6, comments: 9 },
+      { id: 'p3', author: 'Marcus Vale', rank: 'ARCHITECT', time: '3h', aud: 'both', caption: 'New bench PR — 315 for a single. Bar speed felt easy, which is the scary part.', kind: 'video', videoDur: '0:22', workout: 'Bench Session', pr: 'Bench PR', reactors: ['Priya', 'Jonah'], more: 5, comments: 4 },
+      { id: 'p4', author: 'Elena Ruiz', rank: '', time: '6h', aud: 'friends', caption: 'Chalk, coffee, and a quiet platform. Best kind of Saturday.', kind: 'photo', reactors: ['Camille'], more: 2, comments: 2 },
+      { id: 'p5', author: 'Jonah Weiss', rank: 'BUILDER', time: '1d', aud: 'friends', caption: '12 weeks, done. Toughest block I\u2019ve run. On to the next one.', kind: 'milestone', mileKind: 'program', mileHead: 'Completed a Program', mileTitle: 'Hypertrophy Foundations', mileSub: '12 weeks · 48 sessions logged', mileItems: [{ g: 'shield', l: 'Program Architect' }], reactors: ['Elena', 'Diego'], more: 3, comments: 5 },
+      { id: 'p6', author: 'Camille Fortin', rank: 'CRAFTSMAN', time: '2d', aud: 'friends', caption: 'Deload week. A reminder that rest is part of the work, not a break from it.', kind: 'photo', reactors: [], more: 0, comments: 1 },
+    ];
+
+    const buildPost = (r, i) => {
+      const am = audienceMeta(r.aud);
+      const chosen = S.reacts[r.id] || null;
+      const reacted = !!chosen;
+      const reactBtnStyle = { display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', color: reacted ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', fontSize: '12.5px', fontWeight: 600, transition: 'color 160ms ease' };
+      const reactIcon = reacted ? wrap(reactionGlyph(chosen, 18, 2.1)) : wrap(sv('M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z', 17, 1.9));
+      const reactLabel = reacted ? (REACTIONS.find(x => x.key === chosen) || {}).name : 'React';
+      const reactionOptions = REACTIONS.map(opt => ({
+        key: opt.key, name: opt.name, icon: wrap(ic(opt.glyph, 20, 1.9)),
+        style: { width: '38px', height: '38px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--fl-radius-round)', border: '1px solid ' + (chosen === opt.key ? 'var(--fl-bronze-border)' : 'transparent'), background: chosen === opt.key ? 'var(--fl-bronze-tint)' : 'transparent', color: chosen === opt.key ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)', cursor: 'pointer', transition: 'background 140ms ease' },
+        pick: () => { this.setState(st => ({ reacts: Object.assign({}, st.reacts, { [r.id]: st.reacts[r.id] === opt.key ? null : opt.key }), pickerId: null })); },
+      }));
+      // reactor summary (names, never a popularity count)
+      const names = (r.reactors || []).slice();
+      const youReacted = reacted;
+      let summaryNames = names.slice();
+      if (youReacted) summaryNames = ['You'].concat(names);
+      const extra = (r.more || 0) + (youReacted && names.length ? 0 : 0);
+      let reactorSummary = '';
+      if (summaryNames.length) {
+        const head = summaryNames.slice(0, 2).join(', ');
+        const rest = (r.more || 0) + Math.max(0, summaryNames.length - 2);
+        reactorSummary = 'Acknowledged by ' + head + (rest > 0 ? ' and ' + rest + ' others' : '');
+      }
+      const reactorSeeds = (youReacted ? [3] : []).concat((r.reactors || []).map(n => n.length + i)).concat(r.more ? [r.more + i] : []);
+      const reactorAvatars = reactorSeeds.slice(0, 3).map((s, k) => ({ key: k, tint: this._tint(s + k * 2), ml: k === 0 ? '0' : '-7px' }));
+      const hasReactors = reactorSummary !== '';
+
+      const mileItems = (r.mileItems || []).map((m, k) => ({ key: k, icon: wrap(ic(m.g, 13, 1.9)), label: m.l }));
+      const cmpPct = S.cmp[r.id] != null ? S.cmp[r.id] : 50;
+
+      return {
+        key: r.id,
+        author: r.author, tint: this._tint(r.author.length + i), time: r.time,
+        hasRank: !!r.rank, rank: r.rank || '',
+        audienceLabel: am.label, audienceIcon: am.icon,
+        hasCaption: !!r.caption, caption: r.caption || '',
+        isPhoto: r.kind === 'photo', isProgress: r.kind === 'progress', isVideo: r.kind === 'video', isMilestone: r.kind === 'milestone',
+        mediaId: r.mediaId || ('ff-' + r.id + '-m'), mediaId2: r.mediaId2 || ('ff-' + r.id + '-m2'), reelMediaId: 'ff-' + r.id + '-rm', reelMediaId2: 'ff-' + r.id + '-rm2',
+        mediaPlaceholder: r.kind === 'photo' ? 'Photo' : 'Media',
+        beforeLabel: 'Week 1', afterLabel: 'Week 12',
+        cmpPos: cmpPct + '%', cmpClip: 'inset(0 0 0 ' + cmpPct + '%)', cmpDown: (e) => this._cmpDown(r.id, e), cmpMove: (e) => this._cmpMove(r.id, e), cmpUp: () => this._cmpUp(),
+        videoDur: r.videoDur || '', hasPrTag: !!r.pr, prLabel: r.pr || '', hasWorkoutLabel: !!r.workout, workoutLabel: r.workout || '',
+        mileKindIcon: wrap(ic(r.mileKind === 'program' ? 'forge-mark' : 'medal', 14, 1.9)),
+        mileKindLabel: r.mileHead || '', mileTitle: r.mileTitle || '',
+        hasMileSub: !!r.mileSub, mileSub: r.mileSub || '',
+        hasMileItems: mileItems.length > 0, mileItems: mileItems,
+        reactBtnStyle, reactIcon, reactLabel,
+        pickerOpen: S.pickerId === r.id, togglePicker: () => this.setState(st => ({ pickerId: st.pickerId === r.id ? null : r.id })),
+        reactionOptions,
+        hasReactors, reactorSummary, reactorAvatars,
+        commentCount: String(Array.isArray(r.comments) ? r.comments.length : (r.comments || 0)),
+        reelDivider: i === 0 ? 'none' : '8px solid var(--fl-charcoal-900)',
+        openDetail: () => this.setState({ detailId: r.id, dReacted: !!S.reacts[r.id], pickerId: null }),
+        openAuthor: () => { window.location.href = 'Forge%20Public%20Profile.dc.html?name=' + encodeURIComponent(r.author) + '&rel=Friend'; },
+        openPostOptions: () => this._toast('Post options', 'bronze'),
+        onShare: () => this._toast('Share to a friend or your squad', 'bronze'),
+      };
+    };
+    const FEEDSRC = window.ForgeFriendsPosts ? window.ForgeFriendsPosts.list() : S.myPosts.concat(RAW);
+    const posts = FEEDSRC.map(buildPost);
+
+    // ── layout switcher ──
+    const segStyle = (active) => ({ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '5px 13px', borderRadius: 'var(--fl-radius-pill)', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, letterSpacing: '0.2px', color: active ? '#1A1206' : 'var(--fl-text-secondary)', background: active ? 'var(--fl-bronze-metallic)' : 'transparent', boxShadow: active ? '0 1px 6px rgba(191,143,79,0.35)' : 'none', transition: 'background 180ms var(--fl-ease-out), color 180ms var(--fl-ease-out)' });
+    const layoutTabs = [
+      { key: 'ledger', label: 'Ledger', style: segStyle(S.layout === 'ledger'), select: () => this.setState({ layout: 'ledger', pickerId: null }) },
+      { key: 'reel', label: 'Reel', style: segStyle(S.layout === 'reel'), select: () => this.setState({ layout: 'reel', pickerId: null }) },
+    ];
+    const emptyToggleStyle = { marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 11px', borderRadius: 'var(--fl-radius-pill)', border: '1px solid ' + (S.empty ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: S.empty ? 'var(--fl-bronze-tint)' : 'transparent', color: S.empty ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', fontSize: '10.5px', fontWeight: 600, cursor: 'pointer' };
+
+    // ── audience picker (composer) ──
+    const AUD = [
+      { key: 'friends', label: 'Friends', g: () => friendGlyph(14) },
+      { key: 'squad', label: 'Squad', g: () => sv(['M8 8.4a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2z', 'M16 8.4a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2z', 'M3 18.5a4 4 0 0 1 8 0', 'M13 18.5a4 4 0 0 1 8 0'], 14, 1.6) },
+      { key: 'both', label: 'Both', g: () => bothGlyph(14) },
+    ];
+    const audStyle = (active) => ({ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px 0', borderRadius: 'var(--fl-radius-pill)', border: 'none', cursor: 'pointer', fontSize: '12.5px', fontWeight: 600, color: active ? '#1A1206' : 'var(--fl-text-secondary)', background: active ? 'var(--fl-bronze-metallic)' : 'transparent', boxShadow: active ? '0 1px 6px rgba(191,143,79,0.35)' : 'none', transition: 'background 160ms ease, color 160ms ease' });
+    const audienceOptions = AUD.map(a => ({ key: a.key, label: a.label, icon: wrap(a.g()), style: audStyle(S.audience === a.key), select: () => this.setState({ audience: a.key }) }));
+    const audienceNote = S.audience === 'friends'
+      ? 'Only your friends will see this. There is no public option — being friends never exposes your workouts.'
+      : S.audience === 'squad'
+        ? 'Only your squad will see this. It won\u2019t appear in your friends\u2019 feeds.'
+        : 'Your friends and your squad will both see this. Never public, never the wider community.';
+
+    const mediaChoices = [
+      { key: 'photo', label: 'Photo', icon: wrap(sv(['M4 6h16v12H4z', 'M4 15l4.5-4 3.5 3 3.5-3.5L20 14', 'M8.5 9.4a1.4 1.4 0 1 0 0-2.8 1.4 1.4 0 0 0 0 2.8z'], 20, 1.7)), action: () => this.setState(st => ({ composerMedia: st.composerMedia === 'photo' ? null : 'photo' })) },
+      { key: 'video', label: 'Video', icon: wrap(sv(['M3.5 7h11v10h-11z', 'M14.5 10.2l6-3.2v10l-6-3.2z'], 20, 1.7)), action: () => this.setState(st => ({ composerMedia: st.composerMedia === 'video' ? null : 'video' })) },
+      { key: 'progress', label: 'Progress', icon: wrap(sv(['M12 20V4', 'M6 10l6-6 6 6'], 20, 1.8)), action: () => this.setState(st => ({ composerMedia: st.composerMedia === 'progress' ? null : 'progress' })) },
+    ];
+
+    // ── shareables (opt-in milestones) ──
+    const SHR = [
+      { key: 'honor-ironwill', title: 'Iron Will', meta: 'Honor earned today', g: 'medal' },
+      { key: 'prog-oct', title: 'October Strength Block', meta: 'Program completed · 4 weeks', g: 'forge-mark' },
+    ];
+    const shareables = SHR.map(s => {
+      const on = !!S.shares[s.key];
+      return {
+        key: s.key, title: s.title, meta: s.meta, icon: wrap(ic(s.g, 20, 1.7)),
+        rowStyle: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: 'var(--fl-radius-md)', border: '1px solid ' + (on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-700)'), background: on ? 'linear-gradient(180deg, rgba(38,29,18,0.5), rgba(15,13,10,0.35))' : 'var(--fl-surface-card)', cursor: 'pointer', transition: 'border-color 160ms ease, background 160ms ease' },
+        checkStyle: { width: '24px', height: '24px', flex: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--fl-radius-round)', border: '1px solid ' + (on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-500)'), background: on ? 'var(--fl-bronze-fill)' : 'transparent', color: on ? 'var(--fl-bronze-bright)' : 'transparent' },
+        checkIcon: wrap(sv('M5 12.5l4 4 10-10', 13, 2.4)),
+        toggle: () => this.setState(st => ({ shares: Object.assign({}, st.shares, { [s.key]: !st.shares[s.key] }) })),
+      };
+    });
+
+    // ── settings ──
+    const settingDefs = [
+      { key: 'honors', title: 'Prompt me to share Honors', desc: 'When you earn an Honor, we\u2019ll ask if you want to post it. Never automatic.' },
+      { key: 'programs', title: 'Prompt me for finished programs', desc: 'Finish a program and we\u2019ll offer to share it. You decide each time.' },
+    ];
+    const settingRows = settingDefs.map((d, i) => {
+      const on = !!S.prompt[d.key];
+      return {
+        key: d.key, title: d.title, desc: d.desc, divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)',
+        trackStyle: { position: 'relative', width: '46px', height: '27px', flex: 'none', borderRadius: 'var(--fl-radius-pill)', background: on ? 'var(--fl-bronze-metallic)' : 'var(--fl-charcoal-600)', transition: 'background 200ms var(--fl-ease-out)', boxShadow: on ? 'var(--fl-glow-subtle)' : 'inset 0 1px 3px rgba(0,0,0,0.5)' },
+        knobStyle: { position: 'absolute', top: '3px', left: on ? '22px' : '3px', width: '21px', height: '21px', borderRadius: 'var(--fl-radius-round)', background: on ? '#1A1206' : 'var(--fl-charcoal-300, #b9b2a8)', transition: 'left 200ms var(--fl-ease-out)', boxShadow: '0 1px 3px rgba(0,0,0,0.5)' },
+        toggle: () => this.setState(st => ({ prompt: Object.assign({}, st.prompt, { [d.key]: !st.prompt[d.key] }) })),
+      };
+    });
+
+    // ── detail ──
+    const dPost = FEEDSRC.find(x => x.id === S.detailId) || null;
+    let detail = {};
+    if (dPost) {
+      const am = audienceMeta(dPost.aud);
+      const dChosen = S.reacts[dPost.id] || null;
+      const dReacted = !!dChosen;
+      const COMMENTS_MAP = {
+        _default: [
+          { author: 'Elena Ruiz', time: '1h', body: 'This is huge. The consistency shows.' },
+          { author: 'Marcus Vale', time: '42m', body: 'Proud of you. Earned every bit of it.' },
+          { author: 'Sam Okafor', time: '20m', body: 'Needed to see this today. Back to the platform tomorrow.' },
+        ],
+      };
+      const cList = (Array.isArray(dPost.comments) && dPost.comments.length) ? dPost.comments : (COMMENTS_MAP[dPost.id] || COMMENTS_MAP._default);
+      const dComments = cList.map((c, i) => {
+        const cr = !!S.dCommentReacts[dPost.id + i];
+        return { key: i, author: c.author, tint: this._tint(c.author.length + i + 5), time: c.time, body: c.body, divider: i < cList.length - 1 ? '1px solid var(--fl-charcoal-800)' : 'none', reactColor: cr ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', reactLabel: cr ? 'Respected' : 'Respect', react: () => this.setState(st => ({ dCommentReacts: Object.assign({}, st.dCommentReacts, { [dPost.id + i]: !st.dCommentReacts[dPost.id + i] }) })) };
+      });
+      const dNames = (dPost.reactors || []).slice();
+      let dSummaryNames = dReacted ? ['You'].concat(dNames) : dNames;
+      const dRest = (dPost.more || 0) + Math.max(0, dSummaryNames.length - 2);
+      const dReactorSummary = dSummaryNames.length ? ('Acknowledged by ' + dSummaryNames.slice(0, 2).join(', ') + (dRest > 0 ? ' and ' + dRest + ' others' : '')) : 'Be the first to acknowledge this';
+      const dSeeds = (dReacted ? [3] : []).concat(dNames.map(n => n.length)).concat(dPost.more ? [dPost.more] : []);
+      const dReactorAvatars = dSeeds.slice(0, 3).map((s, k) => ({ key: k, tint: this._tint(s + k * 3), ml: k === 0 ? '0' : '-8px' }));
+      const dcmp = S.cmp[dPost.id] != null ? S.cmp[dPost.id] : 50;
+      detail = {
+        dTint: this._tint(dPost.author.length + RAW.indexOf(dPost)), dAuthor: dPost.author, dRank: dPost.rank || 'ATHLETE', dTime: dPost.time,
+        dAudienceLabel: am.label, dAudienceIcon: am.icon,
+        dCaption: dPost.caption,
+        dIsPhoto: dPost.kind === 'photo', dIsVideo: dPost.kind === 'video', dIsProgress: dPost.kind === 'progress', dIsMilestone: dPost.kind === 'milestone',
+        dMediaId: 'ff-' + dPost.id + '-m', dMediaId2: 'ff-' + dPost.id + '-m2',
+        dVideoDur: dPost.videoDur || '', dHasPr: !!dPost.pr, dPr: dPost.pr || '', dHasWorkout: !!dPost.workout, dWorkout: dPost.workout || '',
+        dBefore: 'Week 1', dAfter: 'Week 12', dCmpPos: dcmp + '%', dCmpClip: 'inset(0 0 0 ' + dcmp + '%)',
+        dCmpDown: (e) => this._cmpDown(dPost.id, e), dCmpMove: (e) => this._cmpMove(dPost.id, e), dCmpUp: () => this._cmpUp(),
+        dMileKindIcon: wrap(ic(dPost.mileKind === 'program' ? 'forge-mark' : 'medal', 14, 1.9)), dMileKindLabel: dPost.mileHead || '', dMileTitle: dPost.mileTitle || '', dHasMileSub: !!dPost.mileSub, dMileSub: dPost.mileSub || '', dHasMileItems: (dPost.mileItems || []).length > 0, dMileItems: (dPost.mileItems || []).map((m, k) => ({ key: k, icon: wrap(ic(m.g, 13, 1.9)), label: m.l })),
+        dReactorAvatars, dReactorSummary,
+        dReactBtnStyle: { display: 'inline-flex', alignItems: 'center', gap: '7px', flex: 'none', padding: '8px 14px', borderRadius: 'var(--fl-radius-pill)', border: '1px solid ' + (dReacted ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: dReacted ? 'var(--fl-bronze-fill)' : 'transparent', color: dReacted ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' },
+        dReactIcon: wrap(dReacted ? reactionGlyph(dChosen, 16, 2.1) : sv('M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z', 15, 1.9)),
+        dReactLabel: dReacted ? 'Acknowledged' : 'Acknowledge',
+        dToggleReact: () => this.setState(st => ({ reacts: Object.assign({}, st.reacts, { [dPost.id]: st.reacts[dPost.id] ? null : 'respect' }) })),
+        dCommentHeader: dComments.length + ' Comments',
+        dComments,
+        sendComment: () => this._toast('Comment sent · ' + dPost.author + ' will be notified', 'positive'),
+      };
+    }
+
+    // ── friends & requests ──
+    const FRIENDS = [
+      { name: 'Priya Nandakumar', rank: 'ARCHITECT', context: 'Trains mornings · building toward a 225 bench', history: 'Friends since Jan 2026 · 42 workouts together' },
+      { name: 'Diego Salas', rank: 'CRAFTSMAN', context: 'Hybrid athlete · last trained yesterday', history: 'Friends since Mar 2026 · 18 workouts together' },
+      { name: 'Marcus Vale', rank: 'ARCHITECT', context: 'Powerlifter · Iron Vigil squad', history: 'Friends for 2 years · 3 shared squads' },
+      { name: 'Elena Ruiz', rank: 'LEGEND', context: 'Coach · trains evenings', history: 'Friends since 2023 · 12 acknowledgements exchanged' },
+      { name: 'Jonah Weiss', rank: 'BUILDER', context: 'Started 4 months ago · early riser', history: 'Friends since Feb 2026 · 9 workouts together' },
+      { name: 'Camille Fortin', rank: 'CRAFTSMAN', context: 'Olympic lifting · deload week', history: 'Friends since Nov 2025 · 2 shared squads' },
+    ];
+    const friendsList = FRIENDS.map((f, i) => ({ key: f.name, name: f.name, rank: f.rank, context: f.context, history: f.history, tint: this._tint(f.name.length + i), divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-800)', a11y: 'View ' + f.name + '\u2019s profile', open: () => { window.location.href = 'Forge%20Public%20Profile.dc.html?name=' + encodeURIComponent(f.name) + '&rel=Friend'; }, action: () => this._toast('Friend options', 'bronze') }));
+
+    const REQS = [
+      { id: 'r1', name: 'Sam Okafor', context: '3 mutual friends' },
+      { id: 'r2', name: 'Nadia R\u00f6ell', context: 'Met through the Iron Collective community' },
+    ];
+    const requestList = REQS.map((r, i) => {
+      const st = S.requests[r.id];
+      const resolved = st === 'accepted' || st === 'declined';
+      return {
+        key: r.id, name: r.name, context: r.context, tint: this._tint(r.name.length + i + 9),
+        pending: !resolved, resolved: resolved,
+        resolvedColor: st === 'accepted' ? '#8FB295' : 'var(--fl-text-tertiary)',
+        resolvedIcon: wrap(st === 'accepted' ? sv('M5 12.5l4 4 10-10', 14, 2.3) : sv('M6 6l12 12M18 6L6 18', 14, 2.1)),
+        resolvedLabel: st === 'accepted' ? 'Friends' : 'Declined',
+        accept: () => { this.setState(s2 => ({ requests: Object.assign({}, s2.requests, { [r.id]: 'accepted' }) })); this._toast('You and ' + r.name + ' are now friends', 'positive'); },
+        decline: () => { this.setState(s2 => ({ requests: Object.assign({}, s2.requests, { [r.id]: 'declined' }) })); this._toast('Request declined', 'bronze'); },
+      };
+    });
+    const pendingCount = REQS.filter(r => !(S.requests[r.id])).length;
+
+    const ftStyle = (active) => ({ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '9px 0', borderRadius: 'var(--fl-radius-pill)', border: 'none', cursor: 'pointer', fontSize: '12.5px', fontWeight: 600, color: active ? '#1A1206' : 'var(--fl-text-secondary)', background: active ? 'var(--fl-bronze-metallic)' : 'transparent', boxShadow: active ? '0 1px 6px rgba(191,143,79,0.35)' : 'none', transition: 'background 160ms ease, color 160ms ease' });
+    const friendTabs = [
+      { key: 'requests', label: 'Requests', style: ftStyle(S.friendsTab === 'requests'), hasBadge: pendingCount > 0, badge: String(pendingCount), badgeStyle: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '18px', height: '18px', padding: '0 5px', borderRadius: 'var(--fl-radius-round)', background: S.friendsTab === 'requests' ? 'rgba(26,18,6,0.25)' : 'var(--fl-bronze-tint)', color: S.friendsTab === 'requests' ? '#1A1206' : 'var(--fl-bronze-bright)', fontSize: '10px', fontWeight: 800 }, select: () => this.setState({ friendsTab: 'requests' }) },
+      { key: 'friends', label: 'Friends · ' + FRIENDS.length, style: ftStyle(S.friendsTab === 'friends'), hasBadge: false, badge: '', badgeStyle: {}, select: () => this.setState({ friendsTab: 'friends' }) },
+    ];
+
+    const fmIcon = (paths) => wrap(h('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, paths.map((d, k) => h('path', { key: k, d }))));
+    const friendsMenuRows = [
+      { key: 'sharing', label: 'Sharing settings', color: 'var(--fl-text-primary)', divider: 'none', icon: fmIcon(['M4 8.5h16', 'M4 15.5h16', 'M8 6.3v4.4', 'M16 13.3v4.4']), action: () => this.setState({ friendsMenuOpen: false, settingsOpen: true }) },
+      { key: 'invite', label: 'Add a friend by handle', color: 'var(--fl-text-primary)', divider: '1px solid var(--fl-charcoal-700)', icon: fmIcon(['M9 8a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 9 8z', 'M3 19a6 6 0 0 1 12 0', 'M18.5 7v6', 'M15.5 10h6']), action: () => { window.location.href = 'Invite%20by%20Handle.dc.html'; } },
+      { key: 'blocked', label: 'Blocked accounts', color: 'var(--fl-text-primary)', divider: '1px solid var(--fl-charcoal-700)', icon: fmIcon(['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M5.6 5.6l12.8 12.8']), action: () => { this.setState({ friendsMenuOpen: false }); this._toast('No blocked accounts', 'bronze'); } },
+    ];
+
+    const emptyOn = (this.props.empty ?? false) || S.empty;
+    const toastColor = S.toastTone === 'positive' ? '#8FB295' : 'var(--fl-icon-bronze)';
+    const toastIcon = wrap(S.toastTone === 'positive' ? sv('M5 12.5l4 4 10-10', 17, 2.3) : ic('friend', 17, 1.9));
+
+    return {
+      ready: true, notReady: false,
+      goHome: () => { window.location.href = 'Forge%20Home.dc.html'; },
+      hasRequests: pendingCount > 0, requestCount: String(pendingCount),
+      openRequests: () => this.setState({ friendsOpen: true, friendsTab: 'requests', friendsOrigin: 'feed' }),
+      openFriends: () => this.setState({ friendsOpen: true, friendsTab: 'friends', friendsOrigin: 'feed' }),
+      openFriendsHub: () => this.setState({ friendsOpen: true, friendsTab: 'friends', friendsOrigin: 'feed' }),
+      closeFriends: () => { if (this.state.friendsOrigin === 'home') { window.location.href = 'Forge%20Home.dc.html'; return; } this.setState({ friendsOpen: false, friendsMenuOpen: false, friendsOrigin: null }); }, friendsOpen: S.friendsOpen,
+      friendsMenuOpen: S.friendsMenuOpen, openFriendsMenu: () => this.setState({ friendsMenuOpen: true }), closeFriendsMenu: () => this.setState({ friendsMenuOpen: false, dragY: 0 }), friendsMenuRows,
+      friendTabs, isFriendsTab: S.friendsTab === 'friends', isRequestsTab: S.friendsTab === 'requests',
+      friendsList, requestList,
+
+      isLedger: true, isReel: false,
+      isEmpty: emptyOn, hasFeed: !emptyOn,
+
+      meTint, posts,
+      openComposer: () => this.setState({ composerOpen: true }),
+      inviteByHandle: () => { window.location.href = 'Add%20Friend%20by%20Handle.dc.html'; },
+
+      composerOpen: S.composerOpen, closeComposer: () => this.setState({ composerOpen: false, composerMedia: null, composerAdjust: null, dragY: 0 }),
+      audienceOptions, audienceNote, mediaChoices, shareables,
+      composerPhoto: S.composerMedia === 'photo', composerVideo: S.composerMedia === 'video', composerProgress: S.composerMedia === 'progress',
+      composerCompareMode: !S.composerAdjust, composerAdjusting: !!S.composerAdjust, composerAdjustSide: S.composerAdjust === 'after' ? 'After' : 'Before',
+      composerCmpPos: (S.cmp['composer'] != null ? S.cmp['composer'] : 50) + '%',
+      composerAfterClip: S.composerAdjust === 'after' ? 'inset(0 0 0 0)' : (S.composerAdjust === 'before' ? 'inset(0 0 0 100%)' : ('inset(0 0 0 ' + (S.cmp['composer'] != null ? S.cmp['composer'] : 50) + '%)')),
+      composerAfterOpacity: S.composerAdjust === 'after' ? '0.6' : '1',
+      composerBeforePE: S.composerAdjust === 'after' ? 'none' : 'auto',
+      composerAfterPE: S.composerAdjust === 'after' ? 'auto' : 'none',
+      composerCmpDown: (e) => this._ccDown(e), composerCmpMove: (e) => this._ccMove(e), composerCmpUp: () => this._ccUp(),
+      adjustBefore: () => { this.setState({ composerAdjust: 'before' }); const el = document.getElementById('ff-composer-before'); if (el) { el.setAttribute('data-editable', ''); if (!el.hasAttribute('data-reframe')) el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); } },
+      adjustAfter: () => { this.setState({ composerAdjust: 'after' }); const el = document.getElementById('ff-composer-after'); if (el) { el.setAttribute('data-editable', ''); if (!el.hasAttribute('data-reframe')) el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); } },
+      composerDone: () => { const side = this.state.composerAdjust; const el = document.getElementById(side === 'after' ? 'ff-composer-after' : 'ff-composer-before'); if (el && el.hasAttribute('data-reframe')) el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); this.setState({ composerAdjust: null }); },
+      submitPost: () => {
+        const media = S.composerMedia;
+        const shareKeys = Object.keys(S.shares).filter(k => S.shares[k]);
+        const id = 'me' + Date.now();
+        const base = { id, author: 'You', rank: '', time: 'Just now', aud: S.audience, reactors: [], more: 0, comments: 0 };
+        let np;
+        if (media === 'progress') np = Object.assign({}, base, { kind: 'progress', caption: '', mediaId: 'ff-composer-before', mediaId2: 'ff-composer-after' });
+        else if (media === 'photo') np = Object.assign({}, base, { kind: 'photo', caption: '', mediaId: 'ff-composer-photo' });
+        else if (media === 'video') np = Object.assign({}, base, { kind: 'video', caption: '', mediaId: 'ff-composer-video', videoDur: '0:18' });
+        else if (shareKeys.length) {
+          const SM = { 'honor-ironwill': { t: 'Iron Will', g: 'medal' }, 'prog-oct': { t: 'October Strength Block', g: 'forge-mark' } };
+          const items = shareKeys.map(k => ({ g: (SM[k] || {}).g || 'medal', l: (SM[k] || {}).t || 'Achievement' }));
+          np = Object.assign({}, base, { kind: 'milestone', mileKind: shareKeys[0] === 'prog-oct' ? 'program' : 'honor', mileHead: 'Shared ' + (shareKeys.length > 1 ? shareKeys.length + ' achievements' : 'an achievement'), mileTitle: items[0].l, mileItems: items });
+        } else np = Object.assign({}, base, { kind: 'note', caption: 'Grateful for this crew. Onward.' });
+        const n = shareKeys.length;
+        try { window.ForgeFriendsPosts.add(np); } catch (e) {} this.setState({ composerOpen: false, composerMedia: null, composerAdjust: null, shares: {}, dragY: 0 });
+        this._toast(n > 0 && media ? 'Posted with ' + n + ' achievement' + (n > 1 ? 's' : '') + ' to your ' + S.audience + ' feed' : 'Posted to your ' + S.audience + ' feed', 'positive');
+        setTimeout(() => { try { const sc = document.querySelector('.fl-scroll'); if (sc) sc.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {} }, 80);
+      },
+
+      settingsOpen: S.settingsOpen, openSettings: () => this.setState({ settingsOpen: true }), closeSettings: () => this.setState({ settingsOpen: false, dragY: 0 }), settingRows,
+
+      onDragDown: (e) => this._dragDown(e), onDragMove: (e) => this._dragMove(e), onDragUp: () => this._dragUp(),
+      sheetTransform: 'translateY(' + (S.dragY || 0) + 'px)', sheetTransition: this._dragging ? 'none' : 'transform 240ms var(--fl-ease-out)',
+
+      detailOpen: !!dPost, closeDetail: () => this.setState({ detailId: null }),
+      ...detail,
+
+      toastOpen: !!S.toastMsg, toastMsg: S.toastMsg || '', toastColor, toastIcon,
+    };
+  }
+}
+</script>
+</body>
+</html>

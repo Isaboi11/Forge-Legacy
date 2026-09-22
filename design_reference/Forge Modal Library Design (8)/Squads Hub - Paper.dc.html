@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-squad-posts.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="forge-coach.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  @keyframes sqRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+<script src="forge-paper-theme.js"></script>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-coach-frame="squads" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(247,243,234,0.13), rgba(247,243,234,0.24) 42%, rgba(247,243,234,0.5)), #F4EFE3 url('assets/squads-hub-bg-paper.png') top center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; position:relative;">
+
+      <!-- ══════ HEADER ══════ -->
+      <div style="position:relative; height:104px; flex:none;">
+        <div data-coach="sq-intro" style="position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; padding:calc(env(safe-area-inset-top, 0px) + 20px) 20px 0 24px;">
+          <span style="font-size:32px; font-weight:700; letter-spacing:-0.4px; color:var(--fl-text-primary); text-shadow:0 2px 14px rgba(0,0,0,0.6);">Squads</span>
+          <div data-coach="sq-create" style="display:flex; align-items:center; gap:4px;">
+            <button type="button" aria-label="Discover squads" onClick="{{ openDiscover }}" style="width:44px; height:44px; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-bronze-bright); border-radius:var(--fl-radius-round);">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M16 16l4.5 4.5"></path></svg>
+            </button>
+            <button type="button" aria-label="Create a squad" onClick="{{ openCreate }}" style="width:44px; height:44px; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-bronze-bright); border-radius:var(--fl-radius-round);">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ POPULATED ══════ -->
+      <sc-if value="{{ populated }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:2px; padding:0 16px 26px; display:flex; flex-direction:column; gap:16px;">
+          <sc-for list="{{ rows }}" as="row" hint-placeholder-count="4">
+
+            <sc-if value="{{ row.isHeader }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:0 4px; margin-top:4px;">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="{{ row.headerLabel }}" icon="{{ row.headerIcon }}" hint-size="100%,18px"></x-import>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ row.isCard }}" hint-placeholder-val="{{ true }}">
+              <div role="button" tabindex="0" onClick="{{ row.onClick }}" style="position:relative; background:{{ row.cardBg }}; border:{{ row.cardBorder }}; border-radius:var(--fl-radius-lg); box-shadow:{{ row.cardShadow }}; cursor:pointer;">
+                <div style="padding:18px 18px 17px; display:flex; flex-direction:column; gap:16px; animation:sqRise 500ms var(--fl-ease-out) both;">
+
+                  <!-- identity -->
+                  <div style="display:flex; align-items:flex-start; gap:15px;">
+                    <!-- crest (circular squad photo / placeholder artwork) -->
+                    <div style="width:66px; height:66px; flex:none; position:relative; border-radius:var(--fl-radius-round); overflow:hidden; background:linear-gradient(152deg, #251a10 0%, #120d07 100%); border:1.5px solid var(--fl-bronze-primary); box-shadow:0 0 0 1px rgba(207,160,99,0.25), 0 0 14px rgba(191,143,79,0.35), inset 0 1px 0 rgba(207,160,99,0.14), inset 0 0 26px rgba(0,0,0,0.6);">
+                      <div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 34%, rgba(191,143,79,0.30), transparent 68%);"></div>
+                      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright); filter:drop-shadow(0 1px 1px rgba(0,0,0,0.6));">{{ row.crestEl }}</div>
+                    </div>
+
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; padding-top:1px;">
+                      <sc-if value="{{ row.owned }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:9.5px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Your Squad</span>
+                      </sc-if>
+                      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+                        <span style="display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:21px; font-weight:700; line-height:1.16; letter-spacing:-0.3px; color:var(--fl-text-primary);">{{ row.name }}</span>
+                        <div style="display:flex; align-items:center; gap:1px; flex:none; margin-top:2px;">
+                          <button type="button" aria-label="{{ row.pinLabel }}" onClick="{{ row.togglePin }}" style="width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; border-radius:var(--fl-radius-round);">{{ row.pinIcon }}</button>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+                        </div>
+                      </div>
+                      <span style="font-family:var(--fl-font-display); font-style:italic; font-size:14px; line-height:1.3; color:var(--fl-bronze-bright); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ row.motto }}</span>
+
+                      <!-- member row -->
+                      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:9px;">
+                        <div style="display:flex; align-items:center; padding-left:8px;">
+                          <sc-for list="{{ row.avatars }}" as="a" hint-placeholder-count="4">
+                            <span style="width:28px; height:28px; margin-left:-8px; border-radius:var(--fl-radius-round); background:{{ a.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55), 0 0 0 2px var(--fl-charcoal-800);"></span>
+                          </sc-for>
+                          <sc-if value="{{ row.hasOverflow }}" hint-placeholder-val="{{ false }}">
+                            <span style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; margin-left:-8px; border-radius:var(--fl-radius-round); background:var(--fl-surface-elevated); border:1px solid var(--fl-charcoal-500); box-shadow:0 0 0 2px var(--fl-charcoal-800); font-size:10.5px; font-weight:700; color:var(--fl-text-secondary);">{{ row.overflow }}</span>
+                          </sc-if>
+                        </div>
+                        <span style="display:inline-flex; align-items:center; gap:6px; flex:none; white-space:nowrap; color:var(--fl-text-secondary);">
+                          <span style="display:inline-flex; color:var(--fl-icon-inactive);">{{ row.membersIcon }}</span>
+                          <span style="font-size:12.5px;">{{ row.memberLabel }}</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- divider -->
+                  <div style="height:1px; background:linear-gradient(90deg, transparent, var(--fl-bronze-border-subtle) 20%, var(--fl-bronze-border-subtle) 80%, transparent);"></div>
+
+                  <!-- daily progress -->
+                  <div style="display:flex; align-items:center; gap:18px; padding:3px 0 2px;">
+                    <div style="flex:none; display:flex; flex-direction:column; gap:5px; min-width:56px;">
+                      <span style="font-size:23px; font-weight:700; line-height:1; letter-spacing:0.2px;"><span style="color:{{ row.numColor }};">{{ row.trainedStr }}</span><span style="color:var(--fl-text-tertiary); font-weight:600;"> / {{ row.totalStr }}</span></span>
+                      <span style="font-size:11.5px; color:var(--fl-text-secondary); letter-spacing:0.2px;">trained today</span>
+                    </div>
+                    <div style="flex:1; display:flex; align-items:center; gap:6px;">
+                      <sc-for list="{{ row.segments }}" as="seg" hint-placeholder-count="5">
+                        <span style="flex:1; height:6px; border-radius:3px; background:{{ seg.bg }}; box-shadow:{{ seg.shadow }};"></span>
+                      </sc-for>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </sc-if>
+
+          </sc-for>
+
+          <div style="margin-top:8px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" icon="{{ plusIcon }}" on-click="{{ openCreate }}" style="{{ createBtnStyle }}" hint-size="100%,58px">Create a Squad</x-import>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ══════ EMPTY ══════ -->
+      <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:-34px; padding:0 26px 34px; display:flex; flex-direction:column; align-items:center; position:relative; z-index:3;">
+          <div style="width:78px; height:78px; flex:none; position:relative; border-radius:var(--fl-radius-round); overflow:hidden; background:linear-gradient(152deg, #251a10 0%, #120d07 100%); border:1.5px solid var(--fl-bronze-primary); box-shadow:0 0 0 1px rgba(207,160,99,0.25), 0 0 22px rgba(191,143,79,0.42), inset 0 1px 0 rgba(207,160,99,0.14), inset 0 0 28px rgba(0,0,0,0.6);">
+            <div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 36%, rgba(191,143,79,0.32), transparent 68%);"></div>
+            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright); filter:drop-shadow(0 1px 1px rgba(0,0,0,0.6));">{{ emptyIcon }}</div>
+          </div>
+          <h2 style="margin:24px 0 0; text-align:center; font-family:var(--fl-font-display); font-size:22px; font-weight:600; line-height:1.28; letter-spacing:-0.2px; color:var(--fl-text-primary); max-width:300px;">Training alongside someone changes how it feels to show up.</h2>
+          <p style="margin:13px 0 0; text-align:center; font-size:13.5px; line-height:1.62; color:var(--fl-text-secondary); max-width:270px;">A squad is a small, private group that trains together. Follow each other's progress, celebrate wins, and take on shared challenges. Build lasting friendships, stay accountable, and discover how much easier consistency becomes when you're not training alone.</p>
+          <div style="margin-top:28px; width:100%;">{{ createPrimary }}</div>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.TabBar" items="{{ tabItems }}" active-id="squads" on-change="{{ setTab }}" hint-size="100%,74px"></x-import>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:96px; transform:translateX(-50%); z-index:80; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:sqRise 260ms var(--fl-ease-out) both;">
+      <span style="display:inline-flex; color:var(--fl-icon-bronze); flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+
+  <!-- forged grain -->
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:90; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;viewState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;populated&quot;,&quot;empty&quot;],&quot;default&quot;:&quot;populated&quot;,&quot;tsType&quot;:&quot;'populated' | 'empty'&quot;,&quot;label&quot;:&quot;Screen state&quot;,&quot;section&quot;:&quot;Squads Hub&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, toastMsg: null, toastIconId: 'squad', favorites: this._loadFavorites() };
+
+  _loadFavorites() {
+    try {
+      const raw = window.localStorage.getItem('forge.squads.favorites');
+      if (raw) { const arr = JSON.parse(raw); if (Array.isArray(arr)) return arr; }
+    } catch (e) {}
+    return ['iron'];
+  }
+  _saveFavorites(favorites) { try { window.localStorage.setItem('forge.squads.favorites', JSON.stringify(favorites)); } catch (e) {} }
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) { this.setState({ ready: true }); this._startCoach(); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+
+  _startCoach() {
+    if (!window.ForgeCoach) return;
+    window.ForgeCoach.start({
+      page: 'squads',
+      frame: '[data-coach-frame="squads"]',
+      steps: [
+        { target: '[data-coach="sq-intro"]', radius: 16, title: 'Squads', body: 'A squad is a small, private group that trains together. You follow each other\u2019s progress, take on shared challenges, and stay accountable \u2014 consistency comes easier when you\u2019re not training alone.' },
+        { target: '[data-coach="sq-create"]', radius: 22, title: 'Start or find a squad', body: 'Use \u002B to create your own squad, or the search icon to discover and join existing ones. Tap any squad to see its goal, competitions, and feed.' },
+      ],
+    });
+  }
+
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); }
+
+  _toast(msg, iconId) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastIconId: iconId || 'squad' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2600); }
+
+  _toggleFavorite(id, name) {
+    const willFav = this.state.favorites.indexOf(id) === -1;
+    this.setState(s => {
+      const has = s.favorites.indexOf(id) !== -1;
+      const favorites = has ? s.favorites.filter(x => x !== id) : s.favorites.concat([id]);
+      this._saveFavorites(favorites);
+      return { favorites: favorites };
+    });
+    this._toast(willFav ? 'Added ' + name + ' to Favorites' : 'Removed ' + name + ' from Favorites', 'squad');
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 20, strokeWidth: sw || 1.8 });
+
+    const starEl = (filled, size) => h('svg', {
+      width: size || 18, height: size || 18, viewBox: '0 0 24 24',
+      fill: filled ? 'var(--fl-bronze-bright)' : 'none',
+      stroke: filled ? 'var(--fl-bronze-bright)' : 'var(--fl-icon-inactive)',
+      strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round',
+    },
+      h('path', { key: 's', d: 'M12 2.6l2.65 6.02 6.55.55-4.98 4.3 1.5 6.4L12 16.9l-5.72 3.47 1.5-6.4-4.98-4.3 6.55-.55z' })
+    );
+
+    const empty = (this.props && this.props.viewState) === 'empty';
+
+    // ── Squads — most-recently-active first; 'iron' is the athlete's own squad ──
+    const SQUADS = [
+      { id: 'iron', crest: 'swords', name: 'Iron Vigil', motto: 'Hold the line, every dawn.', members: 5, trained: 3, owned: true },
+      { id: 'dawn', crest: 'mountain', name: 'Dawn Patrol', motto: 'First light, before the world wakes.', members: 6, trained: 6 },
+      { id: 'proving', crest: 'shield', name: 'The Proving', motto: 'Earn it. Every rep. Every day.', members: 4, trained: 0 },
+      { id: 'home', crest: 'flame', name: 'Home Forge', motto: 'Built here. Built together.', members: 1, trained: 1 },
+    ];
+    // Prepend any creator-made squads (persisted in the registry) so a squad you just forged appears here.
+    try {
+      if (window.ForgeSquadPosts) {
+        var seedIds = SQUADS.map(function (s) { return s.id; });
+        window.ForgeSquadPosts.all().forEach(function (m) {
+          if (seedIds.indexOf(m.id) === -1) SQUADS.unshift({ id: m.id, crest: m.crest || 'swords', name: m.name, motto: m.tagline || '', members: m.members || 1, trained: 0, owned: true });
+        });
+      }
+    } catch (e) {}
+
+    const segFill = 'linear-gradient(180deg, var(--fl-bronze-bright), var(--fl-bronze-primary))';
+    const segEmpty = 'rgba(151,137,113,0.26)';
+    const TINTS = [
+      'radial-gradient(circle at 42% 32%, #4a3826, #1c1510)',
+      'radial-gradient(circle at 45% 35%, #34302a, #17130f)',
+      'radial-gradient(circle at 40% 30%, #40301f, #17120c)',
+      'radial-gradient(circle at 48% 38%, #2d2822, #141210)',
+    ];
+
+    const favSet = this.state.favorites;
+    const makeCard = (sq) => {
+      const shown = Math.min(4, sq.members);
+      const avatars = Array.from({ length: shown }).map((_, i) => ({ key: sq.id + '-' + i, tint: TINTS[(sq.name.length + i) % TINTS.length] }));
+      const over = sq.members - shown;
+      const segments = Array.from({ length: sq.members }).map((_, i) => ({
+        key: sq.id + '-s' + i,
+        bg: i < sq.trained ? segFill : segEmpty,
+        shadow: i < sq.trained ? '0 0 6px rgba(191,143,79,0.35)' : 'inset 0 1px 2px rgba(0,0,0,0.4)',
+      }));
+      const isFav = favSet.indexOf(sq.id) !== -1;
+      return {
+        key: sq.id, isCard: true, isHeader: false,
+        crestEl: ic(sq.crest, 32, 1.6),
+        name: sq.name, motto: sq.motto, owned: !!sq.owned,
+        avatars: avatars, hasOverflow: over > 0, overflow: '+' + over,
+        membersIcon: ic('squad', 15, 1.8),
+        memberLabel: sq.members === 1 ? '1 member' : sq.members + ' members',
+        trainedStr: String(sq.trained), totalStr: String(sq.members),
+        numColor: sq.trained > 0 ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)',
+        segments: segments,
+        pinIcon: starEl(isFav, 18), pinLabel: isFav ? 'Remove ' + sq.name + ' from favorites' : 'Add ' + sq.name + ' to favorites',
+        togglePin: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this._toggleFavorite(sq.id, sq.name); },
+        cardBg: isFav
+          ? 'linear-gradient(180deg, rgba(191,143,79,0.07) 0%, rgba(191,143,79,0) 42%), var(--fl-surface-card)'
+          : 'var(--fl-surface-card)',
+        cardBorder: isFav ? '1px solid rgba(191,143,79,0.62)' : '1px solid rgba(191,143,79,0.30)',
+        cardShadow: isFav
+          ? 'inset 0 1px 0 rgba(207,160,99,0.22), var(--fl-border-inset), var(--fl-shadow-card), 0 0 22px rgba(191,143,79,0.15)'
+          : 'var(--fl-border-inset), var(--fl-shadow-card)',
+        onClick: () => { try { window.localStorage.setItem('forge.squad.role', sq.owned ? 'owner' : 'member'); window.localStorage.setItem('forge.squad', sq.id); } catch (e) {} window.location.href = 'Squad%20Detail%20-%20Paper.dc.html'; },
+      };
+    };
+
+    const favSquads = SQUADS.filter(s => favSet.indexOf(s.id) !== -1).map(makeCard);
+    const otherSquads = SQUADS.filter(s => favSet.indexOf(s.id) === -1).map(makeCard);
+
+    const rows = [];
+    if (favSquads.length) {
+      rows.push({ key: 'h-fav', isHeader: true, isCard: false, headerLabel: 'Favorites', headerIcon: starEl(true, 12) });
+      favSquads.forEach(c => rows.push(c));
+      if (otherSquads.length) rows.push({ key: 'h-all', isHeader: true, isCard: false, headerLabel: 'All Squads', headerIcon: null });
+    }
+    otherSquads.forEach(c => rows.push(c));
+
+    // ── Chrome ──
+    const plusIcon = h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M12 5v14M5 12h14' }));
+    const createBtnStyle = { padding: '18px 26px', fontSize: '14px', letterSpacing: '1.2px', boxShadow: 'var(--fl-glow-subtle), var(--fl-shadow-float)' };
+
+    const Button = (window.ForgeLegacyVisualFoundation_5368b2 || {}).Button;
+    const createPrimary = Button ? h(Button, { variant: 'primary', fullWidth: true, icon: plusIcon, onClick: () => { window.location.href = 'Create%20Squad.dc.html'; }, style: { padding: '23px 26px', letterSpacing: '1.2px' } }, 'Create a Squad') : null;
+    const emptyIcon = ic('squad', 38, 1.6);
+
+    const navIcon = (id) => FS.create(React, id, { size: 22, strokeWidth: 2 });
+    const legacyIcon = React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '32px', borderRadius: 'var(--fl-radius-md)', background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border)', boxShadow: 'var(--fl-glow-subtle)', color: 'var(--fl-bronze-bright)' } }, navIcon('legacy'));
+    const tabItems = [
+      { id: 'home', label: 'Home', icon: navIcon('home') },
+      { id: 'workouts', label: 'Workouts', icon: navIcon('workouts') },
+      { id: 'legacy', label: 'Legacy', icon: legacyIcon },
+      { id: 'squads', label: 'Squads', icon: navIcon('squads') },
+      { id: 'community', label: 'Community', icon: navIcon('explore') },
+    ];
+    const setTab = (id) => {
+      if (id === 'home') { window.location.href = 'Forge%20Home%20-%20Paper.dc.html'; return; }
+      if (id === 'workouts') { window.location.href = 'Forge%20Programs%20Catalog%20-%20Paper.dc.html'; return; }
+      if (id === 'legacy') { window.location.href = 'Forge%20Legacy%20-%20Paper.dc.html'; return; }
+      if (id === 'community') { window.location.href = 'Community%20Home%20-%20Paper.dc.html'; return; }
+    };
+
+    return {
+      ready: true, notReady: false,
+      populated: !empty, empty: empty,
+      rows: rows, n28: 28,
+      plusIcon: plusIcon, createBtnStyle: createBtnStyle, createPrimary: createPrimary, emptyIcon: emptyIcon,
+      openCreate: () => { window.location.href = 'Create%20Squad.dc.html'; },
+      openDiscover: () => { window.location.href = 'Discover%20Squads.dc.html'; },
+      tabItems: tabItems, setTab: setTab,
+      toastOpen: !!this.state.toastMsg, toastMsg: this.state.toastMsg || '', toastIcon: ic(this.state.toastIconId || 'squad', 18, 1.7),
+    };
+  }
+}
+</script>
+</body>
+</html>

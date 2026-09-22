@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style data-omelette-print-defaults>
+@media print {
+  @page { margin: 0.5in; }
+  h1, h2, h3, h4, h5, h6 { break-after: avoid; }
+  figure, table, pre, blockquote, img, svg, tr, [class~="card" i] { break-inside: avoid; }
+  img, svg { max-width: 100%; }
+  p { orphans: 3; widows: 3; }
+}
+</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  /* Gate the DS bundle on React being present (see other Forge screens). */
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  @keyframes flRise { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform:none; } }
+  @keyframes flSealRise { 0% { opacity:0; transform: translateY(12px) scale(0.965); } 100% { opacity:1; transform:none; } }
+  @keyframes flEmber { 0%,100% { opacity:0.42; } 50% { opacity:0.72; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="Legacy" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <!-- Loading splash (pre-mount) -->
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Legacy" serif="{{ true }}" avatar="{{ avatarEl }}" on-avatar="{{ goAccount }}" hint-size="100%,56px"></x-import>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto;">
+
+        <!-- ═══════════ THE STANDING · rank seal + identity ═══════════ -->
+        <div style="position:relative; padding:26px 24px 24px; display:flex; flex-direction:column; align-items:center; text-align:center; overflow:hidden;">
+          <span aria-hidden="true" style="position:absolute; top:2px; left:50%; transform:translateX(-50%); width:230px; height:230px; background:var(--fl-glow-ember); pointer-events:none; animation:flEmber 5s ease-in-out infinite;"></span>
+
+          <div style="position:relative; z-index:1; animation:flSealRise 900ms var(--fl-ease-out, ease-out) both; filter:drop-shadow(0 16px 26px rgba(0,0,0,0.5));">{{ seal }}</div>
+
+          <h1 style="position:relative; z-index:1; margin:16px 0 0; font-family:var(--fl-font-display); font-size:30px; font-weight:700; letter-spacing:-0.2px; line-height:1; animation:flRise 900ms var(--fl-ease-out, ease-out) both; animation-delay:120ms;">Ada Ridge</h1>
+
+          <div style="position:relative; z-index:1; margin-top:13px; animation:flRise 1000ms var(--fl-ease-out, ease-out) both; animation-delay:200ms;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.RankMarker" label="{{ rankLabel }}" hint-size="auto,20px"></x-import>
+          </div>
+
+          <div style="position:relative; z-index:1; width:100%; max-width:266px; margin-top:22px; animation:flRise 1050ms var(--fl-ease-out, ease-out) both; animation-delay:280ms;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="{{ progDone }}" max="{{ progNeed }}" label="{{ progLabel }}" trailing="{{ progTrailing }}" hint-size="100%,32px"></x-import>
+          </div>
+        </div>
+
+        <!-- ═══════════ THE LEDGER · permanent totals ═══════════ -->
+        <div style="padding:2px 24px 4px;">
+          <div style="display:flex; align-items:center; padding:20px 4px; border-top:1px solid var(--fl-charcoal-600); border-bottom:1px solid var(--fl-charcoal-600);">
+            <div style="flex:1; display:flex; justify-content:center;">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.StatBlock" icon="{{ icoSessions }}" value="127" label="Sessions" hint-size="auto,84px"></x-import>
+            </div>
+            <span style="width:1px; height:44px; flex:none; background:var(--fl-bronze-border-subtle);"></span>
+            <div style="flex:1; display:flex; justify-content:center;">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.StatBlock" icon="{{ icoChapters }}" value="3" label="Chapters" hint-size="auto,84px"></x-import>
+            </div>
+            <span style="width:1px; height:44px; flex:none; background:var(--fl-bronze-border-subtle);"></span>
+            <div style="flex:1; display:flex; justify-content:center;">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.StatBlock" icon="{{ icoHonors }}" value="8" label="Honors" hint-size="auto,84px"></x-import>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════ HONORS · earned insignia ═══════════ -->
+        <div style="padding:28px 24px 6px;">
+          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Honors" action="View all" on-action="{{ viewAllHonors }}" hint-size="100%,22px"></x-import>
+          <div style="display:flex; justify-content:space-between; gap:8px; padding-top:4px;">
+            <sc-for list="{{ honors }}" as="hon" hint-placeholder-count="4">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Insignia" variant="honor" size="md" artwork="{{ hon.artwork }}" label="{{ hon.label }}" hint-size="auto,96px"></x-import>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- ═══════════ THE RECORD · legacy timeline ═══════════ -->
+        <div style="padding:30px 20px 4px;">
+          <div style="padding:0 4px;">
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="The Record" hint-size="100%,22px"></x-import>
+          </div>
+
+          <!-- filter · segmented control -->
+          <div style="display:flex; gap:7px; flex-wrap:wrap; padding:0 4px 4px;">
+            <sc-for list="{{ filterChips }}" as="f" hint-placeholder-count="4">
+              <sc-if value="{{ f.active }}" hint-placeholder-val="{{ false }}">
+                <span role="button" tabindex="0" onClick="{{ f.onClick }}" style="display:inline-flex; align-items:center; padding:7px 14px; border-radius:var(--fl-radius-pill); font-size:11.5px; font-weight:700; letter-spacing:0.7px; text-transform:uppercase; cursor:pointer; color:var(--fl-bronze-bright); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border);">{{ f.label }}</span>
+              </sc-if>
+              <sc-if value="{{ f.notActive }}" hint-placeholder-val="{{ true }}">
+                <span role="button" tabindex="0" onClick="{{ f.onClick }}" style="display:inline-flex; align-items:center; padding:7px 14px; border-radius:var(--fl-radius-pill); font-size:11.5px; font-weight:600; letter-spacing:0.7px; text-transform:uppercase; cursor:pointer; color:var(--fl-text-secondary); background:transparent; border:1px solid var(--fl-charcoal-600); transition:color 200ms var(--fl-ease-out, ease-out), border-color 200ms var(--fl-ease-out, ease-out);" style-hover="color:var(--fl-text-primary); border-color:var(--fl-charcoal-500);">{{ f.label }}</span>
+              </sc-if>
+            </sc-for>
+          </div>
+
+          <!-- the thread -->
+          <div style="display:flex; flex-direction:column; padding:6px 4px 0;">
+            <sc-for list="{{ timelineItems }}" as="it" hint-placeholder-count="9">
+
+              <sc-if value="{{ it.isChapter }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; align-items:center; gap:12px; padding:22px 2px 12px;">
+                  <span style="width:9px; height:9px; flex:none; margin-left:16px; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary); background:var(--fl-bronze-tint);"></span>
+                  <div style="display:flex; flex-direction:column; gap:2px; min-width:0;">
+                    <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; letter-spacing:-0.1px; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ it.chapLabel }}</span>
+                    <span style="font-size:10.5px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ it.chapSub }}</span>
+                  </div>
+                  <span style="flex:1; height:1px; background:var(--fl-charcoal-600);"></span>
+                  <sc-if value="{{ it.ongoing }}" hint-placeholder-val="{{ false }}">
+                    <span style="display:inline-flex; align-items:center; gap:6px; flex:none; padding:5px 10px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-bronze-tint);">
+                      <span style="width:6px; height:6px; border-radius:50%; background:var(--fl-status-online); box-shadow:var(--fl-status-online-glow);"></span>
+                      <span style="font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-bright);">Ongoing</span>
+                    </span>
+                  </sc-if>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ it.isEvent }}" hint-placeholder-val="{{ true }}">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.TimelineRow" event-type="{{ it.eventType }}" date="{{ it.date }}" title="{{ it.title }}" subtitle="{{ it.subtitle }}" first="{{ it.first }}" last="{{ it.last }}" hint-size="100%,78px"></x-import>
+              </sc-if>
+
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- ═══════════ CLOSING INSCRIPTION ═══════════ -->
+        <div style="padding:26px 24px 36px; display:flex; flex-direction:column; align-items:center; gap:15px;">
+          <div style="display:flex; align-items:center; gap:14px; width:100%; max-width:220px;">
+            <span style="flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--fl-bronze-border));"></span>
+            <span style="width:6px; height:6px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary);"></span>
+            <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-border), transparent);"></span>
+          </div>
+          <span style="font-family:var(--fl-font-display); font-style:italic; font-size:16px; line-height:1.45; text-align:center; color:var(--fl-bronze-bright); max-width:264px; text-wrap:pretty;">History is permanent. Outcomes cannot change.</span>
+        </div>
+
+      </div>
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.TabBar" items="{{ tabItems }}" active-id="legacy" on-change="{{ setTab }}" hint-size="100%,74px"></x-import>
+
+    </sc-if>
+
+    <!-- Forged grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;rankTier&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Ascendant II&quot;,&quot;Ironbound III&quot;,&quot;Architect IV&quot;],&quot;default&quot;:&quot;Ironbound III&quot;,&quot;tsType&quot;:&quot;'Ascendant II' | 'Ironbound III' | 'Architect IV'&quot;,&quot;section&quot;:&quot;Standing&quot;,&quot;label&quot;:&quot;Current rank&quot;},&quot;defaultFilter&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;All&quot;,&quot;Honors&quot;,&quot;Ranks&quot;,&quot;Records&quot;],&quot;default&quot;:&quot;All&quot;,&quot;tsType&quot;:&quot;'All' | 'Honors' | 'Ranks' | 'Records'&quot;,&quot;section&quot;:&quot;Timeline&quot;,&quot;label&quot;:&quot;Default filter&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, filterOverride: null };
+
+  componentDidMount() {
+    // Preview-runtime gate (see CLAUDE.md): wait for React + DS bundle + symbols.
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true };
+    }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const NS = window.ForgeLegacyVisualFoundation_5368b2 || {};
+    const Avatar = NS.Avatar;
+
+    // ── The rank ladder. Each tier warms the metal and deepens the rim. ──
+    const TIERS = {
+      'Ascendant II':  { name: 'Ascendant', num: 'II',  label: 'Ascendant · II',  next: 'Ironbound III', done: 22, need: 40, rim1: '#6A5334', rim2: '#BF8F4F', ring: 'rgba(191,143,79,0.85)', flame: '#BF8F4F', glow: 0.5 },
+      'Ironbound III': { name: 'Ironbound', num: 'III', label: 'Ironbound · III', next: 'Architect IV',  done: 38, need: 60, rim1: '#8A6C46', rim2: '#CDA063', ring: 'rgba(205,160,99,0.95)', flame: '#CDA063', glow: 0.72 },
+      'Architect IV':  { name: 'Architect', num: 'IV',  label: 'Architect · IV',  next: 'Warden V',      done: 14, need: 80, rim1: '#A57C4A', rim2: '#E7C98E', ring: 'rgba(231,201,142,0.98)', flame: '#E7C98E', glow: 0.9 },
+    };
+    const tier = TIERS[(this.props && this.props.rankTier)] || TIERS['Ironbound III'];
+
+    // ── Forged rank seal (a decorative emblem, built like Home's forge mark). ──
+    const flamePath = 'M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z';
+    const seal = h('svg', { width: 116, height: 116, viewBox: '0 0 140 140', role: 'img', 'aria-label': tier.name + ' ' + tier.num + ' rank seal' },
+      h('defs', null,
+        h('radialGradient', { id: 'flSealDisc', cx: '50%', cy: '34%', r: '76%' },
+          h('stop', { offset: '0%', stopColor: '#26262C' }),
+          h('stop', { offset: '46%', stopColor: '#16181B' }),
+          h('stop', { offset: '100%', stopColor: '#090B0D' })),
+        h('linearGradient', { id: 'flSealBevel', x1: '0', y1: '0', x2: '0', y2: '1' },
+          h('stop', { offset: '0%', stopColor: '#DDB578' }),
+          h('stop', { offset: '18%', stopColor: tier.rim2 }),
+          h('stop', { offset: '55%', stopColor: tier.rim1 }),
+          h('stop', { offset: '100%', stopColor: '#463526' })),
+        h('radialGradient', { id: 'flSealFlame', cx: '50%', cy: '50%', r: '50%' },
+          h('stop', { offset: '0%', stopColor: 'rgba(205,160,99,' + tier.glow + ')' }),
+          h('stop', { offset: '60%', stopColor: 'rgba(191,143,79,0.14)' }),
+          h('stop', { offset: '100%', stopColor: 'rgba(191,143,79,0)' }))),
+      // knurled outer edge
+      h('circle', { cx: 70, cy: 70, r: 67, fill: 'none', stroke: tier.rim1, strokeWidth: 5, strokeDasharray: '1.6 3.2' }),
+      // machined bevel rim
+      h('circle', { cx: 70, cy: 70, r: 63, fill: 'none', stroke: '#2A2016', strokeWidth: 8 }),
+      h('circle', { cx: 70, cy: 70, r: 63, fill: 'none', stroke: 'url(#flSealBevel)', strokeWidth: 6 }),
+      // top specular sweep (light from above)
+      h('path', { d: 'M40 26 A56 56 0 0 1 100 26', fill: 'none', stroke: 'rgba(240,220,180,0.42)', strokeWidth: 2, strokeLinecap: 'round', opacity: 0.5 }),
+      // recessed inner disc
+      h('circle', { cx: 70, cy: 70, r: 53, fill: 'url(#flSealDisc)' }),
+      h('circle', { cx: 70, cy: 70, r: 53, fill: 'none', stroke: tier.ring, strokeWidth: 1.5 }),
+      h('circle', { cx: 70, cy: 70, r: 49, fill: 'none', stroke: 'rgba(255,255,255,0.05)', strokeWidth: 1 }),
+      // forge-heat glow
+      h('circle', { cx: 70, cy: 66, r: 34, fill: 'url(#flSealFlame)', style: { mixBlendMode: 'screen' } }),
+      // flame emblem
+      h('g', { transform: 'translate(70,73) scale(2.4) translate(-12,-12)', fill: tier.flame }, h('path', { d: flamePath })),
+      // seat the etch into the metal
+      h('circle', { cx: 70, cy: 70, r: 53, fill: 'none', stroke: 'rgba(0,0,0,0.5)', strokeWidth: 18, style: { mixBlendMode: 'multiply' } }));
+
+    const goAccount = () => { window.location.href = 'Forge%20Account%20Settings.dc.html'; };
+    const avatarEl = Avatar
+      ? h('div', { role: 'button', tabIndex: 0, 'aria-label': 'Account settings', style: { cursor: 'pointer', display: 'flex' }, onClick: goAccount }, h(Avatar, { name: 'Ada Ridge', size: 'appBar' }))
+      : null;
+
+    const navIcon = (id) => FS.create(React, id, { size: 22, strokeWidth: 2 });
+    const tabItems = [
+      { id: 'home', label: 'Home', icon: navIcon('home') },
+      { id: 'workouts', label: 'Workouts', icon: navIcon('workouts') },
+      { id: 'legacy', label: 'Legacy', emphasized: true, icon: navIcon('legacy') },
+      { id: 'squads', label: 'Squads', icon: navIcon('squads') },
+    ];
+    const setTab = (id) => {
+      if (id === 'home') { window.location.href = 'Forge%20Home.dc.html'; return; }
+      if (id === 'workouts') { window.location.href = 'Forge%20Programs%20Catalog.dc.html'; return; }
+      // legacy = current screen; squads has no destination yet.
+    };
+
+    // ── Honors (earned only) — each carries a distinct engraved mark. ──
+    const honors = [
+      { artwork: FS.create(React, 'laurel', { size: 26, strokeWidth: 1.7 }), label: 'The Unbroken' },
+      { artwork: FS.create(React, 'medal', { size: 26, strokeWidth: 1.7 }), label: 'Century' },
+      { artwork: FS.create(React, 'shield', { size: 26, strokeWidth: 1.7 }), label: 'First Iron' },
+      { artwork: FS.create(React, 'spark', { size: 26, strokeWidth: 1.7 }), label: 'Ironwill' },
+    ];
+
+    // ── Timeline filter (segmented control; prop seeds the default). ──
+    const FILTERS = [
+      { key: 'all', label: 'All' },
+      { key: 'honors', label: 'Honors' },
+      { key: 'ranks', label: 'Ranks' },
+      { key: 'prs', label: 'Records' },
+    ];
+    const PROP_FILTER = { 'All': 'all', 'Honors': 'honors', 'Ranks': 'ranks', 'Records': 'prs' };
+    const filter = this.state.filterOverride || PROP_FILTER[(this.props && this.props.defaultFilter)] || 'all';
+    const setFilter = (k) => this.setState({ filterOverride: k });
+    const filterChips = FILTERS.map((f) => ({ key: f.key, label: f.label, active: f.key === filter, notActive: f.key !== filter, onClick: () => setFilter(f.key) }));
+
+    // ── The record. Newest first, grouped by chapter. ──
+    const groups = [
+      { chapter: { label: 'Chapter III · The Rebuild', sub: 'Ongoing', ongoing: true }, events: [
+        { type: 'honor', date: 'Mar 18', title: 'Earned \u201CThe Unbroken\u201D', subtitle: '30 sessions \u00B7 no missed week' },
+        { type: 'rank', date: 'Mar 14', title: 'Ascended to ' + tier.name + ' ' + tier.num, subtitle: 'Rank earned' },
+        { type: 'accomplishment', date: 'Mar 12', title: 'Bench Press \u00B7 185 \u00D7 10', subtitle: 'New personal record' },
+        { type: 'goal', date: 'Feb 2', title: 'Set mission \u00B7 Squat 405', subtitle: 'Long-term objective' },
+        { type: 'chapter-open', date: 'Jan 8', title: 'Began Chapter III', subtitle: 'The Rebuild' },
+      ] },
+      { chapter: { label: 'Chapter II · Ironborn', sub: 'Sealed \u00B7 48 sessions' }, events: [
+        { type: 'chapter-seal', date: 'Dec 20', title: 'Sealed Chapter II', subtitle: 'Ironborn \u00B7 48 sessions' },
+        { type: 'accomplishment', date: 'Nov 30', title: 'Deadlift \u00B7 405 \u00D7 3', subtitle: 'New personal record' },
+        { type: 'honor', date: 'Oct 15', title: 'Earned \u201CCentury\u201D', subtitle: '100 lifetime sessions' },
+        { type: 'memory', date: 'Sep 3', title: 'A note to future me', subtitle: '\u201CShowed up when it was hard.\u201D' },
+      ] },
+      { chapter: { label: 'Chapter I · Foundation', sub: 'Sealed \u00B7 31 sessions' }, events: [
+        { type: 'chapter-seal', date: 'Aug 1', title: 'Sealed Chapter I', subtitle: 'Foundation \u00B7 31 sessions' },
+        { type: 'rank', date: 'Jul 12', title: 'Reached Ascendant II', subtitle: 'Rank earned' },
+        { type: 'program', date: 'Jun 5', title: 'Started Powerbuilding', subtitle: 'Intermediate program' },
+        { type: 'chapter-open', date: 'May 1', title: 'Began Chapter I', subtitle: 'Where it started' },
+      ] },
+    ];
+    const FTYPES = { honors: ['honor'], ranks: ['rank'], prs: ['accomplishment'] };
+
+    const timelineItems = [];
+    if (filter === 'all') {
+      groups.forEach((g) => {
+        timelineItems.push({ isChapter: true, isEvent: false, chapLabel: g.chapter.label, chapSub: g.chapter.sub, ongoing: !!g.chapter.ongoing });
+        g.events.forEach((e, i) => timelineItems.push({
+          isEvent: true, isChapter: false, eventType: e.type, date: e.date, title: e.title, subtitle: e.subtitle,
+          first: i === 0, last: i === g.events.length - 1,
+        }));
+      });
+    } else {
+      const allow = FTYPES[filter] || [];
+      const flat = [];
+      groups.forEach((g) => g.events.forEach((e) => { if (allow.indexOf(e.type) >= 0) flat.push(e); }));
+      flat.forEach((e, i) => timelineItems.push({
+        isEvent: true, isChapter: false, eventType: e.type, date: e.date, title: e.title, subtitle: e.subtitle,
+        first: i === 0, last: i === flat.length - 1,
+      }));
+    }
+
+    return {
+      ready: true,
+      notReady: false,
+      seal,
+      avatarEl,
+      goAccount,
+      tabItems,
+      setTab,
+      rankLabel: tier.label,
+      progDone: tier.done,
+      progNeed: tier.need,
+      progLabel: 'Toward ' + tier.next,
+      progTrailing: tier.done + ' / ' + tier.need,
+      icoSessions: FS.create(React, 'dumbbell', { size: 22, strokeWidth: 1.7 }),
+      icoChapters: FS.create(React, 'book', { size: 22, strokeWidth: 1.7 }),
+      icoHonors: FS.create(React, 'laurel', { size: 22, strokeWidth: 1.7 }),
+      honors,
+      viewAllHonors: () => {},
+      filterChips,
+      timelineItems,
+    };
+  }
+}
+</script>
+<script>
+(async () => {
+  if (!document.title || !document.title.trim()) document.title = "Forge Legacy";
+  // Prepend so page-supplied @page / break rules (deck-stage's margin:0,
+  // author CSS) keep source-order precedence over the baseline.
+  const baseCss = document.createElement('style');
+  baseCss.textContent = "@media print {\n  figure, table { break-inside: avoid; }\n  *, *::before, *::after {\n    print-color-adjust: exact; -webkit-print-color-adjust: exact;\n    backdrop-filter: none !important; -webkit-backdrop-filter: none !important;\n    animation-delay: -99s !important; animation-duration: .001s !important;\n    animation-iteration-count: 1 !important; animation-fill-mode: both !important;\n    animation-play-state: running !important; transition-duration: 0s !important;\n  }\n}";
+  document.head.prepend(baseCss);
+  if (document.readyState === 'loading') {
+    await new Promise((r) => document.addEventListener('DOMContentLoaded', r, { once: true }));
+  }
+  let ds = document.querySelector('deck-stage');
+  // whenDefined never resolves when nothing registers the element, so only
+  // await it when a <deck-stage> tag exists (and race a timeout regardless).
+  if (ds && !customElements.get('deck-stage')) {
+    try {
+      await Promise.race([
+        customElements.whenDefined('deck-stage'),
+        new Promise((r) => setTimeout(r, 3000)),
+      ]);
+    } catch (e) {}
+    ds = document.querySelector('deck-stage');
+  }
+  // dc-runtime assigns window.DCLogic at init and mounts into #dc-root on
+  // DOMContentLoaded; settle on that subtree so React has rendered before
+  // print(). Non-DC pages fall through to weighing body.
+  const isDc = !ds && 'DCLogic' in window;
+  const settleRoot = ds || (isDc ? document.getElementById('dc-root') : null) || document.body;
+  if (settleRoot) {
+    // Weigh only content children — skip script/style/template so inline
+    // Babel/CSS doesn't register as stable "content" before the framework
+    // has mounted anything.
+    const MEDIA = 'img,svg,canvas,video,picture,iframe,embed,object';
+    const weigh = () => {
+      let text = 0, media = 0;
+      for (const c of settleRoot.children) {
+        const t = c.tagName;
+        if (t === 'SCRIPT' || t === 'STYLE' || t === 'TEMPLATE') continue;
+        text += (c.textContent || '').trim().length;
+        media += c.querySelectorAll(MEDIA).length + (c.matches(MEDIA) ? 1 : 0);
+      }
+      return text + media * 100;
+    };
+    // "Non-zero and stable" alone is not sufficient to mean rendered: generic
+    // body can carry a static shell while async main content is pending, and
+    // #dc-root can carry the root DC's static text while child refs are still
+    // .sc-placeholder boxes. Gate generic on readyState 'complete', and never
+    // accept stability while a dc-runtime placeholder is present.
+    const isGeneric = settleRoot === document.body;
+    const deadline = Date.now() + 15000;
+    let last = -1, stable = 0;
+    while (Date.now() < deadline) {
+      const n = weigh();
+      const ready =
+        (!isGeneric || document.readyState === 'complete') &&
+        !settleRoot.querySelector('.sc-placeholder');
+      if (n > 0 && n === last && ready) { if (++stable >= 2) break; } else { stable = 0; }
+      last = n;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+  }
+  // Project support.js may predate runtime default-seeding; push via bridge.
+  if (isDc && window.__dcSetProps && window.__dcRootName) {
+    try {
+      const dpEl = document.querySelector('script[data-dc-script]');
+      const meta = JSON.parse((dpEl && dpEl.getAttribute('data-props')) || '{}');
+      const bag = {};
+      for (const k in meta)
+        if (k[0] !== '$' && meta[k] && meta[k].default !== undefined)
+          bag[k] = meta[k].default;
+      if (Object.keys(bag).length) {
+        window.__dcSetProps(window.__dcRootName(), bag);
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    } catch (e) {}
+  }
+  // Reveal content gated on scroll or visibility before printing. Lazy <img>,
+  // IntersectionObserver fade-ins, and collapsed <details> don't render while
+  // off-screen, so a long page would print with them blank or closed. Open
+  // every <details>, force native-lazy images eager, and scroll the document
+  // through its full height to trip lazy-load + IO; then wait (bounded) for the
+  // newly-triggered images. Inert for deck-stage (slides aren't scroll-gated).
+  try {
+    for (const d of document.querySelectorAll('details')) d.open = true;
+    for (const img of document.querySelectorAll('img[loading="lazy"]'))
+      img.loading = 'eager';
+    const scroller = document.scrollingElement || document.documentElement;
+    const full = Math.max(scroller.scrollHeight, document.body.scrollHeight);
+    const step = window.innerHeight || 800;
+    for (let y = 0; y <= full; y += step) {
+      window.scrollTo(0, y);
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+    window.scrollTo(0, 0);
+    await Promise.race([
+      Promise.all(
+        [...document.images].map((img) =>
+          img.complete
+            ? null
+            : new Promise((res) => {
+                img.addEventListener('load', res, { once: true });
+                img.addEventListener('error', res, { once: true });
+              })
+        )
+      ),
+      new Promise((r) => setTimeout(r, 4000)),
+    ]);
+  } catch (e) {}
+  try { await document.fonts.ready; } catch (e) {}
+  // Jump every animation to its end state so print() never captures a slide
+  // mid-entrance. Ordering matters: the 0s-transition style must be live
+  // BEFORE data-deck-active is set so attribute-keyed transitions don't
+  // start a (now-0s) run from the pre-active base.
+  const st = document.createElement('style');
+  st.textContent = '*,*::before,*::after{animation-delay:-99s !important;animation-duration:.001s !important;animation-iteration-count:1 !important;animation-fill-mode:both !important;animation-play-state:running !important;transition-duration:0s !important}';
+  document.head.appendChild(st);
+  for (const d of document.querySelectorAll('deck-stage')) {
+    for (const c of d.children) {
+      const t = c.tagName;
+      if (t === 'SCRIPT' || t === 'STYLE' || t === 'TEMPLATE') continue;
+      c.setAttribute('data-deck-active', '');
+    }
+  }
+  // Re-append deck-stage's @page last so no author @page can add a margin and
+  // spill each full-bleed slide onto two sheets. Backstop for old copies.
+  if (ds) {
+    let pg = document.getElementById('deck-stage-print-page');
+    if (!pg) {
+      pg = document.createElement('style');
+      pg.textContent = '@page{size:' + (+ds.getAttribute('width') || 1920) +
+        'px ' + (+ds.getAttribute('height') || 1080) + 'px;margin:0}';
+    }
+    document.body.appendChild(pg);
+  }
+  try {
+    const sweep = () => {
+      for (const a of document.getAnimations()) {
+        try { a.finish(); } catch (e) {
+          try { a.currentTime = (a.effect && a.effect.getComputedTiming().duration) || 0; a.pause(); } catch (e2) {}
+        }
+      }
+    };
+    sweep();
+    await new Promise((r) => requestAnimationFrame(r));
+    sweep();
+    await new Promise((r) => requestAnimationFrame(r));
+  } catch (e) {}
+  // Size the PDF page to the rendered design unless the file opted into
+  // standard paper via @page{size:letter|A4|…}. Decks own their own @page.
+  // Wrappers (body, …) lose padding+margin so the frame sits at (0,0); the
+  // frame itself loses only margin — its padding is INSIDE the measured
+  // rect and must stay, or content shifts and leaves a gap at bottom/right.
+  var __m = null;
+  try { __m = (() => {
+  var STAMP = true;
+  var docEl = document.documentElement;
+  var doc = { width: docEl.scrollWidth, height: docEl.scrollHeight };
+
+  var ds = document.querySelector('deck-stage');
+  if (ds) {
+    var dw = Number(ds.getAttribute('width')) || 1920;
+    var dh = Number(ds.getAttribute('height')) || 1080;
+    var n = typeof ds.length === 'number' ? ds.length : ds.children.length;
+    var idx = typeof ds.index === 'number' ? ds.index : 0;
+    var frames = [];
+    for (var i = 0; i < n; i++) frames.push({ left: 0, top: 0, width: dw, height: dh });
+    return { kind: 'deck', source: 'declared', doc: doc, frames: frames,
+      authored: frames.map(function(){return{width:true,height:true}}),
+      deck: { width: dw, height: dh, slideCount: n, index: idx },
+      signals: { paperPage: false, pxPage: false } };
+  }
+
+  // Declared kind: a doc-page tag names the kind outright, so no signal
+  // heuristics run (like the deck branch above, signals report false —
+  // they describe inferred classifications only). The tag alone is not
+  // trusted: the element must have upgraded (shadowRoot present), so a
+  // leftover tag whose script was deleted falls through to the heuristics
+  // that handle plain markup.
+  var stageSx = window.scrollX || 0, stageSy = window.scrollY || 0;
+  var dp = document.querySelector('doc-page');
+  if (dp && dp.shadowRoot) {
+    // Crop to the sheet, not the host — the desk around it is screen-only
+    // chrome that must not land in PNG exports.
+    var sheet = dp.shadowRoot.querySelector('.sheet');
+    var sr = (sheet || dp).getBoundingClientRect();
+    return { kind: 'paper-doc', source: 'declared', doc: doc,
+      frames: [{ left: sr.left + stageSx, top: sr.top + stageSy,
+        width: sr.width, height: sr.height }],
+      authored: [{ width: false, height: false }],
+      signals: { paperPage: false, pxPage: false } };
+  }
+  var paperPage = false, pxPage = false;
+  var eachRule = function (fn) {
+    for (var s = 0; s < document.styleSheets.length; s++) {
+      var rs; try { rs = document.styleSheets[s].cssRules; } catch (e) { continue; }
+      for (var r = 0; r < rs.length; r++) {
+        fn(rs[r]);
+        if (rs[r].cssRules) for (var n = 0; n < rs[r].cssRules.length; n++) fn(rs[r].cssRules[n]);
+      }
+    }
+  };
+  eachRule(function (r) {
+    if (r.type !== 6) return;
+    var m = /\bsize\s*:\s*([^;}]+)/i.exec(r.cssText || '');
+    if (!m) return;
+    if (/\b(letter|a[3-5]|legal|ledger)\b/i.test(m[1])) paperPage = true;
+    if (/\d+(?:\.\d+)?px\b/i.test(m[1])) pxPage = true;
+  });
+  var signals = { paperPage: paperPage, pxPage: pxPage };
+
+  var pxVal = function (v) {
+    var m = /^(\d+(?:\.\d+)?)px$/.exec(v || ''); return m ? +m[1] : 0;
+  };
+  var authoredPx = function (el, prop) {
+    if (pxVal(el.style[prop])) return true;
+    var attr = el.getAttribute(prop);
+    if (attr && /^\d+$/.test(attr)) return true;
+    var hit = false;
+    eachRule(function (r) {
+      if (hit || r.type !== 1 || !r.style) return;
+      try { if (el.matches(r.selectorText) && pxVal(r.style[prop])) hit = true; } catch (e) {}
+    });
+    return hit;
+  };
+
+  var el = document.body, rootPxW = false;
+  for (;;) {
+    var kids = [];
+    for (var c = 0; c < el.children.length; c++) {
+      var t = el.children[c].tagName;
+      if (t !== 'SCRIPT' && t !== 'STYLE' && t !== 'TEMPLATE') kids.push(el.children[c]);
+    }
+    if (kids.length !== 1 || !(kids[0] instanceof HTMLElement)) break;
+    if (STAMP) el.setAttribute('data-om-frame-wrap', '');
+    el = kids[0];
+    rootPxW = authoredPx(el, 'width');
+    if (rootPxW) break;
+  }
+  if (!rootPxW) rootPxW = authoredPx(el, 'width');
+
+  // @page{size:letter} alone is a flowing doc; with a px-width root it's a
+  // fixed sheet pretending to be paper — fall through and size to render.
+  if (paperPage && !rootPxW) {
+    return { kind: 'paper-doc', source: 'inferred', doc: doc, signals: signals,
+      frames: [{ left: 0, top: 0, width: doc.width, height: doc.height }],
+      authored: [{ width: false, height: false }] };
+  }
+
+  var sx = window.scrollX || 0, sy = window.scrollY || 0;
+  var rectOf = function (e) {
+    var r = e.getBoundingClientRect();
+    var oy; try { oy = getComputedStyle(e).overflowY; } catch (err) {}
+    var h = oy === 'visible' ? Math.max(r.height, e.scrollHeight || 0) : r.height;
+    return { left: r.left + sx, top: r.top + sy, width: r.width, height: h };
+  };
+
+  // Multi-frame: ≥2 visible non-fixed children, each with authored px width
+  // AND height, all within ±2px of each other. Off unless the page opts in
+  // via data-om-multi-frame on the stop element — guards against card grids
+  // and pricing tables that match the geometry but aren't separate canvases.
+  if (el.hasAttribute('data-om-multi-frame')) {
+    var cands = [];
+    for (var k = 0; k < el.children.length; k++) {
+      var ch = el.children[k];
+      var cs; try { cs = getComputedStyle(ch); } catch (e) { continue; }
+      if (cs.display === 'none' || cs.visibility === 'hidden' || cs.position === 'fixed') continue;
+      var rc = rectOf(ch);
+      if (rc.width < 2 || rc.height < 2) continue;
+      if (!authoredPx(ch, 'width') || !authoredPx(ch, 'height')) continue;
+      cands.push(rc);
+    }
+    if (cands.length >= 2) {
+      var w0 = cands[0].width, h0 = cands[0].height, ok = true;
+      for (var q = 1; q < cands.length; q++)
+        if (Math.abs(cands[q].width - w0) > 2 || Math.abs(cands[q].height - h0) > 2) ok = false;
+      if (ok) return { kind: 'multi-frame', source: 'inferred', doc: doc, signals: signals,
+        frames: cands, authored: cands.map(function(){return{width:true,height:true}}) };
+    }
+  }
+
+  if (STAMP) el.setAttribute('data-om-frame', '');
+  return { kind: 'single-canvas', source: 'inferred', doc: doc, signals: signals,
+    frames: [rectOf(el)],
+    authored: [{ width: rootPxW, height: authoredPx(el, 'height') }] };
+})(); } catch (e) {}
+  var frame = null;
+  if (__m && __m.kind === 'single-canvas') {
+    var f = __m.frames && __m.frames[0];
+    if (f && f.width >= 200 && f.height >= 200) {
+      frame = f;
+      var fst = document.createElement('style');
+      fst.textContent = '@media print{@page{size:' + Math.ceil(f.width) + 'px ' +
+        Math.ceil(f.height) + 'px;margin:0}' +
+        'html,body,[data-om-frame-wrap]{padding:0!important;margin:0!important;background:none!important}' +
+        '[data-om-frame]{margin:0!important}}';
+      document.body.appendChild(fst);
+    }
+  }
+  // Relax break-inside on oversized elements. An element taller than a
+  // printable page can't honor break-inside: avoid — browsers either overflow
+  // it or push it whole to the next page, leaving a blank gap, then break it
+  // anyway at an arbitrary point. After the final layout (content revealed,
+  // animations jumped), find elements taller than a page that still compute
+  // break-inside: avoid and reset them to auto, so the browser breaks them at
+  // their children's boundaries instead (children keep their own avoid). PAGE_PX
+  // is a conservative portrait estimate at 96 CSS px/in — Letter/A4 usable
+  // height minus our 0.5in margins — so only clearly-oversized elements are
+  // touched and under-page elements still stay whole. Skipped for decks (slides
+  // are sized to the page) and for fixed-size canvases (frame set, or an author
+  // px-based @page) — runs as before for flowing docs on letter/A4.
+  try {
+    if (!ds && !frame && !(__m && __m.signals && __m.signals.pxPage)) {
+      const PAGE_PX = 1024;
+      // Our print defaults add a real @page margin only when the source has
+      // no @page of its own; computed style can't tell us (it reports screen
+      // media), so read the injected rule directly.
+      const defaults = document.querySelector('style[data-omelette-print-defaults]');
+      const pageInset = /@page\s*\{[^}]*margin/.test(defaults ? defaults.textContent || '' : '');
+      const SEL = 'section,article,figure,table,pre,blockquote,[class~="card" i],[class~="page" i],[class~="sheet" i]';
+      for (const el of document.body.querySelectorAll(SEL)) {
+        if (el instanceof HTMLElement && el.offsetHeight > PAGE_PX) {
+          el.setAttribute('data-om-oversized', '');
+          // Fake-paged docs simulate sheets with over-tall break-after:page
+          // boxes; honoring the break spills half-blank pages and ends a
+          // colored box mid-sheet. Flow them, and (only when we own the page
+          // inset) drop the redundant padding/background via the rule below.
+          const cs = getComputedStyle(el);
+          if (cs.breakAfter === 'page' || cs.pageBreakAfter === 'always') {
+            el.setAttribute('data-om-fakepage', '');
+          }
+        }
+      }
+      const ost = document.createElement('style');
+      ost.textContent = '@media print{' +
+        '[data-om-oversized]{break-inside:auto !important;page-break-inside:auto !important}' +
+        '[data-om-fakepage]{break-after:auto !important;page-break-after:auto !important}' +
+        (pageInset ? '[data-om-fakepage]{padding:0 !important;background:none !important}' : '') +
+        '}';
+      document.head.appendChild(ost);
+    }
+  } catch (e) {}
+  // macOS Preview renders Skia-PDF Luminosity soft-masks as opaque grey boxes;
+  // swap the CSS that triggers them for Preview-safe forms.
+  try {
+    for (const el of document.body.querySelectorAll('*')) {
+      const cs = getComputedStyle(el);
+
+      if (cs.boxShadow !== 'none' && cs.filter === 'none') {
+        const outs = [], kept = [];
+        for (const s of cs.boxShadow.split(/,(?![^(]*[)])/)) {
+          const t = s.trim();
+          const m = t.match(/^(rgba?[(][^)]+[)]) (-?[0-9.]+px) (-?[0-9.]+px) ([0-9.]+px) -?[0-9.]+px$/);
+          if (m && parseFloat(m[4]) > 0) outs.push('drop-shadow(' + m[2] + ' ' + m[3] + ' ' + m[4] + ' ' + m[1] + ')');
+          else kept.push(t);
+        }
+        if (outs.length) {
+          el.style.setProperty('filter', outs.join(' '), 'important');
+          el.style.setProperty('box-shadow', kept.join(', ') || 'none', 'important');
+        }
+      }
+
+      const mask = cs.maskImage && cs.maskImage !== 'none' ? cs.maskImage : cs.webkitMaskImage;
+      if (mask && mask !== 'none' && cs.filter === 'none') el.style.setProperty('filter', 'opacity(1)', 'important');
+    }
+  } catch (e) {}
+  setTimeout(() => { try { window.print(); } catch (e) {} }, 200);
+})();
+</script>
+</body>
+</html>

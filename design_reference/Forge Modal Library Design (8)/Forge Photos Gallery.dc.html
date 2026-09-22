@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  @keyframes pgFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes pgRise { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform:none; } }
+  @keyframes pgZoom { from { opacity:0; transform: scale(0.96); } to { opacity:1; transform:none; } }
+  @keyframes pgExpand { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+
+  <div data-screen-label="L-15 Photos Albums" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/legacy-bg.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <!-- app bar -->
+      <div style="flex:none; height:56px; display:flex; align-items:center; gap:6px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-700); position:relative; z-index:5;">
+        <button onClick="{{ back }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+        <span style="flex:1; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ title }}</span>
+        <sc-if value="{{ albumMode }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ goCompare }}" aria-label="Compare" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-bronze-primary);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="16" rx="1"></rect><rect x="14" y="4" width="7" height="16" rx="1"></rect></svg></button>
+        </sc-if>
+        <sc-if value="{{ albumsMode }}" hint-placeholder-val="{{ true }}"><span style="width:44px;"></span></sc-if>
+      </div>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:22px 18px 36px;">
+
+        <!-- ═══════════ ALBUMS (chapters as covers) ═══════════ -->
+        <sc-if value="{{ albumsMode }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:pgFade 300ms var(--fl-ease-out, ease-out) both;">
+            <div style="display:flex; align-items:baseline; gap:8px; padding:0 2px 20px;">
+              <span style="font-family:var(--fl-font-display); font-size:30px; font-weight:700; letter-spacing:-0.5px; color:var(--fl-text-primary); line-height:1;">{{ totalPhotos }}</span>
+              <span style="font-size:12px; font-weight:600; letter-spacing:0.4px; color:var(--fl-text-tertiary);">{{ subline }}</span>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:26px;">
+              <sc-for list="{{ albums }}" as="a" hint-placeholder-count="2">
+                <div role="button" tabindex="0" onClick="{{ a.open }}" style="cursor:pointer; border-radius:var(--fl-radius-xl); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-shadow-card); background:var(--fl-surface-card); transition:border-color 160ms ease, transform 160ms ease;" style-hover="border-color:var(--fl-bronze-border); transform:translateY(-2px);" style-active="transform:scale(0.985); border-color:var(--fl-bronze-border);">
+                  <!-- hero cover (dominant) -->
+                  <div style="position:relative; width:100%; aspect-ratio:5/4;">
+                    <image-slot id="{{ a.coverId }}" flat nocap shape="rect" placeholder="" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                    <sc-if value="{{ a.dim }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute; inset:0; z-index:1; pointer-events:none; background:rgba(6,7,9,0.3);"></span></sc-if>
+                    <span aria-hidden="true" style="position:absolute; inset:0; z-index:1; pointer-events:none; background:linear-gradient(180deg, rgba(8,11,14,0.15) 0%, transparent 28%, transparent 38%, rgba(8,11,14,0.9));"></span>
+                    <span style="position:absolute; top:12px; left:12px; z-index:2; display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:var(--fl-radius-pill); background:{{ a.chipBg }}; border:1px solid {{ a.chipBorder }}; font-size:9px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:{{ a.chipInk }};"><span style="display:inline-flex;">{{ a.chipIcon }}</span>{{ a.status }}</span>
+                    <div style="position:absolute; left:16px; right:16px; bottom:15px; z-index:2;">
+                      <span style="display:block; font-family:var(--fl-font-display); font-size:25px; font-weight:700; letter-spacing:-0.4px; color:var(--fl-text-primary); text-shadow:0 2px 12px rgba(0,0,0,0.78); line-height:1.05;">{{ a.chapter }}</span>
+                      <span style="display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; margin-top:5px; font-size:11px; line-height:1.42; color:rgba(233,224,208,0.7); text-shadow:0 1px 8px rgba(0,0,0,0.85); text-wrap:pretty;">{{ a.subtitle }}</span>
+                    </div>
+                  </div>
+                  <!-- meta strip -->
+                  <div style="display:flex; flex-direction:column; gap:9px; padding:14px 16px 18px;">
+                    <span style="font-size:11px; font-weight:700; letter-spacing:0.6px; color:var(--fl-bronze-bright);">{{ a.range }}</span>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span style="font-size:12.5px; font-weight:600; color:var(--fl-text-secondary);">{{ a.photoCount }}</span>
+                      <span style="width:3px; height:3px; border-radius:50%; background:var(--fl-charcoal-500);"></span>
+                      <span style="font-size:12.5px; font-weight:600; color:var(--fl-text-secondary);">{{ a.weeks }}</span>
+                      <sc-if value="{{ a.hasHighlight }}" hint-placeholder-val="{{ false }}">
+                        <span style="margin-left:auto; display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:10.5px; font-weight:700; letter-spacing:0.3px; color:var(--fl-bronze-bright);"><span style="display:inline-flex;">{{ a.hlIcon }}</span>{{ a.highlight }}</span>
+                      </sc-if>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <p style="margin:28px 8px 0; font-size:11px; line-height:1.6; text-align:center; color:var(--fl-text-tertiary); text-wrap:pretty;">{{ footnote }}</p>
+          </div>
+        </sc-if>
+
+        <!-- ═══════════ ONE ALBUM · month-grouped timeline ═══════════ -->
+        <sc-if value="{{ albumMode }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:pgFade 280ms var(--fl-ease-out, ease-out) both;">
+            <!-- chapter header -->
+            <div style="padding:0 2px;">
+              <span style="display:inline-flex; align-items:center; gap:7px; font-size:10px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:{{ curChipInk }};"><span style="display:inline-flex;">{{ curChipIcon }}</span>{{ curStatus }}</span>
+              <span style="display:block; margin-top:8px; font-family:var(--fl-font-display); font-size:28px; font-weight:700; letter-spacing:-0.5px; color:var(--fl-text-primary); line-height:1.05;">{{ curChapter }}</span>
+              <span style="display:block; margin-top:6px; font-family:var(--fl-font-display); font-style:italic; font-size:14px; line-height:1.45; color:var(--fl-bronze-bright); text-wrap:pretty;">{{ curSubtitle }}</span>
+              <span style="display:block; margin-top:7px; font-size:12px; font-weight:600; letter-spacing:0.3px; color:var(--fl-text-tertiary);">{{ curRange }}</span>
+            </div>
+
+            <!-- chapter stats strip -->
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:1px; margin:18px 0 8px; background:var(--fl-charcoal-700); border:1px solid var(--fl-charcoal-700); border-radius:var(--fl-radius-lg); overflow:hidden;">
+              <sc-for list="{{ curStats }}" as="s" hint-placeholder-count="4">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:3px; padding:13px 4px; background:var(--fl-surface-recessed);">
+                  <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:700; letter-spacing:-0.3px; color:var(--fl-text-stat); line-height:1;">{{ s.value }}</span>
+                  <span style="font-size:9px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary); text-align:center;">{{ s.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <!-- month-grouped timeline -->
+            <div style="display:flex; flex-direction:column; gap:30px; margin-top:24px;">
+              <sc-for list="{{ months }}" as="m" hint-placeholder-count="2">
+                <div>
+                  <span style="display:block; font-size:11px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:0 2px 14px;">{{ m.label }}</span>
+                  <div style="position:relative; display:flex; flex-direction:column; gap:16px;">
+                    <!-- faint progress connector -->
+                    <span aria-hidden="true" style="position:absolute; left:35px; top:10px; bottom:10px; width:1px; background:linear-gradient(180deg, transparent, var(--fl-bronze-border-subtle) 12%, var(--fl-bronze-border-subtle) 88%, transparent); z-index:0;"></span>
+                    <sc-for list="{{ m.days }}" as="d" hint-placeholder-count="3">
+                      <div style="position:relative; z-index:1;">
+                        <!-- day row -->
+                        <div role="button" tabindex="0" onClick="{{ d.tap }}" style="display:flex; align-items:flex-start; gap:14px; cursor:pointer;">
+                          <div style="position:relative; width:{{ d.coverW }}; height:{{ d.coverH }}; flex:none; border-radius:var(--fl-radius-md); overflow:hidden; border:1px solid {{ d.coverBorder }}; box-shadow:{{ d.coverShadow }};">
+                            <image-slot id="{{ d.coverId }}" flat nocap shape="rect" placeholder="" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                            <sc-if value="{{ d.major }}" hint-placeholder-val="{{ false }}">
+                              <span aria-hidden="true" style="position:absolute; top:5px; left:5px; z-index:2; width:20px; height:20px; border-radius:50%; background:rgba(8,11,14,0.7); border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"></path></svg></span>
+                            </sc-if>
+                            <sc-if value="{{ d.isStack }}" hint-placeholder-val="{{ false }}">
+                              <span aria-hidden="true" style="position:absolute; right:4px; bottom:4px; z-index:2; display:inline-flex; align-items:center; gap:3px; padding:2px 6px; border-radius:var(--fl-radius-sm); background:rgba(8,11,14,0.78); border:1px solid var(--fl-bronze-border-subtle); font-size:9px; font-weight:700; color:var(--fl-bronze-bright);"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="3" width="14" height="14" rx="2"></rect><path d="M21 7v12a2 2 0 0 1-2 2H7"></path></svg>{{ d.count }}</span>
+                            </sc-if>
+                            <sc-if value="{{ d.isVideo }}" hint-placeholder-val="{{ false }}">
+                              <span aria-hidden="true" style="position:absolute; right:4px; bottom:4px; z-index:2; width:18px; height:18px; border-radius:50%; background:rgba(8,11,14,0.72); border:1px solid var(--fl-bronze-border-subtle); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg></span>
+                            </sc-if>
+                          </div>
+                          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; padding-top:2px;">
+                            <span style="font-family:var(--fl-font-display); font-size:{{ d.dateSize }}; font-weight:600; color:var(--fl-text-primary);">{{ d.date }}</span>
+                            <sc-if value="{{ d.hasEvent }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; letter-spacing:0.4px; color:var(--fl-bronze-bright);"><span style="display:inline-flex;">{{ d.eventIcon }}</span>{{ d.event }}</span></sc-if>
+                            <sc-if value="{{ d.isStack }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px; color:var(--fl-text-tertiary);">{{ d.stackLabel }}</span></sc-if>
+                          </div>
+                        </div>
+                        <!-- reflection quote (journal days) -->
+                        <sc-if value="{{ d.hasReflection }}" hint-placeholder-val="{{ false }}">
+                          <div style="margin:10px 0 0 {{ d.reflectIndent }}; padding:12px 15px; border-left:2px solid var(--fl-bronze-border); background:var(--fl-surface-recessed); border-radius:0 var(--fl-radius-md) var(--fl-radius-md) 0;">
+                            <span style="display:block; font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:5px;">Reflection</span>
+                            <span style="font-family:var(--fl-font-display); font-style:italic; font-size:13.5px; line-height:1.5; color:var(--fl-text-secondary); text-wrap:pretty;">{{ d.reflection }}</span>
+                          </div>
+                        </sc-if>
+                        <!-- expanded same-day thumbs -->
+                        <sc-if value="{{ d.expanded }}" hint-placeholder-val="{{ false }}">
+                          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin:10px 0 2px {{ d.thumbIndent }}; animation:pgExpand 220ms var(--fl-ease-out, ease-out) both;">
+                            <sc-for list="{{ d.thumbs }}" as="t" hint-placeholder-count="4">
+                              <div role="button" tabindex="0" onClick="{{ t.open }}" style="position:relative; aspect-ratio:3/4; border-radius:var(--fl-radius-sm); overflow:hidden; border:1px solid var(--fl-charcoal-700); cursor:pointer;">
+                                <image-slot id="{{ t.slotId }}" flat nocap shape="rect" placeholder="" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                                <span style="position:absolute; left:0; right:0; bottom:0; z-index:2; padding:3px 4px; background:linear-gradient(180deg, transparent, rgba(8,11,14,0.8)); font-size:8px; font-weight:600; text-align:center; color:var(--fl-text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ t.pose }}</span>
+                              </div>
+                            </sc-for>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+
+      <!-- ═══ FULL-SCREEN VIEWER ═══ -->
+      <sc-if value="{{ viewerOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; z-index:80; display:flex; flex-direction:column; background:#050505; animation:pgFade 240ms var(--fl-ease-out, ease-out) both;">
+          <div style="flex:none; height:56px; display:flex; align-items:center; gap:6px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-800);">
+            <button onClick="{{ closeViewer }}" aria-label="Close" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+            <span style="flex:1; font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-bright);">{{ vChapter }}</span>
+            <span style="font-size:11px; color:var(--fl-text-tertiary); padding-right:12px;">{{ vPosition }}</span>
+          </div>
+          <div style="flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:16px; position:relative;">
+            <div style="position:relative; width:100%; max-width:340px; aspect-ratio:3/4; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-shadow-float); animation:pgZoom 260ms var(--fl-ease-out, ease-out) both;">
+              <image-slot id="{{ vSlot }}" flat nocap shape="rounded" radius="16" placeholder="" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+            </div>
+            <button onClick="{{ prevPhoto }}" aria-label="Previous" style="position:absolute; left:6px; top:50%; transform:translateY(-50%); width:40px; height:40px; border-radius:50%; background:rgba(8,11,14,0.6); border:1px solid var(--fl-charcoal-600); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--fl-text-secondary);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+            <button onClick="{{ nextPhoto }}" aria-label="Next" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); width:40px; height:40px; border-radius:50%; background:rgba(8,11,14,0.6); border:1px solid var(--fl-charcoal-600); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--fl-text-secondary);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></button>
+          </div>
+          <div style="flex:none; padding:16px 22px calc(20px + env(safe-area-inset-bottom));">
+            <span style="display:block; font-family:var(--fl-font-display); font-size:20px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">{{ vDate }}</span>
+            <sc-if value="{{ vHasPose }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block; margin-top:6px; padding:3px 10px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); font-size:10px; font-weight:600; letter-spacing:0.6px; color:var(--fl-text-secondary);">{{ vPose }}</span></sc-if>
+            <sc-if value="{{ vHasCaption }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:10px 0 0; font-family:var(--fl-font-display); font-style:italic; font-size:14px; line-height:1.5; color:var(--fl-text-secondary); text-wrap:pretty;">{{ vCaption }}</p>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+    </sc-if>
+
+    <!-- forged grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:436,&quot;height&quot;:940}}">
+class Component extends DCLogic {
+  state = { ready: false, album: null, viewer: null, expanded: {} };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      if (r && ns) this.setState({ ready: true });
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  // Shared cover resolver — the single source of truth both the albums list and album
+  // detail call, so a chapter never shows two different covers.
+  //   1. manual cover (coverPhotoId) — an explicit choice always wins
+  //   2. sealed chapter → its final transformation photo (role:'final')
+  //   3. latest starred photo (importance signal, kept separate from cover intent)
+  //   4. most recent photo
+  //   5. null → designed empty state (no photos yet)
+  resolveCover(c) {
+    const flat = [];
+    c.days.forEach((d) => d.shots.forEach((s) => flat.push(s)));   // newest-first (days are newest-first)
+    if (c.coverPhotoId) { const m = flat.find((s) => s.id === c.coverPhotoId); if (m) return m.id; }
+    if (!c.active) { const f = flat.find((s) => s.role === 'final'); if (f) return f.id; }
+    const star = flat.find((s) => s.isStarred); if (star) return star.id;
+    return flat.length ? flat[0].id : null;
+  }
+
+  _data() {
+    // Browse-only archive. Photos captured in chapter/workout flows; this is the reading room.
+    // Each chapter is an album; days group the individual shots (a day may hold a full pose set).
+    // major: a day the page should pause at (chapter open/seal, final). reflection: a journal entry.
+    return [
+      { key: 'rebuild', chapter: 'The Rebuild', active: true, subtitle: 'The chapter I rebuilt my strength.',
+        range: 'Jan 2 – Mar 8, 2026', weeksNum: 8, cover: 'ph-tr-cover', highlight: 'Squat 405', days: [
+        { date: 'Mar 8', month: 'March', event: 'Chapter complete', major: true, reflection: 'I finally believed I could do this.', shots: [
+          { id: 'ph-tr-8a', pose: 'Front' }, { id: 'ph-tr-8b', pose: 'Side' }, { id: 'ph-tr-8c', pose: 'Back' } ] },
+        { date: 'Mar 6', month: 'March', caption: 'Twelve weeks in. The work is showing.', shots: [ { id: 'ph-tr-6a', pose: 'Front', video: true, isStarred: true }, { id: 'ph-tr-6b', pose: 'Side' } ] },
+        { date: 'Mar 1', month: 'March', event: 'PR · Squat 405', shots: [ { id: 'ph-tr-1v', pose: 'Clip', video: true } ] },
+        { date: 'Feb 20', month: 'February', event: 'PR · Bench 225', reflection: 'Two plates, paused and clean. No spot. A year ago this was a dream.', shots: [ { id: 'ph-tr-b1', pose: 'Clip', video: true } ] },
+        { date: 'Feb 12', month: 'February', caption: 'First sub-25 5K.', shots: [ { id: 'ph-tr-f1', pose: 'Photo' } ] },
+        { date: 'Feb 5', month: 'February', reflection: 'Today sucked. Showed up anyway.', shots: [ { id: 'ph-tr-r1', pose: 'Front' } ] },
+        { date: 'Feb 2', month: 'February', caption: 'A full pose set — bulk check.', shots: [
+          { id: 'ph-tr-s1', pose: 'Front Rel.' }, { id: 'ph-tr-s2', pose: 'Front Flex' }, { id: 'ph-tr-s3', pose: 'Side' }, { id: 'ph-tr-s4', pose: 'Side Arms' }, { id: 'ph-tr-s5', pose: 'Back Rel.' }, { id: 'ph-tr-s6', pose: 'Back Flex' } ] },
+        { date: 'Jan 24', month: 'January', shots: [ { id: 'ph-tr-j2', pose: 'Front' } ] },
+        { date: 'Jan 2', month: 'January', event: 'Chapter opened', major: true, reflection: 'New chapter, same discipline. Starting line.', shots: [ { id: 'ph-tr-j1', pose: 'Front' } ] },
+      ] },
+      { key: 'ironclad', chapter: 'Ironclad', active: false, subtitle: 'The chapter that built the base.',
+        range: 'Oct 10 – Dec 18, 2025', weeksNum: 10, cover: 'ph-ic-cover', highlight: 'Deadlift 315', days: [
+        { date: 'Dec 18', month: 'December', event: 'Chapter sealed', major: true, reflection: 'Ten weeks of showing up. It held.', shots: [ { id: 'ph-ic-4', pose: 'Front', role: 'final' } ] },
+        { date: 'Nov 30', month: 'November', shots: [ { id: 'ph-ic-3', pose: 'Front' } ] },
+        { date: 'Nov 15', month: 'November', event: 'PR · Deadlift 315', shots: [ { id: 'ph-ic-2', pose: 'Clip', video: true } ] },
+        { date: 'Oct 10', month: 'October', event: 'Chapter opened', major: true, shots: [ { id: 'ph-ic-1', pose: 'Front' } ] },
+      ] },
+    ];
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) return { ready: false, notReady: true };
+    const h = React.createElement;
+    const S = this.state;
+
+    const svg = (paths, size, sw) => h('svg', { width: size || 13, height: size || 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(paths) ? paths : [paths]).map((d, i) => h('path', { key: i, d })));
+    const bookIcon = svg(['M4 5a2 2 0 0 1 2-2h9a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2z', 'M8 3v16'], 11, 1.9);
+    const flameIcon = svg(['M12 3c1 3-1 4-1 6a3 3 0 0 0 6 0c0-1-.4-2-1-2.6 2 1.4 3 3.6 3 6.1a6 6 0 1 1-12 0c0-3.2 2.5-5.2 5-9.5z'], 11, 1.7);
+    const boltIcon = svg(['M13 3L4 14h6l-1 7 9-11h-6z'], 11, 1.5);
+    const prIcon = svg(['M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z'], 11, 1.6);
+    const sealIcon = svg(['M12 15a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', 'M9 14l-1.5 7L12 18l4.5 3L15 14'], 11, 1.7);
+    const openIcon = svg(['M4 5a2 2 0 0 1 2-2h9a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2z', 'M8 3v16'], 11, 1.7);
+    const eventIconFor = (ev) => { if (!ev) return null; if (/PR/.test(ev)) return prIcon; if (/sealed/i.test(ev)) return flameIcon; if (/opened/i.test(ev)) return openIcon; if (/complete/i.test(ev)) return sealIcon; return prIcon; };
+
+    const DATA = this._data();
+    const shotCount = (c) => c.days.reduce((n, d) => n + d.shots.length, 0);
+    const videoCount = (c) => c.days.reduce((n, d) => n + d.shots.filter((s) => s.video).length, 0);
+    const milestoneCount = (c) => c.days.filter((d) => d.event).length;
+    const total = DATA.reduce((n, c) => n + shotCount(c), 0);
+
+    const chipFor = (active) => active
+      ? { bg: 'rgba(196,142,74,0.16)', border: 'var(--fl-bronze-border)', ink: 'var(--fl-bronze-bright)', icon: bookIcon, status: 'Active' }
+      : { bg: 'var(--fl-surface-recessed)', border: 'var(--fl-charcoal-600)', ink: 'var(--fl-text-secondary)', icon: flameIcon, status: 'Sealed' };
+
+    // ═══ ALBUMS VIEW ═══
+    const albums = DATA.map((c) => {
+      const ch = chipFor(c.active);
+      const n = shotCount(c);
+      const coverId = this.resolveCover(c) || c.cover;
+      return { key: c.key, chapter: c.chapter, subtitle: c.subtitle, coverId: coverId,
+        range: c.range.replace(/, \d{4}$/, ''), dim: !c.active,
+        photoCount: n + (n === 1 ? ' photo' : ' photos'), weeks: c.weeksNum + ' weeks',
+        status: ch.status, chipBg: ch.bg, chipBorder: ch.border, chipInk: ch.ink, chipIcon: ch.icon,
+        hasHighlight: !!c.highlight, highlight: c.highlight || '', hlIcon: prIcon,
+        open: () => this.setState({ album: c.key, expanded: {} }) };
+    });
+
+    // ═══ ALBUM (one chapter) VIEW ═══
+    const cur = DATA.find((c) => c.key === S.album) || null;
+    let months = [], curChapter = '', curSubtitle = '', curRange = '', curStatus = '', curChipIcon = null, curChipInk = '', curStats = [];
+    let flat = [];
+    if (cur) {
+      const ch = chipFor(cur.active);
+      curChapter = cur.chapter; curSubtitle = cur.subtitle; curRange = cur.range;
+      curStatus = ch.status; curChipIcon = ch.icon; curChipInk = ch.ink;
+      const n = shotCount(cur);
+      curStats = [
+        { key: 'p', value: String(n), label: 'Photos' },
+        { key: 'w', value: String(cur.weeksNum), label: 'Weeks' },
+        { key: 'm', value: String(milestoneCount(cur)), label: 'Milestones' },
+        { key: 'v', value: String(videoCount(cur)), label: 'Videos' },
+      ];
+      cur.days.forEach((d) => d.shots.forEach((s) => flat.push({ slotId: s.id, date: d.date, pose: s.pose, caption: d.caption || d.reflection, event: d.event })));
+
+      const order = []; const byMonth = {};
+      cur.days.forEach((d) => { if (!byMonth[d.month]) { byMonth[d.month] = []; order.push(d.month); } byMonth[d.month].push(d); });
+      months = order.map((label) => ({
+        key: label, label,
+        days: byMonth[label].map((d) => {
+          const isStack = d.shots.length > 1;
+          const major = !!d.major;
+          const dayKey = cur.key + ':' + d.date;
+          const expanded = !!S.expanded[dayKey];
+          const firstId = d.shots[0].id;
+          const openShot = (id) => this.setState({ viewer: id });
+          const cw = major ? '92px' : '72px', chh = major ? '122px' : '96px';
+          return {
+            key: dayKey, date: d.date, coverId: firstId,
+            coverW: cw, coverH: chh,
+            coverBorder: major ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+            coverShadow: major ? 'var(--fl-glow-subtle)' : 'none',
+            dateSize: major ? '18px' : '16px',
+            major,
+            isStack, count: String(d.shots.length),
+            isVideo: !isStack && !!d.shots[0].video,
+            stackLabel: isStack ? (d.shots.length + ' photos' + (expanded ? '' : ' · tap to open')) : '',
+            hasEvent: !!d.event, event: d.event || '', eventIcon: eventIconFor(d.event),
+            hasReflection: !!d.reflection, reflection: d.reflection || '',
+            reflectIndent: (major ? 106 : 86) + 'px', thumbIndent: (major ? 106 : 86) + 'px',
+            expanded,
+            thumbs: d.shots.map((s) => ({ key: s.id, slotId: s.id, pose: s.pose, open: () => openShot(s.id) })),
+            tap: () => { if (isStack) this.setState((st) => ({ expanded: Object.assign({}, st.expanded, { [dayKey]: !st.expanded[dayKey] }) })); else this.setState({ viewer: firstId }); },
+          };
+        }),
+      }));
+    }
+
+    // ═══ VIEWER ═══
+    const vId = S.viewer;
+    const vIdx = (cur && vId) ? flat.findIndex((x) => x.slotId === vId) : -1;
+    const vRec = vIdx >= 0 ? flat[vIdx] : null;
+    const vStep = (delta) => { if (vIdx < 0) return; const n = (vIdx + delta + flat.length) % flat.length; this.setState({ viewer: flat[n].slotId }); };
+
+    return {
+      ready: true, notReady: false,
+      title: cur ? 'Album' : 'Photos',
+      back: () => {
+        if (S.viewer) { this.setState({ viewer: null }); return; }
+        if (cur) { this.setState({ album: null, expanded: {} }); return; }
+        if ((function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})()) window.history.back(); else window.location.href = 'Forge%20Legacy.dc.html';
+      },
+
+      albumsMode: !cur,
+      totalPhotos: String(total),
+      subline: 'photos · ' + DATA.length + ' chapters',
+      albums,
+      footnote: 'Every chapter is its own album. Nothing expires, nothing is counted against you.',
+
+      albumMode: !!cur,
+      curChapter, curSubtitle, curRange, curStatus, curChipIcon, curChipInk, curStats,
+      months,
+      goCompare: () => { window.location.href = 'Forge%20Transformation.dc.html'; },
+
+      viewerOpen: !!vRec,
+      vSlot: vRec ? vRec.slotId : '',
+      vDate: vRec ? vRec.date : '',
+      vChapter: curChapter,
+      vPose: vRec ? vRec.pose : '', vHasPose: !!(vRec && vRec.pose),
+      vCaption: vRec ? vRec.caption : '', vHasCaption: !!(vRec && vRec.caption),
+      vPosition: vRec ? (vIdx + 1) + ' / ' + flat.length : '',
+      closeViewer: () => this.setState({ viewer: null }),
+      nextPhoto: () => vStep(1),
+      prevPhoto: () => vStep(-1),
+    };
+  }
+}
+</script>
+</body>
+</html>

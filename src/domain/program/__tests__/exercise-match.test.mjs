@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { matchExercise, tokenize } from '../exercise-match.ts';
+import { matchExercise, suggestExercises, tokenize } from '../exercise-match.ts';
 
 /** The real catalogue, read as data — the picker's module pulls in JSON that `node --test` can't load. */
 const raw = JSON.parse(
@@ -164,4 +164,28 @@ test('naming the obscure implement yourself is honoured', () => {
   // The restriction is on ASSUMING one, never on obeying one.
   const r = m('Band Leg Curl');
   assert.ok(r?.name.toLowerCase().includes('band'), `got ${r?.name}`);
+});
+
+test('"One arm", "1 arm" and "one-legged" are the catalogue\'s SINGLE-arm / single-leg (PO, 2026-09-22)', () => {
+  // A photographed program said "One arm dumbbell row"; the catalogue says "Single-Arm Dumbbell Row".
+  for (const written of ['One arm dumbbell row', '1 arm DB row', 'One-Arm Dumbbell Row', 'one armed db row']) {
+    assert.equal(m(written)?.key, 'single-arm-dumbbell-row', written);
+  }
+  assert.equal(m('One-legged DB RDL')?.name, 'Single-Leg Dumbbell Romanian Deadlift');
+  // "one" on its own is left alone.
+  assert.deepEqual([...tokenize('One Punch Man')], ['one', 'punch', 'man']);
+});
+
+test('suggestions for a name the matcher left alone — offered, never applied', () => {
+  const names = (s) => suggestExercises(s, CATALOG).map((x) => x.name);
+  assert.ok(names('lat pulldwon').some((n) => /Lat Pulldown/.test(n)), 'one typo still suggests the lift');
+  assert.ok(names('tricep pushdwn').some((n) => /Triceps Pushdown/.test(n)));
+  assert.ok(names('Sandbag carry').every((n) => /Sandbag/.test(n) && /Carry/.test(n)));
+  assert.ok(names('Dumbbell row').length > 0 && names('Dumbbell row').every((n) => /Dumbbell/.test(n) && /Row/.test(n)));
+  // Equipment alone suggests nothing, and nonsense suggests nothing.
+  assert.deepEqual(names('dumbbell'), []);
+  assert.deepEqual(names('qwerty zzz'), []);
+  assert.ok(names('lat pulldwon').length <= 3);
+  // The matcher itself still refuses the typo — a suggestion is a choice, not a match.
+  assert.equal(m('lat pulldwon'), null);
 });

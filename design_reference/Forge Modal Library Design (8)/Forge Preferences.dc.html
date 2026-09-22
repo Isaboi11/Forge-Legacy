@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="forge-units.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+  .fl-scroll { scrollbar-width: none; }
+  @keyframes pfRise { from { opacity:0; transform: translateY(9px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="P-4b Preferences" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/forge-slate2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+      <!-- AppBar -->
+      <div style="height:56px; flex:none; display:flex; align-items:center; gap:6px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-600);">
+        <button onClick="{{ back }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+        <span style="flex:1; font-size:13px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-primary);">Preferences</span>
+        <span style="width:44px;"></span>
+      </div>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:22px 20px 40px; animation:pfRise 380ms var(--fl-ease-out, ease-out) both;">
+
+        <!-- DISPLAY -->
+        <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:0 0 12px 2px;">Display</span>
+        <div style="border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-xl); background:var(--fl-bg-primary); padding:16px; margin-bottom:28px; box-shadow:var(--fl-border-inset);">
+          <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:14px;">
+            <span style="width:34px; height:34px; flex:none; border-radius:var(--fl-radius-md); background:var(--fl-icon-container-bg); border:1px solid var(--fl-icon-container-border); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter"><path d="M12 4.5v14"/><path d="M8.5 18.5h7"/><path d="M5 8h14"/><path d="M5 8l-2.2 4.4a2.8 2.8 0 0 0 5.6 0z"/><path d="M19 8l-2.2 4.4a2.8 2.8 0 0 0 5.6 0z"/></svg></span>
+            <div style="flex:1; min-width:0;">
+              <span style="display:block; font-size:15px; font-weight:600; color:var(--fl-text-primary);">Units</span>
+              <span style="display:block; font-size:12.5px; line-height:1.45; color:var(--fl-text-tertiary); margin-top:2px;">Applied across every screen &mdash; workouts, programs, and your legacy.</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:4px; padding:4px; border-radius:var(--fl-radius-lg); background:var(--fl-charcoal-800); border:1px solid var(--fl-charcoal-600);">
+            <div role="button" tabindex="0" aria-label="Imperial" onClick="{{ setImperial }}" style="{{ segImperial }}">Imperial</div>
+            <div role="button" tabindex="0" aria-label="Metric" onClick="{{ setMetric }}" style="{{ segMetric }}">Metric</div>
+          </div>
+          <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--fl-charcoal-700); display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">Preview</span>
+            <div style="display:flex; align-items:baseline; gap:10px;">
+              <span style="font-size:13px; color:var(--fl-text-secondary);">Best squat</span>
+              <span style="font-family:var(--fl-font-mono); font-size:15px; font-weight:600; color:var(--fl-bronze-bright); white-space:nowrap;">{{ sampleSquat }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- EXPERIENCE -->
+        <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:0 0 12px 2px;">Experience</span>
+        <div style="border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-xl); background:var(--fl-bg-primary); overflow:hidden; box-shadow:var(--fl-border-inset);">
+          <sc-for list="{{ toggles }}" as="t" hint-placeholder-count="3">
+            <div style="display:flex; align-items:center; gap:14px; padding:15px 16px; border-top:{{ t.border }};">
+              <span style="width:36px; height:36px; flex:none; border-radius:var(--fl-radius-md); background:var(--fl-icon-container-bg); border:1px solid var(--fl-icon-container-border); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ t.icon }}</span>
+              <div style="flex:1; min-width:0;">
+                <span style="display:block; font-size:14.5px; font-weight:500; color:var(--fl-text-primary);">{{ t.label }}</span>
+                <span style="display:block; font-size:12px; line-height:1.4; color:var(--fl-text-tertiary); margin-top:2px;">{{ t.desc }}</span>
+              </div>
+              <button type="button" onClick="{{ t.toggle }}" aria-label="{{ t.label }}" style="{{ t.switch }}"><span style="{{ t.knob }}"></span></button>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false, tick: 0, prefs: null };
+
+  KEY = 'forge.prefs.v1';
+  DEFAULTS = { haptics: true, sound: true, reduce_motion: false };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      const u = typeof window !== 'undefined' && window.ForgeUnits;
+      if (r && ns && fs && u) {
+        this.setState({ ready: true, prefs: this._load() });
+        if (!this._off) this._off = window.ForgeUnits.subscribe(() => this.setState((s) => ({ tick: (s.tick || 0) + 1 })));
+      } else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._off) this._off(); }
+
+  _load() {
+    try { const raw = window.localStorage.getItem(this.KEY); if (raw) return Object.assign({}, this.DEFAULTS, JSON.parse(raw)); } catch (e) {}
+    return Object.assign({}, this.DEFAULTS);
+  }
+  _save(p) { try { window.localStorage.setItem(this.KEY, JSON.stringify(p)); } catch (e) {} }
+  toggle = (id) => { this.setState((s) => { const prefs = Object.assign({}, s.prefs, { [id]: !s.prefs[id] }); this._save(prefs); return { prefs }; }); };
+
+  back = () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Forge%20Account%20Settings.dc.html'); };
+  setImperial = () => window.ForgeUnits.setPound();
+  setMetric = () => window.ForgeUnits.setKilo();
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const FS = window.ForgeSymbols;
+    const h = React.createElement;
+    const ico = (id, sw) => FS.create(React, id, { size: 18, strokeWidth: sw || 1.8 });
+    const U = window.ForgeUnits;
+    const isKg = U.label === 'kg';
+    const prefs = this.state.prefs || this.DEFAULTS;
+
+    const segBase = {
+      flex: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '10px 0', fontSize: '13px', fontWeight: 700, letterSpacing: '0.3px',
+      fontFamily: 'var(--fl-font-sans)', borderRadius: 'var(--fl-radius-md)',
+      border: '1px solid transparent', cursor: 'pointer', userSelect: 'none',
+      transition: 'background 200ms var(--fl-ease-out, ease-out), color 200ms var(--fl-ease-out, ease-out), border-color 200ms var(--fl-ease-out, ease-out)',
+    };
+    const seg = (active) => active
+      ? Object.assign({}, segBase, { background: 'var(--fl-bronze-tint)', color: 'var(--fl-bronze-bright)', borderColor: 'var(--fl-bronze-border)' })
+      : Object.assign({}, segBase, { background: 'transparent', color: 'var(--fl-text-tertiary)' });
+
+    const swBase = 'position:relative; width:46px; height:27px; flex:none; border-radius:var(--fl-radius-pill); border:1px solid; cursor:pointer; padding:0; transition:background 200ms var(--fl-ease-out, ease-out), border-color 200ms var(--fl-ease-out, ease-out);';
+    const knobBase = 'position:absolute; top:2px; width:21px; height:21px; border-radius:50%; transition:left 220ms var(--fl-ease-out, ease-out);';
+    const sw = (on) => on ? (swBase + ' background:var(--fl-bronze-metallic); border-color:var(--fl-bronze-border);') : (swBase + ' background:var(--fl-charcoal-800); border-color:var(--fl-charcoal-600);');
+    const knob = (on) => on ? (knobBase + ' left:21px; background:#1A1206;') : (knobBase + ' left:2px; background:var(--fl-charcoal-500);');
+
+    const hapticsIcon = h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' },
+      h('rect', { x: 8, y: 3.5, width: 8, height: 17, rx: 2.4 }), h('path', { d: 'M4.5 9v6' }), h('path', { d: 'M19.5 9v6' }));
+    const soundIcon = h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' },
+      h('path', { d: 'M5 9.5h3l4-3.5v12l-4-3.5H5z' }), h('path', { d: 'M16 9a4 4 0 0 1 0 6' }), h('path', { d: 'M18.5 6.5a7.5 7.5 0 0 1 0 11' }));
+    const motionIcon = h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' },
+      h('circle', { cx: 12, cy: 12, r: 8.5 }), h('path', { d: 'M12 7v5l3 2' }));
+
+    const defs = [
+      { id: 'haptics', label: 'Haptics', desc: 'Subtle taps confirm actions and PRs', icon: hapticsIcon },
+      { id: 'sound', label: 'Sound Effects', desc: 'Rest-timer chimes and completion tones', icon: soundIcon },
+      { id: 'reduce_motion', label: 'Reduce Motion', desc: 'Simplifies animations across Forge', icon: motionIcon },
+    ];
+    const toggles = defs.map((d, i) => ({
+      key: d.id, label: d.label, desc: d.desc, icon: d.icon,
+      switch: sw(prefs[d.id]), knob: knob(prefs[d.id]),
+      toggle: () => this.toggle(d.id),
+      border: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)',
+    }));
+
+    return {
+      ready: true, notReady: false,
+      back: this.back,
+      setImperial: this.setImperial, setMetric: this.setMetric,
+      segImperial: seg(!isKg), segMetric: seg(isKg),
+      sampleSquat: U.fmt(315),
+      toggles,
+    };
+  }
+}
+</script>
+</body>
+</html>

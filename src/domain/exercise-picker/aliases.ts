@@ -181,6 +181,8 @@ export const EXERCISE_CONVENTIONS: Record<string, string> = {
   'hamstring curl': 'seated-leg-curl-machine',
   'incline bench': 'barbell-incline-bench-press',
   'incline press': 'barbell-incline-bench-press',
+  // "Incline DB" — the press; it used to reach the Incline Curl (PO, 2026-09-21).
+  'incline dumbbell': 'dumbbell-incline-bench-press',
   'good morning': 'barbell-good-morning',
   'hack squat': 'hack-squat-machine', // the catalogue also holds a Barbell Hack Squat
   skullcrushers: 'barbell-skull-crusher',

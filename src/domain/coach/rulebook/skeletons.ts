@@ -445,23 +445,125 @@ const SPLITS: Partial<Record<Goal, Record<number, DaySkeleton[]>>> = {
 };
 
 /**
+ * What a chosen split style MEANS for each goal — a table, like everything else in this file.
+ *
+ *   · `as_chosen`     — the style's week, exactly. Strength, muscle and health are lifting weeks, and
+ *                       which lifting week is the athlete's call.
+ *   · `with_finisher` — the style's week with the cardio finisher put back on top, because for these
+ *                       goals the finisher is the goal rather than a feature of the split, and a
+ *                       "conditioning block" with no conditioning in it would be the coach agreeing to
+ *                       something it knows is wrong.
+ *   · `ignored`       — the goal owns its shape and a style has nothing to say about it.
+ *
+ * ⚠ MOBILITY IS `ignored`, AND THE ABSENCE OF THIS TABLE IS WHY IT SHIPPED A BARBELL PROGRAM. The four
+ * styles are all LIFTING weeks — push, pull, squat, hinge — and a style used to win over the goal's
+ * default unconditionally. So mobility + full body read the Full Body A/B/C lifting skeleton, the
+ * MOBILITY category then prescribed every slot as a hold, and the athlete got "Barbell Back Squat 2×45s"
+ * under a block called Mobility: 225 of 300 styled mobility builds in the stress sweep (2026-09-21). It
+ * was reachable on every guided build, because `program-guided.tsx` always sends a style — it defaults
+ * to the first legal one. No lifting split is a mobility week, so the style is set aside, not mapped.
+ *
+ * ⚠ A GOAL MISSING FROM HERE HONOURS THE STYLE (`as_chosen`), which is what every lifting goal wants.
+ * A new goal whose week is not a lifting week must add its row, the way mobility has.
+ */
+type StyleUse = 'as_chosen' | 'with_finisher' | 'ignored';
+
+const GOAL_STYLE_USE: Partial<Record<Goal, StyleUse>> = {
+  strength: 'as_chosen',
+  muscle: 'as_chosen',
+  health: 'as_chosen',
+  conditioning: 'with_finisher',
+  weight_loss: 'with_finisher',
+  mobility: 'ignored',
+};
+
+/** Whether a chosen split style shapes this goal's week at all — the rationale reads it too. */
+export const honoursSplitStyle = (goal: Goal): boolean => (GOAL_STYLE_USE[goal] ?? 'as_chosen') !== 'ignored';
+
+/**
  * The week's plan, or null when this goal has no authored rulebook yet.
  *
- * A `style` the athlete chose wins over the goal's default — with one exception that is worth stating:
- * conditioning and weight loss keep their cardio finishers regardless, because the finisher is the goal
- * rather than a feature of the split, and a "conditioning block" with no conditioning in it would be the
- * coach agreeing to something it knows is wrong.
+ * A `style` the athlete chose wins over the goal's default, in whatever sense `GOAL_STYLE_USE` gives it
+ * for this goal.
  */
 export function skeletonFor(goal: Goal, daysPerWeek: number, style?: SplitStyle | null): DaySkeleton[] | null {
-  if (style) {
+  const use = GOAL_STYLE_USE[goal] ?? 'as_chosen';
+  if (style && use !== 'ignored') {
     const chosen = STYLE_SPLITS[style]?.[daysPerWeek];
     if (chosen) {
-      const wantsCardio = goal === 'conditioning' || goal === 'weight_loss';
-      return wantsCardio ? chosen.map((d, i) => cond(d, i === chosen.length - 1 ? 25 : 15)) : chosen;
+      return use === 'with_finisher' ? chosen.map((d, i) => cond(d, i === chosen.length - 1 ? 25 : 15)) : chosen;
     }
   }
   return SPLITS[goal]?.[daysPerWeek] ?? null;
 }
+
+/**
+ * ══ ONE AND SEVEN — THE WEEKS ONLY AN ATHLETE ASKS FOR (CA-D12, CA §4.5) ══
+ *
+ * Every table above stops at 2–6 because that is what Holt writes on his own. An athlete may dictate a
+ * single session or a week with no rest day, and it gets built — so the two ends are DERIVED here, one
+ * rule each, rather than authored as five more rows per goal:
+ *
+ *   · 1 day — the two-day week's first day. Two days is the frequency every goal already builds as its
+ *             most complete sessions (full body for the lifting goals, finisher kept for conditioning,
+ *             Mobility A for mobility), and one day has to be the most complete of all.
+ *   · 7 days — the six-day week plus its own first day again. The split keeps its rotation (upper/lower
+ *             stays upper/lower, push/pull/legs picks push back up), which is what the athlete who
+ *             trains every day actually does.
+ *
+ * Both go through `skeletonFor`, so the goal's own reading of a split style (`GOAL_STYLE_USE`) still
+ * applies — a conditioning seven-day week still ends every day on its finisher.
+ */
+export function weekForAnyDays(goal: Goal, daysPerWeek: number, style?: SplitStyle | null): DaySkeleton[] | null {
+  if (daysPerWeek <= 1) {
+    const two = skeletonFor(goal, 2, style) ?? skeletonFor(goal, 2, null);
+    return two ? [two[0]] : null;
+  }
+  if (daysPerWeek >= 7) {
+    const six = skeletonFor(goal, 6, style) ?? skeletonFor(goal, 6, null);
+    return six ? [...six, six[0]] : null;
+  }
+  return skeletonFor(goal, daysPerWeek, style);
+}
+
+/**
+ * What an athlete means when they name a lift day — "upper on Monday", "legs Wednesday", "glutes".
+ *
+ * CA-D3's *Focus given* state for a whole day: the athlete chose the day's subject and the rulebook
+ * fills it. The words are the ones people use, lower-cased with everything but letters removed, so
+ * "Full-Body", "full body" and "fullbody" are one key. A word not listed here is not guessed at — the
+ * day takes the goal's own day for that position, and the focus is simply not applied.
+ */
+export const DAY_FOR_FOCUS: Readonly<Record<string, DaySkeleton>> = {
+  upper: UPPER,
+  upperbody: UPPER,
+  lower: LOWER,
+  lowerbody: LOWER,
+  legs: LEGS,
+  leg: LEGS,
+  legday: LEGS,
+  quads: LEGS,
+  hamstrings: LOWER,
+  glutes: LOWER,
+  push: PUSH,
+  pull: PULL,
+  chest: CHEST_TRIS,
+  chesttriceps: CHEST_TRIS,
+  back: BACK_BIS,
+  backbiceps: BACK_BIS,
+  shoulders: SHOULDERS,
+  arms: ARMS,
+  full: FULL_A,
+  fullbody: FULL_A,
+  total: FULL_A,
+  totalbody: FULL_A,
+  mobility: MOBILITY_A,
+  stretch: MOBILITY_A,
+};
+
+/** The authored day for a focus word, or null when the word names nothing in the table. */
+export const dayForFocus = (focus: string | null | undefined): DaySkeleton | null =>
+  focus ? (DAY_FOR_FOCUS[focus.toLowerCase().replace(/[^a-z]/g, '')] ?? null) : null;
 
 /**
  * Can this week actually be trained in this room?

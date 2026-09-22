@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #0B0C0E; }
+  a { color: #BF8F4F; text-decoration: none; }
+  a:hover { color: #CDA063; }
+</style>
+</helmet>
+
+<div style="width: 390px; margin: 0 auto; background: radial-gradient(120% 60% at 50% 0%, #16181C 0%, #0B0C0E 62%, #08090A 100%); min-height: 100vh; font-family: 'DM Sans', sans-serif; padding-bottom: 56px">
+
+  <div style="padding: 28px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.05)">
+    <div style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #8C8580; margin-bottom: 8px">Calibration Sheet</div>
+    <div style="font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 700; color: #F2EDE6; line-height: 1.1">Bronze, not orange</div>
+    <div style="font-size: 14px; color: #8C8580; line-height: 1.5; margin-top: 10px">Five candidate bronze ramps rendered on the real Forge surfaces. Judge these on your phone in the light you actually use the app in — then hand the winning hex block to Claude Code.</div>
+  </div>
+
+  <sc-for list="{{ candidates }}" as="c" hint-placeholder-count="3">
+    <div style="padding: 26px 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.05)">
+
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px">
+        <div style="display: flex; align-items: baseline; gap: 10px">
+          <span style="font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700; color: #5C5852; letter-spacing: 0.08em">{{ c.key }}</span>
+          <span style="font-family: 'Playfair Display', serif; font-size: 21px; font-weight: 600; color: #F2EDE6">{{ c.name }}</span>
+        </div>
+        <span style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: {{ c.tagColor }}">{{ c.tag }}</span>
+      </div>
+      <div style="font-size: 13px; color: #8C8580; line-height: 1.5; margin-bottom: 16px">{{ c.note }}</div>
+
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 18px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="height: 52px; border-radius: 4px; background: {{ c.bright }}; box-shadow: inset 0 1px 0 rgba(255,255,255,0.14)"></div>
+          <div style="font-size: 10px; color: #6B6560; letter-spacing: 0.04em">bright</div>
+          <div style="font-size: 11px; color: #A9A29B; font-variant-numeric: tabular-nums">{{ c.bright }}</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="height: 52px; border-radius: 4px; background: {{ c.primary }}; box-shadow: inset 0 1px 0 rgba(255,255,255,0.12)"></div>
+          <div style="font-size: 10px; color: #6B6560; letter-spacing: 0.04em">primary</div>
+          <div style="font-size: 11px; color: #A9A29B; font-variant-numeric: tabular-nums">{{ c.primary }}</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="height: 52px; border-radius: 4px; background: {{ c.mid }}"></div>
+          <div style="font-size: 10px; color: #6B6560; letter-spacing: 0.04em">mid</div>
+          <div style="font-size: 11px; color: #A9A29B; font-variant-numeric: tabular-nums">{{ c.mid }}</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="height: 52px; border-radius: 4px; background: {{ c.deep }}"></div>
+          <div style="font-size: 10px; color: #6B6560; letter-spacing: 0.04em">deep</div>
+          <div style="font-size: 11px; color: #A9A29B; font-variant-numeric: tabular-nums">{{ c.deep }}</div>
+        </div>
+      </div>
+
+      <div style="height: 26px; border-radius: 3px; background: {{ c.metallic }}; box-shadow: inset 0 1px 0 rgba(255,255,255,0.16); margin-bottom: 6px"></div>
+      <div style="font-size: 10px; color: #6B6560; letter-spacing: 0.04em; margin-bottom: 18px">metallic sweep — deep → primary → specular → deep</div>
+
+      <sc-if value="{{ showPreviews }}" hint-placeholder-val="{{ true }}">
+      <div style="background: linear-gradient(180deg, #14161A 0%, #101216 100%); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 18px 16px 20px; display: flex; flex-direction: column; gap: 18px">
+
+        <div style="display: flex; flex-direction: column; gap: 9px">
+          <div style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: {{ c.primary }}">Your Circle</div>
+          <div style="font-size: 10px; color: #5C5852">section header · bronze label · icon fill</div>
+        </div>
+
+        <button type="button" style="position: relative; overflow: hidden; width: 100%; height: 54px; border-radius: 10px; border: 1px solid {{ c.metalBorder }}; background: {{ c.fill }}; box-shadow: inset 0 1px 0 {{ c.topRim }}, inset 0 -1px 1px {{ c.glowSoft }}, 0 0 3px {{ c.glowSoft }}; color: #F8F3EA; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px">
+          <span style="position: absolute; inset: 0; background: {{ c.sheen }}; pointer-events: none"></span>
+          <span style="position: relative; color: {{ c.bright }}; font-size: 16px">◆</span>
+          <span style="position: relative">Start Workout</span>
+        </button>
+
+        <div style="display: flex; gap: 10px">
+          <div style="flex: 1; height: 44px; border-radius: 9px; border: 1px solid {{ c.border }}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: {{ c.primary }}">Train Together</div>
+          <div style="flex: 1; height: 44px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: #C6C0B9">Competitions</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline">
+            <span style="font-family: 'Playfair Display', serif; font-size: 20px; color: #F2EDE6">Strength Foundation II</span>
+            <span style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: {{ c.primary }}">Wk 3</span>
+          </div>
+          <div style="height: 6px; border-radius: 3px; background: rgba(255,255,255,0.06); overflow: hidden">
+            <div style="height: 100%; width: 42%; border-radius: 3px; background: {{ c.progress }}"></div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 14px; padding-top: 4px">
+          <div style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{ c.border }}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: {{ c.primary }}; letter-spacing: 0.04em">IA</div>
+          <div style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-size: 14px; color: #F2EDE6; font-weight: 500">Isaiah A.</span>
+            <span style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: {{ c.primary }}">Architect · IV</span>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-around; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.05)">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 5px">
+            <span style="font-size: 18px; color: {{ c.primary }}">⌂</span>
+            <span style="font-size: 11px; color: {{ c.primary }}">Home</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 5px">
+            <span style="font-size: 18px; color: #5C5852">▤</span>
+            <span style="font-size: 11px; color: #5C5852">Workouts</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 5px">
+            <span style="font-size: 18px; color: #5C5852">◫</span>
+            <span style="font-size: 11px; color: #5C5852">Legacy</span>
+          </div>
+        </div>
+
+      </div>
+      </sc-if>
+    </div>
+  </sc-for>
+
+  <div style="padding: 26px 20px 34px">
+    <div style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #8C8580; margin-bottom: 12px">Handoff</div>
+    <div style="font-size: 14px; color: #A9A29B; line-height: 1.55; margin-bottom: 16px">Pick a letter and tell Claude Code: replace the bronze ramp in <span style="color: #F2EDE6">tokens/foundation.css</span> and <span style="color: #F2EDE6">src/constants/tokens.ts</span> with that candidate's four hexes, and retune every bronze rgba to its base triplet.</div>
+    <sc-for list="{{ candidates }}" as="c" hint-placeholder-count="3">
+      <div style="display: flex; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid rgba(255,255,255,0.05); font-size: 12px; font-variant-numeric: tabular-nums">
+        <span style="width: 16px; color: #5C5852; font-weight: 700">{{ c.key }}</span>
+        <span style="width: 12px; height: 12px; border-radius: 2px; background: {{ c.primary }}; flex: none"></span>
+        <span style="flex: 1; color: #A9A29B">{{ c.hexLine }}</span>
+      </div>
+    </sc-for>
+    <div style="margin-top: 18px; padding: 14px 14px 16px; border-radius: 10px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05)">
+      <div style="font-size: 12px; color: #8C8580; line-height: 1.6">rgba triplet per candidate — used by <span style="color: #C6C0B9">--fl-bronze-border</span>, <span style="color: #C6C0B9">--fl-bronze-glow-ring</span>, <span style="color: #C6C0B9">--fl-bronze-warm</span>, and the card hero wash. Keep the alphas as-is; only the triplet moves.</div>
+      <sc-for list="{{ candidates }}" as="c" hint-placeholder-count="3">
+        <div style="display: flex; gap: 10px; margin-top: 9px; font-size: 12px; font-variant-numeric: tabular-nums">
+          <span style="width: 16px; color: #5C5852; font-weight: 700">{{ c.key }}</span>
+          <span style="color: #A9A29B">rgb({{ c.rgb }})</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:900},&quot;showPreviews&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Sheet&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const defs = [
+      { key: 'A', name: 'Current', tag: 'Shipping', tagColor: '#8C8580',
+        note: 'Hue 34°. Sits at the red end of bronze — that is the orange you are seeing on OLED.',
+        primary: '#BF8F4F', bright: '#CDA063', mid: '#7A6040', deep: '#574029', rgb: '186, 146, 92' },
+      { key: 'B', name: 'Polished Bronze', tag: '+4° hue', tagColor: '#8C8580',
+        note: 'Rotated off red and lifted a step brighter. Same chroma, more light — shine held, orange gone.',
+        primary: '#C39A5E', bright: '#DCB87C', mid: '#7C6543', deep: '#55402B', rgb: '190, 155, 102' },
+      { key: 'C', name: 'Burnished Bronze', tag: 'Recommended', tagColor: '#BE985F',
+        note: 'Hue 40° with a much brighter specular. Shine comes from the gap between deep body and hot highlight, not from saturation.',
+        primary: '#BE985F', bright: '#E0C089', mid: '#77613F', deep: '#503C27', rgb: '186, 152, 100' },
+      { key: 'D', name: 'Lit Brass', tag: 'Hue 44°', tagColor: '#8C8580',
+        note: 'Furthest toward gold while staying luminous. Brightest highlight of the set — reads polished, almost new-cast.',
+        primary: '#C1A165', bright: '#E4CB94', mid: '#786445', deep: '#4E3D29', rgb: '190, 162, 108' },
+      { key: 'E', name: 'Old Gold', tag: 'Highest chroma', tagColor: '#8C8580',
+        note: 'More saturated than current but yellower. Loudest shine; risks trophy-gold rather than forged bronze. The far bound.',
+        primary: '#C79E55', bright: '#E5C57C', mid: '#7E6740', deep: '#55412A', rgb: '194, 158, 94' }
+    ];
+    const fills = {
+      A: ['#8A6A3E', '#573F24', '#3D2F1A', '#2E2314', '#342817', '#42321C', '#382A18'],
+      B: ['#AB8850', '#5E4728', '#41321C', '#312515', '#3A2C19', '#4B3921', '#3F2F1C'],
+      C: ['#B08A52', '#63492A', '#43341D', '#322616', '#3C2D1A', '#4F3B22', '#42311D'],
+      D: ['#B29059', '#644C2E', '#443620', '#332818', '#3D2F1C', '#503D25', '#43331F'],
+      E: ['#B8934E', '#684C27', '#47361B', '#352814', '#3F2F18', '#543D20', '#46331B']
+    };
+    const candidates = defs.map(d => {
+      const s = fills[d.key];
+      return Object.assign({}, d, {
+        hexLine: d.primary + ' · ' + d.bright + ' · ' + d.mid + ' · ' + d.deep,
+        border: 'rgba(' + d.rgb + ', 0.40)',
+        metalBorder: 'rgba(' + d.rgb + ', 0.55)',
+        topRim: 'rgba(' + d.rgb + ', 0.66)',
+        glowSoft: 'rgba(' + d.rgb + ', 0.22)',
+        sheen: 'linear-gradient(103deg, rgba(255,255,255,0) 26%, rgba(' + d.rgb + ', 0.20) 44%, rgba(255,248,232,0.16) 50%, rgba(' + d.rgb + ', 0.16) 56%, rgba(255,255,255,0) 74%)',
+        metallic: 'linear-gradient(115deg, ' + d.deep + ' 0%, ' + d.mid + ' 16%, ' + d.primary + ' 38%, ' + d.bright + ' 50%, ' + d.primary + ' 62%, ' + d.mid + ' 84%, ' + d.deep + ' 100%)',
+        progress: 'linear-gradient(90deg, ' + d.mid + ' 0%, ' + d.primary + ' 62%, ' + d.bright + ' 100%)',
+        fill: 'linear-gradient(180deg, ' + s[0] + ' 0%, ' + s[1] + ' 6%, ' + s[2] + ' 26%, ' + s[3] + ' 50%, ' + s[4] + ' 72%, ' + s[5] + ' 92%, ' + s[6] + ' 100%)'
+      });
+    });
+    return { candidates, showPreviews: this.props.showPreviews ?? true };
+  }
+}
+</script>
+</body>
+</html>

@@ -117,6 +117,36 @@ test('⚠ nothing finishes overhead when the athlete said nothing overhead', () 
   for (const k of LIMITATION_EXCLUDE_KEYS.no_overhead) assert.ok(!got.includes(k), `${k} goes overhead`);
 });
 
+/*
+ * Stress test, 2026-09-21. Each case carries its CONTROL: the same request with no limitation must still
+ * produce the movement, or the assertion below it passes because nothing was ever at risk.
+ */
+test('⚠ "No jumping" and "Knees" take the rope off a cardio day', () => {
+  const focus = { kind: 'body_parts', parts: [], cardio: true };
+  const over = { focus, ownedEquipment: ['jumprope'] };
+  assert.ok(day(over).includes('jump-rope'), 'control: the rope should be on this day with no limitation');
+  for (const lim of ['no_jumping', 'knees']) {
+    const got = day({ ...over, limitations: [lim] });
+    for (const k of LIMITATION_EXCLUDE_KEYS[lim]) assert.ok(!got.includes(k), `${k} survived ${lim}`);
+  }
+});
+
+test('⚠ arms-overhead work leaves for both "Nothing overhead" and "Shoulders"', () => {
+  const over = { focus: { kind: 'body_parts', parts: ['triceps'] }, environment: 'home', ownedEquipment: ['bands'] };
+  assert.ok(day(over).includes('band-overhead-triceps-extension'), 'control: the extension should be picked with no limitation');
+  for (const lim of ['no_overhead', 'shoulders']) {
+    const got = day({ ...over, limitations: [lim] });
+    assert.ok(!got.includes('band-overhead-triceps-extension'), `overhead extension survived ${lim}`);
+  }
+});
+
+test('⚠ "No barbell" takes the EZ-bar too — both unlock groups', () => {
+  const over = { focus: { kind: 'body_parts', parts: ['biceps'] } };
+  const ez = (keys) => keys.filter((k) => k.startsWith('ez-bar-'));
+  assert.ok(ez(day(over)).length > 0, 'control: an EZ-bar curl should appear at a full gym with no limitation');
+  assert.deepEqual(ez(day({ ...over, limitations: ['no_barbell'] })), []);
+});
+
 test('⭐ a bad back gets its glute bridge back, and still no deadlift', () => {
   const res = assemble(
     {

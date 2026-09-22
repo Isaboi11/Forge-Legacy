@@ -1,0 +1,1158 @@
+{"id":"A0001","qid":"size","text":"4 weeks","style":"typed_clean","expect":{"weeks":4}}
+{"id":"A0002","qid":"size","text":"8","style":"typed_clean","expect":{"weeks":8}}
+{"id":"A0003","qid":"size","text":"12 weeks please","style":"typed_clean","expect":{"weeks":12}}
+{"id":"A0004","qid":"size","text":"one week","style":"typed_clean","expect":{"weeks":1}}
+{"id":"A0005","qid":"size","text":"just one week to try it out","style":"chatty","expect":{"weeks":1}}
+{"id":"A0006","qid":"size","text":"a month","style":"voice","expect":{"weeks":4},"note":"month ~ 4 weeks"}
+{"id":"A0007","qid":"size","text":"about a month","style":"voice","expect":{"weeks":4}}
+{"id":"A0008","qid":"size","text":"couple months","style":"voice","expect":{"ambiguous":true,"best":{"weeks":8}},"note":"couple months ~ 8-9 weeks"}
+{"id":"A0009","qid":"size","text":"two months","style":"voice","expect":{"weeks":8}}
+{"id":"A0010","qid":"size","text":"three months","style":"voice","expect":{"weeks":12}}
+{"id":"A0011","qid":"size","text":"a quarter","style":"slang","expect":{"weeks":12}}
+{"id":"A0012","qid":"size","text":"twelve","style":"voice","expect":{"weeks":12}}
+{"id":"A0013","qid":"size","text":"ate weeks","style":"voice","expect":{"weeks":8},"note":"homophone ate=eight"}
+{"id":"A0014","qid":"size","text":"for weeks","style":"voice","expect":{"weeks":4},"note":"homophone for=four"}
+{"id":"A0015","qid":"size","text":"fore weeks","style":"voice","expect":{"weeks":4},"note":"homophone fore=four"}
+{"id":"A0016","qid":"size","text":"8wks","style":"typed_sloppy","expect":{"weeks":8}}
+{"id":"A0017","qid":"size","text":"12 wk","style":"typed_sloppy","expect":{"weeks":12}}
+{"id":"A0018","qid":"size","text":"4wk","style":"typed_sloppy","expect":{"weeks":4}}
+{"id":"A0019","qid":"size","text":"eigth weeks","style":"typed_sloppy","expect":{"weeks":8}}
+{"id":"A0020","qid":"size","text":"twelv","style":"typed_sloppy","expect":{"weeks":12}}
+{"id":"A0021","qid":"size","text":"6 weeks","style":"out_of_range","expect":{"weeks":6},"note":"not offered; nearest options 4/8"}
+{"id":"A0022","qid":"size","text":"16 weeks","style":"out_of_range","expect":{"weeks":16},"note":"not offered"}
+{"id":"A0023","qid":"size","text":"10 weeks","style":"out_of_range","expect":{"weeks":10},"note":"not offered"}
+{"id":"A0024","qid":"size","text":"a year","style":"out_of_range","expect":{"ambiguous":true,"best":{"weeks":12}},"note":"far beyond offered; confirm"}
+{"id":"A0025","qid":"size","text":"my wedding is dec 14, so until then","style":"relative_dates","expect":{"weeks":12},"note":"date-derived: Sep 21 -> Dec 14 = 12 weeks"}
+{"id":"A0026","qid":"size","text":"idk whatever you think","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0027","qid":"size","text":"what do most people do?","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0028","qid":"size","text":"how long do you recommend","style":"typed_sloppy","expect":{"defer":true}}
+{"id":"A0029","qid":"size","text":"4 or 8 not sure","style":"range","expect":{"ambiguous":true,"best":{"weeks":4}}}
+{"id":"A0030","qid":"size","text":"8-12","style":"range","expect":{"ambiguous":true,"best":{"weeks":8}}}
+{"id":"A0031","qid":"size","text":"the long one","style":"slang","expect":{"weeks":12}}
+{"id":"A0032","qid":"size","text":"the shortest one","style":"typed_clean","expect":{"weeks":1}}
+{"id":"A0033","qid":"size","text":"something short","style":"chatty","expect":{"ambiguous":true,"best":{"weeks":4}},"note":"1 or 4"}
+{"id":"A0034","qid":"size","text":"go big, 12","style":"slang","expect":{"weeks":12}}
+{"id":"A0035","qid":"size","text":"4️⃣ weeks","style":"emoji","expect":{"weeks":4}}
+{"id":"A0036","qid":"size","text":"8️⃣","style":"emoji","expect":{"weeks":8}}
+{"id":"A0037","qid":"size","text":"💯 12 weeks","style":"emoji","expect":{"weeks":12}}
+{"id":"A0038","qid":"size","text":"cuatro semanas","style":"non_english","expect":{"weeks":4}}
+{"id":"A0039","qid":"size","text":"ocho semanas","style":"non_english","expect":{"weeks":8}}
+{"id":"A0040","qid":"size","text":"four no wait eight","style":"voice","expect":{"weeks":8},"note":"self-correction: last value wins"}
+{"id":"A0041","qid":"size","text":"uh twelve i guess","style":"voice","expect":{"weeks":12}}
+{"id":"A0042","qid":"size","text":"lets do 8 weeks, i'll reassess after","style":"chatty","expect":{"weeks":8}}
+{"id":"A0043","qid":"size","text":"honestly I bail on stuff after a month so 4","style":"chatty","expect":{"weeks":4}}
+{"id":"A0044","qid":"size","text":"not more than 8","style":"negation","expect":{"ambiguous":true,"best":{"weeks":8}},"note":"ceiling, 4 or 8"}
+{"id":"A0045","qid":"size","text":"nothing longer than a month","style":"negation","expect":{"ambiguous":true,"best":{"weeks":4}}}
+{"id":"A0046","qid":"size","text":"not 12, thats too long. 8","style":"negation","expect":{"weeks":8}}
+{"id":"A0047","qid":"size","text":"one","style":"voice","expect":{"weeks":1}}
+{"id":"A0048","qid":"size","text":"1 wk","style":"typed_sloppy","expect":{"weeks":1}}
+{"id":"A0049","qid":"size","text":"a week","style":"voice","expect":{"weeks":1}}
+{"id":"A0050","qid":"size","text":"just this week","style":"chatty","expect":{"weeks":1}}
+{"id":"A0051","qid":"size","text":"8 weeks, 4 days a week","style":"typed_clean","expect":{"weeks":8,"daysPerWeek":4},"multi":true}
+{"id":"A0052","qid":"size","text":"12 weeks, I'm training for a meet","style":"chatty","expect":{"weeks":12,"goal":"strength"},"multi":true}
+{"id":"A0053","qid":"size","text":"a month, I'm working out at home","style":"chatty","expect":{"weeks":4,"environment":"home"},"multi":true}
+{"id":"A0054","qid":"size","text":"three months, before the holidays","style":"chatty","expect":{"weeks":12}}
+{"id":"A0055","qid":"size","text":"6 weeks until vacation","style":"out_of_range","expect":{"weeks":6},"note":"not offered"}
+{"id":"A0056","qid":"size","text":"2 weeks","style":"out_of_range","expect":{"weeks":2},"note":"not offered"}
+{"id":"A0057","qid":"size","text":"twelve weeks yeah","style":"voice","expect":{"weeks":12}}
+{"id":"A0058","qid":"size","text":"eight","style":"voice","expect":{"weeks":8}}
+{"id":"A0059","qid":"size","text":"8 week block","style":"typed_clean","expect":{"weeks":8}}
+{"id":"A0060","qid":"size","text":"12. go.","style":"slang","expect":{"weeks":12}}
+{"id":"A0061","qid":"size","text":"ongoing","style":"typed_clean","expect":{"ambiguous":true},"note":"no end date"}
+{"id":"A0062","qid":"size","text":"forever lol","style":"slang","expect":{"ambiguous":true,"best":{"weeks":12}}}
+{"id":"A0063","qid":"size","text":"90 days","style":"typed_clean","expect":{"weeks":12},"note":"90d ~ 13 wk -> nearest offered 12"}
+{"id":"A0064","qid":"size","text":"30 days","style":"typed_clean","expect":{"weeks":4}}
+{"id":"A0065","qid":"size","text":"the 4 week one","style":"typed_clean","expect":{"weeks":4}}
+{"id":"A0066","qid":"goal","text":"get stronger","style":"typed_clean","expect":{"goal":"strength"}}
+{"id":"A0067","qid":"goal","text":"strength","style":"typed_clean","expect":{"goal":"strength"}}
+{"id":"A0068","qid":"goal","text":"build muscle","style":"typed_clean","expect":{"goal":"muscle"}}
+{"id":"A0069","qid":"goal","text":"lose weight","style":"typed_clean","expect":{"goal":"weight_loss"}}
+{"id":"A0070","qid":"goal","text":"mobility","style":"typed_clean","expect":{"goal":"mobility"}}
+{"id":"A0071","qid":"goal","text":"general health","style":"typed_clean","expect":{"goal":"health"}}
+{"id":"A0072","qid":"goal","text":"I want to get bigger","style":"chatty","expect":{"goal":"muscle"}}
+{"id":"A0073","qid":"goal","text":"size","style":"slang","expect":{"goal":"muscle"}}
+{"id":"A0074","qid":"goal","text":"gains","style":"slang","expect":{"goal":"muscle"}}
+{"id":"A0075","qid":"goal","text":"hypertrophy","style":"typed_clean","expect":{"goal":"muscle"}}
+{"id":"A0076","qid":"goal","text":"get jacked","style":"slang","expect":{"goal":"muscle"}}
+{"id":"A0077","qid":"goal","text":"get swole 💪","style":"emoji","expect":{"goal":"muscle"}}
+{"id":"A0078","qid":"goal","text":"bulk","style":"slang","expect":{"goal":"muscle"}}
+{"id":"A0079","qid":"goal","text":"cut","style":"slang","expect":{"goal":"weight_loss"}}
+{"id":"A0080","qid":"goal","text":"shred for summer","style":"slang","expect":{"goal":"weight_loss"}}
+{"id":"A0081","qid":"goal","text":"drop 20 lbs","style":"chatty","expect":{"goal":"weight_loss"}}
+{"id":"A0082","qid":"goal","text":"lose the dad bod","style":"slang","expect":{"goal":"weight_loss"}}
+{"id":"A0083","qid":"goal","text":"tone up","style":"slang","expect":{"ambiguous":true,"best":{"goal":"weight_loss"}},"note":"tone = muscle vs fat loss"}
+{"id":"A0084","qid":"goal","text":"get toned","style":"typed_clean","expect":{"ambiguous":true,"best":{"goal":"muscle"}}}
+{"id":"A0085","qid":"goal","text":"lean out","style":"slang","expect":{"goal":"weight_loss"}}
+{"id":"A0086","qid":"goal","text":"fat loss","style":"typed_clean","expect":{"goal":"weight_loss"}}
+{"id":"A0087","qid":"goal","text":"loose wieght","style":"typed_sloppy","expect":{"goal":"weight_loss"}}
+{"id":"A0088","qid":"goal","text":"stregnth","style":"typed_sloppy","expect":{"goal":"strength"}}
+{"id":"A0089","qid":"goal","text":"strenght","style":"typed_sloppy","expect":{"goal":"strength"}}
+{"id":"A0090","qid":"goal","text":"buld mucsle","style":"typed_sloppy","expect":{"goal":"muscle"}}
+{"id":"A0091","qid":"goal","text":"moblity","style":"typed_sloppy","expect":{"goal":"mobility"}}
+{"id":"A0092","qid":"goal","text":"helth","style":"typed_sloppy","expect":{"goal":"health"}}
+{"id":"A0093","qid":"goal","text":"bigger lifts","style":"slang","expect":{"goal":"strength"}}
+{"id":"A0094","qid":"goal","text":"increase my squat","style":"typed_clean","expect":{"goal":"strength"}}
+{"id":"A0095","qid":"goal","text":"powerlifting meet in the spring","style":"chatty","expect":{"goal":"strength"}}
+{"id":"A0096","qid":"goal","text":"I want to deadlift 500","style":"chatty","expect":{"goal":"strength"}}
+{"id":"A0097","qid":"goal","text":"be able to do a pull up","style":"chatty","expect":{"goal":"strength"},"note":"skill goal, closest is strength"}
+{"id":"A0098","qid":"goal","text":"move better","style":"typed_clean","expect":{"goal":"mobility"}}
+{"id":"A0099","qid":"goal","text":"flexibility","style":"typed_clean","expect":{"goal":"mobility"}}
+{"id":"A0100","qid":"goal","text":"touch my toes again","style":"chatty","expect":{"goal":"mobility"}}
+{"id":"A0101","qid":"goal","text":"stop feeling so stiff all the time","style":"chatty","expect":{"goal":"mobility"}}
+{"id":"A0102","qid":"goal","text":"my hips are tight from sitting all day","style":"chatty","expect":{"goal":"mobility"}}
+{"id":"A0103","qid":"goal","text":"yoga-ish stuff","style":"slang","expect":{"goal":"mobility"}}
+{"id":"A0104","qid":"goal","text":"just be healthy","style":"typed_clean","expect":{"goal":"health"}}
+{"id":"A0105","qid":"goal","text":"stay healthy","style":"typed_clean","expect":{"goal":"health"}}
+{"id":"A0106","qid":"goal","text":"longevity","style":"typed_clean","expect":{"goal":"health"}}
+{"id":"A0107","qid":"goal","text":"keep up with my grandkids","style":"chatty","expect":{"goal":"health"}}
+{"id":"A0108","qid":"goal","text":"my doctor said I need to exercise","style":"chatty","expect":{"goal":"health"}}
+{"id":"A0109","qid":"goal","text":"feel better","style":"typed_clean","expect":{"goal":"health"}}
+{"id":"A0110","qid":"goal","text":"general fitness","style":"typed_clean","expect":{"goal":"health"}}
+{"id":"A0111","qid":"goal","text":"a bit of everything","style":"chatty","expect":{"ambiguous":true,"best":{"goal":"health"}}}
+{"id":"A0112","qid":"goal","text":"all of the above","style":"typed_clean","expect":{"ambiguous":true,"best":{"goal":"health"}}}
+{"id":"A0113","qid":"goal","text":"look good naked","style":"slang","expect":{"ambiguous":true,"best":{"goal":"weight_loss"}},"note":"muscle vs weight_loss"}
+{"id":"A0114","qid":"goal","text":"run a race","style":"typed_clean","expect":{"ambiguous":true},"note":"race without distance -> ask race_distance"}
+{"id":"A0115","qid":"goal","text":"running","style":"typed_clean","expect":{"ambiguous":true},"note":"race or just running?"}
+{"id":"A0116","qid":"goal","text":"5k","style":"typed_clean","expect":{"goal":"run_5k"}}
+{"id":"A0117","qid":"goal","text":"a 5k","style":"typed_clean","expect":{"goal":"run_5k"}}
+{"id":"A0118","qid":"goal","text":"my first 5K","style":"chatty","expect":{"goal":"run_5k"}}
+{"id":"A0119","qid":"goal","text":"couch to 5k","style":"slang","expect":{"goal":"run_5k"}}
+{"id":"A0120","qid":"goal","text":"10k","style":"typed_clean","expect":{"goal":"run_10k"}}
+{"id":"A0121","qid":"goal","text":"10K race","style":"typed_clean","expect":{"goal":"run_10k"}}
+{"id":"A0122","qid":"goal","text":"doing a half in the spring","style":"chatty","expect":{"goal":"run_half"}}
+{"id":"A0123","qid":"goal","text":"13.1","style":"slang","expect":{"goal":"run_half"}}
+{"id":"A0124","qid":"goal","text":"marathon","style":"typed_clean","expect":{"goal":"run_marathon"}}
+{"id":"A0125","qid":"goal","text":"26.2 baby","style":"slang","expect":{"goal":"run_marathon"}}
+{"id":"A0126","qid":"goal","text":"the chicago marathon","style":"typed_clean","expect":{"goal":"run_marathon"}}
+{"id":"A0127","qid":"goal","text":"boston qualifier","style":"slang","expect":{"goal":"run_marathon"}}
+{"id":"A0128","qid":"goal","text":"triathlon","style":"typed_clean","expect":{"goal":"triathlon"}}
+{"id":"A0129","qid":"goal","text":"sprint tri","style":"slang","expect":{"goal":"triathlon"}}
+{"id":"A0130","qid":"goal","text":"ironman","style":"typed_clean","expect":{"goal":"triathlon"}}
+{"id":"A0131","qid":"goal","text":"tri","style":"slang","expect":{"goal":"triathlon"}}
+{"id":"A0132","qid":"goal","text":"half ironman 70.3","style":"typed_clean","expect":{"goal":"triathlon"}}
+{"id":"A0133","qid":"goal","text":"a race","style":"typed_clean","expect":{"ambiguous":true},"note":"distance unknown"}
+{"id":"A0134","qid":"goal","text":"run","style":"voice","expect":{"ambiguous":true}}
+{"id":"A0135","qid":"goal","text":"cardio","style":"typed_clean","expect":{"ambiguous":true,"best":{"goal":"health"}},"note":"not_in_list"}
+{"id":"A0136","qid":"goal","text":"endurance","style":"typed_clean","expect":{"ambiguous":true}}
+{"id":"A0137","qid":"goal","text":"football season","style":"chatty","expect":{"ambiguous":true,"best":{"goal":"strength"}},"note":"sport prep not_in_list"}
+{"id":"A0138","qid":"goal","text":"get ready for basketball tryouts","style":"chatty","expect":{"ambiguous":true},"note":"sport prep not_in_list"}
+{"id":"A0139","qid":"goal","text":"hiking trip in the rockies next summer","style":"chatty","expect":{"ambiguous":true,"best":{"goal":"health"}}}
+{"id":"A0140","qid":"goal","text":"muscle","style":"voice","expect":{"goal":"muscle"}}
+{"id":"A0141","qid":"goal","text":"strong","style":"voice","expect":{"goal":"strength"}}
+{"id":"A0142","qid":"goal","text":"build mussel","style":"voice","expect":{"goal":"muscle"},"note":"homophone"}
+{"id":"A0143","qid":"goal","text":"lose wait","style":"voice","expect":{"goal":"weight_loss"},"note":"homophone"}
+{"id":"A0144","qid":"goal","text":"get stronger and lose some weight","style":"chatty","expect":{"ambiguous":true,"best":{"goal":"strength"}},"note":"two goals"}
+{"id":"A0145","qid":"goal","text":"mostly muscle but also lose the gut","style":"chatty","expect":{"ambiguous":true,"best":{"goal":"muscle"}}}
+{"id":"A0146","qid":"goal","text":"not really about size, I just want to be strong","style":"negation","expect":{"goal":"strength"}}
+{"id":"A0147","qid":"goal","text":"not trying to get big, just lose weight","style":"negation","expect":{"goal":"weight_loss"}}
+{"id":"A0148","qid":"goal","text":"not a runner, just want to lift heavy","style":"negation","expect":{"goal":"strength"}}
+{"id":"A0149","qid":"goal","text":"idk","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0150","qid":"goal","text":"what do you think I should do","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0151","qid":"goal","text":"you tell me","style":"slang","expect":{"defer":true}}
+{"id":"A0152","qid":"goal","text":"whatever's best for a beginner","style":"chatty","expect":{"defer":true}}
+{"id":"A0153","qid":"goal","text":"ganar músculo","style":"non_english","expect":{"goal":"muscle"}}
+{"id":"A0154","qid":"goal","text":"bajar de peso","style":"non_english","expect":{"goal":"weight_loss"}}
+{"id":"A0155","qid":"goal","text":"ser más fuerte","style":"non_english","expect":{"goal":"strength"}}
+{"id":"A0156","qid":"goal","text":"🏃‍♂️ marathon","style":"emoji","expect":{"goal":"run_marathon"}}
+{"id":"A0157","qid":"goal","text":"💪💪💪","style":"emoji","expect":{"ambiguous":true,"best":{"goal":"muscle"}}}
+{"id":"A0158","qid":"goal","text":"🔥 burn fat","style":"emoji","expect":{"goal":"weight_loss"}}
+{"id":"A0159","qid":"goal","text":"honestly just want my jeans to fit again","style":"chatty","expect":{"goal":"weight_loss"}}
+{"id":"A0160","qid":"goal","text":"I had a baby 6 months ago and want my strength back","style":"chatty","expect":{"goal":"strength"}}
+{"id":"A0161","qid":"goal","text":"rehab after my knee surgery","style":"chatty","expect":{"ambiguous":true,"best":{"goal":"mobility","limitations":["knees"]}},"multi":true}
+{"id":"A0162","qid":"goal","text":"strength, 4 days a week","style":"typed_clean","expect":{"goal":"strength","daysPerWeek":4},"multi":true}
+{"id":"A0163","qid":"goal","text":"build muscle at home","style":"typed_clean","expect":{"goal":"muscle","environment":"home"},"multi":true}
+{"id":"A0164","qid":"goal","text":"lose weight but I have a bad knee","style":"chatty","expect":{"goal":"weight_loss","limitations":["knees"]},"multi":true}
+{"id":"A0165","qid":"goal","text":"marathon in 16 weeks","style":"typed_clean","expect":{"goal":"run_marathon","raceInWeeks":16},"multi":true}
+{"id":"A0166","qid":"goal","text":"gettin stronger","style":"typed_sloppy","expect":{"goal":"strength"}}
+{"id":"A0167","qid":"goal","text":"musle","style":"typed_sloppy","expect":{"goal":"muscle"}}
+{"id":"A0168","qid":"goal","text":"weightloss","style":"typed_sloppy","expect":{"goal":"weight_loss"}}
+{"id":"A0169","qid":"goal","text":"wt loss","style":"typed_sloppy","expect":{"goal":"weight_loss"}}
+{"id":"A0170","qid":"goal","text":"recomp","style":"slang","expect":{"ambiguous":true,"best":{"goal":"muscle"}},"note":"body recomposition"}
+{"id":"A0171","qid":"goal","text":"powerbuilding","style":"slang","expect":{"ambiguous":true,"best":{"goal":"strength"}}}
+{"id":"A0172","qid":"goal","text":"stronger","style":"typed_clean","expect":{"goal":"strength"}}
+{"id":"A0173","qid":"goal","text":"perder peso","style":"non_english","expect":{"goal":"weight_loss"}}
+{"id":"A0174","qid":"race_distance","text":"5k","style":"typed_clean","expect":{"goal":"run_5k"}}
+{"id":"A0175","qid":"race_distance","text":"10k","style":"typed_clean","expect":{"goal":"run_10k"}}
+{"id":"A0176","qid":"race_distance","text":"half","style":"typed_clean","expect":{"goal":"run_half"}}
+{"id":"A0177","qid":"race_distance","text":"full","style":"typed_clean","expect":{"goal":"run_marathon"}}
+{"id":"A0178","qid":"race_distance","text":"marathon","style":"typed_clean","expect":{"goal":"run_marathon"}}
+{"id":"A0179","qid":"race_distance","text":"half marathon","style":"typed_clean","expect":{"goal":"run_half"}}
+{"id":"A0180","qid":"race_distance","text":"triathlon","style":"typed_clean","expect":{"goal":"triathlon"}}
+{"id":"A0181","qid":"race_distance","text":"tri","style":"slang","expect":{"goal":"triathlon"}}
+{"id":"A0182","qid":"race_distance","text":"the half","style":"typed_clean","expect":{"goal":"run_half"}}
+{"id":"A0183","qid":"race_distance","text":"13.1","style":"typed_clean","expect":{"goal":"run_half"}}
+{"id":"A0184","qid":"race_distance","text":"26.2","style":"typed_clean","expect":{"goal":"run_marathon"}}
+{"id":"A0185","qid":"race_distance","text":"3.1 miles","style":"typed_clean","expect":{"goal":"run_5k"}}
+{"id":"A0186","qid":"race_distance","text":"6.2","style":"typed_clean","expect":{"goal":"run_10k"}}
+{"id":"A0187","qid":"race_distance","text":"3 miles","style":"typed_clean","expect":{"goal":"run_5k"},"note":"approx 5k"}
+{"id":"A0188","qid":"race_distance","text":"6 miles","style":"typed_clean","expect":{"goal":"run_10k"},"note":"approx 10k"}
+{"id":"A0189","qid":"race_distance","text":"the full one","style":"slang","expect":{"goal":"run_marathon"}}
+{"id":"A0190","qid":"race_distance","text":"full marathon","style":"typed_clean","expect":{"goal":"run_marathon"}}
+{"id":"A0191","qid":"race_distance","text":"sprint triathlon","style":"typed_clean","expect":{"goal":"triathlon"}}
+{"id":"A0192","qid":"race_distance","text":"olympic tri","style":"typed_clean","expect":{"goal":"triathlon"}}
+{"id":"A0193","qid":"race_distance","text":"70.3","style":"slang","expect":{"goal":"triathlon"}}
+{"id":"A0194","qid":"race_distance","text":"five k","style":"voice","expect":{"goal":"run_5k"}}
+{"id":"A0195","qid":"race_distance","text":"ten k","style":"voice","expect":{"goal":"run_10k"}}
+{"id":"A0196","qid":"race_distance","text":"five kay","style":"voice","expect":{"goal":"run_5k"}}
+{"id":"A0197","qid":"race_distance","text":"tin k","style":"voice","expect":{"goal":"run_10k"},"note":"homophone"}
+{"id":"A0198","qid":"race_distance","text":"have marathon","style":"voice","expect":{"goal":"run_half"},"note":"STT for half marathon"}
+{"id":"A0199","qid":"race_distance","text":"the marathon","style":"voice","expect":{"goal":"run_marathon"}}
+{"id":"A0200","qid":"race_distance","text":"a fivek","style":"typed_sloppy","expect":{"goal":"run_5k"}}
+{"id":"A0201","qid":"race_distance","text":"halff","style":"typed_sloppy","expect":{"goal":"run_half"}}
+{"id":"A0202","qid":"race_distance","text":"maraton","style":"typed_sloppy","expect":{"goal":"run_marathon"}}
+{"id":"A0203","qid":"race_distance","text":"marthon","style":"typed_sloppy","expect":{"goal":"run_marathon"}}
+{"id":"A0204","qid":"race_distance","text":"triathalon","style":"typed_sloppy","expect":{"goal":"triathlon"}}
+{"id":"A0205","qid":"race_distance","text":"just a 5k, nothing crazy","style":"chatty","expect":{"goal":"run_5k"}}
+{"id":"A0206","qid":"race_distance","text":"working up to a half eventually but the first one is a 10k","style":"chatty","expect":{"goal":"run_10k"},"note":"nearest race wins"}
+{"id":"A0207","qid":"race_distance","text":"the Chicago marathon","style":"typed_clean","expect":{"goal":"run_marathon"}}
+{"id":"A0208","qid":"race_distance","text":"turkey trot","style":"slang","expect":{"ambiguous":true,"best":{"goal":"run_5k"}},"note":"usually 5k, sometimes 10k"}
+{"id":"A0209","qid":"race_distance","text":"a color run","style":"chatty","expect":{"ambiguous":true,"best":{"goal":"run_5k"}}}
+{"id":"A0210","qid":"race_distance","text":"Spartan race","style":"typed_clean","expect":{"ambiguous":true},"note":"not_in_list"}
+{"id":"A0211","qid":"race_distance","text":"an ultra","style":"out_of_range","expect":{"ambiguous":true,"best":{"goal":"run_marathon"}},"note":"not_in_list"}
+{"id":"A0212","qid":"race_distance","text":"50k","style":"out_of_range","expect":{"ambiguous":true,"best":{"goal":"run_marathon"}},"note":"not_in_list"}
+{"id":"A0213","qid":"race_distance","text":"15k","style":"out_of_range","expect":{"ambiguous":true,"best":{"goal":"run_10k"}},"note":"not_in_list"}
+{"id":"A0214","qid":"race_distance","text":"10 miler","style":"out_of_range","expect":{"ambiguous":true,"best":{"goal":"run_half"}},"note":"not_in_list"}
+{"id":"A0215","qid":"race_distance","text":"8k","style":"out_of_range","expect":{"ambiguous":true,"best":{"goal":"run_10k"}},"note":"not_in_list"}
+{"id":"A0216","qid":"race_distance","text":"half or full, haven't decided","style":"range","expect":{"ambiguous":true,"best":{"goal":"run_half"}}}
+{"id":"A0217","qid":"race_distance","text":"5 or 10k","style":"range","expect":{"ambiguous":true,"best":{"goal":"run_5k"}}}
+{"id":"A0218","qid":"race_distance","text":"which do you recommend for a first race?","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0219","qid":"race_distance","text":"idk what's good for a beginner","style":"typed_sloppy","expect":{"defer":true}}
+{"id":"A0220","qid":"race_distance","text":"medio maratón","style":"non_english","expect":{"goal":"run_half"}}
+{"id":"A0221","qid":"race_distance","text":"maratón","style":"non_english","expect":{"goal":"run_marathon"}}
+{"id":"A0222","qid":"race_distance","text":"5️⃣K","style":"emoji","expect":{"goal":"run_5k"}}
+{"id":"A0223","qid":"race_distance","text":"🏅 26.2","style":"emoji","expect":{"goal":"run_marathon"}}
+{"id":"A0224","qid":"race_distance","text":"the half, it's on Nov 15","style":"chatty","expect":{"goal":"run_half","raceDate":"2026-11-15"},"multi":true}
+{"id":"A0225","qid":"race_distance","text":"marathon, 12 weeks out","style":"typed_clean","expect":{"goal":"run_marathon","raceInWeeks":12},"multi":true}
+{"id":"A0226","qid":"race_distance","text":"not a full, just the half","style":"negation","expect":{"goal":"run_half"}}
+{"id":"A0227","qid":"race_distance","text":"nothing longer than a 10k","style":"negation","expect":{"ambiguous":true,"best":{"goal":"run_10k"}}}
+{"id":"A0228","qid":"race_distance","text":"not the marathon lol, 5k","style":"negation","expect":{"goal":"run_5k"}}
+{"id":"A0229","qid":"race_distance","text":"half. no wait, full","style":"voice","expect":{"goal":"run_marathon"},"note":"self-correction"}
+{"id":"A0230","qid":"race_distance","text":"uh the ten k","style":"voice","expect":{"goal":"run_10k"}}
+{"id":"A0231","qid":"race_distance","text":"the long one","style":"slang","expect":{"ambiguous":true,"best":{"goal":"run_marathon"}}}
+{"id":"A0232","qid":"race_distance","text":"swim bike run","style":"slang","expect":{"goal":"triathlon"}}
+{"id":"A0233","qid":"race_distance","text":"a sprint","style":"slang","expect":{"ambiguous":true,"best":{"goal":"triathlon"}},"note":"sprint tri? or short run"}
+{"id":"A0234","qid":"race_distance","text":"HM","style":"slang","expect":{"goal":"run_half"}}
+{"id":"A0235","qid":"race_distance","text":"full mary","style":"slang","expect":{"goal":"run_marathon"}}
+{"id":"A0236","qid":"race_when","text":"in 10 weeks","style":"relative_dates","expect":{"raceInWeeks":10}}
+{"id":"A0237","qid":"race_when","text":"12 weeks","style":"typed_clean","expect":{"raceInWeeks":12}}
+{"id":"A0238","qid":"race_when","text":"Oct 12","style":"relative_dates","expect":{"raceDate":"2026-10-12"}}
+{"id":"A0239","qid":"race_when","text":"October 12th","style":"typed_clean","expect":{"raceDate":"2026-10-12"}}
+{"id":"A0240","qid":"race_when","text":"10/12","style":"typed_clean","expect":{"raceDate":"2026-10-12"},"note":"US m/d"}
+{"id":"A0241","qid":"race_when","text":"11/15","style":"typed_clean","expect":{"raceDate":"2026-11-15"}}
+{"id":"A0242","qid":"race_when","text":"Nov 8","style":"relative_dates","expect":{"raceDate":"2026-11-08"}}
+{"id":"A0243","qid":"race_when","text":"november eighth","style":"voice","expect":{"raceDate":"2026-11-08"}}
+{"id":"A0244","qid":"race_when","text":"december 6","style":"typed_clean","expect":{"raceDate":"2026-12-06"}}
+{"id":"A0245","qid":"race_when","text":"dec 13th","style":"typed_sloppy","expect":{"raceDate":"2026-12-13"}}
+{"id":"A0246","qid":"race_when","text":"January 18","style":"relative_dates","expect":{"raceDate":"2027-01-18"},"note":"rolls to next year"}
+{"id":"A0247","qid":"race_when","text":"jan 10 2027","style":"typed_clean","expect":{"raceDate":"2027-01-10"}}
+{"id":"A0248","qid":"race_when","text":"March 14","style":"relative_dates","expect":{"raceDate":"2027-03-14"}}
+{"id":"A0249","qid":"race_when","text":"april 19th","style":"typed_clean","expect":{"raceDate":"2027-04-19"}}
+{"id":"A0250","qid":"race_when","text":"May 2","style":"relative_dates","expect":{"raceDate":"2027-05-02"}}
+{"id":"A0251","qid":"race_when","text":"2026-11-01","style":"typed_clean","expect":{"raceDate":"2026-11-01"}}
+{"id":"A0252","qid":"race_when","text":"11/1/26","style":"typed_sloppy","expect":{"raceDate":"2026-11-01"}}
+{"id":"A0253","qid":"race_when","text":"the twenty fifth of october","style":"voice","expect":{"raceDate":"2026-10-25"}}
+{"id":"A0254","qid":"race_when","text":"next month","style":"relative_dates","expect":{"ambiguous":true},"note":"October, no day"}
+{"id":"A0255","qid":"race_when","text":"next week","style":"out_of_range","expect":{"raceInWeeks":1},"note":"too soon for a block; confirm"}
+{"id":"A0256","qid":"race_when","text":"this saturday","style":"out_of_range","expect":{"raceDate":"2026-09-26"}}
+{"id":"A0257","qid":"race_when","text":"two weeks","style":"out_of_range","expect":{"raceInWeeks":2}}
+{"id":"A0258","qid":"race_when","text":"in a month","style":"relative_dates","expect":{"raceInWeeks":4}}
+{"id":"A0259","qid":"race_when","text":"about 3 months","style":"relative_dates","expect":{"raceInWeeks":13},"note":"approx"}
+{"id":"A0260","qid":"race_when","text":"six weeks","style":"voice","expect":{"raceInWeeks":6}}
+{"id":"A0261","qid":"race_when","text":"sixteen weeks","style":"voice","expect":{"raceInWeeks":16}}
+{"id":"A0262","qid":"race_when","text":"sixty weeks","style":"voice","expect":{"ambiguous":true,"best":{"raceInWeeks":16}},"note":"likely STT for sixteen"}
+{"id":"A0263","qid":"race_when","text":"eight weeks from saturday","style":"relative_dates","expect":{"raceDate":"2026-11-21"},"note":"Sat Sep 26 + 8 wk"}
+{"id":"A0264","qid":"race_when","text":"the Chicago marathon","style":"relative_dates","expect":{"ambiguous":true,"best":{"raceDate":"2026-10-11"}},"note":"named event; confirm date"}
+{"id":"A0265","qid":"race_when","text":"NYC marathon","style":"relative_dates","expect":{"ambiguous":true,"best":{"raceDate":"2026-11-01"}},"note":"named event"}
+{"id":"A0266","qid":"race_when","text":"Boston","style":"relative_dates","expect":{"ambiguous":true,"best":{"raceDate":"2027-04-19"}},"note":"named event, Patriots Day"}
+{"id":"A0267","qid":"race_when","text":"thanksgiving morning","style":"relative_dates","expect":{"raceDate":"2026-11-26"}}
+{"id":"A0268","qid":"race_when","text":"new years day","style":"relative_dates","expect":{"raceDate":"2027-01-01"}}
+{"id":"A0269","qid":"race_when","text":"halloween","style":"relative_dates","expect":{"raceDate":"2026-10-31"}}
+{"id":"A0270","qid":"race_when","text":"christmas eve","style":"relative_dates","expect":{"raceDate":"2026-12-24"}}
+{"id":"A0271","qid":"race_when","text":"spring","style":"relative_dates","expect":{"ambiguous":true}}
+{"id":"A0272","qid":"race_when","text":"sometime in the spring","style":"relative_dates","expect":{"ambiguous":true}}
+{"id":"A0273","qid":"race_when","text":"early march","style":"relative_dates","expect":{"ambiguous":true}}
+{"id":"A0274","qid":"race_when","text":"already registered for one in March","style":"relative_dates","expect":{"ambiguous":true},"note":"month only"}
+{"id":"A0275","qid":"race_when","text":"end of october","style":"relative_dates","expect":{"ambiguous":true,"best":{"raceDate":"2026-10-31"}}}
+{"id":"A0276","qid":"race_when","text":"mid november","style":"relative_dates","expect":{"ambiguous":true}}
+{"id":"A0277","qid":"race_when","text":"first weekend of december","style":"relative_dates","expect":{"ambiguous":true,"best":{"raceDate":"2026-12-06"}},"note":"Sat 5 or Sun 6"}
+{"id":"A0278","qid":"race_when","text":"haven't picked one yet","style":"chatty","expect":{"defer":true},"note":"no race chosen"}
+{"id":"A0279","qid":"race_when","text":"no date, I just want to be able to run it","style":"chatty","expect":{"defer":true}}
+{"id":"A0280","qid":"race_when","text":"whenever I'm ready","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0281","qid":"race_when","text":"what's realistic?","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0282","qid":"race_when","text":"how long do I need to train for a half?","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0283","qid":"race_when","text":"10wks","style":"typed_sloppy","expect":{"raceInWeeks":10}}
+{"id":"A0284","qid":"race_when","text":"12 wk","style":"typed_sloppy","expect":{"raceInWeeks":12}}
+{"id":"A0285","qid":"race_when","text":"oct 12th","style":"typed_sloppy","expect":{"raceDate":"2026-10-12"}}
+{"id":"A0286","qid":"race_when","text":"novmber 8","style":"typed_sloppy","expect":{"raceDate":"2026-11-08"}}
+{"id":"A0287","qid":"race_when","text":"decmber 5","style":"typed_sloppy","expect":{"raceDate":"2026-12-05"}}
+{"id":"A0288","qid":"race_when","text":"in 3 mos","style":"typed_sloppy","expect":{"raceInWeeks":13},"note":"approx"}
+{"id":"A0289","qid":"race_when","text":"tenn weeks","style":"typed_sloppy","expect":{"raceInWeeks":10}}
+{"id":"A0290","qid":"race_when","text":"diez semanas","style":"non_english","expect":{"raceInWeeks":10}}
+{"id":"A0291","qid":"race_when","text":"el 15 de noviembre","style":"non_english","expect":{"raceDate":"2026-11-15"}}
+{"id":"A0292","qid":"race_when","text":"🗓️ Nov 1","style":"emoji","expect":{"raceDate":"2026-11-01"}}
+{"id":"A0293","qid":"race_when","text":"📅 12 weeks","style":"emoji","expect":{"raceInWeeks":12}}
+{"id":"A0294","qid":"race_when","text":"it's on the 18th of october, but I might do the november one instead","style":"chatty","expect":{"ambiguous":true,"best":{"raceDate":"2026-10-18"}}}
+{"id":"A0295","qid":"race_when","text":"my buddy signed us up for one on halloween weekend","style":"chatty","expect":{"ambiguous":true,"best":{"raceDate":"2026-10-31"}},"note":"Sat 31 or Sun Nov 1"}
+{"id":"A0296","qid":"race_when","text":"it's 9 weeks from yesterday","style":"relative_dates","expect":{"raceDate":"2026-11-22"}}
+{"id":"A0297","qid":"race_when","text":"like 10 or 12 weeks","style":"range","expect":{"ambiguous":true,"best":{"raceInWeeks":10}}}
+{"id":"A0298","qid":"race_when","text":"3-4 months","style":"range","expect":{"ambiguous":true}}
+{"id":"A0299","qid":"race_when","text":"between 8 and 10 weeks","style":"range","expect":{"ambiguous":true,"best":{"raceInWeeks":8}}}
+{"id":"A0300","qid":"race_when","text":"not for a while, like 6 months","style":"chatty","expect":{"raceInWeeks":26}}
+{"id":"A0301","qid":"race_when","text":"a year from now","style":"out_of_range","expect":{"raceInWeeks":52}}
+{"id":"A0302","qid":"race_when","text":"tomorrow","style":"out_of_range","expect":{"raceDate":"2026-09-22"}}
+{"id":"A0303","qid":"race_when","text":"yesterday lol I missed it","style":"out_of_range","expect":{"ambiguous":true},"note":"race already passed"}
+{"id":"A0304","qid":"race_when","text":"not until next spring","style":"negation","expect":{"ambiguous":true}}
+{"id":"A0305","qid":"race_when","text":"not before december","style":"negation","expect":{"ambiguous":true}}
+{"id":"A0306","qid":"race_when","text":"ten weeks","style":"voice","expect":{"raceInWeeks":10}}
+{"id":"A0307","qid":"race_when","text":"twelve weeks from now","style":"voice","expect":{"raceInWeeks":12}}
+{"id":"A0308","qid":"race_when","text":"november fifteenth","style":"voice","expect":{"raceDate":"2026-11-15"}}
+{"id":"A0309","qid":"race_when","text":"the fifteenth","style":"voice","expect":{"ambiguous":true,"best":{"raceDate":"2026-10-15"}},"note":"month missing"}
+{"id":"A0310","qid":"race_when","text":"october twelve","style":"voice","expect":{"raceDate":"2026-10-12"}}
+{"id":"A0311","qid":"race_when","text":"ten weeks no wait eleven","style":"voice","expect":{"raceInWeeks":11}}
+{"id":"A0312","qid":"race_when","text":"uh like two months","style":"voice","expect":{"raceInWeeks":9},"note":"approx"}
+{"id":"A0313","qid":"race_when","text":"a couple months","style":"voice","expect":{"ambiguous":true,"best":{"raceInWeeks":8}}}
+{"id":"A0314","qid":"race_when","text":"in for weeks","style":"voice","expect":{"raceInWeeks":4},"note":"homophone for=four"}
+{"id":"A0315","qid":"race_when","text":"Sunday November 8th","style":"typed_clean","expect":{"raceDate":"2026-11-08"}}
+{"id":"A0316","qid":"race_when","text":"Saturday oct 17","style":"typed_clean","expect":{"raceDate":"2026-10-17"}}
+{"id":"A0317","qid":"race_when","text":"the 10k is oct 25 and I run about 10 miles a week","style":"chatty","expect":{"raceDate":"2026-10-25","currentWeeklyMi":10},"multi":true}
+{"id":"A0318","qid":"race_when","text":"12 weeks, I'm at 15 miles a week","style":"typed_clean","expect":{"raceInWeeks":12,"currentWeeklyMi":15},"multi":true}
+{"id":"A0319","qid":"race_when","text":"March 2027","style":"typed_clean","expect":{"ambiguous":true}}
+{"id":"A0320","qid":"race_when","text":"next year","style":"relative_dates","expect":{"ambiguous":true}}
+{"id":"A0321","qid":"race_when","text":"in the summer","style":"relative_dates","expect":{"ambiguous":true}}
+{"id":"A0322","qid":"race_when","text":"Feb 14","style":"relative_dates","expect":{"raceDate":"2027-02-14"}}
+{"id":"A0323","qid":"race_when","text":"valentines day","style":"relative_dates","expect":{"raceDate":"2027-02-14"}}
+{"id":"A0324","qid":"race_when","text":"St patricks day","style":"relative_dates","expect":{"raceDate":"2027-03-17"}}
+{"id":"A0325","qid":"race_when","text":"memorial day weekend","style":"relative_dates","expect":{"ambiguous":true}}
+{"id":"A0326","qid":"race_when","text":"12/5","style":"typed_clean","expect":{"raceDate":"2026-12-05"}}
+{"id":"A0327","qid":"race_when","text":"5/12","style":"typed_clean","expect":{"ambiguous":true},"note":"May 12 vs Dec 5 date format"}
+{"id":"A0328","qid":"race_base","text":"0","style":"typed_clean","expect":{"currentWeeklyMi":0}}
+{"id":"A0329","qid":"race_base","text":"none","style":"typed_clean","expect":{"currentWeeklyMi":0}}
+{"id":"A0330","qid":"race_base","text":"zero","style":"voice","expect":{"currentWeeklyMi":0}}
+{"id":"A0331","qid":"race_base","text":"I don't run","style":"chatty","expect":{"currentWeeklyMi":0}}
+{"id":"A0332","qid":"race_base","text":"not at all","style":"negation","expect":{"currentWeeklyMi":0}}
+{"id":"A0333","qid":"race_base","text":"10","style":"typed_clean","expect":{"currentWeeklyMi":10}}
+{"id":"A0334","qid":"race_base","text":"15 miles","style":"typed_clean","expect":{"currentWeeklyMi":15}}
+{"id":"A0335","qid":"race_base","text":"about 20","style":"typed_clean","expect":{"currentWeeklyMi":20}}
+{"id":"A0336","qid":"race_base","text":"5ish","style":"typed_sloppy","expect":{"currentWeeklyMi":5}}
+{"id":"A0337","qid":"race_base","text":"like 8","style":"slang","expect":{"currentWeeklyMi":8}}
+{"id":"A0338","qid":"race_base","text":"12 mpw","style":"typed_sloppy","expect":{"currentWeeklyMi":12}}
+{"id":"A0339","qid":"race_base","text":"25 mi/wk","style":"typed_sloppy","expect":{"currentWeeklyMi":25}}
+{"id":"A0340","qid":"race_base","text":"30","style":"typed_clean","expect":{"currentWeeklyMi":30}}
+{"id":"A0341","qid":"race_base","text":"40 miles","style":"typed_clean","expect":{"currentWeeklyMi":40}}
+{"id":"A0342","qid":"race_base","text":"3","style":"typed_clean","expect":{"currentWeeklyMi":3}}
+{"id":"A0343","qid":"race_base","text":"a couple miles","style":"chatty","expect":{"ambiguous":true,"best":{"currentWeeklyMi":2}}}
+{"id":"A0344","qid":"race_base","text":"maybe 2 miles total","style":"chatty","expect":{"currentWeeklyMi":2}}
+{"id":"A0345","qid":"race_base","text":"I run 3 miles 3 times a week","style":"chatty","expect":{"currentWeeklyMi":9},"note":"requires multiplication"}
+{"id":"A0346","qid":"race_base","text":"2 runs of 5k","style":"chatty","expect":{"currentWeeklyMi":6},"note":"km conversion 6.2"}
+{"id":"A0347","qid":"race_base","text":"20k a week","style":"typed_clean","expect":{"currentWeeklyMi":12},"note":"km -> mi 12.4"}
+{"id":"A0348","qid":"race_base","text":"30 km","style":"typed_clean","expect":{"currentWeeklyMi":19},"note":"km -> mi 18.6"}
+{"id":"A0349","qid":"race_base","text":"about 50 km","style":"typed_clean","expect":{"currentWeeklyMi":31},"note":"km -> mi"}
+{"id":"A0350","qid":"race_base","text":"I just started, maybe one run a week of 2 miles","style":"chatty","expect":{"currentWeeklyMi":2}}
+{"id":"A0351","qid":"race_base","text":"none since covid","style":"chatty","expect":{"currentWeeklyMi":0}}
+{"id":"A0352","qid":"race_base","text":"i used to run 30 but nothing lately","style":"chatty","expect":{"currentWeeklyMi":0},"note":"past vs present"}
+{"id":"A0353","qid":"race_base","text":"15 but I've been hurt for a month so 0 right now","style":"chatty","expect":{"currentWeeklyMi":0},"note":"current wins"}
+{"id":"A0354","qid":"race_base","text":"10-15","style":"range","expect":{"ambiguous":true,"best":{"currentWeeklyMi":12}}}
+{"id":"A0355","qid":"race_base","text":"5 to 10","style":"range","expect":{"ambiguous":true,"best":{"currentWeeklyMi":7}}}
+{"id":"A0356","qid":"race_base","text":"20-25","style":"range","expect":{"ambiguous":true,"best":{"currentWeeklyMi":22}}}
+{"id":"A0357","qid":"race_base","text":"zero, total couch potato","style":"slang","expect":{"currentWeeklyMi":0}}
+{"id":"A0358","qid":"race_base","text":"i walk a lot but don't run","style":"chatty","expect":{"currentWeeklyMi":0},"note":"walking isn't running"}
+{"id":"A0359","qid":"race_base","text":"walking 3 miles a day","style":"chatty","expect":{"ambiguous":true,"best":{"currentWeeklyMi":0}},"note":"walking not running"}
+{"id":"A0360","qid":"race_base","text":"ten","style":"voice","expect":{"currentWeeklyMi":10}}
+{"id":"A0361","qid":"race_base","text":"fifteen","style":"voice","expect":{"currentWeeklyMi":15}}
+{"id":"A0362","qid":"race_base","text":"fifty","style":"voice","expect":{"currentWeeklyMi":50},"note":"could be STT for fifteen; plausibility check"}
+{"id":"A0363","qid":"race_base","text":"twenty five miles","style":"voice","expect":{"currentWeeklyMi":25}}
+{"id":"A0364","qid":"race_base","text":"for miles","style":"voice","expect":{"currentWeeklyMi":4},"note":"homophone"}
+{"id":"A0365","qid":"race_base","text":"to miles","style":"voice","expect":{"currentWeeklyMi":2},"note":"homophone"}
+{"id":"A0366","qid":"race_base","text":"tree miles","style":"voice","expect":{"currentWeeklyMi":3},"note":"homophone"}
+{"id":"A0367","qid":"race_base","text":"eight no ten","style":"voice","expect":{"currentWeeklyMi":10}}
+{"id":"A0368","qid":"race_base","text":"uh maybe like six","style":"voice","expect":{"currentWeeklyMi":6}}
+{"id":"A0369","qid":"race_base","text":"a mile or two","style":"range","expect":{"ambiguous":true,"best":{"currentWeeklyMi":2}}}
+{"id":"A0370","qid":"race_base","text":"10mi","style":"typed_sloppy","expect":{"currentWeeklyMi":10}}
+{"id":"A0371","qid":"race_base","text":"15 mi","style":"typed_sloppy","expect":{"currentWeeklyMi":15}}
+{"id":"A0372","qid":"race_base","text":"20 mi/wk","style":"typed_sloppy","expect":{"currentWeeklyMi":20}}
+{"id":"A0373","qid":"race_base","text":"abt 8","style":"typed_sloppy","expect":{"currentWeeklyMi":8}}
+{"id":"A0374","qid":"race_base","text":"~10","style":"typed_sloppy","expect":{"currentWeeklyMi":10}}
+{"id":"A0375","qid":"race_base","text":"prob 5","style":"typed_sloppy","expect":{"currentWeeklyMi":5}}
+{"id":"A0376","qid":"race_base","text":"idk like 6?","style":"typed_sloppy","expect":{"currentWeeklyMi":6}}
+{"id":"A0377","qid":"race_base","text":"i don't track it","style":"chatty","expect":{"ambiguous":true}}
+{"id":"A0378","qid":"race_base","text":"no idea","style":"typed_clean","expect":{"ambiguous":true}}
+{"id":"A0379","qid":"race_base","text":"what counts, treadmill?","style":"typed_clean","expect":{"defer":true},"note":"treadmill counts"}
+{"id":"A0380","qid":"race_base","text":"does the elliptical count?","style":"typed_clean","expect":{"defer":true},"note":"elliptical is not running"}
+{"id":"A0381","qid":"race_base","text":"diez millas","style":"non_english","expect":{"currentWeeklyMi":10}}
+{"id":"A0382","qid":"race_base","text":"unos 15 km","style":"non_english","expect":{"currentWeeklyMi":9},"note":"km -> mi 9.3"}
+{"id":"A0383","qid":"race_base","text":"cero","style":"non_english","expect":{"currentWeeklyMi":0}}
+{"id":"A0384","qid":"race_base","text":"0️⃣","style":"emoji","expect":{"currentWeeklyMi":0}}
+{"id":"A0385","qid":"race_base","text":"🏃 10","style":"emoji","expect":{"currentWeeklyMi":10}}
+{"id":"A0386","qid":"race_base","text":"💀 zero","style":"emoji","expect":{"currentWeeklyMi":0}}
+{"id":"A0387","qid":"race_base","text":"about 25, long run is 10","style":"chatty","expect":{"currentWeeklyMi":25}}
+{"id":"A0388","qid":"race_base","text":"3 days a week, 4 miles each","style":"chatty","expect":{"currentWeeklyMi":12}}
+{"id":"A0389","qid":"race_base","text":"a 5k on saturdays and that's it","style":"chatty","expect":{"currentWeeklyMi":3}}
+{"id":"A0390","qid":"race_base","text":"I do a 10k every sunday","style":"chatty","expect":{"currentWeeklyMi":6}}
+{"id":"A0391","qid":"race_base","text":"I run to work and back, 2 miles each way, 5 days","style":"chatty","expect":{"currentWeeklyMi":20},"note":"multi-step math"}
+{"id":"A0392","qid":"race_base","text":"not much, maybe 5","style":"negation","expect":{"currentWeeklyMi":5}}
+{"id":"A0393","qid":"race_base","text":"not more than 10","style":"negation","expect":{"ambiguous":true,"best":{"currentWeeklyMi":10}}}
+{"id":"A0394","qid":"race_base","text":"nothing right now","style":"negation","expect":{"currentWeeklyMi":0}}
+{"id":"A0395","qid":"race_base","text":"not running at all, I bike a lot though","style":"negation","expect":{"currentWeeklyMi":0}}
+{"id":"A0396","qid":"race_base","text":"haven't run since high school","style":"chatty","expect":{"currentWeeklyMi":0}}
+{"id":"A0397","qid":"race_base","text":"100","style":"out_of_range","expect":{"currentWeeklyMi":100},"note":"implausible; confirm"}
+{"id":"A0398","qid":"race_base","text":"70 miles","style":"out_of_range","expect":{"currentWeeklyMi":70},"note":"high; confirm"}
+{"id":"A0399","qid":"race_base","text":"2 hours a week","style":"typed_clean","expect":{"ambiguous":true},"note":"time not distance"}
+{"id":"A0400","qid":"race_base","text":"about 3 hours a week","style":"chatty","expect":{"ambiguous":true},"note":"time not distance"}
+{"id":"A0401","qid":"race_base","text":"30 minutes a day","style":"typed_clean","expect":{"ambiguous":true},"note":"time not distance"}
+{"id":"A0402","qid":"race_base","text":"i run every day","style":"chatty","expect":{"ambiguous":true},"note":"frequency not distance"}
+{"id":"A0403","qid":"race_base","text":"4 runs a week","style":"typed_clean","expect":{"ambiguous":true},"note":"count not miles"}
+{"id":"A0404","qid":"race_base","text":"20 miles, running 4 days","style":"typed_clean","expect":{"currentWeeklyMi":20,"daysPerWeek":4},"multi":true}
+{"id":"A0405","qid":"race_base","text":"10 miles, and I lift 3 days a week at the gym","style":"chatty","expect":{"currentWeeklyMi":10,"daysPerWeek":3,"environment":"full_gym"},"multi":true}
+{"id":"A0406","qid":"race_base","text":"fifteen miles a week","style":"voice","expect":{"currentWeeklyMi":15}}
+{"id":"A0407","qid":"race_base","text":"roughly 18","style":"typed_clean","expect":{"currentWeeklyMi":18}}
+{"id":"A0408","qid":"race_base","text":"7","style":"typed_clean","expect":{"currentWeeklyMi":7}}
+{"id":"A0409","qid":"race_base","text":"22","style":"typed_clean","expect":{"currentWeeklyMi":22}}
+{"id":"A0410","qid":"race_base","text":"35","style":"typed_clean","expect":{"currentWeeklyMi":35}}
+{"id":"A0411","qid":"race_base","text":"none, I'm starting from scratch","style":"chatty","expect":{"currentWeeklyMi":0}}
+{"id":"A0412","qid":"race_base","text":"1","style":"typed_clean","expect":{"currentWeeklyMi":1}}
+{"id":"A0413","qid":"race_base","text":"one mile","style":"voice","expect":{"currentWeeklyMi":1}}
+{"id":"A0414","qid":"race_base","text":"a few","style":"slang","expect":{"ambiguous":true,"best":{"currentWeeklyMi":3}}}
+{"id":"A0415","qid":"race_base","text":"not a lot","style":"negation","expect":{"ambiguous":true}}
+{"id":"A0416","qid":"race_base","text":"decent amount","style":"slang","expect":{"ambiguous":true}}
+{"id":"A0417","qid":"race_base","text":"mid 20s","style":"slang","expect":{"currentWeeklyMi":25},"note":"approx"}
+{"id":"A0418","qid":"race_base","text":"low teens","style":"slang","expect":{"currentWeeklyMi":12},"note":"approx"}
+{"id":"A0419","qid":"race_base","text":"single digits","style":"slang","expect":{"ambiguous":true,"best":{"currentWeeklyMi":5}}}
+{"id":"A0420","qid":"race_base","text":"like a marathon a week lol","style":"slang","expect":{"currentWeeklyMi":26}}
+{"id":"A0421","qid":"race_base","text":"a half marathon a week","style":"chatty","expect":{"currentWeeklyMi":13}}
+{"id":"A0422","qid":"race_base","text":"5k three times a week","style":"chatty","expect":{"currentWeeklyMi":9},"note":"3 x 3.1"}
+{"id":"A0423","qid":"race_base","text":"20 miles last week but usually 12","style":"chatty","expect":{"ambiguous":true,"best":{"currentWeeklyMi":12}}}
+{"id":"A0424","qid":"race_base","text":"I've been doing 10 but ramping up","style":"chatty","expect":{"currentWeeklyMi":10}}
+{"id":"A0425","qid":"days","text":"3","style":"typed_clean","expect":{"daysPerWeek":3}}
+{"id":"A0426","qid":"days","text":"4","style":"typed_clean","expect":{"daysPerWeek":4}}
+{"id":"A0427","qid":"days","text":"5","style":"typed_clean","expect":{"daysPerWeek":5}}
+{"id":"A0428","qid":"days","text":"2","style":"typed_clean","expect":{"daysPerWeek":2}}
+{"id":"A0429","qid":"days","text":"6","style":"typed_clean","expect":{"daysPerWeek":6}}
+{"id":"A0430","qid":"days","text":"3 days","style":"typed_clean","expect":{"daysPerWeek":3}}
+{"id":"A0431","qid":"days","text":"4 days a week","style":"typed_clean","expect":{"daysPerWeek":4}}
+{"id":"A0432","qid":"days","text":"five","style":"typed_clean","expect":{"daysPerWeek":5}}
+{"id":"A0433","qid":"days","text":"three days","style":"typed_clean","expect":{"daysPerWeek":3}}
+{"id":"A0434","qid":"days","text":"3 dyas","style":"typed_sloppy","expect":{"daysPerWeek":3}}
+{"id":"A0435","qid":"days","text":"fourr","style":"typed_sloppy","expect":{"daysPerWeek":4}}
+{"id":"A0436","qid":"days","text":"4x/wk","style":"typed_sloppy","expect":{"daysPerWeek":4}}
+{"id":"A0437","qid":"days","text":"3x a wk","style":"typed_sloppy","expect":{"daysPerWeek":3}}
+{"id":"A0438","qid":"days","text":"5 d/wk","style":"typed_sloppy","expect":{"daysPerWeek":5}}
+{"id":"A0439","qid":"days","text":"3/wk","style":"typed_sloppy","expect":{"daysPerWeek":3}}
+{"id":"A0440","qid":"days","text":"4 dys","style":"typed_sloppy","expect":{"daysPerWeek":4}}
+{"id":"A0441","qid":"days","text":"thre","style":"typed_sloppy","expect":{"daysPerWeek":3}}
+{"id":"A0442","qid":"days","text":"fiev days","style":"typed_sloppy","expect":{"daysPerWeek":5}}
+{"id":"A0443","qid":"days","text":"2x","style":"typed_sloppy","expect":{"daysPerWeek":2}}
+{"id":"A0444","qid":"days","text":"4days","style":"typed_sloppy","expect":{"daysPerWeek":4}}
+{"id":"A0445","qid":"days","text":"3 days/wk","style":"typed_sloppy","expect":{"daysPerWeek":3}}
+{"id":"A0446","qid":"days","text":"5x per week","style":"typed_sloppy","expect":{"daysPerWeek":5}}
+{"id":"A0447","qid":"days","text":"four days","style":"voice","expect":{"daysPerWeek":4}}
+{"id":"A0448","qid":"days","text":"for days a week","style":"voice","expect":{"daysPerWeek":4},"note":"homophone for=four"}
+{"id":"A0449","qid":"days","text":"fore","style":"voice","expect":{"daysPerWeek":4},"note":"homophone"}
+{"id":"A0450","qid":"days","text":"to days","style":"voice","expect":{"daysPerWeek":2},"note":"homophone"}
+{"id":"A0451","qid":"days","text":"tree","style":"voice","expect":{"daysPerWeek":3},"note":"homophone"}
+{"id":"A0452","qid":"days","text":"three days a week","style":"voice","expect":{"daysPerWeek":3}}
+{"id":"A0453","qid":"days","text":"like three or four","style":"voice","expect":{"ambiguous":true,"best":{"daysPerWeek":3}}}
+{"id":"A0454","qid":"days","text":"uh maybe three","style":"voice","expect":{"daysPerWeek":3}}
+{"id":"A0455","qid":"days","text":"three no wait four","style":"voice","expect":{"daysPerWeek":4},"note":"self-correction"}
+{"id":"A0456","qid":"days","text":"Monday Wednesday Friday","style":"voice","expect":{"daysPerWeek":3},"note":"count the named days"}
+{"id":"A0457","qid":"days","text":"monday tuesday thursday friday","style":"voice","expect":{"daysPerWeek":4}}
+{"id":"A0458","qid":"days","text":"weekdays","style":"voice","expect":{"daysPerWeek":5}}
+{"id":"A0459","qid":"days","text":"every other day","style":"voice","expect":{"ambiguous":true,"best":{"daysPerWeek":4}},"note":"3.5/wk"}
+{"id":"A0460","qid":"days","text":"twice a week","style":"voice","expect":{"daysPerWeek":2}}
+{"id":"A0461","qid":"days","text":"three times a week","style":"voice","expect":{"daysPerWeek":3}}
+{"id":"A0462","qid":"days","text":"four times","style":"voice","expect":{"daysPerWeek":4}}
+{"id":"A0463","qid":"days","text":"five days","style":"voice","expect":{"daysPerWeek":5}}
+{"id":"A0464","qid":"days","text":"six days","style":"voice","expect":{"daysPerWeek":6}}
+{"id":"A0465","qid":"days","text":"five days Monday through Friday","style":"voice","expect":{"daysPerWeek":5}}
+{"id":"A0466","qid":"days","text":"Tuesdays and Thursdays","style":"voice","expect":{"daysPerWeek":2}}
+{"id":"A0467","qid":"days","text":"weekends","style":"voice","expect":{"daysPerWeek":2}}
+{"id":"A0468","qid":"days","text":"weekends plus Wednesday","style":"voice","expect":{"daysPerWeek":3}}
+{"id":"A0469","qid":"days","text":"mon wed fri and sometimes saturday","style":"voice","expect":{"ambiguous":true,"best":{"daysPerWeek":3}}}
+{"id":"A0470","qid":"days","text":"too days","style":"voice","expect":{"daysPerWeek":2},"note":"homophone"}
+{"id":"A0471","qid":"days","text":"for","style":"voice","expect":{"daysPerWeek":4},"note":"bare homophone"}
+{"id":"A0472","qid":"days","text":"4 bro","style":"slang","expect":{"daysPerWeek":4}}
+{"id":"A0473","qid":"days","text":"5 no excuses","style":"slang","expect":{"daysPerWeek":5}}
+{"id":"A0474","qid":"days","text":"every day that ends in y","style":"slang","expect":{"daysPerWeek":7},"note":"out of range joke = every day"}
+{"id":"A0475","qid":"days","text":"3, I'm not a gym rat","style":"slang","expect":{"daysPerWeek":3}}
+{"id":"A0476","qid":"days","text":"3️⃣","style":"emoji","expect":{"daysPerWeek":3}}
+{"id":"A0477","qid":"days","text":"4️⃣ 💪","style":"emoji","expect":{"daysPerWeek":4}}
+{"id":"A0478","qid":"days","text":"5️⃣🔥","style":"emoji","expect":{"daysPerWeek":5}}
+{"id":"A0479","qid":"days","text":"🗓️ 3","style":"emoji","expect":{"daysPerWeek":3}}
+{"id":"A0480","qid":"days","text":"cuatro días","style":"non_english","expect":{"daysPerWeek":4}}
+{"id":"A0481","qid":"days","text":"tres","style":"non_english","expect":{"daysPerWeek":3}}
+{"id":"A0482","qid":"days","text":"cinco días a la semana","style":"non_english","expect":{"daysPerWeek":5}}
+{"id":"A0483","qid":"days","text":"quatre jours","style":"non_english","expect":{"daysPerWeek":4}}
+{"id":"A0484","qid":"days","text":"drei","style":"non_english","expect":{"daysPerWeek":3}}
+{"id":"A0485","qid":"days","text":"honestly with work and the kids probably 3 days max","style":"chatty","expect":{"daysPerWeek":3}}
+{"id":"A0486","qid":"days","text":"I work 12 hour shifts so like 3, sometimes 4","style":"chatty","expect":{"ambiguous":true,"best":{"daysPerWeek":3}}}
+{"id":"A0487","qid":"days","text":"my schedule's all over the place but I can usually get 4 in","style":"chatty","expect":{"daysPerWeek":4}}
+{"id":"A0488","qid":"days","text":"I'd love 5 but realistically 3","style":"chatty","expect":{"daysPerWeek":3},"note":"realistic wins"}
+{"id":"A0489","qid":"days","text":"I travel a lot for work, 2 is safe","style":"chatty","expect":{"daysPerWeek":2}}
+{"id":"A0490","qid":"days","text":"retired so as many as you want","style":"chatty","expect":{"defer":true}}
+{"id":"A0491","qid":"days","text":"Probably 4. Maybe 5 on a good week","style":"chatty","expect":{"ambiguous":true,"best":{"daysPerWeek":4}}}
+{"id":"A0492","qid":"days","text":"gym's on my way home so 5 is easy","style":"chatty","expect":{"daysPerWeek":5}}
+{"id":"A0493","qid":"days","text":"I can do 4 but one of them has to be short","style":"chatty","expect":{"daysPerWeek":4}}
+{"id":"A0494","qid":"days","text":"3 lifting days plus I run on the weekends","style":"chatty","expect":{"ambiguous":true,"best":{"daysPerWeek":3}},"note":"lifting vs total days"}
+{"id":"A0495","qid":"days","text":"4 days, but saturdays can be long","style":"chatty","expect":{"daysPerWeek":4}}
+{"id":"A0496","qid":"days","text":"not more than 4","style":"negation","expect":{"daysPerWeek":4},"note":"ceiling -> use it"}
+{"id":"A0497","qid":"days","text":"no more than 3","style":"negation","expect":{"daysPerWeek":3},"note":"ceiling"}
+{"id":"A0498","qid":"days","text":"at least 3","style":"negation","expect":{"ambiguous":true,"best":{"daysPerWeek":3}},"note":"floor only"}
+{"id":"A0499","qid":"days","text":"not 5, maybe 4","style":"negation","expect":{"daysPerWeek":4}}
+{"id":"A0500","qid":"days","text":"not weekends, so weekdays","style":"negation","expect":{"daysPerWeek":5}}
+{"id":"A0501","qid":"days","text":"can't do more than 2","style":"negation","expect":{"daysPerWeek":2}}
+{"id":"A0502","qid":"days","text":"not every day, like 3","style":"negation","expect":{"daysPerWeek":3}}
+{"id":"A0503","qid":"days","text":"3-4","style":"range","expect":{"ambiguous":true,"best":{"daysPerWeek":3}}}
+{"id":"A0504","qid":"days","text":"4-5","style":"range","expect":{"ambiguous":true,"best":{"daysPerWeek":4}}}
+{"id":"A0505","qid":"days","text":"2 to 3","style":"range","expect":{"ambiguous":true,"best":{"daysPerWeek":2}}}
+{"id":"A0506","qid":"days","text":"3 or 4","style":"range","expect":{"ambiguous":true,"best":{"daysPerWeek":3}}}
+{"id":"A0507","qid":"days","text":"4/5","style":"range","expect":{"ambiguous":true,"best":{"daysPerWeek":4}}}
+{"id":"A0508","qid":"days","text":"5-6","style":"range","expect":{"ambiguous":true,"best":{"daysPerWeek":5}}}
+{"id":"A0509","qid":"days","text":"7 days","style":"out_of_range","expect":{"daysPerWeek":7}}
+{"id":"A0510","qid":"days","text":"1 day","style":"out_of_range","expect":{"daysPerWeek":1}}
+{"id":"A0511","qid":"days","text":"every day","style":"out_of_range","expect":{"daysPerWeek":7}}
+{"id":"A0512","qid":"days","text":"7","style":"out_of_range","expect":{"daysPerWeek":7}}
+{"id":"A0513","qid":"days","text":"1","style":"out_of_range","expect":{"daysPerWeek":1}}
+{"id":"A0514","qid":"days","text":"once a week","style":"out_of_range","expect":{"daysPerWeek":1}}
+{"id":"A0515","qid":"days","text":"8","style":"out_of_range","expect":{"ambiguous":true},"note":"impossible; >7"}
+{"id":"A0516","qid":"days","text":"0 right now","style":"out_of_range","expect":{"ambiguous":true},"note":"zero days"}
+{"id":"A0517","qid":"days","text":"14 lol twice a day","style":"out_of_range","expect":{"ambiguous":true,"best":{"daysPerWeek":7}}}
+{"id":"A0518","qid":"days","text":"daily","style":"out_of_range","expect":{"daysPerWeek":7}}
+{"id":"A0519","qid":"days","text":"idk","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0520","qid":"days","text":"what do you recommend","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0521","qid":"days","text":"you pick","style":"slang","expect":{"defer":true}}
+{"id":"A0522","qid":"days","text":"whatever works best for strength","style":"chatty","expect":{"defer":true},"note":"also hints goal"}
+{"id":"A0523","qid":"days","text":"how many should I do?","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0524","qid":"days","text":"depends on the week","style":"chatty","expect":{"ambiguous":true}}
+{"id":"A0525","qid":"days","text":"4 days, about an hour, at the Y","style":"chatty","expect":{"daysPerWeek":4,"sessionMinutes":60,"environment":"full_gym"},"multi":true}
+{"id":"A0526","qid":"days","text":"3 days at home","style":"typed_clean","expect":{"daysPerWeek":3,"environment":"home"},"multi":true}
+{"id":"A0527","qid":"days","text":"5 days, 45 min each","style":"typed_clean","expect":{"daysPerWeek":5,"sessionMinutes":45},"multi":true}
+{"id":"A0528","qid":"days","text":"3x a week, im a beginer","style":"typed_sloppy","expect":{"daysPerWeek":3,"experience":"beginner"},"multi":true}
+{"id":"A0529","qid":"days","text":"4 days but my knee is bad","style":"chatty","expect":{"daysPerWeek":4,"limitations":["knees"]},"multi":true}
+{"id":"A0530","qid":"days","text":"twice a week, 30 min","style":"typed_clean","expect":{"daysPerWeek":2,"sessionMinutes":30},"multi":true}
+{"id":"A0531","qid":"days","text":"M/W/F on my lunch break so 45 mins","style":"typed_sloppy","expect":{"daysPerWeek":3,"sessionMinutes":45},"multi":true}
+{"id":"A0532","qid":"days","text":"3 days in my garage, I've got a rack and dumbbells","style":"chatty","expect":{"daysPerWeek":3,"environment":"home"},"multi":true}
+{"id":"A0533","qid":"days","text":"3 days please","style":"typed_clean","expect":{"daysPerWeek":3}}
+{"id":"A0534","qid":"days","text":"Four.","style":"typed_clean","expect":{"daysPerWeek":4}}
+{"id":"A0535","qid":"days","text":"2 days","style":"typed_clean","expect":{"daysPerWeek":2}}
+{"id":"A0536","qid":"days","text":"6 days a week","style":"typed_clean","expect":{"daysPerWeek":6}}
+{"id":"A0537","qid":"days","text":"5 days a week","style":"typed_clean","expect":{"daysPerWeek":5}}
+{"id":"A0538","qid":"days","text":"3-ish","style":"typed_sloppy","expect":{"daysPerWeek":3}}
+{"id":"A0539","qid":"days","text":"4 usually","style":"typed_clean","expect":{"daysPerWeek":4}}
+{"id":"A0540","qid":"days","text":"4 i think","style":"typed_sloppy","expect":{"daysPerWeek":4}}
+{"id":"A0541","qid":"days","text":"prolly 3","style":"slang","expect":{"daysPerWeek":3}}
+{"id":"A0542","qid":"days","text":"3 max","style":"typed_clean","expect":{"daysPerWeek":3}}
+{"id":"A0543","qid":"days","text":"at most 5","style":"negation","expect":{"daysPerWeek":5},"note":"ceiling"}
+{"id":"A0544","qid":"days","text":"Sunday and Wednesday","style":"voice","expect":{"daysPerWeek":2}}
+{"id":"A0545","qid":"days","text":"tuesday thursday saturday","style":"voice","expect":{"daysPerWeek":3}}
+{"id":"A0546","qid":"days","text":"six days, one rest day","style":"typed_clean","expect":{"daysPerWeek":6}}
+{"id":"A0547","qid":"days","text":"like 2 or 3 honestly","style":"chatty","expect":{"ambiguous":true,"best":{"daysPerWeek":2}}}
+{"id":"A0548","qid":"days","text":"fivee","style":"typed_sloppy","expect":{"daysPerWeek":5}}
+{"id":"A0549","qid":"days","text":"two","style":"voice","expect":{"daysPerWeek":2}}
+{"id":"A0550","qid":"where","text":"gym","style":"typed_clean","expect":{"environment":"full_gym"}}
+{"id":"A0551","qid":"where","text":"full gym","style":"typed_clean","expect":{"environment":"full_gym"}}
+{"id":"A0552","qid":"where","text":"at the gym","style":"typed_clean","expect":{"environment":"full_gym"}}
+{"id":"A0553","qid":"where","text":"home","style":"typed_clean","expect":{"environment":"home"}}
+{"id":"A0554","qid":"where","text":"at home","style":"typed_clean","expect":{"environment":"home"}}
+{"id":"A0555","qid":"where","text":"bodyweight","style":"typed_clean","expect":{"environment":"bodyweight"}}
+{"id":"A0556","qid":"where","text":"outside","style":"typed_clean","expect":{"environment":"outdoor"}}
+{"id":"A0557","qid":"where","text":"outdoors","style":"typed_clean","expect":{"environment":"outdoor"}}
+{"id":"A0558","qid":"where","text":"the park","style":"typed_clean","expect":{"environment":"outdoor"}}
+{"id":"A0559","qid":"where","text":"planet fitness","style":"typed_clean","expect":{"environment":"full_gym"},"note":"brand name"}
+{"id":"A0560","qid":"where","text":"LA Fitness","style":"typed_clean","expect":{"environment":"full_gym"}}
+{"id":"A0561","qid":"where","text":"24 hour fitness","style":"typed_clean","expect":{"environment":"full_gym"}}
+{"id":"A0562","qid":"where","text":"the Y","style":"slang","expect":{"environment":"full_gym"}}
+{"id":"A0563","qid":"where","text":"YMCA","style":"typed_clean","expect":{"environment":"full_gym"}}
+{"id":"A0564","qid":"where","text":"golds","style":"typed_sloppy","expect":{"environment":"full_gym"}}
+{"id":"A0565","qid":"where","text":"anytime fitness","style":"typed_clean","expect":{"environment":"full_gym"}}
+{"id":"A0566","qid":"where","text":"my work gym","style":"typed_clean","expect":{"environment":"full_gym"}}
+{"id":"A0567","qid":"where","text":"apartment gym","style":"typed_clean","expect":{"ambiguous":true,"best":{"environment":"home"}},"note":"limited equipment"}
+{"id":"A0568","qid":"where","text":"hotel gym","style":"typed_clean","expect":{"ambiguous":true,"best":{"environment":"home"}},"note":"limited equipment"}
+{"id":"A0569","qid":"where","text":"school weight room","style":"typed_clean","expect":{"environment":"full_gym"}}
+{"id":"A0570","qid":"where","text":"crossfit box","style":"typed_clean","expect":{"environment":"full_gym"}}
+{"id":"A0571","qid":"where","text":"commercial gym","style":"typed_clean","expect":{"environment":"full_gym"}}
+{"id":"A0572","qid":"where","text":"garage gym","style":"typed_clean","expect":{"environment":"home"}}
+{"id":"A0573","qid":"where","text":"garage, I've got a rack, barbell and plates","style":"chatty","expect":{"environment":"home"},"note":"home with barbell"}
+{"id":"A0574","qid":"where","text":"home with dumbbells","style":"typed_clean","expect":{"environment":"home"}}
+{"id":"A0575","qid":"where","text":"just some dbs at home","style":"typed_sloppy","expect":{"environment":"home"}}
+{"id":"A0576","qid":"where","text":"bands and a kettlebell","style":"typed_clean","expect":{"environment":"home"}}
+{"id":"A0577","qid":"where","text":"my living room, no equipment","style":"chatty","expect":{"environment":"bodyweight"}}
+{"id":"A0578","qid":"where","text":"no equipment","style":"negation","expect":{"environment":"bodyweight"}}
+{"id":"A0579","qid":"where","text":"nothing, just me","style":"chatty","expect":{"environment":"bodyweight"}}
+{"id":"A0580","qid":"where","text":"bedroom lol","style":"slang","expect":{"ambiguous":true,"best":{"environment":"bodyweight"}}}
+{"id":"A0581","qid":"where","text":"hotel rooms, I travel a lot","style":"chatty","expect":{"environment":"bodyweight"}}
+{"id":"A0582","qid":"where","text":"no gym, just my garage","style":"negation","expect":{"environment":"home"}}
+{"id":"A0583","qid":"where","text":"no gym membership","style":"negation","expect":{"ambiguous":true,"best":{"environment":"bodyweight"}},"note":"home vs bodyweight"}
+{"id":"A0584","qid":"where","text":"not a gym, the park","style":"negation","expect":{"environment":"outdoor"}}
+{"id":"A0585","qid":"where","text":"no weights at all","style":"negation","expect":{"environment":"bodyweight"}}
+{"id":"A0586","qid":"where","text":"don't have any equipment","style":"negation","expect":{"environment":"bodyweight"}}
+{"id":"A0587","qid":"where","text":"the track","style":"typed_clean","expect":{"environment":"outdoor"}}
+{"id":"A0588","qid":"where","text":"on the trails","style":"typed_clean","expect":{"environment":"outdoor"}}
+{"id":"A0589","qid":"where","text":"running outside mostly","style":"chatty","expect":{"environment":"outdoor"}}
+{"id":"A0590","qid":"where","text":"my backyard","style":"typed_clean","expect":{"environment":"outdoor"}}
+{"id":"A0591","qid":"where","text":"the beach","style":"typed_clean","expect":{"environment":"outdoor"}}
+{"id":"A0592","qid":"where","text":"calisthenics park","style":"typed_clean","expect":{"environment":"outdoor"},"note":"has pull-up bars"}
+{"id":"A0593","qid":"where","text":"playground bars at the park","style":"chatty","expect":{"environment":"outdoor"}}
+{"id":"A0594","qid":"where","text":"gim","style":"typed_sloppy","expect":{"environment":"full_gym"}}
+{"id":"A0595","qid":"where","text":"hme","style":"typed_sloppy","expect":{"environment":"home"}}
+{"id":"A0596","qid":"where","text":"hom gym","style":"typed_sloppy","expect":{"environment":"home"}}
+{"id":"A0597","qid":"where","text":"the gym downtown","style":"typed_clean","expect":{"environment":"full_gym"}}
+{"id":"A0598","qid":"where","text":"gymm","style":"typed_sloppy","expect":{"environment":"full_gym"}}
+{"id":"A0599","qid":"where","text":"bodywieght","style":"typed_sloppy","expect":{"environment":"bodyweight"}}
+{"id":"A0600","qid":"where","text":"outsdie","style":"typed_sloppy","expect":{"environment":"outdoor"}}
+{"id":"A0601","qid":"where","text":"full gim","style":"typed_sloppy","expect":{"environment":"full_gym"}}
+{"id":"A0602","qid":"where","text":"jim","style":"voice","expect":{"environment":"full_gym"},"note":"homophone"}
+{"id":"A0603","qid":"where","text":"at the Jim","style":"voice","expect":{"environment":"full_gym"},"note":"homophone"}
+{"id":"A0604","qid":"where","text":"at home","style":"voice","expect":{"environment":"home"}}
+{"id":"A0605","qid":"where","text":"home gym","style":"voice","expect":{"environment":"home"}}
+{"id":"A0606","qid":"where","text":"body weight only","style":"voice","expect":{"environment":"bodyweight"}}
+{"id":"A0607","qid":"where","text":"out side","style":"voice","expect":{"environment":"outdoor"}}
+{"id":"A0608","qid":"where","text":"gym no wait home","style":"voice","expect":{"environment":"home"},"note":"self-correction"}
+{"id":"A0609","qid":"where","text":"uh mostly the gym","style":"voice","expect":{"environment":"full_gym"}}
+{"id":"A0610","qid":"where","text":"the why","style":"voice","expect":{"environment":"full_gym"},"note":"STT for the Y"}
+{"id":"A0611","qid":"where","text":"planet fitness","style":"voice","expect":{"environment":"full_gym"}}
+{"id":"A0612","qid":"where","text":"globo gym","style":"slang","expect":{"environment":"full_gym"}}
+{"id":"A0613","qid":"where","text":"the box","style":"slang","expect":{"environment":"full_gym"},"note":"crossfit slang"}
+{"id":"A0614","qid":"where","text":"my dungeon","style":"slang","expect":{"ambiguous":true,"best":{"environment":"home"}}}
+{"id":"A0615","qid":"where","text":"wherever I am lol","style":"slang","expect":{"ambiguous":true,"best":{"environment":"bodyweight"}}}
+{"id":"A0616","qid":"where","text":"🏋️","style":"emoji","expect":{"environment":"full_gym"}}
+{"id":"A0617","qid":"where","text":"🏠","style":"emoji","expect":{"environment":"home"}}
+{"id":"A0618","qid":"where","text":"🌳","style":"emoji","expect":{"environment":"outdoor"}}
+{"id":"A0619","qid":"where","text":"🏠 with dumbbells","style":"emoji","expect":{"environment":"home"}}
+{"id":"A0620","qid":"where","text":"🏋️‍♀️ gym","style":"emoji","expect":{"environment":"full_gym"}}
+{"id":"A0621","qid":"where","text":"en casa","style":"non_english","expect":{"environment":"home"}}
+{"id":"A0622","qid":"where","text":"gimnasio","style":"non_english","expect":{"environment":"full_gym"}}
+{"id":"A0623","qid":"where","text":"en el parque","style":"non_english","expect":{"environment":"outdoor"}}
+{"id":"A0624","qid":"where","text":"sin equipo","style":"non_english","expect":{"environment":"bodyweight"}}
+{"id":"A0625","qid":"where","text":"I have a membership at LA fitness but I never go, so honestly home","style":"chatty","expect":{"environment":"home"},"note":"stated fact vs reality"}
+{"id":"A0626","qid":"where","text":"mostly the gym, but when I travel it's hotel rooms","style":"chatty","expect":{"ambiguous":true,"best":{"environment":"full_gym"}}}
+{"id":"A0627","qid":"where","text":"my husband built a gym in the basement, it's got everything","style":"chatty","expect":{"ambiguous":true,"best":{"environment":"full_gym"}},"note":"home location, full equipment"}
+{"id":"A0628","qid":"where","text":"both gym and home","style":"typed_clean","expect":{"ambiguous":true,"best":{"environment":"full_gym"}}}
+{"id":"A0629","qid":"where","text":"gym on weekdays, home on weekends","style":"chatty","expect":{"ambiguous":true,"best":{"environment":"full_gym"}}}
+{"id":"A0630","qid":"where","text":"gym or outside depending on the weather","style":"chatty","expect":{"ambiguous":true,"best":{"environment":"full_gym"}}}
+{"id":"A0631","qid":"where","text":"home, 3 days","style":"typed_clean","expect":{"environment":"home","daysPerWeek":3},"multi":true}
+{"id":"A0632","qid":"where","text":"gym, an hour","style":"typed_clean","expect":{"environment":"full_gym","sessionMinutes":60},"multi":true}
+{"id":"A0633","qid":"where","text":"garage with a barbell but my back is bad","style":"chatty","expect":{"environment":"home","limitations":["lower_back"]},"multi":true}
+{"id":"A0634","qid":"where","text":"planet fitness, total beginner","style":"typed_clean","expect":{"environment":"full_gym","experience":"beginner"},"multi":true}
+{"id":"A0635","qid":"where","text":"does it matter?","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0636","qid":"where","text":"where's best?","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0637","qid":"where","text":"what do I need?","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0638","qid":"where","text":"apartment, can't jump, downstairs neighbor","style":"chatty","expect":{"environment":"bodyweight","limitations":["no_jumping"]},"multi":true}
+{"id":"A0639","qid":"where","text":"office, during lunch","style":"chatty","expect":{"ambiguous":true,"best":{"environment":"bodyweight"}}}
+{"id":"A0640","qid":"where","text":"the pool","style":"typed_clean","expect":{"ambiguous":true},"note":"not_in_list"}
+{"id":"A0641","qid":"where","text":"a climbing gym","style":"typed_clean","expect":{"ambiguous":true},"note":"not_in_list"}
+{"id":"A0642","qid":"where","text":"work has a small gym, a few dumbbells and a treadmill","style":"chatty","expect":{"environment":"home"},"note":"limited equipment"}
+{"id":"A0643","qid":"where","text":"university rec center","style":"typed_clean","expect":{"environment":"full_gym"}}
+{"id":"A0644","qid":"where","text":"base gym","style":"slang","expect":{"environment":"full_gym"},"note":"military base"}
+{"id":"A0645","qid":"where","text":"Equinox","style":"typed_clean","expect":{"environment":"full_gym"}}
+{"id":"A0646","qid":"where","text":"orange theory","style":"typed_clean","expect":{"ambiguous":true},"note":"class studio"}
+{"id":"A0647","qid":"where","text":"just my peloton","style":"chatty","expect":{"ambiguous":true,"best":{"environment":"home"}}}
+{"id":"A0648","qid":"where","text":"home but I have a full rack, bench, barbell, and like 400lbs of plates","style":"chatty","expect":{"environment":"home"}}
+{"id":"A0649","qid":"where","text":"not the gym, too crowded. home","style":"negation","expect":{"environment":"home"}}
+{"id":"A0650","qid":"where","text":"no gym near me, so outside","style":"negation","expect":{"environment":"outdoor"}}
+{"id":"A0651","qid":"where","text":"the gym at my apartment complex has everything","style":"chatty","expect":{"environment":"full_gym"}}
+{"id":"A0652","qid":"where","text":"a real gym","style":"slang","expect":{"environment":"full_gym"}}
+{"id":"A0653","qid":"where","text":"my parents' basement, they have a bench and some dumbbells","style":"chatty","expect":{"environment":"home"}}
+{"id":"A0654","qid":"where","text":"gym gym","style":"voice","expect":{"environment":"full_gym"}}
+{"id":"A0655","qid":"where","text":"cul-de-sac in front of my house","style":"chatty","expect":{"environment":"outdoor"}}
+{"id":"A0656","qid":"where","text":"floor of my dorm","style":"chatty","expect":{"environment":"bodyweight"}}
+{"id":"A0657","qid":"where","text":"I've got a pull up bar and that's it","style":"chatty","expect":{"ambiguous":true,"best":{"environment":"bodyweight"}},"note":"near-bodyweight"}
+{"id":"A0658","qid":"where","text":"outside, I've got a sandbag","style":"chatty","expect":{"environment":"outdoor"}}
+{"id":"A0659","qid":"where","text":"homee","style":"typed_sloppy","expect":{"environment":"home"}}
+{"id":"A0660","qid":"where","text":"gum","style":"typed_sloppy","expect":{"environment":"full_gym"},"note":"typo gym"}
+{"id":"A0661","qid":"where","text":"home, no weights","style":"negation","expect":{"environment":"bodyweight"},"note":"home location but no equipment"}
+{"id":"A0662","qid":"where","text":"my garage","style":"typed_clean","expect":{"environment":"home"}}
+{"id":"A0663","qid":"where","text":"uh the park by my house","style":"voice","expect":{"environment":"outdoor"}}
+{"id":"A0664","qid":"time","text":"30","style":"typed_clean","expect":{"sessionMinutes":30}}
+{"id":"A0665","qid":"time","text":"45","style":"typed_clean","expect":{"sessionMinutes":45}}
+{"id":"A0666","qid":"time","text":"60","style":"typed_clean","expect":{"sessionMinutes":60}}
+{"id":"A0667","qid":"time","text":"75","style":"typed_clean","expect":{"sessionMinutes":75}}
+{"id":"A0668","qid":"time","text":"30 min","style":"typed_sloppy","expect":{"sessionMinutes":30}}
+{"id":"A0669","qid":"time","text":"45 minutes","style":"typed_clean","expect":{"sessionMinutes":45}}
+{"id":"A0670","qid":"time","text":"an hour","style":"typed_clean","expect":{"sessionMinutes":60}}
+{"id":"A0671","qid":"time","text":"1 hour","style":"typed_clean","expect":{"sessionMinutes":60}}
+{"id":"A0672","qid":"time","text":"hour","style":"typed_clean","expect":{"sessionMinutes":60}}
+{"id":"A0673","qid":"time","text":"half an hour","style":"voice","expect":{"sessionMinutes":30}}
+{"id":"A0674","qid":"time","text":"hour and a half","style":"out_of_range","expect":{"sessionMinutes":90}}
+{"id":"A0675","qid":"time","text":"forty five","style":"voice","expect":{"sessionMinutes":45}}
+{"id":"A0676","qid":"time","text":"sixty","style":"voice","expect":{"sessionMinutes":60}}
+{"id":"A0677","qid":"time","text":"seventy five","style":"voice","expect":{"sessionMinutes":75}}
+{"id":"A0678","qid":"time","text":"thirty minutes","style":"voice","expect":{"sessionMinutes":30}}
+{"id":"A0679","qid":"time","text":"an hour fifteen","style":"voice","expect":{"sessionMinutes":75}}
+{"id":"A0680","qid":"time","text":"1h15","style":"typed_sloppy","expect":{"sessionMinutes":75}}
+{"id":"A0681","qid":"time","text":"1:15","style":"typed_clean","expect":{"sessionMinutes":75}}
+{"id":"A0682","qid":"time","text":"1.5 hrs","style":"out_of_range","expect":{"sessionMinutes":90}}
+{"id":"A0683","qid":"time","text":"90 min","style":"out_of_range","expect":{"sessionMinutes":90}}
+{"id":"A0684","qid":"time","text":"2 hours","style":"out_of_range","expect":{"sessionMinutes":120}}
+{"id":"A0685","qid":"time","text":"20 minutes","style":"out_of_range","expect":{"sessionMinutes":20}}
+{"id":"A0686","qid":"time","text":"15 min","style":"out_of_range","expect":{"sessionMinutes":15}}
+{"id":"A0687","qid":"time","text":"10 minutes","style":"out_of_range","expect":{"sessionMinutes":10}}
+{"id":"A0688","qid":"time","text":"3 hours","style":"out_of_range","expect":{"sessionMinutes":180},"note":"very long; confirm"}
+{"id":"A0689","qid":"time","text":"45min","style":"typed_sloppy","expect":{"sessionMinutes":45}}
+{"id":"A0690","qid":"time","text":"30mins","style":"typed_sloppy","expect":{"sessionMinutes":30}}
+{"id":"A0691","qid":"time","text":"1hr","style":"typed_sloppy","expect":{"sessionMinutes":60}}
+{"id":"A0692","qid":"time","text":"1 hr","style":"typed_sloppy","expect":{"sessionMinutes":60}}
+{"id":"A0693","qid":"time","text":"an hr","style":"typed_sloppy","expect":{"sessionMinutes":60}}
+{"id":"A0694","qid":"time","text":"45 mni","style":"typed_sloppy","expect":{"sessionMinutes":45}}
+{"id":"A0695","qid":"time","text":"fourty five","style":"typed_sloppy","expect":{"sessionMinutes":45}}
+{"id":"A0696","qid":"time","text":"sixy","style":"typed_sloppy","expect":{"sessionMinutes":60}}
+{"id":"A0697","qid":"time","text":"1hr ish","style":"typed_sloppy","expect":{"sessionMinutes":60}}
+{"id":"A0698","qid":"time","text":"hr","style":"typed_sloppy","expect":{"sessionMinutes":60}}
+{"id":"A0699","qid":"time","text":"45m","style":"typed_sloppy","expect":{"sessionMinutes":45}}
+{"id":"A0700","qid":"time","text":"30-ish","style":"typed_sloppy","expect":{"sessionMinutes":30}}
+{"id":"A0701","qid":"time","text":"1 hr 15","style":"typed_sloppy","expect":{"sessionMinutes":75}}
+{"id":"A0702","qid":"time","text":"3o min","style":"typed_sloppy","expect":{"sessionMinutes":30},"note":"letter o for zero"}
+{"id":"A0703","qid":"time","text":"forty five minutes","style":"voice","expect":{"sessionMinutes":45}}
+{"id":"A0704","qid":"time","text":"40 five","style":"voice","expect":{"sessionMinutes":45},"note":"STT split number"}
+{"id":"A0705","qid":"time","text":"45 minutes","style":"voice","expect":{"sessionMinutes":45}}
+{"id":"A0706","qid":"time","text":"about an hour","style":"voice","expect":{"sessionMinutes":60}}
+{"id":"A0707","qid":"time","text":"forty five no wait thirty","style":"voice","expect":{"sessionMinutes":30},"note":"self-correction"}
+{"id":"A0708","qid":"time","text":"thirty no an hour","style":"voice","expect":{"sessionMinutes":60}}
+{"id":"A0709","qid":"time","text":"like forty five","style":"voice","expect":{"sessionMinutes":45}}
+{"id":"A0710","qid":"time","text":"uh an hour maybe","style":"voice","expect":{"sessionMinutes":60}}
+{"id":"A0711","qid":"time","text":"sixty minutes","style":"voice","expect":{"sessionMinutes":60}}
+{"id":"A0712","qid":"time","text":"an hour and fifteen minutes","style":"voice","expect":{"sessionMinutes":75}}
+{"id":"A0713","qid":"time","text":"three quarters of an hour","style":"voice","expect":{"sessionMinutes":45}}
+{"id":"A0714","qid":"time","text":"forty","style":"voice","expect":{"sessionMinutes":40},"note":"off-grid"}
+{"id":"A0715","qid":"time","text":"fifty","style":"voice","expect":{"sessionMinutes":50},"note":"off-grid"}
+{"id":"A0716","qid":"time","text":"fifteen","style":"voice","expect":{"ambiguous":true,"best":{"sessionMinutes":15}},"note":"STT fifteen vs fifty"}
+{"id":"A0717","qid":"time","text":"not long, 30 tops","style":"slang","expect":{"sessionMinutes":30}}
+{"id":"A0718","qid":"time","text":"a quick 30","style":"slang","expect":{"sessionMinutes":30}}
+{"id":"A0719","qid":"time","text":"full hour","style":"slang","expect":{"sessionMinutes":60}}
+{"id":"A0720","qid":"time","text":"lunch hour","style":"slang","expect":{"ambiguous":true,"best":{"sessionMinutes":45}},"note":"an hour away, less actual training"}
+{"id":"A0721","qid":"time","text":"however long a podcast episode is lol","style":"slang","expect":{"ambiguous":true}}
+{"id":"A0722","qid":"time","text":"⏱️ 45","style":"emoji","expect":{"sessionMinutes":45}}
+{"id":"A0723","qid":"time","text":"60 ⏰","style":"emoji","expect":{"sessionMinutes":60}}
+{"id":"A0724","qid":"time","text":"🕐 an hour","style":"emoji","expect":{"sessionMinutes":60}}
+{"id":"A0725","qid":"time","text":"3️⃣0️⃣ min","style":"emoji","expect":{"sessionMinutes":30}}
+{"id":"A0726","qid":"time","text":"una hora","style":"non_english","expect":{"sessionMinutes":60}}
+{"id":"A0727","qid":"time","text":"media hora","style":"non_english","expect":{"sessionMinutes":30}}
+{"id":"A0728","qid":"time","text":"45 minutos","style":"non_english","expect":{"sessionMinutes":45}}
+{"id":"A0729","qid":"time","text":"une heure","style":"non_english","expect":{"sessionMinutes":60}}
+{"id":"A0730","qid":"time","text":"I get about an hour at lunch but need to shower so like 45","style":"chatty","expect":{"sessionMinutes":45}}
+{"id":"A0731","qid":"time","text":"kids nap for an hour so that's my window","style":"chatty","expect":{"sessionMinutes":60}}
+{"id":"A0732","qid":"time","text":"depends, 30 on weekdays and 90 on weekends","style":"chatty","expect":{"ambiguous":true,"best":{"sessionMinutes":30}}}
+{"id":"A0733","qid":"time","text":"usually 45 but I could stretch to an hour","style":"chatty","expect":{"ambiguous":true,"best":{"sessionMinutes":45}}}
+{"id":"A0734","qid":"time","text":"gym closes at 9 and I usually get there at 8","style":"chatty","expect":{"sessionMinutes":60},"note":"derive from clock times"}
+{"id":"A0735","qid":"time","text":"I get off at 5 and have to pick up my kid at 6:15, gym is 10 min away","style":"chatty","expect":{"ambiguous":true,"best":{"sessionMinutes":45}},"note":"clock math ~55 min"}
+{"id":"A0736","qid":"time","text":"my train leaves at 7:30 and I wake up at 6, so maybe 45 of actual workout","style":"chatty","expect":{"sessionMinutes":45}}
+{"id":"A0737","qid":"time","text":"not more than 45","style":"negation","expect":{"sessionMinutes":45},"note":"ceiling"}
+{"id":"A0738","qid":"time","text":"no longer than an hour","style":"negation","expect":{"sessionMinutes":60}}
+{"id":"A0739","qid":"time","text":"less than 30","style":"negation","expect":{"ambiguous":true,"best":{"sessionMinutes":30}}}
+{"id":"A0740","qid":"time","text":"not an hour, 45","style":"negation","expect":{"sessionMinutes":45}}
+{"id":"A0741","qid":"time","text":"can't do more than half an hour","style":"negation","expect":{"sessionMinutes":30}}
+{"id":"A0742","qid":"time","text":"no less than an hour","style":"negation","expect":{"sessionMinutes":60}}
+{"id":"A0743","qid":"time","text":"45-60","style":"range","expect":{"ambiguous":true,"best":{"sessionMinutes":45}}}
+{"id":"A0744","qid":"time","text":"30-45 mins","style":"range","expect":{"ambiguous":true,"best":{"sessionMinutes":30}}}
+{"id":"A0745","qid":"time","text":"an hour to an hour and a half","style":"range","expect":{"ambiguous":true,"best":{"sessionMinutes":60}}}
+{"id":"A0746","qid":"time","text":"45 to 60 minutes","style":"range","expect":{"ambiguous":true,"best":{"sessionMinutes":45}}}
+{"id":"A0747","qid":"time","text":"30 or 45","style":"range","expect":{"ambiguous":true,"best":{"sessionMinutes":30}}}
+{"id":"A0748","qid":"time","text":"60-75","style":"range","expect":{"ambiguous":true,"best":{"sessionMinutes":60}}}
+{"id":"A0749","qid":"time","text":"40-50","style":"range","expect":{"ambiguous":true,"best":{"sessionMinutes":45}}}
+{"id":"A0750","qid":"time","text":"whatever you think","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0751","qid":"time","text":"how long should it be?","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0752","qid":"time","text":"how long do workouts usually take","style":"typed_sloppy","expect":{"defer":true}}
+{"id":"A0753","qid":"time","text":"doesn't matter","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0754","qid":"time","text":"an hour, 4 days","style":"typed_clean","expect":{"sessionMinutes":60,"daysPerWeek":4},"multi":true}
+{"id":"A0755","qid":"time","text":"45 min at home","style":"typed_clean","expect":{"sessionMinutes":45,"environment":"home"},"multi":true}
+{"id":"A0756","qid":"time","text":"30 minutes, bodyweight only","style":"typed_clean","expect":{"sessionMinutes":30,"environment":"bodyweight"},"multi":true}
+{"id":"A0757","qid":"time","text":"an hour at the gym, 3x a week","style":"typed_sloppy","expect":{"sessionMinutes":60,"environment":"full_gym","daysPerWeek":3},"multi":true}
+{"id":"A0758","qid":"time","text":"all day","style":"out_of_range","expect":{"ambiguous":true}}
+{"id":"A0759","qid":"time","text":"as long as it takes","style":"chatty","expect":{"defer":true}}
+{"id":"A0760","qid":"time","text":"unlimited, I'm retired","style":"chatty","expect":{"ambiguous":true,"best":{"sessionMinutes":75}}}
+{"id":"A0761","qid":"time","text":"60 minutes","style":"typed_clean","expect":{"sessionMinutes":60}}
+{"id":"A0762","qid":"time","text":"75 minutes","style":"typed_clean","expect":{"sessionMinutes":75}}
+{"id":"A0763","qid":"time","text":"30 minutes","style":"typed_clean","expect":{"sessionMinutes":30}}
+{"id":"A0764","qid":"time","text":"about 45","style":"typed_clean","expect":{"sessionMinutes":45}}
+{"id":"A0765","qid":"time","text":"roughly an hour","style":"typed_clean","expect":{"sessionMinutes":60}}
+{"id":"A0766","qid":"time","text":"~60","style":"typed_sloppy","expect":{"sessionMinutes":60}}
+{"id":"A0767","qid":"time","text":"1 hour 15 min","style":"typed_clean","expect":{"sessionMinutes":75}}
+{"id":"A0768","qid":"time","text":"an hour and a quarter","style":"voice","expect":{"sessionMinutes":75}}
+{"id":"A0769","qid":"time","text":"45 but my knee needs a long warmup","style":"chatty","expect":{"sessionMinutes":45,"limitations":["knees"]},"multi":true}
+{"id":"A0770","qid":"time","text":"half hour","style":"voice","expect":{"sessionMinutes":30}}
+{"id":"A0771","qid":"time","text":"an our","style":"typed_sloppy","expect":{"sessionMinutes":60},"note":"typo hour"}
+{"id":"A0772","qid":"time","text":"for T5","style":"voice","expect":{"sessionMinutes":45},"note":"STT garble of forty five"}
+{"id":"A0773","qid":"time","text":"hour tops","style":"slang","expect":{"sessionMinutes":60}}
+{"id":"A0774","qid":"time","text":"like 20 on a bad day, 45 normally","style":"chatty","expect":{"ambiguous":true,"best":{"sessionMinutes":45}}}
+{"id":"A0775","qid":"time","text":"thirty","style":"voice","expect":{"sessionMinutes":30}}
+{"id":"A0776","qid":"time","text":"45 please","style":"typed_clean","expect":{"sessionMinutes":45}}
+{"id":"A0777","qid":"time","text":"an hour ish","style":"typed_sloppy","expect":{"sessionMinutes":60}}
+{"id":"A0778","qid":"time","text":"not 30, that's too short. 60","style":"negation","expect":{"sessionMinutes":60}}
+{"id":"A0779","qid":"time","text":"one hour","style":"voice","expect":{"sessionMinutes":60}}
+{"id":"A0780","qid":"time","text":"1 1/2 hours","style":"out_of_range","expect":{"sessionMinutes":90}}
+{"id":"A0781","qid":"time","text":"75 if I skip cardio","style":"chatty","expect":{"sessionMinutes":75}}
+{"id":"A0782","qid":"time","text":"hour-ish","style":"typed_sloppy","expect":{"sessionMinutes":60}}
+{"id":"A0783","qid":"time","text":"between 30 and 45","style":"range","expect":{"ambiguous":true,"best":{"sessionMinutes":30}}}
+{"id":"A0784","qid":"time","text":"short, like 25","style":"out_of_range","expect":{"sessionMinutes":25}}
+{"id":"A0785","qid":"experience","text":"beginner","style":"typed_clean","expect":{"experience":"beginner"}}
+{"id":"A0786","qid":"experience","text":"intermediate","style":"typed_clean","expect":{"experience":"intermediate"}}
+{"id":"A0787","qid":"experience","text":"advanced","style":"typed_clean","expect":{"experience":"advanced"}}
+{"id":"A0788","qid":"experience","text":"never","style":"typed_clean","expect":{"experience":"beginner"}}
+{"id":"A0789","qid":"experience","text":"never touched a weight","style":"voice","expect":{"experience":"beginner"}}
+{"id":"A0790","qid":"experience","text":"just starting","style":"typed_clean","expect":{"experience":"beginner"}}
+{"id":"A0791","qid":"experience","text":"brand new","style":"typed_clean","expect":{"experience":"beginner"}}
+{"id":"A0792","qid":"experience","text":"a few months","style":"typed_clean","expect":{"experience":"beginner"}}
+{"id":"A0793","qid":"experience","text":"6 months","style":"typed_clean","expect":{"experience":"beginner"}}
+{"id":"A0794","qid":"experience","text":"about a month","style":"voice","expect":{"experience":"beginner"}}
+{"id":"A0795","qid":"experience","text":"2 weeks","style":"typed_clean","expect":{"experience":"beginner"}}
+{"id":"A0796","qid":"experience","text":"a year","style":"typed_clean","expect":{"experience":"intermediate"},"note":"boundary"}
+{"id":"A0797","qid":"experience","text":"2 years","style":"typed_clean","expect":{"experience":"intermediate"}}
+{"id":"A0798","qid":"experience","text":"3 years","style":"typed_clean","expect":{"experience":"intermediate"}}
+{"id":"A0799","qid":"experience","text":"5 years","style":"typed_clean","expect":{"experience":"advanced"}}
+{"id":"A0800","qid":"experience","text":"10+ years","style":"typed_clean","expect":{"experience":"advanced"}}
+{"id":"A0801","qid":"experience","text":"I've been lifting for five years","style":"voice","expect":{"experience":"advanced"}}
+{"id":"A0802","qid":"experience","text":"since high school","style":"voice","expect":{"ambiguous":true,"best":{"experience":"advanced"}},"note":"age unknown"}
+{"id":"A0803","qid":"experience","text":"since college, I'm 45 now","style":"chatty","expect":{"experience":"advanced"}}
+{"id":"A0804","qid":"experience","text":"on and off for years","style":"chatty","expect":{"ambiguous":true,"best":{"experience":"intermediate"}}}
+{"id":"A0805","qid":"experience","text":"used to lift in college, haven't in 10 years","style":"chatty","expect":{"ambiguous":true,"best":{"experience":"beginner"}},"note":"detrained"}
+{"id":"A0806","qid":"experience","text":"I compete in powerlifting","style":"typed_clean","expect":{"experience":"advanced"}}
+{"id":"A0807","qid":"experience","text":"I coach","style":"typed_clean","expect":{"experience":"advanced"}}
+{"id":"A0808","qid":"experience","text":"former D1 athlete, but mostly sport, not lifting","style":"chatty","expect":{"ambiguous":true,"best":{"experience":"intermediate"}}}
+{"id":"A0809","qid":"experience","text":"beginer","style":"typed_sloppy","expect":{"experience":"beginner"}}
+{"id":"A0810","qid":"experience","text":"intermidiate","style":"typed_sloppy","expect":{"experience":"intermediate"}}
+{"id":"A0811","qid":"experience","text":"advnced","style":"typed_sloppy","expect":{"experience":"advanced"}}
+{"id":"A0812","qid":"experience","text":"begginer","style":"typed_sloppy","expect":{"experience":"beginner"}}
+{"id":"A0813","qid":"experience","text":"intermediat","style":"typed_sloppy","expect":{"experience":"intermediate"}}
+{"id":"A0814","qid":"experience","text":"noob","style":"slang","expect":{"experience":"beginner"}}
+{"id":"A0815","qid":"experience","text":"newbie","style":"slang","expect":{"experience":"beginner"}}
+{"id":"A0816","qid":"experience","text":"6 mo","style":"typed_sloppy","expect":{"experience":"beginner"}}
+{"id":"A0817","qid":"experience","text":"2 yrs","style":"typed_sloppy","expect":{"experience":"intermediate"}}
+{"id":"A0818","qid":"experience","text":"5+ yrs","style":"typed_sloppy","expect":{"experience":"advanced"}}
+{"id":"A0819","qid":"experience","text":"3yrs on and off","style":"typed_sloppy","expect":{"ambiguous":true,"best":{"experience":"intermediate"}},"note":"inconsistent"}
+{"id":"A0820","qid":"experience","text":"like 1 yr","style":"typed_sloppy","expect":{"experience":"intermediate"},"note":"boundary"}
+{"id":"A0821","qid":"experience","text":"n00b","style":"slang","expect":{"experience":"beginner"}}
+{"id":"A0822","qid":"experience","text":"intermed","style":"typed_sloppy","expect":{"experience":"intermediate"}}
+{"id":"A0823","qid":"experience","text":"adv","style":"typed_sloppy","expect":{"experience":"advanced"}}
+{"id":"A0824","qid":"experience","text":"a couple months","style":"voice","expect":{"experience":"beginner"}}
+{"id":"A0825","qid":"experience","text":"about a year","style":"voice","expect":{"experience":"intermediate"},"note":"boundary"}
+{"id":"A0826","qid":"experience","text":"a year and a half","style":"voice","expect":{"experience":"intermediate"}}
+{"id":"A0827","qid":"experience","text":"two years","style":"voice","expect":{"experience":"intermediate"}}
+{"id":"A0828","qid":"experience","text":"for years","style":"voice","expect":{"ambiguous":true,"best":{"experience":"intermediate"}},"note":"homophone: four years vs many years"}
+{"id":"A0829","qid":"experience","text":"tin years","style":"voice","expect":{"experience":"advanced"},"note":"homophone ten"}
+{"id":"A0830","qid":"experience","text":"to years","style":"voice","expect":{"experience":"intermediate"},"note":"homophone two"}
+{"id":"A0831","qid":"experience","text":"three months","style":"voice","expect":{"experience":"beginner"}}
+{"id":"A0832","qid":"experience","text":"uh like six months maybe","style":"voice","expect":{"experience":"beginner"}}
+{"id":"A0833","qid":"experience","text":"two years no wait three","style":"voice","expect":{"experience":"intermediate"}}
+{"id":"A0834","qid":"experience","text":"since I was sixteen and I'm thirty now","style":"voice","expect":{"experience":"advanced"}}
+{"id":"A0835","qid":"experience","text":"I'm a complete beginner","style":"voice","expect":{"experience":"beginner"}}
+{"id":"A0836","qid":"experience","text":"eight months","style":"voice","expect":{"experience":"beginner"}}
+{"id":"A0837","qid":"experience","text":"about eighteen months","style":"voice","expect":{"experience":"intermediate"}}
+{"id":"A0838","qid":"experience","text":"gym rat for a decade","style":"slang","expect":{"experience":"advanced"}}
+{"id":"A0839","qid":"experience","text":"I know my way around a barbell","style":"slang","expect":{"ambiguous":true,"best":{"experience":"intermediate"}}}
+{"id":"A0840","qid":"experience","text":"total noob","style":"slang","expect":{"experience":"beginner"}}
+{"id":"A0841","qid":"experience","text":"couch to gym","style":"slang","expect":{"experience":"beginner"}}
+{"id":"A0842","qid":"experience","text":"I'm a meathead lol","style":"slang","expect":{"ambiguous":true,"best":{"experience":"advanced"}}}
+{"id":"A0843","qid":"experience","text":"day one","style":"slang","expect":{"experience":"beginner"}}
+{"id":"A0844","qid":"experience","text":"fresh off the couch","style":"slang","expect":{"experience":"beginner"}}
+{"id":"A0845","qid":"experience","text":"been doing this longer than you've existed","style":"slang","expect":{"experience":"advanced"}}
+{"id":"A0846","qid":"experience","text":"OG","style":"slang","expect":{"ambiguous":true,"best":{"experience":"advanced"}}}
+{"id":"A0847","qid":"experience","text":"🐣 beginner","style":"emoji","expect":{"experience":"beginner"}}
+{"id":"A0848","qid":"experience","text":"👶","style":"emoji","expect":{"experience":"beginner"}}
+{"id":"A0849","qid":"experience","text":"💪 10 years","style":"emoji","expect":{"experience":"advanced"}}
+{"id":"A0850","qid":"experience","text":"🏆 advanced","style":"emoji","expect":{"experience":"advanced"}}
+{"id":"A0851","qid":"experience","text":"🤷 a few months","style":"emoji","expect":{"experience":"beginner"}}
+{"id":"A0852","qid":"experience","text":"principiante","style":"non_english","expect":{"experience":"beginner"}}
+{"id":"A0853","qid":"experience","text":"intermedio","style":"non_english","expect":{"experience":"intermediate"}}
+{"id":"A0854","qid":"experience","text":"avanzado","style":"non_english","expect":{"experience":"advanced"}}
+{"id":"A0855","qid":"experience","text":"nunca he levantado pesas","style":"non_english","expect":{"experience":"beginner"}}
+{"id":"A0856","qid":"experience","text":"hace dos años","style":"non_english","expect":{"experience":"intermediate"}}
+{"id":"A0857","qid":"experience","text":"I did p90x like 10 years ago, does that count","style":"chatty","expect":{"ambiguous":true,"best":{"experience":"beginner"}},"note":"old, non-lifting"}
+{"id":"A0858","qid":"experience","text":"mostly machines for a couple years, never really used free weights","style":"chatty","expect":{"ambiguous":true,"best":{"experience":"beginner"}},"note":"machines vs free weights"}
+{"id":"A0859","qid":"experience","text":"I can squat 315 and bench 225","style":"chatty","expect":{"ambiguous":true,"best":{"experience":"intermediate"}},"note":"strength numbers, not time"}
+{"id":"A0860","qid":"experience","text":"I've been going consistently since the pandemic","style":"chatty","expect":{"experience":"advanced"},"note":"2020 -> ~6 years"}
+{"id":"A0861","qid":"experience","text":"lifted all through high school football, I'm 35 now, off and on since","style":"chatty","expect":{"ambiguous":true,"best":{"experience":"intermediate"}}}
+{"id":"A0862","qid":"experience","text":"my trainer says I'm intermediate","style":"chatty","expect":{"experience":"intermediate"}}
+{"id":"A0863","qid":"experience","text":"ran starting strength twice and stalled out","style":"chatty","expect":{"experience":"intermediate"},"note":"finished novice LP"}
+{"id":"A0864","qid":"experience","text":"not a beginner but not advanced either","style":"negation","expect":{"experience":"intermediate"}}
+{"id":"A0865","qid":"experience","text":"not long, like 3 months","style":"negation","expect":{"experience":"beginner"}}
+{"id":"A0866","qid":"experience","text":"not new, 4 years","style":"negation","expect":{"experience":"intermediate"}}
+{"id":"A0867","qid":"experience","text":"never consistently","style":"negation","expect":{"ambiguous":true,"best":{"experience":"beginner"}}}
+{"id":"A0868","qid":"experience","text":"I wouldn't call myself advanced","style":"negation","expect":{"ambiguous":true,"best":{"experience":"intermediate"}}}
+{"id":"A0869","qid":"experience","text":"not a total beginner, I did some machines","style":"negation","expect":{"ambiguous":true,"best":{"experience":"beginner"}}}
+{"id":"A0870","qid":"experience","text":"1-2 years","style":"range","expect":{"experience":"intermediate"}}
+{"id":"A0871","qid":"experience","text":"3-4 yrs","style":"range","expect":{"experience":"intermediate"}}
+{"id":"A0872","qid":"experience","text":"somewhere between beginner and intermediate","style":"range","expect":{"ambiguous":true,"best":{"experience":"beginner"}}}
+{"id":"A0873","qid":"experience","text":"6 months to a year","style":"range","expect":{"ambiguous":true,"best":{"experience":"beginner"}}}
+{"id":"A0874","qid":"experience","text":"40 years","style":"out_of_range","expect":{"experience":"advanced"}}
+{"id":"A0875","qid":"experience","text":"0","style":"out_of_range","expect":{"experience":"beginner"}}
+{"id":"A0876","qid":"experience","text":"a week","style":"out_of_range","expect":{"experience":"beginner"}}
+{"id":"A0877","qid":"experience","text":"since yesterday lol","style":"out_of_range","expect":{"experience":"beginner"}}
+{"id":"A0878","qid":"experience","text":"how do I know?","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0879","qid":"experience","text":"what counts as intermediate?","style":"typed_clean","expect":{"defer":true}}
+{"id":"A0880","qid":"experience","text":"idk how to rate myself","style":"typed_sloppy","expect":{"defer":true}}
+{"id":"A0881","qid":"experience","text":"beginner, 3 days a week","style":"typed_clean","expect":{"experience":"beginner","daysPerWeek":3},"multi":true}
+{"id":"A0882","qid":"experience","text":"5 years, training for a meet","style":"chatty","expect":{"experience":"advanced","goal":"strength"},"multi":true}
+{"id":"A0883","qid":"experience","text":"new, at home","style":"typed_clean","expect":{"experience":"beginner","environment":"home"},"multi":true}
+{"id":"A0884","qid":"experience","text":"2 years, but my shoulder's been bugging me","style":"chatty","expect":{"experience":"intermediate","limitations":["shoulders"]},"multi":true}
+{"id":"A0885","qid":"experience","text":"pretty new","style":"typed_clean","expect":{"experience":"beginner"}}
+{"id":"A0886","qid":"experience","text":"a little while","style":"chatty","expect":{"ambiguous":true}}
+{"id":"A0887","qid":"experience","text":"long time","style":"chatty","expect":{"ambiguous":true,"best":{"experience":"advanced"}}}
+{"id":"A0888","qid":"experience","text":"decades","style":"typed_clean","expect":{"experience":"advanced"}}
+{"id":"A0889","qid":"experience","text":"I've lifted for 7 years","style":"typed_clean","expect":{"experience":"advanced"}}
+{"id":"A0890","qid":"experience","text":"12 years","style":"typed_clean","expect":{"experience":"advanced"}}
+{"id":"A0891","qid":"experience","text":"almost 2 years","style":"typed_clean","expect":{"experience":"intermediate"}}
+{"id":"A0892","qid":"experience","text":"just over a year","style":"typed_clean","expect":{"experience":"intermediate"}}
+{"id":"A0893","qid":"experience","text":"4 months","style":"typed_clean","expect":{"experience":"beginner"}}
+{"id":"A0894","qid":"experience","text":"i started in january","style":"relative_dates","expect":{"experience":"beginner"},"note":"Jan 2026 -> ~8 months"}
+{"id":"A0895","qid":"experience","text":"since last summer","style":"relative_dates","expect":{"experience":"beginner"},"note":"~15 months? borderline"}
+{"id":"A0896","qid":"experience","text":"since 2019","style":"relative_dates","expect":{"experience":"advanced"},"note":"~7 years"}
+{"id":"A0897","qid":"experience","text":"since 2024","style":"relative_dates","expect":{"experience":"intermediate"},"note":"~2 years"}
+{"id":"A0898","qid":"experience","text":"since march","style":"relative_dates","expect":{"experience":"beginner"}}
+{"id":"A0899","qid":"experience","text":"off and on since 2015 but pretty consistent the last year","style":"chatty","expect":{"ambiguous":true,"best":{"experience":"intermediate"}}}
+{"id":"A0900","qid":"experience","text":"idk like a while","style":"typed_sloppy","expect":{"ambiguous":true}}
+{"id":"A0901","qid":"experience","text":"Never lifted but I've done a lot of yoga","style":"chatty","expect":{"experience":"beginner"}}
+{"id":"A0902","qid":"experience","text":"I teach spin classes but never lifted","style":"chatty","expect":{"experience":"beginner"}}
+{"id":"A0903","qid":"experience","text":"I'm a personal trainer","style":"typed_clean","expect":{"experience":"advanced"}}
+{"id":"A0904","qid":"experience","text":"I was pretty advanced before my surgery, now starting over","style":"chatty","expect":{"ambiguous":true,"best":{"experience":"intermediate"}}}
+{"id":"A0905","qid":"experience","text":"fve years","style":"typed_sloppy","expect":{"experience":"advanced"}}
+{"id":"A0906","qid":"experience","text":"2 yeras","style":"typed_sloppy","expect":{"experience":"intermediate"}}
+{"id":"A0907","qid":"experience","text":"siz months","style":"typed_sloppy","expect":{"experience":"beginner"}}
+{"id":"A0908","qid":"experience","text":"never ever","style":"voice","expect":{"experience":"beginner"}}
+{"id":"A0909","qid":"experience","text":"like a year or two","style":"range","expect":{"experience":"intermediate"}}
+{"id":"A0910","qid":"limits","text":"none","style":"typed_clean","expect":{"limitations":[]}}
+{"id":"A0911","qid":"limits","text":"nothing","style":"typed_clean","expect":{"limitations":[]}}
+{"id":"A0912","qid":"limits","text":"nah","style":"slang","expect":{"limitations":[]}}
+{"id":"A0913","qid":"limits","text":"all good","style":"slang","expect":{"limitations":[]}}
+{"id":"A0914","qid":"limits","text":"nope","style":"typed_clean","expect":{"limitations":[]}}
+{"id":"A0915","qid":"limits","text":"I'm good","style":"typed_clean","expect":{"limitations":[]}}
+{"id":"A0916","qid":"limits","text":"no injuries","style":"typed_clean","expect":{"limitations":[]}}
+{"id":"A0917","qid":"limits","text":"healthy as a horse","style":"slang","expect":{"limitations":[]}}
+{"id":"A0918","qid":"limits","text":"n/a","style":"typed_sloppy","expect":{"limitations":[]}}
+{"id":"A0919","qid":"limits","text":"no","style":"typed_clean","expect":{"limitations":[]}}
+{"id":"A0920","qid":"limits","text":"not really","style":"typed_clean","expect":{"limitations":[]}}
+{"id":"A0921","qid":"limits","text":"👍","style":"emoji","expect":{"limitations":[]}}
+{"id":"A0922","qid":"limits","text":"✅ nothing","style":"emoji","expect":{"limitations":[]}}
+{"id":"A0923","qid":"limits","text":"nada","style":"non_english","expect":{"limitations":[]}}
+{"id":"A0924","qid":"limits","text":"ninguna","style":"non_english","expect":{"limitations":[]}}
+{"id":"A0925","qid":"limits","text":"nothing I can think of","style":"chatty","expect":{"limitations":[]}}
+{"id":"A0926","qid":"limits","text":"not that I know of","style":"chatty","expect":{"limitations":[]}}
+{"id":"A0927","qid":"limits","text":"bad knee","style":"typed_clean","expect":{"limitations":["knees"]}}
+{"id":"A0928","qid":"limits","text":"my back","style":"typed_clean","expect":{"limitations":["lower_back"]}}
+{"id":"A0929","qid":"limits","text":"cranky shoulder","style":"slang","expect":{"limitations":["shoulders"]}}
+{"id":"A0930","qid":"limits","text":"can't do overhead","style":"typed_clean","expect":{"limitations":["no_overhead"]}}
+{"id":"A0931","qid":"limits","text":"no barbell","style":"typed_clean","expect":{"limitations":["no_barbell"]}}
+{"id":"A0932","qid":"limits","text":"hate running","style":"typed_clean","expect":{"limitations":["no_running"]}}
+{"id":"A0933","qid":"limits","text":"knees","style":"typed_clean","expect":{"limitations":["knees"]}}
+{"id":"A0934","qid":"limits","text":"lower back","style":"typed_clean","expect":{"limitations":["lower_back"]}}
+{"id":"A0935","qid":"limits","text":"shoulders","style":"typed_clean","expect":{"limitations":["shoulders"]}}
+{"id":"A0936","qid":"limits","text":"no jumping","style":"typed_clean","expect":{"limitations":["no_jumping"]}}
+{"id":"A0937","qid":"limits","text":"bad knees","style":"typed_clean","expect":{"limitations":["knees"]}}
+{"id":"A0938","qid":"limits","text":"torn meniscus last year","style":"chatty","expect":{"limitations":["knees"]}}
+{"id":"A0939","qid":"limits","text":"ACL reconstruction","style":"typed_clean","expect":{"limitations":["knees"]}}
+{"id":"A0940","qid":"limits","text":"patellar tendonitis","style":"typed_clean","expect":{"limitations":["knees"]}}
+{"id":"A0941","qid":"limits","text":"runner's knee","style":"typed_clean","expect":{"limitations":["knees"]}}
+{"id":"A0942","qid":"limits","text":"herniated disc","style":"typed_clean","expect":{"limitations":["lower_back"]}}
+{"id":"A0943","qid":"limits","text":"sciatica","style":"typed_clean","expect":{"limitations":["lower_back"]}}
+{"id":"A0944","qid":"limits","text":"L4 L5","style":"typed_clean","expect":{"limitations":["lower_back"]}}
+{"id":"A0945","qid":"limits","text":"slipped disc back in 2019","style":"chatty","expect":{"limitations":["lower_back"]}}
+{"id":"A0946","qid":"limits","text":"rotator cuff","style":"typed_clean","expect":{"limitations":["shoulders"]}}
+{"id":"A0947","qid":"limits","text":"impingement in my right shoulder","style":"typed_clean","expect":{"limitations":["shoulders"]}}
+{"id":"A0948","qid":"limits","text":"dislocated my shoulder playing rugby","style":"chatty","expect":{"limitations":["shoulders"]}}
+{"id":"A0949","qid":"limits","text":"frozen shoulder","style":"typed_clean","expect":{"limitations":["shoulders"]}}
+{"id":"A0950","qid":"limits","text":"labrum tear","style":"typed_clean","expect":{"limitations":["shoulders"]}}
+{"id":"A0951","qid":"limits","text":"back is tweaky","style":"slang","expect":{"limitations":["lower_back"]}}
+{"id":"A0952","qid":"limits","text":"my back goes out sometimes","style":"chatty","expect":{"limitations":["lower_back"]}}
+{"id":"A0953","qid":"limits","text":"upper back","style":"typed_clean","expect":{"ambiguous":true},"note":"not_in_list: upper back"}
+{"id":"A0954","qid":"limits","text":"neck","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A0955","qid":"limits","text":"wrist","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A0956","qid":"limits","text":"elbow","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A0957","qid":"limits","text":"hip","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A0958","qid":"limits","text":"ankle","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list; may imply no_jumping"}
+{"id":"A0959","qid":"limits","text":"asthma","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A0960","qid":"limits","text":"pregnant","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list; flag medical"}
+{"id":"A0961","qid":"limits","text":"heart condition","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list; flag medical clearance"}
+{"id":"A0962","qid":"limits","text":"no running","style":"typed_clean","expect":{"limitations":["no_running"]}}
+{"id":"A0963","qid":"limits","text":"running hurts my shins","style":"chatty","expect":{"limitations":["no_running"]},"note":"shin splints"}
+{"id":"A0964","qid":"limits","text":"can't jump, downstairs neighbors","style":"chatty","expect":{"limitations":["no_jumping"]}}
+{"id":"A0965","qid":"limits","text":"no box jumps please","style":"typed_clean","expect":{"limitations":["no_jumping"]}}
+{"id":"A0966","qid":"limits","text":"no burpees","style":"typed_clean","expect":{"limitations":["no_jumping"]}}
+{"id":"A0967","qid":"limits","text":"plyometrics kill my knees","style":"chatty","expect":{"limitations":["knees","no_jumping"]}}
+{"id":"A0968","qid":"limits","text":"I don't have a barbell","style":"typed_clean","expect":{"limitations":["no_barbell"]}}
+{"id":"A0969","qid":"limits","text":"only dumbbells","style":"typed_clean","expect":{"limitations":["no_barbell"]}}
+{"id":"A0970","qid":"limits","text":"no bar","style":"typed_sloppy","expect":{"limitations":["no_barbell"]}}
+{"id":"A0971","qid":"limits","text":"barbells scare me","style":"chatty","expect":{"limitations":["no_barbell"]}}
+{"id":"A0972","qid":"limits","text":"no overhead pressing","style":"typed_clean","expect":{"limitations":["no_overhead"]}}
+{"id":"A0973","qid":"limits","text":"can't lift my arms over my head","style":"chatty","expect":{"limitations":["no_overhead"]},"note":"may also imply shoulders"}
+{"id":"A0974","qid":"limits","text":"overhead hurts my shoulder","style":"chatty","expect":{"limitations":["shoulders","no_overhead"]}}
+{"id":"A0975","qid":"limits","text":"bad knee and my lower back","style":"typed_clean","expect":{"limitations":["knees","lower_back"]}}
+{"id":"A0976","qid":"limits","text":"shoulder and knee","style":"typed_clean","expect":{"limitations":["shoulders","knees"]}}
+{"id":"A0977","qid":"limits","text":"no running, no jumping","style":"typed_clean","expect":{"limitations":["no_running","no_jumping"]}}
+{"id":"A0978","qid":"limits","text":"back and shoulders, and I hate running","style":"chatty","expect":{"limitations":["lower_back","shoulders","no_running"]}}
+{"id":"A0979","qid":"limits","text":"knees are shot, no jumping and no running","style":"slang","expect":{"limitations":["knees","no_jumping","no_running"]}}
+{"id":"A0980","qid":"limits","text":"bad kne","style":"typed_sloppy","expect":{"limitations":["knees"]}}
+{"id":"A0981","qid":"limits","text":"lowr back","style":"typed_sloppy","expect":{"limitations":["lower_back"]}}
+{"id":"A0982","qid":"limits","text":"sholder","style":"typed_sloppy","expect":{"limitations":["shoulders"]}}
+{"id":"A0983","qid":"limits","text":"shoudler impingment","style":"typed_sloppy","expect":{"limitations":["shoulders"]}}
+{"id":"A0984","qid":"limits","text":"no overhed","style":"typed_sloppy","expect":{"limitations":["no_overhead"]}}
+{"id":"A0985","qid":"limits","text":"no barbel","style":"typed_sloppy","expect":{"limitations":["no_barbell"]}}
+{"id":"A0986","qid":"limits","text":"no jumpin","style":"typed_sloppy","expect":{"limitations":["no_jumping"]}}
+{"id":"A0987","qid":"limits","text":"kness","style":"typed_sloppy","expect":{"limitations":["knees"]}}
+{"id":"A0988","qid":"limits","text":"l back","style":"typed_sloppy","expect":{"limitations":["lower_back"]}}
+{"id":"A0989","qid":"limits","text":"LB pain","style":"typed_sloppy","expect":{"limitations":["lower_back"]}}
+{"id":"A0990","qid":"limits","text":"rc tear","style":"typed_sloppy","expect":{"limitations":["shoulders"]}}
+{"id":"A0991","qid":"limits","text":"acl","style":"typed_sloppy","expect":{"limitations":["knees"]}}
+{"id":"A0992","qid":"limits","text":"hte running","style":"typed_sloppy","expect":{"limitations":["no_running"]}}
+{"id":"A0993","qid":"limits","text":"my knees are kind of bad","style":"voice","expect":{"limitations":["knees"]}}
+{"id":"A0994","qid":"limits","text":"bad niece","style":"voice","expect":{"limitations":["knees"]},"note":"STT for bad knees"}
+{"id":"A0995","qid":"limits","text":"my lower back","style":"voice","expect":{"limitations":["lower_back"]}}
+{"id":"A0996","qid":"limits","text":"my shoulder no wait my elbow","style":"voice","expect":{"limitations":[]},"note":"not_in_list; self-correction to elbow"}
+{"id":"A0997","qid":"limits","text":"uh nothing really","style":"voice","expect":{"limitations":[]}}
+{"id":"A0998","qid":"limits","text":"no no I'm fine","style":"voice","expect":{"limitations":[]}}
+{"id":"A0999","qid":"limits","text":"no jumping I live in an apartment","style":"voice","expect":{"limitations":["no_jumping"]}}
+{"id":"A1000","qid":"limits","text":"I have a bad back","style":"voice","expect":{"limitations":["lower_back"]}}
+{"id":"A1001","qid":"limits","text":"my back is cooked","style":"slang","expect":{"limitations":["lower_back"]}}
+{"id":"A1002","qid":"limits","text":"knees are shot","style":"slang","expect":{"limitations":["knees"]}}
+{"id":"A1003","qid":"limits","text":"shoulder's janky","style":"slang","expect":{"limitations":["shoulders"]}}
+{"id":"A1004","qid":"limits","text":"running is cardio for people who hate themselves","style":"slang","expect":{"limitations":["no_running"]}}
+{"id":"A1005","qid":"limits","text":"I'm held together with duct tape lol","style":"slang","expect":{"ambiguous":true}}
+{"id":"A1006","qid":"limits","text":"old man knees","style":"slang","expect":{"limitations":["knees"]}}
+{"id":"A1007","qid":"limits","text":"I'm made of glass","style":"slang","expect":{"ambiguous":true}}
+{"id":"A1008","qid":"limits","text":"🦵 bad knee","style":"emoji","expect":{"limitations":["knees"]}}
+{"id":"A1009","qid":"limits","text":"😬 back","style":"emoji","expect":{"limitations":["lower_back"]}}
+{"id":"A1010","qid":"limits","text":"👍 none","style":"emoji","expect":{"limitations":[]}}
+{"id":"A1011","qid":"limits","text":"🚫🏃","style":"emoji","expect":{"limitations":["no_running"]}}
+{"id":"A1012","qid":"limits","text":"🙅‍♂️ no burpees","style":"emoji","expect":{"limitations":["no_jumping"]}}
+{"id":"A1013","qid":"limits","text":"rodilla mala","style":"non_english","expect":{"limitations":["knees"]}}
+{"id":"A1014","qid":"limits","text":"me duele la espalda","style":"non_english","expect":{"limitations":["lower_back"]}}
+{"id":"A1015","qid":"limits","text":"hombro","style":"non_english","expect":{"limitations":["shoulders"]}}
+{"id":"A1016","qid":"limits","text":"not an injury exactly but my knees ache after long runs","style":"chatty","expect":{"limitations":["knees"]}}
+{"id":"A1017","qid":"limits","text":"I had back surgery 3 years ago, cleared but still careful","style":"chatty","expect":{"limitations":["lower_back"]}}
+{"id":"A1018","qid":"limits","text":"only thing is I really can't stand running, it's boring","style":"chatty","expect":{"limitations":["no_running"]}}
+{"id":"A1019","qid":"limits","text":"shoulder surgery in march, PT says no overhead yet","style":"chatty","expect":{"limitations":["shoulders","no_overhead"]}}
+{"id":"A1020","qid":"limits","text":"I'm 8 weeks postpartum","style":"chatty","expect":{"ambiguous":true},"note":"not_in_list; flag medical"}
+{"id":"A1021","qid":"limits","text":"I'm pregnant, second trimester","style":"chatty","expect":{"limitations":[]},"note":"not_in_list; flag medical, likely no_jumping"}
+{"id":"A1022","qid":"limits","text":"I have a heart condition, doctor says keep it moderate","style":"chatty","expect":{"limitations":[]},"note":"not_in_list; flag medical"}
+{"id":"A1023","qid":"limits","text":"asthma, so not too much cardio","style":"chatty","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A1024","qid":"limits","text":"carpal tunnel in my wrists","style":"chatty","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A1025","qid":"limits","text":"tennis elbow","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A1026","qid":"limits","text":"hip replacement last year","style":"chatty","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A1027","qid":"limits","text":"sprained my ankle two weeks ago","style":"chatty","expect":{"limitations":[]},"note":"not_in_list; may imply no_jumping/no_running"}
+{"id":"A1028","qid":"limits","text":"arthritis in my hands","style":"chatty","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A1029","qid":"limits","text":"plantar fasciitis","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list; may imply no_running"}
+{"id":"A1030","qid":"limits","text":"osteoporosis","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A1031","qid":"limits","text":"vertigo","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A1032","qid":"limits","text":"type 1 diabetes","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A1033","qid":"limits","text":"high blood pressure","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A1034","qid":"limits","text":"scoliosis","style":"typed_clean","expect":{"ambiguous":true,"best":{"limitations":["lower_back"]}},"note":"spine; nearest is lower_back"}
+{"id":"A1035","qid":"limits","text":"no knee problems, but my back","style":"negation","expect":{"limitations":["lower_back"]}}
+{"id":"A1036","qid":"limits","text":"nothing except no running","style":"negation","expect":{"limitations":["no_running"]}}
+{"id":"A1037","qid":"limits","text":"not my knees, my shoulders","style":"negation","expect":{"limitations":["shoulders"]}}
+{"id":"A1038","qid":"limits","text":"I don't want to do barbell stuff","style":"negation","expect":{"limitations":["no_barbell"]}}
+{"id":"A1039","qid":"limits","text":"no, but I don't want to jump","style":"negation","expect":{"limitations":["no_jumping"]}}
+{"id":"A1040","qid":"limits","text":"what do you mean?","style":"typed_clean","expect":{"defer":true}}
+{"id":"A1041","qid":"limits","text":"like injuries?","style":"typed_clean","expect":{"defer":true}}
+{"id":"A1042","qid":"limits","text":"what counts?","style":"typed_clean","expect":{"defer":true}}
+{"id":"A1043","qid":"limits","text":"bad knee, and I only have dumbbells at home","style":"chatty","expect":{"limitations":["knees","no_barbell"],"environment":"home"},"multi":true}
+{"id":"A1044","qid":"limits","text":"nothing, 4 days a week works","style":"chatty","expect":{"limitations":[],"daysPerWeek":4},"multi":true}
+{"id":"A1045","qid":"limits","text":"groin strain","style":"typed_clean","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A1046","qid":"limits","text":"hamstring is tight","style":"chatty","expect":{"limitations":[]},"note":"not_in_list"}
+{"id":"A1047","qid":"limits","text":"bad hips so no running","style":"chatty","expect":{"limitations":["no_running"]},"note":"hip not_in_list"}
+{"id":"A1048","qid":"limits","text":"just a little tight in the lower back sometimes","style":"chatty","expect":{"limitations":["lower_back"]}}
+{"id":"A1049","qid":"limits","text":"sometimes my knee clicks but it doesn't hurt","style":"chatty","expect":{"ambiguous":true},"note":"possibly none"}
+{"id":"A1050","qid":"limits","text":"no overhead stuff and nothing with a bar","style":"typed_clean","expect":{"limitations":["no_overhead","no_barbell"]}}
+{"id":"A1051","qid":"limits","text":"kneez n back","style":"typed_sloppy","expect":{"limitations":["knees","lower_back"]}}
+{"id":"A1052","qid":"limits","text":"zero","style":"typed_clean","expect":{"limitations":[]}}
+{"id":"A1053","qid":"limits","text":"negative","style":"slang","expect":{"limitations":[]}}
+{"id":"A1054","qid":"day_focus","text":"back and biceps","style":"typed_clean","expect":{"dayFocus":"back and biceps"}}
+{"id":"A1055","qid":"day_focus","text":"legs","style":"typed_clean","expect":{"dayFocus":"legs"}}
+{"id":"A1056","qid":"day_focus","text":"push","style":"typed_clean","expect":{"dayFocus":"push"}}
+{"id":"A1057","qid":"day_focus","text":"pull","style":"typed_clean","expect":{"dayFocus":"pull"}}
+{"id":"A1058","qid":"day_focus","text":"full body","style":"typed_clean","expect":{"dayFocus":"full body"}}
+{"id":"A1059","qid":"day_focus","text":"chest","style":"typed_clean","expect":{"dayFocus":"chest"}}
+{"id":"A1060","qid":"day_focus","text":"arms","style":"typed_clean","expect":{"dayFocus":"arms"}}
+{"id":"A1061","qid":"day_focus","text":"shoulders","style":"typed_clean","expect":{"dayFocus":"shoulders"}}
+{"id":"A1062","qid":"day_focus","text":"upper body","style":"typed_clean","expect":{"dayFocus":"upper body"}}
+{"id":"A1063","qid":"day_focus","text":"lower","style":"typed_clean","expect":{"dayFocus":"lower body"}}
+{"id":"A1064","qid":"day_focus","text":"chest and tris","style":"slang","expect":{"dayFocus":"chest and triceps"}}
+{"id":"A1065","qid":"day_focus","text":"back and bis","style":"slang","expect":{"dayFocus":"back and biceps"}}
+{"id":"A1066","qid":"day_focus","text":"leg day","style":"typed_clean","expect":{"dayFocus":"legs"}}
+{"id":"A1067","qid":"day_focus","text":"glutes","style":"typed_clean","expect":{"dayFocus":"glutes"}}
+{"id":"A1068","qid":"day_focus","text":"booty day","style":"slang","expect":{"dayFocus":"glutes"}}
+{"id":"A1069","qid":"day_focus","text":"abs","style":"typed_clean","expect":{"dayFocus":"core"}}
+{"id":"A1070","qid":"day_focus","text":"core","style":"typed_clean","expect":{"dayFocus":"core"}}
+{"id":"A1071","qid":"day_focus","text":"cardio","style":"typed_clean","expect":{"dayFocus":"cardio"}}
+{"id":"A1072","qid":"day_focus","text":"conditioning","style":"typed_clean","expect":{"dayFocus":"conditioning"}}
+{"id":"A1073","qid":"day_focus","text":"arms and abs","style":"typed_clean","expect":{"dayFocus":"arms and core"}}
+{"id":"A1074","qid":"day_focus","text":"chest shoulders triceps","style":"typed_clean","expect":{"dayFocus":"push"}}
+{"id":"A1075","qid":"day_focus","text":"whatever's next in my program","style":"chatty","expect":{"defer":true},"note":"defer to plan"}
+{"id":"A1076","qid":"day_focus","text":"surprise me","style":"slang","expect":{"defer":true}}
+{"id":"A1077","qid":"day_focus","text":"you pick","style":"typed_clean","expect":{"defer":true}}
+{"id":"A1078","qid":"day_focus","text":"idk","style":"typed_clean","expect":{"defer":true}}
+{"id":"A1079","qid":"day_focus","text":"bak and bis","style":"typed_sloppy","expect":{"dayFocus":"back and biceps"}}
+{"id":"A1080","qid":"day_focus","text":"legz","style":"typed_sloppy","expect":{"dayFocus":"legs"}}
+{"id":"A1081","qid":"day_focus","text":"chst","style":"typed_sloppy","expect":{"dayFocus":"chest"}}
+{"id":"A1082","qid":"day_focus","text":"sholders and arms","style":"typed_sloppy","expect":{"dayFocus":"shoulders and arms"}}
+{"id":"A1083","qid":"day_focus","text":"fullbody","style":"typed_sloppy","expect":{"dayFocus":"full body"}}
+{"id":"A1084","qid":"day_focus","text":"uppr","style":"typed_sloppy","expect":{"dayFocus":"upper body"}}
+{"id":"A1085","qid":"day_focus","text":"quads n hams","style":"typed_sloppy","expect":{"dayFocus":"quads and hamstrings"}}
+{"id":"A1086","qid":"day_focus","text":"bi's and tri's","style":"typed_sloppy","expect":{"dayFocus":"arms"}}
+{"id":"A1087","qid":"day_focus","text":"legs","style":"voice","expect":{"dayFocus":"legs"}}
+{"id":"A1088","qid":"day_focus","text":"back and by sips","style":"voice","expect":{"dayFocus":"back and biceps"},"note":"STT biceps"}
+{"id":"A1089","qid":"day_focus","text":"chest and try sips","style":"voice","expect":{"dayFocus":"chest and triceps"},"note":"STT triceps"}
+{"id":"A1090","qid":"day_focus","text":"full body","style":"voice","expect":{"dayFocus":"full body"}}
+{"id":"A1091","qid":"day_focus","text":"push day","style":"voice","expect":{"dayFocus":"push"}}
+{"id":"A1092","qid":"day_focus","text":"pull no wait legs","style":"voice","expect":{"dayFocus":"legs"},"note":"self-correction"}
+{"id":"A1093","qid":"day_focus","text":"uh upper body I guess","style":"voice","expect":{"dayFocus":"upper body"}}
+{"id":"A1094","qid":"day_focus","text":"shoulders and traps","style":"voice","expect":{"dayFocus":"shoulders and traps"}}
+{"id":"A1095","qid":"day_focus","text":"my hamstrings","style":"voice","expect":{"dayFocus":"hamstrings"}}
+{"id":"A1096","qid":"day_focus","text":"glutes and hamstrings","style":"voice","expect":{"dayFocus":"glutes and hamstrings"}}
+{"id":"A1097","qid":"day_focus","text":"leg day 😩","style":"emoji","expect":{"dayFocus":"legs"}}
+{"id":"A1098","qid":"day_focus","text":"gun show","style":"slang","expect":{"dayFocus":"arms"}}
+{"id":"A1099","qid":"day_focus","text":"chest day, it's monday bro","style":"slang","expect":{"dayFocus":"chest"}}
+{"id":"A1100","qid":"day_focus","text":"international chest day","style":"slang","expect":{"dayFocus":"chest"}}
+{"id":"A1101","qid":"day_focus","text":"skipping legs lol","style":"slang","expect":{"ambiguous":true},"note":"only says what NOT to do"}
+{"id":"A1102","qid":"day_focus","text":"pump day","style":"slang","expect":{"ambiguous":true,"best":{"dayFocus":"arms"}}}
+{"id":"A1103","qid":"day_focus","text":"beach muscles","style":"slang","expect":{"ambiguous":true,"best":{"dayFocus":"chest and arms"}}}
+{"id":"A1104","qid":"day_focus","text":"🦵","style":"emoji","expect":{"dayFocus":"legs"}}
+{"id":"A1105","qid":"day_focus","text":"💪","style":"emoji","expect":{"dayFocus":"arms"}}
+{"id":"A1106","qid":"day_focus","text":"🍑","style":"emoji","expect":{"dayFocus":"glutes"}}
+{"id":"A1107","qid":"day_focus","text":"🏋️ full body","style":"emoji","expect":{"dayFocus":"full body"}}
+{"id":"A1108","qid":"day_focus","text":"piernas","style":"non_english","expect":{"dayFocus":"legs"}}
+{"id":"A1109","qid":"day_focus","text":"espalda y bíceps","style":"non_english","expect":{"dayFocus":"back and biceps"}}
+{"id":"A1110","qid":"day_focus","text":"pecho","style":"non_english","expect":{"dayFocus":"chest"}}
+{"id":"A1111","qid":"day_focus","text":"cuerpo completo","style":"non_english","expect":{"dayFocus":"full body"}}
+{"id":"A1112","qid":"day_focus","text":"my legs are still sore from saturday so something upper","style":"chatty","expect":{"dayFocus":"upper body"}}
+{"id":"A1113","qid":"day_focus","text":"I've got a date tonight so arms and chest lol","style":"chatty","expect":{"dayFocus":"chest and arms"}}
+{"id":"A1114","qid":"day_focus","text":"back's been feeling tight, maybe something light and some mobility","style":"chatty","expect":{"ambiguous":true,"best":{"dayFocus":"mobility"}}}
+{"id":"A1115","qid":"day_focus","text":"I only have 20 minutes, just core","style":"chatty","expect":{"dayFocus":"core","sessionMinutes":20},"multi":true}
+{"id":"A1116","qid":"day_focus","text":"didn't train legs last week so legs for sure","style":"chatty","expect":{"dayFocus":"legs"}}
+{"id":"A1117","qid":"day_focus","text":"anything but legs","style":"negation","expect":{"ambiguous":true},"note":"exclusion only"}
+{"id":"A1118","qid":"day_focus","text":"not legs, my knees hurt today","style":"negation","expect":{"ambiguous":true,"best":{"limitations":["knees"]}},"multi":true,"note":"exclusion + limitation"}
+{"id":"A1119","qid":"day_focus","text":"no chest, did it yesterday","style":"negation","expect":{"ambiguous":true}}
+{"id":"A1120","qid":"day_focus","text":"upper, but not shoulders","style":"negation","expect":{"dayFocus":"upper body (no shoulders)"}}
+{"id":"A1121","qid":"day_focus","text":"back or legs","style":"range","expect":{"ambiguous":true}}
+{"id":"A1122","qid":"day_focus","text":"chest or arms, whichever","style":"range","expect":{"ambiguous":true,"best":{"dayFocus":"chest"}}}
+{"id":"A1123","qid":"day_focus","text":"legs, at home","style":"typed_clean","expect":{"dayFocus":"legs","environment":"home"},"multi":true}
+{"id":"A1124","qid":"day_focus","text":"back and bis, 45 min","style":"typed_sloppy","expect":{"dayFocus":"back and biceps","sessionMinutes":45},"multi":true}
+{"id":"A1125","qid":"day_focus","text":"full body, I've got an hour","style":"chatty","expect":{"dayFocus":"full body","sessionMinutes":60},"multi":true}
+{"id":"A1126","qid":"day_focus","text":"easy run","style":"typed_clean","expect":{"dayFocus":"easy run"}}
+{"id":"A1127","qid":"day_focus","text":"long run","style":"typed_clean","expect":{"dayFocus":"long run"}}
+{"id":"A1128","qid":"day_focus","text":"intervals","style":"typed_clean","expect":{"dayFocus":"intervals"}}
+{"id":"A1129","qid":"day_focus","text":"tempo run","style":"typed_clean","expect":{"dayFocus":"tempo run"}}
+{"id":"A1130","qid":"day_focus","text":"can I just stretch today","style":"chatty","expect":{"dayFocus":"mobility"}}
+{"id":"A1131","qid":"day_focus","text":"recovery","style":"typed_clean","expect":{"dayFocus":"recovery"}}
+{"id":"A1132","qid":"day_focus","text":"hiit","style":"typed_sloppy","expect":{"dayFocus":"HIIT"}}
+{"id":"A1133","qid":"day_focus","text":"posterior chain","style":"typed_clean","expect":{"dayFocus":"posterior chain"}}
+{"id":"A1134","qid":"day_focus","text":"deadlifts","style":"typed_clean","expect":{"dayFocus":"deadlift"}}
+{"id":"A1135","qid":"day_focus","text":"bench","style":"slang","expect":{"dayFocus":"bench press"}}
+{"id":"A1136","qid":"day_focus","text":"squats","style":"typed_clean","expect":{"dayFocus":"squat"}}
+{"id":"A1137","qid":"day_focus","text":"hit my weak points","style":"chatty","expect":{"ambiguous":true}}
+{"id":"A1138","qid":"day_focus","text":"same as last time","style":"chatty","expect":{"ambiguous":true},"note":"needs history"}
+{"id":"A1139","qid":"day_focus","text":"rest day?","style":"typed_clean","expect":{"ambiguous":true},"note":"asking to skip"}
+{"id":"A1140","qid":"day_focus","text":"uper body","style":"typed_sloppy","expect":{"dayFocus":"upper body"}}
+{"id":"A1141","qid":"day_focus","text":"everything","style":"typed_clean","expect":{"dayFocus":"full body"}}
+{"id":"A1142","qid":"day_focus","text":"a little bit of everything","style":"chatty","expect":{"dayFocus":"full body"}}
+{"id":"A1143","qid":"day_focus","text":"calves lol","style":"slang","expect":{"dayFocus":"calves"}}
+{"id":"A1144","qid":"day_focus","text":"forearms and grip","style":"typed_clean","expect":{"dayFocus":"forearms and grip"}}
+{"id":"A1145","qid":"day_focus","text":"legs no wait back","style":"voice","expect":{"dayFocus":"back"}}
+{"id":"A1146","qid":"day_focus","text":"chest and back","style":"typed_clean","expect":{"dayFocus":"chest and back"}}
+{"id":"A1147","qid":"day_focus","text":"arms. big arms.","style":"slang","expect":{"dayFocus":"arms"}}
+{"id":"A1148","qid":"day_focus","text":"lats","style":"typed_clean","expect":{"dayFocus":"back"}}
+{"id":"A1149","qid":"day_focus","text":"pull day, back and rear delts","style":"typed_clean","expect":{"dayFocus":"pull"}}
+{"id":"A1150","qid":"day_focus","text":"push. heavy bench","style":"typed_clean","expect":{"dayFocus":"push"}}
+{"id":"A1151","qid":"day_focus","text":"lower body but no squats, my knee","style":"chatty","expect":{"dayFocus":"lower body (no squats)","limitations":["knees"]},"multi":true}
+{"id":"A1152","qid":"day_focus","text":"abs and cardio","style":"typed_clean","expect":{"dayFocus":"core and cardio"}}
+{"id":"A1153","qid":"day_focus","text":"something quick, full body","style":"chatty","expect":{"dayFocus":"full body"}}
+{"id":"A1154","qid":"day_focus","text":"i want to feel my glutes tmrw 😂","style":"emoji","expect":{"dayFocus":"glutes"}}
+{"id":"A1155","qid":"day_focus","text":"sprints","style":"typed_clean","expect":{"dayFocus":"sprints"}}
+{"id":"A1156","qid":"day_focus","text":"a swim","style":"typed_clean","expect":{"ambiguous":true},"note":"not_in_list"}
+{"id":"A1157","qid":"day_focus","text":"yoga","style":"typed_clean","expect":{"dayFocus":"mobility"}}
+{"id":"A1158","qid":"day_focus","text":"upper/lower, whichever is next","style":"typed_sloppy","expect":{"defer":true}}

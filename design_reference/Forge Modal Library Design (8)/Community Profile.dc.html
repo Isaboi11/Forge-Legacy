@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-gate.js"></script>
+  <script src="forge-communities.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  image-slot::part(ring) { border-color: var(--fl-bronze-border); }
+  image-slot::part(empty) { color: var(--fl-text-tertiary); font-size: 10px; }
+  image-slot::part(frame) { background: rgba(191,143,79,0.05); }
+  @keyframes cpRise { from { opacity:0; transform: translateY(9px); } to { opacity:1; transform:none; } }
+  @keyframes cpFade { from { opacity:0; } to { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Community Profile" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.2), rgba(5,5,5,0.2)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <!-- ═══ SCROLL AREA ═══ -->
+    <div class="fl-scroll" onScroll="{{ onScroll }}" style="flex:1; min-height:0; overflow-y:auto;">
+
+      <!-- ═══ BANNER ═══ -->
+      <div style="position:relative; height:172px; flex:none; overflow:hidden;">
+        <div id="cp-banner-img" style="position:absolute; inset:0; will-change:transform; transform-origin:center top; background:radial-gradient(120% 95% at 82% -10%, rgba(191,143,79,0.24), transparent 52%), radial-gradient(90% 80% at 8% 120%, rgba(191,143,79,0.08), transparent 60%), linear-gradient(158deg, #241a10 0%, #16110b 46%, #0b0908 100%);"></div>
+        <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(5,5,5,0.55) 0%, rgba(5,5,5,0.12) 38%, rgba(5,5,5,0.82) 100%);"></div>
+        <div style="position:absolute; top:14px; left:14px; right:14px; display:flex; align-items:center; justify-content:space-between;">
+          <button type="button" onClick="{{ goBack }}" aria-label="Back" style="width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.5); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(6px); color:var(--fl-text-primary); cursor:pointer;">{{ backIcon }}</button>
+          <button type="button" onClick="{{ onShare }}" aria-label="Share community" style="width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(10,10,10,0.5); border:1px solid var(--fl-charcoal-600); backdrop-filter:blur(6px); color:var(--fl-text-primary); cursor:pointer;">{{ shareIcon }}</button>
+        </div>
+      </div>
+
+      <!-- ═══ IDENTITY ═══ -->
+      <div style="position:relative; padding:0 20px;">
+        <div style="display:flex; align-items:flex-end; gap:14px; margin-top:-23px;">
+          <span style="position:relative; width:84px; height:84px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 50% 32%, rgba(191,143,79,0.28), transparent 72%), var(--fl-surface-recessed); box-shadow:0 0 0 2.5px var(--fl-bronze-primary), 0 10px 22px rgba(0,0,0,0.7); color:var(--fl-bronze-bright);">{{ crestIcon }}</span>
+          <div style="flex:1; min-width:0; padding-bottom:5px;">
+            <span style="{{ tagStyle }}"><span style="display:inline-flex;">{{ tagIcon }}</span>{{ tagLabel }}</span>
+          </div>
+        </div>
+
+        <h1 style="font-family:var(--fl-font-display); font-size:26px; font-weight:600; letter-spacing:-0.4px; color:var(--fl-text-primary); text-shadow:0 2px 12px rgba(0,0,0,0.5); margin:13px 0 0;">{{ name }}</h1>
+
+        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:9px;">
+          <span style="display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); font-size:11px; font-weight:600; letter-spacing:0.2px; color:var(--fl-text-secondary);"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ categoryIcon }}</span>{{ category }}</span>
+          <span style="display:inline-flex; align-items:center; gap:6px; padding:3px 4px; font-size:12px; color:var(--fl-text-tertiary);"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ membersIcon }}</span>{{ memberCount }} members</span>
+        </div>
+
+        <span style="display:block; font-size:14px; line-height:1.5; color:var(--fl-text-secondary); margin-top:12px;">{{ tagline }}</span>
+      </div>
+
+      <!-- ═══ STATS ═══ -->
+      <div style="padding:20px 11px 0;">
+        <div style="display:flex; background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+          <sc-for list="{{ stats }}" as="s" hint-placeholder-count="3">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:15px 6px; border-left:{{ s.divider }};">
+              <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:700; color:var(--fl-text-primary); line-height:1;">{{ s.value }}</span>
+              <span style="font-size:9.5px; font-weight:600; letter-spacing:0.7px; text-transform:uppercase; color:var(--fl-text-bronze-label); text-align:center;">{{ s.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ═══ ABOUT ═══ -->
+      <div style="padding:22px 20px 0;">
+        <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:0 4px 12px;">About</span>
+        <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:15px;">
+          <span style="display:block; font-size:13.5px; line-height:1.6; color:var(--fl-text-secondary);">{{ about }}</span>
+        </div>
+      </div>
+
+      <!-- ═══ ACTIVITY PEEK (public) / LOCKED NOTE (private) ═══ -->
+      <sc-if value="{{ hasPeek }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:22px 20px 0;">
+          <div style="margin:0 4px 12px;">
+            <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Inside the Community</span>
+            <span style="display:block; font-size:12px; color:var(--fl-text-tertiary); margin-top:5px;">{{ activityProof }}</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <sc-for list="{{ peek }}" as="p" hint-placeholder-count="2">
+              <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:12px 14px;">
+                <div style="display:flex; align-items:center; gap:11px;">
+                  <span style="width:38px; height:38px; flex:none; border-radius:var(--fl-radius-round); background:{{ p.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+                  <div style="flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:7px;">
+                      <span style="font-size:14px; font-weight:500; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ p.author }}</span>
+                      <sc-if value="{{ p.hasRole }}" hint-placeholder-val="{{ false }}">
+                        <span style="{{ p.roleStyle }}">{{ p.roleIcon }}{{ p.roleLabel }}</span>
+                      </sc-if>
+                    </div>
+                    <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ p.time }}</span>
+                  </div>
+                  <span style="flex:none; font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ p.type }}</span>
+                </div>
+                <span style="display:block; font-size:13.5px; line-height:1.5; color:var(--fl-text-secondary); margin-top:10px;">{{ p.body }}</span>
+                <div style="display:flex; align-items:center; gap:18px; margin-top:11px;">
+                  <span style="display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:600; color:var(--fl-text-tertiary);"><span style="display:inline-flex;">{{ flameIcon }}</span>{{ p.respect }}</span>
+                  <span style="display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:600; color:var(--fl-text-tertiary);"><span style="display:inline-flex;">{{ commentIcon }}</span>{{ p.comments }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:13px; padding:11px; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); border:1px dashed var(--fl-charcoal-600);">
+            <span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ lockIcon }}</span>
+            <span style="font-size:12px; color:var(--fl-text-tertiary);">{{ peekFootNote }}</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isPrivateLocked }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:22px 20px 0;">
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:0 4px 12px;">Inside the Community</span>
+          <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:26px 22px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-shadow-card);">
+            <span style="width:46px; height:46px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 50% 34%, rgba(191,143,79,0.16), transparent 72%); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright);">{{ lockIconLg }}</span>
+            <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary);">Members only</span>
+            <span style="font-size:12.5px; line-height:1.5; color:var(--fl-text-secondary); max-width:250px;">Posts, events, and challenges are visible to members. Request to join to take part.</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ═══ LEADERSHIP ═══ -->
+      <div style="padding:22px 20px 0;">
+        <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:0 4px 12px;">Leadership</span>
+        <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+          <sc-for list="{{ leaders }}" as="l" hint-placeholder-count="2">
+            <button type="button" onClick="{{ l.onOpen }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:12px 14px; border-top:{{ l.divider }}; border-left:none; border-right:none; border-bottom:none; background:transparent; cursor:pointer; text-align:left; transition:background 140ms ease;" style-active="background:var(--fl-charcoal-800);">
+              <span style="width:40px; height:40px; flex:none; border-radius:var(--fl-radius-round); background:{{ l.tint }}; box-shadow:{{ l.ring }};"></span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:14.5px; color:var(--fl-text-primary);">{{ l.name }}</span>
+                <span style="font-size:12px; color:var(--fl-text-tertiary);">{{ l.sub }}</span>
+              </div>
+              <span style="{{ l.roleStyle }}">{{ l.roleIcon }}{{ l.roleLabel }}</span>
+              <span style="flex:none; display:inline-flex; color:var(--fl-text-tertiary);">{{ chevronRight }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ═══ COMMUNITY RULES ═══ -->
+      <div style="padding:22px 20px 0;">
+        <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin:0 4px 12px;">Community Rules</span>
+        <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+          <sc-for list="{{ rules }}" as="r" hint-placeholder-count="5">
+            <div style="display:flex; align-items:flex-start; gap:13px; padding:11px 15px; border-top:{{ r.divider }};">
+              <span style="flex:none; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-family:var(--fl-font-display); font-size:13px; font-weight:700; color:var(--fl-bronze-bright);">{{ r.n }}</span>
+              <span style="flex:1; min-width:0; font-size:13px; line-height:1.5; color:var(--fl-text-secondary); padding-top:2px;">{{ r.text }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="height:26px;"></div>
+
+    </div>
+
+    <!-- ═══ STICKY JOIN BAR ═══ -->
+    <div style="flex:none; position:relative; z-index:6; padding:12px 20px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(9,9,9,0.9), rgba(6,6,6,0.98)); backdrop-filter:blur(8px);">
+      <div style="display:flex; align-items:center; gap:8px; margin:0 2px 10px;">
+        <span style="display:inline-flex; color:{{ ctaHintColor }};">{{ ctaHintIcon }}</span>
+        <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ ctaHint }}</span>
+      </div>
+      <button type="button" onClick="{{ onCta }}" style="{{ ctaStyle }}" style-active="transform:scale(0.99); opacity:0.92;"><span style="display:inline-flex;">{{ ctaIcon }}</span>{{ ctaLabel }}</button>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:104px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:cpRise 260ms var(--fl-ease-out);">
+      <span style="display:inline-flex; color:{{ toastIconColor }}; flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+
+  <!-- Forged grain -->
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;previewCommunity&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;auto&quot;,&quot;options&quot;:[&quot;auto&quot;,&quot;ironcollective&quot;,&quot;endurance&quot;,&quot;hybridsociety&quot;,&quot;strongmanunited&quot;,&quot;weightroom&quot;,&quot;physiqueforge&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Preview&quot;},&quot;showActivityPeek&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, toastMsg: null, memState: null, id: null };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      const cs = typeof window !== 'undefined' && window.ForgeCommunities;
+      if (r && ns && fs && cs) {
+        const pv = this.props.previewCommunity;
+        const id = (pv && pv !== 'auto' && window.ForgeCommunities.get(pv)) ? pv : (window.ForgeCommunities.activeId() || 'endurance');
+        window.ForgeCommunities.setActive(id);
+        this.setState({ ready: true, id, memState: window.ForgeCommunities.state(id) });
+      } else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); }
+
+  _toast(msg, tone) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastTone: tone || 'bronze' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2400); }
+
+  _tint(seed) {
+    const T = [
+      'radial-gradient(circle at 42% 32%, #4a3826, #1c1510)',
+      'radial-gradient(circle at 45% 35%, #34302a, #17130f)',
+      'radial-gradient(circle at 40% 30%, #40301f, #17120c)',
+      'radial-gradient(circle at 48% 38%, #2d2822, #141210)',
+      'radial-gradient(circle at 44% 34%, #453322, #1a140e)',
+      'radial-gradient(circle at 41% 33%, #3a2c1c, #191309)',
+      'radial-gradient(circle at 46% 36%, #2b2620, #131210)'
+    ];
+    return T[seed % T.length];
+  }
+
+  _goHome() { window.ForgeCommunities.setActive(this.state.id); window.location.href = 'Community%20Home.dc.html'; }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const CS = window.ForgeCommunities;
+    const S = this.state;
+    const c = CS.get(S.id) || CS.all()[0];
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.9 });
+    const sv = (d, size, sw, fill) => h('svg', { width: size || 18, height: size || 18, viewBox: '0 0 24 24', fill: fill || 'none', stroke: fill ? 'none' : 'currentColor', strokeWidth: sw || 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(d) ? d : [d]).map((p, i) => h('path', { key: i, d: p })));
+    const wrap = (el) => h('span', { style: { display: 'inline-flex' } }, el);
+
+    const isPublic = c.join === 'public';
+    const mem = S.memState; // 'joined' | 'requested' | null
+
+    // ── glyphs ──
+    const backIcon = wrap(sv('M15 5l-7 7 7 7', 19, 2));
+    const shareIcon = wrap(ic('share', 17, 1.9));
+    const flameIcon = wrap(ic('flame', 15, 1.9));
+    const commentIcon = wrap(sv('M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4 19.5l1.3-4A7.5 7.5 0 1 1 20 11.5z', 15, 1.9));
+    const membersIcon = wrap(h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 7, r: 2.3 }), h('circle', { cx: 6, cy: 10, r: 2 }), h('circle', { cx: 18, cy: 10, r: 2 }), h('path', { d: 'M8.6 17.5a3.5 3.5 0 0 1 6.8 0' }), h('path', { d: 'M2.8 17a3 3 0 0 1 4.4-2.4' }), h('path', { d: 'M21.2 17a3 3 0 0 0-4.4-2.4' })));
+    const globeIcon = sv(['M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17z', 'M3.5 12h17', 'M12 3.5c2.4 2.3 3.7 5.3 3.7 8.5S14.4 18.2 12 20.5c-2.4-2.3-3.7-5.3-3.7-8.5S9.6 5.8 12 3.5z'], 12, 1.8);
+    const lockGlyph = (sz) => h('svg', { width: sz || 12, height: sz || 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 5, y: 10.5, width: 14, height: 9, rx: 2 }), h('path', { d: 'M8 10.5V8a4 4 0 0 1 8 0v2.5' }));
+    const checkIcon = wrap(sv('M5 12.5l4 4 10-10', 16, 2.3));
+    const plusIcon = wrap(sv('M12 5v14M5 12h14', 16, 2.2));
+    const arrowIcon = wrap(sv('M5 12h14M13 6l6 6-6 6', 16, 2));
+    const chevronRight = wrap(sv('M9 5l7 7-7 7', 14, 2));
+    const clockIcon = wrap(h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 12, r: 8.5 }), h('path', { d: 'M12 7.5v5l3.2 2' })));
+    const crown = (sz) => h('svg', { width: sz || 11, height: sz || 11, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z' }));
+
+    // ── role badge ──
+    const roleBadge = (kind) => {
+      const base = { flex: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 7px', borderRadius: 'var(--fl-radius-pill)', fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' };
+      if (kind === 'owner') return { style: Object.assign({}, base, { background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border)', color: 'var(--fl-bronze-bright)' }), icon: wrap(crown(9)), label: 'Owner' };
+      if (kind === 'mod') return { style: Object.assign({}, base, { background: 'rgba(191,143,79,0.08)', border: '1px solid var(--fl-bronze-border-subtle)', color: 'var(--fl-bronze-primary)' }), icon: wrap(ic('shield', 9, 2)), label: 'Mod' };
+      return null;
+    };
+
+    // ── identity ──
+    const fmtMembers = (n) => n.toLocaleString('en-US');
+    const fmtK = (n) => n >= 1000 ? (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'k' : ('' + n);
+    const tagBase = { flex: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 11px', borderRadius: 'var(--fl-radius-pill)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.3px', backdropFilter: 'blur(4px)' };
+    const tagStyle = isPublic
+      ? Object.assign({}, tagBase, { background: 'rgba(110,142,116,0.16)', border: '1px solid rgba(110,142,116,0.4)', color: '#8FB295' })
+      : Object.assign({}, tagBase, { background: 'rgba(191,143,79,0.16)', border: '1px solid var(--fl-bronze-border)', color: 'var(--fl-bronze-bright)' });
+
+    // ── stats ──
+    const stats = [
+      { key: 'm', value: fmtMembers(c.members), label: 'Members', divider: 'none' },
+      { key: 'p', value: '' + c.postsPerWeek, label: 'Weekly Posts', divider: '1px solid var(--fl-charcoal-700)' },
+      { key: 'f', value: c.founded, label: 'Founded', divider: '1px solid var(--fl-charcoal-700)' }
+    ];
+
+    // ── rules ──
+    const rules = CS.rulesFor(S.id).map((text, i) => ({ key: i, n: '' + (i + 1), text, divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)' }));
+
+    // ── leaders ──
+    const leaders = c.leaders.map((l, i) => { const role = roleBadge(l.role); const isOwner = l.role === 'owner'; return { key: l.name, name: l.name, sub: l.sub, tint: this._tint(l.name.length + i), divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)', ring: isOwner ? '0 0 0 2px var(--fl-bronze-primary), inset 0 1px 3px rgba(0,0,0,0.55)' : '0 0 0 1px var(--fl-bronze-border-subtle), inset 0 1px 3px rgba(0,0,0,0.55)', roleStyle: role ? role.style : null, roleIcon: role ? role.icon : null, roleLabel: role ? role.label : '', onOpen: () => this._toast('Opens ' + l.name + '\u2019s profile', 'bronze') }; });
+
+    // ── activity social proof ──
+    const nounMap = { Powerlifting: 'lifters', Olympic: 'lifters', Running: 'runners', Hybrid: 'athletes', Strongman: 'competitors', Bodybuilding: 'builders' };
+    const memberNoun = nounMap[c.category] || 'members';
+    const activityProof = fmtMembers(c.members) + ' ' + memberNoun + ' \u00b7 ' + c.postsPerWeek + ' discussions this week';
+
+    // ── activity peek (public only, gated by tweak) ──
+    const peekOn = (this.props.showActivityPeek ?? true) && isPublic && c.peek && c.peek.length > 0 && mem !== 'joined';
+    const peek = peekOn ? c.peek.map((p, i) => { const role = p.role ? roleBadge(p.role) : null; return { key: i, author: p.author, tint: this._tint(p.author.length + i + 2), time: p.time, type: p.type, body: p.body, respect: p.respect, comments: p.comments, hasRole: !!role, roleStyle: role ? role.style : null, roleIcon: role ? role.icon : null, roleLabel: role ? role.label : '' }; }) : [];
+    const isPrivateLocked = !isPublic && mem !== 'joined';
+
+    // ── CTA (adaptive) ──
+    const primaryBase = { width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', borderRadius: 'var(--fl-radius-md)', fontSize: '14.5px', fontWeight: 700, letterSpacing: '0.3px', cursor: 'pointer', transition: 'transform 120ms var(--fl-ease-out), opacity 120ms ease' };
+    const filled = Object.assign({}, primaryBase, { border: '1px solid var(--fl-bronze-border)', background: 'var(--fl-bronze-fill)', color: 'var(--fl-bronze-bright)', boxShadow: 'var(--fl-glow-subtle)' });
+    const outline = Object.assign({}, primaryBase, { border: '1px solid var(--fl-bronze-border)', background: 'transparent', color: 'var(--fl-bronze-bright)' });
+    const muted = Object.assign({}, primaryBase, { border: '1px solid var(--fl-charcoal-600)', background: 'var(--fl-charcoal-800)', color: 'var(--fl-text-secondary)', fontWeight: 600 });
+
+    let ctaStyle, ctaLabel, ctaIcon, onCta, ctaHint, ctaHintIcon, ctaHintColor;
+    if (mem === 'joined') {
+      ctaStyle = filled; ctaLabel = 'Go to Community'; ctaIcon = arrowIcon;
+      ctaHint = 'You\u2019re a member'; ctaHintIcon = checkIcon; ctaHintColor = '#8FB295';
+      onCta = () => this._goHome();
+    } else if (mem === 'requested') {
+      ctaStyle = muted; ctaLabel = 'Request Sent'; ctaIcon = checkIcon;
+      ctaHint = 'Pending owner approval \u00b7 tap to withdraw'; ctaHintIcon = clockIcon; ctaHintColor = 'var(--fl-icon-bronze)';
+      onCta = () => { const ns = CS.withdraw(S.id); this.setState({ memState: ns }); this._toast('Request to ' + c.name + ' withdrawn', 'bronze'); };
+    } else if (isPublic) {
+      ctaStyle = filled; ctaLabel = 'Join Community'; ctaIcon = plusIcon;
+      ctaHint = 'Join instantly \u00b7 no approval required'; ctaHintIcon = wrap(globeIcon); ctaHintColor = '#8FB295';
+      onCta = () => { const ns = CS.join(S.id); try { if (window.ForgeGate) window.ForgeGate.unlock('community_joined'); } catch (e) {} this.setState({ memState: ns }); this._toast('You joined ' + c.name, 'positive'); };
+    } else {
+      ctaStyle = outline; ctaLabel = 'Request to Join'; ctaIcon = plusIcon;
+      ctaHint = 'Requests reviewed by community leadership'; ctaHintIcon = wrap(lockGlyph(12)); ctaHintColor = 'var(--fl-icon-bronze)';
+      onCta = () => { const ns = CS.request(S.id); this.setState({ memState: ns }); this._toast('Request sent to ' + c.name, 'bronze'); };
+    }
+
+    const toastColor = S.toastTone === 'positive' ? '#6E8E74' : 'var(--fl-icon-bronze)';
+
+    return {
+      ready: true, notReady: false,
+      backIcon, shareIcon, flameIcon, commentIcon, membersIcon,
+      crestIcon: wrap(ic(c.crest, 40, 1.55)),
+      categoryIcon: wrap(ic(c.crest, 12, 1.9)), category: c.category,
+      tagStyle, tagLabel: isPublic ? 'Public' : 'Private', tagIcon: wrap(isPublic ? globeIcon : lockGlyph(12)),
+      name: c.name, memberCount: fmtMembers(c.members), tagline: c.tagline,
+      stats, about: c.about, rules, leaders, activityProof, chevronRight,
+      hasPeek: peekOn, peek, flameIcon2: flameIcon,
+      peekFootNote: 'Join to react, comment, and post',
+      lockIcon: wrap(lockGlyph(13)), lockIconLg: wrap(lockGlyph(20)),
+      isPrivateLocked,
+      ctaStyle, ctaLabel, ctaIcon, onCta, ctaHint, ctaHintIcon, ctaHintColor,
+      goBack: () => { if ((function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})()) window.history.back(); else window.location.href = 'Discover%20Communities.dc.html'; },
+      onShare: () => this._toast('Share ' + c.name, 'bronze'),
+      onScroll: (e) => {
+        const st = e.target.scrollTop;
+        const b = this._bannerEl || (this._bannerEl = e.target.querySelector('#cp-banner-img'));
+        if (b) { const clamped = Math.min(st, 260); b.style.transform = 'translateY(' + (clamped * 0.4) + 'px) scale(' + (1 + clamped * 0.0006) + ')'; }
+      },
+      toastOpen: !!S.toastMsg, toastMsg: S.toastMsg || '', toastIcon: wrap(ic('flame', 18, 1.9)), toastIconColor: toastColor
+    };
+  }
+}
+</script>
+</body>
+</html>

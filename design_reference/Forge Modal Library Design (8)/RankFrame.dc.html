@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:transparent; }
+  img { -webkit-user-drag:none; user-select:none; }
+</style>
+</helmet>
+<div style="width:100%; aspect-ratio:82 / 100; position:relative; filter:drop-shadow(0 14px 26px rgba(0,0,0,0.6));">
+
+  <!-- ══ INTERIOR ARTWORK APERTURE ══ inner hexagon, source frame cropped away -->
+  <div style="position:absolute; inset:0; clip-path:polygon(50% 9.5%, 90.2% 20%, 90.2% 76%, 50% 89%, 9.8% 76%, 9.8% 20%); overflow:hidden; background:#0A0705;">
+    <img src="{{ src }}" alt="{{ alt }}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 46%; display:block; transform:{{ artTransform }}; transform-origin:50% 46%;">
+    <!-- forge-heat + vignette grade so any artwork sits in the frame's light -->
+    <div style="position:absolute; inset:0; background:radial-gradient(72% 46% at 50% 96%, rgba(201,128,44,0.20) 0%, rgba(201,128,44,0) 62%), radial-gradient(120% 90% at 50% 0%, rgba(0,0,0,0) 46%, rgba(6,4,2,0.55) 100%); mix-blend-mode:normal;"></div>
+  </div>
+
+  <!-- ══ FORGED BRONZE FRAME ══ single fixed silhouette -->
+  <svg viewBox="0 0 82 100" width="100%" height="100%" style="position:absolute; inset:0; overflow:visible;" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="flBand" x1="0.12" y1="0" x2="0.58" y2="1">
+        <stop offset="0" stop-color="#6E5330"></stop>
+        <stop offset="0.20" stop-color="#A47C46"></stop>
+        <stop offset="0.42" stop-color="#DCC08A"></stop>
+        <stop offset="0.52" stop-color="#C9A566"></stop>
+        <stop offset="0.66" stop-color="#96703C"></stop>
+        <stop offset="1" stop-color="#412F1B"></stop>
+      </linearGradient>
+      <linearGradient id="flStud" x1="0" y1="0" x2="0.4" y2="1">
+        <stop offset="0" stop-color="#E7CD98"></stop>
+        <stop offset="0.5" stop-color="#BF8F4F"></stop>
+        <stop offset="1" stop-color="#5A4227"></stop>
+      </linearGradient>
+    </defs>
+
+    <!-- outer edge shadow, seats the frame on the canvas -->
+    <path d="M41 2 L80.5 15 L80.5 81 L41 98 L1.5 81 L1.5 15 Z" fill="none" stroke="#0B0805" stroke-width="2.4"></path>
+
+    <!-- the frame band: outer hexagon minus inner aperture (even-odd hole) -->
+    <path d="M41 2 L80.5 15 L80.5 81 L41 98 L1.5 81 L1.5 15 Z M41 9.5 L74 20 L74 76 L41 89 L8 76 L8 20 Z" fill-rule="evenodd" fill="url(#flBand)"></path>
+
+    <!-- outer machined lip highlight -->
+    <path d="M41 2 L80.5 15 L80.5 81 L41 98 L1.5 81 L1.5 15 Z" fill="none" stroke="#EFD3A0" stroke-width="0.5" stroke-opacity="0.65"></path>
+    <!-- inner aperture groove (dark) + bright inner lip -->
+    <path d="M41 9.5 L74 20 L74 76 L41 89 L8 76 L8 20 Z" fill="none" stroke="#17110A" stroke-width="1.4"></path>
+    <path d="M41 10.6 L72.7 20.7 L72.7 75.3 L41 87.8 L9.3 75.3 L9.3 20.7 Z" fill="none" stroke="#D9BC85" stroke-width="0.45" stroke-opacity="0.7"></path>
+
+    <!-- ══ forged corner brackets ══ machined reinforcement at the load corners -->
+    <!-- top-right -->
+    <polyline points="73,12.7 80.5,15 80.5,24.5" fill="none" stroke="url(#flStud)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline>
+    <!-- top-left -->
+    <polyline points="9,12.7 1.5,15 1.5,24.5" fill="none" stroke="url(#flStud)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline>
+    <!-- bottom-right -->
+    <polyline points="80.5,71.5 80.5,81 73,84.2" fill="none" stroke="url(#flStud)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline>
+    <!-- bottom-left -->
+    <polyline points="1.5,71.5 1.5,81 9,84.2" fill="none" stroke="url(#flStud)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline>
+    <!-- mid-wall studs -->
+    <rect x="79.2" y="45" width="2.6" height="6" rx="0.6" fill="url(#flStud)"></rect>
+    <rect x="0.2" y="45" width="2.6" height="6" rx="0.6" fill="url(#flStud)"></rect>
+
+    <!-- ══ integrated Roman-numeral plate ══ -->
+    <polygon points="32.5,80 49.5,80 52.5,83 52.5,92 49.5,95 32.5,95 29.5,92 29.5,83" fill="#15110B" stroke="url(#flBand)" stroke-width="0.9"></polygon>
+    <polygon points="34,81.6 48,81.6 51,84.4 51,90.8 48,93.4 34,93.4 31,90.8 31,84.4" fill="none" stroke="#7A6040" stroke-width="0.4"></polygon>
+    <text x="41" y="88.4" text-anchor="middle" font-family="'Playfair Display', Georgia, serif" font-weight="700" font-size="8.6" letter-spacing="0.4" fill="#DCC08A">{{ roman }}</text>
+  </svg>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:250,&quot;height&quot;:305},&quot;rank&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;foundation&quot;,&quot;builder&quot;],&quot;default&quot;:&quot;foundation&quot;,&quot;tsType&quot;:&quot;'foundation' | 'builder'&quot;,&quot;label&quot;:&quot;Rank family&quot;},&quot;tier&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;1&quot;,&quot;2&quot;,&quot;3&quot;,&quot;4&quot;],&quot;default&quot;:&quot;1&quot;,&quot;tsType&quot;:&quot;1 | 2 | 3 | 4&quot;,&quot;label&quot;:&quot;Sub-rank (I–IV)&quot;},&quot;artScale&quot;:{&quot;editor&quot;:&quot;float&quot;,&quot;default&quot;:1.46,&quot;min&quot;:1,&quot;max&quot;:2.2,&quot;step&quot;:0.02,&quot;label&quot;:&quot;Interior crop&quot;,&quot;section&quot;:&quot;Artwork&quot;},&quot;artwork&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;,&quot;label&quot;:&quot;Artwork override (src)&quot;,&quot;section&quot;:&quot;Artwork&quot;},&quot;roman&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;,&quot;label&quot;:&quot;Numeral override&quot;}}">
+class Component extends DCLogic {
+  // FORGE LEGACY RANK FRAME — the single fixed silhouette every rank family inherits.
+  // Aspect 0.82:1 · centered apex · long vertical walls · bottom apex · integrated
+  // numeral plate · forged bronze border. Interior artwork changes only; never alter
+  // the silhouette between rank families. `rank`+`tier` resolve the interior art at
+  // assets/{rank}-{tier}.png; `artwork`/`roman` override directly for future ranks.
+  renderVals() {
+    const p = this.props || {};
+    const rank = (p.rank || 'foundation').toLowerCase();
+    const tier = Math.max(1, Math.min(4, parseInt(p.tier, 10) || 1));
+    const roman = p.roman || ['', 'I', 'II', 'III', 'IV'][tier];
+    const src = p.artwork || ('assets/' + rank + '-' + tier + '.png');
+    const SUB = {
+      foundation: ['', 'The Spark', 'The Flame', 'The Forge', 'The Hearth'],
+      builder: ['', 'The First Step', 'The Marked Path', 'The Worn Trail', 'The Enduring Way']
+    };
+    const fam = rank.charAt(0).toUpperCase() + rank.slice(1);
+    const alt = p.alt || (fam + ' ' + roman + ' \u00B7 ' + ((SUB[rank] || SUB.foundation)[tier] || ''));
+    // Per-family crop scale so each source's own baked-in frame is pushed past the aperture.
+    const scale = p.artScale != null ? Number(p.artScale) : (rank === 'builder' ? 1.62 : 1.46);
+    return { src, alt, roman, artTransform: 'scale(' + scale + ')' };
+  }
+}
+</script>
+</body>
+</html>

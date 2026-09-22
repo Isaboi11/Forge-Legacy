@@ -81,6 +81,16 @@ export function SquadsTabIcon(props: NavIconProps) {
   )
 }
 
+// nutrition: flame — ForgeSymbols `flame` (category "Progress"), the same glyph the calorie ring
+// carries in `Nutrition Home.dc.html`. NUT-D1 put Nutrition in the fifth, right-most slot.
+export function NutritionTabIcon(props: NavIconProps) {
+  return (
+    <Glyph {...props}>
+      <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />
+    </Glyph>
+  )
+}
+
 // community: explore compass — '<circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>'
 export function CommunityTabIcon(props: NavIconProps) {
   return (

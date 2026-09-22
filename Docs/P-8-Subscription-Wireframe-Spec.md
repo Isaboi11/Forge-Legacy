@@ -371,6 +371,8 @@ Carried forward, not blocking P-8:
 
 ## Section 11 — Plan Selection *(new 2026-08-12 — resolves Open Issue #2)*
 
+> ⚠ **Amended 2026-09-21 by `Monetization-Architecture-Amendment-006-Three-Plans-And-Nutrition.md`.** The plans are now **Premium** ($14.99 / $119.99) and **Premium AI** ($19.99 / $169.99, = Premium + AI), yearly pre-selected in each (MA6-D10), plus **Founder while seats remain**. **`premium_lifetime_299` is withdrawn (MA6-D5)**, so P8W-D8 is moot. A **7-day free trial on yearly** may be stated beside the buy button (MA6-D11). P-8 is also shown **once at the end of onboarding**, dismissible (MA6-D9). ⏳ The diagram and checklist below still show the four-option picker; the rewrite is owed with the P-8 re-render.
+
 ### 11.1 The decision
 
 **P8W-D1 — P-8 presents a plan picker. The single-SKU assumption in §8 is superseded.**

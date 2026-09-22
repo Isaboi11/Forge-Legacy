@@ -22,9 +22,6 @@
  */
 export type HomeHero = 'program' | 'resume' | 'planned' | 'open' | 'none';
 
-/** Which face the first-run starting-point slot wears. `'none'` = the slot is not on screen at all. */
-export type HomeStartingPoint = 'none' | 'chooser' | 'intake' | 'suggestion';
-
 export interface HomeStateInput {
   /**
    * The chapter/awaiting query has not resolved. NOTHING that frames the athlete's state may draw yet.
@@ -59,25 +56,38 @@ export interface HomeStateInput {
   hasPlannedWorkout: boolean;
   /** Logged sets sitting in the local autosave, or null when there is no unfinished work. */
   resumeSets: number | null;
-  /** `catalogCanRecommend()` — whether the guided on-ramp is offered at all. */
-  guidedOnRamp: boolean;
-  /** Intake answered, nothing chosen yet. */
-  hasSuggestion: boolean;
-  /** They tapped "Help me find one" and are mid-stepper. */
-  guidedPathOpen: boolean;
 }
 
 export interface HomeComposition {
   hero: HomeHero;
   /** Whether the hero shows its quiet "Something else today?" link. */
   heroOffersFreestyle: boolean;
-  startingPoint: HomeStartingPoint;
-  /** The quiet "Or just train today" under the starting-point slot. */
-  showQuietFreestyle: boolean;
+  /**
+   * The three GET STARTED rows under the hero — set a goal · explore the app · programs.
+   * `Onboarding-Amendment-006` ONB-A6-D2: the arrival Home, drawn from the PO's mockup (2026-09-21).
+   *
+   * ⚠ THIS REPLACED THE "HOW DO YOU WANT TO START?" CHOOSER, and the difference is the point. The chooser
+   * put a question where the first workout should be; the hero now owns that spot and these rows only
+   * point, quietly, at the three things worth knowing exist. They ask nothing and record nothing.
+   */
+  showGetStarted: boolean;
   /** The quiet "Want a plan? Build or browse →" under the hero. */
   showQuietProgramLink: boolean;
   showMissionTile: boolean;
   showProgramTile: boolean;
+  /**
+   * Your Circle and the Train Together / Competitions row — `Onboarding-Amendment-005` ONB-A5-D2.
+   *
+   * ⚠ BOTH, OR NEITHER. They are one decision and one flag on purpose: they are the two cards whose
+   * only day-one content is their own absence ("No friends yet"; training with people who are not
+   * there). Splitting them would invite a future edit that keeps one and quietly reintroduces the
+   * half-populated Home the amendment exists to remove.
+   *
+   * ⚠ THIS IS NOT A GATE, AND THE DIFFERENCE IS THE WHOLE ARGUMENT OF ONB-A5-D1. Nothing stands in
+   * front of Home, nothing must be answered, and Friends and Squads stay one tap away on the tab bar.
+   * Only the CARDS are withheld, and only until the athlete settles.
+   */
+  showSocialCards: boolean;
 }
 
 /**
@@ -103,11 +113,16 @@ export function composeHome(s: HomeStateInput): HomeComposition {
     return {
       hero: hasResume ? 'resume' : 'none',
       heroOffersFreestyle: hasResume,
-      startingPoint: 'none',
-      showQuietFreestyle: false,
+      showGetStarted: false,
       showQuietProgramLink: false,
       showMissionTile: false,
       showProgramTile: false,
+      /*
+       * ⚠ FALSE WHILE LOADING, LIKE EVERY OTHER CLAIM ON THIS FRAME. `awaiting` is not known yet, and
+       * drawing the social cards now means drawing them and then taking them away — the retraction
+       * this loading frame exists to prevent, performed on the one athlete it would confuse most.
+       */
+      showSocialCards: false,
     };
   }
 
@@ -122,7 +137,7 @@ export function composeHome(s: HomeStateInput): HomeComposition {
   /*
    * ⚠ A PROGRAM SETTLES IT TOO, AND LEAVING THAT OUT PUT A HOLE BETWEEN THE TWO SLOTS.
    *
-   * `startingPoint` below has always treated `s.hasProgram` as an answer to "How do you want to start?"
+   * The starting-point slot (retired by ONB-A6-D1) always treated `s.hasProgram` as an answer to "How do you want to start?"
    * — having one IS the answer. The hero did not, so the two disagreed, and an athlete who had a program
    * while `awaiting` was true fell down the gap: the hero read `'none'` because it was not settled, the
    * starting-point card read `'none'` because there was a program, and Home drew NEITHER. The screen
@@ -164,11 +179,10 @@ export function composeHome(s: HomeStateInput): HomeComposition {
       ? 'planned'
       : s.hasProgramSession
         ? 'program'
-        : // Settled and program-less: the Tier 3 CTA the spec marks Always. Only an athlete who has neither
-          // trained nor chosen gets the chooser instead — the question is worth asking exactly once.
-          settled
-          ? 'open'
-          : 'none';
+        : /* The Tier 3 CTA the spec marks Always — and since ONB-A6-D1, for the brand-new athlete too. It
+             used to read `settled ? 'open' : 'none'`, handing the arrival moment to the chooser; the PO's
+             mockup puts "Start Your First Workout" there instead. `'none'` now means only "still loading". */
+          'open';
 
   /*
    * The open hero's button IS the freestyle choice — it opens the Start a Workout sheet (the spec's W-8
@@ -177,34 +191,12 @@ export function composeHome(s: HomeStateInput): HomeComposition {
    */
   const heroOffersFreestyle = hero === 'program' || hero === 'resume' || hero === 'planned';
 
-  /* "Help me find one" deliberately does NOT settle anything — it is a stepper that lives ON this slot and
-   * ends in a program. Only the three doors that LEAVE the chooser (freestyle, build, browse) record a
-   * choice, which is why `StartChoice` has exactly those three values. */
-  const startingPoint: HomeStartingPoint =
-    s.hasProgram || settled
-      ? 'none'
-      : s.hasSuggestion
-        ? 'suggestion'
-        : s.guidedPathOpen
-          ? 'intake'
-          : 'chooser';
-
   return {
     hero,
     heroOffersFreestyle,
-    startingPoint,
-    /*
-     * ⚠ ALWAYS FALSE NOW, AND THE RULE IT REPLACED IS WHY.
-     *
-     * This used to read `startingPoint === 'chooser' && guidedOnRamp`, whose whole job was to avoid
-     * saying the same thing twice: the link appeared only when the chooser's own freestyle CARD was
-     * absent. The chooser is now three fixed doors and *"Just train today"* is permanently one of them,
-     * so the condition can never be satisfied without repeating a card that is already on screen.
-     *
-     * Kept in the shape rather than deleted: it is part of `HomeComposition`'s contract, several tests
-     * name it, and a field that is honestly always false reads better than a field quietly removed.
-     */
-    showQuietFreestyle: false,
+    /* Arrival only. Any of the three things that settle Home — training, a choice, a program — retires
+       the rows for good, the same moment the mission tile and the social cards arrive to replace them. */
+    showGetStarted: !settled,
     // Subordinate on purpose. Training is the primary action; a program is an option, not a prerequisite.
     // It appears the moment they settle, so the athlete who chose freestyle always has a route to one.
     showQuietProgramLink: !s.hasProgram && settled,
@@ -215,6 +207,22 @@ export function composeHome(s: HomeStateInput): HomeComposition {
      */
     showMissionTile: s.hasProgram || settled,
     showProgramTile: s.hasProgram,
+    /*
+     * ⚠ `settled`, AND AN EARLIER DRAFT OF THIS LINE READ `!s.awaiting` — which a test caught.
+     *
+     * `a chosen freestyle athlete is composed exactly like one who has already trained` asserts a
+     * deliberate invariant: **the two routes to settled must produce one screen.** Keying the social
+     * cards to the first WORKOUT broke it, because choosing "just train today" settles an athlete who
+     * has not trained — and that would have shipped two different Homes for people in the same state,
+     * which is precisely what that assertion exists to prevent.
+     *
+     * So the reduction lasts until the athlete engages at all, not until they have trained. That is
+     * also the better story: the stripped Home belongs to the moment of ARRIVAL, before any decision
+     * has been made, and the screen opens up the moment one has been. `settled` already gates the
+     * mission tile and the quiet program link, so the social cards graduate alongside them rather
+     * than on a schedule of their own.
+     */
+    showSocialCards: settled,
   };
 }
 

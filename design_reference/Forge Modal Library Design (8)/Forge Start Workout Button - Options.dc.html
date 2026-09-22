@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-paper-theme.js"></script>
+<script src="forge-symbols.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;background:#EDE9E1;font-family:var(--fl-font-sans, system-ui, sans-serif);}
+  .dv-turn{padding:40px 44px 32px;}
+  .dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 6px;}
+  .dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#231F1A;color:#F4EFE3;border-radius:4px;text-decoration:none;}
+  .dv-tname{font:600 15px/1.2 var(--fl-font-sans, system-ui, sans-serif);color:#231F1A;}
+  .dv-sub{margin:0 0 22px;font:13px/1.5 system-ui,sans-serif;color:#5E574C;max-width:600px;}
+  .dv-opts{display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start;}
+  .dv-opt{flex:none;width:320px;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px;}
+  .dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(35,31,26,0.08);color:#231F1A;border-radius:5px;text-decoration:none;}
+  .dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 12px/1.3 system-ui,sans-serif;color:rgba(35,31,26,0.6);}
+  .dv-oname{font-weight:700;color:#231F1A;font-size:12.5px;}
+  .dv-chip{display:inline-block;width:12px;height:12px;border-radius:3px;flex:none;box-shadow:inset 0 0 0 1px rgba(35,31,26,0.2);}
+  .dv-card{width:100%;background:var(--fl-surface-panel);border:1px solid var(--fl-charcoal-600);border-radius:14px;box-shadow:var(--fl-shadow-card-soft, 0 2px 8px rgba(0,0,0,0.08));overflow:hidden;padding:16px 16px calc(16px + env(safe-area-inset-bottom, 0px));}
+  .dv-opt:target .dv-oid{background:#8A6431;color:#fff;}
+  .dv-next{margin:26px 0 0;font:12px/1.6 system-ui,sans-serif;color:rgba(35,31,26,0.55);max-width:640px;}
+</style>
+</helmet>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#F4F1EA"></rect><rect x="18" y="42" width="64" height="20" rx="5" fill="#A88650"></rect></svg></template>
+
+<div style="min-height:100vh;">
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:60px; font:13px system-ui,sans-serif; color:#8C8478;">Loading…</div>
+  </sc-if>
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+  <section class="dv-turn" id="t3">
+    <div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Riffs on <a class="dv-oid" href="#1a">1a</a>, <a class="dv-oid" href="#1b">1b</a>, <a class="dv-oid" href="#1c">1c</a>, <a class="dv-oid" href="#1g">1g</a> — full Home screen</span></div>
+    <p class="dv-sub">Each fill applied across the whole screen (button, plus every other bronze-fill element it touches).</p>
+    <div class="dv-opts">
+      <sc-for list="{{ homeOptions }}" as="opt" hint-placeholder-count="4">
+        <div class="dv-opt" id="{{ opt.fullId }}" style="width:404px;">
+          <div class="dv-olabel"><a class="dv-oid" href="{{ opt.href }}">{{ opt.id }}</a><span class="dv-chip" style="background:{{ opt.chipBg }};"></span><span class="dv-oname">{{ opt.name }}</span></div>
+          <div style="width:404px; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-500); background:var(--fl-paper-grain), var(--fl-paper-vignette), linear-gradient(rgba(247,243,234,0.06), rgba(247,243,234,0.06)), #F4EFE3 url('assets/forge-slate-paper.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; {{ opt.varsStyle }}">
+
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="{{ homeLogo }}" actions="{{ friendsEntry }}" avatar="{{ avatarEl }}" on-avatar="{{ noop }}" hint-size="100%,56px"></x-import>
+
+            <div class="pv-scroll" style="flex:1; min-height:0; overflow-y:auto;">
+              <div style="padding:16px 26px 8px; display:flex; flex-direction:column; gap:9px;">
+                <span style="font-size:12px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--fl-text-secondary);">Chapter Six</span>
+                <h1 style="margin:0; font-family:var(--fl-font-display); font-size:38px; line-height:0.98; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-text-primary);">The Reckoning</h1>
+                <div style="display:flex; align-items:center; gap:14px; max-width:300px;">
+                  <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-border) 0%, transparent 100%);"></span>
+                  <span style="width:7px; height:7px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary);"></span>
+                  <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-border) 0%, transparent 100%);"></span>
+                </div>
+                <span style="font-size:15px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-secondary);">Week 6 &nbsp;·&nbsp; Day 2</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:20px; padding:2px 18px 40px;">
+                <div style="position:relative; background:var(--fl-card-hero-wash), var(--fl-surface-card); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); padding:20px 22px; box-shadow:var(--fl-shadow-card-hero); display:flex; flex-direction:column; gap:16px;">
+                  <div style="display:flex; align-items:flex-start; gap:16px;">
+                    <span style="width:52px; height:52px; flex:none; margin-top:6px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); box-shadow:var(--fl-glow-subtle); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg></span>
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px;">
+                      <span style="font-size:10.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Today's Workout</span>
+                      <span style="font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.3px; line-height:1.02;">Push Day A</span>
+                      <span style="font-size:14px; color:var(--fl-text-secondary);">Chest, Shoulders, Triceps</span>
+                    </div>
+                  </div>
+                  <div style="height:1px; background:var(--fl-bronze-border-subtle); max-width:150px;"></div>
+                  <span style="display:flex; align-items:center; gap:9px; font-size:12px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-secondary);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-icon-bronze)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M9 3.5h6v2H9zM9 11h6M9 15h4"></path></svg>6 Exercises</span>
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ noop }}" hint-size="100%,52px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" style="margin-right:8px; vertical-align:-3px; stroke:currentColor;"><path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z"></path></svg>Start Workout</x-import>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                  <div style="background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-xl); padding:18px 16px; box-shadow:var(--fl-shadow-card-soft); display:flex; flex-direction:column; gap:11px;">
+                    <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Current Program</span>
+                    <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px;">Powerbuilding II</span>
+                    <div style="display:flex; flex-direction:column; gap:8px; margin-top:3px;">
+                      <div style="display:flex; align-items:baseline; gap:5px;">
+                        <span style="font-family:var(--fl-font-display); font-size:26px; font-weight:600; line-height:0.9;">12</span>
+                        <span style="font-size:14px; font-weight:500; color:var(--fl-text-secondary);">/ 32</span>
+                      </div>
+                      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="12" max="32" hint-size="100%,8px"></x-import>
+                    </div>
+                  </div>
+                  <div style="background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-xl); padding:18px 16px; box-shadow:var(--fl-shadow-card-soft); display:flex; flex-direction:column; gap:12px;">
+                    <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Mission</span>
+                    <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; line-height:1.15;">Bench 225 × 1</span>
+                    <span style="font-size:12.5px; color:var(--fl-text-secondary);">Your long-term objective</span>
+                  </div>
+                </div>
+
+                <div>
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Your Circle" hint-size="100%,20px"></x-import>
+                  <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); box-shadow:var(--fl-shadow-card-soft); padding:16px; display:flex; flex-direction:column;">
+                    <div style="display:flex; flex-direction:column; gap:12px; padding:14px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border-subtle);">
+                      <div style="display:flex; align-items:center; gap:9px;">
+                        <span style="width:8px; height:8px; flex:none; border-radius:50%; background:var(--fl-status-online); box-shadow:var(--fl-status-online-glow);"></span>
+                        <span style="font-size:10.5px; font-weight:600; letter-spacing:1.7px; text-transform:uppercase; color:var(--fl-bronze-primary);">Live Now</span>
+                        <span style="margin-left:auto; font-size:12px; font-weight:500; color:var(--fl-text-secondary);">+2 training now</span>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:13px; min-height:40px;">
+                        <div style="display:flex; align-items:center; gap:13px; flex:1; min-width:0;">
+                          <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Avatar" name="Marcus Vale" size="listRow" hint-size="40px,40px"></x-import>
+                          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                            <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; line-height:1.05;">Marcus Vale</span>
+                            <span style="font-size:12.5px; color:var(--fl-text-secondary);">Pull Day A · Live for 4 min</span>
+                          </div>
+                        </div>
+                        <span style="flex:none; display:inline-flex; align-items:center; justify-content:center; padding:9px 18px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); color:var(--fl-bronze-primary); font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase;">Join</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.TabBar" items="{{ tabItems }}" active-id="home" on-change="{{ noop }}" hint-size="100%,74px"></x-import>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <p class="dv-next">Try next: "go with <a class="dv-oid" href="#1a">1a</a> everywhere" · "darken <a class="dv-oid" href="#1g">1g</a> slightly" · "apply 1a to Active Workout and Squads too"</p>
+  </section>
+
+  <section class="dv-turn" id="t2">
+    <div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Riffs on <a class="dv-oid" href="#1a">1a</a>, <a class="dv-oid" href="#1b">1b</a>, <a class="dv-oid" href="#1c">1c</a>, <a class="dv-oid" href="#1g">1g</a> — on the Home hero card</span></div>
+    <p class="dv-sub">Same four fills, now on the actual "Today's Workout" hero card from Home.</p>
+    <div class="dv-opts">
+      <sc-for list="{{ homeOptions }}" as="opt" hint-placeholder-count="4">
+        <div class="dv-opt" id="{{ opt.heroId }}">
+          <div class="dv-olabel"><a class="dv-oid" href="{{ opt.href }}">{{ opt.id }}</a><span class="dv-chip" style="background:{{ opt.chipBg }};"></span><span class="dv-oname">{{ opt.name }}</span></div>
+          <div style="width:100%; background:var(--fl-paper-grain), var(--fl-paper-vignette), linear-gradient(180deg, #F5F2EB 0%, var(--fl-charcoal-900) 44%, #E5E0D6 100%); border:1px solid var(--fl-charcoal-500); border-radius:20px; padding:20px; box-shadow:var(--fl-shadow-ambient);">
+            <div style="position:relative; background:var(--fl-card-hero-wash), var(--fl-surface-card); border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); padding:20px 22px; box-shadow:var(--fl-shadow-card-hero); display:flex; flex-direction:column; gap:16px; {{ opt.varsStyle }}">
+              <div style="display:flex; align-items:flex-start; gap:16px;">
+                <span style="width:52px; height:52px; flex:none; margin-top:6px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); box-shadow:var(--fl-glow-subtle); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"></path></svg></span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px;">
+                  <span style="font-size:10.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Today's Workout</span>
+                  <span style="font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.3px; line-height:1.02;">Push Day A</span>
+                  <span style="font-size:14px; color:var(--fl-text-secondary);">Chest, Shoulders, Triceps</span>
+                </div>
+              </div>
+              <div style="height:1px; background:var(--fl-bronze-border-subtle); max-width:150px;"></div>
+              <span style="display:flex; align-items:center; gap:9px; font-size:12px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-secondary);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fl-icon-bronze)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M9 3.5h6v2H9zM9 11h6M9 15h4"></path></svg>6 Exercises</span>
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ noop }}" hint-size="100%,52px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" style="margin-right:8px; vertical-align:-3px; stroke:currentColor;"><path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z"></path></svg>Start Workout</x-import>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <p class="dv-next">Try next: "go with <a class="dv-oid" href="#1a">1a</a> everywhere" · "darken <a class="dv-oid" href="#1g">1g</a> slightly" · "show 1a on Active Workout and Squads too"</p>
+  </section>
+
+  <section class="dv-turn" id="t1">
+    <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Start Workout / Log Set button — 7 fill options</span></div>
+    <p class="dv-sub">Current fill reads a little yellow. All seven stay in the bronze/copper/brass family — border, rim highlight and text stay identical so only the fill hue changes. <a class="dv-oid" href="#1a">1a</a> is tuned to the exact tone of the bottom tab bar's active-tab outline.</p>
+    <div class="dv-opts">
+      <sc-for list="{{ options }}" as="opt" hint-placeholder-count="7">
+        <div class="dv-opt" id="{{ opt.id }}">
+          <div class="dv-olabel"><a class="dv-oid" href="{{ opt.href }}">{{ opt.id }}</a><span class="dv-chip" style="background:{{ opt.chipBg }};"></span><span class="dv-oname">{{ opt.name }}</span></div>
+          <div class="dv-olabel" style="margin-top:-6px;">{{ opt.note }}</div>
+          <div class="dv-card" style="{{ opt.varsStyle }}">
+            <div style="display:flex; gap:10px;">
+              <div style="flex:1;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" full-width="{{ true }}" on-click="{{ noop }}" hint-size="100%,50px">Skip</x-import></div>
+              <div style="flex:2;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" on-click="{{ noop }}" hint-size="100%,50px"><span style="display:inline-flex; align-items:center; gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" style="stroke:currentColor;"><path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z"></path></svg>Log Set</span></x-import></div>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <p class="dv-next">Try next: "give me <a class="dv-oid" href="#1a">1a</a> but a shade darker" · "mix the fill from <a class="dv-oid" href="#1d">1d</a> with the border from <a class="dv-oid" href="#1a">1a</a>" · "show more options between <a class="dv-oid" href="#1c">1c</a> and <a class="dv-oid" href="#1e">1e</a>"</p>
+  </section>
+
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { ready: false };
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) this.setState({ ready: true });
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  renderVals() {
+    if (!this.state.ready) return { ready: false, notReady: true };
+    const noop = () => {};
+    const topRim = 'inset 0 1px 0 rgba(255,250,240,0.45)';
+    const bottomRim = 'inset 0 -1px 1px rgba(90,64,32,0.12)';
+    const border = 'rgba(138,100,49,0.32)';
+    const borderHover = 'rgba(138,100,49,0.4)';
+
+    const mk = (id, name, note, fillStops, hoverStops, chip) => ({
+      id, href: '#' + id, name, note,
+      chipBg: chip,
+      varsStyle:
+        '--fl-bronze-fill:linear-gradient(180deg,' + fillStops + ');' +
+        '--fl-bronze-fill-hover:linear-gradient(180deg,' + hoverStops + ');' +
+        '--fl-bronze-metal-border:' + border + ';' +
+        '--fl-bronze-metal-border-hover:' + borderHover + ';' +
+        '--fl-bronze-metal-top-rim:' + topRim + ';' +
+        '--fl-bronze-metal-bottom-rim:' + bottomRim + ';',
+    });
+
+    const options = [
+      mk('1a', 'Tab Outline Match', 'Same tone as the active tab\u2019s bronze outline below',
+        '#BBA383 0%,#AB9573 45%,#9C8560 100%', '#C4AD8C 0%,#B49F7C 45%,#A5906A 100%', '#AB9573'),
+      mk('1b', 'Current', 'What\u2019s live now \u2014 the one that reads a little yellow',
+        '#C2A579 0%,#B0955F 45%,#A17D49 100%', '#CBAF88 0%,#B9A06F 45%,#AB8B58 100%', '#B0955F'),
+      mk('1c', 'Warm Brass', 'Slightly browner, less yellow than current',
+        '#B69A70 0%,#A3865C 45%,#8F714A 100%', '#BFA47F 0%,#AC916B 45%,#987C59 100%', '#A3865C'),
+      mk('1d', 'Antique Copper', 'Warm reddish undertone instead of yellow',
+        '#BC8F6C 0%,#A97952 45%,#93643F 100%', '#C59B7B 0%,#B28661 45%,#9C704E 100%', '#A97952'),
+      mk('1e', 'Umber Bronze', 'Deeper and richer, most contrast against the paper',
+        '#9C8058 0%,#856941 45%,#6E5432 100%', '#A88D65 0%,#91764C 45%,#7A613D 100%', '#856941'),
+      mk('1f', 'Pewter Bronze', 'Desaturated, quiet \u2014 barely reads as metal',
+        '#A79A85 0%,#948870 45%,#7E7359 100%', '#B0A491 0%,#9E927B 45%,#887C64 100%', '#948870'),
+      mk('1g', 'Champagne Bronze', 'Lightest option, closest to the paper itself',
+        '#D0BA95 0%,#C0A87E 45%,#AE9569 100%', '#D8C5A3 0%,#C9B38B 45%,#B8A176 100%', '#C0A87E'),
+    ];
+
+    const wantHome = ['1a', '1b', '1c', '1g'];
+    const homeOptions = options.filter(o => wantHome.includes(o.id)).map(o => ({ ...o, heroId: o.id + '-home', fullId: o.id + '-full' }));
+
+    const FS = window.ForgeSymbols;
+    const forgeMark = React.createElement('svg', { width: 19, height: 28, viewBox: '16 0 68 102', style: { flex: 'none', display: 'block' }, 'aria-hidden': true },
+      React.createElement('defs', null, React.createElement('linearGradient', { id: 'pvForgeMarkGrad2', x1: '0', y1: '0', x2: '0', y2: '1' },
+        React.createElement('stop', { offset: '0%', stopColor: '#DCB57A' }), React.createElement('stop', { offset: '52%', stopColor: '#BF8F4F' }), React.createElement('stop', { offset: '100%', stopColor: '#835F32' }))),
+      React.createElement('g', { fill: 'url(#pvForgeMarkGrad2)' },
+        React.createElement('polygon', { points: '43,6 57,6 57,96 43,96' }),
+        React.createElement('polygon', { points: '23,42 37,27 37,96 23,96' }),
+        React.createElement('polygon', { points: '63,27 77,42 77,96 63,96' })));
+    const homeLogo = React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '8px' } },
+      forgeMark, React.createElement('span', { style: { fontFamily: 'var(--fl-font-display)', fontSize: '16px', fontWeight: 600, letterSpacing: '-0.2px', color: 'var(--fl-text-primary)' } }, 'Forge Legacy'));
+    const friendsEntry = React.createElement('span', { style: { position: 'relative', width: '40px', height: '40px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fl-icon-bronze)' } },
+      React.createElement('svg', { width: 23, height: 23, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' },
+        React.createElement('circle', { cx: 7.5, cy: 8, r: 2.7 }), React.createElement('circle', { cx: 16.5, cy: 8, r: 2.7 }),
+        React.createElement('path', { d: 'M3 19a4.5 4.5 0 0 1 9 0' }), React.createElement('path', { d: 'M12 19a4.5 4.5 0 0 1 9 0' })));
+    const avatarEl = window.ForgeLegacyVisualFoundation_5368b2.Avatar ? React.createElement(window.ForgeLegacyVisualFoundation_5368b2.Avatar, { name: 'Ada Ridge', size: 'appBar' }) : null;
+    const navIcon = (id) => FS.create(React, id, { size: 22, strokeWidth: 2 });
+    const tabItems = [
+      { id: 'home', label: 'Home', icon: navIcon('home') },
+      { id: 'workouts', label: 'Workouts', icon: navIcon('workouts') },
+      { id: 'legacy', label: 'Legacy', icon: navIcon('legacy') },
+      { id: 'squads', label: 'Squads', icon: navIcon('squads') },
+      { id: 'community', label: 'Community', icon: navIcon('explore') },
+    ];
+
+    return { ready: true, notReady: false, noop, options, homeOptions, homeLogo, friendsEntry, avatarEl, tabItems };
+  }
+}
+
+</script>
+</body>
+</html>

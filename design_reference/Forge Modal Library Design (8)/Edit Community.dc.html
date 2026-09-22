@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-communities.js"></script>
+  <script src="forge-community-posts.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .ec-input { width:100%; font-family:var(--fl-font-sans); font-size:14.5px; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); padding:12px 13px; outline:none; transition:border-color 160ms ease; }
+  .ec-input:focus { border-color:var(--fl-bronze-border); }
+  .ec-input::placeholder { color:var(--fl-text-tertiary); }
+  textarea.ec-input { resize:none; line-height:1.5; }
+  @keyframes ecRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Edit Community" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none; position:relative; z-index:5;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Edit Community" on-back="{{ goBack }}" hint-size="100%,56px"></x-import>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:16px 20px 28px;">
+
+      <!-- crest + name -->
+      <div style="display:flex; align-items:center; gap:14px; animation:ecRise 380ms var(--fl-ease-out) both;">
+        <span style="width:64px; height:64px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 50% 34%, rgba(191,143,79,0.24), transparent 72%), var(--fl-charcoal-900); border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright); box-shadow:var(--fl-glow-subtle);">{{ heroCrest }}</span>
+        <div style="flex:1; min-width:0;">
+          <span style="display:block; font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ heroName }}</span>
+          <span style="font-size:12px; color:var(--fl-text-tertiary);">{{ category }} · editing</span>
+        </div>
+      </div>
+
+      <!-- IDENTITY -->
+      <div style="margin:24px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Identity</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:18px 15px; display:flex; flex-direction:column; gap:18px;">
+        <label style="display:flex; flex-direction:column; gap:7px;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Community Name</span>
+          <input class="ec-input" type="text" value="{{ name }}" placeholder="Community name" maxlength="30" onInput="{{ onName }}">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:7px;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Tagline</span>
+          <input class="ec-input" type="text" value="{{ tagline }}" placeholder="A short line on what it's for" maxlength="60" onInput="{{ onTagline }}">
+        </label>
+      </div>
+
+      <!-- CATEGORY -->
+      <div style="margin:24px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Category</span></div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        <sc-for list="{{ categoryOptions }}" as="c" hint-placeholder-count="6">
+          <button type="button" onClick="{{ c.select }}" style="{{ c.style }}">{{ c.label }}</button>
+        </sc-for>
+      </div>
+
+      <!-- CREST -->
+      <div style="margin:24px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Crest</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:15px;">
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;">
+          <sc-for list="{{ crestOptions }}" as="cr" hint-placeholder-count="8">
+            <button type="button" aria-label="Choose crest" onClick="{{ cr.select }}" style="{{ cr.style }}">{{ cr.glyph }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ABOUT -->
+      <div style="margin:24px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">About</span></div>
+      <textarea class="ec-input" rows="4" placeholder="Describe what this community is about." maxlength="400" onInput="{{ onAbout }}">{{ about }}</textarea>
+
+      <!-- RULES -->
+      <div style="margin:24px 4px 8px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Rules</span></div>
+      <span style="display:block; font-size:11.5px; line-height:1.5; color:var(--fl-text-tertiary); margin:0 2px 10px;">One rule per line. These show on your community profile.</span>
+      <textarea class="ec-input" rows="6" placeholder="Post real numbers.&#10;Form checks welcome — add the angle and load.&#10;Keep coaching constructive." onInput="{{ onRules }}">{{ rulesText }}</textarea>
+
+      <!-- ═══ JOIN REQUESTS ═══ -->
+      <sc-if value="{{ hasRequests }}" hint-placeholder-val="{{ false }}">
+        <div style="margin:28px 4px 12px; display:flex; align-items:center; justify-content:space-between;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Join Requests</span>
+          <span style="font-size:11px; font-weight:600; color:var(--fl-bronze-primary);">{{ requestCount }} pending</span>
+        </div>
+        <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+          <sc-for list="{{ requestRows }}" as="q" hint-placeholder-count="2">
+            <div style="padding:14px 15px; border-top:1px solid rgba(255,255,255,0.03);">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span style="{{ memberGlyphStyle }}">{{ q.initials }}</span>
+                <div style="flex:1; min-width:0;">
+                  <span style="display:block; font-size:14.5px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ q.name }}</span>
+                  <span style="font-size:11.5px; color:var(--fl-text-tertiary);">Requested {{ q.when }}</span>
+                </div>
+              </div>
+              <sc-if value="{{ q.hasNote }}" hint-placeholder-val="{{ false }}">
+                <span style="display:block; font-size:12.5px; line-height:1.5; color:var(--fl-text-secondary); margin-top:8px;">{{ q.note }}</span>
+              </sc-if>
+              <div style="display:flex; gap:9px; margin-top:12px;">
+                <button type="button" onClick="{{ q.approve }}" style="flex:1; padding:10px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-fill); color:var(--fl-bronze-bright); font-size:13px; font-weight:600; cursor:pointer; box-shadow:var(--fl-glow-subtle);">Approve</button>
+                <button type="button" onClick="{{ q.decline }}" style="flex:1; padding:10px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:13px; font-weight:600; cursor:pointer;">Decline</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- ═══ MEMBERS ═══ -->
+      <div style="margin:28px 4px 12px; display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Members</span>
+        <span style="font-size:11px; font-weight:600; color:var(--fl-text-tertiary);">{{ memberCount }}</span>
+      </div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+        <sc-for list="{{ memberRows }}" as="m" hint-placeholder-count="4">
+          <div role="button" tabindex="0" onClick="{{ m.open }}" style="display:flex; align-items:center; gap:12px; padding:13px 15px; border-top:1px solid rgba(255,255,255,0.03); cursor:pointer; transition:background 140ms ease;" style-hover="background:var(--fl-surface-elevated);">
+            <span style="{{ memberGlyphStyle }}">{{ m.initials }}</span>
+            <span style="flex:1; min-width:0; font-size:14.5px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ m.name }}</span>
+            <span style="{{ m.chipStyle }}">{{ m.roleLabel }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- ═══ ROLES ═══ -->
+      <div style="margin:28px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Roles</span></div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <sc-for list="{{ roleCards }}" as="r" hint-placeholder-count="4">
+          <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:14px 15px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+              <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary);">{{ r.label }}</span>
+              <span style="font-size:11px; font-weight:600; color:var(--fl-text-tertiary);">{{ r.countLabel }}</span>
+            </div>
+            <span style="display:block; font-size:12.5px; line-height:1.5; color:var(--fl-text-secondary); margin-top:5px; text-wrap:pretty;">{{ r.blurb }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- ═══ POSTING PERMISSIONS ═══ -->
+      <div style="margin:28px 4px 8px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Posting Permissions</span></div>
+      <span style="display:block; font-size:11.5px; line-height:1.5; color:var(--fl-text-tertiary); margin:0 2px 10px;">The minimum role allowed to post each type. Higher roles inherit everything below.</span>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+        <sc-for list="{{ permRows }}" as="p" hint-placeholder-count="6">
+          <div style="display:flex; align-items:center; gap:12px; padding:11px 15px; border-top:1px solid rgba(255,255,255,0.03);">
+            <span style="flex:none; display:inline-flex; color:var(--fl-icon-bronze);">{{ p.icon }}</span>
+            <span style="flex:1; min-width:0; font-size:14px; font-weight:500; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ p.label }}</span>
+            <select value="{{ p.value }}" onChange="{{ p.onChange }}" style="flex:none; font-family:var(--fl-font-sans); font-size:12.5px; font-weight:600; color:var(--fl-bronze-bright); background:var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-pill); padding:7px 10px; outline:none; cursor:pointer;">
+              <sc-for list="{{ p.options }}" as="o" hint-placeholder-count="3">
+                <option value="{{ o.value }}">{{ o.label }}+</option>
+              </sc-for>
+            </select>
+          </div>
+        </sc-for>
+      </div>
+
+    </div>
+
+    <div style="flex:none; position:relative; z-index:5; padding:14px 20px calc(16px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(9,9,9,0.4), rgba(9,9,9,0.72));">
+      <button type="button" onClick="{{ save }}" disabled="{{ saveDisabled }}" style="{{ saveStyle }}"><span style="display:inline-flex;">{{ saveIcon }}</span>Save Changes</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" style="position:absolute; inset:0; z-index:1200; background:rgba(4,5,7,0.66); backdrop-filter:blur(2px); animation:ecRise 160ms ease both;"></div>
+    <div style="position:absolute; left:0; right:0; bottom:0; z-index:1210; border-top-left-radius:var(--fl-radius-xl); border-top-right-radius:var(--fl-radius-xl); border:1px solid var(--fl-charcoal-600); border-bottom:none; background:var(--fl-surface-modal, #14110d); box-shadow:0 -20px 50px rgba(0,0,0,0.5); padding:8px 20px calc(24px + env(safe-area-inset-bottom)); animation:ecRise 240ms var(--fl-ease-out) both;">
+      <div style="width:40px; height:5px; border-radius:3px; background:var(--fl-charcoal-500); margin:6px auto 14px;"></div>
+      <div style="display:flex; align-items:center; gap:12px; padding:0 2px 4px;">
+        <span style="{{ memberGlyphStyle }}">{{ sheetInitials }}</span>
+        <div style="flex:1; min-width:0;">
+          <span style="display:block; font-family:var(--fl-font-display); font-size:17px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ sheetName }}</span>
+          <span style="font-size:11.5px; color:var(--fl-text-tertiary);">Change role or remove</span>
+        </div>
+      </div>
+      <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary); margin:14px 2px 8px;">Set role</span>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <sc-for list="{{ sheetRoleOptions }}" as="o" hint-placeholder-count="3">
+          <button type="button" onClick="{{ o.pick }}" style="{{ o.style }}"><span style="flex:1; text-align:left;">{{ o.label }}</span><sc-if value="{{ o.active }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex; color:var(--fl-bronze-bright);">{{ checkIcon }}</span></sc-if></button>
+        </sc-for>
+      </div>
+      <button type="button" onClick="{{ removeMember }}" style="width:100%; margin-top:14px; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:13px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-red-metal-border, rgba(150,70,60,0.42)); background:transparent; color:var(--fl-red-muted, #C97A6E); font-size:14px; font-weight:600; cursor:pointer;">Remove from community</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:96px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:ecRise 260ms var(--fl-ease-out) both;">
+      <span style="display:inline-flex; color:{{ toastIconColor }}; flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false, toastMsg: null, cid: null, name: '', tagline: '', category: '', crest: 'dumbbell', about: '', rulesText: '', loaded: false, memberSheet: null, rev: 0 };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = window.ForgeLegacyVisualFoundation_5368b2;
+      if (r && ns && window.ForgeSymbols && window.ForgeCommunities && window.ForgeCommunityPosts) {
+        const cid = window.ForgeCommunities.activeId() || 'ironcollective';
+        const c = window.ForgeCommunities.get(cid) || {};
+        this.setState({ ready: true, cid, name: c.name || '', tagline: c.tagline || '', category: c.category || 'General', crest: c.crest || 'dumbbell', about: c.about || '', rulesText: (c.rules && c.rules.length ? c.rules.join('\n') : ''), loaded: true });
+      } else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); if (this._navT) clearTimeout(this._navT); }
+
+  _toast(msg, tone) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastTone: tone || 'bronze' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2200); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) return { ready: false, notReady: true };
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const S = this.state;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.8 });
+
+    const CATS = ['Powerlifting', 'Running', 'Hybrid', 'Strongman', 'Olympic', 'Bodybuilding', 'CrossFit', 'General'];
+    const catStyle = (on) => ({ padding: '9px 14px', borderRadius: 'var(--fl-radius-pill)', border: '1px solid ' + (on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: on ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)', color: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer', transition: 'background 140ms ease, border-color 140ms ease, color 140ms ease' });
+    const categoryOptions = CATS.map(c => ({ key: c, label: c, style: catStyle(S.category === c), select: () => this.setState({ category: c }) }));
+
+    const CRESTS = ['dumbbell', 'shoe', 'mountain', 'trophy', 'medal', 'flame', 'swords', 'target'];
+    const crestOptions = CRESTS.map(g => { const on = (S.crest || 'dumbbell') === g; return { key: g, glyph: ic(g, 22, 1.7), select: () => this.setState({ crest: g }), style: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '13px 0', borderRadius: 'var(--fl-radius-md)', border: '1px solid ' + (on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: on ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-recessed)', color: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)', cursor: 'pointer', transition: 'background 140ms ease, border-color 140ms ease, color 140ms ease' } }; });
+
+    const nameTrim = S.name.trim();
+    const canSave = nameTrim.length >= 2;
+    const forge = (size) => h('svg', { width: size || 17, height: size || 17, viewBox: '0 0 24 24', fill: 'currentColor' }, h('path', { d: 'M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z' }));
+    const saveStyle = { width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '9px', padding: '15px', borderRadius: 'var(--fl-radius-md)', fontSize: '15px', fontWeight: 600, border: '1px solid ' + (canSave ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: canSave ? 'var(--fl-bronze-fill)' : 'var(--fl-charcoal-800)', color: canSave ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', boxShadow: canSave ? 'var(--fl-glow-subtle)' : 'none', cursor: canSave ? 'pointer' : 'not-allowed', opacity: canSave ? 1 : 0.75 };
+    const toastColor = S.toastTone === 'positive' ? '#6E8E74' : 'var(--fl-icon-bronze)';
+
+    // ── 4-role management ──
+    const FC = window.ForgeCommunities;
+    const cid = S.cid;
+    const bump = () => this.setState(st => ({ rev: st.rev + 1 }));
+    const initials = (nm) => (nm || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    const ROLE_META = {
+      owner:       { label: 'Owner',       bg: 'var(--fl-bronze-metallic)',  bd: 'var(--fl-bronze-metal-border)',  ink: '#1A1206' },
+      moderator:   { label: 'Moderator',   bg: 'var(--fl-bronze-tint)',      bd: 'var(--fl-bronze-border)',        ink: 'var(--fl-bronze-bright)' },
+      contributor: { label: 'Contributor', bg: 'var(--fl-surface-recessed)', bd: 'var(--fl-bronze-border-subtle)', ink: 'var(--fl-bronze-bright)' },
+      member:      { label: 'Member',      bg: 'var(--fl-surface-recessed)', bd: 'var(--fl-charcoal-600)',         ink: 'var(--fl-text-secondary)' },
+    };
+    const chip = (role) => { const mt = ROLE_META[role] || ROLE_META.member; return { display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 'var(--fl-radius-pill)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', background: mt.bg, border: '1px solid ' + mt.bd, color: mt.ink, flex: 'none' }; };
+    const glyphStyle = { width: '40px', height: '40px', flex: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--fl-radius-round)', background: 'radial-gradient(circle at 44% 34%, #453322, #1a140e)', border: '1px solid var(--fl-bronze-border-subtle)', color: 'var(--fl-bronze-bright)', fontFamily: 'var(--fl-font-display)', fontSize: '14px', fontWeight: 600 };
+    const checkIcon = h('svg', { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M20 6L9 17l-5-5' }));
+
+    const roster = FC.members(cid);
+    const roleCounts = { owner: 0, moderator: 0, contributor: 0, member: 0 };
+    roster.forEach(m => { roleCounts[m.role] = (roleCounts[m.role] || 0) + 1; });
+    const memberRows = roster.map(m => ({
+      key: m.id, name: m.name, initials: initials(m.name),
+      roleLabel: (ROLE_META[m.role] || ROLE_META.member).label, chipStyle: chip(m.role), isOwner: m.role === 'owner',
+      open: () => { if (m.role === 'owner') { this._toast('Ownership is transferred separately'); return; } this.setState({ memberSheet: m.id }); },
+    }));
+
+    const reqs = FC.requests(cid);
+    const requestRows = reqs.map(q => ({
+      key: q.id, name: q.name, initials: initials(q.name), when: q.when, note: q.note || '', hasNote: !!(q.note && q.note.trim()),
+      approve: () => { FC.acceptRequest(cid, q.id); this._toast(q.name + ' approved', 'positive'); bump(); },
+      decline: () => { FC.denyRequest(cid, q.id); this._toast('Request declined'); bump(); },
+    }));
+
+    const roleCards = FC.ROLES.map(r => ({ key: r.id, label: r.label, blurb: r.blurb, countLabel: (roleCounts[r.id] || 0) + ((roleCounts[r.id] || 0) === 1 ? ' member' : ' members') }));
+
+    // Posting permissions — assignable min role per post type (member ≤ contributor ≤ moderator).
+    const ASSIGN = ['member', 'contributor', 'moderator'];
+    const permRows = window.ForgeCommunityPosts.TYPES.map(t => ({
+      key: t.id, label: t.label, icon: h('span', { style: { display: 'inline-flex' } }, ic(t.icon, 17, 1.7)),
+      value: FC.minRoleFor(cid, t.id, t.gate),
+      onChange: (e) => { FC.setMinRole(cid, t.id, e.target.value); this._toast(t.label + ' \u2192 ' + (ROLE_META[e.target.value] || ROLE_META.member).label + '+'); bump(); },
+      options: ASSIGN.map(r => ({ key: r, value: r, label: (ROLE_META[r] || ROLE_META.member).label })),
+    }));
+
+    // Member action sheet
+    const sheetMember = S.memberSheet ? roster.find(m => m.id === S.memberSheet) : null;
+    const sheetRoleOptions = sheetMember ? ASSIGN.map(r => { const active = sheetMember.role === r; return {
+      key: r, label: (ROLE_META[r] || ROLE_META.member).label, active,
+      style: { width: '100%', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '13px 14px', borderRadius: 'var(--fl-radius-md)', border: '1px solid ' + (active ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: active ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-recessed)', color: active ? 'var(--fl-bronze-bright)' : 'var(--fl-text-primary)', fontSize: '14px', fontWeight: 600, cursor: 'pointer' },
+      pick: () => { FC.setMemberRole(cid, sheetMember.id, r); this._toast(sheetMember.name + ' is now ' + (ROLE_META[r] || ROLE_META.member).label, 'positive'); this.setState({ memberSheet: null }); bump(); },
+    }; }) : [];
+
+    return {
+      ready: true, notReady: false,
+      hasRequests: requestRows.length > 0, requestCount: requestRows.length + '', requestRows,
+      memberRows, memberCount: memberRows.length + '', memberGlyphStyle: glyphStyle,
+      roleCards, permRows,
+      sheetOpen: !!sheetMember, sheetName: sheetMember ? sheetMember.name : '', sheetInitials: sheetMember ? initials(sheetMember.name) : '',
+      sheetRoleOptions, checkIcon,
+      removeMember: () => { if (!sheetMember) return; FC.removeMember(cid, sheetMember.id); this._toast(sheetMember.name + ' removed'); this.setState({ memberSheet: null }); bump(); },
+      closeSheet: () => this.setState({ memberSheet: null }),
+      heroCrest: ic(S.crest || 'dumbbell', 30, 1.6), heroName: nameTrim || 'Community', category: S.category,
+      name: S.name, onName: (e) => this.setState({ name: e.target.value.slice(0, 30) }),
+      tagline: S.tagline, onTagline: (e) => this.setState({ tagline: e.target.value.slice(0, 60) }),
+      categoryOptions, crestOptions,
+      about: S.about, onAbout: (e) => this.setState({ about: e.target.value.slice(0, 400) }),
+      rulesText: S.rulesText, onRules: (e) => this.setState({ rulesText: e.target.value }),
+      saveIcon: forge(17), saveDisabled: !canSave, saveStyle,
+      save: () => {
+        if (!canSave) return;
+        const rules = S.rulesText.split('\n').map(x => x.trim()).filter(Boolean);
+        try { window.ForgeCommunities.updateMeta(S.cid, { name: nameTrim, tagline: S.tagline.trim(), category: S.category, crest: S.crest || 'dumbbell', about: S.about.trim(), rules: rules }); } catch (e) {}
+        this._toast('Community updated', 'positive');
+        if (this._navT) clearTimeout(this._navT);
+        this._navT = setTimeout(() => { window.location.href = 'Community%20Home.dc.html'; }, 800);
+      },
+      goBack: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Community%20Home.dc.html'); },
+      toastOpen: !!S.toastMsg, toastMsg: S.toastMsg || '', toastIcon: forge(18), toastIconColor: toastColor,
+    };
+  }
+}
+</script>
+</body>
+</html>

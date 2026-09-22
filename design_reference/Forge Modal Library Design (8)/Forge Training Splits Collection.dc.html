@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#08090C; color:#EFE9E0; font-family:'Playfair Display',Georgia,serif; -webkit-font-smoothing:antialiased; }
+  .fn-sans { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+  a { color:#CDA063; }
+  a:hover { color:#E4C88E; }
+</style>
+</helmet>
+<div style="min-height:100vh; background:radial-gradient(120% 48% at 50% -6%, rgba(191,143,79,0.09) 0%, rgba(191,143,79,0) 46%), #08090C; padding:60px 40px 90px; display:flex; flex-direction:column; align-items:center;">
+
+  <!-- ══ MASTHEAD ══ -->
+  <header style="display:flex; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:1180px;">
+    <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:5px; text-transform:uppercase; color:#8A6B41; margin-bottom:16px;">Artwork Collection 01 · <a href="Forge Artwork Reference.dc.html" style="color:#8A6B41; text-decoration:none;">Master Artwork Reference</a></span>
+    <h1 style="margin:0; font-size:52px; font-weight:700; letter-spacing:9px; text-indent:9px; background:linear-gradient(180deg,#EFD3A0,#93693B); -webkit-background-clip:text; background-clip:text; color:transparent;">TRAINING SPLITS</h1>
+    <div style="display:flex; align-items:center; gap:16px; width:min(560px,82%); margin:24px 0 14px;">
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(191,143,79,0.7));"></span>
+      <span style="width:8px; height:8px; flex:none; transform:rotate(45deg); border:1px solid #BF8F4F;"></span>
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.7),transparent);"></span>
+    </div>
+    <span class="fn-sans" style="font-size:13px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#B08A55;">8 figures per set · male + female · one unified series</span>
+    <p class="fn-sans" style="max-width:700px; margin:20px 0 0; font-size:13.5px; line-height:1.75; color:#9A938A;">The first activated collection — and the reference every future Forge illustration is measured against. Two parallel sets by the same hand: athletic figures etched into black stone, lit by a single quiet rim light, nearly dissolving into the dark. Users see the set matching their selected sex.</p>
+
+    <!-- sex toggle -->
+    <div class="fn-sans" style="display:inline-flex; margin-top:28px; padding:4px; border-radius:var(--fl-radius-pill); border:1px solid #241B10; background:#0A0805; gap:4px;">
+      <button onClick="{{ selectMale }}" style="{{ maleBtn }}">Male</button>
+      <button onClick="{{ selectFemale }}" style="{{ femaleBtn }}">Female</button>
+    </div>
+    <span class="fn-sans" style="margin-top:12px; font-size:10.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:#5F5648;">Currently viewing · {{ setLabel }} · poses shared across both sets</span>
+  </header>
+
+  <!-- ══ THE PLATE ══ -->
+  <div style="width:100%; max-width:1180px; margin-top:44px; display:grid; grid-template-columns:repeat(4,1fr); gap:18px;">
+    <sc-for list="{{ splits }}" as="s" hint-placeholder-count="8">
+      <figure style="margin:0; border-radius:var(--fl-radius-xl); background:linear-gradient(180deg,#141416 0%,#0B0B0D 100%); border:1px solid #17171B; overflow:hidden; box-shadow:0 12px 30px -24px rgba(0,0,0,0.8);">
+        <div style="position:relative; width:100%; aspect-ratio:300/480; background:#0A0A0C;">
+          <img src="{{ s.src }}" alt="{{ s.name }} training split figure" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center top;">
+        </div>
+        <figcaption class="fn-sans" style="display:flex; align-items:center; justify-content:center; gap:12px; padding:20px 14px 24px; background:#0A0A0C;">
+          <span style="width:22px; height:1px; background:rgba(150,148,146,0.28);"></span>
+          <span style="font-size:12.5px; font-weight:600; letter-spacing:4px; text-transform:uppercase; color:#7C7A78;">{{ s.name }}</span>
+          <span style="width:22px; height:1px; background:rgba(150,148,146,0.28);"></span>
+        </figcaption>
+      </figure>
+    </sc-for>
+  </div>
+
+  <!-- ══ SPECIFICATION ══ -->
+  <section style="width:100%; max-width:1180px; margin-top:76px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:12px;">Recorded Specification</span>
+    <h2 style="margin:0 0 30px; font-size:30px; font-weight:600; letter-spacing:0.3px; color:#E4C88E;">The template, locked.</h2>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+      <!-- Visual Direction -->
+      <div style="padding:28px 30px; border-radius:var(--fl-radius-xl); background:#100C08; border:1px solid #1C150E;">
+        <span class="fn-sans" style="display:block; font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#B08A55; margin-bottom:18px;">Visual Direction</span>
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <sc-for list="{{ direction }}" as="d" hint-placeholder-count="9">
+            <div class="fn-sans" style="display:flex; gap:13px; padding:12px 2px; border-top:1px solid #17110A;">
+              <span style="width:6px; height:6px; flex:none; margin-top:6px; border-radius:50%; background:#574029;"></span>
+              <span style="font-size:12.5px; line-height:1.6; color:#B0A390;">{{ d }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- Required Illustrations -->
+      <div style="padding:28px 30px; border-radius:var(--fl-radius-xl); background:#100C08; border:1px solid #1C150E;">
+        <span class="fn-sans" style="display:block; font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#B08A55; margin-bottom:18px;">Required Illustrations · 8 × 2 sets · pose cue</span>
+        <div style="display:flex; flex-direction:column; gap:0;">
+          <sc-for list="{{ splits }}" as="s" hint-placeholder-count="8">
+            <div class="fn-sans" style="display:flex; align-items:baseline; gap:14px; padding:11px 2px; border-top:1px solid #17110A;">
+              <span style="flex:none; width:82px; font-size:11px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#8F877C;">{{ s.name }}</span>
+              <span style="flex:1; font-size:12px; line-height:1.55; color:#7C7469;">{{ s.cue }}</span>
+              <span style="flex:none; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#574029;">M · F</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- Approved Prompt -->
+    <div style="margin-top:20px; padding:28px 30px; border-radius:var(--fl-radius-xl); background:#08060B; border:1px solid #17110A; box-shadow:var(--fl-border-inset);">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+        <span style="width:7px; height:7px; transform:rotate(45deg); border:1px solid #574029;"></span>
+        <span class="fn-sans" style="font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#B08A55;">Approved Prompt · base template</span>
+      </div>
+      <p class="fn-sans" style="margin:0 0 14px; font-size:12.5px; line-height:1.7; color:#8F877C;">The locked generation formula for every figure. Only the bracketed <span style="color:#B08A55;">[SUBJECT]</span> and <span style="color:#B08A55;">[POSE]</span> lines change; everything else is fixed to hold the style across both sets.</p>
+      <pre class="fn-sans" style="margin:0; padding:20px 22px; border-radius:var(--fl-radius-md); background:#050409; border:1px solid #140F09; font-size:12px; line-height:1.75; color:#B0A390; white-space:pre-wrap; overflow-x:auto;">{{ prompt }}</pre>
+    </div>
+
+    <!-- Status -->
+    <div class="fn-sans" style="margin-top:20px; padding:24px 30px; border-radius:var(--fl-radius-xl); background:#100C08; border:1px solid #1C150E; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+      <div style="display:flex; flex-direction:column; gap:5px;">
+        <span style="font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#6C5A41;">Implementation Status</span>
+        <span style="font-size:14px; font-weight:600; color:#D8CBB8;">Finalized — 16 of 16 illustrations approved &amp; sliced · 8 male · 8 female</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:14px;">
+        <span style="display:flex; height:6px; width:200px; border-radius:var(--fl-radius-pill); background:#140F09; overflow:hidden;"><span style="width:100%; background:linear-gradient(90deg,#7A6040,#BF8F4F);"></span></span>
+        <span style="font-size:12px; font-weight:700; color:#BF8F4F;">100%</span>
+      </div>
+    </div>
+  </section>
+
+  <p class="fn-sans" style="max-width:820px; text-align:center; margin:64px 0 0; font-size:12px; line-height:1.85; color:#5F5648;">Assets: <span style="color:#7C7469;">assets/artwork/training-splits/{male|female}/{split}.png</span> · charcoal monochrome, 300×480, black field. Selected at runtime by the athlete's chosen sex. This plate is the canonical style benchmark — every future collection matches its lighting, emptiness, and restraint. — Training Splits · Collection 01 · Finalized</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { sex: 'male' };
+
+  renderVals() {
+    var self = this;
+    var sex = this.state.sex || 'male';
+    var base = 'assets/artwork/training-splits/' + sex + '/';
+
+    var S = [
+      ['push', 'Push', 'Front three-quarter, chest and shoulders squared forward, one arm easing back — pressing readiness.'],
+      ['pull', 'Pull', 'Turned to the back, lats spread wide, one forearm drawn in — the pulling chain of the back.'],
+      ['legs', 'Legs', 'Full standing figure, weight settled through the hips and quads, quiet contrapposto.'],
+      ['upper', 'Upper', 'Square to front, shoulders and arms balanced and symmetrical — the whole upper body at rest.'],
+      ['lower', 'Lower', 'Turned away, weight on the posterior chain — glutes, hamstrings, calves reading in profile.'],
+      ['full-body', 'Full Body', 'Front-facing full standing figure, evenly lit head to heel — the complete athlete.'],
+      ['core', 'Core', 'Front three-quarter with a faint torsion through the trunk, obliques and midsection carrying the light.'],
+      ['conditioning', 'Conditioning', 'Poised, forward-leaning ready stance, weight shifted onto the front foot — coiled readiness, never mid-stride.'],
+    ];
+    var splits = S.map(function (r) { return { key: r[0], name: r[1], cue: r[2], src: base + r[0] + '.png' }; });
+
+    var direction = [
+      'Charcoal monochrome only — a single near-black tonal family. No bronze, no colour.',
+      'Engraved line work: fine etched contour, not painting or smooth rendering.',
+      'Very low contrast. The figure is barely lifted from the black field around it.',
+      'Minimal linework with reduced internal muscle detail — suggestion over anatomy chart.',
+      'Athletic physiques — lean and capable, never bodybuilder or exaggerated mass.',
+      'Two parallel sets, male & female, by the same hand — identical lighting, composition and poses.',
+      'Female figures read ~25% less muscular than the male set; both stay lean and athletic.',
+      'Large negative space; the figure occupies one region and the rest stays empty and dark.',
+      'Faces mostly lost in shadow. Figures feel etched into black stone, nearly disappearing.',
+    ];
+
+    var subject = sex === 'female'
+      ? 'A single lean athletic female figure (~25% less muscular than the male set — not a bodybuilder)'
+      : 'A single lean athletic male figure (not a bodybuilder)';
+    var prompt = [
+      '[SUBJECT], engraved fine-line etching, carved into black stone.',
+      'Charcoal monochrome, very low contrast, minimal internal muscle detail.',
+      'Calm, stoic, still. Lit by one subtle rim light from above; the figure nearly',
+      'dissolves into a dark, empty background with large negative space.',
+      'Face mostly hidden in shadow. No colour, no glow, no action, no props, no text.',
+      '',
+      'SUBJECT = ' + subject + '.',
+      '[POSE] — subtle body positioning only, suggesting the {split} split.',
+    ].join('\n');
+
+    var activeBtn = {
+      padding: '9px 30px', borderRadius: '999px', border: '1px solid rgba(191,143,79,0.35)',
+      background: 'rgba(191,143,79,0.09)', color: '#E4C88E', fontSize: '11px', fontWeight: '700',
+      letterSpacing: '2.5px', textTransform: 'uppercase', cursor: 'pointer',
+      fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif',
+    };
+    var idleBtn = {
+      padding: '9px 30px', borderRadius: '999px', border: '1px solid transparent',
+      background: 'transparent', color: '#6C5A41', fontSize: '11px', fontWeight: '700',
+      letterSpacing: '2.5px', textTransform: 'uppercase', cursor: 'pointer',
+      fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif',
+    };
+
+    return {
+      splits: splits, direction: direction, prompt: prompt,
+      setLabel: sex === 'female' ? 'Female set' : 'Male set',
+      maleBtn: sex === 'male' ? activeBtn : idleBtn,
+      femaleBtn: sex === 'female' ? activeBtn : idleBtn,
+      selectMale: function () { self.setState({ sex: 'male' }); },
+      selectFemale: function () { self.setState({ sex: 'female' }); },
+    };
+  }
+}
+</script>
+</body>
+</html>

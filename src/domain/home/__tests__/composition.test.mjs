@@ -11,9 +11,6 @@ const BASE = {
   hasProgramSession: false,
   hasPlannedWorkout: false,
   resumeSets: null,
-  guidedOnRamp: false,
-  hasSuggestion: false,
-  guidedPathOpen: false,
 };
 
 const compose = (over = {}) => composeHome({ ...BASE, ...over });
@@ -26,26 +23,32 @@ const compose = (over = {}) => composeHome({ ...BASE, ...over });
 test('the day-to-day athlete gets a Start Workout hero and their goal tile, and is asked nothing', () => {
   const c = compose();
   assert.equal(c.hero, 'open');
-  assert.equal(c.startingPoint, 'none', 'no chooser — the question was answered by them training');
+  assert.equal(c.showGetStarted, false, 'arrival rows are for arriving — they have trained');
   assert.equal(c.showMissionTile, true, 'their goal never depended on a program');
   assert.equal(c.showProgramTile, false);
   assert.equal(c.showQuietProgramLink, true, 'available, subordinate');
   assert.equal(c.heroOffersFreestyle, false, 'the button already opens the freestyle/cardio choice');
 });
 
-test('the brand-new athlete keeps the chooser, and is not handed a goal tile on arrival', () => {
+/*
+ * ══ THE ARRIVAL HOME — `Onboarding-Amendment-006` ══
+ *
+ * PO mockup, 2026-09-21: the chapter, "Start Your First Workout", then three GET STARTED rows. The
+ * "How do you want to start?" chooser that used to own this spot is gone — the first workout is the offer.
+ */
+test('the brand-new athlete gets the first-workout hero and Get Started, and no goal tile yet', () => {
   const c = compose({ awaiting: true });
-  assert.equal(c.startingPoint, 'chooser');
-  assert.equal(c.hero, 'none', 'nothing to resume, nothing to run — the chooser IS the offer');
+  assert.equal(c.hero, 'open', 'the first workout is the offer — nothing is asked in front of it');
+  assert.equal(c.showGetStarted, true);
   assert.equal(c.showMissionTile, false);
-  assert.equal(c.showQuietProgramLink, false, 'the chooser already holds both program doors');
+  assert.equal(c.showQuietProgramLink, false, 'Get Started already carries the way to programs');
 });
 
 test('an athlete with a program is composed exactly as before', () => {
   const c = compose({ hasProgram: true, hasProgramSession: true });
   assert.equal(c.hero, 'program');
   assert.equal(c.heroOffersFreestyle, true, '"Something else today?" still offered over a planned day');
-  assert.equal(c.startingPoint, 'none');
+  assert.equal(c.showGetStarted, false);
   assert.deepEqual([c.showProgramTile, c.showMissionTile], [true, true]);
   assert.equal(c.showQuietProgramLink, false, 'they have one');
 });
@@ -78,16 +81,16 @@ test('unfinished work is offered to the brand-new athlete too', () => {
  */
 test('picking a door closes the question, before any workout is saved', () => {
   const c = compose({ awaiting: true, startChosen: true });
-  assert.equal(c.startingPoint, 'none', 'they answered — do not ask again');
+  assert.equal(c.showGetStarted, false, 'they answered — the arrival rows go');
   assert.equal(c.hero, 'open', 'the same hero a program athlete gets, in its no-program face');
   assert.equal(c.showQuietProgramLink, true, 'and the subtle route to a program comes with it');
   assert.equal(c.showMissionTile, true);
 });
 
-test('mid-session, the chooser is never printed under the Continue card', () => {
+test('mid-session, the arrival rows are never printed under the Continue card', () => {
   const c = compose({ awaiting: true, startChosen: true, resumeSets: 4 });
   assert.equal(c.hero, 'resume');
-  assert.equal(c.startingPoint, 'none');
+  assert.equal(c.showGetStarted, false);
 });
 
 test('a chosen freestyle athlete is composed exactly like one who has already trained', () => {
@@ -96,10 +99,10 @@ test('a chosen freestyle athlete is composed exactly like one who has already tr
   assert.deepEqual(chose, trained, 'the two routes to settled must produce one screen');
 });
 
-test('the question survives until it is actually answered', () => {
+test('Get Started survives until the athlete actually settles', () => {
   // Landing on Home, opening a sheet, closing it — none of that is a choice.
-  assert.equal(compose({ awaiting: true, startChosen: false }).startingPoint, 'chooser');
-  assert.equal(compose({ awaiting: true, startChosen: false }).hero, 'none');
+  assert.equal(compose({ awaiting: true, startChosen: false }).showGetStarted, true);
+  assert.equal(compose({ awaiting: true, startChosen: false }).hero, 'open');
 });
 
 test('resumeSets 0 is real unfinished work, not absence — only null means nothing to resume', () => {
@@ -117,11 +120,11 @@ test('the loading frame claims nothing about the athlete', () => {
   assert.deepEqual(c, {
     hero: 'none',
     heroOffersFreestyle: false,
-    startingPoint: 'none',
-    showQuietFreestyle: false,
+    showGetStarted: false,
     showQuietProgramLink: false,
     showMissionTile: false,
     showProgramTile: false,
+    showSocialCards: false,
   });
 });
 
@@ -138,94 +141,38 @@ test('a program that yields no session still gets a Start Workout button', () =>
   assert.equal(c.showProgramTile, true);
 });
 
-test('the guided on-ramp faces are reachable only while awaiting without a program', () => {
-  assert.equal(compose({ awaiting: true, hasSuggestion: true }).startingPoint, 'suggestion');
-  assert.equal(compose({ awaiting: true, guidedPathOpen: true }).startingPoint, 'intake');
-  // A suggestion outranks a half-open stepper — they already finished it.
-  assert.equal(
-    compose({ awaiting: true, hasSuggestion: true, guidedPathOpen: true }).startingPoint,
-    'suggestion',
-  );
-  assert.equal(
-    compose({ awaiting: true, hasProgram: true, hasSuggestion: true }).startingPoint,
-    'none',
-    'a program ends the question',
-  );
-});
-
-/**
- * ⚠ THE QUIET "OR JUST TRAIN TODAY" IS RETIRED, BECAUSE IT BECAME THE THING IT GUARDED AGAINST.
- *
- * It used to appear only when the chooser's own first card was NOT "Start a freestyle workout" — its
- * entire job was to stop the same offer being made twice on one card. The chooser is now three fixed
- * doors and **"Just train today" is permanently one of them**, so there is no state left in which the
- * link is anything but the second copy.
- *
- * Kept as a field rather than deleted: it is part of the composition's contract, and a flag that is
- * honestly always false is easier to read than one quietly removed.
- */
-test('"Or just train today" is never drawn — the chooser always carries that door itself', () => {
-  for (const guidedOnRamp of [true, false])
-    for (const awaiting of [true, false])
-      for (const startChosen of [true, false]) {
-        assert.equal(
-          compose({ awaiting, guidedOnRamp, startChosen }).showQuietFreestyle,
-          false,
-          `guided=${guidedOnRamp} awaiting=${awaiting} chosen=${startChosen}`,
-        );
-      }
-});
-
 /** Two ways to say "start something" on one card is not two choices — it is one choice, said twice. */
 test('freestyle is never offered twice on the same card, in any state', () => {
   for (const chapterLoading of [true, false])
     for (const awaiting of [true, false])
       for (const hasProgram of [true, false])
         for (const hasProgramSession of [true, false])
-          for (const resumeSets of [null, 4])
-            for (const guidedOnRamp of [true, false]) {
-              const c = compose({
-                chapterLoading, awaiting, hasProgram, hasProgramSession, resumeSets, guidedOnRamp,
-              });
-              const state = JSON.stringify({ chapterLoading, awaiting, hasProgram, resumeSets, guidedOnRamp });
-              assert.ok(
-                !(c.hero === 'open' && c.heroOffersFreestyle),
-                `open hero must not repeat its own button: ${state}`,
-              );
-              assert.ok(
-                !(c.showQuietFreestyle && c.startingPoint !== 'chooser'),
-                `quiet freestyle without a chooser: ${state}`,
-              );
-            }
+          for (const resumeSets of [null, 4]) {
+            const c = compose({ chapterLoading, awaiting, hasProgram, hasProgramSession, resumeSets });
+            const state = JSON.stringify({ chapterLoading, awaiting, hasProgram, resumeSets });
+            assert.ok(
+              !(c.hero === 'open' && c.heroOffersFreestyle),
+              `open hero must not repeat its own button: ${state}`,
+            );
+          }
 });
 
 /**
- * THE INVARIANT THAT ACTUALLY MATTERS. "You don't have a program yet" — the copy H-1 §6 forbids — has
- * exactly one source in the app: the chooser. So the guarantee to hold is that the chooser cannot draw
- * for a settled athlete, in any combination of the other inputs. If it can't draw, it can't be said.
- *
- * Note the slot is NOT mutually exclusive with the hero in general: an awaiting athlete who finished the
- * intake sees the suggested program's day as the hero AND the suggestion card below it, which is the
- * existing, deliberate behaviour (the recommendation feeds Home's real slots rather than a card of its own).
+ * The arrival rows can never draw for a settled athlete, in any combination of the other inputs — the
+ * same guarantee the retired chooser carried, so "what to do first" is never asked of someone who did it.
  */
-test('the "no program yet" chooser can never draw for an athlete who has trained or chosen', () => {
-  for (const [settledBy, over] of [['trained', { awaiting: false }], ['chose', { awaiting: true, startChosen: true }]])
-    for (const hasProgram of [true, false])
-      for (const hasProgramSession of [true, false])
-        for (const resumeSets of [null, 7])
-          for (const guidedOnRamp of [true, false])
-            for (const hasSuggestion of [true, false])
-              for (const guidedPathOpen of [true, false]) {
-                const c = compose({
-                  ...over, hasProgram, hasProgramSession, resumeSets,
-                  guidedOnRamp, hasSuggestion, guidedPathOpen,
-                });
-                assert.equal(
-                  c.startingPoint,
-                  'none',
-                  `slot drew for an athlete settled by ${settledBy}: ${JSON.stringify({ hasProgram, hasSuggestion, guidedPathOpen })}`,
-                );
-              }
+test('Get Started can never draw for an athlete who has trained, chosen, or holds a program', () => {
+  for (const [settledBy, over] of [
+    ['trained', { awaiting: false }],
+    ['chose', { awaiting: true, startChosen: true }],
+    ['program', { awaiting: true, hasProgram: true }],
+  ])
+    for (const hasProgramSession of [true, false])
+      for (const hasPlannedWorkout of [true, false])
+        for (const resumeSets of [null, 7]) {
+          const c = compose({ ...over, hasProgramSession, hasPlannedWorkout, resumeSets });
+          assert.equal(c.showGetStarted, false, `drew for an athlete settled by ${settledBy}`);
+        }
 });
 
 test('the program tile follows the program and nothing else', () => {
@@ -397,7 +344,7 @@ test('⚠ a program-holding athlete on a fresh chapter still gets a hero', () =>
   assert.equal(c.hero, 'open', 'nothing scheduled today, so the freestyle hero is the offer');
 });
 
-test('⚠ the hero and the starting point never both abstain', () => {
+test('⚠ outside the loading frame, the hero never abstains', () => {
   // Exhaustive over every combination of the flags that feed the decision. The PO's state was one cell
   // of this table, and nothing in the module said the table had to be covered.
   const bool = [false, true];
@@ -408,7 +355,7 @@ test('⚠ the hero and the starting point never both abstain', () => {
           for (const hasPlannedWorkout of bool)
             for (const resumeSets of [null, 4]) {
               const c = compose({ awaiting, startChosen, hasProgram, hasProgramSession, hasPlannedWorkout, resumeSets });
-              const silent = c.hero === 'none' && c.startingPoint === 'none';
+              const silent = c.hero === 'none';
               assert.equal(
                 silent,
                 false,
@@ -417,11 +364,10 @@ test('⚠ the hero and the starting point never both abstain', () => {
             }
 });
 
-test('a genuinely new athlete with no program is still asked the question', () => {
-  // The fix must not swallow the case the chooser exists for.
+test('a genuinely new athlete with no program still gets their arrival rows', () => {
   const c = compose({ awaiting: true, hasProgram: false });
-  assert.equal(c.startingPoint, 'chooser');
-  assert.equal(c.hero, 'none', 'the chooser IS the offer — a hero beside it would ask twice');
+  assert.equal(c.showGetStarted, true);
+  assert.equal(c.hero, 'open');
 });
 
 test('a program with a session today still shows the session, not the freestyle hero', () => {
@@ -432,4 +378,57 @@ test('a program with a session today still shows the session, not the freestyle 
 test('unfinished work still outranks everything on a fresh chapter', () => {
   const c = compose({ awaiting: true, hasProgram: true, resumeSets: 7 });
   assert.equal(c.hero, 'resume');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// THE SOCIAL CARDS — `Onboarding-Amendment-005` ONB-A5-D2/D3
+//
+// Your Circle and the Train Together / Competitions row are withheld until a first workout exists.
+// These tests hold the two things that make that a reduction rather than a gate: it keys off the first
+// workout and nothing else, and it never runs backwards.
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+test('a brand-new athlete gets no social cards', () => {
+  assert.equal(compose({ awaiting: true }).showSocialCards, false);
+});
+
+test('they arrive the moment the athlete engages at all', () => {
+  assert.equal(compose({ awaiting: false }).showSocialCards, true);
+  assert.equal(compose({ awaiting: true, startChosen: true }).showSocialCards, true);
+  assert.equal(compose({ awaiting: true, hasProgram: true }).showSocialCards, true);
+});
+
+test('the loading frame claims nothing, in the same direction as every other field', () => {
+  // Drawing them before the chapter read lands means drawing them and then taking them away.
+  assert.equal(compose({ chapterLoading: true, awaiting: false }).showSocialCards, false);
+});
+
+test('the social cards graduate with the mission tile, never on their own schedule', () => {
+  // ⚠ THIS IS THE ASSERTION THAT WOULD HAVE CAUGHT THIS FILE'S OWN FIRST WRONG GUESS. An earlier draft
+  // keyed the cards to the first WORKOUT while everything else keyed to `settled`, which produced two
+  // different Homes for two athletes in the same state. Tying them together here means any future
+  // attempt to split them fails loudly rather than shipping as a subtle inconsistency.
+  for (const awaiting of [true, false]) {
+    for (const startChosen of [true, false]) {
+      for (const hasProgram of [true, false]) {
+        const c = compose({ awaiting, startChosen, hasProgram });
+        assert.equal(
+          c.showSocialCards,
+          c.showMissionTile,
+          `awaiting=${awaiting} startChosen=${startChosen} hasProgram=${hasProgram}`,
+        );
+      }
+    }
+  }
+});
+
+test('Get Started hands over to the settled Home in one moment, never overlapping it', () => {
+  // The arrival rows leave exactly when the mission tile and the social cards arrive. Both on screen, or
+  // neither, would be two Homes at once — or a Home with a gap where the first one used to be.
+  for (const awaiting of [true, false])
+    for (const startChosen of [true, false])
+      for (const hasProgram of [true, false]) {
+        const c = compose({ awaiting, startChosen, hasProgram });
+        assert.equal(c.showGetStarted, !c.showMissionTile, JSON.stringify({ awaiting, startChosen, hasProgram }));
+      }
 });

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .rp-input { width:100%; font-family:var(--fl-font-sans); font-size:14.5px; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); padding:12px 13px; outline:none; transition:border-color 160ms ease; }
+  .rp-input:focus { border-color:var(--fl-bronze-border); }
+  .rp-input::placeholder { color:var(--fl-text-tertiary); }
+  @keyframes rpRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes rpFade { from { opacity:0; } to { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Report Squad" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <div style="flex:none; position:relative; z-index:5;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Report Squad" on-back="{{ goBack }}" hint-size="100%,56px"></x-import>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:10px 20px 20px;">
+
+      <!-- ═══ SQUAD HEADER ═══ -->
+      <div style="display:flex; align-items:center; gap:12px; padding:2px 2px 0; animation:rpRise 380ms var(--fl-ease-out) both;">
+        <div style="position:relative; width:42px; height:42px; flex:none; border-radius:var(--fl-radius-round); box-shadow:0 0 0 2px var(--fl-bronze-primary), 0 4px 12px rgba(0,0,0,0.55), 0 0 10px rgba(191,143,79,0.2);">
+          <image-slot id="squad-rp-avatar" shape="circle" placeholder="Add" style="position:absolute; inset:0; width:100%; height:100%; border-radius:var(--fl-radius-round); overflow:hidden;"></image-slot>
+        </div>
+        <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+          <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">{{ squadName }}</span>
+          <span style="font-size:11.5px; letter-spacing:0.3px; color:var(--fl-text-tertiary);">{{ metaLine }}</span>
+        </div>
+      </div>
+
+      <!-- ═══ PRIVACY REASSURANCE ═══ -->
+      <div style="margin-top:20px; display:flex; align-items:flex-start; gap:12px; background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700); border-radius:var(--fl-radius-lg); padding:14px 15px; animation:rpRise 440ms var(--fl-ease-out) both;">
+        <span style="width:30px; height:30px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-icon-bronze);">{{ shieldIcon }}</span>
+        <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+          <span style="font-size:13.5px; font-weight:600; color:var(--fl-text-primary);">Your report is confidential.</span>
+          <span style="font-size:12.5px; line-height:1.5; color:var(--fl-text-secondary);">{{ squadName }} will never know who submitted this report. Every report is reviewed by the Forge moderation team.</span>
+        </span>
+      </div>
+
+      <!-- ═══ REASON ═══ -->
+      <div style="margin:26px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Reason for Report</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+        <sc-for list="{{ reasons }}" as="r" hint-placeholder-count="6">
+          <button type="button" onClick="{{ r.select }}" aria-pressed="{{ r.selected }}" style="{{ r.rowStyle }}" style-active="background:var(--fl-charcoal-800);">
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; text-align:left;">
+              <span style="font-size:14.5px; color:var(--fl-text-primary);">{{ r.label }}</span>
+              <sc-if value="{{ r.hasHint }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px; line-height:1.4; color:var(--fl-text-tertiary);">{{ r.hint }}</span></sc-if>
+            </div>
+            <span style="{{ r.radioStyle }}"><span style="{{ r.radioDot }}"></span></span>
+          </button>
+        </sc-for>
+      </div>
+
+      <!-- ═══ DETAILS ═══ -->
+      <div style="margin:26px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Add Details {{ detailsSuffix }}</span></div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:14px 15px;">
+        <textarea class="rp-input" rows="4" placeholder="Provide any additional information that may help our moderation team review this report." maxlength="{{ detailsMax }}" style="resize:none; line-height:1.5;" onInput="{{ onDetails }}">{{ details }}</textarea>
+        <div style="display:flex; justify-content:flex-end; margin-top:7px;"><span style="font-size:11px; color:{{ detailsCountColor }};">{{ detailsCount }}</span></div>
+      </div>
+
+      <!-- footer note -->
+      <div style="margin-top:18px; display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <span style="font-family:var(--fl-font-display); font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-charcoal-500);">Forge Legacy</span>
+        <span style="font-size:10.5px; line-height:1.45; letter-spacing:0.3px; color:var(--fl-charcoal-500); text-align:center; max-width:280px;">If someone is in immediate danger, contact your local emergency services first.</span>
+      </div>
+
+    </div>
+
+    <!-- ═══ COMMIT BAR ═══ -->
+    <div style="flex:none; position:relative; z-index:5; padding:14px 20px calc(16px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(9,9,9,0.4), rgba(9,9,9,0.72));">
+      <button type="button" onClick="{{ submit }}" disabled="{{ commitDisabled }}" style="{{ commitStyle }}" style-active="transform:scale(0.99); opacity:0.92;"><span style="display:inline-flex;">{{ flagIcon }}</span>Submit Report</button>
+    </div>
+  </sc-if>
+
+  <!-- ═══ SUBMITTED (confirmation overlay) ═══ -->
+  <sc-if value="{{ doneOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; inset:0; z-index:1200; display:flex; align-items:center; justify-content:center; padding:32px; background:var(--fl-overlay-dark); backdrop-filter:blur(3px); animation:rpFade 200ms ease both;">
+      <div style="width:100%; max-width:312px; text-align:center; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-xl); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:28px 24px; animation:rpRise 260ms var(--fl-ease-out) both;">
+        <div style="display:flex; justify-content:center; margin-bottom:15px;"><span style="width:56px; height:56px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:rgba(110,142,116,0.14); border:1px solid rgba(110,142,116,0.4); color:#8FB295;">{{ doneCheck }}</span></div>
+        <span style="display:block; font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-text-primary);">Report Received</span>
+        <span style="display:block; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); margin-top:10px;">Thank you. Forge will review your report on {{ squadName }} and take action if it breaks the rules.</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Forged grain -->
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;squadName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Iron Vigil&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Content&quot;},&quot;memberCount&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:1,&quot;max&quot;:99,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Content&quot;},&quot;requireDetails&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, reasonId: null, details: '', doneOpen: false };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._navT) clearTimeout(this._navT); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const S = this.state;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.8 });
+    const svg = (d, size, sw) => h('svg', { width: size || 17, height: size || 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(d) ? d : [d]).map((p, i) => h('path', { key: i, d: p })));
+
+    // ── Props ──
+    const squadName = this.props.squadName ?? 'Iron Vigil';
+    const memberCount = this.props.memberCount ?? 5;
+    const requireDetails = this.props.requireDetails ?? false;
+    const detailsMax = 300;
+
+    // ── Reasons ──
+    const REASONS = [
+      { id: 'harassment', label: 'Harassment or bullying', hint: 'Targeting members with abuse or threats.' },
+      { id: 'hate', label: 'Hate speech or symbols', hint: 'Attacks on identity, hateful imagery.' },
+      { id: 'spam', label: 'Spam or scams', hint: 'Deceptive, fraudulent, or repetitive content.' },
+      { id: 'explicit', label: 'Nudity or sexual content' },
+      { id: 'violence', label: 'Violence or dangerous acts' },
+      { id: 'impersonation', label: 'Impersonation' },
+      { id: 'other', label: 'Something else' },
+    ];
+
+    const rowBase = { width: '100%', display: 'flex', alignItems: 'center', gap: '13px', padding: '14px 15px', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 180ms ease, box-shadow 180ms ease' };
+    const radioBase = { position: 'relative', flex: 'none', width: '22px', height: '22px', borderRadius: 'var(--fl-radius-round)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', transition: 'border-color 160ms ease' };
+    const radioOff = Object.assign({}, radioBase, { border: '2px solid var(--fl-charcoal-500)' });
+    const radioOn = Object.assign({}, radioBase, { border: '2px solid var(--fl-bronze-primary)', boxShadow: 'var(--fl-glow-subtle)' });
+    const dotOff = { width: '0', height: '0', borderRadius: 'var(--fl-radius-round)', background: 'var(--fl-bronze-metallic)', transition: 'width 140ms var(--fl-ease-out), height 140ms var(--fl-ease-out)' };
+    const dotOn = { width: '11px', height: '11px', borderRadius: 'var(--fl-radius-round)', background: 'var(--fl-bronze-metallic)', boxShadow: 'var(--fl-glow-subtle)' };
+
+    const reasons = REASONS.map((r, i) => {
+      const on = S.reasonId === r.id;
+      return {
+        key: r.id, label: r.label, hasHint: !!r.hint, hint: r.hint || '',
+        selected: on,
+        rowStyle: Object.assign({}, rowBase, { borderTop: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)', background: on ? 'linear-gradient(180deg, rgba(38,29,18,0.5), rgba(15,13,10,0.32))' : 'transparent', boxShadow: on ? 'inset 3px 0 0 var(--fl-bronze-primary)' : 'inset 3px 0 0 transparent' }),
+        radioStyle: on ? radioOn : radioOff, radioDot: on ? dotOn : dotOff,
+        select: () => this.setState({ reasonId: r.id }),
+      };
+    });
+
+    const detailsLen = S.details.length;
+    const detailsOk = !requireDetails || S.details.trim().length > 0;
+    const commitEnabled = !!S.reasonId && detailsOk;
+
+    const commitStyle = { width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '9px', padding: '15px', borderRadius: 'var(--fl-radius-md)', fontSize: '15px', fontWeight: 600, border: '1px solid ' + (commitEnabled ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'), background: commitEnabled ? 'var(--fl-bronze-fill)' : 'var(--fl-charcoal-800)', color: commitEnabled ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)', boxShadow: commitEnabled ? 'var(--fl-glow-subtle)' : 'none', cursor: commitEnabled ? 'pointer' : 'not-allowed', opacity: commitEnabled ? 1 : 0.75, transition: 'background 220ms ease, opacity 200ms ease, transform 120ms var(--fl-ease-out), border-color 200ms ease, color 200ms ease' };
+
+    const shieldIcon = h('span', { style: { display: 'inline-flex' } }, ic('shield', 16, 1.8));
+    const flagIcon = svg(['M5 21V4', 'M5 5h11l-1.6 3.2L16 12H5'], 17, 1.9);
+    const doneCheck = h('svg', { width: 26, height: 26, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M5 12.5l4 4 10-10' }));
+
+    return {
+      ready: true, notReady: false,
+      squadName: squadName, metaLine: 'Private \u00B7 ' + memberCount + ' Members',
+      shieldIcon: shieldIcon,
+
+      reasons: reasons,
+
+      detailsSuffix: requireDetails ? '' : '(optional)',
+      details: S.details, onDetails: (e) => this.setState({ details: e.target.value.slice(0, detailsMax) }),
+      detailsMax: detailsMax, detailsCount: detailsLen + '/' + detailsMax, detailsCountColor: detailsLen >= detailsMax - 20 ? 'var(--fl-bronze-primary)' : 'var(--fl-text-tertiary)',
+
+      flagIcon: h('span', { style: { display: 'inline-flex' } }, flagIcon),
+      commitDisabled: !commitEnabled, commitStyle: commitStyle,
+      submit: () => {
+        if (!commitEnabled) return;
+        this.setState({ doneOpen: true });
+        if (this._navT) clearTimeout(this._navT);
+        this._navT = setTimeout(() => { window.location.href = 'Squad%20Settings%20Member.dc.html'; }, 1900);
+      },
+      doneOpen: S.doneOpen, doneCheck: doneCheck,
+
+      goBack: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Squad%20Settings%20Member.dc.html'); },
+    };
+  }
+}
+</script>
+</body>
+</html>

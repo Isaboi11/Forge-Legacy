@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js"></script>
+<script src="forge-symbols.js"></script>
+<script src="forge-honors.js"></script>
+<script src="forge-honor-art.js"></script>
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#08090C; color:var(--fl-text-primary); font-family:'Playfair Display',Georgia,serif; -webkit-font-smoothing:antialiased; }
+  .s { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+  a { color:var(--fl-bronze-primary); text-decoration:none; }
+  a:hover { color:var(--fl-bronze-bright); }
+</style>
+</helmet>
+
+<div style="min-height:100vh; background:radial-gradient(120% 48% at 50% -6%, rgba(191,143,79,0.10) 0%, rgba(191,143,79,0) 46%), #08090C; padding:72px 40px 120px; display:flex; flex-direction:column; align-items:center; gap:0;">
+
+  <!-- ══ MASTHEAD ══ -->
+  <header style="display:flex; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:1240px;">
+    <span class="s" style="font-size:11px; font-weight:600; letter-spacing:5px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Design Specification</span>
+    <h1 style="margin:18px 0 0; font-size:56px; font-weight:700; letter-spacing:12px; text-indent:12px; background:linear-gradient(180deg,#EFD3A0,#93693B); -webkit-background-clip:text; background-clip:text; color:transparent;">HONOR MEDALS</h1>
+    <div style="display:flex; align-items:center; gap:16px; width:min(560px,82%); margin:22px 0 14px;">
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(191,143,79,0.7));"></span>
+      <span style="width:8px; height:8px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary);"></span>
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.7),transparent);"></span>
+    </div>
+    <p class="s" style="max-width:660px; margin:6px 0 0; font-size:13.5px; line-height:1.85; color:var(--fl-text-secondary); text-wrap:pretty;">{{ total }} medals in two faces. Every one distinct; every one obviously from the same mint. Uniqueness comes from the engraved glyph on one 64&#215;64 grid &mdash; never from a new drawing style, a new colour, or more detail.</p>
+  </header>
+
+  <!-- ══ THE TWO FACES ══ -->
+  <section style="width:100%; max-width:1240px; margin-top:76px;">
+    <div style="display:flex; align-items:baseline; gap:14px; padding-bottom:16px; border-bottom:1px solid var(--fl-charcoal-600);">
+      <span class="s" style="font-size:11px; font-weight:700; letter-spacing:3px; color:var(--fl-text-secondary);">0</span>
+      <span style="font-size:27px; font-weight:600; color:var(--fl-bronze-bright);">Two faces</span>
+      <span class="s" style="font-size:12px; color:var(--fl-text-secondary); font-style:italic;">Which one a section describes is stated on it</span>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:32px 56px; margin-top:36px;">
+      <sc-for list="{{ faces }}" as="f" hint-placeholder-count="2">
+        <div style="display:grid; grid-template-columns:auto minmax(0,1fr); gap:26px; align-items:start; min-width:0;">
+          <span style="filter:drop-shadow(0 10px 24px rgba(0,0,0,0.55));">{{ f.art }}</span>
+          <span style="display:flex; flex-direction:column; gap:8px; min-width:0;">
+            <span style="font-size:19px; font-weight:600; color:var(--fl-bronze-bright);">{{ f.name }}</span>
+            <span class="s" style="font-size:10px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ f.tag }}</span>
+            <span class="s" style="font-size:12.5px; line-height:1.7; color:var(--fl-text-secondary); text-wrap:pretty;">{{ f.note }}</span>
+          </span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ══ I · ANATOMY ══ -->
+  <section style="width:100%; max-width:1240px; margin-top:80px;">
+    <div style="display:flex; align-items:baseline; gap:14px; padding-bottom:16px; border-bottom:1px solid var(--fl-charcoal-600);">
+      <span class="s" style="font-size:11px; font-weight:700; letter-spacing:3px; color:var(--fl-text-secondary);">I</span>
+      <span style="font-size:27px; font-weight:600; color:var(--fl-bronze-bright);">Anatomy</span>
+      <span class="s" style="font-size:12px; color:var(--fl-text-secondary); font-style:italic;">The struck face &mdash; {{ layerCount }} layers on one grid, in that order</span>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:48px; margin-top:40px;">
+      <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:26px; min-width:0;">
+        <sc-for list="{{ anatomy }}" as="a" hint-placeholder-count="4">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:12px;">
+            <span style="width:112px; height:112px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-surface-recessed); border:1px solid rgba(0,0,0,0.5); box-shadow:inset 0 2px 5px rgba(0,0,0,0.6);">{{ a.art }}</span>
+            <span class="s" style="font-size:10px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-secondary);">{{ a.step }}</span>
+          </div>
+        </sc-for>
+        <span style="font-size:26px; color:var(--fl-text-secondary); align-self:center; margin-top:-24px;">=</span>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:12px;">
+          <span style="filter:drop-shadow(0 10px 24px rgba(0,0,0,0.6));">{{ anatomyFull }}</span>
+          <span class="s" style="font-size:10px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Struck</span>
+        </div>
+      </div>
+
+      <ol class="s" style="margin:0; padding:0; list-style:none; display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:26px 44px; min-width:0;">
+        <sc-for list="{{ layerNotes }}" as="l" hint-placeholder-count="4">
+          <li style="display:grid; grid-template-columns:24px minmax(0, 1fr); gap:16px; align-items:start; min-width:0;">
+            <span style="font-family:'Playfair Display',Georgia,serif; font-size:19px; color:var(--fl-text-bronze-label); line-height:1;">{{ l.n }}</span>
+            <span style="display:flex; flex-direction:column; gap:5px; min-width:0;">
+              <span style="font-size:13px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-bronze-bright);">{{ l.title }}</span>
+              <span style="font-size:13px; line-height:1.7; color:var(--fl-text-secondary); text-wrap:pretty;">{{ l.body }}</span>
+            </span>
+          </li>
+        </sc-for>
+      </ol>
+    </div>
+
+    <div class="s" style="display:grid; grid-template-columns:repeat(4,1fr); gap:1px; margin-top:44px; background:#1B1510; border:1px solid var(--fl-charcoal-600);">
+      <sc-for list="{{ specs }}" as="s" hint-placeholder-count="8">
+        <div style="background:#0C0D10; padding:16px 18px; display:flex; flex-direction:column; gap:5px;">
+          <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--fl-text-secondary);">{{ s.k }}</span>
+          <span style="font-size:13.5px; color:var(--fl-text-secondary);">{{ s.v }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ══ II · FRAMES ══ -->
+  <section style="width:100%; max-width:1240px; margin-top:88px;">
+    <div style="display:flex; align-items:baseline; gap:14px; padding-bottom:16px; border-bottom:1px solid var(--fl-charcoal-600);">
+      <span class="s" style="font-size:11px; font-weight:700; letter-spacing:3px; color:var(--fl-text-secondary);">II</span>
+      <span style="font-size:27px; font-weight:600; color:var(--fl-bronze-bright);">Frames</span>
+      <span class="s" style="font-size:12px; color:var(--fl-text-secondary); font-style:italic;">Struck face only &mdash; fourteen silhouettes, one per category</span>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:34px 22px; margin-top:36px;">
+      <sc-for list="{{ frames }}" as="f" hint-placeholder-count="14">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:11px; text-align:center;">
+          <span style="width:84px; height:84px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-surface-recessed); border:1px solid rgba(0,0,0,0.5); box-shadow:inset 0 2px 5px rgba(0,0,0,0.6);">{{ f.art }}</span>
+          <span style="font-size:14px; font-weight:600; color:var(--fl-bronze-bright); line-height:1.2;">{{ f.of }}</span>
+          <span class="s" style="font-size:10.5px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ f.name }}</span>
+          <span class="s" style="font-size:11.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">{{ f.note }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ══ III · REGISTER + MATERIAL ══ -->
+  <section style="width:100%; max-width:1240px; margin-top:88px; display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:56px 64px;">
+    <div>
+      <div style="display:flex; align-items:baseline; gap:14px; padding-bottom:16px; border-bottom:1px solid var(--fl-charcoal-600);">
+        <span class="s" style="font-size:11px; font-weight:700; letter-spacing:3px; color:var(--fl-text-secondary);">III</span>
+        <span style="font-size:27px; font-weight:600; color:var(--fl-bronze-bright);">The cut</span>
+      </div>
+      <p class="s" style="margin:18px 0 30px; font-size:13px; line-height:1.75; color:var(--fl-text-secondary); text-wrap:pretty;">Nothing sits <em>on</em> the disc. Every stroke is cut <em>into</em> it &mdash; the foundation&rsquo;s icon law, made literal. Light falls from above, so each groove gathers shadow along its upper wall while its lower lip catches the light. Three offset passes per layer; this is what separates a struck medal from a vector icon on a bronze circle.</p>
+      <div style="display:flex; gap:20px;">
+        <sc-for list="{{ rings }}" as="r" hint-placeholder-count="3">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; flex:1;">
+            <span style="width:80px; height:80px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-surface-recessed); border:1px solid rgba(0,0,0,0.5); box-shadow:inset 0 2px 5px rgba(0,0,0,0.6);">{{ r.art }}</span>
+            <span class="s" style="font-size:10.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ r.name }}</span>
+            <span class="s" style="font-size:11.5px; line-height:1.55; color:var(--fl-text-secondary);">{{ r.note }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div>
+      <div style="display:flex; align-items:baseline; gap:14px; padding-bottom:16px; border-bottom:1px solid var(--fl-charcoal-600);">
+        <span class="s" style="font-size:11px; font-weight:700; letter-spacing:3px; color:var(--fl-text-secondary);">IV</span>
+        <span style="font-size:27px; font-weight:600; color:var(--fl-bronze-bright);">Material</span>
+        <span class="s" style="font-size:12px; color:var(--fl-text-secondary); font-style:italic;">Rank changes the metal, never the drawing</span>
+      </div>
+      <p class="s" style="margin:18px 0 30px; font-size:13px; line-height:1.75; color:var(--fl-text-secondary); text-wrap:pretty;">The same medal at all four tiers. The drawing never changes &mdash; the <em>rim</em> does: bare, then struck, then studded, then a twelve-ray corona over the metallic sweep. Structure first, colour second, so magnitude is obvious at 44px without reading a number. This is what keeps a ten-step ladder from becoming ten unrelated drawings.</p>
+      <div style="display:flex; gap:30px;">
+        <sc-for list="{{ tiers }}" as="t" hint-placeholder-count="4">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:11px; text-align:center; flex:1;">
+            {{ t.art }}
+            <span class="s" style="font-size:10.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ t.n }} &middot; {{ t.name }}</span>
+            <span class="s" style="font-size:11.5px; line-height:1.55; color:var(--fl-text-secondary);">{{ t.note }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ V · RULES ══ -->
+  <section style="width:100%; max-width:1240px; margin-top:88px;">
+    <div style="display:flex; align-items:baseline; gap:14px; padding-bottom:16px; border-bottom:1px solid var(--fl-charcoal-600);">
+      <span class="s" style="font-size:11px; font-weight:700; letter-spacing:3px; color:var(--fl-text-secondary);">V</span>
+      <span style="font-size:27px; font-weight:600; color:var(--fl-bronze-bright);">Struck rules</span>
+      <span class="s" style="font-size:12px; color:var(--fl-text-secondary); font-style:italic;">What keeps 179 medals from drifting</span>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 64px; margin-top:32px;">
+      <div style="display:flex; flex-direction:column;">
+        <span class="s" style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding-bottom:12px;">Always</span>
+        <sc-for list="{{ doList }}" as="d" hint-placeholder-count="6">
+          <span class="s" style="display:grid; grid-template-columns:16px 1fr; gap:12px; padding:12px 0; border-top:1px solid var(--fl-charcoal-700); font-size:13px; line-height:1.65; color:var(--fl-text-secondary);"><span style="color:var(--fl-bronze-primary);">&#8212;</span><span style="text-wrap:pretty;">{{ d }}</span></span>
+        </sc-for>
+      </div>
+      <div style="display:flex; flex-direction:column;">
+        <span class="s" style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding-bottom:12px;">Never</span>
+        <sc-for list="{{ dontList }}" as="d" hint-placeholder-count="6">
+          <span class="s" style="display:grid; grid-template-columns:16px 1fr; gap:12px; padding:12px 0; border-top:1px solid var(--fl-charcoal-700); font-size:13px; line-height:1.65; color:var(--fl-text-secondary);"><span style="color:var(--fl-text-secondary);">&#215;</span><span style="text-wrap:pretty;">{{ d }}</span></span>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ VI · THE SET ══ -->
+  <section style="width:100%; max-width:1240px; margin-top:96px;">
+    <div style="display:flex; align-items:baseline; gap:14px; padding-bottom:16px; border-bottom:1px solid var(--fl-charcoal-600);">
+      <span class="s" style="font-size:11px; font-weight:700; letter-spacing:3px; color:var(--fl-text-secondary);">VI</span>
+      <span style="font-size:27px; font-weight:600; color:var(--fl-bronze-bright);">The set</span>
+      <span class="s" style="font-size:12px; color:var(--fl-text-secondary); font-style:italic;">All {{ total }} in the clean face &mdash; catalog order, as the hub shows them</span>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:52px; margin-top:44px;">
+      <sc-for list="{{ cats }}" as="c" hint-placeholder-count="14">
+        <div>
+          <div style="display:flex; align-items:center; gap:13px; padding-bottom:16px; border-bottom:1px solid var(--fl-charcoal-600);">
+            <span style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); background:radial-gradient(circle at 50% 34%, rgba(191,143,79,0.18), transparent 72%); color:var(--fl-bronze-bright);">{{ c.icon }}</span>
+            <span style="font-size:22px; font-weight:600; background:linear-gradient(180deg,#EAD09B,#B98F4E); -webkit-background-clip:text; background-clip:text; color:transparent;">{{ c.name }}</span>
+            <span class="s" style="font-size:10.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-secondary);">{{ c.count }}</span>
+            <span style="flex:1;"></span>
+            <span class="s" style="font-size:11px; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-text-secondary);">{{ c.frameName }} frame</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:34px 16px; margin-top:30px;">
+            <sc-for list="{{ c.honors }}" as="h" hint-placeholder-count="7">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center;">
+                {{ h.medal }}
+                <span style="font-size:13px; font-weight:600; line-height:1.25; color:var(--fl-bronze-bright); text-wrap:balance;">{{ h.name }}</span>
+                <span class="s" style="font-size:10.5px; line-height:1.5; color:var(--fl-text-secondary); text-wrap:pretty;">{{ h.trigger }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ══ COLOPHON ══ -->
+  <footer class="s" style="width:100%; max-width:780px; margin-top:96px; padding-top:30px; border-top:1px solid var(--fl-charcoal-600); text-align:center;">
+    <p style="margin:0; font-size:12.5px; line-height:1.9; color:var(--fl-text-secondary); text-wrap:pretty;">Artwork lives in <span style="color:var(--fl-text-bronze-label);">forge-honor-art.js</span> and fills the <span style="color:var(--fl-text-bronze-label);">Insignia</span> component&rsquo;s deferred <span style="color:var(--fl-text-bronze-label);">artwork</span> slot &mdash; the bronze bezel, recess, sizing and label placement all stay the design system&rsquo;s. Honor data (name, trigger, mark, exergue, tier, register) lives in <span style="color:var(--fl-text-bronze-label);">forge-honors.js</span>. Render at <span style="color:var(--fl-text-bronze-label);">0.8&#215;</span> the Insignia size: sm&nbsp;32 &middot; md&nbsp;44 &middot; lg&nbsp;58 &middot; xl&nbsp;76. Every preview on this page is struck by the engine itself, so nothing here can drift from what ships.</p>
+  </footer>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1360,&quot;height&quot;:1000}}">
+class Component extends DCLogic {
+  state = { ready: false };
+  componentDidMount() {
+    this._poll = () => {
+      // the DS namespace object exists well before the bundle attaches Insignia
+      // to it — gate on the component itself, not the namespace
+      const ns = window.ForgeLegacyVisualFoundation_5368b2;
+      const ok = typeof React !== 'undefined' && window.ForgeSymbols && window.ForgeHonors
+        && window.ForgeHonorArt && ns && typeof ns.Insignia === 'function';
+      if (ok) this.setState({ ready: true }); else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  // Every disc this builds is a DECORATIVE illustration of one layer; the meaning
+  // is carried by the adjacent visible label ("3 Exergue", the frame names, the cut
+  // passes). Hidden from assistive tech as a class — otherwise the engraving's three
+  // offset passes announce their text three times ("500500500").
+  _disc(innerHtml, size) {
+    return React.createElement('svg', {
+      viewBox: '0 0 64 64', width: size, height: size,
+      'aria-hidden': 'true', focusable: 'false',
+      dangerouslySetInnerHTML: { __html: innerHtml },
+    });
+  }
+
+  renderVals() {
+    if (!this.state.ready) return { total: '\u2014', anatomy: [], anatomyFull: null, layerNotes: [], layerCount: '', faces: [], specs: [], frames: [], rings: [], tiers: [], doList: [], dontList: [], cats: [] };
+    const FH = window.ForgeHonors, FA = window.ForgeHonorArt, FS = window.ForgeSymbols;
+    const NS = window.ForgeLegacyVisualFoundation_5368b2;
+    // Category glyphs are decorative — the category name sits right beside them.
+    // aria-hidden has to be cloned onto the element: a literal aria-hidden in the
+    // template markup is dropped by the compiler and never reaches the DOM.
+    const ico = (id, s, w) => {
+      const el = FS.create(React, id, { size: s || 17, strokeWidth: w || 1.8 });
+      return el ? React.cloneElement(el, { 'aria-hidden': 'true', focusable: 'false' }) : null;
+    };
+
+    // an Insignia carrying a real medal face
+    const medal = (honorId, px, face) => (typeof NS.Insignia === 'function'
+      ? React.createElement(NS.Insignia, {
+          variant: 'honor', size: px,
+          artwork: FA.create(React, honorId, { size: Math.round(px * 0.8), face }),
+        })
+      : null);
+
+    // ── anatomy: every layer of one medal, taken straight from the engine so
+    //    this panel can never drift from what forge-honor-art.js actually strikes ──
+    const demo = 'str-squat-500';
+    const ink = '#BF8F4F';
+    const G = FA.GEOM;
+    // The struck face is the one with parts to take apart; the clean face is one
+    // layer by definition. Both are read from the engine, never described by hand.
+    const L = FA.layers(demo, 'struck');
+    const cleanDrawn = Object.keys(FA.layers(demo)).filter((k) => k !== 'spec' && FA.layers(demo)[k]).length;
+    // every preview in this document is struck by the engine itself, at the tier
+    // and finish the real medal uses — so the spec cannot show something the
+    // engine doesn't actually produce
+    const wrap = (body, pass) => FA.preview(body, 3, pass);
+    // Steps are derived from the engine's own layer output, so a layer that
+    // stops being drawn stops being documented.
+    const NOTE = {
+      Frame: 'A silhouette engraved inside the disc, inscribed in r\u202f\u2264\u202f' + G.frameMaxR + ' so the design system\u2019s bronze bezel is never touched. Fourteen frames, fourteen categories. The clean face omits it \u2014 on a hub screen the section heading already groups by category, and repeating that inside every disc is what made the set feel busy.',
+      Mark: 'One engraved figure, authored on the same 24-grid as the icon library \u2014 square caps, mitered joins, two to five strokes. Each is measured and fitted to the clearance its frame allows, with its stroke divided back out, so all ' + FH.total + ' medals land on a constant ' + G.mark.stroke + ' weight whatever their shape. ' + FA.markIds.length + ' marks cover the set: a family shares its mark and separates on the exergue.',
+      Exergue: 'The number, struck under a hairline rule in the bottom band, the way a coin carries its denomination. Plain Arabic figures throughout \u2014 Roman numerals read as costume at this size. Absent where the honor has no number, and absent from the clean face entirely, where the label beneath already carries it.',
+      Tier: 'Earned is earned. Every honor an athlete holds is struck in full bronze \u2014 a first workout is not a dimmer object than a five-hundredth. Escalation may only ADD, at the very top: a family\u2019s apex gains the metallic sweep and a ' + G.coronaCount + '-ray corona. Dimmed, desaturated bronze is the design system\u2019s signal for LOCKED (Insignia\u2019s muted state), so using it for a low rung tells the athlete they haven\u2019t earned the thing they just earned.',
+    };
+    const SUB = { Frame: 'the category', Mark: 'the criterion', Exergue: 'the threshold', Tier: 'the magnitude' };
+    const built = [['Frame', L.frame], ['Mark', L.mark], ['Exergue', L.exergue], ['Tier', L.tier]]
+      .filter((pair) => pair[1]);
+    // the rim ships proud, not cut — preview it the way inner() actually draws it
+    const FLAT = { Tier: 'flat' };
+    const anatomy = built.map((pair, i) => ({
+      key: pair[0], step: (i + 1) + ' ' + pair[0],
+      art: this._disc(wrap(pair[1], FLAT[pair[0]]), 74),
+    }));
+    const layerNotes = built.map((pair, i) => ({
+      key: pair[0], n: String(i + 1), title: pair[0] + ' \u00b7 ' + SUB[pair[0]], body: NOTE[pair[0]],
+    }));
+    const NUM = ['no', 'one', 'two', 'three', 'four', 'five', 'six'];
+    const layerCount = NUM[built.length] || String(built.length);
+
+    // the two faces, side by side — the only honest way to show which is which
+    const faces = [
+      { key: 'clean', name: 'Clean face', tag: 'Ships \u00b7 hub, timeline, toasts',
+        note: 'One engraved glyph, generously sized, nothing else in the disc. The category is already carried by the hub\u2019s grouping and the threshold by the label beneath \u2014 so a frame and a struck numeral would both be repeating what the screen already says. ' + (cleanDrawn === 1 ? 'One layer.' : cleanDrawn + ' layers.'),
+        art: medal(demo, 108) },
+      { key: 'struck', name: 'Struck face', tag: 'Ceremony \u00b7 one medal, shown large',
+        note: 'The full coin: category frame, glyph, the threshold in the exergue, and the tier rim. Earned in a moment that has room for it \u2014 an award ceremony, a single medal filling the screen \u2014 where there is no label doing the work instead. ' + layerCount.charAt(0).toUpperCase() + layerCount.slice(1) + ' layers.',
+        art: medal(demo, 108, 'struck') },
+    ];
+
+    const mg = G.markBox.shield.ex;
+
+    const specs = [
+      { key: 'a', k: 'Grid',        v: G.grid + ' \u00d7 ' + G.grid + ', centre ' + G.centre + ',' + G.centre },
+      { key: 'b', k: 'Frame radius',v: '\u2264 ' + G.frameMaxR + ' \u00b7 stroke ' + G.frameStroke },
+      { key: 'c', k: 'Mark box',    v: 'Fitted per frame \u00b7 constant stroke ' + G.mark.stroke },
+      { key: 'd', k: 'Exergue',     v: 'Rule y\u202f' + G.exergue.ruleY + ' \u00b7 baseline y\u202f' + G.exergue.baseline + ' \u00b7 serif ' + G.exergue.size },
+      { key: 'e', k: 'Tier rim',    v: 'r\u202f' + G.rimR + ' \u00b7 ' + G.studCount + ' studs \u00b7 ' + G.coronaCount + ' rays' },
+      { key: 'f', k: 'Engraving',   v: 'Groove ' + G.engrave.depth + ' \u00b7 frame ' + G.engrave.frameDepth + ' \u00b7 text ' + G.engrave.textDepth },
+      { key: 'g', k: 'Render size', v: '0.8 \u00d7 the Insignia diameter' },
+      { key: 'h', k: 'Marks / medals', v: FA.markIds.length + ' marks \u2192 ' + FH.total + ' medals' },
+    ];
+
+    // ── frames ──
+    const frames = Object.keys(FA.FRAMES).map((id) => {
+      const f = FA.FRAMES[id];
+      return { key: id, of: f.of, name: f.name, note: f.note, art: this._disc(wrap(f.d, 1.1), 62) };
+    });
+
+    // ── the cut: one mark, each pass of the engraving isolated ──
+    const E = G.engrave;
+    const rings = [
+      ['shadow', 'Shadow', 'Offset up ' + E.depth + ' \u2014 the groove\u2019s upper wall, turned away from the light.'],
+      ['light', 'Catch', 'Offset down ' + E.depth + ' \u2014 the lower lip, facing up into it.'],
+      ['body', 'Body', 'Bronze between the two, dark at the top and lit at the base.'],
+      ['all', 'Struck', 'The three together read as metal removed, not ink added.'],
+    ].map(([pass, name, note]) => ({
+      key: pass, name, note, art: this._disc(FA.preview(L.mark, 3, pass), 60),
+    }));
+
+    // ── material tiers, same medal four ways ──
+    const tiers = [
+      ['trn-first', 'Earned', 'First Workout', 'Full bronze \u2014 the same metal as every other earned honor.'],
+      ['trn-500', 'Earned', '500 Workouts', 'Identical. The label already carries the magnitude.'],
+      ['trn-5000', 'Apex', '5,000 Workouts', 'The one escalation: metallic sweep and a ' + G.coronaCount + '-ray corona, ADDED at the top \u2014 never taken away from the rest.'],
+    ].map((r) => ({ key: r[0], n: r[2], name: r[1], note: r[3], art: medal(r[0], 88) }));
+
+    const doList = [
+      'Keep every mark inside the 24-grid box and on one stroke weight \u2014 an outlier reads as a mistake, not a highlight.',
+      'Give a family one mark and let the exergue carry the threshold. Ten workout medals are one idea counted, not ten ideas.',
+      'Strike every earned honor in the same full bronze. Escalation only ever ADDS, and only at a family\u2019s apex.',
+      'Draw the criterion literally and plainly \u2014 a wheel for a ride, an hourglass for hours, three of seven ticks for a first week.',
+      'Show only earned honors. Locked positions are a rank-ladder pattern; honors have no greyed-out state.',
+      'Cut every stroke INTO the disc \u2014 shadow on the upper wall, a warm catch on the lower lip. Light comes from above, always.',
+      'Use the clean face anywhere a label sits beside the medal, and the struck face only when one medal stands alone and large.',
+      'Render into the Insignia artwork slot. The bezel, recess, glow and label placement stay the design system\u2019s.',
+    ];
+    const dontList = [
+      'No new hue. Bronze is the only metal \u2014 no silver, no gold, no per-category colour coding.',
+      'No scene, mascot, character or perspective illustration. These are struck marks, not spot art.',
+      'No dimming, desaturating or fading a low rung. That is the LOCKED state \u2014 it tells the athlete they haven\u2019t earned it.',
+      'No numerals in the mark itself. The number lives in the exergue, at one size, in one place.',
+      'No denominator, \u201cX of Y\u201d, rarity label or percentage beside a medal (design system rule 4).',
+      'No flat line art laid on the disc \u2014 that is the one thing that makes a medal read as a stock icon.',
+      'No forking the Insignia shell to fit a shape. If art does not fit r\u202f28.5, the art is wrong.',
+    ];
+
+    // ── the full set ──
+    const cats = FH.CATEGORIES.map((c) => {
+      const items = FH.byCategory(c.id);
+      return {
+        key: c.id, name: c.name, icon: ico(c.glyph, 17, 1.8),
+        count: items.length + (items.length === 1 ? ' honor' : ' honors'),
+        frameName: FA.FRAMES[FA.FRAME_OF[c.id]].name,
+        honors: items.map((h) => ({ key: h.id, name: h.name, trigger: h.trigger, medal: medal(h.id, 72) })),
+      };
+    });
+
+    return { total: FH.total, anatomy, anatomyFull: medal(demo, 112, 'struck'), layerNotes,
+             layerCount, faces, specs, frames, rings, tiers, doList, dontList, cats };
+  }
+}
+
+</script>
+</body>
+</html>

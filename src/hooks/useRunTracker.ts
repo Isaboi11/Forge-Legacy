@@ -4,7 +4,7 @@ import * as Location from 'expo-location';
 
 import { ACCURACY_FLOOR_M, acceptFix, totalMiles, type ActivityKind, type Fix, type TrackPoint } from '@/domain/run/run-core';
 import { clearBackgroundFixes, drainBackgroundFixes, startBackgroundFixes, stopBackgroundFixes } from '@/domain/run/background-task';
-import { autoResumeStep, probeAt, shouldAutoPause, type AutoResumeProbe } from '@/domain/run/auto-pause';
+import { AUTO_PAUSE_WINDOW_SEC, autoResumeStep, probeAt, shouldAutoPause, type AutoResumeProbe } from '@/domain/run/auto-pause';
 
 /**
  * How long the device may go quiet before "the track stopped growing" stops meaning "the athlete stopped".
@@ -155,6 +155,14 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
    * opposite, and pausing there would stop the clock on someone still running.
    */
   const lastFixAt = useRef(0);
+  /**
+   * Ground speeds the DEVICE reported, newest last, trimmed to the auto-pause window.
+   *
+   * The track credits distance in 10–25 m steps and cannot tell a slow walk from a stop inside ten
+   * seconds; the phone's own Doppler speed can. See `AUTO_PAUSE_MOVING_MPS`. iOS reports −1 for "no
+   * valid speed", and the web usually reports null — both are left out, never read as zero.
+   */
+  const speeds = useRef<{ at: number; mps: number }[]>([]);
   /** The clock, readable from inside the interval without making it a dependency. */
   const elapsedRef = useRef(0);
   /**
@@ -207,6 +215,11 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     setAccuracyM(loc.coords.accuracy ?? null);
     /* Delivery is recorded BEFORE anything can return — that is the point of it. See `lastFixAt`. */
     lastFixAt.current = Date.now();
+    const mps = loc.coords.speed;
+    if (mps != null && mps >= 0) {
+      const cutoff = lastFixAt.current - AUTO_PAUSE_WINDOW_SEC * 1000;
+      speeds.current = [...speeds.current.filter((s) => s.at > cutoff), { at: lastFixAt.current, mps }];
+    }
 
     if (!running.current) {
       /*
@@ -221,6 +234,7 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
         lat: loc.coords.latitude,
         lon: loc.coords.longitude,
         accuracy: loc.coords.accuracy ?? null,
+        speed: mps != null && mps >= 0 ? mps : null,
       });
       autoProbe.current = step.probe;
       if (step.resume) {
@@ -338,6 +352,7 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     autoProbe.current = null;
     elapsedRef.current = 0;
     lastFixAt.current = Date.now();
+    speeds.current = [];
     // Wall-time-driven rather than a counter, so a throttled background tab can't make a 40-minute run
     // report 26 minutes.
     let lastTick = Date.now();
@@ -357,12 +372,14 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
        */
       /* Foreground only — see `appActive`. Nothing may pause a run it cannot also un-pause. */
       if (!appActive.current) return;
+      const recent = speeds.current.filter((s) => s.at > now - AUTO_PAUSE_WINDOW_SEC * 1000);
       if (
         shouldAutoPause({
           track: trackRef.current,
           nowMs: now,
           elapsedSec: elapsedRef.current,
           receivingFixes: now - lastFixAt.current < FIX_SILENCE_MS,
+          deviceSpeedMps: recent.length ? Math.max(...recent.map((s) => s.mps)) : null,
         })
       ) {
         const last = trackRef.current[trackRef.current.length - 1];

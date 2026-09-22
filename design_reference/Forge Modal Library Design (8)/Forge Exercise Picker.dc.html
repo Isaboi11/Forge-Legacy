@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-workout-store.js"></script>
+  <script>
+    (function () {
+      var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+      function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+      if (window.React && window.ReactDOM) { inject(); return; }
+      var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+    })();
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    a { color: var(--fl-bronze-bright); text-decoration: none; }
+    a:hover { color: var(--fl-bronze-primary); }
+    .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+    .fl-scroll { scrollbar-width: none; }
+    .fl-pick-search { width:100%; border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-family:var(--fl-font-sans); font-size:14px; border-radius:var(--fl-radius-md); padding:11px 12px 11px 40px; outline:none; }
+    .fl-pick-search::placeholder { color:var(--fl-text-tertiary); }
+    .fl-pick-search:focus { border-color:var(--fl-bronze-primary); }
+    @keyframes epRise { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; } }
+  </style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="Exercise Picker" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(6,7,8,0.3), rgba(6,7,8,0.3)), #060708 url('assets/forge-bg-2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <!-- ═══ APP BAR (modal-native × dismiss) ═══ -->
+      <div style="flex:none; position:relative; z-index:10;">
+        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="{{ title }}" on-close="{{ onClose }}" actions="{{ filterBtn }}" hint-size="100%,56px"></x-import>
+      </div>
+
+      <!-- sub-header: replacing banner + search + applied filters -->
+      <div style="flex:none; padding:6px 18px 14px; display:flex; flex-direction:column; gap:12px; border-bottom:1px solid var(--fl-charcoal-700); position:relative; z-index:5;">
+        <sc-if value="{{ isReplace }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; align-items:center; gap:10px; padding:10px 13px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:linear-gradient(90deg, rgba(191,143,79,0.07), transparent 72%), var(--fl-surface-card);">
+            <span style="flex:none; width:9px; height:9px; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary); background:var(--fl-bronze-tint);"></span>
+            <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+              <span style="font-size:8.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Replacing</span>
+              <span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ replacingName }}</span>
+            </span>
+          </div>
+        </sc-if>
+        <div style="position:relative;">
+          <span style="position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--fl-text-tertiary); display:flex; pointer-events:none;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.2-3.2"></path></svg></span>
+          <input class="fl-pick-search" type="text" placeholder="Search exercises" value="{{ search }}" onInput="{{ onSearch }}" />
+        </div>
+        <sc-if value="{{ hasFilters }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; align-items:center; gap:7px; flex-wrap:wrap;">
+            <sc-for list="{{ appliedChips }}" as="f" hint-placeholder-count="1">
+              <button type="button" onClick="{{ f.onRemove }}" style="display:inline-flex; align-items:center; gap:6px; padding:5px 8px 5px 11px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); cursor:pointer;"><span style="font-size:11px; font-weight:600; color:var(--fl-bronze-bright);">{{ f.label }}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-bright)" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
+            </sc-for>
+            <button type="button" onClick="{{ onClearFilters }}" style="padding:5px 10px; background:transparent; border:none; cursor:pointer; font-size:11px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Clear</button>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- ═══ SCROLL BODY ═══ -->
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:16px 18px 20px; position:relative; z-index:1;">
+
+        <sc-if value="{{ hasResults }}" hint-placeholder-val="{{ true }}">
+
+          <sc-if value="{{ hasBest }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:0 2px 3px;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Best replacements" hint-size="100%,20px"></x-import></div>
+            <span style="display:block; padding:0 2px 11px; font-size:11.5px; color:var(--fl-text-tertiary);">Closest functional matches to {{ replacingName }}</span>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:22px;">
+              <sc-for list="{{ best }}" as="it" hint-placeholder-count="3">
+                <button type="button" onClick="{{ it.onSelect }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:11px 13px; border-radius:var(--fl-radius-lg); border:1px solid {{ it.borderColor }}; background:{{ it.bg }}; cursor:pointer; text-align:left;">
+                  <span style="flex:none; width:40px; height:40px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ it.icon }}</span>
+                  <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">{{ it.name }}</span>
+                    <span style="font-size:11.5px; color:var(--fl-text-tertiary); line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ it.sub }}</span>
+                  </span>
+                  <span role="button" tabindex="0" aria-label="Exercise details" onClick="{{ it.onInfo }}" style="flex:none; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--fl-text-tertiary); cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5" stroke-linecap="round"></path><circle cx="12" cy="8" r="0.6" fill="currentColor" stroke="none"></circle></svg></span>
+                  <span style="flex:none; width:22px; height:22px; display:flex; align-items:center; justify-content:center;">{{ it.mark }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ hasMine }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:0 2px 10px;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="My exercises" hint-size="100%,20px"></x-import></div>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:22px;">
+              <sc-for list="{{ mine }}" as="it" hint-placeholder-count="3">
+                <button type="button" onClick="{{ it.onSelect }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:11px 13px; border-radius:var(--fl-radius-lg); border:1px solid {{ it.borderColor }}; background:{{ it.bg }}; cursor:pointer; text-align:left;">
+                  <span style="flex:none; width:40px; height:40px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ it.icon }}</span>
+                  <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">{{ it.name }}</span>
+                    <span style="font-size:11.5px; color:var(--fl-text-tertiary); line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ it.sub }}</span>
+                  </span>
+                  <span role="button" tabindex="0" aria-label="Exercise details" onClick="{{ it.onInfo }}" style="flex:none; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--fl-text-tertiary); cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5" stroke-linecap="round"></path><circle cx="12" cy="8" r="0.6" fill="currentColor" stroke="none"></circle></svg></span>
+                  <span style="flex:none; width:22px; height:22px; display:flex; align-items:center; justify-content:center;">{{ it.mark }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <div style="padding:0 2px 10px;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="All exercises" hint-size="100%,20px"></x-import></div>
+          <sc-for list="{{ categories }}" as="cat" hint-placeholder-count="4">
+            <div style="margin-bottom:18px;">
+              <div style="display:flex; align-items:center; gap:9px; padding:0 2px 9px;">
+                <span style="font-size:10px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ cat.label }}</span>
+                <span style="flex:1; height:1px; background:var(--fl-charcoal-700);"></span>
+                <span style="font-size:10px; font-weight:600; color:var(--fl-text-tertiary);">{{ cat.count }}</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <sc-for list="{{ cat.items }}" as="it" hint-placeholder-count="3">
+                  <button type="button" onClick="{{ it.onSelect }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:11px 13px; border-radius:var(--fl-radius-lg); border:1px solid {{ it.borderColor }}; background:{{ it.bg }}; cursor:pointer; text-align:left;">
+                    <span style="flex:none; width:40px; height:40px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);">{{ it.icon }}</span>
+                    <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                      <span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">{{ it.name }}</span>
+                      <span style="font-size:11.5px; color:var(--fl-text-tertiary); line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ it.sub }}</span>
+                    </span>
+                    <span role="button" tabindex="0" aria-label="Exercise details" onClick="{{ it.onInfo }}" style="flex:none; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--fl-text-tertiary); cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5" stroke-linecap="round"></path><circle cx="12" cy="8" r="0.6" fill="currentColor" stroke="none"></circle></svg></span>
+                    <span style="flex:none; width:22px; height:22px; display:flex; align-items:center; justify-content:center;">{{ it.mark }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+
+        </sc-if>
+
+        <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:56px 24px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px;">
+            <span style="width:52px; height:52px; border-radius:50%; border:1px solid var(--fl-charcoal-600); display:flex; align-items:center; justify-content:center; color:var(--fl-text-tertiary);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.2-3.2"></path></svg></span>
+            <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; color:var(--fl-text-primary);">No matches</span>
+            <span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary); max-width:230px;">Nothing fits that search and filter. Try clearing a filter or a different term.</span>
+          </div>
+        </sc-if>
+
+      </div>
+
+      <!-- ═══ FOOTER · confirm ═══ -->
+      <div style="flex:none; padding:14px 18px calc(16px + env(safe-area-inset-bottom)); border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(6,7,8,0.35), rgba(6,7,8,0.82)); position:relative; z-index:5;">
+        <button type="button" onClick="{{ onConfirm }}" disabled="{{ confirmDisabled }}" style="width:100%; display:flex; align-items:center; justify-content:center; gap:9px; padding:15px; border-radius:var(--fl-radius-md); border:1px solid {{ confirmBorder }}; background:{{ confirmBg }}; color:{{ confirmColor }}; font-size:14px; font-weight:700; letter-spacing:0.5px; cursor:{{ confirmCursor }}; box-shadow:{{ confirmShadow }}; text-shadow:0 1px 1px rgba(8,5,2,0.5);">{{ confirmLabel }}</button>
+      </div>
+
+      <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; left:14px; right:14px; bottom:92px; z-index:40; display:flex; align-items:center; gap:12px; padding:13px 15px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-modal); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-shadow-modal), var(--fl-glow-subtle); animation:epRise 240ms var(--fl-ease-out, ease-out) both;">
+          <span style="flex:none; width:26px; height:26px; border-radius:50%; background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>
+          <span style="flex:1; min-width:0; font-size:12.5px; line-height:1.35; color:var(--fl-text-primary);">{{ toastText }}</span>
+          <button type="button" onClick="{{ onUndo }}" style="flex:none; padding:6px 12px; border-radius:var(--fl-radius-sm); border:1px solid var(--fl-bronze-border); background:var(--fl-bronze-tint); color:var(--fl-bronze-bright); font-size:12px; font-weight:700; letter-spacing:0.5px; cursor:pointer;">Undo</button>
+        </div>
+      </sc-if>
+
+      <div aria-hidden="true" style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+    </sc-if>
+  </div>
+</div>
+
+<!-- ═══ FILTER SHEET (filter-by-Apply) ═══ -->
+<x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ filterOpen }}" on-close="{{ onCloseFilter }}" title="Filter" hint-size="1px,1px">
+  <div style="display:flex; flex-direction:column; gap:20px; padding-top:2px;">
+    <div>
+      <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:11px;">Equipment</span>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        <sc-for list="{{ equipChips }}" as="c" hint-placeholder-count="5">
+          <button type="button" onClick="{{ c.onToggle }}" style="padding:8px 14px; border-radius:var(--fl-radius-pill); border:1px solid {{ c.borderColor }}; background:{{ c.bg }}; color:{{ c.color }}; font-size:12.5px; font-weight:600; cursor:pointer;">{{ c.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+    <div>
+      <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:11px;">Muscle group</span>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        <sc-for list="{{ muscleChips }}" as="c" hint-placeholder-count="6">
+          <button type="button" onClick="{{ c.onToggle }}" style="padding:8px 14px; border-radius:var(--fl-radius-pill); border:1px solid {{ c.borderColor }}; background:{{ c.bg }}; color:{{ c.color }}; font-size:12.5px; font-weight:600; cursor:pointer;">{{ c.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+    <div>
+      <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:11px;">Movement type</span>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        <sc-for list="{{ typeChips }}" as="c" hint-placeholder-count="2">
+          <button type="button" onClick="{{ c.onToggle }}" style="padding:8px 14px; border-radius:var(--fl-radius-pill); border:1px solid {{ c.borderColor }}; background:{{ c.bg }}; color:{{ c.color }}; font-size:12.5px; font-weight:600; cursor:pointer;">{{ c.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+    <div>
+      <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-bottom:11px;">Difficulty</span>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        <sc-for list="{{ diffChips }}" as="c" hint-placeholder-count="3">
+          <button type="button" onClick="{{ c.onToggle }}" style="padding:8px 14px; border-radius:var(--fl-radius-pill); border:1px solid {{ c.borderColor }}; background:{{ c.bg }}; color:{{ c.color }}; font-size:12.5px; font-weight:600; cursor:pointer;">{{ c.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; padding-top:6px;">
+      <button type="button" onClick="{{ onResetFilter }}" style="flex:none; padding:14px 20px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:transparent; color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer;">Reset</button>
+      <button type="button" onClick="{{ onApplyFilter }}" style="flex:1; padding:14px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-bronze-metal-border); background:var(--fl-bronze-fill); color:#F7F5F1; font-size:14px; font-weight:700; letter-spacing:0.5px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">{{ applyLabel }}</button>
+    </div>
+  </div>
+</x-import>
+
+<!-- ═══ PERSISTENCE CHOICE SHEET ═══ -->
+<x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.BottomSheet" open="{{ persistOpen }}" on-close="{{ onClosePersist }}" title="{{ persistTitle }}" hint-size="1px,1px">
+  <div style="display:flex; flex-direction:column; gap:10px; padding-top:2px;">
+    <span style="font-size:13px; line-height:1.5; color:var(--fl-text-secondary); margin-bottom:4px;">{{ persistBlurb }}</span>
+    <button type="button" onClick="{{ onPersistSession }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:15px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); cursor:pointer; text-align:left;">
+      <span style="flex:none; width:38px; height:38px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span>
+      <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">Just this session</span><span style="font-size:12px; color:var(--fl-text-tertiary); line-height:1.4;">Your program stays as written.</span></span>
+    </button>
+    <button type="button" onClick="{{ onPersistFuture }}" style="width:100%; display:flex; align-items:center; gap:13px; padding:15px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border); background:linear-gradient(90deg, rgba(191,143,79,0.07), transparent 72%), var(--fl-surface-card); cursor:pointer; text-align:left;">
+      <span style="flex:none; width:38px; height:38px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); display:flex; align-items:center; justify-content:center; color:var(--fl-icon-bronze);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16l-7-4-7 4z"></path></svg></span>
+      <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary);">This &amp; future workouts</span><span style="font-size:12px; color:var(--fl-text-tertiary); line-height:1.4;">Updates this exercise in the program.</span></span>
+    </button>
+  </div>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;replace&quot;,&quot;options&quot;:[&quot;replace&quot;,&quot;add&quot;],&quot;tsType&quot;:&quot;'replace' | 'add'&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
+class Component extends DCLogic {
+  state = {
+    ready: false,
+    search: '',
+    selected: null,
+    filterOpen: false,
+    persistOpen: false,
+    toast: null,
+    picked: [],
+    appliedEquip: [],
+    appliedType: [],
+    appliedMuscle: [],
+    appliedDiff: [],
+    draftEquip: [],
+    draftType: [],
+    draftMuscle: [],
+    draftDiff: [],
+  };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      if (r && ns) this.setState({ ready: true });
+      else this._t = setTimeout(this._poll, 40);
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._navT) clearTimeout(this._navT); }
+
+  _toggle(list, v) { return list.includes(v) ? list.filter((x) => x !== v) : list.concat([v]); }
+
+  _togglePicked(key) { this.setState((st) => ({ picked: st.picked.indexOf(key) >= 0 ? st.picked.filter((k) => k !== key) : st.picked.concat([key]) })); }
+  // add mode (builder): hand back ALL selected exercises at once, then return
+  _commitBuilderMulti(items, ctx) {
+    if (!items || !items.length) return;
+    try { localStorage.setItem(ctx.inboxKey || 'forge_builder_inbox_v1', JSON.stringify({ vary: !!ctx.vary, week: Number(ctx.week) || 0, day: Number(ctx.day), section: ctx.section, items: items.map((ex) => ({ name: ex.name, equip: ex.equip, muscles: ex.muscles, type: ex.type })) })); } catch (e) {}
+    window.location.href = ctx.dest;
+  }
+
+  // Commit the swap → confirmation toast with an Undo window, then WRITE the store + return.
+  // The store write lives inside the timer so Undo (which clears it) prevents the swap entirely.
+  _commit(ex, ctx) {
+    if (!ex) return;
+    if (this._navT) clearTimeout(this._navT);
+    this.setState({ persistOpen: false, toast: { to: ex.name } });
+    this._navT = setTimeout(() => {
+      if (ctx.origin === 'builder') {
+        try { localStorage.setItem('forge_builder_inbox_v1', JSON.stringify({ vary: !!ctx.vary, week: Number(ctx.week) || 0, day: Number(ctx.day), section: ctx.section, name: ex.name, equip: ex.equip, muscles: ex.muscles, type: ex.type })); } catch (e) {}
+      } else if (ctx.slot && window.ForgeWorkoutStore) {
+        window.ForgeWorkoutStore.set(decodeURIComponent(ctx.slot), { name: ex.name, equip: ex.equip, muscles: ex.muscles, tags: [ex.type] });
+      }
+      window.location.href = ctx.dest;
+    }, 2800);
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true };
+    }
+    const h = React.createElement;
+    const s = this.state;
+    const mode = this.props.mode ?? 'replace';
+    const pkHash = (typeof window !== 'undefined' && window.location.hash) || '';
+    const isTemplateBuilder = /(?:^|[#&])o=template/.test(pkHash);   // W-25 free-template builder (multi-add, returns to the template builder)
+    const isWorkoutAdd = /(?:^|[#&])o=workoutadd/.test(pkHash);      // add exercises into a live build-as-you-go Active Workout session
+    const isFresh = /(?:^|[#&])fresh=1/.test(pkHash);               // first pick of a brand-new freestyle session
+    const isBuilder = /(?:^|[#&])o=builder/.test(pkHash) || isTemplateBuilder || isWorkoutAdd;
+    const isReplace = (mode === 'replace') && !isBuilder;   // builder always adds, never replaces
+    const exParam = (/[#&]ex=([^&]+)/.exec(pkHash) || [])[1];
+    const rawName = exParam ? decodeURIComponent(exParam) : 'Bench Press';
+    // reconcile the small naming variants used across the workout / program screens to the picker's canonical names
+    const ALIAS = { 'Incline DB Press': 'Incline Dumbbell Press', 'Bent Over Row': 'Bent-Over Row', 'Cable Row': 'Seated Cable Row', 'Lateral Raise': 'Dumbbell Lateral Raise' };
+    const replacingName = ALIAS[rawName] || rawName;
+    const origin = (/o=([a-z]+)/.exec(pkHash) || [])[1] || 'workout';
+    const pid = (/[#&]pid=([^&]+)/.exec(pkHash) || [])[1] || '';
+    const slot = (/[#&]slot=([^&]+)/.exec(pkHash) || [])[1] || '';
+    const day = (/[#&]day=([0-9]+)/.exec(pkHash) || [])[1] || '';
+    const section = (/[#&]section=([a-z]+)/.exec(pkHash) || [])[1] || '';
+    const week = (/[#&]week=([0-9]+)/.exec(pkHash) || [])[1] || '';
+    const vary = /[#&]vary=1/.test(pkHash);
+    const dest = isTemplateBuilder ? 'Forge%20Free%20Workout%20Builder.dc.html'
+      : (isWorkoutAdd ? 'Forge%20Active%20Workout.dc.html'
+      : (isBuilder ? 'Forge%20Program%20Builder.dc.html'
+      : (origin === 'program' ? ('Forge%20Program.dc.html' + (pid ? '#' + pid : '')) : 'Forge%20Active%20Workout.dc.html')));
+    const commitCtx = { origin: origin, dest: dest, slot: slot, day: day, section: section, week: week, vary: vary, inboxKey: isTemplateBuilder ? 'forge_template_inbox_v1' : (isWorkoutAdd ? 'forge_active_add_inbox_v1' : 'forge_builder_inbox_v1') };
+
+    // equipment glyphs
+    const S = (children, sw) => h('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, children);
+    const P = (d) => h('path', { key: d, d });
+    const EQ_ICON = {
+      Barbell: S([P('M6.5 9v6'), P('M17.5 9v6'), P('M4 10.5v3'), P('M20 10.5v3'), P('M6.5 12h11')]),
+      Dumbbell: S([P('M7 8.5v7'), P('M17 8.5v7'), P('M4.5 10v4'), P('M19.5 10v4'), P('M7 12h10')]),
+      Cable: S([P('M12 3v6'), P('M8.5 9h7l-1 5a2.5 2.5 0 0 1-5 0z')]),
+      Machine: S([P('M5 3v18'), P('M5 7h9a3 3 0 0 1 0 6H9'), P('M9 13v5')]),
+      Bodyweight: S([h('circle', { key: 'c', cx: 12, cy: 6, r: 2.4 }), P('M6 20c0-4.2 2.8-7 6-7s6 2.8 6 7')]),
+    };
+    const checkMark = h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'var(--fl-bronze-bright)', strokeWidth: 2.6, strokeLinecap: 'round', strokeLinejoin: 'round' }, P('M20 6L9 17l-5-5'));
+    const emptyMark = h('span', { style: { width: '18px', height: '18px', borderRadius: '50%', border: '1.5px solid var(--fl-charcoal-500)', display: 'block' } });
+
+    const EQUIP = ['Barbell', 'Dumbbell', 'Cable', 'Machine', 'Bodyweight'];
+    const TYPES = ['Compound', 'Isolation'];
+    const CATS = ['Chest', 'Back', 'Shoulders', 'Legs', 'Arms', 'Core'];
+
+    const DB = [
+      { key: 'bench', name: 'Bench Press', cat: 'Chest', equip: 'Barbell', type: 'Compound', muscles: ['Chest', 'Triceps'] },
+      { key: 'incline_db', name: 'Incline Dumbbell Press', cat: 'Chest', equip: 'Dumbbell', type: 'Compound', muscles: ['Upper Chest', 'Shoulders'] },
+      { key: 'cable_fly', name: 'Cable Fly', cat: 'Chest', equip: 'Cable', type: 'Isolation', muscles: ['Chest'] },
+      { key: 'machine_press', name: 'Machine Chest Press', cat: 'Chest', equip: 'Machine', type: 'Compound', muscles: ['Chest', 'Triceps'] },
+      { key: 'pushup', name: 'Push-Up', cat: 'Chest', equip: 'Bodyweight', type: 'Compound', muscles: ['Chest', 'Core'] },
+      { key: 'deadlift', name: 'Deadlift', cat: 'Back', equip: 'Barbell', type: 'Compound', muscles: ['Back', 'Hamstrings'] },
+      { key: 'row', name: 'Bent-Over Row', cat: 'Back', equip: 'Barbell', type: 'Compound', muscles: ['Back', 'Biceps'] },
+      { key: 'pulldown', name: 'Lat Pulldown', cat: 'Back', equip: 'Cable', type: 'Compound', muscles: ['Lats', 'Biceps'] },
+      { key: 'pullup', name: 'Pull-Up', cat: 'Back', equip: 'Bodyweight', type: 'Compound', muscles: ['Lats', 'Biceps'] },
+      { key: 'cable_row', name: 'Seated Cable Row', cat: 'Back', equip: 'Cable', type: 'Compound', muscles: ['Back', 'Biceps'] },
+      { key: 'ohp', name: 'Overhead Press', cat: 'Shoulders', equip: 'Barbell', type: 'Compound', muscles: ['Shoulders', 'Triceps'] },
+      { key: 'lat_raise', name: 'Dumbbell Lateral Raise', cat: 'Shoulders', equip: 'Dumbbell', type: 'Isolation', muscles: ['Side Delts'] },
+      { key: 'face_pull', name: 'Face Pull', cat: 'Shoulders', equip: 'Cable', type: 'Isolation', muscles: ['Rear Delts'] },
+      { key: 'arnold', name: 'Arnold Press', cat: 'Shoulders', equip: 'Dumbbell', type: 'Compound', muscles: ['Shoulders'] },
+      { key: 'squat', name: 'Back Squat', cat: 'Legs', equip: 'Barbell', type: 'Compound', muscles: ['Quads', 'Glutes'] },
+      { key: 'rdl', name: 'Romanian Deadlift', cat: 'Legs', equip: 'Barbell', type: 'Compound', muscles: ['Hamstrings', 'Glutes'] },
+      { key: 'leg_press', name: 'Leg Press', cat: 'Legs', equip: 'Machine', type: 'Compound', muscles: ['Quads', 'Glutes'] },
+      { key: 'lunge', name: 'Walking Lunge', cat: 'Legs', equip: 'Dumbbell', type: 'Compound', muscles: ['Quads', 'Glutes'] },
+      { key: 'leg_curl', name: 'Leg Curl', cat: 'Legs', equip: 'Machine', type: 'Isolation', muscles: ['Hamstrings'] },
+      { key: 'curl', name: 'Barbell Curl', cat: 'Arms', equip: 'Barbell', type: 'Isolation', muscles: ['Biceps'] },
+      { key: 'pushdown', name: 'Triceps Pushdown', cat: 'Arms', equip: 'Cable', type: 'Isolation', muscles: ['Triceps'] },
+      { key: 'hammer', name: 'Hammer Curl', cat: 'Arms', equip: 'Dumbbell', type: 'Isolation', muscles: ['Biceps', 'Forearms'] },
+      { key: 'skull', name: 'Skull Crusher', cat: 'Arms', equip: 'Barbell', type: 'Isolation', muscles: ['Triceps'] },
+      { key: 'leg_raise', name: 'Hanging Leg Raise', cat: 'Core', equip: 'Bodyweight', type: 'Isolation', muscles: ['Abs'] },
+      { key: 'cable_crunch', name: 'Cable Crunch', cat: 'Core', equip: 'Cable', type: 'Isolation', muscles: ['Abs'] },
+      { key: 'plank', name: 'Plank', cat: 'Core', equip: 'Bodyweight', type: 'Isolation', muscles: ['Core'] },
+    ];
+    const RECENT = ['incline_db', 'ohp', 'cable_fly', 'pushup'];
+
+    // worked-muscle → canonical group, so the muscle filter matches on what an exercise trains
+    const MGROUP = { Chest: 'Chest', 'Upper Chest': 'Chest', Back: 'Back', Lats: 'Back', Shoulders: 'Shoulders', 'Side Delts': 'Shoulders', 'Rear Delts': 'Shoulders', Biceps: 'Arms', Triceps: 'Arms', Forearms: 'Arms', Quads: 'Legs', Glutes: 'Legs', Hamstrings: 'Legs', Abs: 'Core', Core: 'Core' };
+    const MUSCLES = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'];
+    const groupsOf = (x) => { const g = {}; x.muscles.forEach((m) => { if (MGROUP[m]) g[MGROUP[m]] = true; }); return g; };
+
+    const DIFF = { bench: 'Intermediate', incline_db: 'Intermediate', cable_fly: 'Beginner', machine_press: 'Beginner', pushup: 'Beginner', deadlift: 'Advanced', row: 'Intermediate', pulldown: 'Beginner', pullup: 'Advanced', cable_row: 'Beginner', ohp: 'Intermediate', lat_raise: 'Beginner', face_pull: 'Beginner', arnold: 'Intermediate', squat: 'Advanced', rdl: 'Intermediate', leg_press: 'Beginner', lunge: 'Intermediate', leg_curl: 'Beginner', curl: 'Beginner', pushdown: 'Beginner', hammer: 'Beginner', skull: 'Intermediate', leg_raise: 'Intermediate', cable_crunch: 'Beginner', plank: 'Beginner' };
+    const DIFFS = ['Beginner', 'Intermediate', 'Advanced'];
+
+    const q = s.search.trim().toLowerCase();
+    const match = (x) => {
+      if (isReplace && x.name === replacingName) return false;   // can't replace an exercise with itself
+      if (q && !(x.name.toLowerCase().includes(q) || x.muscles.join(' ').toLowerCase().includes(q))) return false;
+      if (s.appliedEquip.length && !s.appliedEquip.includes(x.equip)) return false;
+      if (s.appliedType.length && !s.appliedType.includes(x.type)) return false;
+      if (s.appliedMuscle.length) { const g = groupsOf(x); if (!s.appliedMuscle.some((mm) => g[mm])) return false; }
+      if (s.appliedDiff.length && !s.appliedDiff.includes(DIFF[x.key])) return false;
+      return true;
+    };
+
+    const row = (x) => {
+      const rsel = isBuilder ? (s.picked.indexOf(x.key) >= 0) : (s.selected === x.key);
+      return {
+        key: x.key,
+        name: x.name,
+        sub: x.equip + ' · ' + x.muscles.join(', '),
+        icon: EQ_ICON[x.equip],
+        selected: rsel,
+        borderColor: rsel ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+        bg: rsel ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+        mark: rsel ? checkMark : emptyMark,
+        onSelect: isBuilder ? () => this._togglePicked(x.key) : () => this.setState({ selected: x.key }),
+        onInfo: (e) => { if (e && e.stopPropagation) e.stopPropagation(); window.location.href = 'Forge%20Exercise%20Detail.dc.html'; },
+      };
+    };
+
+    const byKey = {}; DB.forEach((x) => { byKey[x.key] = x; });
+
+    // movement pattern + equipment class drive replacement-quality ranking
+    const PATTERN = { bench: 'H-Push', incline_db: 'H-Push', cable_fly: 'Fly', machine_press: 'H-Push', pushup: 'H-Push', deadlift: 'Hinge', row: 'H-Pull', pulldown: 'V-Pull', pullup: 'V-Pull', cable_row: 'H-Pull', ohp: 'V-Push', lat_raise: 'Lat-Raise', face_pull: 'Rear-Delt', arnold: 'V-Push', squat: 'Squat', rdl: 'Hinge', leg_press: 'Squat', lunge: 'Lunge', leg_curl: 'Leg-Curl', curl: 'Elbow-Flex', pushdown: 'Elbow-Ext', hammer: 'Elbow-Flex', skull: 'Elbow-Ext', leg_raise: 'Core-Flex', cable_crunch: 'Core-Flex', plank: 'Core-Brace' };
+    const EQ_CLASS = { Barbell: 'free', Dumbbell: 'free', Cable: 'machine', Machine: 'machine', Bodyweight: 'body' };
+
+    const searching = q.length > 0;
+    const filtersOn = s.appliedEquip.length > 0 || s.appliedType.length > 0 || s.appliedMuscle.length > 0 || s.appliedDiff.length > 0;
+    const dedupe = !searching && !filtersOn;   // only collapse cross-section duplicates when browsing (spec §3)
+
+    // ── Best replacements (Replace mode) — ranked functional substitutes ──
+    const target = DB.find((x) => x.name === replacingName) || null;   // the exercise being replaced (or null if unknown)
+    let best = [];
+    if (isReplace && target) {
+      best = DB.filter((x) => match(x)).map((x) => {
+        let sc = 0;
+        const patMatch = PATTERN[x.key] === PATTERN[target.key];
+        if (patMatch) sc += 100;                                                   // 1 · same movement pattern
+        const shared = target.muscles.filter((t) => x.muscles.some((m) => m.indexOf(t) >= 0 || t.indexOf(m) >= 0)).length;
+        sc += shared * 25;                                                         // 2 · same primary muscles
+        if (x.equip === target.equip) sc += 15;                                    // 3 · similar equipment
+        else if (EQ_CLASS[x.equip] === EQ_CLASS[target.equip]) sc += 8;
+        if (x.type === target.type) sc += 10;                                      // 4 · similar training intent
+        const pop = RECENT.indexOf(x.key); if (pop >= 0) sc += (RECENT.length - pop); // 5 · history tiebreaker
+        return { x: x, sc: sc, ok: patMatch || shared >= 1 };
+      }).filter((r) => r.ok).sort((a, b) => b.sc - a.sc).slice(0, 5).map((r) => row(r.x));
+    }
+    const bestKeys = {}; best.forEach((b) => { bestKeys[b.key] = true; });
+
+    // My exercises (recents) — drop anything already promoted into Best (when browsing)
+    let mine = RECENT.map((k) => byKey[k]).filter(Boolean).filter(match);
+    if (dedupe) mine = mine.filter((x) => !bestKeys[x.key]);
+    mine = mine.map(row);
+    const mineKeys = {}; mine.forEach((m) => { mineKeys[m.key] = true; });
+
+    // All exercises — omit Best + My rows when browsing; keep everything when searching/filtering
+    const categories = CATS.map((c) => {
+      const items = DB.filter((x) => x.cat === c && match(x) && (!dedupe || (!mineKeys[x.key] && !bestKeys[x.key]))).map(row);
+      return { label: c, count: String(items.length), items };
+    }).filter((c) => c.items.length);
+
+    const hasBest = isReplace && !searching && best.length > 0;
+    const hasMine = mine.length > 0;
+    const hasResults = hasBest || hasMine || categories.length > 0;
+
+    const selectedEx = s.selected ? byKey[s.selected] : null;
+    const pickedCount = s.picked.length;
+    const confirmDisabled = isBuilder ? pickedCount === 0 : !selectedEx;
+    const confirmLabel = isBuilder
+      ? (pickedCount ? ('Add ' + pickedCount + (pickedCount === 1 ? ' exercise' : ' exercises')) : 'Select exercises')
+      : (selectedEx ? (isReplace ? 'Replace with ' + selectedEx.name : 'Add ' + selectedEx.name) : 'Select an exercise');
+
+    // applied-filter chips
+    const removeEquip = (v) => this.setState({ appliedEquip: s.appliedEquip.filter((x) => x !== v) });
+    const removeType = (v) => this.setState({ appliedType: s.appliedType.filter((x) => x !== v) });
+    const removeMuscle = (v) => this.setState({ appliedMuscle: s.appliedMuscle.filter((x) => x !== v) });
+    const removeDiff = (v) => this.setState({ appliedDiff: s.appliedDiff.filter((x) => x !== v) });
+    const appliedChips = s.appliedEquip.map((v) => ({ label: v, onRemove: () => removeEquip(v) }))
+      .concat(s.appliedMuscle.map((v) => ({ label: v, onRemove: () => removeMuscle(v) })))
+      .concat(s.appliedDiff.map((v) => ({ label: v, onRemove: () => removeDiff(v) })))
+      .concat(s.appliedType.map((v) => ({ label: v, onRemove: () => removeType(v) })));
+    const hasFilters = appliedChips.length > 0;
+
+    // filter sheet (draft, apply-based)
+    const chip = (v, draftList, toggler) => {
+      const active = draftList.includes(v);
+      return {
+        label: v,
+        borderColor: active ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+        bg: active ? 'var(--fl-bronze-tint)' : 'transparent',
+        color: active ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)',
+        onToggle: toggler(v),
+      };
+    };
+    const equipChips = EQUIP.map((v) => chip(v, s.draftEquip, (val) => () => this.setState({ draftEquip: this._toggle(this.state.draftEquip, val) })));
+    const muscleChips = MUSCLES.map((v) => chip(v, s.draftMuscle, (val) => () => this.setState({ draftMuscle: this._toggle(this.state.draftMuscle, val) })));
+    const diffChips = DIFFS.map((v) => chip(v, s.draftDiff, (val) => () => this.setState({ draftDiff: this._toggle(this.state.draftDiff, val) })));
+    const typeChips = TYPES.map((v) => chip(v, s.draftType, (val) => () => this.setState({ draftType: this._toggle(this.state.draftType, val) })));
+    const draftCount = s.draftEquip.length + s.draftMuscle.length + s.draftDiff.length + s.draftType.length;
+
+    const filterBtn = h('button', {
+      type: 'button',
+      'aria-label': 'Filter',
+      onClick: () => this.setState({ filterOpen: true, draftEquip: this.state.appliedEquip.slice(), draftType: this.state.appliedType.slice(), draftMuscle: this.state.appliedMuscle.slice(), draftDiff: this.state.appliedDiff.slice() }),
+      style: { position: 'relative', width: '40px', height: '40px', border: 'none', background: 'transparent', color: hasFilters ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    }, [
+      h('svg', { key: 'i', width: 21, height: 21, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, P('M3 5h18l-7 8v5l-4 2v-7z')),
+      hasFilters ? h('span', { key: 'd', style: { position: 'absolute', top: '3px', right: '1px', minWidth: '15px', height: '15px', padding: '0 3px', borderRadius: '999px', background: 'var(--fl-bronze-primary)', color: '#1A1206', fontSize: '9px', fontWeight: 800, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--fl-glow-badge)' } }, String(appliedChips.length)) : null,
+    ]);
+
+    return {
+      ready: true,
+      notReady: false,
+      title: isReplace ? 'Replace Exercise' : 'Add Exercise',
+      isReplace,
+      replacingName,
+      onClose: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = dest); },
+      filterBtn,
+
+      search: s.search,
+      onSearch: (e) => this.setState({ search: e.target.value }),
+
+      hasFilters,
+      appliedChips,
+      onClearFilters: () => this.setState({ appliedEquip: [], appliedType: [], appliedMuscle: [], appliedDiff: [] }),
+
+      hasResults,
+      noResults: !hasResults,
+      hasBest,
+      best,
+      hasMine,
+      mine,
+      categories,
+
+      confirmDisabled,
+      confirmLabel,
+      confirmBg: confirmDisabled ? 'var(--fl-bronze-fill-disabled)' : 'var(--fl-bronze-fill)',
+      confirmBorder: confirmDisabled ? 'var(--fl-bronze-border-disabled)' : 'var(--fl-bronze-metal-border)',
+      confirmColor: confirmDisabled ? 'var(--fl-text-tertiary)' : '#F7F5F1',
+      confirmCursor: confirmDisabled ? 'default' : 'pointer',
+      confirmShadow: confirmDisabled ? 'none' : 'var(--fl-bronze-metal-top-rim), var(--fl-shadow-card)',
+      onConfirm: () => { if (isBuilder) { const items = s.picked.map((k) => byKey[k]).filter(Boolean); if (isWorkoutAdd && isFresh) { try { localStorage.setItem('forge_workout_launch_context_v1', JSON.stringify({ sourceType: 'freestyle', at: Date.now() })); } catch (e) {} } this._commitBuilderMulti(items, commitCtx); return; } if (!selectedEx) return; if (isReplace) this.setState({ persistOpen: true }); else this._commit(selectedEx, commitCtx); },
+
+      // filter sheet
+      filterOpen: s.filterOpen,
+      onCloseFilter: () => this.setState({ filterOpen: false }),
+      equipChips,
+      muscleChips,
+      diffChips,
+      typeChips,
+      applyLabel: draftCount ? 'Apply · ' + draftCount : 'Apply',
+      onApplyFilter: () => this.setState({ appliedEquip: this.state.draftEquip.slice(), appliedType: this.state.draftType.slice(), appliedMuscle: this.state.draftMuscle.slice(), appliedDiff: this.state.draftDiff.slice(), filterOpen: false }),
+      onResetFilter: () => this.setState({ draftEquip: [], draftType: [], draftMuscle: [], draftDiff: [] }),
+
+      // persistence sheet
+      persistOpen: s.persistOpen,
+      onClosePersist: () => this.setState({ persistOpen: false }),
+      persistTitle: isReplace ? 'Apply replacement' : 'Add exercise',
+      persistBlurb: selectedEx ? (isReplace ? 'Swap ' + replacingName + ' for ' + selectedEx.name + '.' : 'Add ' + selectedEx.name + ' to this workout.') : '',
+      onPersistSession: () => this._commit(selectedEx, commitCtx),
+      onPersistFuture: () => this._commit(selectedEx, commitCtx),
+
+      // success toast + undo
+      toastOpen: !!s.toast,
+      toastText: s.toast ? (isReplace ? (replacingName + ' replaced with ' + s.toast.to) : ('Added ' + s.toast.to)) : '',
+      onUndo: () => { if (this._navT) clearTimeout(this._navT); this.setState({ toast: null }); },
+    };
+  }
+}
+</script>
+</body>
+</html>

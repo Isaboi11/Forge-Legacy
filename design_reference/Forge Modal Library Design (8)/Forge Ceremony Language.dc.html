@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-theme.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .cl-h2 { font-family: var(--fl-font-display); font-weight:700; letter-spacing:-0.3px; }
+  .cl-eyebrow { font-size:10px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color: var(--fl-text-bronze-label); }
+  .cl-rule { font-size:14.5px; line-height:1.62; color: var(--fl-text-secondary); text-wrap:pretty; }
+  .cl-rule b { color: var(--fl-text-primary); font-weight:600; }
+  @media print { body { background:#0b0c0d !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; justify-content:center; padding:52px 20px 80px;">
+  <div data-screen-label="Ceremony Language" style="width:840px; max-width:100%; display:flex; flex-direction:column; gap:30px;">
+
+    <!-- masthead -->
+    <div style="position:relative; overflow:hidden; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border); background:linear-gradient(180deg, rgba(191,143,79,0.10), transparent 55%), linear-gradient(180deg, #16130e, #0c0a07); box-shadow:inset 0 1px 0 rgba(191,143,79,0.16), var(--fl-shadow-card); padding:40px 40px 34px;">
+      <span aria-hidden="true" style="position:absolute; top:-40%; right:-8%; width:320px; height:320px; border-radius:50%; background:radial-gradient(circle, rgba(191,143,79,0.14), transparent 66%); pointer-events:none;"></span>
+      <div style="position:relative;">
+        <span class="cl-eyebrow">Internal Reference · Not user-facing</span>
+        <h1 class="cl-h2" style="margin:14px 0 0; font-size:40px; line-height:1.04; color:var(--fl-text-primary);">The Forge Ceremony Language</h1>
+        <p style="margin:16px 0 0; max-width:600px; font-size:15.5px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">Every ceremony in Forge draws from one vocabulary. Nothing is merely <span style="color:var(--fl-text-tertiary);">animated</span> — things are <span style="color:var(--fl-bronze-bright); font-weight:600;">forged</span>: struck, engraved, raised from below, settled under their own weight. This is the shared grammar so any future moment — ranking up, sealing a chapter, a milestone lift — belongs without being reinvented.</p>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:22px;">
+          <sc-for list="{{ tenets }}" as="t" hint-placeholder-count="4">
+            <span style="display:inline-flex; align-items:center; padding:7px 13px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:12px; font-weight:600; color:var(--fl-bronze-bright);">{{ t }}</span>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOUR LAWS -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px;">
+      <sc-for list="{{ laws }}" as="law" hint-placeholder-count="4">
+        <div style="display:flex; flex-direction:column; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-700); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:26px 26px 24px;">
+          <div style="display:flex; align-items:baseline; gap:11px;">
+            <span class="cl-h2" style="font-size:15px; color:var(--fl-bronze-primary);">{{ law.num }}</span>
+            <h2 class="cl-h2" style="margin:0; font-size:22px; color:var(--fl-text-primary);">{{ law.title }}</h2>
+          </div>
+          <p style="margin:9px 0 20px; font-size:13px; line-height:1.5; color:var(--fl-text-tertiary); text-wrap:pretty;">{{ law.blurb }}</p>
+          <div style="display:flex; flex-direction:column; gap:13px;">
+            <sc-for list="{{ law.rules }}" as="r" hint-placeholder-count="4">
+              <div style="display:flex; gap:12px; align-items:flex-start;">
+                <span style="flex:none; margin-top:7px; width:6px; height:6px; transform:rotate(45deg); background:var(--fl-bronze-primary); box-shadow:0 0 6px rgba(191,143,79,0.5);"></span>
+                <span class="cl-rule">{{ r }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- LIGHTING PALETTE -->
+    <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-700); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:30px;">
+      <span class="cl-eyebrow">Lighting</span>
+      <h2 class="cl-h2" style="margin:11px 0 5px; font-size:24px; color:var(--fl-text-primary);">Light has meaning</h2>
+      <p style="margin:0 0 24px; max-width:560px; font-size:14px; line-height:1.55; color:var(--fl-text-tertiary); text-wrap:pretty;">The UI catches light from above — it never emits it. Placement is read through warmth and flare, not brightness alone.</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+        <sc-for list="{{ lights }}" as="lg" hint-placeholder-count="3">
+          <div style="border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-700); background:var(--fl-surface-recessed); overflow:hidden;">
+            <div style="height:96px; position:relative; background:{{ lg.bg }};">
+              <span aria-hidden="true" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:64px; height:64px; border-radius:50%; background:{{ lg.flare }}; box-shadow:{{ lg.glow }};"></span>
+            </div>
+            <div style="padding:15px 16px 17px;">
+              <span style="display:block; font-size:13px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:{{ lg.label }};">{{ lg.name }}</span>
+              <span style="display:block; margin-top:6px; font-size:12.5px; line-height:1.5; color:var(--fl-text-secondary);">{{ lg.use }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- MOTION PRIMITIVES -->
+    <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-700); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:30px;">
+      <span class="cl-eyebrow">Motion Primitives</span>
+      <h2 class="cl-h2" style="margin:11px 0 5px; font-size:24px; color:var(--fl-text-primary);">The forged verbs</h2>
+      <p style="margin:0 0 22px; max-width:600px; font-size:14px; line-height:1.55; color:var(--fl-text-tertiary); text-wrap:pretty;">Eight motions carry every ceremony. Reuse these — don't invent new ones. All run on <span style="font-family:var(--fl-font-display); color:var(--fl-bronze-bright);">ease-out</span>; transform &amp; opacity only, never layout or filter.</p>
+      <div style="display:flex; flex-direction:column; gap:1px; background:var(--fl-charcoal-700); border:1px solid var(--fl-charcoal-700); border-radius:var(--fl-radius-md); overflow:hidden;">
+        <sc-for list="{{ verbs }}" as="v" hint-placeholder-count="8">
+          <div style="display:grid; grid-template-columns:150px 1fr; gap:18px; align-items:baseline; padding:15px 20px; background:var(--fl-surface-recessed);">
+            <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-bronze-bright);">{{ v.name }}</span>
+            <span style="font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">{{ v.desc }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- TIMING STRIP -->
+    <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:linear-gradient(180deg, rgba(191,143,79,0.06), transparent 60%), var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:30px;">
+      <span class="cl-eyebrow">Timing</span>
+      <h2 class="cl-h2" style="margin:11px 0 20px; font-size:24px; color:var(--fl-text-primary);">Anticipation, then release</h2>
+      <div style="display:flex; align-items:stretch; gap:0; flex-wrap:wrap;">
+        <sc-for list="{{ beats }}" as="b" hint-placeholder-count="4">
+          <div style="flex:1; min-width:150px; position:relative; padding:4px 20px 4px 0;">
+            <span style="display:block; font-family:var(--fl-font-display); font-size:13px; font-weight:700; color:var(--fl-bronze-primary);">{{ b.t }}</span>
+            <span style="display:block; margin-top:7px; font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ b.title }}</span>
+            <span style="display:block; margin-top:4px; font-size:12.5px; line-height:1.5; color:var(--fl-text-tertiary);">{{ b.note }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- CEREMONY INVENTORY -->
+    <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-700); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); padding:30px;">
+      <span class="cl-eyebrow">The Lifecycle</span>
+      <h2 class="cl-h2" style="margin:11px 0 22px; font-size:24px; color:var(--fl-text-primary);">Where each ceremony lives</h2>
+      <div style="position:relative; padding-left:30px;">
+        <span aria-hidden="true" style="position:absolute; left:8px; top:8px; bottom:8px; width:2px; background:linear-gradient(180deg, var(--fl-bronze-border), var(--fl-charcoal-700));"></span>
+        <sc-for list="{{ lifecycle }}" as="c" hint-placeholder-count="6">
+          <div style="position:relative; margin-bottom:16px;">
+            <span style="position:absolute; left:-29px; top:15px; width:12px; height:12px; transform:rotate(45deg); background:{{ c.node }}; border:1px solid {{ c.nodeBorder }}; box-shadow:{{ c.nodeGlow }};"></span>
+            <div style="border-radius:var(--fl-radius-md); border:{{ c.border }}; background:{{ c.bg }}; padding:16px 19px;">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                <span style="font-size:15.5px; font-weight:700; color:var(--fl-text-primary);">{{ c.name }}</span>
+                <span style="font-size:11px; font-weight:600; letter-spacing:0.4px; color:{{ c.statusColor }};">{{ c.status }}</span>
+              </div>
+              <p style="margin:5px 0 10px; font-size:13px; line-height:1.5; color:var(--fl-text-secondary); text-wrap:pretty;">{{ c.line }}</p>
+              <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                <sc-for list="{{ c.verbs }}" as="cv" hint-placeholder-count="2">
+                  <span style="display:inline-flex; padding:3px 9px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:10.5px; font-weight:600; letter-spacing:0.3px; color:var(--fl-bronze-bright);">{{ cv }}</span>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- NEVER -->
+    <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-700); background:var(--fl-surface-recessed); box-shadow:var(--fl-shadow-card); padding:28px 30px;">
+      <span class="cl-eyebrow" style="color:var(--fl-text-tertiary);">Never</span>
+      <div style="display:flex; flex-wrap:wrap; gap:x; gap:10px 22px; margin-top:16px;">
+        <sc-for list="{{ nevers }}" as="n" hint-placeholder-count="5">
+          <span style="display:inline-flex; align-items:center; gap:9px; font-size:13.5px; color:var(--fl-text-secondary);"><span aria-hidden="true" style="flex:none; width:15px; height:15px; display:inline-flex; align-items:center; justify-content:center; color:var(--fl-text-tertiary);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></span>{{ n }}</span>
+        </sc-for>
+      </div>
+    </div>
+
+    <span style="text-align:center; font-size:11.5px; letter-spacing:0.4px; color:var(--fl-text-tertiary); padding-top:4px;">Forge Legacy · Ceremony Language v1 · derived from shipped ceremonies</span>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:880,&quot;height&quot;:1400}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      tenets: ['Forged, not animated', 'Weight over flash', 'Anticipation before reveal', 'Permanence is the payoff'],
+
+      laws: [
+        { num: '01', title: 'Motion', blurb: 'Physical, deliberate, heavy. Every object behaves like struck or raised metal.',
+          rules: [
+            'Objects <b>rise from below</b> into place \u2014 they do not fade in from nowhere.',
+            'Metal <b>settles after impact</b>: a small correcting bounce, never a dramatic overshoot.',
+            'Engravings reveal <b>mechanically, left-to-right</b> (a clip wipe) \u2014 never typewriter, never letter pop.',
+            'Crowns and honors <b>fall with weight</b>, animated on their own beat, not attached to what they land on.',
+          ] },
+        { num: '02', title: 'Timing', blurb: 'The pause is part of the emotion. Rushing kills the ceremony.',
+          rules: [
+            '<b>Build anticipation</b> \u2014 reveal the outcome last, the way a broadcast saves the winner.',
+            '<b>Hold a beat</b> (~400\u2013600ms) of stillness before the biggest moment lands.',
+            'Give the eye <b>time to absorb</b> the result before anything else moves.',
+            'Never rush into the next screen \u2014 let the moment finish first.',
+          ] },
+        { num: '03', title: 'Lighting', blurb: 'Warmth reads placement. Light falls from above; the UI catches it.',
+          rules: [
+            '<b>Bronze</b> is the default forge glow \u2014 honors, victory halos, general warmth.',
+            '<b>Silver</b> flares cool and white \u2014 second place, silver honors.',
+            '<b>Gold</b> radiates deep amber \u2014 reserved for the champion alone.',
+            'Glow is <b>restrained</b> \u2014 an ambient halo, never neon, never a light source.',
+          ] },
+        { num: '04', title: 'Particles', blurb: 'Sparks belong to metal. They are consequence, not decoration.',
+          rules: [
+            '<b>Embers drift upward</b> from the point of impact, then fade.',
+            'Particles only appear <b>tied to a strike</b> \u2014 a landing medal, a slammed pedestal.',
+            'A single <b>impact flare</b> may punctuate the moment of contact.',
+            'No confetti. No fireworks. No free-floating sparkles.',
+          ] },
+      ],
+
+      lights: [
+        { name: 'Bronze', use: 'Honors, halos, the default forge warmth.', label: 'var(--fl-bronze-bright)',
+          bg: 'radial-gradient(circle at 50% 40%, #241a0f, #0c0a07)', flare: 'radial-gradient(circle, rgba(230,202,156,0.6), rgba(191,143,79,0.2) 45%, transparent 70%)', glow: '0 0 34px 6px rgba(191,143,79,0.35)' },
+        { name: 'Silver', use: 'Second place. Cool, clean, white flare.', label: '#C7CAD0',
+          bg: 'radial-gradient(circle at 50% 40%, #23242a, #0c0d0f)', flare: 'radial-gradient(circle, rgba(236,238,242,0.7), rgba(190,193,199,0.2) 45%, transparent 70%)', glow: '0 0 30px 5px rgba(190,193,199,0.28)' },
+        { name: 'Gold', use: 'The champion, and only the champion.', label: '#E3C58F',
+          bg: 'radial-gradient(circle at 50% 40%, #2c1f0e, #0c0a05)', flare: 'radial-gradient(circle, rgba(247,222,168,0.8), rgba(205,160,99,0.28) 45%, transparent 70%)', glow: '0 0 40px 8px rgba(205,160,99,0.42)' },
+      ],
+
+      verbs: [
+        { name: 'Rise', desc: 'Pedestals and cards scale up from the floor; content translates up into place. The foundational entrance \u2014 nothing important simply appears.' },
+        { name: 'Strike', desc: 'A medal or honor drops from above and lands hard, scaling to rest. Used for the moment a reward is awarded.' },
+        { name: 'Slam', desc: 'The heaviest impact, reserved for the champion. Falls fast, compresses on landing, corrects. Everything else defers to it.' },
+        { name: 'Crown-fall', desc: 'Descends slowly with weight and a single metallic settle-bounce. Always its own beat, never riding another element.' },
+        { name: 'Engrave', desc: 'A left-to-right clip wipe that presses text into metal, letter-spacing tightening as it sets. The signature Forge verb.' },
+        { name: 'Flash', desc: 'A single radial flare at the instant of contact. One pulse, then gone \u2014 punctuation, not lighting.' },
+        { name: 'Ember-drift', desc: 'Fine sparks rise from an impact point and fade upward. Only ever near struck metal.' },
+        { name: 'Camera', desc: 'A subtle scale-out across the whole scene for cinematic depth. Barely perceptible \u2014 felt, not seen.' },
+      ],
+
+      beats: [
+        { t: '0.0s', title: 'Set the stage', note: 'Context and countdown. The scene is empty, waiting.' },
+        { t: '~2\u20134s', title: 'Build the order', note: 'Lowest place first, staggered upward. Tension accumulates.' },
+        { t: 'the pause', title: 'Hold', note: 'A beat of stillness. The room goes quiet before the winner.' },
+        { t: 'the release', title: 'Reveal & settle', note: 'The champion lands. Engrave, glow, then let it breathe before the CTA.' },
+      ],
+
+      lifecycle: (() => {
+        const done = { status: 'Shipped', statusColor: 'var(--fl-bronze-bright)', node: 'var(--fl-bronze-metallic)', nodeBorder: 'var(--fl-bronze-primary)', nodeGlow: '0 0 9px rgba(191,143,79,0.5)', border: '1px solid var(--fl-charcoal-700)', bg: 'var(--fl-surface-recessed)' };
+        const deferred = { status: 'Deferred', statusColor: 'var(--fl-text-tertiary)', node: 'var(--fl-charcoal-600)', nodeBorder: 'var(--fl-charcoal-500)', nodeGlow: 'none', border: '1px dashed var(--fl-charcoal-600)', bg: 'transparent' };
+        return [
+          Object.assign({ name: 'Challenge Invitation', line: 'Will you answer? The poster and stakes make the ask feel like a duel.', verbs: ['Rise'] }, done),
+          Object.assign({ name: 'Challenge Start', line: 'The competition has begun \u2014 the "it begins" moment right after accepting.', verbs: ['Rise', 'Flash'] }, deferred),
+          Object.assign({ name: 'Podium Reveal', line: 'How it ended. Staggered build, held pause, champion slam and crown.', verbs: ['Rise', 'Slam', 'Crown-fall', 'Engrave', 'Ember-drift', 'Camera'] }, done),
+          Object.assign({ name: 'Final Results', line: 'The complete story \u2014 full standings after the reveal.', verbs: ['Rise'] }, done),
+          Object.assign({ name: 'Honor Engraving', line: 'Your Legacy permanently changes. The medal is struck and engraved onto the timeline.', verbs: ['Strike', 'Engrave', 'Flash', 'Ember-drift'] }, done),
+          Object.assign({ name: 'Trophy Case / Hall of Champions', line: 'History remembers \u2014 the archive worth revisiting.', verbs: ['Rise'] }, done),
+        ];
+      })(),
+
+      nevers: ['Confetti', 'Fireworks', 'Free-floating sparkles', 'Typewriter text', 'Dramatic overshoot', 'Rushing to the next screen', 'Neon glow', 'Light the UI emits'],
+    };
+  }
+}
+</script>
+</body>
+</html>

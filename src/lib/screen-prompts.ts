@@ -67,6 +67,29 @@ export async function clearScreenPrompts(): Promise<void> {
 }
 
 /**
+ * ⚠ THE GUIDED TOUR IS RETIRED — PO decision, 2026-09-20. FLIP THIS ONE CONSTANT TO BRING IT BACK.
+ *
+ * NOTHING HAS BEEN DELETED, and that is the whole point of doing it this way. All 105 authored steps,
+ * `tour-plan.ts`'s planner, the phase table, every `<TourAnchor>` and every `<ScreenTour>` call site
+ * stay exactly where they are and keep type-checking; `node --test` still holds the step data. This
+ * constant is the single gate in front of all of it: `getGuidedTipsEnabled()` is the only read of the
+ * stored preference, and `useTour` refuses to arm when tips are off, so answering `false` here stops
+ * the guided run AND every per-surface banner at once.
+ *
+ * ⚠ IT ALSO HIDES THE ACCOUNT SETTINGS ROW (`account-settings.tsx`). A visible "Guided Tips" switch
+ *   over a retired system is a control that promises something the product no longer intends to give.
+ *
+ * The retirement reverses cleanly: set this to `false` and the stored preference governs again, with
+ * an absent value meaning on. Athletes who explicitly switched tips off keep that; nobody is walked
+ * through anything twice, because the seen-set was never cleared.
+ *
+ * ⚠ THIS CONTRADICTS TWO LOCKED AMENDMENTS — Onboarding-Amendment-003, which deliberately reversed
+ *   the original "no feature tour" non-behavior, and -004, which phased it. Both need an amendment of
+ *   their own before this is anything but a reversible product switch.
+ */
+export const TOUR_RETIRED = true;
+
+/**
  * The Guided Tips master switch (Account Settings).
  *
  * Deliberately SEPARATE from the seen-set. Deriving "tips are on" from `seen.length === 0` would make
@@ -74,6 +97,7 @@ export async function clearScreenPrompts(): Promise<void> {
  * its own state. This is an explicit preference: absent means on, which is the first-run default.
  */
 export async function getGuidedTipsEnabled(): Promise<boolean> {
+  if (TOUR_RETIRED) return false;
   try {
     return (await AsyncStorage.getItem(TIPS_KEY)) !== 'off';
   } catch {

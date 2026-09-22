@@ -159,6 +159,8 @@ export function CoachBubble() {
      second copy of state that can go stale against the nudge it belongs to. */
   const [nudge, setNudge] = useState<{ def: NudgeDef; line: string } | null>(null);
   const [nudgeOpen, setNudgeOpen] = useState(false);
+  /** Lifetime sessions, from the same read as the nudge. Null until known — see `introducing`. */
+  const [sessions, setSessions] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -168,6 +170,7 @@ export function CoachBubble() {
       const [signals, history] = await Promise.all([fetchNudgeSignals(), fetchNudgeHistory()]);
       /* Null signals means 0179 has not been applied, or the read failed. Either way: say nothing. */
       if (!alive || !signals) return;
+      setSessions(signals.sessions);
       const chosen = chooseNudge(signals, history, Date.now());
       setNudge(chosen ? { def: chosen, line: chosen.line(signals) } : null);
     })();
@@ -245,7 +248,14 @@ export function CoachBubble() {
    * WHICH LINE, WHEN BOTH ARE TRUE. The introduction wins: a note FROM Holt about a draft you left in the
    * builder only makes sense once you know there is a Holt. Everyone sees this exactly once.
    */
-  const introducing = met === false;
+  /*
+   * ⚠ NOT ON ARRIVAL — PO, 2026-09-21: *"Coach Holt in the bottom right doesn't need to say anything
+   * right now."* A brand-new athlete's first screen already asks one thing of them (the first workout),
+   * and a speech bubble beside it was a second voice competing for the same tap. The coin is still there
+   * and still opens him; the introduction simply waits until the first session is logged, when there is
+   * something for a coach to build on. Unknown (`null`) reads as "not yet", so nothing flashes.
+   */
+  const introducing = met === false && (sessions ?? 0) > 0;
   /* Introduction, then the draft they already started, then an invitation. See `nudge` above. */
   const line = introducing
     ? 'I build the training. Tap me for a program or a session.'

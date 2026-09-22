@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <script src="forge-gate.js"></script>
+  <script src="forge-communities.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .ds-input { width:100%; font-family:var(--fl-font-sans); font-size:14.5px; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); padding:12px 13px 12px 40px; outline:none; transition:border-color 160ms ease; }
+  .ds-input:focus { border-color:var(--fl-bronze-border); background:var(--fl-charcoal-800); box-shadow:0 0 0 3px rgba(191,143,79,0.12), 0 4px 16px rgba(0,0,0,0.4); }
+  .ds-input::placeholder { color:var(--fl-text-tertiary); }
+  .ds-filters { -webkit-mask-image:linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%); mask-image:linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%); }
+  .ds-skel { background:linear-gradient(90deg, var(--fl-charcoal-800) 25%, var(--fl-charcoal-700) 40%, var(--fl-charcoal-800) 60%); background-size:200% 100%; animation:dsShimmer 1.5s ease-in-out infinite; border-radius:var(--fl-radius-sm); }
+  @keyframes dsRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes dsFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes dsShimmer { 0% { background-position:150% 0; } 100% { background-position:-150% 0; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } .ds-skel { animation:none !important; background:var(--fl-charcoal-800); } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Discover Communities" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <div style="flex:none; position:relative; z-index:5;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Discover Communities" on-back="{{ goBack }}" hint-size="100%,56px"></x-import>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:12px 20px 34px;">
+
+      <!-- ═══ SEARCH ═══ -->
+      <div style="position:relative; animation:dsRise 360ms var(--fl-ease-out) both;">
+        <span style="position:absolute; left:13px; top:50%; transform:translateY(-50%); display:inline-flex; color:var(--fl-text-tertiary); pointer-events:none;">{{ searchIcon }}</span>
+        <input class="ds-input" type="text" value="{{ query }}" placeholder="Search communities..." autocapitalize="none" onInput="{{ onSearch }}">
+      </div>
+
+      <!-- ═══ CATEGORY FILTERS (quick re-filter once browsing) ═══ -->
+      <sc-if value="{{ showChips }}" hint-placeholder-val="{{ true }}">
+        <div class="fl-scroll ds-filters" style="display:flex; gap:8px; overflow-x:auto; padding:14px 6px 2px; margin:0 -6px;">
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="5">
+            <button type="button" onClick="{{ f.select }}" style="{{ f.style }}">{{ f.label }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- ═══ BROWSE BY CATEGORY (default discovery state) ═══ -->
+      <sc-if value="{{ showBrowse }}" hint-placeholder-val="{{ false }}">
+        <div style="margin:18px 0 4px; animation:dsRise 360ms var(--fl-ease-out) both;">
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:0 2px;">Browse by category</span>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
+            <sc-for list="{{ browseCats }}" as="c" hint-placeholder-count="6">
+              <button type="button" onClick="{{ c.select }}" style="display:flex; flex-direction:column; align-items:flex-start; gap:8px; text-align:left; padding:14px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); cursor:pointer; transition:transform 130ms var(--fl-ease-out), border-color 160ms ease;" style-active="transform:scale(0.98); border-color:var(--fl-bronze-border);">
+                <span style="width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 50% 32%, rgba(191,143,79,0.22), transparent 72%), var(--fl-surface-recessed); box-shadow:0 0 0 1.5px var(--fl-bronze-border), var(--fl-glow-subtle); color:var(--fl-bronze-bright);">{{ c.crest }}</span>
+                <span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; color:var(--fl-text-primary); line-height:1.15;">{{ c.label }}</span>
+                <span style="font-size:12px; line-height:1.35; color:var(--fl-text-secondary);">{{ c.blurb }}</span>
+                <span style="font-size:10.5px; font-weight:600; letter-spacing:0.3px; color:var(--fl-text-tertiary);">{{ c.countLabel }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ═══ RESULTS ═══ -->
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin:22px 4px 12px;">
+        <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ resultsLabel }}</span>
+        <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ resultsCount }}</span>
+      </div>
+
+      <sc-if value="{{ showSkeleton }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <sc-for list="{{ skeletons }}" as="k" hint-placeholder-count="3">
+            <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); padding:15px;">
+              <div style="display:flex; align-items:flex-start; gap:13px;">
+                <span class="ds-skel" style="width:52px; height:52px; flex:none; border-radius:var(--fl-radius-md);"></span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:8px; padding-top:3px;">
+                  <span class="ds-skel" style="display:block; width:58%; height:15px;"></span>
+                  <span class="ds-skel" style="display:block; width:82%; height:12px;"></span>
+                </div>
+                <span class="ds-skel" style="width:70px; height:22px; flex:none; border-radius:var(--fl-radius-pill);"></span>
+              </div>
+              <div style="display:flex; gap:16px; margin-top:14px;">
+                <span class="ds-skel" style="width:88px; height:12px;"></span>
+                <span class="ds-skel" style="width:104px; height:12px;"></span>
+              </div>
+              <span class="ds-skel" style="display:block; width:100%; height:42px; margin-top:14px; border-radius:var(--fl-radius-md);"></span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showResults }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <sc-for list="{{ communities }}" as="s" hint-placeholder-count="4">
+            <div role="button" tabindex="0" onClick="{{ s.openDetail }}" style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden; cursor:pointer; animation:dsRise 420ms var(--fl-ease-out) both; transition:transform 130ms var(--fl-ease-out), border-color 160ms ease;" style-active="transform:scale(0.992); border-color:var(--fl-bronze-border);">
+              <div style="display:flex; align-items:flex-start; gap:13px; padding:15px 15px 0;">
+                <span style="width:52px; height:52px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 50% 32%, rgba(191,143,79,0.24), transparent 72%), var(--fl-surface-recessed); box-shadow:0 0 0 2px var(--fl-bronze-primary), var(--fl-glow-subtle); color:var(--fl-bronze-bright);">{{ s.crest }}</span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                  <span style="font-family:var(--fl-font-display); font-size:16.5px; font-weight:600; letter-spacing:-0.1px; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ s.name }}</span>
+                  <span style="font-size:12.5px; line-height:1.4; color:var(--fl-text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ s.motto }}</span>
+                  <sc-if value="{{ s.mostActive }}" hint-placeholder-val="{{ false }}">
+                    <span style="display:inline-flex; align-items:center; gap:5px; margin-top:3px; font-size:10.5px; font-weight:600; letter-spacing:0.4px; color:var(--fl-bronze-primary);"><span style="display:inline-flex;">{{ s.sparkIcon }}</span>Most active this week</span>
+                  </sc-if>
+                </div>
+                <span style="{{ s.tagStyle }}"><span style="display:inline-flex;">{{ s.tagIcon }}</span>{{ s.tagLabel }}</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:22px; padding:12px 15px 0;">
+                <sc-for list="{{ s.stats }}" as="st" hint-placeholder-count="2">
+                  <span style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--fl-text-tertiary);"><span style="display:inline-flex; color:var(--fl-text-tertiary);">{{ st.icon }}</span>{{ st.text }}</span>
+                </sc-for>
+              </div>
+              <div style="padding:14px 15px 15px;">
+                <button type="button" onClick="{{ s.action }}" style="{{ s.btnStyle }}" style-active="transform:scale(0.99); opacity:0.9;"><span style="display:inline-flex;">{{ s.btnIcon }}</span>{{ s.btnLabel }}</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- ═══ EMPTY ═══ -->
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; align-items:center; text-align:center; padding:56px 26px 0; animation:dsFade 320ms var(--fl-ease-out) both;">
+          <span style="width:70px; height:70px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:radial-gradient(circle at 50% 34%, rgba(191,143,79,0.16), transparent 72%); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle); color:var(--fl-bronze-bright);">{{ emptyIcon }}</span>
+          <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-text-primary); margin-top:18px;">{{ emptyTitle }}</span>
+          <span style="font-size:13.5px; line-height:1.5; color:var(--fl-text-secondary); margin-top:8px; max-width:250px;">{{ emptyText }}</span>
+          <button type="button" onClick="{{ goCreate }}" style="margin-top:22px; display:inline-flex; align-items:center; gap:9px; padding:12px 20px; border-radius:var(--fl-radius-md); background:transparent; border:1px solid var(--fl-bronze-border); color:var(--fl-bronze-bright); font-size:13.5px; font-weight:600; cursor:pointer; transition:transform 120ms var(--fl-ease-out), background 160ms ease;" style-active="transform:scale(0.98); background:rgba(191,143,79,0.06);"><span style="display:inline-flex;">{{ createGlyph }}</span>Create a Community</button>
+        </div>
+      </sc-if>
+
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:34px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:dsRise 260ms var(--fl-ease-out) both;">
+      <span style="display:inline-flex; color:{{ toastIconColor }}; flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+
+  <!-- Forged grain -->
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false, toastMsg: null, query: '', category: 'All', membership: {}, loading: true };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) {
+        const cs = window.ForgeCommunities; const seed = {};
+        if (cs) cs.all().forEach(x => { const st = cs.state(x.id); if (st) seed[x.id] = st; });
+        this.setState({ ready: true, membership: seed });
+        this._ldT = setTimeout(() => this.setState({ loading: false }), 650);
+      }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); if (this._navT) clearTimeout(this._navT); if (this._ldT) clearTimeout(this._ldT); }
+
+  _toast(msg, tone) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastTone: tone || 'bronze' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2400); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const S = this.state;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.8 });
+    const svg = (d, size, sw) => h('svg', { width: size || 17, height: size || 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(d) ? d : [d]).map((p, i) => h('path', { key: i, d: p })));
+
+    // ── Icons ──
+    const searchIcon = h('svg', { width: 17, height: 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 10.5, cy: 10.5, r: 6 }), h('path', { d: 'M15 15l5 5' }));
+    const checkIcon = h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.3, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M5 12.5l4 4 10-10' }));
+    const globeIcon = h('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 12, r: 8.5 }), h('path', { d: 'M3.5 12h17' }), h('path', { d: 'M12 3.5c2.4 2.3 3.7 5.3 3.7 8.5S14.4 18.2 12 20.5c-2.4-2.3-3.7-5.3-3.7-8.5S9.6 5.8 12 3.5z' }));
+    const lockIcon = h('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 5, y: 10.5, width: 14, height: 9, rx: 2 }), h('path', { d: 'M8 10.5V8a4 4 0 0 1 8 0v2.5' }));
+    const membersGlyph = h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 7, r: 2.3 }), h('circle', { cx: 6, cy: 10, r: 2 }), h('circle', { cx: 18, cy: 10, r: 2 }), h('path', { d: 'M8.6 17.5a3.5 3.5 0 0 1 6.8 0' }), h('path', { d: 'M2.8 17a3 3 0 0 1 4.4-2.4' }), h('path', { d: 'M21.2 17a3 3 0 0 0-4.4-2.4' }));
+    const activityGlyph = h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M3 12h4l2.5 6 4-13 2.5 7H21' }));
+    const plusIcon = h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M12 5v14M5 12h14' }));
+    const communityGlyph = (sz, sw) => h('svg', { width: sz || 26, height: sz || 26, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 7, r: 2.4 }), h('circle', { cx: 5.5, cy: 10.5, r: 2.1 }), h('circle', { cx: 18.5, cy: 10.5, r: 2.1 }), h('path', { d: 'M8.4 17.5a3.6 3.6 0 0 1 7.2 0' }), h('path', { d: 'M2.4 17.5a3.2 3.2 0 0 1 4.8-2.6' }), h('path', { d: 'M21.6 17.5a3.2 3.2 0 0 0-4.8-2.6' }));
+    const sparkIcon = h('span', { style: { display: 'inline-flex' } }, ic('flame', 12, 1.9));
+
+    // ── Public communities — sourced from the shared store (single source of truth,
+    //    includes creator-made communities). Discover is a view over ForgeCommunities. ──
+    const store = window.ForgeCommunities;
+    const COMMUNITIES = (store && store.all ? store.all() : []).map(c => ({
+      id: c.id, name: c.name, motto: c.tagline || c.motto || '', cat: c.category || 'Community',
+      crest: c.crest || 'squad', members: c.members || 0,
+      posts: (c.postsPerWeek != null ? c.postsPerWeek : (c.posts || 0)),
+      join: c.join || 'public', tags: c.tags || ''
+    }));
+    const mostActiveId = COMMUNITIES.length ? COMMUNITIES.reduce((a, b) => (b.posts > a.posts ? b : a), COMMUNITIES[0]).id : null;
+    const CATLIST = (store && store.categories) ? store.categories() : [];
+    const CATS = ['All'].concat(CATLIST.map(c => c.id));
+
+    // Per-category counts drive the browse grid.
+    const catCounts = {};
+    COMMUNITIES.forEach(c => { catCounts[c.cat] = (catCounts[c.cat] || 0) + 1; });
+    const browseCats = CATLIST.map(c => {
+      const cnt = catCounts[c.id] || 0;
+      return {
+        key: c.id, label: c.id, blurb: c.blurb || '',
+        crest: h('span', { style: { display: 'inline-flex' } }, ic(c.crest, 22, 1.7)),
+        countLabel: cnt === 0 ? 'Be the first' : (cnt + (cnt === 1 ? ' community' : ' communities')),
+        select: () => this.setState({ category: c.id, query: '' }),
+      };
+    });
+
+    // ── Filters ──
+    const chip = (active) => ({ flex: 'none', padding: '8px 15px', borderRadius: 'var(--fl-radius-pill)', border: '1px solid ' + (active ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-500)'), background: active ? 'var(--fl-bronze-metallic)' : 'var(--fl-surface-card)', color: active ? '#1A1206' : 'var(--fl-text-primary)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'background 180ms var(--fl-ease-out), color 180ms var(--fl-ease-out), border-color 180ms ease' });
+    const filters = CATS.map(cat => ({ key: cat, label: cat, style: chip(S.category === cat), select: () => this.setState({ category: cat }) }));
+
+    // ── Filtering ──
+    const q = S.query.trim().toLowerCase();
+    const filtered = COMMUNITIES.filter(s => (S.category === 'All' || s.cat === S.category) && (!q || s.name.toLowerCase().includes(q) || s.motto.toLowerCase().includes(q) || s.cat.toLowerCase().includes(q) || (s.tags || '').includes(q)));
+
+    // ── Tag styles (uniform width so Public / Private align) ──
+    const tagBase = { flex: 'none', minWidth: '86px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '4px 10px', borderRadius: 'var(--fl-radius-pill)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.3px' };
+    const tagPublic = Object.assign({}, tagBase, { background: 'rgba(110,142,116,0.13)', border: '1px solid rgba(110,142,116,0.34)', color: '#8FB295' });
+    const tagPrivate = Object.assign({}, tagBase, { background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border-subtle)', color: 'var(--fl-bronze-bright)' });
+
+    // ── Action button styles ──
+    const btnJoin = { width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '11px', borderRadius: 'var(--fl-radius-md)', border: '1px solid var(--fl-bronze-border)', background: 'var(--fl-bronze-fill)', color: 'var(--fl-bronze-bright)', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--fl-glow-subtle)', transition: 'transform 120ms var(--fl-ease-out), opacity 120ms ease' };
+    const btnRequest = { width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '11px', borderRadius: 'var(--fl-radius-md)', border: '1px solid var(--fl-bronze-border)', background: 'transparent', color: 'var(--fl-bronze-bright)', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer', transition: 'transform 120ms var(--fl-ease-out), background 160ms ease' };
+    const btnDone = { width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '11px', borderRadius: 'var(--fl-radius-md)', border: '1px solid var(--fl-charcoal-600)', background: 'var(--fl-charcoal-800)', color: 'var(--fl-text-secondary)', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer', transition: 'background 160ms ease' };
+
+    const fmt = (n) => n >= 1000 ? (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'k' : ('' + n);
+
+    const communities = filtered.map(s => {
+      const state = S.membership[s.id] || null;
+      const isPublic = s.join === 'public';
+      const openDetail = () => { const cs = window.ForgeCommunities; if (cs) cs.setActive(s.id); else { try { window.localStorage.setItem('forge.community', s.id); } catch (e) {} } const joined = (S.membership[s.id] || (cs && cs.state(s.id))) === 'joined'; window.location.href = joined ? 'Community%20Home.dc.html' : 'Community%20Profile.dc.html'; };
+      let btnStyle, btnLabel, btnIcon, action;
+      if (state === 'joined') {
+        btnStyle = btnDone; btnLabel = 'Joined'; btnIcon = checkIcon;
+        action = (e) => { if (e && e.stopPropagation) e.stopPropagation(); openDetail(); };
+      } else if (state === 'requested') {
+        btnStyle = btnDone; btnLabel = 'Request Sent'; btnIcon = checkIcon;
+        action = (e) => { if (e && e.stopPropagation) e.stopPropagation(); try { if (window.ForgeCommunities) window.ForgeCommunities.withdraw(s.id); } catch (er) {} this.setState(st => { const m = Object.assign({}, st.membership); delete m[s.id]; return { membership: m }; }); this._toast('Request to ' + s.name + ' withdrawn', 'bronze'); };
+      } else if (isPublic) {
+        btnStyle = btnJoin; btnLabel = 'Join Community'; btnIcon = plusIcon;
+        action = (e) => { if (e && e.stopPropagation) e.stopPropagation(); try { if (window.ForgeCommunities) window.ForgeCommunities.join(s.id); } catch (er) {} this.setState(st => ({ membership: Object.assign({}, st.membership, { [s.id]: 'joined' }) })); try { if (window.ForgeGate) window.ForgeGate.unlock('community_joined'); } catch (er) {} this._toast('You joined ' + s.name, 'positive'); };
+      } else {
+        btnStyle = btnRequest; btnLabel = 'Request to Join'; btnIcon = plusIcon;
+        action = (e) => { if (e && e.stopPropagation) e.stopPropagation(); try { if (window.ForgeCommunities) window.ForgeCommunities.request(s.id); } catch (er) {} this.setState(st => ({ membership: Object.assign({}, st.membership, { [s.id]: 'requested' }) })); this._toast('Request sent to ' + s.name, 'bronze'); };
+      }
+      const tagStyle = isPublic ? tagPublic : tagPrivate;
+      const tagLabel = isPublic ? 'Public' : 'Private';
+      const tagIcon = isPublic ? globeIcon : lockIcon;
+      return {
+        key: s.id, name: s.name, motto: s.motto,
+        crest: h('span', { style: { display: 'inline-flex' } }, ic(s.crest, 26, 1.6)),
+        mostActive: s.id === mostActiveId, sparkIcon: sparkIcon,
+        tagStyle: tagStyle,
+        tagIcon: h('span', { style: { display: 'inline-flex' } }, tagIcon),
+        tagLabel: tagLabel,
+        stats: [
+          { key: 'm', icon: h('span', { style: { display: 'inline-flex' } }, membersGlyph), text: fmt(s.members) + ' members' },
+          { key: 'p', icon: h('span', { style: { display: 'inline-flex' } }, activityGlyph), text: s.posts + ' posts/week' },
+        ],
+        openDetail: openDetail,
+        btnStyle: btnStyle, btnLabel: btnLabel, btnIcon: h('span', { style: { display: 'inline-flex' } }, btnIcon), action: action,
+      };
+    });
+
+    const n = filtered.length;
+    const toastColor = S.toastTone === 'positive' ? '#6E8E74' : 'var(--fl-icon-bronze)';
+    const searching = q.length > 0;
+    const emptyTitle = searching ? 'No communities found' : 'No communities in this category';
+    const emptyText = searching ? 'Try another search or category.' : 'Check back later, or start one yourself.';
+
+    return {
+      ready: true, notReady: false,
+      searchIcon: searchIcon, query: S.query, onSearch: (e) => this.setState({ query: e.target.value }),
+      filters: filters,
+      browseCats: browseCats,
+      showBrowse: S.category === 'All' && q.length === 0,
+      showChips: !(S.category === 'All' && q.length === 0),
+      resultsLabel: S.category === 'All' ? 'Public Communities' : S.category,
+      resultsCount: n + (n === 1 ? ' community' : ' communities'),
+      showSkeleton: S.loading, showResults: !S.loading && n > 0, isEmpty: !S.loading && n === 0, communities: communities,
+      skeletons: [{ key: 'k1' }, { key: 'k2' }, { key: 'k3' }],
+
+      emptyIcon: h('span', { style: { display: 'inline-flex' } }, communityGlyph(30, 1.6)),
+      emptyTitle: emptyTitle, emptyText: emptyText,
+      createGlyph: h('span', { style: { display: 'inline-flex' } }, plusIcon),
+      goCreate: () => { window.location.href = 'Create%20Community.dc.html'; },
+
+      goBack: () => {
+        // Unwind in-screen state first: a category filter or active search returns to the browse grid.
+        if (S.category !== 'All' || (S.query && S.query.trim())) { this.setState({ category: 'All', query: '' }); return; }
+        var sameApp = false; try { sameApp = !!document.referrer && new URL(document.referrer).origin === window.location.origin; } catch (e) {}
+        if (sameApp) window.history.back(); else window.location.href = 'Community%20Home.dc.html';
+      },
+      toastOpen: !!S.toastMsg, toastMsg: S.toastMsg || '', toastIcon: communityGlyph(18, 1.7), toastIconColor: toastColor,
+    };
+  }
+}
+</script>
+</body>
+</html>

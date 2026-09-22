@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="forge-theme.js"></script>
+<script src="forge-user.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#0a0b0d; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-bright); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-primary); }
+  .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+  .fl-scroll { scrollbar-width: none; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="Trophy Case" style="width:404px; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.34), rgba(5,5,5,0.34)), #050505 url('assets/forge-slate2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+    <!-- header -->
+    <div style="flex:none; position:relative; z-index:6; background:linear-gradient(180deg, #0a0b0c, rgba(10,11,12,0.85)); border-bottom:1px solid var(--fl-charcoal-700);">
+      <div style="height:56px; display:flex; align-items:center; gap:6px; padding:0 8px;">
+        <button onClick="{{ back }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+        <span style="flex:1; font-size:11px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-primary);">Trophy Case</span>
+        <span style="width:44px;"></span>
+      </div>
+      <div style="display:flex; align-items:center; gap:13px; padding:2px 22px 13px;">
+        <span style="width:46px; height:46px; flex:none; border-radius:50%; background:radial-gradient(circle at 42% 34%, #453322, #1a140e); border:1px solid var(--fl-bronze-primary); display:flex; align-items:center; justify-content:center; font-family:var(--fl-font-display); font-size:16px; font-weight:700; color:var(--fl-bronze-bright); box-shadow:inset 0 1px 4px rgba(0,0,0,0.55);">{{ initials }}</span>
+        <div style="flex:1; min-width:0;">
+          <span style="display:block; font-family:var(--fl-font-display); font-size:20px; font-weight:600; letter-spacing:-0.3px; color:var(--fl-text-primary); line-height:1.1;">{{ name }}</span>
+          <span style="display:block; font-size:11.5px; color:var(--fl-text-tertiary); margin-top:2px;">{{ handle }}</span>
+        </div>
+      </div>
+      <!-- quiet legacy subline -->
+      <div style="display:flex; align-items:center; gap:9px; padding:0 22px 15px;">
+        <span style="font-size:9.5px; font-weight:700; letter-spacing:1.7px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Competitive Legacy</span>
+        <span style="flex:1; height:1px; background:var(--fl-charcoal-700);"></span>
+        <span style="font-size:10.5px; color:var(--fl-text-tertiary);">{{ subline }}</span>
+      </div>
+      <!-- medal tally -->
+      <div style="display:flex; margin:0 22px 16px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); overflow:hidden;">
+        <sc-for list="{{ tally }}" as="m" hint-placeholder-count="3">
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; padding:12px 6px; border-right:{{ m.br }};">
+            <span style="display:inline-flex;">{{ m.glyph }}</span>
+            <span style="font-family:var(--fl-font-display); font-size:21px; font-weight:700; color:{{ m.color }}; line-height:1;">{{ m.count }}</span>
+            <span style="font-size:8.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ m.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- scroll -->
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:18px 20px 30px;">
+      <!-- career record -->
+      <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:0 2px 12px;">Career Record</span>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--fl-charcoal-700); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); overflow:hidden;">
+        <sc-for list="{{ career }}" as="c" hint-placeholder-count="4">
+          <div style="display:flex; align-items:baseline; gap:8px; padding:13px 15px; background:var(--fl-surface-card);">
+            <span style="font-family:var(--fl-font-display); font-size:23px; font-weight:700; letter-spacing:-0.5px; color:var(--fl-text-primary); line-height:1;">{{ c.value }}</span>
+            <span style="font-size:11px; font-weight:600; color:var(--fl-text-tertiary);">{{ c.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex; align-items:center; gap:18px; margin-top:9px; padding:0 4px;">
+        <span style="font-size:11px; color:var(--fl-text-tertiary);">Best event <span style="color:var(--fl-text-secondary); font-weight:600;">{{ bestEvent }}</span></span>
+        <span style="font-size:11px; color:var(--fl-text-tertiary);">Longest streak <span style="color:var(--fl-text-secondary); font-weight:600;">{{ streak }}</span></span>
+      </div>
+
+      <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:24px 2px 13px;">Championships</span>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:11px;">
+        <sc-for list="{{ champTiles }}" as="t" hint-placeholder-count="4">
+          <div role="button" tabindex="0" onClick="{{ t.open }}" style="position:relative; overflow:hidden; display:flex; flex-direction:column; align-items:center; text-align:center; border-radius:var(--fl-radius-xl); border:{{ t.tileBorder }}; background:{{ t.tileBg }}; box-shadow:var(--fl-border-inset), var(--fl-shadow-card); padding:18px 12px 15px; cursor:pointer; transition:transform 200ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.97);">
+            <span style="width:54px; height:54px; flex:none; border-radius:50%; background:{{ t.emblemBg }}; border:1px solid {{ t.emblemRing }}; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 1px 4px rgba(0,0,0,0.5), 0 0 12px {{ t.glow }};">{{ t.emblemGlyph }}</span>
+            <span style="font-family:var(--fl-font-display); font-size:14.5px; font-weight:600; letter-spacing:-0.1px; color:var(--fl-text-primary); line-height:1.2; margin-top:12px;">{{ t.name }}</span>
+            <span style="font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:{{ t.accent }}; margin-top:7px;">{{ t.tierLabel }} · {{ t.fieldLine }}</span>
+            <span style="font-size:11px; font-weight:600; color:var(--fl-text-secondary); margin-top:6px;">{{ t.keyStat }}</span>
+            <span style="font-size:10px; color:var(--fl-text-tertiary); margin-top:3px;">{{ t.date }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:22px 2px 12px;">Podium Finishes</span>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <sc-for list="{{ podiumChips }}" as="c" hint-placeholder-count="4">
+          <div role="button" tabindex="0" onClick="{{ c.open }}" style="display:flex; align-items:center; gap:11px; padding:11px 13px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); cursor:pointer; transition:transform 180ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.99);">
+            <span style="width:34px; height:34px; flex:none; border-radius:50%; border:1px solid {{ c.ring }}; display:flex; align-items:center; justify-content:center;">{{ c.glyph }}</span>
+            <div style="flex:1; min-width:0;">
+              <span style="display:block; font-size:13px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.name }}</span>
+              <span style="display:block; font-size:10.5px; color:var(--fl-text-tertiary); margin-top:2px;">{{ c.meta }}</span>
+            </div>
+            <span style="flex:none; font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:{{ c.accent }};">{{ c.placeLabel }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <p style="margin:18px 4px 0; font-size:11px; line-height:1.55; color:var(--fl-text-tertiary); text-wrap:pretty;">Gold crowns are championships. Silver and bronze mark podium finishes. Tap any trophy to revisit the final standings.</p>
+    </div>
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const h = React.createElement;
+    const crown = (color, size) => h('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: color }, h('path', { d: 'M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z' }));
+    const medal = (color, size) => h('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 14.5, r: 4.8 }), h('circle', { cx: 12, cy: 14.5, r: 1.8 }), h('path', { d: 'M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4' }));
+
+    const goResults = () => { window.location.href = 'Forge%20Challenge%20Results.dc.html'; };
+
+    const TIER = {
+      gold: { accent: 'var(--fl-bronze-bright)', ring: 'var(--fl-bronze-primary)', emblemBg: 'var(--fl-bronze-metallic)', glyphColor: '#1A1206', kind: 'crown', label: 'Champion', placeShort: '1st', glow: 'rgba(191,143,79,0.24)',
+        tileBorder: '1px solid var(--fl-bronze-border)', tileBg: 'linear-gradient(180deg, rgba(191,143,79,0.14), rgba(191,143,79,0.02) 60%), var(--fl-surface-card)' },
+      silver: { accent: '#C7CAD0', ring: 'rgba(199,202,208,0.5)', emblemBg: 'radial-gradient(circle at 42% 34%, #3e434a, #1e2125)', glyphColor: '#C7CAD0', kind: 'medal', label: '2nd Place', placeShort: '2nd', glow: 'rgba(199,202,208,0.10)',
+        tileBorder: '1px solid var(--fl-charcoal-600)', tileBg: 'var(--fl-surface-card)' },
+      bronze: { accent: '#C08A54', ring: 'rgba(176,124,78,0.55)', emblemBg: 'radial-gradient(circle at 42% 34%, #4a3524, #211913)', glyphColor: '#C08A54', kind: 'medal', label: '3rd Place', placeShort: '3rd', glow: 'rgba(176,124,78,0.12)',
+        tileBorder: '1px solid var(--fl-charcoal-600)', tileBg: 'var(--fl-surface-card)' },
+    };
+
+    // Ada Ridge's finishes, best-first within tier
+    const RESULTS = [
+      { key: 'wvw', tier: 'gold', name: 'Winter Volume War', type: 'Most Volume', metric: '86.4k lb', margin: '+4,200 lb', field: 6, date: 'Feb 2026' },
+      { key: 'jb', tier: 'gold', name: 'January Breakthroughs', type: 'Most PRs', metric: '9 PRs', margin: '+2 PRs', field: 8, date: 'Jan 2026' },
+      { key: 'fc', tier: 'gold', name: 'Founders Cup', type: 'Most Workouts', metric: '30 wkts', margin: '+3 wkts', field: 14, date: 'Jul 2024' },
+      { key: 'fl3', tier: 'silver', name: 'Forge League · S3', type: 'Most Workouts', metric: '5 wkts', field: 5, date: 'Jul 2026' },
+      { key: 'fvc', tier: 'silver', name: 'Fall Volume Clash', type: 'Most Volume', metric: '84.1k lb', field: 9, date: 'Oct 2025' },
+      { key: 'tlh', tier: 'silver', name: 'The Long Haul', type: 'Most Duration', metric: '24h', field: 7, date: 'Jan 2026' },
+      { key: 'bb', tier: 'silver', name: 'Bench Battle', type: 'Max Lift', metric: '295 lb', field: 6, date: 'Dec 2025' },
+      { key: 'pt', tier: 'bronze', name: 'The Proving Trial', type: 'Max Lift', metric: '385 lb', field: 10, date: 'Jun 2025' },
+      { key: 'io', tier: 'bronze', name: 'Iron Open', type: 'Most Volume', metric: '60.2k lb', field: 8, date: 'Nov 2024' },
+    ];
+
+    const emblemGlyph = (tier, size) => (TIER[tier].kind === 'crown' ? crown(TIER[tier].glyphColor, size) : medal(TIER[tier].glyphColor, size));
+    const buildTile = (r, glyphSize) => {
+      const t = TIER[r.tier];
+      return {
+        key: r.key, name: r.name, typeLabel: r.type, metric: r.metric, date: r.date,
+        tierLabel: t.label, placeShort: t.placeShort, accent: t.accent,
+        fieldLine: t.placeShort + ' of ' + r.field,
+        keyStat: r.margin ? (r.metric + ' · ' + r.margin) : r.metric,
+        emblemBg: t.emblemBg, emblemRing: t.ring, glow: t.glow,
+        emblemGlyph: emblemGlyph(r.tier, glyphSize || 22),
+        tileBorder: t.tileBorder, tileBg: t.tileBg, open: goResults,
+      };
+    };
+    const buildChip = (r) => {
+      const t = TIER[r.tier];
+      return {
+        key: r.key, name: r.name, meta: r.type + ' · ' + t.placeShort + ' of ' + r.field + ' · ' + r.date,
+        glyph: medal(t.glyphColor, 20), ring: t.ring, accent: t.accent, placeLabel: t.label, open: goResults,
+      };
+    };
+
+    const counts = { gold: 0, silver: 0, bronze: 0 };
+    RESULTS.forEach((r) => { counts[r.tier] += 1; });
+
+    const tally = [
+      { key: 'g', glyph: crown('#CDA063', 15), count: counts.gold, label: 'Gold', color: 'var(--fl-bronze-bright)', br: '1px solid var(--fl-charcoal-700)' },
+      { key: 's', glyph: medal('#C7CAD0', 16), count: counts.silver, label: 'Silver', color: '#C7CAD0', br: '1px solid var(--fl-charcoal-700)' },
+      { key: 'b', glyph: medal('#C08A54', 16), count: counts.bronze, label: 'Bronze', color: '#C08A54', br: 'none' },
+    ];
+
+    const totalEntered = 12;
+    const career = [
+      { key: 'c', value: String(totalEntered), label: 'Competitions' },
+      { key: 'g', value: String(counts.gold), label: 'Championships' },
+      { key: 'p', value: String(RESULTS.length), label: 'Podiums' },
+      { key: 'w', value: Math.round(counts.gold / totalEntered * 100) + '%', label: 'Win Rate' },
+    ];
+
+    return {
+      back: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Forge%20Public%20Profile.dc.html'); },
+      name: (window.ForgeUser ? window.ForgeUser.get().name : 'Ada Ridge'), handle: (window.ForgeUser ? '@' + window.ForgeUser.get().handle : '@ada.forged'), initials: (window.ForgeUser ? window.ForgeUser.get().initials : 'AR'),
+      subline: RESULTS.length + ' podiums · 4 seasons',
+      tally, career, bestEvent: 'Volume', streak: '5 seasons',
+      champTiles: RESULTS.filter((r) => r.tier === 'gold').map((r) => buildTile(r, 24)),
+      podiumChips: RESULTS.filter((r) => r.tier !== 'gold').map(buildChip),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  @keyframes enFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes enRise { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform:none; } }
+  @keyframes enGlow { 0%,100% { opacity:0.5; } 50% { opacity:0.92; } }
+  @keyframes enStrike { 0% { opacity:0; transform: translateY(-20px) scale(1.55); } 58% { opacity:1; transform: translateY(0) scale(0.92); } 76% { transform: scale(1.05); } 100% { transform: scale(1); } }
+  @keyframes enFlash { 0%,42% { opacity:0; transform: translate(-50%,-50%) scale(0.35); } 56% { opacity:0.95; transform: translate(-50%,-50%) scale(1.05); } 100% { opacity:0; transform: translate(-50%,-50%) scale(1.7); } }
+  @keyframes enEmber { 0%,46% { opacity:0; transform: translate(0,0) scale(1); } 60% { opacity:0.9; } 100% { opacity:0; transform: translate(var(--dx,0), -70px) scale(0.6); } }
+  @keyframes enEngrave { 0% { opacity:0; letter-spacing:6px; } 100% { opacity:1; letter-spacing:-0.4px; } }
+  @keyframes enSweep { 0% { transform: translateX(-130%) skewX(-18deg); } 100% { transform: translateX(230%) skewX(-18deg); } }
+  @keyframes enReveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  @keyframes enSlideDown { 0% { transform: translateY(-54px); opacity:0.4; } 100% { transform: translateY(0); opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.001ms !important; } .en-ember, .en-flash, .en-sweep { display:none !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Honor Engraved" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(6,7,8,0.32), rgba(6,7,8,0.32)), #060708 url('assets/forge-bg-2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <!-- ambient forge glow from above -->
+    <div aria-hidden="true" style="position:absolute; top:-13%; left:50%; transform:translateX(-50%); width:360px; height:360px; border-radius:50%; background:radial-gradient(circle, rgba(191,143,79,0.22), transparent 66%); pointer-events:none; z-index:0; animation:enGlow 5.5s ease-in-out infinite;"></div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; position:relative; z-index:1; display:flex; flex-direction:column; padding:0 24px 24px;">
+
+      <!-- close -->
+      <div style="flex:none; height:52px; display:flex; align-items:center; justify-content:flex-end; margin:0 -8px;">
+        <button type="button" onClick="{{ done }}" aria-label="Close" style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-tertiary);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+      </div>
+
+      <!-- eyebrow -->
+      <div style="text-align:center; animation:enFade 800ms var(--fl-ease-out) both;">
+        <span style="display:inline-flex; align-items:center; gap:9px; font-size:10.5px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);"><span style="width:20px; height:1px; background:var(--fl-bronze-border);"></span>{{ eyebrow }}<span style="width:20px; height:1px; background:var(--fl-bronze-border);"></span></span>
+      </div>
+
+      <!-- medallion strike zone -->
+      <div style="position:relative; display:flex; justify-content:center; padding:24px 0 6px;">
+        <span aria-hidden="true" class="en-flash" style="position:absolute; top:50%; left:50%; width:200px; height:200px; border-radius:50%; background:radial-gradient(circle, rgba(230,202,156,0.55), rgba(191,143,79,0.18) 45%, transparent 68%); animation:enFlash 1100ms var(--fl-ease-out) 400ms both; pointer-events:none;"></span>
+        <span aria-hidden="true" class="en-ember" style="--dx:-18px; position:absolute; top:56%; left:44%; width:3px; height:3px; border-radius:50%; background:var(--fl-bronze-bright); box-shadow:0 0 6px 1px rgba(205,160,99,0.7); animation:enEmber 1600ms ease-out 520ms both;"></span>
+        <span aria-hidden="true" class="en-ember" style="--dx:16px; position:absolute; top:58%; left:56%; width:2.5px; height:2.5px; border-radius:50%; background:var(--fl-bronze-bright); box-shadow:0 0 6px 1px rgba(205,160,99,0.7); animation:enEmber 1800ms ease-out 600ms both;"></span>
+        <span aria-hidden="true" class="en-ember" style="--dx:28px; position:absolute; top:54%; left:52%; width:2px; height:2px; border-radius:50%; background:var(--fl-bronze-bright); box-shadow:0 0 5px 1px rgba(205,160,99,0.6); animation:enEmber 2000ms ease-out 700ms both;"></span>
+
+        <div style="position:relative; width:132px; height:132px; display:flex; align-items:center; justify-content:center; animation:enStrike 900ms var(--fl-ease-out) 400ms both;">
+          <span aria-hidden="true" style="position:absolute; inset:-6px; border-radius:50%; background:radial-gradient(circle, {{ haloColor }}, transparent 68%); animation:enGlow 4s ease-in-out infinite;"></span>
+          <div style="position:relative; width:112px; height:112px; border-radius:50%; background:{{ discOuter }}; box-shadow:var(--fl-border-inset-md), 0 8px 22px rgba(0,0,0,0.55), 0 0 20px {{ haloColor }}; display:flex; align-items:center; justify-content:center;">
+            <div style="width:92px; height:92px; border-radius:50%; background:var(--fl-surface-recessed); border:1px solid {{ ringColor }}; display:flex; align-items:center; justify-content:center; color:{{ glyphColor }};">{{ glyph }}</div>
+          </div>
+          <span style="position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); padding:4px 12px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-modal); border:1px solid {{ ringColor }}; font-size:9.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:{{ glyphColor }}; white-space:nowrap; box-shadow:0 3px 8px rgba(0,0,0,0.5);">{{ placeLabel }}</span>
+        </div>
+      </div>
+
+      <!-- engraved plate -->
+      <div style="margin-top:22px; position:relative; overflow:hidden; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-bronze-border); background:linear-gradient(180deg, #16130e, #0c0a07); box-shadow:inset 0 2px 7px rgba(0,0,0,0.72), inset 0 -1px 0 rgba(191,143,79,0.14), var(--fl-shadow-card); padding:20px 18px; text-align:center; animation:enRise 700ms var(--fl-ease-out) 620ms both;">
+        <span aria-hidden="true" class="en-sweep" style="position:absolute; top:0; left:0; width:40%; height:100%; background:linear-gradient(90deg, transparent, rgba(230,202,156,0.18), transparent); animation:enSweep 1300ms var(--fl-ease-out) 1560ms both; pointer-events:none;"></span>
+        <span style="display:block; font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--fl-text-tertiary);">Honor Struck</span>
+        <span style="display:block; font-family:var(--fl-font-display); font-size:27px; font-weight:700; line-height:1.08; margin-top:9px; color:var(--fl-bronze-bright); text-shadow:0 1px 0 rgba(0,0,0,0.7); animation:enReveal 820ms var(--fl-ease-out) 740ms both;">{{ honorName }}</span>
+        <span style="display:block; font-size:11.5px; color:var(--fl-text-tertiary); margin-top:8px;">{{ engravedMeta }}</span>
+      </div>
+
+      <!-- meaning -->
+      <p style="margin:18px auto 0; max-width:300px; text-align:center; font-size:13.5px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty; animation:enRise 750ms var(--fl-ease-out) 780ms both;">{{ meaningLead }} <span style="color:var(--fl-bronze-bright); font-weight:600;">Legacy Timeline</span>{{ meaningTail }}</p>
+      <p style="margin:11px auto 0; max-width:300px; text-align:center; font-family:var(--fl-font-display); font-style:italic; font-size:14px; line-height:1.5; color:var(--fl-text-primary); text-wrap:pretty; animation:enRise 800ms var(--fl-ease-out) 980ms both;">{{ closingLine }}</p>
+
+      <!-- timeline placement -->
+      <div style="margin-top:26px; animation:enRise 800ms var(--fl-ease-out) 1180ms both;">
+        <span style="display:block; font-size:10.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary); text-align:center; margin-bottom:16px;">Its place in your Legacy</span>
+        <div style="position:relative; padding-left:34px;">
+          <!-- spine -->
+          <span aria-hidden="true" style="position:absolute; left:11px; top:6px; bottom:6px; width:2px; background:linear-gradient(180deg, var(--fl-bronze-border), var(--fl-charcoal-700));"></span>
+          <sc-for list="{{ timeline }}" as="t" hint-placeholder-count="2">
+            <div style="position:relative; margin-bottom:12px; {{ t.enterStyle }}">
+              <span style="position:absolute; left:-28px; top:16px; width:14px; height:14px; transform:rotate(45deg); background:{{ t.nodeBg }}; border:1px solid {{ t.nodeBorder }}; box-shadow:{{ t.nodeGlow }};"></span>
+              <div style="display:flex; align-items:center; gap:13px; padding:13px 15px; border-radius:var(--fl-radius-lg); background:{{ t.rowBg }}; border:{{ t.rowBorder }}; box-shadow:{{ t.rowShadow }};">
+                <span style="width:38px; height:38px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:{{ t.iconBg }}; border:1px solid {{ t.iconBorder }}; color:{{ t.iconColor }};">{{ t.icon }}</span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                  <span style="display:inline-flex; align-items:center; gap:7px; font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:{{ t.tagColor }};">{{ t.tag }}<sc-if value="{{ t.isNew }}" hint-placeholder-val="{{ false }}"><span style="padding:1px 6px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-metallic); color:#1A1206; font-size:8px; letter-spacing:0.8px;">New</span></sc-if></span>
+                  <span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ t.title }}</span>
+                  <span style="font-size:11px; color:var(--fl-text-tertiary);">{{ t.meta }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- rank note -->
+      <sc-if value="{{ hasRank }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:8px; display:flex; align-items:center; gap:11px; padding:13px 15px; border-radius:var(--fl-radius-lg); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); animation:enRise 800ms var(--fl-ease-out) 1280ms both;">
+          <span style="flex:none; display:inline-flex; color:var(--fl-bronze-bright);">{{ rankIcon }}</span>
+          <span style="font-size:12.5px; line-height:1.45; color:var(--fl-text-secondary);">{{ rankNote }}</span>
+        </div>
+      </sc-if>
+
+      <div style="flex:1; min-height:20px;"></div>
+
+      <!-- CTA -->
+      <div style="margin-top:22px; display:flex; flex-direction:column; gap:10px; animation:enRise 800ms var(--fl-ease-out) 1380ms both;">
+        <button type="button" onClick="{{ viewLegacy }}" style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:16px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border, var(--fl-bronze-border)); color:var(--fl-bronze-bright); font-size:15px; font-weight:700; letter-spacing:0.3px; cursor:pointer; box-shadow:var(--fl-glow-subtle), var(--fl-shadow-card);"><span style="display:inline-flex;">{{ legacyIcon }}</span>View on Legacy<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+        <button type="button" onClick="{{ done }}" style="width:100%; padding:13px; border-radius:var(--fl-radius-md); background:transparent; border:none; color:var(--fl-text-tertiary); font-size:14px; font-weight:600; cursor:pointer;">Done</button>
+      </div>
+
+    </div>
+  </sc-if>
+
+  <!-- grain -->
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.06; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868}}">
+class Component extends DCLogic {
+  state = { ready: false };
+
+  componentDidMount() {
+    try { this._data = JSON.parse(localStorage.getItem('forge_honor_engrave_v1') || 'null') || null; } catch (e) { this._data = null; }
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.7 });
+
+    const d = this._data || {
+      honorName: 'Forge League \u2014 Silver', tier: 'silver', challengeName: 'Forge League', seasonLabel: 'Season 3',
+      placeLabel: '2nd of 5', glyph: 'medal', rankAfter: 'Craftsman \u00b7 IV',
+    };
+
+    // tier palette
+    const TIER = {
+      champion: { halo: 'rgba(191,143,79,0.34)', outer: 'var(--fl-bronze-metallic)', ring: 'var(--fl-bronze-primary)', glyphCol: 'var(--fl-bronze-bright)' },
+      gold: { halo: 'rgba(191,143,79,0.34)', outer: 'var(--fl-bronze-metallic)', ring: 'var(--fl-bronze-primary)', glyphCol: 'var(--fl-bronze-bright)' },
+      silver: { halo: 'rgba(185,188,194,0.26)', outer: 'linear-gradient(160deg, #d6d9df, #8a8d94)', ring: 'rgba(190,193,199,0.7)', glyphCol: '#D3D6DC' },
+      bronze: { halo: 'rgba(176,124,78,0.28)', outer: 'linear-gradient(160deg, #c88b57, #7a4e2c)', ring: 'rgba(196,140,90,0.7)', glyphCol: '#D69A67' },
+      podium: { halo: 'rgba(191,143,79,0.30)', outer: 'var(--fl-bronze-metallic)', ring: 'var(--fl-bronze-primary)', glyphCol: 'var(--fl-bronze-bright)' },
+    };
+    const t = TIER[d.tier] || TIER.silver;
+    const glyphId = d.glyph || (d.tier === 'champion' || d.tier === 'gold' ? 'trophy' : 'medal');
+
+    // ── Legacy timeline preview ──
+    const newEntry = {
+      key: 'new', isNew: true, enterStyle: 'animation:enRise 620ms var(--fl-ease-out) 1200ms both;',
+      nodeBg: 'var(--fl-bronze-metallic)', nodeBorder: 'var(--fl-bronze-primary)', nodeGlow: '0 0 10px rgba(191,143,79,0.55)',
+      rowBg: 'linear-gradient(180deg, rgba(191,143,79,0.12), transparent 60%), var(--fl-surface-card)', rowBorder: '1px solid var(--fl-bronze-primary)', rowShadow: '0 0 0 1px rgba(191,143,79,0.25), 0 0 18px rgba(191,143,79,0.18), var(--fl-shadow-card)',
+      iconBg: 'var(--fl-bronze-metallic)', iconBorder: 'var(--fl-bronze-primary)', iconColor: '#1A1206',
+      tag: 'Just now', tagColor: 'var(--fl-bronze-bright)', title: d.honorName, meta: d.challengeName + ' \u00b7 ' + (d.seasonLabel || 'Season'), icon: ic(glyphId, 19, 1.7),
+    };
+    const prevEntry = {
+      key: 'prev', isNew: false, enterStyle: 'animation:enSlideDown 640ms var(--fl-ease-out) 1340ms both;',
+      nodeBg: 'var(--fl-charcoal-700)', nodeBorder: 'var(--fl-charcoal-500)', nodeGlow: 'none',
+      rowBg: 'var(--fl-surface-card)', rowBorder: '1px solid var(--fl-charcoal-700)', rowShadow: 'none',
+      iconBg: 'var(--fl-bronze-tint)', iconBorder: 'var(--fl-bronze-border-subtle)', iconColor: 'var(--fl-bronze-bright)',
+      tag: 'Feb 2026', tagColor: 'var(--fl-text-tertiary)', title: 'Winter Volume War \u2014 Champion', meta: 'Squad \u00b7 1st of 6', icon: ic('trophy', 19, 1.7),
+    };
+
+    return {
+      ready: true, notReady: false,
+      eyebrow: (d.challengeName || 'Forge League') + ' \u00b7 ' + (d.seasonLabel || 'Season 3'),
+      haloColor: t.halo, discOuter: t.outer, ringColor: t.ring, glyphColor: t.glyphCol,
+      glyph: ic(glyphId, 40, 1.5),
+      placeLabel: d.placeLabel || 'Podium',
+      honorName: d.honorName || 'Forge Honor',
+      engravedMeta: 'Engraved \u00b7 ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      meaningLead: 'This honor is permanent \u2014 struck for your finish and forever recorded on your',
+      meaningTail: '. It cannot be lost.',
+      closingLine: 'Another page of your Legacy has been written.',
+      timeline: [newEntry, prevEntry],
+      hasRank: !!d.rankAfter, rankIcon: ic('shield', 18, 1.8), rankNote: 'Counts toward your standing \u2014 you hold ' + (d.rankAfter || '') + ' in the Forge.',
+      legacyIcon: ic('book', 17, 1.8),
+      viewLegacy: () => { try { localStorage.removeItem('forge_honor_engrave_v1'); } catch (e) {} window.location.href = 'Forge%20Legacy%20Timeline.dc.html'; },
+      done: () => { try { localStorage.removeItem('forge_honor_engrave_v1'); } catch (e) {} (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Forge%20Legacy.dc.html'); },
+    };
+  }
+}
+</script>
+</body>
+</html>

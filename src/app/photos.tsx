@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Svg, { Path, Rect } from 'react-native-svg';
 
@@ -581,12 +582,15 @@ function Viewer({
   onPlay: (url: string) => void;
 }) {
   const { width } = useWindowDimensions();
+  /* The viewer covers the screen from y=0, AppBar and its inset included — so it has to reserve the
+     status bar itself, or Close sits under it where nobody can tap it. */
+  const insets = useSafeAreaInsets();
   const p = photos[index];
   const step = (delta: number) => onIndex((index + delta + photos.length) % photos.length);
   const frameW = Math.min(340, width - 32);
 
   return (
-    <View style={styles.viewer}>
+    <View style={[styles.viewer, { paddingTop: insets.top }]}>
       <View style={styles.viewerBar}>
         <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" style={styles.barBtn}>
           <CloseGlyph />

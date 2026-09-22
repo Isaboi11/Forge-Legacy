@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#0A0807; color:#EFE9E0; font-family:'Playfair Display',Georgia,serif; -webkit-font-smoothing:antialiased; }
+  a { color:#BF8F4F; } a:hover { color:#CDA063; }
+  .fn-sans { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+</style>
+</helmet>
+<div style="min-height:100vh; background:radial-gradient(120% 58% at 50% -6%, rgba(191,143,79,0.09) 0%, rgba(191,143,79,0) 46%), radial-gradient(90% 46% at 50% 118%, rgba(189,120,41,0.07) 0%, rgba(0,0,0,0) 62%), #0A0807; padding:58px 40px 60px; display:flex; flex-direction:column; align-items:center;">
+
+  <!-- ══ MASTHEAD ══ -->
+  <header style="display:flex; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:1120px;">
+    <h1 style="margin:0; font-size:62px; font-weight:700; letter-spacing:14px; text-indent:14px; background:linear-gradient(180deg,#EFD3A0,#93693B); -webkit-background-clip:text; background-clip:text; color:transparent;">CRAFTSMAN</h1>
+    <span class="fn-sans" style="margin-top:16px; font-size:13px; font-weight:600; letter-spacing:3.5px; text-transform:uppercase; color:#C6BEB2;">Skill is forged through deliberate action and precision.</span>
+    <div style="display:flex; align-items:center; gap:16px; width:min(560px,82%); margin:20px 0 14px;">
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(191,143,79,0.7));"></span>
+      <span style="width:8px; height:8px; flex:none; transform:rotate(45deg); border:1px solid #BF8F4F;"></span>
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.7),transparent);"></span>
+    </div>
+    <span class="fn-sans" style="font-size:12px; font-weight:600; letter-spacing:4px; text-transform:uppercase; color:#B08A55;">Forged Excellence · From preparation to mastery.</span>
+  </header>
+
+  <!-- ══ FOUR BADGES · each a separate artboard ══ -->
+  <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:26px; width:100%; max-width:1120px; margin-top:56px;">
+    <sc-for list="{{ items }}" as="it" hint-placeholder-count="4">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="text-align:center; margin-bottom:16px;">
+          <div style="font-size:19px; font-weight:600; letter-spacing:2.5px; text-transform:uppercase; color:#D8B981;">Craftsman {{ it.roman }}</div>
+          <div class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:2.4px; text-transform:uppercase; color:#8A6B41; margin-top:5px;">{{ it.phase }}</div>
+        </div>
+        <div style="width:100%; max-width:240px;">
+          <dc-import name="FoundationBadge" rank="craftsman" tier="{{ it.tier }}" hint-size="240px,288px"></dc-import>
+        </div>
+        <div style="text-align:center; margin-top:24px; display:flex; flex-direction:column; align-items:center; gap:12px;">
+          <p class="fn-sans" style="margin:0; font-size:13.5px; line-height:1.9; color:#9A938A;">{{ it.l1 }}<br>{{ it.l2 }}<br>{{ it.l3 }}</p>
+          <span style="width:7px; height:7px; flex:none; transform:rotate(45deg); border:1px solid rgba(191,143,79,0.55);"></span>
+          <span class="fn-sans" style="font-size:11.5px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#B4863F;">{{ it.tag }}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ══ THE CRAFTSMAN MINDSET ══ -->
+  <div style="width:100%; max-width:1120px; margin-top:64px; border:1px solid #2A2015; border-radius:14px; background:linear-gradient(180deg, rgba(30,22,12,0.45), rgba(12,10,8,0.4)); display:grid; grid-template-columns:1.9fr 1fr 1fr 1fr;">
+
+    <div style="padding:24px 24px; display:flex; align-items:center; gap:16px;">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C79C60" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M4 9h11l-1.4 3.2c-.7 1.6-2.3 2.6-4 2.6H8.5c-1.9 0-3.6-1.2-4.3-3L4 9z"></path><path d="M15 9c1.8 0 3.4-.6 4.6-1.9"></path><path d="M9.3 15v2.4"></path><path d="M6 20.5h6.6"></path><path d="M5 20.5c0-1.7 1.3-3.1 3-3.1h1.6c1.7 0 3 1.4 3 3.1"></path></svg>
+      <div>
+        <div style="font-size:17px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#E4C489;">The Craftsman Mindset</div>
+        <p class="fn-sans" style="margin:6px 0 0; font-size:12px; line-height:1.6; color:#8F877B;">Deliberate action. Relentless precision.<br>The forge never lies.</p>
+      </div>
+    </div>
+
+    <div style="padding:24px 20px; border-left:1px solid #201810; display:flex; flex-direction:column; gap:10px;">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C79C60" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h11l-1.4 3.2c-.7 1.6-2.3 2.6-4 2.6H8.5c-1.9 0-3.6-1.2-4.3-3L4 9z"></path><path d="M15 9c1.8 0 3.4-.6 4.6-1.9"></path><path d="M6 20.5h6.6"></path><path d="M5 20.5c0-1.7 1.3-3.1 3-3.1h1.6c1.7 0 3 1.4 3 3.1"></path></svg>
+      <div class="fn-sans" style="font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#C79C60;">Built on Foundation</div>
+      <div class="fn-sans" style="font-size:12px; color:#8F877B;">Start from the base.</div>
+    </div>
+
+    <div style="padding:24px 20px; border-left:1px solid #201810; display:flex; flex-direction:column; gap:10px;">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C79C60" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c.6 2.6-1.2 3.6-1.9 5.2-.6 1.4-.2 3 1.1 3.7 1.1.6 1.7-.2 1.6-1.1 1.7 1.2 2.6 3 2.1 5-.6 2.4-3 4.2-5.6 4.2-3 0-5.4-2.3-5.4-5.4 0-3.4 3-4.9 3.8-8 .3-1.3.2-2.6 0-3.7 1.7.6 3.4 1.9 4.3 3.8"></path></svg>
+      <div class="fn-sans" style="font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#C79C60;">Tempered by Discipline</div>
+      <div class="fn-sans" style="font-size:12px; color:#8F877B;">Refined by fire.</div>
+    </div>
+
+    <div style="padding:24px 20px; border-left:1px solid #201810; display:flex; flex-direction:column; gap:10px;">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C79C60" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"></path><path d="M12 18v4"></path><path d="M2 12h4"></path><path d="M18 12h4"></path><path d="M5 5l2.6 2.6"></path><path d="M16.4 16.4L19 19"></path><path d="M19 5l-2.6 2.6"></path><path d="M7.6 16.4L5 19"></path></svg>
+      <div class="fn-sans" style="font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#C79C60;">Forged by Precision</div>
+      <div class="fn-sans" style="font-size:12px; color:#8F877B;">Every strike counts.</div>
+    </div>
+  </div>
+
+  <!-- ══ ASSET NOTE ══ -->
+  <p class="fn-sans" style="max-width:720px; text-align:center; margin:44px 0 0; font-size:12.5px; line-height:1.75; color:#5F5648;">Badge cutouts · <span style="color:#B08A55;">assets/craftsman-1–4.png</span>. Mount anywhere with <span style="color:#B08A55;">&lt;dc-import name="FoundationBadge" rank="craftsman" tier="1–4"&gt;</span>. The anvil grows into the artisan as the rank ascends.</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      items: [
+        { tier: '1', roman: 'I',   phase: 'The Foundation', l1: 'The foundation is set.', l2: 'Potential is ready.',       l3: 'The tools are laid.',     tag: 'The Tools.' },
+        { tier: '2', roman: 'II',  phase: 'The Practice',   l1: 'The artisan appears.',  l2: 'Discipline turns effort',   l3: 'into skill.',            tag: 'The Craft.' },
+        { tier: '3', roman: 'III', phase: 'The Refinement', l1: 'Every strike matters.', l2: 'Precision creates',          l3: 'progress.',              tag: 'The Focus.' },
+        { tier: '4', roman: 'IV',  phase: 'The Mastery',    l1: 'Mastery is revealed.',  l2: 'Excellence is',              l3: 'the standard.',          tag: 'The Excellence.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

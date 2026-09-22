@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<script src="qa-audit-data.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .qa-note { width:100%; font-family:var(--fl-font-sans); font-size:12.5px; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:8px; padding:8px 10px; outline:none; }
+  .qa-note:focus { border-color:var(--fl-bronze-border); }
+  .qa-note::placeholder { color:var(--fl-text-tertiary); }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; justify-content:center; padding:40px 20px 90px;">
+  <div style="width:940px; max-width:100%;">
+
+    <!-- Masthead -->
+    <div style="padding-bottom:22px; border-bottom:1px solid var(--fl-charcoal-600);">
+      <span style="display:block; font-size:10px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-bronze-primary); margin-bottom:12px;">Forge Legacy · Production QA</span>
+      <h1 style="margin:0; font-family:var(--fl-font-display); font-size:38px; font-weight:700; line-height:1.03;">Working Audit</h1>
+      <p style="margin:11px 0 20px; font-size:14px; line-height:1.55; color:var(--fl-text-tertiary); max-width:680px;">Every family, every screen, every interactive control — derived from each screen's real source. Work one family at a time: open a screen, exercise each control, and mark it. Progress saves automatically. <span style="color:var(--fl-bronze-bright);">Red rows were auto-flagged as possibly non-functional</span> (a control with no detected handler) — verify these first.</p>
+      <div style="display:flex; gap:26px; flex-wrap:wrap;">
+        <div style="display:flex; flex-direction:column;"><span style="font-family:var(--fl-font-display); font-size:26px; font-weight:700;">{{ totScreens }}</span><span style="font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">Screens</span></div>
+        <div style="display:flex; flex-direction:column;"><span style="font-family:var(--fl-font-display); font-size:26px; font-weight:700;">{{ totControls }}</span><span style="font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">Controls</span></div>
+        <div style="display:flex; flex-direction:column;"><span style="font-family:var(--fl-font-display); font-size:26px; font-weight:700; color:var(--fl-red-muted, #C97A6E);">{{ totDead }}</span><span style="font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">Flagged</span></div>
+        <div style="display:flex; flex-direction:column;"><span style="font-family:var(--fl-font-display); font-size:26px; font-weight:700; color:var(--fl-bronze-bright);">{{ overallPct }}%</span><span style="font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--fl-text-tertiary);">Audited</span></div>
+      </div>
+    </div>
+
+    <!-- Family selector -->
+    <div style="display:flex; flex-wrap:wrap; gap:9px; margin:22px 0 8px;">
+      <sc-for list="{{ familyChips }}" as="f" hint-placeholder-count="12">
+        <button type="button" onClick="{{ f.select }}" style="{{ f.style }}">{{ f.label }} <span style="opacity:0.7; font-weight:600;">{{ f.progress }}</span></button>
+      </sc-for>
+    </div>
+
+    <!-- Selected family -->
+    <div style="margin-top:20px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <h2 style="margin:0; font-family:var(--fl-font-display); font-size:24px; font-weight:700;">{{ familyName }}</h2>
+      <span style="font-size:12px; color:var(--fl-text-tertiary);">{{ familyProgress }} audited</span>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:16px; margin-top:14px;">
+      <sc-for list="{{ screens }}" as="s" hint-placeholder-count="6">
+        <div style="border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+          <!-- screen header -->
+          <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--fl-charcoal-700); background:var(--fl-surface-recessed);">
+            <div style="flex:1; min-width:0;">
+              <span style="display:block; font-family:var(--fl-font-display); font-size:17px; font-weight:600; color:var(--fl-text-primary);">{{ s.title }}</span>
+              <span style="font-family:var(--fl-font-mono); font-size:11px; color:var(--fl-text-tertiary);">{{ s.file }}</span>
+            </div>
+            <sc-if value="{{ s.hasDead }}" hint-placeholder-val="{{ false }}">
+              <span style="flex:none; padding:4px 10px; border-radius:99px; border:1px solid var(--fl-red-metal-border, rgba(201,122,110,0.4)); background:rgba(201,122,110,0.12); font-size:10px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-red-muted, #C97A6E);">{{ s.deadLabel }}</span>
+            </sc-if>
+            <a href="{{ s.href }}" style="flex:none; padding:8px 13px; border-radius:8px; border:1px solid var(--fl-bronze-border-subtle); font-size:12.5px; font-weight:600; color:var(--fl-bronze-bright);">Open →</a>
+          </div>
+
+          <!-- states -->
+          <div style="padding:12px 16px 4px;">
+            <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:6px;">Screen states</span>
+            <sc-for list="{{ s.stateItems }}" as="it" hint-placeholder-count="4">
+              <div style="{{ it.rowStyle }}">
+                <span style="flex:1; min-width:0; font-size:13px; color:var(--fl-text-secondary); line-height:1.4;">{{ it.label }}</span>
+                <div style="flex:none; display:flex; gap:6px;">
+                  <sc-for list="{{ it.buttons }}" as="b" hint-placeholder-count="3">
+                    <button type="button" onClick="{{ b.on }}" style="{{ b.style }}">{{ b.sym }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- controls -->
+          <div style="padding:10px 16px 16px;">
+            <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary); margin:8px 0 6px;">Interactive controls · {{ s.controlCount }}</span>
+            <sc-for list="{{ s.controlItems }}" as="it" hint-placeholder-count="6">
+              <div style="{{ it.wrapStyle }}">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <span style="{{ it.kindStyle }}">{{ it.kind }}</span>
+                  <span style="flex:1; min-width:0; font-size:13px; color:{{ it.labelColor }}; line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ it.label }}</span>
+                  <div style="flex:none; display:flex; gap:6px;">
+                    <sc-for list="{{ it.buttons }}" as="b" hint-placeholder-count="3">
+                      <button type="button" onClick="{{ b.on }}" style="{{ b.style }}">{{ b.sym }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <sc-if value="{{ it.showNote }}" hint-placeholder-val="{{ false }}">
+                  <input class="qa-note" value="{{ it.note }}" placeholder="What's broken? (saved)" onInput="{{ it.onNote }}" style="margin-top:8px;">
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:980,&quot;height&quot;:940}}">
+class Component extends DCLogic {
+  state = { family: null, statuses: {}, notes: {}, hydrated: false };
+
+  componentDidMount() {
+    let statuses = {}, notes = {};
+    try { const raw = JSON.parse(localStorage.getItem('forge_qa_audit_v1')); if (raw) { statuses = raw.statuses || {}; notes = raw.notes || {}; } } catch (e) {}
+    const QA = (typeof window !== 'undefined' && window.QA_AUDIT) || { families: [] };
+    this.setState({ statuses, notes, hydrated: true, family: (QA.families[0] && QA.families[0].name) || null });
+  }
+
+  _persist(statuses, notes) { try { localStorage.setItem('forge_qa_audit_v1', JSON.stringify({ statuses, notes })); } catch (e) {} }
+  setStatus(id, val) { this.setState(s => { const st = Object.assign({}, s.statuses); st[id] = (st[id] === val ? '' : val); this._persist(st, s.notes); return { statuses: st }; }); }
+  setNote(id, val) { this.setState(s => { const nt = Object.assign({}, s.notes); nt[id] = val; this._persist(s.statuses, nt); return { notes: nt }; }); }
+
+  _stateChecks() {
+    return [
+      { key: 'load', label: 'Loads cleanly — no blank screen or console error' },
+      { key: 'nav', label: 'Back / dismiss returns to the correct place' },
+      { key: 'empty', label: 'Empty / no-data state handled' },
+      { key: 'scale', label: 'Long text & many items don\u2019t break layout' },
+    ];
+  }
+
+  _itemIds(scr) {
+    const ids = this._stateChecks().map(c => scr.file + '::s:' + c.key);
+    (scr.items || []).forEach((_, i) => ids.push(scr.file + '::c:' + i));
+    return ids;
+  }
+  _famProgress(fam) {
+    let total = 0, done = 0;
+    (fam.screens || []).forEach(scr => { this._itemIds(scr).forEach(id => { total++; if (this.state.statuses[id]) done++; }); });
+    return { total, done };
+  }
+
+  _buttons(id) {
+    const S = this.state.statuses;
+    const mk = (val, sym, on) => ({
+      sym, on: () => this.setStatus(id, val),
+      style: {
+        width: '34px', height: '30px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 700, lineHeight: 1,
+        border: '1px solid ' + (S[id] === val ? on.bd : 'var(--fl-charcoal-600)'),
+        background: S[id] === val ? on.bg : 'transparent',
+        color: S[id] === val ? on.ink : 'var(--fl-text-tertiary)',
+        transition: 'all 120ms ease',
+      },
+    });
+    return [
+      mk('pass', '\u2713', { bg: 'rgba(110,142,116,0.2)', bd: '#6E8E74', ink: '#9CC0A2' }),
+      mk('fail', '\u2715', { bg: 'rgba(201,122,110,0.2)', bd: '#C97A6E', ink: '#E0938A' }),
+      mk('na', '\u2013', { bg: 'var(--fl-bronze-tint)', bd: 'var(--fl-bronze-border)', ink: 'var(--fl-bronze-bright)' }),
+    ];
+  }
+
+  _rowTint(id) {
+    const v = this.state.statuses[id];
+    const base = 'display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:8px; margin-bottom:5px; border-left:3px solid ';
+    if (v === 'pass') return base + '#6E8E74; background:rgba(110,142,116,0.07);';
+    if (v === 'fail') return base + '#C97A6E; background:rgba(201,122,110,0.08);';
+    if (v === 'na') return base + 'var(--fl-charcoal-500); background:transparent; opacity:0.6;';
+    return base + 'transparent; background:transparent;';
+  }
+
+  renderVals() {
+    const QA = (typeof window !== 'undefined' && window.QA_AUDIT) || { families: [] };
+    const fams = QA.families || [];
+
+    // overall + per-family progress
+    let totScreens = 0, totControls = 0, totDead = 0, oTotal = 0, oDone = 0;
+    fams.forEach(f => { (f.screens || []).forEach(scr => { totScreens++; totControls += (scr.count || 0); totDead += (scr.dead || 0); }); const p = this._famProgress(f); oTotal += p.total; oDone += p.done; });
+
+    const familyChips = fams.map(f => {
+      const p = this._famProgress(f);
+      const on = this.state.family === f.name;
+      return {
+        key: f.name, label: f.name, progress: p.done + '/' + p.total,
+        select: () => this.setState({ family: f.name }),
+        style: {
+          padding: '9px 14px', borderRadius: 'var(--fl-radius-pill)', cursor: 'pointer', fontSize: '12.5px', fontWeight: 600,
+          border: '1px solid ' + (on ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)'),
+          background: on ? 'var(--fl-bronze-tint)' : 'var(--fl-surface-card)',
+          color: on ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)',
+          transition: 'all 140ms ease',
+        },
+      };
+    });
+
+    const fam = fams.find(f => f.name === this.state.family) || fams[0] || { name: '\u2014', screens: [] };
+    const fp = this._famProgress(fam);
+
+    const kindMeta = {
+      button: { bg: 'var(--fl-bronze-tint)', ink: 'var(--fl-bronze-bright)' },
+      tap: { bg: 'var(--fl-bronze-tint)', ink: 'var(--fl-bronze-bright)' },
+      appbar: { bg: 'var(--fl-surface-recessed)', ink: 'var(--fl-text-secondary)' },
+      input: { bg: 'var(--fl-surface-recessed)', ink: 'var(--fl-text-secondary)' },
+      textarea: { bg: 'var(--fl-surface-recessed)', ink: 'var(--fl-text-secondary)' },
+      select: { bg: 'var(--fl-surface-recessed)', ink: 'var(--fl-text-secondary)' },
+      'image-slot': { bg: 'rgba(201,122,110,0.14)', ink: '#E0938A' },
+    };
+    const kindStyleFor = (k) => { const m = kindMeta[k] || kindMeta.button; return { flex: 'none', minWidth: '62px', textAlign: 'center', padding: '3px 8px', borderRadius: '6px', fontSize: '9.5px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', background: m.bg, color: m.ink, fontFamily: 'var(--fl-font-mono)' }; };
+
+    const screens = (fam.screens || []).map(scr => {
+      const stateItems = this._stateChecks().map(c => { const id = scr.file + '::s:' + c.key; return { key: c.key, label: c.label, rowStyle: this._rowTint(id), buttons: this._buttons(id) }; });
+      const controlItems = (scr.items || []).map((it, i) => {
+        const id = scr.file + '::c:' + i;
+        const v = this.state.statuses[id];
+        return {
+          key: i, kind: it.k, kindStyle: kindStyleFor(it.k),
+          label: (it.dead ? '\u26a0 ' : '') + (it.l || '(control)') + (it.dead ? '  · no handler detected' : ''),
+          labelColor: it.dead ? '#E0938A' : 'var(--fl-text-secondary)',
+          wrapStyle: 'padding:9px 10px; border-radius:8px; margin-bottom:5px; border-left:3px solid ' + (v === 'pass' ? '#6E8E74; background:rgba(110,142,116,0.07);' : v === 'fail' ? '#C97A6E; background:rgba(201,122,110,0.08);' : v === 'na' ? 'var(--fl-charcoal-500); opacity:0.6;' : it.dead ? '#C97A6E; background:rgba(201,122,110,0.05);' : 'transparent;'),
+          buttons: this._buttons(id),
+          showNote: v === 'fail', note: this.state.notes[id] || '', onNote: (e) => this.setNote(id, e.target.value),
+        };
+      });
+      return {
+        key: scr.file, title: scr.title, file: scr.file, href: encodeURI(scr.file),
+        hasDead: (scr.dead || 0) > 0, deadLabel: (scr.dead || 0) + ' flagged',
+        controlCount: (scr.count || 0) + '', stateItems, controlItems,
+      };
+    });
+
+    return {
+      totScreens: totScreens + '', totControls: totControls + '', totDead: totDead + '',
+      overallPct: oTotal ? Math.round(oDone / oTotal * 100) + '' : '0',
+      familyChips,
+      familyName: fam.name, familyProgress: fp.done + ' / ' + fp.total,
+      screens,
+    };
+  }
+}
+</script>
+</body>
+</html>

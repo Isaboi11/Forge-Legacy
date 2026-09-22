@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js"></script>
+  <script src="forge-anim.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    a { color: var(--fl-bronze-bright); text-decoration: none; }
+    a:hover { color: var(--fl-bronze-primary); }
+  </style>
+</helmet>
+
+<div style="min-height:100vh; padding:40px; display:flex; flex-direction:column; gap:8px;">
+
+  <div style="display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; margin-bottom:8px;">
+    <h1 style="margin:0; font-family:var(--fl-font-display); font-size:30px; font-weight:600; letter-spacing:-0.4px; color:var(--fl-text-primary);">Animation coloring preview</h1>
+    <span style="font-size:13px; color:var(--fl-text-secondary);">Checkerboard keyed out live · shown on real Forge surfaces</span>
+  </div>
+
+  <div style="display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap;">
+
+    <!-- ═══ CONTEXT 1 · EXERCISE DETAIL — demonstration panel ═══ -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <span style="font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Exercise detail · demo panel</span>
+      <div style="width:404px; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(6,7,8,0.3), rgba(6,7,8,0.3)), #060708; box-shadow:var(--fl-shadow-ambient); overflow:hidden; padding:18px;">
+        <div style="position:relative; width:100%; height:290px; border-radius:var(--fl-radius-xl); overflow:hidden; border:1px solid var(--fl-charcoal-600); background:radial-gradient(130% 100% at 50% 12%, #16181C 0%, #0A0B0D 80%); box-shadow:var(--fl-border-inset), var(--fl-shadow-image);">
+          <x-import component-from-global-scope="forge-anim" from="./forge-anim.js" src="assets/anim-curl-preview.mp4" fit="contain" key="{{ keyAttr }}" hint-size="100%,290px" style="position:absolute; inset:0; z-index:1;"></x-import>
+          <span aria-hidden="true" style="position:absolute; inset:0; z-index:2; pointer-events:none; background:linear-gradient(180deg, rgba(6,9,12,0) 48%, rgba(6,9,12,0.82) 100%);"></span>
+          <span style="position:absolute; top:12px; left:12px; z-index:3; pointer-events:none; display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border-radius:var(--fl-radius-pill); background:rgba(6,9,12,0.55); border:1px solid var(--fl-bronze-border-subtle); backdrop-filter:blur(3px);"><span style="width:6px; height:6px; border-radius:50%; background:var(--fl-bronze-bright); box-shadow:var(--fl-glow-badge);"></span><span style="font-size:9px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-secondary);">Movement demo</span></span>
+          <span style="position:absolute; bottom:13px; left:15px; z-index:3; pointer-events:none; font-size:11.5px; font-weight:600; letter-spacing:0.3px; color:var(--fl-text-secondary);">Side view · Full ROM · Normal tempo</span>
+        </div>
+        <div style="padding:16px 6px 4px;">
+          <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Compound · Arms</span>
+          <h2 style="margin:6px 0 0; font-family:var(--fl-font-display); font-size:28px; font-weight:600; letter-spacing:-0.5px; color:var(--fl-text-primary);">Barbell Curl</h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CONTEXT 2 · ACTIVE WORKOUT — exercise row ═══ -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <span style="font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Active workout · row thumb</span>
+      <div style="width:360px; border-radius:var(--fl-radius-xl); border:var(--fl-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); padding:6px;">
+        <div style="display:flex; align-items:center; gap:14px; padding:12px 12px;">
+          <div style="flex:none; width:64px; height:64px; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-charcoal-600); background:radial-gradient(120% 100% at 50% 10%, #16181C, #0A0B0D 82%);">
+            <x-import component-from-global-scope="forge-anim" from="./forge-anim.js" src="assets/anim-curl-preview.mp4" fit="contain" key="{{ keyAttr }}" hint-size="64px,64px" style="width:100%; height:100%;"></x-import>
+          </div>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+            <span style="font-size:15px; font-weight:600; color:var(--fl-text-primary);">Barbell Curl</span>
+            <span style="font-size:12px; color:var(--fl-text-tertiary);">3 sets · 8–10 reps</span>
+          </div>
+          <span style="flex:none; display:inline-flex; align-items:center; padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--fl-bronze-bright);">Up next</span>
+        </div>
+        <div style="height:1px; background:var(--fl-charcoal-700); margin:0 12px;"></div>
+        <div style="display:flex; align-items:center; gap:14px; padding:12px 12px; opacity:0.55;">
+          <div style="flex:none; width:64px; height:64px; border-radius:var(--fl-radius-lg); border:1px solid var(--fl-charcoal-700); background:var(--fl-surface-recessed);"></div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:3px;"><span style="font-size:15px; font-weight:600; color:var(--fl-text-secondary);">Hammer Curl</span><span style="font-size:12px; color:var(--fl-text-tertiary);">3 sets · 10–12 reps</span></div>
+        </div>
+      </div>
+
+      <!-- ═══ CONTEXT 3 · LIBRARY — grid card ═══ -->
+      <span style="font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label); margin-top:8px;">Exercise library · grid card</span>
+      <div style="width:360px; display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div style="border-radius:var(--fl-radius-xl); border:var(--fl-border-subtle); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); overflow:hidden;">
+          <div style="height:120px; border-bottom:1px solid var(--fl-charcoal-700); background:radial-gradient(120% 100% at 50% 8%, #16181C, #0A0B0D 82%);">
+            <x-import component-from-global-scope="forge-anim" from="./forge-anim.js" src="assets/anim-curl-preview.mp4" fit="contain" key="{{ keyAttr }}" hint-size="100%,120px" style="width:100%; height:100%;"></x-import>
+          </div>
+          <div style="padding:11px 13px;">
+            <span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">Barbell Curl</span>
+            <span style="display:block; margin-top:3px; font-size:11px; color:var(--fl-text-tertiary);">Barbell · Arms</span>
+          </div>
+        </div>
+        <div style="border-radius:var(--fl-radius-xl); border:var(--fl-border-subtle); background:var(--fl-surface-recessed); box-shadow:var(--fl-border-inset); display:flex; align-items:center; justify-content:center; color:var(--fl-text-tertiary); font-size:11px;">Other exercise</div>
+      </div>
+    </div>
+
+    <!-- ═══ REFERENCE · RAW (checkerboard, un-keyed) ═══ -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <span style="font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Source file · raw (un-keyed)</span>
+      <div style="width:320px; height:180px; border-radius:var(--fl-radius-xl); overflow:hidden; border:1px solid var(--fl-charcoal-600); box-shadow:var(--fl-shadow-card);">
+        <x-import component-from-global-scope="forge-anim" from="./forge-anim.js" src="assets/anim-curl-preview.mp4" fit="contain" key="off" hint-size="100%,100%" style="width:100%; height:100%;"></x-import>
+      </div>
+      <p style="width:320px; margin:0; font-size:12px; line-height:1.55; color:var(--fl-text-tertiary); text-wrap:pretty;">The two flat checkerboard grays (#D2D2D2 / #A1A1A1) are keyed out live. The MP4 has no real alpha channel — for shipping you'll want the alpha-capable master (WebM/VP9, HEVC-with-alpha, or ProRes 4444).</p>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:760},&quot;keyOut&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Preview&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      keyAttr: (this.props.keyOut ?? true) ? 'on' : 'off',
+    };
+  }
+}
+</script>
+</body>
+</html>

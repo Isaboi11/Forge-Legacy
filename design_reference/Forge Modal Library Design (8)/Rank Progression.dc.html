@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#0A0807; color:#EFE9E0; font-family:'Playfair Display',Georgia,serif; -webkit-font-smoothing:antialiased; }
+  .fn-sans { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+</style>
+</helmet>
+<div style="min-height:100vh; background:radial-gradient(120% 50% at 50% -4%, rgba(191,143,79,0.10) 0%, rgba(191,143,79,0) 44%), radial-gradient(90% 40% at 50% 116%, rgba(189,120,41,0.06) 0%, rgba(0,0,0,0) 60%), #0A0807; padding:60px 44px 88px; display:flex; flex-direction:column; align-items:center;">
+
+  <!-- ══ MASTHEAD ══ -->
+  <header style="display:flex; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:1180px;">
+    <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:5px; text-transform:uppercase; color:#8A6B41; margin-bottom:16px;">The Forge Path</span>
+    <h1 style="margin:0; font-size:56px; font-weight:800; letter-spacing:11px; text-indent:11px; background:linear-gradient(180deg,#F0D9A8,#93693B); -webkit-background-clip:text; background-clip:text; color:transparent;">RANK PROGRESSION</h1>
+    <div style="display:flex; align-items:center; gap:16px; width:min(560px,82%); margin:24px 0 16px;">
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(191,143,79,0.7));"></span>
+      <span style="width:8px; height:8px; flex:none; transform:rotate(45deg); border:1px solid #BF8F4F;"></span>
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.7),transparent);"></span>
+    </div>
+    <span class="fn-sans" style="font-size:13px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#B08A55;">Seven ranks · four tiers each · earned in sequence</span>
+  </header>
+
+  <!-- ══ COLUMN HEADER ══ -->
+  <div style="width:100%; max-width:1180px; margin-top:56px; display:grid; grid-template-columns:200px 1fr; gap:28px; align-items:end;">
+    <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:2.4px; text-transform:uppercase; color:#6C5A41;">Rank</span>
+    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:22px;">
+      <sc-for list="{{ tierHead }}" as="th" hint-placeholder-count="4">
+        <span class="fn-sans" style="text-align:center; font-size:11px; font-weight:600; letter-spacing:2.4px; text-transform:uppercase; color:#6C5A41;">{{ th }}</span>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ══ RANK ROWS ══ -->
+  <div style="width:100%; max-width:1180px; margin-top:10px;">
+    <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+      <div style="display:grid; grid-template-columns:200px 1fr; gap:28px; align-items:center; padding:30px 0; border-top:{{ r.border }};">
+        <!-- rank label -->
+        <div style="display:flex; flex-direction:column; align-items:flex-start; gap:11px;">
+          <span class="fn-sans" style="font-size:11px; font-weight:700; letter-spacing:2.6px; color:#7A5E38;">{{ r.index }}</span>
+          <span style="font-size:29px; font-weight:600; letter-spacing:0.5px; background:linear-gradient(180deg,#EAD09B,#B98F4E); -webkit-background-clip:text; background-clip:text; color:transparent;">{{ r.name }}</span>
+          <span style="width:44px; height:2px; background:linear-gradient(90deg,#BF8F4F,transparent);"></span>
+          <span class="fn-sans" style="font-size:11px; font-weight:500; letter-spacing:0.4px; color:#7C7469; line-height:1.5;">{{ r.essence }}</span>
+          <span class="fn-sans" style="font-size:10px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:#8A6B41;">{{ r.genderLabel }}</span>
+        </div>
+        <!-- four tier badges -->
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:22px;">
+          <sc-for list="{{ r.tiles }}" as="t" hint-placeholder-count="4">
+            <div style="display:flex; flex-direction:column; align-items:center;">
+              <div style="width:100%; max-width:156px; margin:0 auto; filter:drop-shadow(0 12px 22px rgba(0,0,0,0.55));">
+                <dc-import name="FoundationBadge" rank="{{ r.key }}" tier="{{ t.tier }}" sex="{{ r.sex }}" hint-size="156px,214px"></dc-import>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ══ ASSET NOTE ══ -->
+  <p class="fn-sans" style="max-width:760px; text-align:center; margin:52px 0 0; font-size:12.5px; line-height:1.8; color:#5F5648;">Qualify for a tier and its badge is awarded — then it follows you across the app: profile, home, squads, leaderboards, and the rank ceremony. Each is a transparent cutout mounted with <span style="color:#B08A55;">&lt;dc-import name="FoundationBadge" rank tier&gt;</span> — <span style="color:#8A6B41;">foundation · builder · craftsman · architect · established · hall · legacy</span>.</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const tiles = [
+      { tier: '1', roman: 'I' },
+      { tier: '2', roman: 'II' },
+      { tier: '3', roman: 'III' },
+      { tier: '4', roman: 'IV' },
+    ];
+    const defs = [
+      { index: '01', key: 'foundation', name: 'Foundation', essence: 'The beginning of every legacy.' },
+      { index: '02', key: 'builder',    name: 'Builder',    essence: 'The habit takes hold.' },
+      { index: '03', key: 'craftsman',  name: 'Craftsman',  essence: 'Skill sharpened by repetition.' },
+      { index: '04', key: 'architect',  name: 'Architect',  essence: 'You design the work now.' },
+      { index: '05', key: 'established', name: 'Established', essence: 'What you built outlives you.', sex: 'm', genderLabel: 'Male' },
+      { index: '',   key: 'established', name: '',           essence: '',                            sex: 'f', genderLabel: 'Female' },
+      { index: '06', key: 'hall',       name: 'Legend',     essence: 'Among the few who endured.' },
+      { index: '07', key: 'legacy',     name: 'Legacy',     essence: 'Timeless, complete, beyond the self.' },
+    ];
+    const rows = defs.map((d, i) => Object.assign({ sex: 'm', genderLabel: '' }, d, { tiles, border: i === 0 ? 'none' : '1px solid #201811' }));
+    return { rows, tierHead: ['I', 'II', 'III', 'IV'] };
+  }
+}
+</script>
+</body>
+</html>

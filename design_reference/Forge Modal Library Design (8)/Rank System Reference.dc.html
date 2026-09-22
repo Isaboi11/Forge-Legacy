@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#08090C; color:#EFE9E0; font-family:'Playfair Display',Georgia,serif; -webkit-font-smoothing:antialiased; }
+  .fn-sans { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+</style>
+</helmet>
+<div style="min-height:100vh; background:radial-gradient(120% 52% at 50% -6%, rgba(191,143,79,0.10) 0%, rgba(191,143,79,0) 46%), #08090C; padding:60px 40px 80px; display:flex; flex-direction:column; align-items:center;">
+
+  <!-- ══ MASTHEAD ══ -->
+  <header style="display:flex; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:1180px;">
+    <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:5px; text-transform:uppercase; color:#8A6B41; margin-bottom:16px;">The Forge Path · Progression Framework</span>
+    <h1 style="margin:0; font-size:54px; font-weight:700; letter-spacing:10px; text-indent:10px; background:linear-gradient(180deg,#EFD3A0,#93693B); -webkit-background-clip:text; background-clip:text; color:transparent;">THE RANK SYSTEM</h1>
+    <div style="display:flex; align-items:center; gap:16px; width:min(560px,82%); margin:22px 0 14px;">
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(191,143,79,0.7));"></span>
+      <span style="width:8px; height:8px; flex:none; transform:rotate(45deg); border:1px solid #BF8F4F;"></span>
+      <span style="flex:1; height:1px; background:linear-gradient(90deg,rgba(191,143,79,0.7),transparent);"></span>
+    </div>
+    <span class="fn-sans" style="font-size:13px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#B08A55;">7 families · 25 levels · earned, permanent, never lost</span>
+    <p class="fn-sans" style="max-width:680px; margin:20px 0 0; font-size:13px; line-height:1.7; color:#9A938A;">Rank is not points or streaks — it is long-term development made legible: produced not conferred, permanent, identity-based, and multi-dimensional. Every threshold below is a minimum, and a family promotion requires <em>all</em> applicable rows at once.</p>
+  </header>
+
+  <!-- ══ 1 · THE LADDER ══ -->
+  <div style="width:100%; max-width:1180px; margin-top:60px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:22px;">The Ladder · seven identities, ascending</span>
+    <div style="display:flex; flex-direction:column; gap:2px;">
+      <sc-for list="{{ ladder }}" as="f" hint-placeholder-count="7">
+        <div style="display:grid; grid-template-columns:54px 1fr 300px; gap:20px; align-items:center; padding:20px 4px; border-top:1px solid #1C150E;">
+          <span style="width:46px; height:46px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); border:1px solid {{ f.ring }}; background:radial-gradient(circle at 50% 34%, {{ f.tint }}, transparent 72%); font-family:var(--fl-font-display); font-size:19px; font-weight:700; color:{{ f.ink }};">{{ f.n }}</span>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <div style="display:flex; align-items:baseline; gap:12px;">
+              <span style="font-size:23px; font-weight:600; letter-spacing:0.3px; color:#E4C88E;">{{ f.name }}</span>
+              <span class="fn-sans" style="font-size:11px; font-weight:600; letter-spacing:2px; color:#6C5A41;">{{ f.tiers }}</span>
+            </div>
+            <span style="font-family:var(--fl-font-display); font-style:italic; font-size:14.5px; color:#B08A55;">{{ f.statement }}</span>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <sc-for list="{{ f.stats }}" as="s" hint-placeholder-count="3">
+              <div style="flex:1; display:flex; flex-direction:column; gap:3px; padding:9px 11px; border-radius:var(--fl-radius-md); background:#100C08; border:1px solid #1C150E;">
+                <span class="fn-sans" style="font-size:8.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#6C5A41;">{{ s.label }}</span>
+                <span class="fn-sans" style="font-size:12px; font-weight:600; color:#C6BEB2;">{{ s.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ══ 2 · THE MONEY TABLE ══ -->
+  <div style="width:100%; max-width:1180px; margin-top:64px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41;">The Money Table · family-promotion thresholds</span>
+    <p class="fn-sans" style="margin:8px 0 22px; font-size:12px; color:#8F877C;">All applicable rows must be satisfied simultaneously. Values are minimums; exceeding one never offsets a deficit in another.</p>
+    <div style="overflow-x:auto;">
+      <div style="min-width:940px;">
+        <!-- header -->
+        <div style="display:grid; grid-template-columns:200px repeat(6, 1fr); gap:1px; background:#1C150E; border:1px solid #1C150E; border-radius:var(--fl-radius-md) var(--fl-radius-md) 0 0; overflow:hidden;">
+          <span class="fn-sans" style="padding:12px 12px; background:#0C0906; font-size:10px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:#6C5A41;">Requirement</span>
+          <sc-for list="{{ mtCols }}" as="c" hint-placeholder-count="6">
+            <span class="fn-sans" style="padding:12px 10px; background:#0C0906; font-size:10.5px; font-weight:700; letter-spacing:0.3px; color:#B08A55; text-align:center; line-height:1.3;">{{ c }}</span>
+          </sc-for>
+        </div>
+        <!-- rows -->
+        <sc-for list="{{ mtRows }}" as="r" hint-placeholder-count="11">
+          <div style="display:grid; grid-template-columns:200px repeat(6, 1fr); gap:1px; background:#140F09;">
+            <span class="fn-sans" style="padding:11px 12px; background:#0A0805; display:flex; flex-direction:column; gap:1px;"><span style="font-size:12px; font-weight:600; color:#C6BEB2;">{{ r.label }}</span><span style="font-size:9.5px; color:#6C5A41;">{{ r.sub }}</span></span>
+            <sc-for list="{{ r.cells }}" as="v" hint-placeholder-count="6">
+              <span class="fn-sans" style="padding:11px 8px; background:#0A0805; font-size:12px; font-weight:500; color:{{ v.color }}; text-align:center; font-variant-numeric:tabular-nums; line-height:1.3;">{{ v.text }}</span>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <p class="fn-sans" style="margin:16px 0 0; font-size:11.5px; line-height:1.65; color:#7C7469;"><span style="color:#B08A55;">The prestige boundary —</span> Architect and above are prestige ranks: imported pre-Forge history can't grant them alone. A Forge-native active-weeks floor (exactly 50% of the cumulative requirement) plus a native-only recent-engagement gate enforce "identity forged here, not imported." Below Craftsman, imported history counts at full credit.</p>
+  </div>
+
+  <!-- ══ 3 · SUB-TIERS ══ -->
+  <div style="width:100%; max-width:1180px; margin-top:64px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41;">Within the Family · sub-tier advancement</span>
+    <p class="fn-sans" style="margin:8px 0 22px; font-size:12px; color:#8F877C;">Driven by active weeks (AW) accumulated since entering the current family — the counter resets on every family promotion. Sub-tier advances fire no ceremony. From Craftsman up, one sub-tier also needs confirming evidence.</p>
+    <div style="display:grid; grid-template-columns:150px 90px 90px 90px 1fr; gap:1px; background:#1C150E; border:1px solid #1C150E; border-radius:var(--fl-radius-md); overflow:hidden;">
+      <span class="fn-sans" style="padding:11px 12px; background:#0C0906; font-size:10px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:#6C5A41;">Family</span>
+      <span class="fn-sans" style="padding:11px 8px; background:#0C0906; font-size:10.5px; font-weight:700; color:#B08A55; text-align:center;">I → II</span>
+      <span class="fn-sans" style="padding:11px 8px; background:#0C0906; font-size:10.5px; font-weight:700; color:#B08A55; text-align:center;">II → III</span>
+      <span class="fn-sans" style="padding:11px 8px; background:#0C0906; font-size:10.5px; font-weight:700; color:#B08A55; text-align:center;">III → IV</span>
+      <span class="fn-sans" style="padding:11px 12px; background:#0C0906; font-size:10.5px; font-weight:700; color:#B08A55;">Confirming evidence</span>
+      <sc-for list="{{ stRows }}" as="r" hint-placeholder-count="6">
+        <span class="fn-sans" style="padding:12px; background:#0A0805; font-size:13px; font-weight:600; color:#E4C88E;">{{ r.family }}</span>
+        <span class="fn-sans" style="padding:12px 8px; background:#0A0805; font-size:12px; color:#C6BEB2; text-align:center; font-variant-numeric:tabular-nums;">{{ r.a }}</span>
+        <span class="fn-sans" style="padding:12px 8px; background:#0A0805; font-size:12px; color:#C6BEB2; text-align:center; font-variant-numeric:tabular-nums;">{{ r.b }}</span>
+        <span class="fn-sans" style="padding:12px 8px; background:#0A0805; font-size:12px; color:#C6BEB2; text-align:center; font-variant-numeric:tabular-nums;">{{ r.c }}</span>
+        <span class="fn-sans" style="padding:12px; background:#0A0805; font-size:11.5px; color:#8F877C; line-height:1.5;">{{ r.evidence }}</span>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ══ 4 · CONSTANTS ══ -->
+  <div style="width:100%; max-width:1180px; margin-top:64px;">
+    <span class="fn-sans" style="display:block; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:#6C5A41; margin-bottom:22px;">The Constants · definitions that make it computable</span>
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;">
+      <sc-for list="{{ constants }}" as="k" hint-placeholder-count="6">
+        <div style="padding:18px 20px; border-radius:var(--fl-radius-lg); background:#100C08; border:1px solid #1C150E; display:flex; flex-direction:column; gap:8px;">
+          <span style="font-family:var(--fl-font-display); font-size:26px; font-weight:700; letter-spacing:-0.3px; color:#D8B981;">{{ k.big }}</span>
+          <span class="fn-sans" style="font-size:12px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:#B08A55;">{{ k.label }}</span>
+          <span class="fn-sans" style="font-size:12px; line-height:1.6; color:#8F877C;">{{ k.desc }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ══ NOTE ══ -->
+  <p class="fn-sans" style="max-width:800px; text-align:center; margin:56px 0 0; font-size:12px; line-height:1.8; color:#5F5648;">Evaluation runs on session save, chapter seal, program graduation and goal completion, plus passive re-checks for time gates and recent engagement. Earned promotions queue and deliver one at a time — family promotions fire the M-1 ceremony; sub-tier advances are silent. <span style="color:#8A6B41;">Guided Transparency:</span> athletes see direction — current rank and what to develop next — never the scores, weights, or exact thresholds on this page. Source: Rank-System-Architecture · Rank-Computation-Model §13–15 · Rank-Calibration-Decisions Q1–Q14 — LOCKED v1.0.</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    var warm = [
+      { ring: 'rgba(154,123,76,0.6)', tint: 'rgba(154,123,76,0.16)', ink: '#9A7B4C' },
+      { ring: 'rgba(178,134,74,0.7)', tint: 'rgba(178,134,74,0.18)', ink: '#B2864A' },
+      { ring: 'rgba(191,143,79,0.8)', tint: 'rgba(191,143,79,0.2)',  ink: '#BF8F4F' },
+      { ring: 'rgba(205,160,99,0.9)', tint: 'rgba(205,160,99,0.22)', ink: '#CDA063' },
+      { ring: 'rgba(219,185,129,0.95)', tint: 'rgba(219,185,129,0.24)', ink: '#DBB981' },
+      { ring: 'rgba(231,201,142,0.98)', tint: 'rgba(231,201,142,0.26)', ink: '#E7C98E' },
+      { ring: 'rgba(244,222,170,1)', tint: 'rgba(244,222,170,0.3)',  ink: '#F4DEAA' },
+    ];
+    var L = [
+      ['Foundation', 'I · II · III · IV', "I've started.", '0–2 months', 'Fast', 'None'],
+      ['Builder', 'I · II · III · IV', "I'm building habits.", '2–6 months', 'Moderate', '60 days'],
+      ['Craftsman', 'I · II · III · IV', 'I know how to train.', '6–12 months', 'Moderate', '270 days'],
+      ['Architect', 'I · II · III · IV', "I'm intentionally shaping my development.", '1–2 years', 'Slow', '540 days'],
+      ['Established', 'I · II · III · IV', "I've built something real.", '2–4 years', 'Very Slow', '4 years'],
+      ['Legend', 'I · II · III · IV', 'My journey has become a meaningful story.', '5–8 years', 'Extremely Slow', '7 years'],
+      ['Legacy', 'final — no sub-tiers', 'I repeatedly become the person I intend to become.', '~7–10 years', 'Final', 'Exceptional'],
+    ];
+    var ladder = L.map(function (r, i) {
+      return {
+        key: r[0], n: String(i + 1), name: r[0], tiers: r[1], statement: r[2],
+        ring: warm[i].ring, tint: warm[i].tint, ink: warm[i].ink,
+        stats: [
+          { key: 'target', label: 'Target', value: r[3] },
+          { key: 'cadence', label: 'Cadence', value: r[4] },
+          { key: 'gate', label: 'Time gate', value: r[5] },
+        ],
+      };
+    });
+
+    var mtCols = ['Foundation → Builder', 'Builder → Craftsman', 'Craftsman → Architect', 'Architect → Established', 'Established → Legend', 'Legend → Legacy'];
+    var MT = [
+      ['Time gate', 'minimum elapsed', ['None', '60 days', '270 days', '540 days', '1,460 days', '2,555 days']],
+      ['Cumulative active weeks', 'since journey start', ['6', '18', '36', '72', '210', '288']],
+      ['Forge-native AW floor', '50% must be native', ['—', '—', '18', '36', '105', '144']],
+      ['Personal improvement', 'personal-best pattern', ['—', 'First event', 'Multi-period', 'Repeated', 'Multi-year', 'Multi-phase']],
+      ['Program graduations', '', ['0', '0', '1', '3', '6', '10']],
+      ['Training volume', 'meaningful-work sessions', ['12', '36', '90', '200', '400', '700']],
+      ['Sealed chapters', '', ['0', '0', '1', '2', '3', '5']],
+      ['Goal participation events', '', ['0', '0', '1', '2', '4', '6']],
+      ['Primary goals achieved', 'minimum', ['0', '0', '—', '≥1', '≥2', '≥4']],
+      ['Recent engagement', '12 wk / 8 native AW', ['—', '—', 'Required', 'Required', 'Required', 'Required']],
+      ['Signature milestone', '', ['None', 'None', '1st sealed chapter', '3 programs + 2 chapters', '6 programs + 3 chapters', '10 programs + 5 chapters']],
+    ];
+    var mtRows = MT.map(function (r) {
+      return {
+        key: r[0], label: r[0], sub: r[1],
+        cells: r[2].map(function (t, j) {
+          var muted = (t === '—' || t === 'None' || t === '0');
+          return { key: j, text: t, color: muted ? '#5F5648' : '#C6BEB2' };
+        }),
+      };
+    });
+
+    var ST = [
+      ['Foundation', '2 AW', '4 AW', '6 AW', 'None at any sub-tier'],
+      ['Builder', '3 AW', '6 AW', '10 AW', 'None at any sub-tier'],
+      ['Craftsman', '4 AW', '8 AW', '14 AW', 'II→III: first improvement event on primary signal'],
+      ['Architect', '6 AW', '12 AW', '20 AW', 'II→III: 1 completed program graduation'],
+      ['Established', '8 AW', '16 AW', '26 AW', 'III→IV: 1 additional sealed chapter'],
+      ['Legend', '10 AW', '22 AW', '36 AW', 'III→IV: 1 additional program graduation'],
+    ];
+    var stRows = ST.map(function (r) { return { key: r[0], family: r[0], a: r[1], b: r[2], c: r[3], evidence: r[4] }; });
+
+    var constants = [
+      { key: 'mw', big: '10 min', label: 'Meaningful work floor', desc: 'A saved, completed session of any of the 9 activity types lasting ≥ 10 minutes. The single most load-bearing value in the system.' },
+      { key: 'aw', big: 'Mon–Sun', label: 'Active week', desc: 'A calendar week containing ≥ 1 meaningful-work session. The atomic consistency unit that feeds every threshold.' },
+      { key: 're', big: '12 wk / 8 AW', label: 'Recent engagement', desc: '≥ 8 native active weeks in the trailing 84 days, checked when a promotion fires. Uniform across all prestige ranks; imported sessions never count.' },
+      { key: 'imp', big: '50%', label: 'Import partial credit', desc: 'Imported active weeks and sessions count at half value toward prestige thresholds (Craftsman → Architect and up). Full credit below Craftsman.' },
+      { key: 'base', big: '3 / wk', label: 'Baseline athlete', desc: 'The calibration reference: ~3 sessions per active week, active ~75% of weeks, 1 program per 3–4 months, 1 sealed chapter per 6–9 months.' },
+      { key: 'types', big: '9 types', label: 'Activity types', desc: 'Strength · Run · Walk · Bike · Swim · HIIT · Mobility · Yoga · Other — all equally valid; none excluded from volume credit.' },
+    ];
+
+    return { ladder: ladder, mtCols: mtCols, mtRows: mtRows, stRows: stRows, constants: constants };
+  }
+}
+</script>
+</body>
+</html>

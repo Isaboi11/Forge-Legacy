@@ -271,21 +271,34 @@ comparison a challenge *is*.
 logged in this app.** The reps cap directly beside it was deliberately raised past the wheel for this exact
 reason (`:115`).
 
-**P0-22 · Program Detail's progress bar cannot see a skipped session.** ✅ **reproduced**
+**P0-22 · Program Detail's progress bar cannot see a skipped session.** ✅ **reproduced** — ✅ **FIXED 2026-09-09**
 `program/[id].tsx:276` feeds `workouts.length` into `computeProgress` while holding `marks` in state.
 `touchedCount` = 2 · `computeProgress(s,1)` = `{completed:1, pct:13, nextDayIndex:1}` — and `nextDayIndex`
 names the session just completed. A program graduated by skipping reads 17% forever.
+> **Fixed:** `progressFromMarks(structure, marks)` replaces it and `computeProgress` is retired. `completed`
+> now means TOUCHED — trained or skipped — which is what graduation counts, so the bar and the finish line
+> can no longer disagree. `changeWarning`'s "sessions ahead of you" moved off the workout count too.
+> `Program-Fork-Edit-Amendment-002` §7.
 
-**P0-23 · "Your Log" files sessions under the wrong day after any skip or swap.**
+**P0-23 · "Your Log" files sessions under the wrong day after any skip or swap.** ✅ **FIXED 2026-09-09**
 `progress-core.ts:330-331` — `offsets[wi] + di` positional fill, and `buildLog` takes no `marks` at all,
 though `program_sessions.workout_id` records exactly which slot a workout satisfied. Produces a row with a
 completion tick **and** a "Skipped" chip simultaneously, and hides the untrained day's actions.
+> **Fixed:** `buildLog` takes `marks` and files each workout by its own `workout_id`. A skipped mark renders
+> a row that is skipped and not completed; a `completed` mark whose workout was deleted (`on delete set
+> null`) renders as trained-without-detail rather than reappearing as owed. Workouts with no mark — pre-0119
+> rows, and any whose session row failed to write — still fill in date order, but only into slots nothing
+> else claims, so an unmarked workout can never displace a marked one. `week.complete` now means every
+> session accounted for, so a week containing a skip can end.
 
-**P0-24 · "Next session" names one already trained — and puts it in a Train-Together invite.** ✅ verified
+**P0-24 · "Next session" names one already trained — and puts it in a Train-Together invite.** ✅ verified — ✅ **FIXED 2026-09-09**
 `progress-core.ts:188` is `slots[completedCount]`. After a swap or skip it returns the wrong day, and
 `templates-live.ts:142-150` snapshots that into the invite, so **both athletes train a session already
 logged**. `nextOpenSlot` (`:551`) is correct and is what Home and the logger use. Their docstrings state
 the identical purpose.
+> **Fixed:** all four callers — `chapter-detail-live`, `progress-hub-live`, `templates-live`,
+> `workout-complete-live` — now read the marks and call `nextOpenSlot`. `nextSession` and
+> `fetchProgramCompletedCount` are deleted, so there is no second opinion left to drift.
 
 **P0-25 · "Training today" reads 0 for a squad where everyone trained.** ✅ verified
 `0053:69-71` (`discover_squads`) and `0055:192-194` (`squad_preview`) count `squad_checkins` only. `0108`

@@ -113,6 +113,16 @@ const NOISE = new Set(['the', 'a', 'and', 'or', 'with', 'on', 'to', 'for', 'of',
  */
 const EQUIPMENT_PREFERENCE = ['barbell', 'dumbbell', 'cable', 'machine', 'smith', 'kettlebell', 'band'];
 
+/** The muscles a catalogue name adds — a variant named for its target, not for a style. */
+// ⚠ SINGULAR, because `tokenize` folds plurals: "Biceps" arrives here as "bicep".
+const BODY_PART_WORDS = new Set(['bicep', 'tricep', 'chest', 'back', 'lat', 'leg', 'calf', 'glute', 'hamstring', 'quad', 'shoulder', 'delt', 'trap', 'ab', 'core', 'forearm', 'hip']);
+
+/** The words that say what a lift DOES — see the "no movement named" rule in `matchExercise`. */
+const MOVEMENTS = new Set([
+  'press', 'curl', 'row', 'fly', 'raise', 'extension', 'squat', 'deadlift', 'lunge', 'pulldown', 'pushdown',
+  'pullup', 'pull', 'push', 'dip', 'shrug', 'crunch', 'bridge', 'thrust', 'kickback', 'pullover', 'carry',
+]);
+
 /**
  * Implements a bare exercise name never means.
  *
@@ -145,6 +155,12 @@ export function tokenize(raw: string): Set<string> {
   const expanded = raw
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
+    /*
+     * "One arm", "1 arm", "one-armed" are what the catalogue calls SINGLE-arm. A photographed program
+     * said "One arm dumbbell row" and it went unmatched against "Single-Arm Dumbbell Row" over one word
+     * (PO, 2026-09-22). Same for legs — "1 leg RDL".
+     */
+    .replace(/\b(?:one|1)\s+(arm|leg)(?:ged|ed)?\b/g, 'single $1')
     .trim()
     .split(/\s+/)
     .flatMap((w) => (ABBREVIATIONS[w] ?? w).split(' '));
@@ -209,6 +225,21 @@ export function matchExercise(written: string, catalog: readonly CatalogEntry[])
         )
       : tied;
   if (usable.length === 0) return null;
+  /*
+   * ⚠ A NAME THAT NEVER SAYS WHAT THE MOVEMENT IS HAS NO NEAREST CANDIDATE.
+   *
+   * "Incline DB" is a press to anyone in a gym — and it reached Dumbbell Incline CURL, because the curl
+   * adds one word ("curl") where the press adds two ("bench press"). Word count cannot choose between a
+   * press, a curl, a fly and a row; every one of them is one movement word away. When the athlete wrote
+   * no movement and the candidates disagree on it, the matcher answers nothing, and the curated
+   * conventions in `aliases.ts` say what the words conventionally mean (PO, 2026-09-21: *"inclined
+   * dumbbell needs to match the right workout"*).
+   */
+  if (![...q].some((w) => MOVEMENTS.has(w))) {
+    const movementsAdded = new Set(candidates.flatMap((c) => [...c.tokens].filter((w) => MOVEMENTS.has(w) && !q.has(w))));
+    if (movementsAdded.size > 1) return null;
+  }
+
   if (usable.length === 1) {
     const only = usable[0];
     // Purely an implement choice the athlete never made, and an implement nobody means by a bare name.
@@ -246,4 +277,77 @@ export function matchExercise(written: string, catalog: readonly CatalogEntry[])
   }
 
   return null; // genuinely ambiguous — keep what they wrote
+}
+
+// ── suggestions for a name that did not match ───────────────────────────────
+
+/** Two words the same, or one typo apart once they are long enough for a typo to be a typo. */
+function closeWord(a: string, b: string): boolean {
+  if (a === b) return true;
+  const n = Math.min(a.length, b.length);
+  if (n < 4 || Math.abs(a.length - b.length) > 2) return false;
+  const limit = n >= 7 ? 2 : 1;
+  // Bounded Levenshtein — these are single words, so the table is tiny.
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[b.length] <= limit;
+}
+
+/**
+ * The library exercises a written name most likely MEANT — offered, never applied.
+ *
+ * ⚠ THIS IS NOT A LOOSER `matchExercise`. That function answers "what IS this?" and refuses to guess;
+ * this one answers "what might you mean?" and is only ever shown as a choice the athlete taps. A name
+ * the matcher left alone ("lat pulldwon", "DB row", "one arm row") reached nothing and could only be
+ * fixed in the builder afterwards (PO, 2026-09-22: *"letting them connect it to an exercise"*).
+ *
+ * Ranked by how many of the written words appear (a typo counts), then by how few words the candidate
+ * adds. A candidate must share a word that is not just equipment — "dumbbell" alone suggests nothing.
+ */
+export function suggestExercises(written: string, catalog: readonly CatalogEntry[], limit = 3): MatchResult[] {
+  const q = [...tokenize(written)];
+  if (!q.length) return [];
+  const scored: { entry: CatalogEntry; hits: number; extra: number }[] = [];
+  for (const entry of catalog) {
+    const t = [...tokenize(entry.name)];
+    const matched = q.filter((w) => t.some((x) => closeWord(w, x)));
+    if (!matched.some((w) => !EQUIPMENT_PREFERENCE.includes(w))) continue;
+    if (matched.length < Math.ceil(q.length / 2)) continue;
+    scored.push({ entry, hits: matched.length, extra: t.length - matched.length });
+  }
+  /*
+   * ⚠ AND THE EVERYDAY LIFT COMES FIRST. Ranked by words alone, "Barbell or DB Curl" offered Drag Curl
+   * ahead of Biceps Curl and "Dumbbell row" offered Seal Row ahead of Bent-Over Row — each the shortest
+   * name among equals, and none of them what anybody means (PO, 2026-09-22). A suggestion is a guess
+   * about intent, so the tie-break is about intent too: the implement people actually reach for.
+   */
+  /*
+   * Two kinds of extra word: one NAMES THE MUSCLE the lift is for ("Barbell Biceps Curl"), the other
+   * names a STYLE of doing it ("Barbell Drag Curl", "Dumbbell Seal Row"). Somebody who wrote neither
+   * meant the plain one, so the muscle-named variant is offered first.
+   */
+  const plain = (e: CatalogEntry) => {
+    const extra = [...tokenize(e.name)].filter((w) => !q.includes(w));
+    return extra.every((w) => BODY_PART_WORDS.has(w) || EQUIPMENT_PREFERENCE.includes(w)) ? 0 : 1;
+  };
+  const rank = (e: CatalogEntry) => {
+    const t = tokenize(e.name);
+    for (const [i, w] of EQUIPMENT_PREFERENCE.entries()) if (t.has(w)) return i;
+    return EQUIPMENT_PREFERENCE.length; // bodyweight and the unequipped — ahead of nothing, behind nothing
+  };
+  scored.sort(
+    (a, b) =>
+      b.hits - a.hits ||
+      a.extra - b.extra ||
+      rank(a.entry) - rank(b.entry) ||
+      plain(a.entry) - plain(b.entry) ||
+      a.entry.name.length - b.entry.name.length,
+  );
+  return scored.slice(0, limit).map((s) => ({ key: s.entry.key, name: s.entry.name, byPreference: false }));
 }

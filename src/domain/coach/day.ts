@@ -546,10 +546,23 @@ export function buildDayWorkout(
 
   /* ⚠ THE TITLE IS NAMED FROM WHAT IS IN THE DAY, NOT FROM WHAT WAS ASKED FOR. If conditioning was
      requested and nothing could be found for it — a bare floor and no rope — the session is "Back", not
-     "Back & Cardio". `missing` already carries the fact; the name must not contradict it. */
+     "Back & Cardio". `missing` already carries the fact; the name must not contradict it.
+
+     ⚠ AND THE SAME FOR EVERY BODY PART, which is where it was still lying. The rule was written for
+     cardio alone, so "Chest & Back" in an empty home came out as four push-up variants under that title
+     — no pulling movement exists without a bar — and a six-part ask at thirty minutes named six parts
+     over four movements. 27,486 of 36,126 multi-part days in the 2026-09-21 sweep titled at least one
+     part the session did not contain. A part in `missing` is dropped from the name; the day is called
+     what it trains. */
   const gotCardio = chosen.some((c) => c.pattern === CARDIO_PATTERN);
   const named: DayFocus =
-    req.focus.kind === 'body_parts' && req.focus.cardio && !gotCardio ? { ...req.focus, cardio: false } : req.focus;
+    req.focus.kind === 'body_parts'
+      ? {
+          ...req.focus,
+          parts: req.focus.parts.filter((p) => !missing.includes(p)),
+          cardio: req.focus.cardio === true && gotCardio,
+        }
+      : req.focus;
 
   return { day: { letter: 'A', name: titleFor(named), warmup: [], main, cooldown: [] }, missing, stretched };
 }

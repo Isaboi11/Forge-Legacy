@@ -84,6 +84,7 @@ import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/doma
 import { publishLiveSession } from '@/data/live-session-live';
 import { liveSessionSnapshot } from '@/domain/workout/live-session';
 import { blockAt, breakBlock, endsSupersetRound, indexAfterRemoval, makeSuperset, nextInSuperset, nextPosition, removeExerciseAt, sessionToTemplateExercises, supersetRounds, syncSupersetRounds } from '@/domain/workout/session-core';
+import { joinAsSuperset, supersetOffer } from '@/domain/workout/superset-offer';
 import { setWeightLabel, setWeightLabelLb } from '@/domain/workout/set-load';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
@@ -116,6 +117,10 @@ import { useScreenPrompt, useTour } from '@/hooks/useTour';
 import { useKeyboardInset } from '@/lib/useKeyboardInset';
 import { clearExerciseInbox, readExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
 import type { ActiveSession, SessionExercise, SessionSet, WorkoutSectionKind } from '@/domain/workout/types';
+import { registerWatchCommands } from '@/domain/workout/watch-commands';
+import { projectWatchState } from '@/domain/workout/watch-projection';
+import { pushWatchState, subscribeWatchCommands } from '@/lib/watch-bridge';
+import { activeTheme } from '@/constants/theme-choice';
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -518,6 +523,15 @@ export default function WorkoutScreen() {
    * very first set. The ANSWER is then written into `intraLine`, so both end up on the same coin.
    */
   const [effortAsk, setEffortAsk] = useState<{ ei: number } | null>(null);
+  /**
+   * "Superset this with Bench Press?" — Holt noticing a superset being built. See `supersetOffer`.
+   *
+   * Held by `position` (the save join key), not by index: the athlete can remove or add a lift before
+   * answering, and an index would then point the question at the wrong pair. Whether it SHOWS is derived
+   * at render (`ssAskView`) — it lives only while they stand on the new lift with nothing logged on it
+   * and the old one still unfinished, so moving on answers it without a tap.
+   */
+  const [supersetAsk, setSupersetAsk] = useState<{ prevPos: number; newPos: number } | null>(null);
   /** Answered already, per exercise index. Once per movement, ever — see `shouldAskEffort`. */
   const [effortDone, setEffortDone] = useState<Record<number, boolean>>({});
   /**
@@ -1414,6 +1428,17 @@ export default function WorkoutScreen() {
              inbox from a build that predates the picker's section pills has no `section` and drains as
              'main', which is exactly what it meant. */
           const addedSection = inbox.section ?? 'main';
+          /* Added before the lift they were on was finished — Holt asks whether this is a superset. Read
+             off the session BEFORE the append, where `exerciseIndex` is still the lift they left. */
+          const offer = supersetOffer({
+            exercises: cur.exercises,
+            currentIdx: cur.exerciseIndex ?? 0,
+            /* Built the way the append below builds them, so a cardio pick reads as cardio. */
+            added: inbox.items.map((p) => pickedToExercise(p, 0, addedSection)),
+            addedSection,
+            declaredSuperset: asSuperset,
+          });
+          setSupersetAsk(offer ? { prevPos: cur.exercises[offer.prevIdx].position, newPos: nextPosition(cur.exercises) } : null);
           // Appending and jumping to what was appended are ONE update now that the index lives on the
           // session — two calls would still queue correctly, but a later edit could reorder them.
           setSession((s) => {
@@ -1517,6 +1542,13 @@ export default function WorkoutScreen() {
     setRestSec(Math.max(15, durMin * 60 + durSec)); // floor 15s
     setDurationPicker(false);
   };
+
+  /* Hoisted above `completeSet`, which calls it. It was declared ~250 lines BELOW its first use, and
+     React Compiler rejects the component for it ("Cannot access variable before it is declared") as
+     soon as that region becomes compilable. Nothing here depends on component state — `itemByKey` and
+     `itemByName` are module imports — so the declaration simply belongs before the callers. */
+  const patternOf = (e: { catalogKey?: string | null; name: string }): string =>
+    (e.catalogKey ? itemByKey(e.catalogKey)?.pattern : undefined) ?? itemByName(e.name)?.pattern ?? '';
 
   /**
    * Mark a set logged.
@@ -1680,6 +1712,84 @@ export default function WorkoutScreen() {
       if (restMode === 'auto' && !holdRest) startRest();
     }
   };
+
+  /* ═══════════════════════════════════════════════════════════════════════════════════════════════
+   * THE WRIST
+   *
+   * `Docs/Apple-Watch-Companion-Build-Plan.md` §3. This screen is the only thing that knows what set
+   * the athlete is on, and all of it is `useState` in this component — so nothing outside could ever
+   * say "that set is done". These three effects are the seam, and they are a REGISTRATION, not a
+   * state-management rewrite: the screen keeps every piece of state it has and lends four functions out
+   * while it is mounted.
+   *
+   * ⚠ NOTHING BELOW DOES ANYTHING ON A BUILD WITHOUT THE NATIVE MODULE, WHICH IS EVERY BUILD TODAY.
+   * `watch-bridge.ts` resolves `ForgeWatchBridge` optionally and no-ops when it is absent, and on web
+   * it resolves `watch-bridge.web.ts`, which is a no-op by construction. So this is live code on a dead
+   * wire until `modules/watch-bridge/` ships — deliberately, so the wire is the only thing left to
+   * build and this screen never has to be opened for it again.
+   * ═══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+  /**
+   * The handlers, refreshed every render.
+   *
+   * ⚠ A PORT CAPTURED ONCE AT MOUNT WOULD LOG AGAINST A STALE SESSION. `completeSet` and the rest
+   * controls close over state that changes on every set and every tick, so registering them once would
+   * mean the wrist writing into the session as it was when the screen mounted. Same latest-ref shape as
+   * the focus drain below, and for the same reason.
+   */
+  const watchLive = useRef<{
+    session: ActiveSession | null;
+    completeSet: (ei: number, si: number) => void;
+    restSkip: () => void;
+    restAdjust: (delta: number) => void;
+    restPauseToggle: () => void;
+  } | null>(null);
+  useEffect(() => {
+    watchLive.current = { session, completeSet, restSkip, restAdjust, restPauseToggle };
+  });
+
+  /* Registered ONCE. Every guard — no session, unknown index, a set already logged, an absurd rest
+     delta — is in `watch-commands.ts`, where it is unit-tested; by the time a call reaches this screen
+     it has already been checked. Returning the unregister directly is what makes the cleanup correct. */
+  useEffect(
+    () =>
+      registerWatchCommands({
+        session: () => watchLive.current?.session ?? null,
+        setDone: (ei, si) => watchLive.current?.completeSet(ei, si),
+        restSkip: () => watchLive.current?.restSkip(),
+        restAdjust: (delta) => watchLive.current?.restAdjust(delta),
+        restToggle: () => watchLive.current?.restPauseToggle(),
+      }),
+    [],
+  );
+
+  /* The other direction: commands arriving from the wrist. A no-op until the native module exists. */
+  useEffect(() => subscribeWatchCommands(), []);
+
+  /**
+   * What the wrist is shown.
+   *
+   * ⚠ `now` ONLY MOVES WHILE A REST OR AN AMRAP IS RUNNING (see the two tickers above), so this does
+   * not recompute on a timer for most of a session — and `pushWatchState` drops a byte-identical
+   * payload anyway, because the projection is a pure function of what went into it.
+   */
+  const watchState = useMemo(
+    () =>
+      projectWatchState({
+        session,
+        units,
+        /* The wrist cannot inherit Alabaster — watchOS has no light appearance — so the app's own
+           choice is mirrored across. `activeTheme()` is the boot value and does not change without a
+           reload, which is exactly the app's own theme contract. */
+        theme: activeTheme(),
+        rest: { endsAt: restEndsAt, paused: restPaused, pausedRemaining, totalSec: restTotal },
+        now,
+      }),
+    [session, units, restEndsAt, restPaused, pausedRemaining, restTotal, now],
+  );
+  useEffect(() => {
+    pushWatchState(watchState);
+  }, [watchState]);
   /**
    * They answered. Write the new weight into every set of this exercise still to come, and hand the
    * sentence to the same coin the nudge uses.
@@ -1796,9 +1906,6 @@ export default function WorkoutScreen() {
    * halved it for an advanced lifter, and the PO got "2.5 lb" offered on a barbell back squat. The
    * catalogue knows that lift perfectly well; nothing had asked it by name.
    */
-  const patternOf = (e: { catalogKey?: string | null; name: string }): string =>
-    (e.catalogKey ? itemByKey(e.catalogKey)?.pattern : undefined) ?? itemByName(e.name)?.pattern ?? '';
-
   const progressions = useMemo(() => {
     const out = new Map<number, Progression>();
     if (!session || !liftHistory) return out;
@@ -2892,6 +2999,37 @@ export default function WorkoutScreen() {
     const gid = existing?.kind === 'superset' ? existing.groupId : `ss${Date.now()}`;
     mutate((s) => ({ ...s, exercises: makeSuperset(s.exercises, start, count, gid) }));
     setExIdx(start);
+    showToast('Superset — log them back to back.');
+  };
+
+  /**
+   * Holt's superset question, if it is still a live question — derived, so it retires itself.
+   *
+   * Shown only on the lift that was just added, before its first set, while the lift they left still has
+   * sets to do and the two are not already one block. Log a set on the new lift, finish the old one, or
+   * pair them by hand from ⋮ and the question is simply no longer true.
+   */
+  const ssAskView = (() => {
+    if (!supersetAsk) return null;
+    const prevIdx = session.exercises.findIndex((e) => e.position === supersetAsk.prevPos);
+    const newIdx = session.exercises.findIndex((e) => e.position === supersetAsk.newPos);
+    if (prevIdx < 0 || newIdx !== exIdx) return null;
+    const prev = session.exercises[prevIdx];
+    const added = session.exercises[newIdx];
+    if (added.sets.some((st) => st.done) || prev.sets.every((st) => st.done)) return null;
+    const pb = blockAt(session.exercises, prevIdx);
+    if (pb && pb.start <= newIdx && newIdx < pb.start + pb.count) return null;
+    return { prevIdx, newIdx, prevName: prev.name };
+  })();
+
+  const acceptSupersetAsk = () => {
+    if (!ssAskView) return;
+    const { prevIdx, newIdx } = ssAskView;
+    setSupersetAsk(null);
+    mutate((s) => {
+      const joined = joinAsSuperset(s.exercises, prevIdx, newIdx, `ss${Date.now()}`);
+      return { ...s, exercises: joined.exercises, exerciseIndex: joined.start };
+    });
     showToast('Superset — log them back to back.');
   };
 
@@ -4237,6 +4375,34 @@ export default function WorkoutScreen() {
         so it cannot be the one thing that ignores those rules. It sits directly above the coin because
         the ANSWER lands there — the athlete's eye does not have to move.
       */}
+      {/*
+        "Superset this with Bench Press?" — the same slot, the same rules, the same voice as the effort
+        question below. The two cannot collide: this one retires on the new lift's first set, which is
+        the earliest the effort question can appear.
+      */}
+      {!holtHidden && ssAskView ? (
+        <View style={[styles.effortAsk, { bottom: 82 + barBottom + 56 }]}>
+          <Text style={styles.effortAskText}>Superset this with {ssAskView.prevName}?</Text>
+          <View style={styles.effortRow}>
+            <Pressable
+              onPress={acceptSupersetAsk}
+              accessibilityRole="button"
+              accessibilityLabel={`Superset this with ${ssAskView.prevName}`}
+              style={({ pressed }) => [styles.effortChip, pressed ? styles.effortChipPressed : null]}
+            >
+              <Text style={styles.effortChipText}>Superset them</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setSupersetAsk(null)}
+              accessibilityRole="button"
+              accessibilityLabel="No, keep them separate"
+              style={({ pressed }) => [styles.effortChip, pressed ? styles.effortChipPressed : null]}
+            >
+              <Text style={styles.effortChipText}>No thanks</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
       {!holtHidden && effortAsk && effortAsk.ei === exIdx ? (
         <View style={[styles.effortAsk, { bottom: 82 + barBottom + 56 }]}>
           <Text style={styles.effortAskText}>How did that feel?</Text>

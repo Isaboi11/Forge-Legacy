@@ -24,6 +24,8 @@ number in this amendment
 
 ## Section 1 — The Organising Principle (Locked)
 
+> ⚠ **Amended 2026-09-21 by `Monetization-Architecture-Amendment-006-Three-Plans-And-Nutrition.md`.** The principle stands; the packaging changes: **Free → Premium → Premium AI**, each containing the one below (MA6-D1). No separate Coach AI price, and no public lifetime (MA6-D5).
+
 > **Your legacy is yours forever. The coach is a service.**
 
 This is the same principle as **Never Charge For History** (Amendment 001 §2) pointed the other way, and it
@@ -51,6 +53,8 @@ the heaviest users. This is the single rule that keeps the lifetime option hones
 ---
 
 ## Section 2 — The Add-On Model (Authorized)
+
+> ⚠ **Amended 2026-09-21 by `Monetization-Architecture-Amendment-006-Three-Plans-And-Nutrition.md`.** "Coach AI" is now sold as **Premium AI = Premium + AI** ($19.99 / $169.99). MA3-D2's *no tier language* is superseded; its *no AI upsell at a ceiling* behaviour stands (MA6-D1, MA6-D9).
 
 ### 2.1 Amendment 001 §4 and §5, superseded in one respect only
 
@@ -292,6 +296,8 @@ entirely.
 ---
 
 ## Section 9 — Founder (Authorized)
+
+> ⚠ **Amended 2026-09-21 by `Monetization-Architecture-Amendment-006-Three-Plans-And-Nutrition.md`.** Founder stays, and is now the only way to own Premium (MA6-D6). MA3-D26's 30% AI discount is re-expressed as 30% off the AI *difference*: **$3.49/mo · $34.99/yr** (MA6-D7).
 
 **MA3-D22 — `founder_lifetime_149`: Premium forever, plus Coach AI at 30% off for life. First 100 new
 signups, then the SKU is delisted.** Holders keep it forever.

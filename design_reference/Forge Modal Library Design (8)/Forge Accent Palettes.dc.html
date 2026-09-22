@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<meta name="design_doc_mode" content="canvas">
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  @keyframes apRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+</style>
+</helmet>
+<div style="min-height:100vh; padding:56px 60px 90px; background:radial-gradient(120% 50% at 50% -10%, rgba(191,143,79,0.05), transparent 58%), var(--fl-bg-atmospheric);">
+
+  <div style="max-width:760px; margin-bottom:44px;">
+    <span style="display:block; font-size:12px; font-weight:600; letter-spacing:2.6px; text-transform:uppercase; color:var(--fl-text-tertiary); margin-bottom:14px;">Forge Legacy · Accent Materials</span>
+    <h1 style="margin:0; font-family:var(--fl-font-display); font-size:42px; font-weight:600; letter-spacing:-0.6px; line-height:1.03; color:var(--fl-text-primary);">Forged accent palettes</h1>
+    <p style="margin:16px 0 0; font-size:15px; line-height:1.62; color:var(--fl-text-secondary); text-wrap:pretty;">Each accent is treated like bronze — muted, burnished, and lit from a forge, not a screen. Restraint over saturation: tarnished metal and gems in low light, never neon. Bronze anchors the set; the four alternates carry the same weight and warmth of light.</p>
+  </div>
+
+  <div style="display:flex; gap:26px; flex-wrap:wrap; align-items:stretch;">
+    <sc-for list="{{ palettes }}" as="p" hint-placeholder-count="5">
+      <div style="{{ p.cardStyle }}">
+        <div style="width:328px; display:flex; flex-direction:column; border-radius:var(--fl-radius-xl); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); overflow:hidden;">
+
+          <!-- material sweep -->
+          <div style="position:relative; height:96px; background:var(--acc-metallic);">
+            <div aria-hidden="true" style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(255,255,255,0.10), transparent 34%, rgba(0,0,0,0.22));"></div>
+            <div aria-hidden="true" style="position:absolute; inset:0; opacity:0.5; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%222%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:120px 120px;"></div>
+            <span style="position:absolute; left:16px; bottom:12px; font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:rgba(20,14,6,0.72);">{{ p.metalTag }}</span>
+          </div>
+
+          <div style="padding:18px 18px 20px; display:flex; flex-direction:column; gap:16px;">
+            <!-- name -->
+            <div>
+              <div style="display:flex; align-items:center; gap:9px;">
+                <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">{{ p.name }}</span>
+                <sc-if value="{{ p.isBronze }}" hint-placeholder-val="{{ false }}"><span style="font-size:8.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--acc-bright); border:1px solid var(--acc-border); background:var(--acc-tint); padding:2px 7px; border-radius:var(--fl-radius-sm);">Current</span></sc-if>
+              </div>
+              <span style="display:block; font-size:12px; line-height:1.5; color:var(--fl-text-tertiary); margin-top:5px;">{{ p.desc }}</span>
+            </div>
+
+            <!-- swatch chips -->
+            <div style="display:flex; gap:8px;">
+              <sc-for list="{{ p.chips }}" as="c" hint-placeholder-count="3">
+                <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                  <div style="height:38px; border-radius:var(--fl-radius-sm); background:{{ c.hex }}; border:1px solid rgba(255,255,255,0.08); box-shadow:var(--fl-border-inset);"></div>
+                  <span style="font-size:8.5px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ c.label }}</span>
+                  <span style="font-size:10px; font-family:var(--fl-font-mono, monospace); color:var(--fl-text-secondary); letter-spacing:0.2px;">{{ c.hex }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="height:1px; background:var(--fl-charcoal-700);"></div>
+
+            <!-- sample application -->
+            <div style="display:flex; flex-direction:column; gap:13px;">
+              <span style="font-size:10px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--acc-bright);">In Context</span>
+
+              <!-- rank marker + pill row -->
+              <div style="display:flex; align-items:center; gap:9px;">
+                <span style="display:inline-flex; align-items:center; gap:7px; padding:5px 11px; border-radius:var(--fl-radius-pill); background:var(--acc-tint); border:1px solid var(--acc-border); font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--acc-bright);">
+                  <span style="width:14px; height:14px; display:inline-flex; color:var(--acc-bright);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v3a5 5 0 0 1-10 0z"></path><path d="M8 20h8M12 12v8"></path></svg></span>Architect · IV
+                </span>
+                <span style="width:28px; height:28px; margin-left:auto; border-radius:50%; background:var(--acc-metallic); box-shadow:var(--fl-border-inset), var(--acc-glow); display:flex; align-items:center; justify-content:center; color:rgba(18,12,5,0.85); font-family:var(--fl-font-display); font-size:12px; font-weight:700;">A</span>
+              </div>
+
+              <!-- progress -->
+              <div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span style="font-size:10.5px; color:var(--fl-text-tertiary);">Chapter progress</span><span style="font-size:10.5px; font-weight:600; color:var(--acc-bright);">68%</span></div>
+                <div style="height:8px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden;"><div style="height:100%; width:68%; border-radius:var(--fl-radius-pill); background:var(--acc-metallic); box-shadow:var(--acc-glow);"></div></div>
+              </div>
+
+              <!-- button -->
+              <button style="display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:13px; border-radius:var(--fl-radius-md); background:var(--acc-fill); border:1px solid var(--acc-metalBorder); color:#F6F4F1; font-size:13px; font-weight:700; letter-spacing:0.4px; cursor:default; box-shadow:var(--acc-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(6,4,2,0.55);">
+                <span style="width:15px; height:15px; display:inline-flex; color:var(--acc-bright);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z"></path></svg></span>Start Session
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    // Each accent designed as a forged material: muted chroma, burnished, forge-lit.
+    // Triad = dark (shadowed metal) · core (primary) · bright (catch-light).
+    const DEFS = [
+      { name: 'Bronze', metalTag: 'Burnished bronze', isBronze: true,
+        desc: 'The anchor. Warm forge-lit copper — the standard every alternate is tuned against.',
+        dark: '#835F32', core: '#BF8F4F', bright: '#CDA063', rgb: '191,143,79' },
+      { name: 'Royal Purple', metalTag: 'Tarnished amethyst', isBronze: false,
+        desc: 'Burnished amethyst — regal and quiet, like violet gemstone under low light.',
+        dark: '#453455', core: '#836C9E', bright: '#A98FC2', rgb: '131,108,158' },
+      { name: 'Royal Blue', metalTag: 'Oxidised steel-blue', isBronze: false,
+        desc: 'Steel-royal — cool and composed, a nocturnal blued metal with depth.',
+        dark: '#2D4062', core: '#5872A0', bright: '#8299C0', rgb: '88,114,160' },
+      { name: 'Forest Green', metalTag: 'Patinated verdigris', isBronze: false,
+        desc: 'Aged copper-green — grounded and earthen, the patina of weathered bronze.',
+        dark: '#2B4335', core: '#587C67', bright: '#7EA087', rgb: '88,124,103' },
+      { name: 'Sapphire', metalTag: 'Deep sapphire', isBronze: false,
+        desc: 'Gemlit deep blue — the richest of the set, luminous where light catches it.',
+        dark: '#234A5A', core: '#3D7D96', bright: '#69A4BB', rgb: '61,125,150' },
+      { name: 'Gunmetal', metalTag: 'Blued gunmetal', isBronze: false,
+        desc: 'Cool blued steel — the quiet, architectural alternative. Understated and severe.',
+        dark: '#2A2F36', core: '#5A626C', bright: '#888F99', rgb: '90,98,108' },
+      { name: 'Antique Gold', metalTag: 'Antique gilt', isBronze: false,
+        desc: 'Aged ceremonial gold — yellower and worn smoother than bronze, like old gilding.',
+        dark: '#6B5A28', core: '#A99247', bright: '#C6B06A', rgb: '169,146,71' },
+      { name: 'Emerald', metalTag: 'Cut emerald', isBronze: false,
+        desc: 'Deep gemstone green — cooler and richer than the verdigris patina.',
+        dark: '#1E4A3A', core: '#2F7D5F', bright: '#5AA383', rgb: '47,125,95' },
+      { name: 'Burnt Rose', metalTag: 'Burnished rose', isBronze: false,
+        desc: 'Dusty burnt rose — a burnished clay-pink, warm and quiet. Luxury, never sweet.',
+        dark: '#5B3038', core: '#A96A78', bright: '#C6929B', rgb: '169,106,120' },
+      { name: 'Oxblood', metalTag: 'Burnished oxblood', isBronze: false,
+        desc: 'Deep wine red — dignified and burnished, never an alarm. Ceremony, not error.',
+        dark: '#4A2028', core: '#8A4048', bright: '#B06A6E', rgb: '138,64,72' },
+    ];
+
+    const palettes = DEFS.map((d, i) => {
+      const rgb = d.rgb;
+      const vars = {
+        '--acc-dark': d.dark, '--acc-primary': d.core, '--acc-bright': d.bright,
+        '--acc-metallic': 'linear-gradient(180deg, ' + d.bright + ', ' + d.core + ' 52%, ' + d.dark + ')',
+        '--acc-tint': 'rgba(' + rgb + ',0.12)',
+        '--acc-border': 'rgba(' + rgb + ',0.42)',
+        '--acc-glow': '0 0 9px rgba(' + rgb + ',0.28)',
+        '--acc-fill': 'linear-gradient(180deg, ' + d.dark + ', #141319)',
+        '--acc-metalBorder': 'rgba(' + rgb + ',0.5)',
+        '--acc-rim': 'inset 0 1px 0 rgba(' + rgb + ',0.32)',
+      };
+      const cardStyle = Object.keys(vars).map((k) => k + ':' + vars[k]).join(';') +
+        ';animation:apRise 620ms var(--fl-ease-out, ease-out) both;animation-delay:' + (i * 70) + 'ms;';
+      return {
+        key: d.name, name: d.name, desc: d.desc, metalTag: d.metalTag, isBronze: d.isBronze,
+        cardStyle,
+        chips: [
+          { key: 'd', label: 'Shadow', hex: d.dark },
+          { key: 'c', label: 'Core', hex: d.core },
+          { key: 'b', label: 'Catch-light', hex: d.bright },
+        ],
+      };
+    });
+
+    return { palettes };
+  }
+}
+</script>
+</body>
+</html>

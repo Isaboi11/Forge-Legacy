@@ -107,7 +107,7 @@ People returning after a gap — injury, life circumstances, loss of motivation.
 - Athletes looking for social media-style public feeds and follower counts.
 - Users who want community forums, public comments, or content creation tools.
 - People who want coach or trainer account management tools (Future Roadmap).
-- Anyone seeking a calorie/macro/nutrition tracker (not in scope).
+- ~~Anyone seeking a calorie/macro/nutrition tracker (not in scope).~~ ⚠ **RETIRED 2026-09-21** — Forge does nutrition (`Nutrition-Architecture-v1.0.md` NUT-D2; placement in `Monetization-Architecture-Amendment-006` §4).
 
 ---
 

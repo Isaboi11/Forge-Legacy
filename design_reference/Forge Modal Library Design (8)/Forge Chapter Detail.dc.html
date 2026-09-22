@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="forge-user.js"></script>
+<script src="forge-chapters.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .fl-strip::-webkit-scrollbar { height: 0; }
+  .fl-strip { scrollbar-width: none; }
+  .cd-ta::placeholder { color: var(--fl-text-tertiary); }
+  @keyframes flRise { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform:none; } }
+  @keyframes flFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes flSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @keyframes flToast { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="L-3/4 Chapter Detail" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.3)), #050505 url('assets/legacy-bg.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+        <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="{{ chapterNo }}" serif="{{ true }}" on-back="{{ goLegacy }}" hint-size="100%,56px"></x-import>
+
+      <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto;">
+
+        <!-- ═══ HERO (shared) ═══ -->
+        <div style="position:relative; overflow:hidden; padding:6px 24px 4px;">
+          <div aria-hidden="true" style="position:absolute; inset:0; z-index:0; pointer-events:none; background:linear-gradient(180deg, rgba(8,11,14,0.55) 0%, rgba(8,11,14,0.12) 64%, transparent 100%);"></div>
+          <div style="position:relative; z-index:1; padding:14px 0 4px; animation:flRise 800ms var(--fl-ease-out, ease-out) both;">
+            <span style="display:block; font-size:11px; font-weight:600; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ chapterNo }}</span>
+            <h1 style="margin:8px 0 0; font-family:var(--fl-font-display); font-size:36px; font-weight:700; letter-spacing:-0.5px; line-height:1.0; color:var(--fl-text-primary);">{{ chapterName }}</h1>
+            <div style="display:flex; align-items:center; gap:10px; padding-top:14px;">
+              <span style="display:inline-flex; align-items:center; gap:6px; font-size:10px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-bronze-bright);">
+                <sc-if value="{{ isActive }}" hint-placeholder-val="{{ true }}"><span style="width:6px; height:6px; border-radius:50%; background:var(--fl-status-online); box-shadow:var(--fl-status-online-glow);"></span></sc-if>{{ statusGlyph }}{{ statusLabel }}
+              </span>
+              <span style="width:3px; height:3px; border-radius:50%; background:var(--fl-text-tertiary);"></span>
+              <span style="font-size:12.5px; color:var(--fl-text-tertiary);">{{ chapterRange }}</span>
+            </div>
+            <p style="margin:14px 0 0; font-family:var(--fl-font-display); font-style:italic; font-size:13px; line-height:1.5; font-weight:500; color:var(--fl-text-tertiary); text-wrap:pretty; max-width:300px;">{{ chapterCreed }}</p>
+          </div>
+        </div>
+
+        <!-- ════════════════════ ACTIVE (L-3) ════════════════════ -->
+        <sc-if value="{{ isActive }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:38px; padding:34px 0 8px;">
+
+            <!-- PRIMARY GOAL · dominant -->
+            <div style="padding:0 24px;">
+              <span style="display:block; font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-bronze-primary); padding:0 2px 12px;">Primary Goal</span>
+              <div style="position:relative; overflow:hidden; border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); background:linear-gradient(180deg, rgba(191,143,79,0.08), transparent 62%), var(--fl-surface-card); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-elevated), var(--fl-glow-subtle); padding:24px 22px;">
+                <span style="display:block; font-family:var(--fl-font-display); font-size:26px; font-weight:600; letter-spacing:-0.3px; line-height:1.05; color:var(--fl-text-primary);">{{ goalLabel }}</span>
+                <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px; padding:20px 0 12px;">
+                  <span style="font-family:var(--fl-font-display); font-size:40px; font-weight:700; letter-spacing:-1px; line-height:0.9; color:var(--fl-bronze-bright);">{{ goalPct }}</span>
+                  <span style="font-size:12.5px; font-weight:600; color:var(--fl-text-secondary); padding-bottom:5px;">{{ goalValue }}</span>
+                </div>
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="{{ goalDone }}" max="{{ goalMax }}" hint-size="100%,8px"></x-import>
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:16px;">
+                  <span style="display:flex; align-items:center; gap:7px; font-size:12px; color:var(--fl-text-tertiary);">{{ icoCal }}<span>{{ goalExpected }}</span></span>
+                  <span role="button" tabindex="0" onClick="{{ viewGoals }}" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; letter-spacing:0.4px; color:var(--fl-bronze-primary); cursor:pointer;">View Goal<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SUPPORTING GOALS · collapsed -->
+            <sc-if value="{{ hasSecondary }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:0 24px;">
+                <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-tertiary); padding:0 2px 12px;">Supporting Goals</span>
+                <div style="display:flex; flex-direction:column;">
+                  <sc-for list="{{ secondary }}" as="g" hint-placeholder-count="2">
+                    <div role="button" tabindex="0" onClick="{{ g.tap }}" style="display:flex; align-items:center; gap:12px; padding:9px 0; border-top:{{ g.border }}; cursor:pointer;">
+                      <span style="width:5px; height:5px; flex:none; border-radius:50%; background:var(--fl-bronze-primary);"></span>
+                      <span style="flex:1; min-width:0; font-size:14.5px; color:var(--fl-text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ g.name }}</span>
+                      <span style="flex:none; font-size:12px; font-weight:600; color:var(--fl-bronze-primary);">{{ g.rightText }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div role="button" tabindex="0" onClick="{{ viewGoals }}" style="display:inline-flex; align-items:center; gap:6px; padding:14px 4px 0; cursor:pointer;">
+                  <span style="font-size:12px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">{{ goalsCountLabel }}</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- CURRENT PROGRAMS + PROGRESS · one section -->
+            <div style="padding:0 24px;">
+              <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-tertiary); padding:0 2px 12px;">{{ programsLabel }}</span>
+              <div style="border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-xl); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); overflow:hidden;">
+                <sc-for list="{{ programs }}" as="p" hint-placeholder-count="2">
+                  <div role="button" tabindex="0" onClick="{{ p.open }}" style="padding:14px 16px; border-top:{{ p.border }}; cursor:pointer; transition:background 200ms var(--fl-ease-out, ease-out);" style-hover="background:var(--fl-hover-wash);">
+                    <div style="display:flex; align-items:center; gap:11px;">
+                      <span style="width:30px; height:30px; flex:none; border-radius:var(--fl-radius-md); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); color:var(--fl-icon-bronze);">{{ p.icon }}</span>
+                      <span style="flex:1; min-width:0; font-family:var(--fl-font-display); font-size:15.5px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ p.name }}</span>
+                      <span style="flex:none; font-size:12px; font-weight:600; color:var(--fl-bronze-primary);">{{ p.doneLabel }}</span>
+                    </div>
+                    <div style="padding:9px 0 0;">
+                      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.ProgressBar" value="{{ p.done }}" max="{{ p.total }}" hint-size="100%,6px"></x-import>
+                    </div>
+                    <span style="display:block; font-size:11px; color:var(--fl-text-tertiary); padding-top:8px;">{{ p.next }}</span>
+                  </div>
+                </sc-for>
+                <div style="display:flex; align-items:center; gap:16px; padding:20px 18px 17px; border-top:1px solid var(--fl-charcoal-700); background:linear-gradient(180deg, rgba(191,143,79,0.05), transparent 72%);">
+                  <span style="font-family:var(--fl-font-display); font-size:42px; font-weight:700; letter-spacing:-1.5px; line-height:0.85; color:var(--fl-text-primary);">{{ progressCount }}</span>
+                  <div style="display:flex; flex-direction:column; gap:3px;">
+                    <span style="font-size:10.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">Workouts completed</span>
+                    <span style="font-size:12.5px; color:var(--fl-bronze-primary); font-weight:600;">{{ progressSince }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MEDIA -->
+            <div>
+              <div style="padding:0 24px;">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Media" action="Add" hint-size="100%,22px"></x-import>
+                <span style="display:block; margin-top:-6px; font-size:11px; color:var(--fl-text-tertiary);">{{ mediaCount }}</span>
+              </div>
+              <div class="fl-strip" style="display:flex; gap:11px; padding:8px 24px 4px; overflow-x:auto;">
+                <sc-for list="{{ media }}" as="m" hint-placeholder-count="3">
+                  <div role="button" tabindex="0" onClick="{{ m.open }}" style="position:relative; width:150px; height:116px; flex:none; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); cursor:pointer;">
+                    <image-slot id="{{ m.mediaId }}" shape="rect" placeholder="{{ m.kind }}" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                    <span aria-hidden="true" style="position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg, rgba(8,11,14,0.4) 0%, transparent 38%, transparent 54%, rgba(8,11,14,0.9) 100%);"></span>
+                    <sc-if value="{{ m.isVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(8,11,14,0.6); border:1px solid var(--fl-bronze-border-subtle);"><svg width="13" height="13" viewBox="0 0 24 24" style="margin-left:2px;"><path d="M9 7.5l8 4.5-8 4.5z" fill="var(--fl-bronze-bright)"></path></svg></span></sc-if>
+                    <span style="position:absolute; left:11px; right:11px; bottom:10px; z-index:2; font-family:var(--fl-font-display); font-size:13px; font-weight:600; line-height:1.15; color:var(--fl-text-primary);">{{ m.title }}</span>
+                  </div>
+                </sc-for>
+                <div role="button" tabindex="0" onClick="{{ openMediaAdd }}" style="width:150px; height:116px; flex:none; border-radius:var(--fl-radius-lg); border:1px dashed var(--fl-bronze-border); background:var(--fl-bronze-tint); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; cursor:pointer;">
+                  <span style="width:34px; height:34px; border-radius:50%; border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-primary);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+                  <span style="font-size:11px; font-weight:600; letter-spacing:0.5px; color:var(--fl-bronze-primary);">Add media</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- HONORS -->
+            <sc-if value="{{ hasHonors }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <div style="padding:0 24px;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Honors" action="View all" hint-size="100%,22px"></x-import>
+                </div>
+                <div class="fl-strip" style="display:flex; gap:16px; padding:10px 24px 0; overflow-x:auto;">
+                  <sc-for list="{{ honors }}" as="hon" hint-placeholder-count="3">
+                    <div style="flex:none;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Insignia" variant="honor" size="lg" artwork="{{ hon.artwork }}" label="{{ hon.label }}" sublabel="{{ hon.date }}" hint-size="96px,120px"></x-import></div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- CHAPTER NOTES -->
+            <div style="padding:0 24px;">
+              <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-tertiary); padding:0 2px 12px;">Chapter Notes</span>
+              <div role="button" tabindex="0" onClick="{{ editNotes }}" style="border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-xl); background:var(--fl-surface-recessed); box-shadow:var(--fl-border-inset); padding:16px 18px; cursor:pointer;">
+                <div style="display:flex; gap:14px;">
+                  <span style="width:2px; flex:none; background:linear-gradient(180deg, var(--fl-bronze-primary), transparent);"></span>
+                  <p style="margin:0; font-family:var(--fl-font-display); font-style:italic; font-size:16px; line-height:1.6; font-weight:500; color:var(--fl-text-primary); text-wrap:pretty;">{{ notesBody }}</p>
+                </div>
+                <span style="display:inline-flex; align-items:center; gap:6px; margin-top:14px; font-size:11.5px; font-weight:600; letter-spacing:0.4px; color:var(--fl-bronze-primary);">{{ icoPencil }}Edit · last edited yesterday</span>
+              </div>
+            </div>
+
+            <!-- TIMELINE -->
+            <div style="padding:0 24px;">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Timeline" hint-size="100%,22px"></x-import>
+              <div style="position:relative; padding:12px 0 2px;">
+                <span aria-hidden="true" style="position:absolute; left:15px; top:22px; bottom:22px; width:1px; background:linear-gradient(180deg, var(--fl-bronze-border), var(--fl-bronze-border-subtle));"></span>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <sc-for list="{{ timeline }}" as="e" hint-placeholder-count="4">
+                    <div style="position:relative; display:flex; align-items:center; gap:14px; padding:8px 2px;">
+                      <span style="width:31px; height:31px; flex:none; z-index:1; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-recessed); color:var(--fl-icon-bronze); box-shadow:0 0 0 3px rgba(8,11,14,0.55);">{{ e.glyph }}</span>
+                      <div style="flex:0 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                        <span style="font-size:14px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ e.title }}</span>
+                        <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ e.sub }}</span>
+                      </div>
+                      <span style="flex:none; font-size:11.5px; color:var(--fl-text-tertiary);">{{ e.date }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div role="button" tabindex="0" onClick="{{ goTimeline }}" style="display:flex; align-items:center; gap:7px; padding:14px 2px 2px; cursor:pointer;">
+                <span style="font-size:12px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">View Full Timeline</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+              </div>
+            </div>
+
+            <!-- SEAL · ceremonial, with breathing room -->
+            <div style="padding:44px 30px 40px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:20px;">
+              <div style="display:flex; align-items:center; gap:14px; width:100%; max-width:200px;">
+                <span style="flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--fl-bronze-border));"></span>
+                <span style="width:6px; height:6px; flex:none; transform:rotate(45deg); border:1px solid var(--fl-bronze-primary);"></span>
+                <span style="flex:1; height:1px; background:linear-gradient(90deg, var(--fl-bronze-border), transparent);"></span>
+              </div>
+              <p style="margin:0; font-family:var(--fl-font-display); font-size:21px; font-weight:600; line-height:1.35; letter-spacing:-0.2px; color:var(--fl-text-primary); max-width:290px; text-wrap:balance;">You've built everything this chapter contains. When you're ready, seal it permanently.</p>
+              <div style="width:100%; max-width:280px; padding-top:4px;">
+                <button onClick="{{ openSeal }}" style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:16px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); color:#F7F5F1; font-size:15px; font-weight:700; letter-spacing:0.5px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">{{ icoSealBtn }}Seal Chapter</button>
+              </div>
+              <span style="font-size:11.5px; line-height:1.5; color:var(--fl-text-tertiary); max-width:260px; text-wrap:pretty;">Outcomes become permanent. Memories can still be added later.</span>
+            </div>
+
+          </div>
+        </sc-if>
+
+        <!-- ════════════════════ ARCHIVED (L-4) ════════════════════ -->
+        <sc-if value="{{ isArchived }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-direction:column; gap:38px; padding:34px 0 8px;">
+
+            <!-- OUTCOMES SUMMARY · the cover page -->
+            <div style="padding:0 24px;">
+              <span style="display:block; font-size:10px; font-weight:600; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-text-tertiary); padding:0 2px 12px;">This Chapter</span>
+              <div style="position:relative; overflow:hidden; border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); background:linear-gradient(180deg, rgba(191,143,79,0.10), transparent 58%), var(--fl-surface-card); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-elevated), var(--fl-glow-subtle); padding:24px 22px;">
+                <div aria-hidden="true" style="position:absolute; top:-40px; right:-36px; width:180px; height:180px; opacity:0.08; color:var(--fl-bronze-primary); pointer-events:none;">{{ outcomesMark }}</div>
+                <div style="position:relative; display:flex; align-items:center; gap:11px; padding-bottom:20px;">
+                  <span style="flex:none; color:var(--fl-icon-bronze);">{{ icoCheck }}</span>
+                  <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:600; letter-spacing:-0.3px; line-height:1.1; color:var(--fl-text-primary);">{{ outPrimaryHeadline }}</span>
+                </div>
+                <div style="position:relative; height:1px; background:var(--fl-bronze-border-subtle);"></div>
+                <div style="position:relative; display:flex; flex-wrap:wrap; padding-top:18px;">
+                  <sc-for list="{{ outStats }}" as="o" hint-placeholder-count="4">
+                    <div style="width:50%; display:flex; flex-direction:column; gap:3px; padding:8px 0;">
+                      <span style="font-family:var(--fl-font-display); font-size:24px; font-weight:700; letter-spacing:-0.4px; color:var(--fl-text-primary); line-height:1;">{{ o.v }}</span>
+                      <span style="font-size:10px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ o.l }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+
+            <!-- GOAL OUTCOMES -->
+            <div style="padding:0 24px;">
+              <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-tertiary); padding:0 2px 12px;">Goal Outcomes</span>
+              <div style="border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); padding:20px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <span style="flex:none; color:var(--fl-icon-bronze);">{{ icoCheck }}</span>
+                  <div style="flex:1; min-width:0;">
+                    <span style="display:block; font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-bright);">Achieved · {{ goalOutcomeDate }}</span>
+                    <span style="display:block; font-family:var(--fl-font-display); font-size:19px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary); margin-top:2px;">{{ goalLabel }}</span>
+                  </div>
+                </div>
+              </div>
+              <sc-if value="{{ hasSecondary }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex; flex-direction:column; gap:2px; padding:14px 4px 0;">
+                  <sc-for list="{{ secondary }}" as="g" hint-placeholder-count="2">
+                    <div style="display:flex; align-items:center; gap:11px; padding:9px 0;">
+                      <span style="flex:none; display:inline-flex;">{{ g.rightIcon }}</span>
+                      <span style="flex:1; min-width:0; font-size:14px; color:{{ g.nameColor }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ g.name }}</span>
+                      <span style="flex:none; font-size:11.5px; font-weight:600; color:{{ g.rightColor }};">{{ g.rightText }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+
+            <!-- PROGRAMS · graduation status -->
+            <div>
+              <div style="padding:0 24px;">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Programs" hint-size="100%,22px"></x-import>
+              </div>
+              <div style="padding:8px 24px 0; display:flex; flex-direction:column; gap:10px;">
+                <sc-for list="{{ programs }}" as="p" hint-placeholder-count="2">
+                  <div role="button" tabindex="0" onClick="{{ p.open }}" style="display:flex; align-items:center; gap:14px; padding:15px 16px; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); background:var(--fl-surface-card); box-shadow:var(--fl-border-inset); cursor:pointer; transition:border-color 200ms var(--fl-ease-out, ease-out);" style-hover="border-color:var(--fl-bronze-border-subtle);">
+                    <span style="width:40px; height:40px; flex:none; border-radius:var(--fl-radius-md); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); color:var(--fl-icon-bronze);">{{ p.icon }}</span>
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                      <span style="font-family:var(--fl-font-display); font-size:16px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ p.name }}</span>
+                      <span style="font-size:12px; color:var(--fl-text-tertiary);">{{ p.meta }}</span>
+                    </div>
+                    <span style="flex:none; display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600; color:{{ p.statusColor }};">{{ p.statusIcon }}{{ p.status }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <!-- REFLECTION · emotional centerpiece -->
+            <sc-if value="{{ hasReflection }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:0 24px;">
+                <span style="display:block; font-size:10px; font-weight:600; letter-spacing:2.2px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:0 2px 14px;">Reflection</span>
+                <div style="position:relative; overflow:hidden; border:1px solid var(--fl-bronze-border); border-radius:var(--fl-radius-xl); background:linear-gradient(180deg, rgba(191,143,79,0.07), transparent 60%), var(--fl-surface-card); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-elevated); padding:26px 24px;">
+                  <span aria-hidden="true" style="position:absolute; top:8px; left:16px; font-family:var(--fl-font-display); font-size:64px; line-height:1; color:var(--fl-bronze-border); opacity:0.5;">&ldquo;</span>
+                  <p style="margin:0; position:relative; font-family:var(--fl-font-display); font-style:italic; font-size:19px; line-height:1.6; font-weight:500; color:var(--fl-text-primary); text-wrap:pretty; padding-top:6px;">{{ notesBody }}</p>
+                  <span style="display:block; margin-top:18px; font-size:11px; font-weight:600; letter-spacing:0.5px; color:var(--fl-text-tertiary);">{{ reflectionMeta }}</span>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ showAddReflection }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:0 24px;">
+                <div role="button" tabindex="0" onClick="{{ addReflection }}" style="display:flex; align-items:center; gap:13px; padding:18px; border:1px dashed var(--fl-bronze-border); border-radius:var(--fl-radius-xl); background:var(--fl-bronze-tint); cursor:pointer;">
+                  <span style="flex:1; min-width:0; font-size:13.5px; line-height:1.5; color:var(--fl-text-secondary); text-wrap:pretty;">No reflection was written for this chapter. You can still add one — once, permanently.</span>
+                  <span style="flex:none; display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--fl-bronze-primary);">Add<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></span>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- MEMORIES · added later, distinct -->
+            <sc-if value="{{ hasMemories }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:0 24px;">
+                <div style="display:flex; align-items:center; gap:8px; padding:0 2px 12px;">
+                  <span style="font-size:10px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-tertiary);">Memories</span>
+                  <span style="font-size:10px; font-weight:600; color:var(--fl-text-tertiary);">· added after sealing</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                  <sc-for list="{{ memories }}" as="mem" hint-placeholder-count="2">
+                    <div style="border:1px dashed var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); background:var(--fl-bronze-tint); padding:16px 17px;">
+                      <span style="display:inline-flex; align-items:center; gap:7px; font-size:10px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">{{ icoMem }}{{ mem.added }}</span>
+                      <p style="margin:10px 0 0; font-size:14px; line-height:1.55; color:var(--fl-text-primary); text-wrap:pretty;">{{ mem.note }}</p>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- PHOTOS -->
+            <div>
+              <div style="padding:0 24px;">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Media" hint-size="100%,22px"></x-import>
+                <span style="display:block; margin-top:-6px; font-size:11px; color:var(--fl-text-tertiary);">{{ mediaCount }}</span>
+              </div>
+              <div class="fl-strip" style="display:flex; gap:12px; padding:8px 24px 4px; overflow-x:auto;">
+                <sc-for list="{{ moments }}" as="m" hint-placeholder-count="3">
+                  <div style="position:relative; width:106px; height:140px; flex:none; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-border-inset), var(--fl-shadow-card);">
+                    <image-slot id="{{ m.mediaId }}" shape="rect" placeholder="{{ m.kind }}" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+                    <span aria-hidden="true" style="position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg, rgba(8,11,14,0.45) 0%, transparent 34%, transparent 52%, rgba(8,11,14,0.92) 100%);"></span>
+                    <span style="position:absolute; left:11px; right:11px; bottom:11px; z-index:2; font-family:var(--fl-font-display); font-size:13.5px; font-weight:600; line-height:1.15; color:var(--fl-text-primary);">{{ m.title }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <!-- HONORS · locked, supporting -->
+            <sc-if value="{{ hasHonors }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <div style="padding:0 24px;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Honors" hint-size="100%,22px"></x-import>
+                </div>
+                <div class="fl-strip" style="display:flex; gap:18px; padding:12px 24px 6px; overflow-x:auto;">
+                  <sc-for list="{{ honors }}" as="hon" hint-placeholder-count="2">
+                    <div style="flex:none;"><x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Insignia" variant="honor" size="lg" artwork="{{ hon.artwork }}" label="{{ hon.label }}" sublabel="{{ hon.date }}" hint-size="96px,120px"></x-import></div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- TIMELINE -->
+            <div style="padding:0 24px;">
+              <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.SectionHeader" label="Timeline" hint-size="100%,22px"></x-import>
+              <div style="position:relative; padding:12px 0 2px;">
+                <span aria-hidden="true" style="position:absolute; left:15px; top:22px; bottom:22px; width:1px; background:linear-gradient(180deg, var(--fl-bronze-border), var(--fl-bronze-border-subtle));"></span>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <sc-for list="{{ timeline }}" as="e" hint-placeholder-count="4">
+                    <div style="position:relative; display:flex; align-items:center; gap:14px; padding:8px 2px;">
+                      <span style="width:31px; height:31px; flex:none; z-index:1; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-recessed); color:var(--fl-icon-bronze); box-shadow:0 0 0 3px rgba(8,11,14,0.55);">{{ e.glyph }}</span>
+                      <div style="flex:0 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                        <span style="font-size:14px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ e.title }}</span>
+                        <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ e.sub }}</span>
+                      </div>
+                      <span style="flex:none; font-size:11.5px; color:var(--fl-text-tertiary);">{{ e.date }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div role="button" tabindex="0" onClick="{{ goTimeline }}" style="display:flex; align-items:center; gap:7px; padding:14px 2px 2px; cursor:pointer;">
+                <span style="font-size:12px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--fl-bronze-primary);">View Full Timeline</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--fl-bronze-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+              </div>
+            </div>
+
+            <!-- inscription + Add a Memory -->
+            <div style="padding:20px 24px 8px; display:flex; flex-direction:column; align-items:center; gap:16px;">
+              <span style="font-family:var(--fl-font-display); font-style:italic; font-size:15px; line-height:1.45; text-align:center; color:var(--fl-bronze-bright); max-width:260px; text-wrap:pretty;">Memories can be added. History cannot be rewritten.</span>
+              <div style="width:100%; max-width:300px;">
+                <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="secondary" full-width="{{ true }}" on-click="{{ openMemory }}" hint-size="100%,50px">Add a Memory</x-import>
+              </div>
+            </div>
+
+          </div>
+        </sc-if>
+
+      </div>
+
+      <!-- ═══ SEAL SHEET · 2 steps (confirm → reflection) ═══ -->
+      <sc-if value="{{ sealOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeSeal }}" style="position:absolute; inset:0; z-index:60; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:flFade 220ms var(--fl-ease-out, ease-out) both;">
+          <div role="dialog" aria-modal="true" onClick="{{ stopProp }}" style="width:100%; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient); animation:flSheetUp 320ms var(--fl-ease-out, ease-out) both; overflow:hidden;">
+            <div style="display:flex; justify-content:center; padding:10px 0 4px;"><span style="width:38px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+            <sc-if value="{{ sealStepConfirm }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:14px 24px 26px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:14px;">
+                <span style="width:64px; height:64px; border-radius:var(--fl-radius-round); background:var(--fl-bronze-metallic); box-shadow:var(--fl-border-inset), var(--fl-glow-badge); display:flex; align-items:center; justify-content:center;">
+                  <span style="width:52px; height:52px; border-radius:var(--fl-radius-round); background:var(--fl-surface-recessed); border:1px solid rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright);">{{ icoSealBig }}</span>
+                </span>
+                <span style="font-family:var(--fl-font-display); font-size:24px; font-weight:600; letter-spacing:-0.3px; line-height:1.1; color:var(--fl-text-primary);">Seal {{ chapterName }}?</span>
+                <p style="margin:0; font-size:14px; line-height:1.6; color:var(--fl-text-secondary); max-width:300px; text-wrap:pretty;">Outcomes will be sealed permanently. <span style="color:var(--fl-text-primary); font-weight:600;">Memories can still be added later.</span></p>
+                <div style="width:100%; display:flex; flex-direction:column; gap:10px; padding-top:6px;">
+                  <button onClick="{{ toReflect }}" style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:16px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); color:#F7F5F1; font-size:15px; font-weight:700; letter-spacing:0.5px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">{{ icoSealBtn }}Continue</button>
+                  <button onClick="{{ closeSeal }}" style="width:100%; padding:13px; border-radius:var(--fl-radius-md); background:transparent; border:1px solid var(--fl-charcoal-600); color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer;">Not yet</button>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ sealStepReflect }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:14px 24px 24px; display:flex; flex-direction:column; gap:14px;">
+                <div style="display:flex; flex-direction:column; gap:8px; text-align:center; align-items:center;">
+                  <span style="font-size:10.5px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Chapter Reflection</span>
+                  <span style="font-family:var(--fl-font-display); font-size:23px; font-weight:600; letter-spacing:-0.3px; line-height:1.12; color:var(--fl-text-primary);">Leave a word for {{ chapterName }}</span>
+                  <p style="margin:0; font-size:13px; line-height:1.55; color:var(--fl-text-secondary); max-width:300px; text-wrap:pretty;">This becomes the permanent voice of the chapter. Write it once — it can't be changed later.</p>
+                </div>
+                <textarea class="cd-ta" value="{{ reflectText }}" onChange="{{ onReflect }}" placeholder="What did this chapter mean?" rows="4" style="width:100%; resize:none; padding:15px; border:1.5px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-family:var(--fl-font-display); font-style:italic; font-size:15px; line-height:1.55; outline:none; box-shadow:inset 0 2px 6px rgba(0,0,0,.45);"></textarea>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                  <button onClick="{{ sealWithReflection }}" style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:16px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); color:#F7F5F1; font-size:15px; font-weight:700; letter-spacing:0.5px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">{{ icoSealBtn }}Seal Chapter</button>
+                  <button onClick="{{ sealSkip }}" style="width:100%; padding:13px; border-radius:var(--fl-radius-md); background:transparent; border:1px solid var(--fl-charcoal-600); color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer;">Seal without a reflection</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ═══ ADD A MEMORY SHEET (archived) ═══ -->
+      <sc-if value="{{ memoryOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeMemory }}" style="position:absolute; inset:0; z-index:60; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:flFade 220ms var(--fl-ease-out, ease-out) both;">
+          <div role="dialog" aria-modal="true" onClick="{{ stopProp }}" style="width:100%; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient); animation:flSheetUp 320ms var(--fl-ease-out, ease-out) both; overflow:hidden;">
+            <div style="display:flex; justify-content:center; padding:10px 0 4px;"><span style="width:38px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+            <div style="padding:14px 24px 24px; display:flex; flex-direction:column; gap:14px;">
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <span style="font-size:10.5px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Add a Memory</span>
+                <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:600; letter-spacing:-0.3px; line-height:1.1; color:var(--fl-text-primary);">Something to remember</span>
+                <p style="margin:0; font-size:12.5px; line-height:1.5; color:var(--fl-text-secondary);">Added to <span style="color:var(--fl-text-primary); font-weight:600;">{{ chapterName }}</span> after sealing — the record itself stays untouched.</p>
+              </div>
+              <textarea class="cd-ta" value="{{ memNote }}" onChange="{{ onMemNote }}" placeholder="A note, looking back…" rows="3" style="width:100%; resize:none; padding:14px; border:1.5px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); color:var(--fl-text-primary); font-family:var(--fl-font-sans); font-size:14px; line-height:1.5; outline:none; box-shadow:inset 0 2px 6px rgba(0,0,0,.45);"></textarea>
+              <div style="display:flex; gap:12px; align-items:center;">
+                <div style="position:relative; width:84px; height:84px; flex:none; border-radius:var(--fl-radius-md); overflow:hidden; border:1px dashed var(--fl-bronze-border);"><image-slot id="chap-mem-new" shape="rect" placeholder="+ Photo" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot></div>
+                <span style="flex:1; font-size:12px; line-height:1.5; color:var(--fl-text-tertiary);">Add a photo to this memory — optional.</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:10px; padding-top:2px;">
+                <button onClick="{{ confirmMemory }}" style="width:100%; padding:15px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); color:#F7F5F1; font-size:15px; font-weight:700; letter-spacing:0.4px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">Save Memory</button>
+                <button onClick="{{ closeMemory }}" style="width:100%; padding:12px; border-radius:var(--fl-radius-md); background:transparent; border:1px solid var(--fl-charcoal-600); color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer;">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- toast -->
+      <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; left:16px; right:16px; bottom:34px; z-index:70; display:flex; align-items:center; gap:11px; padding:13px 16px; border-radius:var(--fl-radius-md); background:#17130d; border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-shadow-float); animation:flToast 220ms var(--fl-ease-out, ease-out) both;">
+          <span style="flex:none; color:var(--fl-bronze-primary); display:inline-flex;">{{ icoSeal }}</span>
+          <span style="flex:1; font-size:13px; line-height:1.4; color:var(--fl-text-secondary);">{{ toastMsg }}</span>
+        </div>
+      </sc-if>
+
+    </sc-if>
+
+      <!-- MEDIA · fullscreen viewer -->
+      <sc-if value="{{ mediaViewOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeMedia }}" style="position:absolute; inset:0; z-index:65; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; background:rgba(4,6,8,0.93); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); animation:flFade 200ms var(--fl-ease-out, ease-out) both; padding:40px 26px;">
+          <div onClick="{{ stopProp }}" style="position:relative; width:100%; max-width:300px; aspect-ratio:3 / 4; border-radius:var(--fl-radius-lg); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-shadow-ambient);">
+            <image-slot id="{{ mediaViewId }}" shape="rect" placeholder="Media" style="position:absolute; inset:0; width:100%; height:100%;"></image-slot>
+            <sc-if value="{{ mediaViewIsVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(8,11,14,0.6); border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-glow-subtle);"><svg width="22" height="22" viewBox="0 0 24 24" style="margin-left:3px;"><path d="M9 7.5l8 4.5-8 4.5z" fill="var(--fl-bronze-bright)"></path></svg></span></sc-if>
+          </div>
+          <span style="font-family:var(--fl-font-display); font-size:17px; font-weight:600; color:var(--fl-text-primary);">{{ mediaViewTitle }}</span>
+          <button onClick="{{ closeMedia }}" aria-label="Close" style="position:absolute; top:calc(16px + env(safe-area-inset-top)); right:18px; width:40px; height:40px; border-radius:50%; border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-elevated); color:var(--fl-text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+        </div>
+      </sc-if>
+
+      <!-- MEDIA · add sheet -->
+      <sc-if value="{{ mediaAddOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeMediaAdd }}" style="position:absolute; inset:0; z-index:66; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:flFade 200ms var(--fl-ease-out, ease-out) both;">
+          <div role="dialog" aria-modal="true" onClick="{{ stopProp }}" style="width:100%; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient); animation:flSheetUp 320ms var(--fl-ease-out, ease-out) both; overflow:hidden;">
+            <div style="display:flex; justify-content:center; padding:10px 0 4px;"><span style="width:38px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+            <div style="padding:14px 24px 24px; display:flex; flex-direction:column; gap:12px;">
+              <span style="font-size:10.5px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Add to Media</span>
+              <button onClick="{{ addPhoto }}" style="display:flex; align-items:center; gap:13px; width:100%; padding:16px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); color:var(--fl-text-primary); font-size:15px; font-weight:600; cursor:pointer; text-align:left;"><span style="color:var(--fl-icon-bronze); display:inline-flex;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="17" height="13" rx="2"></rect><circle cx="12" cy="12.5" r="3"></circle><path d="M8 6l1.3-2h5.4L16 6"></path></svg></span>Add a Photo</button>
+              <button onClick="{{ addVideo }}" style="display:flex; align-items:center; gap:13px; width:100%; padding:16px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); color:var(--fl-text-primary); font-size:15px; font-weight:600; cursor:pointer; text-align:left;"><span style="color:var(--fl-icon-bronze); display:inline-flex;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M10 9.5l5 2.5-5 2.5z" fill="currentColor" stroke="none"></path></svg></span>Add a Video</button>
+              <button onClick="{{ closeMediaAdd }}" style="width:100%; padding:12px; border-radius:var(--fl-radius-md); background:transparent; border:1px solid var(--fl-charcoal-600); color:var(--fl-text-secondary); font-size:14px; font-weight:600; cursor:pointer;">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    <!-- grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;chapterState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;active&quot;,&quot;archived&quot;],&quot;default&quot;:&quot;active&quot;,&quot;tsType&quot;:&quot;'active'|'archived'&quot;,&quot;section&quot;:&quot;Chapter&quot;,&quot;label&quot;:&quot;Chapter state&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, sealOpen: false, sealStep: 'confirm', reflectText: '', memoryOpen: false, memNote: '', mediaOpen: null, mediaAddOpen: false, toast: null };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      const cd = typeof window !== 'undefined' && window.ForgeChapters;
+      if (r && ns && fs && cd) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); if (this._navT) clearTimeout(this._navT); }
+
+  _showToast(msg) { this.setState({ toast: msg }); if (this._toastT) clearTimeout(this._toastT); this._toastT = setTimeout(() => this.setState({ toast: null }), 2600); }
+  _seal(msg) { this.setState({ sealOpen: false }); this._showToast(msg); if (this._navT) clearTimeout(this._navT); this._navT = setTimeout(() => { window.location.href = 'Forge%20Legacy.dc.html'; }, 1300); }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) {
+      return { ready: false, notReady: true };
+    }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const ico = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.7 });
+
+    const tenure = window.ForgeUser ? window.ForgeUser.tenure() : 'y3';
+    const CH = window.ForgeChapters;
+    const propState = this.props && this.props.chapterState;
+    let c = null;
+    if (propState === 'archived') c = CH.latestSealed(tenure) || CH.currentChapter(tenure);
+    else if (propState === 'active') c = CH.currentChapter(tenure) || CH.latestSealed(tenure);
+    else {
+      // Opened from the timeline / Legacy hub: honor the specific chapter id.
+      let chapId = null;
+      try { chapId = window.localStorage.getItem('forge.chapter.id'); } catch (e) {}
+      c = chapId ? CH.byId(chapId, tenure) : null;
+      if (!c) {
+        let ss = 'active';
+        try { ss = window.localStorage.getItem('forge.chapter.state') || 'active'; } catch (e) {}
+        c = (ss === 'archived') ? (CH.latestSealed(tenure) || CH.currentChapter(tenure)) : (CH.currentChapter(tenure) || CH.latestSealed(tenure));
+      }
+    }
+    if (!c) c = CH.forTenure(tenure)[0];
+    const archived = !!(c && c.status === 'sealed');
+    const isActive = !archived;
+
+    const icoCal = h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 4, y: 5, width: 16, height: 16, rx: 2 }), h('path', { d: 'M4 9h16M8 3v4M16 3v4' }));
+    const icoCheck = h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'var(--fl-icon-bronze)', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M5 12.5l4.5 4.5L19 6.5' }));
+    const checkSm = h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'var(--fl-green-muted)', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M5 12.5l4.5 4.5L19 6.5' }));
+    const dashSm = h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'var(--fl-text-tertiary)', strokeWidth: 2.2, strokeLinecap: 'round' }, h('path', { d: 'M6 12h12' }));
+    const icoPencil = h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M4 20h4L18.5 9.5l-4-4L4 16z' }), h('path', { d: 'M13.5 6.5l4 4' }));
+    const icoMem = h('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M12 8v4l3 2' }), h('circle', { cx: 12, cy: 12, r: 9 }));
+    const icoSeal = ico('flame', 15, 1.7);
+    const icoSealBtn = h('span', { style: { display: 'inline-flex' } }, ico('flame', 17, 1.8));
+    const icoSealBig = ico('flame', 26, 1.6);
+    const outcomesMark = ico('banner', 170, 1.2);
+    const statusGlyph = archived ? h('span', { style: { display: 'inline-flex', marginRight: '2px' } }, ico('flame', 11, 1.9)) : null;
+
+    const openProg = () => { window.location.href = 'Forge%20Program.dc.html'; };
+    const barbell = () => ico('dumbbell', 20, 1.7);
+    const runIc = () => ico('shoe', 20, 1.7);
+    const tapGoal = () => this._showToast('Open goal detail');
+    const grad = { statusColor: 'var(--fl-bronze-bright)', statusIcon: checkSm };
+    const carry = { statusColor: 'var(--fl-text-tertiary)', statusIcon: dashSm };
+
+    // ── glyphs for the string icon-names / event-types the seed module carries ──
+    const progGlyph = (n) => n === 'shoe' ? runIc() : barbell();
+    const goalGlyph = h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 12, r: 8 }), h('circle', { cx: 12, cy: 12, r: 3.5 }));
+    const starGlyph = h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M12 3l2.6 5.8 6.4.6-4.8 4.3 1.4 6.3L12 19.4 6.4 20.3l1.4-6.3L3 9.7l6.4-.6z' }));
+    const photoGlyph = h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('rect', { x: 3.5, y: 6, width: 17, height: 13, rx: 2 }), h('circle', { cx: 12, cy: 12.5, r: 3 }), h('path', { d: 'M8 6l1.3-2h5.4L16 6' }));
+    const TGLYPH = { 'chapter-open': ico('book', 15, 1.7), 'chapter-seal': ico('flame', 15, 1.7), 'rank': ico('shield', 15, 1.7), 'honor': ico('laurel', 15, 1.7), 'goal': goalGlyph, 'pr': ico('spark', 15, 1.7), 'program-start': ico('dumbbell', 15, 1.7), 'program-grad': ico('medal', 15, 1.7), 'accomplishment': starGlyph, 'photo': photoGlyph };
+    const typeGlyph = (t) => TGLYPH[t] || TGLYPH['pr'];
+    const green = 'var(--fl-green-muted)';
+
+    const data = archived ? {
+      chapterNo: c.no, chapterName: c.name, statusLabel: 'Sealed',
+      chapterRange: c.range, chapterCreed: c.creed,
+      goalLabel: c.outcome.goalLabel, goalOutcomeDate: c.outcome.date,
+      outPrimaryHeadline: c.outcome.headline,
+      outStats: (c.outcome.stats || []),
+      secondary: (c.secondary || []).map((g) => ({ name: g.name, right: g.right, rightColor: g.achieved ? green : 'var(--fl-text-tertiary)', rightIcon: g.achieved ? checkSm : dashSm, nameColor: g.achieved ? 'var(--fl-text-primary)' : 'var(--fl-text-secondary)' })),
+      programs: (c.programs || []).map((p) => Object.assign({ name: p.name, meta: p.meta, status: p.status, icon: progGlyph(p.icon), open: openProg }, p.statusKind === 'grad' ? grad : carry)),
+      honors: (c.honors || []).map((hn) => ({ artwork: ico(hn.icon, 30, 1.7), label: hn.label, date: hn.date })),
+      moments: (c.media || []).map((m) => ({ title: m.title, kind: m.kind, mediaId: m.mediaId })),
+      memories: (c.memories || []),
+      timeline: (c.events || []).map((e) => ({ title: e.title, sub: e.sub, date: e.date, glyph: typeGlyph(e.type) })),
+      hasReflection: !!c.reflection,
+      notesBody: c.reflection ? c.reflection.body : '',
+      reflectionMeta: c.reflection ? c.reflection.meta : '',
+      showAddReflection: !c.reflection,
+    } : {
+      chapterNo: c.no, chapterName: c.name, statusLabel: 'Active',
+      chapterRange: c.range, chapterCreed: c.creed,
+      goalLabel: c.goal.label, goalValue: c.goal.value, goalPct: c.goal.pct, goalDone: c.goal.done, goalMax: c.goal.max,
+      goalExpected: c.goal.expected,
+      progressCount: c.progress.count, progressSince: c.progress.since,
+      secondary: (c.secondary || []).map((g) => ({ name: g.name, right: g.right, tap: tapGoal })),
+      programs: (c.programs || []).map((p) => ({ name: p.name, done: p.done, total: p.total, doneLabel: p.done + ' / ' + p.total, next: p.next, icon: progGlyph(p.icon), open: openProg })),
+      honors: (c.honors || []).map((hn) => ({ artwork: ico(hn.icon, 30, 1.7), label: hn.label, date: hn.date })),
+      moments: (c.media || []).map((m) => ({ title: m.title, kind: m.kind, mediaId: m.mediaId })),
+      memories: [],
+      timeline: (c.events || []).map((e) => ({ title: e.title, sub: e.sub, date: e.date, glyph: typeGlyph(e.type) })),
+      hasReflection: !!c.notes,
+      notesBody: c.notes || '',
+      showAddReflection: false,
+    };
+
+    const programs = (data.programs || []).map((p, i) => Object.assign({ key: i, border: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)' }, p));
+    const honors = (data.honors || []).map((hn, i) => ({ key: i, artwork: hn.artwork, label: hn.label, date: hn.date }));
+    const moments = (data.moments || []).map((m, i) => ({ key: i, title: m.title, kind: m.kind, mediaId: m.mediaId }));
+    const media = (data.moments || []).map((m, i) => ({ key: i, title: m.title, kind: m.kind, mediaId: m.mediaId, isVideo: m.kind === 'Clip', open: () => this.setState({ mediaOpen: i }) }));
+    const _mv = this.state.mediaOpen;
+    const _curMedia = (_mv != null && media[_mv]) ? media[_mv] : null;
+    const _nPhoto = media.filter((m) => !m.isVideo).length, _nVideo = media.filter((m) => m.isVideo).length;
+    const _plur = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+    const mediaCount = _nVideo ? (_plur(_nPhoto, 'Photo') + ' · ' + _plur(_nVideo, 'Video')) : _plur(_nPhoto, 'Photo');
+    const timeline = (data.timeline || []).map((e, i) => ({ key: i, title: e.title, sub: e.sub, date: e.date, glyph: e.glyph }));
+    const memories = (data.memories || []).map((m, i) => ({ key: i, note: m.note, added: m.added }));
+    const secondary = (data.secondary || []).map((g, i) => ({ key: i, name: g.name, rightText: g.right, rightColor: g.rightColor, rightIcon: g.rightIcon, nameColor: g.nameColor, tap: g.tap || (() => {}), border: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)' }));
+
+    return {
+      ready: true, notReady: false,
+      isActive, isArchived: archived,
+      chapterNo: data.chapterNo, chapterName: data.chapterName,
+      statusLabel: data.statusLabel, statusGlyph,
+      chapterRange: data.chapterRange, chapterCreed: data.chapterCreed,
+      goalLabel: data.goalLabel, goalValue: data.goalValue, goalPct: data.goalPct,
+      goalDone: data.goalDone, goalMax: data.goalMax, goalExpected: data.goalExpected, goalOutcomeDate: data.goalOutcomeDate,
+      progressCount: data.progressCount, progressSince: data.progressSince,
+      outPrimaryHeadline: data.outPrimaryHeadline,
+      outStats: (data.outStats || []).map((o, i) => ({ key: i, v: o.v, l: o.l })),
+      secondary, hasSecondary: secondary.length > 0,
+      goalsCountLabel: secondary.length + (secondary.length === 1 ? ' Goal' : ' Goals'),
+      programsLabel: (programs.length > 1 ? 'Current Programs' : 'Current Program'),
+      programs, honors, moments, timeline, memories,
+      hasHonors: honors.length > 0, hasMemories: memories.length > 0,
+      notesBody: data.notesBody, hasReflection: data.hasReflection,
+      reflectionMeta: data.reflectionMeta, showAddReflection: data.showAddReflection,
+      icoCal, icoCheck, icoPencil, icoSeal, icoSealBtn, icoSealBig, icoMem, outcomesMark,
+
+      goLegacy: () => { window.location.href = 'Forge%20Legacy.dc.html'; },
+      goTimeline: () => { window.location.href = 'Forge%20Legacy%20Timeline.dc.html'; },
+      viewGoals: () => { window.location.href = 'Forge%20Goal%20Hub.dc.html'; },
+      media, mediaCount,
+      mediaViewOpen: !!_curMedia, mediaViewId: _curMedia ? _curMedia.mediaId : '', mediaViewIsVideo: !!(_curMedia && _curMedia.isVideo), mediaViewTitle: _curMedia ? _curMedia.title : '',
+      closeMedia: () => this.setState({ mediaOpen: null }),
+      openMediaAdd: () => this.setState({ mediaAddOpen: true }),
+      closeMediaAdd: () => this.setState({ mediaAddOpen: false }),
+      mediaAddOpen: this.state.mediaAddOpen,
+      addPhoto: () => { this.setState({ mediaAddOpen: false }); this._showToast('Add a photo'); },
+      addVideo: () => { this.setState({ mediaAddOpen: false }); this._showToast('Add a video'); },
+      addReflection: () => this._showToast('Write your reflection (L-6)'),
+      editNotes: () => this._showToast('Edit chapter notes'),
+
+      openSeal: () => this.setState({ sealOpen: true, sealStep: 'confirm', reflectText: data.notesBody || '' }),
+      closeSeal: () => this.setState({ sealOpen: false }),
+      toReflect: () => this.setState({ sealStep: 'reflect' }),
+      onReflect: (e) => this.setState({ reflectText: e.target.value }),
+      sealStepConfirm: this.state.sealOpen && this.state.sealStep === 'confirm',
+      sealStepReflect: this.state.sealOpen && this.state.sealStep === 'reflect',
+      reflectText: this.state.reflectText,
+      sealWithReflection: () => this._seal('Chapter sealed · reflection saved to your Legacy'),
+      sealSkip: () => this._seal('Chapter sealed · added to your Legacy'),
+
+      openMemory: () => this.setState({ memoryOpen: true, memNote: '' }),
+      closeMemory: () => this.setState({ memoryOpen: false }),
+      onMemNote: (e) => this.setState({ memNote: e.target.value }),
+      memNote: this.state.memNote,
+      confirmMemory: () => { this.setState({ memoryOpen: false }); this._showToast('Memory added to this chapter'); },
+      memoryOpen: this.state.memoryOpen,
+
+      stopProp: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+      sealOpen: this.state.sealOpen,
+      toastOpen: !!this.state.toast, toastMsg: this.state.toast || '',
+    };
+  }
+}
+</script>
+</body>
+</html>

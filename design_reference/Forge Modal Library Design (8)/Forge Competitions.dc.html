@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+  .fl-scroll { scrollbar-width: none; }
+  .fl-chips::-webkit-scrollbar { height:0; }
+  .fl-chips { scrollbar-width: none; }
+  @keyframes cpRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div data-screen-label="Competitions" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(6,7,8,0.3), rgba(6,7,8,0.3)), #060708 url('assets/forge-bg-2.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <!-- header -->
+    <div style="height:56px; flex:none; display:flex; align-items:center; gap:6px; padding:0 8px; border-bottom:1px solid var(--fl-charcoal-700); position:relative; z-index:5;">
+      <button onClick="{{ back }}" aria-label="Back" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-secondary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+      <span style="flex:1; font-size:11px; font-weight:700; letter-spacing:2.6px; text-transform:uppercase; color:var(--fl-text-primary);">Competitions</span>
+      <span style="width:44px;"></span>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:0 0 34px;">
+
+      <!-- ═══════════ CREATE ═══════════ -->
+      <div style="padding:20px 22px 4px; animation:cpRise 460ms var(--fl-ease-out, ease-out) both;">
+        <button onClick="{{ create }}" style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:15px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); color:#F7F5F1; font-size:14px; font-weight:700; letter-spacing:0.6px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-shadow-card); text-shadow:0 1px 1px rgba(8,5,2,0.5);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>Create Competition
+        </button>
+      </div>
+
+      <!-- ═══════════ FILTERS (global) ═══════════ -->
+      <div class="fl-chips" style="display:flex; gap:8px; overflow-x:auto; padding:14px 22px 6px;">
+        <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+          <span role="button" tabindex="0" onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</span>
+        </sc-for>
+      </div>
+
+      <!-- ═══════════ PENDING INVITATIONS (compact) ═══════════ -->
+      <sc-if value="{{ hasInvites }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:12px 22px 2px;">
+          <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:0 2px 9px;">Pending Invitations ({{ inviteCount }})</span>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <sc-for list="{{ invites }}" as="inv" hint-placeholder-count="1">
+              <div style="display:flex; align-items:center; gap:11px; padding:9px 12px; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-surface-card); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-border-inset);">
+                <span style="width:32px; height:32px; flex:none; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); color:var(--fl-bronze-bright);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5L18 17.5M19 4.5L6 17.5M12.7 15.8L16.3 12.2M7.7 12.2L11.3 15.8"></path></svg></span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+                  <span style="font-family:var(--fl-font-display); font-size:14.5px; font-weight:600; letter-spacing:-0.1px; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ inv.name }}</span>
+                  <span style="font-size:10.5px; color:var(--fl-text-tertiary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ inv.metaLine }}</span>
+                </div>
+                <button onClick="{{ inv.decline }}" style="flex:none; padding:8px 13px; border-radius:var(--fl-radius-sm); background:transparent; border:1px solid var(--fl-charcoal-500); color:var(--fl-text-secondary); font-size:12px; font-weight:600; cursor:pointer;">Decline</button>
+                <button onClick="{{ inv.join }}" style="flex:none; padding:8px 15px; border-radius:var(--fl-radius-sm); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); color:#F7F5F1; font-size:12px; font-weight:700; letter-spacing:0.3px; cursor:pointer; box-shadow:var(--fl-bronze-metal-top-rim);">Join</button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ═══════════ ACTIVE ═══════════ -->
+      <div style="padding:18px 22px 4px;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:0 2px;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Active</span>
+          <span style="display:inline-flex; align-items:center; gap:6px; font-size:10.5px; font-weight:600; color:var(--fl-bronze-bright); white-space:nowrap;"><span style="width:6px; height:6px; border-radius:50%; background:var(--fl-status-online); box-shadow:var(--fl-status-online-glow);"></span>{{ activeCount }}</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:12px; padding-top:12px;">
+          <sc-for list="{{ active }}" as="a" hint-placeholder-count="2">
+            <div role="button" tabindex="0" onClick="{{ a.open }}" style="position:relative; overflow:hidden; border-radius:var(--fl-radius-xl); border:1px solid var(--fl-bronze-border); background:linear-gradient(180deg, rgba(191,143,79,0.07), transparent 62%), var(--fl-surface-card); box-shadow:var(--fl-border-inset), var(--fl-shadow-card), var(--fl-glow-subtle); padding:17px 18px 16px; cursor:pointer; transition:transform 220ms var(--fl-ease-out, ease-out);" style-active="transform:scale(0.985);">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="display:flex; color:var(--fl-icon-bronze);">{{ a.typeIcon }}</span>
+                <span style="font-size:9.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ a.type }}</span>
+                <span style="margin-left:auto; display:inline-flex; align-items:center; gap:6px;"><span style="width:6px; height:6px; border-radius:50%; background:var(--fl-status-online); box-shadow:var(--fl-status-online-glow);"></span><span style="font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--fl-bronze-bright);">Live</span></span>
+              </div>
+              <span style="display:block; font-family:var(--fl-font-display); font-size:20px; font-weight:600; letter-spacing:-0.2px; line-height:1.1; color:var(--fl-text-primary); padding:7px 0 8px;">{{ a.name }}</span>
+              <div style="display:flex; align-items:center; gap:8px; padding-bottom:13px;">
+                <span style="font-size:12.5px; color:var(--fl-text-secondary); white-space:nowrap;">vs {{ a.opp }}</span>
+                <span style="display:inline-flex; padding:2px 8px; border-radius:var(--fl-radius-sm); font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-bronze-bright);">{{ a.scopeLabel }}</span>
+              </div>
+              <div style="height:8px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-700); overflow:hidden;">
+                <div style="{{ a.barFillStyle }}"></div>
+              </div>
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding-top:9px;">
+                <span style="font-size:12px; font-weight:600; color:var(--fl-bronze-primary);">{{ a.standing }} · {{ a.metric }}</span>
+                <span style="font-size:11px; color:var(--fl-text-tertiary);">{{ a.days }}</span>
+              </div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ noActive }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:18px; border:1px dashed var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); text-align:center;"><span style="font-size:13px; color:var(--fl-text-tertiary);">No live {{ filterName }} competitions right now.</span></div>
+          </sc-if>
+        </div>
+      </div>
+
+      <!-- ═══════════ COMPETITION GROUPS ═══════════ -->
+      <div style="padding:24px 22px 4px;">
+        <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:0 2px 10px;">Competition Groups</span>
+        <div style="border:1px solid var(--fl-charcoal-700); border-radius:var(--fl-radius-lg); background:var(--fl-bg-primary); overflow:hidden;">
+          <sc-for list="{{ groups }}" as="g" hint-placeholder-count="5">
+            <div role="button" tabindex="0" onClick="{{ g.onClick }}" style="display:flex; align-items:center; gap:12px; padding:11px 15px; cursor:pointer; border-top:{{ g.border }};" style-hover="background:var(--fl-hover-wash);">
+              <span style="width:34px; height:34px; flex:none; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-bronze-border-subtle); background:var(--fl-icon-container-bg); color:var(--fl-icon-bronze);">{{ g.icon }}</span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                  <span style="font-size:14.5px; font-weight:600; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ g.name }}</span>
+                  <sc-if value="{{ g.champion }}" hint-placeholder-val="{{ false }}">
+                    <span style="flex:none; display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:var(--fl-radius-sm); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); font-size:8.5px; font-weight:700; letter-spacing:0.7px; text-transform:uppercase; color:var(--fl-bronze-bright);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v3a5 5 0 0 1-10 0z"></path><path d="M7 5H4.5v1a3 3 0 0 0 3 3M17 5h2.5v1a3 3 0 0 1-3 3M9 14.5h6M8 20h8M12 14v6"></path></svg>Champion</span>
+                  </sc-if>
+                </div>
+                <span style="font-size:11.5px; color:{{ g.subColor }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ g.sub }}</span>
+              </div>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fl-text-tertiary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ═══════════ HISTORY (achievement-led) ═══════════ -->
+      <div style="padding:24px 22px 8px;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:0 2px 2px;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">History</span>
+          <span role="button" tabindex="0" onClick="{{ goHistory }}" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:var(--fl-bronze-primary); cursor:pointer; white-space:nowrap;">View all<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></span>
+        </div>
+        <div style="display:flex; flex-direction:column; padding-top:2px;">
+          <sc-for list="{{ pastRows }}" as="p" hint-placeholder-count="5">
+            <div role="button" tabindex="0" onClick="{{ p.open }}" style="display:flex; align-items:center; gap:14px; padding:14px 2px; border-top:1px solid var(--fl-charcoal-700); cursor:pointer; transition:background 180ms var(--fl-ease-out, ease-out);" style-hover="background:var(--fl-hover-wash);">
+              <span style="{{ p.markStyle }}">
+                <sc-if value="{{ p.isChamp }}" hint-placeholder-val="{{ false }}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v3a5 5 0 0 1-10 0z"></path><path d="M7 5H4.5v1a3 3 0 0 0 3 3M17 5h2.5v1a3 3 0 0 1-3 3M9 14.5h6M8 20h8M12 14v6"></path></svg></sc-if>
+                <sc-if value="{{ p.notChamp }}" hint-placeholder-val="{{ true }}">{{ p.placeNum }}</sc-if>
+              </span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; letter-spacing:-0.1px; color:var(--fl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ p.name }}</span>
+                <span style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--fl-text-tertiary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><span style="display:flex; flex:none; color:var(--fl-icon-inactive);">{{ p.typeIcon }}</span>{{ p.metaA }}</span>
+              </div>
+              <div style="flex:none; text-align:right; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-size:14.5px; font-weight:700; letter-spacing:0.1px; color:{{ p.placeColor }};">{{ p.placeLabel }}</span>
+                <span style="font-size:10px; color:var(--fl-text-tertiary); opacity:0.85;">{{ p.standing }} · {{ p.date }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{ noPast }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:20px; border:1px dashed var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); text-align:center; margin-top:8px;"><span style="font-size:13px; color:var(--fl-text-tertiary);">No {{ filterName }} competitions yet.</span></div>
+        </sc-if>
+      </div>
+
+      <!-- ═══════════ COMPETITION HONORS ═══════════ -->
+      <div style="padding:22px 22px 6px;">
+        <div role="button" tabindex="0" onClick="{{ openHonors }}" style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 2px; cursor:pointer;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Competition Honors</span>
+          <span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:var(--fl-bronze-primary); white-space:nowrap;">{{ honorsEarnedLabel }}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></span>
+        </div>
+        <div role="button" tabindex="0" onClick="{{ openHonors }}" style="display:flex; gap:14px; padding-top:14px; cursor:pointer;">
+          <sc-for list="{{ compHonors }}" as="hn" hint-placeholder-count="3">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center;">
+              <span style="width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--fl-bronze-metallic); box-shadow:var(--fl-border-inset), 0 0 9px rgba(191,143,79,0.15);">
+                <span style="width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--fl-surface-recessed); color:var(--fl-bronze-bright);"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v3a5 5 0 0 1-10 0z"></path><path d="M7 5H4.5v1a3 3 0 0 0 3 3M17 5h2.5v1a3 3 0 0 1-3 3M9 14.5h6M8 20h8M12 14v6"></path></svg></span>
+              </span>
+              <span style="font-size:10px; font-weight:600; letter-spacing:0.3px; line-height:1.3; color:var(--fl-text-secondary);">{{ hn.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ═══════════ COMPETITION STATS ═══════════ -->
+      <div style="padding:24px 22px 4px;">
+        <span style="display:block; font-size:11px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label); padding:0 2px 12px;">Competition Stats</span>
+        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:1px; background:var(--fl-charcoal-700); border:1px solid var(--fl-charcoal-700); border-radius:var(--fl-radius-lg); overflow:hidden;">
+          <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+            <div style="display:flex; flex-direction:column; gap:4px; padding:15px 16px; background:var(--fl-surface-recessed);">
+              <span style="font-family:var(--fl-font-display); font-size:24px; font-weight:700; letter-spacing:-0.4px; color:var(--fl-text-stat); line-height:1;">{{ s.value }}</span>
+              <span style="font-size:10px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--fl-text-tertiary);">{{ s.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- favorite competition -->
+        <div style="display:flex; align-items:center; gap:13px; margin-top:12px; padding:14px 16px; border-radius:var(--fl-radius-lg); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle);">
+          <span style="width:42px; height:42px; flex:none; border-radius:var(--fl-radius-round); display:flex; align-items:center; justify-content:center; border:1px solid var(--fl-bronze-border); background:var(--fl-icon-container-bg); box-shadow:var(--fl-glow-subtle); color:var(--fl-bronze-bright);">{{ favIcon }}</span>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+            <span style="font-size:9.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Favorite Competition</span>
+            <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary); line-height:1.05;">{{ favType }}</span>
+          </div>
+          <span style="flex:none; font-size:12px; font-weight:600; color:var(--fl-bronze-bright); white-space:nowrap;">{{ favDetail }}</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- honors detail sheet -->
+    <sc-if value="{{ honorsOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeHonors }}" style="position:absolute; inset:0; z-index:70; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:cpRise 220ms var(--fl-ease-out, ease-out) both;">
+        <div onClick="{{ stopProp }}" style="width:100%; max-height:86%; display:flex; flex-direction:column; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient);">
+          <div style="display:flex; justify-content:center; padding:10px 0 4px;"><span style="width:40px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:8px 22px 12px;">
+            <span style="font-family:var(--fl-font-display); font-size:20px; font-weight:600; color:var(--fl-text-primary);">Competition Honors</span>
+            <span style="font-size:11.5px; font-weight:600; color:var(--fl-bronze-bright); white-space:nowrap;">{{ honorsSheetSub }}</span>
+          </div>
+          <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:0 18px 22px;">
+            <sc-for list="{{ honorRows }}" as="hn" hint-placeholder-count="6">
+              <div style="display:flex; align-items:center; gap:13px; padding:12px 4px; border-top:{{ hn.border }};">
+                <span style="{{ hn.medalStyle }}"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v3a5 5 0 0 1-10 0z"></path><path d="M7 5H4.5v1a3 3 0 0 0 3 3M17 5h2.5v1a3 3 0 0 1-3 3M9 14.5h6M8 20h8M12 14v6"></path></svg></span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                  <span style="font-size:14.5px; font-weight:600; color:{{ hn.labelColor }};">{{ hn.label }}</span>
+                  <span style="font-size:11px; color:var(--fl-text-tertiary);">{{ hn.qual }}</span>
+                </div>
+                <sc-if value="{{ hn.earned }}" hint-placeholder-val="{{ true }}"><span style="flex:none; display:inline-flex; color:var(--fl-bronze-bright);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4 4 10-10"></path></svg></span></sc-if>
+                <sc-if value="{{ hn.locked }}" hint-placeholder-val="{{ false }}"><span style="flex:none; display:inline-flex; color:var(--fl-text-tertiary);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- toast -->
+    <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; left:50%; bottom:34px; transform:translateX(-50%); z-index:80; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:cpRise 260ms var(--fl-ease-out, ease-out) both;">
+        <span style="display:inline-flex; color:var(--fl-icon-bronze); flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5L18 17.5M19 4.5L6 17.5M12.7 15.8L16.3 12.2M7.7 12.2L11.3 15.8"></path></svg></span>{{ toastMsg }}
+      </div>
+    </sc-if>
+
+    <!-- grain -->
+    <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.07; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    toast: null,
+    filter: 'All',
+    honorsOpen: false,
+    invites: [
+      { key: 'i1', name: 'Summer Strength', context: 'Community', from: 'Iron Collective' },
+      { key: 'i2', name: 'Push Week', context: 'Squad', from: 'Iron Vigil' },
+    ],
+  };
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); }
+  _toast(msg) { if (this._t) clearTimeout(this._t); this.setState({ toast: msg }); this._t = setTimeout(() => this.setState({ toast: null }), 2400); }
+
+  renderVals() {
+    const h = React.createElement;
+    const svg = (paths, sw) => h('svg', { width: 17, height: 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(paths) ? paths : [paths]).map((d, i) => h('path', { key: i, d: d })));
+    // Per-type bronze glyphs — subtle, consistent across the hub.
+    const TYPE_PATHS = {
+      'Most Workouts': ['M6.5 9v6', 'M17.5 9v6', 'M4 10.5v3', 'M20 10.5v3', 'M6.5 12h11'],
+      'Most Volume': ['M4 20V10', 'M9 20V4', 'M14 20v-8', 'M19 20v-5'],
+      'Most Duration': ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M12 7.5V12l3 2'],
+      'Max Lift': ['M12 20V6', 'M6 12l6-6 6 6'],
+      'Most PRs': ['M12 3.4l2.1 4.7 5.1.5-3.8 3.4 1.1 5L12 14l-4.6 2.4 1.1-5-3.8-3.4 5.1-.5z'],
+    };
+    const typeIcon = (type, size, sw) => {
+      const paths = TYPE_PATHS[type] || ['M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0'];
+      return h('svg', { width: size || 16, height: size || 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, paths.map((d, i) => h('path', { key: i, d: d })));
+    };
+    const goChallenge = () => { window.location.href = 'Forge%20Challenge.dc.html'; };
+    const barFill = (pct) => 'height:100%;border-radius:var(--fl-radius-pill);background:var(--fl-bronze-metallic);box-shadow:var(--fl-glow-subtle);width:' + pct + '%;';
+
+    // ── Filters (global) ──
+    const FILTERS = ['All', 'Squads', 'Friends', 'Communities'];
+    const ctxOfFilter = { Squads: 'Squad', Friends: 'Friends', Communities: 'Community' };
+    const filter = this.state.filter;
+    const matchesCtx = (scope) => filter === 'All' || scope === ctxOfFilter[filter];
+    const chipBase = 'flex:none; padding:7px 14px; border-radius:var(--fl-radius-pill); font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all 160ms var(--fl-ease-out, ease-out);';
+    const filters = FILTERS.map((f) => ({
+      key: f, label: f, onClick: () => this.setState({ filter: f }),
+      style: f === filter
+        ? (chipBase + ' background:var(--fl-bronze-tint); color:var(--fl-bronze-bright); border:1px solid var(--fl-bronze-border);')
+        : (chipBase + ' background:transparent; color:var(--fl-text-tertiary); border:1px solid var(--fl-charcoal-600);'),
+    }));
+
+    // ── Pending invitations ──
+    const invites = this.state.invites.filter((inv) => matchesCtx(inv.context)).map((inv) => ({
+      key: inv.key, name: inv.name,
+      metaLine: inv.context + ' · from ' + inv.from,
+      join: () => {
+        const scope = inv.context === 'Community' ? 'community' : (inv.context === 'Squad' ? 'squad' : 'friends');
+        try {
+          localStorage.setItem('forge_challenge_invite_v1', JSON.stringify({
+            fromName: inv.from, name: inv.name, metricLabel: 'Most Workouts', metricIcon: 'dumbbell', family: 'total',
+            days: 28, scope: scope, squadName: inv.context === 'Squad' ? inv.from : undefined,
+            competitors: ['Marcus Vale', 'Dana Cole', 'Theo Brandt', 'Lena Cross'], stakes: 'podium', message: '',
+          }));
+        } catch (e) {}
+        window.location.href = 'Forge%20Challenge%20Invite.dc.html';
+      },
+      decline: () => { this.setState((s) => ({ invites: s.invites.filter((x) => x.key !== inv.key) })); this._toast('Invitation declined'); },
+    }));
+
+    // ── Active (type-specific progress wording) ──
+    const activeRaw = [
+      { key: 'a1', type: 'Most Workouts', name: 'The March Grind', opp: 'Iron Vigil', scope: 'Squad', standing: '2nd of 5', metric: '3 workouts behind', days: '3 days left', pct: 62 },
+      { key: 'a2', type: 'Most Volume', name: 'Deadlift Duel', opp: 'Marcus Vale', scope: 'Friends', standing: 'Leading', metric: '1,200 lb ahead', days: '5 days left', pct: 58 },
+    ];
+    const active = activeRaw.filter((a) => matchesCtx(a.scope)).map((a) => Object.assign({}, a, { scopeLabel: a.scope, barFillStyle: barFill(a.pct), typeIcon: typeIcon(a.type, 15), open: goChallenge }));
+
+    // ── Competition Groups (roster hubs) ──
+    const squadIcon = svg(['M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'M2.5 19a5.5 5.5 0 0 1 11 0', 'M16 5.2a3 3 0 0 1 0 5.6', 'M18.5 19a5.5 5.5 0 0 0-3-4.9']);
+    const friendIcon = svg(['M12 11a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z', 'M5.5 19.5a6.5 6.5 0 0 1 13 0']);
+    const commIcon = svg(['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M3.5 9h17M3.5 15h17', 'M12 3c2.5 2.4 2.5 15.6 0 18M12 3c-2.5 2.4-2.5 15.6 0 18']);
+    const squadGo = (role) => () => { try { if (role) window.localStorage.setItem('forge.squad.role', role); window.localStorage.setItem('forge.squad', 'iron'); } catch (e) {} window.location.href = 'Squad%20Detail.dc.html'; };
+    const groupsRaw = [
+      { key: 's1', group: 'Squad', name: 'Iron Vigil', icon: squadIcon, sub: '2 Active · 5 members', subColor: 'var(--fl-bronze-primary)', champion: true, go: squadGo('member') },
+      { key: 's2', group: 'Squad', name: 'Dawn Patrol', icon: squadIcon, sub: 'No active · 6 members', subColor: 'var(--fl-text-tertiary)', champion: false, go: squadGo() },
+      { key: 's3', group: 'Squad', name: 'The Proving', icon: squadIcon, sub: '1 Active · 4 members', subColor: 'var(--fl-bronze-primary)', champion: false, go: squadGo() },
+      { key: 'fr', group: 'Friends', name: 'Friends', icon: friendIcon, sub: '1 Pending · 3 Active', subColor: 'var(--fl-bronze-primary)', champion: false, go: () => this._toast('Friend competitions') },
+      { key: 'co', group: 'Community', name: 'Communities', icon: commIcon, sub: '2 Active · 3 joined', subColor: 'var(--fl-bronze-primary)', champion: false, go: () => { window.location.href = 'Community%20Home.dc.html'; } },
+    ];
+    const groups = groupsRaw.filter((g) => matchesCtx(g.group)).map((g, i) => ({
+      key: g.key, name: g.name, icon: g.icon, sub: g.sub, subColor: g.subColor, champion: g.champion,
+      border: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)',
+      onClick: g.go,
+    }));
+
+    // ── History (achievement-led) ──
+    const markChamp = 'width:36px;height:36px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--fl-bronze-metallic);color:#1A1206;box-shadow:var(--fl-border-inset), 0 0 8px rgba(191,143,79,0.18);';
+    const markPlace = 'width:36px;height:36px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fl-font-display);font-size:14px;font-weight:700;background:var(--fl-surface-recessed);color:var(--fl-text-tertiary);border:1px solid var(--fl-charcoal-600);';
+    const placeOf = (standing) => {
+      if (/^1st/.test(standing)) return { label: 'Champion', color: 'var(--fl-bronze-bright)', champ: true };
+      if (/^2nd/.test(standing)) return { label: 'Runner-up', color: 'var(--fl-text-secondary)', champ: false };
+      if (/^3rd/.test(standing)) return { label: 'Podium', color: 'var(--fl-text-secondary)', champ: false };
+      return { label: 'Completed', color: 'var(--fl-text-tertiary)', champ: false };
+    };
+    const pastRaw = [
+      { key: 'p1', type: 'Most Volume', name: 'Winter Volume War', opp: 'Dawn Patrol', scope: 'Squad', standing: '1st of 6', date: 'Feb 2026' },
+      { key: 'p2', type: 'Most Duration', name: 'The Long Haul', opp: 'Marcus Vale', scope: 'Friends', standing: '2nd', date: 'Jan 2026' },
+      { key: 'p3', type: 'Most PRs', name: 'January Breakthroughs', opp: 'Iron Vigil', scope: 'Squad', standing: '1st of 5', date: 'Jan 2026' },
+      { key: 'p4', type: 'Most Volume', name: 'Collective Volume Open', opp: 'Iron Collective', scope: 'Community', standing: '3rd of 40', date: 'Jan 2026' },
+      { key: 'p5', type: 'Max Lift', name: 'Bench Battle', opp: 'Theo Brandt', scope: 'Friends', standing: '2nd', date: 'Dec 2025' },
+      { key: 'p6', type: 'Most Workouts', name: 'December Grind', opp: 'Iron Vigil', scope: 'Squad', standing: '1st of 5', date: 'Dec 2025' },
+      { key: 'p7', type: 'Most Volume', name: 'Autumn Community Open', opp: 'Iron Collective', scope: 'Community', standing: '12th of 38', date: 'Nov 2025' },
+    ];
+    const filteredPast = pastRaw.filter((p) => matchesCtx(p.scope));
+    const pastRows = filteredPast.slice(0, 3).map((p) => {
+      const pl = placeOf(p.standing);
+      const num = (p.standing.match(/^\d+/) || ['\u2013'])[0];
+      return Object.assign({}, p, {
+        metaA: p.type + ' \u00B7 ' + p.opp + ' \u00B7 ' + p.scope,
+        typeIcon: typeIcon(p.type, 13, 1.8),
+        placeLabel: pl.label, placeColor: pl.color,
+        isChamp: pl.champ, notChamp: !pl.champ, placeNum: num,
+        markStyle: pl.champ ? markChamp : markPlace,
+        open: goChallenge,
+      });
+    });
+
+    // ── Honors (account-wide — not context-filtered) ──
+    const HON = [
+      { fam: 'Wins', label: 'First Victory', qual: 'Win 1 competition', earned: true },
+      { fam: 'Wins', label: '10 Challenge Wins', qual: 'Win 10 competitions', earned: true },
+      { fam: 'Wins', label: '25 Challenge Wins', qual: 'Win 25 competitions', earned: false },
+      { fam: 'Participation', label: 'First Challenge', qual: 'Enter 1 competition', earned: true },
+      { fam: 'Participation', label: '10 Challenges', qual: 'Enter 10 competitions', earned: true },
+      { fam: 'Participation', label: 'Challenge Veteran', qual: 'Enter 25 competitions', earned: false },
+      { fam: 'Streak', label: '3-Challenge Streak', qual: '3 in a row \u00B7 squad', earned: true },
+      { fam: 'Streak', label: '5-Challenge Streak', qual: '5 in a row \u00B7 squad', earned: false },
+      { fam: 'Streak', label: '10-Challenge Streak', qual: '10 in a row \u00B7 squad', earned: false },
+    ];
+    const honEarned = HON.filter((x) => x.earned).length;
+    const medalEarned = 'width:40px;height:40px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--fl-bronze-metallic);color:#1A1206;box-shadow:var(--fl-border-inset), 0 0 8px rgba(191,143,79,0.16);';
+    const medalLocked = 'width:40px;height:40px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--fl-surface-recessed);color:var(--fl-charcoal-500);border:1px solid var(--fl-charcoal-600);';
+    const honorRows = HON.map((x, i) => ({
+      key: 'hr' + i, label: x.label, qual: x.qual,
+      earned: x.earned, locked: !x.earned,
+      medalStyle: x.earned ? medalEarned : medalLocked,
+      labelColor: x.earned ? 'var(--fl-text-primary)' : 'var(--fl-text-tertiary)',
+      border: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)',
+    }));
+    const compHonors = HON.filter((x) => x.earned).slice(0, 3).map((x, i) => ({ key: 'ce' + i, label: x.label }));
+
+    // ── Stats (per-context) + favorite competition ──
+    const STATS = {
+      All:         { entered: '18', wins: '11', podiums: '15', rate: '61%', favType: 'Most Volume', favDetail: 'Won 6 of 8' },
+      Squads:      { entered: '9',  wins: '6',  podiums: '8',  rate: '67%', favType: 'Most Workouts', favDetail: 'Won 4 of 5' },
+      Friends:     { entered: '6',  wins: '4',  podiums: '5',  rate: '67%', favType: 'Max Lift', favDetail: 'Won 3 of 4' },
+      Communities: { entered: '3',  wins: '1',  podiums: '2',  rate: '33%', favType: 'Most Volume', favDetail: '1 win · 2 podiums' },
+    };
+    const st = STATS[filter] || STATS.All;
+    const stats = [
+      { key: 'e', value: st.entered, label: 'Entered' },
+      { key: 'w', value: st.wins, label: 'Wins' },
+      { key: 'p', value: st.podiums, label: 'Podiums' },
+      { key: 'r', value: st.rate, label: 'Win Rate' },
+    ];
+
+    return {
+      back: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Forge%20Home.dc.html'); },
+      goHistory: () => { window.location.href = 'Forge%20Competition%20History.dc.html'; },
+      create: () => { try { localStorage.setItem('forge_challenge_ctx_v1', JSON.stringify({ launchContext: 'Standalone' })); } catch (e) {} window.location.href = 'Forge%20Create%20Challenge.dc.html'; },
+      filters,
+      hasInvites: invites.length > 0, invites, inviteCount: invites.length,
+      active, activeCount: active.length + ' live', noActive: active.length === 0,
+      groups,
+      pastRows, pastCount: filteredPast.length + (filteredPast.length === 1 ? ' competition' : ' competitions'),
+      noPast: filteredPast.length === 0, filterName: ({ Squads: 'squad', Friends: 'friend', Communities: 'community' })[filter] || '',
+      compHonors,
+      honorsOpen: this.state.honorsOpen,
+      openHonors: () => this.setState({ honorsOpen: true }),
+      closeHonors: () => this.setState({ honorsOpen: false }),
+      stopProp: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+      honorRows, honorsEarnedLabel: honEarned + ' earned', honorsSheetSub: honEarned + ' of ' + HON.length + ' earned',
+      stats, favType: st.favType, favDetail: st.favDetail, favIcon: typeIcon(st.favType, 20),
+      toastOpen: !!this.state.toast, toastMsg: this.state.toast || '',
+    };
+  }
+}
+</script>
+</body>
+</html>

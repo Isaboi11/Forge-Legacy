@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, type DimensionValue, type TextInputProps } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 
@@ -37,8 +38,11 @@ export function ProgressHeader({
   onExit?: () => void;
 }) {
   const pct = `${Math.round((step / total) * 100)}%`;
+  /* The onboarding route has no header, so this row IS the top of the screen — without the inset, Back
+     and Exit sat under the status bar where nobody could tap them. */
+  const insets = useSafeAreaInsets();
   return (
-    <View style={s.progressRow}>
+    <View style={[s.progressRow, { paddingTop: 8 + insets.top }]}>
       {onBack ? (
         <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} style={s.back}>
           <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

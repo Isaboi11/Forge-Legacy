@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+<style>
+  body { margin:0; background:var(--fl-bg-primary); color:var(--fl-text-primary); font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:var(--fl-bronze-primary); text-decoration:none; }
+  a:hover { color:var(--fl-bronze-bright); }
+</style>
+</helmet>
+
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#141518"></rect><circle cx="100" cy="100" r="44" fill="#BF8F4F"></circle><circle cx="100" cy="100" r="44" fill="none" stroke="#CDA063" stroke-width="3"></circle><path d="M100 66 A34 34 0 0 1 100 134 Z" fill="#8A6A3E"></path></svg>
+</template>
+
+<div style="max-width:520px; margin:0 auto; padding:28px 20px 72px; display:flex; flex-direction:column; gap:32px;">
+
+  <!-- ═══ HEADER ═══ -->
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <span style="font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Open this on the phone</span>
+    <span style="font-family:var(--fl-font-display); font-size:27px; font-weight:600; line-height:1.18;">Bronze device calibration</span>
+    <span style="font-size:13.5px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">You can't fix a device colour shift by eye on a desktop. Judge every row below on the actual phone and tell me the winning label — I'll write it into the token.</span>
+  </div>
+
+  <!-- ═══ 0 · BEFORE YOU JUDGE ═══ -->
+  <div style="padding:16px 17px; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); display:flex; flex-direction:column; gap:11px;">
+    <span style="font-size:10.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-bronze-primary);">Do this first</span>
+    <span style="font-size:13px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">Settings → Display &amp; Brightness → <strong style="color:var(--fl-text-primary); font-weight:600;">True Tone off</strong>, <strong style="color:var(--fl-text-primary); font-weight:600;">Night Shift off</strong>, brightness around 70%. True Tone warms the whole white point toward amber — it alone can swing bronze several degrees toward yellow, and it's the single most likely reason your phone and your monitor disagree. Establish the baseline with it off, then turn it back on and see how far the winner drifts.</span>
+  </div>
+
+  <!-- ═══ 1 · DEVICE READOUT ═══ -->
+  <div style="display:flex; flex-direction:column; gap:12px;">
+    <span style="font-size:10.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">1 · What this device reports</span>
+    <div style="border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:var(--fl-surface-card); overflow:hidden;">
+      <sc-for list="{{ diag }}" as="d" hint-placeholder-count="5">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; padding:12px 15px; border-top:{{ d.divider }};">
+          <span style="font-size:12.5px; color:var(--fl-text-secondary);">{{ d.k }}</span>
+          <span style="font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12.5px; font-weight:600; color:{{ d.tone }}; text-align:right;">{{ d.v }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <span style="font-size:12px; line-height:1.55; color:var(--fl-text-tertiary); text-wrap:pretty;">If <strong style="color:var(--fl-text-secondary);">Wide gamut (P3)</strong> is yes, the screen can display colours well outside sRGB. That is where the extra saturation comes from.</span>
+  </div>
+
+  <!-- ═══ 2 · HUE LADDER ═══ -->
+  <div style="display:flex; flex-direction:column; gap:13px;">
+    <div style="display:flex; flex-direction:column; gap:7px;">
+      <span style="font-size:10.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">2 · Hue ladder — the main fix</span>
+      <span style="font-size:13px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">Our bronze sits at <strong style="color:var(--fl-text-primary); font-weight:600;">34°</strong>, right on the amber line. A warm display pushes it up toward 40° and it reads gold — cheesy. Pre-rotating it toward copper means the device shift lands it back on target. Red and blue channels are identical in all five; only green moves.</span>
+    </div>
+    <sc-for list="{{ hues }}" as="h" hint-placeholder-count="5">
+      <div style="display:flex; flex-direction:column; gap:7px;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+          <span style="font-size:11.5px; font-weight:700; letter-spacing:0.8px; color:{{ h.labelTone }};">{{ h.label }}</span>
+          <span style="font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:11px; color:var(--fl-text-tertiary);">{{ h.hex }}</span>
+        </div>
+        <button type="button" style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:9px; padding:16px; border-radius:var(--fl-radius-md); font-size:15px; font-weight:600; letter-spacing:0.3px; border:1px solid {{ h.border }}; background:{{ h.fill }}; color:{{ h.ink }}; box-shadow:inset 0 1px 0 rgba(222,190,148,0.20), inset 0 -1px 2px rgba(0,0,0,0.30), inset 6px 0 12px -8px rgba(0,0,0,0.55), inset -6px 0 12px -8px rgba(0,0,0,0.55); cursor:pointer; font-family:inherit; -webkit-tap-highlight-color:transparent;">
+          <span>Join Squad</span>
+        </button>
+        <div style="display:flex; gap:0; height:34px; border-radius:6px; overflow:hidden; border:1px solid var(--fl-charcoal-600);">
+          <span style="flex:1; background:{{ h.hex }};"></span>
+          <span style="flex:1; background:{{ h.bright }};"></span>
+          <span style="flex:1; background:{{ h.mid }};"></span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ═══ 3 · SATURATION ═══ -->
+  <div style="display:flex; flex-direction:column; gap:13px;">
+    <div style="display:flex; flex-direction:column; gap:7px;">
+      <span style="font-size:10.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">3 · Chroma ladder</span>
+      <span style="font-size:13px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">Second lever, independent of hue. A wide-gamut screen stretches saturated colours further than a desktop sRGB monitor does, so a slightly duller source lands in the same place on the phone and stays put on the web. All four are at 30°.</span>
+    </div>
+    <sc-for list="{{ chromas }}" as="c" hint-placeholder-count="4">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="flex:none; width:74px; font-size:11.5px; font-weight:700; letter-spacing:0.6px; color:{{ c.labelTone }};">{{ c.label }}</span>
+        <button type="button" style="flex:1; padding:14px; border-radius:var(--fl-radius-md); font-size:14px; font-weight:600; border:1px solid {{ c.border }}; background:{{ c.fill }}; color:{{ c.ink }}; box-shadow:inset 0 1px 0 rgba(222,190,148,0.18), inset 6px 0 12px -8px rgba(0,0,0,0.55), inset -6px 0 12px -8px rgba(0,0,0,0.55); cursor:pointer; font-family:inherit; -webkit-tap-highlight-color:transparent;">Join Squad</button>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ═══ 4 · GRAIN BLEND ═══ -->
+  <div style="display:flex; flex-direction:column; gap:13px;">
+    <div style="display:flex; flex-direction:column; gap:7px;">
+      <span style="font-size:10.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">4 · The grain overlay — likely culprit</span>
+      <span style="font-size:13px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">Every screen has a full-bleed noise layer set to <code style="font-family:ui-monospace,monospace; font-size:12px; color:var(--fl-bronze-primary);">mix-blend-mode: overlay</code> — it's in around forty files. Overlay <em>increases</em> saturation and contrast of whatever is beneath it, and mobile Safari composites blends in the display's own wide gamut rather than sRGB. That is a yellow-shift amplifier sitting on top of the button on the phone and not on the desktop. Identical bronze in all three; only the blend changes.</span>
+    </div>
+    <sc-for list="{{ grains }}" as="g" hint-placeholder-count="3">
+      <div style="display:flex; flex-direction:column; gap:7px;">
+        <span style="font-size:11.5px; font-weight:700; letter-spacing:0.7px; color:{{ g.labelTone }};">{{ g.label }}</span>
+        <div style="position:relative; border-radius:var(--fl-radius-md); overflow:hidden; border:1px solid var(--fl-charcoal-600); background:var(--fl-bg-atmospheric);">
+          <div style="padding:18px;">
+            <button type="button" style="width:100%; padding:15px; border-radius:var(--fl-radius-md); font-size:14.5px; font-weight:600; border:1px solid rgba(174,136,86,0.42); background:var(--fl-bronze-brush), var(--fl-bronze-fill); color:var(--fl-bronze-primary); box-shadow:inset 0 1px 0 rgba(222,190,148,0.20), inset 6px 0 12px -8px rgba(0,0,0,0.55), inset -6px 0 12px -8px rgba(0,0,0,0.55); cursor:pointer; font-family:inherit; -webkit-tap-highlight-color:transparent;">Join Squad</button>
+          </div>
+          <div aria-hidden="true" style="position:absolute; inset:0; pointer-events:none; opacity:{{ g.opacity }}; mix-blend-mode:{{ g.blend }}; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ═══ 5 · GAMUT PROBE ═══ -->
+  <div style="display:flex; flex-direction:column; gap:13px;">
+    <div style="display:flex; flex-direction:column; gap:7px;">
+      <span style="font-size:10.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">5 · Gamut probe</span>
+      <span style="font-size:13px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">A diagnostic, not a candidate. Left is our hex. Right is the same numbers declared in the display's native space. <strong style="color:var(--fl-text-primary); font-weight:600;">If the right half looks more yellow or more vivid, the phone is expanding the gamut</strong> — and the fix is sections 2 and 3. If they're indistinguishable, the cause is the white point (True Tone) or the blend layer in section 4 instead.</span>
+    </div>
+    <div style="display:flex; height:96px; border-radius:var(--fl-radius-md); overflow:hidden; border:1px solid var(--fl-charcoal-600);">
+      <div style="flex:1; background:#BF8F4F; display:flex; align-items:flex-end; padding:9px;">
+        <span style="font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:10.5px; font-weight:700; color:#1A1206;">sRGB hex</span>
+      </div>
+      <div style="flex:1; background:color(display-p3 0.749 0.561 0.310); display:flex; align-items:flex-end; justify-content:flex-end; padding:9px;">
+        <span style="font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:10.5px; font-weight:700; color:#1A1206;">display-p3</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 6 · GRADIENT INTERPOLATION ═══ -->
+  <div style="display:flex; flex-direction:column; gap:13px;">
+    <div style="display:flex; flex-direction:column; gap:7px;">
+      <span style="font-size:10.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-text-bronze-label);">6 · Gradient interpolation</span>
+      <span style="font-size:13px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">The bronze fill is a five-stop gradient. Browsers blend the space between stops in their own default space, so the mid-tones — the largest area of the button — can land differently per engine. Forcing <code style="font-family:ui-monospace,monospace; font-size:12px; color:var(--fl-bronze-primary);">in oklab</code> makes the ramp perceptually even and identical everywhere. Free consistency; look at the middle third.</span>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:9px;">
+      <span style="font-size:11.5px; font-weight:700; letter-spacing:0.7px; color:var(--fl-text-tertiary);">Default interpolation</span>
+      <div style="height:56px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:linear-gradient(180deg, #8A6A3E 0%, #6E5330 22%, #5C4527 52%, #4A3822 97%, #382A18 100%);"></div>
+      <span style="font-size:11.5px; font-weight:700; letter-spacing:0.7px; color:var(--fl-bronze-primary);">Forced oklab</span>
+      <div style="height:56px; border-radius:var(--fl-radius-md); border:1px solid var(--fl-charcoal-600); background:linear-gradient(180deg in oklab, #8A6A3E 0%, #6E5330 22%, #5C4527 52%, #4A3822 97%, #382A18 100%);"></div>
+    </div>
+  </div>
+
+  <!-- ═══ 7 · WHAT I'D CHANGE ═══ -->
+  <div style="padding:18px; border-radius:var(--fl-radius-md); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); display:flex; flex-direction:column; gap:13px;">
+    <span style="font-size:10.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--fl-bronze-primary);">The actual fix, once you've picked</span>
+    <sc-for list="{{ plan }}" as="p" hint-placeholder-count="4">
+      <div style="display:flex; gap:11px; align-items:flex-start;">
+        <span style="flex:none; width:20px; height:20px; margin-top:1px; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border); display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; color:var(--fl-bronze-primary);">{{ p.n }}</span>
+        <span style="font-size:12.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">{{ p.t }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div aria-hidden="true" style="height:1px; background:var(--fl-charcoal-600);"></div>
+  <span style="font-size:12px; line-height:1.6; color:var(--fl-text-tertiary); text-wrap:pretty;">One thing I can't fix from here: True Tone and Night Shift are OS-level white-point shifts with no web-facing signal. Every app on the phone is warmed by them. The only defence is choosing a source hue that survives the shift — which is what section 2 is for.</span>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: { &quot;width&quot;: 520, &quot;height&quot;: 900 }
+}">
+class Component extends DCLogic {
+  state = { probed: false };
+
+  componentDidMount() {
+    // Gamut / range probes must run on the real device, so read them at mount.
+    const mm = (q) => { try { return window.matchMedia(q).matches; } catch (e) { return null; } };
+    const supports = (v) => { try { return CSS.supports('color', v); } catch (e) { return false; } };
+    this._probe = {
+      p3: mm('(color-gamut: p3)'),
+      rec2020: mm('(color-gamut: rec2020)'),
+      hdr: mm('(dynamic-range: high)'),
+      dpr: window.devicePixelRatio || 1,
+      vw: window.innerWidth,
+      p3Syntax: supports('color(display-p3 1 0 0)'),
+      oklab: supports('oklab(0.5 0 0)'),
+      inverted: mm('(inverted-colors: inverted)'),
+      contrast: mm('(prefers-contrast: more)')
+    };
+    this.setState({ probed: true });
+  }
+
+  _yn(v) {
+    if (v === null || v === undefined) return 'unknown';
+    return v ? 'yes' : 'no';
+  }
+
+  // Hue rotation holding R and B fixed at 0xBF / 0x4F — only green moves,
+  // which is the cleanest single-channel way to walk amber back to copper.
+  _hueRow(deg, green, label, recommended) {
+    const hex = '#BF' + green.toString(16).toUpperCase().padStart(2, '0') + '4F';
+    // Matching lighter + mid companions, same rotation applied proportionally.
+    const bright = '#CD' + Math.round(green + 17).toString(16).toUpperCase().padStart(2, '0') + '63';
+    const mid = '#7A' + Math.round(green * 0.67).toString(16).toUpperCase().padStart(2, '0') + '40';
+    // Dark forged fill, rotated by the same delta from the 34-degree original.
+    const d = 34 - deg;
+    const g = (base) => Math.max(0, Math.round(base - d * 1.6));
+    const stop = (r, gb, b) => 'rgb(' + r + ',' + g(gb) + ',' + b + ')';
+    const fill = 'linear-gradient(180deg in oklab, ' +
+      stop(138, 106, 62) + ' 0%, ' +
+      stop(110, 83, 48) + ' 22%, ' +
+      stop(92, 69, 39) + ' 52%, ' +
+      stop(74, 56, 34) + ' 97%, ' +
+      stop(56, 42, 24) + ' 100%)';
+    return {
+      label: label,
+      hex: hex,
+      bright: bright,
+      mid: mid,
+      fill: fill,
+      ink: hex,
+      border: 'rgba(' + 174 + ',' + g(136) + ',86,0.42)',
+      labelTone: recommended ? 'var(--fl-bronze-primary)' : 'var(--fl-text-tertiary)'
+    };
+  }
+
+  _chromaRow(sat, label, recommended) {
+    // 30 degrees, L held at 53%, chroma walked down.
+    const h = 30, l = 0.529, s = sat;
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const hp = h / 60;
+    const x = c * (1 - Math.abs((hp % 2) - 1));
+    const m = l - c / 2;
+    const to255 = (v) => Math.round(Math.min(1, Math.max(0, v)) * 255);
+    const r = to255(c + m), gg = to255(x + m), b = to255(m);
+    const hex = '#' + [r, gg, b].map((v) => v.toString(16).toUpperCase().padStart(2, '0')).join('');
+    const k = 0.30 + (s / 0.467) * 0.70;
+    const st = (rr, gv, bb) => 'rgb(' + Math.round(rr * k + rr * (1 - k) * 0.62) + ',' + Math.round(gv * k + gv * (1 - k) * 0.78) + ',' + Math.round(bb * k + bb * (1 - k) * 1.18) + ')';
+    return {
+      label: label,
+      fill: 'linear-gradient(180deg in oklab, ' + st(138, 102, 62) + ' 0%, ' + st(110, 80, 48) + ' 24%, ' + st(92, 66, 39) + ' 54%, ' + st(74, 53, 34) + ' 97%, ' + st(56, 40, 24) + ' 100%)',
+      ink: hex,
+      border: 'rgba(174,130,86,' + (0.28 + s * 0.30).toFixed(2) + ')',
+      labelTone: recommended ? 'var(--fl-bronze-primary)' : 'var(--fl-text-tertiary)'
+    };
+  }
+
+  renderVals() {
+    const p = this._probe || {};
+    const rows = [
+      { k: 'Wide gamut (P3)', v: this._yn(p.p3), good: p.p3 },
+      { k: 'Rec. 2020', v: this._yn(p.rec2020), good: p.rec2020 },
+      { k: 'High dynamic range', v: this._yn(p.hdr), good: p.hdr },
+      { k: 'display-p3 syntax', v: this._yn(p.p3Syntax), good: p.p3Syntax },
+      { k: 'oklab interpolation', v: this._yn(p.oklab), good: p.oklab },
+      { k: 'Pixel ratio', v: p.dpr ? String(p.dpr) : '—', good: null },
+      { k: 'Viewport width', v: p.vw ? p.vw + 'px' : '—', good: null }
+    ];
+
+    return {
+      diag: rows.map((r, i) => ({
+        k: r.k,
+        v: r.v,
+        divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-600)',
+        tone: r.good === true ? 'var(--fl-bronze-primary)'
+          : r.good === false ? 'var(--fl-text-tertiary)'
+          : 'var(--fl-text-primary)'
+      })),
+
+      hues: [
+        this._hueRow(34, 143, '34° — current, on the amber line', false),
+        this._hueRow(32, 139, '32° — one step back', false),
+        this._hueRow(30, 135, '30° — burnished copper', true),
+        this._hueRow(28, 131, '28° — clearly copper', false),
+        this._hueRow(26, 127, '26° — too far, for reference', false)
+      ],
+
+      chromas: [
+        this._chromaRow(0.467, 'Current', false),
+        this._chromaRow(0.420, '−10%', true),
+        this._chromaRow(0.373, '−20%', false),
+        this._chromaRow(0.327, '−30%', false)
+      ],
+
+      grains: [
+        { label: 'overlay @ 0.08 — shipping today', blend: 'overlay', opacity: 0.08, labelTone: 'var(--fl-text-tertiary)' },
+        { label: 'soft-light @ 0.14 — texture without the saturation kick', blend: 'soft-light', opacity: 0.14, labelTone: 'var(--fl-bronze-primary)' },
+        { label: 'no blend @ 0.05 — pure tooth, zero colour effect', blend: 'normal', opacity: 0.05, labelTone: 'var(--fl-text-tertiary)' }
+      ],
+
+      plan: [
+        { n: '1', t: 'Rotate --fl-bronze-300 / 400 / 600 and the five bronze-fill stops to the winning hue. One edit in foundation.css, nothing in the screens changes.' },
+        { n: '2', t: 'Apply the chroma reduction if you picked one, in the same pass.' },
+        { n: '3', t: 'Swap the grain layer from overlay to the winning blend across all forty-odd files — mechanical find-and-replace, and the biggest single mobile-versus-desktop delta.' },
+        { n: '4', t: 'Add in oklab to every bronze gradient so the mid-tones are identical on every engine, and keep the color-scheme meta this page already sets so iOS stops auto-adjusting.' },
+        { n: '5', t: 'Optional belt-and-braces: a (color-gamut: p3) media block that serves the slightly duller variant only to wide-gamut screens, leaving desktop sRGB exactly as it is today.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

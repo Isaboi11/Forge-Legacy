@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--fl-bg-atmospheric); background-attachment: fixed; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; }
+  </style>
+</helmet>
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+  <div style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column;">
+
+    <!-- Top bar with back chevron -->
+    <div style="height:56px; flex:none; display:flex; align-items:center; gap:6px; padding:0 10px 0 6px; border-bottom:1px solid var(--fl-charcoal-600);">
+      <a href="Forge%20Home.dc.html" aria-label="Back to home" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; color:var(--fl-text-secondary); border-radius:var(--fl-radius-md); transition:color 160ms ease, background 160ms ease;" style-hover="color:var(--fl-text-primary); background:var(--fl-hover-wash);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+      </a>
+      <span style="font-size:13px; font-weight:700; letter-spacing:2.2px; text-transform:uppercase; color:var(--fl-text-primary);">Mission</span>
+    </div>
+
+    <!-- Body -->
+    <div style="flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; padding:30px 24px 40px;">
+      <span style="font-size:11px; font-weight:600; letter-spacing:2.4px; text-transform:uppercase; color:var(--fl-bronze-primary);">Mission</span>
+      <h1 style="margin:12px 0 0; font-family:var(--fl-font-display); font-size:36px; line-height:1.05; font-weight:700; letter-spacing:-0.3px; color:var(--fl-text-primary);">Squat 405 lb</h1>
+      <span style="margin-top:10px; font-size:14px; color:var(--fl-text-secondary);">Your long-term objective &nbsp;·&nbsp; 2 goals remaining</span>
+
+      <div style="margin-top:16px; display:flex; align-items:baseline; gap:8px;">
+        <span style="font-family:var(--fl-font-display); font-size:26px; font-weight:600; color:var(--fl-bronze-bright);">335</span>
+        <span style="font-size:14px; color:var(--fl-text-tertiary);">/ 405 lb current</span>
+      </div>
+
+      <!-- Stub placeholder -->
+      <div style="margin-top:30px; border:1px dashed var(--fl-bronze-border); border-radius:var(--fl-radius-xl); padding:22px; display:flex; flex-direction:column; gap:16px; background:rgba(191,143,79,0.04);">
+        <span style="font-size:11px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-bronze-primary);">Full page coming</span>
+        <span style="font-size:14px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Destination stub — this is where tapping the Mission card lands. The full screen will let you view and edit your goals: add, adjust, and remove them however you want.</span>
+        <div style="height:1px; background:var(--fl-bronze-border-subtle);"></div>
+        <div style="display:flex; flex-direction:column; gap:11px;">
+          <span style="font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--fl-text-tertiary);">Planned sections</span>
+          <span style="display:flex; align-items:center; gap:10px; font-size:14px; color:var(--fl-text-secondary);"><span style="width:5px; height:5px; flex:none; transform:rotate(45deg); background:var(--fl-bronze-primary);"></span>Primary mission — current vs target</span>
+          <span style="display:flex; align-items:center; gap:10px; font-size:14px; color:var(--fl-text-secondary);"><span style="width:5px; height:5px; flex:none; transform:rotate(45deg); background:var(--fl-bronze-primary);"></span>Sub-goals &amp; remaining goals</span>
+          <span style="display:flex; align-items:center; gap:10px; font-size:14px; color:var(--fl-text-secondary);"><span style="width:5px; height:5px; flex:none; transform:rotate(45deg); background:var(--fl-bronze-primary);"></span>Milestone history &amp; recent PRs</span>
+          <span style="display:flex; align-items:center; gap:10px; font-size:14px; color:var(--fl-text-secondary);"><span style="width:5px; height:5px; flex:none; transform:rotate(45deg); background:var(--fl-bronze-primary);"></span>Projected completion / trend</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

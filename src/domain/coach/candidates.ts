@@ -52,6 +52,8 @@ export interface CatalogExercise {
   muscleIds: readonly string[];
   /** `'Strength' | 'Cardio' | 'Mobility'`. Keeps stretches out of strength slots — see `coherence.ts`. */
   modality?: string;
+  /** What else the catalogue calls it — read by `assemble`'s pin resolver, the Program Builder import's path. */
+  aliases?: readonly string[];
 }
 
 /**

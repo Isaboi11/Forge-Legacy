@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700&display=swap">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+<link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="forge-theme.js"></script>
+<script>
+  (function () {
+    var SRC = "_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js";
+    function inject() { if (window.__flBundleInjected) return; window.__flBundleInjected = true; var s = document.createElement("script"); s.src = SRC; document.head.appendChild(s); }
+    if (window.React && window.ReactDOM) { inject(); return; }
+    var tries = 0; var iv = setInterval(function () { if ((window.React && window.ReactDOM) || ++tries > 600) { clearInterval(iv); inject(); } }, 25);
+  })();
+</script>
+<script src="forge-symbols.js"></script>
+<script src="image-slot.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--fl-bg-atmospheric); color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--fl-bronze-primary); text-decoration: none; }
+  a:hover { color: var(--fl-bronze-bright); }
+  .fl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .fl-scroll { scrollbar-width: none; }
+  .si-input { width:100%; font-family:var(--fl-font-sans); font-size:14.5px; color:var(--fl-text-primary); background:var(--fl-charcoal-900); border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-md); padding:12px 13px 12px 40px; outline:none; }
+  .si-input:focus { border-color:var(--fl-bronze-border); }
+  .si-input::placeholder { color:var(--fl-text-tertiary); }
+  image-slot::part(ring) { border-color: var(--fl-bronze-border); }
+  image-slot::part(empty) { color: var(--fl-text-tertiary); }
+  image-slot::part(frame) { background: rgba(191,143,79,0.04); }
+  @keyframes siRise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes siFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes siSheet { from { transform: translateY(100%); } to { transform:none; } }
+  @keyframes siSweep { 0% { background-position: -120% 0; } 100% { background-position: 220% 0; } }
+  @keyframes siPop { 0% { opacity:0; transform: scale(0.82); } 60% { transform: scale(1.06); } 100% { opacity:1; transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:30px 16px;">
+<div data-screen-label="Squad Invite" style="width:404px; max-width:100%; height:868px; position:relative; border-radius:32px; border:1px solid var(--fl-charcoal-600); background:linear-gradient(rgba(5,5,5,0.15), rgba(5,5,5,0.15)), #050505 url('assets/forge-slate.png') center center / cover no-repeat; box-shadow:var(--fl-shadow-ambient); overflow:hidden; display:flex; flex-direction:column; font-family:var(--fl-font-sans);">
+
+  <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--fl-bg-primary);">
+      <span style="width:40px; height:40px; border-radius:var(--fl-radius-md); background:var(--fl-bronze-metallic); display:flex; align-items:center; justify-content:center; color:#1A1206; font-weight:800; font-family:var(--fl-font-display); font-size:22px; box-shadow:var(--fl-glow-subtle);"><svg viewBox="0 0 24 24" style="width:62%;height:62%;display:block" fill="currentColor"><path d="M10.9 3.2H13.1V15H10.9Z"/><path d="M7.6 7.1L9.6 5.8V15H7.6Z"/><path d="M16.4 7.1L14.4 5.8V15H16.4Z"/><path d="M6.8 15.4H17.2V16.2H6.8Z"/><path d="M5.6 16.6H18.4V17.4H5.6Z"/><path d="M4.4 17.8H19.6V18.6H4.4Z"/></svg></span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+    <div style="flex:none; position:relative; z-index:5;">
+      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.AppBar" title="Invite to Squad" on-back="{{ goBack }}" hint-size="100%,56px"></x-import>
+    </div>
+
+    <div class="fl-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:10px 20px 40px;">
+
+      <!-- ═══ SQUAD HEADER ═══ -->
+      <div style="display:flex; align-items:center; gap:12px; padding:2px 2px 0; animation:siRise 380ms var(--fl-ease-out) both;">
+        <div style="position:relative; width:42px; height:42px; flex:none; border-radius:var(--fl-radius-round); box-shadow:0 0 0 2px var(--fl-bronze-primary), 0 4px 12px rgba(0,0,0,0.55), 0 0 10px rgba(191,143,79,0.2);">
+          <image-slot id="squad-invite-avatar" shape="circle" placeholder="Add" style="position:absolute; inset:0; width:100%; height:100%; border-radius:var(--fl-radius-round); overflow:hidden;"></image-slot>
+        </div>
+        <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+          <span style="font-family:var(--fl-font-display); font-size:18px; font-weight:600; letter-spacing:-0.2px; color:var(--fl-text-primary);">{{ squadName }}</span>
+          <span style="font-size:11.5px; letter-spacing:0.3px; color:var(--fl-text-tertiary);">{{ metaLine }}</span>
+        </div>
+      </div>
+
+      <!-- ═══ 1 · INVITE CODE (hero) ═══ -->
+      <div style="margin-top:12px; position:relative; border-radius:var(--fl-radius-xl); border:1px solid var(--fl-bronze-border); background:linear-gradient(180deg, rgba(38,29,18,0.55), rgba(15,13,10,0.5)), var(--fl-surface-recessed); box-shadow:var(--fl-border-inset), var(--fl-shadow-card); overflow:hidden; animation:siRise 460ms var(--fl-ease-out) both;">
+        <div style="padding:20px 20px 18px; text-align:center;">
+          <span style="display:block; font-size:10.5px; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Squad Invite Code</span>
+          <span style="display:block; font-family:var(--fl-font-mono, ui-monospace, monospace); font-size:38px; font-weight:700; letter-spacing:8px; color:var(--fl-bronze-bright); margin-top:11px; padding-left:8px; text-shadow:0 2px 14px rgba(191,143,79,0.35);">{{ inviteCode }}</span>
+          <span style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:500; color:{{ expiryColor }}; margin-top:11px;"><span style="display:inline-flex;">{{ expiryIcon }}</span>{{ expiryLine }}</span>
+        </div>
+        <div style="display:flex; border-top:1px solid var(--fl-bronze-border-subtle);">
+          <button type="button" onClick="{{ copyCode }}" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:9px; padding:15px; background:transparent; border:none; cursor:pointer; color:var(--fl-bronze-bright); font-size:13.5px; font-weight:600; letter-spacing:0.3px; transition:background 160ms var(--fl-ease-out), opacity 120ms ease;" style-active="background:rgba(191,143,79,0.08); opacity:0.85;">
+            <span style="display:inline-flex;">{{ copyIcon }}</span>Copy Code
+          </button>
+          <sc-if value="{{ allowRegenerate }}" hint-placeholder-val="{{ true }}">
+            <button type="button" onClick="{{ regenCode }}" style="flex:none; display:inline-flex; align-items:center; justify-content:center; gap:9px; padding:15px 20px; background:transparent; border:none; border-left:1px solid var(--fl-bronze-border-subtle); cursor:pointer; color:var(--fl-text-secondary); font-size:13.5px; font-weight:600; transition:background 160ms var(--fl-ease-out), opacity 120ms ease;" style-active="background:rgba(255,255,255,0.03); opacity:0.85;">
+              <span style="display:inline-flex;">{{ regenIcon }}</span>Regenerate
+            </button>
+          </sc-if>
+        </div>
+      </div>
+
+      <!-- ═══ 2 · QUICK SHARE ═══ -->
+      <div style="margin:30px 4px 12px;"><span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Share Invite</span></div>
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+        <sc-for list="{{ shareTiles }}" as="t" hint-placeholder-count="3">
+          <button type="button" onClick="{{ t.action }}" style="{{ t.tileStyle }}" style-active="transform:scale(0.97);">
+            <span style="{{ t.iconWrapStyle }}">{{ t.icon }}</span>
+            <span style="font-size:12.5px; font-weight:{{ t.labelWeight }}; color:{{ t.labelColor }};">{{ t.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+      <button type="button" onClick="{{ copyLink }}" style="width:100%; margin-top:10px; display:flex; align-items:center; gap:12px; padding:13px 15px; background:var(--fl-surface-recessed); border:1px solid {{ linkRowBorder }}; border-radius:var(--fl-radius-lg); cursor:pointer; text-align:left; transition:border-color 200ms var(--fl-ease-out), background 200ms ease;" style-active="background:var(--fl-charcoal-800);">
+        <span style="flex:none; display:inline-flex; color:var(--fl-icon-bronze);">{{ linkIcon }}</span>
+        <span style="flex:1; min-width:0; font-family:var(--fl-font-mono, ui-monospace, monospace); font-size:12.5px; color:var(--fl-text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ inviteLink }}</span>
+        <span style="flex:none; display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; color:{{ linkCopyColor }}; animation:{{ linkCopyAnim }};">{{ linkCopyIcon }}{{ linkCopyLabel }}</span>
+      </button>
+
+      <!-- ═══ 3 · ADD FROM YOUR CIRCLE ═══ -->
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin:34px 4px 12px;">
+        <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Add From Your Circle</span>
+        <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}"><span style="font-size:11.5px; font-weight:600; color:var(--fl-bronze-primary);">{{ selectedLabel }}</span></sc-if>
+      </div>
+      <div style="position:relative; margin-bottom:12px;">
+        <span style="position:absolute; left:13px; top:50%; transform:translateY(-50%); display:inline-flex; color:var(--fl-text-tertiary); pointer-events:none;">{{ searchIcon }}</span>
+        <input class="si-input" type="text" value="{{ query }}" placeholder="Search athletes you follow" onInput="{{ onSearch }}">
+      </div>
+      <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+        <sc-for list="{{ circle }}" as="p" hint-placeholder-count="5">
+          <div style="display:flex; align-items:center; gap:13px; padding:12px 14px; border-top:{{ p.divider }}; opacity:{{ p.rowOpacity }};">
+            <span style="position:relative; width:42px; height:42px; flex:none;">
+              <span style="position:absolute; inset:0; border-radius:var(--fl-radius-round); background:{{ p.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+              <sc-if value="{{ p.hasDot }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute; right:-1px; bottom:-1px; width:12px; height:12px; border-radius:var(--fl-radius-round); background:{{ p.dotColor }}; border:2px solid var(--fl-surface-card);"></span>
+              </sc-if>
+            </span>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-size:14.5px; color:var(--fl-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ p.name }}</span>
+              <sc-if value="{{ p.hasStatusText }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:11px; font-weight:600; letter-spacing:0.2px; color:{{ p.statusColor }};">{{ p.statusText }}</span>
+              </sc-if>
+              <span style="font-size:12px; color:var(--fl-text-tertiary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ p.sub }}</span>
+            </div>
+            <button type="button" onClick="{{ p.action }}" disabled="{{ p.disabled }}" style="{{ p.btnStyle }}" style-active="opacity:0.82; transform:scale(0.97);"><span style="display:inline-flex;">{{ p.btnIcon }}</span>{{ p.btnLabel }}</button>
+          </div>
+        </sc-for>
+        <sc-if value="{{ circleEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:26px 16px; text-align:center;">
+            <span style="display:block; font-size:13.5px; color:var(--fl-text-secondary);">No athletes match "{{ query }}".</span>
+            <span style="display:block; font-size:12px; color:var(--fl-text-tertiary); margin-top:5px;">Share the code or link instead.</span>
+          </div>
+        </sc-if>
+      </div>
+      <button type="button" onClick="{{ goHandle }}" style="width:100%; margin-top:10px; display:flex; align-items:center; gap:12px; padding:13px 15px; background:transparent; border:1px solid var(--fl-charcoal-600); border-radius:var(--fl-radius-lg); cursor:pointer; text-align:left; transition:border-color 160ms ease, background 160ms ease;" style-active="background:var(--fl-charcoal-800);">
+        <span style="width:34px; height:34px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--fl-radius-round); background:var(--fl-bronze-tint); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-icon-bronze);">{{ handleIcon }}</span>
+        <span style="flex:1; min-width:0; font-size:14.5px; color:var(--fl-text-primary);">Invite by username or email</span>
+        <span style="flex:none; color:var(--fl-icon-inactive);">{{ handleChevron }}</span>
+      </button>
+
+      <!-- ═══ 4 · PENDING INVITES ═══ -->
+      <sc-if value="{{ hasPending }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; margin:34px 4px 12px;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:var(--fl-text-bronze-label);">Pending Invites</span>
+          <span style="font-size:11.5px; color:var(--fl-text-tertiary);">{{ pendingCount }}</span>
+        </div>
+        <div style="background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow-card); overflow:hidden;">
+          <sc-for list="{{ pending }}" as="p" hint-placeholder-count="2">
+            <div style="display:flex; align-items:center; gap:13px; padding:12px 14px; border-top:{{ p.divider }};">
+              <span style="width:38px; height:38px; flex:none; border-radius:var(--fl-radius-round); background:{{ p.tint }}; border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 3px rgba(0,0,0,0.55);"></span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-size:14px; color:var(--fl-text-primary);">{{ p.name }}</span>
+                <span style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--fl-text-tertiary);"><span style="display:inline-flex; color:var(--fl-icon-bronze);">{{ p.statusIcon }}</span>{{ p.status }}</span>
+                <span style="font-size:11px; color:var(--fl-text-tertiary); padding-left:18px;">{{ p.expires }}</span>
+              </div>
+              <button type="button" onClick="{{ p.revoke }}" style="flex:none; padding:7px 12px; border-radius:var(--fl-radius-pill); background:transparent; border:1px solid var(--fl-charcoal-600); color:var(--fl-text-secondary); font-size:12px; font-weight:600; cursor:pointer; transition:opacity 120ms ease, border-color 160ms ease;" style-active="opacity:0.75;">Revoke</button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- footer -->
+      <div style="margin-top:30px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+        <span style="font-family:var(--fl-font-display); font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--fl-charcoal-500);">Forge Legacy</span>
+        <span style="font-size:10px; letter-spacing:0.8px; color:var(--fl-charcoal-500);">Invites respect the squad's privacy settings.</span>
+      </div>
+
+    </div>
+  </sc-if>
+
+  <!-- ═══ QR SHEET ═══ -->
+  <sc-if value="{{ qrOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeQr }}" style="position:absolute; inset:0; z-index:1100; display:flex; align-items:flex-end; justify-content:center; background:var(--fl-overlay-dark); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); animation:siFade 200ms var(--fl-ease-out) both;">
+      <div onClick="{{ stop }}" style="width:100%; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-bottom:none; border-radius:var(--fl-radius-xl) var(--fl-radius-xl) 0 0; box-shadow:var(--fl-border-inset-md), var(--fl-shadow-ambient); padding:0 22px 28px; animation:siSheet 320ms var(--fl-ease-out) both;">
+        <div style="display:flex; justify-content:center; padding:12px 0 6px;"><span style="width:40px; height:4px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-500);"></span></div>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 0 16px;">
+          <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600; color:var(--fl-text-primary);">Scan to Join</span>
+          <button type="button" onClick="{{ closeQr }}" aria-label="Close" style="width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:none; color:var(--fl-icon-inactive); cursor:pointer;">{{ closeIcon }}</button>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:16px;">
+          <div style="padding:16px; border-radius:var(--fl-radius-lg); background:#EDE4D2; box-shadow:var(--fl-shadow-float), 0 0 20px rgba(191,143,79,0.25);">
+            <div style="display:grid; grid-template-columns:repeat({{ qrDim }}, 1fr); width:212px; height:212px;">
+              <sc-for list="{{ qrCells }}" as="c" hint-placeholder-count="441">
+                <span style="background:{{ c.fill }};"></span>
+              </sc-for>
+            </div>
+          </div>
+          <div style="text-align:center;">
+            <span style="display:block; font-family:var(--fl-font-mono, ui-monospace, monospace); font-size:18px; font-weight:700; letter-spacing:4px; color:var(--fl-bronze-bright);">{{ inviteCode }}</span>
+            <span style="display:block; font-size:12.5px; color:var(--fl-text-tertiary); margin-top:6px;">Point a camera at the code to join {{ squadName }}.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:34px; transform:translateX(-50%); z-index:1300; display:inline-flex; align-items:center; gap:11px; background:var(--fl-surface-modal); border:1px solid var(--fl-charcoal-500); border-radius:var(--fl-radius-pill); box-shadow:var(--fl-border-inset-md), var(--fl-shadow-float); padding:13px 20px; color:var(--fl-text-primary); font-size:14px; font-weight:500; white-space:nowrap; animation:siRise 260ms var(--fl-ease-out) both;">
+      <span style="display:inline-flex; color:var(--fl-icon-bronze); flex:none;">{{ toastIcon }}</span>{{ toastMsg }}
+    </div>
+  </sc-if>
+
+  <!-- Forged grain -->
+  <div style="position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0.08; mix-blend-mode:overlay; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E'); background-size:160px 160px;"></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:404,&quot;height&quot;:868},&quot;squadName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Iron Vigil&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Content&quot;},&quot;memberCount&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:1,&quot;max&quot;:99,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Content&quot;},&quot;codeExpiry&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;7 days&quot;,&quot;options&quot;:[&quot;7 days&quot;,&quot;30 days&quot;,&quot;Never&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Invite&quot;},&quot;allowRegenerate&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Invite&quot;},&quot;qrEnabled&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Invite&quot;}}">
+class Component extends DCLogic {
+  state = {
+    ready: false, toastMsg: null, toastIconId: 'invite',
+    code: 'IRON-7Q2K', query: '', qrOpen: false,
+    linkCopied: false,
+    invited: {},   // id -> true (sent this session)
+    revoked: {},   // pending id -> true
+  };
+
+  componentDidMount() {
+    this._poll = () => {
+      const r = typeof React !== 'undefined' && React && React.createElement;
+      const ns = typeof window !== 'undefined' && window.ForgeLegacyVisualFoundation_5368b2;
+      const fs = typeof window !== 'undefined' && window.ForgeSymbols;
+      if (r && ns && fs) { this.setState({ ready: true }); }
+      else { this._t = setTimeout(this._poll, 40); }
+    };
+    this._poll();
+  }
+  componentWillUnmount() { if (this._t) clearTimeout(this._t); if (this._toastT) clearTimeout(this._toastT); if (this._linkT) clearTimeout(this._linkT); }
+
+  _toast(msg, iconId) { if (this._toastT) clearTimeout(this._toastT); this.setState({ toastMsg: msg, toastIconId: iconId || 'invite' }); this._toastT = setTimeout(() => this.setState({ toastMsg: null }), 2400); }
+
+  _tint(seed) {
+    const T = [
+      'radial-gradient(circle at 42% 32%, #4a3826, #1c1510)',
+      'radial-gradient(circle at 45% 35%, #34302a, #17130f)',
+      'radial-gradient(circle at 40% 30%, #40301f, #17120c)',
+      'radial-gradient(circle at 48% 38%, #2d2822, #141210)',
+      'radial-gradient(circle at 44% 34%, #453322, #1a140e)',
+    ];
+    return T[seed % T.length];
+  }
+
+  // Deterministic pseudo-QR (visual only) with three finder patterns.
+  _qr(dim, seed) {
+    const cells = [];
+    let s = 0; for (let i = 0; i < seed.length; i++) { s = (s * 31 + seed.charCodeAt(i)) >>> 0; }
+    const rnd = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+    const inFinder = (r, c) => {
+      const corners = [[0, 0], [0, dim - 7], [dim - 7, 0]];
+      for (const [fr, fc] of corners) {
+        const dr = r - fr, dc = c - fc;
+        if (dr >= 0 && dr < 7 && dc >= 0 && dc < 7) {
+          const edge = (dr === 0 || dr === 6 || dc === 0 || dc === 6);
+          const core = (dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4);
+          return { hit: true, on: edge || core };
+        }
+        // quiet ring around finder
+        if (dr >= -1 && dr < 8 && dc >= -1 && dc < 8) return { hit: true, on: false };
+      }
+      return { hit: false };
+    };
+    for (let r = 0; r < dim; r++) {
+      for (let c = 0; c < dim; c++) {
+        const f = inFinder(r, c);
+        const on = f.hit ? f.on : (rnd() > 0.5);
+        cells.push({ key: r + '-' + c, fill: on ? '#141210' : 'transparent' });
+      }
+    }
+    return cells;
+  }
+
+  renderVals() {
+    if (!this.state.ready || typeof React === 'undefined' || !React.createElement) { return { ready: false, notReady: true }; }
+    const h = React.createElement;
+    const FS = window.ForgeSymbols;
+    const S = this.state;
+    const ic = (id, size, sw) => FS.create(React, id, { size: size || 18, strokeWidth: sw || 1.8 });
+    const svg = (d, size, sw) => h('svg', { width: size || 17, height: size || 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw || 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, (Array.isArray(d) ? d : [d]).map((p, i) => h('path', { key: i, d: p })));
+
+    // ── Props ──
+    const squadName = this.props.squadName ?? 'Iron Vigil';
+    const memberCount = this.props.memberCount ?? 5;
+    const codeExpiry = this.props.codeExpiry ?? '7 days';
+    const allowRegenerate = this.props.allowRegenerate ?? true;
+    const qrEnabled = this.props.qrEnabled ?? true;
+
+    const code = S.code;
+    const inviteLink = 'forgelegacy.app/j/' + code.toLowerCase();
+    // Communicate remaining validity as urgency, not the refresh cycle.
+    const expDays = codeExpiry === 'Never' ? null : Math.max(1, parseInt(codeExpiry, 10) - 1);
+    const expiryLine = expDays === null ? 'This code never expires' : ('Expires in ' + expDays + (expDays === 1 ? ' day' : ' days'));
+    const expiryUrgent = expDays !== null && expDays <= 2;
+    const expiryColor = expiryUrgent ? 'var(--fl-bronze-bright)' : 'var(--fl-text-tertiary)';
+
+    // ── Icons ──
+    const copyIcon = svg(['M9 9h10v10H9z', 'M5 15V5h10'], 17, 1.8);
+    const regenIcon = svg(['M4 12a8 8 0 0 1 13.7-5.7L20 8', 'M20 4v4h-4', 'M20 12a8 8 0 0 1-13.7 5.7L4 16', 'M4 20v-4h4'], 16, 1.9);
+    const linkIcon = svg(['M9.5 14.5l5-5', 'M8 12l-2 2a3 3 0 0 0 4.2 4.2l2-2', 'M16 12l2-2a3 3 0 0 0-4.2-4.2l-2 2'], 18, 1.8);
+    const qrIcon = svg(['M4 4h6v6H4z', 'M14 4h6v6h-6z', 'M4 14h6v6H4z', 'M14 14h2v2h-2z', 'M18 14h2v2h-2z', 'M14 18h2v2h-2z', 'M18 18h2v2h-2z'], 22, 1.7);
+    const msgIcon = svg(['M4 5.5h16v11H9l-4 3z'], 22, 1.8);
+    const searchIcon = svg(['M15 15l5 5'], 17, 1.8) && h('svg', { width: 17, height: 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 10.5, cy: 10.5, r: 6 }), h('path', { d: 'M15 15l5 5' }));
+    const closeIcon = svg(['M6 6l12 12', 'M18 6L6 18'], 18, 2);
+    const clockIcon = h('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 12, r: 8.5 }), h('path', { d: 'M12 7v5l3.5 2' }));
+    const shareGlyph = h('span', { style: { display: 'inline-flex' } }, ic('share', 22, 1.8));
+    const checkIcon = h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M5 12.5l4 4 10-10' }));
+    const plusIcon = h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M12 5v14M5 12h14' }));
+
+    // ── Quick share tiles — native Share carries the most weight, the others stay consistent ──
+    const tileBase = { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '11px', padding: '18px 8px', borderRadius: 'var(--fl-radius-lg)', cursor: 'pointer' };
+    const iconWrapBase = { width: '44px', height: '44px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--fl-radius-round)' };
+    const primaryTile = Object.assign({}, tileBase, { background: 'linear-gradient(180deg, rgba(38,29,18,0.6), rgba(15,13,10,0.5)), var(--fl-surface-recessed)', border: '1px solid var(--fl-bronze-border)', boxShadow: 'var(--fl-border-inset), var(--fl-shadow-card)' });
+    const primaryIconWrap = Object.assign({}, iconWrapBase, { background: 'var(--fl-bronze-fill)', border: '1px solid var(--fl-bronze-border)', color: 'var(--fl-bronze-bright)', boxShadow: 'var(--fl-glow-subtle)' });
+    const secondaryTile = Object.assign({}, tileBase, { background: 'var(--fl-surface-card)', border: '1px solid var(--fl-bronze-border-subtle)', boxShadow: 'var(--fl-shadow-card)' });
+    const secondaryIconWrap = Object.assign({}, iconWrapBase, { background: 'var(--fl-bronze-tint)', border: '1px solid var(--fl-bronze-border-subtle)', color: 'var(--fl-icon-bronze)' });
+    const shareTiles = [
+      { key: 'share', label: 'Share', icon: h('span', { style: { display: 'inline-flex' } }, shareGlyph), tileStyle: primaryTile, iconWrapStyle: primaryIconWrap, labelColor: 'var(--fl-text-primary)', labelWeight: 600, action: () => this._toast('Opening share sheet', 'share') },
+      { key: 'msg', label: 'Message', icon: h('span', { style: { display: 'inline-flex' } }, msgIcon), tileStyle: secondaryTile, iconWrapStyle: secondaryIconWrap, labelColor: 'var(--fl-text-secondary)', labelWeight: 500, action: () => this._toast('Compose a message', 'invite') },
+    ];
+    if (qrEnabled) shareTiles.push({ key: 'qr', label: 'QR Code', icon: h('span', { style: { display: 'inline-flex' } }, qrIcon), tileStyle: secondaryTile, iconWrapStyle: secondaryIconWrap, labelColor: 'var(--fl-text-secondary)', labelWeight: 500, action: () => this.setState({ qrOpen: true }) });
+
+    // ── Circle (athletes you follow) ──
+    // `presence` reserves a subtle relationship/availability slot (online / active / follows-you)
+    // without competing with the Invite affordance.
+    const CIRCLE = [
+      { id: 'nora', name: 'Nora Idris', type: 'Hybrid Athlete', rank: 'Craftsman', presence: 'online' },
+      { id: 'sil', name: 'Silas Vance', type: 'Powerlifter', rank: 'Builder', presence: 'follows' },
+      { id: 'juno', name: 'Juno Park', type: 'Olympic Lifter', rank: 'Architect', presence: 'active' },
+      { id: 'wes', name: 'Wes Aldrin', type: 'Strongman', rank: 'Builder' },
+      { id: 'mira', name: 'Mira Foss', type: 'Runner', rank: 'Craftsman', member: true },
+      { id: 'cyr', name: 'Cyrus Bell', type: 'Bodybuilder', rank: 'Legend', presence: 'online' },
+    ];
+    // Availability reads as a dot on the avatar; relationship reads as one quiet line — never mixed with the role.
+    const PRESENCE = {
+      online: { dot: '#6E8E74' },
+      active: { statusText: 'Active today', statusColor: 'var(--fl-text-tertiary)' },
+      follows: { statusText: 'Follows you', statusColor: 'var(--fl-text-tertiary)' },
+    };
+    const tintOf = {}; CIRCLE.forEach((p, i) => { tintOf[p.id] = this._tint(p.name.length + i); });
+    const q = S.query.trim().toLowerCase();
+    const filtered = CIRCLE.filter(p => !q || p.name.toLowerCase().includes(q) || p.type.toLowerCase().includes(q));
+
+    const pressTx = 'transform 120ms var(--fl-ease-out), opacity 120ms ease';
+    const invitedBtn = { flex: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: 'var(--fl-radius-pill)', border: '1px solid var(--fl-bronze-border)', background: 'var(--fl-bronze-tint)', color: 'var(--fl-bronze-bright)', fontSize: '12px', fontWeight: 600, cursor: 'default', transition: pressTx };
+    // Softened ~15%: dropped the forge glow and eased the fill so long lists stay calm.
+    const inviteBtn = { flex: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 13px', borderRadius: 'var(--fl-radius-pill)', border: '1px solid var(--fl-bronze-border)', background: 'var(--fl-bronze-fill)', color: 'var(--fl-bronze-bright)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: pressTx };
+    const memberBtn = { flex: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: 'var(--fl-radius-pill)', border: '1px solid var(--fl-charcoal-700)', background: 'transparent', color: 'var(--fl-text-tertiary)', fontSize: '12px', fontWeight: 600, cursor: 'not-allowed', transition: pressTx };
+
+    const circle = filtered.map((p, i) => {
+      const isMember = !!p.member;
+      const isInvited = !!S.invited[p.id];
+      let btnStyle, btnLabel, btnIcon, disabled, action;
+      if (isMember) { btnStyle = memberBtn; btnLabel = 'Member'; btnIcon = checkIcon; disabled = true; action = () => {}; }
+      else if (isInvited) { btnStyle = invitedBtn; btnLabel = 'Invited'; btnIcon = checkIcon; disabled = false; action = () => { this.setState(s => { const inv = Object.assign({}, s.invited); delete inv[p.id]; return { invited: inv }; }); this._toast('Invite to ' + p.name.split(' ')[0] + ' undone', 'invite'); }; }
+      else { btnStyle = inviteBtn; btnLabel = 'Invite'; btnIcon = plusIcon; disabled = false; action = () => { this.setState(s => ({ invited: Object.assign({}, s.invited, { [p.id]: true }) })); this._toast('Invite sent to ' + p.name.split(' ')[0], 'invite'); }; }
+      const pr = (!isMember && p.presence) ? PRESENCE[p.presence] : null;
+      return {
+        key: p.id, name: p.name, sub: p.rank + ' \u00B7 ' + p.type, tint: tintOf[p.id],
+        divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)',
+        rowOpacity: isMember ? 0.6 : 1,
+        hasDot: !!(pr && pr.dot), dotColor: (pr && pr.dot) ? pr.dot : 'transparent',
+        hasStatusText: !!(pr && pr.statusText), statusText: (pr && pr.statusText) ? pr.statusText : '', statusColor: (pr && pr.statusColor) ? pr.statusColor : 'var(--fl-text-tertiary)',
+        btnStyle, btnLabel, btnIcon: h('span', { style: { display: 'inline-flex' } }, btnIcon), disabled, action,
+      };
+    });
+    const selectedCount = Object.keys(S.invited).length;
+
+    // ── Pending invites (seed + session invites, minus revoked) ──
+    // Each row shows both when it was sent and how long it stays valid, for lifecycle visibility.
+    const sessionExpires = expDays === null ? 'No expiry' : ('Expires in ' + expDays + (expDays === 1 ? ' day' : ' days'));
+    const SEED_PENDING = [
+      { id: 'p-kade', name: 'Kade Rourke', status: 'Sent 2 days ago', expires: 'Expires in 5 days' },
+      { id: 'p-lin', name: 'Lin Osei', status: 'Sent yesterday', expires: 'Expires in 6 days' },
+    ];
+    const sessionPending = CIRCLE.filter(p => S.invited[p.id]).map(p => ({ id: 'p-' + p.id, name: p.name, status: 'Just now', expires: sessionExpires }));
+    const allPending = sessionPending.concat(SEED_PENDING).filter(p => !S.revoked[p.id]);
+    const pendTint = {}; allPending.forEach((p, i) => { pendTint[p.id] = this._tint(p.name.length + i + 2); });
+    const pending = allPending.map((p, i) => ({
+      key: p.id, name: p.name, status: p.status, expires: p.expires, expiresColor: 'var(--fl-text-tertiary)', tint: pendTint[p.id],
+      statusIcon: clockIcon,
+      divider: i === 0 ? 'none' : '1px solid var(--fl-charcoal-700)',
+      revoke: () => { this.setState(s => ({ revoked: Object.assign({}, s.revoked, { [p.id]: true }) })); this._toast('Invite to ' + p.name.split(' ')[0] + ' revoked', 'invite'); },
+    }));
+
+    return {
+      ready: true, notReady: false,
+      squadName: squadName,
+      metaLine: 'Private \u00B7 ' + memberCount + ' Members',
+
+      inviteCode: code, expiryLine: expiryLine, expiryColor: expiryColor, expiryIcon: clockIcon,
+      copyIcon: copyIcon, copyCode: () => this._toast('Invite code copied', 'share'),
+      allowRegenerate: allowRegenerate, regenIcon: regenIcon,
+      regenCode: () => {
+        const pick = (n) => { let out = ''; const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; for (let i = 0; i < n; i++) out += A[Math.floor(Math.random() * A.length)]; return out; };
+        this.setState({ code: 'IRON-' + pick(4) }); this._toast('New invite code generated', 'invite');
+      },
+
+      shareTiles: shareTiles,
+      linkIcon: linkIcon, inviteLink: inviteLink,
+      copyLink: () => { if (this._linkT) clearTimeout(this._linkT); this.setState({ linkCopied: true }); this._linkT = setTimeout(() => this.setState({ linkCopied: false }), 1800); },
+      linkCopyLabel: S.linkCopied ? 'Copied' : 'Copy',
+      linkCopyColor: S.linkCopied ? '#6E8E74' : 'var(--fl-bronze-primary)',
+      linkCopyIcon: S.linkCopied ? checkIcon : null,
+      linkRowBorder: S.linkCopied ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+      linkCopyAnim: S.linkCopied ? 'siPop 300ms var(--fl-ease-out) both' : 'none',
+
+      searchIcon: searchIcon, query: S.query, onSearch: (e) => this.setState({ query: e.target.value }),
+      circle: circle, circleEmpty: circle.length === 0,
+      handleIcon: h('svg', { width: 17, height: 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('circle', { cx: 12, cy: 12, r: 4 }), h('path', { d: 'M16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-3.5 7.1' })),
+      handleChevron: svg('M9 5l7 7-7 7', 17, 1.9),
+      goHandle: () => { window.location.href = 'Invite%20by%20Handle.dc.html'; },
+      hasSelection: selectedCount > 0, selectedLabel: selectedCount + ' invited',
+
+      hasPending: pending.length > 0, pending: pending, pendingCount: pending.length + (pending.length === 1 ? ' invite' : ' invites'),
+
+      qrEnabled: qrEnabled, qrOpen: S.qrOpen, closeQr: () => this.setState({ qrOpen: false }), stop: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+      closeIcon: closeIcon, qrDim: 21, qrCells: this._qr(21, code),
+
+      goBack: () => { (function(){try{return !!document.referrer&&new URL(document.referrer).origin===window.location.origin;}catch(e){return false;}})() ? window.history.back() : (window.location.href = 'Squad%20Detail.dc.html'); },
+      toastOpen: !!S.toastMsg, toastMsg: S.toastMsg || '', toastIcon: ic(S.toastIconId || 'invite', 18, 1.7),
+    };
+  }
+}
+</script>
+</body>
+</html>

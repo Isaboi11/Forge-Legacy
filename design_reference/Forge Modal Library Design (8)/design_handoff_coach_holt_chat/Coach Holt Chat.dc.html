@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/tokens/foundation.css">
+  <link rel="stylesheet" href="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/styles.css">
+  <script src="_ds/forge-legacy-use-this-5368b220-9e78-4104-bd8b-969c39e84346/_ds_bundle.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background:#07090C; color: var(--fl-text-primary); font-family: var(--fl-font-sans); -webkit-font-smoothing: antialiased; }
+    a { color: var(--fl-bronze-primary); text-decoration: none; }
+    a:hover { color: var(--fl-bronze-bright); }
+    .fl-scroll::-webkit-scrollbar { width:0; height:0; }
+    .fl-scroll { scrollbar-width: none; }
+    @keyframes fl-heat { 0%,100% { box-shadow: 0 0 0 1px var(--fl-bronze-border-subtle), 0 0 10px rgba(186,146,92,0.10); } 50% { box-shadow: 0 0 0 1px var(--fl-bronze-border), 0 0 26px rgba(186,146,92,0.34); } }
+    @keyframes fl-sweep { to { transform: rotate(360deg); } }
+    @keyframes fl-caret { 0%,45% { opacity:1; } 55%,100% { opacity:0; } }
+    @keyframes fl-dot { 0%,60%,100% { opacity:0.25; } 30% { opacity:1; } }
+    @keyframes fl-rise { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+  </style>
+</helmet>
+
+<div style="padding:52px 60px 90px; min-height:100vh;">
+
+  <div style="max-width:980px; margin:0 0 24px;">
+    <span style="font-size:12px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--fl-bronze-primary);">Forge Legacy · Coach Holt</span>
+    <h1 style="margin:12px 0 10px; font-family:var(--fl-font-display); font-size:40px; font-weight:700; letter-spacing:0.3px;">The chat surface</h1>
+    <p style="margin:0 0 20px; max-width:700px; font-size:15px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">Not a screen you go to — the bubble grows into a sheet over whatever you were doing, and the app stays behind it. Holt asks one locked question at a time and types it out, you answer by tapping or typing, and the engine hands back a real object. Every state from the brief is in the switcher.</p>
+    <div style="display:flex; gap:7px; flex-wrap:wrap; max-width:820px;">
+      <sc-for list="{{ stateChips }}" as="ch" hint-placeholder-count="13">
+        <span role="button" tabindex="0" onClick="{{ ch.onTap }}" style="padding:8px 14px; border-radius:var(--fl-radius-pill); border:1px solid {{ ch.border }}; background:{{ ch.bg }}; color:{{ ch.ink }}; font-size:12.5px; font-weight:600; cursor:pointer; transition:all 150ms var(--fl-ease-out);">{{ ch.label }}</span>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:40px; align-items:flex-start; flex-wrap:wrap;">
+
+    <!-- ═══ PHONE ═══ -->
+    <div data-screen-label="Coach Holt Chat" style="width:404px; height:868px; flex:none; position:relative; border-radius:34px; border:1px solid var(--fl-charcoal-600); background:var(--fl-bg-atmospheric); box-shadow:var(--fl-shadow-ambient); overflow:hidden;">
+
+      <!-- ── the app underneath ── -->
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="height:44px; flex:none; display:flex; align-items:flex-end; justify-content:space-between; padding:0 22px 6px; font-size:12.5px; font-weight:600; color:var(--fl-text-secondary);">
+          <span>9:41</span>
+          <span style="letter-spacing:1px;">▮▮▮</span>
+        </div>
+        <div style="height:52px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 20px;">
+          <span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600;">Home</span>
+          <span style="width:32px; height:32px; border-radius:var(--fl-radius-round); background:var(--fl-charcoal-700); border:1px solid var(--fl-charcoal-600);"></span>
+        </div>
+        <div style="flex:1; padding:6px 20px 0; display:flex; flex-direction:column; gap:14px;">
+          <div style="height:168px; border-radius:var(--fl-radius-xl); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:var(--fl-shadow-card-hero); padding:20px; display:flex; flex-direction:column; justify-content:flex-end; gap:8px;">
+            <span style="font-size:10.5px; font-weight:700; letter-spacing:2.2px; color:var(--fl-bronze-primary);">WEEK 3 · DAY 2</span>
+            <span style="font-family:var(--fl-font-display); font-size:24px; font-weight:600;">Tempo — 5 miles</span>
+            <span style="font-size:13px; color:var(--fl-text-secondary);">Steady, not hard. You should be able to say a sentence.</span>
+          </div>
+          <div style="height:62px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600);"></div>
+          <div style="height:62px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600);"></div>
+        </div>
+        <div style="height:78px; flex:none; background:var(--fl-surface-nav); border-top:1px solid var(--fl-charcoal-600); display:flex; align-items:flex-start; padding-top:12px;">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;">
+              <span style="width:20px; height:20px; border-radius:5px; background:{{ t.mark }};"></span>
+              <span style="font-size:10px; font-weight:600; letter-spacing:0.4px; color:{{ t.ink }};">{{ t.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ── the bubble ── -->
+      <sc-if value="{{ isCollapsed }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; right:20px; bottom:96px; display:flex; flex-direction:column; align-items:flex-end; gap:10px;">
+          <div style="padding:9px 13px; border-radius:14px 14px 4px 14px; background:var(--fl-surface-elevated); border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-shadow-float); font-size:12.5px; color:var(--fl-text-secondary); max-width:200px;">Week 3 done. Want next week early?</div>
+          <button onClick="{{ open }}" aria-label="Open Coach Holt" style="width:52px; height:52px; border-radius:var(--fl-radius-round); border:1px solid var(--fl-bronze-border); padding:0; overflow:hidden; cursor:pointer; background:var(--fl-charcoal-900); box-shadow:0 0 0 1px rgba(0,0,0,0.5), var(--fl-glow-badge), var(--fl-shadow-float);">
+            <img src="assets/coach-holt-mark.png" alt="Coach Holt" style="width:100%; height:100%; object-fit:cover; display:block;">
+          </button>
+        </div>
+      </sc-if>
+
+      <!-- ── the sheet ── -->
+      <sc-if value="{{ isOpen }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute; inset:0; background:rgba(3,5,7,0.66); backdrop-filter:blur(2px);"></div>
+        <div style="position:absolute; left:0; right:0; bottom:0; top:64px; display:flex; flex-direction:column; border-radius:24px 24px 0 0; background:var(--fl-surface-modal); border-top:1px solid var(--fl-bronze-border-subtle); box-shadow:0 -18px 44px rgba(0,0,0,0.7), inset 0 1px 0 rgba(198,156,100,0.22); overflow:hidden;">
+
+          <div onClick="{{ collapse }}" role="button" tabindex="0" aria-label="Shrink Coach Holt" style="flex:none; padding:9px 0 4px; display:flex; justify-content:center; cursor:grab;">
+            <span style="width:38px; height:4px; border-radius:2px; background:var(--fl-charcoal-500);"></span>
+          </div>
+
+          <!-- sheet header · the live mark -->
+          <div style="flex:none; display:flex; align-items:center; gap:12px; padding:6px 18px 12px; border-bottom:1px solid var(--fl-charcoal-600);">
+            <sc-if value="{{ markIdle }}" hint-placeholder-val="{{ true }}">
+              <span style="position:relative; width:36px; height:36px; flex:none; border-radius:var(--fl-radius-round); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle);"><img src="assets/coach-holt-mark.png" alt="" style="width:100%; height:100%; object-fit:cover; display:block;"></span>
+            </sc-if>
+            <sc-if value="{{ markThinking }}" hint-placeholder-val="{{ false }}">
+              <span style="position:relative; width:36px; height:36px; flex:none; border-radius:var(--fl-radius-round); overflow:hidden; border:1px solid var(--fl-bronze-border-subtle); animation:fl-heat 1.6s ease-in-out infinite;"><img src="assets/coach-holt-mark.png" alt="" style="width:100%; height:100%; object-fit:cover; display:block;"></span>
+            </sc-if>
+            <sc-if value="{{ markBuilding }}" hint-placeholder-val="{{ false }}">
+              <span style="position:relative; width:36px; height:36px; flex:none;">
+                <span style="position:absolute; inset:-4px; border-radius:var(--fl-radius-round); background:conic-gradient(from 0deg, rgba(186,146,92,0) 0deg, rgba(186,146,92,0) 250deg, var(--fl-bronze-bright) 350deg, rgba(186,146,92,0) 360deg); animation:fl-sweep 1.15s linear infinite;"></span>
+                <span style="position:absolute; inset:0; border-radius:var(--fl-radius-round); overflow:hidden; border:1px solid var(--fl-bronze-border);"><img src="assets/coach-holt-mark.png" alt="" style="width:100%; height:100%; object-fit:cover; display:block;"></span>
+              </span>
+            </sc-if>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-size:11px; font-weight:700; letter-spacing:2.4px; color:var(--fl-bronze-primary);">COACH HOLT</span>
+              <span style="font-size:12.5px; color:var(--fl-text-secondary);">{{ status }}</span>
+            </div>
+            <button onClick="{{ collapse }}" aria-label="Dismiss" style="width:36px; height:36px; flex:none; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; color:var(--fl-text-tertiary);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+          </div>
+
+          <!-- ── thread ── -->
+          <div class="fl-scroll" style="flex:1; overflow-y:auto; padding:20px 18px 8px; display:flex; flex-direction:column; gap:18px;">
+            <sc-for list="{{ thread }}" as="m" hint-placeholder-count="4">
+              <div style="display:flex; flex-direction:column; gap:10px; animation:fl-rise 280ms var(--fl-ease-out) both;">
+
+                <sc-if value="{{ m.isHolt }}" hint-placeholder-val="{{ true }}">
+                  <p style="margin:0; max-width:86%; font-size:15.5px; line-height:1.55; color:var(--fl-text-primary); text-wrap:pretty;">{{ m.text }}<sc-if value="{{ m.live }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block; width:8px; height:17px; margin-left:2px; vertical-align:-3px; background:var(--fl-bronze-primary); animation:fl-caret 900ms steps(1) infinite;"></span></sc-if></p>
+                </sc-if>
+
+                <sc-if value="{{ m.isQuiet }}" hint-placeholder-val="{{ false }}">
+                  <p style="margin:0; max-width:86%; font-size:14px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">{{ m.text }}</p>
+                </sc-if>
+
+                <sc-if value="{{ m.isMe }}" hint-placeholder-val="{{ false }}">
+                  <div style="align-self:flex-end; max-width:78%; padding:11px 15px; border-radius:16px 16px 4px 16px; background:rgba(186,146,92,0.11); border:1px solid rgba(186,146,92,0.30); box-shadow:inset 0 1px 0 rgba(198,156,100,0.14); font-size:15px; line-height:1.45; color:var(--fl-text-primary);">{{ m.text }}</div>
+                </sc-if>
+
+                <sc-if value="{{ m.isChips }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; flex-wrap:wrap; gap:8px; padding-top:2px;">
+                    <sc-for list="{{ m.chips }}" as="c" hint-placeholder-count="3">
+                      <span role="button" tabindex="0" style="padding:9px 14px; border-radius:var(--fl-radius-pill); background:var(--fl-charcoal-800); border:1px solid var(--fl-bronze-border-subtle); color:var(--fl-text-primary); font-size:13.5px; font-weight:500; cursor:pointer;" style-hover="border-color:var(--fl-bronze-border); background:var(--fl-bronze-tint);">{{ c }}</span>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ m.isThinking }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; align-items:center; gap:6px; height:20px;">
+                    <span style="width:6px; height:6px; border-radius:50%; background:var(--fl-bronze-primary); animation:fl-dot 1.1s ease-in-out infinite;"></span>
+                    <span style="width:6px; height:6px; border-radius:50%; background:var(--fl-bronze-primary); animation:fl-dot 1.1s ease-in-out 0.18s infinite;"></span>
+                    <span style="width:6px; height:6px; border-radius:50%; background:var(--fl-bronze-primary); animation:fl-dot 1.1s ease-in-out 0.36s infinite;"></span>
+                  </div>
+                </sc-if>
+
+                <!-- BUILDING -->
+                <sc-if value="{{ m.isBuilding }}" hint-placeholder-val="{{ false }}">
+                  <div style="border-radius:var(--fl-radius-xl); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); box-shadow:var(--fl-shadow-card-soft); padding:18px 18px 16px; display:flex; flex-direction:column; gap:14px;">
+                    <span style="font-size:10.5px; font-weight:700; letter-spacing:2.4px; color:var(--fl-bronze-primary);">ASSEMBLING · 14 WEEKS</span>
+                    <div style="display:flex; flex-direction:column; gap:11px;">
+                      <div style="display:flex; align-items:center; gap:10px; font-size:14px; color:var(--fl-text-secondary);"><span style="width:14px; height:14px; flex:none; color:var(--fl-bronze-primary);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"></path></svg></span>Reading your last four weeks</div>
+                      <div style="display:flex; align-items:center; gap:10px; font-size:14px; color:var(--fl-text-secondary);"><span style="width:14px; height:14px; flex:none; color:var(--fl-bronze-primary);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"></path></svg></span>Setting peak volume</div>
+                      <div style="display:flex; align-items:center; gap:10px; font-size:14.5px; font-weight:600; color:var(--fl-text-primary);"><span style="width:14px; height:14px; flex:none; border-radius:50%; border:2px solid var(--fl-bronze-primary); border-top-color:transparent; animation:fl-sweep 700ms linear infinite;"></span>Placing the long runs</div>
+                      <div style="display:flex; align-items:center; gap:10px; font-size:14px; color:var(--fl-text-tertiary);"><span style="width:14px; height:14px; flex:none;"></span>Balancing the taper</div>
+                    </div>
+                    <div style="height:3px; border-radius:2px; background:var(--fl-charcoal-700); overflow:hidden;"><span style="display:block; width:64%; height:100%; background:var(--fl-bronze-metallic);"></span></div>
+                  </div>
+                </sc-if>
+
+                <!-- PROGRAM CARD -->
+                <sc-if value="{{ m.isProgram }}" hint-placeholder-val="{{ false }}">
+                  <div role="button" tabindex="0" style="border-radius:var(--fl-radius-xl); background:var(--fl-surface-elevated); border:1px solid var(--fl-charcoal-500); box-shadow:var(--fl-shadow-card-hero); overflow:hidden; cursor:pointer;">
+                    <div style="display:flex; align-items:center; gap:8px; padding:9px 16px; background:rgba(186,146,92,0.07); border-bottom:1px dashed var(--fl-bronze-border-subtle);">
+                      <span style="width:12px; height:12px; color:var(--fl-bronze-primary); flex:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10" rx="2"></rect><path d="M8 10.5V7a4 4 0 018 0"></path></svg></span>
+                      <span style="font-size:10px; font-weight:700; letter-spacing:2.2px; color:var(--fl-bronze-primary);">DRAFT — NOT SAVED YET</span>
+                    </div>
+                    <div style="padding:18px 16px 16px; display:flex; flex-direction:column; gap:14px;">
+                      <div style="display:flex; flex-direction:column; gap:6px;">
+                        <span style="font-size:10.5px; font-weight:700; letter-spacing:2.2px; color:var(--fl-text-tertiary);">HALF MARATHON · RACE BUILD</span>
+                        <span style="font-family:var(--fl-font-display); font-size:23px; font-weight:600; line-height:1.2;">Bay Bridge Half — 14 weeks</span>
+                      </div>
+                      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px 10px;">
+                        <div style="display:flex; flex-direction:column; gap:3px;"><span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600;">14</span><span style="font-size:9.5px; font-weight:700; letter-spacing:1.6px; color:var(--fl-bronze-primary);">WEEKS</span></div>
+                        <div style="display:flex; flex-direction:column; gap:3px;"><span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600;">4</span><span style="font-size:9.5px; font-weight:700; letter-spacing:1.6px; color:var(--fl-bronze-primary);">DAYS / WEEK</span></div>
+                        <div style="display:flex; flex-direction:column; gap:3px;"><span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600;">Oct 18</span><span style="font-size:9.5px; font-weight:700; letter-spacing:1.6px; color:var(--fl-bronze-primary);">RACE DAY</span></div>
+                        <div style="display:flex; flex-direction:column; gap:3px;"><span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600;">32 mi</span><span style="font-size:9.5px; font-weight:700; letter-spacing:1.6px; color:var(--fl-bronze-primary);">PEAK WEEK</span></div>
+                        <div style="display:flex; flex-direction:column; gap:3px;"><span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600;">12 mi</span><span style="font-size:9.5px; font-weight:700; letter-spacing:1.6px; color:var(--fl-bronze-primary);">LONGEST RUN</span></div>
+                        <div style="display:flex; flex-direction:column; gap:3px;"><span style="font-family:var(--fl-font-display); font-size:19px; font-weight:600;">1:52</span><span style="font-size:9.5px; font-weight:700; letter-spacing:1.6px; color:var(--fl-bronze-primary);">TARGET</span></div>
+                      </div>
+                      <div style="display:flex; flex-direction:column; gap:7px;">
+                        <div style="display:flex; align-items:flex-end; gap:3px; height:46px;">
+                          <span style="flex:1; height:34%; background:var(--fl-bronze-mid); border-radius:1px;"></span>
+                          <span style="flex:1; height:41%; background:var(--fl-bronze-mid); border-radius:1px;"></span>
+                          <span style="flex:1; height:47%; background:var(--fl-bronze-mid); border-radius:1px;"></span>
+                          <span style="flex:1; height:33%; background:var(--fl-bronze-deep); border-radius:1px;"></span>
+                          <span style="flex:1; height:55%; background:var(--fl-bronze-mid); border-radius:1px;"></span>
+                          <span style="flex:1; height:62%; background:var(--fl-bronze-mid); border-radius:1px;"></span>
+                          <span style="flex:1; height:70%; background:var(--fl-bronze-primary); border-radius:1px;"></span>
+                          <span style="flex:1; height:48%; background:var(--fl-bronze-deep); border-radius:1px;"></span>
+                          <span style="flex:1; height:78%; background:var(--fl-bronze-primary); border-radius:1px;"></span>
+                          <span style="flex:1; height:88%; background:var(--fl-bronze-primary); border-radius:1px;"></span>
+                          <span style="flex:1; height:100%; background:var(--fl-bronze-bright); border-radius:1px;"></span>
+                          <span style="flex:1; height:72%; background:var(--fl-bronze-primary); border-radius:1px;"></span>
+                          <span style="flex:1; height:48%; background:var(--fl-bronze-mid); border-radius:1px;"></span>
+                          <span style="flex:1; height:26%; background:var(--fl-bronze-deep); border-radius:1px;"></span>
+                        </div>
+                        <span style="font-size:11.5px; color:var(--fl-text-tertiary);">Weekly volume · peak at week 11, then it comes down. Tap to walk the weeks.</span>
+                      </div>
+                      <p style="margin:0; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">You run three days now, so it opens at three and adds the fourth in week four. The long run grows about a mile a week with a cutback every fourth. The last two weeks drop hard — that's not laziness, that's the race.</p>
+                      <div style="display:flex; align-items:center; gap:10px; padding-top:2px;">
+                        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" hint-size="180px,44px">Final touches</x-import>
+                        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" hint-size="90px,44px">Not this</x-import>
+                      </div>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <!-- DAY CARD -->
+                <sc-if value="{{ m.isDay }}" hint-placeholder-val="{{ false }}">
+                  <div style="border-radius:var(--fl-radius-xl); background:var(--fl-surface-elevated); border:1px solid var(--fl-charcoal-500); box-shadow:var(--fl-shadow-card-soft); overflow:hidden;">
+                    <div style="padding:9px 16px; background:rgba(186,146,92,0.07); border-bottom:1px dashed var(--fl-bronze-border-subtle);">
+                      <span style="font-size:10px; font-weight:700; letter-spacing:2.2px; color:var(--fl-bronze-primary);">DRAFT — NOT SAVED YET</span>
+                    </div>
+                    <div style="padding:16px; display:flex; flex-direction:column; gap:14px;">
+                      <div style="display:flex; flex-direction:column; gap:5px;">
+                        <span style="font-size:10.5px; font-weight:700; letter-spacing:2.2px; color:var(--fl-text-tertiary);">SINGLE DAY · 45 MIN · DUMBBELLS</span>
+                        <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:600;">Upper — push</span>
+                      </div>
+                      <div style="display:flex; flex-direction:column;">
+                        <div style="display:flex; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid var(--fl-charcoal-600); font-size:14.5px;"><span>Incline dumbbell press</span><span style="flex:none; color:var(--fl-text-secondary); font-variant-numeric:tabular-nums;">4 × 8</span></div>
+                        <div style="display:flex; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid var(--fl-charcoal-600); font-size:14.5px;"><span>Standing overhead press</span><span style="flex:none; color:var(--fl-text-secondary); font-variant-numeric:tabular-nums;">3 × 6</span></div>
+                        <div style="display:flex; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid var(--fl-charcoal-600); font-size:14.5px;"><span>Half-kneeling single-arm press</span><span style="flex:none; color:var(--fl-text-secondary); font-variant-numeric:tabular-nums;">3 × 10 per side</span></div>
+                        <div style="display:flex; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid var(--fl-charcoal-600); font-size:14.5px;"><span>Dumbbell lateral raise</span><span style="flex:none; color:var(--fl-text-secondary); font-variant-numeric:tabular-nums;">3 × 12</span></div>
+                        <div style="display:flex; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid var(--fl-charcoal-600); border-bottom:1px solid var(--fl-charcoal-600); font-size:14.5px;"><span>Overhead triceps extension</span><span style="flex:none; color:var(--fl-text-secondary); font-variant-numeric:tabular-nums;">3 × 12</span></div>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:10px;">
+                        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" hint-size="140px,44px">Start it</x-import>
+                        <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" hint-size="150px,44px">Send to the builder</x-import>
+                      </div>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <!-- EDIT CARD -->
+                <sc-if value="{{ m.isEdit }}" hint-placeholder-val="{{ false }}">
+                  <div style="border-radius:var(--fl-radius-xl); background:var(--fl-surface-elevated); border:1px solid var(--fl-charcoal-500); box-shadow:var(--fl-shadow-card-soft); padding:16px; display:flex; flex-direction:column; gap:14px;">
+                    <span style="font-size:10px; font-weight:700; letter-spacing:2.2px; color:var(--fl-bronze-primary);">PROPOSED CHANGE · WEEK 3</span>
+                    <div style="display:flex; align-items:stretch; gap:10px;">
+                      <div style="flex:1; padding:12px; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); display:flex; flex-direction:column; gap:5px;">
+                        <span style="font-size:9.5px; font-weight:700; letter-spacing:1.6px; color:var(--fl-text-tertiary);">THURSDAY NOW</span>
+                        <span style="font-size:15px; color:var(--fl-text-secondary); text-decoration:line-through; text-decoration-color:var(--fl-bronze-mid);">Tempo · 5 miles</span>
+                      </div>
+                      <span style="flex:none; align-self:center; color:var(--fl-bronze-primary);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"></path></svg></span>
+                      <div style="flex:1; padding:12px; border-radius:var(--fl-radius-md); background:rgba(186,146,92,0.09); border:1px solid var(--fl-bronze-border); display:flex; flex-direction:column; gap:5px;">
+                        <span style="font-size:9.5px; font-weight:700; letter-spacing:1.6px; color:var(--fl-bronze-primary);">INSTEAD</span>
+                        <span style="font-size:15px; font-weight:600;">Easy · 4 miles</span>
+                      </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                      <span style="font-size:9.5px; font-weight:700; letter-spacing:1.6px; color:var(--fl-text-tertiary);">SCOPE</span>
+                      <div style="display:flex; gap:8px;">
+                        <span role="button" tabindex="0" style="flex:1; text-align:center; padding:10px; border-radius:var(--fl-radius-md); background:rgba(186,146,92,0.11); border:1px solid var(--fl-bronze-border); font-size:13.5px; font-weight:600; cursor:pointer;">Just this week</span>
+                        <span role="button" tabindex="0" style="flex:1; text-align:center; padding:10px; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); font-size:13.5px; color:var(--fl-text-secondary); cursor:pointer;">Rest of the block</span>
+                      </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" hint-size="120px,44px">Apply</x-import>
+                      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" hint-size="90px,44px">Not that</x-import>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <!-- REFUSAL · the counter-offer -->
+                <sc-if value="{{ m.isRefusal }}" hint-placeholder-val="{{ false }}">
+                  <div style="border-radius:var(--fl-radius-xl); background:var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border-subtle); box-shadow:inset 0 1px 0 rgba(198,156,100,0.16); padding:16px; display:flex; flex-direction:column; gap:12px;">
+                    <span style="font-size:10px; font-weight:700; letter-spacing:2.4px; color:var(--fl-bronze-primary);">WHAT I'D BUILD INSTEAD</span>
+                    <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+                      <span style="font-family:var(--fl-font-display); font-size:21px; font-weight:600;">Half marathon</span>
+                      <span style="font-size:13.5px; color:var(--fl-text-secondary);">7 weeks · 4 days · race day intact</span>
+                    </div>
+                    <p style="margin:0; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Same race, the distance you can actually train for. It also leaves you standing at the end of it, which is the part that gets you to the marathon next spring.</p>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" hint-size="170px,44px">Build the half</x-import>
+                      <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" hint-size="120px,44px">Pick another race</x-import>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <!-- EXERCISE POINTER -->
+                <sc-if value="{{ m.isExplain }}" hint-placeholder-val="{{ false }}">
+                  <div role="button" tabindex="0" style="display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-card); border:1px solid var(--fl-charcoal-600); box-shadow:var(--fl-shadow-card-soft); cursor:pointer;">
+                    <span style="width:42px; height:42px; flex:none; border-radius:var(--fl-radius-md); background:var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border-subtle); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-primary);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M20 9v6M7 6v12M17 6v12M7 12h10"></path></svg></span>
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                      <span style="font-size:15px; font-weight:600;">Romanian deadlift</span>
+                      <span style="font-size:12.5px; color:var(--fl-text-tertiary);">Setup · cues · common mistakes</span>
+                    </div>
+                    <span style="flex:none; color:var(--fl-text-tertiary);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></span>
+                  </div>
+                </sc-if>
+
+                <!-- THE STOP -->
+                <sc-if value="{{ m.isStop }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:15px 16px; border-radius:var(--fl-radius-lg); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-500); display:flex; flex-direction:column; gap:6px;">
+                    <span style="font-size:10px; font-weight:700; letter-spacing:2.2px; color:var(--fl-text-tertiary);">OUT OF MY LANE</span>
+                    <span style="font-size:14.5px; line-height:1.5; color:var(--fl-text-secondary);">Knee pain that wakes you up is a physio's job, not mine. Get it looked at. I'll still be here after.</span>
+                  </div>
+                </sc-if>
+
+                <!-- APP FAILURE -->
+                <sc-if value="{{ m.isError }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:14px 16px; border-radius:var(--fl-radius-lg); background:var(--fl-charcoal-800); border:1px solid rgba(190,90,76,0.42); display:flex; align-items:center; gap:13px;">
+                    <span style="width:18px; height:18px; flex:none; color:var(--fl-red-muted);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 7v7M12 17.5v.5"></path><circle cx="12" cy="12" r="9"></circle></svg></span>
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                      <span style="font-size:14px; font-weight:600; color:var(--fl-text-primary);">{{ m.text }}</span>
+                      <span style="font-size:12.5px; color:var(--fl-text-tertiary);">{{ m.sub }}</span>
+                    </div>
+                    <span role="button" tabindex="0" style="flex:none; padding:8px 13px; border-radius:var(--fl-radius-pill); border:1px solid var(--fl-charcoal-500); font-size:12.5px; font-weight:600; color:var(--fl-text-primary); cursor:pointer;">{{ m.action }}</span>
+                  </div>
+                </sc-if>
+
+                <!-- SAVED CONFIRMATION -->
+                <sc-if value="{{ m.isSaved }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; align-items:center; gap:11px; padding:13px 16px; border-radius:var(--fl-radius-lg); background:rgba(186,146,92,0.08); border:1px solid var(--fl-bronze-border-subtle);">
+                    <span style="width:16px; height:16px; flex:none; color:var(--fl-bronze-primary);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"></path></svg></span>
+                    <span style="flex:1; font-size:14px; color:var(--fl-text-primary);">Bay Bridge Half is live. 14 weeks, starting Monday.</span>
+                  </div>
+                </sc-if>
+
+              </div>
+            </sc-for>
+
+            <!-- UPGRADE WALL -->
+            <sc-if value="{{ isWall }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:6px; padding:26px 20px 22px; border-radius:var(--fl-radius-xl); background:var(--fl-surface-card); border:1px solid var(--fl-bronze-border-subtle); box-shadow:var(--fl-shadow-card-hero); display:flex; flex-direction:column; align-items:center; gap:14px; text-align:center;">
+                <span style="width:62px; height:62px; border-radius:var(--fl-radius-round); overflow:hidden; border:1px solid var(--fl-bronze-border); box-shadow:var(--fl-glow-badge);"><img src="assets/coach-holt-mark.png" alt="" style="width:100%; height:100%; object-fit:cover; display:block;"></span>
+                <span style="font-family:var(--fl-font-display); font-size:24px; font-weight:600; line-height:1.25;">That's your ten for the month</span>
+                <p style="margin:0; max-width:290px; font-size:14px; line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">The wizard is free and stays free — same engine, same programs, one question per card. What you pay for is not having to tap through it.</p>
+                <div style="display:flex; flex-direction:column; gap:9px; width:100%; padding-top:4px;">
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="primary" full-width="{{ true }}" hint-size="100%,46px">Unlock Coach Holt</x-import>
+                  <x-import component-from-global-scope="ForgeLegacyVisualFoundation_5368b2.Button" variant="text" full-width="{{ true }}" hint-size="100%,44px">Use the wizard instead</x-import>
+                </div>
+              </div>
+            </sc-if>
+
+            <span style="flex:none; height:6px;"></span>
+          </div>
+
+          <!-- ── composer ── -->
+          <sc-if value="{{ composerReady }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:none; padding:12px 16px 22px; border-top:1px solid var(--fl-charcoal-600); background:var(--fl-surface-panel); display:flex; align-items:center; gap:10px;">
+              <div style="flex:1; min-width:0; display:flex; align-items:center; padding:12px 16px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); font-size:14.5px; color:var(--fl-text-tertiary);">Tap an answer, or type it</div>
+              <span style="width:44px; height:44px; flex:none; border-radius:var(--fl-radius-round); background:var(--fl-charcoal-800); border:1px solid var(--fl-charcoal-600); display:flex; align-items:center; justify-content:center; color:var(--fl-text-tertiary);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ composerTyping }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:none; padding:12px 16px 22px; border-top:1px solid var(--fl-charcoal-600); background:var(--fl-surface-panel); display:flex; align-items:center; gap:10px;">
+              <div style="flex:1; min-width:0; display:flex; align-items:center; padding:12px 16px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-bronze-border); box-shadow:0 0 0 3px rgba(186,146,92,0.07); font-size:14.5px; color:var(--fl-text-primary);">Four, maybe five if work's quiet<span style="display:inline-block; width:2px; height:16px; margin-left:2px; background:var(--fl-bronze-primary); animation:fl-caret 900ms steps(1) infinite;"></span></div>
+              <span role="button" tabindex="0" style="width:44px; height:44px; flex:none; border-radius:var(--fl-radius-round); background:var(--fl-bronze-fill); border:1px solid var(--fl-bronze-metal-border); box-shadow:var(--fl-bronze-metal-top-rim), var(--fl-glow-forge); display:flex; align-items:center; justify-content:center; color:var(--fl-bronze-bright); cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ composerBusy }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:none; padding:12px 16px 22px; border-top:1px solid var(--fl-charcoal-600); background:var(--fl-surface-panel); display:flex; align-items:center; gap:10px; opacity:0.55;">
+              <div style="flex:1; min-width:0; display:flex; align-items:center; padding:12px 16px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-700); font-size:14.5px; color:var(--fl-text-tertiary);">Holt is working</div>
+              <span style="width:44px; height:44px; flex:none; border-radius:var(--fl-radius-round); background:var(--fl-bronze-fill-disabled); border:1px solid var(--fl-bronze-border-disabled);"></span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ composerOffline }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:none; padding:12px 16px 22px; border-top:1px solid var(--fl-charcoal-600); background:var(--fl-surface-panel); display:flex; flex-direction:column; gap:9px;">
+              <span style="font-size:11.5px; color:var(--fl-red-muted);">No connection — your message is held, nothing is lost.</span>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="flex:1; min-width:0; display:flex; align-items:center; padding:12px 16px; border-radius:var(--fl-radius-pill); background:var(--fl-surface-recessed); border:1px solid var(--fl-charcoal-600); font-size:14.5px; color:var(--fl-text-secondary);">I've got 45 minutes today</div>
+                <span style="width:44px; height:44px; flex:none; border-radius:var(--fl-radius-round); background:var(--fl-charcoal-800); border:1px solid var(--fl-charcoal-600); display:flex; align-items:center; justify-content:center; color:var(--fl-text-tertiary);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16v.5"></path><circle cx="12" cy="12" r="9"></circle></svg></span>
+              </div>
+            </div>
+          </sc-if>
+
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- ═══ NOTES ═══ -->
+    <div style="width:330px; flex:none; display:flex; flex-direction:column; gap:20px; padding-top:6px;">
+      <div style="display:flex; flex-direction:column; gap:9px;">
+        <span style="font-size:10.5px; font-weight:700; letter-spacing:2.4px; color:var(--fl-bronze-primary);">{{ noteKicker }}</span>
+        <span style="font-family:var(--fl-font-display); font-size:22px; font-weight:600; line-height:1.25;">{{ noteTitle }}</span>
+        <p style="margin:0; font-size:14px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty;">{{ noteBody }}</p>
+      </div>
+
+      <div style="height:1px; background:var(--fl-charcoal-600);"></div>
+
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <span style="font-size:10.5px; font-weight:700; letter-spacing:2.4px; color:var(--fl-text-tertiary);">RULES THIS SURFACE KEEPS</span>
+        <div style="display:flex; flex-direction:column; gap:12px; font-size:13.5px; line-height:1.55; color:var(--fl-text-secondary);">
+          <div style="display:flex; gap:10px;"><span style="flex:none; color:var(--fl-bronze-primary); font-weight:700;">01</span><span>One question at a time, typed out. Chips carry the closed answers; typing always works.</span></div>
+          <div style="display:flex; gap:10px;"><span style="flex:none; color:var(--fl-bronze-primary); font-weight:700;">02</span><span>Text is conversation, cards are objects. A turn is text then card, never card then text.</span></div>
+          <div style="display:flex; gap:10px;"><span style="flex:none; color:var(--fl-bronze-primary); font-weight:700;">03</span><span>Every draft carries <strong style="color:var(--fl-text-primary); font-weight:600;">NOT SAVED YET</strong>. Only the Program Builder saves.</span></div>
+          <div style="display:flex; gap:10px;"><span style="flex:none; color:var(--fl-bronze-primary); font-weight:700;">04</span><span>A refusal is bronze and carries the alternative. A failure is red and says it was the app.</span></div>
+          <div style="display:flex; gap:10px;"><span style="flex:none; color:var(--fl-bronze-primary); font-weight:700;">05</span><span>The mark is the only bronze that moves — it warms while thinking, sweeps while building.</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:900,&quot;height&quot;:1040}}">
+const holt = (text, live) => ({ k: 'holt', text, live: !!live });
+const quiet = (text) => ({ k: 'quiet', text });
+const me = (text) => ({ k: 'me', text });
+const chips = (list) => ({ k: 'chips', chips: list });
+const card = (k, extra) => Object.assign({ k }, extra || {});
+
+const STATES = [
+  { id: 'bubble', label: 'Bubble', open: false, mark: 'idle', status: '',
+    kicker: 'S-0 · COLLAPSED', title: 'It lives on the screen you were already on',
+    body: 'A 52pt bronze mark above the tab bar on the four tab surfaces. It can carry one short line when Holt has something worth saying — tapping it grows the mark into the sheet rather than pushing a new screen.',
+    thread: [] },
+
+  { id: 'first', label: 'First run', open: true, mark: 'idle', status: 'Ready', composer: 'ready',
+    kicker: 'S-2 · FIRST RUN', title: 'An introduction, not an empty state',
+    body: 'Shown once. Who he is, what he actually does, and one concrete invitation — then three openers, because a blank field is the hardest thing in software to answer.',
+    thread: [
+      holt("I'm Holt."),
+      holt("I don't pick a program off a shelf and put your name on it. You tell me what you're chasing and what your week actually looks like, and I build the block around that."),
+      holt("Nothing gets saved until you've seen every week of it. Start wherever you like."),
+      chips(['Build me a program', 'What should I train today?', "45 minutes and dumbbells"])
+    ] },
+
+  { id: 'asking', label: 'Asking', open: true, mark: 'idle', status: 'Typing', composer: 'ready',
+    kicker: '§5.3 · ONE QUESTION AT A TIME', title: 'He types. You watch him think.',
+    body: 'The locked wizard questions, one per turn, arriving character by character so the pace feels like a person on the other end. Quick-reply chips for closed answers; the composer stays live the whole time.',
+    thread: [
+      me('Build me a program'),
+      holt("Good. What are you training for?"),
+      me('Half marathon — Bay Bridge, October'),
+      holt("How many days a week can you run? Be honest — I'd rather build three you'll hit than five you won't.", true),
+      chips(['3 days', '4 days', '5 days', '6 days'])
+    ] },
+
+  { id: 'typed', label: 'Composing', open: true, mark: 'idle', status: 'Ready', composer: 'typing',
+    kicker: '§5 · THE COMPOSER', title: 'Typing beats the chips whenever you want it to',
+    body: 'The chips are the fast path, never the only one. As soon as there is a character in the field the send button lights forged bronze; empty, it sits dark and disabled.',
+    thread: [
+      holt("How many days a week can you run? Be honest — I'd rather build three you'll hit than five you won't."),
+      chips(['3 days', '4 days', '5 days', '6 days'])
+    ] },
+
+  { id: 'thinking', label: 'Thinking', open: true, mark: 'thinking', status: 'Thinking', composer: 'busy',
+    kicker: '§4.2 · THINKING', title: 'One to four seconds, and the mark carries it',
+    body: 'Three bronze dots where his next line will land, and the insignia in the header warms like metal near the fire. Nothing else on the surface moves.',
+    thread: [
+      me('4 days'),
+      card('thinking')
+    ] },
+
+  { id: 'building', label: 'Building', open: true, mark: 'building', status: 'Building your block', composer: 'busy',
+    kicker: '§4.2 · BUILDING', title: 'The engine laying down fourteen weeks',
+    body: 'The one moment the product is doing the thing it exists for, so it gets named steps instead of a spinner. Each line is a real decision the rulebook is making, in order. The mark sweeps.',
+    thread: [
+      me('4 days'),
+      holt("Four it is. Give me a second — I'm laying the whole block down."),
+      card('building')
+    ] },
+
+  { id: 'program', label: 'Program card ⭐', open: true, mark: 'idle', status: 'Ready', composer: 'ready',
+    kicker: '§5.4 · THE PROGRAM CARD', title: 'A real object, and it says it is not saved',
+    body: 'Every number on it came from the engine. The volume ribbon is the actual shape of the block, so the taper is visible before you read a word. Two actions: the builder, or not this.',
+    thread: [
+      holt("Here's the block. Fourteen weeks, four days, and it's built around the three you already run."),
+      card('program')
+    ] },
+
+  { id: 'day', label: 'Day card', open: true, mark: 'idle', status: 'Ready', composer: 'ready',
+    kicker: '§5.5 · THE DAY CARD', title: 'One session, ready to start',
+    body: 'Sets and reps as the engine wrote them, per-side where per-side applies. It either starts now or goes to the builder — it never quietly saves.',
+    thread: [
+      me("45 minutes, dumbbells, upper body"),
+      holt("Push day. Five movements, and the last two are there to finish you, not to bury you."),
+      card('day')
+    ] },
+
+  { id: 'edit', label: 'Edit card', open: true, mark: 'idle', status: 'Ready', composer: 'ready',
+    kicker: '§5.6 · THE EDIT CARD', title: 'Before, after, and how far it reaches',
+    body: 'The safe-mutation layer decides what is legal; the card only ever proposes something already legal. Scope is a choice you make before you apply, not a surprise afterwards.',
+    thread: [
+      me("My shoulder's off this week"),
+      holt("Then Thursday comes down. Same day, less of it — you keep the rhythm and lose the load."),
+      card('edit')
+    ] },
+
+  { id: 'refusal', label: 'Refusal ⭐', open: true, mark: 'idle', status: 'Ready', composer: 'ready',
+    kicker: '§5.7 · THE REFUSAL', title: 'Not an error. A coach being right.',
+    body: 'No red, no warning icon, no apology. Bronze, because it is Holt deciding — and it always arrives holding the alternative, framed as the better plan rather than a consolation.',
+    thread: [
+      me("Marathon. Race is in 7 weeks"),
+      holt("No. A marathon build is about sixteen weeks and you've got seven — I'd be handing you an injury with a finish line attached."),
+      holt("Here's the thing though: seven weeks is a real half marathon build, and it's the right first step to the marathon anyway."),
+      card('refusal')
+    ] },
+
+  { id: 'explain', label: 'Explainer', open: true, mark: 'idle', status: 'Ready', composer: 'ready',
+    kicker: '§5.8 · THE EXPLAINER', title: 'A pointer, not a rewrite',
+    body: '735 exercises already carry published coaching content. Holt gives you the one line that answers the question and a door into the real page — he never restates what is already written.',
+    thread: [
+      me('How do I do an RDL?'),
+      holt("Hips back, bar close, spine flat. The stretch is in your hamstrings, not your lower back — the second you feel it there, you've gone too far."),
+      card('explain')
+    ] },
+
+  { id: 'stop', label: 'The stop', open: true, mark: 'idle', status: 'Ready', composer: 'ready',
+    kicker: '§5.9 · THE HONEST NO', title: 'Where his knowledge ends, he stops',
+    body: 'Cycling, heart-rate zones, ultras, nutrition, injury — documented edges, said plainly. Anything medical stops flat: no hedging, no caveat paragraph, no improvised advice.',
+    thread: [
+      me("My knee's been hurting for three weeks"),
+      card('stop')
+    ] },
+
+  { id: 'trouble', label: 'Offline · error', open: true, mark: 'idle', status: 'Offline', composer: 'offline',
+    kicker: '§6 · WHEN THE APP FAILS', title: 'Red, and it says whose fault it was',
+    body: 'This is the one place red appears. A refusal is Holt deciding; this is the app failing, and conflating the two would make him look arbitrary. The message is always preserved.',
+    thread: [
+      me('Change Thursday to an easy 4'),
+      card('error', { text: "That didn't reach me", sub: 'Your message is saved — it sends when you are back.', action: 'Retry' })
+    ] },
+
+  { id: 'wall', label: 'Upgrade', open: true, mark: 'idle', status: 'Ten of ten used', composer: 'busy',
+    kicker: 'S-3 · THE WALL', title: 'It arrives after you have felt it work',
+    body: 'Ten exchanges first, then the ask. The free wizard is named as a real option rather than hidden, because it is the same engine and the same programs — you are paying not to tap through it.',
+    thread: [
+      me('Can you add a fifth day?'),
+    ] },
+
+  { id: 'returned', label: 'Coming back', open: true, mark: 'idle', status: 'Ready', composer: 'ready',
+    kicker: '§9 · COMING BACK', title: 'The thread remembers where you went',
+    body: 'You leave for the Program Builder, you save, you come back — the conversation is where you left it, with the outcome written into it. Then he keeps going.',
+    thread: [
+      holt("Here's the block. Fourteen weeks, four days, and it's built around the three you already run."),
+      card('saved'),
+      holt("Saved. That's your block. Monday is an easy four — start there."),
+      chips(["What's Monday?", 'Move my long run', 'Nothing for now'])
+    ] }
+];
+
+class Component extends DCLogic {
+  state = { id: 'asking', typed: 0, collapsed: false };
+
+  componentDidMount() { this.tick(); }
+  componentWillUnmount() { clearInterval(this.iv); }
+
+  cfg() { return STATES.find(s => s.id === this.state.id) || STATES[0]; }
+
+  liveMsg(c) { return (c.thread || []).find(m => m.k === 'holt' && m.live); }
+
+  tick() {
+    clearInterval(this.iv);
+    const m = this.liveMsg(this.cfg());
+    if (!m) return;
+    this.setState({ typed: 0 });
+    this.iv = setInterval(() => {
+      this.setState(s => {
+        const n = s.typed + 1;
+        if (n > m.text.length + 22) return { typed: 0 };
+        return { typed: n };
+      });
+    }, 42);
+  }
+
+  go(id) { this.setState({ id, collapsed: false }, () => this.tick()); }
+
+  renderVals() {
+    const c = this.cfg();
+    const collapsed = this.state.collapsed || !c.open;
+    const live = this.liveMsg(c);
+    const typed = live ? live.text.slice(0, Math.min(this.state.typed, live.text.length)) : '';
+    const stillTyping = !!live && this.state.typed < live.text.length;
+
+    const thread = (c.thread || []).map(m => ({
+      isHolt: m.k === 'holt',
+      isQuiet: m.k === 'quiet',
+      isMe: m.k === 'me',
+      isChips: m.k === 'chips',
+      isThinking: m.k === 'thinking',
+      isBuilding: m.k === 'building',
+      isProgram: m.k === 'program',
+      isDay: m.k === 'day',
+      isEdit: m.k === 'edit',
+      isRefusal: m.k === 'refusal',
+      isExplain: m.k === 'explain',
+      isStop: m.k === 'stop',
+      isError: m.k === 'error',
+      isSaved: m.k === 'saved',
+      live: !!m.live && stillTyping,
+      text: m.live ? typed : m.text,
+      sub: m.sub, action: m.action,
+      chips: m.chips || []
+    }));
+
+    const status = c.id === 'asking' && !stillTyping ? 'Ready' : c.status;
+
+    return {
+      stateChips: STATES.map(s => ({
+        label: s.label,
+        onTap: () => this.go(s.id),
+        bg: s.id === c.id ? 'rgba(186,146,92,0.12)' : 'var(--fl-charcoal-800)',
+        border: s.id === c.id ? 'var(--fl-bronze-border)' : 'var(--fl-charcoal-600)',
+        ink: s.id === c.id ? 'var(--fl-bronze-bright)' : 'var(--fl-text-secondary)'
+      })),
+      tabs: [
+        { label: 'Home', mark: 'var(--fl-bronze-primary)', ink: 'var(--fl-bronze-primary)' },
+        { label: 'Workouts', mark: 'var(--fl-charcoal-500)', ink: 'var(--fl-text-tertiary)' },
+        { label: 'Legacy', mark: 'var(--fl-charcoal-500)', ink: 'var(--fl-text-tertiary)' },
+        { label: 'Squads', mark: 'var(--fl-charcoal-500)', ink: 'var(--fl-text-tertiary)' }
+      ],
+      thread,
+      isCollapsed: collapsed,
+      isOpen: !collapsed,
+      isWall: c.id === 'wall',
+      status,
+      markIdle: c.mark === 'idle',
+      markThinking: c.mark === 'thinking',
+      markBuilding: c.mark === 'building',
+      composerReady: c.composer === 'ready',
+      composerTyping: c.composer === 'typing',
+      composerBusy: c.composer === 'busy',
+      composerOffline: c.composer === 'offline',
+      open: () => this.setState({ collapsed: false }),
+      collapse: () => this.setState({ collapsed: true }),
+      noteKicker: c.kicker, noteTitle: c.title, noteBody: c.body
+    };
+  }
+}
+
+</script>
+</body>
+</html>

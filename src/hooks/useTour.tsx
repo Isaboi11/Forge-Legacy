@@ -77,6 +77,7 @@ import {
   markPromptSeen,
   setGuidedTipsEnabled,
   promptKeyFor,
+  TOUR_RETIRED,
   type PromptKey,
   type ScreenKey,
 } from '@/lib/screen-prompts';
@@ -192,7 +193,12 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
    */
   const [workoutsLogged, setWorkoutsLogged] = useState<number | null>(null);
   const [seenLoaded, setSeenLoaded] = useState(false);
-  const [tipsEnabled, setTips] = useState(true); // absent preference = on, the first-run default
+  /*
+   * ⚠ THE PRE-LOAD VALUE, and it has to agree with `getGuidedTipsEnabled()` or the tour flashes.
+   * `true` was right while an absent preference meant on; with the tour retired it would arm the beat
+   * for one render before the stored read lands. Both halves move together — see `TOUR_RETIRED`.
+   */
+  const [tipsEnabled, setTips] = useState(!TOUR_RETIRED);
 
   // Baseline the tour state ONCE the session read has resolved, so we read the restored account directly and
   // never mistake boot's null→id settle for an account switch. That false "switch" was wiping the seen-set on

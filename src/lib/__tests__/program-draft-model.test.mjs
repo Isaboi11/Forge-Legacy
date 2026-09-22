@@ -15,6 +15,7 @@ import {
   pairingAt,
   unpairAt,
   draftToStructure,
+  draftFromStructure,
   ensureWeeks,
   hasMainExercise,
   isDraftValid,
@@ -52,7 +53,7 @@ function withMainOn(i) {
 
 // ── clamps (design §14) ───────────────────────────────────────────────────────
 
-test('clamps hold the design bounds: weeks 1–52, sets 1–8, reps 1–60', () => {
+test('clamps hold the bounds: weeks 1–52, sets 1–50, reps 1–500 (PO: “don’t limit amount”)', () => {
   // ⚠ The floor was 4 and is now 1 (PA2-D1). A 3-week block is a real thing an athlete can build; it
   // simply earns no rank credit, which is enforced at the seal and not by this clamp.
   assert.equal(clampWeeks(3), 3);
@@ -62,9 +63,11 @@ test('clamps hold the design bounds: weeks 1–52, sets 1–8, reps 1–60', () 
   assert.equal(clampWeeks(53), 52);
   assert.equal(clampWeeks(12), 12);
   assert.equal(clampSets(0), 1);
-  assert.equal(clampSets(9), 8);
+  assert.equal(clampSets(9), 9, '9 sets is no longer cut to 8');
+  assert.equal(clampSets(51), 50);
   assert.equal(clampReps(0), 1);
-  assert.equal(clampReps(61), 60);
+  assert.equal(clampReps(100), 100, '100 push-ups is no longer cut to 60');
+  assert.equal(clampReps(501), 500);
 });
 
 test('newDraft is the design default: 8 weeks · 4 days · repeat mode · empty', () => {
@@ -94,13 +97,31 @@ test('daysLoseContent flags exactly the shrinks that would destroy exercises', (
   assert.equal(daysLoseContent(withMainOn(0), 2), false, 'day A survives a shrink to 2');
 });
 
-test('applyDaysPerWeek clamps to 2–6 and drops an out-of-range open day', () => {
+test('applyDaysPerWeek clamps to 1–7 and drops an out-of-range open day', () => {
   const d = { ...withMainOn(0), openDay: 3 };
   const shrunk = applyDaysPerWeek(d, 2);
   assert.equal(shrunk.days.length, 2);
   assert.equal(shrunk.openDay, null, 'the open day no longer exists → closed, not dangling');
-  assert.equal(applyDaysPerWeek(d, 9).days.length, 6);
-  assert.equal(applyDaysPerWeek(d, 1).days.length, 2);
+  // CA §4.5 — the athlete's one-day and seven-day weeks are real weeks now; only past them clamps.
+  assert.equal(applyDaysPerWeek(d, 9).days.length, 7);
+  assert.equal(applyDaysPerWeek(d, 0).days.length, 1);
+  assert.equal(applyDaysPerWeek(d, 1).days.length, 1);
+  assert.deepEqual(applyDaysPerWeek(d, 7).days.map((x) => x.letter), ['A', 'B', 'C', 'D', 'E', 'F', 'G']);
+});
+
+test('a seven-day and a one-day program open in the Builder and save back whole (CA §4.5)', () => {
+  // The shape Holt hands over — every week materialised — for the PO's own seven-day example.
+  const day = (letter, name) => ({ letter, name, warmup: [], main: [{ catalogKey: 'push-up', name: 'Push-Up', sets: 3, reps: 10 }], cooldown: [] });
+  for (const n of [1, 7]) {
+    const days = Array.from({ length: n }, (_, i) => day(String.fromCharCode(65 + i), `Day ${i + 1}`));
+    const structure = { name: `${n}-day`, weeks: 2, daysPerWeek: n, vary: true, days, weekPlans: [{ days }, { days }] };
+    const draft = draftFromStructure(structure);
+    assert.equal(draft.daysPerWeek, n, `${n}d: the Builder kept the day count`);
+    assert.ok(draft.weekPlans.every((w) => w.days.length === n), `${n}d: no week lost a day on open`);
+    const saved = draftToStructure({ ...draft, name: `${n}-day` });
+    assert.equal(saved.daysPerWeek, n, `${n}d: the save kept the day count`);
+    assert.ok(saved.weekPlans.every((w) => w.days.length === n), `${n}d: no week lost a day on save`);
+  }
 });
 
 // ── week plans (Customize mode — model is week-aware ahead of the UI) ─────────
