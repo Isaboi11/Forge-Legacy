@@ -57,3 +57,27 @@ test('⚠ a sentence that opens a build passes the same allowance gate as the do
   assert.match(understand, /guard\(opens === 'day' \? 'holt_days_per_month' : 'holt_programs'\)/);
   assert.match(understand, /advance\(\{ \.\.\.athleteFacts\(constraints\), \.\.\.patch \}, opens\)/);
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TALK TO HOLT — the mic (PO 2026-09-21, the phone's own speech recognition)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const hook = readFileSync(path.join(here, '../../../hooks/useDictation.ts'), 'utf8');
+
+test('⚠ the speech package is never imported — an older binary without it must not crash on open', () => {
+  assert.doesNotMatch(hook, /from ['"]expo-speech-recognition['"]/);
+  assert.doesNotMatch(sheet, /expo-speech-recognition/);
+  assert.match(hook, /requireOptionalNativeModule<NativeSpeech>\('ExpoSpeechRecognition'\)/);
+});
+
+test('spoken words take the typed path, so every guard and the model see them the same way', () => {
+  assert.match(sheet, /const dictation = useDictation\(sendText\);/);
+  // The mic replaces the empty send button only where the device can hear.
+  assert.match(sheet, /const micShown = dictation\.available && !draft\.trim\(\);/);
+  assert.match(sheet, /\{micShown \? \(/);
+});
+
+test('a refused mic permission is said in plain words, not a silent dead button', () => {
+  assert.match(hook, /code === 'not-allowed'/);
+  assert.match(sheet, /The mic is off for Forge — turn it on in Settings/);
+});

@@ -29,6 +29,7 @@ import { HoltMark } from '@/components/forge/HoltMark';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { usePremiumAi } from '@/lib/entitlement';
 import { interpretTyped } from '@/data/coach-interpret-live';
+import { useDictation } from '@/hooks/useDictation';
 import { launchRowsFor, templateRowsFor } from '@/domain/coach/save-shapes';
 import { saveTemplate } from '@/data/templates-live';
 import { saveWeekTemplate, startWeekTemplate } from '@/data/week-templates-live';
@@ -1369,6 +1370,10 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     const text = draft.trim();
     if (!text) return;
     setDraft('');
+    sendText(text);
+  };
+
+  const sendText = (text: string) => {
     /* The echo happens exactly once, HERE, whether the message is handled now or held. Putting it inside
        `process` instead is what made a queued message show up twice — once on send, once on drain. */
     say({ kind: 'me', text });
@@ -1378,6 +1383,10 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     }
     process(text);
   };
+
+  /* Talking to Holt: the phone hears it, and the words go through `sendText` exactly as typed ones do. */
+  const dictation = useDictation(sendText);
+  const micShown = dictation.available && !draft.trim();
 
   /**
    * ══ PREMIUM AI: THE MODEL READS THE SENTENCE ══
@@ -1897,9 +1906,23 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
         {preview || !canType ? null : (
         <View style={[styles.composer, { paddingBottom: 12 + insets.bottom }, busy ? styles.composerBusy : null]}>
           <TextInput
-            value={draft}
+            /* While listening, the words so far — read-only — so the athlete can see they are being heard. */
+            value={dictation.listening ? dictation.heard : draft}
+            editable={!dictation.listening}
             onChangeText={setDraft}
-            placeholder={busy ? 'Holt is working — go ahead, he’ll get it' : 'Tap an answer, or type it'}
+            placeholder={
+              dictation.listening
+                ? 'Listening…'
+                : dictation.problem === 'denied'
+                  ? 'The mic is off for Forge — turn it on in Settings'
+                  : dictation.problem === 'no_speech'
+                    ? 'Didn’t catch that — tap the mic and try again'
+                    : busy
+                      ? 'Holt is working — go ahead, he’ll get it'
+                      : dictation.available
+                        ? 'Tap an answer, type, or talk'
+                        : 'Tap an answer, or type it'
+            }
             placeholderTextColor={flColor.gray600}
             style={[styles.input, draft.trim() ? styles.inputTyping : null]}
             multiline
@@ -1907,6 +1930,31 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
             onSubmitEditing={send}
             accessibilityLabel="Message Holt"
           />
+          {micShown ? (
+            <Pressable
+              onPress={dictation.listening ? dictation.stop : () => void dictation.start()}
+              accessibilityRole="button"
+              accessibilityLabel={dictation.listening ? 'Stop listening' : 'Talk to Holt'}
+              accessibilityState={{ busy: dictation.listening }}
+              style={styles.sendWrap}
+            >
+              {dictation.listening ? (
+                <LinearGradient
+                  colors={flGradient.bronzeFill.colors}
+                  locations={flGradient.bronzeFill.locations}
+                  start={flGradient.bronzeFill.start}
+                  end={flGradient.bronzeFill.end}
+                  style={styles.sendOn}
+                >
+                  <StopGlyph color={flColor.bronze300} />
+                </LinearGradient>
+              ) : (
+                <View style={styles.sendOff}>
+                  <MicGlyph color={flColor.bronze400} />
+                </View>
+              )}
+            </Pressable>
+          ) : (
           <Pressable
             onPress={send}
             disabled={!draft.trim()}
@@ -1930,6 +1978,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
               </View>
             )}
           </Pressable>
+          )}
         </View>
         )}
       </LinearGradient>
@@ -2408,6 +2457,23 @@ function MenuRow({ label, onPress, divided = false }: { label: string; onPress: 
     >
       <Text style={styles.menuText}>{label}</Text>
     </Pressable>
+  );
+}
+
+function MicGlyph({ color }: { color: string }) {
+  return (
+    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z" />
+      <Path d="M19 11a7 7 0 0 1-14 0M12 18v3" />
+    </Svg>
+  );
+}
+
+function StopGlyph({ color }: { color: string }) {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill={color}>
+      <Path d="M6 6h12v12H6z" />
+    </Svg>
   );
 }
 

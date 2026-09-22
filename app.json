@@ -66,7 +66,7 @@
         {
           "photosPermission": "Forge Legacy uses your photo library so you can add a squad photo, share progress in the feed, and build your transformation gallery.",
           "cameraPermission": "Forge Legacy uses your camera so you can record squad check-in videos and capture photos on the spot.",
-          "microphonePermission": "Forge Legacy uses your microphone so your check-in and form-check videos have sound."
+          "microphonePermission": "Forge Legacy uses your microphone so you can talk to Coach Holt, and so your check-in and form-check videos have sound."
         }
       ],
       [
@@ -85,7 +85,15 @@
       "expo-image",
       "expo-web-browser",
       "react-native-compressor",
-      "@bacons/apple-targets"
+      "@bacons/apple-targets",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Forge Legacy uses your microphone so you can talk to Coach Holt, and so your check-in and form-check videos have sound.",
+          "speechRecognitionPermission": "Forge Legacy turns what you say to Coach Holt into text on your phone, so you can talk to him instead of typing.",
+          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
