@@ -128,7 +128,7 @@ const BENEFIT_META: Partial<Record<CapKey, { icon: SymbolName; detail: string; s
   programs: { icon: 'dumbbell', detail: 'Build, generate and receive as many programs as your training asks for.' },
   squads: { icon: 'squad', detail: 'Lead more than one squad at a time.' },
   imports: { icon: 'spark', detail: 'Bring a coach’s spreadsheet across whenever you need to.' },
-  holt_programs: { icon: 'medal', detail: 'A full program for any goal, and help during the set — not just between them.' },
+  holt_programs: { icon: 'medal', detail: 'Holt’s rulebook coaching: a full program for any goal, and help during the set. The AI coach is Premium AI.' },
 };
 
 export default function SubscriptionScreen() {
@@ -145,6 +145,8 @@ export default function SubscriptionScreen() {
    */
   const { from } = useLocalSearchParams<{ from?: string }>();
   const viaGate = from === 'gate';
+  /** Shown once after onboarding, unasked (ONB-A7-D2) — so it closes like a gate AND offers Free by name. */
+  const viaOnboarding = from === 'onboarding';
 
   const { snapshot, status, refetch } = useEntitlementState();
   const { data: config } = useQuery(fetchCapConfig, []);
@@ -255,7 +257,7 @@ export default function SubscriptionScreen() {
     if (!opened) setNotice('Couldn’t open your subscription settings.');
   };
 
-  const header = viaGate
+  const header = viaGate || viaOnboarding
     ? { onClose: back, onBack: undefined }
     : { onBack: back, onClose: undefined };
 
@@ -397,6 +399,13 @@ export default function SubscriptionScreen() {
                   {busy === 'purchase' ? 'Opening…' : 'Continue'}
                 </Button>
                 <RestoreLink busy={busy === 'restore'} onPress={onRestore} />
+                {viaOnboarding ? (
+                  /* Leaving an offer nobody asked for is a named, full-contrast choice — not a faint ×
+                     alone. Free is a real plan, and saying so is what makes the offer honest. */
+                  <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Continue with Free" style={styles.restore}>
+                    <Text style={styles.freeText}>Continue with Free</Text>
+                  </Pressable>
+                ) : null}
               </>
             )}
           </View>
@@ -930,4 +939,5 @@ const styles = StyleSheet.create({
   disclosure: { fontSize: 12, lineHeight: 17, color: flColor.gray400, textAlign: 'center' },
   restore: { alignItems: 'center', justifyContent: 'center', paddingVertical: 6, minHeight: 32 },
   restoreText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
+  freeText: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
 });

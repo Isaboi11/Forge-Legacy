@@ -28,6 +28,8 @@ import { clearThread, forgetMetHolt } from './coach-thread';
 /* Its own doc says "used on account switch, beside the other first-run flags" and it had NO CALLERS —
    see the note beside it in the wipe below. Relative, like every other import here. */
 import { forgetWorkoutsLogged } from './tour-phase';
+// The once-after-onboarding plans screen (Onboarding Amendment 007) — plain AsyncStorage, no router.
+import { clearPlansPending } from './onboarding-plans';
 
 /*
  * CLEARING STORAGE IS ONLY HALF OF A HANDOVER — the other half is telling whoever already read it.
@@ -115,6 +117,7 @@ export async function resetFirstRunFlags(): Promise<void> {
      * that works.
      */
     forgetWorkoutsLogged(),
+    clearPlansPending(),
   ]);
 
   /*
