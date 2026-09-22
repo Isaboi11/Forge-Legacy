@@ -35,6 +35,16 @@ const PHOTOS = [
   ['photo-8.tsv', '3 Day Beginner table — a Body Part column, ranges, "10–12 each leg"', 3, 24],
   ['photo-9.tsv', 'Arnold Split — six days, "4 x 8-12"', 6, 36],
   ['photo-10.tsv', '40 Minutes Full Body — four days, one entry with no numbers at all', 4, 28],
+  // ── the second batch (PO, 2026-09-22) ──
+  ['photo-12.tsv', '4x/week Upper/Lower — Upper, Lower, Upper, Lower is FOUR days in one week, not two weeks', 4, 28],
+  ['photo-13.tsv', 'Strength & Power / Hypertrophy / Conditioning — "4 sets of 5 reps", tips ignored', 3, 18],
+  ['photo-14.tsv', 'Beginners — paired days (Monday & Thursday) with arms and abs in their own boxes', 6, 25],
+  ['photo-15.tsv', '5 Day to build muscle — ramping "4 sets of 12, 10, 8, 6 reps" and "3 sets till failure"', 5, 31],
+  ['photo-16.tsv', 'a bodyweight challenge — counts with no sets ("20 SQUATS"), and the weekend is rest', 5, 43],
+  ['photo-17.tsv', 'Blaster — days 1, 2, 3, 5, 6, with a cool-down and a stretch as entries', 5, 30],
+  ['photo-18.tsv', '5-Day Dumbbell — emoji bullets, "3×AMRAP", a combined core line', 5, 28],
+  ['photo-19.tsv', 'Dumbbell-Only Full Week — two columns per day', 5, 30],
+  ['photo-20.tsv', "Women's Elite 6 days — \"Day 7 - Rest\" is not a training day", 6, 37],
 ];
 
 for (const [file, what, days, exercises] of PHOTOS) {
@@ -80,4 +90,26 @@ test('…but days that only SHARE a shape stay separate days', () => {
   const r = ok(parseProgramTable(fixture('photo-9.tsv')));
   assert.equal(r.weeks[0].days.length, 6);
   assert.deepEqual(r.weeks[0].days[0].name, 'Day 1 - Chest + Back');
+});
+
+test('photo-12: the second "Upper" is a different session, not week 2', () => {
+  // Upper / Lower / Upper / Lower, 4×/week. The two Uppers share a NAME and nothing else, so they are
+  // two days of one week — where the PO's three-week photo repeats the same lifts and IS three weeks.
+  const r = ok(parseProgramTable(fixture('photo-12.tsv')));
+  assert.equal(r.weeks.length, 1);
+  assert.deepEqual(r.weeks[0].days.map((d) => d.name), ['Upper', 'Lower', 'Upper', 'Lower']);
+  assert.deepEqual(r.weeks[0].days.map((d) => d.letter), ['A', 'B', 'C', 'D']);
+  assert.notDeepEqual(
+    r.weeks[0].days[0].items.map((i) => i.name),
+    r.weeks[0].days[2].items.map((i) => i.name),
+  );
+});
+
+test('photo-20 and photo-16: a day whose name says REST is not a training day', () => {
+  const women = ok(parseProgramTable(fixture('photo-20.tsv')));
+  assert.equal(women.weeks[0].days.length, 6, '"Day 7 - Rest" is dropped');
+  assert.ok(!women.weeks[0].days.some((d) => /rest/i.test(d.name)));
+
+  const challenge = ok(parseProgramTable(fixture('photo-16.tsv')));
+  assert.deepEqual(challenge.weeks[0].days.map((d) => d.name), ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']);
 });

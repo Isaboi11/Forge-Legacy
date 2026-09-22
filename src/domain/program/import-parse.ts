@@ -608,6 +608,9 @@ function dayLabelKey(label: string): string {
   return weekdayKey(t) ?? '';
 }
 
+/** A day label that says the day is a rest day — "Day 7 - Rest", "Sunday: Rest Day". */
+const REST_DAY_LABEL = /(?:^|[-–—:|]\s*)(?:full\s+)?rest(?:\s*days?)?\s*$/i;
+
 /** What a day gets called when it is written out muscle by muscle — see `dayPrefix`. */
 const BODY_PART = /^(?:chest|back|shoulders?|delts?|arms?|biceps?|triceps?|forearms?|legs?|quads?|hamstrings?|glutes?|calves|calf|abs|abdominals|core|traps?|upper|lower|push|pull)(?:\s*(?:&|\+|and|\/)\s*\w+)*$/i;
 
@@ -1171,6 +1174,8 @@ export function parseProgramTable(raw: string): ParseResult {
    * been used, is the next week — the same rule the typed-text reader applies to weekdays.
    */
   const daysThisWeek = new Set<string>();
+  /** Which block of the week we are in — the key when two different days share a name (see `repeatMode`). */
+  let dayRun = 0;
   /*
    * "Push Day - Chest", "Push Day - Shoulders", "Push Day - Triceps" — ONE day, written out by muscle.
    * A handwritten push day came through as three days (PO's photo, 2026-09-22). Collapsed only when
@@ -1200,20 +1205,53 @@ export function parseProgramTable(raw: string): ParseResult {
    * day coming back as a block, the same number of times each. So the Day column's RUNS are counted
    * first: every day in the same number of runs, two or more, means that many weeks.
    */
-  const repeatsAsWeeks = (() => {
-    if (at.week !== undefined || at.day === undefined) return false;
-    const runs = new Map<string, number>();
-    let prev = '';
+  /*
+   * ══ A DAY LABEL THAT COMES BACK MEANS ONE OF THREE THINGS ══
+   *
+   *   'weeks'  the same day, printed again for the next week — the PO's three-week photo: Monday,
+   *            Tuesday, Thursday, Friday three times over, the same lifts, only the reps changing.
+   *   'days'   a DIFFERENT day that shares a name — a 4×/week Upper/Lower: Upper, Lower, Upper, Lower,
+   *            where the second Upper is a different session entirely. Four days in ONE week.
+   *   'merge'  a stray row the author added under a day used earlier. One day, as it always was.
+   *
+   * The CONTENT is what tells them apart, so the content is what is compared: a block that repeats the
+   * same exercises is the next week; one that does not is another day. (PO, 2026-09-22.)
+   */
+  const repeatMode: 'weeks' | 'days' | 'merge' = (() => {
+    if (at.week !== undefined || at.day === undefined) return 'merge';
+    const runs: { day: string; names: Set<string> }[] = [];
     for (const line of lines.slice(headerAt + 1)) {
-      const d = (splitLine(line, delimiter)[at.day] ?? '').trim();
-      if (!d || d === prev) continue;
+      const cells = splitLine(line, delimiter);
+      const d = (cells[at.day] ?? '').trim();
+      const name = cleanExerciseName((cells[at.exercise!] ?? '').trim());
       // The header row, come round again for the next block — not a day.
-      if ((COLUMNS.day as readonly string[]).includes(d.toLowerCase().replace(/[^a-z]/g, ''))) continue;
-      runs.set(d, (runs.get(d) ?? 0) + 1);
-      prev = d;
+      if (!d || (COLUMNS.day as readonly string[]).includes(d.toLowerCase().replace(/[^a-z]/g, ''))) continue;
+      const last = runs[runs.length - 1];
+      if (last && last.day === d) {
+        if (name) last.names.add(name.toLowerCase());
+        continue;
+      }
+      runs.push({ day: d, names: new Set(name ? [name.toLowerCase()] : []) });
     }
-    const counts = new Set(runs.values());
-    return runs.size >= 1 && counts.size === 1 && [...counts][0] >= 2;
+
+    const first = new Map<string, Set<string>>();
+    const verdicts: ('weeks' | 'days' | 'merge')[] = [];
+    for (const run of runs) {
+      const seen = first.get(run.day);
+      if (!seen) {
+        first.set(run.day, run.names);
+        continue;
+      }
+      const shared = [...run.names].filter((x) => seen.has(x)).length;
+      const same = shared / Math.max(1, Math.max(run.names.size, seen.size));
+      // A single row under a day used earlier is the author adding a lift they forgot — never a week.
+      if (run.names.size < 2) verdicts.push('merge');
+      else verdicts.push(same >= 0.6 ? 'weeks' : 'days');
+    }
+    if (!verdicts.length) return 'merge';
+    // One dissenting block is enough to keep everything in one week — the safer reading.
+    if (verdicts.includes('merge')) return 'merge';
+    return verdicts.every((v) => v === 'weeks') ? 'weeks' : 'days';
   })();
 
   /** "Exercise" / "Movement" / "Lift" in the Exercise column — a repeat of the header, not a lift. */
@@ -1297,15 +1335,19 @@ export function parseProgramTable(raw: string): ParseResult {
     }
 
     const dayCell = dayPrefix ?? (at.day !== undefined ? (cells[at.day] ?? '').trim() : '');
+    if (dayCell && dayCell !== day && repeatMode === 'days') dayRun += 1;
     if (dayCell && dayCell !== day) {
       // Only when the sheet has no Week column to say so itself.
-      if (repeatsAsWeeks && daysThisWeek.has(dayCell)) {
+      if (repeatMode === 'weeks' && daysThisWeek.has(dayCell)) {
         week += 1;
         daysThisWeek.clear();
       }
       day = dayCell;
     }
     if (dayCell) daysThisWeek.add(dayCell);
+
+    // "Day 7 - Rest", "Weekend — Rest Days": the day says it is not a training day.
+    if (REST_DAY_LABEL.test(day)) continue;
 
     /*
      * "Abs", "Core", "Warm-up" on a row of their own with nothing in Sets or Reps — a section label
@@ -1376,7 +1418,7 @@ export function parseProgramTable(raw: string): ParseResult {
 
     const name = cleanExerciseName(named);
     if (!name) continue;
-    b.add(week, day, day, item(name, sets, reps));
+    b.add(week, repeatMode === 'days' ? `${dayRun}:${day}` : day, day, item(name, sets, reps));
   }
 
   if (b.rowsRead === 0) {

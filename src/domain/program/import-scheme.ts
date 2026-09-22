@@ -337,7 +337,7 @@ export function weekHeading(line: string): number | null {
  * was dropped (stress test, 2026-09-21). A rest day is the absence of a session: nothing is created.
  * Strict on purpose; "Rest, then a 20 min walk" is not rest.
  */
-const REST_ENTRY = /^(?:full\s+|complete\s+)?(?:rest|off|recovery)(?:\s+day)?(?:\s*\/\s*(?:rest|off|recovery))?[.!]*$|^day\s+off[.!]*$/i;
+const REST_ENTRY = /^(?:full\s+|complete\s+)?(?:rest|off|recovery)(?:\s+days?)?(?:\s*\/\s*(?:rest|off|recovery))?[.!]*$|^day\s+off[.!]*$/i;
 
 export function isRestEntry(text: string): boolean {
   return REST_ENTRY.test(text.trim());
