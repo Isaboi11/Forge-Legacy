@@ -68,6 +68,8 @@ function photoError(r: Exclude<PhotoReadResult, { kind: 'ok' }>, n: number, tota
       return `${which}That image is too big to read. Try a screenshot rather than a full-size photo.`;
     case 'out_of_credits':
       return 'You’re out of Premium AI credits for this month.';
+    case 'daily_limit':
+      return 'That’s a lot of photos for one day. Try again tomorrow, or paste the program as text.';
     case 'not_entitled':
       return 'Reading photos is part of Premium AI. Paste the program as text instead.';
     case 'unsupported_format':

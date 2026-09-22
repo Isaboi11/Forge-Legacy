@@ -113,6 +113,10 @@ const NOISE = new Set(['the', 'a', 'and', 'or', 'with', 'on', 'to', 'for', 'of',
  */
 const EQUIPMENT_PREFERENCE = ['barbell', 'dumbbell', 'cable', 'machine', 'smith', 'kettlebell', 'band'];
 
+/** The muscles a catalogue name adds — a variant named for its target, not for a style. */
+// ⚠ SINGULAR, because `tokenize` folds plurals: "Biceps" arrives here as "bicep".
+const BODY_PART_WORDS = new Set(['bicep', 'tricep', 'chest', 'back', 'lat', 'leg', 'calf', 'glute', 'hamstring', 'quad', 'shoulder', 'delt', 'trap', 'ab', 'core', 'forearm', 'hip']);
+
 /** The words that say what a lift DOES — see the "no movement named" rule in `matchExercise`. */
 const MOVEMENTS = new Set([
   'press', 'curl', 'row', 'fly', 'raise', 'extension', 'squat', 'deadlift', 'lunge', 'pulldown', 'pushdown',
@@ -317,6 +321,33 @@ export function suggestExercises(written: string, catalog: readonly CatalogEntry
     if (matched.length < Math.ceil(q.length / 2)) continue;
     scored.push({ entry, hits: matched.length, extra: t.length - matched.length });
   }
-  scored.sort((a, b) => b.hits - a.hits || a.extra - b.extra || a.entry.name.length - b.entry.name.length);
+  /*
+   * ⚠ AND THE EVERYDAY LIFT COMES FIRST. Ranked by words alone, "Barbell or DB Curl" offered Drag Curl
+   * ahead of Biceps Curl and "Dumbbell row" offered Seal Row ahead of Bent-Over Row — each the shortest
+   * name among equals, and none of them what anybody means (PO, 2026-09-22). A suggestion is a guess
+   * about intent, so the tie-break is about intent too: the implement people actually reach for.
+   */
+  /*
+   * Two kinds of extra word: one NAMES THE MUSCLE the lift is for ("Barbell Biceps Curl"), the other
+   * names a STYLE of doing it ("Barbell Drag Curl", "Dumbbell Seal Row"). Somebody who wrote neither
+   * meant the plain one, so the muscle-named variant is offered first.
+   */
+  const plain = (e: CatalogEntry) => {
+    const extra = [...tokenize(e.name)].filter((w) => !q.includes(w));
+    return extra.every((w) => BODY_PART_WORDS.has(w) || EQUIPMENT_PREFERENCE.includes(w)) ? 0 : 1;
+  };
+  const rank = (e: CatalogEntry) => {
+    const t = tokenize(e.name);
+    for (const [i, w] of EQUIPMENT_PREFERENCE.entries()) if (t.has(w)) return i;
+    return EQUIPMENT_PREFERENCE.length; // bodyweight and the unequipped — ahead of nothing, behind nothing
+  };
+  scored.sort(
+    (a, b) =>
+      b.hits - a.hits ||
+      a.extra - b.extra ||
+      rank(a.entry) - rank(b.entry) ||
+      plain(a.entry) - plain(b.entry) ||
+      a.entry.name.length - b.entry.name.length,
+  );
   return scored.slice(0, limit).map((s) => ({ key: s.entry.key, name: s.entry.name, byPreference: false }));
 }

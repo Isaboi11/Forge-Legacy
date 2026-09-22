@@ -230,6 +230,9 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
         case 'out_of_credits':
           setImportError('You’re out of Premium AI credits for this month.');
           break;
+        case 'daily_limit':
+          setImportError('That’s a lot of photos for one day. Try again tomorrow, or paste the program as text.');
+          break;
         case 'not_entitled':
           setImportError('Reading photos is part of Premium AI. Paste the program as text instead.');
           break;

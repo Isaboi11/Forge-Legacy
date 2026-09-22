@@ -84,6 +84,16 @@ const MAX_BASE64_CHARS = 6_990_000;
 
 const ALLOWED_MEDIA = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
+/**
+ * A DAY'S CEILING, per athlete.
+ *
+ * PO, 2026-09-22 — a cap "but people realistically don't reach it". An import takes at most six photos
+ * (`MAX_PHOTOS`), so sixty is ten whole programs in one day; nobody importing their training will see
+ * this, and a runaway client or a bored tester stops costing money. The monthly credit allowance is the
+ * real budget (0174/0203) — this is the blast radius of one bad day.
+ */
+const MAX_READS_PER_DAY = 60;
+
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE SYSTEM PROMPT — one stable block, cached
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -173,6 +183,23 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: { headers: { Authorization: authorization } },
   });
+
+  // ── 0. The day's ceiling ───────────────────────────────────────────────────
+  //
+  // Counted under the caller's own JWT, so RLS means it can only ever see that athlete's rows. Read
+  // BEFORE the credit is reserved: a refusal must not spend one.
+  const since = new Date();
+  since.setUTCHours(0, 0, 0, 0);
+  const { count, error: countError } = await supabase
+    .from('coach_ai_spend')
+    .select('id', { count: 'exact', head: true })
+    .eq('action', ACTION)
+    .gte('occurred_at', since.toISOString());
+
+  // A counter that cannot be read must not block the feature — the monthly meter still bounds the spend.
+  if (!countError && (count ?? 0) >= MAX_READS_PER_DAY) {
+    return json({ ok: false, reason: 'daily_limit', limit: MAX_READS_PER_DAY }, 429);
+  }
 
   // ── 1. Reserve the credit BEFORE the model call ────────────────────────────
   //

@@ -71,6 +71,27 @@ async function readAsBase64(uri: string): Promise<{ data: string; mediaType: str
  * ⚠ NEVER THROWS. This runs behind a button in a sheet the athlete may have half a spreadsheet open in;
  * an exception here would take the sheet and their corrections with it.
  */
+/**
+ * ⚠ WHAT WAS ALREADY READ, BY ITS CONTENT — not by its uri.
+ *
+ * Picking the same photo twice gives two different uris on the web (a fresh blob URL each time), so the
+ * screen's own cache saw two photos and paid for two reads of one picture (PO, 2026-09-22). Keyed by the
+ * bytes instead, the second pick is free and instant. Session-only, and small: the tsv of a page of
+ * training, a dozen at a time.
+ */
+const readByContent = new Map<string, PhotoReadResult>();
+const MAX_REMEMBERED = 12;
+
+/** A cheap, stable fingerprint of the image bytes (FNV-1a over the base64). Never leaves the device. */
+function fingerprint(base64: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < base64.length; i++) {
+    h ^= base64.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return `${base64.length}:${(h >>> 0).toString(36)}`;
+}
+
 export async function readProgramPhoto(uri: string): Promise<PhotoReadResult> {
   const file = await readAsBase64(uri);
   // A uri we could not read is the app failing, not the photograph being bad. The athlete would
@@ -79,6 +100,11 @@ export async function readProgramPhoto(uri: string): Promise<PhotoReadResult> {
 
   // Refused by the function before any model call; saying so here saves the round trip and a credit.
   if (!READABLE_MEDIA.includes(file.mediaType)) return { kind: 'unsupported_format' };
+
+  // The same picture, picked again. Only a SUCCESSFUL read is remembered — a failure deserves a retry.
+  const key = fingerprint(file.data);
+  const already = readByContent.get(key);
+  if (already) return already;
 
   try {
     const { data, error } = await supabase.functions.invoke('program-photo-read', {
@@ -101,7 +127,12 @@ export async function readProgramPhoto(uri: string): Promise<PhotoReadResult> {
     }
     if (!body) return { kind: 'offline' };
 
-    return photoResultFrom(body);
+    const result = photoResultFrom(body);
+    if (result.kind === 'ok') {
+      if (readByContent.size >= MAX_REMEMBERED) readByContent.delete(readByContent.keys().next().value!);
+      readByContent.set(key, result);
+    }
+    return result;
   } catch {
     return { kind: 'offline' };
   }

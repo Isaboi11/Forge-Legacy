@@ -11,7 +11,7 @@ import {
   resolveAgainstCatalog,
 } from '../aliases.ts';
 import { HIDDEN_EXERCISE_IDS } from '../catalog-core.ts';
-import { matchExercise } from '../../program/exercise-match.ts';
+import { matchExercise, suggestExercises } from '../../program/exercise-match.ts';
 
 /** The real catalogue, read as data — `data.ts` imports JSON in a way `node --test` cannot load. */
 const raw = JSON.parse(
@@ -226,4 +226,14 @@ test('"Incline DB" is the incline dumbbell PRESS — it used to reach the Inclin
   assert.equal(r('Incline DB Curl')?.key, 'dumbbell-incline-curl');
   assert.equal(r('Incline DB Fly')?.key, 'dumbbell-incline-chest-fly');
   assert.equal(r('Incline DB Press')?.key, 'dumbbell-incline-bench-press');
+});
+
+test('a suggestion leads with the lift people mean, not the shortest name (PO, 2026-09-22)', () => {
+  // Ranked by words alone these tied, and the catalogue's shortest name won: "Barbell or DB Curl"
+  // offered Drag Curl before Biceps Curl, and "Dumbbell row" offered Seal Row before Bent-Over Row.
+  const first = (written) => suggestExercises(written, CATALOG)[0]?.name;
+  assert.equal(first('Barbell or DB Curl'), 'Barbell Biceps Curl');
+  assert.match(first('Dumbbell row') ?? '', /Dumbbell/);
+  // A named implement still wins outright.
+  assert.match(first('Cable row') ?? '', /Cable/);
 });

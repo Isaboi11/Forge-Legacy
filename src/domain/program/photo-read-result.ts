@@ -16,6 +16,8 @@ export type PhotoReadResult =
   | { kind: 'unreadable' }
   /** Bigger than the function accepts — only reachable if the downscale was skipped. */
   | { kind: 'too_large' }
+  /** Sixty reads in one day on this account — a runaway client or a tester, never a real import. */
+  | { kind: 'daily_limit' }
   /** The month's credits are gone. A commercial state, not a verdict on the photo. */
   | { kind: 'out_of_credits'; remaining: number; allowance: number }
   /**
@@ -88,6 +90,8 @@ export function photoResultFrom(body: unknown): PhotoReadResult {
       // all is not a month used up.
       if (!d.allowance) return { kind: 'not_entitled' };
       return { kind: 'out_of_credits', remaining: d.remaining ?? 0, allowance: d.allowance };
+    case 'daily_limit':
+      return { kind: 'daily_limit' };
     case 'bad_request':
       return { kind: 'unsupported_format' };
     default:

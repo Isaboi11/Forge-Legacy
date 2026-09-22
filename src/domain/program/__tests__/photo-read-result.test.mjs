@@ -17,6 +17,7 @@ test('each function reason becomes its own outcome', () => {
     [{ ok: false, reason: 'unreadable' }, 'unreadable'],
     [{ ok: false, reason: 'too_large' }, 'too_large'],
     [{ ok: false, reason: 'bad_request' }, 'unsupported_format'],
+    [{ ok: false, reason: 'daily_limit', limit: 60 }, 'daily_limit'],
     [{ ok: false, reason: 'out_of_credits', remaining: 0, allowance: 60 }, 'out_of_credits'],
     [{ ok: false, reason: 'unconfigured' }, 'unavailable'],
     [{ ok: false, reason: 'meter_unavailable' }, 'unavailable'],
