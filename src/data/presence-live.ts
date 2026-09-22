@@ -25,10 +25,47 @@ export interface TrainingAthlete {
   squadName: string | null;
 }
 
-/** Tell the backend a workout started or ended. Silent on failure — presence is never worth a blocked UI. */
-export async function setTrainingStatus(active: boolean, label?: string): Promise<void> {
+/**
+ * Tell the backend a workout started, paused or ended. Silent on failure — presence is never worth a
+ * blocked UI.
+ *
+ * ══ ⚠ `done` IS NOT COSMETIC: IT IS WHAT STOPS THE SQUAD BEING TOLD TWICE ══
+ *
+ * Stopping is TWO different events and this call used to flatten them into one.
+ *
+ *   · FINISH / DISCARD — the session is over. `done: true` clears `profiles.training_announced_at`, so
+ *     the athlete's NEXT workout is news again.
+ *   · LEAVE — they walked back to Home with the autosave intact and will resume. `done: false` ends the
+ *     presence broadcast (they are not on Live Now while they are not training) but HOLDS the
+ *     announcement stamp, so resuming restores the same `training_since` the squad was already told
+ *     about, the outbox key is identical, and the second push is absorbed (0202).
+ *
+ * Before 0202 there was no third argument and every stop was a finish, so leave → resume wrote a fresh
+ * `now()`, which is a genuinely new outbox key: *"if I leave the workout and go to the home screen … it
+ * notifies everyone again that I'm starting a workout."*
+ *
+ * ⚠ THE DEFAULT IS `true`, MATCHING THE SERVER'S. An omitted argument must mean "finished", because the
+ * failure modes are not symmetric: a wrong `true` announces one extra time, a wrong `false` SILENCES the
+ * athlete's next real workout for up to four hours.
+ */
+export async function setTrainingStatus(active: boolean, label?: string, done = true): Promise<void> {
   try {
-    await supabase.rpc('set_training_status', { p_active: active, p_label: label ?? null });
+    const { error } = await supabase.rpc('set_training_status', { p_active: active, p_label: label ?? null, p_done: done });
+    /*
+     * ⚠ THE DATABASE IS PASTED BY HAND, SO THIS CLIENT CAN REACH A PHONE FIRST.
+     *
+     * PostgREST resolves an RPC by its ARGUMENT NAMES. Against a database still on 0190 there is no
+     * `p_done`, so the whole call 404s as PGRST202 and presence stops working outright — the athlete
+     * vanishes from Live Now and nobody can tap "Join workout" on them, for a parameter that only
+     * changes how often the squad is told. That is the exact shape of failure 0188 caused by shipping a
+     * revoke ahead of its reader, and it is avoidable here for four lines.
+     *
+     * So: fall back to the two-argument call, which is every build's behaviour today. Duplicate
+     * announcements persist until 0202 is pasted, and NOTHING ELSE regresses.
+     */
+    if (error && (error as { code?: string }).code === 'PGRST202') {
+      await supabase.rpc('set_training_status', { p_active: active, p_label: label ?? null });
+    }
   } catch {
     // An unapplied 0086, or an offline device. Neither should interrupt a workout.
   }

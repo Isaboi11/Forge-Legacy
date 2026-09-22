@@ -52,7 +52,62 @@ test('the session is published only when opted in, debounced, and cleared when i
   assert.match(w, /setShareLive\(v\.live_session !== 'private'\)/, 'the publisher no longer reads the athlete’s own opt-in');
   assert.match(w, /if \(!shareLive \|\| phase !== 'active' \|\| !session\) return;\s*const t = setTimeout\(\(\) => void publishLiveSession\(liveSessionSnapshot\(session\)\), 4000\);/, 'the publish is not debounced behind the opt-in');
   const h = strip(SESSION_HOOK);
-  assert.match(h, /setLiveWorkoutPresence\(false\)\s*void clearLiveSession\(\)/, 'ending a session no longer clears the published row');
+  /*
+   * ⚠ ALL THREE EXITS ARRIVE HERE, AND THE PUBLISHED ROW GOES ON EVERY ONE (0202 kept this deliberate).
+   *
+   * `stopSession(done)` is finish, discard, leave AND the stale timer. `done` decides only whether the
+   * squad's record of having been told this session about survives — the presence broadcast and the
+   * published plan-and-log stop either way, because neither is true while the athlete is on Home. A
+   * `done`-conditional `clearLiveSession()` would leave a leave-er's sets, reps and weights readable by
+   * anyone their `live_session` audience clears, for up to four hours after they walked away.
+   */
+  assert.match(
+    h,
+    /setLiveWorkoutPresence\(false, undefined, done\)\s*void clearLiveSession\(\)/,
+    'ending a session no longer clears the published row — or the clear became conditional on `done`',
+  );
+  assert.match(h, /const leaveSession = useCallback\(\(\) => stopSession\(false\)/, 'a leave must not be reported as a finish (0202)');
+  assert.match(h, /const endSession = useCallback\(\(\) => stopSession\(true\)/, 'a finish must clear the announcement stamp (0202)');
+});
+
+/**
+ * ⚠ THREE EXITS FROM THE LOGGER, AND ONLY ONE OF THEM IS A PAUSE.
+ *
+ * PO, 2026-09-20: *"If I leave the workout and go to the home screen … it notifies everyone again that
+ * I'm starting a workout."* The header back arrow called `abandonWorkout()` — the same call as a
+ * discard — so the server was told the session had ENDED, `training_since` was cleared, and resuming
+ * wrote a fresh stamp. A fresh stamp is a fresh `push_outbox` key, so the unique index could not absorb
+ * it and the whole squad was told a second time. And a third, on the next round trip.
+ *
+ * The distinction is not "did they navigate away" — all three do. It is WHETHER THE AUTOSAVE SURVIVES:
+ * if there is something to come back to, it is the same session and it has already been announced.
+ *
+ * This is asserted at the CALL SITES rather than only in the hook, because the hook being right is
+ * worth nothing if the back arrow still reaches the wrong one of its three doors.
+ */
+test('the back arrow pauses a session; a discard ends one', () => {
+  const w = strip(WORKOUT);
+
+  // The header back arrow — the autosave is deliberately NOT cleared here, which is what puts
+  // "Continue Workout" on Home, and is exactly why this must not read as a finish.
+  assert.match(
+    w,
+    /const onLeave = \(\) => \{\s*leaveSession\(\);/,
+    'the header back arrow no longer takes the pause path (0202)',
+  );
+  assert.match(w, /const leaveSession = useCallback\(\(\) => \{\s*endedRef\.current = true;\s*leaveWorkout\(\);/);
+  assert.match(w, /const discardSession = useCallback\(\(\) => \{\s*endedRef\.current = true;\s*abandonWorkout\(\);/);
+
+  /*
+   * ⚠ BOTH DISCARDS CLEAR THE AUTOSAVE FIRST, and that pairing is the invariant worth pinning: a
+   * `clearSession()` beside a `leaveSession()` would be a session nobody can resume whose announcement
+   * is held anyway, silencing the athlete's NEXT real workout for up to four hours.
+   */
+  const discards = w.match(/clearSession\(\);\s*(discardSession|leaveSession)\(\)/g) ?? [];
+  assert.equal(discards.length, 2, 'expected exactly two discard sites — "Not today" and the empty auto-Picker');
+  for (const d of discards) {
+    assert.match(d, /discardSession/, 'a site that clears the autosave must END the session, never pause it');
+  }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

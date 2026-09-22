@@ -412,7 +412,7 @@ export default function WorkoutScreen() {
       refetchMemories();
     }, [refetchMemories]),
   );
-  const { session: liveSession, startWorkout, finishWorkout, abandonWorkout } = useWorkoutSession();
+  const { session: liveSession, startWorkout, finishWorkout, abandonWorkout, leaveWorkout } = useWorkoutSession();
   /**
    * ⚠ THIS SESSION IS OVER AND MUST NOT BE RE-ANNOUNCED. Latched by the three ways out below.
    *
@@ -438,10 +438,31 @@ export default function WorkoutScreen() {
     endedRef.current = true;
     finishWorkout();
   }, [finishWorkout]);
-  const leaveSession = useCallback(() => {
+  /**
+   * ⚠ THERE ARE NOW THREE EXITS, NOT TWO, AND THE THIRD IS THE ONE THE SQUAD FEELS.
+   *
+   * All three end presence — nobody is on Live Now while they are looking at Home. They differ only in
+   * whether THIS SESSION IS OVER, which is what decides whether resuming announces a second start:
+   *
+   *   `endSession`     finished and saved     → over. The next workout is news.
+   *   `discardSession` "Not today" / backed out of a fresh Picker with nothing chosen. The autosave goes
+   *                    too, so there is nothing left to resume → over, same as a finish.
+   *   `leaveSession`   the header back arrow. The AUTOSAVE SURVIVES — that is what puts "Continue
+   *                    Workout" on Home — so this is the same session, paused, and it must not be
+   *                    announced again when they come back to it (0202).
+   *
+   * That last one is the PO's report: *"if I leave the workout and go to the home screen … it notifies
+   * everyone again that I'm starting a workout."* Before this it called `abandonWorkout` like the
+   * discards did, so the server was told the session had ENDED and resuming looked like a new one.
+   */
+  const discardSession = useCallback(() => {
     endedRef.current = true;
     abandonWorkout();
   }, [abandonWorkout]);
+  const leaveSession = useCallback(() => {
+    endedRef.current = true;
+    leaveWorkout();
+  }, [leaveWorkout]);
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [resumable, setResumable] = useState<ActiveSession | null>(null);
   /** When the resume prompt was raised — the clock its "38 min" is measured against. See the setter. */
@@ -1367,7 +1388,7 @@ export default function WorkoutScreen() {
          */
         if (backFromAutoPicker && (!inbox || inbox.kind !== 'add' || inbox.items.length === 0) && sessionRef.current?.exercises.length === 0) {
           void clearSession();
-          leaveSession();
+          discardSession();
           if (router.canGoBack()) router.back();
           else router.replace('/(tabs)');
           return;
@@ -1423,7 +1444,7 @@ export default function WorkoutScreen() {
       return () => {
         active = false;
       };
-    }, [showToast, leaveSession, router]),
+    }, [showToast, discardSession, router]),
   );
 
   const mutate = useCallback((fn: (s: ActiveSession) => ActiveSession) => setSession((s) => (s ? fn(s) : s)), []);
@@ -2118,6 +2139,19 @@ export default function WorkoutScreen() {
    * `leaveSession` ends the presence broadcast and the in-memory session, and latches `endedRef` so the
    * presence effect cannot re-announce the workout on the way out. It does NOT clear the autosave, so the
    * work is still there to resume, which is the whole point of leaving this way.
+   *
+   * ══ ⚠ AND THERE IS A THIRD FACT, WHICH THIS USED TO END BY MISTAKE ══
+   *
+   * "The squad has already been told about this session." It is not the same as either of the two above:
+   * it has to outlive the presence broadcast (the athlete is coming back) and it has to die with the
+   * autosave (there is nothing to come back to). This path called `abandonWorkout()`, which told the
+   * server the session was OVER — so resuming wrote a fresh `training_since`, which is a fresh outbox
+   * key, which is a second *"started training"* push to everyone. Backing out to Home and tapping
+   * Continue announced the same workout twice, and a third time on the next round trip.
+   *
+   * `leaveWorkout()` is that distinction: presence off, announcement HELD, the resumed session restored
+   * to the time it really began (0202). A finish or a discard still clears it, so the next workout is
+   * genuinely news.
    */
   const onLeave = () => {
     leaveSession();
@@ -2333,9 +2367,10 @@ export default function WorkoutScreen() {
           onCta={() => router.push({ pathname: '/exercise-picker', params: { mode: 'add' } })}
           dismissLabel="Not today"
           onDismiss={async () => {
-            // "Not today" discards outright — so BOTH facts end: the autosave and the presence.
+            // "Not today" discards outright — so ALL THREE facts end: the autosave, the presence, and
+            // the squad's record of having been told (there is nothing left to come back to).
             await clearSession();
-            leaveSession();
+            discardSession();
             router.replace('/(tabs)');
           }}
         />
