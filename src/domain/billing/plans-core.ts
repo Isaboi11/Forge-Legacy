@@ -217,8 +217,10 @@ const NOUN: Partial<Record<CapKey, { one: string; many: string; unlimited?: stri
   squads: { one: 'squad', many: 'squads' },
   templates: { one: 'day template', many: 'day templates' },
   imports: { one: 'lifetime import', many: 'lifetime imports', unlimited: 'imports' },
-  holt_programs: { one: 'Coach Holt program', many: 'Coach Holt programs' },
-  holt_days_per_month: { one: 'Coach Holt day a month', many: 'Coach Holt days a month' },
+  /* "Basic Holt" — the rules engine, named so nobody reads it as the AI coach (PO 2026-09-21; that one is
+     Premium AI, MA6-D1). */
+  holt_programs: { one: 'Basic Holt program', many: 'Basic Holt programs' },
+  holt_days_per_month: { one: 'Basic Holt day a month', many: 'Basic Holt days a month' },
 };
 
 /**
@@ -230,7 +232,7 @@ const NOUN: Partial<Record<CapKey, { one: string; many: string; unlimited?: stri
  */
 export function capPhrase(key: CapKey, cap: number): string {
   // In-workout Holt is a capability, not a quantity — "0 Coach Holt in-workouts" is not a sentence.
-  if (key === 'holt_in_workout') return cap === 0 ? 'No Coach Holt mid-workout' : 'Coach Holt in your workout';
+  if (key === 'holt_in_workout') return cap === 0 ? 'No Basic Holt mid-workout' : 'Basic Holt in your workout';
 
   const noun = NOUN[key];
   if (!noun) return '';
@@ -323,8 +325,8 @@ const USAGE_LABEL: Partial<Record<CapKey, string>> = {
   photos: 'Photos',
   squads: 'Squads',
   imports: 'Import',
-  holt_programs: 'Coach Holt programs',
-  holt_days_per_month: 'Coach Holt days',
+  holt_programs: 'Basic Holt programs',
+  holt_days_per_month: 'Basic Holt days',
 };
 
 const USAGE_FIELD: Partial<Record<CapKey, keyof Usage>> = {

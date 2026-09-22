@@ -365,6 +365,10 @@ app today and the right shape.
       `coach_ai_monthly_999` · `coach_ai_annual_8999` · `founder_lifetime_149` (first 100, then delisted).
       ⚠ The Coach AI IDs were corrected from `_799`/`_6999` on 2026-08-12 — the price is **$9.99/$89.99**.
       Coach AI SKUs can be configured now and left unreleased.
+      ⛔ **SUPERSEDED 2026-09-21 by Monetization Amendment 006 §6 row 4.** Configure instead:
+      `premium_monthly_1499` · `premium_annual_11999` · `premium_ai_monthly_1999` · `premium_ai_annual_16999` ·
+      `founder_lifetime_149` · `founder_ai_monthly_349` · `founder_ai_annual_3499`, with a 7-day intro offer on
+      both annuals. **Do not create** `premium_lifetime_299` or any `coach_ai_*` product.
 - [~] **4.4 — Referrals.** ✅ **CLIENT HALF BUILT AND `0170` APPLIED 2026-08-19; the grant itself waits on 4.2.**
       A code per athlete. Credit granted only on the referee's **first successful payment**. Both sides
       credited; referrer capped at 12 months per rolling year.

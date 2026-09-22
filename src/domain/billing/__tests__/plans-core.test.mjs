@@ -165,8 +165,8 @@ test('every number in the comparison comes from config, and pluralises with it (
   assert.equal(capPhrase('photos', 75), '75 photos');
   assert.equal(capPhrase('squads', 1), '1 squad');
   assert.equal(capPhrase('squads', 5), '5 squads');
-  assert.equal(capPhrase('holt_days_per_month', 2), '2 Coach Holt days a month');
-  assert.equal(capPhrase('holt_programs', 1), '1 Coach Holt program');
+  assert.equal(capPhrase('holt_days_per_month', 2), '2 Basic Holt days a month');
+  assert.equal(capPhrase('holt_programs', 1), '1 Basic Holt program');
   assert.equal(capPhrase('imports', 1), '1 lifetime import');
   assert.equal(capPhrase('imports', -1), 'Unlimited imports', 'not "Unlimited lifetime imports"');
   assert.equal(capPhrase('programs', -1), 'Unlimited programs');
@@ -174,8 +174,8 @@ test('every number in the comparison comes from config, and pluralises with it (
 
 test('in-workout Holt is a capability, not a quantity', () => {
   // "0 Coach Holt in-workouts" is not a sentence, and running it through the plural path would produce one.
-  assert.equal(capPhrase('holt_in_workout', 0), 'No Coach Holt mid-workout');
-  assert.equal(capPhrase('holt_in_workout', -1), 'Coach Holt in your workout');
+  assert.equal(capPhrase('holt_in_workout', 0), 'No Basic Holt mid-workout');
+  assert.equal(capPhrase('holt_in_workout', -1), 'Basic Holt in your workout');
 });
 
 test('Premium never claims unlimited squads (M7-D15)', () => {
@@ -220,6 +220,8 @@ test('the benefits list is built features only (P-8 §8)', () => {
   assert.deepEqual(lines.map((b) => b.key), ['photos', 'programs', 'squads', 'imports', 'holt_programs']);
   assert.match(text, /including in your workout/, 'the in-workout half is the recurring reason to pay');
   assert.match(text, /5 squads/);
+  // PO 2026-09-21: Premium's Holt is named "Basic" so it is never mistaken for the AI coach (Premium AI).
+  assert.match(text, /Basic Holt/);
 
   // Analytics, Communities, premium share layouts and the Legacy export book are all part of Premium's
   // long-term definition and none of them exist. Showing one as a current benefit on the screen that
@@ -313,6 +315,9 @@ test('no price string is hardcoded anywhere in the P-8 surface (P-8 §80, §11.6
     { re: /premium_(monthly|annual|lifetime)_\d/, why: 'a SKU identifier, which carries its price' },
     { re: /founder_lifetime_\d/, why: 'a SKU identifier, which carries its price' },
     { re: /coach_ai_(monthly|annual)_\d/, why: 'a SKU identifier, which carries its price' },
+    // Amendment 006 (MA6-D2, MA6-D7): the Premium AI and Founder AI products.
+    { re: /premium_ai_(monthly|annual)_\d/, why: 'a SKU identifier, which carries its price' },
+    { re: /founder_ai_(monthly|annual)_\d/, why: 'a SKU identifier, which carries its price' },
   ];
 
   for (const f of files) {
