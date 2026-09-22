@@ -151,6 +151,12 @@ export function tokenize(raw: string): Set<string> {
   const expanded = raw
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
+    /*
+     * "One arm", "1 arm", "one-armed" are what the catalogue calls SINGLE-arm. A photographed program
+     * said "One arm dumbbell row" and it went unmatched against "Single-Arm Dumbbell Row" over one word
+     * (PO, 2026-09-22). Same for legs — "1 leg RDL".
+     */
+    .replace(/\b(?:one|1)\s+(arm|leg)(?:ged|ed)?\b/g, 'single $1')
     .trim()
     .split(/\s+/)
     .flatMap((w) => (ABBREVIATIONS[w] ?? w).split(' '));
@@ -267,4 +273,50 @@ export function matchExercise(written: string, catalog: readonly CatalogEntry[])
   }
 
   return null; // genuinely ambiguous — keep what they wrote
+}
+
+// ── suggestions for a name that did not match ───────────────────────────────
+
+/** Two words the same, or one typo apart once they are long enough for a typo to be a typo. */
+function closeWord(a: string, b: string): boolean {
+  if (a === b) return true;
+  const n = Math.min(a.length, b.length);
+  if (n < 4 || Math.abs(a.length - b.length) > 2) return false;
+  const limit = n >= 7 ? 2 : 1;
+  // Bounded Levenshtein — these are single words, so the table is tiny.
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[b.length] <= limit;
+}
+
+/**
+ * The library exercises a written name most likely MEANT — offered, never applied.
+ *
+ * ⚠ THIS IS NOT A LOOSER `matchExercise`. That function answers "what IS this?" and refuses to guess;
+ * this one answers "what might you mean?" and is only ever shown as a choice the athlete taps. A name
+ * the matcher left alone ("lat pulldwon", "DB row", "one arm row") reached nothing and could only be
+ * fixed in the builder afterwards (PO, 2026-09-22: *"letting them connect it to an exercise"*).
+ *
+ * Ranked by how many of the written words appear (a typo counts), then by how few words the candidate
+ * adds. A candidate must share a word that is not just equipment — "dumbbell" alone suggests nothing.
+ */
+export function suggestExercises(written: string, catalog: readonly CatalogEntry[], limit = 3): MatchResult[] {
+  const q = [...tokenize(written)];
+  if (!q.length) return [];
+  const scored: { entry: CatalogEntry; hits: number; extra: number }[] = [];
+  for (const entry of catalog) {
+    const t = [...tokenize(entry.name)];
+    const matched = q.filter((w) => t.some((x) => closeWord(w, x)));
+    if (!matched.some((w) => !EQUIPMENT_PREFERENCE.includes(w))) continue;
+    if (matched.length < Math.ceil(q.length / 2)) continue;
+    scored.push({ entry, hits: matched.length, extra: t.length - matched.length });
+  }
+  scored.sort((a, b) => b.hits - a.hits || a.extra - b.extra || a.entry.name.length - b.entry.name.length);
+  return scored.slice(0, limit).map((s) => ({ key: s.entry.key, name: s.entry.name, byPreference: false }));
 }

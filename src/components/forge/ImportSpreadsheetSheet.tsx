@@ -6,7 +6,8 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { readProgramPhoto } from '@/data/program-photo-live';
-import { resolveExerciseName } from '@/domain/exercise-picker/data';
+import { catalogForMatching, resolveExerciseName } from '@/domain/exercise-picker/data';
+import { suggestExercises } from '@/domain/program/exercise-match';
 import { parseProgramTable, summarize, type ParsedWeek } from '@/domain/program/import-parse';
 import { distanceUnitFor, fmtDistanceIn, fmtDuration, type CardioActivity } from '@/domain/workout/conditioning';
 import { pickTextFile } from '@/lib/pick-text-file';
@@ -449,6 +450,24 @@ export function ImportPreview({
       ),
     );
 
+  /**
+   * "Did you mean…" — link a name the library did not recognise to an exercise it has.
+   *
+   * Every row with that written name changes, in every week: a 12-week program says "one arm row" 36
+   * times, and fixing it once should fix it everywhere. What they wrote is kept as the note, so the
+   * athlete's own words still reach the workout (PO, 2026-09-22).
+   */
+  const linkName = (written: string, to: string) =>
+    onChange(
+      preview.map((w) => ({
+        ...w,
+        days: w.days.map((d) => ({
+          ...d,
+          items: d.items.map((i) => (i.name === written ? { ...i, name: to, note: i.note ?? written } : i)),
+        })),
+      })),
+    );
+
   /** "Add another week" — copies the last week forward, which is how a block is usually extended. */
   const addPreviewWeek = () => {
     if (!preview.length) return;
@@ -530,7 +549,33 @@ export function ImportPreview({
                             // A bout is not looked up: its key is the `cardio:<activity>` convention.
                             if (it.kind === 'cardio') return null;
                             const hit = resolveName(it.name);
-                            if (!hit) return <Text style={styles.impItemUnmatched}>not in the library · kept as written</Text>;
+                            if (!hit) {
+                              const guesses = suggestExercises(it.name, libraryCatalog());
+                              return (
+                                <>
+                                  <Text style={styles.impItemUnmatched}>not in the library · kept as written</Text>
+                                  {guesses.length ? (
+                                    <View style={styles.impGuesses}>
+                                      <Text style={styles.impGuessLabel}>Did you mean</Text>
+                                      {guesses.map((g) => (
+                                        <Pressable
+                                          key={g.key}
+                                          onPress={() => linkName(it.name, g.name)}
+                                          accessibilityRole="button"
+                                          accessibilityLabel={`Use ${g.name} for ${it.name}`}
+                                          hitSlop={4}
+                                          style={({ pressed }) => [styles.impGuess, pressed ? styles.impPressed : null]}
+                                        >
+                                          <Text style={styles.impGuessText} numberOfLines={1}>
+                                            {g.name}
+                                          </Text>
+                                        </Pressable>
+                                      ))}
+                                    </View>
+                                  ) : null}
+                                </>
+                              );
+                            }
                             if (hit.name.toLowerCase() === it.name.trim().toLowerCase()) return null;
                             return (
                               <Text style={styles.impItemMatched} numberOfLines={1}>
@@ -579,6 +624,13 @@ export function ImportPreview({
           ) : null}
         </View>
   );
+}
+
+/** The library as the matcher sees it — built once, on first need, not on every render. */
+let catalogCache: ReturnType<typeof catalogForMatching> | null = null;
+function libraryCatalog() {
+  catalogCache ??= catalogForMatching();
+  return catalogCache;
 }
 
 function ImpStep({ glyph, label, onPress }: { glyph: string; label: string; onPress: () => void }) {
@@ -641,6 +693,10 @@ const styles = StyleSheet.create({
   impItemSource: { fontFamily: flFont.sans, fontSize: 10.5, lineHeight: 14, color: flColor.gray600 },
   impItemMatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.bronze400 },
   impItemUnmatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray600 },
+  impGuesses: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 5, marginTop: 4 },
+  impGuessLabel: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray400 },
+  impGuess: { paddingVertical: 3, paddingHorizontal: 8, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, maxWidth: 220 },
+  impGuessText: { fontFamily: flFont.sans, fontSize: 10.5, fontWeight: '600', color: flColor.bronze300 },
   impTarget: { fontFamily: flFont.sans, fontSize: 12, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
   impSteppers: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   impStep: { width: 22, height: 22, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.charcoal500, alignItems: 'center', justifyContent: 'center' },
