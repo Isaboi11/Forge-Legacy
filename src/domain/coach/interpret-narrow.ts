@@ -179,6 +179,11 @@ export function narrowPatch(p: unknown, todayISO: string): Obj {
   const focus = text(p.dayFocus, 60);
   if (focus) out.dayFocus = focus;
 
+  // Exercises they do not want, as named — the app resolves the names to catalogue keys (≤5, ≤40 chars).
+  if (Array.isArray(p.avoid)) {
+    const avoid = [...new Set(p.avoid.filter((x): x is string => typeof x === 'string').map((x) => x.trim()).filter((x) => x.length >= 2 && x.length <= 40))].slice(0, 5);
+    if (avoid.length) out.avoid = avoid;
+  }
   if (Array.isArray(p.focusMuscles)) {
     const muscles = [...new Set(p.focusMuscles.map((m) => oneOf(FOCUS_MUSCLES, m)).filter((m) => m !== undefined))];
     if (muscles.length) out.focusMuscles = muscles;

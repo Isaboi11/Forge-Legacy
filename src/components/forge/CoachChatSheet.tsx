@@ -35,6 +35,7 @@ import { useUnits } from '@/lib/settings';
 import { askHolt, askSourcesLive, type AskTurn } from '@/data/coach-ask-live';
 import { buildAskContext } from '@/domain/coach/ask-context';
 import { resolveEditIntent, type EditIntentResolution } from '@/domain/coach/edit-intent';
+import { resolveAvoid } from '@/domain/coach/avoid';
 import { useDictation } from '@/hooks/useDictation';
 import { launchRowsFor, templateRowsFor } from '@/domain/coach/save-shapes';
 import { saveTemplate } from '@/data/templates-live';
@@ -1730,7 +1731,12 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
         );
       case 'patch': {
         /* The model hands back the athlete's own words for a day focus; the engine needs a `DayFocus`. */
-        const { dayFocus: said, ...rest } = r.patch as Partial<ChatState> & { dayFocus?: unknown };
+        const { dayFocus: said, avoid, ...rest } = r.patch as Partial<ChatState> & { dayFocus?: unknown; avoid?: unknown };
+        /* What they said to leave out is removed by the ENGINE, so Holt's "no lunges" is a fact on the card. */
+        const avoidKeys = Array.isArray(avoid) ? resolveAvoid(avoid.filter((x): x is string => typeof x === 'string'), PICKER_DB) : [];
+        if (avoidKeys.length) {
+          (rest as Partial<ChatState>).excludeExercises = [...new Set([...(constraints.excludeExercises ?? []), ...avoidKeys])];
+        }
         const focus = typeof said === 'string' ? focusFromText(said) ?? focusFromText(text) : null;
         const patch: Partial<ChatState> = { ...rest, ...(focus ? { dayFocus: focus } : {}) };
         if (r.say) say({ kind: 'holt', text: r.say });
