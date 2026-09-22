@@ -256,3 +256,34 @@ test('"Same as Day 1" copies Day 1 — Couch-to-5K used to lose Days 2 and 3 (PO
   // A copy, not the same object: a − / + on Day 2 in the preview must not change Day 1.
   assert.notEqual(repeat.weeks[0].days[0].items[0], repeat.weeks[0].days[1].items[0]);
 });
+
+// ── the PO's own photo ──────────────────────────────────────────────────────
+
+test('the PO\'s 3-week photo: three printed blocks with the same day names are three weeks (2026-09-22)', async () => {
+  // The model's REAL transcript of the photo, byte for byte. Three identical tables — Monday / Tuesday /
+  // Thursday / Friday — with no Week column; only the reps change (8–12, 6–8, 4–6). All three Mondays
+  // used to merge into one day of fifteen lifts.
+  const { readFileSync } = await import('node:fs');
+  const tsvText = readFileSync(new URL('./fixtures/po-3-week-photo.tsv', import.meta.url), 'utf8');
+  const r = ok(parseProgramTable(tsvText));
+  assert.equal(r.weeks.length, 3);
+  for (const w of r.weeks) {
+    // Calendar order, although the two-column photo reads Monday, THURSDAY, Tuesday, Friday.
+    assert.deepEqual(w.days.map((d) => d.name.split('-')[0]), ['Monday', 'Tuesday', 'Thursday', 'Friday']);
+    assert.ok(!w.days.flatMap((d) => d.items.map((i) => i.name)).includes('Abs'), '"Abs" is a section, not a lift');
+  }
+  assert.deepEqual(r.weeks.map((w) => w.days[0].items[0].reps), [8, 6, 4], 'each week keeps its own reps');
+  const legRaise = r.weeks[0].days[1].items.find((i) => i.name === 'Lying Leg Raise');
+  assert.deepEqual([legRaise.sets, legRaise.reps, legRaise.repsAssumed], [3, 10, false], '"3 X 10-15" in the Sets cell');
+});
+
+test('…but one stray row for an earlier day still joins that day — only a whole repeated block is a new week', () => {
+  const r = ok(parseProgramTable(tsv([
+    ['Day', 'Exercise', 'Sets', 'Reps'],
+    ['Push', 'Bench', '4', '8'],
+    ['Pull', 'Row', '4', '8'],
+    ['Push', 'Dips', '3', '10'],
+  ])));
+  assert.equal(r.weeks.length, 1);
+  assert.deepEqual(r.weeks[0].days.map((d) => [d.name, d.items.length]), [['Push', 2], ['Pull', 1]]);
+});

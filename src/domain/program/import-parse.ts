@@ -219,13 +219,32 @@ class Builder {
       .sort((a, b) => a[0] - b[0])
       .map(([index, days]) => ({
         index,
-        days: [...days.values()].map((d, i) => ({
+        days: calendarOrder([...days.values()]).map((d, i) => ({
           name: d.name,
           letter: LETTERS[i] ?? String(i + 1),
           items: d.items,
         })),
       }));
   }
+}
+
+const WEEK_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+/**
+ * When EVERY day in a week is named for a weekday, the week runs in calendar order.
+ *
+ * A program printed as two columns — Monday beside Thursday, Tuesday beside Friday — is read row by
+ * row, left then right, and came out Monday, Thursday, Tuesday, Friday (PO's three-week photo,
+ * 2026-09-22). The weekday is the author's own statement of the order, so it wins over where the text
+ * happened to sit. A week that names even one day otherwise ("Push", "Day 3") keeps its written order.
+ */
+function calendarOrder<T extends { name: string }>(days: T[]): T[] {
+  const keys = days.map((d) => weekdayKey(d.name));
+  if (days.length < 2 || keys.some((k) => k == null)) return days;
+  return days
+    .map((d, i) => ({ d, i, at: WEEK_ORDER.indexOf(keys[i] as string) }))
+    .sort((a, b) => a.at - b.at || a.i - b.i)
+    .map((x) => x.d);
 }
 
 function item(name: string, sets: number | undefined, reps: number | undefined): ParsedItem {
@@ -588,6 +607,9 @@ function dayLabelKey(label: string): string {
   if (numbered) return `day${Number(numbered[1])}`;
   return weekdayKey(t) ?? '';
 }
+
+/** A section inside a day, named on a row of its own in a table — never an exercise. */
+const SECTION_WORD = /^(?:abs|abdominals|core|warm\s*-?\s*ups?|cool\s*-?\s*downs?|accessor(?:y|ies)|finishers?|conditioning|mobility|stretching|cardio)$/i;
 
 /** Does this text carry a sets×reps of its own? */
 function hasScheme(text: string): boolean {
@@ -1138,6 +1160,35 @@ export function parseProgramTable(raw: string): ParseResult {
    * repeated header and goes straight to work still keeps that work.
    */
   let inPreamble = false;
+  /*
+   * THE DAYS ALREADY USED IN THIS WEEK — for a sheet with no Week column that simply prints the block
+   * again for the next week. The PO's three-week program is three identical tables, Monday / Tuesday /
+   * Thursday / Friday each time, with only the reps changing; keyed by day name, all three Mondays
+   * merged into one day of fifteen lifts (2026-09-22). A day coming round AGAIN, after other days have
+   * been used, is the next week — the same rule the typed-text reader applies to weekdays.
+   */
+  const daysThisWeek = new Set<string>();
+  /*
+   * ⚠ ONLY WHEN THE WHOLE WEEK REPEATS. A single stray row — "Push / Pull / Push: Dips", the author
+   * adding a lift they forgot — is the same day, and has always merged. A printed-again week is every
+   * day coming back as a block, the same number of times each. So the Day column's RUNS are counted
+   * first: every day in the same number of runs, two or more, means that many weeks.
+   */
+  const repeatsAsWeeks = (() => {
+    if (at.week !== undefined || at.day === undefined) return false;
+    const runs = new Map<string, number>();
+    let prev = '';
+    for (const line of lines.slice(headerAt + 1)) {
+      const d = (splitLine(line, delimiter)[at.day] ?? '').trim();
+      if (!d || d === prev) continue;
+      // The header row, come round again for the next block — not a day.
+      if ((COLUMNS.day as readonly string[]).includes(d.toLowerCase().replace(/[^a-z]/g, ''))) continue;
+      runs.set(d, (runs.get(d) ?? 0) + 1);
+      prev = d;
+    }
+    const counts = new Set(runs.values());
+    return runs.size >= 1 && counts.size === 1 && [...counts][0] >= 2;
+  })();
 
   /** "Exercise" / "Movement" / "Lift" in the Exercise column — a repeat of the header, not a lift. */
   const isHeaderWord = (s: string) =>
@@ -1160,6 +1211,7 @@ export function parseProgramTable(raw: string): ParseResult {
         const wk = weekHeading(cell.trim());
         if (wk != null) {
           week = wk;
+          daysThisWeek.clear();
           inPreamble = true;
           break;
         }
@@ -1185,6 +1237,7 @@ export function parseProgramTable(raw: string): ParseResult {
     if (bannerWeek != null || bannerDay) {
       if (bannerWeek != null) {
         week = bannerWeek;
+        daysThisWeek.clear();
         inPreamble = true;
       }
       if (bannerDay) {
@@ -1212,13 +1265,44 @@ export function parseProgramTable(raw: string): ParseResult {
     }
 
     const wkCell = at.week !== undefined ? firstNumber(cells[at.week]) : undefined;
-    if (wkCell != null) week = wkCell;
+    if (wkCell != null && wkCell !== week) {
+      week = wkCell;
+      daysThisWeek.clear();
+    }
 
     const dayCell = at.day !== undefined ? (cells[at.day] ?? '').trim() : '';
-    if (dayCell) day = dayCell;
+    if (dayCell && dayCell !== day) {
+      // Only when the sheet has no Week column to say so itself.
+      if (repeatsAsWeeks && daysThisWeek.has(dayCell)) {
+        week += 1;
+        daysThisWeek.clear();
+      }
+      day = dayCell;
+    }
+    if (dayCell) daysThisWeek.add(dayCell);
+
+    /*
+     * "Abs", "Core", "Warm-up" on a row of their own with nothing in Sets or Reps — a section label
+     * inside the day, not a lift. It imported as an exercise called "Abs" at an invented 3×10.
+     */
+    const setsText = at.sets !== undefined ? (cells[at.sets] ?? '').trim() : '';
+    const repsText = at.reps !== undefined ? (cells[at.reps] ?? '').trim() : '';
+    if (!setsText && !repsText && SECTION_WORD.test(cleanExerciseName(rawName))) continue;
 
     let sets = at.sets !== undefined ? firstNumber(cells[at.sets]) : undefined;
     let reps = at.reps !== undefined ? firstNumber(cells[at.reps]) : undefined;
+
+    /*
+     * The whole scheme typed into the SETS cell — "3 X 10-15" with Reps left empty. First-number
+     * reading took the 3 and lost the reps, which then showed as an assumed 10.
+     */
+    if (reps == null && setsText) {
+      const inSets = extractScheme(setsText).scheme;
+      if (inSets.sets != null && inSets.reps != null) {
+        sets = inSets.sets;
+        reps = inSets.reps;
+      }
+    }
 
     // A single "Sets x Reps" column, when that is how the sheet keeps it.
     if ((sets == null || reps == null) && at.scheme !== undefined) {
