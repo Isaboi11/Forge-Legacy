@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 // DASHBOARD PASTE COPY of supabase/functions/coach-interpret/index.ts — GENERATED, DO NOT EDIT.
 //
-// The real function imports src/domain/coach/medical-routing.ts and src/domain/coach/interpret-narrow.ts,
-// which the Supabase dashboard editor cannot reach. This copy inlines each module in place of its import
-// line; nothing else differs. Regenerate from the three source files rather than editing this one.
+// The real function imports src/domain/coach/medical-routing.ts and src/domain/coach/interpret-narrow.ts, which
+// the Supabase dashboard editor cannot reach. This copy inlines those modules in place of their import
+// lines; nothing else differs. Regenerate with `node scripts/build-coach-interpret-deploy.mjs`.
 //
 // Supabase dashboard → Edge Functions → Deploy a new function → "Via Editor" → name it
 // coach-interpret → replace the editor contents with this whole file → Deploy.
@@ -266,7 +266,7 @@ export const stopsForMedical = (text: string): boolean => medicalRoute(text) !==
  */
 
 export const ROUTES = [
-  'patch', 'answer', 'edit', 'import', 'pick', 'medical_stop', 'unclear', 'crisis', 'urgent', 'care',
+  'patch', 'answer', 'edit', 'import', 'pick', 'build', 'build_day', 'medical_stop', 'unclear', 'crisis', 'urgent', 'care',
 ] as const;
 export type ModelRoute = (typeof ROUTES)[number];
 
@@ -597,7 +597,9 @@ Every reply is one of these routes.
 
 **answer** — a question or a remark rather than a request to build: how training works, how to do a lift, running, recovery, sleep, general eating, motivation, nerves about the gym, fitting training around work and kids, how the app works, or just talk ("thanks coach", "I hit a PR", "I feel lazy today"). Put Holt's reply in say. If the athlete also gave fields, return route patch with the fields and your reply in say instead.
 
-**edit** — they want to change the program they are already running. When it is one of these, return edit with what they named, in their own words: swap an exercise (op swap), change sets (sets), change reps (reps), change a run or ride's distance (distance) or time (duration), or rebuild a day around something (rebuild). The app finds the session and the exercise in their real program, so copy their words ("bench", "leg day", "tomorrow") rather than guessing a full name or a date. Never choose a replacement, a number or a day they did not say; leave it out and the app asks. scope is rest_of_block only when they say so ("from now on", "every week", "for the rest of the block"), this_week only when they say so, otherwise leave it out. Anything else about the running program (move a day, skip a week, make it shorter) is edit with no edit object, and the app opens the edit flow.
+**edit** — they want to change the program they are already running. When it is one of these, return edit with what they named, in their own words: swap an exercise (op swap), change sets (sets), change reps (reps), change a run or ride's distance (distance) or time (duration), or rebuild a day around something (rebuild). The app finds the session and the exercise in their real program, so copy their words ("bench", "leg day", "tomorrow") rather than guessing a full name or a date. Never choose a replacement, a number or a day they did not say; leave it out and the app asks. scope is rest_of_block only when they say so ("from now on", "every week", "for the rest of the block"), this_week only when they say so, otherwise leave it out. Anything else about the running program (move a day, skip a week, "less cardio", "more arm work", "I'm on vacation next week") is edit with no edit object, and the app opens the edit flow — never a new program, and never focusMuscles, when the words are about changing what they already run.
+
+A change for TODAY only is not a program edit: "only 25 minutes today", "I'm at a hotel gym today", "legs are fried, something light today" → patch with dayFocus (use "full body" when they named no focus) and sessionMinutes/environment as said. The app builds one session.
 
 - "swap bench for dumbbell press on Monday" → edit, edit: { op: "swap", exercise: "bench", to: "dumbbell press", day: "Monday" }
 - "4 sets of squats tomorrow" → edit, edit: { op: "sets", exercise: "squats", sets: 4, day: "tomorrow" }
@@ -605,11 +607,20 @@ Every reply is one of these routes.
 - "only 20 minutes on the bike Wednesday" → edit, edit: { op: "duration", exercise: "bike", minutes: 20, day: "Wednesday" }
 - earlier the athlete asked to swap bench for dumbbell press on Monday, and now types "actually Friday" → edit, edit: { op: "swap", exercise: "bench", to: "dumbbell press", day: "Friday" } (the whole edit again, with the change applied)
 
+**build** — they want a program built but gave nothing usable yet ("idk just make me something", "can you build me a routine", "help me get in shape", "what's the plan"). Return nothing else — the app starts the questions. **build_day** — the same for ONE session with nothing usable ("give me a workout", "something for today pls").
+
 **import** — they already have a program (from a coach, a PDF, a spreadsheet, another app) and want it in. Return nothing else.
 
 **pick** — they want you to recommend one of the app's ready-made programs rather than build one. Return nothing else.
 
 **unclear** — you could not place what they said. Use it for gibberish, not for questions — a question gets answer.
+
+# Phrasings people actually use
+
+- Hybrid weeks said casually are days: "ppl + run 2x" → days: lift, lift, lift, run, lift, lift, run (six lifts as a push/pull/legs twice through is fine; when unsure, lifts on the named count and runs on the rest) with daysAsGiven false; "lift 3, run 2" → days: lift, run, lift, run, lift, rest, rest, daysAsGiven false; "hybrid athlete who can run a half" → goal strength or muscle AND days with two or three runs — ask nothing, the app asks what is missing.
+- A lift target is a goal plus that lift pinned: "225 bench by summer", "first 300 squat" → goal strength, pinned: [{ name: "bench" }].
+- Voice dictation mishears numbers: "for days" = 4 days, "to days" / "too days" = 2 days, "tree" = 3, "fore" = 4, "an hour" = 60 minutes, "half an hour" = 30.
+- One word or an emoji of thanks or agreement ("ok", "k", "lol", "👍", "🙏") is answer with a short line, never unclear.
 
 # Soreness is not an injury, and this distinction is the important one
 

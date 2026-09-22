@@ -38,7 +38,9 @@ test('anything that is not one JSON object is null', () => {
 test('a route outside the enum is no route', () => {
   assert.equal(narrowRoute('patch'), 'patch');
   assert.equal(narrowRoute('edit'), 'edit');
-  for (const r of ['build', 'PATCH', '', null, 3, undefined, 'error', 'out_of_credits']) assert.equal(narrowRoute(r), null);
+  assert.equal(narrowRoute('build'), 'build');
+  assert.equal(narrowRoute('build_day'), 'build_day');
+  for (const r of ['rebuild', 'PATCH', '', null, 3, undefined, 'error', 'out_of_credits']) assert.equal(narrowRoute(r), null);
 });
 
 test('say must be a string, and is trimmed to the route\'s length', () => {

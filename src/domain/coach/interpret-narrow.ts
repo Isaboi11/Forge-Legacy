@@ -16,7 +16,7 @@
  */
 
 export const ROUTES = [
-  'patch', 'answer', 'edit', 'import', 'pick', 'medical_stop', 'unclear', 'crisis', 'urgent', 'care',
+  'patch', 'answer', 'edit', 'import', 'pick', 'build', 'build_day', 'medical_stop', 'unclear', 'crisis', 'urgent', 'care',
 ] as const;
 export type ModelRoute = (typeof ROUTES)[number];
 

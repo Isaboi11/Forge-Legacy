@@ -1649,8 +1649,17 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
           action: 'Tap an answer, or send it again in a moment.',
         });
       case 'unclear':
-        say({ kind: 'holt', text: pick('not_understood') });
-        if (q) say({ kind: 'chips', chips: q.chips, ctl: q.ctl });
+        /* With a question on the table, "didn't catch that" and the choices again is right. With nothing on
+           the table (an emoji, "ok", a stray line) it reads as a coach who is not listening — he offers the
+           doors instead (live run 2026-09-22: 23 small-talk lines got "didn't catch that"). */
+        if (q) {
+          say({ kind: 'holt', text: pick('not_understood') }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+          return;
+        }
+        say(
+          { kind: 'holt', text: "I'm here. What are we working on?" },
+          { kind: 'chips', chips: OPENERS.slice(0, 4).map((label) => ({ label, patch: {} })) },
+        );
         return;
       /* A question mid-conversation is answered, and the question that was on the table comes back —
          asking "what's RPE?" while he wants to know your days should not lose the build. */
@@ -1665,7 +1674,19 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
            rather than walking them through five taps to say what they already said. */
         if (r.to === 'edit' && r.edit) return editByWords(r.edit);
         return tapChip(
-          { label: r.to === 'edit' ? 'Change my program' : r.to === 'import' ? "I've got a program already" : 'Which one should I pick?', patch: {} },
+          {
+            label:
+              r.to === 'edit'
+                ? 'Change my program'
+                : r.to === 'import'
+                  ? "I've got a program already"
+                  : r.to === 'build'
+                    ? 'Build me something'
+                    : r.to === 'build_day'
+                      ? 'What should I train today?'
+                      : 'Which one should I pick?',
+            patch: {},
+          },
           false,
         );
       case 'patch': {

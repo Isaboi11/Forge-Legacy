@@ -49,7 +49,7 @@ export type InterpretResult =
    * `resolveEditIntent` in `domain/coach/edit-intent.ts`. Without it, open the tap flow.
    */
   | { kind: 'door'; to: 'edit'; edit?: EditIntent }
-  | { kind: 'door'; to: 'import' | 'pick' }
+  | { kind: 'door'; to: 'import' | 'pick' | 'build' | 'build_day' }
   | { kind: 'crisis' }
   | { kind: 'urgent' }
   | { kind: 'care' }
@@ -136,6 +136,8 @@ export async function interpretTyped(
       }
       case 'import':
       case 'pick':
+      case 'build':
+      case 'build_day':
         return { kind: 'door', to: route };
       case 'crisis':
       case 'urgent':
