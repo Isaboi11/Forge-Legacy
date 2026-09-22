@@ -297,3 +297,34 @@ test('an edited program is materialised per week, like a swap', () => {
   assert.equal(r.structure.weekPlans.length, s.weeks);
   assert.deepEqual(r.structure.days, r.structure.weekPlans[0].days, 'the repeat template mirrors week one');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚠ A WEEK WITH A REST DAY IN IT (Decision Queue #23, stress test 2026-09-21)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/* Mon · (rest) · Wed · Fri. Schedule index 2 is Friday; raw index 2 is Wednesday. Holt's own blocks never
+   have a gap, which is why this hid — imported programs do. */
+const gapped = () => {
+  const row = (name, catalogKey, sets) => ({ name, catalogKey, sets, reps: 8, kind: 'strength' });
+  const d = (name, main) => ({ name, letter: '', warmup: [], main, cooldown: [] });
+  return {
+    name: 'Gapped', weeks: 1, daysPerWeek: 3, vary: false,
+    days: [d('Mon', [row('Bench', 'bench', 3)]), d('Rest', []), d('Wed', [row('Squat', 'squat', 4)]), d('Fri', [row('Pull-up', 'pullup', 2)])],
+  };
+};
+const setsBy = (s) => Object.fromEntries(s.weekPlans[0].days.flatMap((x) => x.main.map((m) => [m.name, m.sets])));
+
+test('⚠ an edit lands on the session asked for when the week has a rest day', () => {
+  const r = setPrescription(gapped(), [], at(0, 2, 0), { sets: 5 });
+  assert.ok(r.ok);
+  assert.deepEqual(setsBy(r.structure), { Bench: 3, Squat: 4, 'Pull-up': 5 }, 'Friday changed, Wednesday did not');
+});
+
+test('⚠ a trained Wednesday is not rewritten by an edit to Friday, and is refused directly', () => {
+  const marks = [mark(0, 1)]; // schedule index 1 = Wednesday
+  const r = setPrescription(gapped(), marks, at(0, 2, 0), { sets: 5 });
+  assert.ok(r.ok);
+  assert.equal(setsBy(r.structure).Squat, 4);
+  const refused = setPrescription(gapped(), marks, at(0, 1, 0), { sets: 5 });
+  assert.equal(refused.ok, false);
+});

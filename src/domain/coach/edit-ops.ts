@@ -34,6 +34,7 @@
 import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/programs-live';
 import type { SessionMark } from '../program/progress-core.ts';
 import { plannedDays, totalSessions } from '../program/progress-core.ts';
+import { rawIndexOf } from '../program/schedule-edit.ts';
 
 import { fillSlot, isCompound, type CandidateContext, type CatalogExercise } from './candidates.ts';
 import { prescribeReps, roleFor, type PrescribeContext } from './prescribe.ts';
@@ -122,6 +123,20 @@ function commit(before: ProgramStructure, plans: { days: ProgramDay[] }[]): Edit
   return { ok: true, structure: after };
 }
 
+/**
+ * The session at SCHEDULE index `dayIndex` in week `w` — the n-th training day, not the n-th array slot.
+ *
+ * ⚠ Every caller (`edit-chat.ts`, the marks, `canEdit`) counts training days only, while `plans[w].days`
+ * keeps the rest days. Indexing the raw array directly edited the wrong session on any week with a gap —
+ * Friday's pull-ups asked for, Wednesday's squats changed (Decision Queue #23, stress test 2026-09-21).
+ */
+function sessionAt(plans: { days: ProgramDay[] }[], w: number, dayIndex: number): ProgramDay | undefined {
+  const days = plans[w]?.days;
+  if (!days) return undefined;
+  const i = rawIndexOf(days, dayIndex);
+  return i < 0 ? undefined : days[i];
+}
+
 /** The weeks an edit touches, skipping any session already trained or skipped. */
 function targetWeeks(
   structure: ProgramStructure,
@@ -162,15 +177,15 @@ export function swapExercise(
   if (!canEdit(marks, at.weekIndex, at.dayIndex)) return { ok: false, refusal: trainedRefusal() };
 
   const plans = materialise(structure);
-  const source = plans[at.weekIndex]?.days[at.dayIndex]?.main[at.exerciseIndex];
+  const source = sessionAt(plans, at.weekIndex, at.dayIndex)?.main[at.exerciseIndex];
   if (!source) return { ok: false, refusal: noSuchExercise() };
 
   for (const w of targetWeeks(structure, marks, at.weekIndex, at.dayIndex, scope)) {
-    const row = plans[w]?.days[at.dayIndex]?.main[at.exerciseIndex];
+    const row = sessionAt(plans, w, at.dayIndex)?.main[at.exerciseIndex];
     // Only where the same movement is actually sitting in that slot. A later week whose plan already
     // differs is not the exercise the athlete was looking at, and changing it would be a surprise.
     if (!row || row.catalogKey !== source.catalogKey) continue;
-    plans[w].days[at.dayIndex].main[at.exerciseIndex] = {
+    sessionAt(plans, w, at.dayIndex)!.main[at.exerciseIndex] = {
       ...row,
       catalogKey: replacement.key,
       name: replacement.name,
@@ -196,13 +211,13 @@ export function setPrescription(
   if (!canEdit(marks, at.weekIndex, at.dayIndex)) return { ok: false, refusal: trainedRefusal() };
 
   const plans = materialise(structure);
-  const source = plans[at.weekIndex]?.days[at.dayIndex]?.main[at.exerciseIndex];
+  const source = sessionAt(plans, at.weekIndex, at.dayIndex)?.main[at.exerciseIndex];
   if (!source) return { ok: false, refusal: noSuchExercise() };
 
   const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(n)));
 
   for (const w of targetWeeks(structure, marks, at.weekIndex, at.dayIndex, scope)) {
-    const row = plans[w]?.days[at.dayIndex]?.main[at.exerciseIndex];
+    const row = sessionAt(plans, w, at.dayIndex)?.main[at.exerciseIndex];
     if (!row || row.catalogKey !== source.catalogKey) continue;
     const updated: ProgramExercise = { ...row };
     if (next.sets != null) updated.sets = clamp(next.sets, 1, 8);
@@ -210,7 +225,7 @@ export function setPrescription(
     if (next.repsMax !== undefined) {
       updated.repsMax = next.repsMax == null ? null : clamp(next.repsMax, 1, 60);
     }
-    plans[w].days[at.dayIndex].main[at.exerciseIndex] = updated;
+    sessionAt(plans, w, at.dayIndex)!.main[at.exerciseIndex] = updated;
   }
 
   return commit(structure, plans);
@@ -233,7 +248,7 @@ export function setCardioTarget(
   if (!canEdit(marks, at.weekIndex, at.dayIndex)) return { ok: false, refusal: trainedRefusal() };
 
   const plans = materialise(structure);
-  const source = plans[at.weekIndex]?.days[at.dayIndex]?.main[at.exerciseIndex];
+  const source = sessionAt(plans, at.weekIndex, at.dayIndex)?.main[at.exerciseIndex];
   if (!source) return { ok: false, refusal: noSuchExercise() };
   if (source.kind !== 'cardio') {
     return {
@@ -243,13 +258,13 @@ export function setCardioTarget(
   }
 
   for (const w of targetWeeks(structure, marks, at.weekIndex, at.dayIndex, scope)) {
-    const row = plans[w]?.days[at.dayIndex]?.main[at.exerciseIndex];
+    const row = sessionAt(plans, w, at.dayIndex)?.main[at.exerciseIndex];
     if (!row || row.kind !== 'cardio' || row.activity !== source.activity) continue;
     const updated: ProgramExercise = { ...row };
     if (next.targetMi !== undefined) updated.targetMi = next.targetMi;
     if (next.targetSec !== undefined) updated.targetSec = next.targetSec;
     if (next.targetPaceSec !== undefined) updated.targetPaceSec = next.targetPaceSec;
-    plans[w].days[at.dayIndex].main[at.exerciseIndex] = updated;
+    sessionAt(plans, w, at.dayIndex)!.main[at.exerciseIndex] = updated;
   }
 
   return commit(structure, plans);
@@ -281,7 +296,7 @@ export function rebuildDay(
   if (!canEdit(marks, at.weekIndex, at.dayIndex)) return { ok: false, refusal: trainedRefusal() };
 
   const plans = materialise(structure);
-  const template = plans[at.weekIndex]?.days[at.dayIndex];
+  const template = sessionAt(plans, at.weekIndex, at.dayIndex);
   if (!template) {
     return {
       ok: false,
@@ -292,7 +307,7 @@ export function rebuildDay(
   const patternOf = new Map(pool.map((e) => [e.key, e.pattern]));
 
   for (const w of targetWeeks(structure, marks, at.weekIndex, at.dayIndex, scope)) {
-    const day = plans[w]?.days[at.dayIndex];
+    const day = sessionAt(plans, w, at.dayIndex);
     if (!day) continue;
     const used = new Set<string>();
     day.main = day.main.map((row, i) => {

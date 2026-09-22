@@ -38,6 +38,12 @@ import {
   dayPreamble,
   INTRO,
   MEDICAL_STOP,
+  CRISIS_KICKER,
+  CRISIS_STOP,
+  URGENT_KICKER,
+  URGENT_STOP,
+  CARE_KICKER,
+  CARE_STOP,
   OPENERS,
   STOP_KICKER,
   WALL,
@@ -77,6 +83,7 @@ import {
   type RefusalCard,
   type Turn,
 } from '@/domain/coach/chat-core';
+import { medicalRoute } from '@/domain/coach/medical-routing';
 import { pick } from '@/domain/coach/rulebook/voice';
 import { setStartChoice } from '@/lib/program-intent';
 import type { CoachIntent } from '@/hooks/useCoachDoor';
@@ -1343,6 +1350,11 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     /* ⚠ CHECKED BEFORE ANYTHING ELSE, and before any attempt to understand the sentence as training.
        Someone describing an injury is not answering the question on the table, and treating their knee
        as an answer to "how many days a week" would be the worst possible reading of it. */
+    /* ⛔ A person in danger first — before the injury check, whose copy is a physio referral. */
+    const guard = medicalRoute(text);
+    if (guard === 'crisis') return void say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
+    if (guard === 'urgent') return void say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
+    if (guard === 'care') return void say({ kind: 'stop', text: CARE_STOP, kicker: CARE_KICKER });
     if (isMedical(text)) {
       say({ kind: 'stop', text: MEDICAL_STOP });
       return;
@@ -2489,7 +2501,7 @@ function TurnView({
       /* Anything medical stops flat. Recessed and quiet — NO red, because nothing has gone wrong. */
       return (
         <View style={styles.stop}>
-          <Text style={styles.stopKicker}>{STOP_KICKER}</Text>
+          <Text style={styles.stopKicker}>{turn.kicker ?? STOP_KICKER}</Text>
           <Text style={styles.stopText}>{turn.text}</Text>
         </View>
       );

@@ -230,3 +230,64 @@ test('case does not matter', () => {
   assert.equal(medicalRoute('I TORE MY ACL'), 'acute');
   assert.equal(medicalRoute('My Shoulder Hurts, Swap Tomorrow'), 'clear');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. ⛔ CRISIS, EMERGENCY, DISORDERED EATING — stress test 2026-09-21
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('⛔ self-harm routes to crisis, never to "I didn\'t catch that"', () => {
+  for (const s of [
+    'i want to hurt myself',
+    "honestly i've been thinking about ending it",
+    "if i dont lose this weight i'd rather not exist",
+    'kms if i miss my PR lol',
+    'i punish myself when i skip the gym like i hit myself',
+    'sometimes I think about suicide',
+  ]) assert.equal(medicalRoute(s), 'crisis', s);
+});
+
+test('⛔ an emergency happening now routes to urgent, not to a physio referral', () => {
+  for (const s of [
+    'chest pain + sweating + nausea during workout rn',
+    'I blacked out for a second on a heavy deadlift',
+    'I keep fainting when I stand up after squats',
+    "I think I'm having an asthma attack",
+    'my heart is racing and it won\'t settle',
+    'my pee is cola colored after that workout',
+    'Me duele el pecho durante el ejercicio',
+  ]) assert.equal(medicalRoute(s), 'urgent', s);
+});
+
+test('⛔ disordered eating stated as a behaviour routes to care; recovery talk does not', () => {
+  for (const s of ['I throw up after meals to stay lean', 'eating 500 calories a day and training twice', 'I purge after big meals'])
+    assert.equal(medicalRoute(s), 'care', s);
+  assert.notEqual(medicalRoute("I'm in recovery from bulimia, keep calorie talk out of my program"), 'care');
+});
+
+test('the words that stopped harmless lines no longer do', () => {
+  for (const s of [
+    'I tore my gym shorts on a squat. Anyway, legs today?',
+    'strained relations w my gym buddy lol, need a solo program',
+    'Fractured my schedule this week, can we compress to 3 days?',
+    'Torn between PPL and upper/lower',
+    'Should I take creatine?',
+    'How long should I rest between sets?',
+    'Is it bad to lift every day?',
+    'do i need to eat breakfast',
+    'ending my session early today',
+  ]) assert.equal(medicalRoute(s), 'clear', s);
+});
+
+test('…and the same words with anatomy still stop', () => {
+  for (const s of ['I tore my hamstring', 'strained my lat on pull-ups', 'torn calf', 'stress fracture in my foot'])
+    assert.equal(medicalRoute(s), 'acute', s);
+});
+
+test('⛔ the emergencies the live run sent to the physio line now say "call"', () => {
+  for (const s of [
+    "I have numbness in my groin and I've lost bladder control since my back tweak.",
+    "my calf is swollen and hot and now i'm short of breath",
+    'I got stung by a bee on my run and my throat is swelling.',
+  ]) assert.equal(medicalRoute(s), 'urgent', s);
+  assert.equal(medicalRoute('i scratch my arms till they bleed when i feel fat'), 'crisis');
+});

@@ -181,6 +181,52 @@ const OVERHEAD_FINISH: readonly string[] = [
 ];
 
 /**
+ * Arms locked overhead, filed under patterns neither overhead ban names (stress test 2026-09-21).
+ *
+ * `no_overhead` and `shoulders` ban `Vertical Push`, so an overhead triceps extension (Elbow Extension), an
+ * overhead carry (Carry), an overhead squat (Squat) and an overhead throw (Horizontal Pull) all went
+ * through — 379 of 1,800 `no_overhead` programs carried one, mostly at home on a band. PO, same day: the
+ * arms-overhead movements go for BOTH complaints.
+ */
+const ARMS_OVERHEAD: readonly string[] = [
+  'band-overhead-triceps-extension',
+  'barbell-overhead-triceps-extension',
+  'cable-overhead-triceps-extension',
+  'ez-bar-overhead-triceps-extension',
+  'single-arm-cable-overhead-triceps-extension',
+  'single-arm-dumbbell-overhead-triceps-extension',
+  'two-hand-dumbbell-overhead-triceps-extension',
+  'barbell-overhead-carry',
+  'dumbbell-overhead-carry',
+  'kettlebell-overhead-carry',
+  'overhead-carry',
+  'barbell-overhead-squat',
+  'medicine-ball-overhead-throw',
+];
+
+/**
+ * Jumping and skipping filed outside `Power / Plyometric`, which is all `knees` and `no_jumping` ban.
+ *
+ * Found by the 2026-09-21 stress test: a cardio day for an athlete who ticked "No jumping" was *Jump Rope ·
+ * Jump Rope Intervals*, identical to the day with no limitation at all. The hops sit under Hinge, the
+ * lunge/squat jumps under Squat, the rope work under Cardio / Locomotion. The burpee deadlift is here
+ * because a burpee ends in a jump.
+ */
+const JUMPS_OUTSIDE_PLYO: readonly string[] = [
+  'jump-rope',
+  'jump-rope-intervals',
+  'double-under',
+  'alternating-lunge-jump',
+  'jump-squat',
+  'split-squat-jump',
+  'step-up-box-jump',
+  'forward-hurdle-hop',
+  'lateral-hurdle-hop',
+  'hurdle-jump',
+  'dumbbell-burpee-deadlift',
+];
+
+/**
  * Catalogue keys a limitation removes on top of its patterns.
  *
  * ⚠ EVERY KEY IS ASSERTED TO EXIST (`limitation-keys.test.mjs`). A typo here is a safeguard that silently
@@ -188,12 +234,12 @@ const OVERHEAD_FINISH: readonly string[] = [
  * believes they have been heard, and gets the movement anyway.
  */
 export const LIMITATION_EXCLUDE_KEYS: Record<Limitation, readonly string[]> = {
-  shoulders: [...UPRIGHT_ROWS, ...OVERHEAD_FINISH],
-  knees: [],
+  shoulders: [...UPRIGHT_ROWS, ...OVERHEAD_FINISH, ...ARMS_OVERHEAD],
+  knees: JUMPS_OUTSIDE_PLYO,
   lower_back: [],
-  no_jumping: [],
+  no_jumping: JUMPS_OUTSIDE_PLYO,
   // Not the upright rows: this is a statement about where the load goes, not about the shoulder joint.
-  no_overhead: OVERHEAD_FINISH,
+  no_overhead: [...OVERHEAD_FINISH, ...ARMS_OVERHEAD],
   no_barbell: [],
   no_running: [],
 };
@@ -225,6 +271,10 @@ export const limitationExcludeKeys = (l: Limitation): readonly string[] => LIMIT
  * So the group is removed whole, and losing the EZ-bar is the honest price of `EQUIP_UNLOCK` being
  * all-or-nothing. Derived from that constant rather than copied out of it — if the unlock group ever
  * changes, this follows instead of silently drifting back into the same bug.
+ *
+ * ⚠ AND IT DID DRIFT: `ezbar` later moved out of `EQUIP_UNLOCK.barbell` into its own `ez_bar` group, so
+ * the EZ-bar came back for `no_barbell` athletes (128 of 1,800 programs, stress test 2026-09-21). Both
+ * groups are named now.
  */
 export const LIMITATION_EQUIPMENT: Record<Limitation, readonly string[]> = {
   shoulders: [],
@@ -232,7 +282,10 @@ export const LIMITATION_EQUIPMENT: Record<Limitation, readonly string[]> = {
   lower_back: [],
   no_jumping: [],
   no_overhead: [],
-  no_barbell: EQUIP_UNLOCK.barbell ?? ['barbell', 'plates', 'rack', 'ezbar', 'trapbar', 'smith'],
+  no_barbell: [
+    ...(EQUIP_UNLOCK.barbell ?? ['barbell', 'plates', 'rack', 'trapbar', 'smith']),
+    ...(EQUIP_UNLOCK.ez_bar ?? ['ezbar']),
+  ],
   no_running: [],
 };
 

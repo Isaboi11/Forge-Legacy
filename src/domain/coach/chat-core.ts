@@ -66,7 +66,8 @@ export type Turn =
   | { kind: 'edit'; card: EditCard }
   | { kind: 'refusal'; card: RefusalCard }
   | { kind: 'explain'; name: string; catalogKey: string | null }
-  | { kind: 'stop'; text: string }
+  /** `kicker` absent → STOP_KICKER. Crisis, emergency and care stops carry their own. */
+  | { kind: 'stop'; text: string; kicker?: string }
   | { kind: 'error'; text: string; sub: string; action: string }
   | { kind: 'saved'; text: string }
   | { kind: 'wall' };
@@ -872,33 +873,63 @@ export function interpret(text: string, q: Question): Partial<CoachConstraints> 
    * would fall through "One week" (no digit in it), past "4 weeks" and "8 weeks", and land on "12 weeks"
    * — a twelve-week block from an athlete who asked for one. Snapped to the nearest rung instead.
    */
-  if (q.id === 'size') {
-    const w = Number(t.replace(/[^0-9.]/g, ''));
-    if (Number.isFinite(w) && w > 0) {
-      return { weeks: BLOCK_LENGTHS.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a)) };
-    }
+  /*
+   * ⚠ EXACT OR NOTHING (stress test 2026-09-21). This runs BEFORE the model, so anything it places the
+   * model never sees — and it placed 163 of 756 short probes wrongly: "0" weekly miles → 8 (a substring of
+   * "5 to 10 miles"), "no" → advanced, "not sure" → no limitations, "1 hour" → 30 minutes, "in 3 months"
+   * → a race in 3 weeks, and a typed date crashed `isoInWeeks`. So it now places only what cannot be
+   * misread, and hands everything else to the model (or asks again, offline).
+   */
+  // Two numbers ("3-4", "45 to 60", "2 or 3") is a question back, not an answer.
+  if (/\d\s*(-|–|to|or)\s*\d/.test(t)) return null;
+  // A date ("11/15", "2026-11-01") is not a count of anything.
+  if (/\d+\s*[/-]\s*\d+/.test(t)) return null;
+  const numMatch = t.match(/^(?:about\s+|like\s+|maybe\s+|~)?(\d+(?:\.\d+)?)\s*([a-z]*)\s*[.!]*$/);
+  const n = numMatch ? Number(numMatch[1]) : NaN;
+  const unit = numMatch?.[2] ?? '';
+
+  if (q.id === 'size' && Number.isFinite(n) && n > 0 && /^(|w|wk|wks|week|weeks)$/.test(unit)) {
+    return { weeks: BLOCK_LENGTHS.reduce((a, b) => (Math.abs(b - n) < Math.abs(a - n) ? b : a)) };
   }
 
-  // An exact or contained chip label is the common case: people type what they see.
+  // The label typed as shown, or a sentence that contains it. NOT the label containing what was typed —
+  // that direction is how "a" became "General health" and "0" became "5 to 10 miles".
+  // "Shoulders and knees" is two answers to a question that takes several. Hand it over whole.
+  const several = /,|&|\+|\band\b|\balso\b|\bplus\b/.test(t);
   for (const c of q.chips) {
+    // A chip whose meaning is not in its patch (the day-focus taps carry `focus`, "Run a race" narrows
+    // the question) cannot be answered by typing its name: `{}` advances nothing and re-asks forever.
+    if (Object.keys(c.patch).length === 0) continue;
     const label = c.label.toLowerCase();
-    if (t === label || label.includes(t) || t.includes(label)) return c.patch;
+    // …and only when little else was said. "4 days, about an hour, at the Y" is three answers; taking one
+    // and dropping two is worse than letting the model hear all of it.
+    if (t === label || (!several && label.length >= 4 && t.includes(label) && t.length <= label.length + 10)) return c.patch;
   }
 
-  // A bare number answers the two questions that are counts, and nothing else. Scoped to the question on
-  // the table so "4" cannot mean four days on one turn and four miles on the next.
-  const n = Number(t.replace(/[^0-9.]/g, ''));
-  if (Number.isFinite(n) && n > 0) {
-    if (q.id === 'days' && n >= 2 && n <= 6) return { daysPerWeek: Math.round(n) };
-    if (q.id === 'time') {
-      const nearest = [30, 45, 60, 75].reduce((a, b) => (Math.abs(b - n) < Math.abs(a - n) ? b : a));
-      return { sessionMinutes: nearest as CoachConstraints['sessionMinutes'] };
+  // A bare number, scoped to the question on the table so "4" cannot mean four days on one turn and four
+  // miles on the next. A unit the question does not use (hours on a miles question) is not an answer.
+  if (Number.isFinite(n)) {
+    if (q.id === 'days' && n >= 2 && n <= 6 && /^(|d|day|days|x)$/.test(unit)) return { daysPerWeek: Math.round(n) };
+    if (q.id === 'time' && n > 0) {
+      // A bare 1 or 1.5 is hours; a bare 7 or 10 is neither an hour count nor a real session length.
+      const bareHours = unit === '' && n <= 3;
+      const bareUnclear = unit === '' && n > 3 && n < 15;
+      const minutes = /^(h|hr|hrs|hour|hours)$/.test(unit) || bareHours ? n * 60
+        : bareUnclear ? NaN
+        : /^(|m|min|mins|minute|minutes)$/.test(unit) ? n : NaN;
+      if (Number.isFinite(minutes)) {
+        const nearest = [30, 45, 60, 75].reduce((a, b) => (Math.abs(b - minutes) < Math.abs(a - minutes) ? b : a));
+        return { sessionMinutes: nearest as CoachConstraints['sessionMinutes'] };
+      }
     }
-    if (q.id === 'race_base') return { currentWeeklyMi: n };
-    if (q.id === 'race_when') return { raceDate: isoInWeeks(Math.round(n)) };
+    // 0 is a real answer here — the one question where it is the most common one.
+    if (q.id === 'race_base' && n >= 0 && n <= 150 && /^(|mi|mile|miles)$/.test(unit)) return { currentWeeklyMi: n };
+    if (q.id === 'race_when' && n > 0 && n <= 104 && /^(|w|wk|wks|week|weeks)$/.test(unit)) return { raceDate: isoInWeeks(Math.round(n)) };
   }
 
-  if (q.id === 'limits' && /^(no|none|nothing|nope|all good|i'm fine)/.test(t)) return { limitations: [] };
+  // The WHOLE answer is a no. "no running" starts with "no" and means the opposite of nothing, and "not
+  // sure" is not an answer at all.
+  if (q.id === 'limits' && /^(no|none|nothing|nope|nah|all good|i'?m fine|i'?m good|n\/a)[.! ]*$/.test(t)) return { limitations: [] };
 
   return null;
 }
@@ -1633,6 +1664,24 @@ export function isMedical(text: string): boolean {
 export const STOP_KICKER = 'OUT OF MY LANE';
 export const MEDICAL_STOP =
   "That's a physio's job, not mine. Get it looked at — I'll still be here after.";
+
+/*
+ * ⛔ THREE STOPS THAT ARE NOT A PHYSIO REFERRAL (stress test 2026-09-21). "That's a physio's job" was the
+ * only stop copy, and it went to "I want to hurt myself" and to chest pain mid-set. Routed by
+ * `medicalRoute()` — 'crisis', 'urgent', 'care' — in code, before any model.
+ *
+ * ⚠ DRAFT COPY, AWAITING PO SIGN-OFF. 988 is the US Suicide & Crisis Lifeline and 911 US emergency; an
+ * athlete outside the US needs their local numbers, which the app does not yet know.
+ */
+export const CRISIS_KICKER = 'I HEAR YOU';
+export const CRISIS_STOP =
+  "I'm really glad you told me. This is bigger than training, and you deserve support right now. In the US you can call or text 988, any time, free. If you're in danger, call 911. I'll be here when you're ready.";
+export const URGENT_KICKER = 'STOP TRAINING';
+export const URGENT_STOP =
+  "Stop now. Chest pain, fainting, trouble breathing, a sudden bad headache — that needs help right away. Call 911 or get to an emergency room. Don't wait on it.";
+export const CARE_KICKER = 'NOT THIS ONE';
+export const CARE_STOP =
+  "I can't build around that one safely. A doctor or a registered dietitian is the right person for it, and I'd want them in your corner. When you're ready, I'll build you training that makes you stronger.";
 
 /**
  * ⛔ THE CHAT IS UNLIMITED. PO decision, 2026-08-09.

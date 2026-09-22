@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import type { CoachConstraints } from '@/domain/coach/constraints';
 import type { Question } from '@/domain/coach/chat-core';
 import { interpret as interpretLocally } from '@/domain/coach/chat-core';
+import { medicalRoute } from '@/domain/coach/medical-routing';
 
 /**
  * THE ONE PLACE THE APP TALKS TO A MODEL.
@@ -36,6 +37,10 @@ export type InterpretResult =
   | { kind: 'patch'; patch: Partial<CoachConstraints>; say: string | null; remaining: number | null }
   /** Injury language, or a question about the body. The caller shows `MEDICAL_STOP`. */
   | { kind: 'medical' }
+  /** Self-harm, an emergency now, or disordered eating. The caller shows CRISIS_ / URGENT_ / CARE_STOP. */
+  | { kind: 'crisis' }
+  | { kind: 'urgent' }
+  | { kind: 'care' }
   /** Placed by neither the matcher nor the model. The caller shows `NOT_UNDERSTOOD` and asks again. */
   | { kind: 'unclear' }
   /** The month's credits are gone. A commercial state, not a coaching one. */
@@ -59,6 +64,12 @@ export async function interpretTyped(
 ): Promise<InterpretResult> {
   const trimmed = text.trim();
   if (!trimmed) return { kind: 'unclear' };
+
+  // 0. The code guard, before the local matcher: "i want to hurt myself" contains "i", which the chip
+  //    matcher will happily read as an answer. Offline or not, a person in danger gets the right words.
+  const guard = medicalRoute(trimmed);
+  if (guard === 'crisis' || guard === 'urgent' || guard === 'care') return { kind: guard };
+  if (guard !== 'clear') return { kind: 'medical' };
 
   // 1. Free, local, instant. Only meaningful when a question is on the table — the chips belong to it.
   if (question) {
@@ -98,6 +109,10 @@ export async function interpretTyped(
       }
       case 'medical_stop':
         return { kind: 'medical' };
+      case 'crisis':
+      case 'urgent':
+      case 'care':
+        return { kind: route };
       case 'out_of_credits': {
         const d = data as { remaining?: number; allowance?: number };
         return { kind: 'out_of_credits', remaining: d.remaining ?? 0, allowance: d.allowance ?? 0 };
