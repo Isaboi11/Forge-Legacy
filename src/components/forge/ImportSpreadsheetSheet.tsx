@@ -570,17 +570,6 @@ export function ImportPreview({
                               style={styles.impItemNameInput}
                               numberOfLines={1}
                             />
-                            <Pressable
-                              onPress={() => removeItem(wi, di, ii)}
-                              accessibilityRole="button"
-                              accessibilityLabel={`Remove ${it.name}`}
-                              hitSlop={8}
-                              style={({ pressed }) => [styles.impRemove, pressed ? styles.impPressed : null]}
-                            >
-                              <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2.6} strokeLinecap="round">
-                                <Path d="M6 6l12 12M18 6L6 18" />
-                              </Svg>
-                            </Pressable>
                           </View>
                           {/*
                             ══ THE SENTENCE IT CAME FROM ══
@@ -655,6 +644,19 @@ export function ImportPreview({
                           <ImpStep label={`More reps of ${it.name}`} glyph="+" onPress={() => bumpPreview(wi, di, ii, 'reps', 1)} />
                         </View>
                         )}
+                        {/* ⚠ LAST IN THE ROW, not inside the name. Tucked beside the name it sat UNDER the
+                            steppers, which take the row's right-hand side — visible, and untappable. */}
+                        <Pressable
+                          onPress={() => removeItem(wi, di, ii)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove ${it.name}`}
+                          hitSlop={10}
+                          style={({ pressed }) => [styles.impRemove, pressed ? styles.impPressed : null]}
+                        >
+                          <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2.6} strokeLinecap="round">
+                            <Path d="M6 6l12 12M18 6L6 18" />
+                          </Svg>
+                        </Pressable>
                       </View>
                     ))}
                   </View>
@@ -748,7 +750,7 @@ const styles = StyleSheet.create({
   impNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   /* An input rather than text, because a misread name is the one thing the steppers could never fix. */
   impItemNameInput: { flex: 1, fontFamily: flFont.sans, fontSize: 12.5, color: flColor.cream100, paddingVertical: 2 },
-  impRemove: { width: 18, height: 18, alignItems: 'center', justifyContent: 'center' },
+  impRemove: { width: 20, height: 20, marginLeft: 2, alignItems: 'center', justifyContent: 'center' },
   impSectionTag: { fontFamily: flFont.sans, fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, color: flColor.bronze400 },
   impItemSource: { fontFamily: flFont.sans, fontSize: 10.5, lineHeight: 14, color: flColor.gray600 },
   impItemMatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.bronze400 },
