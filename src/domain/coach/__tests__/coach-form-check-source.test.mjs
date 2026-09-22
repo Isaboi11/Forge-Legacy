@@ -47,11 +47,12 @@ test('a guarded request returns a route and spends nothing', () => {
   // Nothing between the guard and its return: no RPC, no fetch, no logging of the note.
   const between = SRC.slice(at('const guarded = guardRoute('), at('if (guarded) return json({ route: guarded });'));
   assert.ok(!/rpc\(|fetch\(/.test(between), 'nothing may happen between classifying and stopping');
-  assert.match(SRC, /import \{ medicalRoute \} from '\.\.\/\.\.\/\.\.\/src\/domain\/coach\/medical-routing\.ts';/);
+  assert.match(SRC, /import \{ medicalRoute, mentionsDiscomfort \} from '\.\.\/\.\.\/\.\.\/src\/domain\/coach\/medical-routing\.ts';/);
 });
 
 test('the lift AND the note are both classified, as one piece of text', () => {
-  assert.match(SRC, /guardRoute\(`\$\{lift\}\\n\$\{note\}`\)/);
+  assert.match(SRC, /const said = `\$\{lift\}\\n\$\{note\}`;/);
+  assert.match(SRC, /guardRoute\(said\)/);
   // The note reaches the model only in the user turn, and only after the guard.
   assert.ok(at('guardRoute(') < at('The athlete says:'));
 });
@@ -225,4 +226,13 @@ test('the dashboard paste copy is current, and carries both guards', () => {
 
 test('the domain module has no imports, which is what lets it be inlined at all', () => {
   assert.ok(!/^import /m.test(DOMAIN), 'an import here breaks the paste-copy generator and `node --test`');
+});
+
+test("⛔ the guard uses the BROAD discomfort list, before the credit", () => {
+  // The narrow route lets "my knee hurts, swap it" through for the chat; a video of a body must not be
+  // read against it (PO 2026-09-22). Live that day: it reached the model and spent credits.
+  assert.match(SRC, /mentionsDiscomfort\(said\)/);
+  const guardAt = SRC.indexOf("mentionsDiscomfort(said)");
+  const creditAt = SRC.indexOf(".rpc('coach_ai_spend_credits'");
+  assert.ok(guardAt > 0 && creditAt > guardAt, "the guard must run before the credit is reserved");
 });

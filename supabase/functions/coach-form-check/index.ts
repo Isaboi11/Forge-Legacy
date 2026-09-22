@@ -63,7 +63,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 // ⚠ ONE SOURCE FOR THE INPUT GUARD — the same classifier the chat and the interpreter run.
-import { medicalRoute } from '../../../src/domain/coach/medical-routing.ts';
+import { medicalRoute, mentionsDiscomfort } from '../../../src/domain/coach/medical-routing.ts';
 // ⚠ ONE SOURCE FOR THE OUTPUT GUARD AND EVERY CAP — the app imports the same module.
 import {
   capFrames,
@@ -211,7 +211,14 @@ Deno.serve(async (req) => {
   // ⚠ THE LIFT NAME IS CLASSIFIED TOO, NOT ONLY THE NOTE. "squat" arrives in the same field an athlete
   // can type anything into, and "shoulder press since I tore my cuff" is a sentence somebody will put
   // there. Both are joined and read as one piece of text, so neither field can launder the other.
-  const guarded = guardRoute(`${lift}\n${note}`);
+  //
+  // ⚠ AND THE LINE IS BROADER HERE THAN IN THE CHAT. `medicalRoute` lets "my shoulder hurts, swap
+  // tomorrow" through on purpose — in a conversation that is a substitution the app gives away free. This
+  // is a VIDEO OF A BODY, and reading frames against "my knee hurts on rep 3" is exactly what we will not
+  // do (PO, 2026-09-22, legal caution). Live test the same day: that note reached the model and spent
+  // credits, because the narrow route is correctly clear. `mentionsDiscomfort` is the broad list.
+  const said = `${lift}\n${note}`;
+  const guarded = guardRoute(said) ?? (mentionsDiscomfort(said) ? ('medical_stop' as const) : null);
   if (guarded) return json({ route: guarded });
 
   // ── 1. The frames ───────────────────────────────────────────────────────────

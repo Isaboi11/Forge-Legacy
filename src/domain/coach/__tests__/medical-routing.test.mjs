@@ -325,3 +325,14 @@ test('plain training questions still get through', () => {
   for (const s of ['how much should I bench as a beginner?', 'how much protein do I need', 'is creatine worth it?', 'what is RPE?', 'how long should I rest between sets?'])
     assert.equal(medicalRoute(s), 'clear', s);
 });
+
+test('⛔ a form check is stopped by ANY mention of discomfort — broader than the chat, on purpose', async () => {
+  const { mentionsDiscomfort } = await import('../medical-routing.ts');
+  // Live 2026-09-22: this note reached the vision model and spent credits, because the narrow route is
+  // correctly clear for it — in the chat it is a swap request.
+  for (const s of ['my knee hurts on rep 3', 'left shoulder is sore', 'elbow aches at lockout', 'slight niggle in my back', 'tweaked it last week'])
+    assert.equal(mentionsDiscomfort(s), true, s);
+  assert.equal(medicalRoute('my knee hurts on rep 3'), 'clear', 'the chat still performs the swap');
+  for (const s of ['Back Squat', 'bench press, film from the side', 'check my depth', 'deadlift'])
+    assert.equal(mentionsDiscomfort(s), false, s);
+});

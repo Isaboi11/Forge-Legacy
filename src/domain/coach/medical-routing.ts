@@ -152,6 +152,20 @@ export const DOSE =
 
 const SYMPTOM_QUESTION = new RegExp(SYMPTOM_QUESTION_SOURCE(), 'i');
 
+/**
+ * ⚠ ANY MENTION OF DISCOMFORT — the BROAD list, on purpose, and not what `medicalRoute` uses.
+ *
+ * `medicalRoute` deliberately lets "my shoulder hurts, swap tomorrow" through: in the chat that is a
+ * substitution request the app gives away free, and stopping it was the defect this file was written to
+ * end. A FORM CHECK is the opposite case — a video of a person moving, where "my knee hurts on rep 3" is
+ * the sentence a coach app must not read frames against (PO 2026-09-22, legal caution). Live test the same
+ * day: that note reached the model and spent credits, because the narrow route is correctly clear.
+ *
+ * So the broad check lives here, next to the narrow one, and each caller picks the line it needs.
+ */
+export const mentionsDiscomfort = (text: string): boolean =>
+  /\b(hurt\w*|pain\w*|ach(e|es|ing|y)|sore\w*|injur\w*|tweak(ed|ing)?|strain\w*|niggl\w*|uncomfortable|discomfort|stiff\w*|flare[-\s]?up|twinge)\b/i.test(text ?? '');
+
 export type MedicalRoute =
   /** Nothing clinical. Proceed. */
   | 'clear'
