@@ -361,6 +361,12 @@ function RootNavigator() {
         <Stack.Screen name="week-template/[id]" />
         <Stack.Screen name="forge-templates" />
         <Stack.Screen name="home-gym" />
+        {/* Nutrition (Phase 1). A food diary is health information — P-6-Amendment-002 P6-A2-D1 makes
+            every nutrition table owner-only, and these two screens must be inside the guard for the
+            same reason: a signed-out visitor should meet sign-in, not a chromed empty diary. */}
+        <Stack.Screen name="log-food" />
+        <Stack.Screen name="food-detail" />
+        <Stack.Screen name="nutrition-targets" />
         <Stack.Screen name="account-settings" />
         {/* P-8. A plain push in BOTH entry contexts, deliberately: the spec's two contexts differ only in
             the dismiss affordance (§2.3), which `?from=gate` switches, and M-7 dismisses before routing —

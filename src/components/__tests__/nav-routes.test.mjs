@@ -34,11 +34,16 @@ const EXPECTED = [
   { name: 'workouts', href: '/workouts', label: 'Workouts' },
   { name: 'legacy', href: '/legacy', label: 'Legacy' },
   { name: 'squads', href: '/squads', label: 'Squads' },
+  /* ⚠ THE FIFTH SLOT IS NUTRITION, NOT COMMUNITIES. `Community-Architecture-Amendment-002` (2026-07-07)
+     reserved it for Communities and Communities was never shipped (`src/deferred/community.tsx`);
+     `Nutrition-Architecture-v1.0` NUT-D1 (PO, 2026-09-21 — "farthest right") reassigns it. Nutrition is
+     APPENDED so Legacy keeps the emphasised centre tile, which the next test still asserts. */
+  { name: 'nutrition', href: '/nutrition', label: 'Nutrition' },
 ];
 
-test('exactly 4 tabs in order, with correct names + hrefs (Community shelved)', () => {
+test('exactly 5 tabs in order, with correct names + hrefs (Nutrition has the 5th slot; Community shelved)', () => {
   const triggers = tabTriggers();
-  assert.equal(triggers.length, 4, 'expected 4 tabs');
+  assert.equal(triggers.length, 5, 'expected 5 tabs');
   assert.deepEqual(
     triggers,
     EXPECTED.map((e) => ({ name: e.name, href: e.href })),
@@ -53,7 +58,7 @@ test('labels match the dc (incl. "Workouts" plural)', () => {
 
 test('Legacy is the emphasized (centre) tab', () => {
   assert.match(tabs, /label="Legacy"\s+emphasized/);
-  // and it is positioned 3rd of 4 (the emphasized centre tile)
+  // and it is positioned 3rd of 5 (the emphasized centre tile — Nutrition was appended, not inserted)
   assert.equal(tabTriggers()[2].name, 'legacy');
 });
 

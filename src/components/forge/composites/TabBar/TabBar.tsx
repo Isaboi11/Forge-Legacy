@@ -43,7 +43,14 @@ export interface TabBarButtonProps extends Omit<PressableProps, 'children'> {
 
 export function TabBarButton({ label, renderIcon, emphasized = false, isFocused = false, badge = 0, style: _triggerStyle, ...rest }: TabBarButtonProps) {
   const active = isFocused
-  const emph = emphasized && active
+  /*
+   * ⚠ THE TILE IS PERMANENT, NOT AN ACTIVE STATE. It used to appear only while Legacy was the open tab,
+   * so four screens out of five showed a bare icon. `Nutrition Home.dc.html`'s own `legacyTile()` draws
+   * it unconditionally ("carries a lit bronze tile app-wide"), and the PO asked for the same after
+   * seeing the bar with Nutrition selected. The label still follows focus, so the tile marks the
+   * signature destination without ever claiming to be the current one.
+   */
+  const emph = emphasized
   const color = active ? flColor.bronze400 : flColor.gray600
   const showBadge = badge > 0
 

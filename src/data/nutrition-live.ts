@@ -1,0 +1,546 @@
+import type { LogEntry, MealSlot, Targets } from '@/domain/nutrition/day';
+import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
+// The app's own id minter (Hermes has no `crypto.randomUUID` everywhere) — no new dependency.
+import { uuid } from '@/lib/app-session';
+import { supabase } from '@/lib/supabase';
+
+/**
+ * Nutrition data (0205) — the ONE read/write path for the food diary and its targets.
+ *
+ * ⚠ **THE DEVICE MINTS THE ID.** A food log is written in a kitchen on bad signal, so every write is an
+ * upsert on a client-generated uuid: a retry can never double-log. (`pending-save.ts` has no such key and
+ * needs `findCommittedWorkout` before every replay — this does not repeat that.)
+ *
+ * ⚠ **PRIVATE BY SCHEMA** (P6-A2-D1). Every query here is implicitly `athlete_id = auth.uid()` via RLS;
+ * there is no visibility column to read, and nothing here is ever fetched for another athlete.
+ *
+ * Every read degrades to empty when the migration has not been pasted yet — the same rule the rest of
+ * `src/data` follows, so the tab renders its empty state instead of an error on a stale database.
+ */
+
+export interface DayLog {
+  entries: LogEntry[];
+  targets: Targets | null;
+}
+
+interface EntryRow {
+  id: string;
+  meal: MealSlot;
+  name: string;
+  brand: string | null;
+  serving_label: string | null;
+  quantity: number;
+  kcal: number;
+  protein: number;
+  carb: number;
+  fat: number;
+}
+
+const toEntry = (r: EntryRow): LogEntry => ({
+  id: r.id,
+  meal: r.meal,
+  name: r.name,
+  brand: r.brand,
+  servingLabel: r.serving_label,
+  quantity: Number(r.quantity),
+  kcal: Number(r.kcal),
+  protein: Number(r.protein),
+  carb: Number(r.carb),
+  fat: Number(r.fat),
+});
+
+async function athleteId(): Promise<string | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
+
+/** One day: its entries in the order they were logged, plus the target in force on that date. */
+export async function fetchDay(iso: string): Promise<DayLog> {
+  const id = await athleteId();
+  if (!id) return { entries: [], targets: null };
+
+  const [entries, targets] = await Promise.all([
+    supabase
+      .from('food_log_entries')
+      .select('id, meal, name, brand, serving_label, quantity, kcal, protein, carb, fat')
+      .eq('athlete_id', id)
+      .eq('logged_on', iso)
+      .order('created_at', { ascending: true }),
+    fetchTargetsOn(iso),
+  ]);
+
+  if (entries.error) return { entries: [], targets: null };
+  return { entries: ((entries.data ?? []) as EntryRow[]).map(toEntry), targets };
+}
+
+/**
+ * The target in force on a date — the newest row at or before it (0205 §4). A target set today does not
+ * rewrite last week, which is what makes an old day still readable against what was true then.
+ */
+export async function fetchTargetsOn(iso: string): Promise<Targets | null> {
+  const id = await athleteId();
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from('nutrition_targets')
+    .select('kcal, protein_g, carb_g, fat_g')
+    .eq('athlete_id', id)
+    .lte('effective_from', iso)
+    .order('effective_from', { ascending: false })
+    .limit(1);
+  if (error || !data?.length) return null;
+  const t = data[0] as { kcal: number; protein_g: number; carb_g: number; fat_g: number };
+  return { kcal: t.kcal, protein: t.protein_g, carb: t.carb_g, fat: t.fat_g };
+}
+
+export interface NewEntry {
+  meal: MealSlot;
+  source: 'usda' | 'off' | 'fs' | 'custom' | 'quick';
+  sourceKey?: string | null;
+  name: string;
+  brand?: string | null;
+  servingLabel?: string | null;
+  quantity: number;
+  macros: PortionMacros;
+}
+
+/**
+ * Write food to a day. Returns the rows as they will appear, so a caller can show them before the server
+ * answers. `id` is minted here — resending the same batch is a no-op, not a duplicate.
+ */
+export async function addEntries(iso: string, entries: NewEntry[]): Promise<LogEntry[]> {
+  const id = await athleteId();
+  if (!id || !entries.length) return [];
+
+  const rows = entries.map((e) => ({
+    id: uuid(),
+    athlete_id: id,
+    logged_on: iso,
+    meal: e.meal,
+    source: e.source,
+    source_key: e.sourceKey ?? null,
+    name: e.name,
+    brand: e.brand ?? null,
+    serving_label: e.servingLabel ?? null,
+    grams: e.macros.grams,
+    quantity: e.quantity,
+    kcal: e.macros.kcal,
+    protein: e.macros.protein,
+    carb: e.macros.carb,
+    fat: e.macros.fat,
+  }));
+
+  const { error } = await supabase.from('food_log_entries').upsert(rows, { onConflict: 'id' });
+  if (error) throw error;
+
+  return rows.map((r) => toEntry(r as unknown as EntryRow));
+}
+
+export async function removeEntry(entryId: string): Promise<void> {
+  const { error } = await supabase.from('food_log_entries').delete().eq('id', entryId);
+  if (error) throw error;
+}
+
+/** Change a logged portion — Food Detail reopened on an existing row. */
+export async function updateEntry(
+  entryId: string,
+  patch: { quantity: number; servingLabel: string | null; macros: PortionMacros },
+): Promise<void> {
+  const { error } = await supabase
+    .from('food_log_entries')
+    .update({
+      quantity: patch.quantity,
+      serving_label: patch.servingLabel,
+      grams: patch.macros.grams,
+      kcal: patch.macros.kcal,
+      protein: patch.macros.protein,
+      carb: patch.macros.carb,
+      fat: patch.macros.fat,
+    })
+    .eq('id', entryId);
+  if (error) throw error;
+}
+
+/**
+ * Copy one meal from another day — the `.dc`'s "Copy yesterday" on an empty card. It copies the stored
+ * snapshots, so a food whose source has since changed still copies as it was eaten.
+ */
+export async function copyMealFrom(fromIso: string, toIso: string, meal: MealSlot): Promise<LogEntry[]> {
+  const id = await athleteId();
+  if (!id) return [];
+
+  const { data, error } = await supabase
+    .from('food_log_entries')
+    .select('meal, source, source_key, name, brand, serving_label, grams, quantity, kcal, protein, carb, fat')
+    .eq('athlete_id', id)
+    .eq('logged_on', fromIso)
+    .eq('meal', meal);
+  if (error || !data?.length) return [];
+
+  return addEntries(
+    toIso,
+    (data as Record<string, any>[]).map((r) => ({
+      meal: r.meal,
+      source: r.source,
+      sourceKey: r.source_key,
+      name: r.name,
+      brand: r.brand,
+      servingLabel: r.serving_label,
+      quantity: Number(r.quantity),
+      macros: {
+        kcal: Number(r.kcal),
+        protein: Number(r.protein),
+        carb: Number(r.carb),
+        fat: Number(r.fat),
+        grams: r.grams != null ? Number(r.grams) : null,
+      },
+    })),
+  );
+}
+
+/** Which meal "Copy yesterday" would fill — null when yesterday's slot was empty too. */
+export async function mealHasFood(iso: string, meal: MealSlot): Promise<boolean> {
+  const id = await athleteId();
+  if (!id) return false;
+  const { data } = await supabase
+    .from('food_log_entries')
+    .select('id')
+    .eq('athlete_id', id)
+    .eq('logged_on', iso)
+    .eq('meal', meal)
+    .limit(1);
+  return Boolean(data?.length);
+}
+
+export interface RecentFood {
+  key: string;
+  source: 'usda' | 'off' | 'fs' | 'custom';
+  name: string;
+  brand: string | null;
+  servingLabel: string | null;
+  quantity: number;
+  kcal: number;
+}
+
+/**
+ * Recent foods, most recent first and one row per food. Quick Adds are excluded — they have no food
+ * behind them, so there is nothing to log again.
+ */
+export async function fetchRecentFoods(limit = 30): Promise<RecentFood[]> {
+  const id = await athleteId();
+  if (!id) return [];
+  const { data, error } = await supabase
+    .from('food_log_entries')
+    .select('source, source_key, name, brand, serving_label, quantity, kcal, created_at')
+    .eq('athlete_id', id)
+    .not('source_key', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(limit * 4);
+  if (error) return [];
+
+  const seen = new Set<string>();
+  const out: RecentFood[] = [];
+  for (const r of (data ?? []) as Record<string, any>[]) {
+    if (seen.has(r.source_key)) continue;
+    seen.add(r.source_key);
+    out.push({
+      key: r.source_key,
+      source: r.source,
+      name: r.name,
+      brand: r.brand,
+      servingLabel: r.serving_label,
+      quantity: Number(r.quantity),
+      kcal: Number(r.kcal),
+    });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+/**
+ * Search outside Forge. Everything vendor-shaped lives in the `food-search` Edge Function (USDA, Open
+ * Food Facts, FatSecret when its keys exist) — the app never learns which source answered beyond the
+ * badge and the attribution line it must show.
+ */
+export async function searchFoods(q: string): Promise<CatalogFood[]> {
+  if (q.trim().length < 2) return [];
+  const { data, error } = await supabase.functions.invoke('food-search', { body: { q: q.trim() } });
+  if (error) return [];
+  return normaliseFoods(data);
+}
+
+/** Barcode lookup. An empty list means "not found", which is the Create Food path, not an error. */
+export async function lookupBarcode(barcode: string): Promise<CatalogFood[]> {
+  const { data, error } = await supabase.functions.invoke('food-search', { body: { barcode } });
+  if (error) return [];
+  return normaliseFoods(data);
+}
+
+function normaliseFoods(data: unknown): CatalogFood[] {
+  const foods = (data as { foods?: Record<string, any>[] })?.foods ?? [];
+  return foods.map((f) => ({
+    key: f.key,
+    source: f.source,
+    name: f.name,
+    brand: f.brand ?? null,
+    kcal100: f.kcal100 ?? null,
+    protein100: f.protein100 ?? null,
+    carb100: f.carb100 ?? null,
+    fat100: f.fat100 ?? null,
+    servings: (f.servings ?? []) as Serving[],
+    micros: f.micros ?? null,
+    attribution: f.attribution ?? null,
+  }));
+}
+
+/**
+ * One food, by the key a diary row or a search result carries — what Food Detail opens on.
+ *
+ * Looks in the catalogue first (every searched or scanned food is cached there by `food-search`), then in
+ * the athlete's own foods. Returns null when neither has it, which is the "this food is gone" case the
+ * screen shows rather than a half-drawn page of zeros.
+ */
+export async function fetchFoodByKey(key: string): Promise<CatalogFood | null> {
+  if (!key) return null;
+
+  if (key.includes(':')) {
+    const { data } = await supabase
+      .from('food_catalog')
+      .select('key, source, name, brand, kcal_100, protein_100, carb_100, fat_100, servings, micros')
+      .eq('key', key)
+      .maybeSingle();
+    if (data) {
+      const r = data as Record<string, any>;
+      return {
+        key: r.key,
+        source: r.source,
+        name: r.name,
+        brand: r.brand,
+        kcal100: r.kcal_100,
+        protein100: r.protein_100,
+        carb100: r.carb_100,
+        fat100: r.fat_100,
+        servings: (r.servings ?? []) as Serving[],
+        micros: r.micros ?? null,
+        attribution:
+          r.source === 'off' ? 'Data from Open Food Facts (ODbL)' : r.source === 'fs' ? 'Powered by fatsecret' : null,
+      };
+    }
+    return null;
+  }
+
+  const mine = await fetchMyFoods();
+  return mine.find((f) => f.key === key) ?? null;
+}
+
+/** The athlete's own foods, which search always ranks first. */
+export async function fetchMyFoods(): Promise<CatalogFood[]> {
+  const id = await athleteId();
+  if (!id) return [];
+  const { data, error } = await supabase
+    .from('user_foods')
+    .select('id, name, brand, kcal_100, protein_100, carb_100, fat_100, servings')
+    .eq('athlete_id', id)
+    .order('name');
+  if (error) return [];
+  return ((data ?? []) as Record<string, any>[]).map((r) => ({
+    key: r.id,
+    source: 'custom' as const,
+    name: r.name,
+    brand: r.brand,
+    kcal100: r.kcal_100,
+    protein100: r.protein_100,
+    carb100: r.carb_100,
+    fat100: r.fat_100,
+    servings: (r.servings ?? []) as Serving[],
+    micros: null,
+    attribution: null,
+  }));
+}
+
+export interface FavoriteFood {
+  key: string;
+  name: string;
+  brand: string | null;
+}
+
+/** Favourites are pointers (`food_catalog.key` or a `user_foods.id`), never copies of the numbers. */
+export async function fetchFavorites(): Promise<FavoriteFood[]> {
+  const id = await athleteId();
+  if (!id) return [];
+  const { data, error } = await supabase
+    .from('food_favorites')
+    .select('food_key, name, brand')
+    .eq('athlete_id', id)
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return ((data ?? []) as Record<string, any>[]).map((r) => ({ key: r.food_key, name: r.name, brand: r.brand }));
+}
+
+export async function setFavorite(food: { key: string; name: string; brand?: string | null }, on: boolean): Promise<void> {
+  const id = await athleteId();
+  if (!id) return;
+  if (on) {
+    await supabase
+      .from('food_favorites')
+      .upsert({ athlete_id: id, food_key: food.key, name: food.name, brand: food.brand ?? null }, { onConflict: 'athlete_id,food_key' });
+  } else {
+    await supabase.from('food_favorites').delete().eq('athlete_id', id).eq('food_key', food.key);
+  }
+}
+
+export interface SavedMeal {
+  id: string;
+  name: string;
+  kcal: number;
+  itemCount: number;
+}
+
+export async function fetchSavedMeals(): Promise<SavedMeal[]> {
+  const id = await athleteId();
+  if (!id) return [];
+  const { data, error } = await supabase
+    .from('saved_meals')
+    .select('id, name, saved_meal_items(kcal)')
+    .eq('athlete_id', id)
+    .order('name');
+  if (error) return [];
+  return ((data ?? []) as Record<string, any>[]).map((r) => {
+    const items = (r.saved_meal_items ?? []) as { kcal: number }[];
+    return {
+      id: r.id,
+      name: r.name,
+      kcal: Math.round(items.reduce((sum, i) => sum + Number(i.kcal), 0)),
+      itemCount: items.length,
+    };
+  });
+}
+
+/** Logging a saved meal writes every one of its foods into the day, in one tap. */
+export async function logSavedMeal(mealId: string, iso: string, meal: MealSlot): Promise<LogEntry[]> {
+  const { data, error } = await supabase
+    .from('saved_meal_items')
+    .select('source, source_key, name, brand, serving_label, grams, quantity, kcal, protein, carb, fat')
+    .eq('meal_id', mealId);
+  if (error || !data?.length) return [];
+
+  return addEntries(
+    iso,
+    (data as Record<string, any>[]).map((r) => ({
+      meal,
+      source: r.source,
+      sourceKey: r.source_key,
+      name: r.name,
+      brand: r.brand,
+      servingLabel: r.serving_label,
+      quantity: Number(r.quantity),
+      macros: {
+        kcal: Number(r.kcal),
+        protein: Number(r.protein),
+        carb: Number(r.carb),
+        fat: Number(r.fat),
+        grams: r.grams != null ? Number(r.grams) : null,
+      },
+    })),
+  );
+}
+
+/** Save a day's meal as a reusable one — "Usual Breakfast" from what is already logged. */
+export async function saveMealFromDay(name: string, iso: string, meal: MealSlot): Promise<void> {
+  const id = await athleteId();
+  if (!id) return;
+  const { data: rows } = await supabase
+    .from('food_log_entries')
+    .select('source, source_key, name, brand, serving_label, grams, quantity, kcal, protein, carb, fat')
+    .eq('athlete_id', id)
+    .eq('logged_on', iso)
+    .eq('meal', meal);
+  if (!rows?.length) return;
+
+  const { data: created, error } = await supabase
+    .from('saved_meals')
+    .insert({ athlete_id: id, name })
+    .select('id')
+    .single();
+  if (error || !created) throw error;
+
+  await supabase.from('saved_meal_items').insert(
+    (rows as Record<string, any>[]).map((r) => ({
+      meal_id: (created as { id: string }).id,
+      source: r.source,
+      source_key: r.source_key,
+      name: r.name,
+      brand: r.brand,
+      serving_label: r.serving_label,
+      grams: r.grams,
+      quantity: r.quantity,
+      kcal: r.kcal,
+      protein: r.protein,
+      carb: r.carb,
+      fat: r.fat,
+    })),
+  );
+}
+
+/** A food the athlete typed in themselves — Create Food, and the fallback when a barcode is unknown. */
+export async function createUserFood(food: {
+  name: string;
+  brand?: string | null;
+  kcal100: number;
+  protein100: number;
+  carb100: number;
+  fat100: number;
+  servings: Serving[];
+}): Promise<CatalogFood | null> {
+  const id = await athleteId();
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from('user_foods')
+    .insert({
+      athlete_id: id,
+      name: food.name,
+      brand: food.brand ?? null,
+      kcal_100: food.kcal100,
+      protein_100: food.protein100,
+      carb_100: food.carb100,
+      fat_100: food.fat100,
+      servings: food.servings,
+    })
+    .select('id')
+    .single();
+  if (error || !data) throw error;
+
+  return {
+    key: (data as { id: string }).id,
+    source: 'custom',
+    name: food.name,
+    brand: food.brand ?? null,
+    kcal100: food.kcal100,
+    protein100: food.protein100,
+    carb100: food.carb100,
+    fat100: food.fat100,
+    servings: food.servings,
+    attribution: null,
+  };
+}
+
+/** Targets are history rows: setting one writes today's row, it never edits an older one (NUT-D5). */
+export async function saveTargets(t: Targets, method: 'manual' | 'recommended' = 'manual'): Promise<void> {
+  const id = await athleteId();
+  if (!id) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const { error } = await supabase.from('nutrition_targets').upsert(
+    {
+      athlete_id: id,
+      effective_from: today,
+      method,
+      kcal: Math.round(t.kcal),
+      protein_g: Math.round(t.protein),
+      carb_g: Math.round(t.carb),
+      fat_g: Math.round(t.fat),
+    },
+    { onConflict: 'athlete_id,effective_from' },
+  );
+  if (error) throw error;
+}
