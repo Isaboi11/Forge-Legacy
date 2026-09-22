@@ -1399,10 +1399,13 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
                sheet — see `import_later`. The second door is also the only one that fits an athlete
                whose program is in their head rather than written down. */
             chips: [
-              { label: 'Paste it in', patch: {}, goTo: '/program-builder?o=import' },
-              /* The builder WITHOUT the paste sheet — an empty week grid to lay it out by hand. Same
-                 screen, different door, because they have nothing to paste. */
-              { label: BUILD_IT_OUT, patch: {}, goTo: '/program-builder' },
+              /* ⚠ BOTH OF THESE OPEN BUILD A PROGRAM'S CHOOSER, NOT THE BUILDER (PO, 2026-09-22): *"make
+                 sure [the text / picture / from scratch page] happens every time someone goes to build a
+                 program."* They went straight to the dense builder — one with its paste sheet up, one
+                 empty. The chooser has both of those and the photo read besides, so the chips keep their
+                 words and lose nothing; they just arrive where every other Build a Program door does. */
+              { label: 'Paste it in', patch: {}, goTo: '/program-guided' },
+              { label: BUILD_IT_OUT, patch: {}, goTo: '/program-guided' },
               { label: DECLINE_IMPORT, patch: {} },
             ],
           },

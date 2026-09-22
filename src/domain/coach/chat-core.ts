@@ -1293,8 +1293,9 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
   },
   {
     q: 'Import a program',
-    a: "Paste it into the Program Builder — a table, a spreadsheet, a plan somebody wrote out. I'll read the weeks out of it and show you what I found before anything is saved.",
-    route: '/program-builder?o=import',
+    a: "Open Build a Program and paste it in — a table, a spreadsheet, a plan somebody wrote out — or upload pictures of it. I'll read the weeks out of it and show you what I found before anything is saved.",
+    /* Build a Program's chooser, like every other door into building (PO, 2026-09-22). */
+    route: '/program-guided',
     cta: 'Import one',
   },
   /*
