@@ -38,6 +38,10 @@ export type InterpretResult =
   /** Injury language, or a question about the body. The caller shows `MEDICAL_STOP`. */
   | { kind: 'medical' }
   /** Self-harm, an emergency now, or disordered eating. The caller shows CRISIS_ / URGENT_ / CARE_STOP. */
+  /** A question or a remark, answered in Holt's voice. Words only — never training on a card. */
+  | { kind: 'answer'; text: string; remaining: number | null }
+  /** They asked for a door the app already has: change the running program, import one, or pick one. */
+  | { kind: 'door'; to: 'edit' | 'import' | 'pick' }
   | { kind: 'crisis' }
   | { kind: 'urgent' }
   | { kind: 'care' }
@@ -109,6 +113,15 @@ export async function interpretTyped(
       }
       case 'medical_stop':
         return { kind: 'medical' };
+      case 'answer': {
+        const d = data as { say?: string | null; remaining?: number };
+        if (!d.say) return { kind: 'unclear' };
+        return { kind: 'answer', text: d.say, remaining: typeof d.remaining === 'number' ? d.remaining : null };
+      }
+      case 'edit':
+      case 'import':
+      case 'pick':
+        return { kind: 'door', to: route };
       case 'crisis':
       case 'urgent':
       case 'care':

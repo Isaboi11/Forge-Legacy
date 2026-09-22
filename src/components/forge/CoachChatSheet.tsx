@@ -770,6 +770,38 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
               : []),
           );
         }
+        /*
+         * ⚠ WHAT THE ATHLETE ASKED FOR THAT DID NOT LAND IS SAID, NEVER DROPPED (Coach-AI-Amendment-001 §4.2).
+         * A name the catalogue could not place is asked back; an exercise held out for a limitation or missing
+         * kit is named with the reason and one tap to put it in anyway (CA-D12 — a stated limitation is never
+         * silently overridden, and never silently obeyed against their explicit ask either). Concerns about
+         * the week (seven days, no rest, a leg day before the long run) are said once.
+         */
+        const asm = res.assembly;
+        const list = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+        for (const line of asm.concerns ?? []) say({ kind: 'holt', text: line });
+        if (asm.unresolved?.length) {
+          say({
+            kind: 'holt',
+            text: `I couldn't find ${list(asm.unresolved)} in the exercise library. Tell me what you meant and I'll put ${asm.unresolved.length > 1 ? 'them' : 'it'} in.`,
+          });
+        }
+        const held = (asm.held ?? []).filter((h) => h.reason === 'limitation' || h.reason === 'equipment');
+        if (held.length && merged.pinned?.length) {
+          const why = held.some((h) => h.reason === 'limitation') ? 'because of what you asked me to work around' : "because it needs kit you haven't got";
+          say(
+            { kind: 'holt', text: `I left ${list(held.map((h) => h.name))} out ${why}. Your call.` },
+            {
+              kind: 'chips',
+              chips: [
+                {
+                  label: 'Put it in anyway',
+                  patch: { pinned: merged.pinned.map((p) => (held.some((h) => h.asked === p.name) ? { ...p, confirmed: true } : p)) },
+                },
+              ],
+            },
+          );
+        }
       } catch (e) {
         /*
          * ⚠ **THE SHEET FREEZING WAS THIS, AND THE FAILURE CARD BELOW HAD NO CALLER.**
@@ -1118,7 +1150,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     }
   };
 
-  const tapChip = (chip: Chip) => {
+  const tapChip = (chip: Chip, echo = true) => {
     if (chip.label === 'Change the one I have') {
       say({ kind: 'me', text: chip.label });
       handOff();
@@ -1232,7 +1264,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
 
     const opener = fromOpener(chip.label);
     if (opener) {
-      say({ kind: 'me', text: chip.label });
+      if (echo) say({ kind: 'me', text: chip.label });
 
       if (opener.kind === 'import') {
         /* ⚠ THE IMPORTER ALREADY EXISTS AND HE HANDS OVER TO IT rather than growing a second one. The
@@ -1427,6 +1459,19 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
         say({ kind: 'holt', text: pick('not_understood') });
         if (q) say({ kind: 'chips', chips: q.chips, ctl: q.ctl });
         return;
+      /* A question mid-conversation is answered, and the question that was on the table comes back —
+         asking "what's RPE?" while he wants to know your days should not lose the build. */
+      case 'answer':
+        say({ kind: 'holt', text: r.text });
+        if (q) say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+        return;
+      /* A door the app already has. Opened exactly as the matching opener chip opens it, minus the echo —
+         the athlete's own sentence is already in the thread. */
+      case 'door':
+        return tapChip(
+          { label: r.to === 'edit' ? 'Change my program' : r.to === 'import' ? "I've got a program already" : 'Which one should I pick?', patch: {} },
+          false,
+        );
       case 'patch': {
         /* The model hands back the athlete's own words for a day focus; the engine needs a `DayFocus`. */
         const { dayFocus: said, ...rest } = r.patch as Partial<ChatState> & { dayFocus?: unknown };

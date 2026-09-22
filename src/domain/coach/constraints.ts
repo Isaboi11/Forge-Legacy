@@ -217,9 +217,24 @@ export type SessionMinutes = 30 | 45 | 60 | 75;
 
 export const SESSION_LENGTHS: readonly SessionMinutes[] = [30, 45, 60, 75];
 
-/** The Program Builder's own clamps, so nothing the coach builds is un-editable in the screen that opens it. */
+/**
+ * The range Holt builds to ON HIS OWN — every split in `rulebook/skeletons.ts` is authored at 2 through 6.
+ *
+ * ⚠ NO LONGER THE BUILDER'S RANGE. These were "the Program Builder's own clamps" and the Builder now
+ * takes 1–7 (`ATHLETE_MIN/MAX_DAYS_PER_WEEK`, CA §4.5). They stay 2–6 because CA-D12 keeps them as the
+ * shape of what Holt writes unprompted: a week with no rest day, or a single session, is the athlete's
+ * call to make, never his default.
+ */
 export const MIN_DAYS_PER_WEEK = 2;
 export const MAX_DAYS_PER_WEEK = 6;
+/**
+ * What an athlete may dictate — the Program Builder's own range (`DAYS_MIN`/`DAYS_MAX` in
+ * `lib/program-draft-model.ts`, which must agree). CA-D12, the PO's own example: *"run 1 mile a day and
+ * lift on Wednesday"* is seven days, and it gets built. The validator holds programs to THIS range,
+ * because it is the range the screen that opens them can render.
+ */
+export const ATHLETE_MIN_DAYS_PER_WEEK = 1;
+export const ATHLETE_MAX_DAYS_PER_WEEK = 7;
 /** What a program is built on when the day count is absent — or arrived as something that is not one. */
 export const DEFAULT_DAYS_PER_WEEK = 4;
 /**
@@ -237,8 +252,18 @@ export const MAX_WEEKS = 52;
 export interface CoachConstraints {
   goal: Goal;
   experience: ExperienceProfile;
-  /** 2–6. Clamped by `normalise`, because the Builder cannot render anything outside that. */
+  /**
+   * 2–6 for a week Holt shapes himself, 1–7 when the athlete set it (`athleteSetDays`, or a `days` week).
+   * Clamped by `normalise`; a clamp is said out loud as a concern, never done silently (CA-D12).
+   */
   daysPerWeek: number;
+  /**
+   * The athlete said this day count themselves — "seven days", "just Mondays" — rather than Holt
+   * proposing it. Widens the clamp to the Builder's 1–7, and a count outside Holt's own 2–6 comes back
+   * with a one-sentence concern instead of being rewritten. Absent or false is the behaviour before this
+   * existed, exactly.
+   */
+  athleteSetDays?: boolean;
   sessionMinutes: SessionMinutes;
   environment: Environment;
   /** `home-gym/equipment.ts` ids. Resolved against `environment` by `effectiveEquipment`. */
@@ -316,6 +341,104 @@ export interface CoachConstraints {
    * two identical programs (`recent-work.ts`). Resolved by the caller; absent means "no history".
    */
   recent?: RecentWork;
+
+  // ── Athlete-authored (CA-D3 / CA-D12) ───────────────────────────────────────────────────────────────
+  /**
+   * "Glute focus", "bigger arms", "calves" — 69 of 705 real requests. The block keeps its goal and its
+   * split; volume leans toward these groups inside the caps the validator enforces. `rulebook/focus.ts`
+   * says what each one means. Absent or empty is the behaviour before this existed, exactly.
+   */
+  focusMuscles?: readonly FocusMuscle[] | null;
+  /**
+   * Exercises the athlete named — "bench, rows, pull-ups, curls", "bench 5×5, rows 4×8". Placed FIRST,
+   * before the rulebook fills the rest. See `PinnedExercise`.
+   */
+  pinned?: readonly PinnedExercise[] | null;
+  /**
+   * The week, one entry per day — "run twice, lift three days", "run a mile a day and lift Wednesday".
+   * When present it IS the week: `daysPerWeek` becomes the count of non-rest entries and the day count
+   * is the athlete's (1–7). `rest` entries are not sessions — a program has no rest rows — but they keep
+   * their place for the interference rules, so a rest day between a leg day and a long run counts.
+   */
+  days?: readonly DayIntent[] | null;
+  /**
+   * The athlete fixed which day is which ("run Tuesday and Thursday, lift Monday, Wednesday, Friday").
+   * Then `days` is kept in that order and a conflict comes back as a concern. False or absent lets Holt
+   * arrange the entries — "run twice, lift three days" names no weekdays, so the order is his to choose.
+   */
+  daysAsGiven?: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// ATHLETE-AUTHORED PARTS — CA-D3's four states, per part of a day
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The muscle groups an athlete can ask to bring up, in the words they use.
+ *
+ * Deliberately coarse and overlapping — `arms` is `biceps` + `triceps`, `legs` is `quads` + `hamstrings`
+ * + `glutes` + `calves` — because the athlete says "arms" far more often than "brachii". Each maps to
+ * catalogue movement patterns and `primaryMuscleIds` in `rulebook/focus.ts`, never to a hand-kept list
+ * of exercises.
+ */
+export type FocusMuscle =
+  | 'glutes'
+  | 'arms'
+  | 'biceps'
+  | 'triceps'
+  | 'shoulders'
+  | 'chest'
+  | 'back'
+  | 'legs'
+  | 'quads'
+  | 'hamstrings'
+  | 'calves'
+  | 'core';
+
+export const FOCUS_MUSCLES: readonly FocusMuscle[] = [
+  'glutes', 'arms', 'biceps', 'triceps', 'shoulders', 'chest', 'back', 'legs', 'quads', 'hamstrings', 'calves', 'core',
+];
+
+/**
+ * One exercise the athlete named.
+ *
+ *   · `name`      — their words. Resolved through the catalogue's own resolver (`resolveAgainstCatalog`,
+ *                   the Program Builder import's path), then the rulebook's family words ("rows",
+ *                   "curls"). A name neither answers comes back in `Assembly.unresolved` — asked back,
+ *                   never silently dropped, which is the Exercise Picker's known failure.
+ *   · `catalogKey`— when the caller already knows the row. Checked against the pool; an unknown key
+ *                   falls back to the name.
+ *   · `day`       — 0-based. Indexes `days` when a `days` week is given, otherwise the training days of
+ *                   the built week. Absent, or pointing at a day that cannot take it, and it goes on the
+ *                   day whose pattern fits.
+ *   · `sets`/`reps` — verbatim when given ("5×5"); otherwise the rulebook's.
+ *   · `confirmed` — the athlete heard that this conflicts with a limitation or their kit and wants it
+ *                   anyway (CA-D12: a limitation is never SILENTLY violated — named, then confirmed).
+ */
+export interface PinnedExercise {
+  day?: number | null;
+  name: string;
+  catalogKey?: string | null;
+  sets?: number | null;
+  reps?: number | null;
+  confirmed?: boolean;
+}
+
+/**
+ * One day of an athlete-shaped week (CA §4.1).
+ *
+ *   · `lift`   — from the strength rulebook: goal, focus, pinned, limitations, equipment all honoured.
+ *                `focus` names the day ("upper", "legs", "push", "glutes") — `DAY_FOR_FOCUS`.
+ *   · `run`    — an easy run, sized from `runMi` / `runMin` verbatim, else from `currentWeeklyMi`,
+ *                else the rulebook's default minutes.
+ *   · `cardio` — a bout on whatever the athlete can use; `focus` may name the activity ("bike", "row").
+ *   · `rest`   — no session. Keeps its place in the week.
+ */
+export interface DayIntent {
+  kind: 'run' | 'lift' | 'rest' | 'cardio';
+  focus?: string | null;
+  runMi?: number | null;
+  runMin?: number | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -346,13 +469,27 @@ export function effectiveEquipment(c: CoachConstraints): readonly string[] {
  *
  * Clamping rather than rejecting is deliberate for the numeric fields: a wizard cannot offer 7 days, so a
  * 7 can only arrive from a caller that made it up, and the useful response to that is a 6-day program
- * rather than an error nobody can act on. The fields that CANNOT be guessed — a race with no date — are
+ * rather than an error nobody can act on. (⚠ Unless the athlete said it — `athleteSetDays` or a `days`
+ * week widens the clamp to the Builder's 1–7, CA-D12, and `assemble` names any clamp that still bites.)
+ * The fields that CANNOT be guessed — a race with no date — are
  * left alone here and reported by `missingFor`, because inventing a race date is worse than asking.
  */
 export function normalise(c: CoachConstraints): CoachConstraints {
+  /* A `days` week sets the count itself — the athlete wrote every day of it, so it is theirs by
+     construction (CA-D12). Only the non-rest entries are sessions. A week of all rest is left at 0 for
+     `assemble` to refuse in words; it is not quietly turned into four days of something. */
+  const week = (c.days ?? []).slice(0, ATHLETE_MAX_DAYS_PER_WEEK);
+  const hasWeek = week.length > 0;
+  const athlete = hasWeek || c.athleteSetDays === true;
+  const [lo, hi] = athlete
+    ? [ATHLETE_MIN_DAYS_PER_WEEK, ATHLETE_MAX_DAYS_PER_WEEK]
+    : [MIN_DAYS_PER_WEEK, MAX_DAYS_PER_WEEK];
   const out: CoachConstraints = {
     ...c,
-    daysPerWeek: clamp(isCount(c.daysPerWeek) ? c.daysPerWeek : DEFAULT_DAYS_PER_WEEK, MIN_DAYS_PER_WEEK, MAX_DAYS_PER_WEEK),
+    daysPerWeek: hasWeek
+      ? week.filter((d) => d.kind !== 'rest').length
+      : clamp(isCount(c.daysPerWeek) ? c.daysPerWeek : DEFAULT_DAYS_PER_WEEK, lo, hi),
+    ...(hasWeek ? { days: week } : {}),
     limitations: [...new Set(c.limitations)],
     excludeExercises: [...new Set(c.excludeExercises)],
     ownedEquipment: [...new Set(c.ownedEquipment)],
@@ -360,6 +497,9 @@ export function normalise(c: CoachConstraints): CoachConstraints {
   // Non-finite reads as absent — `undefined`, so `weeks ?? defaultWeeksFor(goal)` supplies the length.
   if (out.weeks != null) out.weeks = isCount(out.weeks) ? clamp(out.weeks, MIN_WEEKS, MAX_WEEKS) : undefined;
   if (out.currentWeeklyMi != null) out.currentWeeklyMi = isCount(out.currentWeeklyMi) ? Math.max(0, out.currentWeeklyMi) : null;
+  if (out.focusMuscles) out.focusMuscles = [...new Set(out.focusMuscles.filter((m) => FOCUS_MUSCLES.includes(m)))];
+  // A pin with no name and no key is nothing anybody said — it cannot be asked back, so it is not kept.
+  if (out.pinned) out.pinned = out.pinned.filter((p) => (p.name ?? '').trim() !== '' || !!p.catalogKey);
   return out;
 }
 
@@ -380,6 +520,21 @@ export type MissingField = 'daysPerWeek' | 'sessionMinutes' | 'raceDate' | 'curr
  */
 export function missingFor(c: Partial<CoachConstraints>): MissingField[] {
   const out: MissingField[] = [];
+  /*
+   * ══ A `days` WEEK ANSWERS ITS OWN QUESTIONS (CA §4.3) ══
+   *
+   * The athlete who says "run Tuesday and Thursday, lift the other three" has told Holt the day count.
+   * What is still worth asking depends on what the days ARE: a lift day needs a session length (it sets
+   * how many movements fit), a cardio bout with no minutes needs one too, and a run day needs nothing —
+   * it is sized from their miles or minutes, their weekly mileage, or the rulebook's default. And a
+   * run-and-lift week is not a race build, so an endurance goal stops asking for a race date.
+   */
+  const week = c.days ?? [];
+  if (week.length > 0) {
+    const needsLength = week.some((d) => d.kind === 'lift' || (d.kind === 'cardio' && !isCount(d.runMin)));
+    if (needsLength && c.sessionMinutes == null) out.push('sessionMinutes');
+    return out;
+  }
   // `isCount`, not `== null` — a NaN day count is a question still to ask, not an answer (see `isCount`).
   if (!isCount(c.daysPerWeek)) out.push('daysPerWeek');
   if (c.sessionMinutes == null) out.push('sessionMinutes');

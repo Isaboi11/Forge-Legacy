@@ -594,7 +594,9 @@ function askProgram(c: ChatState): Question | null {
     };
   }
 
-  if (!isCount(c.daysPerWeek)) {
+  /* A week described day by day ("run Tuesday and Thursday, lift the other three") already says how many
+     days — asking again would be the coach not listening, and a chip answer would contradict the week. */
+  if (!isCount(c.daysPerWeek) && !c.days?.length) {
     return {
       id: 'days',
       /* The PO's own words, kept verbatim — this line already ships in the wizard. A one-week build gets
@@ -1507,7 +1509,7 @@ function daysOfWeek(structure: Partial<ProgramStructure> & { daysPerWeek: number
 export function programCardFor(
   c: CoachConstraints,
   structure: Partial<ProgramStructure> & { name: string; weeks: number; daysPerWeek: number },
-  volume: { mileage: number; longRunMi: number }[],
+  volume: { mileage: number; longRunMi: number; minutes?: number }[],
   rationale: string,
 ): ProgramCard {
   const endurance = isEnduranceGoal(c.goal);
@@ -1519,7 +1521,13 @@ export function programCardFor(
   ];
 
   if (endurance && c.raceDate) stats.push({ value: shortDate(c.raceDate), label: 'RACE DAY' });
-  if (volume.length) {
+  /* A triathlon is measured in TIME — its week is swim, bike and run, and a run-mileage peak on its card
+     described a curve the plan does not follow (the week composer reads `minutes`). */
+  const triMinutes = volume.map((v) => v.minutes).filter((m): m is number => m != null);
+  if (triMinutes.length) {
+    const peak = Math.max(...triMinutes);
+    stats.push({ value: `${Math.floor(peak / 60)}h ${String(Math.round(peak % 60)).padStart(2, '0')}m`, label: 'PEAK WEEK' });
+  } else if (volume.length) {
     stats.push({ value: `${Math.round(Math.max(...volume.map((v) => v.mileage)))} mi`, label: 'PEAK WEEK' });
     stats.push({ value: `${Math.max(...volume.map((v) => v.longRunMi))} mi`, label: 'LONGEST RUN' });
   }
@@ -1796,11 +1804,12 @@ const capitalise = (t: string) => t.replace(/^./, (ch) => ch.toUpperCase());
  */
 
 /** The weekly mileage curve behind an endurance card. Empty for everything else, which is not a failure. */
-export function volumeFor(c: CoachConstraints, weeks: number): { mileage: number; longRunMi: number }[] {
+export function volumeFor(c: CoachConstraints, weeks: number): { mileage: number; longRunMi: number; minutes?: number }[] {
   if (!isEnduranceGoal(c.goal)) return [];
   return weeklyVolumePlan({ goal: c.goal, weeks, startMi: c.currentWeeklyMi ?? 0 }).map((v) => ({
     mileage: v.mileage,
     longRunMi: v.longRunMi,
+    ...(v.minutes != null ? { minutes: v.minutes } : {}),
   }));
 }
 

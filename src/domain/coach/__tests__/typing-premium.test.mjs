@@ -48,7 +48,7 @@ test('⚠ a Premium AI sentence reaches the model, and the broad word list no lo
   assert.match(sheet, /if \(!premiumAi && isMedical\(text\)\)/);
   // Every route the function can return has an answer — an unhandled one would be silence.
   const understand = sheet.slice(sheet.indexOf('const understand = async'), sheet.indexOf('const process = (text'));
-  for (const route of ['crisis', 'urgent', 'care', 'medical', 'out_of_credits', 'offline', 'unclear', 'patch'])
+  for (const route of ['crisis', 'urgent', 'care', 'medical', 'out_of_credits', 'offline', 'unclear', 'answer', 'door', 'patch'])
     assert.match(understand, new RegExp(`case '${route}':`), route);
 });
 
@@ -80,4 +80,12 @@ test('spoken words take the typed path, so every guard and the model see them th
 test('a refused mic permission is said in plain words, not a silent dead button', () => {
   assert.match(hook, /code === 'not-allowed'/);
   assert.match(sheet, /The mic is off for Forge — turn it on in Settings/);
+});
+
+test('a week described day by day is not asked "how many days a week?"', async () => {
+  const { nextQuestion } = await import('../chat-core.ts');
+  const days = [{ kind: 'lift' }, { kind: 'run', runMi: 3 }, { kind: 'lift' }, { kind: 'rest' }];
+  const s = { goal: 'strength', experience: { lifting: 'beginner', running: 'beginner' }, days, weeks: 4, environment: 'full_gym', sessionMinutes: 60, limitations: [] };
+  assert.equal(nextQuestion(s, 'program'), null);
+  assert.equal(nextQuestion({ ...s, days: undefined }, 'program')?.id, 'days', 'control: without a week, it asks');
 });

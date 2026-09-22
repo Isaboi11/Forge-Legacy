@@ -120,6 +120,56 @@ export const TRI_SPLIT = { swim: 0.3, bike: 0.5, run: 0.2 } as const;
 /** EPS-D12 — swim and row carry no pace. Distance or duration only; `RATE_KIND` is not extended. */
 export const SWIM_HAS_PACE = false;
 
+/*
+ * ══ TRIATHLON VOLUME — MEASURED IN MINUTES, BECAUSE THE RACE IS ══
+ *
+ * ⚠ THE FIRST VERSION HAD NO TRIATHLON VOLUME AT ALL. `composeTriWeek` ignored the curve, and every
+ * session length came off a fixed 45→90 minute progress ramp — so a 16-week plan peaked near three hours
+ * a week against `RACE_SPEC.triathlon.peakHours` of eight, with no taper, no down weeks and no race. The
+ * numbers below are what replaced it. Each is a mainstream default, NOT a PO decision yet: the endurance
+ * rulebook's contested calls are the PO's, and these are marked for review rather than presented as
+ * settled.
+ */
+
+/**
+ * Where a triathlon block starts, in weekly minutes. DEFAULT PENDING PO REVIEW.
+ *
+ * Holt asks for running miles and nothing about the pool or the bike, so there is no honest reading of
+ * the athlete's swim/bike fitness to start from. Instead the start is back-solved from the plan: the
+ * weekly figure that, climbing at the locked 10% (EPS-D3) through the ramp weeks the plan actually has,
+ * lands on the peak in the last build week. Then it is clamped to what mainstream beginner-to-intermediate
+ * triathlon plans open with — 2½ hours a week at the least (a long plan does not start at an hour and
+ * crawl), 4 at the most (a short one does not open at a volume nobody has built to).
+ */
+export const TRI_START_MIN = { floor: 150, ceiling: 240 } as const;
+
+/**
+ * The longest any single triathlon session gets, in minutes. DEFAULT PENDING PO REVIEW.
+ *
+ * ⚠ WITHOUT THESE, EPS-D11 PRESCRIBES NONSENSE ON A FOUR-DAY WEEK. 30% of an eight-hour week is 144
+ * minutes of swimming, and with one swim day that is one 2½-hour swim. Mainstream plans at this volume
+ * cap a swim near 75 minutes, a standalone run near 90 (the run is the discipline with the injury cost),
+ * a midweek ride at two hours, the long ride (the brick's) at three, and a run off the bike at 45. What a
+ * cap takes out of the swim or the run goes to the bike — the same reason EPS-D11 leans to it: biggest
+ * race share, lowest impact. What the bike cannot hold either is simply not prescribed, and the curve is
+ * capped at what the week CAN hold (`triWeekCapacityMin`), so a two-day week peaks under the spec. That
+ * is the honest result of fewer days, not a shortfall to paper over with four-hour sessions.
+ */
+export const TRI_SESSION_CAP_MIN = { swim: 75, run: 90, ride: 120, longRide: 180, brickRun: 45 } as const;
+
+/** The shortest a triathlon session is worth getting changed for. Below these it is a warm-up, not a session. */
+export const TRI_SESSION_FLOOR_MIN = { swim: 20, run: 20, ride: 30, brickRun: 10 } as const;
+
+/**
+ * The brick's ride against a standalone ride, when the bike minutes are shared out. DEFAULT PENDING PO REVIEW.
+ *
+ * The brick sits after the week's biggest ride (EPS-D11's one-a-week), so it IS the long ride: twice a
+ * standalone ride is the usual long-ride-to-midweek-ride ratio. Its run is half a standalone run — the
+ * point of a brick run is running on bike legs, not more run volume.
+ */
+const TRI_BRICK_RIDE_WEIGHT = 2;
+const TRI_BRICK_RUN_WEIGHT = 0.5;
+
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE RACES
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -200,7 +250,12 @@ export const RACE_SPEC: Record<EnduranceGoal, RaceSpec> = {
     minWeeks: 12,
     idealWeeks: 16,
     minBaseMi: 0,
-    taperWeeks: 3,
+    /* ⚠ WAS 3, AND THE 3 WAS NEVER READ — `composeTriWeek` ignored the whole volume curve, so no triathlon
+       plan ever tapered at all. Now that it is read, 2 is EPS-D5's own option (b) applied honestly: the
+       three-week window is for the races that accumulate the most fatigue (marathon, Ironman), and an
+       8-hour peak is an Olympic / 70.3-class build, whose mainstream taper is 10–14 days. Two weeks here
+       is the week before plus race week itself. DEFAULT PENDING PO REVIEW — amend EPS-D5's row with it. */
+    taperWeeks: 2,
     peakLongMi: null,
     peakHours: 8,
     fallback: null,
@@ -518,6 +573,12 @@ export interface WeekVolume {
   longRunMi: number;
   phase: 'base' | 'build' | 'peak' | 'taper';
   isDeload: boolean;
+  /**
+   * Triathlon only: the week's training minutes, on the same phases and down weeks as the mileage. A
+   * triathlon is measured in hours (`RaceSpec.peakHours`), so this — not `mileage` — is what sizes its
+   * sessions. `mileage` is kept for triathlon as the run leg's curve the card already shows.
+   */
+  minutes?: number;
 }
 
 /**
@@ -537,6 +598,8 @@ export function weeklyVolumePlan(opts: {
   weeks: number;
   startMi: number;
   startLongMi?: number | null;
+  /** Triathlon only: the most the athlete's week can hold (`triWeekCapacityMin`); the peak is capped at it. */
+  capacityMin?: number;
 }): WeekVolume[] {
   const spec = RACE_SPEC[opts.goal];
   const taperWeeks = Math.min(spec.taperWeeks, Math.max(1, opts.weeks - 2));
@@ -576,6 +639,26 @@ export function weeklyVolumePlan(opts: {
   let ramp = start;
   let peakWeekly = start;
 
+  /*
+   * ══ TRIATHLON MINUTES — THE SAME CURVE, IN THE UNIT THE RACE IS MEASURED IN ══
+   *
+   * Same down weeks, same taper, same locked 10% ceiling on the ramp — only the target is the spec's peak
+   * hours rather than a long run. The start is back-solved so the ramp arrives (see `TRI_START_MIN`): the
+   * ramp weeks are counted first, and week 1 is the start ITSELF rather than 10% above it — the start is
+   * an assumed training level, not a number the athlete has logged, so there is nothing to add to yet.
+   */
+  const tri = opts.goal === 'triathlon' && spec.peakHours != null;
+  const peakMin = Math.min((spec.peakHours ?? 0) * 60, opts.capacityMin ?? Infinity);
+  let rampWeeks = 0;
+  for (let w = 0; w < buildWeeks; w += 1) if (!(w > 0 && (w + 1) % 4 === 0)) rampWeeks += 1;
+  const startMin = Math.min(
+    TRI_START_MIN.ceiling,
+    Math.max(TRI_START_MIN.floor, peakMin / (1 + WEEKLY_INCREASE_CAP) ** Math.max(0, rampWeeks - 1)),
+  );
+  let rampMin = startMin;
+  let peakMinSoFar = startMin;
+  let rampedYet = false;
+
   const out: WeekVolume[] = [];
 
   for (let w = 0; w < opts.weeks; w += 1) {
@@ -586,6 +669,7 @@ export function weeklyVolumePlan(opts: {
     let mileage: number;
     let longRunMi: number;
     let phase: WeekVolume['phase'];
+    let minutes = rampMin;
 
     if (inTaper) {
       phase = 'taper';
@@ -595,11 +679,18 @@ export function weeklyVolumePlan(opts: {
       // fatigue is shed, which is the same reason intensity is retained (EPS-D6).
       longRunMi = longSoFar * (1 - 0.5 * step);
       phase = 'taper';
+      minutes = peakMinSoFar * (1 - TAPER_VOLUME_CUT * step);
     } else if (isDeload) {
       phase = 'build';
       mileage = ramp * 0.75;
       longRunMi = longSoFar * 0.7;
+      minutes = rampMin * 0.75;
     } else {
+      rampMin = rampedYet ? Math.min(rampMin * (1 + WEEKLY_INCREASE_CAP), peakMin) : startMin;
+      rampedYet = true;
+      minutes = rampMin;
+      peakMinSoFar = Math.max(peakMinSoFar, rampMin);
+
       // ⚠ THE LOCKED 10%/WEEK CEILING (EPS-D3), applied to the ramp rather than to last week's number.
       ramp = Math.min(ramp * (1 + WEEKLY_INCREASE_CAP), targetPeakWeekly);
       mileage = ramp;
@@ -618,6 +709,7 @@ export function weeklyVolumePlan(opts: {
       longRunMi: Math.round(Math.max(1, longRunMi) * 10) / 10,
       phase,
       isDeload,
+      ...(tri ? { minutes: Math.round(minutes) } : {}),
     });
   }
 
@@ -712,9 +804,35 @@ export function composeRunWeek(opts: {
   return roles;
 }
 
-/** Sessions for a triathlon week, balanced by EPS-D11 and carrying one brick. */
-export function composeTriWeek(daysPerWeek: number): SessionRole[] {
-  const days = Math.max(3, daysPerWeek);
+/**
+ * Sessions for a triathlon week, balanced by EPS-D11 and carrying one brick.
+ *
+ * ⚠ THE WEEK IS THE DAYS THEY GAVE. The first version floored this at three, so a two-day athlete got a
+ * three-session week — a plan whose weeks disagreed with its own `daysPerWeek`. Two days is a swim and a
+ * brick: the brick carries the bike and the run, and the swim is the discipline that least survives
+ * being left out.
+ */
+export function composeTriWeek(daysPerWeek: number, opts: { isRaceWeek?: boolean } = {}): SessionRole[] {
+  const days = Math.max(1, daysPerWeek);
+
+  /*
+   * ══ RACE WEEK — THE SAME RULE AS THE RUN PLANS' ══
+   *
+   * A few short sharpening sessions and the race: one of each discipline with a handful of race-effort
+   * openers, and nothing that builds. At most four sessions whatever the usual week is, as for the runs
+   * (`composeRunWeek`). With fewer days the brick stands in for the bike and the run, because a short
+   * brick is the classic race-week opener — it rehearses the transition as well as the legs. DEFAULT
+   * PENDING PO REVIEW.
+   */
+  if (opts.isRaceWeek) {
+    const n = Math.min(days, 4);
+    if (n <= 1) return ['race'];
+    if (n === 2) return ['brick', 'race'];
+    if (n === 3) return ['swim', 'brick', 'race'];
+    return ['swim', 'bike', 'shakeout', 'race'];
+  }
+
+  if (days <= 2) return days === 1 ? ['brick'] : ['swim', 'brick'];
   const roles: SessionRole[] = [];
   // Bike-led, because it is the biggest race-day share and the cheapest place to put volume.
   const rotation: SessionRole[] = ['swim', 'bike', 'easy', 'swim', 'bike', 'easy'];
@@ -722,6 +840,104 @@ export function composeTriWeek(daysPerWeek: number): SessionRole[] {
   roles.push('brick'); // One a week, after the week's biggest ride.
   return roles;
 }
+
+/**
+ * Which of a triathlon week's sessions carry quality work, by index.
+ *
+ * EPS-D4 applied to three sports: the brick is the week's long session and counts as one of the hard
+ * days, the way the long run does. The rest go to the BIKE first (cheapest place for intensity, as in
+ * EPS-D11), then the swim, and to a run last — the run is where intensity costs the most tissue. None may
+ * sit beside another hard day (PAS §11.4), which is why a three-day week's second quality session lands
+ * on the swim rather than the ride next to the brick. A down week carries none: it is recovery.
+ * DEFAULT PENDING PO REVIEW.
+ */
+export function triQualityIndexes(roles: readonly SessionRole[], experience: Experience, isDeload: boolean): Set<number> {
+  const out = new Set<number>();
+  const brick = roles.lastIndexOf('brick');
+  if (brick < 0 || isDeload) return out;
+  const hard = new Set<number>([brick]);
+  let wanted = Math.min(HARD_SESSIONS[experience], maxHardFor(roles.length)) - 1;
+  for (const pref of ['bike', 'swim', 'easy'] as const) {
+    for (let i = 0; i < roles.length && wanted > 0; i += 1) {
+      if (roles[i] !== pref || hard.has(i - 1) || hard.has(i + 1)) continue;
+      hard.add(i);
+      out.add(i);
+      wanted -= 1;
+    }
+  }
+  return out;
+}
+
+/** One triathlon session's main-block length: seconds, or a brick's ride and run. */
+export type TriSessionSec = number | { rideSec: number; runSec: number };
+
+const toFive = (min: number) => Math.round(min / 5) * 5 * 60;
+
+/**
+ * Share a week's minutes over its sessions — EPS-D11's split, inside the session caps.
+ *
+ * Swim and run are shared first and capped; what they cannot hold goes to the bike, and the bike's
+ * minutes are split with the brick's ride weighted as the long ride (`TRI_BRICK_RIDE_WEIGHT`). Every
+ * session is rounded to five minutes — a 67-minute ride is a number nobody sets a watch to.
+ */
+export function triSessionMinutes(roles: readonly SessionRole[], weekMin: number): TriSessionSec[] {
+  const count = (r: SessionRole) => roles.filter((x) => x === r).length;
+  const nSwim = count('swim');
+  const nRide = count('bike');
+  const nRun = count('easy');
+  const hasBrick = roles.includes('brick');
+  const cap = TRI_SESSION_CAP_MIN;
+  const floor = TRI_SESSION_FLOOR_MIN;
+
+  let bikePool = weekMin * TRI_SPLIT.bike;
+
+  const swimPool = weekMin * TRI_SPLIT.swim;
+  const swim = nSwim ? Math.min(cap.swim, swimPool / nSwim) : 0;
+  bikePool += swimPool - swim * nSwim;
+
+  const runPool = weekMin * TRI_SPLIT.run;
+  const runShares = nRun + (hasBrick ? TRI_BRICK_RUN_WEIGHT : 0);
+  const runUnit = runShares > 0 ? runPool / runShares : 0;
+  const run = Math.min(cap.run, runUnit);
+  const brickRun = hasBrick ? Math.min(cap.brickRun, runUnit * TRI_BRICK_RUN_WEIGHT) : 0;
+  bikePool += runPool - run * nRun - brickRun;
+
+  // The long ride is shared first; what its cap will not hold goes to the midweek rides, not the floor.
+  const rideShares = nRide + (hasBrick ? TRI_BRICK_RIDE_WEIGHT : 0);
+  const rideUnit = rideShares > 0 ? bikePool / rideShares : 0;
+  const brickRide = hasBrick ? Math.min(cap.longRide, rideUnit * TRI_BRICK_RIDE_WEIGHT) : 0;
+  const ride = nRide ? Math.min(cap.ride, (bikePool - brickRide) / nRide) : 0;
+
+  return roles.map((r): TriSessionSec => {
+    switch (r) {
+      case 'swim':
+        return toFive(Math.max(floor.swim, swim));
+      case 'bike':
+        return toFive(Math.max(floor.ride, ride));
+      case 'easy':
+        return toFive(Math.max(floor.run, run));
+      case 'brick':
+        return { rideSec: toFive(Math.max(floor.ride, brickRide)), runSec: toFive(Math.max(floor.brickRun, brickRun)) };
+      default:
+        return 0;
+    }
+  });
+}
+
+/** Total minutes a set of triathlon sessions holds, as built. */
+export const triMinutesOf = (secs: readonly TriSessionSec[]): number =>
+  secs.reduce<number>((n, s) => n + (typeof s === 'number' ? s : s.rideSec + s.runSec), 0) / 60;
+
+/**
+ * The most a triathlon week of this many days can hold with every session at its cap.
+ *
+ * ⚠ THE CURVE IS CAPPED AT THIS, NOT JUST THE SESSIONS. Capping only the sessions let a two-day plan's
+ * target climb to eight hours while the week it built sat flat at five — so its down weeks and its taper,
+ * cuts taken from a target the week never reached, built exactly the same five hours as the peak. A cut
+ * nobody can see is not a cut.
+ */
+export const triWeekCapacityMin = (daysPerWeek: number): number =>
+  triMinutesOf(triSessionMinutes(composeTriWeek(daysPerWeek), 1e6));
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // BUILDING THE DAY
@@ -975,6 +1191,184 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
   }
 }
 
+export interface TriDayInput {
+  role: SessionRole;
+  /** This session's length from `triSessionMinutes`; ignored in race week, whose openers are fixed. */
+  sec: TriSessionSec;
+  phase: WeekVolume['phase'];
+  /** Carries the week's quality work (`triQualityIndexes`). */
+  quality: boolean;
+  isDeload: boolean;
+  isRaceWeek: boolean;
+  /** The last session before the race — where "take tomorrow off" is said. */
+  lastBeforeRace: boolean;
+  /** 0 → 1 across the build, 1 through the taper — as for the run plans. */
+  progress: number;
+  stretchKeys: readonly string[];
+}
+
+/**
+ * Race-week openers, in minutes. DEFAULT PENDING PO REVIEW: the mainstream race-week shape — short, with
+ * a few race-effort pieces so the legs remember the pace, and nothing that leaves fatigue behind.
+ */
+export const TRI_OPENER_MIN = { swim: 20, ride: 30, run: 15, brickRide: 25, brickRun: 10 } as const;
+
+/**
+ * One triathlon day.
+ *
+ * Separate from `buildRunDay` because every triathlon session is sized in MINUTES off the week's budget,
+ * where a run plan's are sized in miles off its mileage — sharing that switch is how the triathlon's
+ * sessions came to ignore the week entirely. EPS-D12 still holds: the swim carries a duration, never a
+ * pace and never a distance derived from one.
+ *
+ * ⚠ "REST THE DAY BEFORE" IS SAID, NOT SCHEDULED. A week here is an ordered list of sessions with no
+ * calendar under it, so the rest day cannot be a row; it is the last opener's instruction instead.
+ */
+export function buildTriDay(input: TriDayInput, letter: string): ProgramDay {
+  const { role, quality, phase } = input;
+  const t = Math.max(0, Math.min(1, input.progress));
+  const step = (from: number, to: number) => Math.round(from + (to - from) * t);
+  const one = typeof input.sec === 'number' ? input.sec : 0;
+  const brick = typeof input.sec === 'number' ? { rideSec: 0, runSec: 0 } : input.sec;
+  const restTomorrow = input.lastBeforeRace ? ' Take tomorrow off completely — the day before the race is rest.' : '';
+  const recovery = input.isDeload ? ' Recovery week: all of it easy, nothing hard.' : '';
+
+  if (input.isRaceWeek) {
+    switch (role) {
+      case 'swim':
+        return {
+          letter,
+          name: 'Swim',
+          warmup: [],
+          main: [cardio('swim', { targetSec: TRI_OPENER_MIN.swim * 60 }, 'Swim', `Easy, with 4 × 50 at race effort. Sharpening, not training.${restTomorrow}`)],
+          cooldown: [],
+        };
+      case 'bike':
+        return {
+          letter,
+          name: 'Ride',
+          warmup: [],
+          main: [cardio('bike', { targetSec: TRI_OPENER_MIN.ride * 60 }, 'Ride', `Easy, with 3 × 2 minutes at race effort. Check the bike while you are on it.${restTomorrow}`)],
+          cooldown: [],
+        };
+      case 'brick':
+        return {
+          letter,
+          name: 'Brick',
+          warmup: [],
+          main: [
+            cardio('bike', { targetSec: TRI_OPENER_MIN.brickRide * 60 }, 'Ride', 'Easy, with 3 × 1 minute at race effort.'),
+            cardio('run', { targetSec: TRI_OPENER_MIN.brickRun * 60 }, 'Run', `Straight off the bike, easy, a few strides to finish.${restTomorrow}`),
+          ],
+          cooldown: [],
+        };
+      case 'shakeout':
+        return {
+          letter,
+          name: 'Shakeout',
+          warmup: [],
+          main: [cardio('run', { targetSec: TRI_OPENER_MIN.run * 60 }, 'Shakeout', `Fifteen minutes easy with four short strides. Nothing to prove today.${restTomorrow}`)],
+          cooldown: [],
+        };
+      case 'race':
+      default:
+        return {
+          letter,
+          name: 'Race Day',
+          warmup: [],
+          // No distances and no paces: the rulebook does not know whether this is a sprint or an Olympic,
+          // and it has no business telling someone how fast to race the thing it prepared them for.
+          main: [
+            cardio('swim', {}, 'Swim', 'Start wide and easy. Find your rhythm before you find anyone else’s feet.'),
+            cardio('bike', {}, 'Ride', 'Ride your effort, not theirs. You still have to run.'),
+            cardio('run', {}, 'Run', 'This is the one. Everything before it was for this.'),
+          ],
+          cooldown: [],
+        };
+    }
+  }
+
+  switch (role) {
+    case 'swim':
+      return {
+        letter,
+        name: 'Swim',
+        warmup: [],
+        main: [
+          cardio(
+            'swim',
+            { targetSec: one },
+            'Swim',
+            quality
+              ? `Main set: ${step(6, 10)} × 100 at a strong, even effort, 20 seconds' rest between. Easy either side.`
+              : `Steady. Technique before volume — this is the discipline I cannot coach for you.${recovery}`,
+          ),
+        ],
+        cooldown: [],
+      };
+
+    case 'bike':
+      return {
+        letter,
+        name: 'Ride',
+        warmup: [],
+        main: [
+          cardio(
+            'bike',
+            { targetSec: one },
+            'Ride',
+            // Base is aerobic by definition: its quality is tempo; the build, peak and taper sharpen to
+            // threshold — and the taper keeps it (EPS-D6), because `progress` holds at 1 through it.
+            quality
+              ? phase === 'base'
+                ? `Include ${step(2, 3)} × 8 minutes at tempo — comfortably hard — with 4 minutes easy between.`
+                : `Include ${step(3, 5)} × 5 minutes at threshold with 3 minutes easy between.`
+              : `Steady aerobic effort. You should be able to hold this all day.${recovery}`,
+          ),
+        ],
+        cooldown: [],
+      };
+
+    case 'brick':
+      return {
+        letter,
+        name: 'Brick',
+        warmup: [],
+        main: [
+          cardio('bike', { targetSec: brick.rideSec }, 'Ride', `The week's long ride. Steady — save something for what follows it.${recovery}`),
+          cardio(
+            'run',
+            { targetSec: brick.runSec },
+            'Run',
+            !input.isDeload && (phase === 'peak' || phase === 'taper')
+              ? 'Straight off the bike, no sitting down. Settle into race effort for the middle of it.'
+              : 'Straight off the bike, no sitting down. Your legs will feel odd for the first mile — that is the session.',
+          ),
+        ],
+        cooldown: [cardio('walk', { targetSec: 300 }, 'Cool-Down Walk')],
+      };
+
+    case 'easy':
+    default:
+      return {
+        letter,
+        name: quality ? 'Tempo Run' : 'Easy Run',
+        warmup: runWarmup(),
+        main: [
+          cardio(
+            'run',
+            { targetSec: one },
+            quality ? 'Tempo' : 'Easy Run',
+            quality
+              ? `Include ${step(2, 3)} × 8 minutes comfortably hard, easy running between and around them.`
+              : `Easy means easy — you have a swim and a ride to recover from as well.${recovery}`,
+          ),
+        ],
+        cooldown: runCooldown(input.stretchKeys),
+      };
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE PROGRAM
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -1044,31 +1438,65 @@ export function assembleEndurance(
   // placement (a separate open decision). `max(1, …)` only matters under `buildAnyway`: without it a
   // plan this short was refused above.
   const weeks = Math.max(1, Math.min(weeksAvailable, spec.idealWeeks + 8));
-  const volume = weeklyVolumePlan({ goal, weeks, startMi: currentWeeklyMi });
-
   // EPS-D7 — a beginner gets three days whatever they asked for. Fewer cannot carry a base; more, before
   // the tissue is ready, is the commonest way a new runner's first block ends in an injury.
   const daysPerWeek = canRun ? c.daysPerWeek : Math.max(MIN_DAYS_BEGINNER, Math.min(c.daysPerWeek, 4));
 
+  const volume = weeklyVolumePlan({
+    goal,
+    weeks,
+    startMi: currentWeeklyMi,
+    ...(goal === 'triathlon' ? { capacityMin: triWeekCapacityMin(daysPerWeek) } : {}),
+  });
+
   const weekPlans = volume.map((v) => {
-    const roles =
-      goal === 'triathlon'
-        ? composeTriWeek(daysPerWeek)
-        : composeRunWeek({
-            daysPerWeek,
-            experience: c.experience.running,
-            phase: v.phase,
-            canRunContinuously: canRun,
-            isRaceWeek: v.weekIndex === volume.length - 1,
-          });
-
-    const hardCount = roles.filter((r) => r !== 'easy').length;
-    const longRunMi = longRunAfterTimeCap(v.longRunMi, paces?.easySec ?? null);
-
     // 0 in week 1, 1 at the peak, and held at 1 through the taper — intensity is RETAINED while volume
     // falls (EPS-D6), so a taper week's tempo is the peak week's tempo, not week one's.
     const buildLast = Math.max(1, volume.filter((x) => x.phase !== 'taper').length - 1);
     const progress = v.phase === 'taper' ? 1 : Math.min(1, v.weekIndex / buildLast);
+    const isRaceWeek = v.weekIndex === volume.length - 1;
+
+    /*
+     * ══ TRIATHLON — THE SAME CURVE THE RUNS GET ══
+     *
+     * Sized from `v.minutes`, so the down weeks, the taper and the race week the curve always carried
+     * finally reach the sessions. Before this the triathlon branch read nothing of `v`: every week was the
+     * same sessions growing on a fixed ramp, straight through the taper and past a race that never came.
+     */
+    if (goal === 'triathlon') {
+      const roles = composeTriWeek(daysPerWeek, { isRaceWeek });
+      const secs = triSessionMinutes(roles, v.minutes ?? 0);
+      const quality = isRaceWeek ? new Set<number>() : triQualityIndexes(roles, c.experience.running, v.isDeload);
+      return {
+        days: roles.map((role, i) =>
+          buildTriDay(
+            {
+              role,
+              sec: secs[i],
+              phase: v.phase,
+              quality: quality.has(i),
+              isDeload: v.isDeload,
+              isRaceWeek,
+              lastBeforeRace: isRaceWeek && i === roles.length - 2,
+              progress,
+              stretchKeys: opts.stretchKeys,
+            },
+            String.fromCharCode(65 + i),
+          ),
+        ),
+      };
+    }
+
+    const roles = composeRunWeek({
+      daysPerWeek,
+      experience: c.experience.running,
+      phase: v.phase,
+      canRunContinuously: canRun,
+      isRaceWeek,
+    });
+
+    const hardCount = roles.filter((r) => r !== 'easy').length;
+    const longRunMi = longRunAfterTimeCap(v.longRunMi, paces?.easySec ?? null);
 
     return {
       days: roles.map((role, i) =>

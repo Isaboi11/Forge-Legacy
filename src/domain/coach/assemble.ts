@@ -28,12 +28,21 @@ import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/progr
 
 import {
   effectiveEquipment,
+  isCount,
   isEnduranceGoal,
+  MAX_DAYS_PER_WEEK,
+  MIN_DAYS_PER_WEEK,
   normalise,
   type CoachConstraints,
+  type DayIntent,
+  type FocusMuscle,
   type Goal,
+  type Limitation,
+  type PinnedExercise,
 } from './constraints.ts';
 import {
+  candidatesFor,
+  canStretch,
   contextFrom,
   fillSlot,
   isCompound,
@@ -59,17 +68,42 @@ import {
   limitationPatterns,
 } from './rulebook/limitations.ts';
 import {
+  dayForFocus,
   defaultWeeksFor,
   firstUnviableDay,
   fullBodyFallback,
   isAuthored,
-  skeletonFor,
+  weekForAnyDays,
   weekIsViable,
   type DaySkeleton,
 } from './rulebook/skeletons.ts';
-import { bandFor, deloadWeeks, GOAL_CATEGORY, type PasCategory } from './rulebook/volume.ts';
-import { assembleEndurance, type EnduranceConcern } from './rulebook/endurance.ts';
+import { bandFor, deloadSets, deloadWeeks, GOAL_CATEGORY, type PasCategory } from './rulebook/volume.ts';
+import { assembleEndurance, buildRunDay, pacesFrom, type EnduranceConcern } from './rulebook/endurance.ts';
 import { cueFor } from './rulebook/cues.ts';
+import {
+  FOCUS_EXTRA_SETS,
+  FOCUS_SLOT_INDEX,
+  FOCUS_SPEC,
+  focusApplies,
+  focusMuscleIds,
+  focusMusclesForSlot,
+  focusSlotsFor,
+} from './rulebook/focus.ts';
+import { PIN_FAMILIES, type PinFamily } from './rulebook/pinned.ts';
+import {
+  ACTIVITY_PLURAL,
+  ATHLETE_SIZED_RUN_HAS_WARMUP,
+  COMPARE_MIN_PER_MI,
+  CONCERN,
+  DEFAULT_CARDIO_MIN,
+  DEFAULT_RUN_MIN,
+  DELOAD_RUN_MULTIPLIER,
+  INTERFERENCE_COST,
+  isLowerHeavy,
+  liftGoalFor,
+  LONG_SHARE_BY_RUNS,
+} from './rulebook/hybrid.ts';
+import { aliasKey, resolveAgainstCatalog } from '../exercise-picker/aliases.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // RESULT
@@ -77,7 +111,8 @@ import { cueFor } from './rulebook/cues.ts';
 
 /** Why the coach will not build this, in words an athlete can act on. */
 export interface CoachRefusal {
-  reason: 'goal_not_authored' | 'limitation_conflicts_with_goal' | 'not_enough_equipment';
+  /** `empty_week`: a `days` week with nothing in it but rest — there is no session to build. */
+  reason: 'goal_not_authored' | 'limitation_conflicts_with_goal' | 'not_enough_equipment' | 'empty_week';
   message: string;
 }
 
@@ -114,6 +149,43 @@ export interface Assembly {
    * suggestion (CA-D12). Absent on every other build.
    */
   concern?: EnduranceConcern | null;
+
+  // ── Athlete-authored (CA-D3 / CA-D12) — always present on a strength or hybrid build ────────────────
+  /**
+   * Pinned names the catalogue could not match — to be ASKED BACK ("which row did you mean?"), never
+   * silently dropped. The athlete's own words, exactly as given.
+   */
+  unresolved?: string[];
+  /**
+   * Pinned exercises that matched but were held out by a wall — a stated limitation, kit they have not
+   * said they own, an exclusion they asked for, or a week with no lift day to put them on. Each one also
+   * has its sentence in `concerns`. A pin marked `confirmed` is never held for a limitation or kit.
+   */
+  held?: PinHeld[];
+  /** Family words Holt turned into a specific movement — "rows" → Barbell Bent-Over Row — to say so. */
+  chosen?: PinChosen[];
+  /**
+   * One sentence each, in Holt's voice, to say ONCE and then drop (CA-D12): a heavy leg day before the
+   * athlete's own long run, a week with no rest day, a clamp, a held pin. Never a refusal.
+   */
+  concerns?: string[];
+}
+
+export interface PinHeld {
+  /** What the athlete wrote. */
+  asked: string;
+  /** The catalogue's name for what matched (the athlete's words again when a family matched nothing). */
+  name: string;
+  catalogKey: string;
+  reason: 'limitation' | 'equipment' | 'excluded' | 'no_lift_day';
+}
+
+export interface PinChosen {
+  /** What the athlete wrote. */
+  asked: string;
+  catalogKey: string;
+  /** The catalogue's name for what went in. */
+  name: string;
 }
 
 export type AssembleResult = { ok: true; assembly: Assembly } | { ok: false; refusal: CoachRefusal };
@@ -229,6 +301,42 @@ function variantFor(day: DaySkeleton, occurrence: number, total: number): DaySke
   return { ...day, name: `${day.name} ${letter}`, slots };
 }
 
+/** A pinned exercise that resolved, passed its walls, and has a day to go on. */
+interface PlacedPin {
+  pin: PinnedExercise;
+  exercise: CatalogExercise;
+}
+
+/**
+ * The focus, pre-resolved once per build: which patterns a day may gain, the primary-muscle ids that earn
+ * an extra set, and for each extra slot the pools its pick is drawn from, best first — the group's own
+ * primary movers, then anything that works the group, then the whole pool (`rulebook/focus.ts`).
+ */
+interface FocusPlan {
+  focus: readonly FocusMuscle[];
+  muscles: ReadonlySet<string>;
+  pools: ReadonlyMap<string, readonly (readonly CatalogExercise[])[]>;
+}
+
+const NO_FOCUS: FocusPlan = { focus: [], muscles: new Set(), pools: new Map() };
+
+function focusPlanFor(focus: readonly FocusMuscle[], pool: readonly CatalogExercise[]): FocusPlan {
+  if (focus.length === 0) return NO_FOCUS;
+  const pools = new Map<string, (readonly CatalogExercise[])[]>();
+  for (const f of focus) {
+    for (const pattern of FOCUS_SPEC[f]?.slots ?? []) {
+      if (pools.has(pattern)) continue;
+      const muscles = focusMusclesForSlot(pattern, focus);
+      pools.set(pattern, [
+        pool.filter((e) => e.primaryMuscleIds.some((m) => muscles.has(m))),
+        pool.filter((e) => e.muscleIds.some((m) => muscles.has(m))),
+        pool,
+      ]);
+    }
+  }
+  return { focus, muscles: focusMuscleIds(focus), pools };
+}
+
 function buildDay(
   skeleton: DaySkeleton,
   letter: string,
@@ -248,31 +356,138 @@ function buildDay(
     maxSets: number | null;
     owned: readonly string[];
     bannedActivities: ReadonlySet<string>;
+    /** The athlete's own exercises for this day, placed before anything the rulebook chooses. */
+    pins?: readonly PlacedPin[];
+    focus?: FocusPlan;
   },
   notes: AssemblyNote[],
 ): ProgramDay {
   const main: ProgramExercise[] = [];
   const used = new Set<string>(baseCtx.used);
   const cardioSlots = skeleton.cardioFinisher ? 1 : 0;
+  const focus = opts.focus ?? NO_FOCUS;
   let sets = 0;
 
-  for (const pattern of skeleton.slots) {
-    if (main.length >= opts.budget - cardioSlots) break;
+  const pctxFor = () => ({
+    category: opts.category,
+    experience: opts.experience.lifting,
+    weekIndex: opts.weekIndex,
+    totalWeeks: opts.totalWeeks,
+    isDeload: opts.isDeload,
+  });
+  /* The extra set a focused group earns — on its primary movers only, never in a deload (the deload has
+     to stay lighter than the week before it, PAS-D8), and always inside the session's ceiling below. */
+  const focusBonus = (ex: CatalogExercise): number =>
+    !opts.isDeload && ex.primaryMuscleIds.some((m) => focus.muscles.has(m)) ? FOCUS_EXTRA_SETS : 0;
+  const cueOf = (ex: CatalogExercise) =>
+    cueFor({ pattern: ex.pattern, goal: opts.goal, experience: opts.experience.lifting, isPrimary: main.length === 0 });
+
+  /*
+   * ══ 1. THE ATHLETE'S OWN EXERCISES ARE PLACED FIRST (CA-D3) ══
+   *
+   * Placed before a single slot is filled, and outside the budget and the set ceiling: they are the
+   * athlete's, and a coach does not trim somebody's bench press to make room for his own accessory. What
+   * the ceiling governs is everything Holt ADDS around them — so a day of four pinned lifts gets few or no
+   * extra movements, which is exactly right. `sets`/`reps` are verbatim when given ("5×5"), else the
+   * rulebook's for that position. A verbatim count is still cut in a deload week, like everything else,
+   * and `assemble` says so once (`CONCERN.pinDeload`) rather than letting the athlete find a 3×5.
+   *
+   * ⚠ PLACED FIRST IS NOT ORDERED FIRST. The first build led a full-body day with *Bench · Barbell Curl ·
+   * Back Squat* — the athlete's curl ahead of the day's squat, which breaks the one ordering rule that
+   * holds across every goal (compounds first, `candidates.ts`). So a pinned COMPOUND leads the day, and a
+   * pinned isolation movement has its room and its sets reserved now and is written after the rulebook's
+   * compounds, at the end of the day — still guaranteed, just where an isolation movement belongs.
+   */
+  const slots = [...skeleton.slots];
+  const pinRow = (pin: PinnedExercise, exercise: CatalogExercise, index: number): { row: ProgramExercise; dose: number } => {
+    const cue = cueFor({ pattern: exercise.pattern, goal: opts.goal, experience: opts.experience.lifting, isPrimary: index === 0 });
+    const pctx = pctxFor();
+    const verbatimSets = isCount(pin.sets) && pin.sets >= 1 ? Math.round(pin.sets) : null;
+    const own = verbatimSets != null ? (opts.isDeload ? deloadSets(verbatimSets) : verbatimSets) : null;
+    if (opts.category === 'MOBILITY' || exercise.pattern === 'Mobility') {
+      const hold = prescribeHold(pctx);
+      const row = { catalogKey: exercise.key, name: exercise.name, sets: own ?? hold.sets, durationSec: hold.durationSec, ...(cue ? { coachNote: cue } : {}) };
+      return { row, dose: 0 };
+    }
+    const rx = prescribeReps(roleFor(index, isCompound(exercise.pattern)), pctx);
+    const dose = own ?? rx.sets + focusBonus(exercise);
+    const verbatimReps = isCount(pin.reps) && pin.reps >= 1 ? Math.round(pin.reps) : null;
+    const row = {
+      catalogKey: exercise.key,
+      name: exercise.name,
+      sets: dose,
+      reps: verbatimReps ?? rx.reps,
+      ...(verbatimReps != null ? {} : { repsMax: rx.repsMax }),
+      ...(cue ? { coachNote: cue } : {}),
+    };
+    return { row, dose };
+  };
+
+  const dayPins: PlacedPin[] = [];
+  for (const p of opts.pins ?? []) {
+    if (used.has(p.exercise.key)) continue; // the same lift named twice for one day is one row, not two
+    used.add(p.exercise.key);
+    dayPins.push(p);
+    // The pin takes the slot of its own pattern, so the day does not also get the rulebook's version.
+    const taken = slots.indexOf(p.exercise.pattern);
+    if (taken >= 0) slots.splice(taken, 1);
+  }
+  for (const { pin, exercise } of dayPins.filter((p) => isCompound(p.exercise.pattern))) {
+    const { row, dose } = pinRow(pin, exercise, main.length);
+    sets += dose;
+    main.push(row);
+  }
+  const tail = dayPins
+    .filter((p) => !isCompound(p.exercise.pattern))
+    .map((p) => pinRow(p.pin, p.exercise, Infinity));
+  // Room and sets held back for the athlete's isolation work, written after the fill below.
+  const reservedCount = tail.length;
+  const reservedSets = tail.reduce((n, t) => n + t.dose, 0);
+
+  /*
+   * ══ 2. THE FOCUS TAKES A SLOT EARLY ══
+   *
+   * After the day's lead movements and before its tail — see `FOCUS_SLOT_INDEX`. What falls off the end
+   * of the budget in exchange is the last isolation or core movement, which is the trade a focus is.
+   */
+  const extra = new Set<number>();
+  const focusSlots = focus.focus.length > 0 ? focusSlotsFor(skeleton.slots, focus.focus) : [];
+  if (focusSlots.length > 0) {
+    const at = Math.min(FOCUS_SLOT_INDEX, slots.length);
+    slots.splice(at, 0, ...focusSlots);
+    focusSlots.forEach((_, i) => extra.add(at + i));
+  }
+
+  for (let si = 0; si < slots.length; si++) {
+    const pattern = slots[si];
+    if (main.length >= opts.budget - cardioSlots - reservedCount) break;
     /* ⚠ THE SET CEILING IS HELD HERE, NOT ONLY IN THE VALIDATOR. The budget counts EXERCISES and PAS-D11
        caps both: an advanced lifter's 75-minute hypertrophy day is eight exercises at four sets each —
        32 against HYPERTROPHY's 30 — so the builder wrote a day its own validator rejects (75 of 125
        advanced 75-minute muscle builds in the stress sweep, 2026-09-21). A slot that cannot carry a real
        dose of at least two sets inside the ceiling is not started. */
-    if (opts.maxSets != null && opts.maxSets - sets < 2) break;
+    if (opts.maxSets != null && opts.maxSets - sets - reservedSets < 2) break;
 
-    const found = fillSlot(pattern, pool, { ...baseCtx, used });
+    const isFocusSlot = extra.has(si);
+    let found: ReturnType<typeof fillSlot> = null;
+    if (isFocusSlot) {
+      // The group's own movers first, then anything that works it, then the pattern's usual answer.
+      for (const p of focus.pools.get(pattern) ?? [pool]) {
+        found = fillSlot(pattern, p, { ...baseCtx, used });
+        if (found) break;
+      }
+      // A focus slot the room cannot fill is not a gap in the plan the athlete was promised — no note.
+      if (!found) continue;
+    } else {
+      found = fillSlot(pattern, pool, { ...baseCtx, used });
+    }
     if (!found) {
       // Only worth telling the athlete about once, and only on the first week — the same gap repeats
       // every week and a list of forty identical notes is noise, not information.
       if (opts.weekIndex === 0) notes.push({ kind: 'dropped', day: skeleton.name, wanted: pattern });
       continue;
     }
-    if (found.relaxed && opts.weekIndex === 0) {
+    if (found.relaxed && opts.weekIndex === 0 && !isFocusSlot) {
       notes.push({ kind: 'relaxed', day: skeleton.name, wanted: pattern, got: found.pattern });
     }
     /* Reaching a tier above the athlete is reported the same way relaxing a pattern is: it is the right
@@ -284,23 +499,12 @@ function buildDay(
 
     used.add(found.exercise.key);
     const role = roleFor(main.length, isCompound(found.pattern));
-    const pctx = {
-      category: opts.category,
-      experience: opts.experience.lifting,
-      weekIndex: opts.weekIndex,
-      totalWeeks: opts.totalWeeks,
-      isDeload: opts.isDeload,
-    };
+    const pctx = pctxFor();
 
     /* HOW to do it, not just how much — the line the athlete reads under THE PLAN SAYS. Keyed on the
        movement pattern and the goal, so it is a rulebook decision like every other number here rather
        than 733 hand-written strings. `null` for an advanced lifter on an accessory, deliberately. */
-    const cue = cueFor({
-      pattern: found.exercise.pattern,
-      goal: opts.goal,
-      experience: opts.experience.lifting,
-      isPrimary: main.length === 0,
-    });
+    const cue = cueOf(found.exercise);
 
     if (opts.category === 'MOBILITY') {
       const hold = prescribeHold(pctx);
@@ -313,8 +517,9 @@ function buildDay(
       });
     } else {
       const rx = prescribeReps(role, pctx);
+      const wanted = rx.sets + focusBonus(found.exercise);
       // The last slot takes what the ceiling leaves — the day keeps its length and its tail is lighter.
-      const dose = opts.maxSets != null ? Math.min(rx.sets, opts.maxSets - sets) : rx.sets;
+      const dose = opts.maxSets != null ? Math.min(wanted, opts.maxSets - sets - reservedSets) : wanted;
       sets += dose;
       main.push({
         catalogKey: found.exercise.key,
@@ -326,6 +531,9 @@ function buildDay(
       });
     }
   }
+
+  // The athlete's isolation work, in the place an isolation movement belongs.
+  for (const t of tail) main.push(t.row);
 
   if (skeleton.cardioFinisher) {
     const opt = chooseCardio(opts.owned, opts.bannedActivities);
@@ -370,6 +578,16 @@ export function assemble(
 ): AssembleResult {
   const c = normalise(rawConstraints);
 
+  /*
+   * ══ A WEEK THE ATHLETE SHAPED COMES FIRST (CA §4.1) ══
+   *
+   * "Run twice, lift three days" is not a goal with a split — it is a week of days, and the goal only
+   * decides what the LIFT days are for. It goes before the refusals because the one refusal that could
+   * fire here (a race goal with running ruled out) is about a race build, and a run-and-lift week is not
+   * one: its runs meet the limitation on their own terms, day by day, in `assembleHybrid`.
+   */
+  if (c.days && c.days.length > 0) return assembleHybrid(c, pool, canDo);
+
   const refusal = refusalFor(c);
   if (refusal) return { ok: false, refusal };
 
@@ -382,9 +600,11 @@ export function assemble(
    * can fill. All five endurance goals still run through a single machine of their own — the per-GOAL
    * differences live in `RACE_SPEC`, which is the promise this engine was built on.
    */
-  if (isEnduranceGoal(c.goal)) return assembleEnduranceGoal(c, pool);
+  if (isEnduranceGoal(c.goal)) return withUnplacedPins(assembleEnduranceGoal(c, pool), c, pool);
 
-  const requested = skeletonFor(c.goal, c.daysPerWeek, c.splitStyle ?? null);
+  /* ⚠ `weekForAnyDays`, NOT `skeletonFor` — identical at 2–6, and the one place a 1- or 7-day week the
+     athlete dictated (`athleteSetDays`) gets a shape instead of a refusal. */
+  const requested = weekForAnyDays(c.goal, c.daysPerWeek, c.splitStyle ?? null);
   if (!requested) {
     return {
       ok: false,
@@ -392,8 +612,87 @@ export function assemble(
     };
   }
 
-  const weeks = c.weeks ?? defaultWeeksFor(c.goal);
-  const category = GOAL_CATEGORY[c.goal as keyof typeof GOAL_CATEGORY] as PasCategory;
+  const concerns: string[] = [...dayCountConcerns(rawConstraints, c)];
+  const plan = planLifts(c, c.goal, requested, pool, canDo, (day) => (isCount(day) ? day : null), concerns);
+
+  const notes: AssemblyNote[] = [];
+  const weekPlans = Array.from({ length: plan.weeks }, (_, weekIndex) => ({
+    days: plan.variants.map((_, i) => liftDay(plan, i, String.fromCharCode(65 + i), weekIndex, pool, c, notes)),
+  }));
+
+  const thin = thinRefusal(weekPlans.flatMap((w) => w.days), c, plan.owned);
+  if (thin) return { ok: false, refusal: thin };
+
+  const structure: ProgramStructure = {
+    name: nameFor(c.goal, plan.weeks),
+    weeks: plan.weeks,
+    daysPerWeek: c.daysPerWeek,
+    vary: true,
+    days: weekPlans[0].days,
+    weekPlans,
+  };
+
+  concerns.push(...pinCeilingConcerns(plan, weekPlans[0].days.map((day, lift) => ({ day, lift }))));
+
+  return {
+    ok: true,
+    assembly: {
+      structure,
+      notes,
+      category: plan.category,
+      deloadWeeks: plan.deloads,
+      restructured: plan.restructured,
+      unresolved: plan.unresolved,
+      held: plan.held,
+      chosen: plan.chosen,
+      concerns: [...new Set(concerns)],
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// THE LIFT WEEK — shared by the strength path and the lift days of a hybrid week
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** Everything the lift days of one build share, resolved once rather than per day per week. */
+interface LiftPlan {
+  variants: DaySkeleton[];
+  baseCtx: CandidateContext;
+  owned: readonly string[];
+  bannedActivities: ReadonlySet<string>;
+  restructured?: Restructure;
+  category: PasCategory;
+  goal: Goal;
+  weeks: number;
+  deloads: number[];
+  /** Placed pins, by lift-day index. */
+  pinsByDay: PlacedPin[][];
+  focus: FocusPlan;
+  unresolved: string[];
+  held: PinHeld[];
+  chosen: PinChosen[];
+}
+
+/**
+ * The room, the context, the split check, the variants, the pins and the focus — everything before a
+ * single day is built.
+ *
+ * `liftGoal` is the goal the lift days are FOR: the block's own goal on the strength path, and
+ * `liftGoalFor(goal)` on a hybrid week (a race goal lends its lift days to `health`). `pinDay` turns a
+ * pin's `day` into a lift-day index, or null when it names no lift day — the two paths index days
+ * differently (training days vs the `days` week) and this is the one place that difference lives.
+ */
+function planLifts(
+  c: CoachConstraints,
+  liftGoal: Goal,
+  requested: DaySkeleton[],
+  pool: readonly CatalogExercise[],
+  canDo: EquipmentGate,
+  pinDay: (day: number | null | undefined) => number | null,
+  concerns: string[],
+): LiftPlan {
+  const weeks = c.weeks ?? defaultWeeksFor(liftGoal);
+  const category = GOAL_CATEGORY[liftGoal as keyof typeof GOAL_CATEGORY] as PasCategory;
   const deloads = deloadWeeks(weeks);
 
   // Equipment resolves in two steps and the order matters: the environment decides what is in the room,
@@ -446,9 +745,12 @@ export function assemble(
     /* ⚠ THROUGH `skeletonFor`, not the raw table. `fullBodyFallback` returns the bare full-body week, and
        using it directly stripped the cardio finishers off a CONDITIONING block — Holt restructured the
        split and quietly deleted the conditioning while he was at it. `skeletonFor` re-applies whatever
-       the goal requires on top of the chosen shape, which is exactly the point of it existing. */
-    const fallback = skeletonFor(c.goal, c.daysPerWeek, 'full_body') ?? fullBodyFallback(c.daysPerWeek);
-    if (fallback && weekIsViable(fallback, trainable)) {
+       the goal requires on top of the chosen shape, which is exactly the point of it existing.
+       (`weekForAnyDays` is `skeletonFor` with the athlete's 1- and 7-day ends derived from it.) */
+    const fallback =
+      weekForAnyDays(liftGoal, requested.length, 'full_body') ??
+      fullBodyFallback(Math.min(MAX_DAYS_PER_WEEK, Math.max(MIN_DAYS_PER_WEEK, requested.length)));
+    if (fallback && fallback.length === requested.length && weekIsViable(fallback, trainable)) {
       skeleton = fallback;
       restructured = {
         from: requested[0]?.name ?? 'that split',
@@ -472,83 +774,679 @@ export function assemble(
     return variantFor(d, n, occurrences.get(d.name) ?? 1);
   });
 
-  const notes: AssemblyNote[] = [];
-  const weekPlans = Array.from({ length: weeks }, (_, weekIndex) => {
-    const isDeload = deloads.includes(weekIndex);
-    const band = bandFor(category, isDeload);
-    const budget = Math.min(exerciseBudget(c.sessionMinutes), band.maxExercises);
+  // ── The focus: a table lookup, or nothing — and said once when the goal sets it aside ──
+  const wantsFocus = (c.focusMuscles ?? []).length > 0;
+  const focus = wantsFocus && focusApplies(liftGoal) ? focusPlanFor(c.focusMuscles ?? [], pool) : NO_FOCUS;
+  if (wantsFocus && !focusApplies(liftGoal)) concerns.push(CONCERN.focusIgnored());
 
-    return {
-      days: variants.map((d, i) =>
-        buildDay(d, String.fromCharCode(65 + i), pool, baseCtx, {
-          category,
-          goal: c.goal,
-          experience: c.experience,
-          weekIndex,
-          totalWeeks: weeks,
-          isDeload,
-          budget,
-          maxSets: band.maxSets,
-          owned,
-          bannedActivities,
-        }, notes),
-      ),
-    };
+  // ── The athlete's own exercises: resolved, walled, and given a day ──
+  const pins = placePins(c, pool, canDo, owned, baseCtx, variants, pinDay, concerns);
+  if (pins.hasVerbatimSets && deloads.length > 0) concerns.push(CONCERN.pinDeload(deloads[0] + 1));
+
+  return {
+    variants,
+    baseCtx,
+    owned,
+    bannedActivities,
+    restructured,
+    category,
+    goal: liftGoal,
+    weeks,
+    deloads,
+    pinsByDay: pins.byDay,
+    focus,
+    unresolved: pins.unresolved,
+    held: pins.held,
+    chosen: pins.chosen,
+  };
+}
+
+/** Lift day `i` of the plan, for one week. */
+function liftDay(
+  plan: LiftPlan,
+  i: number,
+  letter: string,
+  weekIndex: number,
+  pool: readonly CatalogExercise[],
+  c: CoachConstraints,
+  notes: AssemblyNote[],
+): ProgramDay {
+  const isDeload = plan.deloads.includes(weekIndex);
+  const band = bandFor(plan.category, isDeload);
+  const budget = Math.min(exerciseBudget(c.sessionMinutes), band.maxExercises);
+  return buildDay(plan.variants[i], letter, pool, plan.baseCtx, {
+    category: plan.category,
+    goal: plan.goal,
+    experience: c.experience,
+    weekIndex,
+    totalWeeks: plan.weeks,
+    isDeload,
+    budget,
+    maxSets: band.maxSets,
+    owned: plan.owned,
+    bannedActivities: plan.bannedActivities,
+    pins: plan.pinsByDay[i] ?? [],
+    focus: plan.focus,
+  }, notes);
+}
+
+/*
+ * ══ ⚠ A BACKSTOP, AND HONESTLY NOT THE THING THAT FIXED THE REPORT ══
+ *
+ * The check here used to be `main.length === 0`. Zero was refused; one and two were shipped — as an
+ * EIGHT-WEEK BLOCK. The single-workout path was given `MIN_DAY_MOVEMENTS` when the PO reported this
+ * class of bug against it (`day.ts`, `thin-day.test.mjs`, 2026-08-14); the assembler was never
+ * brought along, so a program could still ship a two-movement day that a one-off workout refused.
+ *
+ * ⚠ **IT WOULD NOT HAVE CAUGHT THE 2026-08-17 REPORT.** That program — dumbbells, a mat, a bench and
+ * a bad back — came out at *Box Squat to Bench · Seated Dumbbell Shoulder Press · Dead Bug*, three
+ * movements a day for eight weeks, which clears a floor of three by exactly nothing. What repaired
+ * that is `STRETCH_CEILING` in `candidates.ts`; this closes the hole underneath it so the next
+ * starved room refuses instead of shipping. Swept after the fix: **54,000 combinations across six
+ * rooms, 0 refusals, thinnest day shipped anywhere = 4.** It is a guard that should never fire.
+ *
+ * Same constant as the day builder, deliberately — a session is a session, and a floor that differed
+ * between them would mean Holt refusing to write a workout he would happily put in a program.
+ *
+ * ⚠ NOT THE PAS-D11 FLOOR, which is 4–5 depending on category. That one is already handled, and
+ * deliberately as a DEVIATION rather than a failure, by `validate-program.ts` — a room that cannot
+ * reach five movements gets a note, not a refusal. Re-deciding it here would overrule the standard
+ * from the wrong file.
+ *
+ * ⚠ IT IS CHECKED ON EVERY WEEK, NOT JUST THE FIRST. A deload cuts sets, never exercises (PAS-A6-D2),
+ * so week 1 is representative today — but that is a property of the volume tables, not a guarantee
+ * this check is entitled to assume.
+ *
+ * ⚠ LIFT DAYS ONLY. A hybrid week's run is one row by design, and is not a thin lift day.
+ */
+function thinRefusal(liftDays: readonly ProgramDay[], c: CoachConstraints, owned: readonly string[]): CoachRefusal | null {
+  const thin = liftDays.filter((d) => d.main.length < MIN_DAY_MOVEMENTS);
+  if (thin.length === 0) return null;
+  const bareRoom = c.environment === 'bodyweight' || owned.length === 0;
+  return {
+    reason: 'not_enough_equipment',
+    message: c.limitations.length > 0 && !bareRoom
+      ? "Between what you've got to train with and what you've told me to work around, I can't fill a session properly — and a three-movement week isn't a program. Add what else you have access to, or take one restriction off, and I'll build it."
+      : "There isn't enough here for me to build a full week — I couldn't fill a single day. Tell me what you have access to, or pick bodyweight-only and I'll work with that.",
+  };
+}
+
+/**
+ * CA-D12 for the day count: a count the athlete set outside Holt's own 2–6 is built and said once; a count
+ * Holt had to clamp is said too, never done silently. Absent when nothing about the count is unusual.
+ */
+function dayCountConcerns(raw: CoachConstraints, c: CoachConstraints): string[] {
+  const out: string[] = [];
+  const asked = isCount(raw.daysPerWeek) ? Math.round(raw.daysPerWeek) : null;
+  if (asked != null && asked !== c.daysPerWeek) out.push(CONCERN.clampedDays(asked, c.daysPerWeek));
+  if (c.daysPerWeek >= 7) out.push(CONCERN.noRestDay());
+  if (c.daysPerWeek === 1) out.push(CONCERN.oneDay());
+  return out;
+}
+
+/** A day the athlete's own sets pushed past the session ceiling — theirs, and said once. Week 1 only. */
+function pinCeilingConcerns(plan: LiftPlan, week1: readonly { day: ProgramDay; lift: number }[]): string[] {
+  const band = bandFor(plan.category, false);
+  const out: string[] = [];
+  week1.forEach(({ day: d, lift }) => {
+    if ((plan.pinsByDay[lift] ?? []).length === 0) return;
+    const sets = d.main.reduce((n, ex) => n + (ex.kind === 'cardio' ? 0 : (ex.sets ?? 0)), 0);
+    if (d.main.length > band.maxExercises || (band.maxSets != null && sets > band.maxSets)) {
+      out.push(CONCERN.pinOverCeiling(d.name));
+    }
   });
+  return out;
+}
 
-  /*
-   * ══ ⚠ A BACKSTOP, AND HONESTLY NOT THE THING THAT FIXED THE REPORT ══
-   *
-   * The check here used to be `main.length === 0`. Zero was refused; one and two were shipped — as an
-   * EIGHT-WEEK BLOCK. The single-workout path was given `MIN_DAY_MOVEMENTS` when the PO reported this
-   * class of bug against it (`day.ts`, `thin-day.test.mjs`, 2026-08-14); the assembler was never
-   * brought along, so a program could still ship a two-movement day that a one-off workout refused.
-   *
-   * ⚠ **IT WOULD NOT HAVE CAUGHT THE 2026-08-17 REPORT.** That program — dumbbells, a mat, a bench and
-   * a bad back — came out at *Box Squat to Bench · Seated Dumbbell Shoulder Press · Dead Bug*, three
-   * movements a day for eight weeks, which clears a floor of three by exactly nothing. What repaired
-   * that is `STRETCH_CEILING` in `candidates.ts`; this closes the hole underneath it so the next
-   * starved room refuses instead of shipping. Swept after the fix: **54,000 combinations across six
-   * rooms, 0 refusals, thinnest day shipped anywhere = 4.** It is a guard that should never fire.
-   *
-   * Same constant as the day builder, deliberately — a session is a session, and a floor that differed
-   * between them would mean Holt refusing to write a workout he would happily put in a program.
-   *
-   * ⚠ NOT THE PAS-D11 FLOOR, which is 4–5 depending on category. That one is already handled, and
-   * deliberately as a DEVIATION rather than a failure, by `validate-program.ts` — a room that cannot
-   * reach five movements gets a note, not a refusal. Re-deciding it here would overrule the standard
-   * from the wrong file.
-   *
-   * ⚠ IT IS CHECKED ON EVERY WEEK, NOT JUST THE FIRST. A deload cuts sets, never exercises (PAS-A6-D2),
-   * so week 1 is representative today — but that is a property of the volume tables, not a guarantee
-   * this check is entitled to assume.
-   */
-  const thin = weekPlans.flatMap((w) => w.days).filter((d) => d.main.length < MIN_DAY_MOVEMENTS);
-  if (thin.length > 0) {
-    const bareRoom = c.environment === 'bodyweight' || owned.length === 0;
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// PINNED EXERCISES — CA-D3's "Exercises given" and "Everything given"
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Resolve, wall, and place every pin.
+ *
+ * ══ EVERY PIN ENDS IN EXACTLY ONE OF FOUR PLACES ══
+ *
+ *   · on a day            — resolved, allowed, placed
+ *   · `unresolved`        — the catalogue could not match the words; asked back
+ *   · `held`              — matched, but a wall stands (limitation, kit, exclusion, no lift day), with
+ *                           its sentence in `concerns`
+ *   · (a duplicate)       — the same lift named twice for one day is one row
+ *
+ * There is no fifth place. Silently dropping a name is the Exercise Picker's known failure (`resolveKey`
+ * miss = silent drop) and the sweep test asserts it cannot happen here.
+ *
+ * ══ RESOLUTION: THE CATALOGUE'S RESOLVER, THEN THE FAMILY TABLE ══
+ *
+ * A given `catalogKey` that is in the pool wins. Otherwise `resolveAgainstCatalog` — the same path the
+ * Program Builder's import uses, matcher first and curated aliases only on a miss — and only then
+ * `rulebook/pinned.ts`'s families ("rows", "curls"), which pick inside ONE pattern with the rulebook's own
+ * ranking, in the athlete's room, and are reported on `chosen`.
+ *
+ * ══ PLACEMENT: THE DAY THEY SAID, ELSE THE DAY WHOSE PATTERN FITS ══
+ *
+ * A pin's own day wins when it names a lift day. Otherwise it goes on the day that lists its movement
+ * pattern EARLIEST — a bench press lands where a horizontal push leads, not where one is the sixth slot —
+ * then the day carrying the fewest pins, then the earliest day. Each pin is placed once a week: "bench,
+ * rows, pull-ups, curls, three days" spreads the four across the week rather than stacking all four on
+ * every day, and the rulebook fills around them.
+ */
+function placePins(
+  c: CoachConstraints,
+  pool: readonly CatalogExercise[],
+  canDo: EquipmentGate,
+  owned: readonly string[],
+  ctx: CandidateContext,
+  days: readonly DaySkeleton[],
+  pinDay: (day: number | null | undefined) => number | null,
+  concerns: string[],
+): { byDay: PlacedPin[][]; unresolved: string[]; held: PinHeld[]; chosen: PinChosen[]; hasVerbatimSets: boolean } {
+  const byDay: PlacedPin[][] = days.map(() => []);
+  const unresolved: string[] = [];
+  const held: PinHeld[] = [];
+  const chosen: PinChosen[] = [];
+  const pins = c.pinned ?? [];
+  if (pins.length === 0) return { byDay, unresolved, held, chosen, hasVerbatimSets: false };
+
+  const byKey = new Map(pool.map((e) => [e.key, e]));
+  const catalog = pool.map((e) => ({ key: e.key, name: e.name, aliases: e.aliases ? [...e.aliases] : undefined }));
+  const room = effectiveEquipment(c);
+  let hasVerbatimSets = false;
+
+  for (const pin of pins) {
+    const label = (pin.name ?? '').trim() || pin.catalogKey || '';
+    const found = resolvePin(pin, pool, byKey, catalog, ctx);
+    if (!found) {
+      unresolved.push(label);
+      continue;
+    }
+    if (found.kind === 'family_blocked') {
+      // The family exists but nothing in it survives the room and the limitations — say which wall.
+      const reason = ctx.excludePatterns.has(found.family.pattern) ? 'limitation' : 'equipment';
+      held.push({ asked: label, name: label, catalogKey: '', reason });
+      concerns.push(reason === 'limitation' ? CONCERN.pinHeldLimitation(label, null) : CONCERN.pinHeldEquipment(label));
+      continue;
+    }
+    const ex = found.exercise;
+    if (found.kind === 'family') chosen.push({ asked: label, catalogKey: ex.key, name: ex.name });
+
+    if (days.length === 0) {
+      held.push({ asked: label, name: ex.name, catalogKey: ex.key, reason: 'no_lift_day' });
+      concerns.push(CONCERN.pinNoLiftDay(ex.name));
+      continue;
+    }
+
+    const wall = pin.confirmed ? null : wallFor(ex, c, ctx, canDo, owned, room);
+    if (wall) {
+      held.push({ asked: label, name: ex.name, catalogKey: ex.key, reason: wall.reason });
+      concerns.push(
+        wall.reason === 'limitation'
+          ? CONCERN.pinHeldLimitation(ex.name, wall.limitation)
+          : wall.reason === 'excluded'
+            ? CONCERN.pinHeldExcluded(ex.name)
+            : CONCERN.pinHeldEquipment(ex.name),
+      );
+      continue;
+    }
+
+    const own = pinDay(pin.day);
+    const target = own != null && own >= 0 && own < days.length ? own : bestDayFor(ex.pattern, days, byDay);
+    byDay[target].push({ pin, exercise: ex });
+    if (isCount(pin.sets)) hasVerbatimSets = true;
+  }
+
+  return { byDay, unresolved, held, chosen, hasVerbatimSets };
+}
+
+type ResolvedPin =
+  | { kind: 'exact'; exercise: CatalogExercise }
+  | { kind: 'family'; exercise: CatalogExercise; family: PinFamily }
+  | { kind: 'family_blocked'; family: PinFamily };
+
+function resolvePin(
+  pin: PinnedExercise,
+  pool: readonly CatalogExercise[],
+  byKey: ReadonlyMap<string, CatalogExercise>,
+  catalog: { key: string; name: string; aliases?: string[] }[],
+  ctx: CandidateContext,
+): ResolvedPin | null {
+  if (pin.catalogKey && byKey.has(pin.catalogKey)) return { kind: 'exact', exercise: byKey.get(pin.catalogKey)! };
+  const name = (pin.name ?? '').trim();
+  if (!name) return null;
+
+  const matched = resolveAgainstCatalog(name, catalog);
+  const exact = matched ? byKey.get(matched.key) : undefined;
+  if (exact) return { kind: 'exact', exercise: exact };
+
+  const key = aliasKey(name);
+  const family = PIN_FAMILIES.find((f) => aliasKey(f.words) === key);
+  if (!family) return null;
+
+  // Inside the one pattern, in the rulebook's own order, in this room — the athlete's level first, then
+  // the tier above, exactly as `fillSlot` walks it. Never a relaxed pattern: "rows" is a row or nothing.
+  const members = pool.filter((e) => e.pattern === family.pattern && (!family.name || family.name.test(e.name)));
+  for (const stretch of canStretch(ctx.experience) ? [false, true] : [false]) {
+    const pick = candidatesFor(family.pattern, members, ctx, stretch)[0];
+    if (pick) return { kind: 'family', exercise: pick, family };
+  }
+  return { kind: 'family_blocked', family };
+}
+
+/**
+ * Which wall, if any, stands between a resolved pin and the program.
+ *
+ * The same gates `candidatesFor` applies to anything Holt picks — the athlete's exclusions, a limitation's
+ * patterns (with its carve-outs) and keys, and the room after limitations — minus difficulty and
+ * coherence, which are Holt's judgements about what to CHOOSE and have nothing to say about what the
+ * athlete chose. A limitation is named by the first one that bites, so the sentence can say which.
+ */
+function wallFor(
+  ex: CatalogExercise,
+  c: CoachConstraints,
+  ctx: CandidateContext,
+  canDo: EquipmentGate,
+  owned: readonly string[],
+  room: readonly string[],
+): { reason: 'limitation' | 'equipment' | 'excluded'; limitation: Limitation | null } | null {
+  if (c.excludeExercises.includes(ex.key)) return { reason: 'excluded', limitation: null };
+  const patternBanned = ctx.excludePatterns.has(ex.pattern) && !ctx.keepKeys?.has(ex.key);
+  if (ctx.excludeKeys.has(ex.key) || patternBanned || !canDo(ex, owned)) {
+    if (!canDo(ex, room)) return { reason: 'equipment', limitation: null };
+    const blame =
+      c.limitations.find(
+        (l) =>
+          limitationExcludeKeys(l).includes(ex.key) ||
+          (limitationPatterns(l).includes(ex.pattern) && !limitationKeepKeys(l).includes(ex.key)) ||
+          !canDo(ex, equipmentAfterLimitations(room, [l])),
+      ) ?? null;
+    return { reason: 'limitation', limitation: blame };
+  }
+  return null;
+}
+
+/** The lift day a pin with no day of its own belongs on — see `placePins`. */
+function bestDayFor(pattern: string, days: readonly DaySkeleton[], byDay: readonly PlacedPin[][]): number {
+  let best = 0;
+  let bestScore = [Infinity, Infinity];
+  days.forEach((d, i) => {
+    const at = d.slots.indexOf(pattern);
+    const score = [at < 0 ? Infinity : at, byDay[i].length];
+    if (score[0] < bestScore[0] || (score[0] === bestScore[0] && score[1] < bestScore[1])) {
+      best = i;
+      bestScore = score;
+    }
+  });
+  return best;
+}
+
+/**
+ * A race plan has no lift day, so a pin cannot be placed in one — and must not vanish either. Every pin
+ * on a race build comes back held (`no_lift_day`) or unresolved, with its sentence.
+ */
+function withUnplacedPins(res: AssembleResult, c: CoachConstraints, pool: readonly CatalogExercise[]): AssembleResult {
+  if (!res.ok || (c.pinned ?? []).length === 0) return res;
+  const concerns: string[] = [];
+  const ctx = contextFrom({
+    owned: [],
+    canDo: () => true,
+    experience: c.experience.lifting,
+    limitations: [],
+    limitationPatterns: () => [],
+  });
+  const pins = placePins(c, pool, () => true, [], ctx, [], () => null, concerns);
+  return {
+    ok: true,
+    assembly: { ...res.assembly, unresolved: pins.unresolved, held: pins.held, chosen: pins.chosen, concerns },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// HYBRID WEEKS — CA §4.1
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** One entry of the athlete's week, carrying where it came from and, for a lift, which lift day it is. */
+interface WeekEntry {
+  intent: DayIntent;
+  /** Index in `c.days`. */
+  at: number;
+  /** Lift-day index into the plan, for `lift` entries. */
+  lift: number | null;
+  /** Comparable length of a run (miles, or minutes ÷ `COMPARE_MIN_PER_MI`). 0 for everything else. */
+  length: number;
+}
+
+/**
+ * A run-and-lift week.
+ *
+ * Lift days are the strength rulebook's, exactly — the same `planLifts` and `buildDay` as a strength
+ * block, so the goal, the focus, the pins, the limitations and the room all apply without a second copy
+ * of any of it. Run days are `endurance.ts`'s own easy and long days (`buildRunDay`), sized from the
+ * athlete's words or their weekly miles. What is new is only the ORDER: `arrangeWeek` keeps a heavy leg
+ * day off the day before the long run when Holt is free to choose, and names it when he is not.
+ */
+function assembleHybrid(c: CoachConstraints, pool: readonly CatalogExercise[], canDo: EquipmentGate): AssembleResult {
+  const week = c.days ?? [];
+  if (!week.some((d) => d.kind !== 'rest')) {
     return {
       ok: false,
       refusal: {
-        reason: 'not_enough_equipment',
-        message: c.limitations.length > 0 && !bareRoom
-          ? "Between what you've got to train with and what you've told me to work around, I can't fill a session properly — and a three-movement week isn't a program. Add what else you have access to, or take one restriction off, and I'll build it."
-          : "There isn't enough here for me to build a full week — I couldn't fill a single day. Tell me what you have access to, or pick bodyweight-only and I'll work with that.",
+        reason: 'empty_week',
+        message: "That week is all rest — give me at least one day to train and I'll build around it.",
       },
     };
   }
 
+  const concerns: string[] = [];
+  if (isEnduranceGoal(c.goal)) concerns.push(CONCERN.hybridNotRace());
+  const liftGoal = liftGoalFor(c.goal);
+
+  // ── Lift days: the goal's own week at this many lift days, with any day the athlete named taking its
+  //    named shape. A named day inherits the goal's finisher, so a conditioning week stays conditioning. ──
+  let liftCount = 0;
+  const entries: WeekEntry[] = week.map((intent, at) => ({
+    intent,
+    at,
+    lift: intent.kind === 'lift' ? liftCount++ : null,
+    length: 0,
+  }));
+  const goalWeek = liftCount > 0 ? (weekForAnyDays(liftGoal, liftCount, c.splitStyle ?? null) ?? []) : [];
+  const requested: DaySkeleton[] = entries
+    .filter((e) => e.lift != null)
+    .map((e, k) => {
+      const base = goalWeek[k] ?? goalWeek[0];
+      const named = dayForFocus(e.intent.focus);
+      if (!named) return base;
+      return base?.cardioFinisher ? { ...named, cardioFinisher: base.cardioFinisher } : named;
+    })
+    .filter((d): d is DaySkeleton => d != null);
+
+  const plan = planLifts(
+    c,
+    liftGoal,
+    requested,
+    pool,
+    canDo,
+    (day) => (isCount(day) ? (entries[day]?.lift ?? null) : null),
+    concerns,
+  );
+
+  // ── Runs: sized, then the longest one found (the day the interference rule protects) ──
+  const runsBanned = forbidsRunning(c.limitations);
+  const runsOverridden = runsBanned && c.buildAnyway === true;
+  const sizes = sizeRuns(entries, c);
+  for (const e of entries) e.length = sizes.get(e.at)?.compare ?? 0;
+  const runLengths = entries.filter((e) => e.intent.kind === 'run').map((e) => e.length);
+  const longest = Math.max(0, ...runLengths);
+  // A key run exists only when ONE run is the longest — seven equal miles have no long run to protect.
+  const keyAt = runLengths.filter((l) => l === longest).length === 1 ? entries.find((e) => e.intent.kind === 'run' && e.length === longest)?.at ?? null : null;
+
+  const heavy = (e: WeekEntry): boolean => e.lift != null && !!plan.variants[e.lift] && isLowerHeavy(plan.variants[e.lift]);
+  const order = c.daysAsGiven ? entries : arrangeWeek(entries, keyAt, heavy);
+
+  // ── Interference, said once: the athlete's order is kept; Holt's own is only ever unavoidable ──
+  if (keyAt != null && !(runsBanned && !runsOverridden)) {
+    const k = order.findIndex((e) => e.at === keyAt);
+    const before = order[(k - 1 + order.length) % order.length];
+    if (order.length > 1 && heavy(before)) {
+      concerns.push(
+        c.daysAsGiven
+          ? CONCERN.heavyLegsBeforeLongRun(plan.variants[before.lift!].name)
+          : CONCERN.heavyLegsUnavoidable(),
+      );
+    }
+  }
+  if (c.daysPerWeek >= 7) concerns.push(CONCERN.noRestDay());
+  if (c.daysPerWeek === 1) concerns.push(CONCERN.oneDay());
+
+  const paces = pacesFrom(c.recentRaceMi, c.recentRaceSec);
+  const stretchKeys = pool
+    .filter((e) => e.modality === 'Mobility' && /stretch/i.test(e.name))
+    .map((e) => e.key)
+    .sort()
+    .slice(0, 6);
+  const bannedActivities = plan.bannedActivities;
+  // A holder, not a `let` — it is written inside the day builder's closure below.
+  const swap: { to: string | null } = { to: null };
+
+  /* A week with no lift day is a running week and is authored against the running band. Its deload
+     week keeps the marker (PAS-D8 reads it on every day) and cuts the runs Holt sized
+     (`DELOAD_RUN_MULTIPLIER`); the validator's "lighter by sets" check has no sets to measure there. */
+  if (liftCount === 0) plan.category = 'RUNNING';
+
+  const notes: AssemblyNote[] = [];
+  const sessions = order.filter((e) => e.intent.kind !== 'rest');
+  const weekPlans = Array.from({ length: plan.weeks }, (_, weekIndex) => {
+    const isDeload = plan.deloads.includes(weekIndex);
+    return {
+      days: sessions.map((e, i): ProgramDay => {
+        const letter = String.fromCharCode(65 + i);
+        if (e.intent.kind === 'lift') return liftDay(plan, e.lift!, letter, weekIndex, pool, c, notes);
+        const size = sizes.get(e.at);
+        if (e.intent.kind === 'run' && !(runsBanned && !runsOverridden)) {
+          return marked(runDay(size, e.at === keyAt, c, paces, stretchKeys, letter, isDeload), isDeload);
+        }
+        // A cardio day, or a run the athlete's limitation turned into one.
+        const preferred = e.intent.kind === 'cardio' ? e.intent.focus : null;
+        const minutes = size?.min ?? (size?.mi != null ? size.mi * COMPARE_MIN_PER_MI : DEFAULT_CARDIO_MIN);
+        const day = cardioDay(plan.owned, bannedActivities, preferred, minutes, letter);
+        if (e.intent.kind === 'run') swap.to = day.activity;
+        return marked(day.day, isDeload);
+      }),
+    };
+  });
+
+  if (runsOverridden && entries.some((e) => e.intent.kind === 'run')) concerns.push(CONCERN.runsKept());
+  if (swap.to) concerns.push(CONCERN.runsSwapped(ACTIVITY_PLURAL[swap.to] ?? 'other cardio'));
+
+  const liftDays = weekPlans.flatMap((w) => w.days.filter((_, i) => sessions[i].intent.kind === 'lift'));
+  const thin = thinRefusal(liftDays, c, plan.owned);
+  if (thin) return { ok: false, refusal: thin };
+
+  const week1Lifts = weekPlans[0].days
+    .map((day, i) => ({ day, lift: sessions[i].lift }))
+    .filter((d): d is { day: ProgramDay; lift: number } => d.lift != null);
+  concerns.push(...pinCeilingConcerns(plan, week1Lifts));
+
+  const hasRuns = entries.some((e) => e.intent.kind === 'run' || e.intent.kind === 'cardio');
   const structure: ProgramStructure = {
-    name: nameFor(c.goal, weeks),
-    weeks,
-    daysPerWeek: c.daysPerWeek,
+    name: liftCount > 0 && hasRuns ? `${plan.weeks}-Week Run & Lift Block` : liftCount > 0 ? nameFor(liftGoal, plan.weeks) : `${plan.weeks}-Week Running Block`,
+    weeks: plan.weeks,
+    daysPerWeek: sessions.length,
     vary: true,
     days: weekPlans[0].days,
     weekPlans,
   };
 
-  return { ok: true, assembly: { structure, notes, category, deloadWeeks: deloads, restructured } };
+  return {
+    ok: true,
+    assembly: {
+      structure,
+      notes,
+      category: plan.category,
+      deloadWeeks: plan.deloads,
+      restructured: plan.restructured,
+      unresolved: plan.unresolved,
+      held: plan.held,
+      chosen: plan.chosen,
+      concerns: [...new Set(concerns)],
+    },
+  };
 }
 
+/** A non-lift day in a deload week carries the marker too — PAS-D8 reads it on every day of the week. */
+const marked = (day: ProgramDay, isDeload: boolean): ProgramDay =>
+  isDeload ? { ...day, name: nameForWeek(day.name, true) } : day;
+
+/** A run's size: what to write on it, whether the athlete said it, and a length to compare runs by. */
+interface RunSize {
+  mi: number | null;
+  min: number | null;
+  athlete: boolean;
+  compare: number;
+}
+
+/**
+ * Size every run in the week.
+ *
+ *   1. the athlete's own miles or minutes, verbatim;
+ *   2. else a share of their weekly miles (`currentWeeklyMi` less anything they sized themselves), the
+ *      longest share to the LAST unsized run (`LONG_SHARE_BY_RUNS`) so the week has a long run;
+ *   3. else the rulebook's default minutes for their running experience.
+ *
+ * Cardio entries are sized too (minutes only) so the caller has one map to read.
+ */
+function sizeRuns(entries: readonly WeekEntry[], c: CoachConstraints): Map<number, RunSize> {
+  const out = new Map<number, RunSize>();
+  const unsized: number[] = [];
+  let given = 0;
+  for (const e of entries) {
+    const { kind, runMi, runMin } = e.intent;
+    if (kind !== 'run' && kind !== 'cardio') continue;
+    if (isCount(runMi) && runMi > 0 && kind === 'run') {
+      out.set(e.at, { mi: runMi, min: null, athlete: true, compare: runMi });
+      given += runMi;
+    } else if (isCount(runMin) && runMin > 0) {
+      out.set(e.at, { mi: null, min: runMin, athlete: true, compare: runMin / COMPARE_MIN_PER_MI });
+      if (kind === 'run') given += runMin / COMPARE_MIN_PER_MI;
+    } else if (kind === 'run') {
+      unsized.push(e.at);
+    }
+  }
+  if (unsized.length === 0) return out;
+
+  const weekly = isCount(c.currentWeeklyMi) && c.currentWeeklyMi > 0 ? c.currentWeeklyMi - given : 0;
+  if (weekly >= unsized.length) {
+    const longShare = LONG_SHARE_BY_RUNS[unsized.length] ?? LONG_SHARE_BY_RUNS[7];
+    const longMi = unsized.length === 1 ? weekly : weekly * longShare;
+    const easyMi = unsized.length === 1 ? 0 : (weekly - longMi) / (unsized.length - 1);
+    unsized.forEach((at, i) => {
+      const mi = Math.round((i === unsized.length - 1 ? longMi : easyMi) * 10) / 10;
+      out.set(at, { mi, min: null, athlete: false, compare: mi });
+    });
+  } else {
+    const min = DEFAULT_RUN_MIN[c.experience.running];
+    for (const at of unsized) out.set(at, { mi: null, min, athlete: false, compare: min / COMPARE_MIN_PER_MI });
+  }
+  return out;
+}
+
+/**
+ * A run day in `endurance.ts`'s own shape — `buildRunDay`'s easy or long day, then its one row set to the
+ * size decided above. A run the athlete sized loses the warm-up jog (`ATHLETE_SIZED_RUN_HAS_WARMUP`); a
+ * runner who cannot yet run continuously gets the rulebook's run/walk, unless they sized it themselves.
+ */
+function runDay(
+  size: RunSize | undefined,
+  isKey: boolean,
+  c: CoachConstraints,
+  paces: ReturnType<typeof pacesFrom>,
+  stretchKeys: readonly string[],
+  letter: string,
+  isDeload: boolean,
+): ProgramDay {
+  const athlete = size?.athlete ?? false;
+  const role = c.canRunContinuously === false && !athlete ? 'run_walk' : isKey ? 'long' : 'easy';
+  /* PAS-D8 generalised to mileage, as `assembleEnduranceGoal` does: a deload week keeps the frequency and
+     cuts the distance. Only a run HOLT sized — the athlete's mile stays a mile. */
+  const cut = isDeload && !athlete ? DELOAD_RUN_MULTIPLIER : 1;
+  const mi = size?.mi != null ? Math.round(size.mi * cut * 10) / 10 : null;
+  const min = size?.min != null ? size.min * cut : null;
+  const day = buildRunDay(
+    { role, weeklyMi: mi ?? 1, longRunMi: isKey ? (mi ?? 1) : 0, paces, stretchKeys, hardCount: 6, progress: 0 },
+    letter,
+  );
+  if (role === 'run_walk') return day;
+  const [first, ...rest] = day.main;
+  const row: ProgramExercise = { ...first };
+  if (mi != null) {
+    row.targetMi = mi;
+    delete row.targetSec;
+  } else if (min != null) {
+    row.targetSec = Math.round(min * 60);
+    delete row.targetMi;
+  }
+  return {
+    ...day,
+    warmup: athlete && !ATHLETE_SIZED_RUN_HAS_WARMUP ? [] : day.warmup,
+    main: [row, ...rest],
+  };
+}
+
+/** A timed bout on the athlete's preferred activity when they can do it, else the first they can. */
+function cardioDay(
+  owned: readonly string[],
+  banned: ReadonlySet<string>,
+  preferred: string | null | undefined,
+  minutes: number,
+  letter: string,
+): { day: ProgramDay; activity: string } {
+  const want = (preferred ?? '').toLowerCase().replace(/[^a-z]/g, '');
+  const usable = (o: CardioOption) => !banned.has(o.activity) && (o.needs == null || owned.includes(o.needs));
+  const opt =
+    CARDIO_OPTIONS.find((o) => want !== '' && o.activity === want && usable(o)) ??
+    chooseCardio(owned, banned) ??
+    CARDIO_OPTIONS[CARDIO_OPTIONS.length - 1];
+  const row = prescribeCardio({
+    activity: opt.activity,
+    modality: opt.modality,
+    targetSec: Math.round(minutes * 60),
+    rateKind: opt.rateKind,
+    tracksDistance: opt.tracksDistance,
+  }) as ProgramExercise;
+  return { day: { letter, name: row.name || 'Cardio', warmup: [], main: [row], cooldown: [] }, activity: opt.activity };
+}
+
+/**
+ * The order Holt chooses when the athlete did not fix one.
+ *
+ * Every ordering is scored against `INTERFERENCE_COST` — a heavy leg day before the long run, heavy leg
+ * days back to back, sessions of one kind back to back — cyclically, because the week repeats and Sunday
+ * is the day before Monday. Rest entries take part: a rest day is the cheapest thing to put between a
+ * leg day and a long run. Seven entries is 5,040 orderings, which is nothing, so this is exhaustive
+ * rather than clever. Ties keep the athlete's own listing order — the permutations are walked in
+ * lexicographic order of their original positions and only a strictly better score replaces the best.
+ */
+function arrangeWeek(
+  entries: readonly WeekEntry[],
+  keyAt: number | null,
+  heavy: (e: WeekEntry) => boolean,
+): WeekEntry[] {
+  const n = entries.length;
+  if (n < 2) return [...entries];
+  const cost = (seq: readonly WeekEntry[]): number => {
+    let total = 0;
+    for (let i = 0; i < n; i++) {
+      const a = seq[i];
+      const b = seq[(i + 1) % n];
+      if (keyAt != null && b.at === keyAt && heavy(a)) total += INTERFERENCE_COST.heavyLegsBeforeLongRun;
+      if (heavy(a) && heavy(b)) total += INTERFERENCE_COST.heavyLegsBackToBack;
+      if (a.intent.kind !== 'rest' && a.intent.kind === b.intent.kind) total += INTERFERENCE_COST.sameKindBackToBack;
+    }
+    return total;
+  };
+
+  let best = [...entries];
+  let bestCost = cost(best);
+  const idx = entries.map((_, i) => i);
+  // Heap-free lexicographic permutation walk (next_permutation).
+  for (;;) {
+    let i = n - 2;
+    while (i >= 0 && idx[i] >= idx[i + 1]) i--;
+    if (i < 0) break;
+    let j = n - 1;
+    while (idx[j] <= idx[i]) j--;
+    [idx[i], idx[j]] = [idx[j], idx[i]];
+    for (let l = i + 1, r = n - 1; l < r; l++, r--) [idx[l], idx[r]] = [idx[r], idx[l]];
+    const seq = idx.map((k) => entries[k]);
+    const s = cost(seq);
+    if (s < bestCost) {
+      best = seq;
+      bestCost = s;
+      if (s === 0) break;
+    }
+  }
+  return best;
+}
 
 /**
  * Adapt the endurance rulebook to the assembler's result shape.

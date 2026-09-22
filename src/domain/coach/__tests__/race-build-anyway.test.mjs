@@ -82,11 +82,11 @@ test('with buildAnyway every race builds, inside every cap, for every athlete', 
               for (const d of w.days) assert.ok(d.main.length > 0, `${tag}: week ${i + 1} "${d.name}" is empty`);
             }
 
-            // ⚠ Triathlon has no Race Day in ANY build today — composeTriWeek has no race week. Adding one is
-            // a triathlon race-week decision, not compression, so it is not asserted here.
+            // Triathlon included: `composeTriWeek` has a race week now (triathlon-plan.test.mjs). Its Race Day
+            // carries no distance — the rulebook does not know whether it is a sprint or an Olympic.
+            const last = r.structure.weekPlans[r.structure.weekPlans.length - 1].days;
+            assert.equal(last[last.length - 1].name, 'Race Day', `${tag}: the block does not end on the race`);
             if (goal !== 'triathlon') {
-              const last = r.structure.weekPlans[r.structure.weekPlans.length - 1].days;
-              assert.equal(last[last.length - 1].name, 'Race Day', `${tag}: the block does not end on the race`);
               assert.equal(last[last.length - 1].main[0].targetMi, RACE_SPEC[goal].raceMi, `${tag}: race distance`);
             }
 

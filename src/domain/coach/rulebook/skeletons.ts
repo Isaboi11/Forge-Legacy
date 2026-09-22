@@ -498,6 +498,74 @@ export function skeletonFor(goal: Goal, daysPerWeek: number, style?: SplitStyle 
 }
 
 /**
+ * ══ ONE AND SEVEN — THE WEEKS ONLY AN ATHLETE ASKS FOR (CA-D12, CA §4.5) ══
+ *
+ * Every table above stops at 2–6 because that is what Holt writes on his own. An athlete may dictate a
+ * single session or a week with no rest day, and it gets built — so the two ends are DERIVED here, one
+ * rule each, rather than authored as five more rows per goal:
+ *
+ *   · 1 day — the two-day week's first day. Two days is the frequency every goal already builds as its
+ *             most complete sessions (full body for the lifting goals, finisher kept for conditioning,
+ *             Mobility A for mobility), and one day has to be the most complete of all.
+ *   · 7 days — the six-day week plus its own first day again. The split keeps its rotation (upper/lower
+ *             stays upper/lower, push/pull/legs picks push back up), which is what the athlete who
+ *             trains every day actually does.
+ *
+ * Both go through `skeletonFor`, so the goal's own reading of a split style (`GOAL_STYLE_USE`) still
+ * applies — a conditioning seven-day week still ends every day on its finisher.
+ */
+export function weekForAnyDays(goal: Goal, daysPerWeek: number, style?: SplitStyle | null): DaySkeleton[] | null {
+  if (daysPerWeek <= 1) {
+    const two = skeletonFor(goal, 2, style) ?? skeletonFor(goal, 2, null);
+    return two ? [two[0]] : null;
+  }
+  if (daysPerWeek >= 7) {
+    const six = skeletonFor(goal, 6, style) ?? skeletonFor(goal, 6, null);
+    return six ? [...six, six[0]] : null;
+  }
+  return skeletonFor(goal, daysPerWeek, style);
+}
+
+/**
+ * What an athlete means when they name a lift day — "upper on Monday", "legs Wednesday", "glutes".
+ *
+ * CA-D3's *Focus given* state for a whole day: the athlete chose the day's subject and the rulebook
+ * fills it. The words are the ones people use, lower-cased with everything but letters removed, so
+ * "Full-Body", "full body" and "fullbody" are one key. A word not listed here is not guessed at — the
+ * day takes the goal's own day for that position, and the focus is simply not applied.
+ */
+export const DAY_FOR_FOCUS: Readonly<Record<string, DaySkeleton>> = {
+  upper: UPPER,
+  upperbody: UPPER,
+  lower: LOWER,
+  lowerbody: LOWER,
+  legs: LEGS,
+  leg: LEGS,
+  legday: LEGS,
+  quads: LEGS,
+  hamstrings: LOWER,
+  glutes: LOWER,
+  push: PUSH,
+  pull: PULL,
+  chest: CHEST_TRIS,
+  chesttriceps: CHEST_TRIS,
+  back: BACK_BIS,
+  backbiceps: BACK_BIS,
+  shoulders: SHOULDERS,
+  arms: ARMS,
+  full: FULL_A,
+  fullbody: FULL_A,
+  total: FULL_A,
+  totalbody: FULL_A,
+  mobility: MOBILITY_A,
+  stretch: MOBILITY_A,
+};
+
+/** The authored day for a focus word, or null when the word names nothing in the table. */
+export const dayForFocus = (focus: string | null | undefined): DaySkeleton | null =>
+  focus ? (DAY_FOR_FOCUS[focus.toLowerCase().replace(/[^a-z]/g, '')] ?? null) : null;
+
+/**
  * Can this week actually be trained in this room?
  *
  * A day is viable when every one of its `requires` groups has at least one trainable pattern in it. A

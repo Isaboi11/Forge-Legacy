@@ -6,7 +6,7 @@ import { draftFromImport, importLimitNotes } from '../program-import-draft.ts';
 import { newDraft } from '../program-draft-model.ts';
 
 /*
- * A confirmed import → the builder's draft. The draft has hard limits (52 weeks, 6 days, 8 sets, 60
+ * A confirmed import → the builder's draft. The draft has hard limits (52 weeks, 7 days, 8 sets, 60
  * reps). The stress test (2026-09-21) found two of them cut SILENTLY: a seventh day in week 2 or later,
  * and any set or rep count over the cap. Nothing may be cut without being named, in the preview and in
  * the toast alike.
@@ -20,19 +20,20 @@ const weeksOf = (text) => {
 const resolveKey = () => undefined;
 const tsv = (rows) => rows.map((r) => r.join('\t')).join('\n');
 
-test('a seventh day in WEEK 2 is named — it was dropped without a word', () => {
+test('an eighth day in WEEK 2 is named — a day past the limit was dropped without a word', () => {
+  // Seven days is a real week since CA §4.5 (the Builder takes 1–7), so the day past the limit is H now.
   const rows = [['Week', 'Day', 'Exercise', 'Sets', 'Reps']];
   for (const d of 'ABC') rows.push(['1', d, 'Squat', '5', '5']);
-  for (const d of 'ABCDEFG') rows.push(['2', d, 'Squat', '5', '5']);
+  for (const d of 'ABCDEFGH') rows.push(['2', d, 'Squat', '5', '5']);
   const weeks = weeksOf(tsv(rows));
 
   const notes = importLimitNotes(weeks);
-  assert.match(notes.join(' '), /week 2 G/);
+  assert.match(notes.join(' '), /week 2 H/);
 
   const r = draftFromImport(newDraft(), weeks, { isWeek: false, resolveKey });
-  assert.match(r.toast, /1 day over the 6-day limit is dropped \(week 2 G\)/);
-  assert.equal(r.draft.daysPerWeek, 6, 'the widest week sets the day count, not week 1');
-  assert.equal(r.draft.weekPlans[1].days.length, 6);
+  assert.match(r.toast, /1 day over the 7-day limit is dropped \(week 2 H\)/);
+  assert.equal(r.draft.daysPerWeek, 7, 'the widest week sets the day count, not week 1');
+  assert.equal(r.draft.weekPlans[1].days.length, 7);
 });
 
 test('100 push-ups and 12 sets import as written — the old 8 × 60 cap is gone (PO: "don\'t limit amount")', () => {
