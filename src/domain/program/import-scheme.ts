@@ -428,6 +428,8 @@ export function isChatter(line: string): boolean {
   if (/\(?\b\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b/.test(t)) return true; // a phone number
   if (/^(?:hi|hey|hello|dear|thanks|thank you|thx|cheers|best|regards|sincerely|lmk|let me know|sent from)\b/i.test(t)) return true;
   if (/^[QA]\s*:/i.test(t)) return true; // an FAQ
+  // What a post asks of its reader — shouted, short, and never a training day.
+  if (/\b(?:save (?:this|it)|follow (?:me|us|@)|share this|dm me|comment below|link in bio|tag a friend|swipe|subscribe|like and)\b/i.test(t)) return true;
   // A date on a line of its own — "September 20, 2026", "9/20/26".
   if (/^(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{2,4}|\d{1,2}\/\d{1,2}\/\d{2,4})$/i.test(t)) return true;
   /*
