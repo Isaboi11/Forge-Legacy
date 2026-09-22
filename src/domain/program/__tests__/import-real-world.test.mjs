@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parseProgramTable } from '../import-parse.ts';
+import { parseProgramTable, toProgramStructure } from '../import-parse.ts';
 import { distanceIn, durationIn } from '../import-session-text.ts';
 
 /*
@@ -235,9 +235,14 @@ test('prose and a bare link are refused, not imported as one giant exercise', ()
 });
 
 test('a line that is only a scheme, or a day that came to nothing, is listed — never an exercise called "3x8"', () => {
+  // ⭐ A LIFT WITH A SCHEME PER WEEK IS BUILT NOW (PO, 2026-09-22) — it used to be listed as skipped.
   const r = ok(parseProgramTable('Squat\nWeek 1: 3x8\nWeek 2: 3x6'));
-  assert.ok(!names(r).flat().includes('3x8'));
-  assert.deepEqual(r.skipped, ['Week 1: 3x8', 'Week 2: 3x6']);
+  assert.ok(!names(r).flat().includes('3x8'), 'never an exercise called "3x8"');
+  assert.equal(r.weeks.length, 2);
+  assert.deepEqual(
+    r.weeks.map((w) => w.days[0].items.map((i) => [i.name, i.sets, i.reps])),
+    [[['Squat', 3, 8]], [['Squat', 3, 6]]],
+  );
 
   const missing = ok(parseProgramTable('Day 1\nSquat 5x5\nDay 2: Same as Day 4'));
   assert.deepEqual(missing.skipped, ['Day 2: Same as Day 4'], 'a day we could not copy is said, not silently lost');
@@ -286,4 +291,35 @@ test('…but one stray row for an earlier day still joins that day — only a wh
   ])));
   assert.equal(r.weeks.length, 1);
   assert.deepEqual(r.weeks[0].days.map((d) => [d.name, d.items.length]), [['Push', 2], ['Pull', 1]]);
+});
+
+// ── what the PO asked for next (2026-09-22) ─────────────────────────────────
+
+test('"Weeks 1-4" is four weeks of that training, written once', () => {
+  const r = ok(parseProgramTable('Weeks 1-4\nDay 1\nSquat 5x5\nBench 3x8\nWeeks 5-8\nDay 1\nSquat 3x3'));
+  assert.equal(r.weeks.length, 8);
+  assert.deepEqual(r.weeks.map((w) => w.index), [1, 2, 3, 4, 5, 6, 7, 8]);
+  // A copy of what was written — never a new exercise, and the later range keeps its own work.
+  assert.deepEqual(r.weeks[3].days[0].items.map((i) => [i.name, i.sets, i.reps]), [['Squat', 5, 5], ['Bench', 3, 8]]);
+  assert.deepEqual(r.weeks[7].days[0].items.map((i) => [i.name, i.sets, i.reps]), [['Squat', 3, 3]]);
+});
+
+test('a week the text writes itself is never overwritten by a range', () => {
+  const r = ok(parseProgramTable('Weeks 1-3\nDay 1\nSquat 5x5\nWeek 3\nDay 1\nSquat 2x2'));
+  assert.deepEqual(r.weeks.map((w) => w.days[0].items[0].reps), [5, 5, 2]);
+});
+
+test('"Warm-up:" and "Cool-down:" file the work where the athlete filed it', () => {
+  const r = ok(parseProgramTable('Day 1 - Upper\nWarm-up:\nArm circles 2x10\nMain:\nBench Press 4x6\nCool-down:\nHamstring stretch 1x30'));
+  const items = r.weeks[0].days[0].items;
+  assert.deepEqual(items.map((i) => [i.name, i.section ?? 'main']), [
+    ['Arm circles', 'warmup'],
+    ['Bench Press', 'main'],
+    ['Hamstring stretch', 'cooldown'],
+  ]);
+  // …and they reach the draft's own warm-up and cool-down lists, not the main work.
+  const s = toProgramStructure(r.weeks, 'x', () => undefined);
+  assert.deepEqual(s.days[0].warmup.map((x) => x.name), ['Arm circles']);
+  assert.deepEqual(s.days[0].main.map((x) => x.name), ['Bench Press']);
+  assert.deepEqual(s.days[0].cooldown.map((x) => x.name), ['Hamstring stretch']);
 });

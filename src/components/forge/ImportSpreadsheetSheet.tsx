@@ -471,6 +471,40 @@ export function ImportPreview({
       })),
     );
 
+  /** Change one item, wherever it sits. The host holds the weeks; this hands back a new list. */
+  const editItem = (wi: number, di: number, ii: number, change: ((it: ParsedWeek['days'][number]['items'][number]) => ParsedWeek['days'][number]['items'][number]) | null) =>
+    onChange(
+      preview.map((w, a) =>
+        a !== wi
+          ? w
+          : {
+              ...w,
+              days: w.days.map((d, b) =>
+                b !== di
+                  ? d
+                  : {
+                      ...d,
+                      items: change
+                        ? d.items.map((it, c) => (c === ii ? change(it) : it))
+                        : d.items.filter((_, c) => c !== ii),
+                    },
+              ),
+            },
+      ),
+    );
+
+  /**
+   * ⚠ A ROW YOU CAN REMOVE AND RENAME, not only re-count.
+   *
+   * The preview could fix a number and nothing else, so a line the reader should not have kept — a
+   * caption, a note, a lift you do not do — could only be dealt with by going back to the text, and a
+   * photo has no text to go back to (PO, 2026-09-22). Both edits are local to the preview: nothing has
+   * been created yet, and Back still throws the whole read away.
+   */
+  const removeItem = (wi: number, di: number, ii: number) => editItem(wi, di, ii, null);
+  const renameItem = (wi: number, di: number, ii: number, name: string) =>
+    editItem(wi, di, ii, (it) => ({ ...it, name, note: it.note ?? it.name }));
+
   /** "Add another week" — copies the last week forward, which is how a block is usually extended. */
   const addPreviewWeek = () => {
     if (!preview.length) return;
@@ -507,7 +541,7 @@ export function ImportPreview({
             <Text style={styles.impSummaryText}>{summarize(preview)}</Text>
           </View>
           <Text style={styles.impNote}>
-            Tap − / + to fix any sets × reps now. Grey text is the sentence we read it from — it is kept
+            Tap − / + to fix any sets × reps, edit a name, or remove a row with ✕. Grey text is the sentence we read it from — it is kept
             as a coaching note, so anything we couldn&rsquo;t turn into a number still reaches you. You can
             rename, reorder and add exercises after{scope === 'program' ? ' you create the program' : 'wards'}.
           </Text>
@@ -527,9 +561,27 @@ export function ImportPreview({
                     {d.items.map((it, ii) => (
                       <View key={`${it.name}-${ii}`} style={styles.impItemRow}>
                         <View style={styles.impItemText}>
-                          <Text style={styles.impItemName} numberOfLines={1}>
-                            {it.name}
-                          </Text>
+                          <View style={styles.impNameRow}>
+                            {it.section ? <Text style={styles.impSectionTag}>{it.section === 'warmup' ? 'WARM-UP' : 'COOL-DOWN'}</Text> : null}
+                            <TextInput
+                              value={it.name}
+                              onChangeText={(v) => renameItem(wi, di, ii, v)}
+                              accessibilityLabel={`Name of exercise ${ii + 1} in ${d.name}`}
+                              style={styles.impItemNameInput}
+                              numberOfLines={1}
+                            />
+                            <Pressable
+                              onPress={() => removeItem(wi, di, ii)}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Remove ${it.name}`}
+                              hitSlop={8}
+                              style={({ pressed }) => [styles.impRemove, pressed ? styles.impPressed : null]}
+                            >
+                              <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2.6} strokeLinecap="round">
+                                <Path d="M6 6l12 12M18 6L6 18" />
+                              </Svg>
+                            </Pressable>
+                          </View>
                           {/*
                             ══ THE SENTENCE IT CAME FROM ══
 
@@ -693,6 +745,11 @@ const styles = StyleSheet.create({
   impItemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   impItemText: { flex: 1, gap: 1 },
   impItemName: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
+  impNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  /* An input rather than text, because a misread name is the one thing the steppers could never fix. */
+  impItemNameInput: { flex: 1, fontFamily: flFont.sans, fontSize: 12.5, color: flColor.cream100, paddingVertical: 2 },
+  impRemove: { width: 18, height: 18, alignItems: 'center', justifyContent: 'center' },
+  impSectionTag: { fontFamily: flFont.sans, fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, color: flColor.bronze400 },
   impItemSource: { fontFamily: flFont.sans, fontSize: 10.5, lineHeight: 14, color: flColor.gray600 },
   impItemMatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.bronze400 },
   impItemUnmatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray600 },

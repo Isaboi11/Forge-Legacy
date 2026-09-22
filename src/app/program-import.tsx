@@ -24,7 +24,7 @@
  * money; going back from the preview to add one more photo must not re-read the three already read.
  */
 import { useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
@@ -43,7 +43,8 @@ import { parseProgramTable, type ParsedWeek } from '@/domain/program/import-pars
 import { mergeParsedWeeks } from '@/domain/program/import-merge';
 import { useToast } from '@/hooks/useCeremony';
 import { pickTextFile } from '@/lib/pick-text-file';
-import { newDraft, saveProgramDraft } from '@/lib/program-draft';
+import { loadProgramDraft, newDraft, saveProgramDraft } from '@/lib/program-draft';
+import { draftHasContent } from '@/lib/program-draft-model';
 import { usePremiumAi } from '@/lib/entitlement';
 import { draftFromImport } from '@/lib/program-import-draft';
 import { pickImagesFromLibrary } from '@/lib/useMediaPicker';
@@ -229,7 +230,16 @@ function ProgramImport() {
   };
 
   // ── create ───────────────────────────────────────────────────────────────────────────────────────
-  const create = async () => {
+  /**
+   * ⚠ CREATING REPLACES THE PROGRAM ALREADY IN THE BUILDER, so it asks first.
+   *
+   * There is ONE draft. An import writes over it, and a half-built program — a name, days, exercises
+   * someone had been adding — disappeared without a word (PO, 2026-09-22). `draftHasContent` is the
+   * same test the builder uses before it lets anybody leave.
+   */
+  const [confirmReplace, setConfirmReplace] = useState(false);
+
+  const writeDraft = async () => {
     if (!preview?.length) return;
     const r = draftFromImport(newDraft(), preview, {
       isWeek: false,
@@ -239,6 +249,16 @@ function ProgramImport() {
     await saveProgramDraft(r.draft);
     showToast(r.toast);
     router.replace('/program-builder?o=imported');
+  };
+
+  const create = async () => {
+    if (!preview?.length) return;
+    const existing = await loadProgramDraft();
+    if (existing && draftHasContent(existing)) {
+      setConfirmReplace(true);
+      return;
+    }
+    await writeDraft();
   };
 
   const canPreview = mode === 'paste' ? text.trim().length >= MIN_PASTE_CHARS : photos.length > 0 && busy == null;
@@ -397,6 +417,33 @@ function ProgramImport() {
           )}
         </View>
       </ScrollView>
+
+      <Modal visible={confirmReplace} transparent animationType="fade" onRequestClose={() => setConfirmReplace(false)}>
+        <View style={styles.modalScrim}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Replace the program you’re building?</Text>
+            <Text style={styles.modalBody}>
+              You have one in progress in the builder. Creating this import writes over it, and there is only
+              one draft.
+            </Text>
+            <View style={styles.modalActions}>
+              <Button
+                variant="primary"
+                fullWidth
+                onPress={() => {
+                  setConfirmReplace(false);
+                  void writeDraft();
+                }}
+              >
+                Replace it
+              </Button>
+              <Button variant="secondary" fullWidth onPress={() => setConfirmReplace(false)}>
+                Keep what I have
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
         <View style={styles.column}>
@@ -648,6 +695,21 @@ const styles = StyleSheet.create({
     borderTopColor: flColor.charcoal700,
     backgroundColor: flColor.surfaceNav,
   },
+  modalScrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  modalCard: {
+    width: '100%',
+    maxWidth: 420,
+    gap: 10,
+    padding: 22,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal900,
+  },
+  modalTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
+  modalBody: { fontSize: 13.5, lineHeight: 19, color: flColor.gray400, marginBottom: 6 },
+  modalActions: { gap: 8 },
+
   previewActions: { flexDirection: 'row', gap: 10 },
   previewBack: { flexBasis: 96 },
   previewCreate: { flex: 1 },

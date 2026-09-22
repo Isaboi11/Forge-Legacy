@@ -322,7 +322,7 @@ const WEEK_NUMBER_WORDS: Record<string, number> = {
  * and filling them in would be writing weeks nobody wrote — so they are not.
  */
 const WEEK_WORD = new RegExp(
-  `^(?:weeks?|wks?|w)\\s*\\.?\\s*#?(\\d{1,2}|${Object.keys(WEEK_NUMBER_WORDS).join('|')})\\b(?:\\s*[-–—]\\s*\\d{1,2}\\b)?`,
+  `^(?:weeks?|wks?|w)\\s*\\.?\\s*#?(\\d{1,2}|${Object.keys(WEEK_NUMBER_WORDS).join('|')})\\b(?:\\s*[-–—]\\s*(\\d{1,2})\\b)?`,
   'i',
 );
 
@@ -332,6 +332,31 @@ export function weekHeading(line: string): number | null {
   if (!m) return null;
   const n = WEEK_NUMBER_WORDS[m[1].toLowerCase()] ?? Number(m[1]);
   return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/**
+ * The LAST week a heading covers — "Weeks 1-4" runs to week 4. Null when it names one week.
+ *
+ * A block written once and labelled with a range is four weeks of training, and it imported as one
+ * (PO, 2026-09-22). The weeks between are copies of what was written, which is exactly what the range
+ * says; nothing is invented, and the preview shows every week before anything is created.
+ */
+export function weekHeadingEnd(line: string): number | null {
+  const m = line.trim().match(WEEK_WORD);
+  const end = m?.[2] == null ? null : Number(m[2]);
+  const start = weekHeading(line);
+  return end != null && start != null && end > start && end - start < 52 ? end : null;
+}
+
+/**
+ * "Warm-up", "Cool-down" — a section of a day that the builder has a PLACE for, unlike "Abs" or
+ * "Accessories", which are simply more of the day's main work.
+ */
+export function sectionOf(line: string): 'warmup' | 'cooldown' | null {
+  const t = line.replace(/\*\*|__/g, '').trim();
+  if (/^(?:warm\s*-?\s*ups?|warm\s*up:?)\s*:?$/i.test(t)) return 'warmup';
+  if (/^(?:cool\s*-?\s*downs?|cool\s*down:?|stretching?)\s*:?$/i.test(t)) return 'cooldown';
+  return null;
 }
 
 /**

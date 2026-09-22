@@ -45,10 +45,12 @@ import {
   isPageFooter,
   isRestEntry,
   isRestInstruction,
+  sectionOf,
   looksLikeDayHeading,
   splitDayHeading,
   splitDayLabel,
   weekHeading,
+  weekHeadingEnd,
   weekdayKey,
 } from './import-scheme.ts';
 
@@ -73,6 +75,15 @@ export interface ParsedItem {
   targetSec?: number | null;
   /** Canonical miles; yards are converted on the way in. */
   targetMi?: number | null;
+  /**
+   * Which part of the day this belongs to — set only when the text SAID so ("Warm-up:", "Cool-down:").
+   *
+   * A spreadsheet has no warm-up column, so an import files everything as main work (see
+   * `toProgramStructure`) — but a typed-out day that names its sections is telling us, and throwing that
+   * away put an athlete's mobility work among their main lifts, where PR detection counts it (PO,
+   * 2026-09-22).
+   */
+  section?: 'warmup' | 'cooldown';
   /**
    * The source phrase, whole — "75min bike Z2 w/ 3x8min Z3".
    *
@@ -288,6 +299,15 @@ function parseFreeform(lines: string[]): ParseResult {
   const seenDays = new Set<string>();
   /** True directly after a "FOCUS:" label, while a line wrapped off the end of it may still arrive. */
   let afterLabel = false;
+  /** Set by a "Warm-up:" / "Cool-down:" label, until the day or the section changes. */
+  let currentSection: 'warmup' | 'cooldown' | undefined;
+  /** Weeks a range heading covers — "Weeks 1-4" — filled in once everything is read. */
+  const weekSpans = new Map<number, number>();
+  /**
+   * The lift a set of week lines belongs to — "Squat" followed by "Week 1: 3x8", "Week 2: 3x6".
+   * One exercise, written once, with a scheme per week.
+   */
+  let progressionLift: string | null = null;
   /** Every line read as NOT training, in order — see `ParseResult.skipped`. */
   const skipped: string[] = [];
 
@@ -374,12 +394,15 @@ function parseFreeform(lines: string[]): ParseResult {
     }
     day = cleanDayName(rawName);
     dayOrdinal++;
+    currentSection = undefined;
     opened.push({ week, key: `${dayOrdinal}`, line, label: dayLabelKey(rawName) });
   };
 
   /** Add the work in a piece of text — one exercise, several ("Bench 4x8, Row 4x8"), or a bout. */
   const addWork = (text: string, source: string) => {
-    for (const it of workItems(text, source, skipped)) b.add(week, `${dayOrdinal}`, day ?? 'Day 1', it);
+    for (const it of workItems(text, source, skipped)) {
+      b.add(week, `${dayOrdinal}`, day ?? 'Day 1', currentSection ? { ...it, section: currentSection } : it);
+    }
   };
 
   rows.forEach((row, i) => {
@@ -408,7 +431,15 @@ function parseFreeform(lines: string[]): ParseResult {
      * colon) they split one training day into three called "Warm-up", "Main" and "Cool-down". The work
      * under them stays in the day it belongs to; which section it lands in is `toProgramStructure`'s rule.
      */
-    if (isSectionLabel(row.line)) return;
+    const section = sectionOf(row.line);
+    if (section) {
+      currentSection = section;
+      return;
+    }
+    if (isSectionLabel(row.line)) {
+      currentSection = undefined; // "Main:" — back to the day's own work
+      return;
+    }
 
     /*
      * "Block 1", "Phase 2 - Hypertrophy", "Cycle 3" — a stretch of several weeks, not a week and not a
@@ -434,7 +465,19 @@ function parseFreeform(lines: string[]): ParseResult {
        * "Week 1: 15 miles" is the week's volume and "Week 4 — deload" is what the week is FOR; neither is
        * an exercise.
        */
+      const end = weekHeadingEnd(row.line);
+      if (end != null) weekSpans.set(week, end);
+
       const rest = afterWeekHeading(row.line);
+      /*
+       * "Squat" / "Week 1: 3x8" / "Week 2: 3x6" — one lift, a scheme per week. The scheme alone used to
+       * become an exercise called "3x8"; now it is the lift named above the weeks, in each week.
+       */
+      if (rest && progressionLift && !cleanExerciseName(extractScheme(rest).rest) && hasScheme(rest)) {
+        const { scheme } = extractScheme(rest);
+        b.add(week, `${dayOrdinal}`, day ?? 'Day 1', item(progressionLift, scheme.sets, scheme.reps));
+        return;
+      }
       if (rest && (hasScheme(rest) || (activityIn(rest) != null && cardioItems(rest) != null) || (!/\d/.test(rest) && !isChatter(rest) && !isRestEntry(rest) && !/\bdeload\b/i.test(rest)))) {
         addWork(rest, row.line);
       }
@@ -547,6 +590,16 @@ function parseFreeform(lines: string[]): ParseResult {
         return;
       }
 
+      /*
+       * A bare name whose next line is "Week N: <scheme>" is the SUBJECT of those weeks, not an exercise
+       * of its own at an invented 3×10.
+       */
+      const nextRow = rows[i + 1];
+      if (nextRow?.wk != null && hasScheme(afterWeekHeading(nextRow.line)) && !cleanExerciseName(extractScheme(afterWeekHeading(nextRow.line)).rest)) {
+        progressionLift = cleanExerciseName(row.line) || null;
+        return;
+      }
+
       // What is NOT an exercise: chatter anywhere, the sign-off, and the title page above the program.
       if (
         isChatter(row.line) ||
@@ -572,7 +625,7 @@ function parseFreeform(lines: string[]): ParseResult {
   if (b.rowsRead === 0) {
     return { ok: false, error: 'No exercises found. Write one per line, like “Bench Press 3x8”.' };
   }
-  return { ok: true, weeks: b.done(), ignoredColumns: [], rowsRead: b.rowsRead, skipped };
+  return { ok: true, weeks: expandWeekSpans(b.done(), weekSpans), ignoredColumns: [], rowsRead: b.rowsRead, skipped };
 }
 
 /**
@@ -616,6 +669,29 @@ const BODY_PART = /^(?:chest|back|shoulders?|delts?|arms?|biceps?|triceps?|forea
 
 /** A section inside a day, named on a row of its own in a table — never an exercise. */
 const SECTION_WORD = /^(?:abs|abdominals|core|warm\s*-?\s*ups?|cool\s*-?\s*downs?|accessor(?:y|ies)|finishers?|conditioning|mobility|stretching|cardio)$/i;
+
+/**
+ * "Weeks 1-4" written once is four weeks of that training.
+ *
+ * Only weeks the text did not write itself are filled in, so "Weeks 1-4" followed by an explicit
+ * "Week 3" leaves week 3 exactly as written. A copy, never a new exercise.
+ */
+function expandWeekSpans(weeks: ParsedWeek[], spans: Map<number, number>): ParsedWeek[] {
+  if (!spans.size) return weeks;
+  const byIndex = new Map(weeks.map((w) => [w.index, w]));
+  for (const [start, end] of spans) {
+    const source = byIndex.get(start);
+    if (!source) continue;
+    for (let w = start + 1; w <= end; w++) {
+      if (byIndex.has(w)) continue;
+      byIndex.set(w, {
+        index: w,
+        days: source.days.map((d) => ({ ...d, items: d.items.map((i) => ({ ...i })) })),
+      });
+    }
+  }
+  return [...byIndex.values()].sort((a, b) => a.index - b.index);
+}
 
 /** Does this text carry a sets×reps of its own? */
 function hasScheme(text: string): boolean {
@@ -1486,13 +1562,17 @@ export interface ImportedStructure {
 /**
  * Turn a parsed table into the structure the builder persists.
  *
- * ══ EVERYTHING LANDS IN `main` ══
+ * ══ EVERYTHING LANDS IN `main` — UNLESS THE TEXT SAID OTHERWISE ══
  *
- * A spreadsheet has no warm-up column. Splitting the rows by guessing which look like warm-ups — the
+ * A spreadsheet has no warm-up column. Splitting the rows by GUESSING which look like warm-ups — the
  * light ones, the ones with "mobility" in the name — would file an athlete's actual work under a heading
  * they never chose, and warm-ups are excluded from PR detection, so the guess would quietly change what
- * counts as a record. They can move anything in the builder afterwards; the import puts it where they
- * put it.
+ * counts as a record.
+ *
+ * ⚠ A DAY THAT NAMES ITS OWN SECTIONS IS NOT A GUESS. "Warm-up:" over two movements and "Cool-down:"
+ * over a stretch is the athlete's own filing, and ignoring it put their mobility work among the lifts
+ * that set records (PO, 2026-09-22). Only `section`, which the reader sets only from an explicit label,
+ * moves anything; everything else still lands in main.
  *
  * ══ AND IT NEVER INVENTS A CATALOGUE MATCH ══
  *
@@ -1506,35 +1586,37 @@ export function toProgramStructure(
   programName: string,
   resolveKey: (name: string) => string | undefined,
 ): ImportedStructure {
+  const toExercise = (i: ParsedItem) => {
+    /*
+     * A CARDIO BOUT IS NOT LOOKED UP IN THE CATALOGUE. Its `catalogKey` is the `cardio:<activity>`
+     * convention the rest of the app already round-trips through, and searching "bike Z2" among 794
+     * lifts could only ever produce a wrong answer or none.
+     */
+    if (i.kind === 'cardio' && i.activity) {
+      // `i.name` is already the derived block name — see `sessionItem`.
+      return {
+        name: i.name,
+        catalogKey: `cardio:${i.activity}`,
+        sets: 1,
+        reps: 0,
+        kind: 'cardio' as const,
+        activity: i.activity,
+        targetSec: i.targetSec ?? null,
+        targetMi: i.targetMi ?? null,
+        coachNote: i.note ?? null,
+      };
+    }
+    const key = resolveKey(i.name);
+    const base = { name: i.name, sets: i.sets, reps: i.reps, ...(i.note ? { coachNote: i.note } : {}) };
+    return key ? { ...base, catalogKey: key } : base;
+  };
+
   const toDay = (d: ParsedDay): ImportedDay => ({
     letter: d.letter,
     name: d.name,
-    warmup: [],
-    main: d.items.map((i) => {
-      /*
-       * A CARDIO BOUT IS NOT LOOKED UP IN THE CATALOGUE. Its `catalogKey` is the `cardio:<activity>`
-       * convention the rest of the app already round-trips through, and searching "bike Z2" among 794
-       * lifts could only ever produce a wrong answer or none.
-       */
-      if (i.kind === 'cardio' && i.activity) {
-        // `i.name` is already the derived block name — see `sessionItem`.
-        return {
-          name: i.name,
-          catalogKey: `cardio:${i.activity}`,
-          sets: 1,
-          reps: 0,
-          kind: 'cardio' as const,
-          activity: i.activity,
-          targetSec: i.targetSec ?? null,
-          targetMi: i.targetMi ?? null,
-          coachNote: i.note ?? null,
-        };
-      }
-      const key = resolveKey(i.name);
-      const base = { name: i.name, sets: i.sets, reps: i.reps, ...(i.note ? { coachNote: i.note } : {}) };
-      return key ? { ...base, catalogKey: key } : base;
-    }),
-    cooldown: [],
+    warmup: d.items.filter((i) => i.section === 'warmup').map(toExercise),
+    main: d.items.filter((i) => i.section == null).map(toExercise),
+    cooldown: d.items.filter((i) => i.section === 'cooldown').map(toExercise),
   });
 
   const vary = !weeksAreIdentical(weeks);
