@@ -14,6 +14,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { compactForPaste } from './compact-deploy.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FUNCTION = 'supabase/functions/coach-ask/index.ts';
@@ -45,7 +46,8 @@ export function buildCoachAskDeploy() {
     return `// ── inlined: ${rel} ──\n${body}\n\n// ── end inlined ──\n`;
   });
   if (inlined.includes("'../../../src/")) throw new Error('an import from src/ was not inlined');
-  return HEADER + inlined;
+  // Comments stripped and types erased — the paste only needs the code (see compact-deploy.mjs).
+  return compactForPaste(HEADER, inlined);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
