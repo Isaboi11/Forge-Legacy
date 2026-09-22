@@ -291,3 +291,37 @@ test('⛔ the emergencies the live run sent to the physio line now say "call"', 
   ]) assert.equal(medicalRoute(s), 'urgent', s);
   assert.equal(medicalRoute('i scratch my arms till they bleed when i feel fat'), 'crisis');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. ⛔ LEGAL CAUTION (PO 2026-09-22: "stay away from anything that would get us into legal trouble")
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('⛔ symptom questions stop — the live model reassured "cracking usually isn\'t a red flag"', () => {
+  for (const s of [
+    'real talk is it bad if my back cracks every time i deadlift',
+    'my knees click when I squat',
+    'Hey coach, why do my shoulders click when I bench?',
+    'is it normal that my hip pops on lunges',
+  ]) assert.equal(medicalRoute(s), 'advice', s);
+});
+
+test('⛔ conditions, medication, pregnancy and "cleared by my doctor" stop', () => {
+  for (const s of [
+    'I have epilepsy. Anything to avoid?',
+    "I'm on SSRIs, will that affect my gains?",
+    'is it safe to lift while pregnant',
+    '👶 postpartum 4 months, want to get back at it',
+    'I was born with a heart murmur. Any restrictions?',
+    'I have type 1 diabetes and use a pump',
+  ]) assert.notEqual(medicalRoute(s), 'clear', s);
+});
+
+test('⛔ an amount of caffeine or a supplement is care, never an answer', () => {
+  for (const s of ['is 600mg of caffeine too much pre-workout?', 'how much creatine should I take', 'what creatine dosage is best'])
+    assert.equal(medicalRoute(s), 'care', s);
+});
+
+test('plain training questions still get through', () => {
+  for (const s of ['how much should I bench as a beginner?', 'how much protein do I need', 'is creatine worth it?', 'what is RPE?', 'how long should I rest between sets?'])
+    assert.equal(medicalRoute(s), 'clear', s);
+});

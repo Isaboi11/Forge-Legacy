@@ -131,6 +131,27 @@ export const SEEKING_ADVICE =
 export const DISORDERED_EATING =
   /\b(purg(e|es|ed|ing)|throw(ing)?\s+up\s+after\s+(i\s+eat|eating|meals?|food)|make\s+myself\s+(throw\s+up|sick|puke)|starv(e|ing)\s+myself|laxatives?\s+(to|for)\s+(lose|drop|cut)|(eat|eating)\s+(only\s+)?([1-7]\d{2}|[1-9]\d)\s+cal\w*|stop(ped)?\s+eating\s+(to|so)\b)/i;
 
+/*
+ * ⛔ LEGAL CAUTION (PO, 2026-09-22: *"let's just stay away from anything that would get us into legal
+ * trouble"*). Three families that a coach app must not answer, stopped HERE because the live model ignored
+ * the prompt's "never reassure about a symptom" line ("cracking by itself usually isn't a red flag"):
+ */
+
+/** A medical condition, medication, pregnancy or a procedure — the answer depends on a clinician. → advice */
+export const MEDICAL_CONTEXT =
+  /\b(pregnan\w*|postpartum|post-partum|breastfeed\w*|breast-feed\w*|c-?section|miscarriage|epilep\w*|diabet\w*|insulin|heart\s+(condition|disease|murmur|attack|problem|issue)s?|arrhythmia|a-?fib|pacemaker|blood\s+pressure|hypertension|asthma|copd|cancer|chemo\w*|osteopor\w*|arthritis|ssris?|antidepressant\w*|medications?|prescription|cortisone|steroid\s+shot|kidney|liver\s+(disease|condition)|hernia|cleared\s+(me|by)|got\s+clearance)\b/i;
+
+/** A noise or sensation in a body part, or "is it bad/normal … my <body part>" — a symptom question. → advice */
+const SENSATION = String.raw`(crack\w*|pop|pops|popping|click\w*|grind\w*|clunk\w*|crunch\w*)`;
+const SYMPTOM_QUESTION_SOURCE = () =>
+  String.raw`\b${SENSATION}\s+${WORDS}(?:${BODY_PART.source.slice(3, -3)})\b|\b(?:${BODY_PART.source.slice(3, -3)})\s+${WORDS}${SENSATION}\b|\bis\s+(it|this|that)\s+(bad|normal|ok|okay|safe|dangerous|fine)\b[^.?!]{0,40}\bmy\s+(?:${BODY_PART.source.slice(3, -3)})\b`;
+
+/** An AMOUNT of caffeine, a supplement or a drug. → care */
+export const DOSE =
+  /(\b\d+(\.\d+)?\s*(mg|mcg|milligrams?|grams?|g|iu|scoops?)\b[^.?!]{0,30}\b(caffeine|creatine|pre-?workout|supplements?|beta-?alanine|melatonin|vitamin|ashwagandha|stims?)\b|\bhow\s+(much|many\s+(mg|milligrams|scoops))\s+(of\s+)?(caffeine|creatine|pre-?workout|melatonin|beta-?alanine|ashwagandha|vitamin\s*d?)\b|\b(caffeine|creatine|pre-?workout|melatonin)\s+(dose|dosage|dosing)\b)/i;
+
+const SYMPTOM_QUESTION = new RegExp(SYMPTOM_QUESTION_SOURCE(), 'i');
+
 export type MedicalRoute =
   /** Nothing clinical. Proceed. */
   | 'clear'
@@ -157,9 +178,11 @@ export function medicalRoute(text: string): MedicalRoute {
   if (CRISIS.test(t)) return 'crisis';
   if (URGENT.test(t)) return 'urgent';
   if (DISORDERED_EATING.test(t)) return 'care';
+  if (DOSE.test(t)) return 'care';
   if (ACUTE.test(t)) return 'acute';
   // "broke my ankle" stops; "broke my PR" does not. The body part is the whole difference.
   if (DAMAGE_NEAR_BODY.test(t)) return 'acute';
+  if (MEDICAL_CONTEXT.test(t) || SYMPTOM_QUESTION.test(t)) return 'advice';
   if (SEEKING_ADVICE.test(t)) return 'advice';
   return 'clear';
 }
