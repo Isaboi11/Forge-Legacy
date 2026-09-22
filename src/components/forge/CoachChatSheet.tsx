@@ -1425,6 +1425,13 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
         return;
       }
 
+      /* Out to the screen with the camera on it — a hand-off, so the conversation survives coming back. */
+      if (opener.kind === 'form') {
+        handOff();
+        router.push('/form-check' as Parameters<typeof router.push>[0]);
+        return;
+      }
+
       if (opener.kind === 'edit') {
         void beginEdit();
         return;
@@ -2446,7 +2453,12 @@ function CoachHome({ onOpener }: { onOpener: (opener: string) => void }) {
                 rest. */}
             <View style={[styles.homeGlyph, r.icon === 'question' && styles.homeGlyphRound]}>
               <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                {r.icon === 'document' ? (
+                {r.icon === 'camera' ? (
+                  <>
+                    <Path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h2L9 4h6l1.5 2h2A2.5 2.5 0 0 1 21 8.5v9A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z" />
+                    <Path d="M12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+                  </>
+                ) : r.icon === 'document' ? (
                   <>
                     <Path d="M6.5 3.5h7L18 8v12.5h-11.5z" />
                     <Path d="M13.5 3.5V8H18" />

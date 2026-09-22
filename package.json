@@ -38,6 +38,7 @@
     "expo-task-manager": "~56.0.25",
     "expo-updates": "~56.0.23",
     "expo-video": "~56.1.4",
+    "expo-video-thumbnails": "~56.0.3",
     "expo-web-browser": "~56.0.6",
     "pdfjs-dist": "^6.2.108",
     "react": "19.2.3",

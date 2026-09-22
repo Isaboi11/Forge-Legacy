@@ -1053,6 +1053,14 @@ export const OPENERS: string[] = [
    * what the app does; this is the thing somebody is about to say.
    */
   'Which one should I pick?',
+  /*
+   * ⚠ A SEVENTH DOOR, AND IT LEAVES THE CONVERSATION (2026-09-22). Filming a set needs the camera, and
+   * `useMediaPicker` cannot present over a sheet that is still dismissing — so this one hands off to
+   * `/form-check` rather than growing a camera inside Holt. It is an opener like the rest because
+   * `chat-core.test.mjs` holds Home's tiles and OPENERS equal: a capability with no door on Home is a
+   * capability nobody finds.
+   */
+  'Check my form',
   'How do I…?',
 ];
 
@@ -1063,6 +1071,8 @@ export type OpenerAction =
   | { kind: 'edit' }
   /** Read the shelf. Ends in somebody else's program, or in an honest no — never in a build. */
   | { kind: 'pick' }
+  /** Film a set. Leaves for `/form-check` — the camera cannot open over this sheet. */
+  | { kind: 'form' }
   | { kind: 'help' };
 
 export function fromOpener(label: string): OpenerAction | null {
@@ -1081,6 +1091,8 @@ export function fromOpener(label: string): OpenerAction | null {
       return { kind: 'import' };
     case 'Which one should I pick?':
       return { kind: 'pick' };
+    case 'Check my form':
+      return { kind: 'form' };
     case 'How do I…?':
       return { kind: 'help' };
     default:
@@ -1202,7 +1214,7 @@ export const HOME_CARDS: readonly HomeCard[] = [
 /** The two quiet rows under the cards. Same contract: `opener` must be an `OPENERS` member. */
 export interface HomeRow {
   /** Which glyph the 26×26 outlined container holds — a rounded square, a circle, or the shelf. */
-  icon: 'document' | 'question' | 'shelf';
+  icon: 'document' | 'question' | 'shelf' | 'camera';
   label: string;
   opener: string;
 }
@@ -1224,6 +1236,7 @@ export const HOME_ROWS: readonly HomeRow[] = [
   /* ⚠ IT SAYS THE QUESTION, NOT A DESCRIPTION OF THE QUESTION (PO, 2026-08-14). "Ask Holt something"
      is a category; "How do I…" is the sentence somebody is actually about to finish, and it is the same
      words the topics themselves answer. */
+  { icon: 'camera', label: 'Check my form', opener: 'Check my form' },
   { icon: 'question', label: 'How do I…', opener: 'How do I…?' },
 ];
 
