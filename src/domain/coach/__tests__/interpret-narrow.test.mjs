@@ -11,11 +11,18 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import path from 'node:path';
 
 import {
+  narrowAction,
   narrowEdit,
   narrowHistory,
+  narrowNotes,
   narrowPatch,
+  narrowRemember,
+  narrowReply,
   narrowRoute,
   narrowSay,
   parseModelJson,
@@ -158,4 +165,130 @@ test('history: real roles, trimmed lines, the last six turns only', () => {
   assert.ok(h.every((t) => t.role === 'athlete' || t.role === 'holt'));
   assert.equal(narrowHistory([{ role: 'athlete', text: 'z'.repeat(2000) }])[0].text.length, 400);
   assert.deepEqual(narrowHistory('not a list'), []);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE NEW EDIT OPS (move · skip · add · remove · volume)
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('edit: the new ops carry their own fields, checked against their enums', () => {
+  assert.deepEqual(narrowEdit({ op: 'move', day: 'leg day', to: 'Friday' }), { op: 'move', day: 'leg day', to: 'Friday' });
+  assert.deepEqual(narrowEdit({ op: 'skip', week: ' next week ' }), { op: 'skip', week: 'next week' });
+  assert.deepEqual(narrowEdit({ op: 'add', exercise: 'hammer curls', day: 'upper A', sets: 3 }), { op: 'add', exercise: 'hammer curls', day: 'upper A', sets: 3 });
+  assert.deepEqual(narrowEdit({ op: 'remove', exercise: 'front squats' }), { op: 'remove', exercise: 'front squats' });
+  assert.deepEqual(narrowEdit({ op: 'volume', target: 'arms', direction: 'more' }), { op: 'volume', target: 'arms', direction: 'more' });
+  assert.deepEqual(narrowEdit({ op: 'volume', target: 'cardio', direction: 'less' }), { op: 'volume', target: 'cardio', direction: 'less' });
+  assert.deepEqual(narrowEdit({ op: 'volume', target: 'forearms', direction: 'lots', week: 'w'.repeat(41) }), { op: 'volume' });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHAT HOLT REMEMBERS (CA-D2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('remember: strings only, one line, at most two, never over 80 characters', () => {
+  assert.deepEqual(narrowRemember(['  Hates   lunges ', 'Runs Tuesdays and Thursdays', 'Gym has no leg press']), ['Hates lunges', 'Runs Tuesdays and Thursdays']);
+  assert.deepEqual(narrowRemember([3, null, { text: 'x' }, '', 'Left-handed']), ['Left-handed']);
+  assert.deepEqual(narrowRemember(['a'.repeat(81), 'Trains before work']), ['Trains before work'], 'a long line is dropped, not cut');
+  assert.deepEqual(narrowRemember('Hates lunges'), []);
+});
+
+test('remember: deduped against itself and against what Holt already knows', () => {
+  assert.deepEqual(narrowRemember(['Hates lunges', 'hates lunges.']), ['Hates lunges']);
+  assert.deepEqual(narrowRemember(['Hates lunges.', 'Left-handed'], ['hates lunges']), ['Left-handed']);
+});
+
+test('remember: ⚠ the body is never a note', () => {
+  for (const line of [
+    'Left knee flares on deep squats', 'Has a bad shoulder', 'Weighs 210 lbs', 'Is diabetic', 'On medication for anxiety',
+    'Trying to cut calories', 'Pregnant, second trimester', 'Tore an ACL last year', 'Lower back pain',
+  ]) assert.deepEqual(narrowRemember([line]), [], line);
+  assert.deepEqual(narrowRemember(['Back day on Mondays', 'Hates lunges']), ['Back day on Mondays', 'Hates lunges']);
+});
+
+test('notes: at most 20 lines of at most 80, trimmed and deduped', () => {
+  const many = Array.from({ length: 30 }, (_, i) => `Fact number ${i}`);
+  assert.equal(narrowNotes(many).length, 20);
+  assert.equal(narrowNotes(['x'.repeat(200)])[0].length, 80);
+  assert.deepEqual(narrowNotes([' Hates lunges ', 'hates lunges', 7, '', null]), ['Hates lunges']);
+  assert.deepEqual(narrowNotes('Hates lunges'), []);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE WHOLE REPLY — one route or several (CA-D11 without a tool loop)
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('reply: a single route narrows exactly as before', () => {
+  assert.deepEqual(narrowReply({ route: 'answer', say: ' Sleep matters. ' }, TODAY), { route: 'answer', say: 'Sleep matters.' });
+  assert.deepEqual(narrowReply({ route: 'answer' }, TODAY), { route: 'unclear' });
+  assert.deepEqual(narrowReply({ route: 'patch', patch: { daysPerWeek: 3 }, say: 'Three.' }, TODAY), { route: 'patch', patch: { daysPerWeek: 3 }, say: 'Three.' });
+  assert.deepEqual(narrowReply({ route: 'patch', patch: { daysPerWeek: 9 }, say: 'Hm.' }, TODAY), { route: 'answer', say: 'Hm.' });
+  assert.deepEqual(narrowReply({ route: 'patch', patch: {} }, TODAY), { route: 'unclear' });
+  assert.deepEqual(narrowReply({ route: 'edit', edit: { op: 'nope' } }, TODAY), { route: 'edit' });
+  assert.deepEqual(narrowReply({ route: 'pick', say: 'ignored' }, TODAY), { route: 'pick' });
+  assert.deepEqual(narrowReply({ route: 'medical_stop', say: 'x', remember: ['Hates lunges'] }, TODAY), { route: 'medical_stop' });
+  assert.deepEqual(narrowReply({ route: 'wat' }, TODAY), { route: 'unclear' });
+});
+
+test('reply: multi keeps up to three actions in order, each narrowed, junk dropped', () => {
+  const r = narrowReply(
+    {
+      route: 'multi',
+      actions: [
+        { route: 'patch', patch: { daysPerWeek: 3, goal: 'wizardry' }, say: 'Three days it is.' },
+        { route: 'answer', say: 'RPE is how hard a set felt out of 10.' },
+        { route: 'answer' },
+        'junk',
+        { route: 'edit', edit: { op: 'skip', day: 'Friday' } },
+        { route: 'pick' },
+      ],
+    },
+    TODAY,
+  );
+  assert.deepEqual(r, {
+    route: 'multi',
+    actions: [
+      { route: 'patch', patch: { daysPerWeek: 3 }, say: 'Three days it is.' },
+      { route: 'answer', say: 'RPE is how hard a set felt out of 10.' },
+      { route: 'edit', edit: { op: 'skip', day: 'Friday' } },
+    ],
+  });
+});
+
+test('reply: one surviving action is a plain single route; none is unclear; a nested multi is dropped', () => {
+  assert.deepEqual(narrowReply({ route: 'multi', actions: [{ route: 'build' }, { route: 'answer' }] }, TODAY), { route: 'build' });
+  assert.deepEqual(narrowReply({ route: 'multi', actions: [{ route: 'multi', actions: [] }, 4] }, TODAY), { route: 'unclear' });
+  assert.deepEqual(narrowReply({ route: 'multi' }, TODAY), { route: 'unclear' });
+});
+
+test('reply: ⚠ a stop filed inside a multi wins the whole reply', () => {
+  assert.deepEqual(narrowReply({ route: 'multi', actions: [{ route: 'build' }, { route: 'medical_stop' }] }, TODAY), { route: 'medical_stop' });
+  assert.deepEqual(narrowReply({ route: 'multi', actions: [{ route: 'care' }, { route: 'crisis' }], remember: ['Hates lunges'] }, TODAY), { route: 'crisis' });
+});
+
+test('reply: remember rides on any route that is not a stop', () => {
+  assert.deepEqual(narrowReply({ route: 'answer', say: 'Noted.', remember: ['Hates lunges', 'Has a bad knee'] }, TODAY), {
+    route: 'answer', say: 'Noted.', remember: ['Hates lunges'],
+  });
+  assert.deepEqual(narrowReply({ route: 'multi', actions: [{ route: 'build' }, { route: 'pick' }], remember: ['Left-handed'] }, TODAY), {
+    route: 'multi', actions: [{ route: 'build' }, { route: 'pick' }], remember: ['Left-handed'],
+  });
+  assert.deepEqual(narrowReply({ route: 'unclear', remember: ['Runs Tuesdays'] }, TODAY), { route: 'unclear', remember: ['Runs Tuesdays'] });
+  assert.deepEqual(narrowReply({ route: 'answer', say: 'Ok.', remember: ['Hates lunges'] }, TODAY, ['Hates lunges']), { route: 'answer', say: 'Ok.' });
+});
+
+test('an action outside the multi vocabulary is null', () => {
+  for (const a of [{ route: 'crisis' }, { route: 'unclear' }, { route: 'multi' }, null, [], { route: 'patch' }]) {
+    assert.equal(narrowAction(a, TODAY), null, JSON.stringify(a));
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE DASHBOARD PASTE COPY IS IN STEP WITH THE FUNCTION
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('supabase/apply/deploy-coach-interpret.ts is the generator output for the current sources', async () => {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
+  const { buildCoachInterpretDeploy, DEPLOY_COPY } = await import(pathToFileURL(path.join(root, 'scripts/build-coach-interpret-deploy.mjs')).href);
+  const onDisk = readFileSync(path.join(root, DEPLOY_COPY), 'utf8').replace(/\r\n/g, '\n');
+  assert.equal(onDisk, buildCoachInterpretDeploy(), 'run: node scripts/build-coach-interpret-deploy.mjs');
 });

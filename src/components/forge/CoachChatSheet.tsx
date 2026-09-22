@@ -28,7 +28,10 @@ import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/Confirm
 import { HoltMark } from '@/components/forge/HoltMark';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { usePremiumAi } from '@/lib/entitlement';
-import { interpretTyped, type EditIntent } from '@/data/coach-interpret-live';
+import { interpretTyped, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
+import { addNotes, fetchNotes } from '@/data/holt-notes-live';
+import { askBriefLive } from '@/data/holt-training-live';
+import { useUnits } from '@/lib/settings';
 import { askHolt, askSourcesLive, type AskTurn } from '@/data/coach-ask-live';
 import { buildAskContext } from '@/domain/coach/ask-context';
 import { resolveEditIntent, type EditIntentResolution } from '@/domain/coach/edit-intent';
@@ -113,6 +116,7 @@ import {
   fetchProgramSessions,
   startProgram,
   updateProgram,
+  skipProgramSession,
   type ProgramDay,
   type ProgramStructure,
   type SavedProgram,
@@ -202,6 +206,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
   /* Typing to Holt is the Premium AI add-on — the PO only, for now (`coach_ai`, fails closed). Everyone
      else keeps the taps; `TYPING_ENABLED` stays the public switch. */
   const premiumAi = usePremiumAi();
+  const { units } = useUnits();
   const canType = TYPING_ENABLED || premiumAi;
 
   /*
@@ -1247,7 +1252,13 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     }
     setBusy('thinking');
     try {
-      await updateProgram(pe.programId, res.structure);
+      /* A skip is a MARK on each session, never a structure change — saving the unchanged structure and
+         saying "done" is the defect this branch exists to prevent. The RPC ignores a session already done. */
+      if (pe.plan.kind === 'skip') {
+        for (const at of pe.plan.sessions) await skipProgramSession(pe.programId, at.weekIndex, at.dayIndex);
+      } else {
+        await updateProgram(pe.programId, res.structure);
+      }
       pendingEdit.current = null;
       say(
         { kind: 'holt', text: pick('edit_done') },
@@ -1575,8 +1586,17 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
       fetchActiveProgram().catch(() => null),
       new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
     ]);
+    /* Notes always; the training summary only for a progress/weights question — `askBriefLive` decides, so
+       an ordinary question pays nothing for history it does not need. */
+    const brief = await askBriefLive(text, units).catch(() => ({ notes: [] as string[], training: null }));
     const context = buildAskContext(
-      { question: text, history, program: active ? { structure: { ...active.structure, name: active.name } } : null },
+      {
+        question: text,
+        history,
+        program: active ? { structure: { ...active.structure, name: active.name } } : null,
+        notes: brief.notes,
+        training: brief.training,
+      },
       askSourcesLive(),
     );
     let started = false;
@@ -1623,16 +1643,32 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     }
   };
 
-  const understand = async (text: string) => {
-    const m: ChatMode = mode ?? 'program';
-    const q = mode ? nextQuestion(constraints, m) : null;
-    /* This conversation's own recent words (CA-D1) — the current message is not in `thread` yet. */
-    const history = historyFrom(thread);
-    /* A question streams from coach-ask in Holt's words; everything else is parsed for the engine. */
-    if (looksLikeQuestion(text)) return askAloud(text, history, q);
-    setBusy('thinking');
-    const r = await interpretTyped(text, q, m === 'day' ? 'day' : 'program', constraints, history);
-    setBusy(null);
+  /**
+   * ══ WHAT HOLT KNOWS ABOUT THEM (CA-D2) ══
+   *
+   * The notes the athlete can see and delete in What Holt Remembers — read once per sheet, refreshed after
+   * he saves one. They travel with every typed message so "build me a leg day" already avoids the lunges
+   * they said they hate. `remember` is what the athlete SAID this turn, never what the model inferred.
+   */
+  const notesRef = useRef<string[] | null>(null);
+  const loadNotes = async (): Promise<string[]> => {
+    if (notesRef.current) return notesRef.current;
+    const rows = await fetchNotes().catch(() => []);
+    notesRef.current = rows.map((n) => n.text);
+    return notesRef.current;
+  };
+  const rememberSaid = async (lines: string[]) => {
+    const res = await addNotes(lines, 'chat').catch(() => null);
+    if (!res) return;
+    notesRef.current = null;
+    /* Full notebook: he says so once, rather than silently dropping what they told him. */
+    if (res.skipped.some((x) => x.reason === 'cap')) {
+      say({ kind: 'holt', text: "My notes on you are full. Clear one in What Holt Remembers and I'll keep that too." });
+    }
+  };
+
+  /** One understood step — a single reply, or one part of a message that asked for several things. */
+  const respondTo = async (r: InterpretStep | InterpretResult, text: string, q: ReturnType<typeof nextQuestion>, m: ChatMode) => {
     switch (r.kind) {
       case 'crisis':
         return say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
@@ -1708,6 +1744,25 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
         return void advance({ ...athleteFacts(constraints), ...patch }, opens);
       }
     }
+  };
+
+  const understand = async (text: string) => {
+    const m: ChatMode = mode ?? 'program';
+    const q = mode ? nextQuestion(constraints, m) : null;
+    /* This conversation's own recent words (CA-D1) — the current message is not in `thread` yet. */
+    const history = historyFrom(thread);
+    /* A question streams from coach-ask in Holt's words; everything else is parsed for the engine. */
+    if (looksLikeQuestion(text)) return askAloud(text, history, q);
+    setBusy('thinking');
+    const r = await interpretTyped(text, q, m === 'day' ? 'day' : 'program', constraints, history, await loadNotes());
+    setBusy(null);
+    if (r.remember?.length) void rememberSaid(r.remember);
+    /* "Build me a 3 day program and also what's RPE?" — each part answered, in the order it was said. */
+    if (r.kind === 'multi') {
+      for (const step of r.steps) await respondTo(step, text, q, m);
+      return;
+    }
+    return respondTo(r, text, q, m);
   };
 
   /** Everything that happens to a message after it is on screen. */

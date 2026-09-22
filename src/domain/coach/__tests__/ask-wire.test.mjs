@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 
 import {
   ASK_HISTORY_MAX,
+  ASK_NOTE_CHARS,
+  ASK_NOTES_MAX,
   ASK_OUTPUT_CAP,
+  ASK_TRAINING_CHARS,
   askUserTurn,
   cleanContext,
   parseSse,
@@ -164,4 +167,51 @@ test('utf8Decoder: a character split across chunks survives — native and hand-
   } finally {
     globalThis.TextDecoder = saved;
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CA-D2 notes and the training summary
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('cleanContext: at most 20 notes, each ≤ 80 characters, junk dropped', () => {
+  const c = cleanContext({
+    notes: [...Array.from({ length: 30 }, (_, i) => `  note   ${i}  `), 'n'.repeat(300), 7, null, '', 'x'],
+  });
+  assert.equal(c.notes.length, ASK_NOTES_MAX);
+  assert.equal(c.notes[0], 'note 0', 'whitespace collapsed');
+  assert.ok(c.notes.every((n) => typeof n === 'string' && n.length >= 2 && n.length <= ASK_NOTE_CHARS));
+  const long = cleanContext({ notes: ['n'.repeat(300)] });
+  assert.equal(long.notes[0].length, ASK_NOTE_CHARS);
+  assert.deepEqual(cleanContext({ notes: 'not an array' }).notes, []);
+});
+
+test('cleanContext: the training summary is capped and must be a string', () => {
+  assert.equal(cleanContext({ training: 't'.repeat(5000) }).training.length, ASK_TRAINING_CHARS);
+  assert.equal(cleanContext({ training: { lifts: [] } }).training, null);
+  assert.equal(cleanContext({ training: '   ' }).training, null);
+});
+
+test('askUserTurn: notes are the athlete’s own words, in the USER turn, before the question', () => {
+  const turn = askUserTurn(
+    'am I getting stronger?',
+    {
+      notes: ['Hates lunges', 'Runs Tue/Thu, long run Sunday'],
+      training: 'Last 8 wks: 4 sessions/wk. Weights in lb. Bench — best 225×5, e1RM 245→262 (up 7%), 2d ago.',
+    },
+    '2026-09-22',
+  );
+  assert.ok(turn.includes("The athlete's logged training: Last 8 wks: 4 sessions/wk."));
+  assert.ok(turn.includes('What you know about this athlete:\n- Hates lunges\n- Runs Tue/Thu, long run Sunday'));
+  // The app's reference block, then the notes, then the question — in that order.
+  const app = turn.indexOf('From the app');
+  const notes = turn.indexOf('What you know about this athlete:');
+  const ask = turn.indexOf('The athlete asks:');
+  assert.ok(app === 0 && app < notes && notes < ask);
+  assert.ok(turn.endsWith('The athlete asks: "am I getting stronger?"'));
+});
+
+test('askUserTurn: notes alone still arrive, and no notes add nothing', () => {
+  const turn = askUserTurn('hi', { notes: ['Hates lunges'] }, '2026-09-22');
+  assert.equal(turn, 'Today is 2026-09-22.\n\nWhat you know about this athlete:\n- Hates lunges\n\nThe athlete asks: "hi"');
+  assert.equal(askUserTurn('hi', { notes: [], training: null }, '2026-09-22'), 'Today is 2026-09-22.\n\nThe athlete asks: "hi"');
 });

@@ -17,6 +17,7 @@
 
 export const ROUTES = [
   'patch', 'answer', 'edit', 'import', 'pick', 'build', 'build_day', 'medical_stop', 'unclear', 'crisis', 'urgent', 'care',
+  'multi',
 ] as const;
 export type ModelRoute = (typeof ROUTES)[number];
 
@@ -34,8 +35,13 @@ export const FOCUS_MUSCLES = [
 ] as const;
 export const SESSION_MINUTES = [30, 45, 60, 75] as const;
 export const DAY_KINDS = ['run', 'lift', 'rest', 'cardio'] as const;
-export const EDIT_OPS = ['swap', 'sets', 'reps', 'distance', 'duration', 'rebuild'] as const;
+export const EDIT_OPS = [
+  'swap', 'sets', 'reps', 'distance', 'duration', 'rebuild', 'move', 'skip', 'add', 'remove', 'volume',
+] as const;
 export const EDIT_SCOPES = ['this_week', 'rest_of_block'] as const;
+/** What a `volume` edit may aim at: a focus muscle group, or the cardio. */
+export const VOLUME_TARGETS = [...FOCUS_MUSCLES, 'cardio'] as const;
+export const VOLUME_DIRECTIONS = ['more', 'less'] as const;
 
 /**
  * "Change my program by typing" — what the athlete asked for, in their words. Resolved against the real
@@ -43,12 +49,24 @@ export const EDIT_SCOPES = ['this_week', 'rest_of_block'] as const;
  */
 export interface EditIntent {
   op: (typeof EDIT_OPS)[number];
-  /** The movement as the athlete named it — "bench". */
+  /**
+   * The movement as the athlete named it — "bench". For `add`, the movement to ADD ("hammer curls"); for
+   * `remove`, the one to take out; for `volume`, optionally the one row they mean.
+   */
   exercise?: string;
-  /** The replacement as named — "dumbbell press". */
+  /**
+   * `swap`: the replacement as named — "dumbbell press".
+   * `move`: where the session goes — a day or session ("Friday", "Thursday", "Upper B"), or "first" / "last".
+   */
   to?: string;
-  /** The day as named — "Monday", "leg day", "tomorrow", "Wednesday's session". */
+  /** The day as named — "Monday", "leg day", "tomorrow", "Wednesday's session". For `move`, the session that moves. */
   day?: string;
+  /** `skip` only: a whole week, as said — "next week", "this week", "week 5". */
+  week?: string;
+  /** `volume` only: the muscle group (or the cardio) the athlete wants more or less of. */
+  target?: (typeof VOLUME_TARGETS)[number];
+  /** `volume` only. */
+  direction?: (typeof VOLUME_DIRECTIONS)[number];
   sets?: number;
   reps?: number;
   miles?: number;
@@ -240,6 +258,9 @@ export function narrowEdit(e: unknown): EditIntent | null {
   const miles = num(e.miles, 0.1, 100);
   const minutes = int(e.minutes, 1, 600);
   const scope = oneOf(EDIT_SCOPES, e.scope);
+  const week = text(e.week, 40);
+  const target = oneOf(VOLUME_TARGETS, e.target);
+  const direction = oneOf(VOLUME_DIRECTIONS, e.direction);
   if (exercise) out.exercise = exercise;
   if (to) out.to = to;
   if (day) out.day = day;
@@ -248,6 +269,9 @@ export function narrowEdit(e: unknown): EditIntent | null {
   if (miles !== undefined) out.miles = miles;
   if (minutes !== undefined) out.minutes = minutes;
   if (scope) out.scope = scope;
+  if (week) out.week = week;
+  if (target) out.target = target;
+  if (direction) out.direction = direction;
   return out;
 }
 
@@ -268,4 +292,169 @@ export function narrowHistory(v: unknown): HistoryTurn[] {
     })
     .filter((t): t is HistoryTurn => t !== null)
     .slice(-6);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// WHAT HOLT REMEMBERS (CA-D2) — notes record what the athlete SAID, never an inference
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** A note, or a remember line, is one short sentence. */
+export const NOTE_MAX_CHARS = 80;
+/** CA-D2: the brief carries at most 20 notes. */
+export const NOTES_MAX = 20;
+/** At most two new facts from one message. */
+export const REMEMBER_MAX = 2;
+
+/**
+ * ⚠ THE BODY IS NOT A NOTE. Health, injury, weight and eating facts are amber-tier data (CA-D2 rules,
+ * Preflight Gates Part 2): they reach a model only on an explicit per-request ask, and a sentence carrying
+ * one stops at the medical guard anyway. So a "remember" line that mentions any of it is dropped here in
+ * code, whatever the prompt said — the prompt is a request, this is the boundary.
+ */
+const BODY_WORDS =
+  /\b(pain\w*|hurt\w*|injur\w*|sore\w*|ache\w*|achy|surger\w*|pregnan\w*|diabet\w*|asthma\w*|medicat\w*|meds|doctor|physio\w*|therap\w*|heart|blood|weigh\w*|lbs?|kgs?|kilos?|pounds|body ?fat|bmi|calori\w*|diet\w*|eating|anorexi\w*|bulimi\w*|anxi\w*|depress\w*|adhd|condition\w*|diagnos\w*|tear|tore|torn|brokew*|fracturw*|acl|mcl|rotator|concussw*|herniw*|sciaticw*|migrainew*|cancer|chemow*|stroke|seizurew*|epilepw*|sprain\w*|strain\w*|arthriti\w*|tendon\w*|tendin\w*|knees?|shoulders?|hips?|wrists?|ankles?|elbows?|spine|spinal|disc|neck|period|menopaus\w*|steroid\w*|sarms?|testosterone)\b/i;
+
+const oneLine = (v: unknown): string | null => {
+  if (typeof v !== 'string') return null;
+  const t = v.replace(/\s+/g, ' ').trim();
+  return t || null;
+};
+
+/** Lowercased, punctuation-free — two notes that differ only in case or a full stop are one note. */
+const noteKey = (s: string): string => s.toLowerCase().replace(/[^a-z0-9 ]+/g, '').replace(/\s+/g, ' ').trim();
+
+/**
+ * The model's `remember`: at most two one-liners of what the athlete said about themselves.
+ *
+ * Strings only, whitespace collapsed, ≤80 characters (a longer line is DROPPED, not cut — a cut sentence
+ * can say something the athlete did not), no body facts, deduped, capped. `known` (the notes the athlete
+ * already has) filters out a fact Holt already holds, so a repeat is not offered twice.
+ */
+export function narrowRemember(v: unknown, known: readonly string[] = []): string[] {
+  if (!Array.isArray(v)) return [];
+  const seen = new Set(known.map(noteKey));
+  const out: string[] = [];
+  for (const item of v) {
+    const line = oneLine(item);
+    if (!line || line.length > NOTE_MAX_CHARS || BODY_WORDS.test(line)) continue;
+    const k = noteKey(line);
+    if (!k || seen.has(k)) continue;
+    seen.add(k);
+    out.push(line);
+    if (out.length >= REMEMBER_MAX) break;
+  }
+  return out;
+}
+
+/**
+ * The client's `notes` — the athlete's saved facts (visible and editable by them, CA-D2) — as lines for
+ * the user turn. Strings only, one line each, cut to 80, deduped, at most 20.
+ */
+export function narrowNotes(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of v) {
+    const line = oneLine(item)?.slice(0, NOTE_MAX_CHARS).trim();
+    if (!line) continue;
+    const k = noteKey(line);
+    if (!k || seen.has(k)) continue;
+    seen.add(k);
+    out.push(line);
+    if (out.length >= NOTES_MAX) break;
+  }
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// THE WHOLE REPLY — one route, or several things said in one message (CA-D11 without a tool loop)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** One thing the athlete asked for, narrowed. What a single-route reply carries, minus the meter tail. */
+export type WireAction =
+  | { route: 'patch'; patch: Obj; say: string | null }
+  | { route: 'answer'; say: string }
+  | { route: 'edit'; edit?: EditIntent }
+  | { route: 'build' | 'build_day' | 'import' | 'pick' };
+
+export type StopRoute = 'crisis' | 'urgent' | 'care' | 'medical_stop';
+
+/** The reply body, before the meter tail — exactly what the Edge Function returns. */
+export type NarrowedReply = (
+  | WireAction
+  | { route: 'multi'; actions: WireAction[] }
+  | { route: 'unclear' }
+  | { route: StopRoute }
+) & { remember?: string[] };
+
+/** Several things in one message, at most. A fourth is dropped — the athlete can say it again. */
+export const MULTI_MAX = 3;
+
+const DOORS = ['build', 'build_day', 'import', 'pick'] as const;
+type Door = (typeof DOORS)[number];
+
+/**
+ * One action — a single route's fields, or one entry of `actions` — narrowed with the same rules a
+ * single-route reply has always had: an answer needs a line; a patch with nothing usable in it is an
+ * answer when there is a line and nothing when there is not; an edit with no usable object still routes
+ * (the app opens the tap flow). Anything else is null.
+ */
+export function narrowAction(a: unknown, todayISO: string): WireAction | null {
+  if (!isObj(a)) return null;
+  const route = narrowRoute(a.route);
+  if (route === 'answer') {
+    const say = narrowSay(a.say, 700);
+    return say ? { route: 'answer', say } : null;
+  }
+  if (route === 'patch') {
+    const patch = narrowPatch(a.patch, todayISO);
+    if (Object.keys(patch).length === 0) {
+      const say = narrowSay(a.say, 700);
+      return say ? { route: 'answer', say } : null;
+    }
+    return { route: 'patch', patch, say: narrowSay(a.say, 200) };
+  }
+  if (route === 'edit') {
+    const edit = narrowEdit(a.edit);
+    return edit ? { route: 'edit', edit } : { route: 'edit' };
+  }
+  if (route && (DOORS as readonly string[]).includes(route)) return { route: route as Door };
+  return null;
+}
+
+const STOP_ORDER: readonly StopRoute[] = ['crisis', 'urgent', 'care', 'medical_stop'];
+
+/**
+ * The model's whole reply, narrowed to what the device may act on.
+ *
+ * `multi` is several actions in the order the athlete said them, at most three. Each is narrowed on its
+ * own and a bad one is dropped; if only one survives the reply is that one, as a normal single route; if
+ * none do, it is `unclear`. ⚠ A STOP INSIDE A MULTI WINS THE WHOLE REPLY — a model that files "my chest is
+ * tight" as one of three actions has told us the message needs the stop, and the other two wait. (The code
+ * guard on the raw text runs before this anyway; this is the model's own verdict, taken seriously.)
+ *
+ * `remember` rides on any route that is not a stop, per `narrowRemember`.
+ */
+export function narrowReply(parsed: Obj, todayISO: string, knownNotes: readonly string[] = []): NarrowedReply {
+  const route = narrowRoute(parsed.route);
+  if (route && (STOP_ORDER as readonly string[]).includes(route)) return { route: route as StopRoute };
+
+  const remember = narrowRemember(parsed.remember, knownNotes);
+  const withMemory = (r: NarrowedReply): NarrowedReply => (remember.length ? { ...r, remember } : r);
+
+  if (route === 'multi') {
+    const raw: unknown[] = Array.isArray(parsed.actions) ? parsed.actions : [];
+    const stop = STOP_ORDER.find((s) => raw.some((a) => isObj(a) && a.route === s));
+    if (stop) return { route: stop };
+    const actions = raw
+      .map((a) => narrowAction(a, todayISO))
+      .filter((a): a is WireAction => a !== null)
+      .slice(0, MULTI_MAX);
+    if (actions.length === 0) return withMemory({ route: 'unclear' });
+    if (actions.length === 1) return withMemory(actions[0]);
+    return withMemory({ route: 'multi', actions });
+  }
+
+  if (!route || route === 'unclear') return withMemory({ route: 'unclear' });
+  return withMemory(narrowAction(parsed, todayISO) ?? { route: 'unclear' });
 }

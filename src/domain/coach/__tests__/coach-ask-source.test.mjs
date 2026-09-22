@@ -102,3 +102,21 @@ test('the app calls the function with expo/fetch and the athlete\'s JWT, and nev
   assert.match(LIVE, /functions\/v1\/coach-ask/);
   assert.ok(!/ANTHROPIC|x-api-key/i.test(LIVE), 'no key, no direct model call from the app');
 });
+
+test('CA-D2 notes and the training summary reach the model ONLY through the user turn', () => {
+  const WIRE = read('src/domain/coach/ask-wire.ts');
+  // The function never touches the notes or the summary itself — only `cleanContext` → `askUserTurn`.
+  assert.ok(!/context\.notes|context\.training|body\.context\.notes/.test(SRC), 'the function must not route notes anywhere else');
+  const system = SRC.slice(SRC.indexOf('const SYSTEM = `'), SRC.indexOf('`;', SRC.indexOf('const SYSTEM = `')));
+  assert.ok(!system.includes('${'), 'nothing per-athlete is interpolated into the cached block');
+  // …and the wire puts them in the user turn, with the notes labelled as what Holt knows.
+  const turn = WIRE.slice(WIRE.indexOf('export function askUserTurn'), WIRE.indexOf('// Server-Sent Events'));
+  assert.ok(turn.includes('What you know about this athlete:'));
+  assert.ok(turn.includes('context.notes'));
+  assert.ok(turn.includes('context.training'));
+  // The system prompt tells Holt how to use both, without pretending to see more.
+  assert.ok(system.includes('What you know about this athlete'));
+  assert.ok(system.includes("athlete's logged training is provided"));
+  // And the paste copy carries it too.
+  assert.ok(read(DEPLOY_COPY).includes('What you know about this athlete:'));
+});

@@ -144,6 +144,12 @@ export function settingsSections(opts: {
   hasNotifications?: boolean;
   hasPreferences?: boolean;
   /**
+   * "What Holt Remembers" (`/holt-memory`, Coach-AI-Amendment-001 CA-D2) — the athlete's view of Holt's
+   * notes about them, where each can be edited or deleted. Flag-gated like the rows above so an undefined
+   * flag keeps the exact menu the tests pin.
+   */
+  hasHoltMemory?: boolean;
+  /**
    * The operator dashboard row (0129/0130). Absent for everybody who is not in `app_admins`, and
    * absent by DEFAULT — an undefined flag must produce exactly the section list every athlete has
    * today, which is what `content.test.mjs` asserts.
@@ -189,6 +195,9 @@ export function settingsSections(opts: {
   ];
   if (opts.hasPreferences) {
     training.push({ key: 'prefs', label: 'Preferences', action: { type: 'route', path: '/preferences' } });
+  }
+  if (opts.hasHoltMemory) {
+    training.push({ key: 'holt', label: 'What Holt Remembers', action: { type: 'route', path: '/holt-memory' } });
   }
   sections.push({ key: 'training', label: 'Training', rows: training });
 

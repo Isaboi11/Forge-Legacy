@@ -25,7 +25,16 @@ import { canDoExercise } from '../../home-gym/equipment.ts';
 import { totalSessions, scheduleSlots } from '../../program/progress-core.ts';
 import { assemble } from '../assemble.ts';
 import { contextFrom } from '../candidates.ts';
-import { canEdit, rebuildDay, setCardioTarget, setPrescription, swapExercise } from '../edit-ops.ts';
+import {
+  addExercise,
+  canEdit,
+  rebuildDay,
+  removeExercise,
+  setCardioTarget,
+  setPrescription,
+  setSetsMany,
+  swapExercise,
+} from '../edit-ops.ts';
 import { limitationPatterns } from '../rulebook/limitations.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -327,4 +336,76 @@ test('⚠ a trained Wednesday is not rewritten by an edit to Friday, and is refu
   assert.equal(setsBy(r.structure).Squat, 4);
   const refused = setPrescription(gapped(), marks, at(0, 1, 0), { sets: 5 });
   assert.equal(refused.ok, false);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADD · REMOVE · SETS IN BULK (typed edits, 2026-09-22)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const mainAt = (s, w, d) => scheduleSlots(s).find((x) => x.weekIndex === w && x.dayIndex === d).day.main;
+const curl = { catalogKey: 'dumbbell-hammer-curl', name: 'Dumbbell Hammer Curl', sets: 3, reps: 10, repsMax: 12 };
+
+test('addExercise appends to one session, keeps the count, and never duplicates', () => {
+  const s = program();
+  const before = mainAt(s, 0, 0).length;
+  const r = addExercise(s, [], { weekIndex: 0, dayIndex: 0 }, () => ({ ...curl }));
+  assert.ok(r.ok);
+  assert.equal(totalSessions(r.structure), totalSessions(s));
+  assert.equal(mainAt(r.structure, 0, 0).length, before + 1);
+  assert.equal(mainAt(r.structure, 0, 0).at(-1).catalogKey, 'dumbbell-hammer-curl');
+  assert.equal(mainAt(r.structure, 1, 0).length, before, 'just this week');
+
+  const again = addExercise(r.structure, [], { weekIndex: 0, dayIndex: 0 }, () => ({ ...curl }));
+  assert.equal(again.ok, false);
+  assert.equal(again.refusal.reason, 'duplicate');
+});
+
+test('addExercise across the block doses each week with the maker, and skips a trained week', () => {
+  const s = program();
+  const marks = [{ weekIndex: 2, dayIndex: 0, state: 'completed' }];
+  const r = addExercise(s, marks, { weekIndex: 1, dayIndex: 0 }, (w) => ({ ...curl, reps: 8 + w }), 'rest_of_block');
+  assert.ok(r.ok);
+  assert.equal(mainAt(r.structure, 1, 0).at(-1).reps, 9);
+  assert.equal(mainAt(r.structure, 3, 0).at(-1).reps, 11);
+  assert.ok(!mainAt(r.structure, 2, 0).some((e) => e.catalogKey === curl.catalogKey), 'the trained week is untouched');
+  assert.ok(!mainAt(r.structure, 0, 0).some((e) => e.catalogKey === curl.catalogKey), 'earlier weeks are untouched');
+  assert.equal(addExercise(s, marks, { weekIndex: 2, dayIndex: 0 }, () => ({ ...curl })).refusal.reason, 'already_trained');
+});
+
+test('removeExercise takes one row out, refuses to leave fewer than two, and never a trained session', () => {
+  const s = program();
+  const n = mainAt(s, 0, 1).length;
+  const r = removeExercise(s, [], { weekIndex: 0, dayIndex: 1, exerciseIndex: 3 }, 'rest_of_block');
+  assert.ok(r.ok);
+  assert.equal(totalSessions(r.structure), totalSessions(s));
+  for (let w = 0; w < s.weeks; w += 1) assert.equal(mainAt(r.structure, w, 1).length, n - 1, `week ${w + 1}`);
+
+  const two = gapped();
+  two.days[0].main.push({ name: 'Pull-Up', catalogKey: 'pull-up', sets: 3, reps: 8 });
+  const short = removeExercise(two, [], { weekIndex: 0, dayIndex: 0, exerciseIndex: 0 });
+  assert.equal(short.ok, false);
+  assert.equal(short.refusal.reason, 'too_few_exercises');
+
+  const trained = removeExercise(s, [{ weekIndex: 0, dayIndex: 1, state: 'skipped' }], { weekIndex: 0, dayIndex: 1, exerciseIndex: 3 });
+  assert.equal(trained.refusal.reason, 'already_trained');
+});
+
+test('setSetsMany writes a batch once, clamps to 1–8, drops a stale key, and refuses a touched session', () => {
+  const s = program();
+  const row = mainAt(s, 0, 0)[4];
+  const r = setSetsMany(s, [], [
+    { at: { weekIndex: 0, dayIndex: 0, exerciseIndex: 4 }, sets: 4, catalogKey: row.catalogKey },
+    { at: { weekIndex: 0, dayIndex: 2, exerciseIndex: 0 }, sets: 12 },
+    { at: { weekIndex: 0, dayIndex: 1, exerciseIndex: 0 }, sets: 5, catalogKey: 'not-what-is-there' },
+  ]);
+  assert.ok(r.ok);
+  assert.equal(mainAt(r.structure, 0, 0)[4].sets, 4);
+  assert.equal(mainAt(r.structure, 0, 2)[0].sets, 8);
+  assert.equal(mainAt(r.structure, 0, 1)[0].sets, mainAt(s, 0, 1)[0].sets, 'a stale key changes nothing');
+  assert.equal(totalSessions(r.structure), totalSessions(s));
+
+  const touched = setSetsMany(s, [{ weekIndex: 0, dayIndex: 0, state: 'completed' }], [{ at: { weekIndex: 0, dayIndex: 0, exerciseIndex: 4 }, sets: 4 }]);
+  assert.equal(touched.refusal.reason, 'already_trained');
+  const same = setSetsMany(s, [], [{ at: { weekIndex: 0, dayIndex: 0, exerciseIndex: 4 }, sets: row.sets }]);
+  assert.equal(same.refusal.reason, 'nothing_to_change');
 });

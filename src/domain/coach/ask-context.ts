@@ -30,7 +30,8 @@
 import { ALIAS_INDEX, aliasKey, resolveAgainstCatalog } from '../exercise-picker/aliases.ts';
 import { ABBREVIATIONS, tokenize, type CatalogEntry } from '../program/exercise-match.ts';
 import { rationaleFor, type RationaleInput } from './rulebook/rationale.ts';
-import type { AskContext, AskTurn } from './ask-wire.ts';
+import { isTrainingQuestion } from './training-summary.ts';
+import { ASK_NOTES_MAX, type AskContext, type AskTurn } from './ask-wire.ts';
 
 export type { AskContext, AskTurn } from './ask-wire.ts';
 
@@ -90,6 +91,17 @@ export interface AskContextInput {
    * attached to "why"-type questions.
    */
   rationale?: string | RationaleInput | null;
+  /**
+   * CA-D2: Holt's notes — what the athlete told him (`fetchNotes()` in `data/holt-notes-live.ts`). Sent
+   * with every question: they are few, short, and the whole point of his not forgetting you.
+   */
+  notes?: readonly string[] | null;
+  /**
+   * The athlete's training summary (`fetchTrainingSummary()` in `data/holt-training-live.ts`). Attached
+   * ONLY when `isTrainingQuestion(question)` — an ordinary question pays nothing for it, whatever the
+   * caller passes. `askBriefLive()` also skips the read itself when the question does not need it.
+   */
+  training?: string | null;
 }
 
 /** At most this many coaching records per question (CA-D5 — the context stays small). */
@@ -330,6 +342,11 @@ export function buildAskContext(input: AskContextInput, sources: AskSources): As
     }
     if (why.length) ctx.rationale = why.join(' ');
   }
+
+  // CA-D2 notes, and the training summary only for a training question (CA-D5: only what the job needs).
+  const notes = (input.notes ?? []).map((n) => (typeof n === 'string' ? n.trim() : '')).filter(Boolean);
+  if (notes.length) ctx.notes = notes.slice(0, ASK_NOTES_MAX);
+  if (input.training && input.training.trim() && isTrainingQuestion(question)) ctx.training = input.training.trim();
 
   return ctx;
 }

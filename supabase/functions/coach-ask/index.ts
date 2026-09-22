@@ -122,6 +122,8 @@ Some messages start with reference material from the app: the athlete's program,
 
 - When the question is about an exercise and a coaching record for it is provided, answer from that record: its setup, cues and common mistakes are what the app teaches, so your answer should agree with it. Pick the one or two points that answer the question; do not recite the record.
 - When the question is why their plan looks the way it does and a reason is provided, use that reason. It is what the engine actually decided. Do not invent a different reason.
+- When the athlete's logged training is provided (their top lifts, best recent sets, estimated one-rep-max trend, sessions a week), answer questions about their progress and loads from those numbers, in the units given. Estimated maxes are estimates; say so if you lean on one. Do not invent sessions or numbers that are not there.
+- A message may also carry "What you know about this athlete": short notes of things the athlete told you before. Use them where they matter (a lift they hate, a day they can't train) without reciting them, and never treat them as more than what the athlete said.
 - When nothing relevant is provided, answer from general coaching knowledge. Never pretend the app told you something it did not, and never claim to see their logged sessions, weights or history unless they are in the message.
 
 # The app, so answers about it are right
@@ -154,7 +156,11 @@ interface Body {
   question: string;
   /** The last ≤ 8 turns of THIS conversation only (CA-D1). Trimmed here too. */
   history?: unknown;
-  /** Program summary, coaching records, rationale — built on the device by `ask-context.ts`. */
+  /**
+   * Program summary, coaching records, rationale, Holt's notes (CA-D2, ≤ 20 × 80 chars) and — for
+   * training questions only — the athlete's training summary. Built on the device by `ask-context.ts`;
+   * narrowed here by `cleanContext`, and all of it goes in the user turn.
+   */
   context?: unknown;
   /** Optional, one of ALLOWED_MODELS. Anything else runs the default. */
   model?: string;

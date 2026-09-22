@@ -48,7 +48,10 @@ export type EditRefusalReason =
   | 'no_such_session'
   | 'no_such_exercise'
   | 'not_cardio'
-  | 'would_resize';
+  | 'would_resize'
+  | 'duplicate'
+  | 'too_few_exercises'
+  | 'nothing_to_change';
 
 export interface EditRefusal {
   reason: EditRefusalReason;
@@ -343,6 +346,140 @@ export function rebuildDay(
 
   return commit(structure, plans);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// ADDING AND REMOVING A MOVEMENT (typed edits, 2026-09-22)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * A session must keep at least this many exercises after a removal. One row is not a session the athlete
+ * would recognise as the day they signed up for, and zero rows would drop the day from the schedule
+ * altogether — `trainingDays` filters empty days, which is a resize by the back door.
+ */
+export const MIN_EXERCISES_AFTER_REMOVE = 2;
+
+/**
+ * Add one movement to the end of a session — "add hammer curls to Monday".
+ *
+ * ⚠ IT CANNOT RESIZE, AND `commit` STILL CHECKS. Appending to a session that already prescribes something
+ * leaves every schedule index where it was; only the rows inside the slot change. The session count is
+ * asserted anyway, like every op here.
+ *
+ * `make` builds the row per week, so a caller can dose it from the rulebook for THAT week (the rep climb,
+ * a deload's lighter sets) instead of copying week one's numbers down the block. A later week that already
+ * holds the movement is left alone rather than given it twice (PAS §10.3, no duplicates per section).
+ */
+export function addExercise(
+  structure: ProgramStructure,
+  marks: readonly SessionMark[],
+  at: { weekIndex: number; dayIndex: number },
+  make: (weekIndex: number, day: ProgramDay) => ProgramExercise,
+  scope: EditScope = 'this_week',
+): EditResult {
+  if (!canEdit(marks, at.weekIndex, at.dayIndex)) return { ok: false, refusal: trainedRefusal() };
+
+  const plans = materialise(structure);
+  const first = sessionAt(plans, at.weekIndex, at.dayIndex);
+  if (!first) return { ok: false, refusal: noSuchSession() };
+  const probe = make(at.weekIndex, first);
+  if (probe.catalogKey && first.main.some((e) => e.catalogKey === probe.catalogKey)) {
+    return {
+      ok: false,
+      refusal: { reason: 'duplicate', message: `${probe.name} is already in that session — want more sets of it instead?` },
+    };
+  }
+
+  for (const w of targetWeeks(structure, marks, at.weekIndex, at.dayIndex, scope)) {
+    const day = sessionAt(plans, w, at.dayIndex);
+    if (!day) continue;
+    const row = w === at.weekIndex ? probe : make(w, day);
+    if (row.catalogKey && day.main.some((e) => e.catalogKey === row.catalogKey)) continue;
+    day.main.push(row);
+  }
+
+  return commit(structure, plans);
+}
+
+/**
+ * Take one movement out of a session — "drop the front squats on Lower A".
+ *
+ * Refused when the session would be left with fewer than `MIN_EXERCISES_AFTER_REMOVE` rows. In later weeks
+ * (rest of the block) a session that is already that short is skipped rather than refused, and the row is
+ * found by its catalogue key rather than its index — a later week whose plan differs is not the row the
+ * athlete was looking at.
+ */
+export function removeExercise(
+  structure: ProgramStructure,
+  marks: readonly SessionMark[],
+  at: { weekIndex: number; dayIndex: number; exerciseIndex: number },
+  scope: EditScope = 'this_week',
+): EditResult {
+  if (!canEdit(marks, at.weekIndex, at.dayIndex)) return { ok: false, refusal: trainedRefusal() };
+
+  const plans = materialise(structure);
+  const first = sessionAt(plans, at.weekIndex, at.dayIndex);
+  const source = first?.main[at.exerciseIndex];
+  if (!first || !source) return { ok: false, refusal: noSuchExercise() };
+  if (first.main.length - 1 < MIN_EXERCISES_AFTER_REMOVE) return { ok: false, refusal: tooFew() };
+
+  for (const w of targetWeeks(structure, marks, at.weekIndex, at.dayIndex, scope)) {
+    const day = sessionAt(plans, w, at.dayIndex);
+    if (!day || day.main.length - 1 < MIN_EXERCISES_AFTER_REMOVE) continue;
+    const i =
+      w === at.weekIndex
+        ? at.exerciseIndex
+        : day.main.findIndex((e) => (source.catalogKey ? e.catalogKey === source.catalogKey : e.name === source.name));
+    if (i < 0) continue;
+    day.main.splice(i, 1);
+  }
+
+  return commit(structure, plans);
+}
+
+/**
+ * Set the sets on several rows at once, in one write — the "more arm work" edit, which touches every
+ * matching row across a week (or a block).
+ *
+ * Each change names its row by position AND, optionally, by catalogue key: a key that no longer matches is
+ * a stale plan (the program changed underneath the conversation) and that change is dropped rather than
+ * landing on whatever now sits in the slot. A touched session anywhere in the list refuses the whole
+ * batch, because a half-applied volume change is not what anybody confirmed.
+ */
+export function setSetsMany(
+  structure: ProgramStructure,
+  marks: readonly SessionMark[],
+  changes: readonly { at: { weekIndex: number; dayIndex: number; exerciseIndex: number }; sets: number; catalogKey?: string }[],
+): EditResult {
+  if (changes.some((c) => !canEdit(marks, c.at.weekIndex, c.at.dayIndex))) return { ok: false, refusal: trainedRefusal() };
+
+  const plans = materialise(structure);
+  let changed = 0;
+  for (const c of changes) {
+    const day = sessionAt(plans, c.at.weekIndex, c.at.dayIndex);
+    const row = day?.main[c.at.exerciseIndex];
+    if (!day || !row || row.kind === 'cardio') continue;
+    if (c.catalogKey !== undefined && row.catalogKey !== c.catalogKey) continue;
+    const sets = Math.min(8, Math.max(1, Math.round(c.sets)));
+    if (sets === row.sets) continue;
+    day.main[c.at.exerciseIndex] = { ...row, sets };
+    changed += 1;
+  }
+  if (changed === 0) {
+    return { ok: false, refusal: { reason: 'nothing_to_change', message: 'That would leave the plan exactly as it is.' } };
+  }
+
+  return commit(structure, plans);
+}
+
+const tooFew = (): EditRefusal => ({
+  reason: 'too_few_exercises',
+  message: `That would leave the session with fewer than ${MIN_EXERCISES_AFTER_REMOVE} exercises. Swap it for something else instead?`,
+});
+
+const noSuchSession = (): EditRefusal => ({
+  reason: 'no_such_session',
+  message: "I can't find that session in this program.",
+});
 
 const noSuchExercise = (): EditRefusal => ({
   reason: 'no_such_exercise',

@@ -295,7 +295,26 @@ export interface AskContext {
   coaching?: { name: string; text: string }[];
   /** Why the plan is shaped the way it is (`rulebook/rationale.ts`), for "why is X in my plan" questions. */
   rationale?: string | null;
+  /**
+   * CA-D2: Holt's notes — one-line facts the athlete TOLD him (`holt_notes`, 0204). At most
+   * {@link ASK_NOTES_MAX}, each at most {@link ASK_NOTE_CHARS}. They go in the user turn, never the system
+   * block, and they are labelled as the athlete's own words, not the app's reference material.
+   */
+  notes?: string[];
+  /**
+   * The athlete's own logged training, summarised (`training-summary.ts`) — top lifts, recent bests, e1RM
+   * trend, sessions a week. Attached ONLY to training questions (`isTrainingQuestion`), so an ordinary
+   * question pays nothing for it.
+   */
+  training?: string | null;
 }
+
+/** CA-D2: the notes cap. Mirrors `HOLT_NOTES_MAX` in `holt-notes.ts` and the 0204 trigger. */
+export const ASK_NOTES_MAX = 20;
+/** One line. Mirrors `HOLT_NOTE_CHARS` and `varchar(80)` in 0204. */
+export const ASK_NOTE_CHARS = 80;
+/** The training summary's ceiling on the wire. The builder aims for ~400. */
+export const ASK_TRAINING_CHARS = 500;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // History
@@ -329,7 +348,8 @@ const str = (v: unknown, cap: number): string | null =>
 
 /**
  * The context, narrowed to what the function accepts. A client can send anything; this keeps three
- * coaching records at most and caps every string, so the context stays a few hundred tokens.
+ * coaching records and twenty notes at most and caps every string, so the context stays a few hundred
+ * tokens.
  */
 export function cleanContext(ctx: unknown): AskContext {
   if (!ctx || typeof ctx !== 'object') return {};
@@ -344,10 +364,22 @@ export function cleanContext(ctx: unknown): AskContext {
         .filter((r): r is { name: string; text: string } => r !== null)
         .slice(0, 3)
     : [];
+  const notes: string[] = [];
+  if (Array.isArray(c.notes)) {
+    for (const n of c.notes) {
+      if (typeof n !== 'string') continue;
+      const t = n.replace(/\s+/g, ' ').trim().slice(0, ASK_NOTE_CHARS);
+      if (t.length < 2) continue;
+      notes.push(t);
+      if (notes.length >= ASK_NOTES_MAX) break;
+    }
+  }
   return {
     program: str(c.program, 300),
     coaching,
     rationale: str(c.rationale, 700),
+    notes,
+    training: str(c.training, ASK_TRAINING_CHARS),
   };
 }
 
@@ -361,11 +393,15 @@ export function askUserTurn(question: string, context: AskContext, todayISO: str
   if (context.program) lines.push(`The athlete's program: ${context.program}`);
   for (const r of context.coaching ?? []) lines.push(`Coaching record — ${r.name}: ${r.text}`);
   if (context.rationale) lines.push(`Why the plan is built this way: ${context.rationale}`);
+  if (context.training) lines.push(`The athlete's logged training: ${context.training}`);
   const header =
     lines.length > 1
       ? `From the app (reference material, not the athlete's words — use it when it is relevant):\n${lines.join('\n')}`
       : lines[0];
-  return `${header}\n\nThe athlete asks: "${question}"`;
+  // CA-D2 notes: things the athlete told Holt before. Their own words, so labelled apart from the app's.
+  const notes = (context.notes ?? []).filter(Boolean);
+  const known = notes.length ? `\n\nWhat you know about this athlete:\n${notes.map((n) => `- ${n}`).join('\n')}` : '';
+  return `${header}${known}\n\nThe athlete asks: "${question}"`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -567,6 +603,8 @@ Some messages start with reference material from the app: the athlete's program,
 
 - When the question is about an exercise and a coaching record for it is provided, answer from that record: its setup, cues and common mistakes are what the app teaches, so your answer should agree with it. Pick the one or two points that answer the question; do not recite the record.
 - When the question is why their plan looks the way it does and a reason is provided, use that reason. It is what the engine actually decided. Do not invent a different reason.
+- When the athlete's logged training is provided (their top lifts, best recent sets, estimated one-rep-max trend, sessions a week), answer questions about their progress and loads from those numbers, in the units given. Estimated maxes are estimates; say so if you lean on one. Do not invent sessions or numbers that are not there.
+- A message may also carry "What you know about this athlete": short notes of things the athlete told you before. Use them where they matter (a lift they hate, a day they can't train) without reciting them, and never treat them as more than what the athlete said.
 - When nothing relevant is provided, answer from general coaching knowledge. Never pretend the app told you something it did not, and never claim to see their logged sessions, weights or history unless they are in the message.
 
 # The app, so answers about it are right
@@ -599,7 +637,11 @@ interface Body {
   question: string;
   /** The last ≤ 8 turns of THIS conversation only (CA-D1). Trimmed here too. */
   history?: unknown;
-  /** Program summary, coaching records, rationale — built on the device by `ask-context.ts`. */
+  /**
+   * Program summary, coaching records, rationale, Holt's notes (CA-D2, ≤ 20 × 80 chars) and — for
+   * training questions only — the athlete's training summary. Built on the device by `ask-context.ts`;
+   * narrowed here by `cleanContext`, and all of it goes in the user turn.
+   */
   context?: unknown;
   /** Optional, one of ALLOWED_MODELS. Anything else runs the default. */
   model?: string;

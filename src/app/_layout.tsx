@@ -369,6 +369,9 @@ function RootNavigator() {
         <Stack.Screen name="subscription" />
         <Stack.Screen name="edit-profile" />
         <Stack.Screen name="preferences" />
+        {/* What Holt Remembers (0204, CA-D2). Account Settings → Training — Holt's notes, each editable
+            and deletable by the athlete. */}
+        <Stack.Screen name="holt-memory" />
         <Stack.Screen name="profile-visibility" />
         <Stack.Screen name="notifications" />
         {/* Blocked People (0171). Account Settings → Privacy & Alerts, and the ONLY way to undo a block:

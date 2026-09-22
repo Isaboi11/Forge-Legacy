@@ -3,7 +3,7 @@ import type { CoachConstraints } from '@/domain/coach/constraints';
 import type { Question } from '@/domain/coach/chat-core';
 import { interpret as interpretLocally } from '@/domain/coach/chat-core';
 import { medicalRoute } from '@/domain/coach/medical-routing';
-import { narrowEdit, type EditIntent, type HistoryTurn } from '@/domain/coach/interpret-narrow';
+import { narrowEdit, narrowNotes, narrowRemember, type EditIntent, type HistoryTurn } from '@/domain/coach/interpret-narrow';
 
 export type { EditIntent, HistoryTurn };
 
@@ -35,7 +35,7 @@ export type { EditIntent, HistoryTurn };
  * failure here returns `offline`, never `unclear` — the caller owes the athlete different copy.
  */
 
-export type InterpretResult =
+export type InterpretStep =
   /** The model placed it. `patch` is engine-shaped and safe to merge into `ChatState`. */
   | { kind: 'patch'; patch: Partial<CoachConstraints>; say: string | null; remaining: number | null }
   /** Injury language, or a question about the body. The caller shows `MEDICAL_STOP`. */
@@ -60,6 +60,24 @@ export type InterpretResult =
   /** The app failed. Never conflate with `unclear`. */
   | { kind: 'offline' };
 
+/** What one message resolved to. */
+export type InterpretResult = (
+  | InterpretStep
+  /**
+   * Several things said in one message (CA-D11 without a tool loop) — at most three, in the order said,
+   * each already narrowed and converted exactly as a single reply would be. Only patch, answer and door
+   * steps occur here: the medical guard runs on the whole message first, and a stop anywhere is the whole
+   * reply, never one step of several.
+   */
+  | { kind: 'multi'; steps: InterpretStep[] }
+) & {
+  /**
+   * CA-D2: up to two facts the athlete just stated about themselves ("Hates lunges"), ≤80 chars each,
+   * never a body fact. OFFER them as notes the athlete can see and delete; never save one silently.
+   */
+  remember?: string[];
+};
+
 /** What the athlete has already settled, so the model does not re-fill a field it was not asked about. */
 type Known = Partial<Record<string, unknown>>;
 
@@ -75,9 +93,15 @@ export async function interpretTyped(
   known: Known = {},
   /** This job's earlier turns (CA-D1), so a follow-up resolves. The function keeps the last six. */
   history: readonly HistoryTurn[] = [],
+  /**
+   * Holt's notes on this athlete (CA-D2) — what they said about themselves, one line each, ≤20 of ≤80
+   * chars. Sent in the user turn as "What you know about this athlete:" so answers use it.
+   */
+  notes: readonly string[] = [],
 ): Promise<InterpretResult> {
   const trimmed = text.trim();
   if (!trimmed) return { kind: 'unclear' };
+  const sentNotes = narrowNotes(notes);
 
   // 0. The code guard, before the local matcher: "i want to hurt myself" contains "i", which the chip
   //    matcher will happily read as an answer. Offline or not, a person in danger gets the right words.
@@ -102,43 +126,38 @@ export async function interpretTyped(
         mode,
         known,
         ...(history.length ? { history: history.slice(-6) } : {}),
+        ...(sentNotes.length ? { notes: sentNotes } : {}),
       },
     });
 
     if (error || !data) return { kind: 'offline' };
 
+    const remaining = typeof (data as { remaining?: unknown }).remaining === 'number' ? (data as { remaining: number }).remaining : null;
+    // Narrowed again on this side, like every field: a stale or future function must not hand the chat junk.
+    const remember = narrowRemember((data as { remember?: unknown }).remember, sentNotes);
+    const withMemory = (r: InterpretResult): InterpretResult => (remember.length ? { ...r, remember } : r);
+
+    if ((data as { route?: string }).route === 'multi') {
+      const actions = (data as { actions?: unknown }).actions;
+      const steps = (Array.isArray(actions) ? actions : [])
+        .map((a) => stepFrom(a, remaining))
+        .filter((s): s is InterpretStep => s !== null)
+        .slice(0, 3);
+      if (steps.length === 0) return withMemory({ kind: 'unclear' });
+      return withMemory(steps.length === 1 ? steps[0] : { kind: 'multi', steps });
+    }
+
     const route = (data as { route?: string }).route;
+    const single = stepFrom(data, remaining);
+    if (single) return withMemory(single);
 
     switch (route) {
-      case 'patch': {
-        const d = data as { patch?: Partial<CoachConstraints>; say?: string | null; remaining?: number };
-        // A patch with nothing in it is not a patch. The function already guards this; so does the
-        // caller, because two cheap checks are worth one silent no-op that reads as the coach ignoring you.
-        if (!d.patch || Object.keys(d.patch).length === 0) return { kind: 'unclear' };
-        return {
-          kind: 'patch',
-          patch: d.patch,
-          say: d.say ?? null,
-          remaining: typeof d.remaining === 'number' ? d.remaining : null,
-        };
-      }
+      case 'patch':
+      case 'answer':
+        // A patch with nothing in it, or an answer with no line, is not one (`stepFrom` returned null).
+        return withMemory({ kind: 'unclear' });
       case 'medical_stop':
         return { kind: 'medical' };
-      case 'answer': {
-        const d = data as { say?: string | null; remaining?: number };
-        if (!d.say) return { kind: 'unclear' };
-        return { kind: 'answer', text: d.say, remaining: typeof d.remaining === 'number' ? d.remaining : null };
-      }
-      case 'edit': {
-        // Narrowed again on this side: a stale or future function must not hand the resolver junk.
-        const edit = narrowEdit((data as { edit?: unknown }).edit);
-        return edit ? { kind: 'door', to: 'edit', edit } : { kind: 'door', to: 'edit' };
-      }
-      case 'import':
-      case 'pick':
-      case 'build':
-      case 'build_day':
-        return { kind: 'door', to: route };
       case 'crisis':
       case 'urgent':
       case 'care':
@@ -148,13 +167,45 @@ export async function interpretTyped(
         return { kind: 'out_of_credits', remaining: d.remaining ?? 0, allowance: d.allowance ?? 0 };
       }
       case 'unclear':
-        return { kind: 'unclear' };
+        return withMemory({ kind: 'unclear' });
       default:
         // `error`, or a route this build does not know. Both are the app failing, not Holt deciding.
         return { kind: 'offline' };
     }
   } catch {
     return { kind: 'offline' };
+  }
+}
+
+/**
+ * One action off the wire — a single-route reply or one entry of a `multi` — as a step, or null when it is
+ * not a usable patch / answer / door. Stops are never steps: they are whole replies, handled by the caller.
+ */
+function stepFrom(raw: unknown, remaining: number | null): InterpretStep | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const d = raw as { route?: unknown; patch?: unknown; say?: unknown; edit?: unknown };
+  const say = typeof d.say === 'string' && d.say.trim() ? d.say.trim() : null;
+  switch (d.route) {
+    case 'patch': {
+      // A patch with nothing in it is not a patch. The function already guards this; so does the caller,
+      // because two cheap checks are worth one silent no-op that reads as the coach ignoring you.
+      const patch = d.patch;
+      if (typeof patch !== 'object' || patch === null || Object.keys(patch).length === 0) return null;
+      return { kind: 'patch', patch: patch as Partial<CoachConstraints>, say, remaining };
+    }
+    case 'answer':
+      return say ? { kind: 'answer', text: say, remaining } : null;
+    case 'edit': {
+      const edit = narrowEdit(d.edit);
+      return edit ? { kind: 'door', to: 'edit', edit } : { kind: 'door', to: 'edit' };
+    }
+    case 'import':
+    case 'pick':
+    case 'build':
+    case 'build_day':
+      return { kind: 'door', to: d.route };
+    default:
+      return null;
   }
 }
 

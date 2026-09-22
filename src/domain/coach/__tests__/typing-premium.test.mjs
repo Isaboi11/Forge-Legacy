@@ -47,13 +47,13 @@ test('⚠ a Premium AI sentence reaches the model, and the broad word list no lo
   assert.match(sheet, /if \(premiumAi\) \{\s*void understand\(text\);/);
   assert.match(sheet, /if \(!premiumAi && isMedical\(text\)\)/);
   // Every route the function can return has an answer — an unhandled one would be silence.
-  const understand = sheet.slice(sheet.indexOf('const understand = async'), sheet.indexOf('const process = (text'));
+  const understand = sheet.slice(sheet.indexOf('const respondTo = async'), sheet.indexOf('const process = (text'));
   for (const route of ['crisis', 'urgent', 'care', 'medical', 'out_of_credits', 'offline', 'unclear', 'answer', 'door', 'patch'])
     assert.match(understand, new RegExp(`case '${route}':`), route);
 });
 
 test('⚠ a sentence that opens a build passes the same allowance gate as the door, from the athlete facts', () => {
-  const understand = sheet.slice(sheet.indexOf('const understand = async'), sheet.indexOf('const process = (text'));
+  const understand = sheet.slice(sheet.indexOf('const respondTo = async'), sheet.indexOf('const process = (text'));
   assert.match(understand, /guard\(opens === 'day' \? 'holt_days_per_month' : 'holt_programs'\)/);
   assert.match(understand, /advance\(\{ \.\.\.athleteFacts\(constraints\), \.\.\.patch \}, opens\)/);
 });
@@ -113,7 +113,7 @@ test('⚠ the streamed reply is ONE growing turn, cleared of `streaming` when it
 
 test('⚠ conversation memory is this conversation, eight turns, into both AI jobs', () => {
   assert.match(sheet, /\.slice\(-8\)/);
-  assert.match(sheet, /interpretTyped\(text, q, m === 'day' \? 'day' : 'program', constraints, history\)/);
+  assert.match(sheet, /interpretTyped\(text, q, m === 'day' \? 'day' : 'program', constraints, history, await loadNotes\(\)\)/);
   assert.match(sheet, /askHolt\(text, history, context,/);
 });
 
@@ -125,4 +125,13 @@ test('⚠ a typed edit is resolved, confirmed, and applied only on a tap — nev
   assert.match(finish, /pe\.plan\.apply\(scope\)/);
   assert.match(finish, /await updateProgram\(pe\.programId, res\.structure\)/);
   assert.match(finish, /That change went stale/, 'a chip restored after a reload says so instead of doing nothing');
+});
+
+test('⚠ several things in one message run in order; a skip saves as skip marks; what they said is remembered', () => {
+  const u = sheet.slice(sheet.indexOf('const understand = async'), sheet.indexOf('const process = (text'));
+  assert.match(u, /if \(r\.kind === 'multi'\) \{\s*for \(const step of r\.steps\) await respondTo\(step, text, q, m\);/);
+  assert.match(u, /if \(r\.remember\?\.length\) void rememberSaid\(r\.remember\);/);
+  const finish = sheet.slice(sheet.indexOf('const finishTypedEdit = async'), sheet.indexOf('const tapChip = (chip'));
+  assert.match(finish, /if \(pe\.plan\.kind === 'skip'\) \{\s*for \(const at of pe\.plan\.sessions\) await skipProgramSession\(pe\.programId, at\.weekIndex, at\.dayIndex\);/);
+  assert.match(sheet, /const brief = await askBriefLive\(text, units\)/);
 });

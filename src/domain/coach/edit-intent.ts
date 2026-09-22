@@ -29,21 +29,44 @@
  * asked about rather than mapped onto "the first session", and "tomorrow" / "today" mean the next session
  * the athlete owes.
  *
+ * ══ THE OPS (2026-09-22) ══
+ *
+ * Row edits (swap · sets · reps · distance · duration · remove), whole-day (rebuild · add), and three that
+ * reach across a week: `move` (a reorder through `schedule-edit.reorderWeek`, pinned sessions fixed exactly
+ * as the Reorder sheet fixes them), `volume` (one set up or down on a muscle group's rows, inside
+ * `validateProgram`'s caps, or one accessory in or out), and `skip` — which is NOT a structure edit: its plan
+ * (`kind: 'skip'`) returns the positions for `skipProgramSession`, and the structure is never touched.
+ *
  * Pure: type-only `@/` imports, relative value imports, injected catalogue.
  */
 
 import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/programs-live';
 import type { SessionMark } from '../program/progress-core.ts';
 import { plannedDays, trainingDays } from '../program/progress-core.ts';
-import { rawIndexOf } from '../program/schedule-edit.ts';
+import { moveInOrder, rawIndexOf, reorderWeek, transposition, weekSessionCount } from '../program/schedule-edit.ts';
 import { matchExercise, tokenize } from '../program/exercise-match.ts';
 import { resolveAgainstCatalog } from '../exercise-picker/aliases.ts';
 
-import type { CandidateContext, CatalogExercise } from './candidates.ts';
+import { candidatesFor, fillSlot, isCompound, type CandidateContext, type CatalogExercise } from './candidates.ts';
 import { describe, editableSessions, replacementsFor, valuesFor } from './edit-chat.ts';
-import { canEdit, rebuildDay, setCardioTarget, setPrescription, swapExercise, type EditResult, type EditScope } from './edit-ops.ts';
+import {
+  addExercise,
+  canEdit,
+  MIN_EXERCISES_AFTER_REMOVE,
+  rebuildDay,
+  removeExercise,
+  setCardioTarget,
+  setPrescription,
+  setSetsMany,
+  swapExercise,
+  type EditRefusal,
+  type EditResult,
+  type EditScope,
+} from './edit-ops.ts';
 import type { EditIntent } from './interpret-narrow.ts';
-import type { PrescribeContext } from './prescribe.ts';
+import { prescribeReps, roleFor, type PrescribeContext } from './prescribe.ts';
+import { FOCUS_SPEC } from './rulebook/focus.ts';
+import { bandFor, type PasCategory } from './rulebook/volume.ts';
 
 export type { EditIntent };
 
@@ -51,9 +74,30 @@ export type { EditIntent };
 // RESULT
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
-export type EditAsk = 'which_day' | 'which_exercise' | 'which_replacement' | 'which_value' | 'not_editable';
+/**
+ * What the athlete is asked. The chat answers each by re-sending the intent with one field filled from the
+ * chip: `which_day` → `day`, `which_exercise` → `exercise`, `which_replacement` → `to`, `which_value` → the
+ * number, `which_position` (a `move` destination) → `to`, `which_week` (a `skip` week) → `week`.
+ * `not_editable` is terminal — a refusal in Holt's words, with at most an alternative offered.
+ */
+export type EditAsk =
+  | 'which_day'
+  | 'which_exercise'
+  | 'which_replacement'
+  | 'which_value'
+  | 'which_position'
+  | 'which_week'
+  | 'not_editable';
 
+/** A session's place: SCHEDULE indices, exactly what `program_sessions` rows and `skipProgramSession` take. */
+export interface SessionPosition {
+  weekIndex: number;
+  dayIndex: number;
+}
+
+/** A plan that changes the program's structure. `apply` returns the structure to save (`updateProgram`). */
 export interface EditPlan {
+  kind: 'structure';
   at: { weekIndex: number; dayIndex: number; exerciseIndex?: number };
   op: EditIntent['op'];
   /** "Week 3, Monday — Barbell Bench Press → Dumbbell Bench Press". What the athlete confirms. */
@@ -64,8 +108,35 @@ export interface EditPlan {
   apply(scope?: EditScope): EditResult;
 }
 
+/**
+ * ⚠ A SKIP IS A SESSION MARK, NOT A STRUCTURE EDIT. The structure never changes; each position gets a
+ * `skipped` row through the existing `skipProgramSession(programId, weekIndex, dayIndex)` RPC wrapper
+ * (`data/programs-live.ts`), which ignores a session already touched. `structure` is the input, unchanged,
+ * so a caller that still saves it writes nothing new — but the skip only happens when the positions are sent.
+ */
+export type SkipResult =
+  | { ok: true; skip: SessionPosition[]; structure: ProgramStructure }
+  | { ok: false; refusal: EditRefusal };
+
+export interface SkipPlan {
+  kind: 'skip';
+  op: 'skip';
+  /** The first session skipped. */
+  at: { weekIndex: number; dayIndex: number };
+  /** "Skip all 4 sessions of week 5". */
+  label: string;
+  /** Always set: a skip has no reach to choose, so the chat confirms rather than asking for a scope. */
+  scope: EditScope;
+  /** Every position to mark, soonest first — all untouched. */
+  sessions: SessionPosition[];
+  /** The positions to mark skipped. The argument is ignored; it exists so every plan applies the same way. */
+  apply(scope?: EditScope): SkipResult;
+}
+
+export type TypedEditPlan = EditPlan | SkipPlan;
+
 export type EditIntentResolution =
-  | { ok: true; plan: EditPlan }
+  | { ok: true; plan: TypedEditPlan }
   | { ok: false; ask: EditAsk; options: string[]; message: string };
 
 export interface ResolveEditOptions {
@@ -73,6 +144,11 @@ export interface ResolveEditOptions {
   ctx?: CandidateContext;
   /** For `rebuild` only — how a rebuilt slot with no prescription of its own is dosed. */
   prescribe?: Omit<PrescribeContext, 'weekIndex' | 'isDeload'>;
+  /**
+   * The program's PAS category, for the per-session caps a `volume` edit stays inside (`validateProgram`'s
+   * ceiling). Absent: `prescribe.category`, else STRENGTH — the tightest lifting band.
+   */
+  category?: PasCategory;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -355,7 +431,7 @@ function resolveDay(
 
 const isCardio = (e: ProgramExercise): boolean => e.kind === 'cardio';
 const eligibleFor = (op: EditIntent['op']) => (e: ProgramExercise): boolean =>
-  op === 'distance' || op === 'duration' ? isCardio(e) : !isCardio(e);
+  op === 'remove' ? true : op === 'distance' || op === 'duration' ? isCardio(e) : !isCardio(e);
 
 /** Every token a row answers to — its name, plus a cardio bout's activity ("run", "bike"). */
 function rowTokens(e: ProgramExercise): Set<string> {
@@ -531,7 +607,13 @@ export function resolveEditIntent(
     return ask('not_editable', [], "Every session in this program is done — there's nothing left in it to change.");
   }
   const catalog = catalogOf(pool);
-  const needsRow = intent.op !== 'rebuild';
+
+  // Ops that are not "one row in one session" have their own resolvers.
+  if (intent.op === 'move') return resolveMove(intent, structure, marks, first.at, today);
+  if (intent.op === 'skip') return resolveSkip(intent, structure, marks, first.at, today);
+  if (intent.op === 'volume') return resolveVolume(intent, structure, marks, first.at, today, pool, ctx, opts);
+
+  const needsRow = intent.op !== 'rebuild' && intent.op !== 'add';
 
   // ── The day ──
   let where: Found;
@@ -569,9 +651,11 @@ export function resolveEditIntent(
   // ── Rebuild: the whole day, no row ──
   if (!needsRow) {
     const prescribe = opts.prescribe ?? { category: 'STRENGTH', experience: ctx.experience };
+    if (intent.op === 'add') return resolveAdd(intent, structure, marks, { weekIndex, dayIndex }, day, place, pool, ctx, opts, said);
     return {
       ok: true,
       plan: {
+        kind: 'structure',
         at: { weekIndex, dayIndex },
         op: 'rebuild',
         label: `${place} — rebuilt with new exercises`,
@@ -608,7 +692,7 @@ export function resolveEditIntent(
   const at = { weekIndex, dayIndex, exerciseIndex };
   const plan = (label: string, apply: (scope: EditScope) => EditResult): EditIntentResolution => ({
     ok: true,
-    plan: { at, op: intent.op, label: `${place} — ${label}`, scope: said, apply: (scope) => apply(scope ?? said ?? 'this_week') },
+    plan: { kind: 'structure', at, op: intent.op, label: `${place} — ${label}`, scope: said, apply: (scope) => apply(scope ?? said ?? 'this_week') },
   });
   const valueOptions = (change: 'sets' | 'distance' | 'duration') => valuesFor(day, change, exerciseIndex).map((v) => v.label);
 
@@ -654,7 +738,537 @@ export function resolveEditIntent(
         setCardioTarget(structure, marks, at, { targetSec: minutes * 60, ...(hadMiles ? { targetMi: null } : {}) }, scope),
       );
     }
+    case 'remove': {
+      if (day.main.length - 1 < MIN_EXERCISES_AFTER_REMOVE) {
+        return ask(
+          'not_editable',
+          [],
+          `Taking ${row.name} out would leave ${place} with fewer than ${MIN_EXERCISES_AFTER_REMOVE} exercises. Want to swap it for something instead?`,
+        );
+      }
+      return plan(`take out ${row.name}`, (scope) => removeExercise(structure, marks, at, scope));
+    }
     default:
       return ask('which_exercise', [], "I can't make that change by typing yet — use the edit flow.");
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// SHARED BY THE WHOLE-SESSION OPS
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+const range = (from: number, to: number): number[] => Array.from({ length: Math.max(0, to - from) }, (_, i) => from + i);
+const isDeloadDay = (d: ProgramDay): boolean => /\[DELOAD\]/i.test(d.name);
+const setsOf = (d: ProgramDay): number => d.main.reduce((n, e) => n + (isCardio(e) ? 0 : (e.sets ?? 0)), 0);
+
+/**
+ * The trained-session refusal, in the op's own words. `resolveDay` speaks for edits ("I'm not going to
+ * change what it says"); a move or a skip says what it will not do instead.
+ */
+const reword = (r: Ask, instead: string): Ask =>
+  r.ask === 'not_editable' ? { ...r, message: r.message.replace("I'm not going to change what it says", instead) } : r;
+
+const prescribeFor = (opts: ResolveEditOptions, ctx: CandidateContext): Omit<PrescribeContext, 'weekIndex' | 'isDeload'> =>
+  opts.prescribe ?? { category: opts.category ?? 'STRENGTH', experience: ctx.experience };
+
+/** A session's own name, with its weekday when the week knows one and the name does not already say it. */
+function who(structure: ProgramStructure, w: number, d: number): string {
+  const day = sessionAt(structure, w, d);
+  const name = day ? cleanName(day) : '';
+  const wd = dayWord(structure, w, d);
+  if (!name) return wd;
+  if (wd === name || words(name).some((x) => WEEKDAY[x] !== undefined)) return name;
+  return WEEKDAY_NAMES.includes(wd) ? `${name} (${wd})` : name;
+}
+
+const structurePlan = (
+  at: EditPlan['at'],
+  op: EditIntent['op'],
+  label: string,
+  said: EditScope | null,
+  apply: (scope: EditScope) => EditResult,
+): EditIntentResolution => ({
+  ok: true,
+  plan: { kind: 'structure', at, op, label, scope: said, apply: (scope) => apply(scope ?? said ?? 'this_week') },
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// MOVE — "move leg day to Friday", "swap Tuesday and Thursday", "do Wednesday's session first"
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+const POSITION_WORDS: Record<string, 'first' | 'last'> = {
+  first: 'first', start: 'first', beginning: 'first', front: 'first', earliest: 'first',
+  last: 'last', end: 'last', final: 'last', latest: 'last',
+};
+
+/**
+ * A reorder of one week, through `schedule-edit.reorderWeek` — the same code the Reorder sheet runs, so a
+ * trained or skipped session keeps its place exactly as it does there and the session count cannot move.
+ *
+ * "to Friday" / "and Thursday" / "to Upper B" names ANOTHER session, and the two trade places (a
+ * transposition — the smallest change that puts the session where it was asked for). "first" / "last" is
+ * a position, and the session is lifted there with the rest shuffling up (`moveInOrder`, pinned rows
+ * fixed). Never across weeks: a session belongs to its week.
+ */
+function resolveMove(
+  intent: EditIntent,
+  structure: ProgramStructure,
+  marks: readonly SessionMark[],
+  current: { weekIndex: number; dayIndex: number },
+  today: Date | string | undefined,
+): EditIntentResolution {
+  if (!intent.day) return ask('which_day', weekOptions(structure, marks, current.weekIndex), 'Which session do you want to move?');
+  const from = resolveDay(intent.day, structure, marks, current, today);
+  if (!from.ok) return reword(from, 'it stays where it is');
+
+  const w = from.weekIndex;
+  const a = from.dayIndex;
+  const n = weekSessionCount(structure, w);
+  const others = () => weekOptions(structure, marks, w).filter((o) => o !== sessionLabel(structure, w, a));
+  const mover = who(structure, w, a);
+  if (!intent.to) return ask('which_position', others(), `Where should ${mover} go?`);
+
+  const pinned = new Set(range(0, n).filter((d) => !canEdit(marks, w, d)));
+  const identity = range(0, n);
+  const position = words(intent.to).map((x) => POSITION_WORDS[x]).find((x) => x !== undefined);
+
+  let order: number[];
+  let label: string;
+  if (position) {
+    const dest = position === 'first' ? 0 : n - 1;
+    // The nearest position a done session does not hold — `moveInOrder` snaps in the direction of travel,
+    // and "first" with day 1 already trained means first of what is left, not "nowhere".
+    const open = identity.filter((p) => !pinned.has(p));
+    const reach = open.length ? (position === 'first' ? open[0] : open[open.length - 1]) : dest;
+    order = moveInOrder(identity, a, reach, pinned);
+    if (order.every((v, i) => v === i)) {
+      return ask(
+        'not_editable',
+        [],
+        order.indexOf(a) === dest
+          ? `${mover} is already ${position} in week ${w + 1}.`
+          : `The sessions ${position === 'first' ? 'before' : 'after'} ${mover} are already done or skipped, so it's as ${position === 'first' ? 'early' : 'late'} as it can go.`,
+      );
+    }
+    const landed = order.indexOf(a);
+    label = `Week ${w + 1} — ${mover} ${landed === dest ? `goes ${position}` : `moves as ${position === 'first' ? 'early' : 'late'} as it can`}: ${order
+      .map((d) => who(structure, w, d))
+      .join(' · ')}`;
+  } else {
+    const to = resolveDay(intent.to, structure, marks, { weekIndex: w, dayIndex: a }, today);
+    if (!to.ok) {
+      if (to.ask === 'not_editable') {
+        return ask('which_position', others(), `That session is already done or skipped — it keeps its place. Where else should ${mover} go?`);
+      }
+      if (/rest day/.test(to.message)) {
+        return ask('which_position', others(), `${to.message.replace(/ — which session do you mean\?$/, '')}, and I can reorder sessions but not move one onto a rest day. Where should ${mover} go?`);
+      }
+      return { ...to, ask: 'which_position' };
+    }
+    if (to.weekIndex !== w) {
+      return ask('which_position', others(), `A session stays in its own week — where in week ${w + 1} should ${mover} go?`);
+    }
+    const b = to.dayIndex;
+    if (b === a) return ask('which_position', others(), `${mover} is already there — where should it go?`);
+    order = transposition(n, a, b);
+    label = `Week ${w + 1} — ${mover} and ${who(structure, w, b)} trade places`;
+  }
+
+  const said = intent.scope ?? null;
+  return structurePlan({ weekIndex: w, dayIndex: a }, 'move', label, said, (scope) => {
+    const next = reorderWeek(structure, marks, w, order, scope);
+    if (next === structure) {
+      return { ok: false, refusal: { reason: 'nothing_to_change', message: 'That order is what you already have — nothing to move.' } };
+    }
+    return { ok: true, structure: next };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// SKIP — "skip today", "I'm on vacation next week"
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * A week the athlete named. "next week" is only obvious once the current week has begun: before any
+ * session of it is done, the week about to start and the one after are both "next week" to somebody, and
+ * that is asked rather than picked.
+ */
+function resolveWeek(
+  text: string,
+  structure: ProgramStructure,
+  marks: readonly SessionMark[],
+  current: { weekIndex: number },
+): { ok: true; weekIndex: number } | Ask {
+  const ws = words(text);
+  const joined = ws.join(' ');
+  const cw = current.weekIndex;
+  const total = weekCount(structure);
+  const weekOpts = (from: number) => range(from, Math.min(total, from + 3)).map((w) => `Week ${w + 1}`);
+
+  const numbered = /\bweek (\d{1,2})\b/.exec(joined);
+  if (numbered) {
+    const w = Number(numbered[1]) - 1;
+    if (w < 0 || w >= total) return ask('which_week', weekOpts(cw), `This program runs ${total} weeks — which week?`);
+    return { ok: true, weekIndex: w };
+  }
+  if (ws.includes('next') || ws.includes('coming') || ws.includes('upcoming')) {
+    const begun = range(0, weekSessionCount(structure, cw)).some((d) => !canEdit(marks, cw, d));
+    if (!begun) {
+      if (cw + 1 >= total) return { ok: true, weekIndex: cw };
+      return ask(
+        'which_week',
+        [`Week ${cw + 1}`, `Week ${cw + 2}`],
+        `Do you mean week ${cw + 1}, the one you're about to start, or week ${cw + 2}?`,
+      );
+    }
+    if (cw + 1 >= total) return ask('not_editable', [], `Week ${cw + 1} is the last week of this program — there's no next week in it to skip.`);
+    return { ok: true, weekIndex: cw + 1 };
+  }
+  if (ws.includes('this') || ws.includes('current') || ws.includes('rest')) return { ok: true, weekIndex: cw };
+  return ask('which_week', weekOpts(cw), 'Which week do you want to skip?');
+}
+
+function skipPlan(structure: ProgramStructure, sessions: SessionPosition[], label: string): EditIntentResolution {
+  return {
+    ok: true,
+    plan: {
+      kind: 'skip',
+      op: 'skip',
+      at: { ...sessions[0] },
+      label,
+      scope: 'this_week',
+      sessions,
+      apply: () => ({ ok: true, skip: sessions.map((s) => ({ ...s })), structure }),
+    },
+  };
+}
+
+/**
+ * Skipping is a SESSION MARK — `skipProgramSession` per position — never a structure edit. So nothing
+ * here writes: the plan hands back the positions, all untouched. A skip counts toward finishing the
+ * program (PO decision 2026-08-07), and a skip that finishes it cannot be undone, so the label says so.
+ */
+function resolveSkip(
+  intent: EditIntent,
+  structure: ProgramStructure,
+  marks: readonly SessionMark[],
+  current: { weekIndex: number; dayIndex: number },
+  today: Date | string | undefined,
+): EditIntentResolution {
+  const left = editableSessions(structure, marks, 100_000).length;
+  const finishing = (k: number) => (k >= left ? " — that's the last of the program, so it finishes it" : '');
+
+  if (intent.week) {
+    const r = resolveWeek(intent.week, structure, marks, current);
+    if (!r.ok) return r;
+    const w = r.weekIndex;
+    const n = weekSessionCount(structure, w);
+    const open = range(0, n).filter((d) => canEdit(marks, w, d));
+    if (open.length === 0) {
+      return ask('not_editable', [], `Every session in week ${w + 1} is already done or skipped — there's nothing left in it to skip.`);
+    }
+    const s = (k: number) => (k === 1 ? '' : 's');
+    const label =
+      open.length === n
+        ? `Skip all ${n} session${s(n)} of week ${w + 1}`
+        : `Skip the ${open.length} session${s(open.length)} left in week ${w + 1}`;
+    return skipPlan(structure, open.map((d) => ({ weekIndex: w, dayIndex: d })), label + finishing(open.length));
+  }
+
+  if (!intent.day) return ask('which_day', upcoming(structure, marks), 'Which session do you want to skip?');
+  const r = resolveDay(intent.day, structure, marks, current, today);
+  if (!r.ok) return reword(r, "there's nothing to skip");
+  return skipPlan(
+    structure,
+    [{ weekIndex: r.weekIndex, dayIndex: r.dayIndex }],
+    `Skip ${sessionLabel(structure, r.weekIndex, r.dayIndex)}${finishing(1)}`,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// ADD — "add hammer curls to Upper A"
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** The athlete's words in the catalogue: the curated resolver first, then the fewest-extra-words match. */
+function findInCatalogue(
+  name: string,
+  pool: readonly CatalogExercise[],
+): { ok: true; hit: CatalogExercise } | { ok: false; options: string[] } {
+  const named = resolveAgainstCatalog(name, catalogOf(pool));
+  const exact = named ? pool.find((e) => e.key === named.key) : undefined;
+  if (exact) return { ok: true, hit: exact };
+  const q = tokenize(name);
+  if (q.size === 0) return { ok: false, options: [] };
+  const scored = pool
+    .map((e) => {
+      const hits = [e.name, ...(e.aliases ?? [])].map((n) => tokenize(n)).filter((t) => isSubset(q, t));
+      return hits.length ? { e, extra: Math.min(...hits.map((t) => t.size - q.size)) } : null;
+    })
+    .filter((x) => x !== null)
+    .sort((a, b) => a.extra - b.extra || a.e.name.localeCompare(b.e.name));
+  if (scored.length === 0) return { ok: false, options: [] };
+  const top = scored.filter((x) => x.extra === scored[0].extra);
+  if (top.length === 1) return { ok: true, hit: top[0].e };
+  return { ok: false, options: scored.slice(0, 5).map((x) => x.e.name) };
+}
+
+/**
+ * Add a movement the athlete named. Sets and reps are theirs when they said them, else the rulebook's
+ * for that week (`prescribeReps`, the rep climb and a deload's lighter sets included) — never a number
+ * of the model's. A movement a stated limitation walls off is refused, not added (CA-D12's second wall).
+ */
+function resolveAdd(
+  intent: EditIntent,
+  structure: ProgramStructure,
+  marks: readonly SessionMark[],
+  at: { weekIndex: number; dayIndex: number },
+  day: ProgramDay,
+  place: string,
+  pool: readonly CatalogExercise[],
+  ctx: CandidateContext,
+  opts: ResolveEditOptions,
+  said: EditScope | null,
+): EditIntentResolution {
+  if (!intent.exercise) return ask('which_exercise', [], `What do you want to add to ${place}?`);
+  const found = findInCatalogue(intent.exercise, pool);
+  if (!found.ok) {
+    return ask(
+      'which_exercise',
+      found.options,
+      found.options.length
+        ? `A few things answer to "${intent.exercise}" — which one?`
+        : `I don't have "${intent.exercise}" in the catalogue — what else is it called?`,
+    );
+  }
+  const hit = found.hit;
+  if (walled(hit, ctx)) {
+    return ask('not_editable', [], `${hit.name} works a movement you told me to keep away from, so I won't add it. Want something else?`);
+  }
+  if (day.main.some((e) => e.catalogKey === hit.key)) {
+    return ask('not_editable', [], `${hit.name} is already in ${place} — want more sets of it instead?`);
+  }
+
+  const prescribe = prescribeFor(opts, ctx);
+  const rowFor = (w: number, d: ProgramDay): ProgramExercise => {
+    const rx = prescribeReps(roleFor(d.main.length, isCompound(hit.pattern)), {
+      totalWeeks: weekCount(structure),
+      ...prescribe,
+      weekIndex: w,
+      isDeload: isDeloadDay(d),
+    });
+    return {
+      catalogKey: hit.key,
+      name: hit.name,
+      sets: intent.sets != null ? clamp(intent.sets, 1, 8) : rx.sets,
+      reps: intent.reps != null ? clamp(intent.reps, 1, 60) : rx.reps,
+      repsMax: intent.reps != null ? null : rx.repsMax,
+    };
+  };
+  const first = rowFor(at.weekIndex, day);
+  return structurePlan(at, 'add', `${place} — add ${hit.name}, ${first.sets} × ${repsText(first)}`, said, (scope) =>
+    addExercise(structure, marks, at, rowFor, scope),
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// VOLUME — "more arm work", "less cardio"
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+const TARGET_NOUN: Record<NonNullable<EditIntent['target']>, string> = {
+  glutes: 'glute work', arms: 'arm work', biceps: 'biceps work', triceps: 'triceps work', shoulders: 'shoulder work',
+  chest: 'chest work', back: 'back work', legs: 'leg work', quads: 'quad work', hamstrings: 'hamstring work',
+  calves: 'calf work', core: 'core work', cardio: 'cardio',
+};
+
+type RowRef = { d: number; i: number; row: ProgramExercise };
+
+/**
+ * One set more (or fewer) on every row of the named group in the sessions coming up — the same "+1 set on
+ * a primary mover" a focus build uses (`rulebook/focus.ts`) — inside `validateProgram`'s caps: 1–8 sets a
+ * row, the category's per-session set ceiling, and never more in a deload week (PAS-D8). When nothing in
+ * the week trains the group, one accessory is added to a session the athlete names; when every row is
+ * already down to one set, one is taken out. The label lists every row that changes.
+ *
+ * Cardio has no sets, so "less cardio" takes one cardio piece out of a session that keeps two exercises
+ * — never a whole run day, which would change the session count — and "more cardio" asks for the change
+ * in the athlete's own numbers rather than inventing a distance.
+ */
+function resolveVolume(
+  intent: EditIntent,
+  structure: ProgramStructure,
+  marks: readonly SessionMark[],
+  current: { weekIndex: number; dayIndex: number },
+  today: Date | string | undefined,
+  pool: readonly CatalogExercise[],
+  ctx: CandidateContext,
+  opts: ResolveEditOptions,
+): EditIntentResolution {
+  const target = intent.target;
+  const dir = intent.direction;
+  if (!target) return ask('not_editable', [], 'More or less of what? Tell me the muscles — arms, glutes, back — or the cardio.');
+  const noun = TARGET_NOUN[target];
+  if (!dir) return ask('not_editable', [], `More ${noun}, or less? Tell me which and I'll set it up.`);
+
+  let w: number;
+  let days: number[];
+  if (intent.day) {
+    const r = resolveDay(intent.day, structure, marks, current, today);
+    if (!r.ok) return r;
+    w = r.weekIndex;
+    days = [r.dayIndex];
+  } else {
+    w = current.weekIndex;
+    days = range(0, weekSessionCount(structure, w)).filter((d) => canEdit(marks, w, d));
+  }
+  const daysIn = (wk: number) => (intent.day ? days : range(0, weekSessionCount(structure, wk)));
+  const where = days.length === 1 ? sessionLabel(structure, w, days[0]) : `Week ${w + 1}`;
+  const said = intent.scope ?? null;
+  const category = opts.category ?? opts.prescribe?.category ?? 'STRENGTH';
+
+  const byKey = new Map(pool.map((e) => [e.key, e]));
+  const spec = target === 'cardio' ? null : FOCUS_SPEC[target];
+  const named = intent.exercise ? tokenize(intent.exercise) : null;
+  const trains = (row: ProgramExercise): boolean => {
+    if (named && !isSubset(named, rowTokens(row))) return false;
+    if (!spec) return isCardio(row);
+    if (isCardio(row) || !row.catalogKey) return false;
+    return (byKey.get(row.catalogKey)?.primaryMuscleIds ?? []).some((m) => spec.muscles.includes(m));
+  };
+  const rowsIn = (wk: number, d: number): RowRef[] => {
+    const day = sessionAt(structure, wk, d);
+    return day ? day.main.map((row, i) => ({ d, i, row })).filter(({ row }) => trains(row)) : [];
+  };
+  const found = days.flatMap((d) => rowsIn(w, d));
+
+  /* Taking one movement out — when a set cannot come off, or for cardio. Asks rather than picks. */
+  const removeOne = (candidates: RowRef[], none: string): EditIntentResolution => {
+    const ok = candidates.filter((c) => (sessionAt(structure, w, c.d)?.main.length ?? 0) - 1 >= MIN_EXERCISES_AFTER_REMOVE);
+    if (ok.length === 0) return ask('not_editable', [], none);
+    const sessions = [...new Set(ok.map((c) => c.d))];
+    if (sessions.length > 1) {
+      return ask('which_day', sessions.map((d) => sessionLabel(structure, w, d)), `Which session should lose one?`);
+    }
+    if (ok.length > 1) return ask('which_exercise', ok.map((c) => c.row.name), `Which one should come out?`);
+    const c = ok[0];
+    const at = { weekIndex: w, dayIndex: c.d, exerciseIndex: c.i };
+    return structurePlan(at, 'volume', `${sessionLabel(structure, w, c.d)} — take out ${c.row.name}`, said, (scope) =>
+      removeExercise(structure, marks, at, scope),
+    );
+  };
+
+  if (!spec) {
+    if (dir === 'more') {
+      return ask(
+        'not_editable',
+        [],
+        found.length
+          ? `Tell me which one and how much — say "make Thursday's run 5 miles" and I'll change it.`
+          : `There's no cardio in ${where} to add to, and I won't add a session to a program you've already started.`,
+      );
+    }
+    if (found.length === 0) return ask('not_editable', [], `There's no cardio in ${where} to cut.`);
+    return removeOne(
+      found,
+      `Your cardio is whole sessions, and I won't take a session out of a program you've already started. Tell me a run to shorten — "make Thursday's run 3 miles" — or skip one.`,
+    );
+  }
+
+  /* One set up or down on every matching row the week's untouched sessions hold, inside the caps. */
+  const setChanges = (wk: number) => {
+    const out: { at: { weekIndex: number; dayIndex: number; exerciseIndex: number }; sets: number; from: number; catalogKey?: string; name: string }[] = [];
+    for (const d of daysIn(wk)) {
+      if (!canEdit(marks, wk, d)) continue;
+      const day = sessionAt(structure, wk, d);
+      if (!day) continue;
+      const deload = isDeloadDay(day);
+      if (dir === 'more' && deload) continue;
+      const band = bandFor(category, deload);
+      let total = setsOf(day);
+      for (const { i, row } of rowsIn(wk, d)) {
+        const from = row.sets;
+        if (!from) continue;
+        if (dir === 'more') {
+          if (from >= 8 || (band.maxSets != null && total + 1 > band.maxSets)) continue;
+          total += 1;
+          out.push({ at: { weekIndex: wk, dayIndex: d, exerciseIndex: i }, sets: from + 1, from, catalogKey: row.catalogKey, name: row.name });
+        } else if (from > 1) {
+          out.push({ at: { weekIndex: wk, dayIndex: d, exerciseIndex: i }, sets: from - 1, from, catalogKey: row.catalogKey, name: row.name });
+        }
+      }
+    }
+    return out;
+  };
+
+  const first = setChanges(w);
+  if (first.length) {
+    const several = new Set(first.map((c) => c.at.dayIndex)).size > 1;
+    const list = first
+      .map((c) => `${c.name}${several ? ` (${who(structure, w, c.at.dayIndex)})` : ''} ${c.from} → ${c.sets}`)
+      .join(', ');
+    const label = `${where} — one ${dir === 'more' ? 'more' : 'fewer'} set each for ${noun}: ${list}`;
+    return structurePlan({ weekIndex: w, dayIndex: first[0].at.dayIndex }, 'volume', label, said, (scope) => {
+      const weeks = scope === 'rest_of_block' ? range(w, weekCount(structure)) : [w];
+      return setSetsMany(
+        structure,
+        marks,
+        weeks.flatMap((wk) => setChanges(wk)).map((c) => ({ at: c.at, sets: c.sets, catalogKey: c.catalogKey })),
+      );
+    });
+  }
+
+  if (dir === 'less') {
+    if (found.length === 0) return ask('not_editable', [], `There's no ${noun} in ${where} to cut.`);
+    return removeOne(
+      found,
+      `Every ${noun} exercise in ${where} is already down to one set, and taking one out would leave its session too short. Swap it for something instead?`,
+    );
+  }
+
+  const deloadOnly = days.every((d) => {
+    const day = sessionAt(structure, w, d);
+    return !day || isDeloadDay(day);
+  });
+  if (deloadOnly) return ask('not_editable', [], `${where} is a deload — it's meant to be lighter, so I'll leave it alone.`);
+  if (found.length) {
+    return ask('not_editable', [], `The ${noun} in ${where} is already at the most sets I'll put in a session. Want me to add an exercise instead? Tell me which one.`);
+  }
+
+  // Nothing in the week trains it: one accessory, in ONE session the athlete names.
+  if (days.length !== 1) {
+    return ask('which_day', days.map((d) => sessionLabel(structure, w, d)), `There's no ${noun} in week ${w + 1} yet — which session should I add some to?`);
+  }
+  const d = days[0];
+  const day = sessionAt(structure, w, d);
+  if (!day) return ask('which_day', upcoming(structure, marks), "I can't find that session in this program — which one?");
+  const place = sessionLabel(structure, w, d);
+  const band = bandFor(category, false);
+  if (day.main.length + 1 > band.maxExercises) {
+    return ask('not_editable', [], `${place} is already at ${band.maxExercises} exercises, the most I'll put in a session. Want me to swap something for ${noun} instead?`);
+  }
+  const used = new Set(day.main.map((e) => e.catalogKey).filter((k): k is string => !!k));
+  let pick: CatalogExercise | undefined;
+  for (const pattern of spec.slots) {
+    pick =
+      candidatesFor(pattern, pool, { ...ctx, used }).find(
+        (e) => !used.has(e.key) && e.primaryMuscleIds.some((m) => spec.muscles.includes(m)),
+      ) ?? fillSlot(pattern, pool, { ...ctx, used })?.exercise;
+    if (pick && !used.has(pick.key)) break;
+    pick = undefined;
+  }
+  if (!pick) return ask('not_editable', [], `I can't find ${noun} you can do with your setup to add to ${place}.`);
+  const chosen = pick;
+  const prescribe = prescribeFor(opts, ctx);
+  const rowFor = (wk: number, dd: ProgramDay): ProgramExercise => {
+    const rx = prescribeReps('accessory', { totalWeeks: weekCount(structure), ...prescribe, weekIndex: wk, isDeload: isDeloadDay(dd) });
+    return { catalogKey: chosen.key, name: chosen.name, sets: rx.sets, reps: rx.reps, repsMax: rx.repsMax };
+  };
+  const row = rowFor(w, day);
+  if (band.maxSets != null && setsOf(day) + (row.sets ?? 0) > band.maxSets) {
+    return ask('not_editable', [], `${place} is already near the most sets I'll put in a session. Want me to swap something for ${noun} instead?`);
+  }
+  const at = { weekIndex: w, dayIndex: d };
+  return structurePlan(at, 'volume', `${place} — add ${chosen.name}, ${row.sets} × ${repsText(row)}, for more ${noun}`, said, (scope) =>
+    addExercise(structure, marks, at, rowFor, scope),
+  );
+}
+
