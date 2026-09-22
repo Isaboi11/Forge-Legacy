@@ -13,56 +13,74 @@ import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons'
 import { LegacyTabIcon } from '@/components/forge/primitives/icons/NavIcons';
 import { flColor, flFont, flGradient, flRadius, flShadow, flText } from '@/constants/foundation';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
-import { editorialRule, surfaceEditorial } from '@/constants/surfaces';
+import { surfaceEditorial } from '@/constants/surfaces';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useCoachDoor } from '@/hooks/useCoachDoor';
 import { getPrograms } from '@/domain/training/active-program';
-import { fetchMyPrograms, type SavedProgram } from '@/data/programs-live';
-import { fetchProgramSessions } from '@/data/programs-live';
-import { BottomSheet } from '@/components/forge/composites/BottomSheet';
-import { dayLabel, isSealed, nextOpenSlot, sessionsPerWeek, shelvePrograms, totalSessions, viewForState } from '@/domain/program/progress-core';
+import { PROGRAM_FAMILIES, type ProgramFamily } from '@/domain/training/schema';
+import { fetchMyPrograms } from '@/data/programs-live';
+import { fetchCoachProfile, EMPTY_COACH_PROFILE, type CoachProfile } from '@/data/coach-profile-live';
+import { nextAfter, recommendProgramOptions } from '@/domain/onboarding/recommend';
+import type { EquipmentId } from '@/domain/onboarding/derive';
+import { sessionsPerWeek, shelvePrograms, totalSessions } from '@/domain/program/progress-core';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
-import { StartStrengthSheet } from '@/components/forge/compositions/StartStrengthSheet';
+import { CreateNewSheet } from '@/components/forge/compositions/CreateNewSheet';
+import { ProgramCatalogRow } from '@/components/forge/compositions/ProgramCatalogRow';
 import { useQuery } from '@/lib/useQuery';
-import { fetchTemplates, templateSummary } from '@/data/templates-live';
+import { fetchTemplates } from '@/data/templates-live';
 import { STARTER_TEMPLATES } from '@/domain/workout/starter-templates';
-import type { Program } from '@/domain/training/schema';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 
 /**
- * Workouts tab root (plural) — W-2 Program Browse / Programs Catalog.
- * Source of truth: the design handoff "Forge Programs Catalog.dc.html".
+ * Workouts tab root (plural). Distinct from `/workout` (singular) — the active session.
  *
- * Two tabs: "My Workouts" (what you own + train today) and "Discover" (find
- * something new). Distinct from `/workout` (singular) — the active session that
- * the header start button and Home's "Start Workout" push to.
+ * ══ A HUB, NOT A LIST — Workouts restructure (PO, 2026-09-22, with a mockup as north star) ══
  *
- * REAL data: the active program (getActiveProgram) and the Discover catalog
- * (getPrograms — the converted, LOCKED Strength programs), including each
- * program's family / difficulty / duration / frequency. The header start button
- * starts today's real workout via useWorkoutSession + /workout.
+ * *"We are not reducing Forge's workout capabilities. We are reducing how many concepts the user has to
+ * understand at once."* Before: programs, templates, weeks, three builders, discovery and reference all
+ * exposed at once. Now each half of the segmented control answers a small set of questions:
  *
- * DEFERRED to a follow-up sub-phase (noted at the gate, not faked here): the
- * three bottom sheets — Start Training (activity tiles), Train with others
- * (friends roster is placeholder social data), and Filters (needs a per-program
- * `equipment` field the runtime Program does not carry yet). Sections with no
- * backend — Planned, Your Programs (custom), Shared — are omitted while empty
- * rather than shown with fabricated rows. Library rows + program taps route to a
- * not-yet-built destination and are inert (consistent with Home's unbuilt links).
+ *   MY WORKOUTS                                   DISCOVER
+ *   What am I doing?      → Active Program        A workout today?     → Single Sessions
+ *   What have I made?     → Programs · Templates   A structured block?  → Browse by Focus · Recommended
+ *   I want to make one.   → Create New            I don't know.        → Coach Holt
+ *   Supporting reference. → Library · History
+ *
+ * WHERE EVERYTHING THAT LEFT THIS SCREEN WENT — nothing was deleted, only moved one tap in:
+ *   · Planned / built / imported / past program rows → `/programs` (the "Programs" card)
+ *   · The inline template rows                     → `/templates` (the "Workout Templates" card)
+ *   · The full catalogue + family filter           → `/program-catalog?family=` (chips, See all)
+ *   · Build a Program / Build a Template           → Create New (one sheet, also the `+`)
+ *   · "Log a Run" (the only door to /log-activity) → Activity History's header
+ *   · Today's Workout / Track a Run                → Home, which owns starting today's session and
+ *                                                    already starts outdoor and treadmill runs
+ *
+ * ⚠ "BUILD A WEEK" IS GONE FROM THE HUB BY DECISION. The model is Program → Weeks → Workouts → Exercises.
+ * The `week_templates` data, W-29, Program Builder's "use a saved week" and Holt's week artifact are all
+ * untouched — only the standalone top-level door is removed.
  */
 
-// ── derivations from the runtime Program (all real, from the definition) ──
-function freqAndWeeks(p: Program): { freq: number; weeks?: number } {
-  const freq = p.frequencyPerWeek ?? p.schedule.length;
-  const weeks = p.durationWeeks ?? (p.progress ? Math.round(p.progress.total / Math.max(1, freq)) : undefined);
-  return { freq, weeks };
-}
-function compactMeta(p: Program): string {
-  const { freq, weeks } = freqAndWeeks(p);
-  return weeks ? `${p.family} · ${weeks} wk · ${freq}/wk` : `${p.family} · ${freq}/wk`;
+/**
+ * The coach profile's environment, in the recommender's equipment vocabulary.
+ *
+ * ⚠ NOT OPTIONAL: `accessFor` reads an EMPTY list as "bodyweight only", so passing `[]` for an athlete who
+ * never answered would recommend them a no-equipment block. Unknown is treated as a gym — the catalogue's
+ * own fallback (Strength Foundation I) is a gym program, and that is what an unanswered intake gets on
+ * Home too.
+ */
+function equipmentFor(p: CoachProfile): EquipmentId[] {
+  switch (p.environment) {
+    case 'home':
+      return ['homegym'];
+    case 'bodyweight':
+    case 'outdoor':
+      return ['bodyweight'];
+    default:
+      return ['fullgym'];
+  }
 }
 
 export default function WorkoutsScreen() {
@@ -74,203 +92,126 @@ export default function WorkoutsScreen() {
   const { openCoach } = useCoachDoor();
   const { startWorkout } = useWorkoutSession();
   const [tab, setTab] = useState<'mine' | 'discover'>('mine');
-  const [family, setFamily] = useState<string>('All');
   // Walkthrough anchors. The `+` is a bare Pressable in the AppBar, so it takes the ref directly;
   // the sections are compositions and get a wrapper.
   const startRef = useTourAnchor('workouts-start');
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
 
-  // The athlete's own programs. Refetched on focus so a program just built, duplicated, or ended shows
-  // up the moment they come back to this tab.
-  const { data: myPrograms, refetch: refetchMine, settled: mineSettled } = useQuery(fetchMyPrograms, []);
   /*
-   * ⚠ **THIS READ ONCE PER TAB MOUNT AND NEVER AGAIN, DIRECTLY UNDER A COMMENT PROMISING THE OPPOSITE.**
-   *
-   * PO, 2026-08-24: *"When I build a template it says saved but doesn't pop up on my saved templates
-   * right away. There is a delay."* There was no delay and nothing was slow — the list was simply never
-   * asked a second time. `useQuery` runs on mount and on a deps change; `[]` means neither ever happens
-   * again, so "Your Templates" showed whatever was true when the tab first rendered, for the life of the
-   * session. The "delay" was however long it took for something to unmount the tab.
-   *
-   * The line above it — `myPrograms` — has been refetched on focus since it was written, and its comment
-   * says why in as many words: *"so a program just built ... shows up the moment they come back to this
-   * tab."* The templates query sat one line below that sentence and did not do it.
-   *
-   * ⚠ SAME SHAPE AS THE COACH BUBBLE'S STALE DRAFT NAME, which told athletes for the rest of the day
-   * that a program they had already saved was still sitting unsaved. A `[]` effect reading a fact that
-   * changes on another screen is the recurring version of this bug in this codebase.
-   *
-   * `/templates` — the hub — was always correct: it refetches both lists on focus. So the same athlete
-   * saw the template in one place and not the other, which is what made it read as a delay rather than
-   * as a screen that never looked again.
+   * Both reads refetch on focus. ⚠ The templates read once sat on `[]` directly under a comment
+   * promising the opposite, so a template just built "didn't show up" until the tab remounted (PO,
+   * 2026-08-24). A `[]` effect reading a fact that changes on another screen is the recurring version of
+   * this bug in this codebase. The hub no longer lists either inline, but both still decide whether the
+   * athlete owns anything at all (`hasOwnWork`), and the active program is read from the first.
    */
+  const { data: myPrograms, refetch: refetchMine, settled: mineSettled } = useQuery(fetchMyPrograms, []);
   const { data: templateData, refetch: refetchTemplates, settled: templatesSettled } = useQuery(fetchTemplates, []);
+  const { data: profileData } = useQuery(fetchCoachProfile, []);
   useFocusEffect(
     useCallback(() => {
       refetchMine();
       refetchTemplates();
     }, [refetchMine, refetchTemplates]),
   );
-  // Memoized: `?? []` would mint a fresh array every render and defeat the catalog memo below.
+  // Memoized: `?? []` would mint a fresh array every render and defeat the memos below.
   const mine = useMemo(() => myPrograms ?? [], [myPrograms]);
   const templates = templateData ?? [];
+  const catalog = useMemo(() => getPrograms(), []);
 
   /**
-   * Open a built-in program — to READ it.
-   *
-   * This used to adopt first: a built-in has no database row, and adopting was how it got an id to
-   * navigate with. The cost was that looking at a program put it on the athlete's list as "Planned",
-   * for a plan they had not chosen. Reported by the PO doing exactly what a catalog invites — browsing.
-   *
-   * Program Detail now takes a DEFINITION SLUG and renders a preview with no row behind it. Adoption
-   * moves to the Start button on that screen, which is the first moment the athlete has said they want
-   * it. If they already have this plan in flight, open THAT row instead so they land on their own
-   * progress rather than a preview of a program they are halfway through.
+   * ACTIVE IS THE ATHLETE'S OWN, NOT THE CATALOG'S DEMO DEFAULT. `getActiveProgram()` reads the shipped
+   * DEFINITIONS and returns whichever one the catalog marks active — a demo cursor from before 0017.
+   * Telling a brand-new athlete they had Strength Foundation I underway is a claim about their own record,
+   * which is the one thing the app must never invent. `shelvePrograms` reads the per-athlete `state`.
    */
-  const openCatalogProgram = (p: Program) => {
-    const live = mine.find((m) => m.sourceDefinitionId === p.id && (m.state === 'future' || m.state === 'active'));
-    router.push({ pathname: '/program/[id]', params: { id: live?.id ?? p.id } });
-  };
+  const { active: myActive, planned, past } = useMemo(() => shelvePrograms(mine), [mine]);
+  /** The Forge definition behind the active program, when there is one — for its focus + difficulty tags. */
+  const activeDef = myActive?.sourceDefinitionId ? catalog.find((p) => p.id === myActive.sourceDefinitionId) ?? null : null;
 
-  /**
-   * ACTIVE IS THE ATHLETE'S OWN, NOT THE CATALOG'S DEMO DEFAULT.
-   *
-   * `getActiveProgram()` reads the shipped program DEFINITIONS and returns whichever one the catalog
-   * marks active — a demo cursor from before an athlete-progress backend existed. Its own header says so.
-   * That backend has existed since 0017: `programs` carries a per-athlete `state`, and `fetchMyPrograms`
-   * reads it. So this screen was telling a brand-new athlete they had Strength Foundation I underway
-   * before they had chosen anything — a claim about their own record, which is the one thing the app must
-   * never invent.
-   */
-  const { catalog, families } = useMemo(() => {
-    const programs = getPrograms();
-    /*
-     * DISCOVER SUBTRACTS NOTHING. It is the catalogue, and the catalogue is a fixed list of what Forge
-     * offers — not a list of what the athlete has left to take.
-     *
-     * Two rounds of this. First it subtracted every program ever adopted in ANY state, so finishing one
-     * removed it permanently: graduate Strength Foundation I and you could never browse to it again,
-     * though the model has supported a second run since 0104 dropped the one-row-per-source index. That
-     * was fixed by exempting finished ones — and the exemption's own argument, that a catalogue which
-     * quietly shrinks as you train is the opposite of what a catalogue is for, applies just as well to
-     * the planned ones it kept hiding. Planning something is not consuming it.
-     *
-     * Reported by the PO, who planned a program and watched it vanish from the page he found it on.
-     *
-     * They are MARKED instead — the card carries an "In your plans" / "Active" pill — and
-     * `openCatalogProgram` already routes a live one to the athlete's own row rather than a preview, so
-     * tapping it lands on real progress. Nothing about that needed the row to be hidden.
-     */
-    const families = ['All', ...Array.from(new Set(programs.map((p) => p.family)))];
-    return { catalog: programs, families };
-  }, []);
-
-  const discover = useMemo(
-    () => (family === 'All' ? catalog : catalog.filter((p) => p.family === family)),
-    [family, catalog],
-  );
-
-  /**
-   * ══ FOUR THINGS, NOT ONE LIST ══
-   *
-   * "Your Programs" used to be every row the athlete owned, in every state — so the active program was
-   * listed twice (once under Active, once here), a program merely queued sat under a heading that reads
-   * as "the ones I built", and a finished one sat beside a plan for next month as though they were the
-   * same kind of object. The `.dc` never said that: it has an Active card, a PLANNED section, and a
-   * "Your Programs · custom-built" list, and this screen's own header admitted Planned was omitted for
-   * want of a backend. That backend arrived with 0017.
-   *
-   *   planned — queued, not started. Where the next block waits while this one finishes.
-   *   built   — programs the athlete AUTHORED (no catalog source). What the heading has always meant.
-   *   past    — sealed runs of Forge programs. They leave the live sections but not the screen: a
-   *             permanent record with nowhere to be read from is a record you have lost.
-   */
-  // The athlete's own active program wins over the built-in one — it's the thing actually tracking.
-  const { active: myActive, planned, built, past } = useMemo(() => shelvePrograms(mine), [mine]);
   /**
    * Whether "My Workouts" has anything in it at all — the test for showing the tab control.
    *
-   * ⚠ EVERY SECTION OF THAT TAB, NOT JUST THE ACTIVE PROGRAM. A saved template or a finished program
-   * is still work of the athlete's own, and hiding the control on somebody who owns twelve templates
-   * would strand them: `mine` is the only door back from Discover once the toggle is gone.
-   *
-   * ⚠ `built` IS DELIBERATELY EXCLUDED. It is the bundled demo program, present for everybody from the
-   * moment they install — counting it would make `hasOwnWork` permanently true and the whole gate a
-   * no-op that reads as working.
+   * ⚠ EVERY KIND OF OWN WORK, NOT JUST THE ACTIVE PROGRAM. A saved template or a finished program is
+   * still the athlete's, and hiding the control on somebody who owns twelve templates would strand them:
+   * `mine` is the only door back from Discover once the toggle is gone.
    */
   const hasOwnWork = myActive != null || planned.length > 0 || past.length > 0 || mine.length > 0 || templates.length > 0;
   /**
-   * The arrival view — `Onboarding-Amendment-006` ONB-A6-D3, the PO's mockup (2026-09-21): a heading, a
-   * sentence, two doors and a tip, in place of a "My Workouts" tab whose every section was empty.
-   *
-   * ⚠ ONLY ONCE BOTH READS HAVE LANDED. `hasOwnWork` reads false while they are in flight, so keying on
-   * it alone would flash the arrival view at every returning athlete on a cold open. Until then the tab
-   * draws nothing rather than a guess it may have to take back.
+   * The arrival view — `Onboarding-Amendment-006` ONB-A6-D3 (PO mockup, 2026-09-21). ⚠ ONLY ONCE BOTH
+   * READS HAVE LANDED: `hasOwnWork` reads false while they are in flight, so keying on it alone would
+   * flash the arrival view at every returning athlete on a cold open.
    */
   const ownWorkKnown = mineSettled && templatesSettled;
-  /** The design collapses Planned to a digest at 2+, so a queue never outweighs the program in flight. */
-  const [plannedExpanded, setPlannedExpanded] = useState(false);
-  const plannedCollapsed = planned.length >= 2 && !plannedExpanded;
-  const [startOpen, setStartOpen] = useState(false);
-  const [strengthOpen, setStrengthOpen] = useState(false);
 
-  const startToday = async () => {
-    setStartOpen(false);
-    if (myActive) {
-      const next = nextOpenSlot(myActive.structure, await fetchProgramSessions(myActive.id));
-      // `nextOpenSlot` already skips unbuilt slots, but its `day` is typed nullable for the fallback
-      // shape a still-being-authored program can have. Nothing to train is not an error — it is a
-      // finished program, or one with no schedule yet.
-      if (!next?.day) return;
-      await writeWorkoutLaunch({ programId: myActive.id });
-      startWorkout(dayLabel(next.day, next.dayIndex));
-      router.push('/workout');
-      return;
-    }
-    // No active program: there is no "today's workout" to start, so ask how they want to begin rather
-    // than assuming the one-off. Assuming it was how a saved template became unreachable from here.
-    setStrengthOpen(true);
-  };
-
-  /** A one-off session, deliberately unattributed — it belongs to no program's progress. */
-  /**
-   * A run that IS the session — the same one-block workout Home builds, on the same card.
-   *
-   * This row used to push `/active-run`, a second full-screen surface for the same activity with its own
-   * controls, its own ending and its own way of writing to the record. That screen is retired; what it
-   * had that the card didn't — the distance goal, the pace target and its cues — moved onto the card,
-   * and the ending it owned is the session's own Finish, which every other workout already uses.
-   */
-  const startTrackedRun = async () => {
-    setStartOpen(false);
-    await writeWorkoutLaunch({ conditioning: { activity: 'run', modality: 'outdoor' } });
-    startWorkout('Outdoor Run');
-    router.push('/workout');
-  };
+  /* ONE creation sheet for both doors — the `+` and the Create New card. See `CreateNewSheet`. */
+  const [createOpen, setCreateOpen] = useState(false);
 
   /**
-   * Build-as-you-go — one of THREE ways to start a lifting session, not the only one.
-   *
-   * Every entry that used to land here directly now opens the Start Strength chooser first
-   * (`Forge Strength Start.dc.html`): from a template · build it first · build as you go. This is what
-   * the third option does once it is chosen.
+   * Freestyle — train now, attributed to no program. The session name is the literal the logger's rename
+   * guard compares against (`cardio-manual-log.test.mjs` pins it in this file), which is why the launch
+   * stays here and the sheet only calls it.
    */
   const startFreestyle = async () => {
-    setStartOpen(false);
-    setStrengthOpen(false);
+    setCreateOpen(false);
     await writeWorkoutLaunch({ freestyle: true });
     startWorkout('Freestyle Workout');
     router.push('/workout');
   };
 
-  /** Open the chooser. The `+` sheet closes first so two sheets are never stacked. */
-  const chooseStrength = () => {
-    setStartOpen(false);
-    setStrengthOpen(true);
-  };
+  // ── DISCOVER ────────────────────────────────────────────────────────────────────────────────────
+  /** Focus chips: the families the catalogue actually carries, in the schema's canonical order. */
+  const focuses = useMemo(() => {
+    const present = new Set(catalog.map((p) => p.family));
+    return PROGRAM_FAMILIES.filter((f) => present.has(f));
+  }, [catalog]);
 
-  const todayLabel = myActive ? myActive.name : null;
+  const profile = profileData ?? EMPTY_COACH_PROFILE;
+  /**
+   * ══ "RECOMMENDED FOR YOU" IS A RECOMMENDATION, NOT THE CATALOGUE RELABELLED ══
+   *
+   * Four at most, from the mechanisms that already exist and nothing invented:
+   *   1. What comes after the program they last finished — `nextAfter`, only when the named successor is
+   *      REAL (six of seven authored successors are not, and a miss is simply skipped).
+   *   2. The intake recommendation — goal × experience × equipment, from the SERVER coach profile, the
+   *      same lookup Home's starting point runs. Its first entry is the recommendation; the rest are its
+   *      own alternates (Home Gym coverage order when a profile exists, catalogue order otherwise).
+   * Then: the program already active is dropped (you are doing it), and duplicates collapse.
+   */
+  const recommended = useMemo(() => {
+    const ids: string[] = [];
+    const lastPast = past[0]?.sourceDefinitionId ?? null;
+    const after = lastPast ? nextAfter(lastPast) : null;
+    if (after?.kind === 'program') ids.push(after.program.id);
+    for (const v of recommendProgramOptions(
+      {
+        experience: profile.experience,
+        primaryGoal: profile.goalIds[0] ?? null,
+        equipment: equipmentFor(profile),
+        homeGym: profile.ownedEquipment,
+      },
+      catalog.length,
+    )) {
+      ids.push(v.id);
+    }
+    const activeSource = myActive?.sourceDefinitionId ?? null;
+    const out: typeof catalog = [];
+    for (const id of ids) {
+      if (out.length === 4) break;
+      if (id === activeSource || out.some((p) => p.id === id)) continue;
+      const p = catalog.find((c) => c.id === id);
+      if (p) out.push(p);
+    }
+    return out;
+  }, [catalog, past, profile, myActive]);
+
+  /**
+   * Open a Forge program — to READ it. Program Detail takes a DEFINITION SLUG and renders a preview with
+   * no row behind it; adoption waits for its Start (`browse-is-not-adopt.test.mjs`). A program already
+   * held live opens THAT row, so the athlete lands on their own progress.
+   */
+  const liveFor = (id: string) => mine.find((m) => m.sourceDefinitionId === id && (m.state === 'future' || m.state === 'active'));
+  const openCatalogProgram = (id: string) => router.push({ pathname: '/program/[id]', params: { id: liveFor(id)?.id ?? id } });
 
   return (
     <View style={styles.root}>
@@ -281,9 +222,9 @@ export default function WorkoutsScreen() {
         actions={
           <Pressable
             ref={startRef}
-            onPress={() => setStartOpen(true)}
+            onPress={() => setCreateOpen(true)}
             accessibilityRole="button"
-            accessibilityLabel="Start training"
+            accessibilityLabel="Create new"
             style={styles.startBtn}
             hitSlop={8}
           >
@@ -293,11 +234,9 @@ export default function WorkoutsScreen() {
       />
 
       {/* segmented control — two mindsets: own/train vs. find new.
-          ⚠ HIDDEN WHILE "MY WORKOUTS" HOLDS NOTHING. The control defaults to `mine`, so on a brand-new
-          account it opens on the empty half of a two-way choice and asks the athlete to discover that
-          the other half is where everything is. A toggle between something and nothing is not a
-          choice, it is a wrong first guess with a fix hidden inside it. It returns permanently the
-          moment the athlete owns anything at all — see `hasOwnWork`. */}
+          ⚠ HIDDEN WHILE "MY WORKOUTS" HOLDS NOTHING. A toggle between something and nothing is not a
+          choice, it is a wrong first guess with a fix hidden inside it. It returns permanently the moment
+          the athlete owns anything at all — see `hasOwnWork`. */}
       {hasOwnWork ? (
         <View style={styles.segWrap}>
           <TourAnchor id="workouts-segments" style={styles.segTrack}>
@@ -307,14 +246,13 @@ export default function WorkoutsScreen() {
         </View>
       ) : tab === 'discover' ? (
         /* ⚠ A BACK BUTTON, NOT THE TABS — PO, 2026-09-21: *"there should just be a back button for right
-           now and not those two tabs."* With nothing owned, "My Workouts" is only the arrival view, so
-           the way back to it is Back. The tabs arrive with the first thing they own. */
+           now and not those two tabs."* The tabs arrive with the first thing they own. */
         <Pressable
           onPress={() => setTab('mine')}
           accessibilityRole="button"
           accessibilityLabel="Back"
           hitSlop={8}
-          style={({ pressed }) => [styles.discoverBack, pressed ? styles.anchorPressed : null]}
+          style={({ pressed }) => [styles.discoverBack, pressed ? styles.pressed : null]}
         >
           <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="square">
             <Path d="M15 5l-7 7 7 7" />
@@ -334,7 +272,7 @@ export default function WorkoutsScreen() {
           ownWorkKnown ? (
             <View style={styles.firstRun}>
               <View style={styles.firstRunHead}>
-                <Text style={styles.anchorKicker}>Get started</Text>
+                <Text style={styles.kicker}>Get started</Text>
                 <Text style={styles.firstRunTitle}>Build Your Training.</Text>
                 <Text style={styles.firstRunBody}>
                   Create your own workouts and programs, or choose from templates to get started.
@@ -369,241 +307,137 @@ export default function WorkoutsScreen() {
           ) : null
         ) : tab === 'mine' ? (
           <View style={styles.stack}>
-            {/* ACTIVE — the anchor */}
             {/*
-              ══ THE ANCHOR IS EDITORIAL, IN BOTH STATES ══
+              ══ ACTIVE PROGRAM — WHAT AM I CURRENTLY DOING ══
 
-              PO design review, 2026-08-25: *"Legacy has composition. Home has hierarchy. Workouts
-              currently has components."* Right, and this section is where it shows — it is called the
-              anchor in this file and it was drawn as one more bordered rectangle above a stack of them.
+              ⚠ A SURFACE NOW, WHERE IT WAS EDITORIAL. The 2026-08-25 pass drew this as type on the ground
+              ("the anchor is not a card, you leave it for the program screen"). The PO's 2026-09-22 mockup
+              — the north star for this restructure — puts it on a restrained surface with a round chevron,
+              and says *"visually important, but not oversized"*. Newer instruction wins; the surface is
+              neutral (`charcoal600` hairline), because bronze on this screen is reserved for Create New.
 
-              ⚠ THE PO'S SKETCH FIXED ONLY THE EMPTY STATE, AND THAT WOULD HAVE MADE IT WORSE. It
-              proposed the `NO ACTIVE PROGRAM / Forge Your Next Legacy` treatment — but that state
-              disappears the moment somebody starts a program, and the slot fell back to a
-              `SavedProgramRow`, the same component as every row beneath it. The screen would have read
-              as composed when you had nothing and componentised as soon as you were using it: the
-              anchor at its strongest for the athlete with the least invested.
+              ⚠ AND IT IS NOT A SECOND COPY OF HOME. Home answers *what do I train now* and owns the start
+              button. This answers *what am I following* — the program as an object.
 
-              So both states are editorial. With a program, THAT is the anchor — its name in the display
-              face, where you are in it, what is next. Without one, the invitation. Neither is a card,
-              because neither is a thing you act inside: you act inside the rows below.
-
-              ⚠ AND IT IS NOT A SECOND COPY OF HOME. Home answers *what do I train now* and owns the
-              start button. This answers *what am I following* — the program as an object, with its
-              shape and its progress. Same subject, different question.
-
-              Layout and form, so it lands on BOTH themes (Design System §2.0).
+              Without an active program: the existing invitation, unchanged — no fabricated program.
             */}
             <TourAnchor id="workouts-active">
-              <SectionHeader label="Active" />
-              <View style={[styles.sectionBody, styles.anchor]}>
-                {myActive ? (
-                  <Pressable
-                    onPress={() => router.push({ pathname: '/program/[id]', params: { id: myActive.id } })}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${myActive.name} — open your active program`}
-                    style={({ pressed }) => [styles.anchorBody, pressed ? styles.anchorPressed : null]}
-                  >
-                    <Text style={styles.anchorKicker}>Following</Text>
-                    <Text style={styles.anchorTitle}>{myActive.name}</Text>
-                    <Text style={styles.anchorMeta}>
-                      {sessionsPerWeek(myActive.structure)}× a week · {totalSessions(myActive.structure)} sessions
-                    </Text>
-                    {/*
-                      ══ IT WAS ALWAYS PRESSABLE AND IT NEVER LOOKED IT ══
-
-                      PO, 2026-09-04: *"it doesn't look like the active program is clickable. Needs to
-                      look clickable because it is."* Correct — the `Pressable` has been here the whole
-                      time, wrapping three lines of type on the editorial surface, with a pressed
-                      opacity as its only tell. A pressed state is feedback AFTER the tap; it can't
-                      invite one.
-
-                      ⚠ NOT SOLVED BY GIVING IT A CARD. That is the reflex and it is the wrong one here:
-                      a card says "you act INSIDE this", and you do not act inside the anchor — you
-                      leave it for the program screen. Wrapping it would also undo the composition this
-                      section was deliberately rebuilt into, and make it a fourth bordered rectangle
-                      above three more.
-
-                      So the affordance is a NAMED DESTINATION rather than a container: the bronze cue
-                      and the chevron every other navigating row on this screen already carries. It says
-                      where the tap goes, which the pressed state never did.
-
-                      Layout and form, so it lands on BOTH themes (Design System §2.0). The two colours
-                      are role tokens, not literals.
-                    */}
-                    <View style={styles.anchorGo}>
-                      <Text style={styles.anchorGoText}>View program</Text>
-                      <ChevronRightIcon size={14} color={flColor.bronze400} />
-                    </View>
-                  </Pressable>
-                ) : (
-                  <View style={styles.anchorBody}>
-                    <Text style={styles.anchorKicker}>No active program</Text>
-                    <Text style={styles.anchorTitle}>Forge Your Next Legacy</Text>
-                    <Text style={styles.anchorMeta}>Build your own program, or find one built for your goals.</Text>
-                    {/* ⚠ "BUILD" GOES TO THE GUIDED LANE, NOT THE DENSE BUILDER — PO, 2026-09-20:
-                        *"If they say they'll build one I don't want it to go through coach holt, it
-                        should do the program build screens we just built."* `program-guided` asks one
-                        question per screen and carries "I'll set it up myself" on every step, so the
-                        express lane `Onboarding-Amendment-002` guarantees is one tap away rather than
-                        removed. Somebody who already knows what they want loses nothing. */}
-                    <View style={styles.anchorActions}>
-                      <Pressable
-                        onPress={() => router.push('/program-guided')}
-                        accessibilityRole="button"
-                        accessibilityLabel="Build my own program"
-                        style={({ pressed }) => [styles.anchorCta, pressed ? styles.anchorPressed : null]}
-                      >
-                        <Text style={styles.anchorCtaText}>Build My Own</Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => setTab('discover')}
-                        accessibilityRole="button"
-                        accessibilityLabel="Find a program built for your goals"
-                        style={({ pressed }) => [styles.anchorCtaQuiet, pressed ? styles.anchorPressed : null]}
-                      >
-                        <Text style={styles.anchorCtaQuietText}>Find Me One</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                )}
-                {/* The divider IS the container — `editorialRule`, one weight everywhere. */}
-                <View style={styles.anchorRule} />
-              </View>
-            </TourAnchor>
-
-            {/* PLANNED — queued, not started. The section the `.dc` always had and this screen never
-                built, which is why a planned program had to sit in "Your Programs" pretending to be one
-                the athlete wrote. Omitted entirely when empty: a heading over nothing is not a queue. */}
-            {planned.length > 0 ? (
-              <TourAnchor id="workouts-planned">
-                <SectionHeader
-                  label="Planned"
-                  action={plannedCollapsed ? 'View all' : undefined}
-                  onAction={() => setPlannedExpanded(true)}
-                />
-                <View style={[styles.sectionBody, styles.stackTight]}>
-                  {plannedCollapsed ? (
-                    <PlannedDigest
-                      programs={planned}
-                      onOpen={(p) => router.push({ pathname: '/program/[id]', params: { id: p.id } })}
-                      onExpand={() => setPlannedExpanded(true)}
-                    />
-                  ) : (
-                    planned.map((p) => (
-                      <SavedProgramRow
-                        key={p.id}
-                        program={p}
-                        onPress={() => router.push({ pathname: '/program/[id]', params: { id: p.id } })}
-                      />
-                    ))
-                  )}
-                </View>
-              </TourAnchor>
-            ) : null}
-
-            {/* YOUR PROGRAMS — always rendered, because the create row lives here and the moment you most
-                need it is the moment you have none. It used to be gated on `mine.length > 0`, which hid
-                authoring from exactly the athlete who had never authored anything. */}
-            <TourAnchor id="workouts-programs">
-              <SectionHeader label="Your Programs" />
-              <View style={[styles.sectionBody, styles.stackTight]}>
-                {built.map((p) => (
-                  <SavedProgramRow
-                    key={p.id}
-                    program={p}
-                    onPress={() => router.push({ pathname: '/program/[id]', params: { id: p.id } })}
-                  />
-                ))}
-                {/* Creation beside what it creates. This was a dashed CTA in DISCOVER — which means "find
-                    something someone else made", and where the thing you built then landed in the OTHER
-                    tab. */}
-                <CreateRow label="Build a Program" onPress={() => router.push('/program-builder')} />
-              </View>
-            </TourAnchor>
-
-            {/* PAST PROGRAMS — Forge programs you finished. Sealed records (Amendment-001 §6), so they are
-                out of the live sections above, but they keep a home here: they used to be the only place
-                on this screen a graduated run could be read from, and dropping them to match the `.dc`'s
-                custom-only "Your Programs" would have deleted that access rather than moved it. */}
-            {past.length > 0 ? (
-              <View>
-                <SectionHeader label="Past Programs" />
-                <View style={[styles.sectionBody, styles.stackTight]}>
-                  {past.map((p) => (
-                    <SavedProgramRow
-                      key={p.id}
-                      program={p}
-                      onPress={() => router.push({ pathname: '/program/[id]', params: { id: p.id } })}
-                    />
-                  ))}
-                </View>
-              </View>
-            ) : null}
-
-            {/* YOUR TEMPLATES — a personal artifact, so it sits with programs rather than under "Library"
-                beside two platform surfaces everyone shares. That grouping was the real error. */}
-            <TourAnchor id="workouts-templates">
-              {/* `mine=1` — this link sits under "Your Templates", so it answers with the athlete's own
-                  shelf and not the From Forge suggestions. Same defect the row taps had; the rows were
-                  fixed and the section link was left pointing at the undifferentiated hub. */}
               <SectionHeader
-                label="Your Templates"
-                action={templates.length > 3 ? 'View all' : undefined}
-                onAction={() => router.push({ pathname: '/templates', params: { mine: '1' } })}
+                label="Active Program"
+                action={myActive ? 'View Program' : undefined}
+                onAction={() => myActive && router.push({ pathname: '/program/[id]', params: { id: myActive.id } })}
               />
-              <View style={[styles.sectionBody, styles.stackTight]}>
-                {templates.slice(0, 3).map((t) => (
-                  <LibraryRow
-                    key={t.id}
-                    title={t.name}
-                    sub={templateSummary(t)}
-                    icon={<TemplatesIcon />}
-                    /* ⚠ THIS PUSHED `/templates` — the HUB — for every row. Tapping your own template
-                       landed you on a screen whose first section is the "From Forge" suggested shelf, so
-                       the app answered "open my template" with four sessions somebody else wrote. The
-                       hub is still one tap away on the section header's "View all"; a row opens the
-                       template it names. */
-                    onPress={() => router.push({ pathname: '/template/[id]', params: { id: t.id } })}
-                  />
-                ))}
-                {/* ⚠ THIS OPENED THE START STRENGTH CHOOSER, under a header that says "Your Templates".
-                    W25-Amendment-001 listed six doors that dropped into an empty freestyle session and
-                    routed them all to the chooser; this row was one of them, and for the other five that
-                    was right — they ask "how do you want to train right now". This one does not. It asks
-                    to AUTHOR a shape, and the athlete has already answered the chooser's question by
-                    tapping it. The sixth door on that same list settles the treatment: Templates' own
-                    "New" pushes the builder directly (`templates.tsx`), and so does this.
-
-                    ⚠ AND THE LABEL IS "TEMPLATE", NOT "WORKOUT" — PO call, 2026-08-13, overturning the
-                    note that used to sit here arguing for consistency with the builder's own title. The
-                    consistency argument was answered by renaming the OTHER three instead: this row, the
-                    Templates hub's button, and the builder's own AppBar all say Template now, because a
-                    template is what the screen produces. "Build a Workout" described the activity; the
-                    athlete is choosing an artifact. */}
-                <CreateRow label="Build a Template" onPress={() => router.push('/workout-builder')} />
-                {/* The week door, beside its sibling. It was reachable only from the Templates hub, so an
-                    athlete looking for it on the tab that lists their templates found the one-session
-                    builder and reasonably concluded weeks were not built yet (PO, 2026-08-13). */}
-                <CreateRow label="Build a Week" onPress={() => router.push({ pathname: '/program-builder', params: { mode: 'week' } })} />
-              </View>
+              {myActive ? (
+                <Pressable
+                  onPress={() => router.push({ pathname: '/program/[id]', params: { id: myActive.id } })}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${myActive.name} — open your active program`}
+                  style={({ pressed }) => [styles.activeCard, pressed ? styles.pressed : null]}
+                >
+                  <View style={styles.activeBody}>
+                    <Text style={styles.kicker}>Following</Text>
+                    <Text style={styles.activeTitle} numberOfLines={2}>
+                      {myActive.name}
+                    </Text>
+                    <Text style={styles.activeMeta}>
+                      {sessionsPerWeek(myActive.structure)}× per week · {totalSessions(myActive.structure)} sessions
+                    </Text>
+                    {/* Tags only where the definition carries them — an imported or built program has no
+                        family or difficulty, and inventing one would be a claim nobody made. */}
+                    {activeDef ? (
+                      <View style={styles.tags}>
+                        <Pill tone="muted" size="sm">{activeDef.family}</Pill>
+                        <Pill tone="muted" size="sm">{activeDef.difficulty}</Pill>
+                      </View>
+                    ) : null}
+                  </View>
+                  <View style={styles.activeGo}>
+                    <ChevronRightIcon size={18} color={flColor.cream100} />
+                  </View>
+                </Pressable>
+              ) : (
+                <View style={styles.anchorBody}>
+                  <Text style={styles.kicker}>No active program</Text>
+                  <Text style={styles.anchorTitle}>Forge Your Next Legacy</Text>
+                  <Text style={styles.activeMeta}>Build your own program, or find one built for your goals.</Text>
+                  {/* ⚠ "BUILD" GOES TO THE GUIDED LANE, NOT THE DENSE BUILDER — PO, 2026-09-20. */}
+                  <View style={styles.anchorActions}>
+                    <Pressable
+                      onPress={() => router.push('/program-guided')}
+                      accessibilityRole="button"
+                      accessibilityLabel="Build my own program"
+                      style={({ pressed }) => [styles.anchorCta, pressed ? styles.pressed : null]}
+                    >
+                      <Text style={styles.anchorCtaText}>Build My Own</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setTab('discover')}
+                      accessibilityRole="button"
+                      accessibilityLabel="Find a program built for your goals"
+                      style={({ pressed }) => [styles.anchorCtaQuiet, pressed ? styles.pressed : null]}
+                    >
+                      <Text style={styles.anchorCtaQuietText}>Find Me One</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
             </TourAnchor>
 
-            {/* REFERENCE — what's left once the personal things move out is genuinely reference, and the
-                section name is finally true. */}
+            {/* YOUR PROGRAMS — one door to the library, not the rows themselves. The hub stays a hub. */}
+            <TourAnchor id="workouts-programs">
+              <SectionHeader label="Your Programs" action="See all" onAction={() => router.push('/programs')} />
+              <NavCard
+                title="Programs"
+                sub="Programs you’ve built, imported, or saved."
+                icon={<StackIcon />}
+                onPress={() => router.push('/programs')}
+              />
+            </TourAnchor>
+
+            {/* WORKOUT TEMPLATES — "Workout" in the name on purpose: these are reusable single workouts,
+                and the word keeps them from being read as week or program templates. Opens the Templates
+                hub, which carries the athlete's own and Forge's suggested ones. */}
+            <TourAnchor id="workouts-templates">
+              <SectionHeader label="Workout Templates" action="See all" onAction={() => router.push('/templates')} />
+              <NavCard
+                title="Workout Templates"
+                sub="Reusable individual workouts."
+                icon={<TemplateIcon />}
+                onPress={() => router.push('/templates')}
+              />
+            </TourAnchor>
+
+            {/* CREATE NEW — the one bronze thing on this half, because it is the one thing to DO here. */}
+            <TourAnchor id="workouts-create">
+              <Pressable
+                onPress={() => setCreateOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Create new — program, workout template, or freestyle workout"
+                style={({ pressed }) => [styles.createCard, pressed ? styles.pressed : null]}
+              >
+                <View style={styles.createHead}>
+                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square">
+                    <Path d="M12 5v14M5 12h14" />
+                  </Svg>
+                  <Text style={styles.createTitle}>Create New</Text>
+                </View>
+                <Text style={styles.createSub}>Program, workout template, or freestyle workout.</Text>
+              </Pressable>
+            </TourAnchor>
+
+            {/* REFERENCE — genuinely reference: platform surfaces, not personal artefacts. */}
             <TourAnchor id="workouts-reference">
               <SectionHeader label="Reference" />
-              <View style={[styles.sectionBody, styles.stackTight]}>
-                <LibraryRow
+              <View style={styles.stackTight}>
+                <NavCard
                   title="Exercise Library"
                   sub="Browse every exercise, bookmark the ones you use."
                   icon={<DumbbellIcon />}
                   onPress={() => router.push('/exercise-library')}
                 />
                 {/* Stays here, deliberately. It answers "what did I lift Tuesday" — a training question at
-                    set-level granularity. The Legacy Timeline answers "what has this amounted to". Moving
-                    a set-by-set log into the museum would dilute the museum. */}
-                <LibraryRow
+                    set-level granularity. The Legacy Timeline answers "what has this amounted to". */}
+                <NavCard
                   title="Activity History"
                   sub="Every session you’ve logged, month by month."
                   icon={<HistoryIcon />}
@@ -614,191 +448,71 @@ export default function WorkoutsScreen() {
           </View>
         ) : (
           <View style={styles.stack}>
-            {/* Kept OUT of Discover: authorship is not discovery, and what you build lands in the other
-                tab. The one honest mention is the exit line under empty results, below. */}
-            <Pressable onPress={() => router.push('/program-builder')} accessibilityRole="button" accessibilityLabel="Build your own program" style={[styles.buildCta, styles.hidden]}>
-              <View style={styles.buildIcon}>
-                <PlusIcon color={flColor.bronze300} />
-              </View>
-              <View style={styles.rowBody}>
-                <Text style={styles.rowTitle}>Build Your Own</Text>
-                <Text style={styles.rowSub}>Design a program around your lifts.</Text>
-              </View>
-              <ChevronRightIcon size={18} color={flColor.bronze400} />
-            </Pressable>
-
-            {/* ── SINGLE SESSIONS ───────────────────────────────────────────────────────────────
-                Discover was programs only, which made the 81 Forge sessions reachable from exactly
-                one place: the Templates hub, behind "Browse all". But a ready-made day is DISCOVERY
-                content in the same sense a program is — the difference is commitment, not kind, and
-                somebody who wants a leg day on Thursday is not shopping for a six-week block. One
-                row rather than a second card list: this tab's subject is programs, and the browse
-                screen is already built to be filtered. ── */}
-            <Pressable
+            {/* ── SINGLE SESSIONS — "I want a workout to do today." Distinct from following a program:
+                the difference is commitment, not kind. ── */}
+            <NavCard
+              title="Single Sessions"
+              sub={`${STARTER_TEMPLATES.length} ready-made workouts — push, pull, legs and more, for the gym or at home.`}
+              icon={<DumbbellIcon />}
               onPress={() => router.push('/forge-templates')}
-              accessibilityRole="button"
               accessibilityLabel={`Browse ${STARTER_TEMPLATES.length} single sessions built by Forge`}
-              style={styles.libRow}
-            >
-              <View style={styles.rowBody}>
-                <Text style={styles.rowTitle}>Single Sessions</Text>
-                <Text style={styles.rowSub}>
-                  {STARTER_TEMPLATES.length} ready-made workouts — push, pull, legs and more, for the gym or at home.
-                </Text>
-              </View>
-              <ChevronRightIcon size={18} color={flColor.bronze400} />
-            </Pressable>
+            />
 
-            {/* Family filter */}
+            {/* ── BROWSE BY FOCUS — program families, each opening the ONE catalogue filtered to it. Wraps
+                rather than scrolling sideways: nothing on this hub scrolls horizontally. ── */}
             <View>
-              <Text style={styles.filterLabel}>Family</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-                {families.map((f) => (
-                  <FamilyChip key={f} label={f} active={family === f} onPress={() => setFamily(f)} />
+              <SectionHeader label="Browse by Focus" action="See all" onAction={() => router.push('/program-catalog')} />
+              <View style={styles.focusWrap}>
+                {focuses.map((f) => (
+                  <Pressable
+                    key={f}
+                    onPress={() => router.push({ pathname: '/program-catalog', params: { family: f } })}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${f} programs`}
+                    style={({ pressed }) => [styles.focusChip, pressed ? styles.pressed : null]}
+                  >
+                    <FocusIcon family={f} />
+                    <Text style={styles.focusText}>{f}</Text>
+                  </Pressable>
                 ))}
-              </ScrollView>
+              </View>
             </View>
 
-            {/*
-              ══ THE ONE PLACE THE QUESTION IS ACTUALLY ASKED (PO, 2026-08-24) ══
+            {/* ── RECOMMENDED FOR YOU — see `recommended` for exactly what "for you" is built from. ── */}
+            <View>
+              <SectionHeader label="Recommended for You" action="See all" onAction={() => router.push('/program-catalog')} />
+              <View style={styles.stackTight}>
+                {recommended.map((p) => (
+                  <ProgramCatalogRow key={p.id} program={p} held={liveFor(p.id)?.state ?? null} onPress={() => openCatalogProgram(p.id)} />
+                ))}
+              </View>
+            </View>
 
-              *"should we have a button in the program that says (and it would be a subtle button) don't
-              know which to choose? Let us help"*
-
-              ⚠ **IT SITS HERE, UNDER THE FILTER, AND NOT ON HOME.** Home already carries this door — the
-              lead card of the first-program block is Coach Holt — but only for an athlete who has no
-              program at all. The moment somebody is stood in front of the shelf comparing names, the help
-              disappeared, and the only thing on this screen that could help was a door OUT of it.
-
-              ⚠ **AND IT OPENS THE COACH THAT ALREADY EXISTS, rather than a second picker.** Home's own
-              note records the decision this would otherwise undo: "Build it with me" and "Help me find
-              one" were collapsed into one door because they were two doors to the same room. This is the
-              same room, entered with `recommend` so Holt arrives already reading the catalogue instead of
-              offering to replace it.
-
-              ⚠ **A ROW, NOT A CARD.** "Subtle" was the ask and it is also correct: a card here would
-              compete with the programs it is offering to help choose between, which is the problem.
-            */}
+            {/* ── COACH HOLT — the fallback, not the primary CTA. Opens the coach that already exists with
+                `recommend`, so Holt arrives reading the catalogue as a program recommendation rather than
+                offering to replace it. Neutral hairline: it must not outweigh the programs above it. ── */}
             <Pressable
               onPress={() => openCoach('recommend')}
               accessibilityRole="button"
-              accessibilityLabel="Not sure which program to choose? Ask Coach Holt"
-              style={({ pressed }) => [styles.helpMeChoose, pressed && styles.helpMePressed]}
+              accessibilityLabel="Not sure what to do? Ask Coach Holt for a personalized recommendation"
+              style={({ pressed }) => [styles.holtCard, pressed ? styles.pressed : null]}
             >
-              <Text style={styles.helpMeText}>
-                Not sure which one? <Text style={styles.helpMeLink}>Ask Coach Holt.</Text>
-              </Text>
-              <ChevronRightIcon size={15} color={flColor.bronze400} />
-            </Pressable>
-
-            {/* Recommended Next — real catalog */}
-            <View>
-              <Text style={styles.recTitle}>Recommended Next</Text>
-              <Text style={styles.recBlurb}>
-                {myActive
-                  ? `Something to follow ${myActive.name}.`
-                  : 'A curated starting point for your next chapter.'}
-              </Text>
-              <View style={styles.stackTight}>
-                {discover.map((p) => (
-                  <CompactProgramCard
-                    key={p.id}
-                    program={p}
-                    mine={mine.find((m) => m.sourceDefinitionId === p.id && (m.state === 'future' || m.state === 'active'))?.state ?? null}
-                    onOpen={() => void openCatalogProgram(p)}
-                  />
-                ))}
-                {discover.length === 0 ? (
-                  <View style={styles.noResults}>
-                    <Text style={styles.noResultsText}>No programs in this family yet.</Text>
-                  </View>
-                ) : null}
+              <View style={styles.navIcon}>
+                <ChatIcon />
               </View>
-            </View>
+              <View style={styles.rowBody}>
+                <Text style={styles.rowTitle}>Not sure what to do?</Text>
+                <Text style={styles.rowSub}>Ask Coach Holt for a personalized recommendation.</Text>
+              </View>
+              <ChevronRightIcon size={18} color={flColor.bronze400} />
+            </Pressable>
           </View>
         )}
       </ScrollView>
 
-      {/* Start Training — the `+`'s sheet (`openStart` in the .dc): today's session, a freestyle strength
-          log, distance-activity logging ("Log a Run" → run/walk/ride/row/swim with miles), and building a
-          program. "Train with others" still needs the social plumbing, so it stays absent. */}
-      <BottomSheet open={startOpen} onClose={() => setStartOpen(false)} title="Start Training">
-        <View style={styles.stackTight}>
-          {todayLabel ? (
-            <Pressable onPress={() => void startToday()} accessibilityRole="button" accessibilityLabel={`Start today's workout — ${todayLabel}`} style={styles.libRow}>
-              <View style={styles.rowBody}>
-                <Text style={styles.rowTitle}>Today’s Workout</Text>
-                <Text style={styles.rowSub} numberOfLines={1}>{todayLabel}</Text>
-              </View>
-              <ChevronRightIcon size={18} color={flColor.bronze400} />
-            </Pressable>
-          ) : null}
-          <Pressable
-            onPress={chooseStrength}
-            accessibilityRole="button"
-            accessibilityLabel="Start a strength workout"
-            style={styles.libRow}
-          >
-            <View style={styles.rowBody}>
-              <Text style={styles.rowTitle}>Strength Workout</Text>
-              <Text style={styles.rowSub}>From a template, planned first, or built as you go.</Text>
-            </View>
-            <ChevronRightIcon size={18} color={flColor.bronze400} />
-          </Pressable>
-          {/* Two different things, deliberately both here: TRACK measures a session as you do it,
-              LOG records one you already did. Neither replaces the other — a treadmill run or a swim
-              has nothing for GPS to measure, and a run you forgot to start still counts. */}
-          <Pressable
-            onPress={() => void startTrackedRun()}
-            accessibilityRole="button"
-            accessibilityLabel="Track a run with GPS"
-            style={styles.libRow}
-          >
-            <View style={styles.rowBody}>
-              <Text style={styles.rowTitle}>Track a Run</Text>
-              <Text style={styles.rowSub}>Start now — your phone measures distance, pace, and route.</Text>
-            </View>
-            <ChevronRightIcon size={18} color={flColor.bronze400} />
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              setStartOpen(false);
-              router.push('/log-activity');
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Log a run"
-            style={styles.libRow}
-          >
-            <View style={styles.rowBody}>
-              <Text style={styles.rowTitle}>Log a Run</Text>
-              <Text style={styles.rowSub}>Already done it? Record a run, walk, ride, row, or swim.</Text>
-            </View>
-            <ChevronRightIcon size={18} color={flColor.bronze400} />
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              setStartOpen(false);
-              router.push('/program-builder');
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Build a program"
-            style={styles.libRow}
-          >
-            <View style={styles.rowBody}>
-              <Text style={styles.rowTitle}>Build a Program</Text>
-              <Text style={styles.rowSub}>Design your own week, day by day.</Text>
-            </View>
-            <ChevronRightIcon size={18} color={flColor.bronze400} />
-          </Pressable>
-        </View>
-      </BottomSheet>
+      <CreateNewSheet open={createOpen} onClose={() => setCreateOpen(false)} onFreestyle={() => void startFreestyle()} />
 
-      {/* The three ways into a lifting session (`Forge Strength Start.dc.html`). Every path that would
-          otherwise drop into an empty session opens this first. */}
-      <StartStrengthSheet open={strengthOpen} onClose={() => setStrengthOpen(false)} onFreestyle={() => void startFreestyle()} />
-
-      {/* Held to the "My Workouts" side: four of the six steps ring sections that only exist there, and a
-          walkthrough that opened on Discover would silently drop them and teach a third of the screen. */}
+      {/* Held to the "My Workouts" side: the steps ring sections that only exist there. */}
       <ScreenTour screenKey="workouts" ready={tab === 'mine'} restingBottom={108} />
     </View>
   );
@@ -830,124 +544,28 @@ function Segment({ label, active, onPress }: { label: string; active: boolean; o
   );
 }
 
-
-/**
- * `mine` — the athlete's state for this definition, when they already hold it ('future' | 'active').
- * The card says so rather than the catalogue hiding the row: a program you planned is still a program
- * Forge offers, and the tap already opens YOUR copy of it.
- */
-function CompactProgramCard({ program, mine, onOpen }: { program: Program; mine?: string | null; onOpen: () => void }) {
-  const held = mine === 'active' ? 'Active' : mine === 'future' ? 'In your plans' : null;
-  return (
-    <Pressable
-      onPress={onOpen}
-      accessibilityRole="button"
-      accessibilityLabel={held ? `Open ${program.name} — ${held}` : `Open ${program.name}`}
-      style={styles.compactCard}
-    >
-      <View style={styles.compactBody}>
-        <Text style={styles.compactName} numberOfLines={1}>
-          {program.name}
-        </Text>
-        <Text style={styles.compactMeta} numberOfLines={1}>
-          {compactMeta(program)}
-        </Text>
-      </View>
-      <Pill tone={held ? 'bronze' : 'muted'} size="sm">
-        {held ?? program.difficulty}
-      </Pill>
-    </Pressable>
-  );
-}
-
-/**
- * Planned, at 2+ — one card instead of a stack of them.
- *
- * A queue is a fact about later, and at full size it competes with the program actually in flight. The
- * digest still names every one of them and still opens each: it is smaller, not shorter.
- */
-function PlannedDigest({
-  programs,
-  onOpen,
-  onExpand,
+/** One navigation card: icon tile · title · one line · chevron. The hub's only row shape. */
+function NavCard({
+  title,
+  sub,
+  icon,
+  onPress,
+  accessibilityLabel,
 }: {
-  programs: SavedProgram[];
-  onOpen: (p: SavedProgram) => void;
-  onExpand: () => void;
+  title: string;
+  sub: string;
+  icon: ReactNode;
+  onPress: () => void;
+  accessibilityLabel?: string;
 }) {
   return (
-    <View style={styles.digest}>
-      <Text style={styles.digestCount}>
-        {programs.length} planned {programs.length === 1 ? 'program' : 'programs'}
-      </Text>
-      {programs.map((p) => (
-        <Pressable
-          key={p.id}
-          onPress={() => onOpen(p)}
-          accessibilityRole="button"
-          accessibilityLabel={`${p.name}, planned`}
-          style={styles.digestRow}
-        >
-          <View style={styles.digestMark} />
-          <View style={styles.rowBody}>
-            <Text style={styles.digestName} numberOfLines={1}>
-              {p.name}
-            </Text>
-            <Text style={styles.rowSub} numberOfLines={1}>
-              {p.structure.weeks} wk · {sessionsPerWeek(p.structure)}/wk
-            </Text>
-          </View>
-          <ChevronRightIcon size={16} color={flColor.gray600} />
-        </Pressable>
-      ))}
-      <Pressable onPress={onExpand} accessibilityRole="button" accessibilityLabel="View all planned programs" style={styles.digestAll}>
-        <Text style={styles.digestAllText}>View all</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-/** One athlete-authored program: name, lifecycle, shape. Taps through to the existing Program Detail. */
-function SavedProgramRow({ program, onPress }: { program: SavedProgram; onPress: () => void }) {
-  const { pill } = viewForState(program.state, true);
-  const perWeek = sessionsPerWeek(program.structure);
-  const isActive = program.state === 'active';
-  const isRetired = isSealed(program.state);
-
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${program.name}, ${pill}`} style={styles.libRow}>
-      <View style={styles.rowBody}>
-        <Text style={[styles.rowTitle, isRetired && styles.rowTitleRetired]} numberOfLines={1}>
-          {program.name}
-        </Text>
-        <Text style={styles.rowSub} numberOfLines={1}>
-          {program.structure.weeks} wk · {perWeek}/wk
-        </Text>
-      </View>
-      <View style={[styles.statePill, isActive && styles.statePillActive]}>
-        <Text style={[styles.statePillText, isActive && styles.statePillTextActive]}>{pill}</Text>
-      </View>
-      <ChevronRightIcon size={18} color={flColor.bronze400} />
-    </Pressable>
-  );
-}
-
-/** Authoring, rendered as the last row of the section holding what it authors. */
-function CreateRow({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => [styles.createRow, pressed ? styles.createRowPressed : null]}>
-      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round">
-        <Path d="M12 5v14M5 12h14" />
-      </Svg>
-      <Text style={styles.createRowText}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function LibraryRow({ title, sub, icon, onPress }: { title: string; sub: string; icon: React.ReactNode; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={styles.libRow}>
-      <View style={styles.libIcon}>{icon}</View>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? title}
+      style={({ pressed }) => [styles.navCard, pressed ? styles.pressed : null]}
+    >
+      <View style={styles.navIcon}>{icon}</View>
       <View style={styles.rowBody}>
         <Text style={styles.rowTitle}>{title}</Text>
         <Text style={styles.rowSub}>{sub}</Text>
@@ -957,20 +575,6 @@ function LibraryRow({ title, sub, icon, onPress }: { title: string; sub: string;
   );
 }
 
-function FamilyChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      style={[styles.chip, active ? styles.chipActive : styles.chipIdle]}
-    >
-      <Text style={[styles.chipText, active ? styles.chipTextActive : styles.chipTextIdle]}>{label}</Text>
-    </Pressable>
-  );
-}
-
-// ── inline glyphs (Forged DNA: square caps / miter joins on structural marks) ──
 /** One of the arrival view's two doors — icon ring · title · one line · chevron. */
 function FirstRunDoor({ icon, title, sub, onPress }: { icon: ReactNode; title: string; sub: string; onPress: () => void }) {
   return (
@@ -978,7 +582,7 @@ function FirstRunDoor({ icon, title, sub, onPress }: { icon: ReactNode; title: s
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title} — ${sub}`}
-      style={({ pressed }) => [styles.door, pressed ? styles.anchorPressed : null]}
+      style={({ pressed }) => [styles.door, pressed ? styles.pressed : null]}
     >
       <View style={styles.doorRing}>{icon}</View>
       <View style={styles.doorText}>
@@ -987,6 +591,15 @@ function FirstRunDoor({ icon, title, sub, onPress }: { icon: ReactNode; title: s
       </View>
       <ChevronRightIcon size={16} color={flColor.bronze400} />
     </Pressable>
+  );
+}
+
+// ── inline glyphs (Forged DNA: square caps / miter joins on structural marks) ──
+function Glyph({ children, size = 20, color = flColor.bronze300 }: { children: ReactNode; size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
+      {children}
+    </Svg>
   );
 }
 function LightbulbIcon() {
@@ -1003,43 +616,43 @@ function PlusIcon({ color = flColor.bronze400 }: { color?: string }) {
     </Svg>
   );
 }
-function TemplatesIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M4 6h16M4 12h16M4 18h10" />
-    </Svg>
-  );
+function StackIcon() {
+  return <Glyph><Path d="M12 3l9 4.5-9 4.5-9-4.5zM3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5" /></Glyph>;
+}
+function TemplateIcon() {
+  return <Glyph><Path d="M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6" /></Glyph>;
 }
 function DumbbellIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
-    </Svg>
-  );
+  return <Glyph><Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" /></Glyph>;
 }
 function HistoryIcon() {
   return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
+    <Glyph>
       <Path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
       <Path d="M3 4v4h4" />
       <Path d="M12 8v4l3 2" />
-    </Svg>
+    </Glyph>
   );
+}
+function ChatIcon() {
+  return <Glyph><Path d="M4 5h16v11H9l-5 4zM8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" /></Glyph>;
+}
+/** One mark per program family, for the focus chips. */
+const FOCUS_PATHS: Record<ProgramFamily, ReactNode> = {
+  Strength: <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />,
+  Conditioning: <Path d="M13 3l-7 10h5l-1 8 7-10h-5z" />,
+  'Muscle Building': <Path d="M5 19c0-5 2-9 5-11l2-4 3 1-1 4c3 1 5 4 5 7v3z" />,
+  'Full Body & Home': <Path d="M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5" />,
+  Mobility: <Path d="M12 5.5a1.5 1.5 0 1 0 0-.01M12 8v6M7 10l5-1 5 1M9 21l3-7 3 7" />,
+  Running: <Path d="M14 5.5a1.5 1.5 0 1 0 0-.01M9 20l2.5-5 3-2-1-4-3.5 2-1.5 3M14.5 9l3 2 1.5-1" />,
+};
+function FocusIcon({ family }: { family: ProgramFamily }) {
+  return <Glyph size={18}>{FOCUS_PATHS[family]}</Glyph>;
 }
 
 const styles = StyleSheet.create({
-  hidden: { display: 'none' },
-  createRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
-  createRowPressed: { opacity: 0.88, borderColor: flColor.bronzeBorder },
-  createRowText: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
   root: { flex: 1 },
-  barTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 2.4,
-    textTransform: 'uppercase',
-    color: flColor.cream100,
-  },
+  pressed: { opacity: 0.86 },
   startBtn: {
     width: 40,
     height: 40,
@@ -1101,8 +714,10 @@ const styles = StyleSheet.create({
     paddingBottom: SCREEN_BOTTOM_GAP,
   },
   stack: { gap: 28 },
+  stackTight: { gap: 10 },
   discoverBack: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 18, paddingVertical: 10 },
   discoverBackText: { fontSize: 14, fontWeight: '600', color: flColor.bronze400 },
+
   /* ── THE ARRIVAL VIEW (ONB-A6-D3) ─────────────────────────────────────────────────────────────── */
   firstRun: { gap: 26 },
   firstRunHead: { gap: 12 },
@@ -1152,71 +767,52 @@ const styles = StyleSheet.create({
   tipText: { flex: 1, minWidth: 0, gap: 6 },
   tipTitle: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.bronze400 },
   tipBody: { fontSize: 14, lineHeight: 20, color: flColor.gray400 },
-  stackTight: { gap: 10 },
-  sectionBody: { marginTop: 12 },
 
-  // active hero card
-  heroCard: {
-    position: 'relative',
-    overflow: 'hidden',
-    borderRadius: flRadius.xl,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.base,
-    paddingHorizontal: 20,
-    paddingTop: 22,
-    paddingBottom: 24,
-    gap: 14,
-    boxShadow: flShadow.missionCard,
-  },
-  heroTopRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  heroTitleWrap: { flex: 1, minWidth: 0, gap: 4 },
-  heroName: {
-    fontFamily: flFont.display,
-    fontSize: 20,
-    fontWeight: '600',
-    lineHeight: 22,
-    color: flColor.cream100,
-  },
-  heroMeta: { fontSize: 13, color: flColor.gray400 },
-  heroProgressRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  heroProgressBar: { flex: 1 },
-  heroPct: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: flColor.bronze300,
-    fontVariant: ['tabular-nums'],
-  },
-  heroWorkoutLabel: { fontSize: 12, color: flColor.gray600 },
-  heroNextRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  diamond: {
-    width: 5,
-    height: 5,
-    transform: [{ rotate: '45deg' }],
-    backgroundColor: flColor.bronze400,
-  },
-  heroNext: { flex: 1, fontSize: 12.5, color: flColor.bronze400 },
-
-  // empty state
-  /* ── THE ANCHOR (editorial surface — see `constants/surfaces.ts`) ────────────────────────────────
-     No container: type, spacing and one rule. The `.dc`'s composition rather than another card. */
-  anchor: { gap: 18 },
-  anchorBody: { ...surfaceEditorial },
-  anchorPressed: { opacity: 0.86 },
-  anchorKicker: {
+  kicker: {
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1.8,
     textTransform: 'uppercase',
     color: flText.bronzeLabel,
   },
-  /* The display face at hero scale — this is the one typographic moment on the screen, and the whole
-     point of the change. Everything below it stays in the sans. */
+
+  /* ── ACTIVE PROGRAM ───────────────────────────────────────────────────────────────────────────── */
+  activeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    borderRadius: flRadius.xl,
+    backgroundColor: flColor.charcoal900,
+    boxShadow: flShadow.card,
+  },
+  activeBody: { flex: 1, minWidth: 0, gap: 6 },
+  /* The display face at hero scale — the one typographic moment on this half. Everything else is sans. */
+  activeTitle: {
+    fontFamily: flFont.display,
+    fontSize: 26,
+    lineHeight: 30,
+    fontWeight: '600',
+    letterSpacing: -0.4,
+    color: flColor.cream100,
+  },
+  activeMeta: { fontSize: 13.5, lineHeight: 19, color: flColor.gray400 },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
+  activeGo: {
+    width: 40,
+    height: 40,
+    flexShrink: 0,
+    borderRadius: flRadius.round,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  /* No active program — the editorial invitation, kept as it was (type on the ground, no container). */
+  anchorBody: { ...surfaceEditorial },
   anchorTitle: {
     fontFamily: flFont.display,
     fontSize: 30,
@@ -1224,17 +820,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: -0.5,
     color: flColor.cream100,
-  },
-  anchorMeta: { fontSize: 13.5, lineHeight: 19, color: flColor.gray400 },
-  /* The affordance. Same bronze label grammar as `anchorKicker` so it reads as part of the composition
-     rather than a button dropped onto it — the chevron is what makes it a destination. */
-  anchorGo: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10 },
-  anchorGoText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    color: flColor.bronze400,
   },
   anchorActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
   anchorCta: {
@@ -1246,19 +831,13 @@ const styles = StyleSheet.create({
   anchorCtaText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, color: flColor.onBronze },
   anchorCtaQuiet: { paddingVertical: 11, paddingHorizontal: 18, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600 },
   anchorCtaQuietText: { fontSize: 13, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray400 },
-  anchorRule: { ...editorialRule },
 
-  /* ⚠ `emptyCard`, `emptyTitle` and `emptySub` were DELETED here, not orphaned. They dressed the dashed
-     bronze box the editorial anchor above replaced, and a style with no consumer reads as a thing the
-     screen still draws — which is exactly how somebody rebuilds a container that was removed on purpose.
-     The anchor is `anchorBody` and it has no container by design. */
-
-  // library / build rows
-  libRow: {
+  /* ── NAV CARDS ────────────────────────────────────────────────────────────────────────────────── */
+  navCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 13,
-    paddingVertical: 15,
+    gap: 14,
+    paddingVertical: 16,
     paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: flColor.charcoal600,
@@ -1266,9 +845,10 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
     boxShadow: flShadow.card,
   },
-  libIcon: {
-    width: 38,
-    height: 38,
+  navIcon: {
+    width: 42,
+    height: 42,
+    flexShrink: 0,
     borderRadius: flRadius.md,
     borderWidth: 1,
     borderColor: flColor.charcoal600,
@@ -1276,149 +856,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // planned digest
-  digest: {
-    borderWidth: 1,
-    borderColor: flColor.charcoal600,
-    borderRadius: flRadius.xl,
-    backgroundColor: flColor.charcoal900,
-    boxShadow: flShadow.card,
-    overflow: 'hidden',
-  },
-  digestCount: {
-    paddingTop: 13,
-    paddingHorizontal: 16,
-    paddingBottom: 6,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-    color: flColor.gray600,
-  },
-  digestRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 11,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.03)',
-  },
-  digestMark: { width: 5, height: 5, flexShrink: 0, transform: [{ rotate: '45deg' }], backgroundColor: flColor.bronze400 },
-  digestName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
-  digestAll: {
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: flColor.charcoal700,
-  },
-  digestAllText: { fontSize: 12.5, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
-
   rowBody: { flex: 1, minWidth: 0 },
-  rowTitle: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
-  rowTitleRetired: { color: flColor.gray400 },
-  statePill: {
-    flexShrink: 0,
-    paddingVertical: 4,
-    paddingHorizontal: 9,
-    borderRadius: flRadius.pill,
-    borderWidth: 1,
-    borderColor: flColor.charcoal600,
-    backgroundColor: flColor.charcoal800,
-  },
-  statePillActive: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  statePillText: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
-  statePillTextActive: { color: flColor.bronze300 },
-  rowSub: { marginTop: 1, fontSize: 12.5, color: flColor.gray400 },
-  buildCta: {
-    flexDirection: 'row',
+  rowTitle: { fontSize: 15.5, fontWeight: '600', color: flColor.cream100 },
+  rowSub: { marginTop: 2, fontSize: 12.5, lineHeight: 17.5, color: flColor.gray400 },
+
+  /* ── CREATE NEW — the hub's one bronze surface ────────────────────────────────────────────────── */
+  createCard: {
     alignItems: 'center',
-    gap: 13,
-    paddingVertical: 15,
+    gap: 4,
+    paddingVertical: 16,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderStyle: 'dashed',
     borderColor: flColor.bronzeBorder,
     borderRadius: flRadius.xl,
     backgroundColor: flColor.bronzeTint,
   },
-  buildIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.charcoal800,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  createHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  createTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100 },
+  createSub: { fontSize: 12.5, lineHeight: 17.5, color: flColor.gray400, textAlign: 'center' },
 
-  // family filter
-  filterLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-    color: flColor.gray600,
-    marginBottom: 10,
-  },
-  /* Deliberately the quietest interactive thing on the tab — no border, no fill, no icon container.
-     It is a sentence with an arrow, and it earns its place by being where the question gets asked
-     rather than by being loud. */
-  helpMeChoose: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
-  helpMePressed: { opacity: 0.6 },
-  helpMeText: { flex: 1, fontSize: 13, color: flColor.gray600 },
-  helpMeLink: { color: flColor.bronze400, fontWeight: '600' },
-  chips: { gap: 8, paddingRight: 4 },
-  chip: {
-    paddingVertical: 9,
-    paddingHorizontal: 15,
-    borderRadius: flRadius.pill,
-    borderWidth: 1,
-  },
-  chipActive: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  chipIdle: { borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
-  chipText: { fontSize: 12.5, fontWeight: '600' },
-  chipTextActive: { color: flColor.bronze300 },
-  chipTextIdle: { color: flColor.gray400 },
-
-  // recommended
-  recTitle: {
-    fontFamily: flFont.display,
-    fontSize: 18,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-    color: flColor.cream100,
-    marginBottom: 4,
-  },
-  recBlurb: { fontSize: 13, lineHeight: 20, color: flColor.gray400, marginBottom: 14 },
-
-  // compact card
-  compactCard: {
+  /* ── DISCOVER ─────────────────────────────────────────────────────────────────────────────────── */
+  focusWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  focusChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    paddingVertical: 12,
+    gap: 8,
+    paddingVertical: 10,
     paddingHorizontal: 14,
+    borderRadius: flRadius.lg,
     borderWidth: 1,
     borderColor: flColor.charcoal600,
-    borderRadius: flRadius.lg,
     backgroundColor: flColor.charcoal900,
-    boxShadow: flShadow.card,
   },
-  compactBody: { flex: 1, minWidth: 0, gap: 2 },
-  compactName: { fontSize: 15, fontWeight: '600', lineHeight: 18, color: flColor.cream100 },
-  compactMeta: { fontSize: 12, color: flColor.gray400 },
-
-  noResults: {
-    paddingVertical: 18,
+  focusText: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
+  holtCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderStyle: 'dashed',
     borderColor: flColor.charcoal600,
-    borderRadius: flRadius.lg,
-    alignItems: 'center',
+    borderRadius: flRadius.xl,
+    backgroundColor: flColor.surfaceRecessed,
   },
-  noResultsText: { fontSize: 13, color: flColor.gray600 },
 });

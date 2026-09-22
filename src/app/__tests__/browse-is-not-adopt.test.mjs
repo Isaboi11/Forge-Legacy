@@ -32,7 +32,7 @@ const APP = path.join(HERE, '..');
 const read = (f) => fs.readFileSync(path.join(APP, f), 'utf8');
 
 /** Screens whose job is to let the athlete LOOK at programs. */
-const BROWSE_SURFACES = ['(tabs)/workouts.tsx'];
+const BROWSE_SURFACES = ['(tabs)/workouts.tsx', 'program-catalog.tsx'];
 
 test('browsing the catalog never adopts a program', () => {
   for (const f of BROWSE_SURFACES) {

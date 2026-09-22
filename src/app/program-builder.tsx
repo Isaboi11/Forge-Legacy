@@ -1561,11 +1561,12 @@ function WeekTemplateSheet({
         {error ? <Text style={styles.tplEmpty}>{error}</Text> : null}
 
         {!loading && !error && rows.length === 0 ? (
-          /* The honest empty state names the OTHER door rather than apologising: a week template is built
-             on the Templates tab, and an athlete who has none has not been anywhere near it. */
+          /* ⚠ THIS NAMED "Workouts → Your Templates → Build a Week", a door removed by the Workouts
+             restructure (2026-09-22): weeks are built inside programs now. The remaining way a saved week
+             arrives is Coach Holt's week artifact, so that is the door this names. */
           <Text style={styles.tplEmpty}>
-            You haven’t saved any weeks yet. Build one from Workouts → Your Templates → Build a Week, and it will
-            show up here.
+            You haven’t saved any weeks yet. When Coach Holt plans a week for you and you save it, it will show
+            up here.
           </Text>
         ) : null}
 

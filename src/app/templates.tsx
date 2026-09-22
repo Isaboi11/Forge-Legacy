@@ -4,7 +4,6 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
-import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { ScreenBackground } from '@/components/screen-background';
@@ -106,26 +105,15 @@ export default function TemplatesScreen() {
    * screen because the athlete's mental model is already "reusable shapes I can run" — and this hub
    * already routes to two different detail screens, so a third is not a new idea.
    *
-   * The `+` therefore has to ask WHICH, rather than assuming. Assuming is exactly what made a saved
-   * template unreachable from the Workouts tab (W25-A1-D8): a door that answers a question the athlete
-   * did not ask.
+   * ⚠ LISTED, NO LONGER AUTHORED HERE (2026-09-22) — see `onNew` below.
    */
   const weeks = weekData ?? [];
-  const [newOpen, setNewOpen] = useState(false);
-
-  const newWeek = () => {
-    setNewOpen(false);
-    if (!guard('short_programs')) return;
-    router.push({ pathname: '/program-builder', params: { mode: 'week' } });
-  };
-
-  /**
-   * ⚠ THIS USED TO SKIP THE CHOOSER WHEN THE ATHLETE HAD NO WEEKS YET, on the reasoning that there was
-   * nothing to disambiguate. That reasoning is exactly backwards for a NEW feature: the only people it
-   * "helped" were the ones who had never seen weeks, i.e. everybody, so the `+` never once mentioned
-   * them. Discovery cannot be gated on already having discovered the thing.
-   */
-  const onNew = () => setNewOpen(true);
+  /* ⚠ NO "BUILD A WEEK" DOOR HERE ANY MORE (Workouts restructure, PO 2026-09-22): this hub is reached
+     from a card reading "Workout Templates — reusable individual workouts", and the model is Program →
+     Weeks → Workouts. A week is built inside a program. Weeks the athlete ALREADY saved still list above
+     their templates and open W-29 — that is their data. The `+` therefore builds a template directly;
+     the chooser it used to open had only one other answer. */
+  const onNew = () => newTemplate();
 
   const [reorderOpen, setReorderOpen] = useState(false);
   const [reorderBusy, setReorderBusy] = useState(false);
@@ -174,7 +162,7 @@ export default function TemplatesScreen() {
         onBack={goBack}
         actions={
           list.length > 0 ? (
-            <Pressable onPress={onNew} accessibilityRole="button" accessibilityLabel="New template or week" hitSlop={8} style={styles.barBtn}>
+            <Pressable onPress={onNew} accessibilityRole="button" accessibilityLabel="New workout template" hitSlop={8} style={styles.barBtn}>
               <PlusGlyph />
             </Pressable>
           ) : undefined
@@ -417,13 +405,6 @@ export default function TemplatesScreen() {
               <PlusGlyph size={16} />
               <Text style={styles.newRowText}>Build a template</Text>
             </Pressable>
-            {/* Its own row rather than a second option behind the first: two distinct things to author,
-                each one tap. The chooser sheet exists for the AppBar `+`, which has no room to say two
-                words — it is not the primary door. */}
-            <Pressable onPress={newWeek} accessibilityRole="button" accessibilityLabel="Build a week" style={({ pressed }) => [styles.newRow, pressed ? styles.pressed : null]}>
-              <PlusGlyph size={16} />
-              <Text style={styles.newRowText}>Build a week</Text>
-            </Pressable>
           </TourAnchor>
         </ScrollView>
       )}
@@ -440,33 +421,6 @@ export default function TemplatesScreen() {
         onSave={(ids) => void saveOrder(ids)}
       />
 
-      {/* The `+` asks which.
-          ⚠ NOT a ConfirmSheet, which was the first attempt and was wrong: its cancel and its
-          backdrop-dismiss are the same callback, so tapping OUTSIDE the sheet — the universal gesture
-          for "never mind" — would have opened the template builder. A chooser has two actions and a
-          dismiss, and the dismiss must do nothing. Same two-row shape as `StartStrengthSheet`. */}
-      <BottomSheet open={newOpen} onClose={() => setNewOpen(false)} title="What are you building?">
-        <View style={styles.chooser}>
-          <Pressable
-            onPress={() => { setNewOpen(false); newTemplate(); }}
-            accessibilityRole="button"
-            accessibilityLabel="Build a template. One session you can start any time."
-            style={({ pressed }) => [styles.chooserRow, pressed ? styles.pressed : null]}
-          >
-            <Text style={styles.chooserTitle}>Build a template</Text>
-            <Text style={styles.chooserSub}>One session you can start any time.</Text>
-          </Pressable>
-          <Pressable
-            onPress={newWeek}
-            accessibilityRole="button"
-            accessibilityLabel="Build a week. Several days you run in order, like a short program."
-            style={({ pressed }) => [styles.chooserRow, pressed ? styles.pressed : null]}
-          >
-            <Text style={styles.chooserTitle}>Build a week</Text>
-            <Text style={styles.chooserSub}>Several days you run in order, like a short program.</Text>
-          </Pressable>
-        </View>
-      </BottomSheet>
 
       <ConfirmSheet
         open={!!confirmDelete}
@@ -580,14 +534,6 @@ const styles = StyleSheet.create({
   newRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   newRowText: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze300 },
 
-  chooser: { gap: 10, paddingBottom: 6 },
-  chooserRow: {
-    paddingVertical: 14, paddingHorizontal: 16,
-    borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600,
-    backgroundColor: flColor.charcoal800, gap: 3,
-  },
-  chooserTitle: { fontFamily: flFont.display, fontSize: 15.5, fontWeight: '600', color: flColor.cream100 },
-  chooserSub: { fontSize: 12.5, lineHeight: 17, color: flColor.gray600 },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34 },
   emptyCrest: { width: 58, height: 58, marginBottom: 14, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },

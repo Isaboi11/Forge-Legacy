@@ -147,13 +147,9 @@ test('the derived names the guard compares against are the ones the launch paths
   assert.equal(deriveName('bike', 'indoor'), 'Indoor Ride', 'there is no treadmill for a bicycle');
 });
 
-test('Track a Run’s hard-coded label still matches what the block derives', () => {
-  // `workouts.tsx` passes no `workoutName` on the launch, so the session takes `block.name`. If these
-  // two ever diverge the rename guard silently stops firing for that entry point.
-  const src = readFileSync(path.join(here, '../../../app/(tabs)/workouts.tsx'), 'utf8');
-  assert.match(src, /startWorkout\('Outdoor Run'\)/);
-  assert.equal(deriveName('run', 'outdoor'), 'Outdoor Run');
-});
+/* "Track a Run's hard-coded label" was asserted here against `workouts.tsx`. That door is gone — the
+   Workouts `+` became Create New (2026-09-22) and Home is where a run starts, through `deriveName` itself,
+   so there is no hand-typed label left to drift. The derivation it guarded is still asserted above. */
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3 · THE SAME REPORT, THROUGH THE FREESTYLE DOOR

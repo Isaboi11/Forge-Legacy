@@ -305,6 +305,9 @@ function RootNavigator() {
         {/* W-28, both modes off one route: `?id` present is EDIT, absent is CREATE. */}
         <Stack.Screen name="custom-exercise" />
         <Stack.Screen name="templates" />
+        {/* Workouts restructure (2026-09-22): the athlete's own program library, and the full Forge catalogue. */}
+        <Stack.Screen name="programs" />
+        <Stack.Screen name="program-catalog" />
         <Stack.Screen name="workout" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="log-activity" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="exercise-picker" options={{ presentation: 'fullScreenModal' }} />
