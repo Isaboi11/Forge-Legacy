@@ -31,6 +31,7 @@ import { usePremiumAi } from '@/lib/entitlement';
 import { interpretTyped, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
 import { addNotes, fetchNotes } from '@/data/holt-notes-live';
 import { askBriefLive } from '@/data/holt-training-live';
+import { gapReplyLive, isGapQuestion } from '@/data/training-gaps-live';
 import { useUnits } from '@/lib/settings';
 import { askHolt, askSourcesLive, type AskTurn } from '@/data/coach-ask-live';
 import { buildAskContext } from '@/domain/coach/ask-context';
@@ -1574,7 +1575,18 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
    * get stronger"): it opens a build — a day when the athlete named what to train today — through the same
    * allowance gate the door uses, starting from the athlete's facts, never from the last request.
    */
-  /** The last eight spoken turns, as the two AI jobs take them. */
+  /**
+   * The last eight spoken turns, as the two AI jobs take them.
+   *
+   * ⚠ THE `'holt'` ARM IS LOAD-BEARING FOR A FEATURE THAT IS NOT IN THIS FILE. The Training Gaps answer
+   * (`isGapQuestion` below) is produced locally and never goes to a model, so the ONLY way a follow-up —
+   * "why?", "what do I do about it" — reaches the same numbers is as a `holt` turn in this history.
+   * Drop that arm and the follow-up degrades silently into a general answer.
+   *
+   * `domain/coach/__tests__/training-gaps.test.mjs` pins this filter for exactly that reason and will go
+   * red if it changes. That test is in another module's suite on purpose; read its comment before
+   * "fixing" the failure.
+   */
   const historyFrom = (t: Turn[]): AskTurn[] =>
     t
       .filter((x): x is Extract<Turn, { kind: 'me' | 'holt' }> => (x.kind === 'me' || x.kind === 'holt') && x.text.trim() !== '')
@@ -1589,6 +1601,30 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
    * exercise he is asked about travel as context — the coaching records, not his memory.
    */
   const askAloud = async (text: string, history: AskTurn[], q: ReturnType<typeof nextQuestion>) => {
+    /**
+     * ══ "WHAT DO I NEED TO WORK ON?" IS ANSWERED HERE, WITHOUT A MODEL ══
+     *
+     * `Coach-Holt-Training-Gaps-v1.0` (LOCKED). The answer is arithmetic over the athlete's own logged
+     * sets — Preflight Gates §2.2 green-tier data — so there is nothing for a model to add and a good
+     * deal for it to get wrong. Short-circuiting here means the question costs nothing, cannot be
+     * steered by a crafted sentence, and works on any tier (TG-D4 is still open; this is the cheap side
+     * of that decision).
+     *
+     * ⚠ TG-D2 — PULL, NEVER PUSH. This fires only when the athlete ASKS, and `isGapQuestion` is
+     * deliberately much narrower than `isTrainingQuestion`: volunteering a list of what someone is
+     * neglecting is the same shape as an unasked remark about their body, which is the thing this whole
+     * feature exists to avoid.
+     */
+    if (isGapQuestion(text)) {
+      setBusy('thinking');
+      const reply = await gapReplyLive().catch(() => null);
+      setBusy(null);
+      if (reply) {
+        say({ kind: 'holt', text: reply });
+        return;
+      }
+      /* Fall through to the ordinary ask only if the local answer failed outright. */
+    }
     setBusy('thinking');
     const active = await Promise.race([
       fetchActiveProgram().catch(() => null),

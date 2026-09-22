@@ -287,6 +287,13 @@ const VERDICT_SENTENCE =
  * weight"* carry that case instead. *"Leaned out"* IS caught, except when it is followed by "over" —
  * *"you're leaning out over the bar"* is a torso-position note, and *"you've leaned out since last time"*
  * is a remark about a body.
+ *
+ * ⚠ THIS PATTERN IS DUPLICATED IN `appearance.ts`, ON PURPOSE, AND A TEST HOLDS THE TWO IDENTICAL.
+ * `training-gaps.ts` needs the same guarantee and cannot reach this file: import-free is a hard
+ * requirement here (see the header — the deploy builder refuses to inline a module with imports), so the
+ * usual fix of extracting a shared module is not available. `__tests__/training-gaps.test.mjs` reads BOTH
+ * files off disk and fails if the two regex sources differ by one byte. Change this and you change that,
+ * in the same commit, or the suite stops you.
  */
 const BODY_SENTENCE =
   /\b(body\s?fat|physique|overweight|obese|obesity|skinny|chubby|fat\b|flabby|slim|bulky|belly|gut\b|love\s+handles|lean(er|ness)\b|lean\s+(body|mass|muscle)|lean(ed|ing)?\s+out\b(?!\s+over)|put(ting)?\s+on\s+(some\s+)?(muscle|size|mass)|your\s+(physique|frame|build)\b|(los(e|ing)|drop(ping)?|gain(ing)?|shed(ding)?)\s+(some\s+|a\s+few\s+|a\s+bit\s+of\s+)?(weight|fat|pounds|lbs?|kg)|you\s+look\s+(strong|big|small|heavy|light|thin|fit))\b/i;
