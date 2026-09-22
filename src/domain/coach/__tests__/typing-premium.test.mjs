@@ -89,3 +89,40 @@ test('a week described day by day is not asked "how many days a week?"', async (
   assert.equal(nextQuestion(s, 'program'), null);
   assert.equal(nextQuestion({ ...s, days: undefined }, 'program')?.id, 'days', 'control: without a week, it asks');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ASK vs PARSE, streaming answers, typed edits
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('a question streams from coach-ask; a request — even phrased as a question — is parsed', async () => {
+  const { looksLikeQuestion } = await import('../chat-core.ts');
+  for (const q of ['how much should I bench?', 'what is RPE', 'is it ok to train sore?', 'why is lunges in my plan', 'tips for sleep?'])
+    assert.equal(looksLikeQuestion(q), true, q);
+  for (const r of ['can you make me a 4 day program?', 'could you build me a glute focused plan?', 'swap bench for db press', '4 days', 'legs today, 45 min', 'could you swap my squats for leg press?'])
+    assert.equal(looksLikeQuestion(r), false, r);
+});
+
+test('⚠ the streamed reply is ONE growing turn, cleared of `streaming` when it ends', () => {
+  const ask = sheet.slice(sheet.indexOf('const askAloud = async'), sheet.indexOf('const understand = async'));
+  assert.match(ask, /say\(\{ kind: 'holt', text: acc, streaming: true \}\)/);
+  assert.match(ask, /last\?\.kind === 'holt' && last\.streaming \? \[\.\.\.t\.slice\(0, i\), \{ \.\.\.last, text: acc \}\] : t/);
+  assert.match(ask, /x\.kind === 'holt' && x\.streaming \? \{ \.\.\.x, streaming: undefined \}/);
+  for (const route of ['answer', 'crisis', 'urgent', 'care', 'medical', 'out_of_credits', 'offline'])
+    assert.match(ask, new RegExp(`case '${route}':`), route);
+});
+
+test('⚠ conversation memory is this conversation, eight turns, into both AI jobs', () => {
+  assert.match(sheet, /\.slice\(-8\)/);
+  assert.match(sheet, /interpretTyped\(text, q, m === 'day' \? 'day' : 'program', constraints, history\)/);
+  assert.match(sheet, /askHolt\(text, history, context,/);
+});
+
+test('⚠ a typed edit is resolved, confirmed, and applied only on a tap — never saved on its own', () => {
+  const edit = sheet.slice(sheet.indexOf('const editByWords = async'), sheet.indexOf('const finishTypedEdit = async'));
+  assert.match(edit, /resolveEditIntent\(intent, active\.structure, marks, PICKER_DB/);
+  assert.doesNotMatch(edit, /updateProgram\(/, 'resolving must not save');
+  const finish = sheet.slice(sheet.indexOf('const finishTypedEdit = async'), sheet.indexOf('const tapChip = (chip'));
+  assert.match(finish, /pe\.plan\.apply\(scope\)/);
+  assert.match(finish, /await updateProgram\(pe\.programId, res\.structure\)/);
+  assert.match(finish, /That change went stale/, 'a chip restored after a reload says so instead of doing nothing');
+});

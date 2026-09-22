@@ -57,7 +57,8 @@ export type Turn =
   /** `at` is epoch ms, stamped when the turn is appended. Absent on threads stored before v2. */
   | { kind: 'me'; text: string; at?: number }
   /** `live` types itself out, character by character. Exactly one turn at a time may be live. */
-  | { kind: 'holt'; text: string; live?: boolean; at?: number }
+  /** `streaming` while a coach-ask reply is still arriving; cleared when it is complete. */
+  | { kind: 'holt'; text: string; live?: boolean; at?: number; streaming?: boolean }
   /** `ctl` is how they are DRAWN (v2 layer 2). Absent → the 2-col chip grid, which is what every
    *  answer used to be. The openers and the help menu carry none, and correctly render as chips. */
   | { kind: 'chips'; chips: Chip[]; ctl?: QuestionControl }
@@ -197,6 +198,13 @@ export interface Chip {
    */
   startsBuild?: boolean;
   levelOnly?: boolean;
+  /**
+   * One step of a change the athlete TYPED ("swap bench for dumbbell press on Monday"): answering what
+   * Holt asked back, applying it for this week or the rest of the block, or leaving it. A string, not the
+   * plan itself — the thread is persisted as JSON, so the pending plan lives in the sheet and a chip
+   * restored after a reload finds nothing and says so.
+   */
+  typedEdit?: 'answer' | 'this_week' | 'rest_of_block' | 'apply' | 'cancel';
   label: string;
   /** What tapping it fills in. The typed path resolves to the same thing — see `interpret`. */
   /* Widened to ChatState so a chip can carry `dayFocus`, which describes one WORKOUT rather than the
@@ -971,6 +979,28 @@ export function interpret(text: string, q: Question): Partial<CoachConstraints> 
   if (q.id === 'limits' && /^(no|none|nothing|nope|nah|all good|i'?m fine|i'?m good|n\/a)[.! ]*$/.test(t)) return { limitations: [] };
 
   return null;
+}
+
+/**
+ * Is this a question to ANSWER, rather than a request to build or change something?
+ *
+ * Decides which Holt a typed line reaches: a question streams from `coach-ask` in his own words; anything
+ * else goes to `coach-interpret`, which fills fields for the engine. One call either way — routing a
+ * question through the parser first and then asking would pay twice for every "how much should I bench?".
+ *
+ * ⚠ A request phrased as a question ("can you make me a 4 day program?", "could you swap my bench?") is a
+ * REQUEST — the build and edit verbs win over the question mark.
+ */
+const BUILD_OR_CHANGE =
+  /\b(make|build|create|write|design|give|put\s+together)\s+(me\s+)?([\w-]+\s+){0,4}(program|plan|routine|split|block|workout|session)s?\b|\b(swap|replace|switch|change|move|skip|add|remove|drop|shorten|extend|reschedule)\b/i;
+const QUESTION_START =
+  /^(how|what|what's|whats|why|when|where|which|who|should|shall|can|could|is|are|am|do|does|did|will|would|was|were|explain|tell me|help me understand|any tips|thoughts on)\b/i;
+
+export function looksLikeQuestion(text: string): boolean {
+  const t = text.trim();
+  if (!t) return false;
+  if (BUILD_OR_CHANGE.test(t)) return false;
+  return /\?\s*$/.test(t) || QUESTION_START.test(t);
 }
 
 /** Holt's line when he could not place an answer. Asks again; never guesses. */

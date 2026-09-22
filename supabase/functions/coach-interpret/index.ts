@@ -11,7 +11,8 @@
  * programs. He calls a machine that does."* This function fills fields. `assemble()` on the device
  * builds the program from them, validated by the same rules the free wizard uses. That is why the AI
  * tier cannot emit an invalid program — it is not writing one. Nothing here may return sets, reps,
- * weights, or exercises.
+ * weights, or exercises — except, verbatim, the ones the ATHLETE named (a pin, or an `edit` like "4 sets
+ * of squats"), which the device resolves against the catalogue and applies through `edit-ops.ts`.
  *
  * ══ ⚠ THE API KEY LIVES HERE AND NOWHERE ELSE ══
  *
@@ -62,6 +63,9 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 // ⚠ ONE SOURCE FOR THE GUARD. The classifier is a pure domain module so `node --test` can prove it
 // separates real sentences, and so the function and the app can never drift apart on where the line is.
 import { medicalRoute } from '../../../src/domain/coach/medical-routing.ts';
+// ⚠ AND ONE SOURCE FOR TRUSTING THE MODEL. Structured outputs are gone (see THE OUTPUT below), so every field
+// the model returns is checked in code, in a pure module `node --test` can prove narrows junk.
+import { narrowEdit, narrowHistory, narrowPatch, narrowRoute, narrowSay, parseModelJson } from '../../../src/domain/coach/interpret-narrow.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -120,6 +124,8 @@ You NEVER write training yourself. You do not choose exercises, sets, reps, weig
 
 Emit only fields the athlete actually gave you. Never guess a field to be helpful. A missing field is asked again; a wrong field is a program built on a lie.
 
+Earlier turns of this conversation may come with the message, so a follow-up ("make it 4 instead", "actually Friday", "the other one") can be understood. They are context only: route what the athlete typed now, and fill in from the earlier turns only what the new message clearly refers back to.
+
 # Routing
 
 Every reply is one of these routes.
@@ -136,7 +142,13 @@ Every reply is one of these routes.
 
 **answer** — a question or a remark rather than a request to build: how training works, how to do a lift, running, recovery, sleep, general eating, motivation, nerves about the gym, fitting training around work and kids, how the app works, or just talk ("thanks coach", "I hit a PR", "I feel lazy today"). Put Holt's reply in say. If the athlete also gave fields, return route patch with the fields and your reply in say instead.
 
-**edit** — they want to change the program they are already running (swap an exercise, move a day, make it shorter, change sets, skip a week). Return nothing else; the app opens the edit flow.
+**edit** — they want to change the program they are already running. When it is one of these, return edit with what they named, in their own words: swap an exercise (op swap), change sets (sets), change reps (reps), change a run or ride's distance (distance) or time (duration), or rebuild a day around something (rebuild). The app finds the session and the exercise in their real program, so copy their words ("bench", "leg day", "tomorrow") rather than guessing a full name or a date. Never choose a replacement, a number or a day they did not say; leave it out and the app asks. scope is rest_of_block only when they say so ("from now on", "every week", "for the rest of the block"), this_week only when they say so, otherwise leave it out. Anything else about the running program (move a day, skip a week, make it shorter) is edit with no edit object, and the app opens the edit flow.
+
+- "swap bench for dumbbell press on Monday" → edit, edit: { op: "swap", exercise: "bench", to: "dumbbell press", day: "Monday" }
+- "4 sets of squats tomorrow" → edit, edit: { op: "sets", exercise: "squats", sets: 4, day: "tomorrow" }
+- "make Thursday's run 5 miles from now on" → edit, edit: { op: "distance", exercise: "run", miles: 5, day: "Thursday", scope: "rest_of_block" }
+- "only 20 minutes on the bike Wednesday" → edit, edit: { op: "duration", exercise: "bike", minutes: 20, day: "Wednesday" }
+- earlier the athlete asked to swap bench for dumbbell press on Monday, and now types "actually Friday" → edit, edit: { op: "swap", exercise: "bench", to: "dumbbell press", day: "Friday" } (the whole edit again, with the change applied)
 
 **import** — they already have a program (from a coach, a PDF, a spreadsheet, another app) and want it in. Return nothing else.
 
@@ -199,97 +211,31 @@ If you do not know where something is, say so rather than inventing a screen.
 
 - patch: at most one short sentence confirming what you understood. Never list the fields back.
 - answer: speak as Holt, 1 to 4 short sentences, under 90 words. Plain text, no markdown, no lists. Answer the question asked; end with a nudge back to training only when it is natural.
-- every other route: write nothing — the app supplies that copy itself.`;
+- every other route: write nothing — the app supplies that copy itself.
+
+# Your reply
+
+Reply with ONLY one JSON object, no prose, no code fences:
+{"route": "...", "say": "...", "patch": {...}, "edit": {...}}
+
+- route (always): patch, answer, edit, import, pick, medical_stop, unclear, crisis, urgent or care
+- say: only when the route has a line (see above)
+- patch: only with route patch. Keys: goal, daysPerWeek, sessionMinutes, environment, experienceLifting, experienceRunning (each beginner, intermediate or advanced), limitations (array), raceInWeeks, raceDate, weeks, currentWeeklyMi, dayFocus, focusMuscles (array), pinned (array of { name, day, sets, reps }), days (array of { kind, focus, runMi, runMin }), daysAsGiven. Values exactly as described under The fields
+- edit: only with route edit. Keys: op (swap, sets, reps, distance, duration or rebuild), exercise, to, day, sets, reps, miles, minutes, scope (this_week or rest_of_block)
+
+Leave out any key you have no value for. Never write null, and never add a key that is not listed here.`;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
-// THE OUTPUT SHAPE
+// THE OUTPUT — plain JSON under the prompt's contract, narrowed in code
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
-
-const GOALS = [
-  'strength', 'muscle', 'weight_loss', 'conditioning', 'mobility', 'health',
-  'run_5k', 'run_10k', 'run_half', 'run_marathon', 'triathlon',
-];
-const LIMITATIONS = [
-  'shoulders', 'knees', 'lower_back', 'no_jumping', 'no_overhead', 'no_barbell', 'no_running',
-];
-const EXPERIENCE = ['beginner', 'intermediate', 'advanced'];
-const FOCUS_MUSCLES = [
-  'glutes', 'arms', 'biceps', 'triceps', 'shoulders', 'chest', 'back', 'legs', 'quads', 'hamstrings', 'calves', 'core',
-];
-
-/**
- * Structured outputs rather than prose parsing. The schema is the contract: a field that is not here
- * cannot come back, so the engine never receives a key it does not understand.
- *
- * `additionalProperties: false` and a full `required` list are both mandatory for strict validation.
- * Optional-in-spirit fields are expressed as nullable rather than absent, because the schema language
- * has no "sometimes".
- */
 
 /*
- * ⚠ OPTIONAL, NOT NULLABLE (2026-09-21, second rewrite). The first cut made every field required-but-
- * nullable (`orNull` → an `anyOf` per field). That worked at 13 unions and failed EVERY call at 23, once the
- * athlete-authored fields arrived — program-photo-read, on the same key, kept answering, so it was this
- * schema. Fields the athlete did not give are now simply absent: no unions at all, and the narrowing below
- * already treats absent and null alike.
+ * ⚠ NO STRUCTURED OUTPUTS (2026-09-21, third rewrite). The nullable-union schema failed every call at 23
+ * unions; the optional-fields rewrite then came back HTTP 400 "Schema is too complex", and the first attempt
+ * hit a 150-second idle timeout while the grammar compiled. The model now replies with one JSON object under
+ * the contract at the end of SYSTEM, and `interpret-narrow.ts` checks every field against the enums and
+ * ranges the schema used to enforce. Nothing the model returns reaches the device unchecked.
  */
-const SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['route'],
-  properties: {
-    route: { type: 'string', enum: ['patch', 'answer', 'edit', 'import', 'pick', 'medical_stop', 'unclear', 'crisis', 'urgent', 'care'] },
-    say: { type: 'string', description: 'patch: one short sentence. answer: Holt\'s reply. Otherwise omit.' },
-    patch: {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        goal: { type: 'string', enum: GOALS },
-        daysPerWeek: { type: 'integer' },
-        sessionMinutes: { type: 'integer', enum: [30, 45, 60, 75] },
-        environment: { type: 'string', enum: ['full_gym', 'home', 'bodyweight', 'outdoor'] },
-        experienceLifting: { type: 'string', enum: EXPERIENCE },
-        experienceRunning: { type: 'string', enum: EXPERIENCE },
-        limitations: { type: 'array', items: { type: 'string', enum: LIMITATIONS } },
-        raceDate: { type: 'string' },
-        raceInWeeks: { type: 'integer' },
-        weeks: { type: 'integer' },
-        currentWeeklyMi: { type: 'number' },
-        dayFocus: { type: 'string' },
-        focusMuscles: { type: 'array', items: { type: 'string', enum: FOCUS_MUSCLES } },
-        pinned: {
-          type: 'array',
-          items: {
-            type: 'object',
-            additionalProperties: false,
-            required: ['name'],
-            properties: {
-              name: { type: 'string' },
-              day: { type: 'integer' },
-              sets: { type: 'integer' },
-              reps: { type: 'integer' },
-            },
-          },
-        },
-        days: {
-          type: 'array',
-          items: {
-            type: 'object',
-            additionalProperties: false,
-            required: ['kind'],
-            properties: {
-              kind: { type: 'string', enum: ['run', 'lift', 'rest', 'cardio'] },
-              focus: { type: 'string' },
-              runMi: { type: 'number' },
-              runMin: { type: 'integer' },
-            },
-          },
-        },
-        daysAsGiven: { type: 'boolean' },
-      },
-    },
-  },
-};
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -304,6 +250,11 @@ interface Body {
   known?: Record<string, unknown>;
   /** Optional, one of ALLOWED_MODELS. Anything else runs the default. */
   model?: string;
+  /**
+   * The last few turns of THIS job's conversation (CA-D1 — never another job's), so "make it 4 instead"
+   * resolves. Trimmed server-side to six turns; goes in the user turn, never the cached system block.
+   */
+  history?: { role: 'athlete' | 'holt'; text: string }[];
 }
 
 /** The code guard's verdict as a route the app has copy for, or null to carry on. */
@@ -312,26 +263,6 @@ function guardRoute(text: string): 'crisis' | 'urgent' | 'care' | 'medical_stop'
   if (r === 'clear') return null;
   if (r === 'crisis' || r === 'urgent' || r === 'care') return r;
   return 'medical_stop';
-}
-
-/**
- * The race date, computed HERE from a week count, or a stated date checked for sense.
- *
- * ⚠ The model is bad at calendar arithmetic and has no clock of its own — it wrote `P10W`, and dates two
- * years in the past. So it reports a week count and this does the sum. A stated date that is not a real
- * YYYY-MM-DD, or is already past, is dropped: Holt asks again rather than building toward a race that
- * happened last year.
- */
-function raceDateFrom(inWeeks: unknown, stated: unknown, todayISO: string): string | null {
-  const base = new Date(`${todayISO}T00:00:00Z`);
-  if (typeof inWeeks === 'number' && inWeeks >= 0 && inWeeks <= 104) {
-    return new Date(base.getTime() + Math.round(inWeeks) * 7 * 864e5).toISOString().slice(0, 10);
-  }
-  if (typeof stated === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(stated)) {
-    const d = new Date(`${stated}T00:00:00Z`);
-    if (!Number.isNaN(d.getTime()) && d.getTime() >= base.getTime()) return stated;
-  }
-  return null;
 }
 
 const json = (body: unknown, status = 200) =>
@@ -412,6 +343,11 @@ Deno.serve(async (req) => {
       ? `Already settled, do not re-fill: ${JSON.stringify(body.known)}`
       : null,
   ].filter(Boolean).join('\n');
+  // CA-D1: this job's own earlier turns and nothing else, in the user turn so the system block stays cached.
+  const history = narrowHistory(body.history);
+  const earlier = history.length
+    ? `Earlier in this conversation:\n${history.map((t) => `${t.role === 'athlete' ? 'Athlete' : 'Holt'}: ${t.text}`).join('\n')}\n\n`
+    : '';
 
   const model = body.model && ALLOWED_MODELS.includes(body.model) ? body.model : MODEL;
 
@@ -434,15 +370,12 @@ Deno.serve(async (req) => {
         // Haiku 4.5 takes neither `effort` (a 400 there) nor the disabled-thinking form; it runs without
         // thinking when the field is absent.
         ...(model === HAIKU ? {} : { thinking: { type: 'disabled' } }),
-        output_config: {
-          ...(model === HAIKU ? {} : { effort: 'low' }),
-          format: { type: 'json_schema', schema: SCHEMA },
-        },
+        ...(model === HAIKU ? {} : { output_config: { effort: 'low' } }),
         system: [
           { type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } },
         ],
         messages: [
-          { role: 'user', content: `${context}\n\nThe athlete typed: "${text}"` },
+          { role: 'user', content: `${context}\n\n${earlier}The athlete typed: "${text}"` },
         ],
       }),
     });
@@ -501,14 +434,12 @@ Deno.serve(async (req) => {
     return json({ route: 'unclear', ...tail });
   }
 
-  let parsed: { route?: string; say?: string | null; patch?: Record<string, unknown> } | null = null;
-  try {
-    const block = (payload?.content ?? []).find((b: { type: string }) => b.type === 'text');
-    parsed = block ? JSON.parse(block.text) : null;
-  } catch {
-    parsed = null;
-  }
-  if (!parsed?.route) return json({ route: 'unclear', ...tail });
+  // Defensive by construction: fences stripped, the first {...} span parsed, and the route checked
+  // against its enum. Anything that fails is `unclear` — Holt asks again rather than acting on junk.
+  const block = (payload?.content ?? []).find((b: { type: string }) => b.type === 'text');
+  const parsed = parseModelJson(block?.text);
+  const route = narrowRoute(parsed?.route);
+  if (!parsed || !route) return json({ route: 'unclear', ...tail });
 
   // ── 4. THE ACUITY OVERRIDE ─────────────────────────────────────────────────
   //
@@ -519,49 +450,31 @@ Deno.serve(async (req) => {
   if (after) return json({ route: after, ...tail });
 
   // Holt's own words, for an answer — trimmed to the brief's length so a runaway reply cannot fill a phone.
-  const said = typeof parsed.say === 'string' && parsed.say.trim() ? parsed.say.trim().slice(0, 700) : null;
+  const said = narrowSay(parsed.say, route === 'patch' ? 200 : 700);
 
-  if (parsed.route === 'answer') {
+  if (route === 'answer') {
     return json(said ? { route: 'answer', say: said, ...tail } : { route: 'unclear', ...tail });
   }
 
-  if (parsed.route !== 'patch') {
-    return json({ route: parsed.route, ...tail });
+  // "Change my program by typing": what the athlete named, in their words, checked field by field. The
+  // device resolves it against the real program (`edit-intent.ts`); an edit with no usable object still
+  // routes, and the app opens the tap flow as it always did.
+  if (route === 'edit') {
+    const edit = narrowEdit(parsed.edit);
+    return json(edit ? { route: 'edit', edit, ...tail } : { route: 'edit', ...tail });
+  }
+
+  if (route !== 'patch') {
+    return json({ route, ...tail });
   }
 
   // ── 5. Narrow the patch to what the engine accepts ─────────────────────────
   //
-  // The schema already constrains shape; this drops nulls and re-nests experience, so the device
-  // receives exactly a `Partial<CoachConstraints>` and never a bag of nulls to filter itself.
-  const p = parsed.patch ?? {};
-  const patch: Record<string, unknown> = {};
-  const put = (k: string, v: unknown) => { if (v !== null && v !== undefined) patch[k] = v; };
-
-  put('goal', p.goal);
-  put('daysPerWeek', p.daysPerWeek);
-  put('sessionMinutes', p.sessionMinutes);
-  put('environment', p.environment);
-  put('raceDate', raceDateFrom(p.raceInWeeks, p.raceDate, today));
-  if (typeof p.weeks === 'number' && p.weeks >= 1) patch.weeks = Math.min(52, Math.round(p.weeks));
-  put('currentWeeklyMi', p.currentWeeklyMi);
-  put('dayFocus', p.dayFocus);
-  // The athlete-authored parts (Coach-AI-Amendment-001 CA-D3, §4). The engine resolves names and reports
-  // anything it could not place — nothing here is invented, only carried.
-  if (Array.isArray(p.focusMuscles) && p.focusMuscles.length) patch.focusMuscles = p.focusMuscles;
-  if (Array.isArray(p.pinned) && p.pinned.length) patch.pinned = p.pinned;
-  if (Array.isArray(p.days) && p.days.length) {
-    patch.days = p.days;
-    patch.daysAsGiven = p.daysAsGiven === true;
-  }
-  // A 1- or 7-day week is the athlete's own call; the engine honours it only when told so (CA-D12).
-  if (typeof p.daysPerWeek === 'number' && (p.daysPerWeek < 2 || p.daysPerWeek > 6)) patch.athleteSetDays = true;
-  if (Array.isArray(p.limitations)) patch.limitations = p.limitations;
-  if (p.experienceLifting || p.experienceRunning) {
-    patch.experience = {
-      ...(p.experienceLifting ? { lifting: p.experienceLifting } : {}),
-      ...(p.experienceRunning ? { running: p.experienceRunning } : {}),
-    };
-  }
+  // The device receives exactly a `Partial<CoachConstraints>`, never a bag of nulls to filter itself.
+  // Every field checked against its enum or range; anything outside is dropped, never repaired. See
+  // `interpret-narrow.ts` — the race date is computed there from a week count, and a 1- or 7-day week is
+  // marked as the athlete's own call (CA-D12).
+  const patch = narrowPatch(parsed.patch, today);
 
   // An empty patch is not a patch. Saying "I didn't catch that" is the honest answer and it is what the
   // local matcher already does when it cannot place an answer.

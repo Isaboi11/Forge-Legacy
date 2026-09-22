@@ -28,7 +28,10 @@ import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/Confirm
 import { HoltMark } from '@/components/forge/HoltMark';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { usePremiumAi } from '@/lib/entitlement';
-import { interpretTyped } from '@/data/coach-interpret-live';
+import { interpretTyped, type EditIntent } from '@/data/coach-interpret-live';
+import { askHolt, askSourcesLive, type AskTurn } from '@/data/coach-ask-live';
+import { buildAskContext } from '@/domain/coach/ask-context';
+import { resolveEditIntent, type EditIntentResolution } from '@/domain/coach/edit-intent';
 import { useDictation } from '@/hooks/useDictation';
 import { launchRowsFor, templateRowsFor } from '@/domain/coach/save-shapes';
 import { saveTemplate } from '@/data/templates-live';
@@ -60,6 +63,7 @@ import {
   TYPING_ENABLED,
   interpret,
   focusFromText,
+  looksLikeQuestion,
   isMedical,
   LEVEL_CHIPS,
   nextQuestion,
@@ -1150,7 +1154,124 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     }
   };
 
+  /* ── a change the athlete typed ────────────────────────────────────────────────────────────────── */
+
+  /** The plan waiting for "Do it", and the question waiting for an answer. Refs: a plan holds a function. */
+  const pendingEdit = useRef<{ programId: string; plan: Extract<EditIntentResolution, { ok: true }>['plan'] } | null>(null);
+  const pendingEditAsk = useRef<{ intent: EditIntent; ask: string } | null>(null);
+
+  /**
+   * Resolve "swap bench for dumbbell press on Monday" against the running program and confirm it.
+   *
+   * `resolveEditIntent` never guesses between two plausible matches — it asks, with the options as chips —
+   * and it applies through `edit-ops`, so every invariant (a trained session is never touched, the session
+   * count never moves) holds exactly as it does in the tapped flow. Nothing saves until they say so.
+   */
+  const editByWords = async (intent: EditIntent) => {
+    setBusy('thinking');
+    const active = await Promise.race([
+      fetchActiveProgram().catch(() => null),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
+    ]);
+    if (!active) {
+      setBusy(null);
+      say({ kind: 'holt', text: pick('no_active_program') }, { kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] });
+      return;
+    }
+    const marks = await fetchProgramSessions(active.id).catch(() => [] as SessionMark[]);
+    setBusy(null);
+    const res = resolveEditIntent(intent, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx() });
+    if (!res.ok) {
+      pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent, ask: res.ask };
+      say(
+        { kind: 'holt', text: res.message },
+        ...(res.ask !== 'not_editable' && res.options.length
+          ? [{ kind: 'chips' as const, chips: res.options.map((o) => ({ label: o, patch: {}, typedEdit: 'answer' as const })) }]
+          : []),
+      );
+      return;
+    }
+    pendingEdit.current = { programId: active.id, plan: res.plan };
+    pendingEditAsk.current = null;
+    say(
+      { kind: 'holt', text: `${res.plan.label}. Want it?` },
+      {
+        kind: 'chips',
+        chips: res.plan.scope
+          ? [
+              { label: 'Do it', patch: {}, typedEdit: 'apply' },
+              { label: 'Leave it', patch: {}, typedEdit: 'cancel' },
+            ]
+          : [
+              { label: 'Just this week', patch: {}, typedEdit: 'this_week' },
+              { label: 'The rest of the block', patch: {}, typedEdit: 'rest_of_block' },
+              { label: 'Leave it', patch: {}, typedEdit: 'cancel' },
+            ],
+      },
+    );
+  };
+
+  const finishTypedEdit = async (chip: Chip) => {
+    if (chip.typedEdit === 'answer') {
+      const p = pendingEditAsk.current;
+      if (!p) return say({ kind: 'holt', text: 'I lost the thread on that one. Tell me the change again.' });
+      const n = Number(chip.label.replace(/[^0-9.]/g, ''));
+      const next: EditIntent =
+        p.ask === 'which_day'
+          ? { ...p.intent, day: chip.label }
+          : p.ask === 'which_exercise'
+            ? { ...p.intent, exercise: chip.label }
+            : p.ask === 'which_replacement'
+              ? { ...p.intent, to: chip.label }
+              : p.intent.op === 'distance'
+                ? { ...p.intent, miles: n }
+                : p.intent.op === 'duration'
+                  ? { ...p.intent, minutes: n }
+                  : p.intent.op === 'reps'
+                    ? { ...p.intent, reps: n }
+                    : { ...p.intent, sets: n };
+      return editByWords(next);
+    }
+    if (chip.typedEdit === 'cancel') {
+      pendingEdit.current = null;
+      return say({ kind: 'holt', text: 'Left it as it was.' });
+    }
+    const pe = pendingEdit.current;
+    if (!pe) return say({ kind: 'holt', text: "That change went stale. Tell me again and I'll set it up." });
+    const scope: EditScope | undefined =
+      chip.typedEdit === 'this_week' ? 'this_week' : chip.typedEdit === 'rest_of_block' ? 'rest_of_block' : undefined;
+    const res = pe.plan.apply(scope);
+    if (!res.ok) {
+      pendingEdit.current = null;
+      return say({ kind: 'holt', text: res.refusal.message });
+    }
+    setBusy('thinking');
+    try {
+      await updateProgram(pe.programId, res.structure);
+      pendingEdit.current = null;
+      say(
+        { kind: 'holt', text: pick('edit_done') },
+        { kind: 'chips', chips: [{ label: 'Change something else', patch: {} }, { label: 'Show me the program', patch: {}, goTo: '/(tabs)' }] },
+      );
+    } catch (e) {
+      say({
+        kind: 'error',
+        text: 'That did not save.',
+        sub: e instanceof Error ? e.message : String(e),
+        action: 'Your program is unchanged. Try again in a moment.',
+      });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+
   const tapChip = (chip: Chip, echo = true) => {
+    if (chip.typedEdit) {
+      if (echo) say({ kind: 'me', text: chip.label });
+      void finishTypedEdit(chip);
+      return;
+    }
     if (chip.label === 'Change the one I have') {
       say({ kind: 'me', text: chip.label });
       handOff();
@@ -1431,11 +1552,83 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
    * get stronger"): it opens a build — a day when the athlete named what to train today — through the same
    * allowance gate the door uses, starting from the athlete's facts, never from the last request.
    */
+  /** The last eight spoken turns, as the two AI jobs take them. */
+  const historyFrom = (t: Turn[]): AskTurn[] =>
+    t
+      .filter((x): x is Extract<Turn, { kind: 'me' | 'holt' }> => (x.kind === 'me' || x.kind === 'holt') && x.text.trim() !== '')
+      .slice(-8)
+      .map((x) => ({ role: x.kind === 'me' ? 'athlete' : 'holt', text: x.text }));
+
+  /**
+   * ══ HOLT ANSWERS, WORD BY WORD (CA-D10, §4.3 streaming) ══
+   *
+   * The reply is ONE Holt turn that grows as the stream arrives (`streaming` until it is complete), so the
+   * first words land in about a second instead of after the whole paragraph. The active program and any
+   * exercise he is asked about travel as context — the coaching records, not his memory.
+   */
+  const askAloud = async (text: string, history: AskTurn[], q: ReturnType<typeof nextQuestion>) => {
+    setBusy('thinking');
+    const active = await Promise.race([
+      fetchActiveProgram().catch(() => null),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
+    ]);
+    const context = buildAskContext(
+      { question: text, history, program: active ? { structure: { ...active.structure, name: active.name } } : null },
+      askSourcesLive(),
+    );
+    let started = false;
+    const r = await askHolt(text, history, context, (acc) => {
+      if (!started) {
+        started = true;
+        setBusy(null);
+        say({ kind: 'holt', text: acc, streaming: true });
+        return;
+      }
+      setThread((t) => {
+        const i = t.length - 1;
+        const last = t[i];
+        return last?.kind === 'holt' && last.streaming ? [...t.slice(0, i), { ...last, text: acc }] : t;
+      });
+    });
+    setBusy(null);
+    setThread((t) => t.map((x) => (x.kind === 'holt' && x.streaming ? { ...x, streaming: undefined } : x)));
+    switch (r.kind) {
+      case 'answer':
+        if (!started) say({ kind: 'holt', text: r.text });
+        /* Asked mid-build: the question on the table comes back. Asked about a program with none open: the
+           door to build one, since the coach-ask prompt has him offer to build it. */
+        if (q) say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+        else if (/\b(program|plan|routine|workout|split)\b/i.test(text)) say({ kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] });
+        return;
+      case 'crisis':
+        return say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
+      case 'urgent':
+        return say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
+      case 'care':
+        return say({ kind: 'stop', text: CARE_STOP, kicker: CARE_KICKER });
+      case 'medical':
+        return say({ kind: 'stop', text: MEDICAL_STOP });
+      case 'out_of_credits':
+        return say({ kind: 'holt', text: pick('allowance_program') });
+      case 'offline':
+        return say({
+          kind: 'error',
+          text: started ? 'I lost the line partway through.' : "I couldn't reach my notes just then.",
+          sub: 'The connection dropped before I finished.',
+          action: 'Ask me again in a moment.',
+        });
+    }
+  };
+
   const understand = async (text: string) => {
     const m: ChatMode = mode ?? 'program';
     const q = mode ? nextQuestion(constraints, m) : null;
+    /* This conversation's own recent words (CA-D1) — the current message is not in `thread` yet. */
+    const history = historyFrom(thread);
+    /* A question streams from coach-ask in Holt's words; everything else is parsed for the engine. */
+    if (looksLikeQuestion(text)) return askAloud(text, history, q);
     setBusy('thinking');
-    const r = await interpretTyped(text, q, m === 'day' ? 'day' : 'program', constraints);
+    const r = await interpretTyped(text, q, m === 'day' ? 'day' : 'program', constraints, history);
     setBusy(null);
     switch (r.kind) {
       case 'crisis':
@@ -1468,6 +1661,9 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
       /* A door the app already has. Opened exactly as the matching opener chip opens it, minus the echo —
          the athlete's own sentence is already in the thread. */
       case 'door':
+        /* "Swap bench for dumbbell press on Monday" carries the change itself — resolve and confirm it
+           rather than walking them through five taps to say what they already said. */
+        if (r.to === 'edit' && r.edit) return editByWords(r.edit);
         return tapChip(
           { label: r.to === 'edit' ? 'Change my program' : r.to === 'import' ? "I've got a program already" : 'Which one should I pick?', patch: {} },
           false,

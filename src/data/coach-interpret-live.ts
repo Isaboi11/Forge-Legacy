@@ -3,6 +3,9 @@ import type { CoachConstraints } from '@/domain/coach/constraints';
 import type { Question } from '@/domain/coach/chat-core';
 import { interpret as interpretLocally } from '@/domain/coach/chat-core';
 import { medicalRoute } from '@/domain/coach/medical-routing';
+import { narrowEdit, type EditIntent, type HistoryTurn } from '@/domain/coach/interpret-narrow';
+
+export type { EditIntent, HistoryTurn };
 
 /**
  * THE ONE PLACE THE APP TALKS TO A MODEL.
@@ -40,8 +43,13 @@ export type InterpretResult =
   /** Self-harm, an emergency now, or disordered eating. The caller shows CRISIS_ / URGENT_ / CARE_STOP. */
   /** A question or a remark, answered in Holt's voice. Words only — never training on a card. */
   | { kind: 'answer'; text: string; remaining: number | null }
-  /** They asked for a door the app already has: change the running program, import one, or pick one. */
-  | { kind: 'door'; to: 'edit' | 'import' | 'pick' }
+  /**
+   * They asked for a door the app already has: change the running program, import one, or pick one.
+   * An edit the model could read carries it (`edit`, the athlete's own words) — resolve it with
+   * `resolveEditIntent` in `domain/coach/edit-intent.ts`. Without it, open the tap flow.
+   */
+  | { kind: 'door'; to: 'edit'; edit?: EditIntent }
+  | { kind: 'door'; to: 'import' | 'pick' }
   | { kind: 'crisis' }
   | { kind: 'urgent' }
   | { kind: 'care' }
@@ -65,6 +73,8 @@ export async function interpretTyped(
   question: Question | null,
   mode: 'program' | 'day' = 'program',
   known: Known = {},
+  /** This job's earlier turns (CA-D1), so a follow-up resolves. The function keeps the last six. */
+  history: readonly HistoryTurn[] = [],
 ): Promise<InterpretResult> {
   const trimmed = text.trim();
   if (!trimmed) return { kind: 'unclear' };
@@ -91,6 +101,7 @@ export async function interpretTyped(
         chips: question?.chips.map((c) => c.label) ?? [],
         mode,
         known,
+        ...(history.length ? { history: history.slice(-6) } : {}),
       },
     });
 
@@ -118,7 +129,11 @@ export async function interpretTyped(
         if (!d.say) return { kind: 'unclear' };
         return { kind: 'answer', text: d.say, remaining: typeof d.remaining === 'number' ? d.remaining : null };
       }
-      case 'edit':
+      case 'edit': {
+        // Narrowed again on this side: a stale or future function must not hand the resolver junk.
+        const edit = narrowEdit((data as { edit?: unknown }).edit);
+        return edit ? { kind: 'door', to: 'edit', edit } : { kind: 'door', to: 'edit' };
+      }
       case 'import':
       case 'pick':
         return { kind: 'door', to: route };
