@@ -225,73 +225,67 @@ const FOCUS_MUSCLES = [
  * Optional-in-spirit fields are expressed as nullable rather than absent, because the schema language
  * has no "sometimes".
  */
-/**
- * A field that may be null. `anyOf` with a `null` branch, not `type: [x, 'null']` + an enum holding
- * `null` — the first deploy (2026-09-21) returned `upstream_error` on every call with the type-array form,
- * while program-photo-read (same key, model and settings, no schema) answered. `anyOf` is the documented
- * shape for structured outputs.
- */
-const orNull = (s: Record<string, unknown>) => ({ anyOf: [s, { type: 'null' }] });
 
+/*
+ * ⚠ OPTIONAL, NOT NULLABLE (2026-09-21, second rewrite). The first cut made every field required-but-
+ * nullable (`orNull` → an `anyOf` per field). That worked at 13 unions and failed EVERY call at 23, once the
+ * athlete-authored fields arrived — program-photo-read, on the same key, kept answering, so it was this
+ * schema. Fields the athlete did not give are now simply absent: no unions at all, and the narrowing below
+ * already treats absent and null alike.
+ */
 const SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['route', 'patch', 'say'],
+  required: ['route'],
   properties: {
     route: { type: 'string', enum: ['patch', 'answer', 'edit', 'import', 'pick', 'medical_stop', 'unclear', 'crisis', 'urgent', 'care'] },
-    say: orNull({ type: 'string', description: 'At most one short sentence, or null.' }),
+    say: { type: 'string', description: 'patch: one short sentence. answer: Holt\'s reply. Otherwise omit.' },
     patch: {
       type: 'object',
       additionalProperties: false,
-      required: [
-        'goal', 'daysPerWeek', 'sessionMinutes', 'environment',
-        'experienceLifting', 'experienceRunning', 'limitations', 'raceDate', 'raceInWeeks', 'weeks',
-        'focusMuscles', 'pinned', 'days', 'daysAsGiven',
-        'currentWeeklyMi', 'dayFocus',
-      ],
       properties: {
-        goal: orNull({ type: 'string', enum: GOALS }),
-        daysPerWeek: orNull({ type: 'integer' }),
-        sessionMinutes: orNull({ type: 'integer', enum: [30, 45, 60, 75] }),
-        environment: orNull({ type: 'string', enum: ['full_gym', 'home', 'bodyweight', 'outdoor'] }),
-        experienceLifting: orNull({ type: 'string', enum: EXPERIENCE }),
-        experienceRunning: orNull({ type: 'string', enum: EXPERIENCE }),
-        limitations: orNull({ type: 'array', items: { type: 'string', enum: LIMITATIONS } }),
-        raceDate: orNull({ type: 'string' }),
-        currentWeeklyMi: orNull({ type: 'number' }),
-        dayFocus: orNull({ type: 'string' }),
-        raceInWeeks: orNull({ type: 'integer' }),
-        focusMuscles: orNull({ type: 'array', items: { type: 'string', enum: FOCUS_MUSCLES } }),
-        pinned: orNull({
+        goal: { type: 'string', enum: GOALS },
+        daysPerWeek: { type: 'integer' },
+        sessionMinutes: { type: 'integer', enum: [30, 45, 60, 75] },
+        environment: { type: 'string', enum: ['full_gym', 'home', 'bodyweight', 'outdoor'] },
+        experienceLifting: { type: 'string', enum: EXPERIENCE },
+        experienceRunning: { type: 'string', enum: EXPERIENCE },
+        limitations: { type: 'array', items: { type: 'string', enum: LIMITATIONS } },
+        raceDate: { type: 'string' },
+        raceInWeeks: { type: 'integer' },
+        weeks: { type: 'integer' },
+        currentWeeklyMi: { type: 'number' },
+        dayFocus: { type: 'string' },
+        focusMuscles: { type: 'array', items: { type: 'string', enum: FOCUS_MUSCLES } },
+        pinned: {
           type: 'array',
           items: {
             type: 'object',
             additionalProperties: false,
-            required: ['name', 'day', 'sets', 'reps'],
+            required: ['name'],
             properties: {
               name: { type: 'string' },
-              day: orNull({ type: 'integer' }),
-              sets: orNull({ type: 'integer' }),
-              reps: orNull({ type: 'integer' }),
+              day: { type: 'integer' },
+              sets: { type: 'integer' },
+              reps: { type: 'integer' },
             },
           },
-        }),
-        days: orNull({
+        },
+        days: {
           type: 'array',
           items: {
             type: 'object',
             additionalProperties: false,
-            required: ['kind', 'focus', 'runMi', 'runMin'],
+            required: ['kind'],
             properties: {
               kind: { type: 'string', enum: ['run', 'lift', 'rest', 'cardio'] },
-              focus: orNull({ type: 'string' }),
-              runMi: orNull({ type: 'number' }),
-              runMin: orNull({ type: 'integer' }),
+              focus: { type: 'string' },
+              runMi: { type: 'number' },
+              runMin: { type: 'integer' },
             },
           },
-        }),
-        daysAsGiven: orNull({ type: 'boolean' }),
-        weeks: orNull({ type: 'integer' }),
+        },
+        daysAsGiven: { type: 'boolean' },
       },
     },
   },
@@ -458,7 +452,8 @@ Deno.serve(async (req) => {
 
   if (!response.ok) {
     // The reason goes to the function's own log (dashboard → Edge Functions → Logs), never to the client.
-    console.error('anthropic', response.status, (await response.text().catch(() => '')).slice(0, 800));
+    const upstream = (await response.text().catch(() => '')).slice(0, 800);
+    console.error('anthropic', response.status, upstream);
     // Record the failed attempt so the 60-day run does not under-count what the product actually costs
     // to operate. Credits already reserved stay spent — see the refund note below.
     await supabase.rpc('coach_ai_record_usage', {
@@ -467,7 +462,9 @@ Deno.serve(async (req) => {
       p_cache_read_input_tokens: 0, p_cache_creation_input_tokens: 0,
       p_uncharged: true,
     });
-    return json({ route: 'error', reason: 'upstream_error' }, 503);
+    // The upstream's own words (its error type and message, never our key or prompt), so a rejected request
+    // explains itself to whoever is testing instead of reading as a bare outage.
+    return json({ route: 'error', reason: 'upstream_error', status: response.status, detail: upstream.slice(0, 300) }, 503);
   }
 
   const payload = await response.json();

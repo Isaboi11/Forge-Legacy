@@ -1971,7 +1971,9 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
             placeholderTextColor={flColor.gray600}
             style={[styles.input, draft.trim() ? styles.inputTyping : null]}
             multiline
-            maxLength={280}
+            /* 280 cut off the detailed requests — a fifth of what real people type is a paragraph (stress test
+               2026-09-21). coach-interpret accepts 2,000; 1,000 keeps a paste from becoming an essay. */
+            maxLength={1000}
             onSubmitEditing={send}
             accessibilityLabel="Message Holt"
           />
