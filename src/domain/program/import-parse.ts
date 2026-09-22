@@ -1084,6 +1084,12 @@ function findHeaderRow(lines: string[], delimiter: '\t' | ';' | ',') {
 
 export function parseProgramTable(raw: string): ParseResult {
   let lines = raw
+    /*
+     * A NON-BREAKING SPACE IS NOT A SPACE, and a paste out of Word, Pages or iOS Notes is full of them.
+     * They are invisible, so "Day 1" and "Day 1" look identical and behave differently everywhere — the
+     * day's name, the catalogue match, every regex in this file. Normalised once, on the way in.
+     */
+    .replace(/ /g, ' ')
     .split(/\r?\n/)
     .map((l) => l.trimEnd())
     .filter((l) => l.trim().length > 0);
@@ -1187,7 +1193,7 @@ export function parseProgramTable(raw: string): ParseResult {
     const labels = new Set<string>();
     for (const line of lines.slice(headerAt + 1)) {
       const d = (splitLine(line, delimiter)[at.day] ?? '').trim();
-      if (d && !(COLUMNS.day as readonly string[]).includes(d.toLowerCase().replace(/[^a-z]/g, ''))) labels.add(d);
+      if (d && !(COLUMNS.day as readonly string[]).includes(d.trim().toLowerCase())) labels.add(d);
     }
     if (labels.size < 2) return null;
     const parts = [...labels].flatMap((l) => {
@@ -1225,7 +1231,7 @@ export function parseProgramTable(raw: string): ParseResult {
       const d = (cells[at.day] ?? '').trim();
       const name = cleanExerciseName((cells[at.exercise!] ?? '').trim());
       // The header row, come round again for the next block — not a day.
-      if (!d || (COLUMNS.day as readonly string[]).includes(d.toLowerCase().replace(/[^a-z]/g, ''))) continue;
+      if (!d || (COLUMNS.day as readonly string[]).includes(d.trim().toLowerCase())) continue;
       const last = runs[runs.length - 1];
       if (last && last.day === d) {
         if (name) last.names.add(name.toLowerCase());

@@ -122,6 +122,9 @@ const INNER_DEBRIS = /\s*[-–—:|,]\s*(?=[-–—:|,]|$)/g;
  * "▪️ Deadlifts" out of an Instagram caption. None of them is part of what the exercise is CALLED, and
  * the line they came from is kept whole as the item's note, so stripping them loses nothing.
  */
+/** A non-breaking space — what a paste out of Word, Pages or iOS Notes is full of. */
+const NBSP = / /g;
+
 /** Markdown emphasis — a chat answer bolds every name. */
 const MARKDOWN = /\*\*|__|^#+\s+/g;
 /** A name wrapped in quotes, straight or smart. */
@@ -158,6 +161,8 @@ export function hasQualifier(line: string): boolean {
 /** Strip decoration, a trailing load and dangling separators — what the exercise is actually called. */
 export function cleanExerciseName(raw: string): string {
   return raw
+    // A non-breaking space is what Word and iOS paste; invisible, and not the same character.
+    .replace(NBSP, ' ')
     .replace(MARKDOWN, '')
     .replace(EMOJI_EDGES, '')
     .replace(LEADING_DECORATION, '')
@@ -537,6 +542,7 @@ export function dayHeadingRow(cells: readonly string[]): string | null {
 export function cleanDayName(line: string): string {
   return (
     line
+      .replace(NBSP, ' ')
       .trim()
       // "**Day 1: Upper Body**" out of a chat answer.
       .replace(/\*\*|__/g, '')
