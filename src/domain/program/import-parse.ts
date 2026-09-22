@@ -608,6 +608,9 @@ function dayLabelKey(label: string): string {
   return weekdayKey(t) ?? '';
 }
 
+/** What a day gets called when it is written out muscle by muscle — see `dayPrefix`. */
+const BODY_PART = /^(?:chest|back|shoulders?|delts?|arms?|biceps?|triceps?|forearms?|legs?|quads?|hamstrings?|glutes?|calves|calf|abs|abdominals|core|traps?|upper|lower|push|pull)(?:\s*(?:&|\+|and|\/)\s*\w+)*$/i;
+
 /** A section inside a day, named on a row of its own in a table — never an exercise. */
 const SECTION_WORD = /^(?:abs|abdominals|core|warm\s*-?\s*ups?|cool\s*-?\s*downs?|accessor(?:y|ies)|finishers?|conditioning|mobility|stretching|cardio)$/i;
 
@@ -1169,6 +1172,29 @@ export function parseProgramTable(raw: string): ParseResult {
    */
   const daysThisWeek = new Set<string>();
   /*
+   * "Push Day - Chest", "Push Day - Shoulders", "Push Day - Triceps" — ONE day, written out by muscle.
+   * A handwritten push day came through as three days (PO's photo, 2026-09-22). Collapsed only when
+   * EVERY day label shares the same prefix and every suffix is a body part; "Day 1 - Chest + Back" and
+   * "Day 2 - Shoulders + Arms" have different prefixes and stay two days, as they should.
+   */
+  const dayPrefix = (() => {
+    if (at.day === undefined) return null;
+    const labels = new Set<string>();
+    for (const line of lines.slice(headerAt + 1)) {
+      const d = (splitLine(line, delimiter)[at.day] ?? '').trim();
+      if (d && !(COLUMNS.day as readonly string[]).includes(d.toLowerCase().replace(/[^a-z]/g, ''))) labels.add(d);
+    }
+    if (labels.size < 2) return null;
+    const parts = [...labels].flatMap((l) => {
+      const m = l.match(/^(.+?)\s*[-–—:]\s*(.+)$/);
+      return m ? [{ prefix: m[1].trim(), suffix: m[2].trim() }] : [];
+    });
+    if (parts.length !== labels.size) return null;
+    const prefix = parts[0].prefix;
+    if (!parts.every((x) => x.prefix === prefix && BODY_PART.test(x.suffix))) return null;
+    return prefix;
+  })();
+  /*
    * ⚠ ONLY WHEN THE WHOLE WEEK REPEATS. A single stray row — "Push / Pull / Push: Dips", the author
    * adding a lift they forgot — is the same day, and has always merged. A printed-again week is every
    * day coming back as a block, the same number of times each. So the Day column's RUNS are counted
@@ -1270,7 +1296,7 @@ export function parseProgramTable(raw: string): ParseResult {
       daysThisWeek.clear();
     }
 
-    const dayCell = at.day !== undefined ? (cells[at.day] ?? '').trim() : '';
+    const dayCell = dayPrefix ?? (at.day !== undefined ? (cells[at.day] ?? '').trim() : '');
     if (dayCell && dayCell !== day) {
       // Only when the sheet has no Week column to say so itself.
       if (repeatsAsWeeks && daysThisWeek.has(dayCell)) {
@@ -1301,6 +1327,19 @@ export function parseProgramTable(raw: string): ParseResult {
       if (inSets.sets != null && inSets.reps != null) {
         sets = inSets.sets;
         reps = inSets.reps;
+      }
+    }
+    /*
+     * …or in the REPS cell, with Sets left empty — "Hip Thrusts | | 3x10". Read a number at a time that
+     * was THREE REPS of a hip thrust, and the sets were then filled in as an assumed 3 (a five-day plan
+     * imported entirely as 3 × 3, PO's photo 2026-09-22).
+     */
+    if (sets == null && repsText) {
+      const inReps = extractScheme(repsText).scheme;
+      if (inReps.sets != null) {
+        sets = inReps.sets;
+        // "3x failure" states the sets and leaves the reps to the day — shown as an assumption, not as 3.
+        reps = inReps.reps;
       }
     }
 
