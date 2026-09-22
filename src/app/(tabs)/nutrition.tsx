@@ -28,7 +28,7 @@ import {
 import { copyMealFrom, fetchDay, mealHasFood } from '@/data/nutrition-live';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 import { useToast } from '@/hooks/useCeremony';
-import { useTier } from '@/lib/entitlement';
+import { useEntitlementState, useNutritionAccess, useTier } from '@/lib/entitlement';
 import { useProfile } from '@/lib/profile';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { useQuery } from '@/lib/useQuery';
@@ -68,6 +68,11 @@ export default function NutritionScreen() {
   const { showToast } = useToast();
   const tier = useTier();
   const { profile } = useProfile();
+  /* 0206 — the preview allowlist. The TAB is hidden for everyone else, but `/nutrition` is still a real
+     route, so a typed URL or a stale deep link lands here. Read alongside `status` so the two accounts
+     that DO have access never see the refusal flash while entitlement is still loading. */
+  const mayUseNutrition = useNutritionAccess();
+  const { status: entitlementStatus } = useEntitlementState();
   useEarnedMoments();
 
   /* The day being read. Minted once per mount from the device clock, then moved only by the arrows —
@@ -104,6 +109,41 @@ export default function NutritionScreen() {
     setReloads((n) => n + 1);
     showToast(`Copied ${copied.length} ${copied.length === 1 ? 'item' : 'items'}`);
   };
+
+  /*
+   * ══ 0206 — NOT ON THE PREVIEW ALLOWLIST ══
+   *
+   * Every hook above has already run, so this early return cannot change hook order. It is placed after
+   * them deliberately rather than at the top of the component.
+   *
+   * ⚠ This is a COURTESY, not the gate: 0206 puts the allowlist inside the RLS of all seven nutrition
+   * tables, so without it `fetchDay` returns nothing and every write is refused. What this avoids is a
+   * chromed, permanently-empty food diary that reads as a bug rather than as a closed door.
+   *
+   * While entitlement is still loading nothing is said either way — claiming "not available" to the PO
+   * for a few hundred milliseconds would be a lie with a short shelf life.
+   */
+  if (!mayUseNutrition) {
+    return (
+      <View style={styles.screen}>
+        <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.22)' }} />
+        <AppBar
+          title="Nutrition"
+          transparent
+          avatar={<Avatar name={profile?.name ?? ''} src={profile?.avatarUrl ?? undefined} size="appBar" />}
+        />
+        {entitlementStatus === 'ready' ? (
+          <View style={styles.previewGate}>
+            <Text style={styles.previewTitle}>Not open yet</Text>
+            <Text style={styles.previewBody}>
+              Nutrition is still being built. It will arrive as part of Forge when it is finished — nothing to
+              sign up for.
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.screen}>
@@ -402,6 +442,11 @@ const CalendarGlyph = () => (
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: flColor.base },
+  /* 0206 — the preview refusal. Role tokens only, so Alabaster gets it for free: the compiler catches
+     colour but not layout, and a hardcoded cream here would be invisible on the light ground. */
+  previewGate: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36, gap: 10 },
+  previewTitle: { fontFamily: flFont.display, fontSize: 23, color: flColor.cream100, letterSpacing: -0.2 },
+  previewBody: { fontSize: 14, lineHeight: 21, color: flColor.gray400, textAlign: 'center' },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 2 },
   barAction: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },

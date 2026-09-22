@@ -37,6 +37,7 @@ nutrition scope (`Coach-Chat-Design-Brief-v1.0` §201 lists nutrition as an "I d
 | **NUT-D6** | **Allergens are hard constraints**, and only Forge-tagged recipes can guarantee them. Generated plans draw **only** from the Forge recipe library (and the athlete's own recipes, which they tag). Unknown allergen status counts as excluded. |
 | **NUT-D7** | **Nutrition is private by schema.** Owner-only RLS on every nutrition table, no visibility setting to get wrong, meal photos in a **new private bucket** (never the public photo buckets). Nothing reaches a squad unless the athlete posts it, and a post never carries calories, weight, targets or adherence. |
 | **NUT-D8** | **V1 does not upsell.** Free athletes simply don't see Premium nutrition surfaces (Meal Plan, Grocery List) on Nutrition Home — no locked tiles, no new paywall moment. MA6-D9's two paywall moments stand. How Free athletes discover planning is decided later, from use. |
+| **NUT-D9** | **Phase 1 ships behind a PREVIEW ALLOWLIST** *(added 2026-09-22, PO: “it's not done yet so I don't want people using it. Me and the claudetest account.”)*. Migration `0206` adds `nutrition_preview` — an allowlist table with RLS on and **zero policies**, same posture as `app_admins` — and `has_nutrition_access()` is consulted by **all 17** nutrition RLS policies and by the `food-search` Edge Function (403). The tab is hidden for everyone else and `/nutrition` shows a closed door. ⚠ **Deliberately NOT an `athlete_entitlement` column and NOT `app_admins`**: `coach_ai` has a self-serve setter (0203 §4) which is the opposite of what was asked, and “may preview an unfinished feature” is not “may read every athlete's metrics”. There is no self-serve grant — the roster is written by hand in the SQL editor. Seeded: `isaiahaltamirano@gmail.com`, `claudetest@test.com`. **Lift the gate (not the table) when Nutrition ships publicly.** |
 
 ---
 
@@ -253,3 +254,4 @@ history view); model-written weeks; paid search-as-you-type; any model call outs
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-09-21 | Written from the Feasibility Review; NUT-D1…D8 locked by the PO the same day. |
+| 1.1 | 2026-09-22 | **NUT-D9** — Phase 1 is a preview behind an allowlist (`0206`); the PO and `claudetest` only. No other decision changed. |
