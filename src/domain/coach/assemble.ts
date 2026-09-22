@@ -78,7 +78,17 @@ import {
   type DaySkeleton,
 } from './rulebook/skeletons.ts';
 import { bandFor, deloadSets, deloadWeeks, GOAL_CATEGORY, type PasCategory } from './rulebook/volume.ts';
-import { assembleEndurance, buildRunDay, pacesFrom, type EnduranceConcern } from './rulebook/endurance.ts';
+import {
+  assembleEndurance,
+  buildRunDay,
+  enduranceBlock,
+  enduranceConcernOf,
+  pacesFor,
+  type EnduranceConcern,
+  type EnduranceOpts,
+  type SessionRole,
+  type TrainingPaces,
+} from './rulebook/endurance.ts';
 import { cueFor } from './rulebook/cues.ts';
 import {
   FOCUS_EXTRA_SETS,
@@ -99,9 +109,20 @@ import {
   DEFAULT_RUN_MIN,
   DELOAD_RUN_MULTIPLIER,
   INTERFERENCE_COST,
+  INTERFERENCE_RULES,
   isLowerHeavy,
+  liftDaysAtPeak,
   liftGoalFor,
+  liftLoadOf,
   LONG_SHARE_BY_RUNS,
+  MIN_ENDURANCE_DAYS,
+  MIN_RACE_RUN_DAYS,
+  RACE_LIFT_GOAL,
+  RACE_WEEK_LIFT,
+  RUN_DEMAND,
+  TRI_LIFT_DAYS_MAX,
+  type LiftLoad,
+  type RunDemand,
 } from './rulebook/hybrid.ts';
 import { aliasKey, resolveAgainstCatalog } from '../exercise-picker/aliases.ts';
 
@@ -169,6 +190,15 @@ export interface Assembly {
    * athlete's own long run, a week with no rest day, a clamp, a held pin. Never a refusal.
    */
   concerns?: string[];
+  /**
+   * The seven days of the week as Holt laid them out, rest days included — a race build that keeps lifting
+   * and nothing else (`assembleRaceAndLift`).
+   *
+   * ⚠ THE REST DAYS ARE THE POINT. `structure` holds sessions and a program has no rest rows, so the one
+   * thing that actually separates a leg day from the long run — the day off between them — is invisible
+   * there. This is the only place it survives, for a surface that wants to say "Monday lift, Tuesday run".
+   */
+  weekShape?: readonly ('run' | 'lift' | 'rest')[];
 }
 
 export interface PinHeld {
@@ -585,11 +615,24 @@ export function assemble(
    * decides what the LIFT days are for. It goes before the refusals because the one refusal that could
    * fire here (a race goal with running ruled out) is about a race build, and a run-and-lift week is not
    * one: its runs meet the limitation on their own terms, day by day, in `assembleHybrid`.
+   *
+   * ⚠ UNLESS THERE IS A RACE DATE ON IT, and then it is BOTH. `CONCERN.hybridNotRace` has always said
+   * *"if there's a race, give me the date and I'll build to it"* — so a `days` week with a date is a race
+   * block whose week the athlete laid out, and it goes to `assembleRaceAndLift` with their order intact.
    */
+  const ordered = raceOrderFrom(c);
+  if (ordered) return assembleRaceAndLift(c, pool, canDo, ordered);
   if (c.days && c.days.length > 0) return assembleHybrid(c, pool, canDo);
 
   const refusal = refusalFor(c);
   if (refusal) return { ok: false, refusal };
+
+  /* ══ A RACE THAT KEEPS LIFTING ══ "Half marathon in November, also lift 3x" is one block, not two: the
+     run days are the race plan's own and the rest are the strength rulebook's. `liftDays: 0` or absent is
+     the pure race plan, unchanged. */
+  if (isEnduranceGoal(c.goal) && isCount(c.liftDays) && c.liftDays > 0) {
+    return assembleRaceAndLift(c, pool, canDo, null);
+  }
 
   /*
    * ══ THE ONE FAMILY BRANCH ══
@@ -801,7 +844,12 @@ function planLifts(
   };
 }
 
-/** Lift day `i` of the plan, for one week. */
+/**
+ * Lift day `i` of the plan, for one week.
+ *
+ * `over` is how one week asks for a different day than the block's — race week's short upper session
+ * (`RACE_WEEK_LIFT`), and nothing else so far. Absent is the plan's own day, exactly as before.
+ */
 function liftDay(
   plan: LiftPlan,
   i: number,
@@ -810,11 +858,12 @@ function liftDay(
   pool: readonly CatalogExercise[],
   c: CoachConstraints,
   notes: AssemblyNote[],
+  over?: { skeleton?: DaySkeleton; maxExercises?: number },
 ): ProgramDay {
   const isDeload = plan.deloads.includes(weekIndex);
   const band = bandFor(plan.category, isDeload);
-  const budget = Math.min(exerciseBudget(c.sessionMinutes), band.maxExercises);
-  return buildDay(plan.variants[i], letter, pool, plan.baseCtx, {
+  const budget = Math.min(exerciseBudget(c.sessionMinutes), band.maxExercises, over?.maxExercises ?? Infinity);
+  return buildDay(over?.skeleton ?? plan.variants[i], letter, pool, plan.baseCtx, {
     category: plan.category,
     goal: plan.goal,
     experience: c.experience,
@@ -1096,9 +1145,442 @@ function withUnplacedPins(res: AssembleResult, c: CoachConstraints, pool: readon
   const pins = placePins(c, pool, () => true, [], ctx, [], () => null, concerns);
   return {
     ok: true,
-    assembly: { ...res.assembly, unresolved: pins.unresolved, held: pins.held, chosen: pins.chosen, concerns },
+    assembly: {
+      ...res.assembly,
+      unresolved: pins.unresolved,
+      held: pins.held,
+      chosen: pins.chosen,
+      // ⚠ ADDED TO, NOT REPLACING. The race plan may already carry one (a target time's, `goalTime`), and
+      // assigning over it would drop a sentence the athlete is owed.
+      concerns: [...new Set([...(res.assembly.concerns ?? []), ...concerns])],
+    },
   };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// A RACE THAT KEEPS LIFTING — one block, two rulebooks
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * ══ "STRONG AND RUN A SUB-25 5K" IS ONE PLAN ══
+ *
+ * The corpus asks for both halves in one sentence — *"marathons and bench 3 plates"*, *"half marathon in
+ * Nov, also lift 3x"* — and the engine used to answer with one half or the other: a race goal built a
+ * running-only block, and a `days` week built easy runs with no race progression in them at all. Only 5 of
+ * 18 casual hybrids landed in the live run.
+ *
+ * Nothing here is a third rulebook. The running days ARE `endurance.ts`'s days, off the same volume curve,
+ * with the same phases, the same taper and the same race week (`enduranceBlock`). The lifting days ARE the
+ * strength rulebook's, through the same `planLifts` and `buildDay` a pure strength block uses, so the goal,
+ * the focus, the pins, the limitations and the room all apply without a second copy of any of them. What is
+ * new is two decisions and nothing else:
+ *
+ *   1. HOW MANY of each the week holds — `splitRaceWeek`, off two tables.
+ *   2. WHICH ORDER they sit in — `arrangeRaceWeek`, off `INTERFERENCE_RULES`, unless the athlete fixed it.
+ */
+
+/** One day of the week beside a race: which rulebook fills it, or nothing. */
+type RaceSlot = 'run' | 'lift' | 'rest';
+
+/** The week the athlete laid out themselves — a `days` week with a race date on it. */
+interface GivenOrder {
+  slots: RaceSlot[];
+  asGiven: boolean;
+}
+
+const WEEK_DAYS = 7;
+
+/** Rest to the end of the calendar week, so "the day after" wraps across a real Sunday and not a list. */
+const padWeek = (slots: readonly RaceSlot[]): RaceSlot[] => [
+  ...slots.slice(0, WEEK_DAYS),
+  ...Array.from({ length: Math.max(0, WEEK_DAYS - slots.length) }, (): RaceSlot => 'rest'),
+];
+
+/**
+ * Is this a race block whose week the athlete already laid out?
+ *
+ * A `days` week plus a race date, which is exactly what `CONCERN.hybridNotRace` has always offered to
+ * build. Below two running days it is not a race block whatever the date says — one run a week cannot
+ * carry a progression — and `CONCERN.raceNeedsTwoRuns` says so instead of quietly building one.
+ */
+function raceOrderFrom(c: CoachConstraints): GivenOrder | null {
+  const week = c.days ?? [];
+  if (week.length === 0 || !isEnduranceGoal(c.goal) || !c.raceDate) return null;
+  const slots: RaceSlot[] = week.map((d) => (d.kind === 'rest' ? 'rest' : d.kind === 'lift' ? 'lift' : 'run'));
+  if (slots.filter((s) => s === 'run').length < MIN_ENDURANCE_DAYS) return null;
+  return { slots: padWeek(slots), asGiven: c.daysAsGiven === true };
+}
+
+/**
+ * How the week divides between the race and the barbell.
+ *
+ * Two tables and a floor, and every one of them can only ever take lifting days AWAY — the running days
+ * are what the race needs, and a race build that quietly ran less because the athlete also wanted to lift
+ * would be the coach answering a question nobody asked.
+ */
+function splitRaceWeek(opts: { goal: Goal; week: number; asked: number; peakMi: number }): { runDays: number; liftDays: number } {
+  const byLoad = opts.goal === 'triathlon' ? TRI_LIFT_DAYS_MAX : liftDaysAtPeak(opts.peakMi);
+  const floor = Math.max(
+    MIN_ENDURANCE_DAYS,
+    Math.min(MIN_RACE_RUN_DAYS[opts.goal] ?? MIN_ENDURANCE_DAYS, opts.week - 1),
+  );
+  const lift = Math.max(0, Math.min(opts.asked, byLoad, opts.week - floor));
+  const runDays = Math.max(MIN_ENDURANCE_DAYS, opts.week - lift);
+  return { runDays, liftDays: Math.max(0, opts.week - runDays) };
+}
+
+/** Which session sits in each slot of the week, once the rest days are taken out. */
+type RaceSession = { kind: 'run'; at: number } | { kind: 'lift'; at: number };
+
+const sessionsIn = (slots: readonly RaceSlot[]): RaceSession[] => {
+  let run = 0;
+  let lift = 0;
+  return slots
+    .filter((s) => s !== 'rest')
+    .map((s): RaceSession => (s === 'run' ? { kind: 'run', at: run++ } : { kind: 'lift', at: lift++ }));
+};
+
+/**
+ * The session on each of the seven days, rest days included as gaps.
+ *
+ * ⚠ ADJACENCY IS CALENDAR DAYS, NOT SESSION ORDER. Reading the sessions as a list makes a rest day
+ * invisible, which is the one thing that actually separates a leg day from a long run.
+ */
+function byDay(slots: readonly RaceSlot[]): (RaceSession | null)[] {
+  const sessions = sessionsIn(slots);
+  let k = 0;
+  return slots.map((s) => (s === 'rest' ? null : (sessions[k++] ?? null)));
+}
+
+/** A rule that stands in the week as laid out, with the lift day it is about. */
+interface Interference {
+  rule: (typeof INTERFERENCE_RULES)[number];
+  liftDay: string;
+}
+
+/**
+ * The first interference rule the week breaks — one sentence's worth, in the table's own priority order.
+ *
+ * Read cyclically: the week repeats, so Sunday is the day before Monday, and a rest day between a leg day
+ * and a long run is the cheapest fix there is.
+ */
+function firstInterference(
+  slots: readonly RaceSlot[],
+  demands: readonly RunDemand[],
+  loads: readonly LiftLoad[],
+  names: readonly string[],
+): Interference | null {
+  const atDay = byDay(slots);
+  for (const rule of INTERFERENCE_RULES) {
+    for (let i = 0; i < atDay.length; i += 1) {
+      const a = atDay[i];
+      const b = atDay[(i + 1) % atDay.length];
+      if (!a || !b) continue;
+      const lift = rule.where === 'day_before' ? a : b;
+      const run = rule.where === 'day_before' ? b : a;
+      if (lift.kind !== 'lift' || run.kind !== 'run') continue;
+      if (demands[run.at] !== rule.of || !rule.forbids.includes(loads[lift.at] ?? 'upper')) continue;
+      return { rule, liftDay: names[lift.at] ?? 'That lift day' };
+    }
+  }
+  return null;
+}
+
+/** Every way to choose `k` of `n` positions, in lexicographic order — so the arrangement is stable. */
+function choose(n: number, k: number): number[][] {
+  if (k <= 0) return [[]];
+  const out: number[][] = [];
+  const walk = (start: number, taken: number[]): void => {
+    if (taken.length === k) {
+      out.push([...taken]);
+      return;
+    }
+    for (let i = start; i <= n - (k - taken.length); i += 1) {
+      taken.push(i);
+      walk(i + 1, taken);
+      taken.pop();
+    }
+  };
+  walk(0, []);
+  return out;
+}
+
+/**
+ * The order Holt lays out when the athlete did not fix one.
+ *
+ * Each side keeps its own internal order — the running week's spacing is `composeRunWeek`'s work and the
+ * lift days are the split's rotation — so this only chooses WHERE in the seven days each one lands. Every
+ * interleaving is scored against `INTERFERENCE_RULES` and the cheapest wins; at most a couple of hundred
+ * arrangements exist, so it is exhaustive rather than clever. Ties keep the earliest, which puts the
+ * running week at the front of the week and reads the way a runner's calendar does.
+ */
+function arrangeRaceWeek(opts: { demands: readonly RunDemand[]; loads: readonly LiftLoad[] }): RaceSlot[] {
+  const runs = opts.demands.length;
+  const lifts = opts.loads.length;
+  let best: RaceSlot[] | null = null;
+  let bestCost = Infinity;
+  for (const runAt of choose(WEEK_DAYS, Math.min(runs, WEEK_DAYS))) {
+    const free = Array.from({ length: WEEK_DAYS }, (_, i) => i).filter((i) => !runAt.includes(i));
+    for (const pick of choose(free.length, Math.min(lifts, free.length))) {
+      const liftAt = pick.map((i) => free[i]);
+      const slots: RaceSlot[] = Array.from({ length: WEEK_DAYS }, (_, i) =>
+        runAt.includes(i) ? 'run' : liftAt.includes(i) ? 'lift' : 'rest',
+      );
+      const cost = raceWeekCost(slots, opts.demands, opts.loads);
+      if (cost < bestCost) {
+        best = slots;
+        bestCost = cost;
+        if (cost === 0) return slots;
+      }
+    }
+  }
+  return best ?? padWeek(Array.from({ length: runs }, (): RaceSlot => 'run'));
+}
+
+/** What an arrangement costs — the rules' own numbers, plus keeping the lift days apart as a tiebreak. */
+function raceWeekCost(slots: readonly RaceSlot[], demands: readonly RunDemand[], loads: readonly LiftLoad[]): number {
+  const atDay = byDay(slots);
+  let total = 0;
+  for (let i = 0; i < atDay.length; i += 1) {
+    const a = atDay[i];
+    const b = atDay[(i + 1) % atDay.length];
+    if (!a || !b) continue;
+    for (const rule of INTERFERENCE_RULES) {
+      const lift = rule.where === 'day_before' ? a : b;
+      const run = rule.where === 'day_before' ? b : a;
+      if (lift.kind !== 'lift' || run.kind !== 'run') continue;
+      if (demands[run.at] === rule.of && rule.forbids.includes(loads[lift.at] ?? 'upper')) total += rule.cost;
+    }
+    if (a.kind === 'lift' && b.kind === 'lift') {
+      total += INTERFERENCE_COST.sameKindBackToBack;
+      if (loads[a.at] === 'lower_heavy' && loads[b.at] === 'lower_heavy') total += INTERFERENCE_COST.heavyLegsBackToBack;
+    }
+  }
+  return total;
+}
+
+/**
+ * The athlete's own week, made to fit the block that was actually built.
+ *
+ * ⚠ THE ONLY THINGS THAT MOVE ARE THE ONES THE RULEBOOK CHANGED — a lifting day the week could not hold
+ * (`splitRaceWeek`) becomes a rest day, and a running day EPS-D7 insisted on takes the first free day. The
+ * order they wrote is otherwise kept exactly, because it is theirs (CA-D12).
+ */
+function fitGiven(slots: readonly RaceSlot[], runDays: number, liftDays: number): RaceSlot[] {
+  const out = padWeek(slots);
+  const count = (k: RaceSlot) => out.filter((s) => s === k).length;
+  for (let i = out.length - 1; i >= 0 && count('lift') > liftDays; i -= 1) if (out[i] === 'lift') out[i] = 'rest';
+  for (let i = out.length - 1; i >= 0 && count('run') > runDays; i -= 1) if (out[i] === 'run') out[i] = 'rest';
+  while (count('run') < runDays && out.includes('rest')) out[out.indexOf('rest')] = 'run';
+  return out;
+}
+
+/**
+ * A race build that keeps lifting.
+ *
+ * `given` is the athlete's own week when they wrote one; null means Holt lays it out. Everything else is
+ * the two rulebooks, unchanged, plus the sentences about what had to give.
+ */
+function assembleRaceAndLift(
+  c: CoachConstraints,
+  pool: readonly CatalogExercise[],
+  canDo: EquipmentGate,
+  given: GivenOrder | null,
+): AssembleResult {
+  const refused = refusalFor(c);
+  if (refused) return { ok: false, refusal: refused };
+
+  const concerns: string[] = [];
+  const stretchKeys = stretchKeysIn(pool);
+  const eopts = (enduranceDays: number): EnduranceOpts => ({
+    todayISO: new Date().toISOString().slice(0, 10),
+    stretchKeys,
+    canRunContinuously: c.canRunContinuously ?? undefined,
+    recentRaceMi: c.recentRaceMi,
+    recentRaceSec: c.recentRaceSec,
+    enduranceDays,
+    keepDaysInRaceWeek: true,
+  });
+
+  const week = given ? given.slots.filter((s) => s !== 'rest').length : c.daysPerWeek;
+  const asked = given ? given.slots.filter((s) => s === 'lift').length : Math.max(0, Math.round(c.liftDays ?? 0));
+
+  /* The curve is read BEFORE the week is split, because how much lifting a week can hold depends on how
+     much running it is doing (`LIFT_DAYS_AT_PEAK_MI`) — and the curve itself never moves with the split,
+     so reading it twice cannot change it. */
+  let block = enduranceBlock(c, eopts(Math.max(MIN_ENDURANCE_DAYS, week - asked)));
+  if (block.refusal && c.buildAnyway !== true) {
+    // The rulebook's refusals are about time and base, and they arrive through the same channel the
+    // wizard already shows — see `assembleEnduranceGoal`.
+    return { ok: false, refusal: { reason: 'limitation_conflicts_with_goal', message: block.refusal.message } };
+  }
+  const peakMi = block.volume.reduce((n, v) => Math.max(n, v.mileage), 0);
+
+  let liftDays = asked;
+  if (!given) {
+    const split = splitRaceWeek({ goal: c.goal, week, asked, peakMi });
+    if (split.runDays !== block.daysPerWeek) block = enduranceBlock(c, eopts(split.runDays));
+    liftDays = split.liftDays;
+  }
+  /* EPS-D7 can move the running days on its own — a beginner gets three whatever they asked for, and
+     nobody who cannot yet run continuously gets more than four. The week does not grow to pay for it: the
+     lifting gives way, and the sentence below says so. */
+  const runDays = block.daysPerWeek;
+  liftDays = Math.max(0, Math.min(liftDays, week - runDays));
+
+  const liftGoal = c.strengthGoal ?? RACE_LIFT_GOAL;
+  const requested = raceLiftWeek(c, liftGoal, liftDays);
+  const plan = planLifts(
+    { ...c, weeks: block.weeks, daysPerWeek: Math.max(1, requested.length) },
+    liftGoal,
+    requested,
+    pool,
+    canDo,
+    // A pin's `day` indexes the athlete's own week where they wrote one, and the lift days otherwise.
+    (day) => (isCount(day) ? (given ? liftIndexIn(given.slots, day) : day) : null),
+    concerns,
+  );
+  liftDays = plan.variants.length;
+  if (liftDays < asked) concerns.push(CONCERN.liftDaysTrimmed(asked, liftDays, peakMi));
+  if (block.goalTime?.concern) concerns.push(block.goalTime.concern);
+
+  /*
+   * The week's shape is chosen ONCE, off the last week before the taper — where the long run is longest and
+   * the lifting hardest to place. A shape that changed week to week would be a program the athlete cannot
+   * put in a calendar, and a week whose length changed would be one the validator will not walk.
+   */
+  const shapeWeek = block.volume.reduce((best, v, i) => (v.phase === 'taper' ? best : i), 0);
+  const demands = (block.weekPlans[shapeWeek]?.roles ?? []).map((r) => RUN_DEMAND[r]);
+  const loads = plan.variants.map(liftLoadOf);
+  const names = plan.variants.map((v) => v.name);
+  const slots = given?.asGiven ? fitGiven(given.slots, runDays, liftDays) : arrangeRaceWeek({ demands, loads });
+
+  const clash = firstInterference(slots, demands, loads, names);
+  if (clash) {
+    /* The athlete's order is kept and named (CA-D12). Holt's own is the cheapest arrangement there was, so
+       the only thing left to say about the long run is that there was nowhere else to put it. */
+    concerns.push(
+      !given?.asGiven && clash.rule.where === 'day_before' && clash.rule.of === 'long'
+        ? CONCERN.heavyLegsUnavoidable()
+        : clash.rule.say(clash.liftDay),
+    );
+  }
+
+  const sessions = sessionsIn(slots);
+  const notes: AssemblyNote[] = [];
+  const raceWeek = block.weeks - 1;
+  const raceWeekLift = {
+    skeleton: dayForFocus(RACE_WEEK_LIFT.focus) ?? undefined,
+    maxExercises: RACE_WEEK_LIFT.maxExercises,
+  };
+  const weekPlans = block.weekPlans.map((ew, weekIndex) => {
+    const isDeload = plan.deloads.includes(weekIndex);
+    /* ⚠ NOTHING IS SCHEDULED AFTER THE RACE. The week's shape is the block's, and in race week that can put
+       a lifting day after the thing the block was built for — so in that one week the race goes last and
+       whatever sat behind it moves in front of it. */
+    const order = weekIndex === raceWeek ? raceLast(sessions, ew.roles) : sessions;
+    const days = order.map((s, i): ProgramDay => {
+      const letter = String.fromCharCode(65 + i);
+      if (s.kind === 'lift') {
+        return liftDay(plan, s.at, letter, weekIndex, pool, c, notes, weekIndex === raceWeek ? raceWeekLift : undefined);
+      }
+      const run = ew.days[Math.min(s.at, ew.days.length - 1)];
+      return marked({ ...run, letter }, isDeload);
+    });
+    return { days };
+  });
+
+  const thin = thinRefusal(
+    weekPlans.flatMap((w) => w.days.filter((d) => d.main.some((e) => e.kind !== 'cardio'))),
+    c,
+    plan.owned,
+  );
+  if (thin) return { ok: false, refusal: thin };
+
+  concerns.push(
+    ...pinCeilingConcerns(
+      plan,
+      weekPlans[0].days
+        .map((day, i) => ({ day, lift: sessions[i].kind === 'lift' ? sessions[i].at : null }))
+        .filter((d): d is { day: ProgramDay; lift: number } => d.lift != null),
+    ),
+  );
+
+  const label = block.spec.label.replace(/^./, (ch) => ch.toUpperCase());
+  const structure: ProgramStructure = {
+    name: liftDays > 0 ? `${block.weeks}-Week ${label} & Lifting Plan` : `${block.weeks}-Week ${label} Plan`,
+    weeks: block.weeks,
+    daysPerWeek: sessions.length,
+    vary: true,
+    days: weekPlans[0].days,
+    weekPlans,
+  };
+
+  return {
+    ok: true,
+    assembly: {
+      structure,
+      notes,
+      /* ⚠ THE LIFT GOAL'S CATEGORY, NOT `RUNNING`. The volume gates (PAS-D11) are about the lifting — a
+         RUNNING band caps a day at three exercises and would reject every strength day in the block. The
+         run days fall under its floor and are reported as deviations, which is what a deviation is for. */
+      category: (liftDays > 0 ? GOAL_CATEGORY[liftGoal as keyof typeof GOAL_CATEGORY] : 'RUNNING') as PasCategory,
+      deloadWeeks: plan.deloads,
+      restructured: plan.restructured,
+      unresolved: plan.unresolved,
+      held: plan.held,
+      chosen: plan.chosen,
+      concerns: [...new Set(concerns)],
+      weekShape: slots,
+      ...(enduranceConcernOf(block, c) ? { concern: enduranceConcernOf(block, c) } : {}),
+    },
+  };
+}
+
+/** The race week's sessions with the race itself last — see the note at its call site. */
+function raceLast(sessions: readonly RaceSession[], roles: readonly SessionRole[]): RaceSession[] {
+  const at = roles.indexOf('race');
+  if (at < 0) return [...sessions];
+  const race = sessions.find((s) => s.kind === 'run' && s.at === at);
+  if (!race) return [...sessions];
+  return [...sessions.filter((s) => s !== race), race];
+}
+
+/**
+ * The lifting week beside a race — the goal's own split at this many days, with any day the athlete NAMED
+ * taking its named shape ("legs Wednesday", "upper Monday"), exactly as a run-and-lift week does it.
+ */
+function raceLiftWeek(c: CoachConstraints, liftGoal: Goal, liftDays: number): DaySkeleton[] {
+  if (liftDays <= 0) return [];
+  const base = weekForAnyDays(liftGoal, liftDays, c.splitStyle ?? null) ?? [];
+  const named = (c.days ?? []).filter((d) => d.kind === 'lift');
+  return base.map((day, i) => {
+    const want = dayForFocus(named[i]?.focus);
+    if (!want) return day;
+    // A named day still inherits the goal's finisher, so a conditioning lift day stays conditioning.
+    return day.cardioFinisher ? { ...want, cardioFinisher: day.cardioFinisher } : want;
+  });
+}
+
+/** The lift-day index of a day in the athlete's own week, or null when that day is not a lift day. */
+function liftIndexIn(slots: readonly RaceSlot[], day: number): number | null {
+  if (slots[day] !== 'lift') return null;
+  return slots.slice(0, day).filter((s) => s === 'lift').length;
+}
+
+/**
+ * Lower-body static stretches from the real catalogue, for a runner's cool-down.
+ *
+ * Sorted so the same athlete gets the same plan twice — the determinism the matrix test asserts for every
+ * other goal — and pulled from the pool rather than named in the rulebook, because a cool-down naming an
+ * exercise nobody can open is worse than no cool-down.
+ */
+const stretchKeysIn = (pool: readonly CatalogExercise[]): string[] =>
+  pool
+    .filter((e) => e.modality === 'Mobility' && /stretch/i.test(e.name))
+    .map((e) => e.key)
+    .sort()
+    .slice(0, 6);
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // HYBRID WEEKS — CA §4.1
@@ -1137,7 +1619,11 @@ function assembleHybrid(c: CoachConstraints, pool: readonly CatalogExercise[], c
   }
 
   const concerns: string[] = [];
-  if (isEnduranceGoal(c.goal)) concerns.push(CONCERN.hybridNotRace());
+  /* A date with only one running day on the week is the one case that reaches here WITH a race: the
+     sentence says what is missing rather than asking again for something they already gave. */
+  if (isEnduranceGoal(c.goal)) {
+    concerns.push(c.raceDate ? CONCERN.raceNeedsTwoRuns() : CONCERN.hybridNotRace());
+  }
   const liftGoal = liftGoalFor(c.goal);
 
   // ── Lift days: the goal's own week at this many lift days, with any day the athlete named taking its
@@ -1198,12 +1684,15 @@ function assembleHybrid(c: CoachConstraints, pool: readonly CatalogExercise[], c
   if (c.daysPerWeek >= 7) concerns.push(CONCERN.noRestDay());
   if (c.daysPerWeek === 1) concerns.push(CONCERN.oneDay());
 
-  const paces = pacesFrom(c.recentRaceMi, c.recentRaceSec);
-  const stretchKeys = pool
-    .filter((e) => e.modality === 'Mobility' && /stretch/i.test(e.name))
-    .map((e) => e.key)
-    .sort()
-    .slice(0, 6);
+  /* A target time sets paces here too (`pacesFor`) — an athlete chasing one does not stop chasing it
+     because this week is a run-and-lift week rather than a race build. A recent result still wins. */
+  const { paces } = pacesFor({
+    goal: c.goal,
+    recentRaceMi: c.recentRaceMi,
+    recentRaceSec: c.recentRaceSec,
+    goalTimeSec: c.goalTimeSec,
+  });
+  const stretchKeys = stretchKeysIn(pool);
   const bannedActivities = plan.bannedActivities;
   // A holder, not a `let` — it is written inside the day builder's closure below.
   const swap: { to: string | null } = { to: null };
@@ -1339,7 +1828,7 @@ function runDay(
   size: RunSize | undefined,
   isKey: boolean,
   c: CoachConstraints,
-  paces: ReturnType<typeof pacesFrom>,
+  paces: TrainingPaces | null,
   stretchKeys: readonly string[],
   letter: string,
   isDeload: boolean,
@@ -1457,13 +1946,7 @@ function arrangeWeek(
  * than read inside a pure module, so the whole thing stays testable against a fixed date.
  */
 function assembleEnduranceGoal(c: CoachConstraints, pool: readonly CatalogExercise[]): AssembleResult {
-  // Lower-body static stretches, which is what a runner's cool-down wants. Sorted so the same athlete
-  // gets the same plan twice — the determinism the matrix test asserts for every other goal.
-  const stretchKeys = pool
-    .filter((e) => e.modality === 'Mobility' && /stretch/i.test(e.name))
-    .map((e) => e.key)
-    .sort()
-    .slice(0, 6);
+  const stretchKeys = stretchKeysIn(pool);
 
   const result = assembleEndurance(c, {
     todayISO: new Date().toISOString().slice(0, 10),
@@ -1492,6 +1975,9 @@ function assembleEnduranceGoal(c: CoachConstraints, pool: readonly CatalogExerci
       // PAS-D8 generalised to mileage: keep the frequency, cut the distance.
       deloadWeeks: result.volume.filter((v) => v.isDeload).map((v) => v.weekIndex),
       ...(result.concern ? { concern: result.concern } : {}),
+      /* The target time's one sentence rides the same channel every other "said once" line does, so the
+         chat needs no second field to read (`concerns`, CA-D12). */
+      ...(result.goalTime?.concern ? { concerns: [result.goalTime.concern] } : {}),
     },
   };
 }

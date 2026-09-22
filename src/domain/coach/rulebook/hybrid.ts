@@ -22,6 +22,7 @@
 
 import type { Experience, Goal, Limitation } from '../constraints.ts';
 import { LIMITATION_LABEL } from '../constraints.ts';
+import type { SessionRole } from './endurance.ts';
 import type { DaySkeleton } from './skeletons.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -42,6 +43,27 @@ export const HYBRID_LIFT_GOAL: Partial<Record<Goal, Goal>> = {
 };
 
 export const liftGoalFor = (goal: Goal): Goal => HYBRID_LIFT_GOAL[goal] ?? goal;
+
+/**
+ * The lifting goal inside a RACE build — and it is not `health`.
+ *
+ * ⚠ THE SAME QUESTION, A DIFFERENT ANSWER, DELIBERATELY. A week the athlete dictated ("run twice, lift
+ * three days") names no race, so its lifting is general and `HYBRID_LIFT_GOAL` sends it to `health`. A race
+ * build that keeps lifting is the athlete saying both halves out loud — *"strong AND run a sub-25 5K"*,
+ * *"marathons and bench 3 plates"* — and what they are protecting is strength. `strengthGoal` overrides it
+ * whenever they say otherwise.
+ */
+export const RACE_LIFT_GOAL: Goal = 'strength';
+
+/**
+ * Race week's lifting: kept, and kept off the legs.
+ *
+ * ⚠ NOT DROPPED, AND NOT THE USUAL DAY EITHER. Dropping it makes race week the one week whose length
+ * disagrees with every other week (`schedule_mismatch`, and a calendar the athlete has to re-read);
+ * keeping the usual day puts a squat four days before the race. So it becomes one short upper session,
+ * which is what a hybrid athlete's race week actually holds. DEFAULT PENDING PO REVIEW.
+ */
+export const RACE_WEEK_LIFT = { focus: 'upper', maxExercises: 3 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // SIZING THE RUNS
@@ -119,6 +141,154 @@ export const INTERFERENCE_COST = {
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// A RACE THAT KEEPS LIFTING — the interference rules as a TABLE
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * How hard a lift day is on the legs.
+ *
+ *   · `lower_heavy` — it LEADS with a squat or a hinge (`isLowerHeavy`): the movement trained hardest,
+ *                     and the one that takes the legs out of tomorrow's run.
+ *   · `lower`       — it trains the lower body somewhere in the list but does not lead on it.
+ *   · `upper`       — it never asks the legs for anything. The day after a long run wants this one.
+ */
+export type LiftLoad = 'lower_heavy' | 'lower' | 'upper';
+
+/** Every pattern that asks the legs for work — the test for `lower`, as a list rather than a guess. */
+export const LOWER_PATTERNS: readonly string[] = [
+  'Squat / Knee Dominant',
+  'Hinge / Hip Dominant',
+  'Hip Isolation',
+  'Calf / Ankle',
+];
+
+export const liftLoadOf = (day: DaySkeleton): LiftLoad =>
+  isLowerHeavy(day) ? 'lower_heavy' : day.slots.some((s) => LOWER_PATTERNS.includes(s)) ? 'lower' : 'upper';
+
+/**
+ * What an endurance session asks of the legs. A race day is read as a long run, because the one rule that
+ * matters most in the last week is that nothing heavy sits the day before it.
+ */
+export type RunDemand = 'long' | 'quality' | 'easy';
+
+export const RUN_DEMAND: Record<SessionRole, RunDemand> = {
+  long: 'long',
+  race: 'long',
+  /* A brick is the triathlon week's long session — its ride IS the long ride (EPS-D11's one a week). */
+  brick: 'long',
+  tempo: 'quality',
+  intervals: 'quality',
+  easy: 'easy',
+  run_walk: 'easy',
+  shakeout: 'easy',
+  swim: 'easy',
+  bike: 'easy',
+};
+
+/**
+ * ══ THE INTERFERENCE RULES, AS A TABLE ══
+ *
+ * Three rows, each saying which lift load may not sit on which side of which session, what that costs when
+ * Holt is choosing the order, and the sentence he says when the athlete chose it instead (CA-D12 — his own
+ * order obeys the rule, theirs is kept and named once).
+ *
+ * The costs are ordered rather than measured: protecting the long run beats protecting a quality session,
+ * which beats keeping the day after the long run off the legs — and all three beat the tidiness of
+ * spreading the lift days out (`INTERFERENCE_COST.sameKindBackToBack`). A cost is never a refusal: the
+ * cheapest arrangement is built whatever it scores.
+ */
+export interface InterferenceRule {
+  /** Where the lift day sits relative to the endurance session. */
+  where: 'day_before' | 'day_after';
+  of: RunDemand;
+  /** The lift loads this rule will not have there. */
+  forbids: readonly LiftLoad[];
+  cost: number;
+  /** One sentence, when the order is the athlete's and the rule stands. */
+  say: (liftDay: string) => string;
+}
+
+export const INTERFERENCE_RULES: readonly InterferenceRule[] = [
+  {
+    where: 'day_before',
+    of: 'long',
+    forbids: ['lower_heavy'],
+    cost: INTERFERENCE_COST.heavyLegsBeforeLongRun,
+    say: (d) => CONCERN.heavyLegsBeforeLongRun(d),
+  },
+  {
+    where: 'day_before',
+    of: 'quality',
+    forbids: ['lower_heavy'],
+    cost: 60,
+    say: (d) => CONCERN.heavyLegsBeforeQualityRun(d),
+  },
+  {
+    /* The day AFTER the long run is upper or rest — not a lighter leg day, which is the compromise that
+       looks reasonable and still lands squats on legs that ran two hours yesterday. */
+    where: 'day_after',
+    of: 'long',
+    forbids: ['lower_heavy', 'lower'],
+    cost: 40,
+    say: (d) => CONCERN.legsAfterLongRun(d),
+  },
+];
+
+/**
+ * The most lifting days a week can hold beside a race build, by the mileage the block PEAKS at.
+ *
+ * ⚠ DECIDED FOR THE BLOCK, NOT WEEK BY WEEK. Dropping a lift day in week 9 and putting it back in week 10
+ * gives the athlete a program whose shape changes under them — and a week that disagrees with every other
+ * week about its own length. So the whole block gets the lifting its hardest running week can carry, and
+ * Holt says once that it is fewer days than they asked for.
+ *
+ * The numbers are the mainstream hybrid compromise: four lifting days beside twenty miles a week is a
+ * lifter who runs, one beside fifty is a runner who lifts, and the middle is where most people asking this
+ * question actually live. DEFAULT PENDING PO REVIEW.
+ */
+export const LIFT_DAYS_AT_PEAK_MI: readonly { fromMi: number; liftDays: number }[] = [
+  { fromMi: 45, liftDays: 1 },
+  { fromMi: 35, liftDays: 2 },
+  { fromMi: 25, liftDays: 3 },
+  { fromMi: 0, liftDays: 4 },
+];
+
+export const liftDaysAtPeak = (peakMi: number): number =>
+  LIFT_DAYS_AT_PEAK_MI.find((r) => peakMi >= r.fromMi)?.liftDays ?? 1;
+
+/**
+ * A triathlon week holds two lifting days at most, whatever the mileage says.
+ *
+ * Three disciplines already fill the week, and the run leg's mileage — the only thing `LIFT_DAYS_AT_PEAK_MI`
+ * can read — is 20% of it (EPS-D11). Reading a triathlon's load off its running would let a swim-and-bike
+ * heavy week look empty. DEFAULT PENDING PO REVIEW.
+ */
+export const TRI_LIFT_DAYS_MAX = 2;
+
+/**
+ * The fewest running days a race block can be honest at, whatever the lifting wants.
+ *
+ * ⚠ THE LONGER THE RACE, THE LESS A TWO-DAY WEEK CAN SAY. A 5K off two runs a week is thin but real; a
+ * marathon off two is a long run and one other thing, which is not marathon preparation whatever the
+ * mileage adds up to. Capped at one day below the week the athlete asked for, so that asking for lifting
+ * always gets at least one lifting day — the alternative is a race plan that silently ignores half the
+ * request.
+ *
+ * `MIN_ENDURANCE_DAYS` is the hard floor underneath all of it: two is what `composeRunWeek` itself will not
+ * go below, so a race block asking for one running day would get two and a week that disagreed with its
+ * own day count.
+ */
+export const MIN_ENDURANCE_DAYS = 2;
+
+export const MIN_RACE_RUN_DAYS: Record<string, number> = {
+  run_5k: 2,
+  run_10k: 3,
+  run_half: 3,
+  run_marathon: 4,
+  triathlon: 3,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // WHAT HOLT SAYS — ONCE
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -137,6 +307,16 @@ export const CONCERN = {
     `${liftDay} the day before your long run will cost you some of that run — swap them if you can, and if you can't, it stays as you wrote it.`,
   heavyLegsUnavoidable: (): string =>
     "However I lay this week out, your long run lands the day after a leg day — keep that run easy and don't chase pace on it.",
+  heavyLegsBeforeQualityRun: (liftDay: string): string =>
+    `${liftDay} sits the day before a quality run, so that run will feel heavier than it should — swap them if you can, and if you can't, keep the run to effort rather than pace.`,
+  legsAfterLongRun: (liftDay: string): string =>
+    `${liftDay} lands the day after your long run, which is the one day your legs have nothing to give — move it if you can, and if you can't, take the first set lighter than you think you need to.`,
+  liftDaysTrimmed: (asked: number, built: number, peakMi: number): string =>
+    built === 0
+      ? "There isn't a day left for lifting once the running has what a race needs — give me one more day in the week and the first lift goes in."
+      : `I've kept ${built} lifting day${built === 1 ? '' : 's'} rather than ${asked}: the running peaks near ${Math.round(peakMi)} miles a week and that week still has to be trainable. Say the word and I'll put ${asked} back.`,
+  raceNeedsTwoRuns: (): string =>
+    "One running day a week won't build to a race, so I've written this as a run-and-lift week rather than a race block — give me a second running day and I'll build it backwards from the date.",
   runsSwapped: (activity: string): string =>
     `You told me no running, so the run days are ${activity} instead — say the word and I'll put the runs back.`,
   runsKept: (): string =>

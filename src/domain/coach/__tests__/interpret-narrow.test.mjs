@@ -292,3 +292,14 @@ test('supabase/apply/deploy-coach-interpret.ts is the generator output for the c
   const onDisk = readFileSync(path.join(root, DEPLOY_COPY), 'utf8').replace(/\r\n/g, '\n');
   assert.equal(onDisk, buildCoachInterpretDeploy(), 'run: node scripts/build-coach-interpret-deploy.mjs');
 });
+
+test("a race that keeps lifting, and a target time in seconds", () => {
+  const p = narrowPatch({ goal: "run_5k", liftDays: 3, strengthGoal: "muscle", goalTimeSec: 1500 }, "2026-09-22");
+  assert.equal(p.liftDays, 3);
+  assert.equal(p.strengthGoal, "muscle");
+  assert.equal(p.goalTimeSec, 1500);
+  // Out of range or nonsense is dropped, never clamped into a promise.
+  assert.equal(narrowPatch({ liftDays: 9, goalTimeSec: 30, strengthGoal: "run_half" }, "2026-09-22").liftDays, undefined);
+  assert.equal(narrowPatch({ goalTimeSec: 30 }, "2026-09-22").goalTimeSec, undefined);
+  assert.equal(narrowPatch({ strengthGoal: "run_half" }, "2026-09-22").strengthGoal, undefined);
+});

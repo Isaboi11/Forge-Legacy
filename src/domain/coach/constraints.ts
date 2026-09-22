@@ -285,6 +285,37 @@ export interface CoachConstraints {
   /** Explicit weeks, when there is no race to count back from. Ignored when `raceDate` is set. */
   weeks?: number | null;
   /**
+   * How many of the week's days are LIFTING days inside a race build — "half marathon in November, also
+   * lift 3x", "marathons and bench 3 plates", "strong and run a sub-25 5K".
+   *
+   * ⚠ IT COMES OUT OF `daysPerWeek`, IT DOES NOT ADD TO IT. Five days with two lifting days is three runs
+   * and two lifts, because a week has the days it has and the athlete already said how many. The running
+   * days that remain are the race plan's own — same volume curve, same phases, same taper, same race week
+   * — and the rulebook may keep fewer lifting days than asked when the mileage peaks too high for them
+   * (`LIFT_DAYS_AT_PEAK_MI`), which is said once and never done silently.
+   *
+   * 0 or absent is the pure race plan, exactly as before. A `days` week says the same thing more fully
+   * (its own entries ARE the run and lift days) and wins where both are given.
+   */
+  liftDays?: number | null;
+  /**
+   * What the lifting in a race build is FOR. Defaults to `strength`: somebody who says "and I want to keep
+   * lifting" alongside a race is protecting the strength they have, and the corpus asks for it in those
+   * words — *"marathons and bench 3 plates"*. A different answer ("build muscle", "just keep moving") is
+   * the athlete's to give and is honoured as the lift days' goal, with its own split and volume band.
+   */
+  strengthGoal?: StrengthGoal | null;
+  /**
+   * The time they are chasing, in seconds — "sub-25 5K" is 1500, "3:30 marathon" is 12600, "BQ" is
+   * whatever their standard is.
+   *
+   * ⚠ IT SETS PACES, NEVER THE PLAN'S SIZE. With no recent result the target is what the training paces are
+   * derived from (`pacesFor`); with one, the result wins, because it is what they have actually run. A
+   * target beyond today's fitness is BUILT ANYWAY (CA-D12) with one sentence naming the gap in real
+   * numbers — it never shrinks the goal and it never moves a mile of the curve.
+   */
+  goalTimeSec?: number | null;
+  /**
    * A recent all-out result — distance in miles and time in seconds — used to derive training paces.
    *
    * ⚠ **OPTIONAL, AND ITS ABSENCE MUST STAY VISIBLE.** With a result, Holt writes real paces (EPS-D10).
@@ -496,6 +527,13 @@ export function normalise(c: CoachConstraints): CoachConstraints {
   };
   // Non-finite reads as absent — `undefined`, so `weeks ?? defaultWeeksFor(goal)` supplies the length.
   if (out.weeks != null) out.weeks = isCount(out.weeks) ? clamp(out.weeks, MIN_WEEKS, MAX_WEEKS) : undefined;
+  /* Lifting days inside a race week are bounded by the week, not by Holt's own 2–6: the athlete asked for
+     both halves and the split between them is `splitRaceWeek`'s to make, out loud. */
+  if (out.liftDays != null) out.liftDays = isCount(out.liftDays) ? clamp(out.liftDays, 0, ATHLETE_MAX_DAYS_PER_WEEK) : undefined;
+  // A target of zero seconds is not a target, and neither is a time nobody could have meant.
+  if (out.goalTimeSec != null) out.goalTimeSec = isCount(out.goalTimeSec) && out.goalTimeSec > 0 ? Math.round(out.goalTimeSec) : undefined;
+  // A lifting goal the rulebook has never heard of is not guessed at — the lift days take the default.
+  if (out.strengthGoal != null && !STRENGTH_GOALS.includes(out.strengthGoal)) out.strengthGoal = undefined;
   if (out.currentWeeklyMi != null) out.currentWeeklyMi = isCount(out.currentWeeklyMi) ? Math.max(0, out.currentWeeklyMi) : null;
   if (out.focusMuscles) out.focusMuscles = [...new Set(out.focusMuscles.filter((m) => FOCUS_MUSCLES.includes(m)))];
   // A pin with no name and no key is nothing anybody said — it cannot be asked back, so it is not kept.

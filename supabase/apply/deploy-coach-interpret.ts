@@ -169,6 +169,15 @@ export function narrowPatch(p: unknown, todayISO: string): Obj {
     const focus = text(p.dayFocus, 60);
     if (focus)
         out.dayFocus = focus;
+    const lift = int(p.liftDays, 0, 6);
+    if (lift !== undefined)
+        out.liftDays = lift;
+    const strengthGoal = oneOf(GOALS, p.strengthGoal);
+    if (strengthGoal && !['run_5k', 'run_10k', 'run_half', 'run_marathon', 'triathlon'].includes(strengthGoal))
+        out.strengthGoal = strengthGoal;
+    const goalTime = int(p.goalTimeSec, 4 * 60, 24 * 3600);
+    if (goalTime !== undefined)
+        out.goalTimeSec = goalTime;
     if (Array.isArray(p.avoid)) {
         const avoid = [...new Set(p.avoid.filter((x): x is string => typeof x === 'string').map((x) => x.trim()).filter((x) => x.length >= 2 && x.length <= 40))].slice(0, 5);
         if (avoid.length)
@@ -457,6 +466,9 @@ You NEVER write training yourself. You do not choose exercises, sets, reps, weig
 - weeks: integer 1-52 — how long the block should be, when they say ("8 weeks", "until my wedding in December" → count from today)
 - currentWeeklyMi: number, only for a race goal — current weekly running mileage (convert km to miles)
 - dayFocus: only when the athlete wants ONE session rather than a program
+- liftDays: for a RACE goal, how many days of the week are lifting rather than running ("half marathon in November, lift 3x" → goal run_half, daysPerWeek 5, liftDays 3). Holt builds the running and the lifting as one week
+- strengthGoal: what the lifting days are for when they say ("…and keep building muscle" → muscle). Defaults to strength
+- goalTimeSec: a target finish time in SECONDS, only when they name one — "sub 25 minute 5k" → 1500, "3:30 marathon" → 12600, "break 2 hours in the half" → 7200. Never guess one from a distance alone, and never from "BQ" or "PR" (no number in those)
 - avoid: exercises they do not want, as they named them ("I hate lunges" → ["lunges"], "no burpees" → ["burpees"]). ALSO fill it from "What you know about this athlete" on any build — a note that says they hate an exercise means it goes in avoid every time. Never promise to leave something out unless it is in avoid.
 - focusMuscles: muscles they want the program to bias toward — any of glutes, arms, biceps, triceps, shoulders, chest, back, legs, quads, hamstrings, calves, core ("glute focus", "bigger arms", "I want my calves to grow")
 - pinned: exercises the athlete named, each { name, day, sets, reps } — name as they said it, day as a 0-based index into days (or null), sets/reps only if they gave them
@@ -523,6 +535,7 @@ A named focus is usable: "build me a leg day", "arms today", "quick push workout
 
 # Phrasings people actually use
 
+- Wanting BOTH a race and the gym is one plan, not two: "strong AND run a sub-25 5K" → goal run_5k, goalTimeSec 1500, liftDays 2-3 (what they said, else leave it out and the app asks); "marathons and bench 3 plates" → goal run_marathon, liftDays 2, pinned bench; "half in Nov, also lift 3x" → goal run_half, liftDays 3.
 - Hybrid weeks said casually are days: "ppl + run 2x" → days: lift, lift, lift, run, lift, lift, run (six lifts as a push/pull/legs twice through is fine; when unsure, lifts on the named count and runs on the rest) with daysAsGiven false; "lift 3, run 2" → days: lift, run, lift, run, lift, rest, rest, daysAsGiven false; "hybrid athlete who can run a half" → goal strength or muscle AND days with two or three runs — ask nothing, the app asks what is missing.
 - A lift target is a goal plus that lift pinned: "225 bench by summer", "first 300 squat" → goal strength, pinned: [{ name: "bench" }].
 - Voice dictation mishears numbers: "for days" = 4 days, "to days" / "too days" = 2 days, "tree" = 3, "fore" = 4, "an hour" = 60 minutes, "half an hour" = 30.

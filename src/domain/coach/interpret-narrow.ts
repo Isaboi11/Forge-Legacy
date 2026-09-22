@@ -180,6 +180,13 @@ export function narrowPatch(p: unknown, todayISO: string): Obj {
   if (focus) out.dayFocus = focus;
 
   // Exercises they do not want, as named — the app resolves the names to catalogue keys (≤5, ≤40 chars).
+  // A race that keeps lifting, and a target finish time (seconds — the model converts, the app never parses clock text).
+  const lift = int(p.liftDays, 0, 6);
+  if (lift !== undefined) out.liftDays = lift;
+  const strengthGoal = oneOf(GOALS, p.strengthGoal);
+  if (strengthGoal && !['run_5k', 'run_10k', 'run_half', 'run_marathon', 'triathlon'].includes(strengthGoal)) out.strengthGoal = strengthGoal;
+  const goalTime = int(p.goalTimeSec, 4 * 60, 24 * 3600);
+  if (goalTime !== undefined) out.goalTimeSec = goalTime;
   if (Array.isArray(p.avoid)) {
     const avoid = [...new Set(p.avoid.filter((x): x is string => typeof x === 'string').map((x) => x.trim()).filter((x) => x.length >= 2 && x.length <= 40))].slice(0, 5);
     if (avoid.length) out.avoid = avoid;
