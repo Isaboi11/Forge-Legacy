@@ -438,6 +438,35 @@ export function weightDrift(opts: {
   };
 }
 
+/**
+ * What Holt says when the body has moved under a target — `Holt-Voice-Amendment-001`.
+ *
+ * ⚠ **HV-D5: HE NEVER GUILTS.** "Your targets are out of date" reads as a telling-off for something the
+ * athlete did right — they weighed themselves. The change is the athlete's PROGRESS, so he names it as
+ * theirs.
+ *
+ * ⚠ **HV-D2/§2: SPECIFIC, NEVER VAGUE.** *"Thursday's run drops to 4 miles"*, never *"I've adjusted your
+ * week."* So: the pounds, and the number it moves to when that is known.
+ *
+ * ⚠ **NO EXCLAMATION MARK.** HV-D3 allows one only for a real win. This is a notice with an action on
+ * it, and instructions and acknowledgements never carry one.
+ *
+ * `newTarget` is null where the goal and pace that produced the old target are not known — they are not
+ * stored on the row, so only the Targets screen (where both are on screen) can name the new figure.
+ */
+export function driftLine(drift: WeightDrift, newTarget: number | null): { title: string; detail: string } {
+  const moved = Math.abs(Math.round(drift.change * 10) / 10);
+  const lb = moved.toFixed(1).replace(/\.0$/, '');
+  const direction = drift.change < 0 ? 'down' : 'up';
+
+  return {
+    title: `You're ${direction} ${lb} lb since we set these numbers.`,
+    detail: newTarget
+      ? `That puts your target at ${fmt(newTarget)} a day.`
+      : 'Worth a fresh look at your targets.',
+  };
+}
+
 /* ── the history ──────────────────────────────────────────────────────────── */
 
 export interface HistoryRow {

@@ -12,7 +12,7 @@ import { useBodyGoalSync } from '@/hooks/useBodyGoalSync';
 import { useBodyPrefs } from '@/lib/body-metrics';
 import { useNutritionAccess } from '@/lib/entitlement';
 import { localToday } from '@/domain/nutrition/day';
-import { weightDrift } from '@/domain/nutrition/targets';
+import { driftLine, weightDrift } from '@/domain/nutrition/targets';
 import { fetchTargetHistory } from '@/data/nutrition-live';
 import { useUnits } from '@/lib/settings';
 import { useQuery } from '@/lib/useQuery';
@@ -219,8 +219,12 @@ export function BodySection() {
               <Glyph d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6l8-3z" size={16} color={flColor.bronze300} width={1.7} />
             </View>
             <View style={styles.photosText}>
-              <Text style={styles.photosTitle}>Your nutrition targets are out of date</Text>
-              <Text style={styles.photosSub}>{targetDrift.detail}</Text>
+              {/* ⚠ Holt's voice (HV-D2/D5): the change is the athlete's PROGRESS, named specifically,
+                  never "your targets are out of date" — which tells someone off for weighing in. The new
+                  figure is not named HERE because the goal and pace behind the old target are not stored
+                  on the row; only the Targets screen, where both are on screen, can say it. */}
+              <Text style={styles.photosTitle}>{driftLine(targetDrift, null).title}</Text>
+              <Text style={styles.photosSub}>{driftLine(targetDrift, null).detail}</Text>
             </View>
             <Glyph d="M9 5l7 7-7 7" size={16} color={flColor.bronze400} width={1.9} />
           </Pressable>

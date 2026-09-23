@@ -22,6 +22,7 @@ import {
   recommend,
   sameAsCurrent,
   saveNote,
+  driftLine,
   WEIGHT_DRIFT_MIN_LB,
   weightDrift,
 } from '../targets.ts';
@@ -318,4 +319,38 @@ test('⚠ and with no snapshot there is NO comparison to draw — silence, never
 
 test('the floor is a real number, not a magic literal at the call site', () => {
   assert.equal(WEIGHT_DRIFT_MIN_LB, 2);
+});
+
+/* ── how Holt says it ─────────────────────────────────────────────────────── */
+
+test('⚠ he names the athlete’s PROGRESS, never tells them their targets are stale', () => {
+  const d = drift({ now: 196.4, atTarget: 201.8, targetFrom: '2026-08-04' });
+  const line = driftLine(d, 2340);
+  assert.equal(line.title, "You're down 5.4 lb since we set these numbers.");
+  assert.equal(line.detail, 'That puts your target at 2,340 a day.');
+  /* HV-D5 — weighing in is something they did right; nothing here may read as a telling-off. */
+  assert.doesNotMatch(line.title + line.detail, /out of date|stale|overdue|should have|behind/i);
+});
+
+test('gaining reads the same way, in the other direction', () => {
+  const d = drift({ now: 210, atTarget: 201.8, targetFrom: '2026-08-04' });
+  assert.equal(driftLine(d, 3010).title, "You're up 8.2 lb since we set these numbers.");
+});
+
+test('a whole number of pounds does not read as 5.0', () => {
+  const d = drift({ now: 196, atTarget: 201, targetFrom: '2026-08-04' });
+  assert.equal(driftLine(d, 2340).title, "You're down 5 lb since we set these numbers.");
+});
+
+test('⚠ HV-D3 — no exclamation mark: this is a notice with an action, not a win', () => {
+  const d = drift({ now: 196.4, atTarget: 201.8, targetFrom: '2026-08-04' });
+  const line = driftLine(d, 2340);
+  assert.doesNotMatch(line.title + line.detail, /!/);
+});
+
+test('where the new figure cannot be known, it asks rather than inventing one', () => {
+  /* The goal and pace behind the old target are not stored on the row, so the weigh-in surface
+     cannot name a number — and must not guess at one. */
+  const d = drift({ now: 196.4, atTarget: 201.8, targetFrom: '2026-08-04' });
+  assert.equal(driftLine(d, null).detail, 'Worth a fresh look at your targets.');
 });
