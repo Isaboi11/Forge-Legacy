@@ -45,13 +45,10 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
  * ⚠ **ALLERGIES ARE ANSWERED, NEVER DEFAULTED.** Neither option starts chosen and Continue stays shut
  * until one is (NUT-D6 makes them a hard constraint on every plan).
  *
- * ⚠ **"BUILD MY WEEK" SAVES; IT DOES NOT BUILD YET.** The planner (§6) and the week screen are the next
- * screens of Phase 3 and do not exist. The `.dc` toasts "Building your week" — saying that with nothing
- * behind it would be a promise the app cannot keep, so the toast says what actually happened. When the
- * week screen lands, this button routes to it.
- *
- * Reopened after a save, every answer comes back as it was left (`draftFrom`), so the Meal Plan button
- * doubles as "change my setup" until the week screen exists.
+ * "Build my week" saves, then opens Meal Plan — which sees the new answers and rebuilds the week
+ * (`resolveWeek`). First time in, it REPLACES this screen so Back from the week goes to Nutrition, not
+ * back into setup; reopened from "Edit setup", it simply returns. Every answer comes back as it was left
+ * (`draftFrom`).
  */
 export default function MealPlanSetupScreen() {
   const router = useRouter();
@@ -105,8 +102,9 @@ export default function MealPlanSetupScreen() {
     setSaving(true);
     try {
       await saveMealPlanPrefs(prefsFrom(d));
-      showToast('Saved. Your week gets built when the planner arrives.');
-      router.back();
+      showToast('Building your week');
+      if (saved.data) router.back();
+      else router.replace('/meal-plan');
     } catch (e) {
       showToast(errorMessage(e));
     } finally {
