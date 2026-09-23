@@ -368,6 +368,7 @@ function RootNavigator() {
         <Stack.Screen name="food-detail" />
         <Stack.Screen name="meal-detail" />
         <Stack.Screen name="create-food" />
+        <Stack.Screen name="nutrition-details" />
         <Stack.Screen name="nutrition-targets" />
         <Stack.Screen name="account-settings" />
         {/* P-8. A plain push in BOTH entry contexts, deliberately: the spec's two contexts differ only in

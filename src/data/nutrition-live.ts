@@ -1,4 +1,5 @@
 import type { LogEntry, MealSlot, Targets } from '@/domain/nutrition/day';
+import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
 // The app's own id minter (Hermes has no `crypto.randomUUID` everywhere) — no new dependency.
 import { uuid } from '@/lib/app-session';
@@ -85,6 +86,68 @@ export async function fetchDay(iso: string): Promise<DayLog> {
 
   if (entries.error) return { entries: [], targets: null };
   return { entries: ((entries.data ?? []) as EntryRow[]).map(toEntry), targets };
+}
+
+/**
+ * Every day in a range, already summed — Nutrition Details reads a week with one query.
+ *
+ * ⚠ **A DAY WITH NO ROW IS ABSENT FROM THE RESULT, NOT A ZERO.** The caller fills the gaps and draws
+ * them as unlogged; handing back `kcal: 0` here would make "ate nothing" and "logged nothing"
+ * indistinguishable one layer too early to tell them apart again.
+ */
+export async function fetchRangeTotals(fromIso: string, toIso: string): Promise<DayTotals[]> {
+  const id = await athleteId();
+  if (!id) return [];
+
+  const { data, error } = await supabase
+    .from('food_log_entries')
+    .select('logged_on, kcal, protein, carb, fat')
+    .eq('athlete_id', id)
+    .gte('logged_on', fromIso)
+    .lte('logged_on', toIso);
+  if (error) return [];
+
+  const byDay = new Map<string, DayTotals>();
+  for (const r of (data ?? []) as Record<string, any>[]) {
+    const iso = r.logged_on as string;
+    const acc = byDay.get(iso) ?? { iso, kcal: 0, protein: 0, carb: 0, fat: 0, logged: true };
+    acc.kcal += Number(r.kcal);
+    acc.protein += Number(r.protein);
+    acc.carb += Number(r.carb);
+    acc.fat += Number(r.fat);
+    byDay.set(iso, acc);
+  }
+  /* Rounded ONCE, at the end — the same rule `totals()` follows, so a week of twelve-food days
+     does not drift a calorie per row. */
+  return [...byDay.values()].map((d) => ({
+    ...d,
+    kcal: Math.round(d.kcal),
+    protein: Math.round(d.protein),
+    carb: Math.round(d.carb),
+    fat: Math.round(d.fat),
+  }));
+}
+
+/**
+ * Every target ever set at or before a date, newest last.
+ *
+ * One query instead of seven: the week resolves each day's target from this list (`targetOn`), which is
+ * what keeps an old day readable against what was true THEN rather than against today's number.
+ */
+export async function fetchTargetHistory(uptoIso: string): Promise<{ from: string; targets: Targets }[]> {
+  const id = await athleteId();
+  if (!id) return [];
+  const { data, error } = await supabase
+    .from('nutrition_targets')
+    .select('effective_from, kcal, protein_g, carb_g, fat_g')
+    .eq('athlete_id', id)
+    .lte('effective_from', uptoIso)
+    .order('effective_from', { ascending: true });
+  if (error) return [];
+  return ((data ?? []) as Record<string, any>[]).map((r) => ({
+    from: r.effective_from as string,
+    targets: { kcal: Number(r.kcal), protein: Number(r.protein_g), carb: Number(r.carb_g), fat: Number(r.fat_g) },
+  }));
 }
 
 /**

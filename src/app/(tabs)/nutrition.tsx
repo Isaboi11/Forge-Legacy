@@ -214,9 +214,9 @@ export default function NutritionScreen() {
 
           <Pressable
             accessibilityRole="button"
-            /* Analytics is Phase 2. The link stays where the `.dc` put it and says so plainly rather
-               than opening an empty screen or vanishing from the layout. */
-            onPress={() => showToast('Nutrition details arrive with the analytics pass')}
+            /* Was a toast saying the analytics pass was coming — the one dead end in the tab. It opens
+               `Nutrition Details.dc.html` now: the week, its target band, and where the gap is. */
+            onPress={() => router.push('/nutrition-details')}
             style={styles.detailsLink}
           >
             <Text style={styles.detailsText}>See Details</Text>
