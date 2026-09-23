@@ -414,16 +414,45 @@ export async function fetchFoodByKey(key: string): Promise<CatalogFood | null> {
   return mine.find((f) => f.key === key) ?? null;
 }
 
+/**
+ * Is `micros` on `user_foods` / `saved_meal_items` yet (0207)?
+ *
+ * ⚠ **A MISSING COLUMN IS A REQUEST-TIME ERROR, NOT AN EMPTY RESULT.** PostgREST answers `42703` /
+ * `PGRST204` for a column its schema cache has never seen, which fails the WHOLE statement — so a
+ * select or an insert naming `micros` before the paste lands takes Create Food down entirely rather
+ * than degrading. This latches the answer per session so the fallback costs one failed call, not one
+ * per read, and resolves itself the moment the migration is applied and the app is reopened.
+ */
+let microsColumn: boolean | null = null;
+const isMissingColumn = (e: unknown): boolean => {
+  const o = e as { code?: string; message?: string } | null;
+  const code = o?.code ?? '';
+  return code === '42703' || code === 'PGRST204' || /column .* does not exist|could not find the '?micros/i.test(o?.message ?? '');
+};
+
+const USER_FOOD_COLUMNS = 'id, name, brand, kcal_100, protein_100, carb_100, fat_100, servings';
+
 /** The athlete's own foods, which search always ranks first. */
 export async function fetchMyFoods(): Promise<CatalogFood[]> {
   const id = await athleteId();
   if (!id) return [];
-  const { data, error } = await supabase
-    .from('user_foods')
-    .select('id, name, brand, kcal_100, protein_100, carb_100, fat_100, servings')
-    .eq('athlete_id', id)
-    .order('name');
+
+  const read = (withMicros: boolean) =>
+    supabase
+      .from('user_foods')
+      .select(withMicros ? `${USER_FOOD_COLUMNS}, micros` : USER_FOOD_COLUMNS)
+      .eq('athlete_id', id)
+      .order('name');
+
+  let { data, error } = await read(microsColumn !== false);
+  if (error && microsColumn !== false && isMissingColumn(error)) {
+    microsColumn = false;
+    ({ data, error } = await read(false));
+  } else if (!error && microsColumn == null) {
+    microsColumn = true;
+  }
   if (error) return [];
+
   return ((data ?? []) as Record<string, any>[]).map((r) => ({
     key: r.id,
     source: 'custom' as const,
@@ -434,7 +463,7 @@ export async function fetchMyFoods(): Promise<CatalogFood[]> {
     carb100: r.carb_100,
     fat100: r.fat_100,
     servings: (r.servings ?? []) as Serving[],
-    micros: null,
+    micros: r.micros ?? null,
     attribution: null,
   }));
 }
@@ -499,10 +528,18 @@ export async function fetchSavedMeals(): Promise<SavedMeal[]> {
 
 /** Logging a saved meal writes every one of its foods into the day, in one tap. */
 export async function logSavedMeal(mealId: string, iso: string, meal: MealSlot): Promise<LogEntry[]> {
-  const { data, error } = await supabase
-    .from('saved_meal_items')
-    .select('source, source_key, name, brand, serving_label, grams, quantity, kcal, protein, carb, fat')
-    .eq('meal_id', mealId);
+  const columns = 'source, source_key, name, brand, serving_label, grams, quantity, kcal, protein, carb, fat';
+  const read = (withMicros: boolean) =>
+    supabase
+      .from('saved_meal_items')
+      .select(withMicros ? `${columns}, micros` : columns)
+      .eq('meal_id', mealId);
+
+  let { data, error } = await read(microsColumn !== false);
+  if (error && microsColumn !== false && isMissingColumn(error)) {
+    microsColumn = false;
+    ({ data, error } = await read(false));
+  }
   if (error || !data?.length) return [];
 
   return addEntries(
@@ -515,6 +552,7 @@ export async function logSavedMeal(mealId: string, iso: string, meal: MealSlot):
       brand: r.brand,
       servingLabel: r.serving_label,
       quantity: Number(r.quantity),
+      micros: r.micros ?? null,
       macros: {
         kcal: Number(r.kcal),
         protein: Number(r.protein),
@@ -532,7 +570,7 @@ export async function saveMealFromDay(name: string, iso: string, meal: MealSlot)
   if (!id) return;
   const { data: rows } = await supabase
     .from('food_log_entries')
-    .select('source, source_key, name, brand, serving_label, grams, quantity, kcal, protein, carb, fat')
+    .select('source, source_key, name, brand, serving_label, grams, quantity, kcal, protein, carb, fat, micros')
     .eq('athlete_id', id)
     .eq('logged_on', iso)
     .eq('meal', meal);
@@ -545,26 +583,36 @@ export async function saveMealFromDay(name: string, iso: string, meal: MealSlot)
     .single();
   if (error || !created) throw error;
 
-  await supabase.from('saved_meal_items').insert(
-    (rows as Record<string, any>[]).map((r) => ({
-      meal_id: (created as { id: string }).id,
-      source: r.source,
-      source_key: r.source_key,
-      name: r.name,
-      brand: r.brand,
-      serving_label: r.serving_label,
-      grams: r.grams,
-      quantity: r.quantity,
-      kcal: r.kcal,
-      protein: r.protein,
-      carb: r.carb,
-      fat: r.fat,
-    })),
-  );
+  /* ⚠ The micronutrients ride along (0207), or the saved meal comes back SHORTER than the plate it was
+     saved from — and `mealBreakdown` then drops a nutrient for the whole meal because one row cannot
+     account for it. Falls back to the macro-only insert while the migration is unpasted. */
+  const item = (r: Record<string, any>, withMicros: boolean) => ({
+    meal_id: (created as { id: string }).id,
+    source: r.source,
+    source_key: r.source_key,
+    name: r.name,
+    brand: r.brand,
+    serving_label: r.serving_label,
+    grams: r.grams,
+    quantity: r.quantity,
+    kcal: r.kcal,
+    protein: r.protein,
+    carb: r.carb,
+    fat: r.fat,
+    ...(withMicros ? { micros: r.micros ?? null } : {}),
+  });
+
+  const list = rows as Record<string, any>[];
+  const wanted = microsColumn !== false;
+  let { error: itemsError } = await supabase.from('saved_meal_items').insert(list.map((r) => item(r, wanted)));
+  if (itemsError && wanted && isMissingColumn(itemsError)) {
+    microsColumn = false;
+    ({ error: itemsError } = await supabase.from('saved_meal_items').insert(list.map((r) => item(r, false))));
+  }
+  if (itemsError) throw itemsError;
 }
 
-/** A food the athlete typed in themselves — Create Food, and the fallback when a barcode is unknown. */
-export async function createUserFood(food: {
+export interface UserFoodInput {
   name: string;
   brand?: string | null;
   kcal100: number;
@@ -572,37 +620,89 @@ export async function createUserFood(food: {
   carb100: number;
   fat100: number;
   servings: Serving[];
-}): Promise<CatalogFood | null> {
+  /** Per 100 g, from the label (0207). Omitted keys are nutrients the label did not state. */
+  micros?: Record<string, number> | null;
+}
+
+const userFoodRow = (food: UserFoodInput) => ({
+  name: food.name,
+  brand: food.brand ?? null,
+  kcal_100: food.kcal100,
+  protein_100: food.protein100,
+  carb_100: food.carb100,
+  fat_100: food.fat100,
+  servings: food.servings,
+});
+
+const asCatalogFood = (key: string, food: UserFoodInput): CatalogFood => ({
+  key,
+  source: 'custom',
+  name: food.name,
+  brand: food.brand ?? null,
+  kcal100: food.kcal100,
+  protein100: food.protein100,
+  carb100: food.carb100,
+  fat100: food.fat100,
+  servings: food.servings,
+  micros: food.micros ?? null,
+  attribution: null,
+});
+
+/**
+ * A food the athlete typed in themselves — Create Food, and the fallback when a barcode is unknown.
+ *
+ * ⚠ **THE FOOD IS CREATED EVEN IF `0207` HAS NOT BEEN PASTED.** A write naming a column PostgREST has
+ * never seen fails the whole insert, so a new client against an old database would refuse to create
+ * ANY food rather than lose the extra nutrients. It retries without them instead: the label's macros
+ * are what the athlete came for, and the micronutrients are the part that can wait.
+ */
+export async function createUserFood(food: UserFoodInput): Promise<CatalogFood | null> {
   const id = await athleteId();
   if (!id) return null;
-  const { data, error } = await supabase
-    .from('user_foods')
-    .insert({
-      athlete_id: id,
-      name: food.name,
-      brand: food.brand ?? null,
-      kcal_100: food.kcal100,
-      protein_100: food.protein100,
-      carb_100: food.carb100,
-      fat_100: food.fat100,
-      servings: food.servings,
-    })
-    .select('id')
-    .single();
+
+  const insert = (withMicros: boolean) =>
+    supabase
+      .from('user_foods')
+      .insert(
+        withMicros
+          ? { athlete_id: id, ...userFoodRow(food), micros: food.micros ?? null }
+          : { athlete_id: id, ...userFoodRow(food) },
+      )
+      .select('id')
+      .single();
+
+  const wanted = microsColumn !== false && food.micros != null;
+  let { data, error } = await insert(wanted);
+  if (error && wanted && isMissingColumn(error)) {
+    microsColumn = false;
+    ({ data, error } = await insert(false));
+  }
   if (error || !data) throw error;
 
-  return {
-    key: (data as { id: string }).id,
-    source: 'custom',
-    name: food.name,
-    brand: food.brand ?? null,
-    kcal100: food.kcal100,
-    protein100: food.protein100,
-    carb100: food.carb100,
-    fat100: food.fat100,
-    servings: food.servings,
-    attribution: null,
-  };
+  return asCatalogFood((data as { id: string }).id, food);
+}
+
+/** Edit a food the athlete already made. Same column fallback, same reasoning. */
+export async function updateUserFood(foodId: string, food: UserFoodInput): Promise<CatalogFood | null> {
+  const id = await athleteId();
+  if (!id) return null;
+
+  const write = (withMicros: boolean) =>
+    supabase
+      .from('user_foods')
+      .update(withMicros ? { ...userFoodRow(food), micros: food.micros ?? null } : userFoodRow(food))
+      .eq('id', foodId)
+      .eq('athlete_id', id);
+
+  const wanted = microsColumn !== false;
+  let { error } = await write(wanted);
+  if (error && wanted && isMissingColumn(error)) {
+    microsColumn = false;
+    ({ error } = await write(false));
+  }
+  if (error) throw error;
+
+  return asCatalogFood(foodId, food);
 }
 
 /** Targets are history rows: setting one writes today's row, it never edits an older one (NUT-D5). */

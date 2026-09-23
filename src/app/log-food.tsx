@@ -19,11 +19,9 @@ import {
   quickAddMacros,
   SOURCE_LABEL,
   type CatalogFood,
-  type Serving,
 } from '@/domain/nutrition/serving';
 import {
   addEntries,
-  createUserFood,
   fetchFavorites,
   fetchMyFoods,
   fetchRecentFoods,
@@ -31,7 +29,6 @@ import {
   logSavedMeal,
   lookupBarcode,
   searchFoods,
-  setFavorite,
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { useQuery } from '@/lib/useQuery';
@@ -89,7 +86,11 @@ export default function LogFoodScreen() {
 
   const [barcodeOpen, setBarcodeOpen] = useState(params.scan === '1');
   const [quickOpen, setQuickOpen] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
+
+  /* Create Food is a SCREEN now (`Create Food.dc.html`), not the six-field sheet this file used to
+     own — it carries a unit picker, a calories-versus-macros check and ten more nutrients, none of
+     which fit under a keyboard in a sheet. It takes the meal and day so it can log what it creates. */
+  const goCreateFood = () => router.push({ pathname: '/create-food', params: { date: iso, meal } });
 
   const { data: recents } = useQuery(fetchRecentFoods, [reloads]);
   const { data: favorites } = useQuery(fetchFavorites, [reloads]);
@@ -118,7 +119,6 @@ export default function LogFoodScreen() {
   const results = isSearching && search.q === trimmed ? search.foods : null;
   const searching = isSearching && search.q !== trimmed;
 
-  const favoriteKeys = useMemo(() => new Set((favorites ?? []).map((f) => f.key)), [favorites]);
 
   /** One tap: the food's default serving, quantity 1, straight into the day. */
   const logNow = async (food: CatalogFood) => {
@@ -250,7 +250,7 @@ export default function LogFoodScreen() {
           <Text style={styles.footerAction}>Quick Add</Text>
         </Pressable>
         <View style={styles.footerDot} />
-        <Pressable accessibilityRole="button" onPress={() => setCreateOpen(true)}>
+        <Pressable accessibilityRole="button" onPress={goCreateFood}>
           <Text style={styles.footerAction}>Create Food</Text>
         </Pressable>
       </View>
@@ -266,7 +266,7 @@ export default function LogFoodScreen() {
         }}
         onNotFound={() => {
           setBarcodeOpen(false);
-          setCreateOpen(true);
+          goCreateFood();
           showToast('Not in the database — add it yourself');
         }}
       />
@@ -284,16 +284,6 @@ export default function LogFoodScreen() {
         }}
       />
 
-      <CreateFoodSheet
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreate={async (food) => {
-          const created = await createUserFood(food);
-          setCreateOpen(false);
-          setReloads((n) => n + 1);
-          if (created) router.push({ pathname: '/food-detail', params: { key: created.key, date: iso, meal } });
-        }}
-      />
     </View>
   );
 }
@@ -516,75 +506,6 @@ function QuickAddSheet({
   );
 }
 
-function CreateFoodSheet({
-  open,
-  onClose,
-  onCreate,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onCreate: (food: {
-    name: string;
-    brand: string | null;
-    kcal100: number;
-    protein100: number;
-    carb100: number;
-    fat100: number;
-    servings: Serving[];
-  }) => void;
-}) {
-  const [name, setName] = useState('');
-  const [brand, setBrand] = useState('');
-  const [servingGrams, setServingGrams] = useState('');
-  const [servingLabel, setServingLabel] = useState('');
-  const [kcal, setKcal] = useState('');
-  const [protein, setProtein] = useState('');
-  const [carb, setCarb] = useState('');
-  const [fat, setFat] = useState('');
-
-  /* A label states one serving, not 100 g — so the numbers are entered as the label reads them and
-     converted here. Entering "per 100 g" figures into a serving-sized form is the classic way a custom
-     food ends up 3× wrong. */
-  const grams = Number(servingGrams);
-  const per100 = (v: string) => (grams > 0 ? (Number(v || 0) * 100) / grams : 0);
-  const valid = name.trim().length > 1 && grams > 0 && Number(kcal) > 0;
-
-  return (
-    <BottomSheet open={open} onClose={onClose} title="Create food" scroll>
-      <View style={styles.sheetBody}>
-        <Text style={styles.sheetNote}>Copy the nutrition label. One serving, exactly as it is printed.</Text>
-        <InputField label="Name" value={name} onChange={setName} placeholder="Greek yogurt" />
-        <InputField label="Brand (optional)" value={brand} onChange={setBrand} placeholder="Fage" />
-        <View style={styles.macroInputs}>
-          <NumberField label="Serving (g)" value={servingGrams} onChange={setServingGrams} />
-          <NumberField label="Calories" value={kcal} onChange={setKcal} />
-          <NumberField label="Protein" value={protein} onChange={setProtein} />
-          <NumberField label="Carbs" value={carb} onChange={setCarb} />
-          <NumberField label="Fat" value={fat} onChange={setFat} />
-        </View>
-        <InputField label="Serving name (optional)" value={servingLabel} onChange={setServingLabel} placeholder="1 container" />
-        <Button
-          variant="primary"
-          fullWidth
-          disabled={!valid}
-          onPress={() =>
-            onCreate({
-              name: name.trim(),
-              brand: brand.trim() || null,
-              kcal100: per100(kcal),
-              protein100: per100(protein),
-              carb100: per100(carb),
-              fat100: per100(fat),
-              servings: [{ label: servingLabel.trim() || `${grams} g`, grams }],
-            })
-          }
-        >
-          Save food
-        </Button>
-      </View>
-    </BottomSheet>
-  );
-}
 
 function NumberField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
