@@ -20,8 +20,14 @@ export async function fetchSelfProfile(): Promise<UserProfile> {
     .from('profiles')
     .select('name, first_name, handle, initials, sex, avatar_url, onboarded_at')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
   if (error) throw error;
+  // No row is a real answer, not a failure: the account has never been through onboarding, whose
+  // finish mints the row (0199 `ensure_my_profile`). Anything that THREW above is a failure, and the
+  // provider retries it rather than reading it as "not onboarded".
+  if (!data) {
+    return { name: '', firstName: '', handle: '', initials: '', avatarUrl: null, sex: 'unspecified', onboardedAt: null };
+  }
   return {
     name: data.name,
     firstName: data.first_name,
