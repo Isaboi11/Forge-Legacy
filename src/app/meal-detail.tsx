@@ -157,7 +157,7 @@ export default function MealDetailScreen() {
         );
       } else {
         if (sameSpot || !targetEntry) return;
-        await moveEntry(targetEntry.id, { iso: targetDay, meal: targetSlot });
+        await moveEntry(targetEntry.id, { iso: targetDay, meal: targetSlot }, targetEntry);
         showToast(`Moved to ${targetDayLabel} · ${MEAL_LABELS[targetSlot]}`);
       }
       setSheet(null);

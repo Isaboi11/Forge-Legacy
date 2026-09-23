@@ -2,6 +2,18 @@ import type { LogEntry, MealSlot, Targets } from '@/domain/nutrition/day';
 import { localToday } from '@/domain/nutrition/day';
 import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
+import { opsFor, overlayDay, type OutboxOp } from '@/domain/nutrition/outbox';
+import { isTransportFailure } from '@/domain/workout/pending-save';
+import {
+  heldItems,
+  holdOp,
+  readCache,
+  readLastAthlete,
+  retire,
+  writeCache,
+  writeLastAthlete,
+} from '@/data/nutrition-outbox-live';
+import { reportError } from '@/lib/diagnostics';
 // The app's own id minter (Hermes has no `crypto.randomUUID` everywhere) — no new dependency.
 import { uuid } from '@/lib/app-session';
 import { supabase } from '@/lib/supabase';
@@ -12,6 +24,12 @@ import { supabase } from '@/lib/supabase';
  * ⚠ **THE DEVICE MINTS THE ID.** A food log is written in a kitchen on bad signal, so every write is an
  * upsert on a client-generated uuid: a retry can never double-log. (`pending-save.ts` has no such key and
  * needs `findCommittedWorkout` before every replay — this does not repeat that.)
+ *
+ * ⚠ **A WRITE WITH NO SIGNAL IS HELD, NOT LOST** (§12 Phase 1, "offline-safe log"). A write that fails
+ * in transport goes to the outbox (`domain/nutrition/outbox.ts`), every day read overlays what is held,
+ * and `drainFoodOutbox` replays it on the next foreground. While anything is held, NEW writes queue
+ * behind it too — otherwise a delete made online could land before the offline add it was deleting, and
+ * the drain would bring the food back.
  *
  * ⚠ **PRIVATE BY SCHEMA** (P6-A2-D1). Every query here is implicitly `athlete_id = auth.uid()` via RLS;
  * there is no visibility column to read, and nothing here is ever fetched for another athlete.
@@ -63,11 +81,152 @@ const toEntry = (r: EntryRow): LogEntry => ({
   micros: r.micros ?? null,
 });
 
+/**
+ * Who is signed in, from the CACHED session. `getUser()` asks the server, so with no signal it answered
+ * null and every write here silently did nothing — the exact moment the outbox exists for. RLS still
+ * decides every row on the server; this id only scopes queries and tags held writes.
+ *
+ * ⚠ **AN HOUR OFFLINE EXPIRES THE ACCESS TOKEN**, and `getSession()` then tries a refresh, fails for want
+ * of signal, and answers `session: null` WITH an error. That is not a sign-out, so the last athlete seen
+ * signed in is used — only on a transport failure. A real sign-out answers null with NO error, and gets
+ * null here: a queue must never be written in the name of someone who has left.
+ */
 async function athleteId(): Promise<string | null> {
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user?.id ?? null;
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+  const id = session?.user?.id ?? null;
+  if (id) {
+    if (id !== lastAthlete) {
+      lastAthlete = id;
+      void writeLastAthlete(id);
+    }
+    return id;
+  }
+  if (error && isTransportFailure(error)) return lastAthlete ?? (lastAthlete = await readLastAthlete());
+  if (!error && lastAthlete) {
+    lastAthlete = null;
+    void writeLastAthlete(null);
+  }
+  return null;
+}
+
+let lastAthlete: string | null = null;
+
+/** This athlete's held writes, oldest first. */
+async function heldOps(id: string): Promise<OutboxOp[]> {
+  return opsFor(await heldItems(), id);
+}
+
+/**
+ * The offline half of a list read: on success remember it, on a transport failure answer with what was
+ * remembered. Any other error stays the empty list it always was. This is what lets Log Food offer
+ * recents, favourites, saved meals and your own foods with no signal — the foods a kitchen logs.
+ */
+async function remembered<T>(id: string, key: string, error: unknown, fresh: () => T, empty: T): Promise<T> {
+  if (error) return isTransportFailure(error) ? ((await readCache<T>(id, key)) ?? empty) : empty;
+  const value = fresh();
+  void writeCache(id, key, value);
+  return value;
+}
+
+/**
+ * Send a write, or hold it. Held when (a) earlier writes are still held — so order is kept — or (b) this
+ * one failed before the server ruled on it. A write the server REJECTED still throws, so a screen shows
+ * the refusal instead of a success the drain can never make true.
+ */
+async function sendOrHold(id: string, op: OutboxOp): Promise<void> {
+  if ((await heldOps(id)).length > 0 && (await holdOp(id, op))) {
+    void drainFoodOutbox();
+    return;
+  }
+  const error = await apply(id, op);
+  if (!error) return;
+  if (isTransportFailure(error) && (await holdOp(id, op))) return;
+  throw error;
+}
+
+const entryRow = (athlete: string, iso: string, e: LogEntry) => ({
+  id: e.id,
+  athlete_id: athlete,
+  logged_on: iso,
+  meal: e.meal,
+  source: e.source,
+  source_key: e.sourceKey ?? null,
+  name: e.name,
+  brand: e.brand ?? null,
+  serving_label: e.servingLabel ?? null,
+  grams: e.grams ?? null,
+  quantity: e.quantity,
+  kcal: e.kcal,
+  protein: e.protein,
+  carb: e.carb,
+  fat: e.fat,
+  micros: e.micros ?? null,
+});
+
+/** One write against the server. Returns the error rather than throwing — the caller decides hold vs. surface. */
+async function apply(athlete: string, op: OutboxOp): Promise<unknown> {
+  switch (op.kind) {
+    case 'add':
+      return (
+        await supabase
+          .from('food_log_entries')
+          .upsert(op.entries.map((e) => entryRow(athlete, op.iso, e)), { onConflict: 'id' })
+      ).error;
+    case 'remove':
+      return (await supabase.from('food_log_entries').delete().eq('id', op.id)).error;
+    case 'update':
+      return (
+        await supabase
+          .from('food_log_entries')
+          .update({
+            quantity: op.patch.quantity,
+            serving_label: op.patch.servingLabel,
+            grams: op.patch.grams,
+            kcal: op.patch.kcal,
+            protein: op.patch.protein,
+            carb: op.patch.carb,
+            fat: op.patch.fat,
+          })
+          .eq('id', op.id)
+      ).error;
+    case 'move':
+      return (
+        await supabase.from('food_log_entries').update({ logged_on: op.iso, meal: op.meal }).eq('id', op.id)
+      ).error;
+  }
+}
+
+let draining = false;
+
+/**
+ * Replay held writes, oldest first. Fire-and-forget: mounted with the workout drain (foreground = the
+ * proxy for "signal came back"), and kicked after any write that queued behind others.
+ *
+ * Stops at the first transport failure — still offline, try next foreground. An op the server REJECTS
+ * is retired and reported: it will never succeed, and leaving it would block every write behind it.
+ */
+export async function drainFoodOutbox(): Promise<void> {
+  if (draining) return;
+  draining = true;
+  try {
+    const id = await athleteId();
+    if (!id) return;
+    for (;;) {
+      const next = (await heldItems()).find((i) => i.athleteId === id);
+      if (!next) return;
+      const error = await apply(id, next.op);
+      if (error && isTransportFailure(error)) return;
+      if (error) reportError(error);
+      await retire(next.key);
+    }
+  } catch (e) {
+    reportError(e);
+  } finally {
+    draining = false;
+  }
 }
 
 /** One day: its entries in the order they were logged, plus the target in force on that date. */
@@ -75,7 +234,7 @@ export async function fetchDay(iso: string): Promise<DayLog> {
   const id = await athleteId();
   if (!id) return { entries: [], targets: null };
 
-  const [entries, targets] = await Promise.all([
+  const [entries, targets, held] = await Promise.all([
     supabase
       .from('food_log_entries')
       .select(ENTRY_COLUMNS)
@@ -83,10 +242,20 @@ export async function fetchDay(iso: string): Promise<DayLog> {
       .eq('logged_on', iso)
       .order('created_at', { ascending: true }),
     fetchTargetsOn(iso),
+    heldOps(id),
   ]);
 
-  if (entries.error) return { entries: [], targets: null };
-  return { entries: ((entries.data ?? []) as EntryRow[]).map(toEntry), targets };
+  /* No signal: the last read of this day, with what is held drawn on top — never an empty diary for a
+     day the athlete can see they logged. */
+  if (entries.error) {
+    if (!isTransportFailure(entries.error)) return { entries: [], targets: null };
+    const cached = await readCache<DayLog>(id, `day:${iso}`);
+    return { entries: overlayDay(iso, cached?.entries ?? [], held), targets: cached?.targets ?? null };
+  }
+
+  const server: DayLog = { entries: ((entries.data ?? []) as EntryRow[]).map(toEntry), targets };
+  void writeCache(id, `day:${iso}`, server);
+  return { entries: overlayDay(iso, server.entries, held), targets };
 }
 
 export interface TargetHistoryRow {
@@ -116,7 +285,8 @@ export async function fetchRangeTotals(fromIso: string, toIso: string): Promise<
     .eq('athlete_id', id)
     .gte('logged_on', fromIso)
     .lte('logged_on', toIso);
-  if (error) return [];
+  const cacheKey = `range:${fromIso}:${toIso}`;
+  if (error) return isTransportFailure(error) ? ((await readCache<DayTotals[]>(id, cacheKey)) ?? []) : [];
 
   const byDay = new Map<string, DayTotals>();
   for (const r of (data ?? []) as Record<string, any>[]) {
@@ -130,13 +300,15 @@ export async function fetchRangeTotals(fromIso: string, toIso: string): Promise<
   }
   /* Rounded ONCE, at the end — the same rule `totals()` follows, so a week of twelve-food days
      does not drift a calorie per row. */
-  return [...byDay.values()].map((d) => ({
+  const out = [...byDay.values()].map((d) => ({
     ...d,
     kcal: Math.round(d.kcal),
     protein: Math.round(d.protein),
     carb: Math.round(d.carb),
     fat: Math.round(d.fat),
   }));
+  void writeCache(id, cacheKey, out);
+  return out;
 }
 
 /**
@@ -220,16 +392,14 @@ export async function addEntries(iso: string, entries: NewEntry[]): Promise<LogE
   const id = await athleteId();
   if (!id || !entries.length) return [];
 
-  const rows = entries.map((e) => ({
+  const logged: LogEntry[] = entries.map((e) => ({
     id: uuid(),
-    athlete_id: id,
-    logged_on: iso,
     meal: e.meal,
     source: e.source,
-    source_key: e.sourceKey ?? null,
+    sourceKey: e.sourceKey ?? null,
     name: e.name,
     brand: e.brand ?? null,
-    serving_label: e.servingLabel ?? null,
+    servingLabel: e.servingLabel ?? null,
     grams: e.macros.grams,
     quantity: e.quantity,
     kcal: e.macros.kcal,
@@ -239,15 +409,14 @@ export async function addEntries(iso: string, entries: NewEntry[]): Promise<LogE
     micros: e.micros ?? null,
   }));
 
-  const { error } = await supabase.from('food_log_entries').upsert(rows, { onConflict: 'id' });
-  if (error) throw error;
-
-  return rows.map((r) => toEntry(r as unknown as EntryRow));
+  await sendOrHold(id, { kind: 'add', iso, entries: logged });
+  return logged;
 }
 
 export async function removeEntry(entryId: string): Promise<void> {
-  const { error } = await supabase.from('food_log_entries').delete().eq('id', entryId);
-  if (error) throw error;
+  const id = await athleteId();
+  if (!id) return;
+  await sendOrHold(id, { kind: 'remove', id: entryId });
 }
 
 /** Change a logged portion — Food Detail reopened on an existing row. */
@@ -255,19 +424,21 @@ export async function updateEntry(
   entryId: string,
   patch: { quantity: number; servingLabel: string | null; macros: PortionMacros },
 ): Promise<void> {
-  const { error } = await supabase
-    .from('food_log_entries')
-    .update({
+  const id = await athleteId();
+  if (!id) return;
+  await sendOrHold(id, {
+    kind: 'update',
+    id: entryId,
+    patch: {
       quantity: patch.quantity,
-      serving_label: patch.servingLabel,
+      servingLabel: patch.servingLabel,
       grams: patch.macros.grams,
       kcal: patch.macros.kcal,
       protein: patch.macros.protein,
       carb: patch.macros.carb,
       fat: patch.macros.fat,
-    })
-    .eq('id', entryId);
-  if (error) throw error;
+    },
+  });
 }
 
 /**
@@ -279,36 +450,24 @@ export async function copyMealTo(
   from: { iso: string; meal: MealSlot },
   to: { iso: string; meal: MealSlot },
 ): Promise<LogEntry[]> {
-  const id = await athleteId();
-  if (!id) return [];
-
-  const { data, error } = await supabase
-    .from('food_log_entries')
-    .select('source, source_key, name, brand, serving_label, grams, quantity, kcal, protein, carb, fat, micros')
-    .eq('athlete_id', id)
-    .eq('logged_on', from.iso)
-    .eq('meal', from.meal)
-    .order('created_at', { ascending: true });
-  if (error || !data?.length) return [];
+  /* Read through `fetchDay`, not a query of its own: offline it answers from the cache plus what is
+     held, so "copy yesterday's breakfast" works in the same kitchen with no signal. */
+  const { entries } = await fetchDay(from.iso);
+  const source = entries.filter((e) => e.meal === from.meal);
+  if (!source.length) return [];
 
   return addEntries(
     to.iso,
-    (data as Record<string, any>[]).map((r) => ({
+    source.map((e) => ({
       meal: to.meal,
-      source: r.source,
-      sourceKey: r.source_key,
-      name: r.name,
-      brand: r.brand,
-      servingLabel: r.serving_label,
-      quantity: Number(r.quantity),
-      micros: r.micros ?? null,
-      macros: {
-        kcal: Number(r.kcal),
-        protein: Number(r.protein),
-        carb: Number(r.carb),
-        fat: Number(r.fat),
-        grams: r.grams != null ? Number(r.grams) : null,
-      },
+      source: e.source,
+      sourceKey: e.sourceKey ?? null,
+      name: e.name,
+      brand: e.brand ?? null,
+      servingLabel: e.servingLabel ?? null,
+      quantity: e.quantity,
+      micros: e.micros ?? null,
+      macros: { kcal: e.kcal, protein: e.protein, carb: e.carb, fat: e.fat, grams: e.grams ?? null },
     })),
   );
 }
@@ -327,25 +486,25 @@ export async function copyMealFrom(fromIso: string, toIso: string, meal: MealSlo
  * re-inserting it, so the id an offline client already minted stays the id — a replayed write after a
  * move is still the same row, not a second helping.
  */
-export async function moveEntry(entryId: string, to: { iso: string; meal: MealSlot }): Promise<void> {
-  const { error } = await supabase
-    .from('food_log_entries')
-    .update({ logged_on: to.iso, meal: to.meal })
-    .eq('id', entryId);
-  if (error) throw error;
+export async function moveEntry(
+  entryId: string,
+  to: { iso: string; meal: MealSlot },
+  /** The row as shown, so a move held offline can still be drawn on a destination day never fetched here. */
+  entry: LogEntry | null = null,
+): Promise<void> {
+  const id = await athleteId();
+  if (!id) return;
+  await sendOrHold(id, { kind: 'move', id: entryId, iso: to.iso, meal: to.meal, entry });
 }
 
 /** Empty one meal of one day. Owner-scoped by RLS; the explicit day and slot keep it to what was asked. */
 export async function clearMeal(iso: string, meal: MealSlot): Promise<void> {
   const id = await athleteId();
   if (!id) return;
-  const { error } = await supabase
-    .from('food_log_entries')
-    .delete()
-    .eq('athlete_id', id)
-    .eq('logged_on', iso)
-    .eq('meal', meal);
-  if (error) throw error;
+  /* One remove per row the athlete can see — never a (day, meal) filter, which replayed late would also
+     delete food logged into this meal after the clear (see `domain/nutrition/outbox.ts`). */
+  const { entries } = await fetchDay(iso);
+  for (const e of entries) if (e.meal === meal) await sendOrHold(id, { kind: 'remove', id: e.id });
 }
 
 /**
@@ -404,7 +563,7 @@ export async function fetchRecentFoods(limit = 30): Promise<RecentFood[]> {
     .not('source_key', 'is', null)
     .order('created_at', { ascending: false })
     .limit(limit * 4);
-  if (error) return [];
+  if (error) return remembered<RecentFood[]>(id, `recents:${limit}`, error, () => [], []);
 
   const seen = new Set<string>();
   const out: RecentFood[] = [];
@@ -422,7 +581,7 @@ export async function fetchRecentFoods(limit = 30): Promise<RecentFood[]> {
     });
     if (out.length >= limit) break;
   }
-  return out;
+  return remembered(id, `recents:${limit}`, null, () => out, []);
 }
 
 /**
@@ -550,9 +709,8 @@ export async function fetchMyFoods(): Promise<CatalogFood[]> {
   } else if (!error && microsColumn == null) {
     microsColumn = true;
   }
-  if (error) return [];
 
-  return ((data ?? []) as Record<string, any>[]).map((r) => ({
+  return remembered<CatalogFood[]>(id, 'myFoods', error, () => ((data ?? []) as Record<string, any>[]).map((r) => ({
     key: r.id,
     source: 'custom' as const,
     name: r.name,
@@ -564,7 +722,7 @@ export async function fetchMyFoods(): Promise<CatalogFood[]> {
     servings: (r.servings ?? []) as Serving[],
     micros: r.micros ?? null,
     attribution: null,
-  }));
+  })), []);
 }
 
 export interface FavoriteFood {
@@ -582,8 +740,13 @@ export async function fetchFavorites(): Promise<FavoriteFood[]> {
     .select('food_key, name, brand')
     .eq('athlete_id', id)
     .order('created_at', { ascending: false });
-  if (error) return [];
-  return ((data ?? []) as Record<string, any>[]).map((r) => ({ key: r.food_key, name: r.name, brand: r.brand }));
+  return remembered<FavoriteFood[]>(
+    id,
+    'favorites',
+    error,
+    () => ((data ?? []) as Record<string, any>[]).map((r) => ({ key: r.food_key, name: r.name, brand: r.brand })),
+    [],
+  );
 }
 
 export async function setFavorite(food: { key: string; name: string; brand?: string | null }, on: boolean): Promise<void> {
@@ -613,20 +776,28 @@ export async function fetchSavedMeals(): Promise<SavedMeal[]> {
     .select('id, name, saved_meal_items(kcal)')
     .eq('athlete_id', id)
     .order('name');
-  if (error) return [];
-  return ((data ?? []) as Record<string, any>[]).map((r) => {
-    const items = (r.saved_meal_items ?? []) as { kcal: number }[];
-    return {
-      id: r.id,
-      name: r.name,
-      kcal: Math.round(items.reduce((sum, i) => sum + Number(i.kcal), 0)),
-      itemCount: items.length,
-    };
-  });
+  return remembered<SavedMeal[]>(
+    id,
+    'savedMeals',
+    error,
+    () =>
+      ((data ?? []) as Record<string, any>[]).map((r) => {
+        const items = (r.saved_meal_items ?? []) as { kcal: number }[];
+        return {
+          id: r.id,
+          name: r.name,
+          kcal: Math.round(items.reduce((sum, i) => sum + Number(i.kcal), 0)),
+          itemCount: items.length,
+        };
+      }),
+    [],
+  );
 }
 
 /** Logging a saved meal writes every one of its foods into the day, in one tap. */
 export async function logSavedMeal(mealId: string, iso: string, meal: MealSlot): Promise<LogEntry[]> {
+  const id = await athleteId();
+  if (!id) return [];
   const columns = 'source, source_key, name, brand, serving_label, grams, quantity, kcal, protein, carb, fat';
   const read = (withMicros: boolean) =>
     supabase
@@ -639,11 +810,18 @@ export async function logSavedMeal(mealId: string, iso: string, meal: MealSlot):
     microsColumn = false;
     ({ data, error } = await read(false));
   }
-  if (error || !data?.length) return [];
+  const items = await remembered<Record<string, any>[]>(
+    id,
+    `savedMeal:${mealId}`,
+    error,
+    () => (data ?? []) as Record<string, any>[],
+    [],
+  );
+  if (!items.length) return [];
 
   return addEntries(
     iso,
-    (data as Record<string, any>[]).map((r) => ({
+    items.map((r) => ({
       meal,
       source: r.source,
       sourceKey: r.source_key,
@@ -667,13 +845,25 @@ export async function logSavedMeal(mealId: string, iso: string, meal: MealSlot):
 export async function saveMealFromDay(name: string, iso: string, meal: MealSlot): Promise<void> {
   const id = await athleteId();
   if (!id) return;
-  const { data: rows } = await supabase
-    .from('food_log_entries')
-    .select('source, source_key, name, brand, serving_label, grams, quantity, kcal, protein, carb, fat, micros')
-    .eq('athlete_id', id)
-    .eq('logged_on', iso)
-    .eq('meal', meal);
-  if (!rows?.length) return;
+  /* Through `fetchDay`, so a meal logged offline and not yet drained is saved whole. The insert below
+     still needs signal — and throws without it, rather than the old silent "saved" on an empty read. */
+  const rows = (await fetchDay(iso)).entries
+    .filter((e) => e.meal === meal)
+    .map((e) => ({
+      source: e.source,
+      source_key: e.sourceKey ?? null,
+      name: e.name,
+      brand: e.brand ?? null,
+      serving_label: e.servingLabel ?? null,
+      grams: e.grams ?? null,
+      quantity: e.quantity,
+      kcal: e.kcal,
+      protein: e.protein,
+      carb: e.carb,
+      fat: e.fat,
+      micros: e.micros ?? null,
+    }));
+  if (!rows.length) return;
 
   const { data: created, error } = await supabase
     .from('saved_meals')

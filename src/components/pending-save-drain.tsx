@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
+import { drainFoodOutbox } from '@/data/nutrition-live';
 import { drainPendingSaves } from '@/data/pending-save-live';
 
 /**
@@ -28,9 +29,13 @@ import { drainPendingSaves } from '@/data/pending-save-live';
 export function PendingSaveDrain() {
   useEffect(() => {
     void drainPendingSaves();
+    void drainFoodOutbox();
 
     const sub = AppState.addEventListener('change', (next) => {
-      if (next === 'active') void drainPendingSaves();
+      if (next !== 'active') return;
+      void drainPendingSaves();
+      /* The food diary's held writes (`domain/nutrition/outbox.ts`) — same trigger, same silence. */
+      void drainFoodOutbox();
     });
     return () => sub.remove();
   }, []);
