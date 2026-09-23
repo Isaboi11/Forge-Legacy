@@ -19,6 +19,9 @@ import type { Experience, SessionMinutes } from '@/domain/coach/constraints';
 import { canDoExercise, HOME_GYM_EQUIPMENT, HOME_GYM_GROUPS } from '@/domain/home-gym/equipment';
 import { CHAPTER_SUGGESTIONS, CHAPTER_TITLE_MAX, chapterNameFrom, DEFAULT_CHAPTER_I_TITLE } from '@/domain/legacy/chapter-name';
 import { track } from '@/lib/analytics';
+import { markPlansPending } from '@/lib/onboarding-plans';
+import { activeTheme, applyThemeAndReload, DEFAULT_THEME, THEME_OPTIONS, type ThemeName } from '@/constants/theme-choice';
+import { fetchAppPrefs, saveAppPrefs } from '@/data/settings-live';
 import { useAuth } from '@/lib/auth';
 import { useProfile } from '@/lib/profile';
 import { useMediaPicker } from '@/lib/useMediaPicker';
@@ -97,6 +100,7 @@ import { errorMessage } from '@/lib/useQuery';
 const HOLT_FIRST_WEEK = false;
 
 const BASE_SETUP: Step[] = [
+  'theme',
   'account',
   'username',
   'goal',
@@ -137,7 +141,7 @@ const EQUIPMENT_OPTIONS: { id: EquipmentId; title: string; desc: string }[] = [
   { id: 'bands', title: 'Resistance bands', desc: 'Bands and bodyweight.' },
   { id: 'bodyweight', title: 'Nothing yet', desc: 'Just me and the floor. That’s a real answer.' },
 ];
-type Step = 'account' | 'username' | 'goal' | 'experience' | 'equipment' | 'gear' | 'schedule' | 'chapter' | 'transition';
+type Step = 'theme' | 'account' | 'username' | 'goal' | 'experience' | 'equipment' | 'gear' | 'schedule' | 'chapter' | 'transition';
 type UStatus = 'idle' | 'short' | 'checking' | 'available' | 'taken';
 
 /**
@@ -255,7 +259,18 @@ async function buildFirstWeek(d: Data): Promise<FirstWeek | null> {
 }
 
 export default function Onboarding() {
-  const [step, setStep] = useState<Step>('account');
+  /*
+   * ⚠ WHERE THE FLOW STARTS DEPENDS ON THE THEME, BECAUSE CHOOSING ONE RESTARTS THE APP (ONB-A7-D1).
+   *
+   * Every stylesheet freezes its colours at import (`constants/theme-choice.ts`), so picking Alabaster
+   * reloads the JS and this screen mounts again from nothing. Coming back up already on a non-default
+   * theme means the question was just answered, so the flow resumes at the account step rather than
+   * asking twice. Nothing is lost by the reload: the theme is the first question, before any answer
+   * exists to lose — which is the whole reason it is first.
+   */
+  const [step, setStep] = useState<Step>(activeTheme() === DEFAULT_THEME ? 'theme' : 'account');
+  const [themePick, setThemePick] = useState<ThemeName>(activeTheme());
+  const [restarting, setRestarting] = useState(false);
   const [data, setData] = useState<Data>({
     name: '', sex: null, units: 'imperial', username: '', goals: [], experience: null,
     equipment: [], gear: null, chapterTitle: '', photoUri: null,
@@ -327,7 +342,7 @@ export default function Onboarding() {
    * length rather than a hard-coded total.
    */
   const setup: Step[] = data.equipment.includes('homegym')
-    ? [...BASE_SETUP.slice(0, 5), 'gear', ...BASE_SETUP.slice(5)]
+    ? [...BASE_SETUP.slice(0, BASE_SETUP.indexOf('equipment') + 1), 'gear', ...BASE_SETUP.slice(BASE_SETUP.indexOf('equipment') + 1)]
     : BASE_SETUP;
 
   const idx = setup.indexOf(step);
@@ -416,6 +431,20 @@ export default function Onboarding() {
     }, 450);
   };
 
+  /** Same theme: just move on. Different: save it and restart into it (the only way a theme changes). */
+  const chooseTheme = async () => {
+    if (themePick === activeTheme()) {
+      next();
+      return;
+    }
+    setRestarting(true);
+    track('onboarding_theme_chosen', { section: themePick });
+    await applyThemeAndReload(themePick);
+    // Only reached where a reload is unavailable (Expo Go) — the choice is saved for the next launch.
+    setRestarting(false);
+    next();
+  };
+
   const onFinish = async () => {
     setFinishing(true);
     setError(null);
@@ -438,6 +467,18 @@ export default function Onboarding() {
         equipment: data.equipment,
         gear: data.gear,
       });
+      /*
+       * The theme was chosen before an account existed, so it lives only on this device. Preferences
+       * reads the server copy (`app_prefs.theme`), and would otherwise show Forge selected under an
+       * Alabaster app. Best-effort: the device copy is what renders, so a failure here costs nothing.
+       */
+      if (activeTheme() !== DEFAULT_THEME) {
+        void fetchAppPrefs()
+          .then((prefs) => saveAppPrefs({ ...prefs, theme: activeTheme() }))
+          .catch(() => {});
+      }
+      // Home opens the plans screen once, for a Free athlete only (ONB-A7-D2).
+      await markPlansPending();
       /*
        * ⭐ THE FIRST WEEK, BUILT BEFORE THEY EVER SEE HOME.
        *
@@ -571,12 +612,34 @@ export default function Onboarding() {
           {error ? <Text style={styles.err}>Couldn&apos;t finish — {error}. Try again.</Text> : null}
           <View style={styles.tAction}>
             <Button variant="primary" fullWidth disabled={finishing} onPress={onFinish} accessibilityLabel="Enter Forge">
-              {finishing ? 'Building your first week…' : 'Enter Forge'}
+              {finishing ? (HOLT_FIRST_WEEK ? 'Building your first week…' : 'Opening your forge…') : 'Enter Forge'}
             </Button>
           </View>
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          {step === 'theme' ? (
+            <>
+              <Heading eyebrow="Before we begin" title="Choose your look" body="Dark or light. You can change it any time in Preferences." />
+              <View style={styles.tileStack}>
+                {THEME_OPTIONS.map((t) => (
+                  <SelectTile
+                    key={t.id}
+                    title={t.id === 'forge' ? `${t.label} · Dark` : `${t.label} · Light`}
+                    desc={t.hint}
+                    selected={themePick === t.id}
+                    onPress={() => setThemePick(t.id)}
+                    right={<ThemeSwatch name={t.id} />}
+                  />
+                ))}
+              </View>
+              {themePick !== activeTheme() ? (
+                <Text style={styles.optional}>Forge restarts to change its look. It takes a moment.</Text>
+              ) : null}
+              <Continue disabled={restarting} onPress={() => void chooseTheme()} />
+            </>
+          ) : null}
+
           {step === 'account' ? (
             <>
               <Heading eyebrow="Create your account" title="Claim your name" body="This is the name on your record and above every honor you earn." />
@@ -894,6 +957,28 @@ export default function Onboarding() {
 }
 
 // ── local pieces ──
+/**
+ * A thumbnail of each theme — its ground, a line of its ink and a bar of its metal.
+ *
+ * ⚠ LITERAL COLOURS ON PURPOSE. This is a picture of a theme, drawn identically whichever theme is
+ *   running, so it cannot use role tokens — `flColor.cream100` is near-white in Forge and dark ink in
+ *   Alabaster, and would draw each preview in the wrong theme's ink. Values are the two palettes' own
+ *   ground / primary text / bronze (`foundation.forge.ts`, `foundation.paper.ts`).
+ */
+const SWATCH: Record<ThemeName, { ground: string; ink: string; metal: string; edge: string }> = {
+  forge: { ground: '#0C1013', ink: '#F0EDE8', metal: '#BA8654', edge: '#2E2E35' },
+  paper: { ground: '#F6F2E8', ink: '#28231D', metal: '#A47A3D', edge: '#CDBD9F' },
+};
+function ThemeSwatch({ name }: { name: ThemeName }) {
+  const c = SWATCH[name];
+  return (
+    <View style={[styles.swatch, { backgroundColor: c.ground, borderColor: c.edge }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <View style={[styles.swatchLine, { backgroundColor: c.ink }]} />
+      <View style={[styles.swatchLine, styles.swatchLineShort, { backgroundColor: c.ink, opacity: 0.5 }]} />
+      <View style={[styles.swatchBar, { backgroundColor: c.metal }]} />
+    </View>
+  );
+}
 function Group({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <View style={styles.group}>
@@ -935,6 +1020,10 @@ const styles = StyleSheet.create({
   avatarRow: { alignItems: 'center', gap: 10, paddingVertical: 6 },
   avatarPressed: { opacity: 0.7 },
   optional: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },
+  swatch: { width: 56, height: 44, borderRadius: 8, borderWidth: 1, padding: 7, gap: 4, justifyContent: 'center' },
+  swatchLine: { height: 3, borderRadius: 2, width: '80%' },
+  swatchLineShort: { width: '55%' },
+  swatchBar: { height: 7, borderRadius: 3, width: '100%', marginTop: 2 },
 
   suggestRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   suggestChip: { paddingVertical: 8, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed },
