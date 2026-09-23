@@ -16,8 +16,10 @@
 //   FATSECRET_CLIENT_ID      — OPTIONAL, and absent on purpose today. Restaurants stay off until both
 //   FATSECRET_CLIENT_SECRET    exist; the code simply skips that source. ⚠ FatSecret issues tokens only
 //                              to IP addresses allowlisted in advance and Edge Functions egress from
-//                              rotating AWS addresses, so setting these WITHOUT a fixed-address relay
-//                              will not work — the token call fails and the source stays silent.
+//                              rotating AWS addresses, so the FatSecret console must allowlist
+//                              `0.0.0.0/0` FIRST or the token call fails and the source stays silent.
+//                              (A static-IP relay is NOT required — FatSecret confirmed that in
+//                              writing, 2026-09-23. See the Legal file.)
 //
 // SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are injected by the platform.
 // ⚠ The service role is used for ONE thing: upserting fetched foods into `food_catalog`, which is
@@ -48,6 +50,17 @@
 //
 // ⚠ THIS FILE IS REGENERATED FROM `supabase/functions/food-search/index.ts`, NOT HAND-EDITED. The
 // previous copy had drifted 59 lines behind it. If you change the function, regenerate this.
+//
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// ⚠ REVISION 4 (2026-09-23): FATSECRET ROWS NOW EXPIRE — **REDEPLOY BEFORE SETTING THE SECRETS**.
+//
+// Revisions 1–3 cached every fetched food in `food_catalog` forever, FatSecret included. That is fine
+// while FatSecret is dormant (only USDA rows land there) and a licence breach the moment it is not:
+// their written permission covers a logged food's calories and macros in the athlete's OWN diary, not
+// a shared table every signed-in athlete can read. `fs` rows are now purged after 24 hours, never
+// served past it, and re-read by `food_id` on demand via the new `{ key: 'fs:…' }` mode.
+//
+// ⛔ Deploy THIS revision before `FATSECRET_CLIENT_ID`/`SECRET` are set, not after.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
 /**
@@ -67,9 +80,17 @@
  * keep its calories and macros permanently (that is why `mayStoreMacros` is true for `fs` and
  * `mayStoreMicros` is not). The blocker is mechanical: FatSecret issues OAuth2 tokens **only to IP
  * addresses allowlisted in advance**, and Supabase Edge Functions egress from rotating AWS addresses.
- * Until a fixed-address relay exists, `FATSECRET_CLIENT_ID` / `FATSECRET_CLIENT_SECRET` are simply unset
- * and `fatsecretSearch` never runs — no code change, no redeploy, nothing to remember. Set the two
- * secrets once the IPs are allowlisted and restaurants appear.
+ *
+ * ⚠ **A RELAY IS NOT REQUIRED.** FatSecret said so in writing on 2026-09-22 (second email, recorded in
+ * the same Legal file): a dynamic-IP host is handled either by a static-IP proxy *or* by allowlisting
+ * `0.0.0.0/0`, which they permit and merely do not recommend. So waking this source up is two console
+ * steps by the PO and no code:
+ *
+ *   1. FatSecret console → IP Whitelisting → `0.0.0.0/0`
+ *   2. Supabase → Edge Functions → Secrets → `FATSECRET_CLIENT_ID`, `FATSECRET_CLIENT_SECRET`
+ *
+ * Until those secrets exist they are simply unset and `fatsecretSearch` never runs — no code change, no
+ * redeploy, nothing to remember. Set them and restaurants appear on the next call.
  *
  * ══ ATTRIBUTION IS A CONDITION OF THE LICENCE ══
  *
@@ -364,7 +385,47 @@ async function fatsecretSearch(query: string, limit: number): Promise<Food[]> {
   return (Array.isArray(foods) ? foods : [foods]).map(fsFood).filter(Boolean) as Food[];
 }
 
+/**
+ * One FatSecret food, fresh, by the id a diary row kept.
+ *
+ * This is the other half of the 24-hour rule: we are not allowed to *hold* their nutrition in the shared
+ * catalogue, but we are allowed to *ask again* whenever a screen needs it. Food Detail on an expired row
+ * lands here. Returns null while dormant, exactly like search.
+ */
+async function fatsecretFoodById(id: string): Promise<Food | null> {
+  const token = await fatsecretToken();
+  if (!token) return null;
+  const url = new URL('https://platform.fatsecret.com/rest/food/v4');
+  url.searchParams.set('food_id', id);
+  url.searchParams.set('format', 'json');
+  const res = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+  if (!res.ok) return null;
+  const body = await res.json();
+  return body.food ? fsFood(body.food) : null;
+}
+
 // ── The cache ────────────────────────────────────────────────────────────────
+
+/*
+ * ══ ⚠ FATSECRET ROWS EXPIRE. USDA ROWS DO NOT. ══
+ *
+ * `Docs/Legal/FatSecret-Storage-Permission-2026-09-22.md`: their written permission covers a logged
+ * food's calories and macros inside the athlete's OWN diary — `food_log_entries` snapshots those at log
+ * time and keeps them forever, which is allowed. It does NOT cover `food_catalog`, which is shared
+ * reference data every signed-in athlete can read; there their terms are the standard 24-hour rule.
+ *
+ * So an `fs` row here is a short-lived cache, not a copy of their catalogue. It is purged after
+ * `FS_TTL_MS` and never served past it — on a miss we re-read the food by `source_id`, which is exactly
+ * what the licence asks for. USDA is CC0 and OFF is ODbL-with-credit, so neither expires.
+ */
+const FS_TTL_MS = 24 * 60 * 60 * 1000;
+
+const fsExpiry = () => new Date(Date.now() - FS_TTL_MS).toISOString();
+
+/** Drop every FatSecret row we are no longer licensed to hold. Cheap, indexed, and safe to over-call. */
+async function purgeStaleFatSecret(admin: ReturnType<typeof createClient>): Promise<void> {
+  await admin.from('food_catalog').delete().eq('source', 'fs').lt('fetched_at', fsExpiry());
+}
 
 async function cache(foods: Food[]): Promise<void> {
   if (!foods.length) return;
@@ -387,15 +448,19 @@ async function cache(foods: Food[]): Promise<void> {
     })),
     { onConflict: 'key' },
   );
+  await purgeStaleFatSecret(admin);
 }
 
-/** Ours first, and never a paid lookup for something we already hold. */
+/** Ours first, and never a paid lookup for something we already hold — but never a stale `fs` row either. */
 async function cached(query: string, limit: number): Promise<Food[]> {
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
   const { data } = await admin
     .from('food_catalog')
     .select('key, source, source_id, name, brand, gtin, kcal_100, protein_100, carb_100, fat_100, servings, micros')
     .ilike('name', `%${query}%`)
+    // A FatSecret row past its 24 hours is treated as absent even if the purge has not run yet, so the
+    // TTL holds whatever else happens. `or` reads as: not FatSecret, OR fetched within the window.
+    .or(`source.neq.fs,fetched_at.gte.${fsExpiry()}`)
     .limit(limit);
   return (data ?? []).map((r: Record<string, any>) => ({
     key: r.key,
@@ -445,7 +510,7 @@ Deno.serve(async (req) => {
   const { data: mayUseNutrition, error: gateError } = await supabase.rpc('has_nutrition_access');
   if (gateError || mayUseNutrition !== true) return json({ error: 'nutrition_preview_only' }, 403);
 
-  let body: { q?: string; barcode?: string; limit?: number };
+  let body: { q?: string; barcode?: string; key?: string; limit?: number };
   try {
     body = await req.json();
   } catch {
@@ -453,6 +518,59 @@ Deno.serve(async (req) => {
   }
 
   const limit = Math.min(Math.max(body.limit ?? 25, 1), 50);
+
+  /*
+   * ── One food by key — what Food Detail opens on for a source that expires ──
+   *
+   * `fetchFoodByKey` reads `food_catalog` directly for every other source, because a USDA row is ours
+   * forever. An `fs:` key cannot be answered that way: the row is gone 24 hours after it was fetched,
+   * and "this food is gone" is the wrong thing to show for a meal the athlete logged last week. So the
+   * client routes `fs:` here, and we re-read it from FatSecret — which is what the licence asks for
+   * instead of holding the data.
+   *
+   * The diary is unaffected either way: `food_log_entries` snapshotted its calories and macros at log
+   * time under the written permission, so the day's totals never depend on this call succeeding.
+   */
+  if (body.key) {
+    const key = body.key.trim();
+    if (!key.startsWith('fs:')) return json({ error: 'bad_request' }, 400);
+
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
+    const { data: fresh } = await admin
+      .from('food_catalog')
+      .select('key, source, source_id, name, brand, gtin, kcal_100, protein_100, carb_100, fat_100, servings, micros')
+      .eq('key', key)
+      .gte('fetched_at', fsExpiry())
+      .maybeSingle();
+
+    if (fresh) {
+      const r = fresh as Record<string, any>;
+      return json({
+        foods: [
+          {
+            key: r.key,
+            source: r.source,
+            sourceId: r.source_id,
+            name: r.name,
+            brand: r.brand,
+            gtin: r.gtin,
+            kcal100: r.kcal_100,
+            protein100: r.protein_100,
+            carb100: r.carb_100,
+            fat100: r.fat_100,
+            servings: r.servings ?? [],
+            micros: r.micros,
+            attribution: 'Powered by fatsecret',
+          },
+        ],
+      });
+    }
+
+    const food = await fatsecretFoodById(key.slice(3)).catch(() => null);
+    if (!food) return json({ foods: [] });
+    await cache([food]);
+    return json({ foods: [food] });
+  }
 
   // ── Barcode: exact, and the order matters. USDA first (CC0), OFF second (ODbL, community-quality).
   if (body.barcode) {
