@@ -4,7 +4,7 @@
 #   2. Edit recipes.py (ingredient table + per-serving grams).  `python recipes.py` prints each recipe's
 #      totals and the 4/4/9 energy check.
 #   3. `python gen_recipes_ts.py` writes recipes.gen.ts; copy it to src/domain/nutrition/recipes-data.ts
-#      (with `allergens: readonly Allergen[]` in the Ingredient interface) and run node --test.
+#      and run node --test.
 import csv, sys, pickle, os
 D='sr/FoodData_Central_sr_legacy_food_csv_2018-04/'
 if not os.path.exists('usda.pkl'):

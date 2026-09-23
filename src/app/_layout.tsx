@@ -372,6 +372,7 @@ function RootNavigator() {
         <Stack.Screen name="nutrition-targets" />
         <Stack.Screen name="meal-plan-setup" />
         <Stack.Screen name="meal-plan" />
+        <Stack.Screen name="recipe" />
         <Stack.Screen name="account-settings" />
         {/* P-8. A plain push in BOTH entry contexts, deliberately: the spec's two contexts differ only in
             the dismiss affordance (§2.3), which `?from=gate` switches, and M-7 dismisses before routing —

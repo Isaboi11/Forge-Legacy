@@ -160,10 +160,11 @@ test('a locked added snack survives a rebuild', () => {
 /* ── short days ───────────────────────────────────────────────────────── */
 
 test('short is said only past the larger of 100 kcal or 5%, and over is never flagged', () => {
-  const day = { items: [{ slot: 'breakfast', recipeId: 'b02', leftover: false }] }; // 567
-  assert.equal(shortBy(day, 600), 0); // 30 short
-  assert.equal(shortBy(day, 900), 330);
-  assert.equal(shortBy(day, 400), 0); // over
+  const day = { items: [{ slot: 'breakfast', recipeId: 'b02', leftover: false }] };
+  const kcal = RECIPE_BY_ID.b02.kcal;
+  assert.equal(shortBy(day, kcal + 30), 0); // 30 short: inside the band
+  assert.equal(shortBy(day, kcal + 330), Math.round(330 / 10) * 10);
+  assert.equal(shortBy(day, kcal - 200), 0); // over is never flagged
 });
 
 /* ── swaps ────────────────────────────────────────────────────────────── */

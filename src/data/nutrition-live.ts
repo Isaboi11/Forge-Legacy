@@ -4,7 +4,7 @@ import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
 import { opsFor, overlayDay, type OutboxOp } from '@/domain/nutrition/outbox';
 import type { MealPlanPrefs } from '@/domain/nutrition/meal-plan-setup';
-import type { Locks, MealPlanWeek, PlanDay } from '@/domain/nutrition/meal-planner';
+import { RECIPE_BY_ID, logKey, type Locks, type MealPlanWeek, type PlanDay } from '@/domain/nutrition/meal-planner';
 import { isTransportFailure } from '@/domain/workout/pending-save';
 import {
   heldItems,
@@ -1190,4 +1190,43 @@ export async function saveMealPlanWeek(week: MealPlanWeek): Promise<void> {
     { onConflict: 'athlete_id,week_start' },
   );
   if (error) throw error;
+}
+
+/**
+ * "Log meal" / "Logged" for one planned meal — shared by Meal Plan and Recipe so both write the same row.
+ *
+ * Logging writes a real diary row TODAY, in the meal's slot, as a quick-add labelled "Forge recipe"
+ * (one serving, the recipe's per-serving numbers — which are USDA-derived, NUT-D4). Unlogging removes
+ * exactly that row, by the id the plan remembered. Returns the week with `logged` updated; the caller
+ * saves it.
+ */
+export async function togglePlanLog(
+  week: MealPlanWeek,
+  d: number,
+  i: number,
+  todayIso: string,
+): Promise<{ week: MealPlanWeek; logged: boolean }> {
+  const it = week.days[d]?.items[i];
+  const r = it ? RECIPE_BY_ID[it.recipeId] : undefined;
+  if (!it || !r) return { week, logged: false };
+  const key = logKey(d, it);
+  const logged = { ...week.logged };
+  const existing = logged[key];
+  if (existing) {
+    await removeEntry(existing);
+    delete logged[key];
+    return { week: { ...week, logged }, logged: false };
+  }
+  const [entry] = await addEntries(todayIso, [
+    {
+      meal: it.slot,
+      source: 'quick',
+      name: r.name,
+      servingLabel: '1 serving · Forge recipe',
+      quantity: 1,
+      macros: { kcal: r.kcal, protein: r.protein, carb: r.carb, fat: r.fat, grams: null },
+    },
+  ]);
+  if (entry) logged[key] = entry.id;
+  return { week: { ...week, logged }, logged: true };
 }
