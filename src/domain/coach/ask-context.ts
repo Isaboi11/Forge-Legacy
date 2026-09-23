@@ -31,6 +31,7 @@ import { ALIAS_INDEX, aliasKey, resolveAgainstCatalog } from '../exercise-picker
 import { ABBREVIATIONS, tokenize, type CatalogEntry } from '../program/exercise-match.ts';
 import { rationaleFor, type RationaleInput } from './rulebook/rationale.ts';
 import { isTrainingQuestion } from './training-summary.ts';
+import { isNutritionQuestion } from '../nutrition/holt-summary.ts';
 import { ASK_NOTES_MAX, type AskContext, type AskTurn } from './ask-wire.ts';
 
 export type { AskContext, AskTurn } from './ask-wire.ts';
@@ -102,6 +103,11 @@ export interface AskContextInput {
    * caller passes. `askBriefLive()` also skips the read itself when the question does not need it.
    */
   training?: string | null;
+  /**
+   * The athlete's nutrition summary (`fetchNutritionSummary()`). Attached only to a NUTRITION question,
+   * the same rule the training summary follows — CA-D5, only what the job needs.
+   */
+  nutrition?: string | null;
 }
 
 /** At most this many coaching records per question (CA-D5 — the context stays small). */
@@ -347,6 +353,7 @@ export function buildAskContext(input: AskContextInput, sources: AskSources): As
   const notes = (input.notes ?? []).map((n) => (typeof n === 'string' ? n.trim() : '')).filter(Boolean);
   if (notes.length) ctx.notes = notes.slice(0, ASK_NOTES_MAX);
   if (input.training && input.training.trim() && isTrainingQuestion(question)) ctx.training = input.training.trim();
+  if (input.nutrition && input.nutrition.trim() && isNutritionQuestion(question)) ctx.nutrition = input.nutrition.trim();
 
   return ctx;
 }

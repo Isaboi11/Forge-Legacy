@@ -244,7 +244,7 @@ history view); model-written weeks; paid search-as-you-type; any model call outs
 | 6 | `Monetization-Architecture-Amendment-006` §4 grocery note, §6 row 7 | Grocery note → NUT-D3; row 7 → this doc | ✅ 2026-09-21 |
 | 7 | FatSecret | Written answer on keeping log totals past 24h | ✅ **Approved 2026-09-22** — PO reports FatSecret replied "good to go" to storing a logged food's calories + macros permanently in the athlete's diary. Reply saved verbatim: `Docs/Legal/FatSecret-Storage-Permission-2026-09-22.md` (calories + macros only; attribution required). |
 | 8 | `P-6-Privacy-Architecture.md` | Nutrition addendum (NUT-D7) | ✅ `P-6-Amendment-002-Nutrition-Data.md` 2026-09-21 (Privacy Policy section still owed before Phase 1) |
-| 9 | Coach-AI amendment | Holt's nutrition scope | ☐ before Phase 4 |
+| 9 | Coach-AI amendment | Holt's nutrition scope | ✅ **SETTLED 2026-09-23** — `Nutrition-Architecture-Amendment-001-Holt-Nutrition-Scope.md` 🔒. Holt READS a facts-only diary summary and may state and review it; he still may not prescribe a diet (CA-D10 unchanged). Built and wired. |
 | 10 | `src/components/app-tabs.tsx` | 5th tab | ☐ Phase 1 |
 
 ---
