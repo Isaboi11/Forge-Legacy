@@ -28,6 +28,7 @@ import { CreateNewSheet } from '@/components/forge/compositions/CreateNewSheet';
 import { ProgramCatalogRow } from '@/components/forge/compositions/ProgramCatalogRow';
 import { useQuery } from '@/lib/useQuery';
 import { fetchTemplates } from '@/data/templates-live';
+import { fetchTrainedWithin } from '@/data/recent-work-live';
 import { STARTER_TEMPLATES, focusLabel, starterMeta, starterSummary } from '@/domain/workout/starter-templates';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
@@ -112,11 +113,13 @@ export default function WorkoutsScreen() {
   const { data: myPrograms, refetch: refetchMine, settled: mineSettled } = useQuery(fetchMyPrograms, []);
   const { data: templateData, refetch: refetchTemplates, settled: templatesSettled } = useQuery(fetchTemplates, []);
   const { data: profileData } = useQuery(fetchCoachProfile, []);
+  const { data: trainedRecently, error: trainedError, refetch: refetchTrained, settled: trainedSettled } = useQuery(fetchTrainedWithin, []);
   useFocusEffect(
     useCallback(() => {
       refetchMine();
       refetchTemplates();
-    }, [refetchMine, refetchTemplates]),
+      refetchTrained();
+    }, [refetchMine, refetchTemplates, refetchTrained]),
   );
   // Memoized: `?? []` would mint a fresh array every render and defeat the memos below.
   const mine = useMemo(() => myPrograms ?? [], [myPrograms]);
@@ -140,13 +143,19 @@ export default function WorkoutsScreen() {
    * still the athlete's, and hiding the control on somebody who owns twelve templates would strand them:
    * `mine` is the only door back from Discover once the toggle is gone.
    */
-  const hasOwnWork = myActive != null || planned.length > 0 || past.length > 0 || mine.length > 0 || templates.length > 0;
+  const hasOwnWork =
+    myActive != null || planned.length > 0 || past.length > 0 || mine.length > 0 || templates.length > 0 ||
+    /* ⚠ OR THEY TRAIN (PO, 2026-09-23): anyone who has saved a workout in the last 14 days gets the full
+       tab — a tester logging every week with no program or template was still being shown the arrival view. */
+    trainedRecently === true ||
+    /* A read that failed is unknown, and unknown gets the full tab, not the arrival view. */
+    trainedError != null;
   /**
    * The arrival view — `Onboarding-Amendment-006` ONB-A6-D3 (PO mockup, 2026-09-21). ⚠ ONLY ONCE BOTH
    * READS HAVE LANDED: `hasOwnWork` reads false while they are in flight, so keying on it alone would
    * flash the arrival view at every returning athlete on a cold open.
    */
-  const ownWorkKnown = mineSettled && templatesSettled;
+  const ownWorkKnown = mineSettled && templatesSettled && trainedSettled;
 
   /* The ONE creation sheet, behind the header `+`. See `CreateNewSheet`. */
   const [createOpen, setCreateOpen] = useState(false);
