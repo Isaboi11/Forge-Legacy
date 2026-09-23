@@ -25,7 +25,7 @@ import {
   type MealGroup,
   type MealSlot,
 } from '@/domain/nutrition/day';
-import { copyMealFrom, fetchDay, mealHasFood } from '@/data/nutrition-live';
+import { copyMealFrom, fetchDay, hasFoodAfter, mealHasFood } from '@/data/nutrition-live';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 import { useToast } from '@/hooks/useCeremony';
 import { useEntitlementState, useNutritionAccess, useTier } from '@/lib/entitlement';
@@ -82,6 +82,15 @@ export default function NutritionScreen() {
   const [reloads, setReloads] = useState(0);
 
   const { data: day, loading } = useQuery(useCallback(() => fetchDay(iso), [iso]), [iso, reloads]);
+  /**
+   * ⚠ THE FORWARD ARROW IS NOT ONLY ABOUT TODAY ANY MORE. `canGoForward` closes the strip at today
+   * because a diary of the future is a plan — still true of LOGGING. But Meal Detail can now copy a meal
+   * FORWARD (meal prep is the reason the `.dc` defaults its copy to tomorrow), and that writes real rows
+   * on a real day. A day the athlete cannot reach is a day they cannot correct, so the arrow also opens
+   * when there is already food out there.
+   */
+  const { data: foodAhead } = useQuery(useCallback(() => hasFoodAfter(iso), [iso]), [iso, reloads]);
+  const mayGoForward = canGoForward(iso, todayIso) || !!foodAhead;
   /* Any return to the tab re-reads — food logged on another screen has to be here when you come back. */
   useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
 
@@ -193,13 +202,13 @@ export default function NutritionScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Next day"
-              disabled={!canGoForward(iso, todayIso)}
+              disabled={!mayGoForward}
               onPress={() => setIso((d) => shiftDay(d, 1))}
               style={styles.dayArrow}
             >
-              {/* Tomorrow is not loggable — the arrow greys out rather than disappearing, so the
+              {/* Nothing to see ahead — the arrow greys out rather than disappearing, so the
                   control never moves under the thumb. */}
-              <Chevron direction="right" color={canGoForward(iso, todayIso) ? flColor.bronze400 : flColor.charcoal500} />
+              <Chevron direction="right" color={mayGoForward ? flColor.bronze400 : flColor.charcoal500} />
             </Pressable>
           </View>
 
@@ -305,7 +314,14 @@ export default function NutritionScreen() {
             <MealCard
               key={group.meal}
               group={group}
-              onPress={() => goLog(group.meal)}
+              /* A meal WITH food opens itself — Meal Detail is where a portion is fixed, a mis-tap is
+                 deleted and the plate is saved. An empty one has nothing to show, so its card stays the
+                 shortcut into the search it has always been. */
+              onPress={() =>
+                group.entries.length
+                  ? router.push({ pathname: '/meal-detail', params: { date: iso, meal: group.meal } })
+                  : goLog(group.meal)
+              }
               onCopyYesterday={() => copyYesterday(group.meal)}
             />
           ))}

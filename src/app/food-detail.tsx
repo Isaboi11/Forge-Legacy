@@ -22,8 +22,8 @@ import {
   unitWord,
   type UnitChoice,
 } from '@/domain/nutrition/detail';
-import { portionLabel, portionMacros, SOURCE_LABEL } from '@/domain/nutrition/serving';
-import { addEntries, fetchDay, fetchFoodByKey, fetchFavorites, setFavorite } from '@/data/nutrition-live';
+import { MAY_STORE_MICROS, portionLabel, portionMacros, SOURCE_LABEL } from '@/domain/nutrition/serving';
+import { addEntries, fetchDay, fetchFoodByKey, fetchFavorites, setFavorite, updateEntry } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { useQuery } from '@/lib/useQuery';
 
@@ -49,10 +49,20 @@ import { useQuery } from '@/lib/useQuery';
 export default function FoodDetailScreen() {
   const router = useRouter();
   const { showToast } = useToast();
-  const params = useLocalSearchParams<{ key?: string; date?: string; meal?: string }>();
+  const params = useLocalSearchParams<{
+    key?: string;
+    date?: string;
+    meal?: string;
+    entry?: string;
+    amount?: string;
+    grams?: string;
+  }>();
 
   const foodKey = typeof params.key === 'string' ? params.key : '';
   const iso = typeof params.date === 'string' ? params.date : new Date().toISOString().slice(0, 10);
+  /* Present when Meal Detail sent us here to CHANGE a portion rather than add one. */
+  const entryId = typeof params.entry === 'string' && params.entry ? params.entry : null;
+  const editing = entryId != null;
 
   const { data: food, loading } = useQuery(useCallback(() => fetchFoodByKey(foodKey), [foodKey]), [foodKey]);
   const { data: day } = useQuery(useCallback(() => fetchDay(iso), [iso]), [iso]);
@@ -62,22 +72,73 @@ export default function FoodDetailScreen() {
     (MEAL_SLOTS as readonly string[]).includes(String(params.meal)) ? (params.meal as MealSlot) : 'breakfast',
   );
   const [mealPickerOpen, setMealPickerOpen] = useState(false);
-  const [unitIndex, setUnitIndex] = useState(0);
+  const [pickedUnit, setPickedUnit] = useState<number | null>(null);
   const [amountText, setAmountText] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const units = useMemo<UnitChoice[]>(() => (food ? unitChoices(food) : []), [food]);
+
+  /**
+   * Reopening an entry has to land on THE PORTION THAT WAS LOGGED, and the diary does not store which
+   * pill it was chosen with — only the quantity and what it weighed. So the unit is recovered from the
+   * weight of one of them: `grams / quantity` is the serving, and the pill whose serving matches is the
+   * one the athlete used. No match (an unweighted serving, a food whose servings have since changed)
+   * falls back to the gram pill with the weight itself, which is always true even when it is not what
+   * they picked. Derived, never an effect — a `setState` on load is the react-compiler lint error this
+   * codebase treats as a build break.
+   */
+  const seed = useMemo(() => {
+    if (!editing || !units.length) return null;
+    const quantity = Number(params.amount);
+    const grams = Number(params.grams);
+    const qty = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+    const perUnit = Number.isFinite(grams) && grams > 0 ? grams / qty : null;
+    if (perUnit != null) {
+      let index = -1;
+      let closest = Infinity;
+      units.forEach((u, i) => {
+        const g = u.serving.grams;
+        if (g == null || g <= 0 || g === 1) return;
+        const distance = Math.abs(g - perUnit);
+        if (distance < closest) {
+          closest = distance;
+          index = i;
+        }
+      });
+      /* Half a gram apart is rounding; anything wider is a different serving. */
+      if (index >= 0 && closest <= 0.5) return { index, amount: qty };
+      const gramPill = units.findIndex((u) => u.serving.grams === 1);
+      if (gramPill >= 0) return { index: gramPill, amount: Math.round(grams) };
+    }
+    return { index: 0, amount: qty };
+  }, [editing, units, params.amount, params.grams]);
+
+  const unitIndex = pickedUnit ?? seed?.index ?? 0;
   const unit = units[unitIndex] ?? units[0];
-  /* Until the athlete types, the amount is the unit's natural one: a whole cup, or 100 g. */
-  const amount = amountText != null ? Number(amountText.replace(',', '.')) || 0 : unit?.serving.grams === 1 ? 100 : 1;
+  /* Until the athlete types, the amount is the logged one, or the unit's natural one: a cup, or 100 g. */
+  const amount =
+    amountText != null
+      ? Number(amountText.replace(',', '.')) || 0
+      : (seed?.amount ?? (unit?.serving.grams === 1 ? 100 : 1));
 
   const macros = useMemo(
     () => (food && unit ? portionMacros(food, { serving: unit.serving, quantity: amount }) : null),
     [food, unit, amount],
   );
 
-  const eaten = useMemo(() => totals(day?.entries ?? []), [day]);
+  /**
+   * What the rest of the day already holds.
+   *
+   * ⚠ **THE ROW BEING EDITED IS NOT PART OF "ALREADY".** It is still in the diary, so summing the day
+   * whole and then adding the new portion counts this food TWICE: re-opening a 300 cal breakfast and
+   * changing nothing would read "300 fewer left after this". Excluding it makes the line answer the
+   * question it is actually asking — what the day looks like once this portion is what it says.
+   */
+  const eaten = useMemo(
+    () => totals((day?.entries ?? []).filter((e) => e.id !== entryId)),
+    [day, entryId],
+  );
   const targets = day?.targets ?? null;
   const impact = macros ? impactLine(eaten.kcal, macros.kcal, targets?.kcal ?? null) : null;
   const extras = useMemo(() => extraRows(food?.micros, macros?.grams ?? null), [food, macros]);
@@ -88,6 +149,17 @@ export default function FoodDetailScreen() {
   const add = async () => {
     if (!food || !unit || !macros || macros.kcal <= 0 || saving) return;
     setSaving(true);
+    const servingLabel = portionLabel({ serving: unit.serving, quantity: amount });
+
+    /* Editing re-files the row that is already there. It never adds a second one, and it never leaves
+       the meal — moving between meals is Meal Detail's "Move to…", which is a different intention. */
+    if (entryId) {
+      await updateEntry(entryId, { quantity: amount, servingLabel, macros });
+      showToast(`${food.name} updated`);
+      router.back();
+      return;
+    }
+
     await addEntries(iso, [
       {
         meal,
@@ -95,8 +167,11 @@ export default function FoodDetailScreen() {
         sourceKey: food.key,
         name: food.name,
         brand: food.brand,
-        servingLabel: portionLabel({ serving: unit.serving, quantity: amount }),
+        servingLabel,
         quantity: amount,
+        /* Keep the per-100 g micronutrients with the row, so a meal's full breakdown survives the
+           catalogue changing under it — and only from a source whose licence allows it (§4). */
+        micros: MAY_STORE_MICROS.has(food.source) ? (food.micros ?? null) : null,
         macros,
       },
     ]);
@@ -220,7 +295,7 @@ export default function FoodDetailScreen() {
                   if (i === unitIndex) return;
                   /* Convert, never reset: 1 cup becomes 80 g, not 1 g. */
                   setAmount(convertAmount(amount, unit, u));
-                  setUnitIndex(i);
+                  setPickedUnit(i);
                 }}
               >
                 <Text style={[styles.pillText, i === unitIndex && styles.pillTextOn]}>{u.label}</Text>
@@ -282,15 +357,23 @@ export default function FoodDetailScreen() {
 
       {/* commit */}
       <View style={styles.footer}>
-        <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
-          <Text style={styles.mealLineLabel}>Adding to</Text>
-          <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
-          <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M6 9l6 6 6-6" />
-          </Svg>
-        </Pressable>
+        {editing ? (
+          /* The meal is already decided — this row is IN one. Offering a picker here would look like a
+             way to move it and quietly not be one (`updateEntry` writes the portion, not the slot). */
+          <Text style={styles.editingLine}>{`Editing in ${MEAL_LABELS[meal]}`}</Text>
+        ) : (
+          <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
+            <Text style={styles.mealLineLabel}>Adding to</Text>
+            <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
+            <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M6 9l6 6 6-6" />
+            </Svg>
+          </Pressable>
+        )}
         <Button variant="primary" fullWidth disabled={!macros || macros.kcal <= 0 || saving} onPress={add}>
-          {`Add to ${MEAL_LABELS[meal]} · ${(macros?.kcal ?? 0).toLocaleString('en-US')} cal`}
+          {editing
+            ? `Save · ${(macros?.kcal ?? 0).toLocaleString('en-US')} cal`
+            : `Add to ${MEAL_LABELS[meal]} · ${(macros?.kcal ?? 0).toLocaleString('en-US')} cal`}
         </Button>
       </View>
 
@@ -433,6 +516,7 @@ const styles = StyleSheet.create({
   mealLine: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 4, paddingHorizontal: 2 },
   mealLineLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
   mealLineValue: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze400 },
+  editingLine: { alignSelf: 'center', paddingVertical: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
 
   sheetBody: { gap: 10, paddingBottom: 8 },
   choice: { paddingVertical: 12, paddingHorizontal: 14, borderRadius: flRadius.md, backgroundColor: flColor.charcoal800, ...flBorder.subtle },
