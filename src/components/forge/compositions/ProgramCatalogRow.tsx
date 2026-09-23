@@ -7,7 +7,7 @@ import { flColor, flRadius, flShadow } from '@/constants/foundation';
 import type { Program } from '@/domain/training/schema';
 
 /**
- * One Forge program on a shelf — Discover's "Recommended for you" and the full `/program-catalog`.
+ * One Forge program on a shelf — Discover's "For You" and search results, and the full `/program-catalog`.
  *
  * Name · `Family · N wk · N×/wk` · a difficulty badge · chevron. Typography and a glyph, no artwork: the
  * restructure's brief rules out stock imagery on these rows, and the authored descriptions are paragraphs,

@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -13,7 +13,7 @@ import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons'
 import { LegacyTabIcon } from '@/components/forge/primitives/icons/NavIcons';
 import { flColor, flFont, flGradient, flRadius, flShadow, flText } from '@/constants/foundation';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
-import { surfaceEditorial } from '@/constants/surfaces';
+import { HoltMark } from '@/components/forge/HoltMark';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useCoachDoor } from '@/hooks/useCoachDoor';
 import { getPrograms } from '@/domain/training/active-program';
@@ -28,7 +28,7 @@ import { CreateNewSheet } from '@/components/forge/compositions/CreateNewSheet';
 import { ProgramCatalogRow } from '@/components/forge/compositions/ProgramCatalogRow';
 import { useQuery } from '@/lib/useQuery';
 import { fetchTemplates } from '@/data/templates-live';
-import { STARTER_TEMPLATES } from '@/domain/workout/starter-templates';
+import { STARTER_TEMPLATES, focusLabel, starterMeta, starterSummary } from '@/domain/workout/starter-templates';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
@@ -44,16 +44,20 @@ import { useEarnedMoments } from '@/hooks/useEarnedMoments';
  * exposed at once. Now each half of the segmented control answers a small set of questions:
  *
  *   MY WORKOUTS                                   DISCOVER
- *   What am I doing?      → Active Program        A workout today?     → Single Sessions
- *   What have I made?     → Programs · Templates   A structured block?  → Browse by Focus · Recommended
- *   I want to make one.   → Create New            I don't know.        → Coach Holt
+ *   What am I doing?      → Active Program /      Looking for one?     → Search · Browse by Focus
+ *                           Build What's Next     A structured block?  → For You (2) · All Programs
+ *   What have I made?     → Your Library          A workout today?     → Single Sessions
+ *   I want to make one.   → the `+`               I don't know.        → Coach Holt
  *   Supporting reference. → Library · History
+ *
+ * (2026-09-23 hierarchy pass, PO mockup: Create New card removed — the `+` is the same sheet; Programs and
+ * Templates share one "Your Library" label; Discover reordered so programs lead and sessions follow.)
  *
  * WHERE EVERYTHING THAT LEFT THIS SCREEN WENT — nothing was deleted, only moved one tap in:
  *   · Planned / built / imported / past program rows → `/programs` (the "Programs" card)
  *   · The inline template rows                     → `/templates` (the "Workout Templates" card)
- *   · The full catalogue + family filter           → `/program-catalog?family=` (chips, See all)
- *   · Build a Program / Build a Template           → Create New (one sheet, also the `+`)
+ *   · The full catalogue + family filter           → `/program-catalog?family=` (focus chips, All Programs)
+ *   · Build a Program / Build a Template           → the `+` (CreateNewSheet)
  *   · "Log a Run" (the only door to /log-activity) → Activity History's header
  *   · Today's Workout / Track a Run                → Home, which owns starting today's session and
  *                                                    already starts outdoor and treadmill runs
@@ -144,7 +148,7 @@ export default function WorkoutsScreen() {
    */
   const ownWorkKnown = mineSettled && templatesSettled;
 
-  /* ONE creation sheet for both doors — the `+` and the Create New card. See `CreateNewSheet`. */
+  /* The ONE creation sheet, behind the header `+`. See `CreateNewSheet`. */
   const [createOpen, setCreateOpen] = useState(false);
 
   /**
@@ -210,6 +214,24 @@ export default function WorkoutsScreen() {
    * no row behind it; adoption waits for its Start (`browse-is-not-adopt.test.mjs`). A program already
    * held live opens THAT row, so the athlete lands on their own progress.
    */
+  /**
+   * Discover's search — over the two shelves the page already offers, both shipped content, so it is a
+   * local filter and not a new index. Every query word must hit (name, family / focus, level, blurb), so
+   * "home beginner" narrows instead of widening. Sessions are capped with a door to their full browser.
+   */
+  const [query, setQuery] = useState('');
+  const searching = query.trim().length > 0;
+  const searchHits = useMemo(() => {
+    const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return { programs: [], sessions: [], sessionTotal: 0 };
+    const hits = (hay: string) => words.every((w) => hay.includes(w));
+    const programs = catalog.filter((p) => hits(`${p.name} ${p.family} ${p.difficulty}`.toLowerCase()));
+    const sessions = STARTER_TEMPLATES.filter((t) =>
+      hits(`${t.name} ${focusLabel(t.focus)} ${t.blurb} ${starterMeta(t)}`.toLowerCase()),
+    );
+    return { programs, sessions: sessions.slice(0, 8), sessionTotal: sessions.length };
+  }, [query, catalog]);
+
   const liveFor = (id: string) => mine.find((m) => m.sourceDefinitionId === id && (m.state === 'future' || m.state === 'active'));
   const openCatalogProgram = (id: string) => router.push({ pathname: '/program/[id]', params: { id: liveFor(id)?.id ?? id } });
 
@@ -314,7 +336,7 @@ export default function WorkoutsScreen() {
               ("the anchor is not a card, you leave it for the program screen"). The PO's 2026-09-22 mockup
               — the north star for this restructure — puts it on a restrained surface with a round chevron,
               and says *"visually important, but not oversized"*. Newer instruction wins; the surface is
-              neutral (`charcoal600` hairline), because bronze on this screen is reserved for Create New.
+              neutral (`charcoal600` hairline), because bronze on this half is reserved for Build My Own.
 
               ⚠ AND IT IS NOT A SECOND COPY OF HOME. Home answers *what do I train now* and owns the start
               button. This answers *what am I following* — the program as an object.
@@ -322,11 +344,13 @@ export default function WorkoutsScreen() {
               Without an active program: the existing invitation, unchanged — no fabricated program.
             */}
             <TourAnchor id="workouts-active">
-              <SectionHeader
-                label="Active Program"
-                action={myActive ? 'View Program' : undefined}
-                onAction={() => myActive && router.push({ pathname: '/program/[id]', params: { id: myActive.id } })}
-              />
+              {myActive ? (
+                <SectionHeader
+                  label="Active Program"
+                  action="View Program"
+                  onAction={() => router.push({ pathname: '/program/[id]', params: { id: myActive.id } })}
+                />
+              ) : null}
               {myActive ? (
                 <Pressable
                   onPress={() => router.push({ pathname: '/program/[id]', params: { id: myActive.id } })}
@@ -356,74 +380,90 @@ export default function WorkoutsScreen() {
                   </View>
                 </Pressable>
               ) : (
-                <View style={styles.anchorBody}>
+                /* ══ NO ACTIVE PROGRAM — "BUILD WHAT'S NEXT" (PO mockup, 2026-09-23) ══
+                   No "Active Program" header above it: the eyebrow already says there isn't one, and a
+                   heading announcing an empty slot was the same fact twice. Build My Own is THE action
+                   (bronze fill); Find Me One is the quiet sibling. The plate behind it is a background
+                   detail at 7% — if it is noticeable, it is too loud. */
+                <View style={styles.hero}>
+                  <HeroPlate style={styles.heroPlateMine} />
                   <Text style={styles.kicker}>No active program</Text>
-                  <Text style={styles.anchorTitle}>Forge Your Next Legacy</Text>
-                  <Text style={styles.activeMeta}>Build your own program, or find one built for your goals.</Text>
+                  <Text style={styles.heroTitle}>Build What’s Next</Text>
+                  <Text style={styles.heroBody}>Create your own program or find one built for your goals.</Text>
                   {/* ⚠ "BUILD" GOES TO THE GUIDED LANE, NOT THE DENSE BUILDER — PO, 2026-09-20. */}
-                  <View style={styles.anchorActions}>
-                    <Pressable
-                      onPress={() => router.push('/program-guided')}
-                      accessibilityRole="button"
-                      accessibilityLabel="Build my own program"
-                      style={({ pressed }) => [styles.anchorCta, pressed ? styles.pressed : null]}
-                    >
-                      <Text style={styles.anchorCtaText}>Build My Own</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => setTab('discover')}
-                      accessibilityRole="button"
-                      accessibilityLabel="Find a program built for your goals"
-                      style={({ pressed }) => [styles.anchorCtaQuiet, pressed ? styles.pressed : null]}
-                    >
-                      <Text style={styles.anchorCtaQuietText}>Find Me One</Text>
-                    </Pressable>
+                  <View style={styles.heroActions}>
+                    <View style={styles.heroAction}>
+                      <Pressable
+                        onPress={() => router.push('/program-guided')}
+                        accessibilityRole="button"
+                        accessibilityLabel="Build my own program — create a program from scratch"
+                        style={({ pressed }) => [styles.heroCta, styles.heroCtaPrimary, pressed ? styles.pressed : null]}
+                      >
+                        <LinearGradient
+                          colors={flGradient.bronzeFill.colors}
+                          locations={flGradient.bronzeFill.locations}
+                          start={flGradient.bronzeFill.start}
+                          end={flGradient.bronzeFill.end}
+                          style={StyleSheet.absoluteFill}
+                        />
+                        <HammerIcon />
+                        <Text style={styles.heroCtaPrimaryText} numberOfLines={1}>
+                          Build My Own
+                        </Text>
+                        <ChevronRightIcon size={15} color={flColor.onBronze} />
+                      </Pressable>
+                      <Text style={styles.heroCaption}>Create a program from scratch.</Text>
+                    </View>
+                    <View style={styles.heroAction}>
+                      <Pressable
+                        onPress={() => setTab('discover')}
+                        accessibilityRole="button"
+                        accessibilityLabel="Find me a program — get a personalized plan"
+                        style={({ pressed }) => [styles.heroCta, styles.heroCtaQuiet, pressed ? styles.pressed : null]}
+                      >
+                        <CompassIcon />
+                        <Text style={styles.heroCtaQuietText} numberOfLines={1}>
+                          Find Me One
+                        </Text>
+                        <ChevronRightIcon size={15} color={flColor.gray400} />
+                      </Pressable>
+                      <Text style={styles.heroCaption}>Get a personalized plan.</Text>
+                    </View>
                   </View>
                 </View>
               )}
             </TourAnchor>
 
-            {/* YOUR PROGRAMS — one door to the library, not the rows themselves. The hub stays a hub. */}
-            <TourAnchor id="workouts-programs">
-              <SectionHeader label="Your Programs" action="See all" onAction={() => router.push('/programs')} />
-              <NavCard
-                title="Programs"
-                sub="Programs you’ve built, imported, or saved."
-                icon={<StackIcon />}
-                onPress={() => router.push('/programs')}
-              />
-            </TourAnchor>
+            {/*
+              YOUR LIBRARY — programs and workout templates under ONE label (PO, 2026-09-23). Two separate
+              doors to two separate screens; only their presentation is shared. No "See all": each card IS
+              the navigation. "Workout" stays in the templates' name on purpose — these are reusable single
+              workouts, and the word keeps them from being read as week or program templates.
 
-            {/* WORKOUT TEMPLATES — "Workout" in the name on purpose: these are reusable single workouts,
-                and the word keeps them from being read as week or program templates. Opens the Templates
-                hub, which carries the athlete's own and Forge's suggested ones. */}
-            <TourAnchor id="workouts-templates">
-              <SectionHeader label="Workout Templates" action="See all" onAction={() => router.push('/templates')} />
-              <NavCard
-                title="Workout Templates"
-                sub="Reusable individual workouts."
-                icon={<TemplateIcon />}
-                onPress={() => router.push('/templates')}
-              />
-            </TourAnchor>
-
-            {/* CREATE NEW — the one bronze thing on this half, because it is the one thing to DO here. */}
-            <TourAnchor id="workouts-create">
-              <Pressable
-                onPress={() => setCreateOpen(true)}
-                accessibilityRole="button"
-                accessibilityLabel="Create new — program, workout template, or freestyle workout"
-                style={({ pressed }) => [styles.createCard, pressed ? styles.pressed : null]}
-              >
-                <View style={styles.createHead}>
-                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square">
-                    <Path d="M12 5v14M5 12h14" />
-                  </Svg>
-                  <Text style={styles.createTitle}>Create New</Text>
-                </View>
-                <Text style={styles.createSub}>Program, workout template, or freestyle workout.</Text>
-              </Pressable>
-            </TourAnchor>
+              ⚠ NO CREATE NEW CARD. It duplicated the `+` (same sheet) and, with no program, Build My Own.
+              The `+` still opens `CreateNewSheet`: freestyle · workout template · program · import.
+            */}
+            <View>
+              <SectionHeader label="Your Library" />
+              <View style={styles.stackTight}>
+                <TourAnchor id="workouts-programs">
+                  <NavCard
+                    title="Programs"
+                    sub="Programs you’ve built, imported, or saved."
+                    icon={<StackIcon />}
+                    onPress={() => router.push('/programs')}
+                  />
+                </TourAnchor>
+                <TourAnchor id="workouts-templates">
+                  <NavCard
+                    title="Workout Templates"
+                    sub="Reusable individual workouts."
+                    icon={<TemplateIcon />}
+                    onPress={() => router.push('/templates')}
+                  />
+                </TourAnchor>
+              </View>
+            </View>
 
             {/* REFERENCE — genuinely reference: platform surfaces, not personal artefacts. */}
             <TourAnchor id="workouts-reference">
@@ -431,7 +471,7 @@ export default function WorkoutsScreen() {
               <View style={styles.stackTight}>
                 <NavCard
                   title="Exercise Library"
-                  sub="Browse every exercise, bookmark the ones you use."
+                  sub="Browse exercises, muscle groups, and equipment."
                   icon={<DumbbellIcon />}
                   onPress={() => router.push('/exercise-library')}
                 />
@@ -448,64 +488,155 @@ export default function WorkoutsScreen() {
           </View>
         ) : (
           <View style={styles.stack}>
-            {/* ── SINGLE SESSIONS — "I want a workout to do today." Distinct from following a program:
-                the difference is commitment, not kind. ── */}
-            <NavCard
-              title="Single Sessions"
-              sub={`${STARTER_TEMPLATES.length} ready-made workouts — push, pull, legs and more, for the gym or at home.`}
-              icon={<DumbbellIcon />}
-              onPress={() => router.push('/forge-templates')}
-              accessibilityLabel={`Browse ${STARTER_TEMPLATES.length} single sessions built by Forge`}
-            />
-
-            {/* ── BROWSE BY FOCUS — program families, each opening the ONE catalogue filtered to it. Wraps
-                rather than scrolling sideways: nothing on this hub scrolls horizontally. ── */}
-            <View>
-              <SectionHeader label="Browse by Focus" action="See all" onAction={() => router.push('/program-catalog')} />
-              <View style={styles.focusWrap}>
-                {focuses.map((f) => (
-                  <Pressable
-                    key={f}
-                    onPress={() => router.push({ pathname: '/program-catalog', params: { family: f } })}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${f} programs`}
-                    style={({ pressed }) => [styles.focusChip, pressed ? styles.pressed : null]}
-                  >
-                    <FocusIcon family={f} />
-                    <Text style={styles.focusText}>{f}</Text>
+            {/*
+              ══ DISCOVER — Search → Browse by Focus → For You → Single Sessions → Holt (PO, 2026-09-23) ══
+              Programs are the structured path, so they lead; a single session is the "just today" option
+              beneath them; Holt is the last door — "I've looked and still don't know".
+            */}
+            <View style={styles.hero}>
+              <HeroPlate style={styles.heroPlateDiscover} />
+              <Text style={styles.kicker}>Discover</Text>
+              <Text style={styles.heroTitle}>Find Your Next Program</Text>
+              <Text style={styles.heroBody}>Search programs, single workouts, or browse by focus.</Text>
+              <View style={styles.searchWrap}>
+                <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" style={styles.searchIcon}>
+                  <Circle cx={11} cy={11} r={7} />
+                  <Path d="M20 20l-3.2-3.2" />
+                </Svg>
+                <TextInput
+                  style={styles.search}
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Search programs & workouts…"
+                  placeholderTextColor={flColor.gray600}
+                  accessibilityLabel="Search programs and workouts"
+                  autoCorrect={false}
+                  returnKeyType="search"
+                />
+                {query ? (
+                  <Pressable onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={10} style={styles.searchClear}>
+                    <Glyph size={16} color={flColor.gray400}>
+                      <Path d="M6 6l12 12M18 6L6 18" />
+                    </Glyph>
                   </Pressable>
-                ))}
+                ) : null}
               </View>
             </View>
 
-            {/* ── RECOMMENDED FOR YOU — see `recommended` for exactly what "for you" is built from. ── */}
-            <View>
-              <SectionHeader label="Recommended for You" action="See all" onAction={() => router.push('/program-catalog')} />
-              <View style={styles.stackTight}>
-                {recommended.map((p) => (
-                  <ProgramCatalogRow key={p.id} program={p} held={liveFor(p.id)?.state ?? null} onPress={() => openCatalogProgram(p.id)} />
-                ))}
-              </View>
-            </View>
+            {searching ? (
+              /* ── SEARCH RESULTS — the same two shelves the landing page samples, matched in full. ── */
+              <>
+                {searchHits.programs.length === 0 && searchHits.sessions.length === 0 ? (
+                  <View style={styles.searchEmpty}>
+                    <Text style={styles.rowTitle}>Nothing matches “{query.trim()}”</Text>
+                    <Text style={styles.rowSub}>Try a focus, a lift, or a level — or browse all programs.</Text>
+                  </View>
+                ) : null}
+                {searchHits.programs.length > 0 ? (
+                  <View>
+                    <SectionHeader label="Programs" action="All Programs ›" onAction={() => router.push('/program-catalog')} />
+                    <View style={styles.stackTight}>
+                      {searchHits.programs.map((p) => (
+                        <ProgramCatalogRow key={p.id} program={p} held={liveFor(p.id)?.state ?? null} onPress={() => openCatalogProgram(p.id)} />
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
+                {searchHits.sessions.length > 0 ? (
+                  <View>
+                    <SectionHeader
+                      label="Single Sessions"
+                      action={searchHits.sessionTotal > searchHits.sessions.length ? 'All Sessions ›' : undefined}
+                      onAction={() => router.push('/forge-templates')}
+                    />
+                    <View style={styles.stackTight}>
+                      {searchHits.sessions.map((t) => (
+                        <NavCard
+                          key={t.id}
+                          title={t.name}
+                          sub={`${starterSummary(t)} · ${starterMeta(t)}`}
+                          icon={<DumbbellIcon />}
+                          onPress={() => router.push({ pathname: '/starter-template/[id]', params: { id: t.id } })}
+                          accessibilityLabel={`Preview ${t.name}`}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
+              </>
+            ) : (
+              <>
+                {/* ── BROWSE BY FOCUS — compact filters, each opening the ONE catalogue filtered to its
+                    family. One row that scrolls sideways when it runs out of width, rather than a tall
+                    wrapped block; no "See all" — All Programs sits on For You. ── */}
+                <View>
+                  <SectionHeader label="Browse by Focus" />
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.focusScroller}
+                    contentContainerStyle={styles.focusRow}
+                  >
+                    {focuses.map((f) => (
+                      <Pressable
+                        key={f}
+                        onPress={() => router.push({ pathname: '/program-catalog', params: { family: f } })}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${f} programs`}
+                        style={({ pressed }) => [styles.focusChip, pressed ? styles.pressed : null]}
+                      >
+                        <FocusIcon family={f} />
+                        <Text style={styles.focusText} numberOfLines={1}>
+                          {f}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
 
-            {/* ── COACH HOLT — the fallback, not the primary CTA. Opens the coach that already exists with
-                `recommend`, so Holt arrives reading the catalogue as a program recommendation rather than
-                offering to replace it. Neutral hairline: it must not outweigh the programs above it. ── */}
-            <Pressable
-              onPress={() => openCoach('recommend')}
-              accessibilityRole="button"
-              accessibilityLabel="Not sure what to do? Ask Coach Holt for a personalized recommendation"
-              style={({ pressed }) => [styles.holtCard, pressed ? styles.pressed : null]}
-            >
-              <View style={styles.navIcon}>
-                <ChatIcon />
-              </View>
-              <View style={styles.rowBody}>
-                <Text style={styles.rowTitle}>Not sure what to do?</Text>
-                <Text style={styles.rowSub}>Ask Coach Holt for a personalized recommendation.</Text>
-              </View>
-              <ChevronRightIcon size={18} color={flColor.bronze400} />
-            </Pressable>
+                {/* ── FOR YOU — the top two of `recommended`. "All Programs" is the WHOLE catalogue, not
+                    "more recommendations". ── */}
+                <View>
+                  <SectionHeader label="For You" action="All Programs ›" onAction={() => router.push('/program-catalog')} />
+                  <View style={styles.stackTight}>
+                    {recommended.slice(0, 2).map((p) => (
+                      <ProgramCatalogRow key={p.id} program={p} held={liveFor(p.id)?.state ?? null} onPress={() => openCatalogProgram(p.id)} />
+                    ))}
+                  </View>
+                </View>
+
+                {/* ── SINGLE SESSIONS — "I want a workout to do today." Below the programs on purpose: the
+                    difference is commitment, not kind, and the structured path leads. ── */}
+                <NavCard
+                  title="Single Sessions"
+                  sub="Ready-made workouts for today."
+                  icon={<DumbbellIcon />}
+                  onPress={() => router.push('/forge-templates')}
+                  accessibilityLabel={`Browse ${STARTER_TEMPLATES.length} single sessions built by Forge`}
+                />
+
+                {/* ── COACH HOLT — the last door, not the primary CTA. Opens the coach that already exists
+                    with `recommend`, so Holt arrives reading the catalogue as a program recommendation.
+                    His established medallion, not a new portrait; neutral hairline so it cannot outweigh
+                    the programs above it. ── */}
+                <Pressable
+                  onPress={() => openCoach('recommend')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Not sure where to start? Ask Coach Holt to build around your goals"
+                  style={({ pressed }) => [styles.holtCard, pressed ? styles.pressed : null]}
+                >
+                  <HoltMark size={44} />
+                  <View style={styles.rowBody}>
+                    <Text style={styles.rowTitle}>Not sure where to start?</Text>
+                    <Text style={styles.rowSub}>Let Coach Holt build around your goals.</Text>
+                  </View>
+                  <View style={styles.holtCta}>
+                    <Text style={styles.holtCtaText}>Ask Holt</Text>
+                    <ChevronRightIcon size={13} color={flColor.bronze300} />
+                  </View>
+                </Pressable>
+              </>
+            )}
           </View>
         )}
       </ScrollView>
@@ -634,8 +765,37 @@ function HistoryIcon() {
     </Glyph>
   );
 }
-function ChatIcon() {
-  return <Glyph><Path d="M4 5h16v11H9l-5 4zM8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" /></Glyph>;
+function HammerIcon() {
+  return (
+    <Glyph size={18} color={flColor.onBronze}>
+      <Path d="M13.5 4.5l6 6-2.5 2.5-6-6zM11 7L4 14M4 14l6 6M10 20l7-7" />
+    </Glyph>
+  );
+}
+function CompassIcon() {
+  return (
+    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinejoin="round">
+      <Circle cx={12} cy={12} r={9} />
+      <Path d="M15.5 8.5l-2 5-5 2 2-5z" />
+    </Svg>
+  );
+}
+/**
+ * The heroes' background detail — a weight plate in outline, bronze at 7%, bled off the right edge.
+ * Drawn, not a raster: it takes the theme's own bronze in both palettes, and at this opacity it reads as
+ * part of the slate texture rather than an illustration. Never under the text column's first ~60%.
+ */
+function HeroPlate({ style }: { style: StyleProp<ViewStyle> }) {
+  return (
+    <View pointerEvents="none" style={[styles.heroPlate, style]}>
+      <Svg width={190} height={190} viewBox="0 0 200 200" fill="none" stroke={flColor.bronze400}>
+        <Circle cx={100} cy={100} r={96} strokeWidth={3} />
+        <Circle cx={100} cy={100} r={82} strokeWidth={1.2} />
+        <Circle cx={100} cy={100} r={40} strokeWidth={1.5} />
+        <Circle cx={100} cy={100} r={14} strokeWidth={3} />
+      </Svg>
+    </View>
+  );
 }
 /** One mark per program family, for the focus chips. */
 const FOCUS_PATHS: Record<ProgramFamily, ReactNode> = {
@@ -713,7 +873,7 @@ const styles = StyleSheet.create({
     paddingTop: 22,
     paddingBottom: SCREEN_BOTTOM_GAP,
   },
-  stack: { gap: 28 },
+  stack: { gap: 36 },
   stackTight: { gap: 10 },
   discoverBack: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 18, paddingVertical: 10 },
   discoverBackText: { fontSize: 14, fontWeight: '600', color: flColor.bronze400 },
@@ -811,26 +971,64 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  /* No active program — the editorial invitation, kept as it was (type on the ground, no container). */
-  anchorBody: { ...surfaceEditorial },
-  anchorTitle: {
+  /* ── HEROES — "Build What's Next" and Discover's intro. Type on the ground, no container. ─────────── */
+  hero: { gap: 8 },
+  heroPlate: { position: 'absolute', opacity: 0.07 },
+  heroPlateMine: { top: -30, right: -64 },
+  heroPlateDiscover: { top: -34, right: -70 },
+  heroTitle: {
     fontFamily: flFont.display,
-    fontSize: 30,
-    lineHeight: 34,
+    fontSize: 32,
+    lineHeight: 36,
     fontWeight: '600',
     letterSpacing: -0.5,
     color: flColor.cream100,
+    marginTop: 2,
   },
-  anchorActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  anchorCta: {
-    paddingVertical: 11,
-    paddingHorizontal: 18,
+  heroBody: { fontSize: 14.5, lineHeight: 21, color: flColor.gray400, maxWidth: 330 },
+  heroActions: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  heroAction: { flex: 1, minWidth: 0, gap: 7 },
+  heroCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    minHeight: 50,
+    paddingHorizontal: 13,
     borderRadius: flRadius.md,
-    backgroundColor: flColor.bronzeSolid,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
-  anchorCtaText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, color: flColor.onBronze },
-  anchorCtaQuiet: { paddingVertical: 11, paddingHorizontal: 18, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600 },
-  anchorCtaQuietText: { fontSize: 13, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray400 },
+  heroCtaPrimary: { borderColor: flColor.bronzeBorder, boxShadow: flShadow.card },
+  heroCtaPrimaryText: {
+    flex: 1,
+    fontSize: 14.5,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+    color: flColor.onBronze,
+    textShadowColor: 'rgba(8,5,2,0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
+  },
+  heroCtaQuiet: { borderColor: flColor.charcoal600 },
+  heroCtaQuietText: { flex: 1, fontSize: 14.5, fontWeight: '600', letterSpacing: 0.2, color: flColor.cream100 },
+  heroCaption: { fontSize: 12, lineHeight: 16, color: flColor.gray600, paddingHorizontal: 2 },
+
+  searchWrap: { position: 'relative', justifyContent: 'center', marginTop: 12 },
+  searchIcon: { position: 'absolute', left: 14, zIndex: 1 },
+  search: {
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.surfaceRecessed,
+    borderRadius: flRadius.md,
+    paddingVertical: 12,
+    paddingLeft: 42,
+    paddingRight: 40,
+    fontFamily: flFont.sans,
+    fontSize: 14.5,
+    color: flColor.cream100,
+  },
+  searchClear: { position: 'absolute', right: 12, zIndex: 1 },
+  searchEmpty: { gap: 2 },
 
   /* ── NAV CARDS ────────────────────────────────────────────────────────────────────────────────── */
   navCard: {
@@ -860,44 +1058,44 @@ const styles = StyleSheet.create({
   rowTitle: { fontSize: 15.5, fontWeight: '600', color: flColor.cream100 },
   rowSub: { marginTop: 2, fontSize: 12.5, lineHeight: 17.5, color: flColor.gray400 },
 
-  /* ── CREATE NEW — the hub's one bronze surface ────────────────────────────────────────────────── */
-  createCard: {
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    borderRadius: flRadius.xl,
-    backgroundColor: flColor.bronzeTint,
-  },
-  createHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  createTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100 },
-  createSub: { fontSize: 12.5, lineHeight: 17.5, color: flColor.gray400, textAlign: 'center' },
-
   /* ── DISCOVER ─────────────────────────────────────────────────────────────────────────────────── */
-  focusWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  /* Bleeds to the screen edges so a scrolled chip runs off the edge, not into an invisible wall. */
+  focusScroller: { marginHorizontal: -20 },
+  focusRow: { gap: 8, paddingHorizontal: 20 },
   focusChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: flRadius.lg,
+    gap: 7,
+    height: 38,
+    paddingHorizontal: 12,
+    borderRadius: flRadius.md,
     borderWidth: 1,
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
   },
-  focusText: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
+  focusText: { fontSize: 13, fontWeight: '600', color: flColor.cream100 },
   holtCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 13,
     paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     borderWidth: 1,
     borderColor: flColor.charcoal600,
     borderRadius: flRadius.xl,
     backgroundColor: flColor.surfaceRecessed,
   },
+  holtCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingVertical: 8,
+    paddingLeft: 12,
+    paddingRight: 9,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.bronzeTint,
+  },
+  holtCtaText: { fontSize: 13, fontWeight: '700', color: flColor.bronze300 },
 });

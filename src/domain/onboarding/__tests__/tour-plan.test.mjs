@@ -325,7 +325,8 @@ test('the walkthroughs teach the decisions, not the labels', () => {
   const body = said;
   assert.match(said('workouts', 'wk-templates'), /already done/i, 'a template is a session you did');
   /* wk-start (TRACK vs LOG) retired with the old `+` sheet, 2026-09-22 — the `+` is Create New now. */
-  assert.match(body('workouts', 'wk-create'), /same sheet/i, 'the + and Create New are one sheet');
+  /* The Create New card left the hub 2026-09-23 (PO hierarchy pass) — the `+` is the one creation door. */
+  assert.match(body('workouts', 'wk-create'), /freestyle[\s\S]*template[\s\S]*program[\s\S]*import/i, 'the + makes every kind of thing');
   assert.match(body('program-builder', 'pb-structure'), /Repeat the same week|Customize each week/);
   assert.match(body('day-builder', 'db-sections'), /optional/i, 'which sections are optional');
   /* ⚠ THIS ASKED FOR THE WORD `Actual` AND THERE IS NO SUCH COLUMN SINCE W9-A9 — the ask and the answer
