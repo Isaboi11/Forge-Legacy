@@ -77,6 +77,18 @@ export interface LedgerPostProps {
   title: string | null;
   /** `<Program> · Week N · Day N`, or `Target established <date>`. */
   context: string | null;
+  /**
+   * WHO ELSE WAS THERE — "Trained with Selene", under the context line and above the numbers.
+   *
+   * ⚠ A LINE, NOT A ROW OF AVATARS AND NOT A LINK. The snapshot carries names, deliberately (see
+   * `WorkoutSummary.partners`): the partner did not post this and is not a tap target on it. An avatar
+   * row would also need ids, and would put a second cluster of faces under the author's own — which is
+   * the boxes-inside-boxes mistake this component's header exists to have stopped.
+   *
+   * It sits with `title`/`context` rather than in the stat strip because it is not a measurement. §2.6
+   * caps that row at three and a name is not a number.
+   */
+  partners?: string | null;
   /** At most three — Volume · Time · Lifts. Anything past that is trimmed here rather than by the caller. */
   stats?: LedgerStat[];
   playlist?: WorkoutPlaylistLink | null;
@@ -206,6 +218,7 @@ export function LedgerPost({
   marker,
   title,
   context,
+  partners = null,
   stats = [],
   playlist = null,
   caption,
@@ -303,6 +316,13 @@ export function LedgerPost({
           </Text>
         ) : null}
         {showBody && context ? <Text style={styles.context}>{context}</Text> : null}
+        {/* The people. Same `showBody` gate as everything else in the block — a post whose subject is a
+            photo says who was there in its caption, not in a stats-less header. */}
+        {showBody && partners ? (
+          <Text style={styles.partners} numberOfLines={2}>
+            {partners}
+          </Text>
+        ) : null}
 
         {showBody && shownStats.length ? (
           <View style={styles.stats}>
@@ -654,6 +674,10 @@ const styles = StyleSheet.create({
 
   title: { marginTop: 7, paddingHorizontal: LEDGER_GUTTER, fontFamily: flFont.display, fontSize: 22, fontWeight: '600', lineHeight: 25.3, letterSpacing: 0.2, color: flColor.cream100 },
   context: { marginTop: 4, paddingHorizontal: LEDGER_GUTTER, fontSize: 12.5, color: flColor.gray600 },
+  /* One step brighter than `context` and no bronze. The program a session belonged to is filing; who
+     you trained with is the post. Bronze on a post is the type icon, the type label and the stat
+     labels — nothing else, which is what kept it meaning anything. */
+  partners: { marginTop: 5, paddingHorizontal: LEDGER_GUTTER, fontSize: 13, lineHeight: 18, color: flColor.gray400 },
 
   /* A plain row. No container, no dividers, no background — the numbers sit on the feed canvas. */
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 26, marginTop: 15, paddingHorizontal: LEDGER_GUTTER },

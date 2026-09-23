@@ -1674,3 +1674,32 @@ gray silhouette over faded art (not `filter: grayscale`, which isn't honoured on
 ⚠ **DECISION NEEDED:** the engine gives Legacy **no sub-tiers** (levels stop at 25) but the ladder shows Legacy I–IV —
 Legacy II–IV can never be earned. Define them in the engine, or show Legacy as one rung.
 
+### 0. ⭐ Templates in your own order (0201) + an all-upper-body session is "Upper Body", not "Full Body" (2026-09-11, W-26 + session naming · commits `88f71f2` `f8e6d83` on `feat/route-map` (pushed) · ✅ **0201 APPLIED** — §3 `templates 26 · placed 0 · athletes_with_an_order 0`, exactly as predicted · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a09102-189e-79db-9d21-c470be29bf65` on runtime `47944f2e…` (fingerprint MATCHED `3f67281b…`; manifest returned it), Android `01a09102-189e-7bcf…`; picked as `30e4cf5` `6266521` on `ota/build8-js` (pushed; tsc 0; 388/388 related, 3,437/3,437 on main) · ⛔ **WEB NOT DEPLOYED** · ⏳ **NOT SEEN BY A HUMAN**)
+
+**Naming** — PO on Kim's lateral raises / curls / presses / floor press / renegade rows, saved "Full Body + Cardio":
+*"just upper body."* `groupLabel` called any 3+ primary groups Full Body, but upper body is four groups and lower is
+one, so "Upper Body" was unreachable. Now Full Body = Legs + an upper group; 3+ without Legs = Upper Body (Core rides
+along). Program Builder day rows share the rule. Future saves only — Kim's stored name is unchanged. "+ Cardio" is
+appended only when a cardio bout was logged, so her session likely had one above the fold.
+**Template order** — PO: *"rearrange my templates … same drag and drop as the days in a program."* "Your Templates ·
+Reorder" (2+ templates) → `ReorderTemplatesSheet` (the week sheet's hook, pitch, grip, chevrons, haptics; Save writes).
+`workout_templates.position` (null = unplaced) sorted by `workout_templates_list()` — unplaced (new) on top in the old
+recency order, so every template list in the app follows it. **W26-Amendment-003** supersedes W26-D1.
+✅ Rower units RESOLVED — see the entry above.
+
+### 0. ⭐ Active Workout layout: All Exercises at the top, bare prev/next arrows, one count on screen (2026-09-11, Active Workout — PO layout brief · commit `0b33510` on `feat/route-map` · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a0903a-6aab-750d-876c-16f60d750640` on runtime `47944f2e…` (fingerprint MATCHED build `3f67281b…` first; manifest returned it to a build-8 iOS client), Android `01a0903a-6aab-7440…`; picked as `c2573cb` on `ota/build8-js` (tsc 0; 254/254 related tests there) · ⛔ **WEB NOT DEPLOYED** — PO asked for OTA only · ⏳ **NOT SEEN BY A HUMAN**)
+
+PO: *"This is just a layout change. And some word changes."* No logging, timer, Finish or save behaviour moved —
+the footer still reads **Next Exercise** until the last exercise, then **Finish Workout**, exactly as before.
+"View Plan · 1 / 3" under the note became an **All Exercises ›** text row directly under the progress bar
+(outside the pager, so it holds still while exercises swipe); its sheet is titled **All Exercises** (was
+"Workout Plan"). Dot strip removed, and every position count with it — including the "2 / 3" on the mid-swipe
+peek — so "0 / 3 Done" is the only count on screen. Prev/next are two bare chevrons, a centred pair, 48pt targets.
+**Discoverability (PO: testers hadn't noticed the arrows):** (1) the next arrow nudges right once when the card
+above it is fully logged (after the exercise seal clears; a fused superset waits for every member) and thickens
+while it stays done — transition only, revisiting a finished exercise is quiet; (2) the first time on a workout
+with somewhere to swipe to, the pager slides 40pt toward the next exercise and springs back — once per
+device+account (`lib/swipe-hint.ts`, cleared by `first-run.ts`), and it waits for the walkthrough overlay
+(`ScreenTour` gained an optional `onShowingChange`, because `shouldShow` goes false at step two while the overlay
+is still drawn). ⚠ The OTA audit still shows `a814feb`'s JS half (`settings/notifications.ts` +
+`visibility.ts`, the 0188 testing posture) absent from `ota/build8-js` — left as found, not this pass's call.

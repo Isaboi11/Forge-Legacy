@@ -134,3 +134,27 @@ export function cardioMarkerLabel(activityType: string | null): string {
   };
   return LABEL[String(activityType ?? '')] ?? 'Cardio';
 }
+
+/**
+ * THE PEOPLE ON THE POST — "Trained with Selene", "Trained with Selene & Marcus".
+ *
+ * PO, 2026-09-23: *"I did a walk and added someone to my workout. I posted that workout in the squad.
+ * How come they didn't show up on the face card of the post?"* They didn't because nothing ever put
+ * them there. The tags were written to `workouts.partners` at save, read by Activity History and
+ * Activity Detail and counted by 0079's partnership honors — and then the share snapshot dropped them,
+ * so the post was the one surface in the app that forgot who was there.
+ *
+ * ⚠ NAMES, NEVER IDS, AND THEREFORE NEVER A TAP TARGET. The partner did not post anything; they are
+ * being named on somebody else's record. Naming them is the point — linking to them would make a feed
+ * card a route into a profile on the strength of a tag its subject never approved, which is exactly the
+ * social mechanic WwF §1 refuses ("no engagement loops built around tagging others").
+ *
+ * The ampersand rather than "and": this sits in the same quiet line the program context uses, where
+ * every character is competing with the stat strip underneath it.
+ */
+export function partnersLine(partners: readonly string[] | null | undefined): string | null {
+  const names = (partners ?? []).map((n) => n.trim()).filter(Boolean);
+  if (names.length === 0) return null;
+  if (names.length === 1) return `Trained with ${names[0]}`;
+  return `Trained with ${names.slice(0, -1).join(', ')} & ${names[names.length - 1]}`;
+}

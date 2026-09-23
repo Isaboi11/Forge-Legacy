@@ -259,6 +259,10 @@ interface SharedRow {
      no stored shape, and on the goal-contribution door, which has no post and therefore no consent. */
   route: string | null;
   climb_m: number | null;
+  /* The "Trained With" names the AUTHOR PUBLISHED ON A POST this viewer can see (0208) — never the live
+     `workouts.partners` column. OPTIONAL rather than merely nullable, because a database that has not
+     applied 0208 omits the key entirely, which must read as "nobody named" and not as a type error. */
+  partners?: string[] | null;
   note: string | null;
   exercises: {
     name: string;
@@ -344,7 +348,19 @@ async function fetchSharedActivityDetail(id: string): Promise<ActivityDetail | n
     chapterName: null,
     programId: null,
     programName: r.program_name,
-    partners: [],
+    /*
+     * ══ WHO ELSE WAS THERE, WHEN THE POST SAID SO (0208) ══
+     *
+     * Hardcoded `[]` until now because 0117 withheld it, and that was right while the only source was
+     * `workouts.partners` — a live column about people who did not post anything. 0208 returns the
+     * names off the POST'S OWN SNAPSHOT instead, gated exactly as the route is: a post that carries
+     * this workout, to an audience this viewer is in, that published these names.
+     *
+     * ⚠ THE SAME NON-DECISION AS `route`. A database that has not applied 0208 returns no key, this
+     * reads undefined, and the Trained With row does not draw — the client cannot grant itself names
+     * by forgetting a rule.
+     */
+    partners: Array.isArray(r.partners) ? r.partners.filter((n) => typeof n === 'string' && n.trim()) : [],
     playlist: playlistFromRow({
       playlist_url: r.playlist_url,
       playlist_service: r.playlist_service,

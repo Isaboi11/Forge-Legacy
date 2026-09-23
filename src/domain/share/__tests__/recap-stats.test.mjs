@@ -13,6 +13,7 @@ import {
   cardioStats,
   deriveLead,
   liftsLabel,
+  partnersLine,
   recapCardioFrom,
 } from '../recap-stats.ts';
 
@@ -121,4 +122,25 @@ test('a rowing post leads with metres by default; the viewer’s miles choice is
   assert.deepEqual(cardioStats(row, 480, 'imperial')[0], { value: '2000', label: 'Distance (m)' });
   assert.equal(cardioStats(row, 480, 'imperial', 'road')[0].label, 'Distance (mi)');
   assert.equal(cardioStats(row, 480, 'imperial')[1].label, 'Pace /mi', 'pace stays per mile — no /500 m yet');
+});
+
+
+// ── who else was there ──────────────────────────────────────────────────────
+
+test('the post names the people — nobody tagged draws no line at all', () => {
+  assert.equal(partnersLine(null), null);
+  assert.equal(partnersLine(undefined), null, 'an old post has no key; absent is not an empty sentence');
+  assert.equal(partnersLine([]), null);
+  assert.equal(partnersLine(['   ']), null, 'a blank tag is not a person');
+});
+
+test('one name, two names, three — the ampersand joins the last', () => {
+  assert.equal(partnersLine(['Selene']), 'Trained with Selene');
+  assert.equal(partnersLine(['Selene', 'Marcus']), 'Trained with Selene & Marcus');
+  assert.equal(partnersLine(['Selene', 'Marcus', 'Brady']), 'Trained with Selene, Marcus & Brady');
+});
+
+test('whitespace is trimmed and blanks are dropped without leaving a dangling "&"', () => {
+  assert.equal(partnersLine([' Selene ', '', 'Marcus']), 'Trained with Selene & Marcus');
+  assert.equal(partnersLine(['Selene', '  ']), 'Trained with Selene');
 });

@@ -18,7 +18,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
 import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
-import { cardioStats } from '@/domain/share/recap-stats';
+import { cardioStats, partnersLine } from '@/domain/share/recap-stats';
 import { useUnits } from '@/lib/settings';
 import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, isMilestoneCard, deleteSquadPost, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, renameSquadPost, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadMedia, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -685,8 +685,14 @@ function RecapBlock({ summary }: { summary: WorkoutSummary }) {
    */
   const { units, rowUnit } = useUnits();
   const cardioRow = summary.lead === 'cardio' && summary.cardio ? cardioStats(summary.cardio, summary.durationSec, units, rowUnit) : null;
+  /* Who else was there. Above the numbers and off the same snapshot the feed card reads, for the reason
+     the cardio row above is: the post, its card and the screen it opens must not disagree about the
+     session. A card that says "Trained with Selene" opening a screen that does not is the same defect
+     as "Under Iron" over a run. */
+  const withWho = partnersLine(summary.partners);
   return (
     <View style={styles.recapBlock}>
+      {withWho ? <Text style={styles.recapPartners}>{withWho}</Text> : null}
       <View style={styles.recapStatRow}>
         {cardioRow ? (
           cardioRow.map((st, i) => (
@@ -899,6 +905,7 @@ const styles = StyleSheet.create({
 
   // recap breakdown
   recapBlock: { marginTop: 16 },
+  recapPartners: { marginBottom: 12, fontSize: 13, lineHeight: 18, color: flColor.gray400 },
   recapPlaylist: { marginTop: 12 },
   openSession: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 12, paddingVertical: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   openSessionText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },

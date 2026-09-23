@@ -50,6 +50,7 @@ import {
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
 import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
 import { milestoneAckLabel } from '@/domain/share/milestone-card';
+import { partnersLine } from '@/domain/share/recap-stats';
 import { earlyLabel, goalDraft, parseGoalEditMode, type GoalEditMode, type GoalPhase } from '@/domain/squad/goal-state';
 import { TransformationLayout } from '@/components/forge/TransformationLayout';
 import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
@@ -1541,6 +1542,9 @@ function FeedCard({
       marker={summary ? recapMarker(summary) : hasMedia ? null : SQUAD_MARKER[post.type] ?? null}
       title={summary ? summary.name ?? recapMarker(summary).label : post.type === 'pr' ? post.prExercise ?? 'A new best' : null}
       context={summary ? summary.context ?? null : post.type === 'pr' ? [post.prValue, post.prLabel].filter(Boolean).join(' · ') || null : null}
+      /* Who else was there — off the snapshot, so it says what the session looked like when it was
+         shared. Absent on every recap posted before 2026-09-23, which renders as no line at all. */
+      partners={summary ? partnersLine(summary.partners) : null}
       stats={summary ? workoutStats(summary, units, rowUnit) : []}
       playlist={summary?.playlist ?? null}
       onPlaylist={summary?.playlist ? () => void openPlaylist(summary.playlist!) : undefined}
