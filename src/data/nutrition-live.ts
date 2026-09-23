@@ -768,6 +768,53 @@ export async function updateUserFood(foodId: string, food: UserFoodInput): Promi
   return asCatalogFood(foodId, food);
 }
 
+/**
+ * The three facts a recommended target needs, which `0205` §5 added to `profiles` and NOTHING has ever
+ * written — they were put there for this screen.
+ *
+ * ⚠ **`null` MEANS NEVER ASKED, AND IS NOT A DEFAULT TO FILL IN.** Onboarding does not collect these
+ * (Onboarding-Amendment-007 shipped without them), so every existing athlete reads null here and is
+ * asked once, on the screen that needs them. A helpful backfill would be indistinguishable from an
+ * answer and would feed the equation numbers nobody gave it.
+ */
+export interface NutritionProfile {
+  birthYear: number | null;
+  heightIn: number | null;
+  activityLevel: string | null;
+}
+
+export async function fetchNutritionProfile(): Promise<NutritionProfile> {
+  const id = await athleteId();
+  if (!id) return { birthYear: null, heightIn: null, activityLevel: null };
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('birth_year, height_in, activity_level')
+    .eq('id', id)
+    .maybeSingle();
+  if (error || !data) return { birthYear: null, heightIn: null, activityLevel: null };
+  const r = data as Record<string, any>;
+  return {
+    birthYear: r.birth_year != null ? Number(r.birth_year) : null,
+    heightIn: r.height_in != null ? Number(r.height_in) : null,
+    activityLevel: r.activity_level ?? null,
+  };
+}
+
+/** Saved alongside the target, because the athlete supplied them in order to get one. */
+export async function saveNutritionProfile(profile: NutritionProfile): Promise<void> {
+  const id = await athleteId();
+  if (!id) return;
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      birth_year: profile.birthYear,
+      height_in: profile.heightIn,
+      activity_level: profile.activityLevel,
+    })
+    .eq('id', id);
+  if (error) throw error;
+}
+
 /** Targets are history rows: setting one writes today's row, it never edits an older one (NUT-D5). */
 export async function saveTargets(t: Targets, method: 'manual' | 'recommended' = 'manual'): Promise<void> {
   const id = await athleteId();
