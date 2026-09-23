@@ -1638,3 +1638,39 @@ PO: *"the indoor ride is just one continuous ride even when you end the workout,
 ⚠ **A BOUT IN PROGRESS WHEN THIS LANDS LOSES ITS CLOCK** — the key format changed. That clock is the broken one.
 
 ⏳ **UNCHECKED: STALE ROWS ALREADY IN THE DATABASE.** Nothing clamps the seeded duration on save, so any ride the PO ended on an inflated clock wrote a multi-day `timeSec` into `workouts` and is skewing totals. The Supabase MCP server was down this session (`AUTH_HEADER_REJECTED — JWT could not be decoded`), so **Nate Witt's profile was never looked at**. This fix stops new ones; it cleans up nothing. **Open task.**
+
+---
+
+### 0. ⭐ A squad goal ENDS now — posted, pushed, and the card stops saying it's still going; and a tapped squad photo shows the photo (2026-09-10, Squads — **`Squad-Architecture-Amendment-006-Goal-Close.md` 🔒 LOCKED** (PO took D1–D3 same day) · ⛔ **`0200` WRITTEN, NOT APPLIED** (`supabase/apply/pending-0200.sql` — paste now; the app half is out) · ✅ **OTA PUBLISHED TO BUILD 8 AND VERIFIED DELIVERABLE** iOS `01a08c4d-9e0f-74d3-a6c8-51bb66ce26b1` (group `de4b0ea2…`) on runtime `47944f2e…` (fingerprint MATCHED build `3f67281b…` first), Android `01a08c4d-9e0f-76e1…` — commit `67cc632` on `feat/route-map` (**pushed**), cherry-picked as `fabfca4` on `ota/build8-js` (**pushed**; tsc 0, 3,371/3,371 in the worktree). ⛔ **WEB NOT DEPLOYED · NOT SEEN ON A DEVICE**)
+
+**PO:** *"A goal in the squad Moch 1 ended without anyone knowing. It didn't prompt us or post anything. Didn't send a notification, and it still looks like it's going right now."* Every clause was a missing path, not a broken one: 0103 only **froze** the total at the deadline — no status, no job, no post, no push — and an unmet goal left no record anywhere. The spec had no rule for a deadline passing unmet (Missions had one, SQ-D4.5; Goals never got it).
+
+**Decided (Amendment 006):** four ends — **met** (closes the moment it's met, SQ-D3.5), **closed** (deadline passed under target; never "failed" — SQ-D4.5 carried to Goals), **removed** (owner, silent), no-deadline goals close only as met/removed. On close: an authorless feed post (milestone band, "Squad Goal Complete" / "Goal Closed"), a push to every member (**D1: `squad_goals` ON by default**), an inbox row, and a card that stays in its finished state until the owner acts. Owner: **Set the next goal / Raise the bar** (met), **Try again / Set a new goal** (closed). **D2: Extend lives before the deadline only** — an owner-only "closes soon" inbox row 2 days out opens the editor. **D3: members get a sentence, no control.** Past Goals shows every ended goal, not only met ones.
+
+**Built (Part 1, client — works before the paste):** `domain/squad/goal-state.ts` (live/met/closed, server close wins, drafts per editor mode) · S-2 card in three states with owner actions · S-2b hero/pace/close card/Past Goals per state · Squad Settings row · inbox kinds `squad_goal_met/closed/closing` + destinations · squad-voice header for authorless posts. **(Part 2, `0200`):** `squads.goal_closed_at/goal_outcome`, `squad_goal_closures` log, pg_cron `forge-squad-goals` every 15 min, `squads_goal_lifecycle` trigger (owner replace/remove before the job), `squad_goal_notifications()`, weekly recap stops attaching a closed goal (0057 spliced + one predicate, identity-checked).
+
+⚠ **0200 DOES NOT TOUCH `notification_events_for` / `push_pref_key` / `push_pref_default`** — 0195/0196 (feat/forge-coach, unapplied) restate all three and whichever lands second erases the other. The push is written to `push_outbox` directly (0159's shape) and the inbox rows come from their own function. `push.test.mjs` gains a narrow exemption pinning `squad_goals`' default to 0200's sender, which fails if a union kind ever maps to that key (mutation-checked). ⚠ **The job runs each squad's sum AS ITS OWNER** (`squad_goal_act_as`, transaction-local, revoked from PUBLIC) because `squad_metric_sum` answers 0 to a user-less caller on a private squad. ⚠ **Backfill:** first run closes every goal past its deadline; deadlines within 7 days (Moch 1) get a post and push, older ones close silently. §3 of the bundle lists exactly which squads.
+
+**Found on the way:** the goal editor opened **BLANK** from Goal Detail (`?editGoal=1` never prefilled — Save would have blanked the live goal); start dates reopened a day early east of UTC (`iso.slice(0,10)`); authorless posts were typed `authorId: string` and headed "Athlete".
+
+**Photo tap (da bois):** a recap's photo opened Activity Detail, which has no photo slot, so the picture vanished. A photo now opens the post, which leads with **every** photo at its real shape (it drew `media[0]` only, cropped to 300px), then the session and "See every set".
+
+tsc 0 · lint 0 · **3,420/3,420** across 233 files (`goal-state.test.mjs` 20, `squad-goal-close.test.mjs` 14 new). **Order to ship: deploy web + OTA → paste `pending-0200.sql` → read §3 against its prediction.** ⏳ Nothing here has been seen rendered.
+
+
+---
+
+### 0. ⭐ Tap any rank rung: when it was earned and what it took; unreached rungs grayed out (2026-09-10, Progress Hub — RSA-A3-D5 follow-up · commit `3e4709f` (pushed) · ✅ **WEB** `index-04094f6a53633026d6374c5233690f19.js` (200, MATCH, sheet copy in bundle) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a08d93-5c11-7aa7-a6a7-5e4921e1bfc3` (fingerprint MATCHED; manifest returned it), Android `01a08d93-5c11-70a7…`; picked as `bf15945` on `ota/build8-js` (pushed; tsc 0; rank tests 54/54 there) · ⏳ **NOT SEEN BY A HUMAN**)
+
+PO: *"Let's make them tapable, and then make sure the ones not earned yet are grayed out."* No rank history is stored,
+so `domain/rank/history.ts` **replays the engine** over each day that can change its answer (events, Mondays,
+time-gate days — asserted equal to the every-day walk; 1,165 → 132 ms for two years on desktop) and records the first
+day each rung is reached + that day's signals. `rank-live.ts` now fetches **dated** inputs once and cuts them at today
+(live rank, unchanged by construction; dates clamped to today) or any past day. ⚠ Caught before shipping: the draft
+selected `programs.graduated_at`, which is not a column (it is `ended_at`) — that would have zeroed graduations in the
+LIVE rank. Sheet (`RankRungSheet`): earned date · what it took · what it asked (`rungStandards`) · the session that did
+it (→ activity); current adds the next rung's bar; unreached shows the bar and where you stand. Unreached badges: tinted
+gray silhouette over faded art (not `filter: grayscale`, which isn't honoured on every platform). 3,431/3,431 tests.
+⚠ **DECISION NEEDED:** the engine gives Legacy **no sub-tiers** (levels stop at 25) but the ladder shows Legacy I–IV —
+Legacy II–IV can never be earned. Define them in the engine, or show Legacy as one rung.
+

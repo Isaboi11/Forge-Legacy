@@ -202,6 +202,25 @@ export default function FoodDetailScreen() {
         transparent
         onBack={() => router.back()}
         actions={
+          <View style={styles.appBarActions}>
+            {/* ⚠ Only a food the athlete TYPED can be edited. A USDA or Open Food Facts row is
+                reference data shared by everyone, and `user_foods` is the only table this app may
+                write a food into. Without this the Edit half of Create Food has no door at all. */}
+            {food.source === 'custom' ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Edit this food"
+                hitSlop={8}
+                style={styles.starButton}
+                onPress={() =>
+                  router.push({ pathname: '/create-food', params: { food: food.key, mode: 'edit', date: iso, meal } })
+                }
+              >
+                <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+                  <Path d="M4 20h4L19 9a2.8 2.8 0 10-4-4L4 16v4z" />
+                </Svg>
+              </Pressable>
+            ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ selected: isFavorite }}
@@ -225,6 +244,7 @@ export default function FoodDetailScreen() {
               <Path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />
             </Svg>
           </Pressable>
+          </View>
         }
       />
 
@@ -424,6 +444,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: flColor.base },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 20, paddingBottom: 24 },
+  appBarActions: { flexDirection: 'row', alignItems: 'center' },
   starButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   missing: { paddingHorizontal: 24, paddingTop: 40, fontSize: 14, lineHeight: 20, color: flColor.gray400 },
 
