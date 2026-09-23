@@ -4,6 +4,7 @@ import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
 import { opsFor, overlayDay, type OutboxOp } from '@/domain/nutrition/outbox';
 import type { MealPlanPrefs } from '@/domain/nutrition/meal-plan-setup';
+import type { GroceryState } from '@/domain/nutrition/grocery';
 import { RECIPE_BY_ID, itemTotals, logKey, portionLabel, type Locks, type MealPlanWeek, type PlanDay } from '@/domain/nutrition/meal-planner';
 import { isTransportFailure } from '@/domain/workout/pending-save';
 import {
@@ -1230,4 +1231,36 @@ export async function togglePlanLog(
   ]);
   if (entry) logged[key] = entry.id;
   return { week: { ...week, logged }, logged: true };
+}
+
+/* ── Grocery List marks (0212) ──────────────────────────────────────────── */
+
+/**
+ * What the athlete ticked, has at home, removed or added for this week — or null before any. The list
+ * itself is never stored; it is derived from the week's cooks (`domain/nutrition/grocery.ts`).
+ */
+export async function fetchGroceryState(weekStart: string): Promise<Partial<GroceryState> | null> {
+  const id = await athleteId();
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from('meal_plan_weeks')
+    .select('grocery')
+    .eq('athlete_id', id)
+    .eq('week_start', weekStart)
+    .maybeSingle();
+  if (error || !data) return null;
+  const g = (data as { grocery: Partial<GroceryState> | null }).grocery;
+  return g && Object.keys(g).length ? g : null;
+}
+
+/** Save the marks onto the week's row. Only this column: a plan save never clobbers it, nor it a plan. */
+export async function saveGroceryState(weekStart: string, state: GroceryState): Promise<void> {
+  const id = await athleteId();
+  if (!id) throw new Error('Not signed in');
+  const { error } = await supabase
+    .from('meal_plan_weeks')
+    .update({ grocery: state })
+    .eq('athlete_id', id)
+    .eq('week_start', weekStart);
+  if (error) throw error;
 }
