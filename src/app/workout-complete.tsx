@@ -15,6 +15,9 @@ import { saveWorkoutAsTemplate } from '@/data/templates-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { useUnits } from '@/lib/settings';
+import { useNutritionAccess } from '@/lib/entitlement';
+import { localToday, totals } from '@/domain/nutrition/day';
+import { fetchDay } from '@/data/nutrition-live';
 import { rowMetresText } from '@/domain/workout/conditioning';
 import { displayWeight, exactWeight } from '@/domain/settings/units';
 import { WORKOUT_NAME_MAX, fetchCompletion, renameWorkout, savePlaylist, saveReflection, saveWorkoutNote, type CompletionCardio, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
@@ -280,6 +283,25 @@ export default function WorkoutComplete() {
    * to re-sync it. Deriving it during render instead is one expression and no effect, which is also what
    * this repo's react-compiler lint requires.
    */
+  /**
+   * ⚠ **THE ONE TIE BETWEEN TRAINING AND FOOD, AND IT LIVES ON `capture`, NEVER ON `seal`.** The seal is
+   * the ceremony and it is finished the moment the hold completes; hanging an errand off it would ask
+   * the athlete to go shopping inside a ritual. `capture` is explicitly the SECOND moment "after
+   * closure" where the note, the photo and the playlist already live, and a meal is the same kind of
+   * thing — optional, yours, and about the session you just finished.
+   *
+   * ⚠ Gated on `0206`: an athlete who cannot reach Nutrition is never shown a row that leads there.
+   * ⚠ And never on a REVIEWED workout — "log what you ate" makes no sense while reading back a session
+   *   from three weeks ago, and it would be ambiguous which day it meant.
+   */
+  const mayUseNutrition = useNutritionAccess();
+  const showFoodRow = mayUseNutrition && !review;
+  const { data: today } = useQuery(
+    useCallback(() => (showFoodRow ? fetchDay(localToday()) : Promise.resolve(null)), [showFoodRow]),
+    [showFoodRow],
+  );
+  const eatenToday = today ? totals(today.entries).kcal : 0;
+
   const [playlistEdit, setPlaylistEdit] = useState<WorkoutPlaylistLink | null | undefined>(undefined);
   const [savingPlaylist, setSavingPlaylist] = useState(false);
   /* Read on load rather than when the sheet opens: it is one small query, and a list that appears a
@@ -944,6 +966,17 @@ export default function WorkoutComplete() {
                 filled={!!playlist}
                 onPress={() => setSheet('playlist')}
               />
+              {showFoodRow ? (
+                <CaptureRow
+                  divided
+                  icon={<BowlGlyph size={18} color={eatenToday > 0 ? flColor.bronze300 : flColor.bronze400} />}
+                  /* Reads as a fact once there is one, like the note and the photo above it — not as a
+                     second ask. Nothing here nags: an unlogged day simply offers the door. */
+                  label={eatenToday > 0 ? `${thousands(eatenToday)} cal logged today` : 'Log what you ate'}
+                  filled={eatenToday > 0}
+                  onPress={() => router.push('/log-food')}
+                />
+              ) : null}
             </View>
 
             {/* The only filled button on this screen. */}
@@ -1570,6 +1603,15 @@ function CameraGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; 
 }
 
 /** §5's music-note mark — the same glyph the chip and the ⋯ Options row use. */
+function BowlGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M4 11h16a8 8 0 0 1-16 0z" />
+      <Path d="M3 19h18" />
+    </Svg>
+  );
+}
+
 function NoteGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
