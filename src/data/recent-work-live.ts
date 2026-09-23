@@ -69,3 +69,29 @@ export async function fetchRecentWork(): Promise<RecentWork> {
     return NO_RECENT_WORK;
   }
 }
+
+/**
+ * Has this athlete saved a workout in the last `days` days? The Workouts tab's arrival view steps aside
+ * for anyone who has (PO, 2026-09-23): a tester who trains every week but has never built a program or
+ * saved a template was still being greeted as brand new.
+ *
+ * ⚠ UNLIKE `fetchRecentWork`, A FAILURE THROWS. "Could not tell" must not read as "has not trained";
+ * the caller treats an error as unknown, not as no.
+ */
+export async function fetchTrainedWithin(days = 14): Promise<boolean> {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  if (!user) return false;
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const { count, error } = await supabase
+    .from('workouts')
+    .select('id', { count: 'exact', head: true })
+    .eq('athlete_id', user.id)
+    .eq('state', 'saved')
+    .gte('started_at', since);
+  if (error) throw error;
+  return (count ?? 0) > 0;
+}
