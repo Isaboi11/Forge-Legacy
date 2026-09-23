@@ -249,6 +249,12 @@ export function paceLabel(rate: number): string {
 
 const fmt = (n: number): string => Math.round(n).toLocaleString('en-US');
 
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const md = (iso: string): string => {
+  const [, m, d] = iso.split('-').map(Number);
+  return `${MON[m - 1]} ${d}`;
+};
+
 /** The sentence under the recommended figure. */
 export function basisLine(rec: Recommendation): string {
   const parts = [`Maintenance is about ${fmt(rec.burn.tdee)}.`];
@@ -372,6 +378,66 @@ export function macroSumLine(kcal: number | null, protein: number, carb: number,
   return { text, off };
 }
 
+/* ── has the body moved since ─────────────────────────────────────────────── */
+
+/**
+ * How far bodyweight must move before a target is worth revisiting: **2% of what it was**.
+ *
+ * ⚠ Not an invented threshold — it is twice `MAX_LOSS_FRACTION`, the 1%-a-week cap this module already
+ * enforces, so it means "about two weeks of the fastest progress Forge will plan for". Below that the
+ * target barely moves (bodyweight enters the calorie figure at roughly 7 kcal a pound), and a banner
+ * that fires on a hydration swing is a banner people learn to ignore.
+ */
+export const WEIGHT_DRIFT_FRACTION = MAX_LOSS_FRACTION * 2;
+
+/** And never on less than this, so a small body does not trip on scale noise. */
+export const WEIGHT_DRIFT_MIN_LB = 2;
+
+export interface WeightDrift {
+  /** What they weighed when the target was written. */
+  then: number;
+  now: number;
+  /** Signed, in pounds. */
+  change: number;
+  /** "201.8 lb on Aug 4 · 196.4 lb now" — the banner's second line. */
+  detail: string;
+}
+
+/**
+ * Whether to offer a review of the target in force, and the sentence that says why.
+ *
+ * Null in every case where the comparison cannot honestly be drawn:
+ *   · no weigh-in now, or none recorded with the target (`0209` unpasted, or set before any weigh-in);
+ *   · the target was set TODAY — it already reflects this body, and the `.dc` suppresses it too;
+ *   · the change is inside the band above.
+ *
+ * ⚠ It NEVER compares the latest weigh-in to anything but the snapshot. The oldest weigh-in on file
+ * answers a different question, and the latest compared to itself answers none — both would put a
+ * change that did not happen on the screen whose job is saying true things about someone's body.
+ */
+export function weightDrift(opts: {
+  now: number | null;
+  atTarget: number | null;
+  targetFrom: string | null;
+  todayIso: string;
+}): WeightDrift | null {
+  const { now, atTarget, targetFrom, todayIso } = opts;
+  if (now == null || now <= 0 || atTarget == null || atTarget <= 0) return null;
+  if (!targetFrom || targetFrom === todayIso) return null;
+
+  const change = now - atTarget;
+  const threshold = Math.max(WEIGHT_DRIFT_MIN_LB, atTarget * WEIGHT_DRIFT_FRACTION);
+  if (Math.abs(change) < threshold) return null;
+
+  const lb = (n: number): string => (Math.round(n * 10) / 10).toFixed(1).replace(/\.0$/, '');
+  return {
+    then: atTarget,
+    now,
+    change,
+    detail: `${lb(atTarget)} lb on ${md(targetFrom)} · ${lb(now)} lb now`,
+  };
+}
+
 /* ── the history ──────────────────────────────────────────────────────────── */
 
 export interface HistoryRow {
@@ -382,11 +448,6 @@ export interface HistoryRow {
   current: boolean;
 }
 
-const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const md = (iso: string): string => {
-  const [, m, d] = iso.split('-').map(Number);
-  return `${MON[m - 1]} ${d}`;
-};
 const dayBefore = (iso: string): string => {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d) - 86_400_000).toISOString().slice(0, 10);

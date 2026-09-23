@@ -88,6 +88,16 @@ export async function fetchDay(iso: string): Promise<DayLog> {
   return { entries: ((entries.data ?? []) as EntryRow[]).map(toEntry), targets };
 }
 
+export interface TargetHistoryRow {
+  from: string;
+  targets: Targets;
+  /** What they weighed when it was written (0209). Null before the migration, or before any weigh-in. */
+  weightLb: number | null;
+}
+
+/** Is `nutrition_targets.weight_lb` there yet (0209)? Latched per session, like `microsColumn`. */
+let targetWeightColumn: boolean | null = null;
+
 /**
  * Every day in a range, already summed — Nutrition Details reads a week with one query.
  *
@@ -134,19 +144,32 @@ export async function fetchRangeTotals(fromIso: string, toIso: string): Promise<
  * One query instead of seven: the week resolves each day's target from this list (`targetOn`), which is
  * what keeps an old day readable against what was true THEN rather than against today's number.
  */
-export async function fetchTargetHistory(uptoIso: string): Promise<{ from: string; targets: Targets }[]> {
+export async function fetchTargetHistory(uptoIso: string): Promise<TargetHistoryRow[]> {
   const id = await athleteId();
   if (!id) return [];
-  const { data, error } = await supabase
-    .from('nutrition_targets')
-    .select('effective_from, kcal, protein_g, carb_g, fat_g')
-    .eq('athlete_id', id)
-    .lte('effective_from', uptoIso)
-    .order('effective_from', { ascending: true });
+
+  const columns = 'effective_from, kcal, protein_g, carb_g, fat_g';
+  const read = (withWeight: boolean) =>
+    supabase
+      .from('nutrition_targets')
+      .select(withWeight ? `${columns}, weight_lb` : columns)
+      .eq('athlete_id', id)
+      .lte('effective_from', uptoIso)
+      .order('effective_from', { ascending: true });
+
+  let { data, error } = await read(targetWeightColumn !== false);
+  if (error && targetWeightColumn !== false && isMissingColumn(error)) {
+    targetWeightColumn = false;
+    ({ data, error } = await read(false));
+  } else if (!error && targetWeightColumn == null) {
+    targetWeightColumn = true;
+  }
   if (error) return [];
+
   return ((data ?? []) as Record<string, any>[]).map((r) => ({
     from: r.effective_from as string,
     targets: { kcal: Number(r.kcal), protein: Number(r.protein_g), carb: Number(r.carb_g), fat: Number(r.fat_g) },
+    weightLb: r.weight_lb != null ? Number(r.weight_lb) : null,
   }));
 }
 
@@ -816,21 +839,55 @@ export async function saveNutritionProfile(profile: NutritionProfile): Promise<v
 }
 
 /** Targets are history rows: setting one writes today's row, it never edits an older one (NUT-D5). */
-export async function saveTargets(t: Targets, method: 'manual' | 'recommended' = 'manual'): Promise<void> {
+export async function saveTargets(
+  t: Targets,
+  method: 'manual' | 'recommended' = 'manual',
+  /**
+   * What the athlete weighs right now (0209) — a SNAPSHOT, so the review prompt can later say what
+   * changed. Omitted when they have never logged a weigh-in, and null then means "no comparison to
+   * draw", never "0 lb".
+   */
+  weightLb?: number | null,
+): Promise<void> {
   const id = await athleteId();
   if (!id) return;
   const today = new Date().toISOString().slice(0, 10);
-  const { error } = await supabase.from('nutrition_targets').upsert(
-    {
-      athlete_id: id,
-      effective_from: today,
-      method,
-      kcal: Math.round(t.kcal),
-      protein_g: Math.round(t.protein),
-      carb_g: Math.round(t.carb),
-      fat_g: Math.round(t.fat),
-    },
-    { onConflict: 'athlete_id,effective_from' },
-  );
+  /* One type with an OPTIONAL `weight_lb`, rather than two shapes — a union of payloads trips the
+     client's excess-property check on the branch that carries the newer column. */
+  type TargetRow = {
+    athlete_id: string;
+    effective_from: string;
+    method: 'manual' | 'recommended';
+    kcal: number;
+    protein_g: number;
+    carb_g: number;
+    fat_g: number;
+    weight_lb?: number | null;
+  };
+  const base: TargetRow = {
+    athlete_id: id,
+    effective_from: today,
+    method,
+    kcal: Math.round(t.kcal),
+    protein_g: Math.round(t.protein),
+    carb_g: Math.round(t.carb),
+    fat_g: Math.round(t.fat),
+  };
+
+  const write = (withWeight: boolean) =>
+    supabase
+      .from('nutrition_targets')
+      .upsert(withWeight ? { ...base, weight_lb: weightLb ?? null } : base, {
+        onConflict: 'athlete_id,effective_from',
+      });
+
+  /* The TARGET still saves if `0209` is unpasted — only its weight snapshot is lost, which costs that
+     one target its future review banner and nothing else. Same posture as `micros` (0207). */
+  const wanted = targetWeightColumn !== false && weightLb != null;
+  let { error } = await write(wanted);
+  if (error && wanted && isMissingColumn(error)) {
+    targetWeightColumn = false;
+    ({ error } = await write(false));
+  }
   if (error) throw error;
 }

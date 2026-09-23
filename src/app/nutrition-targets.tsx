@@ -31,6 +31,7 @@ import {
   recommend,
   sameAsCurrent,
   saveNote,
+  weightDrift,
   type ActivityLevel,
   type AthleteFacts,
   type AthleteSex,
@@ -86,6 +87,8 @@ export default function NutritionTargetsScreen() {
   const [goal, setGoal] = useState<Goal>('lose');
   const [rate, setRate] = useState(1);
   const [saving, setSaving] = useState(false);
+  /* Dismissed for this visit only — the prompt is about the target, not about a preference. */
+  const [reviewed, setReviewed] = useState(false);
 
   /* Typed values take over from the loaded ones; null means "not touched yet". */
   const [byText, setByText] = useState<string | null>(null);
@@ -114,8 +117,22 @@ export default function NutritionTargetsScreen() {
   const rec = burn ? recommend(facts, burn, goal, rate, todayIso) : null;
 
   const rows = useMemo(() => historyRows(history ?? [], todayIso), [history, todayIso]);
-  const current: Targets | null = history?.length ? history[history.length - 1].targets : null;
-  const currentFrom = history?.length ? history[history.length - 1].from : null;
+  const currentRow = history?.length ? history[history.length - 1] : null;
+  const current: Targets | null = currentRow?.targets ?? null;
+  const currentFrom = currentRow?.from ?? null;
+
+  /**
+   * ⚠ The comparison is against the weight RECORDED WITH THE TARGET (0209), never against the oldest
+   * weigh-in on file — that answers a different question — and never against the latest, which is the
+   * other half of the sentence. Null until the migration is pasted, and the banner simply does not
+   * appear rather than claiming a change it cannot evidence.
+   */
+  const drift = weightDrift({
+    now: weightLb,
+    atTarget: currentRow?.weightLb ?? null,
+    targetFrom: currentFrom,
+    todayIso,
+  });
 
   /* Manual opens on whatever is in force, then the athlete's typing takes over. */
   const man = manual ?? {
@@ -162,9 +179,11 @@ export default function NutritionTargetsScreen() {
       if (mode === 'recommended' && profileComplete) {
         await saveNutritionProfile({ birthYear, heightIn, activityLevel: activity?.key ?? null });
       }
-      await saveTargets(proposed, mode === 'recommended' ? 'recommended' : 'manual');
+      /* The weight rides along so this target can be reviewed when the body moves (0209). */
+      await saveTargets(proposed, mode === 'recommended' ? 'recommended' : 'manual', weightLb);
       setReloads((n) => n + 1);
       setEditingProfile(false);
+      setReviewed(false);
       showToast(`New target from today · ${grouped(proposed.kcal)} cal`);
     } catch (e) {
       showToast(errorMessage(e));
@@ -185,6 +204,25 @@ export default function NutritionTargetsScreen() {
           <Text style={styles.eyebrow}>Nutrition</Text>
           <Text style={styles.title}>Daily targets</Text>
         </View>
+
+        {drift && !reviewed ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Review your targets: your weight has changed since they were set"
+            style={styles.reviewBanner}
+            onPress={() => {
+              setReviewed(true);
+              setMode('recommended');
+              setEditingProfile(false);
+            }}
+          >
+            <View style={styles.reviewText}>
+              <Text style={styles.reviewLine}>Your weight has changed since these targets were set.</Text>
+              <Text style={styles.reviewDelta}>{drift.detail}</Text>
+            </View>
+            <Text style={styles.linkText}>Review</Text>
+          </Pressable>
+        ) : null}
 
         {/* mode */}
         <View style={styles.tabs}>
@@ -682,6 +720,21 @@ const styles = StyleSheet.create({
   gateFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   gateFootText: { fontSize: 12.5, color: flColor.gray600 },
   linkText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
+  reviewBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: flRadius.md,
+    backgroundColor: 'rgba(191,143,79,0.07)',
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+  },
+  reviewText: { flex: 1, minWidth: 0, gap: 3 },
+  reviewLine: { fontSize: 13, lineHeight: 19, color: flColor.gray400 },
+  reviewDelta: { fontSize: 12, color: flColor.gray600 },
   adjustLink: { paddingVertical: 12, paddingHorizontal: 2, fontSize: 13 },
 
   sectionLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray600 },

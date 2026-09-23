@@ -22,6 +22,8 @@ import {
   recommend,
   sameAsCurrent,
   saveNote,
+  WEIGHT_DRIFT_MIN_LB,
+  weightDrift,
 } from '../targets.ts';
 
 const TODAY = '2026-09-23';
@@ -272,4 +274,48 @@ test('the save note says what pressing it will do', () => {
 test('the four activity levels carry the standard multipliers', () => {
   assert.deepEqual(ACTIVITY_LEVELS.map((a) => a.multiplier), [1.2, 1.375, 1.55, 1.725]);
   assert.equal(activityByKey('nope'), null);
+});
+
+/* ── has the body moved since ─────────────────────────────────────────────── */
+
+const drift = (o) => weightDrift({ todayIso: TODAY, ...o });
+
+test('a real change offers a review, and says both numbers', () => {
+  const d = drift({ now: 196.4, atTarget: 201.8, targetFrom: '2026-08-04' });
+  assert.equal(d.detail, '201.8 lb on Aug 4 · 196.4 lb now');
+  assert.equal(Math.round(d.change * 10) / 10, -5.4);
+});
+
+test('⚠ a hydration swing is not a changed body — 2% of bodyweight, or 2 lb, whichever is larger', () => {
+  /* 201.8 × 2% = 4.04 lb. Three pounds is under it and says nothing. */
+  assert.equal(drift({ now: 198.8, atTarget: 201.8, targetFrom: '2026-08-04' }), null);
+  assert.ok(drift({ now: 197.5, atTarget: 201.8, targetFrom: '2026-08-04' }));
+});
+
+test('and a small body is held to the 2 lb floor rather than to 2% of very little', () => {
+  /* 90 × 2% = 1.8 lb, under the floor, so 2 lb is what binds. */
+  assert.equal(drift({ now: 91.9, atTarget: 90, targetFrom: '2026-08-04' }), null);
+  assert.ok(drift({ now: 92.1, atTarget: 90, targetFrom: '2026-08-04' }));
+});
+
+test('gaining offers the same review as losing — the target is out of date either way', () => {
+  const d = drift({ now: 210, atTarget: 201.8, targetFrom: '2026-08-04' });
+  assert.ok(d.change > 0);
+  assert.match(d.detail, /201.8 lb on Aug 4 · 210 lb now/);
+});
+
+test('⚠ a target set TODAY already reflects this body, so it is never asked to be reviewed', () => {
+  assert.equal(drift({ now: 196.4, atTarget: 250, targetFrom: TODAY }), null);
+});
+
+test('⚠ and with no snapshot there is NO comparison to draw — silence, never a guess', () => {
+  /* `0209` unpasted, or the target predates any weigh-in. */
+  assert.equal(drift({ now: 196.4, atTarget: null, targetFrom: '2026-08-04' }), null);
+  assert.equal(drift({ now: null, atTarget: 201.8, targetFrom: '2026-08-04' }), null);
+  assert.equal(drift({ now: 196.4, atTarget: 201.8, targetFrom: null }), null);
+  assert.equal(drift({ now: 0, atTarget: 201.8, targetFrom: '2026-08-04' }), null);
+});
+
+test('the floor is a real number, not a magic literal at the call site', () => {
+  assert.equal(WEIGHT_DRIFT_MIN_LB, 2);
 });
