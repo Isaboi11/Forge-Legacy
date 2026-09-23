@@ -62,6 +62,10 @@
 
 ## 🏃 Current Sprint
 
+> **▶ 2026-09-23 — THE APPLE ACCOUNT IS NOW FORGE LEGACY LLC (Organization), PO reported.** Supersedes every
+> "still Individual" line below. **Submission work now runs from ONE list: `Docs/App-Store-Submission-Checklist.md`**
+> — read it and update it as items move. Next up: Agreements, Tax & Banking.
+
 > **⛔ 2026-08-19 — A SUBMISSION BLOCKER THAT WAS ON NO LAUNCH DOCUMENT, AND IT IS NOW CLOSED IN CODE.**
 > **App Store Guideline 1.2** requires filtering · reporting **with timely responses** · **blocking** ·
 > published contact info for any app carrying user-generated content. Forge had the fourth and **one**
@@ -867,6 +871,10 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 ---
 
 ## ✅ Recently Completed (last ~20 milestones)
+
+### 00000000000000. ⭐ Meal Plan Setup: two steps, two doors, and allergies you must answer (2026-09-23, Nutrition Phase 3, first screen, built to `Meal Plan Setup.dc.html` (Claude Design `b029488a`) · commit `a9a4419` on `feat/route-map` · ✅ **`0210` APPLIED AND VERIFIED 2026-09-23** (readback: constraints 7 · rls_on true · policies 1 · rows 0, exactly as predicted) · **NOT deployed** · ⏳ **NOT SEEN**)
+
+Step 1 is Your food: diet, then allergies (neither option pre-chosen, and Continue stays shut until one is), then dislikes as tags. Step 2 is Your week: which meals, time to cook, cooking for 1–8, and an optional weekly budget. The doors come in this order: under 18 first (this applies even with a manual target), then no calorie target. Answers save to `meal_plan_prefs` (owner RLS behind the 0206 gate) and reopen as left. Nutrition Home's Meal Plan button opens this screen for Premium. **Delta:** "Build my week" saves and returns, and the toast says so, because the planner and the week screen are not built. tsc 0 · 4,142/4,142 (17 new).
 
 ### 0000000000000. ⭐ Food logged with no signal is held, not lost — and Holt meal plans proposed (2026-09-23, Nutrition · commit `0da884c` (offline) + `e8aa263` (amendment) on `feat/route-map` · **NOT deployed** · ⏳ **NOT SEEN**)
 
