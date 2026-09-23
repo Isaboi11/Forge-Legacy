@@ -6,7 +6,9 @@ import {
   type PlanSlot,
   type ProteinSource,
   type RecipeSource,
+  type RecipeStep,
   type Reheat,
+  type UsMeasure,
 } from './recipes-data.ts';
 
 /**
@@ -106,8 +108,70 @@ export function deriveRecipe(src: RecipeSource): Recipe {
   };
 }
 
+/** Forge's starter library. */
 export const RECIPES: readonly Recipe[] = RECIPE_SOURCES.map(deriveRecipe);
-export const RECIPE_BY_ID: Readonly<Record<string, Recipe>> = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
+
+/* ── the recipe book: Forge's recipes + the athlete's own ───────────────── */
+
+export interface RecipeViewIngredient {
+  /** A Forge catalogue key (`recipes-data.ts` INGREDIENTS) — what the grocery list buys. */
+  key: string;
+  name: string;
+  /** Grams in ONE serving. */
+  g: number;
+  us: UsMeasure | null;
+}
+
+/** What the Recipe screen and the Grocery List read: the same shape for Forge's recipes and the athlete's. */
+export interface RecipeView {
+  id: string;
+  name: string;
+  minutes: number;
+  equipment: readonly string[];
+  steps: readonly RecipeStep[];
+  ingredients: RecipeViewIngredient[];
+  /** The athlete wrote it (My Recipes). */
+  mine: boolean;
+}
+
+const starterView = (src: RecipeSource): RecipeView => ({
+  id: src.id,
+  name: src.name,
+  minutes: src.minutes,
+  equipment: src.equipment,
+  steps: src.steps,
+  ingredients: src.ingredients.map(([key, g]) => ({ key, name: INGREDIENTS[key].name, g, us: INGREDIENTS[key].us })),
+  mine: false,
+});
+
+/**
+ * Every recipe by id — Forge's, plus the athlete's own once `registerUserRecipes` has run. Mutable on
+ * purpose: My Recipes registers into it after reading them, and every reader (the planner, a stored
+ * week, the Recipe screen, the Grocery List) resolves ids through here.
+ *
+ * ⚠ **READ YOUR RECIPES BEFORE YOU READ A WEEK.** A stored week naming `u:…` with the athlete's recipes
+ * not yet registered looks unreadable, and `resolveWeek` would rebuild it. Screens wait for the recipes
+ * query before resolving.
+ */
+export const RECIPE_BY_ID: Record<string, Recipe> = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
+const VIEW_BY_ID: Record<string, RecipeView> = Object.fromEntries(RECIPE_SOURCES.map((s) => [s.id, starterView(s)]));
+let USER_RECIPES: Recipe[] = [];
+
+export const recipeView = (id: string): RecipeView | undefined => VIEW_BY_ID[id];
+
+/** Replace the athlete's recipes in the book. `plannable` are the ones the planner may pick. */
+export function registerUserRecipes(entries: { recipe: Recipe; view: RecipeView; plannable: boolean }[]): void {
+  for (const r of USER_RECIPES) {
+    delete RECIPE_BY_ID[r.id];
+    delete VIEW_BY_ID[r.id];
+  }
+  USER_RECIPES = [];
+  for (const e of entries) {
+    RECIPE_BY_ID[e.recipe.id] = e.recipe;
+    VIEW_BY_ID[e.recipe.id] = e.view;
+    if (e.plannable) USER_RECIPES.push(e.recipe);
+  }
+}
 
 /* ── the hard filters ───────────────────────────────────────────────────── */
 
@@ -133,7 +197,7 @@ export function fits(r: Recipe, p: MealPlanPrefs): boolean {
 export const fitsSlot = (r: Recipe, slot: PlanSlot, p: MealPlanPrefs): boolean =>
   r.mealTypes.includes(slot) && fits(r, p) && (p.cookMinutes == null || r.minutes <= p.cookMinutes);
 
-const pool = (slot: PlanSlot, p: MealPlanPrefs): Recipe[] => RECIPES.filter((r) => fitsSlot(r, slot, p));
+const pool = (slot: PlanSlot, p: MealPlanPrefs): Recipe[] => [...RECIPES, ...USER_RECIPES].filter((r) => fitsSlot(r, slot, p));
 
 /* ── the plan's shape ───────────────────────────────────────────────────── */
 

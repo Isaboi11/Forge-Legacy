@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { batchNote, ingredientRows, metricAmount, servingsFor, usAmount } from '../recipe-view.ts';
 import { RECIPE_SOURCES } from '../recipes-data.ts';
+import { recipeView } from '../meal-planner.ts';
 
 test('ounces for meat, one decimal, no trailing .0', () => {
   assert.equal(usAmount({ kind: 'oz' }, 160), '5.6 oz');
@@ -41,7 +42,7 @@ test('grams read like a scale: whole grams, decimals under 10, pinch under half 
 
 test('every ingredient of every recipe renders an amount in both systems', () => {
   for (const src of RECIPE_SOURCES) {
-    for (const row of ingredientRows(src, 2, true)) {
+    for (const row of ingredientRows(recipeView(src.id), 2, true)) {
       assert.ok(row.metric.length > 0, `${src.id} ${row.key}`);
       if (row.metric !== 'pinch') assert.ok(row.us && !row.us.startsWith('null'), `${src.id} ${row.key}: ${row.us}`);
     }
@@ -49,14 +50,14 @@ test('every ingredient of every recipe renders an amount in both systems', () =>
 });
 
 test('metric only when the athlete uses metric', () => {
-  const rows = ingredientRows(RECIPE_SOURCES[0], 1, false);
+  const rows = ingredientRows(recipeView(RECIPE_SOURCES[0].id), 1, false);
   assert.ok(rows.every((r) => r.us === null));
 });
 
 test('amounts scale with servings', () => {
-  const chilli = RECIPE_SOURCES.find((r) => r.id === 'd02');
-  const one = ingredientRows(chilli, 1, false).find((r) => r.key === 'ground_beef');
-  const four = ingredientRows(chilli, 4, false).find((r) => r.key === 'ground_beef');
+  const chilli = recipeView('d02');
+  const one = ingredientRows(chilli, 1, false).find((r) => r.key.startsWith('ground_beef'));
+  const four = ingredientRows(chilli, 4, false).find((r) => r.key.startsWith('ground_beef'));
   assert.equal(one.metric, '160 g');
   assert.equal(four.metric, '640 g');
 });

@@ -11,17 +11,15 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { grouped, localToday } from '@/domain/nutrition/day';
 import { ALLERGENS } from '@/domain/nutrition/meal-plan-setup';
-import { DAY_NAMES, RECIPE_BY_ID, feedsDay, itemTotals, logKey, mondayOf, portionLabel, slotKey, toggleLock } from '@/domain/nutrition/meal-planner';
+import { DAY_NAMES, RECIPE_BY_ID, feedsDay, itemTotals, logKey, mondayOf, portionLabel, recipeView, slotKey, toggleLock } from '@/domain/nutrition/meal-planner';
 import { batchNote, ingredientRows, servingsFor, servingsLabel } from '@/domain/nutrition/recipe-view';
-import { RECIPE_SOURCES } from '@/domain/nutrition/recipes-data';
-import { fetchMealPlanPrefs, fetchMealPlanWeek, saveMealPlanWeek, togglePlanLog } from '@/data/nutrition-live';
+import { addEntries, fetchMealPlanPrefs, fetchMealPlanWeek, fetchUserRecipes, saveMealPlanWeek, togglePlanLog } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { requestSwap } from '@/lib/meal-plan-intent';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { useUnits } from '@/lib/settings';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
-const SOURCE_BY_ID = Object.fromEntries(RECIPE_SOURCES.map((r) => [r.id, r]));
 const ALLERGEN_LABEL = Object.fromEntries(ALLERGENS.map((a) => [a.key, a.label])) as Record<string, string>;
 const SLOT_LABEL: Record<string, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snack' };
 
@@ -47,17 +45,20 @@ export default function RecipeScreen() {
   const router = useRouter();
   const { showToast } = useToast();
   const { units } = useUnits();
-  const params = useLocalSearchParams<{ id?: string; d?: string; i?: string }>();
-
-  const src = params.id ? SOURCE_BY_ID[params.id] : undefined;
-  const r = params.id ? RECIPE_BY_ID[params.id] : undefined;
+  const params = useLocalSearchParams<{ id?: string; d?: string; i?: string; from?: string }>();
 
   const [todayIso] = useState(() => localToday());
   const monday = mondayOf(todayIso);
   const [reloads, setReloads] = useState(0);
   useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
+  /* The athlete's recipes go into the book first — an `u:` id resolves only after this. */
+  const mineQ = useQuery(fetchUserRecipes, [reloads]);
   const weekQ = useQuery(useCallback(() => fetchMealPlanWeek(monday), [monday]), [monday, reloads]);
   const prefsQ = useQuery(fetchMealPlanPrefs, []);
+
+  const booked = mineQ.settled;
+  const src = booked && params.id ? recipeView(params.id) : undefined;
+  const r = booked && params.id ? RECIPE_BY_ID[params.id] : undefined;
 
   const [edited, setEdited] = useState<typeof weekQ.data>(null);
   const week = edited ?? weekQ.data ?? null;
@@ -71,6 +72,15 @@ export default function RecipeScreen() {
   const i = params.i != null ? Number(params.i) : NaN;
   const it = week && Number.isInteger(d) && Number.isInteger(i) ? week.days[d]?.items[i] : undefined;
   const ctx = it && r && it.recipeId === r.id ? { d, i, it } : null;
+
+  if (!booked) {
+    return (
+      <View style={styles.screen}>
+        <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.46)' }} />
+        <AppBar title="" transparent onBack={() => router.back()} />
+      </View>
+    );
+  }
 
   if (!src || !r) {
     return (
@@ -122,12 +132,35 @@ export default function RecipeScreen() {
     if (done !== cooking) setCooking(done);
   };
 
+  const isMine = !ctx && src.mine;
+
   const toggleLog = async () => {
     if (busy) return;
     if (!ctx || !week) {
-      /* Opened outside a plan: there is no week row to remember the entry in. The design allows this
-         entry point; nothing in the app opens it yet, so it says where logging lives. */
-      showToast('Open this from your meal plan to log it');
+      /* Opened from My Recipes: log one serving today, in the recipe's first meal type. There is no
+         week row to remember it in, so it is a one-way log — the diary is where it can be undone. */
+      if (!src.mine) {
+        showToast('Open this from your meal plan to log it');
+        return;
+      }
+      setBusy(true);
+      try {
+        await addEntries(todayIso, [
+          {
+            meal: r.mealTypes[0] ?? 'dinner',
+            source: 'quick',
+            name: r.name,
+            servingLabel: '1 serving · My recipe',
+            quantity: 1,
+            macros: { kcal: r.kcal, protein: r.protein, carb: r.carb, fat: r.fat, grams: null },
+          },
+        ]);
+        showToast('Added to today’s diary');
+      } catch (e) {
+        showToast(errorMessage(e));
+      } finally {
+        setBusy(false);
+      }
       return;
     }
     setBusy(true);
@@ -238,6 +271,7 @@ export default function RecipeScreen() {
         <View style={[styles.headRow, styles.methodHead]}>
           <Text style={styles.h2}>Method</Text>
         </View>
+        {!src.steps.length ? <Text style={styles.noSteps}>Steps for this recipe haven’t been written yet.</Text> : null}
         {src.steps.map((st, j) => (
           <View key={j} style={styles.step}>
             <Text style={styles.stepN}>{j + 1}</Text>
@@ -286,8 +320,18 @@ export default function RecipeScreen() {
             </Pressable>
           </View>
         ) : null}
-        <View style={[styles.logWrap, !ctx && styles.logWrapFull]}>
-          <Button variant={!isLogged && cooking ? 'primary' : 'secondary'} fullWidth={!ctx} disabled={busy} onPress={toggleLog}>
+        {isMine ? (
+          <Pressable accessibilityRole="button" hitSlop={6} onPress={() => router.push({ pathname: '/my-recipes', params: { edit: r.id } })}>
+            <Text style={styles.link}>Edit recipe</Text>
+          </Pressable>
+        ) : null}
+        <View style={[styles.logWrap, !ctx && !isMine && styles.logWrapFull]}>
+          <Button
+            variant={!isLogged && (cooking || !src.steps.length) ? 'primary' : 'secondary'}
+            fullWidth={!ctx && !isMine}
+            disabled={busy}
+            onPress={toggleLog}
+          >
             {isLogged ? 'Logged' : 'Log meal'}
           </Button>
         </View>
@@ -387,6 +431,7 @@ const styles = StyleSheet.create({
   stepTitle: { flex: 1, fontSize: 15, fontWeight: '600', lineHeight: 20, color: flColor.cream100 },
   stepMin: { fontSize: 12.5, color: flColor.gray400, fontVariant: ['tabular-nums'] },
   stepText: { fontSize: 14.5, lineHeight: 22, color: flColor.gray400 },
+  noSteps: { paddingTop: 6, paddingHorizontal: 2, fontSize: 14, color: flColor.gray400 },
 
   footer: {
     flexDirection: 'row',
