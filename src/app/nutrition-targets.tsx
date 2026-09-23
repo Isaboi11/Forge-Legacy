@@ -12,7 +12,7 @@ import { LogWeightSheet } from '@/components/forge/LogWeightSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { grouped, type Targets } from '@/domain/nutrition/day';
+import { grouped, localToday, type Targets } from '@/domain/nutrition/day';
 import {
   ACTIVITY_LEVELS,
   activityByKey,
@@ -73,7 +73,7 @@ export default function NutritionTargetsScreen() {
   const { profile } = useProfile();
   const { units } = useUnits();
 
-  const [todayIso] = useState(() => new Date().toISOString().slice(0, 10));
+  const [todayIso] = useState(() => localToday());
   const [reloads, setReloads] = useState(0);
 
   const { data: nutritionProfile } = useQuery(fetchNutritionProfile, [reloads]);

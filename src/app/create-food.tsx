@@ -10,7 +10,7 @@ import { InputField } from '@/components/forge/composites/InputField';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
+import { localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
 import {
   checkCalories,
   extrasPerHundred,
@@ -58,7 +58,7 @@ export default function CreateFoodScreen() {
   const { showToast } = useToast();
   const params = useLocalSearchParams<{ meal?: string; date?: string; food?: string; mode?: string }>();
 
-  const iso = typeof params.date === 'string' && params.date ? params.date : new Date().toISOString().slice(0, 10);
+  const iso = typeof params.date === 'string' && params.date ? params.date : localToday();
   const editId = params.mode === 'edit' && typeof params.food === 'string' && params.food ? params.food : null;
   const editing = editId != null;
 

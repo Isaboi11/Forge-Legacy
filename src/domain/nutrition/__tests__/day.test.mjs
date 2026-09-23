@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  toLocalIso,
   calorieCaption,
   calorieHeadline,
   canGoForward,
@@ -111,4 +112,30 @@ test('shiftDay crosses months, years and a DST boundary without drifting', () =>
 test('you cannot log the future', () => {
   assert.equal(canGoForward('2026-09-15', '2026-09-16'), true);
   assert.equal(canGoForward('2026-09-16', '2026-09-16'), false);
+});
+
+/* ── the day key ──────────────────────────────────────────────────────────── */
+
+test('⚠ the day key is the ATHLETE’S calendar day, not UTC’s', () => {
+  /* 6pm on 22 Sep in California is 01:00 on 23 Sep UTC. `toISOString().slice(0,10)` — what every
+     nutrition surface used to call — filed that dinner on the 23rd, a day that had not started. */
+  const evening = new Date(2026, 8, 22, 18, 30);
+  assert.equal(toLocalIso(evening), '2026-09-22');
+
+  /* TZ-independent statement of the same rule: the key always matches the LOCAL parts, whatever zone
+     the runner is in. West of Greenwich in the evening, UTC disagrees — and UTC is the one that is wrong. */
+  for (const hour of [0, 6, 12, 18, 23]) {
+    const d = new Date(2026, 8, 22, hour, 30);
+    assert.equal(toLocalIso(d), `${d.getFullYear()}-09-${String(d.getDate()).padStart(2, '0')}`);
+  }
+});
+
+test('and it pads, so September is 09 and the 3rd is 03', () => {
+  assert.equal(toLocalIso(new Date(2026, 8, 3, 9, 0)), '2026-09-03');
+  assert.equal(toLocalIso(new Date(2026, 11, 31, 23, 59)), '2026-12-31');
+});
+
+test('midnight and one second before it land on the days they belong to', () => {
+  assert.equal(toLocalIso(new Date(2026, 8, 22, 0, 0, 0)), '2026-09-22');
+  assert.equal(toLocalIso(new Date(2026, 8, 22, 23, 59, 59)), '2026-09-22');
 });

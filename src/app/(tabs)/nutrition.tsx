@@ -14,6 +14,7 @@ import {
   calorieCaption,
   calorieHeadline,
   canGoForward,
+  localToday,
   dayDateLine,
   dayLabel,
   groupByMeal,
@@ -77,7 +78,7 @@ export default function NutritionScreen() {
 
   /* The day being read. Minted once per mount from the device clock, then moved only by the arrows —
      so a session that crosses midnight keeps showing the day the athlete was looking at. */
-  const [todayIso] = useState(() => new Date().toISOString().slice(0, 10));
+  const [todayIso] = useState(() => localToday());
   const [iso, setIso] = useState(todayIso);
   const [reloads, setReloads] = useState(0);
 
@@ -244,7 +245,11 @@ export default function NutritionScreen() {
             ) : null}
           </Svg>
 
-          <View style={styles.heroCentre} pointerEvents="none">
+          {/* ⚠ `box-none`, NOT `none`. This wrapper sits over the ring so touches fall through to it,
+              but `none` excludes the view AND ITS CHILDREN — which made "Set a daily target" below
+              completely untappable, on the one screen a brand-new athlete starts from. `box-none` lets
+              the children stay interactive while the wrapper itself still passes touches through. */}
+          <View style={styles.heroCentre} pointerEvents="box-none">
             <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.emberFlame} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
               <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />
             </Svg>

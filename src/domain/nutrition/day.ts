@@ -202,6 +202,30 @@ export function dayDateLine(iso: string): string {
 }
 
 /**
+ * Today, as the ATHLETE'S CALENDAR sees it — not as UTC does.
+ *
+ * ⚠ **`new Date().toISOString().slice(0, 10)` IS A UTC DATE, AND IT FILES DINNER ON TOMORROW.** Every
+ * nutrition surface used it, so west of Greenwich the diary rolled over in the EVENING: at 6pm in
+ * California the app's "today" was already tomorrow, and a dinner logged then landed on a day that had
+ * not started. The day strip still said "Today" over tomorrow's date, the week's last column was a day
+ * that did not exist yet, and the average excluded the wrong day as "unfinished".
+ *
+ * The rest of the app already builds its day keys from LOCAL parts (`domain/admin/series.ts`,
+ * `domain/squad/goal-state.ts`, `domain/settings/export-core.ts`); nutrition was the outlier.
+ *
+ * Pure — it takes the Date, so a test can pin one and the impurity stays at the call site.
+ */
+export function toLocalIso(date: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
+}
+
+/** The athlete's today. The one call that reads the clock, so every screen agrees on the date. */
+export function localToday(): string {
+  return toLocalIso(new Date());
+}
+
+/**
  * Move a calendar day. UTC arithmetic on the date parts only — a local-time `Date` shifts by an hour
  * across a DST boundary and can land on the wrong day, which would silently re-file a whole day's food.
  */

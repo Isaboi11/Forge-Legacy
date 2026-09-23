@@ -11,7 +11,7 @@ import { InputField } from '@/components/forge/composites/InputField';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { MEAL_LABELS, MEAL_SLOTS, shiftDay, totals, type LogEntry, type MealSlot } from '@/domain/nutrition/day';
+import { localToday, MEAL_LABELS, MEAL_SLOTS, shiftDay, totals, type LogEntry, type MealSlot } from '@/domain/nutrition/day';
 import {
   canEditPortion,
   countLabel,
@@ -74,7 +74,7 @@ export default function MealDetailScreen() {
 
   /* Minted once per mount, like Nutrition Home: a session that crosses midnight keeps showing the day
      the athlete opened, rather than silently re-labelling it. */
-  const [todayIso] = useState(() => new Date().toISOString().slice(0, 10));
+  const [todayIso] = useState(() => localToday());
   const iso = typeof params.date === 'string' && params.date ? params.date : todayIso;
   const meal: MealSlot = (MEAL_SLOTS as readonly string[]).includes(String(params.meal))
     ? (params.meal as MealSlot)

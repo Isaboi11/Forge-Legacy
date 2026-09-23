@@ -1,4 +1,5 @@
 import type { LogEntry, MealSlot, Targets } from '@/domain/nutrition/day';
+import { localToday } from '@/domain/nutrition/day';
 import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
 // The app's own id minter (Hermes has no `crypto.randomUUID` everywhere) — no new dependency.
@@ -851,7 +852,7 @@ export async function saveTargets(
 ): Promise<void> {
   const id = await athleteId();
   if (!id) return;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
   /* One type with an OPTIONAL `weight_lb`, rather than two shapes — a union of payloads trips the
      client's excess-property check on the branch that carries the newer column. */
   type TargetRow = {
