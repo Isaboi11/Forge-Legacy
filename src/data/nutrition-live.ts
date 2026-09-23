@@ -3,6 +3,7 @@ import { localToday } from '@/domain/nutrition/day';
 import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
 import { opsFor, overlayDay, type OutboxOp } from '@/domain/nutrition/outbox';
+import type { MealPlanPrefs } from '@/domain/nutrition/meal-plan-setup';
 import { isTransportFailure } from '@/domain/workout/pending-save';
 import {
   heldItems,
@@ -1092,5 +1093,53 @@ export async function saveTargets(
     targetWeightColumn = false;
     ({ error } = await write(false));
   }
+  if (error) throw error;
+}
+
+/* ── Meal Plan Setup (0210) ─────────────────────────────────────────────── */
+
+/**
+ * The athlete's saved setup, or null when they have never completed it — or when `0210` is not pasted
+ * yet, which reads the same way: the screen opens fresh, and saving is what surfaces the missing table.
+ */
+export async function fetchMealPlanPrefs(): Promise<MealPlanPrefs | null> {
+  const id = await athleteId();
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from('meal_plan_prefs')
+    .select('diet, allergens, dislikes, meals, cook_minutes, household, weekly_budget_usd')
+    .eq('athlete_id', id)
+    .maybeSingle();
+  if (error || !data) return null;
+  const r = data as Record<string, any>;
+  return {
+    diet: r.diet,
+    allergens: r.allergens ?? [],
+    dislikes: r.dislikes ?? [],
+    meals: r.meals ?? [],
+    cookMinutes: r.cook_minutes ?? null,
+    household: Number(r.household ?? 1),
+    weeklyBudgetUsd: r.weekly_budget_usd != null ? Number(r.weekly_budget_usd) : null,
+  };
+}
+
+/** Save the setup. Throws on any failure — the screen must not say "saved" when nothing was. */
+export async function saveMealPlanPrefs(prefs: MealPlanPrefs): Promise<void> {
+  const id = await athleteId();
+  if (!id) throw new Error('Not signed in');
+  const { error } = await supabase.from('meal_plan_prefs').upsert(
+    {
+      athlete_id: id,
+      diet: prefs.diet,
+      allergens: prefs.allergens,
+      dislikes: prefs.dislikes,
+      meals: prefs.meals,
+      cook_minutes: prefs.cookMinutes,
+      household: prefs.household,
+      weekly_budget_usd: prefs.weeklyBudgetUsd,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'athlete_id' },
+  );
   if (error) throw error;
 }
