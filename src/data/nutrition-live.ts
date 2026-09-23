@@ -5,6 +5,7 @@ import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/ser
 import { opsFor, overlayDay, type OutboxOp } from '@/domain/nutrition/outbox';
 import type { MealPlanPrefs } from '@/domain/nutrition/meal-plan-setup';
 import type { GroceryState } from '@/domain/nutrition/grocery';
+import { registerAll, type UserRecipe } from '@/domain/nutrition/user-recipes';
 import { RECIPE_BY_ID, itemTotals, logKey, portionLabel, type Locks, type MealPlanWeek, type PlanDay } from '@/domain/nutrition/meal-planner';
 import { isTransportFailure } from '@/domain/workout/pending-save';
 import {
@@ -1263,4 +1264,67 @@ export async function saveGroceryState(weekStart: string, state: GroceryState): 
     .eq('athlete_id', id)
     .eq('week_start', weekStart);
   if (error) throw error;
+}
+
+/* ── My Recipes (0213) ──────────────────────────────────────────────────── */
+
+const toUserRecipe = (r: Record<string, any>): UserRecipe => ({
+  id: `u:${r.id}`,
+  name: r.name,
+  mealTypes: r.meal_types ?? [],
+  minutes: Number(r.minutes),
+  yield: Number(r.yield),
+  ingredients: Array.isArray(r.ingredients) ? r.ingredients : [],
+  allergens: r.allergens ?? [],
+  confirmed: !!r.confirmed,
+  steps: r.steps ?? [],
+  usePlan: !!r.use_plan,
+  createdAt: r.created_at,
+});
+
+/**
+ * The athlete's recipes — and, as it reads them, puts them in the recipe book (`registerAll`), so any
+ * week naming one resolves. Empty when there are none or `0213` is not pasted yet.
+ */
+export async function fetchUserRecipes(): Promise<UserRecipe[]> {
+  const id = await athleteId();
+  if (!id) return [];
+  const { data, error } = await supabase
+    .from('user_recipes')
+    .select('id, name, meal_types, minutes, yield, ingredients, allergens, confirmed, steps, use_plan, created_at')
+    .eq('athlete_id', id)
+    .order('created_at', { ascending: false });
+  const list = error ? [] : ((data ?? []) as Record<string, any>[]).map(toUserRecipe);
+  registerAll(list);
+  return list;
+}
+
+/** Insert or update one recipe. Returns it as stored. Throws — the form must not say "saved" when it wasn't. */
+export async function saveUserRecipe(u: Omit<UserRecipe, 'id' | 'createdAt'> & { id: string | null }): Promise<UserRecipe> {
+  const athlete = await athleteId();
+  if (!athlete) throw new Error('Not signed in');
+  const rowId = u.id ? u.id.replace(/^u:/, '') : uuid();
+  const { data, error } = await supabase
+    .from('user_recipes')
+    .upsert(
+      {
+        id: rowId,
+        athlete_id: athlete,
+        name: u.name,
+        meal_types: u.mealTypes,
+        minutes: u.minutes,
+        yield: u.yield,
+        ingredients: u.ingredients,
+        allergens: u.allergens,
+        confirmed: u.confirmed,
+        steps: u.steps,
+        use_plan: u.usePlan,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' },
+    )
+    .select('id, name, meal_types, minutes, yield, ingredients, allergens, confirmed, steps, use_plan, created_at')
+    .single();
+  if (error || !data) throw error ?? new Error('Could not save the recipe');
+  return toUserRecipe(data as Record<string, any>);
 }

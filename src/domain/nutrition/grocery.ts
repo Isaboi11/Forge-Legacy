@@ -1,6 +1,6 @@
 import { AISLES, GROCERY, type Aisle, type BuyUnit } from './grocery-data.ts';
-import { DAY_NAMES, cooksOf, type PlanDay } from './meal-planner.ts';
-import { INGREDIENTS, RECIPE_SOURCES, type PlanSlot } from './recipes-data.ts';
+import { DAY_NAMES, cooksOf, recipeView, type PlanDay } from './meal-planner.ts';
+import { INGREDIENTS, type PlanSlot } from './recipes-data.ts';
 
 /**
  * Grocery List — built from the week's COOKS, never from the meals shown (Recipe Schema and Planner
@@ -12,7 +12,6 @@ import { INGREDIENTS, RECIPE_SOURCES, type PlanSlot } from './recipes-data.ts';
  * not priced" instead of implying a number covers the whole list.
  */
 
-const SOURCE_BY_ID = Object.fromEntries(RECIPE_SOURCES.map((r) => [r.id, r]));
 const SLOT_LABEL: Record<PlanSlot, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snack' };
 
 export interface GroceryUse {
@@ -66,10 +65,10 @@ export function groceryList(days: PlanDay[], household: number): GroceryList {
   const acc = new Map<string, { grams: number; uses: GroceryUse[] }>();
   const cooks = cooksOf(days, household);
   for (const c of cooks) {
-    const src = SOURCE_BY_ID[c.recipeId];
-    if (!src) continue;
-    const use = { day: DAY_NAMES[c.d], slot: SLOT_LABEL[c.slot], recipe: src.name, servings: c.servingsCooked };
-    for (const [ingredient, perServing] of src.ingredients) {
+    const view = recipeView(c.recipeId);
+    if (!view) continue;
+    const use = { day: DAY_NAMES[c.d], slot: SLOT_LABEL[c.slot], recipe: view.name, servings: c.servingsCooked };
+    for (const { key: ingredient, g: perServing } of view.ingredients) {
       const key = SAME_ITEM[ingredient] ?? ingredient;
       const g = perServing * c.servingsCooked;
       const a = acc.get(key) ?? { grams: 0, uses: [] };

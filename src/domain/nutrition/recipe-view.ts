@@ -1,5 +1,5 @@
-import { portionLabel } from './meal-planner.ts';
-import { INGREDIENTS, type RecipeSource, type UsMeasure } from './recipes-data.ts';
+import { portionLabel, type RecipeView } from './meal-planner.ts';
+import type { UsMeasure } from './recipes-data.ts';
 
 /**
  * The Recipe screen's arithmetic — amounts, US measures and how many servings to prepare. Built from
@@ -51,17 +51,16 @@ export interface IngredientRow {
   us: string | null;
 }
 
-export function ingredientRows(src: RecipeSource, servings: number, showUs: boolean): IngredientRow[] {
-  return src.ingredients.map(([key, perServing]) => {
-    const g = perServing * servings;
-    const ing = INGREDIENTS[key];
+export function ingredientRows(view: Pick<RecipeView, 'ingredients'>, servings: number, showUs: boolean): IngredientRow[] {
+  return view.ingredients.map((ing, i) => {
+    const g = ing.g * servings;
     const metric = metricAmount(g);
     return {
-      key,
+      key: `${ing.key}-${i}`,
       name: ing.name,
       metric,
       /* A pinch is a pinch in any system — saying it twice is noise. */
-      us: showUs && metric !== 'pinch' ? usAmount(ing.us, g) : null,
+      us: showUs && metric !== 'pinch' && ing.us ? usAmount(ing.us, g) : null,
     };
   });
 }

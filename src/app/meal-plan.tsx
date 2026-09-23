@@ -50,6 +50,7 @@ import {
   fetchMealPlanWeek,
   fetchNutritionProfile,
   fetchTargetsOn,
+  fetchUserRecipes,
   saveMealPlanWeek,
   togglePlanLog,
 } from '@/data/nutrition-live';
@@ -112,12 +113,15 @@ export default function MealPlanScreen() {
     setPicked(next);
   };
 
+  /* The athlete's recipes go into the book BEFORE a week is resolved — a stored week naming one would
+     otherwise look unreadable and be rebuilt (`registerUserRecipes`). */
+  const mineQ = useQuery(fetchUserRecipes, [reloads]);
   const prefsQ = useQuery(fetchMealPlanPrefs, [reloads]);
   const profileQ = useQuery(fetchNutritionProfile, [reloads]);
   const targetQ = useQuery(useCallback(() => fetchTargetsOn(todayIso), [todayIso]), [todayIso, reloads]);
   const storedQ = useQuery(useCallback(() => fetchMealPlanWeek(monday), [monday]), [monday, reloads]);
 
-  const loaded = prefsQ.settled && profileQ.settled && targetQ.settled && storedQ.settled;
+  const loaded = mineQ.settled && prefsQ.settled && profileQ.settled && targetQ.settled && storedQ.settled;
   const prefs = prefsQ.data ?? null;
   const target = targetQ.data ?? null;
   const gate = loaded ? setupGate(profileQ.data?.birthYear ?? null, target, todayIso) : null;
@@ -125,10 +129,12 @@ export default function MealPlanScreen() {
 
   const resolved = useMemo(
     () =>
-      ready && prefs && target
+      /* `mineQ.data` is read here on purpose: the athlete's recipes are registered into the book as that
+         query lands, and the week must re-resolve against them. */
+      ready && prefs && target && mineQ.data
         ? resolveWeek(storedQ.data ?? null, prefs, prefs.updatedAt, target, monday)
         : null,
-    [ready, prefs, target, storedQ.data, monday],
+    [ready, prefs, target, storedQ.data, monday, mineQ.data],
   );
 
   /* The athlete's edits this visit, tied to the week they were made on. When the week underneath is
@@ -253,8 +259,8 @@ export default function MealPlanScreen() {
             <ActionRow icon={<SwapGlyph />} label="Swap meal" chevron onPress={() => setSheet({ d, i, mode: 'swap' })} />
             <ActionRow
               icon={<LockGlyph shut={isLocked} />}
-              label={isLocked ? 'Unlock meal' : 'Lock meal'}
-              hint={isLocked ? 'Rebuild can replace it' : 'Keep this one if you rebuild'}
+              label={isLocked ? 'Locked' : 'Lock meal'}
+              hint={isLocked ? 'Kept when you rebuild · tap to unlock' : 'Keep this one if you rebuild'}
               onPress={() => void commit({ ...week, locked: toggleLock(week.days, week.locked, d, i) })}
             />
             <ActionRow
@@ -402,7 +408,7 @@ export default function MealPlanScreen() {
                     const metaParts =
                       it.leftover && it.cookDay != null
                         ? [`From ${dates[it.cookDay].name} dinner`]
-                        : [`${r.minutes} min`, ...(feeds != null ? [`makes ${dates[feeds].name} lunch`] : [])];
+                        : [`${r.minutes} min`, ...(feeds != null ? [`leftovers for ${dates[feeds].name} lunch`] : [])];
                     if (it.portion !== 1) metaParts.push(portionLabel(it.portion));
                     /* PO 2026-09-23 (open question 1): when the library runs out, repeat — and say so. */
                     if (it.repeated) metaParts.push('Repeated · nothing else fits');
@@ -487,6 +493,9 @@ export default function MealPlanScreen() {
             Grocery list
           </Button>
           <View style={styles.footerLinks}>
+            <Pressable accessibilityRole="button" hitSlop={6} onPress={() => router.push('/my-recipes')}>
+              <Text style={styles.linkQuiet}>My recipes</Text>
+            </Pressable>
             <Pressable
               accessibilityRole="button"
               hitSlop={6}
@@ -741,7 +750,7 @@ const styles = StyleSheet.create({
     borderTopColor: flColor.charcoal700,
     backgroundColor: flColor.charcoal900,
   },
-  footerLinks: { flexDirection: 'row', justifyContent: 'center', gap: 28 },
+  footerLinks: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
   budgetLine: { textAlign: 'center', fontSize: 12.5, color: flColor.gray400, paddingBottom: 4 },
   linkBronze: { paddingVertical: 10, paddingHorizontal: 4, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
   linkQuiet: { paddingVertical: 10, paddingHorizontal: 4, fontSize: 13, fontWeight: '600', color: flColor.gray400 },

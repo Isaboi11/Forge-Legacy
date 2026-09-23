@@ -27,7 +27,7 @@ import {
 } from '@/domain/nutrition/grocery';
 import { AISLES } from '@/domain/nutrition/grocery-data';
 import { mondayOf, portionLabel, weekDates, weekRange } from '@/domain/nutrition/meal-planner';
-import { fetchGroceryState, fetchMealPlanPrefs, fetchMealPlanWeek, saveGroceryState } from '@/data/nutrition-live';
+import { fetchGroceryState, fetchMealPlanPrefs, fetchMealPlanWeek, fetchUserRecipes, saveGroceryState } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -62,15 +62,18 @@ export default function GroceryListScreen() {
   const [reloads, setReloads] = useState(0);
   useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
 
+  /* The athlete's recipes go into the book first, so a week naming one buys its ingredients. */
+  const mineQ = useQuery(fetchUserRecipes, [reloads]);
   const weekQ = useQuery(useCallback(() => fetchMealPlanWeek(monday), [monday]), [monday, reloads]);
   const prefsQ = useQuery(fetchMealPlanPrefs, [reloads]);
   const savedQ = useQuery(useCallback(() => fetchGroceryState(monday), [monday]), [monday, reloads]);
 
-  const loaded = weekQ.settled && prefsQ.settled && savedQ.settled;
+  const loaded = mineQ.settled && weekQ.settled && prefsQ.settled && savedQ.settled;
   const household = prefsQ.data?.household ?? 1;
-  const days = weekQ.data?.days ?? null;
+  const days = mineQ.settled ? (weekQ.data?.days ?? null) : null;
+  const mine = mineQ.data;
 
-  const list = useMemo(() => (days ? groceryList(days, household) : null), [days, household]);
+  const list = useMemo(() => (days && mine ? groceryList(days, household) : null), [days, household, mine]);
   const sig = useMemo(() => (days ? planSignature(days, household) : ''), [days, household]);
   const base = useMemo(() => (list ? stateFor(savedQ.data ?? null, list, sig) : null), [list, sig, savedQ.data]);
 
