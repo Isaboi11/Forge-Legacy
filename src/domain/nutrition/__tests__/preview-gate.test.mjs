@@ -123,6 +123,22 @@ test('both accounts are seeded by email, and by email only', () => {
   assert.match(code, /on conflict \(user_id\) do nothing/, 'the seed must be re-runnable');
 });
 
+test('the app_admins bootstrap exists, so the PO’s access does not hang on an email string', () => {
+  // `pending-0129-0130` STEP 2 seeded app_admins from the same address, and /admin works, so the email
+  // does match. But "which account is the PO's" is a fact about the database; this is the safety net.
+  assert.match(code, /insert into public\.nutrition_preview[\s\S]{0,200}from public\.app_admins/);
+});
+
+test('⚠ admin does NOT imply nutrition — app_admins is a SEED, not part of the check', () => {
+  // If `has_nutrition_access()` consulted app_admins, every future operator would silently gain the
+  // preview and the two tables would be one table again, which is the thing 0206 exists to avoid.
+  const fn = /create or replace function public\.has_nutrition_access\(\)[\s\S]*?\n\$\$;/.exec(code);
+  assert.ok(fn, 'has_nutrition_access is not defined');
+  assert.doesNotMatch(fn[0], /app_admins/, 'the check must read nutrition_preview ONLY');
+  assert.doesNotMatch(fn[0], /is_app_admin/);
+  assert.match(fn[0], /from public\.nutrition_preview p where p\.user_id = auth\.uid\(\)/);
+});
+
 test('my_entitlement() returns the nutrition key, and is 0145’s body otherwise', () => {
   const fn = /create or replace function public\.my_entitlement\(\)[\s\S]*?\n\$\$;/.exec(code);
   assert.ok(fn, 'my_entitlement is not defined in 0206');

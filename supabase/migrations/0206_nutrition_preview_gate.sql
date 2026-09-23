@@ -181,13 +181,29 @@ create policy nutrition_targets_owner_update on public.nutrition_targets for upd
 -- ─────────────────────────────────────────────────────────────────────────────
 insert into public.nutrition_preview (user_id, note)
 select p.id,
-       case u.email
+       case lower(u.email)
          when 'isaiahaltamirano@gmail.com' then 'PO — Nutrition preview (0206)'
          else 'claudetest — Nutrition preview (0206)'
        end
   from auth.users u
   join public.profiles p on p.id = u.id
  where lower(u.email) in ('isaiahaltamirano@gmail.com', 'claudetest@test.com')
+    on conflict (user_id) do nothing;
+
+-- 4b. ⭐ AND WHOEVER ALREADY HOLDS ADMIN, so the PO's access does not depend on an email string.
+--
+-- The list above is the same address `pending-0129-0130.sql` STEP 2 used to bootstrap `app_admins`, and
+-- `/admin` works, so it did match a real account. But "the PO's account" is a fact about the database, not
+-- about a literal in this file: if he ever signs in under a different address, the line above silently
+-- grants nobody and §2 aborts the migration. `app_admins` already answers "which account is the creator's"
+-- authoritatively, so ask it too. 0203 §3 did exactly this for the same reason.
+--
+-- ⚠ THIS IS A ONE-SHOT BOOTSTRAP, NOT A RULE. It copies today's operators into the allowlist; it does not
+-- make admin imply nutrition. A future operator gets no preview access, and a future preview tester gets
+-- no admin — which is the whole reason `nutrition_preview` is its own table.
+insert into public.nutrition_preview (user_id, note)
+select a.user_id, 'operator (app_admins) — Nutrition preview (0206)'
+  from public.app_admins a
     on conflict (user_id) do nothing;
 
 -- ─────────────────────────────────────────────────────────────────────────────

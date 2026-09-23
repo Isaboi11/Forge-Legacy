@@ -17,8 +17,13 @@
 -- account exists again and the seed picks it up.
 --
 -- WHAT §3 SHOULD SAY (predicted before running — read the real output against this):
---   • allowlist_rows: **2** if both accounts exist, **1** if claudetest has been wiped.
---     Never 0 — the PO's own account must be there or the feature is off for him too.
+--   • ⭐ **§3a IS THE ANSWER TO "will it be on my account?"** — it lists the exact email addresses that
+--     will see the Nutrition tab. Expect `isaiahaltamirano@gmail.com` and `claudetest@test.com`.
+--     §3a-ii lists EVERY account with a yes/no, so a missing seed explains itself at a glance.
+--   • allowlist_rows: **2** normally — the PO and claudetest, which are the same two accounts §4 seeds by
+--     email. It can be **1** if claudetest has been wiped, and it stays 2 (not 3) because the PO is
+--     already an operator, so §4b's `app_admins` bootstrap hits `on conflict do nothing`.
+--     Never 0 — §2 aborts rather than leave the PO locked out of his own feature.
 --   • policies_gated / policies_total: **17 of 17**. A lower gated count means a policy was added to
 --     0205 after this file was written and is now UNGATED — find it before trusting the gate.
 --   • preview_table_policy_count: **0** — zero is correct and deliberate, not an omission.
@@ -158,13 +163,29 @@ create policy nutrition_targets_owner_update on public.nutrition_targets for upd
 -- ─────────────────────────────────────────────────────────────────────────────
 insert into public.nutrition_preview (user_id, note)
 select p.id,
-       case u.email
+       case lower(u.email)
          when 'isaiahaltamirano@gmail.com' then 'PO — Nutrition preview (0206)'
          else 'claudetest — Nutrition preview (0206)'
        end
   from auth.users u
   join public.profiles p on p.id = u.id
  where lower(u.email) in ('isaiahaltamirano@gmail.com', 'claudetest@test.com')
+    on conflict (user_id) do nothing;
+
+-- 4b. ⭐ AND WHOEVER ALREADY HOLDS ADMIN, so the PO's access does not depend on an email string.
+--
+-- The list above is the same address `pending-0129-0130.sql` STEP 2 used to bootstrap `app_admins`, and
+-- `/admin` works, so it did match a real account. But "the PO's account" is a fact about the database, not
+-- about a literal in this file: if he ever signs in under a different address, the line above silently
+-- grants nobody and §2 aborts the migration. `app_admins` already answers "which account is the creator's"
+-- authoritatively, so ask it too. 0203 §3 did exactly this for the same reason.
+--
+-- ⚠ THIS IS A ONE-SHOT BOOTSTRAP, NOT A RULE. It copies today's operators into the allowlist; it does not
+-- make admin imply nutrition. A future operator gets no preview access, and a future preview tester gets
+-- no admin — which is the whole reason `nutrition_preview` is its own table.
+insert into public.nutrition_preview (user_id, note)
+select a.user_id, 'operator (app_admins) — Nutrition preview (0206)'
+  from public.app_admins a
     on conflict (user_id) do nothing;
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -245,6 +266,7 @@ declare
   v_rows  int;
   v_po    boolean;
   v_ct    boolean;
+  v_admin boolean;
   v_tabs  text[] := array['food_catalog','user_foods','food_log_entries','food_favorites',
                           'saved_meals','saved_meal_items','nutrition_targets'];
 begin
@@ -300,9 +322,20 @@ begin
                    join auth.users u on u.id = p.user_id
                   where lower(u.email) = 'claudetest@test.com') into v_ct;
 
-  if not v_po then
+  select exists (select 1 from public.nutrition_preview p
+                   join public.app_admins a on a.user_id = p.user_id) into v_admin;
+
+  -- The PO must be reachable by ONE of the two paths, or this migration has locked HIM out too, which is
+  -- the one outcome nobody wants. Email is the expected path; the app_admins bootstrap is the safety net.
+  if not v_po and not v_admin then
     raise exception
-      '0206 FAILED: isaiahaltamirano@gmail.com is NOT on the allowlist, so Nutrition is off for the PO too. Does that account have a profiles row?';
+      '0206 FAILED: nobody identifiable has access — isaiahaltamirano@gmail.com matched no auth.users row AND app_admins is empty. Run: select email from auth.users; then put the real address in §4 and re-run this file.';
+  end if;
+
+  if not v_po and v_admin then
+    raise warning
+      '0206: isaiahaltamirano@gmail.com matched NO account, but % operator account(s) from app_admins were seeded and DO have access. Confirm you sign in as one of them — §3a lists the emails.',
+      (select count(*) from public.nutrition_preview p join public.app_admins a on a.user_id = p.user_id);
   end if;
 
   if not v_ct then
@@ -316,11 +349,23 @@ end $checks$;
 
 -- ═══ §3 — THE REPORT (read-only) ══════════════════════════════════════════════
 
--- 3a. Who may use Nutrition, and since when.
-select u.email, p.note, p.granted_at
+-- 3a. ⭐ WHO MAY USE NUTRITION — read this one first. These are the exact accounts that will see the tab
+-- in the app. If the address you sign in with is not in this list, you will NOT see Nutrition.
+select u.email,
+       p_prof.handle,
+       p.note,
+       p.granted_at
   from public.nutrition_preview p
   join auth.users u on u.id = p.user_id
+  left join public.profiles p_prof on p_prof.id = p.user_id
  order by p.granted_at;
+
+-- 3a-ii. And every account that exists, so a missing seed is one glance away from an explanation.
+select u.email,
+       exists (select 1 from public.nutrition_preview n where n.user_id = u.id) as has_nutrition,
+       exists (select 1 from public.app_admins a where a.user_id = u.id)       as is_operator
+  from auth.users u
+ order by has_nutrition desc, u.email;
 
 -- 3b. Every nutrition policy and whether it consults the gate. EVERY row must say `true`.
 select tablename,
