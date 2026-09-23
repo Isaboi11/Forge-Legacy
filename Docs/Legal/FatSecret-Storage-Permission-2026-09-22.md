@@ -3,7 +3,12 @@
 **Received:** 2026-09-22, by email to Isaiah Altamirano (PO), in reply to a question sent through
 https://platform.fatsecret.com/contact on 2026-09-21.
 **From:** James, fatsecret Platform
-**Tier:** Premier Free
+**Tier:** ⚠ **Basic (free), confirmed 2026-09-23 at key signup — NOT Premier Free.** The question below
+said "we're a startup using Premier Free" and James answered in those terms, so this file previously
+recorded Premier Free as fact. It was the PO's own framing, never a confirmation: Premier Free is a
+separate application with revenue verification, and we have not filed one. The key we hold is Basic —
+5,000 calls/day, attribution required. **The permission itself is unaffected** — attribution is a
+condition of both tiers, and nothing below turns on which one we are on.
 **Governs:** `Nutrition-Architecture-v1.0.md` §4 (FatSecret row) and §13 row 7
 
 ## The question (as sent)
