@@ -1632,7 +1632,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     ]);
     /* Notes always; the training summary only for a progress/weights question — `askBriefLive` decides, so
        an ordinary question pays nothing for history it does not need. */
-    const brief = await askBriefLive(text, units).catch(() => ({ notes: [] as string[], training: null }));
+    const brief = await askBriefLive(text, units).catch(() => ({ notes: [] as string[], training: null, nutrition: null }));
     const context = buildAskContext(
       {
         question: text,
@@ -1640,6 +1640,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
         program: active ? { structure: { ...active.structure, name: active.name } } : null,
         notes: brief.notes,
         training: brief.training,
+        nutrition: brief.nutrition,
       },
       askSourcesLive(),
     );

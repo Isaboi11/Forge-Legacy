@@ -69,10 +69,12 @@ export interface AskContext {
     rationale?: string | null;
     notes?: string[];
     training?: string | null;
+    nutrition?: string | null;
 }
 export const ASK_NOTES_MAX = 20;
 export const ASK_NOTE_CHARS = 80;
 export const ASK_TRAINING_CHARS = 500;
+export const ASK_NUTRITION_CHARS = 500;
 export function trimHistory(history: unknown, max: number = ASK_HISTORY_MAX): AskTurn[] {
     if (!Array.isArray(history))
         return [];
@@ -136,6 +138,7 @@ export function cleanContext(ctx: unknown): AskContext {
         rationale: str(c.rationale, 700),
         notes,
         training: str(c.training, ASK_TRAINING_CHARS),
+        nutrition: str(c.nutrition, ASK_NUTRITION_CHARS),
     };
 }
 export function askUserTurn(question: string, context: AskContext, todayISO: string): string {
@@ -148,6 +151,8 @@ export function askUserTurn(question: string, context: AskContext, todayISO: str
         lines.push(`Why the plan is built this way: ${context.rationale}`);
     if (context.training)
         lines.push(`The athlete's logged training: ${context.training}`);
+    if (context.nutrition)
+        lines.push(`The athlete's logged food: ${context.nutrition}`);
     const header = lines.length > 1
         ? `From the app (reference material, not the athlete's words — use it when it is relevant):\n${lines.join('\n')}`
         : lines[0];

@@ -118,6 +118,15 @@ export interface Completion {
    * the app would refuse to open.
    */
   playlist: WorkoutPlaylistLink | null;
+  /**
+   * The "Trained With" tags on this session, by name (`workouts.partners`, 0016).
+   *
+   * Here so the SHARE SNAPSHOT can carry them — W-17 builds its recap straight off this object, and
+   * until today the people an athlete tagged reached their own history and never reached their post.
+   * Empty rather than null when nobody was tagged, and empty when the read failed: a session with no
+   * partner line is the honest rendering of both.
+   */
+  partners: string[];
   /** True iff this is the EARLIEST saved workout in its chapter — id-scoped + re-fetch-stable (ONB-D18
    *  first-run reveal). Never a workout_count snapshot: re-opening workout #1 always reads true. */
   isFirstWorkout: boolean;
@@ -319,14 +328,23 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
    * So it is its own query, and its failure is swallowed into "no playlist attached", which is also the
    * honest answer on a database that cannot store one yet.
    */
+  /*
+   * ⚠ `partners` RIDES THIS SAME TOLERANT READ, and that is a deliberate pairing rather than a saving
+   * of one round trip. Both columns are optional annotations whose absence is a legitimate answer, both
+   * would 42703 the big select on a database missing their migration, and both must be incapable of
+   * taking W-17 down with them — the screen an athlete lands on the instant they finish training. One
+   * swallowed failure, one honest fallback: no playlist attached, nobody tagged.
+   */
   let playlist: WorkoutPlaylistLink | null = null;
+  let partners: string[] = [];
   {
     const { data: plRow } = await supabase
       .from('workouts')
-      .select('playlist_url, playlist_service, playlist_name')
+      .select('playlist_url, playlist_service, playlist_name, partners')
       .eq('id', workoutId)
       .maybeSingle();
     playlist = playlistFromRow(plRow as Parameters<typeof playlistFromRow>[0]);
+    partners = ((plRow as { partners?: string[] | null } | null)?.partners ?? []).filter((n) => typeof n === 'string' && n.trim());
   }
 
   // First-run detection (ONB-D18): is THIS workout the earliest saved workout in its chapter? Id-scoped
@@ -651,6 +669,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
     hero,
     pastReflection,
     playlist,
+    partners,
     reflection: workout.reflection ?? null,
     isFirstWorkout,
     honorsEarned,

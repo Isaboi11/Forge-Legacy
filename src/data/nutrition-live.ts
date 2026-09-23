@@ -1,4 +1,5 @@
 import type { LogEntry, MealSlot, Targets } from '@/domain/nutrition/day';
+import { localToday } from '@/domain/nutrition/day';
 import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
 // The app's own id minter (Hermes has no `crypto.randomUUID` everywhere) — no new dependency.
@@ -466,9 +467,21 @@ function normaliseFoods(data: unknown): CatalogFood[] {
  * Looks in the catalogue first (every searched or scanned food is cached there by `food-search`), then in
  * the athlete's own foods. Returns null when neither has it, which is the "this food is gone" case the
  * screen shows rather than a half-drawn page of zeros.
+ *
+ * ⚠ **A `fs:` KEY IS NOT IN THE CATALOGUE FOR LONG.** FatSecret's terms let us keep a logged food's
+ * calories and macros in the athlete's own diary, but not in `food_catalog`, which every athlete reads —
+ * those rows are purged after 24 hours. Reading the table directly would therefore show "this food is
+ * gone" for a meal logged last week, so `fs:` goes through the Edge Function, which re-reads it from
+ * FatSecret. The diary's own numbers are snapshotted at log time and never depend on this.
  */
 export async function fetchFoodByKey(key: string): Promise<CatalogFood | null> {
   if (!key) return null;
+
+  if (key.startsWith('fs:')) {
+    const { data, error } = await supabase.functions.invoke('food-search', { body: { key } });
+    if (error) return null;
+    return normaliseFoods(data)[0] ?? null;
+  }
 
   if (key.includes(':')) {
     const { data } = await supabase
@@ -851,7 +864,7 @@ export async function saveTargets(
 ): Promise<void> {
   const id = await athleteId();
   if (!id) return;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
   /* One type with an OPTIONAL `weight_lb`, rather than two shapes — a union of payloads trips the
      client's excess-property check on the branch that carries the newer column. */
   type TargetRow = {

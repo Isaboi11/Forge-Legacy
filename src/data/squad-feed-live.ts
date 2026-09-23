@@ -304,6 +304,25 @@ export interface WorkoutSummary {
    */
   hasRoute?: boolean;
   shareRoute?: boolean;
+  /**
+   * WHO ELSE WAS THERE — the "Trained With" tags, snapshotted by NAME (2026-09-23).
+   *
+   * PO: *"I did a walk and added someone to my workout. I posted that workout in the squad. How come
+   * they didn't show up on the face card of the post?"* Because this key did not exist. The tags were
+   * written to `workouts.partners` at save and read by every one of the athlete's OWN surfaces —
+   * Activity History's "with Selene", Activity Detail's Trained With row, 0079's partnership honors —
+   * and then the share snapshot dropped them on the floor. The post was the only place in the app that
+   * forgot who was there, which is the exact opposite of what a post about a shared session is for.
+   *
+   * ⚠ OPTIONAL, ABSENT ON EVERY POST WRITTEN BEFORE TODAY — the `name`/`playlist`/`cardio`/`hasRoute`
+   * pattern, fifth time around. No migration, no backfill, and no post already in a feed silently
+   * gains names it was not shared with.
+   *
+   * ⚠ NAMES, NOT IDS. A viewer gets a line that says who was there, never a link to them: the partner
+   * did not post anything and has not agreed to be a tap target on somebody else's card. See
+   * `partnersLine`.
+   */
+  partners?: string[] | null;
 }
 
 export interface SquadPostTypeDef {
@@ -660,6 +679,8 @@ interface CompletionLike {
   activityType?: string | null;
   /** Whether the session stored a route. Resolved by the caller — `recapSummaryFrom` stays pure. */
   hasRoute?: boolean;
+  /** The session's "Trained With" tags, by name. Read off the workout row by `fetchCompletion`. */
+  partners?: string[] | null;
 }
 
 /** Snapshot a Completion's stats into the recap `WorkoutSummary` stored on the post. */
@@ -705,6 +726,13 @@ export function recapSummaryFrom(c: CompletionLike): WorkoutSummary {
      * of the session.
      */
     hasRoute: c.hasRoute ?? false,
+    /*
+     * The people, snapshotted like everything else here — so un-tagging somebody a week later does not
+     * rewrite a card their squad has already seen, and re-tagging does not add them to it either. The
+     * cap is `MAX_PARTNERS`' three by construction (the tagger enforces it at save), but the slice is
+     * kept: a row that predates the cap must not be able to push a five-name sentence onto a card.
+     */
+    partners: (c.partners ?? []).map((n) => n.trim()).filter(Boolean).slice(0, 3),
   };
 }
 

@@ -33,6 +33,7 @@ import {
   type Reaction,
 } from '@/data/friends-feed-live';
 import { isMilestoneCard, milestoneAckLabel } from '@/domain/share/milestone-card';
+import { partnersLine } from '@/domain/share/recap-stats';
 import { fetchFriendLists } from '@/data/friends-live';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -372,6 +373,9 @@ function FeedLedgerPost({
          stands in rather than a heading reading "null". No backfill, no version check. */
       title={summary ? summary.name ?? recapMarker(summary).label : shape === 'milestone' ? post.prExercise ?? post.body ?? 'A milestone' : null}
       context={summary ? summary.context ?? null : shape === 'milestone' ? post.prValue : null}
+      /* Who else was there, off the same snapshot the squad card reads — the two feeds share this
+         renderer precisely so a post cannot say one thing here and another there. */
+      partners={summary ? partnersLine(summary.partners) : null}
       stats={summary ? workoutStats(summary, units, rowUnit) : []}
       playlist={summary?.playlist ?? null}
       onPlaylist={summary?.playlist ? () => void openPlaylist(summary.playlist!) : undefined}

@@ -1,6 +1,8 @@
 import { fetchRecentTraining } from '@/data/lift-history-live';
 import { fetchNotes } from '@/data/holt-notes-live';
 import { isTrainingQuestion, summarizeTraining } from '@/domain/coach/training-summary';
+import { isNutritionQuestion } from '@/domain/nutrition/holt-summary';
+import { fetchNutritionSummary } from '@/data/holt-nutrition-live';
 import type { UnitSystem } from '@/domain/settings/units';
 
 export { isTrainingQuestion } from '@/domain/coach/training-summary';
@@ -30,10 +32,14 @@ export async function fetchTrainingSummary(units: UnitSystem, weeks = 8): Promis
 export async function askBriefLive(
   question: string,
   units: UnitSystem,
-): Promise<{ notes: string[]; training: string | null }> {
-  const [notes, training] = await Promise.all([
+): Promise<{ notes: string[]; training: string | null; nutrition: string | null }> {
+  /* Each summary is read ONLY when the question is about it — CA-D5, only what the job needs. An
+     ordinary question pays for neither, and a question about food does not drag the training summary
+     along behind it. */
+  const [notes, training, nutrition] = await Promise.all([
     fetchNotes().catch(() => []),
     isTrainingQuestion(question) ? fetchTrainingSummary(units) : Promise.resolve(null),
+    isNutritionQuestion(question) ? fetchNutritionSummary() : Promise.resolve(null),
   ]);
-  return { notes: notes.map((n) => n.text), training };
+  return { notes: notes.map((n) => n.text), training, nutrition };
 }

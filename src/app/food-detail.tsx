@@ -10,7 +10,7 @@ import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flBorder, flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { MEAL_LABELS, MEAL_SLOTS, totals, type MealSlot } from '@/domain/nutrition/day';
+import { localToday, MEAL_LABELS, MEAL_SLOTS, totals, type MealSlot } from '@/domain/nutrition/day';
 import {
   convertAmount,
   extraRows,
@@ -59,7 +59,7 @@ export default function FoodDetailScreen() {
   }>();
 
   const foodKey = typeof params.key === 'string' ? params.key : '';
-  const iso = typeof params.date === 'string' ? params.date : new Date().toISOString().slice(0, 10);
+  const iso = typeof params.date === 'string' ? params.date : localToday();
   /* Present when Meal Detail sent us here to CHANGE a portion rather than add one. */
   const entryId = typeof params.entry === 'string' && params.entry ? params.entry : null;
   const editing = entryId != null;

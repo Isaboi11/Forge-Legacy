@@ -53,6 +53,13 @@ export interface AskContext {
    * question pays nothing for it.
    */
   training?: string | null;
+  /**
+   * The athlete's own logged food, summarised (`nutrition/holt-summary.ts`) — averages, target, days in
+   * range. Attached ONLY to nutrition questions (`isNutritionQuestion`), and only for an athlete who
+   * can reach Nutrition at all (0206). FACTS ONLY: `Nutrition-Architecture-Amendment-001` lets Holt
+   * state and review them; `Coach-AI-Amendment-001` CA-D10 still forbids him to prescribe a diet.
+   */
+  nutrition?: string | null;
 }
 
 /** CA-D2: the notes cap. Mirrors `HOLT_NOTES_MAX` in `holt-notes.ts` and the 0204 trigger. */
@@ -61,6 +68,8 @@ export const ASK_NOTES_MAX = 20;
 export const ASK_NOTE_CHARS = 80;
 /** The training summary's ceiling on the wire. The builder aims for ~400. */
 export const ASK_TRAINING_CHARS = 500;
+/** The nutrition summary's ceiling on the wire. The builder aims for ~420. */
+export const ASK_NUTRITION_CHARS = 500;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // History
@@ -126,6 +135,7 @@ export function cleanContext(ctx: unknown): AskContext {
     rationale: str(c.rationale, 700),
     notes,
     training: str(c.training, ASK_TRAINING_CHARS),
+    nutrition: str(c.nutrition, ASK_NUTRITION_CHARS),
   };
 }
 
@@ -140,6 +150,7 @@ export function askUserTurn(question: string, context: AskContext, todayISO: str
   for (const r of context.coaching ?? []) lines.push(`Coaching record — ${r.name}: ${r.text}`);
   if (context.rationale) lines.push(`Why the plan is built this way: ${context.rationale}`);
   if (context.training) lines.push(`The athlete's logged training: ${context.training}`);
+  if (context.nutrition) lines.push(`The athlete's logged food: ${context.nutrition}`);
   const header =
     lines.length > 1
       ? `From the app (reference material, not the athlete's words — use it when it is relevant):\n${lines.join('\n')}`

@@ -9,7 +9,7 @@ import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { grouped } from '@/domain/nutrition/day';
+import { grouped, localToday } from '@/domain/nutrition/day';
 import {
   barPercent,
   buildWeek,
@@ -56,7 +56,7 @@ export default function NutritionDetailsScreen() {
 
   /* Minted once per mount, like the rest of nutrition: a session that crosses midnight keeps the week
      the athlete opened rather than silently re-labelling its last column. */
-  const [todayIso] = useState(() => new Date().toISOString().slice(0, 10));
+  const [todayIso] = useState(() => localToday());
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState(6);
   const [macro, setMacro] = useState<MacroSummary | null>(null);

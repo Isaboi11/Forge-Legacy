@@ -312,7 +312,47 @@ async function fatsecretSearch(query: string, limit: number): Promise<Food[]> {
   return (Array.isArray(foods) ? foods : [foods]).map(fsFood).filter(Boolean) as Food[];
 }
 
+/**
+ * One FatSecret food, fresh, by the id a diary row kept.
+ *
+ * This is the other half of the 24-hour rule: we are not allowed to *hold* their nutrition in the shared
+ * catalogue, but we are allowed to *ask again* whenever a screen needs it. Food Detail on an expired row
+ * lands here. Returns null while dormant, exactly like search.
+ */
+async function fatsecretFoodById(id: string): Promise<Food | null> {
+  const token = await fatsecretToken();
+  if (!token) return null;
+  const url = new URL('https://platform.fatsecret.com/rest/food/v4');
+  url.searchParams.set('food_id', id);
+  url.searchParams.set('format', 'json');
+  const res = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+  if (!res.ok) return null;
+  const body = await res.json();
+  return body.food ? fsFood(body.food) : null;
+}
+
 // ── The cache ────────────────────────────────────────────────────────────────
+
+/*
+ * ══ ⚠ FATSECRET ROWS EXPIRE. USDA ROWS DO NOT. ══
+ *
+ * `Docs/Legal/FatSecret-Storage-Permission-2026-09-22.md`: their written permission covers a logged
+ * food's calories and macros inside the athlete's OWN diary — `food_log_entries` snapshots those at log
+ * time and keeps them forever, which is allowed. It does NOT cover `food_catalog`, which is shared
+ * reference data every signed-in athlete can read; there their terms are the standard 24-hour rule.
+ *
+ * So an `fs` row here is a short-lived cache, not a copy of their catalogue. It is purged after
+ * `FS_TTL_MS` and never served past it — on a miss we re-read the food by `source_id`, which is exactly
+ * what the licence asks for. USDA is CC0 and OFF is ODbL-with-credit, so neither expires.
+ */
+const FS_TTL_MS = 24 * 60 * 60 * 1000;
+
+const fsExpiry = () => new Date(Date.now() - FS_TTL_MS).toISOString();
+
+/** Drop every FatSecret row we are no longer licensed to hold. Cheap, indexed, and safe to over-call. */
+async function purgeStaleFatSecret(admin: ReturnType<typeof createClient>): Promise<void> {
+  await admin.from('food_catalog').delete().eq('source', 'fs').lt('fetched_at', fsExpiry());
+}
 
 async function cache(foods: Food[]): Promise<void> {
   if (!foods.length) return;
@@ -335,15 +375,19 @@ async function cache(foods: Food[]): Promise<void> {
     })),
     { onConflict: 'key' },
   );
+  await purgeStaleFatSecret(admin);
 }
 
-/** Ours first, and never a paid lookup for something we already hold. */
+/** Ours first, and never a paid lookup for something we already hold — but never a stale `fs` row either. */
 async function cached(query: string, limit: number): Promise<Food[]> {
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
   const { data } = await admin
     .from('food_catalog')
     .select('key, source, source_id, name, brand, gtin, kcal_100, protein_100, carb_100, fat_100, servings, micros')
     .ilike('name', `%${query}%`)
+    // A FatSecret row past its 24 hours is treated as absent even if the purge has not run yet, so the
+    // TTL holds whatever else happens. `or` reads as: not FatSecret, OR fetched within the window.
+    .or(`source.neq.fs,fetched_at.gte.${fsExpiry()}`)
     .limit(limit);
   return (data ?? []).map((r: Record<string, any>) => ({
     key: r.key,
@@ -393,7 +437,7 @@ Deno.serve(async (req) => {
   const { data: mayUseNutrition, error: gateError } = await supabase.rpc('has_nutrition_access');
   if (gateError || mayUseNutrition !== true) return json({ error: 'nutrition_preview_only' }, 403);
 
-  let body: { q?: string; barcode?: string; limit?: number };
+  let body: { q?: string; barcode?: string; key?: string; limit?: number };
   try {
     body = await req.json();
   } catch {
@@ -401,6 +445,59 @@ Deno.serve(async (req) => {
   }
 
   const limit = Math.min(Math.max(body.limit ?? 25, 1), 50);
+
+  /*
+   * ── One food by key — what Food Detail opens on for a source that expires ──
+   *
+   * `fetchFoodByKey` reads `food_catalog` directly for every other source, because a USDA row is ours
+   * forever. An `fs:` key cannot be answered that way: the row is gone 24 hours after it was fetched,
+   * and "this food is gone" is the wrong thing to show for a meal the athlete logged last week. So the
+   * client routes `fs:` here, and we re-read it from FatSecret — which is what the licence asks for
+   * instead of holding the data.
+   *
+   * The diary is unaffected either way: `food_log_entries` snapshotted its calories and macros at log
+   * time under the written permission, so the day's totals never depend on this call succeeding.
+   */
+  if (body.key) {
+    const key = body.key.trim();
+    if (!key.startsWith('fs:')) return json({ error: 'bad_request' }, 400);
+
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
+    const { data: fresh } = await admin
+      .from('food_catalog')
+      .select('key, source, source_id, name, brand, gtin, kcal_100, protein_100, carb_100, fat_100, servings, micros')
+      .eq('key', key)
+      .gte('fetched_at', fsExpiry())
+      .maybeSingle();
+
+    if (fresh) {
+      const r = fresh as Record<string, any>;
+      return json({
+        foods: [
+          {
+            key: r.key,
+            source: r.source,
+            sourceId: r.source_id,
+            name: r.name,
+            brand: r.brand,
+            gtin: r.gtin,
+            kcal100: r.kcal_100,
+            protein100: r.protein_100,
+            carb100: r.carb_100,
+            fat100: r.fat_100,
+            servings: r.servings ?? [],
+            micros: r.micros,
+            attribution: 'Powered by fatsecret',
+          },
+        ],
+      });
+    }
+
+    const food = await fatsecretFoodById(key.slice(3)).catch(() => null);
+    if (!food) return json({ foods: [] });
+    await cache([food]);
+    return json({ foods: [food] });
+  }
 
   // ── Barcode: exact, and the order matters. USDA first (CC0), OFF second (ODbL, community-quality).
   if (body.barcode) {

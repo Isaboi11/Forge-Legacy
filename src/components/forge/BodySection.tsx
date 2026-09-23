@@ -10,6 +10,10 @@ import { fetchBodyEntries } from '@/data/body-metrics-live';
 import { exactWeight } from '@/domain/settings/units';
 import { useBodyGoalSync } from '@/hooks/useBodyGoalSync';
 import { useBodyPrefs } from '@/lib/body-metrics';
+import { useNutritionAccess } from '@/lib/entitlement';
+import { localToday } from '@/domain/nutrition/day';
+import { driftLine, weightDrift } from '@/domain/nutrition/targets';
+import { fetchTargetHistory } from '@/data/nutrition-live';
 import { useUnits } from '@/lib/settings';
 import { useQuery } from '@/lib/useQuery';
 
@@ -37,6 +41,22 @@ export function BodySection() {
   const [logOpen, setLogOpen] = useState(false);
   const [sel, setSel] = useState<number | null>(null);
 
+  /**
+   * ⚠ **LOGGING A WEIGHT IS THE ONE EVENT THAT MOST INVALIDATES A NUTRITION TARGET**, and until now the
+   * two screens did not know about each other. A recommended target is built from bodyweight —
+   * Mifflin–St Jeor, the 1%-a-week cap, protein at 0.9 g per lb — so the moment this number moves, the
+   * target it produced is out of date. The prompt appears HERE, where the change was just made, rather
+   * than waiting for the athlete to happen to open Nutrition.
+   *
+   * ⚠ Gated on `0206`, and silent unless the drift is real (`weightDrift` — 2% of the recorded weight,
+   * floored at 2 lb) and a target actually exists to review.
+   */
+  const mayUseNutrition = useNutritionAccess();
+  const { data: targetHistory, refetch: refetchTargets } = useQuery(
+    () => (mayUseNutrition ? fetchTargetHistory(localToday()) : Promise.resolve([])),
+    [mayUseNutrition],
+  );
+
   if (!loaded) return null;
 
   // ── off: opt-in CTA ──
@@ -62,6 +82,8 @@ export function BodySection() {
     refetch();
     // The weight goal moves with the weigh-in, not the next time Goals is opened — see `useBodyGoalSync`.
     void syncBodyGoals();
+    // And so does the question of whether the nutrition target still fits the body that just changed.
+    refetchTargets();
   }} units={units} />;
 
   // ── on but empty ──
@@ -104,6 +126,15 @@ export function BodySection() {
   const area = `${line} L${coords[coords.length - 1].x.toFixed(1)} ${H - PADBOT} L${coords[0].x.toFixed(1)} ${H - PADBOT} Z`;
   const ticks = tickIndices(list.length).map((i) => ({ x: xAt(i), label: monthOf(list[i].loggedOn) }));
   const selEntry = sel != null ? list[sel] : null;
+
+  /* The target in force, and what the athlete weighed when it was written (0209). */
+  const currentTarget = targetHistory?.length ? targetHistory[targetHistory.length - 1] : null;
+  const targetDrift = weightDrift({
+    now: last.weightLb,
+    atTarget: currentTarget?.weightLb ?? null,
+    targetFrom: currentTarget?.from ?? null,
+    todayIso: localToday(),
+  });
 
   return (
     <View style={styles.section}>
@@ -175,6 +206,28 @@ export function BodySection() {
               <Pill key={m.label} label={m.label} value={`${m.v}″`} />
             ))}
           </View>
+        ) : null}
+
+        {targetDrift ? (
+          <Pressable
+            onPress={() => router.push('/nutrition-targets')}
+            accessibilityRole="button"
+            accessibilityLabel="Review your nutrition targets — your weight has changed since they were set"
+            style={styles.photos}
+          >
+            <View style={styles.photosIcon}>
+              <Glyph d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6l8-3z" size={16} color={flColor.bronze300} width={1.7} />
+            </View>
+            <View style={styles.photosText}>
+              {/* ⚠ Holt's voice (HV-D2/D5): the change is the athlete's PROGRESS, named specifically,
+                  never "your targets are out of date" — which tells someone off for weighing in. The new
+                  figure is not named HERE because the goal and pace behind the old target are not stored
+                  on the row; only the Targets screen, where both are on screen, can say it. */}
+              <Text style={styles.photosTitle}>{driftLine(targetDrift, null).title}</Text>
+              <Text style={styles.photosSub}>{driftLine(targetDrift, null).detail}</Text>
+            </View>
+            <Glyph d="M9 5l7 7-7 7" size={16} color={flColor.bronze400} width={1.9} />
+          </Pressable>
         ) : null}
 
         <Pressable onPress={() => router.push('/transformation')} accessibilityRole="button" accessibilityLabel="Progress photos" style={styles.photos}>

@@ -12,7 +12,7 @@ import { LogWeightSheet } from '@/components/forge/LogWeightSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { grouped, type Targets } from '@/domain/nutrition/day';
+import { grouped, localToday, type Targets } from '@/domain/nutrition/day';
 import {
   ACTIVITY_LEVELS,
   activityByKey,
@@ -29,6 +29,7 @@ import {
   paceLabel,
   paceOptions,
   recommend,
+  driftLine,
   sameAsCurrent,
   saveNote,
   weightDrift,
@@ -73,7 +74,7 @@ export default function NutritionTargetsScreen() {
   const { profile } = useProfile();
   const { units } = useUnits();
 
-  const [todayIso] = useState(() => new Date().toISOString().slice(0, 10));
+  const [todayIso] = useState(() => localToday());
   const [reloads, setReloads] = useState(0);
 
   const { data: nutritionProfile } = useQuery(fetchNutritionProfile, [reloads]);
@@ -169,6 +170,9 @@ export default function NutritionTargetsScreen() {
   const canSave = !!proposed && !same && !saving;
 
   const profileComplete = !blocker;
+  /* The notice's words. `rec` is already recomputed from the LATEST weigh-in above, so when it exists
+     the banner can name the number accepting would write. */
+  const line = drift ? driftLine(drift, rec ? rec.kcal : null) : null;
   const showFields = blocker?.kind !== 'under-age' && (editingProfile || (!profileComplete && blocker?.kind === 'incomplete'));
 
   const save = async () => {
@@ -205,22 +209,30 @@ export default function NutritionTargetsScreen() {
           <Text style={styles.title}>Daily targets</Text>
         </View>
 
-        {drift && !reviewed ? (
+        {drift && line && !reviewed ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Review your targets: your weight has changed since they were set"
             style={styles.reviewBanner}
             onPress={() => {
+              /* Straight to the recommendation it just quoted. The footer's "Use these targets" writes
+                 it — one more tap, and the athlete's, which is NUT-D5's whole point. */
               setReviewed(true);
               setMode('recommended');
               setEditingProfile(false);
             }}
           >
             <View style={styles.reviewText}>
-              <Text style={styles.reviewLine}>Your weight has changed since these targets were set.</Text>
-              <Text style={styles.reviewDelta}>{drift.detail}</Text>
+              {/* ⚠ It NAMES THE NEW NUMBER. The recommendation already recalculates from the latest
+                  weigh-in every time this screen opens, so the figure is sitting there — showing it
+                  turns "go and look" into "here it is, one tap". NUT-D5 still holds: Forge never
+                  changes the target silently, it just stops making the athlete hunt for the change. */}
+              <Text style={styles.reviewLine}>{line.title}</Text>
+              <Text style={styles.reviewDelta}>
+                {line.detail} {drift.detail}
+              </Text>
             </View>
-            <Text style={styles.linkText}>Review</Text>
+            <Text style={styles.linkText}>{rec ? 'Use it' : 'Review'}</Text>
           </Pressable>
         ) : null}
 

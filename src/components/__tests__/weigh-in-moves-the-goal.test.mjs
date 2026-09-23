@@ -42,7 +42,11 @@ test('⚠ a column field never carries flex: 1 — that is the zero-height colla
 });
 
 test('a saved weigh-in syncs the body goals, and the Legacy tab syncs them on focus', () => {
-  assert.match(strip(BODY), /onSaved=\{\(\) => \{\s*refetch\(\);\s*void syncBodyGoals\(\);\s*\}\}/, 'BodySection no longer syncs the goal after a weigh-in');
+  /* ⚠ Widened 2026-09-23: this asserted the WHOLE arrow body, so adding anything else to `onSaved`
+     failed a guard whose point is that the goal sync still happens. It now requires both calls inside
+     `onSaved` and tolerates more beside them — `refetchTargets()` joined them when the weigh-in learned
+     to re-check the nutrition target it invalidates. Still fails if either call is removed. */
+  assert.match(strip(BODY), /onSaved=\{\(\) => \{[^}]*refetch\(\);[^}]*void syncBodyGoals\(\);/, 'BodySection no longer syncs the goal after a weigh-in');
   assert.match(strip(LEGACY), /void syncBodyGoals\(\)\.then\(\(changed\) => changed && refetch\(\)\);/, 'the Legacy tab no longer syncs body goals on focus');
 });
 

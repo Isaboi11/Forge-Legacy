@@ -13,7 +13,11 @@ import { fmtDuration } from '@/data/squad-feed-live';
 import { formatWeekRange, weekHero } from '@/domain/coach/rulebook/review';
 import { displayWeight } from '@/domain/settings/units';
 import { fetchWeeklyReview, type WeeklyReview } from '@/data/weekly-review-live';
-import { useEntitlement } from '@/lib/entitlement';
+import { useEntitlement, useNutritionAccess } from '@/lib/entitlement';
+import { grouped, shiftDay } from '@/domain/nutrition/day';
+import { buildWeek, macroSummaries, summarise, weekGapLine } from '@/domain/nutrition/week';
+import { fetchRangeTotals, fetchTargetHistory } from '@/data/nutrition-live';
+import { useQuery } from '@/lib/useQuery';
 import { useUnits } from '@/lib/settings';
 import { SCREEN_GUTTER } from '@/lib/screen-insets';
 
@@ -42,6 +46,45 @@ import { SCREEN_GUTTER } from '@/lib/screen-insets';
  * week**, and a promoted figure broadcasts that zero where four equal stats simply carry it. Nothing here
  * ranks the four, and nothing should.
  */
+/**
+ * The week's food, stated as FACTS and nothing else.
+ *
+ * ⚠ **THIS DOES NOT TOUCH HOLT'S LINE.** `review.note` is composed once, server-side, and frozen;
+ * `Coach-AI-Amendment-001` §173 says Holt "does not prescribe diets" and the nutrition-scope amendment
+ * the architecture owes is still unwritten (§13 row 9). So nutrition arrives here as the same kind of
+ * statement the session list is — counted, not interpreted — and no model is involved.
+ *
+ * ⚠ **NOTHING LOGGED MEANS NOTHING SAID.** The rest of this screen already refuses to render an empty
+ * state, because "0 sessions, keep going" is the nudge-to-engage DNA §8/§10 forbids. A week with no
+ * food is the same: absent, not scolded.
+ */
+function useWeekNutrition(weekStart: string | undefined, weekEnd: string | undefined) {
+  const mayUseNutrition = useNutritionAccess();
+  const on = mayUseNutrition && !!weekStart && !!weekEnd;
+
+  const { data: totals } = useQuery(
+    () => (on ? fetchRangeTotals(weekStart as string, weekEnd as string) : Promise.resolve([])),
+    [on, weekStart, weekEnd],
+  );
+  const { data: history } = useQuery(
+    () => (on ? fetchTargetHistory(weekEnd as string) : Promise.resolve([])),
+    [on, weekEnd],
+  );
+
+  if (!on || !totals?.length) return null;
+
+  const days: string[] = [];
+  for (let d = weekStart as string; d <= (weekEnd as string); d = shiftDay(d, 1)) days.push(d);
+
+  /* `todayIso` is deliberately a date OUTSIDE this window: the review covers a week that has CLOSED, so
+     none of its days is "still being eaten" and all of them count. */
+  const week = buildWeek(days, new Map(totals.map((t) => [t.iso, t])), history ?? [], '');
+  const summary = summarise(week);
+  if (!summary.counted) return null;
+
+  return { summary, gap: weekGapLine(macroSummaries(week, summary.average), summary) };
+}
+
 export default function WeeklyReviewScreen() {
   const router = useRouter();
   const { week } = useLocalSearchParams<{ week?: string }>();
@@ -67,6 +110,8 @@ export default function WeeklyReviewScreen() {
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
   const d = review?.data;
+  /* Facts from the diary for the same week. Null unless there is food to report. */
+  const nutrition = useWeekNutrition(review?.weekStart, review?.weekEnd);
   const volume = d ? displayWeight(d.volume_lb, units) : null;
   /* The week's headline: the rarest thing that happened. See `weekHero` for why the heaviest lift is
      allowed to lead a week that had nothing scarcer, and only such a week. */
@@ -161,6 +206,20 @@ export default function WeeklyReviewScreen() {
             and grades outright. A list of what you did carries no denominator and cannot be read as a
             score. Absent on any week written before 0191 — reviews are frozen and are never rewritten.
           */}
+          {nutrition ? (
+            <Section label="Food">
+              <Row left="Average a day" right={`${grouped(nutrition.summary.average.kcal)} cal`} />
+              {nutrition.summary.band ? (
+                <Row
+                  left="Days in range"
+                  right={`${nutrition.summary.inRange} of ${nutrition.summary.counted}`}
+                  divider
+                />
+              ) : null}
+              {nutrition.gap ? <Row left={nutrition.gap} right="" divider /> : null}
+            </Section>
+          ) : null}
+
           {d.sessions && d.sessions.length > 0 ? (
             <Section label="This week">
               {d.sessions.map((sn, i) => (

@@ -10,7 +10,7 @@ import { InputField } from '@/components/forge/composites/InputField';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flBorder, flColor, flFont, flRadius } from '@/constants/foundation';
-import { MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
+import { localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
 import {
   defaultServing,
   looksSane,
@@ -67,7 +67,7 @@ export default function LogFoodScreen() {
   const { showToast } = useToast();
   const params = useLocalSearchParams<{ date?: string; meal?: string; scan?: string }>();
 
-  const iso = typeof params.date === 'string' ? params.date : new Date().toISOString().slice(0, 10);
+  const iso = typeof params.date === 'string' ? params.date : localToday();
   const initialMeal = (MEAL_SLOTS as readonly string[]).includes(String(params.meal))
     ? (params.meal as MealSlot)
     : mealForNow();
