@@ -40,17 +40,19 @@ import {
   type PlanItem,
 } from '@/domain/nutrition/meal-planner';
 import {
-  addEntries,
   fetchMealPlanPrefs,
   fetchMealPlanWeek,
   fetchNutritionProfile,
   fetchTargetsOn,
-  removeEntry,
   saveMealPlanWeek,
+  togglePlanLog,
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
+import { takeSwapRequest } from '@/lib/meal-plan-intent';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+
+const takeSwapRequestAsync = () => Promise.resolve(takeSwapRequest());
 
 /**
  * Meal Plan — built to `Meal Plan.dc.html` (Claude Design b029488a), wired to `meal_plan_weeks` (0211)
@@ -73,7 +75,8 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
  *    slot) and "Logged" removes exactly that row.
  *  · The `.dc`'s preview fixtures (a pre-locked Wednesday dinner, a pre-logged Monday breakfast) are
  *    not reproduced.
- *  · Open recipe and Grocery list toast "comes next", as the `.dc` itself does — those screens are next.
+ *  · Grocery list toasts "comes next", as the `.dc` itself does — that screen is next. Open recipe goes
+ *    to Recipe (`Recipe.dc.html`), whose Swap comes back here and opens this sheet.
  */
 export default function MealPlanScreen() {
   const router = useRouter();
@@ -88,8 +91,19 @@ export default function MealPlanScreen() {
   const dates = useMemo(() => weekDates(monday), [monday]);
 
   const [reloads, setReloads] = useState(0);
-  /* Back from Edit setup or Targets: re-read, so the week rebuilds on what just changed. */
+  const [picked, setPicked] = useState<{ d: number; i?: number; mode: 'actions' | 'swap' | 'snack' } | null>(null);
+  /* Back from Edit setup, Targets or Recipe: re-read, so the week reflects what just changed. */
   useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
+  /* Recipe's Swap comes back here with a request waiting (`lib/meal-plan-intent.ts`). One read per
+     focus, the `consumeMealHint` pattern — no state is set from an effect. */
+  const swapQ = useQuery(takeSwapRequestAsync, [reloads]);
+  const [handledSwap, setHandledSwap] = useState<object | null>(null);
+  const requested = swapQ.data && swapQ.data !== handledSwap ? swapQ.data : null;
+  const sheet = requested ? { d: requested.d, i: requested.i, mode: 'swap' as const } : picked;
+  const setSheet = (next: typeof picked) => {
+    if (requested) setHandledSwap(requested);
+    setPicked(next);
+  };
 
   const prefsQ = useQuery(fetchMealPlanPrefs, [reloads]);
   const profileQ = useQuery(fetchNutritionProfile, [reloads]);
@@ -124,7 +138,6 @@ export default function MealPlanScreen() {
 
   const [open, setOpen] = useState<Record<number, boolean>>({});
   const [active, setActive] = useState(0);
-  const [sheet, setSheet] = useState<{ d: number; i?: number; mode: 'actions' | 'swap' | 'snack' } | null>(null);
   const [busy, setBusy] = useState(false);
 
   /* ⛔ The doors. No saved setup, or a gate the setup would show — hand over, and let it explain. */
@@ -233,7 +246,7 @@ export default function MealPlanScreen() {
               label="Open recipe"
               onPress={() => {
                 setSheet(null);
-                showToast('Recipe screen comes next');
+                router.push({ pathname: '/recipe', params: { id: it.recipeId, d: String(d), i: String(i) } });
               }}
             />
             <ActionRow icon={<SwapGlyph />} label="Swap meal" chevron onPress={() => setSheet({ d, i, mode: 'swap' })} />
@@ -257,25 +270,8 @@ export default function MealPlanScreen() {
                 if (busy) return;
                 setBusy(true);
                 try {
-                  const logged = { ...week.logged };
-                  if (loggedId) {
-                    await removeEntry(loggedId);
-                    delete logged[lk];
-                    await commit({ ...week, logged }, 'Removed from diary');
-                  } else {
-                    const [entry] = await addEntries(todayIso, [
-                      {
-                        meal: it.slot,
-                        source: 'quick',
-                        name: r.name,
-                        servingLabel: '1 serving · Forge recipe',
-                        quantity: 1,
-                        macros: { kcal: r.kcal, protein: r.protein, carb: r.carb, fat: r.fat, grams: null },
-                      },
-                    ]);
-                    if (entry) logged[lk] = entry.id;
-                    await commit({ ...week, logged }, 'Added to today’s diary');
-                  }
+                  const out = await togglePlanLog(week, d, i, todayIso);
+                  await commit(out.week, out.logged ? 'Added to today’s diary' : 'Removed from diary');
                 } catch (e) {
                   setSheet(null);
                   showToast(errorMessage(e));
