@@ -61,7 +61,7 @@ test('amounts scale with servings', () => {
   assert.equal(four.metric, '640 g');
 });
 
-const ctx = (over) => ({ household: 2, leftover: false, makesLunchFor: null, cookedOn: null, slot: 'dinner', fromPlan: true, ...over });
+const ctx = (over) => ({ household: 2, portion: 1, leftover: false, makesLunchFor: null, cookedOn: null, slot: 'dinner', fromPlan: true, ...over });
 
 test('a dinner that feeds tomorrow’s lunch prepares twice the household, and says why', () => {
   const s = servingsFor(ctx({ makesLunchFor: 'Tuesday' }));
@@ -91,4 +91,17 @@ test('cooking for one shows a single option and no note', () => {
 
 test('opened outside a plan: one serving', () => {
   assert.deepEqual(servingsFor(ctx({ fromPlan: false })).options, [1]);
+});
+
+test('a bigger portion scales what the cook makes: 2 people × 1¼ × 2 meals = 5 servings', () => {
+  const c = ctx({ portion: 1.25, makesLunchFor: 'Tuesday' });
+  const s = servingsFor(c);
+  assert.deepEqual(s.options, [1.25, 5]);
+  assert.equal(batchNote(c, 5, 5), '5 servings · dinner for 2 + Tuesday lunch for 2');
+});
+
+test('a leftover at a ¾ portion reheats ¾ of a serving', () => {
+  const c = ctx({ portion: 0.75, leftover: true, cookedOn: 'Monday', slot: 'lunch' });
+  assert.deepEqual(servingsFor(c).options, [0.75]);
+  assert.equal(batchNote(c, 0.75, null), 'Cooked with Monday dinner. Reheat ¾ serving.');
 });

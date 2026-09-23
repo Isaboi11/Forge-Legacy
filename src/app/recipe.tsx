@@ -11,7 +11,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { grouped, localToday } from '@/domain/nutrition/day';
 import { ALLERGENS } from '@/domain/nutrition/meal-plan-setup';
-import { DAY_NAMES, RECIPE_BY_ID, feedsTomorrow, logKey, mondayOf, slotKey } from '@/domain/nutrition/meal-planner';
+import { DAY_NAMES, RECIPE_BY_ID, feedsDay, itemTotals, logKey, mondayOf, portionLabel, slotKey, toggleLock } from '@/domain/nutrition/meal-planner';
 import { batchNote, ingredientRows, servingsFor, servingsLabel } from '@/domain/nutrition/recipe-view';
 import { RECIPE_SOURCES } from '@/domain/nutrition/recipes-data';
 import { fetchMealPlanPrefs, fetchMealPlanWeek, saveMealPlanWeek, togglePlanLog } from '@/data/nutrition-live';
@@ -82,12 +82,16 @@ export default function RecipeScreen() {
     );
   }
 
-  const makesLunchFor = ctx && week && feedsTomorrow(week.days, ctx.d, ctx.it) ? DAY_NAMES[ctx.d + 1] : null;
+  const fedDay = ctx && week ? feedsDay(week.days, ctx.d, ctx.it) : null;
+  const makesLunchFor = fedDay != null ? DAY_NAMES[fedDay] : null;
   const isLeftover = !!ctx?.it.leftover;
-  const cookedOn = isLeftover && ctx && ctx.d > 0 ? DAY_NAMES[ctx.d - 1] : null;
+  const cookedOn = isLeftover && ctx?.it.cookDay != null ? DAY_NAMES[ctx.it.cookDay] : null;
+  const portion = ctx?.it.portion ?? 1;
+  /* Numbers for YOUR portion when the plan set one; one serving otherwise. */
+  const shown = ctx ? itemTotals(ctx.it) : { kcal: r.kcal, protein: r.protein, carb: r.carb, fat: r.fat };
   const slot = ctx ? ctx.it.slot : r.slot;
   const household = prefsQ.data?.household ?? 1;
-  const sctx = { household, leftover: isLeftover, makesLunchFor, cookedOn, slot: SLOT_LABEL[slot].toLowerCase(), fromPlan: !!ctx };
+  const sctx = { household, portion, leftover: isLeftover, makesLunchFor, cookedOn, slot: SLOT_LABEL[slot].toLowerCase(), fromPlan: !!ctx };
   const servings = servingsFor(sctx);
   const count = n != null && servings.options.includes(n) ? n : servings.defaultN;
   const note = batchNote(sctx, count, servings.planned);
@@ -152,14 +156,14 @@ export default function RecipeScreen() {
         {/* the numbers */}
         <View style={styles.card}>
           <View style={styles.calRow}>
-            <Text style={styles.cal}>{grouped(r.kcal)}</Text>
+            <Text style={styles.cal}>{grouped(shown.kcal)}</Text>
             <Text style={styles.calUnit}>cal</Text>
           </View>
           <View style={styles.macros}>
             {[
-              ['Protein', r.protein],
-              ['Carbs', r.carb],
-              ['Fat', r.fat],
+              ['Protein', shown.protein],
+              ['Carbs', shown.carb],
+              ['Fat', shown.fat],
             ].map(([label, v]) => (
               <View key={label as string} style={styles.macro}>
                 <Text style={styles.macroVal}>
@@ -170,7 +174,9 @@ export default function RecipeScreen() {
               </View>
             ))}
           </View>
-          <Text style={styles.source}>Per serving · calculated from USDA nutrition data</Text>
+          <Text style={styles.source}>
+            {`${portion !== 1 ? `Your portion · ${portionLabel(portion)}` : 'Per serving'} · calculated from USDA nutrition data`}
+          </Text>
         </View>
 
         {/* contains */}
@@ -266,11 +272,10 @@ export default function RecipeScreen() {
               style={styles.lockLink}
               onPress={() => {
                 if (!week) return;
-                const k = slotKey(ctx.d, ctx.it);
-                const locked = { ...week.locked };
-                if (locked[k]) delete locked[k];
-                else locked[k] = { recipeId: ctx.it.recipeId, leftover: ctx.it.leftover };
-                void save({ ...week, locked }, isLocked ? 'Unlocked' : 'Locked. Kept when you rebuild');
+                void save(
+                  { ...week, locked: toggleLock(week.days, week.locked, ctx.d, ctx.i) },
+                  isLocked ? 'Unlocked' : 'Locked. Kept when you rebuild',
+                );
               }}
             >
               <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">

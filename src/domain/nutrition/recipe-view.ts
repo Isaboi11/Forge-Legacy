@@ -1,3 +1,4 @@
+import { portionLabel } from './meal-planner.ts';
 import { INGREDIENTS, type RecipeSource, type UsMeasure } from './recipes-data.ts';
 
 /**
@@ -70,6 +71,8 @@ export function ingredientRows(src: RecipeSource, servings: number, showUs: bool
 export interface ServingsContext {
   /** From Meal Plan Setup. */
   household: number;
+  /** Servings per person the plan set for this meal (¾ · 1 · 1¼ · 1½). Everyone eats the same. */
+  portion: number;
   /** This meal is last night's batch dinner, eaten again. */
   leftover: boolean;
   /** This dinner also feeds tomorrow's lunch — the day name, or null. */
@@ -90,24 +93,26 @@ export interface Servings {
 
 /**
  * The design's rule, and `Recipe Schema and Planner Rules` §3 "Servings to prepare": the Recipe screen
- * defaults to what the COOK makes — `people × (1 + meals fed by leftovers)` — not the household size. A
- * leftover prepares nothing, so it offers 1 serving only.
+ * defaults to what the COOK makes — `people × portion × (1 + meals fed by leftovers)` — not the household
+ * size. The other option is your own portion. A leftover prepares nothing: it offers your portion only.
  */
 export function servingsFor(c: ServingsContext): Servings {
   if (!c.fromPlan) return { options: [1], defaultN: 1, planned: null };
-  if (c.leftover) return { options: [1], defaultN: 1, planned: null };
-  const planned = Math.max(1, c.household) * (c.makesLunchFor ? 2 : 1);
-  const options = [...new Set([1, planned])];
+  const mine = c.portion || 1;
+  if (c.leftover) return { options: [mine], defaultN: mine, planned: null };
+  const planned = Math.max(1, c.household) * mine * (c.makesLunchFor ? 2 : 1);
+  const options = [...new Set([mine, planned])];
   return { options, defaultN: options[options.length - 1], planned };
 }
 
 /** The line under Ingredients that says what the amounts are FOR. Empty when 1 serving says it all. */
 export function batchNote(c: ServingsContext, n: number, planned: number | null): string {
-  if (c.leftover && c.cookedOn) return `Cooked with ${c.cookedOn} dinner. Reheat 1 serving.`;
-  if (planned == null || n !== planned || planned === 1) return '';
+  if (c.leftover && c.cookedOn) return `Cooked with ${c.cookedOn} dinner. Reheat ${servingsLabel(c.portion || 1)}.`;
+  if (planned == null || n !== planned || planned === (c.portion || 1)) return '';
   return c.makesLunchFor
-    ? `${planned} servings · ${c.slot} for ${c.household} + ${c.makesLunchFor} lunch for ${c.household}`
-    : `${planned} servings · ${c.slot} for ${c.household}`;
+    ? `${servingsLabel(planned)} · ${c.slot} for ${c.household} + ${c.makesLunchFor} lunch for ${c.household}`
+    : `${servingsLabel(planned)} · ${c.slot} for ${c.household}`;
 }
 
-export const servingsLabel = (n: number): string => (n === 1 ? '1 serving' : `${n} servings`);
+/** "1 serving", "2½ servings" — fractions as a cook reads them. */
+export const servingsLabel = (n: number): string => (Number.isInteger(n * 4) ? portionLabel(n) : `${n} servings`);

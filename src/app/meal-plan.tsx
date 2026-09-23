@@ -23,21 +23,27 @@ import { grouped, localToday } from '@/domain/nutrition/day';
 import { setupGate } from '@/domain/nutrition/meal-plan-setup';
 import {
   RECIPE_BY_ID,
+  addSnack,
   alternatives,
   dayTotals,
-  feedsTomorrow,
+  feedsDay,
+  itemTotals,
+  keptLocks,
   logKey,
   mondayOf,
-  planWeek,
+  portionLabel,
+  rebuildWeek,
   resolveWeek,
   shortBy,
   slotKey,
   snackOptions,
   swapMeal,
+  toggleLock,
   weekDates,
   weekRange,
   type MealPlanWeek,
   type PlanItem,
+  type PlanSlotName,
 } from '@/domain/nutrition/meal-planner';
 import {
   fetchMealPlanPrefs,
@@ -119,7 +125,7 @@ export default function MealPlanScreen() {
   const resolved = useMemo(
     () =>
       ready && prefs && target
-        ? resolveWeek(storedQ.data ?? null, prefs, prefs.updatedAt, target.kcal, monday)
+        ? resolveWeek(storedQ.data ?? null, prefs, prefs.updatedAt, target, monday)
         : null,
     [ready, prefs, target, storedQ.data, monday],
   );
@@ -187,50 +193,44 @@ export default function MealPlanScreen() {
     const { d, mode } = sheet;
     const day = week.days[d];
     const total = dayTotals(day).kcal;
-    if (mode === 'snack') {
-      const opts = snackOptions(day, prefs, targetKcal, 3);
+    if (mode === 'snack' && target) {
+      const opts = snackOptions(week.days, d, prefs, target, 3);
       sheetTitle = `Add a snack to ${dates[d].name}`;
       sheetMeta = `${grouped(shortBy(day, targetKcal))} cal short of ${grouped(targetKcal)}.`;
       sheetBody = (
         <OptionList
           empty={!opts.length}
-          options={opts.map((r) => ({
-            key: r.id,
-            name: r.name,
-            cal: r.kcal,
-            sub: `${r.protein}g protein · day total ${grouped(total + r.kcal)}`,
-            pick: () => {
-              const days = week.days.map((x, j) =>
-                j === d ? { items: [...x.items.filter((it) => !it.extra), { slot: 'snacks' as const, recipeId: r.id, leftover: false, extra: true }] } : x,
-              );
-              void commit({ ...week, days });
-            },
+          options={opts.map((o) => ({
+            key: o.recipe.id,
+            name: o.recipe.name,
+            cal: o.kcal,
+            sub: `${Math.round(o.recipe.protein * o.portion)}g protein · day total ${grouped(total + o.kcal)}`,
+            pick: () => void commit({ ...week, days: addSnack(week.days, d, o) }),
           }))}
         />
       );
-    } else if (sheet.i != null) {
+    } else if (sheet.i != null && day.items[sheet.i] && target) {
       const i = sheet.i;
       const it = day.items[i];
       const r = RECIPE_BY_ID[it.recipeId];
-      const k = slotKey(d, it);
-      const lk = logKey(d, it);
-      const isLocked = !!week.locked[k];
-      const loggedId = week.logged[lk];
+      const mine = itemTotals(it).kcal;
+      const isLocked = !!week.locked[slotKey(d, it)];
+      const loggedId = week.logged[logKey(d, it)];
       if (mode === 'swap') {
-        const opts = alternatives(day, i, prefs, targetKcal, 3);
+        const opts = alternatives(week.days, d, i, prefs, target, 3);
         sheetTitle = `Swap ${dates[d].name} ${it.extra ? 'snack' : it.slot === 'snacks' ? 'snack' : it.slot}`;
         sheetMeta = `Replacing ${r.name}.`;
         sheetBody = (
           <OptionList
             empty={!opts.length}
             onBack={() => setSheet({ d, i, mode: 'actions' })}
-            options={opts.map((w) => ({
-              key: w.id,
-              name: w.name,
-              cal: w.kcal,
-              sub: `${w.minutes} min · day total ${grouped(total - r.kcal + w.kcal)}`,
+            options={opts.map((o) => ({
+              key: o.recipe.id,
+              name: o.recipe.name,
+              cal: o.kcal,
+              sub: `${o.recipe.minutes} min${o.portion !== 1 ? ` · ${portionLabel(o.portion)}` : ''} · day total ${grouped(total - mine + o.kcal)}`,
               pick: () => {
-                const out = swapMeal(week.days, week.locked, d, i, w.id, prefs, targetKcal);
+                const out = swapMeal(week.days, week.locked, d, i, { recipeId: o.recipe.id, portion: o.portion }, prefs, target);
                 void commit({ ...week, days: out.days, locked: out.locked });
               },
             }))}
@@ -238,7 +238,7 @@ export default function MealPlanScreen() {
         );
       } else {
         sheetTitle = r.name;
-        sheetMeta = `${grouped(r.kcal)} cal · ${it.leftover && d > 0 ? `Leftover from ${dates[d - 1].name} dinner` : `${r.minutes} min`}`;
+        sheetMeta = `${grouped(mine)} cal · ${it.leftover && it.cookDay != null ? `Leftover from ${dates[it.cookDay].name} dinner` : `${r.minutes} min`}${it.portion !== 1 ? ` · ${portionLabel(it.portion)}` : ''}`;
         sheetBody = (
           <View style={styles.actions}>
             <ActionRow
@@ -254,12 +254,7 @@ export default function MealPlanScreen() {
               icon={<LockGlyph shut={isLocked} />}
               label={isLocked ? 'Unlock meal' : 'Lock meal'}
               hint={isLocked ? 'Rebuild can replace it' : 'Keep this one if you rebuild'}
-              onPress={() => {
-                const locked = { ...week.locked };
-                if (locked[k]) delete locked[k];
-                else locked[k] = { recipeId: it.recipeId, leftover: it.leftover };
-                void commit({ ...week, locked });
-              }}
+              onPress={() => void commit({ ...week, locked: toggleLock(week.days, week.locked, d, i) })}
             />
             <ActionRow
               icon={<LogGlyph logged={!!loggedId} />}
@@ -286,7 +281,8 @@ export default function MealPlanScreen() {
     }
   }
 
-  const lockedCount = week ? Object.keys(week.locked).length : 0;
+  /* Locks + logged meals — everything a rebuild keeps (logged meals are frozen, Rules §3). */
+  const keptCount = week && prefs ? Object.keys(keptLocks(week, prefs)).length : 0;
 
   return (
     <View style={styles.screen}>
@@ -392,17 +388,23 @@ export default function MealPlanScreen() {
 
                   {day.items.map((it: PlanItem, i) => {
                     const r = RECIPE_BY_ID[it.recipeId];
-                    const feeds = feedsTomorrow(week.days, d, it);
-                    const meta = it.leftover && d > 0
-                      ? `From ${dates[d - 1].name} dinner`
-                      : `${r.minutes} min${feeds ? ` · makes ${dates[d + 1].name} lunch` : ''}`;
+                    const feeds = feedsDay(week.days, d, it);
+                    const metaParts =
+                      it.leftover && it.cookDay != null
+                        ? [`From ${dates[it.cookDay].name} dinner`]
+                        : [`${r.minutes} min`, ...(feeds != null ? [`makes ${dates[feeds].name} lunch`] : [])];
+                    if (it.portion !== 1) metaParts.push(portionLabel(it.portion));
+                    /* PO 2026-09-23 (open question 1): when the library runs out, repeat — and say so. */
+                    if (it.repeated) metaParts.push('Repeated · nothing else fits');
+                    const meta = metaParts.join(' · ');
+                    const kcal = itemTotals(it).kcal;
                     const logged = !!week.logged[logKey(d, it)];
                     const locked = !!week.locked[slotKey(d, it)];
                     return (
                       <Pressable
                         key={`${slotKey(d, it)}-${i}`}
                         accessibilityRole="button"
-                        accessibilityLabel={`${it.slot === 'snacks' ? 'Snack' : it.slot}: ${r.name}, ${r.kcal} calories`}
+                        accessibilityLabel={`${SLOT_LABEL[it.slot]}: ${r.name}, ${kcal} calories`}
                         style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
                         onPress={() => setSheet({ d, i, mode: 'actions' })}
                       >
@@ -433,13 +435,26 @@ export default function MealPlanScreen() {
                             </View>
                           ) : null}
                           <Text style={styles.itemCal}>
-                            {grouped(r.kcal)}
+                            {grouped(kcal)}
                             <Text style={styles.itemCalUnit}> cal</Text>
                           </Text>
                         </View>
                       </Pressable>
                     );
                   })}
+
+                  {/* A slot nothing in the library fits at all: said plainly, never filled with a
+                      recipe the hard filters refused (Rules §3). */}
+                  {(prefs?.meals ?? [])
+                    .filter((s) => !day.items.some((it) => it.slot === s && !it.extra))
+                    .map((s) => (
+                      <View key={`empty-${s}`} style={styles.item}>
+                        <View style={styles.itemText}>
+                          <Text style={styles.itemSlot}>{SLOT_LABEL[s]}</Text>
+                          <Text style={styles.itemMeta}>{`No ${SLOT_LABEL[s].toLowerCase()} fits your setup yet.`}</Text>
+                        </View>
+                      </View>
+                    ))}
 
                   {gap > 0 ? (
                     <View style={styles.short}>
@@ -465,12 +480,8 @@ export default function MealPlanScreen() {
               accessibilityRole="button"
               hitSlop={6}
               onPress={() => {
-                if (!prefs) return;
-                const seed = week.seed + 1;
-                void commit(
-                  { ...week, seed, days: planWeek({ prefs, targetKcal, seed, locked: week.locked }) },
-                  lockedCount ? `Week rebuilt · ${lockedCount} locked kept` : 'Week rebuilt',
-                );
+                if (!prefs || !target) return;
+                void commit(rebuildWeek(week, prefs, target), keptCount ? `Week rebuilt · ${keptCount} kept` : 'Week rebuilt');
               }}
             >
               <Text style={styles.linkBronze}>Rebuild week</Text>
@@ -492,7 +503,7 @@ export default function MealPlanScreen() {
   );
 }
 
-const SLOT_LABEL: Record<PlanItem['slot'], string> = {
+const SLOT_LABEL: Record<PlanSlotName, string> = {
   breakfast: 'Breakfast',
   lunch: 'Lunch',
   dinner: 'Dinner',

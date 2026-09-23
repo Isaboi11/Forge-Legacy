@@ -1,6 +1,6 @@
 import json
 from usda import foods, nut
-from recipes import I, R
+from recipes import I, R, META
 
 used = sorted({k for r in R for k, _ in r[6]})
 missing = [k for k in used if k not in I]
@@ -81,13 +81,27 @@ export interface RecipeStep {
   min?: number;
 }
 
+export type Reheat = 'great' | 'ok' | 'poor' | 'cold';
+export type ProteinSource =
+  | 'chicken' | 'beef' | 'pork' | 'turkey' | 'fish' | 'shellfish' | 'egg' | 'dairy' | 'tofu' | 'legume' | 'mixed';
+
 export interface RecipeSource {
   id: string;
+  /** The slot it was written for — where it is listed. */
   slot: PlanSlot;
+  /** Every slot it can fill (a burrito bowl is lunch OR dinner). Always includes `slot`. */
+  mealTypes: readonly PlanSlot[];
+  /** How many days a cooked batch keeps. 0 = eat it the day it is made. */
+  leftoverDays: number;
+  /** `poor` never becomes a leftover; `cold` is eaten cold (salads, overnight oats). */
+  reheat: Reheat;
+  proteinSource: ProteinSource;
+  /** bowl, wrap, tray bake… — for the variety rule. */
+  format: string;
   name: string;
   /** Hands-on + cooking time, minutes. */
   minutes: number;
-  /** Cooks for more than one sitting — a dinner that becomes the next day's lunch. */
+  /** Cooked to feed a later meal too — derived: keeps ≥ 1 day and reheats better than `poor`. */
   batch: boolean;
   /** Unusual items only (sheet pan, blender). Empty for most, and hidden when empty. */
   equipment: readonly string[];
@@ -101,7 +115,9 @@ export const RECIPE_SOURCES: readonly RecipeSource[] = [""")
 for rid, slot, name, mn, b, eq, ings, steps in R:
     ing = ', '.join(f"['{k}', {g:g}]" for k, g in ings)
     st = ', '.join('{ title: ' + ts(t) + ', text: ' + ts(x) + (f', min: {m}' if m else '') + ' }' for t, x, m in steps)
-    out.append(f"  {{\n    id: '{rid}', slot: '{slot}', name: {ts(name)}, minutes: {mn}, batch: {'true' if b else 'false'}, equipment: {ts(eq)},\n    ingredients: [{ing}],\n    steps: [{st}],\n  }},")
+    mt, ld, rh, ps, fm = META[rid]
+    batch = ld >= 1 and rh != 'poor' and b
+    out.append(f"  {{\n    id: '{rid}', slot: '{slot}', mealTypes: {ts(mt)}, leftoverDays: {ld}, reheat: '{rh}', proteinSource: '{ps}', format: {ts(fm)},\n    name: {ts(name)}, minutes: {mn}, batch: {'true' if batch else 'false'}, equipment: {ts(eq)},\n    ingredients: [{ing}],\n    steps: [{st}],\n  }},")
 out.append("];\n")
 open('recipes.gen.ts', 'w', encoding='utf-8', newline='\n').write('\n'.join(out))
 print(len(used), 'ingredients', len(R), 'recipes')
