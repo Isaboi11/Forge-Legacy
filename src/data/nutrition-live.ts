@@ -4,7 +4,7 @@ import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
 import { opsFor, overlayDay, type OutboxOp } from '@/domain/nutrition/outbox';
 import type { MealPlanPrefs } from '@/domain/nutrition/meal-plan-setup';
-import { RECIPE_BY_ID, logKey, type Locks, type MealPlanWeek, type PlanDay } from '@/domain/nutrition/meal-planner';
+import { RECIPE_BY_ID, itemTotals, logKey, portionLabel, type Locks, type MealPlanWeek, type PlanDay } from '@/domain/nutrition/meal-planner';
 import { isTransportFailure } from '@/domain/workout/pending-save';
 import {
   heldItems,
@@ -1217,14 +1217,15 @@ export async function togglePlanLog(
     delete logged[key];
     return { week: { ...week, logged }, logged: false };
   }
+  const mine = itemTotals(it);
   const [entry] = await addEntries(todayIso, [
     {
       meal: it.slot,
       source: 'quick',
       name: r.name,
-      servingLabel: '1 serving · Forge recipe',
-      quantity: 1,
-      macros: { kcal: r.kcal, protein: r.protein, carb: r.carb, fat: r.fat, grams: null },
+      servingLabel: `${portionLabel(it.portion ?? 1)} · Forge recipe`,
+      quantity: it.portion ?? 1,
+      macros: { kcal: mine.kcal, protein: mine.protein, carb: mine.carb, fat: mine.fat, grams: null },
     },
   ]);
   if (entry) logged[key] = entry.id;

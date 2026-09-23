@@ -357,3 +357,50 @@ if __name__ == '__main__':
         t = total(ings)
         chk = 4*t['protein'] + 4*t['carb'] + 9*t['fat']
         print(f"{rid} {name[:36]:36} {t['kcal']:5.0f} P{t['protein']:4.0f} C{t['carb']:4.0f} F{t['fat']:4.0f} (4/4/9={chk:4.0f}) steps={len(steps)}")
+
+# Planner metadata (Recipe Schema and Planner Rules §2): meal types it fits, how long it keeps, how it
+# reheats, main protein, and dish format — the inputs to the variety and leftover rules.
+#   id: (mealTypes, leftoverDays, reheat, proteinSource, format)
+META = {
+ 'b01': (['breakfast'], 0, 'cold', 'dairy', 'bowl'),
+ 'b02': (['breakfast'], 0, 'poor', 'beef', 'hash'),
+ 'b03': (['breakfast'], 2, 'cold', 'legume', 'oats'),
+ 'b04': (['breakfast'], 0, 'poor', 'fish', 'toast'),
+ 'b05': (['breakfast'], 1, 'ok', 'tofu', 'scramble'),
+ 'b06': (['breakfast'], 1, 'ok', 'egg', 'pancakes'),
+ 'b07': (['breakfast'], 2, 'ok', 'turkey', 'wrap'),
+ 'b08': (['breakfast'], 0, 'poor', 'egg', 'skillet'),
+ 'b09': (['breakfast'], 0, 'poor', 'dairy', 'toast'),
+ 'b10': (['breakfast', 'snacks'], 3, 'cold', 'mixed', 'pudding'),
+ 'l01': (['lunch', 'dinner'], 2, 'great', 'chicken', 'bowl'),
+ 'l02': (['lunch'], 1, 'cold', 'fish', 'salad'),
+ 'l03': (['lunch'], 0, 'cold', 'turkey', 'wrap'),
+ 'l04': (['lunch', 'dinner'], 4, 'great', 'legume', 'soup'),
+ 'l05': (['lunch', 'dinner'], 3, 'cold', 'legume', 'bowl'),
+ 'l06': (['lunch'], 1, 'cold', 'dairy', 'salad'),
+ 'l07': (['lunch', 'dinner'], 1, 'ok', 'shellfish', 'stir-fry'),
+ 'l08': (['lunch', 'dinner'], 3, 'great', 'beef', 'bowl'),
+ 'l09': (['lunch', 'dinner'], 2, 'great', 'egg', 'stir-fry'),
+ 'l10': (['lunch'], 0, 'poor', 'chicken', 'wrap'),
+ 'd01': (['dinner'], 1, 'ok', 'fish', 'plate'),
+ 'd02': (['dinner'], 3, 'great', 'beef', 'stew'),
+ 'd03': (['dinner'], 3, 'ok', 'chicken', 'tray bake'),
+ 'd04': (['dinner'], 3, 'great', 'turkey', 'pasta'),
+ 'd05': (['dinner', 'lunch'], 4, 'great', 'legume', 'curry'),
+ 'd06': (['dinner'], 0, 'poor', 'beef', 'plate'),
+ 'd07': (['dinner'], 1, 'ok', 'fish', 'pasta'),
+ 'd08': (['dinner'], 0, 'poor', 'legume', 'tacos'),
+ 'd09': (['dinner', 'lunch'], 2, 'ok', 'tofu', 'stir-fry'),
+ 'd10': (['dinner'], 2, 'ok', 'pork', 'plate'),
+ 'd11': (['dinner'], 2, 'ok', 'mixed', 'risotto'),
+ 'd12': (['dinner'], 2, 'ok', 'chicken', 'wrap'),
+ 's01': (['snacks'], 0, 'cold', 'legume', 'snack'),
+ 's02': (['snacks'], 0, 'cold', 'dairy', 'shake'),
+ 's03': (['snacks'], 0, 'cold', 'legume', 'snack'),
+ 's04': (['snacks'], 30, 'cold', 'mixed', 'snack'),
+ 's05': (['snacks'], 4, 'cold', 'egg', 'snack'),
+ 's06': (['snacks'], 2, 'cold', 'tofu', 'snack'),
+ 's07': (['snacks'], 0, 'cold', 'dairy', 'snack'),
+ 's08': (['snacks'], 30, 'cold', 'beef', 'snack'),
+}
+assert set(META) == {r[0] for r in R}
