@@ -4,6 +4,16 @@ Overflow from `Forge-Legacy-Master-Status.md` § Recently Completed, moved **ver
 
 ---
 
+### 0. ⭐ A rower reads in metres by default — Preferences: Meters | Miles (2026-09-11, cardio units · commit `05e5a0b` on `feat/route-map` (pushed) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a09197-b488-7f40-a937-43472e255a23` on runtime `47944f2e…` (fingerprint MATCHED `3f67281b…`; manifest returned it), Android `01a09197-b488-730c…`; picked onto `ota/build8-js` (pushed; tsc 0; 3,395/3,395 there, 3,441/3,441 on main) · no migration (`app_prefs` is jsonb) · ⛔ **WEB NOT DEPLOYED** · ⏳ **NOT SEEN BY A HUMAN**)
+
+PO: *"default meters"*. `distanceUnitFor(activity, metric, rowUnit = 'm')` — a rower is metres in either system;
+`AppPrefs.rowUnit` (`'m' | 'road'`, server-backed) opts back to mi/km from Preferences → Display. Wired through the card,
+Log a Run, Program Builder, a friend's live view, The Record (`catalog_key` now read to know a bout was a row), feed/share
+posts, Activity Detail and History — summaries convert rowing only, from the canonical mile; swims there unchanged. Seed
+2000 m (was 1.5 mi = 2414 m); metre cap 100,000 (half-marathon row), yard cap stays 10,000. Pace labelled per mi/km
+(`paceUnitFor`) — the "/yd" under a per-mile number on swims was already wrong. **No /500 m split** (EPS-D12, not asked).
+Storage canonical miles throughout; goals, honors and squad totals untouched.
+
 ### 0. ⭐ Rank Journey shows all 28 rungs, each with its own saying (2026-09-10, Progress Hub — **RSA-A3-D5** addendum to `Rank-System-Architecture-Amendment-003` · commit `df31a8f` (pushed) · ✅ **WEB** `index-6a23330dd3516cb9b39bb9ec44e895f9.js` (200, MATCH, "Sealed until earned" gone from the bundle) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a08d6f-828f-7b2c-a104-42f0e357f538` (fingerprint MATCHED; manifest returned it), Android `01a08d6f-828f-7a34…`; picked as `69c0266` on `ota/build8-js` (pushed, tsc 0) · ⏳ **NOT SEEN BY A HUMAN**)
 
 PO: *"I want each sub division to be showing here too. With the sayings underneath. That way it shows the entire
