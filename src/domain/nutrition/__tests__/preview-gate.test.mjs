@@ -165,6 +165,26 @@ test('the bundle asserts the gate landed, rather than returning a tidy green', (
   assert.match(BUNDLE, /are UNGATED/);
 });
 
+test('⛔ the bundle never CALLS my_entitlement() — it raises 28000 in the SQL editor', () => {
+  /*
+   * FOUND THE HARD WAY, 2026-09-22. The first draft's §2 ran `public.my_entitlement() -> 'nutrition'`.
+   * `my_entitlement()` raises `28000 my_entitlement: no authenticated athlete` when `auth.uid()` is null,
+   * and the SQL editor runs as `postgres`, which has none. So: the migration COMMITTED correctly, then the
+   * check block aborted on that call, and the PO saw an error that looked exactly like a failed migration
+   * when nothing was wrong. Verifying a definer function must never mean invoking it as the wrong role.
+   *
+   * `has_nutrition_access()` is fine to call — `select exists (…)` returns false rather than raising.
+   */
+  const checks = BUNDLE.slice(BUNDLE.indexOf('do $checks$'));
+  assert.doesNotMatch(
+    checks,
+    /public\.my_entitlement\(\)/,
+    'read pg_get_functiondef instead of calling it — calling it aborts the checks after a successful migration',
+  );
+  // And the check must still actually verify the key is there, not just skip it.
+  assert.match(checks, /pg_get_functiondef\(oid\) like '%has_nutrition_access%'/);
+});
+
 // ── the Edge Function ────────────────────────────────────────────────────────
 
 test('food-search refuses before it spends anybody’s quota', () => {
