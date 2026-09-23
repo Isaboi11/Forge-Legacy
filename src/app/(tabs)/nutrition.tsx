@@ -292,9 +292,10 @@ export default function NutritionScreen() {
                 icon={<CalendarGlyph />}
                 onPress={() => {
                   /* Premium (MA6 §4). A Free athlete is told what the button is, not refused: the tag
-                     says PREMIUM and the tap opens the plan screen. The planner itself is Phase 3. */
+                     says PREMIUM and the tap opens the plan screen. Premium lands on Meal Plan Setup
+                     (0210) — which reopens with their answers once saved, until the week screen exists. */
                   if (tier !== 'PREMIUM') { router.push('/subscription'); return; }
-                  showToast('Meal plans arrive with the planning phase');
+                  router.push('/meal-plan-setup');
                 }}
               >
                 Meal Plan
