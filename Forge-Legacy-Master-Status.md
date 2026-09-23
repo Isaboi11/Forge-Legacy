@@ -874,7 +874,7 @@ PO mockups (2026-09-23): a layout/hierarchy pass, not a restyle. **My Workouts, 
 
 **Discover** now runs intro + **search** (local filter over shipped programs and the 81 single sessions, every word must match; sessions capped at 8 with All Sessions) → compact single-row focus chips (scroll sideways, no See all) → **For You** = top 2 of the existing recommender + **All Programs ›** (`/program-catalog`, the whole catalogue) → Single Sessions → Holt card with his medallion (`openCoach('recommend')`). Tour step `wk-create` re-anchored to the `+` (`workouts-start`); `workouts-create` anchor retired; `tour-plan.test` updated. Chip keeps the real family name "Full Body & Home" (mockup said "At Home") — PO's call if it should change.
 
-### 00000000000. ⭐ The post finally says who else was there — "Trained with Selene" on the face card (2026-09-23, Social · `0208` authored, **NOT PASTED** · **NOT deployed** · **NOT seen**)
+### 00000000000. ⭐ The post finally says who else was there — "Trained with Selene" on the face card (2026-09-23, Social · ✅ **`0208` APPLIED AND VERIFIED 2026-09-23** (catalog readback: all 5 source checks `true`) · client `c7e97bf` rode the web `index-c792c0c6` + OTA `01a0cf19` deploy · ⏳ **NOT seen**)
 
 PO: *"I just did a walk and added someone to my workout. I posted that workout in the squad. How come they didn't show up on the face card of the post? I say we should have that show."*
 
@@ -918,7 +918,7 @@ PO: *"I just did a walk and added someone to my workout. I posted that workout i
 
 **Deltas from the `.dc`, stated:** the no-sex and no-weigh-in cards (its fixture always knows both).
 
-tsc 0 · **4,110/4,110** `node --test` (39 new) · lint clean on every touched file. ⛔ **`0209` AUTHORED NOT APPLIED** — paste `supabase/apply/pending-0209.sql`; §3 must report `rows_with_weight = 0`. ⚠ **`0208` was taken by a parallel session mid-pass**, which is why the weight snapshot is `0209` — the ledger was re-read rather than remembered. ⏳ NOT deployed · ⏳ not seen.
+tsc 0 · **4,110/4,110** `node --test` (39 new) · lint clean on every touched file. ✅ **`0209` APPLIED AND VERIFIED 2026-09-23** (`nutrition_targets.weight_lb` present in `information_schema`). ⚠ **`0208` was taken by a parallel session mid-pass**, which is why the weight snapshot is `0209` — the ledger was re-read rather than remembered. ⏳ NOT deployed · ⏳ not seen.
 
 ### 0000000000. ⭐ The week, read back — seven bars against a target band, and the one line that names the gap (2026-09-22, Nutrition — built to `Nutrition Details.dc.html` (Claude Design `b029488a`) · NOT deployed · NOT seen)
 
@@ -958,7 +958,7 @@ tsc 0 · **4,071/4,071** `node --test` (28 new) · lint clean on every touched f
 
 **Also:** three dead lines removed from `log-food.tsx` while it was open (`setFavorite`, `favoriteKeys`, `Serving` — the first two already unused before this pass).
 
-tsc 0 · **4,043/4,043** `node --test` (25 new) · lint clean on every touched file. ⛔ **`0207` NOT APPLIED — paste `supabase/apply/pending-0207.sql`; §3 must report `rows_with_micros = 0` on both rows until the client is deployed.** NOT committed at the time of writing · NOT deployed · NOT seen.
+tsc 0 · **4,043/4,043** `node --test` (25 new) · lint clean on every touched file. ✅ **`0207` APPLIED AND VERIFIED 2026-09-23** (`micros` present on `user_foods` + `saved_meal_items` in `information_schema`). NOT committed at the time of writing · NOT deployed · NOT seen.
 
 ### 00000000. ⭐ Tap a meal and it opens: fix a portion, delete a mis-tap, move it, copy it, save it as "Usual Breakfast" (2026-09-22, Nutrition — built to `Meal Detail.dc.html` (Claude Design `b029488a`) · ⛔ NOT committed · NOT deployed · NOT seen)
 
