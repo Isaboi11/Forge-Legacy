@@ -34,7 +34,15 @@ interface EntryRow {
   protein: number;
   carb: number;
   fat: number;
+  source: LogEntry['source'];
+  source_key: string | null;
+  grams: number | null;
+  micros: Record<string, number> | null;
 }
+
+/** The columns every read of the diary asks for — one list, so no screen sees a narrower row. */
+const ENTRY_COLUMNS =
+  'id, meal, name, brand, serving_label, quantity, kcal, protein, carb, fat, source, source_key, grams, micros';
 
 const toEntry = (r: EntryRow): LogEntry => ({
   id: r.id,
@@ -47,6 +55,10 @@ const toEntry = (r: EntryRow): LogEntry => ({
   protein: Number(r.protein),
   carb: Number(r.carb),
   fat: Number(r.fat),
+  source: r.source,
+  sourceKey: r.source_key,
+  grams: r.grams != null ? Number(r.grams) : null,
+  micros: r.micros ?? null,
 });
 
 async function athleteId(): Promise<string | null> {
@@ -64,7 +76,7 @@ export async function fetchDay(iso: string): Promise<DayLog> {
   const [entries, targets] = await Promise.all([
     supabase
       .from('food_log_entries')
-      .select('id, meal, name, brand, serving_label, quantity, kcal, protein, carb, fat')
+      .select(ENTRY_COLUMNS)
       .eq('athlete_id', id)
       .eq('logged_on', iso)
       .order('created_at', { ascending: true }),
@@ -103,6 +115,14 @@ export interface NewEntry {
   servingLabel?: string | null;
   quantity: number;
   macros: PortionMacros;
+  /**
+   * The food's per-100 g micronutrients, snapshotted like the macros beside them (0205 `micros jsonb`).
+   *
+   * ⚠ **PER 100 g, AND ONLY FROM A SOURCE ALLOWED TO KEEP THEM** (`MAY_STORE_MICROS`, §4 — FatSecret's
+   * written permission covers calories and macros only). The row keeps `grams` too, so Meal Detail can
+   * scale these without re-reading a catalogue that may have moved under it.
+   */
+  micros?: Record<string, number> | null;
 }
 
 /**
@@ -129,6 +149,7 @@ export async function addEntries(iso: string, entries: NewEntry[]): Promise<LogE
     protein: e.macros.protein,
     carb: e.macros.carb,
     fat: e.macros.fat,
+    micros: e.micros ?? null,
   }));
 
   const { error } = await supabase.from('food_log_entries').upsert(rows, { onConflict: 'id' });
@@ -163,31 +184,37 @@ export async function updateEntry(
 }
 
 /**
- * Copy one meal from another day — the `.dc`'s "Copy yesterday" on an empty card. It copies the stored
- * snapshots, so a food whose source has since changed still copies as it was eaten.
+ * Copy one meal onto another day, and optionally into another slot — Meal Detail's "Copy to another day
+ * or meal". It copies the stored SNAPSHOTS, so a food whose source has since changed still copies as it
+ * was eaten, and `addEntries` mints fresh ids so the original is untouched.
  */
-export async function copyMealFrom(fromIso: string, toIso: string, meal: MealSlot): Promise<LogEntry[]> {
+export async function copyMealTo(
+  from: { iso: string; meal: MealSlot },
+  to: { iso: string; meal: MealSlot },
+): Promise<LogEntry[]> {
   const id = await athleteId();
   if (!id) return [];
 
   const { data, error } = await supabase
     .from('food_log_entries')
-    .select('meal, source, source_key, name, brand, serving_label, grams, quantity, kcal, protein, carb, fat')
+    .select('source, source_key, name, brand, serving_label, grams, quantity, kcal, protein, carb, fat, micros')
     .eq('athlete_id', id)
-    .eq('logged_on', fromIso)
-    .eq('meal', meal);
+    .eq('logged_on', from.iso)
+    .eq('meal', from.meal)
+    .order('created_at', { ascending: true });
   if (error || !data?.length) return [];
 
   return addEntries(
-    toIso,
+    to.iso,
     (data as Record<string, any>[]).map((r) => ({
-      meal: r.meal,
+      meal: to.meal,
       source: r.source,
       sourceKey: r.source_key,
       name: r.name,
       brand: r.brand,
       servingLabel: r.serving_label,
       quantity: Number(r.quantity),
+      micros: r.micros ?? null,
       macros: {
         kcal: Number(r.kcal),
         protein: Number(r.protein),
@@ -197,6 +224,59 @@ export async function copyMealFrom(fromIso: string, toIso: string, meal: MealSlo
       },
     })),
   );
+}
+
+/**
+ * The `.dc`'s "Copy yesterday" on an empty card — the same meal, a different day. One line on top of
+ * `copyMealTo` rather than a second copy of the mapping: two implementations of "copy a meal" is how
+ * one of them quietly stops carrying a column the other learned about.
+ */
+export async function copyMealFrom(fromIso: string, toIso: string, meal: MealSlot): Promise<LogEntry[]> {
+  return copyMealTo({ iso: fromIso, meal }, { iso: toIso, meal });
+}
+
+/**
+ * Move one logged food to another day and/or meal. It re-files the row rather than deleting and
+ * re-inserting it, so the id an offline client already minted stays the id — a replayed write after a
+ * move is still the same row, not a second helping.
+ */
+export async function moveEntry(entryId: string, to: { iso: string; meal: MealSlot }): Promise<void> {
+  const { error } = await supabase
+    .from('food_log_entries')
+    .update({ logged_on: to.iso, meal: to.meal })
+    .eq('id', entryId);
+  if (error) throw error;
+}
+
+/** Empty one meal of one day. Owner-scoped by RLS; the explicit day and slot keep it to what was asked. */
+export async function clearMeal(iso: string, meal: MealSlot): Promise<void> {
+  const id = await athleteId();
+  if (!id) return;
+  const { error } = await supabase
+    .from('food_log_entries')
+    .delete()
+    .eq('athlete_id', id)
+    .eq('logged_on', iso)
+    .eq('meal', meal);
+  if (error) throw error;
+}
+
+/**
+ * Is there food logged on a day after this one? Nutrition Home's ⟩ is otherwise closed at today
+ * (`canGoForward`), which was correct until Meal Detail could copy a meal FORWARD — meal prep writes a
+ * real row on a real day, and a day you cannot reach is a day the athlete cannot fix.
+ */
+export async function hasFoodAfter(iso: string): Promise<boolean> {
+  const id = await athleteId();
+  if (!id) return false;
+  const { data, error } = await supabase
+    .from('food_log_entries')
+    .select('id')
+    .eq('athlete_id', id)
+    .gt('logged_on', iso)
+    .limit(1);
+  if (error) return false;
+  return !!data?.length;
 }
 
 /** Which meal "Copy yesterday" would fill — null when yesterday's slot was empty too. */

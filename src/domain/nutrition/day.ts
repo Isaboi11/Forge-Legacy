@@ -34,6 +34,18 @@ export interface LogEntry {
   protein: number;
   carb: number;
   fat: number;
+  /** Where the numbers came from, and what they point at. `quick` has no food behind it, so no key. */
+  source: 'usda' | 'off' | 'fs' | 'custom' | 'quick';
+  sourceKey?: string | null;
+  /** What this portion weighs. Null for a Quick Add, and for a serving no source gave a weight for. */
+  grams?: number | null;
+  /**
+   * ⚠ **PER 100 g, NOT PER PORTION** — the same shape `CatalogFood.micros` carries, scaled by `grams`
+   * at the point of display (`extraRows`, `mealBreakdown`). Storing the portion's figures instead would
+   * make an edited portion silently wrong, because `updateEntry` changes the grams and not these.
+   * Present only for a source whose licence permits keeping them (`MAY_STORE_MICROS`).
+   */
+  micros?: Record<string, number> | null;
 }
 
 export interface Macros {

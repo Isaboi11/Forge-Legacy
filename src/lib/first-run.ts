@@ -5,6 +5,7 @@ import { clearHomeTourStatus, clearTourStatus, clearUnlockAnnounced } from './to
 import { clearScreenPrompts } from './screen-prompts';
 import { clearRestTimerPref } from './rest-timer-pref';
 import { clearWheelInputPref } from './set-input-pref';
+import { clearMealHint } from './meal-hint';
 import { clearSwipeHintSeen } from './swipe-hint';
 import { clearSeenPodiums } from './podium-seen';
 import { clearRetiredReviewWeeks } from './weekly-review-seen';
@@ -69,6 +70,8 @@ export async function resetFirstRunFlags(): Promise<void> {
     clearRestTimerPref(),
     clearWheelInputPref(),
     clearSwipeHintSeen(),
+    // The Meal Detail gesture hint — the next person on this phone has not been shown how the rows work.
+    clearMealHint(),
     clearSeenPodiums(),
     // Weeks whose Home card has been read or skipped. Another account's weeks — inheriting them would
     // retire a review the new athlete has never laid eyes on.
