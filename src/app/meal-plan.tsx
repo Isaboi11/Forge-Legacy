@@ -55,6 +55,7 @@ import {
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { takeSwapRequest } from '@/lib/meal-plan-intent';
+import { estimateFor, groceryList, stateFor } from '@/domain/nutrition/grocery';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
@@ -75,14 +76,14 @@ const takeSwapRequestAsync = () => Promise.resolve(takeSwapRequest());
  * rebuilds it, keeping locks that still fit — a lock can never carry an allergen back in.
  *
  * Deltas from the `.dc`, each deliberate:
- *  · **No budget estimate line.** NUT-D3 prices come from USDA ERS data, which is not sourced yet; a
- *    figure without it would be made up. The line returns with the Grocery List.
+ *  · The budget line ("Estimated $X of your $Y budget") uses the Grocery List's sourced USDA ERS / BLS
+ *    prices, and says how many items it could not price rather than inventing them.
  *  · **"Log meal" writes a real diary row** (a quick-add labelled "Forge recipe", today, in that meal's
  *    slot) and "Logged" removes exactly that row.
  *  · The `.dc`'s preview fixtures (a pre-locked Wednesday dinner, a pre-logged Monday breakfast) are
  *    not reproduced.
- *  · Grocery list toasts "comes next", as the `.dc` itself does — that screen is next. Open recipe goes
- *    to Recipe (`Recipe.dc.html`), whose Swap comes back here and opens this sheet.
+ *  · Open recipe goes to Recipe (`Recipe.dc.html`), whose Swap comes back here and opens this sheet;
+ *    Grocery list goes to `Grocery List.dc.html`.
  */
 export default function MealPlanScreen() {
   const router = useRouter();
@@ -281,6 +282,15 @@ export default function MealPlanScreen() {
     }
   }
 
+  /* The `.dc`'s budget line, on sourced prices: what this week's shop costs, staples at home excluded. */
+  let budgetLine = '';
+  if (week && prefs?.weeklyBudgetUsd) {
+    const list = groceryList(week.days, prefs.household);
+    const e = estimateFor(list, stateFor(null, list, ''));
+    budgetLine = `Estimated $${Math.round(e.dollars).toLocaleString('en-US')} of your $${prefs.weeklyBudgetUsd.toLocaleString('en-US')} budget`;
+    if (e.unpriced) budgetLine += ` · ${e.unpriced} ${e.unpriced === 1 ? 'item' : 'items'} not priced`;
+  }
+
   /* Locks + logged meals — everything a rebuild keeps (logged meals are frozen, Rules §3). */
   const keptCount = week && prefs ? Object.keys(keptLocks(week, prefs)).length : 0;
 
@@ -472,7 +482,8 @@ export default function MealPlanScreen() {
 
       {week ? (
         <View style={styles.footer}>
-          <Button variant="primary" fullWidth onPress={() => showToast('Grocery list comes next')}>
+          {budgetLine ? <Text style={styles.budgetLine}>{budgetLine}</Text> : null}
+          <Button variant="primary" fullWidth onPress={() => router.push('/grocery-list')}>
             Grocery list
           </Button>
           <View style={styles.footerLinks}>
@@ -731,6 +742,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
   },
   footerLinks: { flexDirection: 'row', justifyContent: 'center', gap: 28 },
+  budgetLine: { textAlign: 'center', fontSize: 12.5, color: flColor.gray400, paddingBottom: 4 },
   linkBronze: { paddingVertical: 10, paddingHorizontal: 4, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
   linkQuiet: { paddingVertical: 10, paddingHorizontal: 4, fontSize: 13, fontWeight: '600', color: flColor.gray400 },
 
