@@ -39,3 +39,32 @@ https://platform.fatsecret.com/contact on 2026-09-21.
 - ⚠ **Attribution is a condition.** "Powered by fatsecret" must appear wherever FatSecret data is shown
   (https://platform.fatsecret.com/attribution).
 - Keep the original email in the PO's inbox. This file is the project's record of it.
+
+## Second reply, same day — IP whitelisting on a dynamic-IP host
+
+The PO asked a follow-up ("our server runs on Supabase", i.e. rotating egress IPs). James replied:
+
+> To better secure OAuth 2.0, we implemented IP Restrictions, which whitelist IP addresses under "IP
+> Whitelisting". Because IP restrictions white-list IP addresses, you can handle dynamic IP environments
+> like Supabase by setting up an API proxy server with a static IP address.
+>
+> This proxy can manage OAuth 2.0 access token renewal and forward requests to the fatsecret API.
+> Alternatively, 0.0.0.0/0 is a range that allows any IPv4 address, though not recommended for security
+> reasons (See https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)
+>
+> For further technical assistance, please consult with our dedicated group forum:
+> https://groups.google.com/group/fatsecret-platform-api
+
+**What this settles:** a static-IP relay is **not** required. `0.0.0.0/0` is permitted — they only advise
+against it. Our credentials live in Supabase Edge Function secrets and never reach the client bundle, so
+the IP binding is not protecting a secret anyone can see; it is the same posture as the USDA key we
+already ship. Decision: **allowlist `0.0.0.0/0`** rather than own a relay, for what is the *third*
+fallback behind USDA and Open Food Facts.
+
+**To wake FatSecret up (PO, two console steps, no code and no redeploy):**
+
+1. FatSecret console → IP Whitelisting → add `0.0.0.0/0`.
+2. Supabase → Edge Functions → Secrets → set `FATSECRET_CLIENT_ID` and `FATSECRET_CLIENT_SECRET`.
+
+`supabase/functions/food-search/index.ts` already no-ops when those secrets are unset and starts calling
+FatSecret on the next request once they exist.

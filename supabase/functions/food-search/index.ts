@@ -15,9 +15,17 @@
  * keep its calories and macros permanently (that is why `mayStoreMacros` is true for `fs` and
  * `mayStoreMicros` is not). The blocker is mechanical: FatSecret issues OAuth2 tokens **only to IP
  * addresses allowlisted in advance**, and Supabase Edge Functions egress from rotating AWS addresses.
- * Until a fixed-address relay exists, `FATSECRET_CLIENT_ID` / `FATSECRET_CLIENT_SECRET` are simply unset
- * and `fatsecretSearch` never runs — no code change, no redeploy, nothing to remember. Set the two
- * secrets once the IPs are allowlisted and restaurants appear.
+ *
+ * ⚠ **A RELAY IS NOT REQUIRED.** FatSecret said so in writing on 2026-09-22 (second email, recorded in
+ * the same Legal file): a dynamic-IP host is handled either by a static-IP proxy *or* by allowlisting
+ * `0.0.0.0/0`, which they permit and merely do not recommend. So waking this source up is two console
+ * steps by the PO and no code:
+ *
+ *   1. FatSecret console → IP Whitelisting → `0.0.0.0/0`
+ *   2. Supabase → Edge Functions → Secrets → `FATSECRET_CLIENT_ID`, `FATSECRET_CLIENT_SECRET`
+ *
+ * Until those secrets exist they are simply unset and `fatsecretSearch` never runs — no code change, no
+ * redeploy, nothing to remember. Set them and restaurants appear on the next call.
  *
  * ══ ATTRIBUTION IS A CONDITION OF THE LICENCE ══
  *
