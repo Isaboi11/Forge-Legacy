@@ -292,10 +292,10 @@ export default function NutritionScreen() {
                 icon={<CalendarGlyph />}
                 onPress={() => {
                   /* Premium (MA6 §4). A Free athlete is told what the button is, not refused: the tag
-                     says PREMIUM and the tap opens the plan screen. Premium lands on Meal Plan Setup
-                     (0210) — which reopens with their answers once saved, until the week screen exists. */
+                     says PREMIUM and the tap opens the plan screen. Premium lands on the week (0211),
+                     which hands to Meal Plan Setup (0210) until the setup is saved. */
                   if (tier !== 'PREMIUM') { router.push('/subscription'); return; }
-                  router.push('/meal-plan-setup');
+                  router.push('/meal-plan');
                 }}
               >
                 Meal Plan

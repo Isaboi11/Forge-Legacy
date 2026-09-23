@@ -4,6 +4,7 @@ import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
 import { opsFor, overlayDay, type OutboxOp } from '@/domain/nutrition/outbox';
 import type { MealPlanPrefs } from '@/domain/nutrition/meal-plan-setup';
+import type { Locks, MealPlanWeek, PlanDay } from '@/domain/nutrition/meal-planner';
 import { isTransportFailure } from '@/domain/workout/pending-save';
 import {
   heldItems,
@@ -1102,12 +1103,12 @@ export async function saveTargets(
  * The athlete's saved setup, or null when they have never completed it — or when `0210` is not pasted
  * yet, which reads the same way: the screen opens fresh, and saving is what surfaces the missing table.
  */
-export async function fetchMealPlanPrefs(): Promise<MealPlanPrefs | null> {
+export async function fetchMealPlanPrefs(): Promise<(MealPlanPrefs & { updatedAt: string | null }) | null> {
   const id = await athleteId();
   if (!id) return null;
   const { data, error } = await supabase
     .from('meal_plan_prefs')
-    .select('diet, allergens, dislikes, meals, cook_minutes, household, weekly_budget_usd')
+    .select('diet, allergens, dislikes, meals, cook_minutes, household, weekly_budget_usd, updated_at')
     .eq('athlete_id', id)
     .maybeSingle();
   if (error || !data) return null;
@@ -1120,6 +1121,7 @@ export async function fetchMealPlanPrefs(): Promise<MealPlanPrefs | null> {
     cookMinutes: r.cook_minutes ?? null,
     household: Number(r.household ?? 1),
     weeklyBudgetUsd: r.weekly_budget_usd != null ? Number(r.weekly_budget_usd) : null,
+    updatedAt: r.updated_at ?? null,
   };
 }
 
@@ -1140,6 +1142,52 @@ export async function saveMealPlanPrefs(prefs: MealPlanPrefs): Promise<void> {
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'athlete_id' },
+  );
+  if (error) throw error;
+}
+
+/* ── Meal Plan week (0211) ──────────────────────────────────────────────── */
+
+/** The stored week, or null when none is built yet (or `0211` is not pasted — the screen builds one). */
+export async function fetchMealPlanWeek(weekStart: string): Promise<MealPlanWeek | null> {
+  const id = await athleteId();
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from('meal_plan_weeks')
+    .select('week_start, seed, target_kcal, prefs_updated_at, days, locked, logged')
+    .eq('athlete_id', id)
+    .eq('week_start', weekStart)
+    .maybeSingle();
+  if (error || !data) return null;
+  const r = data as Record<string, any>;
+  return {
+    weekStart: r.week_start,
+    seed: Number(r.seed),
+    targetKcal: Number(r.target_kcal),
+    prefsUpdatedAt: r.prefs_updated_at ?? null,
+    days: r.days as PlanDay[],
+    locked: (r.locked ?? {}) as Locks,
+    logged: (r.logged ?? {}) as Record<string, string>,
+  };
+}
+
+/** Save the week as it stands. Throws — a swap the athlete saw must not silently vanish on reopen. */
+export async function saveMealPlanWeek(week: MealPlanWeek): Promise<void> {
+  const id = await athleteId();
+  if (!id) throw new Error('Not signed in');
+  const { error } = await supabase.from('meal_plan_weeks').upsert(
+    {
+      athlete_id: id,
+      week_start: week.weekStart,
+      seed: week.seed,
+      target_kcal: Math.round(week.targetKcal),
+      prefs_updated_at: week.prefsUpdatedAt,
+      days: week.days,
+      locked: week.locked,
+      logged: week.logged,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'athlete_id,week_start' },
   );
   if (error) throw error;
 }
