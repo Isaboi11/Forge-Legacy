@@ -175,6 +175,27 @@ export function usePremiumAi(): boolean {
   return status === 'ready' && snapshot?.coachAi === true;
 }
 
+/**
+ * NUTRITION PREVIEW — `nutrition_preview` (migration 0206), read back through `my_entitlement()`.
+ *
+ * PO, 2026-09-22: *"is there a way to only give access to me for the nutrition part? It's not done yet so
+ * I don't want people using it. Me and the claudetest account."* So this is not a tier, not a cap and not
+ * a purchase — it is an allowlist for an unfinished feature, and there is deliberately no way for an
+ * athlete to grant it to themselves (contrast `setMyPremiumAi`, which anyone may call).
+ *
+ * ⚠ FAILS CLOSED, and here that is not merely the cautious choice — it is the CORRECT one. Every
+ * nutrition table now requires the allowlist in RLS, so an athlete without it cannot read or write a
+ * single row. Showing the tab optimistically would put a screen on their phone whose every query is
+ * refused. Loading and unknown both read as no, so the tab appears only once the server has confirmed it.
+ *
+ * ⚠ Hiding the tab is NOT the gate — 0206's RLS and the `food-search` 403 are. This is the courtesy that
+ * keeps an unfinished feature out of sight.
+ */
+export function useNutritionAccess(): boolean {
+  const { snapshot, status } = useEntitlementState();
+  return status === 'ready' && snapshot?.nutrition === true;
+}
+
 // ── feature display ──────────────────────────────────────────────────────────
 
 /** Features gated by tier rather than by a count. Named so the seam stays greppable. */

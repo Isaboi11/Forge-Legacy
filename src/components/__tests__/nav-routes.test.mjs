@@ -62,6 +62,41 @@ test('Legacy is the emphasized (centre) tab', () => {
   assert.equal(tabTriggers()[2].name, 'legacy');
 });
 
+/*
+ * ══ 0206 — NUTRITION IS BEHIND THE PREVIEW ALLOWLIST ══
+ *
+ * The PO asked that only his own account and `claudetest` reach Nutrition while it is unfinished. The
+ * tests above read SOURCE ORDER, so they still count five triggers and would not notice the gate being
+ * deleted. These two do.
+ *
+ * ⚠ The counterpart in the other direction matters just as much: if someone later wraps one of the FIRST
+ * FOUR in a condition, the bar silently loses a tab for everybody. The second test pins that too.
+ */
+test('the Nutrition trigger is gated on the preview allowlist, and reads it from the hook', () => {
+  assert.match(
+    tabs,
+    /mayUseNutrition\s*\?\s*\(\s*<TabTrigger\s+name="nutrition"/,
+    'the Nutrition TabTrigger must be conditional on mayUseNutrition (0206) — an ungated tab shows an unfinished feature to every tester',
+  );
+  assert.match(
+    tabs,
+    /const mayUseNutrition = useNutritionAccess\(\)/,
+    'mayUseNutrition must come from useNutritionAccess(), which fails closed — not from a local flag',
+  );
+});
+
+test('the other four tabs are NOT conditional', () => {
+  for (const name of ['home', 'workouts', 'legacy', 'squads']) {
+    const before = tabs.slice(0, tabs.indexOf(`name="${name}"`));
+    // The nearest preceding `{` … `?` on the same JSX line would mean a condition wraps this trigger.
+    const lastLine = before.slice(before.lastIndexOf('\n', before.lastIndexOf('<TabTrigger')));
+    assert.ok(
+      !/\?\s*\($/.test(lastLine.trim()),
+      `the ${name} tab must be unconditional — gating it would drop a tab for every athlete`,
+    );
+  }
+});
+
 test('/workout (active session) is DISTINCT from the /workouts tab root', () => {
   const hrefs = tabTriggers().map((t) => t.href);
   assert.ok(hrefs.includes('/workouts'), 'tab root should be /workouts');

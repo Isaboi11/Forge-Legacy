@@ -32,6 +32,11 @@ export interface EntitlementSnapshot {
   premiumUntil: string | null;
   /** Concurrent with Premium, never implied by it (MA3-D3). */
   coachAi: boolean;
+  /**
+   * 0206 — the Nutrition preview allowlist (`nutrition_preview`), NOT a tier and NOT a purchase.
+   * Nutrition Phase 1 is unfinished, so only the PO and `claudetest` may reach it.
+   */
+  nutrition: boolean;
   /** 1–100 while seats remain. Null for a grant — the OG testers occupy none (MA3-D25). */
   founderSeat: number | null;
   caps: Caps;
@@ -102,6 +107,12 @@ export async function fetchEntitlement(): Promise<EntitlementSnapshot | null> {
     premiumKind: (d.premiumKind as EntitlementSnapshot['premiumKind']) ?? null,
     premiumUntil: (d.premiumUntil as string) ?? null,
     coachAi: d.coachAi === true,
+    /*
+     * ⚠ `=== true`, WHICH IS WHAT MAKES AN OLD CLIENT SAFE. A phone still running a bundle from before
+     * 0206 gets no `nutrition` key at all; `undefined === true` is false, so it hides the tab rather
+     * than rendering screens whose every query the server now refuses. Fail-closed by construction.
+     */
+    nutrition: d.nutrition === true,
     founderSeat: d.founderSeat == null ? null : num(d.founderSeat),
     caps: capsFrom(rawCaps),
     usage: {

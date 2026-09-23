@@ -374,6 +374,25 @@ Deno.serve(async (req) => {
   } = await supabase.auth.getUser();
   if (!user) return json({ error: 'unauthorized' }, 401);
 
+  /*
+   * ══ 0206 — NUTRITION IS A PREVIEW, AND THIS IS THE HALF THAT COSTS MONEY ══
+   *
+   * PO, 2026-09-22: only his own account and `claudetest` may use Nutrition until it is finished. The
+   * RLS gate on the seven tables stops a stranger reading or writing food data; it does NOT stop them
+   * calling THIS, and every miss here spends the project's FatSecret/FDC quota. So the allowlist is
+   * checked before any outbound request.
+   *
+   * `has_nutrition_access()` is zero-argument and reads `auth.uid()`, so it is asked through the
+   * CALLER's client (anon key + their Authorization header) — never through the service role, which
+   * would have no `auth.uid()` and would answer false for everybody. Same shape as the `is_app_admin()`
+   * checks in the admin functions.
+   *
+   * 403 rather than 401: they are signed in, they are simply not on the list. The client hides the tab,
+   * so reaching this means someone called it directly.
+   */
+  const { data: mayUseNutrition, error: gateError } = await supabase.rpc('has_nutrition_access');
+  if (gateError || mayUseNutrition !== true) return json({ error: 'nutrition_preview_only' }, 403);
+
   let body: { q?: string; barcode?: string; limit?: number };
   try {
     body = await req.json();
