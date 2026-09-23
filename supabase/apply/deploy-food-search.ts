@@ -30,6 +30,25 @@
 // runs, and searching returns nothing while the function itself looks perfectly healthy. If you
 // deployed revision 1, REDEPLOY — this is the fix for "I searched chicken and nothing came up".
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// ⚠ REVISION 3 (2026-09-22): NUTRITION IS A PREVIEW — **REDEPLOY REQUIRED** (migration `0206`).
+//
+// The function now refuses any caller who is not on the `nutrition_preview` allowlist, with
+// **403 `nutrition_preview_only`**, BEFORE it makes a single outbound request. The RLS gate that 0206
+// puts on the seven nutrition tables stops a stranger reading or writing food data; it does NOT stop
+// them calling this, and every miss here spends the project's FatSecret/FDC quota.
+//
+// ⚠ The check is asked through the CALLER's client (anon key + their Authorization header), never the
+// service role — `has_nutrition_access()` reads `auth.uid()`, which the service role does not have, so
+// asking it that way would answer false for EVERYONE including the PO.
+//
+// ⛔ UNTIL THIS IS REDEPLOYED, food search still works for every signed-in account. `0206` is applied
+// and the tab is hidden, so nobody reaches it through the app — but the function itself is still open
+// to a direct call.
+//
+// ⚠ THIS FILE IS REGENERATED FROM `supabase/functions/food-search/index.ts`, NOT HAND-EDITED. The
+// previous copy had drifted 59 lines behind it. If you change the function, regenerate this.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
 
 /**
  * Forge Legacy — `food-search`: the ONE place a food comes from outside Forge.
@@ -136,6 +155,21 @@ const num = (v: unknown): number | null => {
 /** USDA nutrient numbers are stable across datasets; names are not, so match on the number. */
 const FDC_NUTRIENT = { kcal: '208', protein: '203', fat: '204', carb: '205' } as const;
 
+/**
+ * The extras `Food Detail.dc.html` lists under "More nutrients". Stored per 100 g in `micros` and scaled
+ * on the screen.
+ *
+ * ⚠ USDA AND OPEN FOOD FACTS ONLY. The FatSecret permission covers calories and macros; nothing here may
+ * be kept from `fs`, which is why `fsFood` leaves `micros` null and this map is used nowhere near it.
+ */
+const FDC_MICRO: Record<string, string> = {
+  '291': 'fiber',
+  '269': 'sugar',
+  '606': 'satFat',
+  '307': 'sodium',
+  '601': 'cholesterol',
+};
+
 function fdcFood(hit: Record<string, any>): Food {
   const byNumber = new Map<string, number>();
   for (const n of hit.foodNutrients ?? []) {
@@ -154,6 +188,13 @@ function fdcFood(hit: Record<string, any>): Food {
     servings.unshift({ label: String(hit.householdServingFullText), grams: null });
   }
 
+  const micros: Record<string, number> = {};
+  for (const [number, key] of Object.entries(FDC_MICRO)) {
+    const value = byNumber.get(number);
+    // A nutrient the dataset never measured is left OUT, not zeroed — the screen omits what it lacks.
+    if (value != null) micros[key] = value;
+  }
+
   const id = String(hit.fdcId);
   return {
     key: `usda:${id}`,
@@ -167,7 +208,7 @@ function fdcFood(hit: Record<string, any>): Food {
     carb100: byNumber.get(FDC_NUTRIENT.carb) ?? null,
     fat100: byNumber.get(FDC_NUTRIENT.fat) ?? null,
     servings,
-    micros: null,
+    micros: Object.keys(micros).length ? micros : null,
     attribution: null, // CC0 — a citation is requested, never required.
   };
 }
@@ -194,6 +235,20 @@ async function usdaBarcode(gtin: string): Promise<Food[]> {
 }
 
 // ── Open Food Facts (barcode fallback) ───────────────────────────────────────
+
+/** Open Food Facts' own nutrient keys, per 100 g. Sodium is reported in grams; the UI wants mg. */
+function offMicros(n: Record<string, unknown>): Record<string, number> | null {
+  const out: Record<string, number> = {};
+  const fiber = num(n['fiber_100g']);
+  const sugar = num(n['sugars_100g']);
+  const satFat = num(n['saturated-fat_100g']);
+  const sodium = num(n['sodium_100g']);
+  if (fiber != null) out.fiber = fiber;
+  if (sugar != null) out.sugar = sugar;
+  if (satFat != null) out.satFat = satFat;
+  if (sodium != null) out.sodium = sodium * 1000;
+  return Object.keys(out).length ? out : null;
+}
 
 async function offBarcode(gtin: string): Promise<Food[]> {
   const code = gtin.replace(/^0+/, '');
@@ -226,7 +281,7 @@ async function offBarcode(gtin: string): Promise<Food[]> {
       carb100: num(n.carbohydrates_100g),
       fat100: num(n.fat_100g),
       servings,
-      micros: null,
+      micros: offMicros(n),
       attribution: 'Data from Open Food Facts (ODbL)',
     },
   ];
@@ -370,6 +425,25 @@ Deno.serve(async (req) => {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return json({ error: 'unauthorized' }, 401);
+
+  /*
+   * ══ 0206 — NUTRITION IS A PREVIEW, AND THIS IS THE HALF THAT COSTS MONEY ══
+   *
+   * PO, 2026-09-22: only his own account and `claudetest` may use Nutrition until it is finished. The
+   * RLS gate on the seven tables stops a stranger reading or writing food data; it does NOT stop them
+   * calling THIS, and every miss here spends the project's FatSecret/FDC quota. So the allowlist is
+   * checked before any outbound request.
+   *
+   * `has_nutrition_access()` is zero-argument and reads `auth.uid()`, so it is asked through the
+   * CALLER's client (anon key + their Authorization header) — never through the service role, which
+   * would have no `auth.uid()` and would answer false for everybody. Same shape as the `is_app_admin()`
+   * checks in the admin functions.
+   *
+   * 403 rather than 401: they are signed in, they are simply not on the list. The client hides the tab,
+   * so reaching this means someone called it directly.
+   */
+  const { data: mayUseNutrition, error: gateError } = await supabase.rpc('has_nutrition_access');
+  if (gateError || mayUseNutrition !== true) return json({ error: 'nutrition_preview_only' }, 403);
 
   let body: { q?: string; barcode?: string; limit?: number };
   try {
