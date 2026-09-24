@@ -872,6 +872,40 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### 0000000000000000000. ⭐ My Recipes: your own meals, USDA numbers, allergens you confirm (2026-09-23, Nutrition Phase 3, built to `My Recipes.dc.html` plus the updated `Recipe.dc` and `Meal Plan.dc` · commit `36aa43f3` on `feat/route-map` · ✅ **`0213` APPLIED AND VERIFIED 2026-09-23** (constraints 7 · rls_on true · policies 1 · rows 0, as predicted) · **NOT deployed** · ⏳ **NOT SEEN**)
+
+The list has search, filter and an "In this week" pill. The form builds recipes from Forge's 106 USDA ingredients with live per-serving totals. Allergens are **pre-filled from ingredients and confirmed by the athlete**, and any change un-confirms them. The planner uses a user recipe **only when it is confirmed and "Use in my plans" is on**, under the same hard filters. The recipe book (`RECIPE_BY_ID` / `recipeView`) now carries user recipes, and Meal Plan, Recipe and Grocery List load them before resolving a week. The Recipe screen gains "Edit recipe" and logging from outside the plan; Meal Plan gains a "My recipes" link. **Deltas:** no seeded samples; Create Food items are not searchable yet (no allergen tags); no delete (the design has none). tsc 0 · 4,219 pass · web export builds.
+
+### 0000000000000000000. 🐛 Anyone who trained in the last 14 days gets the full Workouts tab (2026-09-23, Workouts · commit `cdcdfea2` on `feat/route-map`, lane `2103164c` · ✅ **WEB** `index-bc106fcdb3c9bbd604a68016da6c7a3f.js` (200 + hash-matched on alias and deployment URL) · ✅ **OTA TO BUILD 8** iOS `01a0d0cb-f74c-7f31-8673-cf0ab90c2b22` on runtime `47944f2e…` (fingerprint MATCHED `3f67281b…`), Android `01a0d0cb-f74c-7e97…` · ⏳ **NOT SEEN**)
+
+A tester who logs workouts every week but owns no program or template was still shown the arrival view ("Build Your Training."). `hasOwnWork` now also counts a saved workout in the last 14 days (`fetchTrainedWithin`, `recent-work-live.ts`). A failed read means unknown, and unknown gets the full tab, never the arrival view.
+
+### 0000000000000000000. 🐛 Existing athletes were being sent back to onboarding — fixed (2026-09-23, Boot · commit `ee6897c` on `feat/route-map`, lane `2ac3c55` · ✅ **OTA TO BUILD 8** iOS `01a0d08d-d3f6-7a60-85c9-42ffadf491e6` on runtime `47944f2e…` (fingerprint MATCHED `3f67281b…`), Android `01a0d08d-d3f6-75a6…` · ✅ **WEB** `index-865ac5dbc4707397278dd58ce4926191.js` (200 + hash-matched on alias and deployment URL; built from the lane, so web also picked up the Workouts hub hierarchy `a4f1f3d` that phones already had) · ⏳ **NOT SEEN**)
+
+A tester reported seeing onboarding again. Cause: a failed profile read (bad signal, token mid-refresh) left `profile` null, and `routeFor` reads a null `onboarded_at` as "not onboarded". Now a failed read holds the splash and retries every 2s ([profile.tsx](src/lib/profile.tsx)); only a row that says `onboarded_at` null — or no row at all ([live.ts](src/domain/profile/live.ts), `maybeSingle`) — routes to onboarding. Tell anyone affected to reopen the app, NOT to finish onboarding (re-finishing overwrites their name/handle/answers; no duplicate chapter). Nutrition work after `a4f1f3d` (Meal Plan, Recipe, Grocery) was deliberately NOT in this deploy.
+
+### 000000000000000000. ⭐ Grocery List: built from the week's cooks, priced from USDA and BLS (2026-09-23, Nutrition Phase 3, built to `Grocery List.dc.html` · commit `c1d338b` on `feat/route-map` · ✅ **`0212` APPLIED AND VERIFIED 2026-09-23** (has_column true · constraint true · rows_with_marks 0, as predicted) · **NOT deployed** · ⏳ **NOT SEEN**)
+
+The list is built from cooks, not meals: aisles, store units, shopping names. The screen has In the cart, swipe or sheet "Have it" (staples start there), remove, add your own, and Share. Marks save on the week row (`0212`), so phone and web match. PO *"let's pull"* on prices: USDA ERS Fruit & Vegetable Prices (2023 data) plus BLS Average Price Data (Aug 2026), converted to $/100 g as the recipe weighs it. 45 of 106 ingredients have a public price. The rest are **counted, never invented** ("25 items not priced"). Meal Plan's budget line now uses the same prices. The subline adds the cook count (Rules §3). tsc 0 · 4,206 pass · web export builds.
+
+### 00000000000000000. ⭐ The meal planner follows the Recipe Schema and Planner Rules (2026-09-23, Nutrition Phase 3 · commit `2958d0b` on `feat/route-map` · no migration · **NOT deployed** · ⏳ **NOT SEEN**)
+
+PO: *"the rules are good"*. On the open questions the PO said *"whatever you feel is best"*, so: (1) **repeat and say so** when the library runs out, (2) macros from the Targets screen, (3) leftovers may go past tomorrow, (4) everyone eats the same portion. Built:
+- the hard filters, with dislikes now matched on ingredients and slots on `mealTypes`
+- ±5% calories, protein ≥ 90%, per-slot calorie shares
+- ¾–1½ portions
+- the variety caps (as penalties, with "Repeated · nothing else fits")
+- empty-slot lines
+- leftovers up to their keep days, max 4 a week
+- lock-the-leftover-too, logged meals frozen through rebuilds
+- `cooksOf()` for the Grocery List
+
+⚠ **Coverage report:** 116 of 640 diet × allergy × time × slot combos have fewer than 3 options, mostly **15-minute lunches and dinners** and **vegan**. Those are the next recipes to write. tsc 0 · 4,198 pass · web export builds.
+
+### 0000000000000000. ⭐ Recipe: real ingredients, US measures, and a method for all 40 (2026-09-23, Nutrition Phase 3, built to `Recipe.dc.html` (Claude Design `b029488a`) · commit `05f1ece` on `feat/route-map` · no migration · **NOT deployed** · ⏳ **NOT SEEN**)
+
+All 40 recipes now carry what the design's one worked example had: ingredients by display name, seasonings, equipment where unusual, and numbered method steps with times, plus USDA FSIS safe temperatures wherever meat, poultry or fish cooks. **The steps are Forge-written drafts for PO review.** Weights are now as bought (raw meat, dry grains, SR raw/dry records), and all 40 still pass 4/4/9. US measures come from USDA `food_portion.csv`. Servings default to what the cook makes (household × 2 when a dinner feeds tomorrow's lunch; a leftover prepares 1). Swap returns to the plan's swap sheet, and Lock and Log act on that meal. ⏳ **Open for the PO:** `Recipe Schema and Planner Rules.md` in the design project (cooks, slot allocation, variety caps) is marked "Draft for sign-off" and is not built. tsc 0 · 4,180/4,180 · web export builds.
+
 ### 000000000000000. ⭐ Meal Plan: a real week from 40 recipes whose numbers come from USDA (2026-09-23, Nutrition Phase 3, built to `Meal Plan.dc.html` (Claude Design `b029488a`) · commit `18b29d2` on `feat/route-map` · ✅ **`0211` APPLIED AND VERIFIED 2026-09-23** (readback: constraints 3 · rls_on true · policies 1 · rows 0, as predicted) · **NOT deployed** · ⏳ **NOT SEEN**)
 
 **PO 09-23: "Build now, fix numbers first."** The design's `meal-recipes.js` carried hand-written mockup calories, so none of them are used. Its 40 recipes (names, slots, times, batch flags) now have Forge ingredients and grams per serving, and every number is USDA SR Legacy per-100 g × grams, generated by script and cited by `fdcId` (`scripts/nutrition/`, `domain/nutrition/recipes-data.ts`). Allergens and diet are derived from ingredients, and all 40 pass the 4/4/9 check. One stand-in: mozzarella for halloumi. The planner is ported to `domain/nutrition/meal-planner.ts`: hard filter, leftovers, locks, swaps, add-a-snack, seeded rebuild. `resolveWeek` rebuilds a week built on an old target or setup, and a lock can never bring an allergen back. "Log meal" writes a real diary row. **Deltas:** no budget estimate (needs ERS prices), and Recipe and Grocery List still toast "comes next". tsc 0 · 4,166/4,166 (24 new) · web export builds.
