@@ -146,6 +146,10 @@ export default function LogFoodScreen() {
   };
 
   const rows = useMemo(() => buildRows({ results, filter, recents, favorites, myFoods }), [results, filter, recents, favorites, myFoods]);
+  /* A search shows its best ten; "Show more" opens the rest for THAT query only, so the next one starts short again. */
+  const [moreFor, setMoreFor] = useState<string | null>(null);
+  const capped = results != null && moreFor !== trimmed && rows.length > SEARCH_PAGE;
+  const visibleRows = capped ? rows.slice(0, SEARCH_PAGE) : rows;
 
   return (
     <View style={styles.screen}>
@@ -218,7 +222,7 @@ export default function LogFoodScreen() {
                 <AddCircle />
               </Pressable>
             ))
-          : rows.map((row) => (
+          : visibleRows.map((row) => (
               <Pressable
                 key={row.key}
                 accessibilityRole="button"
@@ -238,6 +242,12 @@ export default function LogFoodScreen() {
                 </Pressable>
               </Pressable>
             ))}
+
+        {capped ? (
+          <Pressable accessibilityRole="button" style={styles.more} onPress={() => setMoreFor(trimmed)}>
+            <Text style={styles.footerAction}>{`Show more (${rows.length - SEARCH_PAGE})`}</Text>
+          </Pressable>
+        ) : null}
 
         {!searching && rows.length === 0 && !(results == null && filter === 'meals' && (savedMeals ?? []).length) ? (
           <Text style={styles.empty}>{emptyCopy(filter, results, query)}</Text>
@@ -296,6 +306,20 @@ interface Row {
   meta: string;
 }
 
+const SEARCH_PAGE = 10;
+
+/**
+ * "515 cal · 1 item" when the food has a real serving, "234 cal / 100 g" only when it does not. PO,
+ * 2026-09-24: per-100 g on a Big Mac read as the burger's calories.
+ */
+function calorieMeta(food: CatalogFood): string | null {
+  const serving = defaultServing(food);
+  if (serving.grams != null && !/^100\s*(g|ml)\b/i.test(serving.label)) {
+    return `${portionMacros(food, { serving, quantity: 1 }).kcal} cal · ${serving.label}`;
+  }
+  return food.kcal100 != null ? `${Math.round(food.kcal100)} cal / 100 g` : null;
+}
+
 function buildRows({
   results,
   filter,
@@ -314,7 +338,7 @@ function buildRows({
       key: food.key,
       food,
       meta: [
-        food.kcal100 != null ? `${Math.round(food.kcal100)} cal / 100 g` : null,
+        calorieMeta(food),
         food.brand,
         SOURCE_LABEL[food.source],
       ]
@@ -327,7 +351,7 @@ function buildRows({
     return (myFoods ?? []).map((food) => ({
       key: food.key,
       food,
-      meta: [food.kcal100 != null ? `${Math.round(food.kcal100)} cal / 100 g` : null, food.brand].filter(Boolean).join(' · '),
+      meta: [calorieMeta(food), food.brand].filter(Boolean).join(' · '),
     }));
   }
 
@@ -560,6 +584,7 @@ const styles = StyleSheet.create({
   list: { flex: 1 },
   listContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 18 },
   status: { fontSize: 12.5, color: flColor.gray600, paddingVertical: 10 },
+  more: { alignItems: 'center', paddingVertical: 16 },
   empty: { fontSize: 13.5, color: flColor.gray400, paddingVertical: 24, lineHeight: 20 },
 
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
