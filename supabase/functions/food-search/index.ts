@@ -56,6 +56,14 @@ const FS_SECRET = Deno.env.get('FATSECRET_CLIENT_SECRET');
 
 const OFF_UA = 'ForgeLegacy/1.0 (support@forgelegacy.app)'; // Open Food Facts requires a real User-Agent.
 
+/**
+ * Every outbound call has a ceiling. PO, 2026-09-24: "sometimes it shows up sometimes it doesn't" —
+ * one slow source held the whole answer, and the app reads any failure as "Nothing found". A source
+ * that runs out of time answers empty; the others still return. `extra` is for the nice-to-haves
+ * (serving sizes, the FatSecret token), `source` for a search itself.
+ */
+const SLOW_MS = { source: 6000, extra: 3500 } as const;
+
 interface Serving {
   label: string;
   grams: number | null;
@@ -143,6 +151,8 @@ function fdcFood(hit: Record<string, any>): Food {
   } else if (hit.householdServingFullText) {
     servings.unshift({ label: String(hit.householdServingFullText), grams: null });
   }
+  // Survey (FNDDS) foods carry their household measures in the search hit itself.
+  servings.unshift(...fnddsServings(hit));
 
   const micros: Record<string, number> = {};
   for (const [number, key] of Object.entries(FDC_MICRO)) {
@@ -169,6 +179,82 @@ function fdcFood(hit: Record<string, any>): Food {
   };
 }
 
+/*
+ * ══ A BIG MAC IS "1 BURGER", NOT 100 g ══
+ *
+ * PO, 2026-09-24: Food Detail offered only grams for a Big Mac. USDA had the burger all along — we read
+ * only the Branded label serving. Food Detail already opens on the first named serving, so these go
+ * FIRST, ahead of '100 g'.
+ *
+ * FNDDS shares one measure list across a family ("1 McDonald's Big Mac", "1 … Grand Mac", "1 … Mac Jr"
+ * all hang off the Big Mac), and `rank` is not relevance — so the measure sharing the most words with
+ * the food's own name leads. "Quantity not specified" is USDA's average portion, not a thing you eat.
+ */
+const words = (s: string) =>
+  new Set(
+    s
+      .toLowerCase()
+      .replace(/['’]/g, '')
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length >= 3),
+  );
+
+function fnddsServings(hit: Record<string, any>): Serving[] {
+  const name = words(String(hit.description ?? ''));
+  const shared = (label: string) => [...words(label)].filter((w) => name.has(w)).length;
+  const measures = (hit.foodMeasures ?? [])
+    .map((m: Record<string, any>) => ({ label: String(m.disseminationText ?? '').trim(), grams: num(m.gramWeight), rank: num(m.rank) ?? 99 }))
+    .filter((m: { label: string; grams: number | null }) => m.label && m.grams && m.grams > 0 && !/quantity not specified/i.test(m.label));
+  // A measure naming the food only PARTLY is a sibling product ("1 McDonald's Mac Jr" on the Big Mac) —
+  // dropped. One naming nothing ("1 cup", "1 slice") is a plain measure and stays.
+  const best = Math.max(0, ...measures.map((m: { label: string }) => shared(m.label)));
+  return measures
+    .filter((m: { label: string }) => {
+      const n = shared(m.label);
+      return n === 0 || n === best;
+    })
+    .sort((a: any, b: any) => shared(b.label) - shared(a.label) || a.rank - b.rank)
+    .map(({ label, grams }: Serving) => ({ label, grams }));
+}
+
+/**
+ * SR Legacy and Foundation hits carry no measures in search, only in the food's own record — so the
+ * ones that came back measureless are read in ONE batch call. It is a nicety: a failure leaves grams.
+ */
+async function usdaPortions(ids: string[]): Promise<Map<string, Serving[]>> {
+  const out = new Map<string, Serving[]>();
+  // USDA takes at most 20 ids per call.
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += 20) chunks.push(ids.slice(i, i + 20));
+  const answers = await Promise.all(
+    chunks.map(async (chunk) => {
+      const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods?api_key=${encodeURIComponent(FDC_KEY)}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({ fdcIds: chunk.map(Number), format: 'full', nutrients: [208] }),
+        signal: AbortSignal.timeout(SLOW_MS.extra),
+      });
+      return res.ok ? ((await res.json()) ?? []) : [];
+    }),
+  );
+  for (const f of answers.flat()) {
+    const servings: Serving[] = [];
+    for (const p of f.foodPortions ?? []) {
+      const grams = num(p.gramWeight);
+      if (!grams || grams <= 0) continue;
+      // "item 7.6 oz" → "item": the weight is already in `grams`, and the pill has little room.
+      const what = String(p.portionDescription || p.modifier || p.measureUnit?.name || '')
+        .replace(/\s+\d+(\.\d+)?\s*oz\b.*$/i, '')
+        .trim();
+      if (!what || /undetermined|quantity not specified/i.test(what)) continue;
+      const amount = num(p.amount) ?? 1;
+      servings.push({ label: /^\d/.test(what) ? what : `${amount} ${what}`, grams });
+    }
+    if (servings.length) out.set(String(f.fdcId), servings);
+  }
+  return out;
+}
+
 async function usdaSearch(query: string, limit: number): Promise<Food[]> {
   const url = new URL('https://api.nal.usda.gov/fdc/v1/foods/search');
   url.searchParams.set('api_key', FDC_KEY);
@@ -178,10 +264,27 @@ async function usdaSearch(query: string, limit: number): Promise<Food[]> {
   // nutrient panels. Branded follows for the packaged case.
   url.searchParams.set('dataType', 'Foundation,SR Legacy,Survey (FNDDS),Branded');
 
-  const res = await fetch(url, { headers: { accept: 'application/json' } });
+  const res = await fetch(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(SLOW_MS.source) });
   if (!res.ok) return [];
   const body = await res.json();
   return (body.foods ?? []).map(fdcFood).filter((f: Food) => f.name && f.kcal100 != null);
+}
+
+/**
+ * Serving sizes for the USDA foods that came back with only '100 g' — asked ONLY for the ones about to
+ * be shown (the first `SHOWN`), because each lookup is a heavy record and the list is already ranked.
+ */
+const SHOWN = 10;
+
+async function withPortions(foods: Food[]): Promise<Food[]> {
+  const bare = foods
+    .slice(0, SHOWN)
+    .filter((f) => f.source === 'usda' && f.servings.length === 1)
+    .map((f) => f.sourceId);
+  const portions = await usdaPortions(bare).catch(() => new Map<string, Serving[]>());
+  return foods.map((f) =>
+    f.source === 'usda' && portions.has(f.sourceId) ? { ...f, servings: [...portions.get(f.sourceId)!, ...f.servings] } : f,
+  );
 }
 
 async function usdaBarcode(gtin: string): Promise<Food[]> {
@@ -210,6 +313,7 @@ async function offBarcode(gtin: string): Promise<Food[]> {
   const code = gtin.replace(/^0+/, '');
   const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`, {
     headers: { 'user-agent': OFF_UA, accept: 'application/json' },
+    signal: AbortSignal.timeout(SLOW_MS.source),
   });
   if (!res.ok) return [];
   const body = await res.json();
@@ -253,6 +357,7 @@ async function fatsecretToken(): Promise<string | null> {
 
   const res = await fetch('https://oauth.fatsecret.com/connect/token', {
     method: 'POST',
+    signal: AbortSignal.timeout(SLOW_MS.extra),
     headers: {
       authorization: `Basic ${btoa(`${FS_ID}:${FS_SECRET}`)}`,
       'content-type': 'application/x-www-form-urlencoded',
@@ -313,7 +418,7 @@ async function fatsecretSearch(query: string, limit: number): Promise<Food[]> {
   url.searchParams.set('max_results', String(limit));
   url.searchParams.set('format', 'json');
 
-  const res = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+  const res = await fetch(url, { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(SLOW_MS.source) });
   if (!res.ok) return [];
   const body = await res.json();
   const foods = body.foods_search?.results?.food ?? body.foods?.food ?? [];
@@ -333,10 +438,109 @@ async function fatsecretFoodById(id: string): Promise<Food | null> {
   const url = new URL('https://platform.fatsecret.com/rest/food/v4');
   url.searchParams.set('food_id', id);
   url.searchParams.set('format', 'json');
-  const res = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+  const res = await fetch(url, { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(SLOW_MS.source) });
   if (!res.ok) return null;
   const body = await res.json();
   return body.food ? fsFood(body.food) : null;
+}
+
+/**
+ * A UPC through FatSecret — the third barcode try, behind USDA (CC0) and Open Food Facts (ODbL).
+ *
+ * Needs the `barcode` scope, which is Premier-only; Premier Free was provisioned 2026-09-23 (Legal file,
+ * third reply). FatSecret wants a GTIN-13, so our 14-digit form drops its leading pad digit. v2 answers
+ * with the whole food; an id-only answer (v1's shape) is followed up through `food.get`.
+ */
+async function fatsecretBarcode(gtin: string): Promise<Food[]> {
+  const token = await fatsecretToken();
+  if (!token) return [];
+  const url = new URL('https://platform.fatsecret.com/rest/food/barcode/find-by-id/v2');
+  url.searchParams.set('barcode', gtin.slice(-13));
+  url.searchParams.set('format', 'json');
+  const res = await fetch(url, { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(SLOW_MS.source) });
+  if (!res.ok) return [];
+  const body = await res.json();
+
+  let food = body.food ? fsFood(body.food) : null;
+  const id = body.food_id?.value ?? body.food_id;
+  if (!food && id && String(id) !== '0') food = await fatsecretFoodById(String(id));
+  // Stamp the code we scanned so the 24-hour cache answers the next scan of it.
+  return food ? [{ ...food, gtin }] : [];
+}
+
+// ── Fewer, better results ────────────────────────────────────────────────────
+
+/*
+ * PO, 2026-09-24: "there are just a ton of options". USDA's search is fuzzy, so "big mac" also returned
+ * a Kit Kat Big Kat and Easy Mac, and the same burger twice under two spellings. Three rules:
+ *
+ *   1. Every word typed must start some word of the name or brand ("breast" matches "breasts"). If that
+ *      leaves NOTHING, the unfiltered list is returned — a typo should still show something.
+ *   2. Names that START with the query lead, then foods with a named serving, then shorter names.
+ *   3. The same words in a different order ("McDONALD'S, BIG MAC" / "Big Mac (McDonalds)") are one food;
+ *      the first after ranking is kept.
+ */
+function tidy(query: string, foods: Food[]): Food[] {
+  // A trailing plural 's' is dropped from what was TYPED, so "breasts" still starts "breast".
+  const q = [...words(query)].map((w) => (w.length > 3 ? w.replace(/s$/, '') : w));
+  if (!q.length) return foods;
+  const nameWords = (f: Food) => [...words(`${f.name} ${f.brand ?? ''}`)];
+
+  // A WHOLE word (or its plural) is a strong match. A prefix counts only from 4 letters and ranks lower —
+  // "chick" while typing should find chicken, but "egg" must not lead with eggnog and eggplant.
+  const whole = (h: string, w: string) => h === w || h === `${w}s` || h === `${w}es`;
+  const partials = (f: Food): number | null => {
+    const have = nameWords(f);
+    let weak = 0;
+    for (const w of q) {
+      if (have.some((h) => whole(h, w))) continue;
+      if (w.length >= 4 && have.some((h) => h.startsWith(w))) weak++;
+      else return null;
+    }
+    return weak;
+  };
+  const scored = foods.map((f, i) => ({ f, i, weak: partials(f) }));
+  const matching = scored.filter((s) => s.weak != null);
+  const pool = matching.length ? matching : scored.map((s) => ({ ...s, weak: q.length }));
+
+  const flat = (s: string) => [...words(s)].join(' ');
+  const qFlat = q.join(' ');
+  const named = (f: Food) => f.servings.some((s) => s.grams && !/^100\s*(g|ml)\b/i.test(s.label));
+  const ranked = pool
+    .map(({ f, i, weak }) => {
+      const name = flat(f.name);
+      return {
+        f,
+        i,
+        weak: weak ?? 0,
+        // The words typed, together and in order, somewhere in the name: "McDONALD'S, BIG MAC" over "MAC & … BIG BOWL".
+        phrase: ` ${name} `.includes(` ${qFlat}`) ? 0 : 1,
+        // A plain food over a branded one: "Banana, raw" over a peanut butter whose flavour is "BANANA".
+        branded: f.brand ? 1 : 0,
+        starts: name.startsWith(qFlat) ? 0 : 1,
+        // The food itself before what was done to it: "Apple, raw" over "Apple, candied".
+        raw: /\sraw\b/.test(` ${name}`) ? 0 : 1,
+        served: named(f) ? 0 : 1,
+        extra: words(f.name).size,
+      };
+    })
+    .sort(
+      (a, b) =>
+        a.weak - b.weak || a.phrase - b.phrase || a.branded - b.branded || a.starts - b.starts || a.raw - b.raw || a.served - b.served || a.extra - b.extra || a.i - b.i,
+    )
+    .map((r) => r.f);
+
+  const seen = new Set<string>();
+  return ranked.filter((f) => {
+    // Plurals folded too, so "Bananas, raw" and "Banana, raw" are one food.
+    const sig = nameWords(f)
+      .map((w) => (w.length > 3 ? w.replace(/e?s$/, '') : w))
+      .sort()
+      .join(' ');
+    if (seen.has(sig)) return false;
+    seen.add(sig);
+    return true;
+  });
 }
 
 // ── The cache ────────────────────────────────────────────────────────────────
@@ -356,6 +560,9 @@ async function fatsecretFoodById(id: string): Promise<Food | null> {
 const FS_TTL_MS = 24 * 60 * 60 * 1000;
 
 const fsExpiry = () => new Date(Date.now() - FS_TTL_MS).toISOString();
+
+/** Cached rows older than this hold grams-only or sibling-product servings (2026-09-24) and are re-fetched. */
+const SERVINGS_SINCE = '2026-09-24T19:30:00Z';
 
 /** Drop every FatSecret row we are no longer licensed to hold. Cheap, indexed, and safe to over-call. */
 async function purgeStaleFatSecret(admin: ReturnType<typeof createClient>): Promise<void> {
@@ -396,6 +603,9 @@ async function cached(query: string, limit: number): Promise<Food[]> {
     // A FatSecret row past its 24 hours is treated as absent even if the purge has not run yet, so the
     // TTL holds whatever else happens. `or` reads as: not FatSecret, OR fetched within the window.
     .or(`source.neq.fs,fetched_at.gte.${fsExpiry()}`)
+    // Rows cached before servings were read hold only '100 g'; skipping them makes the search re-fetch
+    // and the upsert overwrite them, so the catalogue heals as people search.
+    .gte('fetched_at', SERVINGS_SINCE)
     .limit(limit);
   return (data ?? []).map((r: Record<string, any>) => ({
     key: r.key,
@@ -507,7 +717,8 @@ Deno.serve(async (req) => {
     return json({ foods: [food] });
   }
 
-  // ── Barcode: exact, and the order matters. USDA first (CC0), OFF second (ODbL, community-quality).
+  // ── Barcode: exact, and the order matters. USDA first (CC0), OFF second (ODbL, community-quality),
+  //    FatSecret last (24-hour rows, attribution required).
   if (body.barcode) {
     const gtin = normaliseGtin(body.barcode);
     if (gtin.replace(/0/g, '') === '') return json({ foods: [] });
@@ -519,8 +730,9 @@ Deno.serve(async (req) => {
       if (found.length) return json({ foods: found });
     }
 
-    let foods = await usdaBarcode(gtin);
+    let foods = await withPortions(await usdaBarcode(gtin));
     if (!foods.length) foods = await offBarcode(gtin);
+    if (!foods.length) foods = await fatsecretBarcode(gtin).catch(() => []);
     await cache(foods);
     return json({ foods });
   }
@@ -529,7 +741,7 @@ Deno.serve(async (req) => {
   if (q.length < 2) return json({ foods: [] });
 
   const ours = await cached(q, limit);
-  if (ours.length >= limit) return json({ foods: ours });
+  if (ours.length >= limit) return json({ foods: await showAndHeal(tidy(q, ours), new Set()) });
 
   // Sources run in parallel: a slow or dormant one must not hold up the rest of the results.
   const [usda, fs] = await Promise.all([
@@ -537,17 +749,38 @@ Deno.serve(async (req) => {
     fatsecretSearch(q, 10).catch(() => []),
   ]);
 
-  const fetched = [...usda, ...fs];
-  await cache(fetched);
+  const fetched = new Set([...usda, ...fs].map((f) => f.key));
 
-  // De-duplicate by key, ours first — a cached row and a fresh one are the same food.
+  /*
+   * De-duplicate by key, ours first — a cached row and a fresh one are the same food.
+   *
+   * ⚠ USDA and FatSecret are INTERLEAVED. USDA is asked for exactly the slots left after `ours`, so
+   * appending FatSecret after it and slicing to `limit` cut FatSecret off every time — the PO searched
+   * "big mac" on 2026-09-24 and saw only USDA rows.
+   */
+  const interleaved: Food[] = [];
+  for (let i = 0; i < Math.max(usda.length, fs.length); i++) {
+    if (fs[i]) interleaved.push(fs[i]);
+    if (usda[i]) interleaved.push(usda[i]);
+  }
   const seen = new Set(ours.map((f) => f.key));
   const merged = [...ours];
-  for (const f of fetched) {
+  for (const f of interleaved) {
     if (seen.has(f.key)) continue;
     seen.add(f.key);
     merged.push(f);
   }
 
-  return json({ foods: merged.slice(0, limit) });
+  return json({ foods: await showAndHeal(tidy(q, merged).slice(0, limit), fetched) });
 });
+
+/**
+ * Fill in serving sizes for what is about to be shown, then cache what is worth keeping: everything just
+ * fetched that survived `tidy`, and any cached row that gained its servings. Noise `tidy` dropped is
+ * never cached, so the catalogue stops collecting Kit Kats for "big mac".
+ */
+async function showAndHeal(shown: Food[], fetched: Set<string>): Promise<Food[]> {
+  const healed = await withPortions(shown);
+  await cache(healed.filter((f, i) => fetched.has(f.key) || f !== shown[i]));
+  return healed;
+}
