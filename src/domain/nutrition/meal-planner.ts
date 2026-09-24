@@ -787,6 +787,10 @@ export function resolveWeek(
     stored &&
     stored.weekStart === weekStart &&
     planIsReadable(stored.days) &&
+    /* ⚠ An EMPTY stored week is rebuilt every time. One saved while the book had no recipes (2026-09-24,
+       between removing the starter 40 and the PO's own arriving) would otherwise read "No recipes yet"
+       for the rest of the week, after the recipes landed. Rebuilding an empty book costs nothing. */
+    stored.days.some((d) => d.items.length > 0) &&
     stored.targetKcal === target.kcal &&
     stored.prefsUpdatedAt === prefsUpdatedAt
   ) {

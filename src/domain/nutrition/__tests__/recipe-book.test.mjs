@@ -36,3 +36,13 @@ test('every shipped recipe’s calories agree with its macros (4/4/9, fibre at 0
     assert.ok(r.kcal >= low * 0.92 && r.kcal <= high * 1.08, `${r.id}: ${r.kcal} kcal vs ${Math.round(low)}–${Math.round(high)} from macros`);
   }
 });
+
+test('a week saved while the book was empty is rebuilt once recipes exist', async () => {
+  const { resolveWeek } = await import('../meal-planner.ts');
+  const prefs = { diet: 'anything', allergens: [], dislikes: [], meals: ['breakfast', 'lunch', 'dinner', 'snacks'], cookMinutes: null, household: 1, weeklyBudgetUsd: null };
+  const target = { kcal: 2400, protein: 180, carb: 240, fat: 80 };
+  const empty = { weekStart: '2026-09-21', seed: 1, targetKcal: 2400, prefsUpdatedAt: 'x', days: Array.from({ length: 7 }, () => ({ items: [] })), locked: {}, logged: {} };
+  const { week, rebuilt } = resolveWeek(empty, prefs, 'x', target, '2026-09-21');
+  assert.equal(rebuilt, true);
+  assert.ok(week.days.some((d) => d.items.length > 0), 'the rebuilt week plans from the shipped recipes');
+});
