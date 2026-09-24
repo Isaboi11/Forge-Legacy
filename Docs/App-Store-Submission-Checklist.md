@@ -10,7 +10,7 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
 
 ## Where we are
 - **Waiting on others:** Apple (bank verification) · Apple (Small Business Program)
-- **PO to-do:** find a lawyer · decide if Nutrition ships in the first release
+- **PO to-do:** find a lawyer · decide if Nutrition ships in the first release · review the 40 recipes
 - **Claude to-do:** paywall code for the new plans → RevenueCat → build 9
 
 ## Pricing (Monetization Amendment 007, locked 2026-09-23)
@@ -68,14 +68,26 @@ No lifetime plan. United States only at launch.
 - ⬜ Lawyer reviews Terms + Privacy Policy
 
 ## 5. Nutrition (only if it ships in the first release — PO to decide)
-- 🔨 Meal Plan Setup (`0210` not applied)
-- ⬜ Gentle message for sustained under-eating (needs PO's wording)
-- ⬜ Search says "couldn't connect" instead of "nothing found" when it fails
+Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web preview NOT updated with it.
+- ✅ Food log, Log Food, Food Detail, Create Food, Meal Detail, Details, Targets — 09-22/23
+- ✅ Meal Plan Setup, Meal Plan (week), Recipe, Grocery List, My Recipes, offline logging — 09-23
+  (`0207`–`0213` applied and verified; OTA `01a0d13e`)
+- ✅ Food search — 09-24: real servings ("1 item"), fewer/better results + Show more, calories per serving,
+  restaurant foods from FatSecret, retries USDA's random failures (OTA `01a0d4a7` + function rev 7+)
+- ✅ Confirm `FDC_API_KEY` in production + FatSecret console steps (Premier Free granted 09-23 — barcode + US data unlocked) — **done 2026-09-24**: IP allowlist + secrets set, token scope `basic premier barcode`, PO saw McDonald's Big Mac with real calories as Restaurant data
+- ⬜ PO reviews the 40 recipes (numbers, allergy tags, steps)
+- ⬜ More recipes — especially 15-minute meals and vegan
+- ⬜ Gentle message for sustained under-eating (needs PO's wording) — **must-do before opening**
+- ⬜ Holt's 4 safety fixes (Coach Holt stress test, Decision Queue #36) — **must-do before opening**
+- ⬜ Privacy policy nutrition section — **must-do before opening**
+- 🔨 Search failure message — 09-24: a failed source now falls back to saved foods; the app still says
+  "Nothing found" if the phone has no connection (should say "couldn't connect")
 - ⬜ First-time welcome screen for the tab (needs a design)
 - ⬜ "This looks wrong" report on a food
 - ⬜ Data export includes nutrition
-- ⬜ Privacy policy nutrition section
-- ✅ Confirm `FDC_API_KEY` in production + FatSecret console steps (Premier Free granted 09-23 — barcode + US data unlocked) — **done 2026-09-24**: IP allowlist + secrets set, token scope `basic premier barcode`, PO saw McDonald's Big Mac with real calories as Restaurant data
+- ⬜ Holt meal plans — Amendment 002 written, NOT locked (PO)
+- ⬜ Barcode camera + label scan → build 9 (the function side of barcode is live)
+- ⬜ Photo food logging (Premium AI) — next to discuss; needs no new build
 - ⬜ Open `0206` to more testers, then lift the gate
 
 ## 6. Ship day
