@@ -51,8 +51,9 @@ const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 
 /** USDA's own key. `DEMO_KEY` works but is limited to 30 requests/hr — set the real one before testers. */
 const FDC_KEY = Deno.env.get('FDC_API_KEY') ?? 'DEMO_KEY';
-const FS_ID = Deno.env.get('FATSECRET_CLIENT_ID');
-const FS_SECRET = Deno.env.get('FATSECRET_CLIENT_SECRET');
+// Trimmed: a pasted secret with a stray space or newline is `invalid_client`, and nothing says why.
+const FS_ID = Deno.env.get('FATSECRET_CLIENT_ID')?.trim();
+const FS_SECRET = Deno.env.get('FATSECRET_CLIENT_SECRET')?.trim();
 
 const OFF_UA = 'ForgeLegacy/1.0 (support@forgelegacy.app)'; // Open Food Facts requires a real User-Agent.
 
@@ -264,8 +265,19 @@ async function usdaSearch(query: string, limit: number): Promise<Food[]> {
   // nutrient panels. Branded follows for the packaged case.
   url.searchParams.set('dataType', 'Foundation,SR Legacy,Survey (FNDDS),Branded');
 
-  const res = await fetch(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(SLOW_MS.source) });
-  if (!res.ok) return [];
+  // ⚠ USDA's gateway answers a bare nginx "400 Bad Request" to a request it accepted a second earlier
+  // (seen 2026-09-24: "Big mac" 400, then 24 results). One retry for that, never for 429/403.
+  const ask = () => fetch(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(SLOW_MS.source) });
+  let res = await ask();
+  if (res.status === 400 || res.status >= 500) {
+    console.log(`usda search ${res.status}, retrying once`);
+    res = await ask();
+  }
+  if (!res.ok) {
+    // 429 = USDA's hourly limit, 403 = a bad key. Read in the dashboard's Logs tab.
+    console.log(`usda search ${res.status}: ${(await res.text().catch(() => '')).slice(0, 300)}`);
+    return [];
+  }
   const body = await res.json();
   return (body.foods ?? []).map(fdcFood).filter((f: Food) => f.name && f.kcal100 != null);
 }
@@ -367,7 +379,10 @@ async function fatsecretToken(): Promise<string | null> {
   });
   // ⚠ The expected failure here is an un-allowlisted IP (see the header). It is not an outage, and it
   // must not take the whole search down — the caller treats an empty list as "this source had nothing".
-  if (!res.ok) return null;
+  if (!res.ok) {
+    console.log(`fatsecret token ${res.status}: ${(await res.text().catch(() => '')).slice(0, 300)}`);
+    return null;
+  }
 
   const body = await res.json();
   if (!body.access_token) return null;
@@ -419,8 +434,13 @@ async function fatsecretSearch(query: string, limit: number): Promise<Food[]> {
   url.searchParams.set('format', 'json');
 
   const res = await fetch(url, { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(SLOW_MS.source) });
-  if (!res.ok) return [];
+  if (!res.ok) {
+    console.log(`fatsecret search ${res.status}: ${(await res.text().catch(() => '')).slice(0, 300)}`);
+    return [];
+  }
   const body = await res.json();
+  // ⚠ FatSecret reports errors INSIDE a 200 — code 21 is an IP not (yet) allowlisted, 14 a missing scope.
+  if (body.error) console.log(`fatsecret search error: ${JSON.stringify(body.error).slice(0, 300)}`);
   const foods = body.foods_search?.results?.food ?? body.foods?.food ?? [];
   return (Array.isArray(foods) ? foods : [foods]).map(fsFood).filter(Boolean) as Food[];
 }
@@ -594,7 +614,7 @@ async function cache(foods: Food[]): Promise<void> {
 }
 
 /** Ours first, and never a paid lookup for something we already hold — but never a stale `fs` row either. */
-async function cached(query: string, limit: number): Promise<Food[]> {
+async function cached(query: string, limit: number, anyAge = false): Promise<Food[]> {
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
   const { data } = await admin
     .from('food_catalog')
@@ -604,8 +624,9 @@ async function cached(query: string, limit: number): Promise<Food[]> {
     // TTL holds whatever else happens. `or` reads as: not FatSecret, OR fetched within the window.
     .or(`source.neq.fs,fetched_at.gte.${fsExpiry()}`)
     // Rows cached before servings were read hold only '100 g'; skipping them makes the search re-fetch
-    // and the upsert overwrite them, so the catalogue heals as people search.
-    .gte('fetched_at', SERVINGS_SINCE)
+    // and the upsert overwrite them, so the catalogue heals as people search. `anyAge` is the fallback
+    // when the outside sources answered nothing: an old row beats "Nothing found".
+    .gte('fetched_at', anyAge ? '1970-01-01T00:00:00Z' : SERVINGS_SINCE)
     .limit(limit);
   return (data ?? []).map((r: Record<string, any>) => ({
     key: r.key,
@@ -744,10 +765,20 @@ Deno.serve(async (req) => {
   if (ours.length >= limit) return json({ foods: await showAndHeal(tidy(q, ours), new Set()) });
 
   // Sources run in parallel: a slow or dormant one must not hold up the rest of the results.
+  const started = Date.now();
   const [usda, fs] = await Promise.all([
-    usdaSearch(q, limit - ours.length).catch(() => []),
-    fatsecretSearch(q, 10).catch(() => []),
+    usdaSearch(q, limit - ours.length).catch((e) => (console.log(`usda search failed: ${e}`), [] as Food[])),
+    fatsecretSearch(q, 10).catch((e) => (console.log(`fatsecret search failed: ${e}`), [] as Food[])),
   ]);
+  // One line per search in the dashboard's Logs tab: how many each source gave, and how long it took.
+  console.log(`search "${q}": cached ${ours.length}, usda ${usda.length}, fatsecret ${fs.length}, ${Date.now() - started} ms`);
+
+  // Both sources came back empty (a limit, an outage, a timeout). Answer from the catalogue at any age
+  // rather than "Nothing found" — PO, 2026-09-24, "nothing found for big mac".
+  if (!usda.length && !fs.length && !ours.length) {
+    const old = await cached(q, limit, true);
+    return json({ foods: tidy(q, old) });
+  }
 
   const fetched = new Set([...usda, ...fs].map((f) => f.key));
 
