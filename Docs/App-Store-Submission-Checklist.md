@@ -51,7 +51,7 @@ No lifetime plan. United States only at launch.
   - ✅ `pending-0214.sql` applied 09-24 (0 · 0 · 0 · 100 · admins-only, as predicted) · ⬜ `set-comped-testers-0214.sql`
   - ⬜ PO: deploy Edge Function `revenuecat-webhook` with **Verify JWT OFF** · set secret `REVENUECAT_WEBHOOK_AUTH`
   - ⬜ PO: RevenueCat → Integrations → Webhooks → URL of that function + the same secret as the Authorization header
-  - ✅ PO 09-24: `alex.review` also sees Tester AI, so Apple can review that product (13 comped accounts)
+  - ✅ PO 09-24: `alex.review` also sees Tester AI, so Apple can review that product (12 comped accounts: 11 testers + alex.review; `poop` was deleted)
 - 🔨 RevenueCat — PO signed up 09-23
   - ✅ Project + iOS app (bundle ID `com.qest4.forgelegacy`) — 09-24
   - ✅ In-App Purchase key (.p8) uploaded to RevenueCat — 09-24 (Key ID `A8T8CTT9TS`).

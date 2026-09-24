@@ -6,12 +6,13 @@
 --   · MA7-D6 — free Premium forever (they already hold the GRANT row from phase-f-1-grant-premium.sql)
 --   · MA7-D7 — the ONLY accounts `my_paywall_offer()` will show the Tester AI add-on to
 --
--- These are the 12 testers from `phase-f-1-grant-premium.sql`, by the same handles, PLUS the Apple review
+-- These are the 11 testers still on the app from `phase-f-1-grant-premium.sql` (the 12th, `poop`, has no
+-- profile any more — deleted; confirmed 2026-09-24: only 11 'OG tester' grant rows exist), PLUS the Apple review
 -- account `alex.review` (PO 2026-09-24): Apple must be able to find every product submitted for review,
 -- and only a comped account is ever shown the Tester AI add-on. `sam.torres` stays out. Apple sees the
 -- regular and Early Bird plans from a fresh sign-up, which is what the review notes should say.
 --
--- ⚠ MATCHED BY HANDLE. A misspelled handle marks nobody, silently — so the file asserts exactly 13 and
+-- ⚠ MATCHED BY HANDLE. A misspelled handle marks nobody, silently — so the file asserts exactly 12 and
 -- rolls back otherwise.
 
 begin;
@@ -21,7 +22,7 @@ update public.athlete_entitlement e
   from public.profiles p
  where p.id = e.athlete_id
    and p.handle in ('jaceypie','racinealta','isaboi11','lilred','kimjovi','kingmo',
-                    'brady','selene','wildwes','poop','bailee','locolando',
+                    'brady','selene','wildwes','bailee','locolando',
                     'alex.review')
    and e.premium_kind = 'GRANT';
 
@@ -30,8 +31,8 @@ declare
   v int;
 begin
   select count(*) into v from public.athlete_entitlement where comped_tester;
-  if v <> 13 then
-    raise exception 'ABORTED: expected 13 comped accounts, got %. A handle did not match, or a row is no longer a GRANT (check-original-14-grants.sql shows which). Nothing was written.', v;
+  if v <> 12 then
+    raise exception 'ABORTED: expected 12 comped accounts, got %. A handle did not match, or a row is no longer a GRANT (check-original-14-grants.sql shows which). Nothing was written.', v;
   end if;
 end $$;
 
