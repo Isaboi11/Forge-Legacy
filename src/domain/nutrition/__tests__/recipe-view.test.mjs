@@ -2,7 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { batchNote, ingredientRows, metricAmount, servingsFor, usAmount } from '../recipe-view.ts';
-import { RECIPE_SOURCES } from '../recipes-data.ts';
+import { setForgeRecipes } from '../meal-planner.ts';
+// The app ships no Forge recipes since 2026-09-24; the planner is tested against the 40 retired ones.
+import { STARTER_RECIPES as RECIPE_SOURCES } from './fixtures/starter-recipes.ts';
+
+setForgeRecipes(RECIPE_SOURCES);
 import { recipeView } from '../meal-planner.ts';
 
 test('ounces for meat, one decimal, no trailing .0', () => {
