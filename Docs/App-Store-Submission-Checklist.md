@@ -11,7 +11,7 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
 ## Where we are
 - **Waiting on others:** Apple (bank verification) · Apple (Small Business Program)
 - **PO to-do:** find a lawyer · decide if Nutrition ships in the first release · write the recipes ·
-  RevenueCat tidy-up (move the .p8, rename the project, delete `$rc_*` packages, delete `REVENUE_WEBHOOK_AUTH`)
+  RevenueCat tidy-up (rename the project, delete `$rc_*` packages, delete `REVENUE_WEBHOOK_AUTH`) — handed to Claude in Chrome 09-24
 - **Claude to-do:** build 9 (paywall, mic, form check, barcode) → sandbox purchase test
 
 ## Pricing (Monetization Amendment 007, locked 2026-09-23)
@@ -56,7 +56,7 @@ No lifetime plan. United States only at launch.
 - ✅ RevenueCat set up — 09-24 (tidy-up items below still open)
   - ✅ Project + iOS app (bundle ID `com.qest4.forgelegacy`) — 09-24
   - ✅ In-App Purchase key (.p8) uploaded to RevenueCat — 09-24 (Key ID `A8T8CTT9TS`).
-    ⬜ Move the .p8 from Downloads to `Forge Legacy Documents` (personal OneDrive) — NEVER in the repo
+    ✅ .p8 moved to `OneDrive\Desktop\Forge Legacy Documents` (personal OneDrive) — 09-24. NEVER in the repo
   - ⬜ Enter the Small Business Program start date in RevenueCat (App settings) once Apple approves
   - ✅ RevenueCat email confirmed — 09-24 · ⬜ rename the project to "Forge Legacy" (it reads "Create an app called Forge Legacy LLC")
   - ✅ 10 products added by hand · entitlements `premium` (8) + `coach_ai` (6) · offerings `default` (Current) / `early_bird` / `tester_ai` — 09-24 (Claude in Chrome)
