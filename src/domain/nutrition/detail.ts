@@ -68,7 +68,8 @@ export function convertAmount(amount: number, from: UnitChoice, to: UnitChoice):
 /** "g" · "cup" · "cups" · "oz" — the word beside the amount, pluralised only where English wants it. */
 export function unitWord(choice: UnitChoice, amount: number): string {
   if (choice.serving.grams === 1) return 'g';
-  const label = choice.label;
+  // "1 McDonald's Big Mac" already counts one; beside an amount it reads "0.9 1 McDonald's Big Macs".
+  const label = choice.label.replace(/^1\s+(?=\D)/, '');
   if (/\boz\b|ounce/i.test(label)) return label;
   if (amount === 1) return label;
   return /s$/i.test(label) ? label : `${label}s`;

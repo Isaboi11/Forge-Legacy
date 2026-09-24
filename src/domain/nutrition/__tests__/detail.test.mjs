@@ -62,8 +62,10 @@ test('⚠ switching units keeps the FOOD, not the number', () => {
 test('the unit word pluralises only where English does', () => {
   const [cup, grams] = unitChoices(oats);
   assert.equal(unitWord(grams, 150), 'g');
-  assert.equal(unitWord(cup, 1), '1 cup');
-  assert.equal(unitWord(cup, 2), '1 cups');
+  // The label's own "1" is dropped beside an amount: "2 cups", never "2 1 cups" (PO, 2026-09-24).
+  assert.equal(unitWord(cup, 1), 'cup');
+  assert.equal(unitWord(cup, 2), 'cups');
+  assert.equal(unitWord({ label: "1 McDonald's Big Mac", serving: { label: "1 McDonald's Big Mac", grams: 205 } }, 0.5), "McDonald's Big Macs");
   assert.equal(unitWord({ label: 'oz', serving: { label: 'oz', grams: 28 } }, 3), 'oz');
 });
 
