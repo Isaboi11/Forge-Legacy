@@ -6,6 +6,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { Button } from '@/components/forge/composites/Button';
+import { NutritionFirstRun } from '@/components/forge/NutritionFirstRun';
 import { Surface } from '@/components/forge/composites/Surface';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -26,7 +27,7 @@ import {
   type MealGroup,
   type MealSlot,
 } from '@/domain/nutrition/day';
-import { copyMealFrom, fetchDay, hasFoodAfter, mealHasFood } from '@/data/nutrition-live';
+import { copyMealFrom, fetchDay, hasFoodAfter, isNutritionFirstRun, mealHasFood } from '@/data/nutrition-live';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 import { useToast } from '@/hooks/useCeremony';
 import { useEntitlementState, useNutritionAccess, useTier } from '@/lib/entitlement';
@@ -94,6 +95,9 @@ export default function NutritionScreen() {
   const mayGoForward = canGoForward(iso, todayIso) || !!foodAhead;
   /* Any return to the tab re-reads — food logged on another screen has to be here when you come back. */
   useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
+  /* `Nutrition First Run.dc.html` — never touched the tab. Re-read on every return, so the first food
+     logged from the welcome brings the athlete back to Home. Unknown answers Home (`first-run.ts`). */
+  const { data: firstRun, settled: firstRunSettled } = useQuery(isNutritionFirstRun, [reloads]);
 
   /* Memoised before the two derived reads: `day?.entries ?? []` mints a new array on every render, which
      would make both useMemos below recompute every time (react-compiler flags exactly this). */
@@ -150,6 +154,25 @@ export default function NutritionScreen() {
               sign up for.
             </Text>
           </View>
+        ) : null}
+      </View>
+    );
+  }
+
+  /* Held until the first-run read answers once, so neither screen flashes before the other. `settled`
+     latches, so returning to the tab never blanks it again. */
+  if (!firstRunSettled || firstRun) {
+    return (
+      <View style={styles.screen}>
+        <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.22)' }} />
+        <AppBar
+          title="Nutrition"
+          transparent
+          avatar={<Avatar name={profile?.name ?? ''} src={profile?.avatarUrl ?? undefined} size="appBar" />}
+          onAvatar={() => router.push('/account-settings')}
+        />
+        {firstRun ? (
+          <NutritionFirstRun onLog={() => goLog()} onTargets={() => router.push('/nutrition-targets')} />
         ) : null}
       </View>
     );

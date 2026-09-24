@@ -3,6 +3,7 @@ import { localToday } from '@/domain/nutrition/day';
 import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
 import { opsFor, overlayDay, type OutboxOp } from '@/domain/nutrition/outbox';
+import { isFirstRun } from '@/domain/nutrition/first-run';
 import type { MealPlanPrefs } from '@/domain/nutrition/meal-plan-setup';
 import type { GroceryState } from '@/domain/nutrition/grocery';
 import { registerAll, type UserRecipe } from '@/domain/nutrition/user-recipes';
@@ -527,6 +528,25 @@ export async function hasFoodAfter(iso: string): Promise<boolean> {
     .limit(1);
   if (error) return false;
   return !!data?.length;
+}
+
+/**
+ * Should the tab open on Nutrition First Run? The rule is `isFirstRun` (tested); this only gathers its
+ * signals. No athlete answers false — the welcome is never a guess.
+ */
+export async function isNutritionFirstRun(): Promise<boolean> {
+  const id = await athleteId();
+  if (!id) return false;
+  const [startedBefore, held, entries, targets] = await Promise.all([
+    readCache<boolean>(id, 'started'),
+    heldOps(id),
+    supabase.from('food_log_entries').select('id').eq('athlete_id', id).limit(1),
+    supabase.from('nutrition_targets').select('athlete_id').eq('athlete_id', id).limit(1),
+  ]);
+  const anyEntry = entries.error ? null : !!entries.data?.length;
+  const anyTarget = targets.error ? null : !!targets.data?.length;
+  if (anyEntry || anyTarget) void writeCache(id, 'started', true);
+  return isFirstRun({ startedBefore: !!startedBefore, heldWrites: held.length, anyEntry, anyTarget });
 }
 
 /** Which meal "Copy yesterday" would fill — null when yesterday's slot was empty too. */
