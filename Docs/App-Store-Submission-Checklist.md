@@ -10,7 +10,7 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
 
 ## Where we are
 - **Waiting on others:** Apple (bank verification) · Apple (Small Business Program)
-- **PO to-do:** find a lawyer · decide if Nutrition ships in the first release · review the 40 recipes
+- **PO to-do:** find a lawyer · decide if Nutrition ships in the first release · write the recipes
 - **Claude to-do:** paywall code for the new plans → RevenueCat → build 9
 
 ## Pricing (Monetization Amendment 007, locked 2026-09-23)
@@ -75,8 +75,9 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
 - ✅ Food search — 09-24: real servings ("1 item"), fewer/better results + Show more, calories per serving,
   restaurant foods from FatSecret, retries USDA's random failures (OTA `01a0d4a7` + function rev 7+)
 - ✅ Confirm `FDC_API_KEY` in production + FatSecret console steps (Premier Free granted 09-23 — barcode + US data unlocked) — **done 2026-09-24**: IP allowlist + secrets set, token scope `basic premier barcode`, PO saw McDonald's Big Mac with real calories as Restaurant data
-- ⬜ PO reviews the 40 recipes (numbers, allergy tags, steps)
-- ⬜ More recipes — especially 15-minute meals and vegan
+- ✅ The 40 starter recipes removed — 09-24 (PO: writing their own; OTA `01a0d506`). Meal Plan now points to My Recipes
+- 🔨 PO's own recipes — send them to Claude (USDA numbers + allergy tags worked out) or add in My Recipes;
+  include 15-minute meals and vegan
 - ⬜ Gentle message for sustained under-eating (needs PO's wording) — **must-do before opening**
 - ⬜ Holt's 4 safety fixes (Coach Holt stress test, Decision Queue #36) — **must-do before opening**
 - ⬜ Privacy policy nutrition section — **must-do before opening**
