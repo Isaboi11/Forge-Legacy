@@ -398,18 +398,39 @@ function fsFood(food: Record<string, any>): Food | null {
   const id = String(food.food_id ?? '');
   // `food.get` returns every serving; `foods.search` returns a summary line instead. Prefer real servings.
   const list = food.servings?.serving;
-  const servings: Serving[] = (Array.isArray(list) ? list : list ? [list] : []).map((s: any) => ({
-    label: String(s.serving_description ?? '1 serving'),
-    grams: num(s.metric_serving_amount),
-  }));
-  const first = Array.isArray(list) ? list[0] : list;
-  if (!id || !food.food_name || !first) return null;
+  const all: Record<string, any>[] = Array.isArray(list) ? list : list ? [list] : [];
 
-  const grams = num(first.metric_serving_amount) ?? 100;
+  /*
+   * ⚠ PO, 2026-09-24: FatSecret's Big Mac opened as "1 serving · 0 calories". A serving without a
+   * weight cannot be turned into per-100 g, and the old code assumed 100 g and then offered a pill
+   * that weighed nothing. Now: the BASIS is the first serving that has calories AND a weight (oz
+   * converted, ml taken as g); a serving with calories but no weight is weighed from the basis's
+   * calories-per-gram; and a food with no calories anywhere is not offered at all. A 0-calorie Big Mac
+   * logs a lie.
+   */
+  const weight = (s: Record<string, any>): number | null => {
+    const n = num(s.metric_serving_amount);
+    if (n == null || n <= 0) return null;
+    return /^oz$/i.test(String(s.metric_serving_unit ?? '')) ? n * 28.3495 : n;
+  };
+  const basis = all.find((s) => num(s.calories) != null && weight(s) != null);
+  if (!id || !food.food_name || !basis) return null;
+  const grams = weight(basis)!;
+  const kcalPerGram = num(basis.calories)! / grams;
+
+  const servings: Serving[] = all
+    .map((s) => {
+      const kcal = num(s.calories);
+      const g = weight(s) ?? (kcal != null && kcalPerGram > 0 ? kcal / kcalPerGram : null);
+      return { label: String(s.serving_description ?? '1 serving'), grams: g != null ? Math.round(g * 10) / 10 : null };
+    })
+    .filter((s) => s.grams != null);
+
   const per100 = (v: unknown) => {
     const n = num(v);
-    return n == null || grams <= 0 ? null : (n * 100) / grams;
+    return n == null ? null : (n * 100) / grams;
   };
+  const first = basis;
 
   return {
     key: `fs:${id}`,
@@ -446,6 +467,9 @@ async function fatsecretSearch(query: string, limit: number): Promise<Food[]> {
   // ⚠ FatSecret reports errors INSIDE a 200 — code 21 is an IP not (yet) allowlisted, 14 a missing scope.
   if (body.error) console.log(`fatsecret search error: ${JSON.stringify(body.error).slice(0, 300)}`);
   const foods = body.foods_search?.results?.food ?? body.foods?.food ?? [];
+  // The shape of one raw result, so a mapping gap is readable in Logs rather than guessed at.
+  const one = Array.isArray(foods) ? foods[0] : foods;
+  if (one) console.log(`fatsecret sample: ${JSON.stringify(one).slice(0, 900)}`);
   return (Array.isArray(foods) ? foods : [foods]).map(fsFood).filter(Boolean) as Food[];
 }
 
@@ -597,7 +621,7 @@ const FS_TTL_MS = 24 * 60 * 60 * 1000;
 const fsExpiry = () => new Date(Date.now() - FS_TTL_MS).toISOString();
 
 /** Cached rows older than this hold grams-only or sibling-product servings (2026-09-24) and are re-fetched. */
-const SERVINGS_SINCE = '2026-09-24T19:30:00Z';
+const SERVINGS_SINCE = '2026-09-24T19:45:00Z';
 
 /** Drop every FatSecret row we are no longer licensed to hold. Cheap, indexed, and safe to over-call. */
 async function purgeStaleFatSecret(admin: ReturnType<typeof createClient>): Promise<void> {
@@ -722,6 +746,8 @@ Deno.serve(async (req) => {
       .select('key, source, source_id, name, brand, gtin, kcal_100, protein_100, carb_100, fat_100, servings, micros')
       .eq('key', key)
       .gte('fetched_at', fsExpiry())
+      // A row cached before the serving fixes may be the "1 serving · 0 calories" one — re-read it.
+      .gte('fetched_at', SERVINGS_SINCE)
       .maybeSingle();
 
     if (fresh) {
