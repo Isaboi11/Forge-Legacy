@@ -8,10 +8,10 @@
 --
 -- These are the 12 testers from `phase-f-1-grant-premium.sql`, by the same handles, PLUS the Apple review
 -- account `alex.review` (PO 2026-09-24): Apple must be able to find every product submitted for review,
--- and only a comped account is ever shown the Tester AI add-on. `sam.torres` stays out, so App Review
--- also has an account that sees Premium AI as the AI step instead.
+-- and only a comped account is ever shown the Tester AI add-on. `sam.torres` stays out. Apple sees the
+-- regular and Early Bird plans from a fresh sign-up, which is what the review notes should say.
 --
--- ⚠ MATCHED BY HANDLE. A misspelled handle marks nobody, silently — so the file asserts exactly 12 and
+-- ⚠ MATCHED BY HANDLE. A misspelled handle marks nobody, silently — so the file asserts exactly 13 and
 -- rolls back otherwise.
 
 begin;
