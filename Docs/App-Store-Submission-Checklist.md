@@ -11,7 +11,8 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
 ## Where we are
 - **Waiting on others:** Apple (bank verification) · Apple (Small Business Program)
 - **PO to-do:** find a lawyer · decide if Nutrition ships in the first release · write the recipes
-- **Claude to-do:** paywall code for the new plans → RevenueCat → build 9
+- **PO to-do (paywall, 09-24):** paste `pending-0214.sql` + `set-comped-testers-0214.sql` · deploy the `revenuecat-webhook` function · add the webhook in RevenueCat
+- **Claude to-do:** build 9 (paywall, mic, form check, barcode)
 
 ## Pricing (Monetization Amendment 007, locked 2026-09-23)
 | Who | Premium | Premium AI |
@@ -43,17 +44,25 @@ No lifetime plan. United States only at launch.
   - Forge Legacy Membership (4 regular) · Early Bird (4) · Tester AI (2)
   - ⛔ Never click "Add for Review" on them — they go in WITH build 9
   - ⛔ Never turn on "App Store Promotion" for Early Bird or Tester AI (shows them to everyone)
-- ⬜ Paywall code: Early Bird prices while spots last · Tester AI shown ONLY to the 14 testers ·
-  never offer a second group to someone already subscribed · remove the old $149 Founder offer
+- ✅ Paywall code — 09-24: Premium / Premium AI tabs, yearly first with the store's own prices + trial ·
+  Early Bird prices + spots left while they last · Tester AI shown ONLY to comped testers · never a second
+  group · Founder/Lifetime removed · Premium AI switch now admin-only. Our server picks the offer (`0214`).
+  Works on build 9 only; web and build 8 say "Plans aren't available on this device yet."
+  - ⬜ PO: paste `supabase/apply/pending-0214.sql`, then `supabase/apply/set-comped-testers-0214.sql`
+  - ⬜ PO: deploy Edge Function `revenuecat-webhook` with **Verify JWT OFF** · set secret `REVENUECAT_WEBHOOK_AUTH`
+  - ⬜ PO: RevenueCat → Integrations → Webhooks → URL of that function + the same secret as the Authorization header
+  - ⬜ PO decides: should one Apple review account also see Tester AI (so Apple can review that product)?
 - 🔨 RevenueCat — PO signed up 09-23
   - ✅ Project + iOS app (bundle ID `com.qest4.forgelegacy`) — 09-24
   - ✅ In-App Purchase key (.p8) uploaded to RevenueCat — 09-24 (Key ID `A8T8CTT9TS`).
     ⬜ Move the .p8 from Downloads to `Forge Legacy Documents` (personal OneDrive) — NEVER in the repo
   - ⬜ Enter the Small Business Program start date in RevenueCat (App settings) once Apple approves
   - ✅ RevenueCat email confirmed — 09-24 · ⬜ rename the project to "Forge Legacy" (it reads "Create an app called Forge Legacy LLC")
-  - ⬜ 10 products imported · entitlements `premium` + `coach_ai` · offerings for regular / Early Bird / Tester AI
-  - ⬜ Public iOS SDK key (`appl_…`) given to Claude — never the secret `sk_…` key or the .p8
-  - ⬜ Code: adapter in `src/lib/billing.ts` over `react-native-purchases` (native → build 9 only)
+  - ✅ 10 products added by hand · entitlements `premium` (8) + `coach_ai` (6) · offerings `default` (Current) / `early_bird` / `tester_ai` — 09-24 (Claude in Chrome)
+  - ⬜ Delete the leftover `$rc_monthly` / `$rc_annual` packages in `default` (Test Store only; the app ignores them)
+  - ⬜ Optional: App Store Connect API key in RevenueCat, so it can check the product IDs against Apple
+  - ✅ Public iOS SDK key (`appl_…`) given to Claude — 09-24 (in `src/lib/billing-store.native.ts`)
+  - ✅ Code: adapter over `react-native-purchases` 10.10.2 — 09-24 (`src/lib/billing-store.native.ts`; native → build 9 only)
 - ⬜ Referral reward: "1 month free" offer for a referrer who is already paying (referrer only)
 - ⬜ Review screenshot on each subscription (after the paywall is updated)
 - ⬜ Sandbox test: buy, force-quit, reinstall, restore

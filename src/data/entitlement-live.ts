@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Caps, Tier, Usage } from '@/domain/entitlement/caps-core';
+import type { OfferingId, PaywallOffer } from '@/domain/billing/plans-core';
 
 /**
  * The entitlement read (migration 0145).
@@ -204,6 +205,24 @@ export async function fetchCapConfig(): Promise<{ free: Caps; paid: Caps } | nul
     free: capsFrom(free as Record<string, unknown>),
     paid: capsFrom(paid as Record<string, unknown>),
   };
+}
+
+/**
+ * Which offering this athlete is shown, and how many Early Bird seats remain (0214, Amendment 007).
+ *
+ * ⚠ THE SERVER DECIDES, AND AN UNREADABLE ANSWER SELLS NOTHING. `null` (not applied yet, offline) draws
+ * no picker at all — guessing `default` would charge a comped tester full price, and guessing
+ * `early_bird` would sell a seat the server never counted.
+ */
+const OFFERINGS: readonly OfferingId[] = ['default', 'early_bird', 'tester_ai'];
+
+export async function fetchPaywallOffer(): Promise<PaywallOffer | null> {
+  const { data, error } = await supabase.rpc('my_paywall_offer');
+  if (error || !data || typeof data !== 'object') return null;
+  const d = data as Record<string, unknown>;
+  const offering = OFFERINGS.find((o) => o === d.offering) ?? null;
+  const seats = d.seatsRemaining == null ? null : Number(d.seatsRemaining);
+  return { offering, seatsRemaining: seats != null && Number.isFinite(seats) ? seats : null };
 }
 
 /** How many Founder seats are left. Null when it cannot be read — P8W-D5 hides the row rather than guess. */

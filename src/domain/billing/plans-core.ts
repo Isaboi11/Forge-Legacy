@@ -6,7 +6,7 @@
  * Every rule the P-8 wireframe spec calls out by decision number is a pure function of the plans the
  * store returned and the caps the server configured: which rows render, which one starts selected, what
  * the saving is, what each column of the comparison says. Those are the things that go quietly wrong —
- * a pre-selected lifetime, a saving computed against the wrong cadence, a "unlimited squads" claim the
+ * a trial the store never granted, a saving computed against the wrong cadence, a "unlimited squads" claim the
  * tier does not deliver — and they are invisible until money changes hands. `node --test` can prove them.
  *
  * ⚠ `@/` IS TYPE-ONLY IN DOMAIN CODE. A runtime `@/` import here breaks `node --test`. Relative `.ts`.
@@ -25,23 +25,82 @@
 
 import { UNLIMITED, usageLabel, type CapKey, type Caps, type Usage } from '../entitlement/caps-core.ts';
 
-// ── the four slots ───────────────────────────────────────────────────────────
+// ── the plans ────────────────────────────────────────────────────────────────
 
 /**
- * The plan rows P-8 can present at launch.
+ * What a plan row IS: a tier and a cadence. Monetization Amendment 006 (three plans, each containing the
+ * one below) and Amendment 007 (no lifetime, no Founder; Early Bird is the same plans, discounted).
  *
- * ⚠ A SLOT IS NOT A SKU. The store product identifiers live in the RevenueCat dashboard and never enter
- * `src/` — each one carries its price in its own name, so importing one would smuggle a price string
- * past the §9 grep. The adapter maps whatever the store returns onto these four slots by RevenueCat
- * *package*; the screen only ever knows the slot.
- *
- * Coach AI is deliberately absent (P8W-D9): it *requires* Premium, so listing it beside Premium would
- * present it as an alternative to the thing it depends on. It gets its own surface when it ships.
+ *   premium     — Premium.
+ *   premium_ai  — Premium AI: Premium plus the AI coach (grants BOTH entitlements, MA6-D3).
+ *   ai_addon    — the comped testers' AI add-on (MA7-D7). `coach_ai` only; their Premium is the comp.
  */
-export type PlanSlot = 'annual' | 'monthly' | 'founder' | 'lifetime';
+export type PlanTier = 'premium' | 'premium_ai' | 'ai_addon';
+export type Cadence = 'annual' | 'monthly';
 
-/** Presentation order (P8W-D2, P8W-D8). Annual leads; lifetime is last and never steered toward. */
-export const PLAN_ORDER: readonly PlanSlot[] = ['annual', 'monthly', 'founder', 'lifetime'];
+/**
+ * ⚠ A SLOT IS A REVENUECAT *PACKAGE* ID, AND NEVER A PRODUCT ID.
+ *
+ * The package ids are the same in every offering (Amendment 007, "RevenueCat layout"), so a regular plan
+ * and its Early Bird twin are one slot and the screen never learns which price list it is reading. The
+ * product ids carry their price in their name and stay in the RevenueCat dashboard — importing one would
+ * smuggle a price past the grep in `plans-core.test.mjs`.
+ */
+export type PlanSlot =
+  | 'premium_annual'
+  | 'premium_monthly'
+  | 'premium_ai_annual'
+  | 'premium_ai_monthly'
+  | 'ai_addon_annual'
+  | 'ai_addon_monthly';
+
+export const PLAN_SLOTS: readonly PlanSlot[] = [
+  'premium_annual',
+  'premium_monthly',
+  'premium_ai_annual',
+  'premium_ai_monthly',
+  'ai_addon_annual',
+  'ai_addon_monthly',
+];
+
+export function isPlanSlot(id: string): id is PlanSlot {
+  return (PLAN_SLOTS as readonly string[]).includes(id);
+}
+
+export function tierOf(slot: PlanSlot): PlanTier {
+  if (slot.startsWith('premium_ai_')) return 'premium_ai';
+  if (slot.startsWith('ai_addon_')) return 'ai_addon';
+  return 'premium';
+}
+
+export function cadenceOf(slot: PlanSlot): Cadence {
+  return slot.endsWith('_annual') ? 'annual' : 'monthly';
+}
+
+export function slotFor(tier: PlanTier, cadence: Cadence): PlanSlot {
+  return `${tier}_${cadence}` as PlanSlot;
+}
+
+/**
+ * Which RevenueCat offering this athlete is shown. **Decided by our server, never by the client and never
+ * by RevenueCat targeting** (Amendment 007) — `my_paywall_offer()`, migration 0214.
+ *
+ *   default     — the regular prices.
+ *   early_bird  — the first 100 (MA7-D3), while seats remain.
+ *   tester_ai   — the comped testers' AI add-on, and nobody else (MA7-D7).
+ */
+export type OfferingId = 'default' | 'early_bird' | 'tester_ai';
+
+export interface PaywallOffer {
+  /**
+   * `null` means nothing is for sale to this athlete. ⚠ Apple does not stop someone holding two
+   * subscriptions in two different groups, so the server answers null rather than offer a second group
+   * to anyone who already holds one.
+   */
+  offering: OfferingId | null;
+  /** Early Bird seats left. Only ever the server's own count; null when it could not be read. */
+  seatsRemaining: number | null;
+}
 
 export interface StorePlan {
   slot: PlanSlot;
@@ -56,67 +115,64 @@ export interface StorePlan {
   amount: number;
   /** ISO-4217. Two plans in different currencies cannot be compared, so they are not. */
   currency: string;
+  /**
+   * The free-trial length in days when the store says this product carries one (MA6-D11, MA7-D4), else
+   * null. Read from the store's introductory offer, never assumed from the cadence: a trial the store
+   * does not actually grant is a false claim beside the buy button.
+   */
+  trialDays: number | null;
 }
 
 /**
  * ⚠ MIRRORS `entitlement_config.founder_seats_total`, AND IS NOT A CAP.
  *
- * MA3-D16 says caps are server configuration because they will be re-tuned after the metered run. This
- * is the opposite kind of number: *"first 100"* is a public promise, MA3-D24 makes selling the 101st a
- * deceptive practice, and a promise that can be edited in a config row is not a promise. The server
- * still enforces it — `claim_founder_seat()` raises past the total — and `founder_seats_remaining()`
- * is what the athlete actually sees counting down. This constant exists only to render the denominator,
- * and `plans-core.test.mjs` reads 0145 and fails if the two ever disagree.
+ * The Early Bird seats keep their `founder_` names in the database (Amendment 007: only the product ids
+ * say `earlybird_`). *"First 100"* is a public promise, MA3-D24 makes selling the 101st a deceptive
+ * practice, and a promise that can be edited in a config row is not a promise. The server enforces it;
+ * this constant only renders the denominator, and `plans-core.test.mjs` reads 0145 and fails if the two
+ * ever disagree.
  */
-export const FOUNDER_SEATS_TOTAL = 100;
+export const EARLY_BIRD_SEATS_TOTAL = 100;
 
 // ── which rows render, and which one starts selected ─────────────────────────
 
 /**
- * The rows P-8 draws, in locked order.
- *
- * ⚠ THE FOUNDER ROW IS HIDDEN UNLESS THE COUNT IS BOTH READ AND POSITIVE (P8W-D5). `null` means the
- * server could not be asked — and an unverifiable scarcity claim is worse than no claim, so the row
- * does not render rather than render a guess. Zero means the seats are gone and the SKU is delisted.
- *
- * Duplicate slots collapse to the first: an offering misconfigured with two annual packages must not
- * draw two annual rows for the athlete to choose between.
+ * The cadence rows for one tier, yearly first (MA6-D10). Slots the offering did not contain do not
+ * render; duplicates collapse to the first, so a misconfigured offering cannot draw two yearly rows.
  */
-export function orderPlans(plans: readonly StorePlan[], founderSeatsRemaining: number | null): StorePlan[] {
-  const seen = new Set<PlanSlot>();
+export function rowsFor(plans: readonly StorePlan[], tier: PlanTier): StorePlan[] {
   const rows: StorePlan[] = [];
-
-  for (const slot of PLAN_ORDER) {
-    if (slot === 'founder' && !(typeof founderSeatsRemaining === 'number' && founderSeatsRemaining > 0)) continue;
-    const found = plans.find((p) => p.slot === slot && !seen.has(p.slot));
-    if (!found) continue;
-    seen.add(slot);
-    rows.push(found);
+  for (const cadence of ['annual', 'monthly'] as const) {
+    const found = plans.find((p) => p.slot === slotFor(tier, cadence));
+    if (found) rows.push(found);
   }
-
   return rows;
 }
 
 /**
- * What is selected on mount.
+ * The tiers this offering can sell, in ladder order. The tier switch on P-8 renders only these — a
+ * Premium AI tab over an offering with no Premium AI packages would be a door to nothing.
+ */
+export function tiersOn(plans: readonly StorePlan[]): PlanTier[] {
+  return (['premium', 'premium_ai', 'ai_addon'] as const).filter((t) => rowsFor(plans, t).length > 0);
+}
+
+/**
+ * What is selected when a tier is shown.
  *
- * ⚠ ANNUAL, EVERY TIME, AND NEVER LIFETIME OR FOUNDER (P8W-D2, P8W-D8). A pre-selected three-figure
- * one-off charge is a dark pattern — the large commitments are offered, not defaulted into. When annual
- * is missing the fallback is monthly, the other renewing cadence; when neither is there, nothing is
- * selected and the buy button has nothing to do.
+ * ⚠ YEARLY WHEN IT EXISTS (MA6-D10), MONTHLY OTHERWISE, NOTHING WHEN NEITHER — never a guess the buy
+ * button would then act on.
  */
 export function defaultSelection(rows: readonly StorePlan[]): PlanSlot | null {
-  if (rows.some((p) => p.slot === 'annual')) return 'annual';
-  if (rows.some((p) => p.slot === 'monthly')) return 'monthly';
-  return null;
+  return rows.find((p) => cadenceOf(p.slot) === 'annual')?.slot ?? rows[0]?.slot ?? null;
 }
 
 // ── the saving ───────────────────────────────────────────────────────────────
 
 /**
- * The annual saving against twelve months of monthly, as a whole percent (P8W-D3).
+ * The yearly saving against twelve months of monthly, as a whole percent (P8W-D3).
  *
- * ⚠ COMPUTED OR ABSENT — NEVER TYPED. "Save 36%" written as a literal is a price string in disguise: it
+ * ⚠ COMPUTED OR ABSENT — NEVER TYPED. A saving written as a literal is a price string in disguise: it
  * goes stale the moment a tier moves or a currency differs, and a wrong saving on a purchase screen is a
  * false claim about a transaction, not a copy bug.
  *
@@ -124,7 +180,7 @@ export function defaultSelection(rows: readonly StorePlan[]): PlanSlot | null {
  *  · either plan is missing, so there is nothing to compare
  *  · the two are priced in different currencies, where the ratio is meaningless
  *  · either amount is not a positive finite number
- *  · annual is not actually cheaper, in which case there is no saving to announce
+ *  · yearly is not actually cheaper, in which case there is no saving to announce
  */
 export function savingPercent(annual: StorePlan | undefined, monthly: StorePlan | undefined): number | null {
   if (!annual || !monthly) return null;
@@ -140,26 +196,46 @@ export function savingLabel(pct: number | null): string | null {
   return pct == null ? null : `Save ${pct}%`;
 }
 
+/** The saving for one tier's pair, straight from the rows the store returned. */
+export function tierSaving(plans: readonly StorePlan[], tier: PlanTier): string | null {
+  const rows = rowsFor(plans, tier);
+  return savingLabel(
+    savingPercent(
+      rows.find((p) => cadenceOf(p.slot) === 'annual'),
+      rows.find((p) => cadenceOf(p.slot) === 'monthly'),
+    ),
+  );
+}
+
 function isPositive(n: number): boolean {
   return Number.isFinite(n) && n > 0;
 }
 
 /** "68 of 100 left". Only ever called with a count the server actually returned (P8W-D5). */
-export function founderSeatLine(remaining: number): string {
-  return `${Math.max(0, Math.floor(remaining))} of ${FOUNDER_SEATS_TOTAL} left`;
+export function earlyBirdSeatLine(remaining: number): string {
+  return `${Math.max(0, Math.floor(remaining))} of ${EARLY_BIRD_SEATS_TOTAL} left`;
+}
+
+/** "7-day free trial", or nothing when the store granted none. */
+export function trialLabel(days: number | null): string | null {
+  return days != null && Number.isFinite(days) && days > 0 ? `${Math.round(days)}-day free trial` : null;
 }
 
 // ── locked copy ──────────────────────────────────────────────────────────────
 
 /**
- * ⚠ A LEGAL REQUIREMENT, NOT COPY (P8W-D4), AND IT SITS ABOVE THE BUY BUTTON.
+ * ⚠ WHAT THE BUYER DOES NOT GET, ABOVE THE BUY BUTTON (P8W-D4, re-expressed for Amendment 006).
  *
- * A buyer who pays for "lifetime" and later finds a feature needs another subscription is the classic
- * deceptive-practices fact pattern. Putting this in the terms instead of on the purchase surface is
- * exactly the failure the requirement exists to prevent. It renders in **every** Free state, not only
- * when Lifetime is selected — the athlete comparing plans is the one who needs it.
+ * P8W-D4's rule survives the ladder: a buyer who pays and later finds the feature they wanted is on
+ * another plan is the classic deceptive-practices fact pattern, and the terms are the wrong place to tell
+ * them. The old sentence ("…Coach AI is a separate subscription") described Amendment 003's add-on and is
+ * no longer true — AI is now the plan above, not a second purchase. Keyed by the tier being bought.
  */
-export const AI_DISCLOSURE = 'The app and your legacy, forever. Coach AI is a separate subscription.';
+export const TIER_DISCLOSURE: Record<PlanTier, string> = {
+  premium: 'Premium includes Basic Holt. Holt AI, the AI coach, is in Premium AI.',
+  premium_ai: 'Premium AI is everything in Premium, plus Holt AI.',
+  ai_addon: 'Adds Holt AI to the Premium you already have.',
+};
 
 /**
  * Never Charge For History, verbatim (Monetization Amendment 001 §2).
@@ -170,27 +246,36 @@ export const AI_DISCLOSURE = 'The app and your legacy, forever. Coach AI is a se
 export const REASSURANCE = 'Everything you’ve already built is yours — forever.';
 
 /**
- * Auto-renewal disclosure, shown only when a renewing plan is selected.
- *
- * Required before purchase for a subscription, and *false* for lifetime and Founder, which renew
- * nothing. Deliberately worded clear of the five claims `content.test.mjs` guards against — the sentence
- * that shipped to testers ("Your plan renews yearly. Billing is handled through your app store.") was
- * banned for asserting a subscription that did not exist, not for describing one that does.
+ * Auto-renewal disclosure. Every plan renews now (MA7-D1 withdrew the one-off purchases), so it renders
+ * beside every buy button. Deliberately worded clear of the five claims `content.test.mjs` guards against.
  */
 export const AUTO_RENEWAL_NOTE =
   'Subscriptions renew automatically until you cancel them in your App Store account.';
 
-/** True for the cadences that actually renew. Lifetime and Founder are one-off purchases. */
-export function renews(slot: PlanSlot | null): boolean {
-  return slot === 'annual' || slot === 'monthly';
-}
+/** Beside the buy button when the selected plan carries a trial (MA6-D11: the terms sit next to it). */
+export const TRIAL_NOTE = 'Cancel before the trial ends and you won’t be charged.';
 
-export const PLAN_COPY: Record<PlanSlot, { title: string; cadence: string; badge?: string }> = {
-  annual: { title: 'Annual', cadence: 'Billed yearly', badge: 'Best value' },
-  monthly: { title: 'Monthly', cadence: 'Billed monthly' },
-  founder: { title: 'Founder', cadence: 'One payment, Premium for life' },
-  lifetime: { title: 'Lifetime', cadence: 'One payment, Premium for life' },
+export const TIER_COPY: Record<PlanTier, { title: string }> = {
+  premium: { title: 'Premium' },
+  premium_ai: { title: 'Premium AI' },
+  ai_addon: { title: 'Holt AI add-on' },
 };
+
+export const CADENCE_COPY: Record<Cadence, { title: string; cadence: string; badge?: string }> = {
+  annual: { title: 'Yearly', cadence: 'Billed yearly', badge: 'Best value' },
+  monthly: { title: 'Monthly', cadence: 'Billed monthly' },
+};
+
+/**
+ * What Premium AI adds, as built today (P-8 §8: built features only). Holt AI answers and edits, and it
+ * reads a program from a photo. Form check waits on build 9 and photo food logging is unbuilt, so neither
+ * is listed. MA6-D4: an allowance, never "unlimited".
+ */
+export const AI_BENEFITS: readonly { title: string; detail: string }[] = [
+  { title: 'Holt AI', detail: 'Ask your coach anything in plain words, and have it change your plan for you.' },
+  { title: 'Import from a photo', detail: 'Snap a coach’s program and Holt AI reads it into the builder.' },
+];
+export const AI_ALLOWANCE_NOTE = 'Includes a generous monthly AI allowance.';
 
 // ── the comparison, the benefits, and the usage review ───────────────────────
 

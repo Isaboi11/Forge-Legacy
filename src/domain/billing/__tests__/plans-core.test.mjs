@@ -3,47 +3,59 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 import {
-  AI_DISCLOSURE,
+  AI_ALLOWANCE_NOTE,
+  AI_BENEFITS,
   AUTO_RENEWAL_NOTE,
   COMPARISON_KEYS,
-  FOUNDER_SEATS_TOTAL,
-  PLAN_ORDER,
+  EARLY_BIRD_SEATS_TOTAL,
+  PLAN_SLOTS,
   REASSURANCE,
+  TIER_DISCLOSURE,
+  TRIAL_NOTE,
+  cadenceOf,
   capPhrase,
   comparisonRows,
   defaultSelection,
-  founderSeatLine,
-  orderPlans,
+  earlyBirdSeatLine,
+  isPlanSlot,
   premiumBenefitLines,
   premiumPhrase,
-  renews,
+  rowsFor,
   savingLabel,
   savingPercent,
+  slotFor,
+  tierOf,
+  tierSaving,
+  tiersOn,
+  trialLabel,
   usageRows,
 } from '../plans-core.ts';
 
 /**
  * P-8's plan picker.
  *
- * Every rule the wireframe spec numbers — annual pre-selected, lifetime never pre-selected, the Founder
- * row hidden unless the count is real, the saving computed rather than typed, "5 squads" not "unlimited
+ * Every rule the wireframe spec numbers — yearly pre-selected, a trial only when the store grants one, the Early Bird
+ * count shown only when it is real, the saving computed rather than typed, "5 squads" not "unlimited
  * squads" — is a claim made on the screen that takes money. Being wrong about one of them is a false
  * statement about a commercial transaction, not a UI bug, so they are pinned here rather than trusted.
  */
 
-const plan = (slot, amount, currency = 'USD', priceLabel = `[${slot}]`, pricePerMonthLabel = null) => ({
+const plan = (slot, amount, currency = 'USD', trialDays = null) => ({
   slot,
-  priceLabel,
-  pricePerMonthLabel,
+  priceLabel: `[${slot}]`,
+  pricePerMonthLabel: null,
   amount,
   currency,
+  trialDays,
 });
 
-const ANNUAL = plan('annual', 99.99);
-const MONTHLY = plan('monthly', 12.99);
-const LIFETIME = plan('lifetime', 299);
-const FOUNDER = plan('founder', 149);
-const ALL = [LIFETIME, FOUNDER, MONTHLY, ANNUAL]; // deliberately out of order
+const P_ANNUAL = plan('premium_annual', 119.99, 'USD', 7);
+const P_MONTHLY = plan('premium_monthly', 14.99);
+const AI_ANNUAL = plan('premium_ai_annual', 169.99, 'USD', 7);
+const AI_MONTHLY = plan('premium_ai_monthly', 19.99);
+const ADDON_ANNUAL = plan('ai_addon_annual', 69.99, 'USD', 7);
+const ADDON_MONTHLY = plan('ai_addon_monthly', 7.99);
+const OFFERING = [AI_MONTHLY, P_MONTHLY, AI_ANNUAL, P_ANNUAL]; // deliberately out of order
 
 const FREE_CAPS = {
   programs: 3,
@@ -71,78 +83,95 @@ const PAID_CAPS = {
   holt_in_workout: -1,
 };
 
+// ── slots are RevenueCat package ids ─────────────────────────────────────────
+
+test('the six slots are exactly the package ids Amendment 007 configures', () => {
+  // The app reads PACKAGE ids, never product ids — the same six in every offering, so the regular and
+  // Early Bird twins are one slot each. A slot the dashboard does not use is a row that never renders.
+  const doc = readFileSync(
+    new URL('../../../../Docs/Amendments/Monetization-Architecture-Amendment-007-Early-Bird-No-Lifetime.md', import.meta.url),
+    'utf8',
+  );
+  for (const s of PLAN_SLOTS) assert.ok(doc.includes('`' + s + '`'), `package id ${s} is not in Amendment 007`);
+  assert.equal(PLAN_SLOTS.length, 6);
+});
+
+test('a slot is a tier and a cadence, and nothing else', () => {
+  assert.equal(tierOf('premium_annual'), 'premium');
+  assert.equal(tierOf('premium_ai_monthly'), 'premium_ai', 'not "premium" — the prefix overlaps');
+  assert.equal(tierOf('ai_addon_annual'), 'ai_addon');
+  assert.equal(cadenceOf('premium_ai_annual'), 'annual');
+  assert.equal(cadenceOf('ai_addon_monthly'), 'monthly');
+  assert.equal(slotFor('premium_ai', 'annual'), 'premium_ai_annual');
+  assert.ok(isPlanSlot('ai_addon_monthly'));
+  assert.ok(!isPlanSlot('$rc_annual'), 'RevenueCat default packages are not ours and never render');
+  assert.ok(!isPlanSlot('founder'), 'Founder was withdrawn (MA7-D1)');
+});
+
 // ── ordering and selection ───────────────────────────────────────────────────
 
-test('rows render in the locked order, whatever order the store returned them in', () => {
-  const rows = orderPlans(ALL, 68).map((p) => p.slot);
-  assert.deepEqual(rows, ['annual', 'monthly', 'founder', 'lifetime']);
-  assert.deepEqual(rows, [...PLAN_ORDER]);
+test('each tier shows yearly then monthly, whatever order the store returned (MA6-D10)', () => {
+  assert.deepEqual(rowsFor(OFFERING, 'premium').map((p) => p.slot), ['premium_annual', 'premium_monthly']);
+  assert.deepEqual(rowsFor(OFFERING, 'premium_ai').map((p) => p.slot), ['premium_ai_annual', 'premium_ai_monthly']);
+  assert.deepEqual(rowsFor(OFFERING, 'ai_addon'), []);
 });
 
-test('lifetime is last — the largest commitment is offered, never led with (P8W-D8)', () => {
-  const rows = orderPlans(ALL, 68).map((p) => p.slot);
-  assert.equal(rows[rows.length - 1], 'lifetime');
-  assert.equal(rows[0], 'annual');
+test('only the tiers the offering can sell get a tab', () => {
+  assert.deepEqual(tiersOn(OFFERING), ['premium', 'premium_ai']);
+  assert.deepEqual(tiersOn([ADDON_MONTHLY, ADDON_ANNUAL]), ['ai_addon']);
+  assert.deepEqual(tiersOn([AI_ANNUAL]), ['premium_ai'], 'an upgrade-only offer has no Premium tab');
+  assert.deepEqual(tiersOn([]), []);
 });
 
-test('the Founder row is hidden unless the seat count is BOTH read and positive (P8W-D5)', () => {
-  const slots = (seats) => orderPlans(ALL, seats).map((p) => p.slot);
-
-  // ⚠ null is "the server could not be asked", and it is the case that matters. An unverifiable scarcity
-  // claim is worse than no claim — and selling seat 101 is a deceptive practice, not a rounding error.
-  assert.ok(!slots(null).includes('founder'), 'unreadable count must not render a guess');
-  assert.ok(!slots(0).includes('founder'), 'seats gone — the SKU is delisted (MA3-D24)');
-  assert.ok(slots(1).includes('founder'), 'one seat left still renders');
-  assert.ok(slots(68).includes('founder'));
+test('a misconfigured offering with two yearly packages still draws one yearly row', () => {
+  const rows = rowsFor([P_ANNUAL, plan('premium_annual', 89.99), P_MONTHLY], 'premium');
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].amount, 119.99, 'the first one wins, deterministically');
 });
 
-test('a misconfigured offering with two annual packages still draws one annual row', () => {
-  const rows = orderPlans([ANNUAL, plan('annual', 89.99), MONTHLY], null);
-  assert.equal(rows.filter((p) => p.slot === 'annual').length, 1);
-  assert.equal(rows[0].amount, 99.99, 'the first one wins, deterministically');
-});
-
-test('slots the store did not return simply do not render', () => {
-  assert.deepEqual(orderPlans([MONTHLY], 68).map((p) => p.slot), ['monthly']);
-  assert.deepEqual(orderPlans([], 68), []);
-});
-
-test('annual is pre-selected on every mount, and lifetime never is (P8W-D2, P8W-D8)', () => {
-  assert.equal(defaultSelection(orderPlans(ALL, 68)), 'annual');
-
-  // A pre-selected three-figure one-off charge is a dark pattern. When annual is gone the fallback is the
-  // other renewing cadence — never the big one, and never Founder either.
-  assert.equal(defaultSelection(orderPlans([LIFETIME, FOUNDER, MONTHLY], 68)), 'monthly');
-  assert.equal(defaultSelection(orderPlans([LIFETIME, FOUNDER], 68)), null);
+test('yearly is pre-selected, monthly when it is missing, and nothing when neither is there', () => {
+  assert.equal(defaultSelection(rowsFor(OFFERING, 'premium')), 'premium_annual');
+  assert.equal(defaultSelection(rowsFor([AI_MONTHLY], 'premium_ai')), 'premium_ai_monthly');
   assert.equal(defaultSelection([]), null, 'nothing selected means the buy button has nothing to do');
 });
 
 // ── the saving ───────────────────────────────────────────────────────────────
 
-test('the annual saving is computed from platform prices (P8W-D3)', () => {
-  // 99.99 against 12 × 12.99 = 155.88 → 35.85%, rounded.
-  assert.equal(savingPercent(ANNUAL, MONTHLY), 36);
-  assert.equal(savingLabel(savingPercent(ANNUAL, MONTHLY)), 'Save 36%');
+test('the yearly saving is computed from platform prices (P8W-D3)', () => {
+  // 119.99 against 12 × 14.99 = 179.88 → 33.3%, rounded. 169.99 against 239.88 → 29.1%.
+  assert.equal(savingPercent(P_ANNUAL, P_MONTHLY), 33);
+  assert.equal(tierSaving(OFFERING, 'premium'), 'Save 33%');
+  assert.equal(tierSaving(OFFERING, 'premium_ai'), 'Save 29%');
+  assert.equal(tierSaving([P_ANNUAL], 'premium'), null, 'no monthly to compare against');
 });
 
 test('the saving renders NOTHING rather than a claim it cannot stand behind (P8W-D3)', () => {
-  assert.equal(savingPercent(undefined, MONTHLY), null, 'no annual price to compare');
-  assert.equal(savingPercent(ANNUAL, undefined), null, 'no monthly price to compare');
-  assert.equal(savingPercent(ANNUAL, plan('monthly', 12.99, 'EUR')), null, 'cross-currency ratio is meaningless');
-  assert.equal(savingPercent(ANNUAL, plan('monthly', 0)), null);
-  assert.equal(savingPercent(ANNUAL, plan('monthly', Number.NaN)), null);
-  assert.equal(savingPercent(plan('annual', 200), MONTHLY), null, 'annual dearer — there is no saving to announce');
-  assert.equal(savingPercent(plan('annual', 155.88), MONTHLY), null, 'exactly equal is not a saving');
+  assert.equal(savingPercent(undefined, P_MONTHLY), null);
+  assert.equal(savingPercent(P_ANNUAL, undefined), null);
+  assert.equal(savingPercent(P_ANNUAL, plan('premium_monthly', 14.99, 'EUR')), null, 'cross-currency ratio is meaningless');
+  assert.equal(savingPercent(P_ANNUAL, plan('premium_monthly', 0)), null);
+  assert.equal(savingPercent(P_ANNUAL, plan('premium_monthly', Number.NaN)), null);
+  assert.equal(savingPercent(plan('premium_annual', 200), P_MONTHLY), null, 'yearly dearer — no saving to announce');
+  assert.equal(savingPercent(plan('premium_annual', 179.88), P_MONTHLY), null, 'exactly equal is not a saving');
   assert.equal(savingLabel(null), null, 'and null renders nothing at all');
 });
 
-// ── the Founder counter ──────────────────────────────────────────────────────
+// ── the trial ────────────────────────────────────────────────────────────────
 
-test('the Founder denominator matches what the server actually enforces', () => {
+test('a trial is announced only when the store says the product carries one (MA6-D11)', () => {
+  assert.equal(trialLabel(7), '7-day free trial');
+  assert.equal(trialLabel(null), null, 'monthly plans have no trial and must not claim one');
+  assert.equal(trialLabel(0), null);
+  assert.equal(trialLabel(Number.NaN), null);
+});
+
+// ── the Early Bird counter ───────────────────────────────────────────────────
+
+test('the Early Bird denominator matches what the server actually enforces', () => {
   /*
    * ⚠ THE ONE NUMBER ON THIS SCREEN THAT IS A PROMISE RATHER THAN A CAP.
    *
-   * MA3-D24 makes selling the 101st seat a deceptive practice, and `claim_founder_seat()` raises past
+   * MA3-D24 makes selling the 101st seat a deceptive practice, and the seat claim raises past
    * `entitlement_config.founder_seats_total`. If the client's denominator ever drifts from the server's
    * total, "68 of 100 left" becomes a false scarcity claim — so this reads the migration rather than
    * trusting two numbers to stay equal by hand.
@@ -150,13 +179,13 @@ test('the Founder denominator matches what the server actually enforces', () => 
   const sql = readFileSync(new URL('../../../../supabase/migrations/0145_entitlement.sql', import.meta.url), 'utf8');
   const m = sql.match(/founder_seats_total\s+int\s+not\s+null\s+default\s+(\d+)/);
   assert.ok(m, 'founder_seats_total is no longer declared the way this guard reads it — re-check 0145');
-  assert.equal(Number(m[1]), FOUNDER_SEATS_TOTAL);
+  assert.equal(Number(m[1]), EARLY_BIRD_SEATS_TOTAL);
 });
 
 test('the seat line reads as the spec writes it', () => {
-  assert.equal(founderSeatLine(68), '68 of 100 left');
-  assert.equal(founderSeatLine(1), '1 of 100 left');
-  assert.equal(founderSeatLine(-3), '0 of 100 left', 'a nonsense count never renders as negative scarcity');
+  assert.equal(earlyBirdSeatLine(68), '68 of 100 left');
+  assert.equal(earlyBirdSeatLine(1), '1 of 100 left');
+  assert.equal(earlyBirdSeatLine(-3), '0 of 100 left', 'a nonsense count never renders as negative scarcity');
 });
 
 // ── the comparison table ─────────────────────────────────────────────────────
@@ -272,57 +301,69 @@ test('a raised one-shot allowance stops reading as a boolean', () => {
 
 // ── locked copy ──────────────────────────────────────────────────────────────
 
-test('the Coach AI disclosure is verbatim (P8W-D4)', () => {
-  // A legal requirement, not copy. A buyer who pays for "lifetime" and later finds a feature needs
-  // another subscription is the classic deceptive-practices fact pattern.
-  assert.equal(AI_DISCLOSURE, 'The app and your legacy, forever. Coach AI is a separate subscription.');
+test('each tier says what it does NOT include, above the buy button (P8W-D4 under Amendment 006)', () => {
+  // The Amendment 003 sentence ("Coach AI is a separate subscription") is no longer true: AI is the plan
+  // above, not a second purchase. The rule it served survives — the buyer learns what is missing before
+  // paying, on the purchase surface.
+  assert.match(TIER_DISCLOSURE.premium, /Holt AI/);
+  assert.match(TIER_DISCLOSURE.premium, /Premium AI/);
+  assert.ok(!/separate subscription/i.test(Object.values(TIER_DISCLOSURE).join(' ')));
+});
+
+test('Premium AI never promises unlimited AI, or a feature that is not built (MA6-D4, P-8 §8)', () => {
+  const text = [...AI_BENEFITS.map((b) => `${b.title} ${b.detail}`), AI_ALLOWANCE_NOTE].join(' ');
+  assert.ok(!/unlimited/i.test(text));
+  // Form check waits on build 9; photo food logging is unbuilt.
+  assert.ok(!/form check|film|meal from a photo|food/i.test(text));
 });
 
 test('Never Charge For History is restated identically, not paraphrased', () => {
   assert.equal(REASSURANCE, 'Everything you’ve already built is yours — forever.');
 });
 
-test('the auto-renewal note is clear of the five banned claims, and only shown where it is true', () => {
-  // The sentence that shipped to testers was banned for asserting a subscription that did not exist —
-  // not for describing one that does. Disclosing renewal terms before purchase is required; saying it of
-  // Lifetime or Founder, which renew nothing, would be false.
+test('the auto-renewal and trial notes are clear of the banned claims', () => {
   for (const claim of [/renews? yearly/i, /billing is handled/i, /next charge/i, /\bcancel at any time\b/i]) {
     assert.ok(!claim.test(AUTO_RENEWAL_NOTE), `auto-renewal note reuses a banned claim: ${claim}`);
+    assert.ok(!claim.test(TRIAL_NOTE), `trial note reuses a banned claim: ${claim}`);
   }
-  assert.equal(renews('annual'), true);
-  assert.equal(renews('monthly'), true);
-  assert.equal(renews('lifetime'), false);
-  assert.equal(renews('founder'), false);
-  assert.equal(renews(null), false);
 });
 
 // ── the §9 grep, as a test ───────────────────────────────────────────────────
 
-test('no price string is hardcoded anywhere in the P-8 surface (P-8 §80, §11.6)', () => {
+test('no price string or product id is hardcoded anywhere in the P-8 surface (P-8 §80, §11.6)', () => {
   /*
    * The wireframe's own validation list says to grep for every launch price and expect zero hits. Doing
    * it by hand is a step somebody skips; doing it here means the release cannot be cut with a stale price
-   * baked into the bundle. Six SKUs make a hardcoded price six times as likely to be wrong.
+   * baked into the bundle.
    *
-   * The SKU identifiers carry their price in their name (`premium_annual_9999`), which is why they live
-   * in the RevenueCat dashboard and are banned here too — importing one would smuggle a price past a
-   * grep that only looks for currency.
+   * The product ids carry their price in their name (`premium_annual_11999`), which is why they live in
+   * the RevenueCat dashboard and are banned here too — importing one would smuggle a price past a grep
+   * that only looks for currency. The PACKAGE ids (`premium_annual`) carry no price and are allowed.
    */
-  const files = ['../plans-core.ts', '../../../lib/billing.ts', '../../../app/subscription.tsx'];
+  const files = [
+    '../plans-core.ts',
+    '../../../lib/billing.ts',
+    '../../../lib/billing-store.native.ts',
+    '../../../lib/billing-store.ts',
+    '../../../app/subscription.tsx',
+  ];
   const banned = [
     { re: /\$\d/, why: 'a literal currency amount' },
     { re: /\b\d+\.99\b/, why: 'a launch price' },
-    { re: /premium_(monthly|annual|lifetime)_\d/, why: 'a SKU identifier, which carries its price' },
-    { re: /founder_lifetime_\d/, why: 'a SKU identifier, which carries its price' },
-    { re: /coach_ai_(monthly|annual)_\d/, why: 'a SKU identifier, which carries its price' },
-    // Amendment 006 (MA6-D2, MA6-D7): the Premium AI and Founder AI products.
-    { re: /premium_ai_(monthly|annual)_\d/, why: 'a SKU identifier, which carries its price' },
-    { re: /founder_ai_(monthly|annual)_\d/, why: 'a SKU identifier, which carries its price' },
+    { re: /premium_(monthly|annual|lifetime)_\d/, why: 'a product id, which carries its price' },
+    { re: /premium_ai_(monthly|annual)_\d/, why: 'a product id, which carries its price' },
+    // Amendment 007: the Early Bird and Tester AI products.
+    { re: /earlybird_premium(_ai)?_(monthly|annual)_\d/, why: 'a product id, which carries its price' },
+    { re: /testerai_(monthly|annual)_\d/, why: 'a product id, which carries its price' },
+    // Withdrawn or burned — must never come back.
+    { re: /founder_(lifetime|premium|ai)_/, why: 'a withdrawn product id (MA7-D1/D2)' },
+    { re: /tester_ai_(monthly|annual)_\d/, why: 'a burned product id (Amendment 007)' },
+    { re: /coach_ai_(monthly|annual)_\d/, why: 'a product id that must never be created' },
   ];
 
   for (const f of files) {
     const src = readFileSync(new URL(f, import.meta.url), 'utf8');
-    // Comments explain the rule and legitimately name the SKUs; the rule is about shipped code.
+    // Comments explain the rule and legitimately name the ids; the rule is about shipped code.
     const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     for (const { re, why } of banned) {
       assert.ok(!re.test(code), `${f} contains ${why} — ${re}`);

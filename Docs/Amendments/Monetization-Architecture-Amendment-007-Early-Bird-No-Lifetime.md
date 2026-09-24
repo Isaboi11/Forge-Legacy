@@ -90,7 +90,7 @@ The seat machinery keeps its `founder_` names (`claim_founder_seat()`, `founder_
 Map plans by RevenueCat **package**, never by product ID (unchanged rule; `plans-core.test.mjs` forbids
 product IDs in `src/`).
 
-## RevenueCat layout (set up 2026-09-23)
+## RevenueCat layout (planned 2026-09-23 · set up in the dashboard 2026-09-24)
 
 **Entitlements:** `premium` ← all 8 Premium/Premium AI products (regular + Early Bird) · `coach_ai` ← the 4
 Premium AI products (regular + Early Bird) and both Tester AI products. (MA6-D3: Premium AI grants both.)
@@ -105,7 +105,12 @@ Premium AI products (regular + Early Bird) and both Tester AI products. (MA6-D3:
 `tester_ai` offering: package `ai_addon_annual` → testerai_annual_6999 · `ai_addon_monthly` → testerai_monthly_799.
 Which offering a person sees is decided by our server, never by RevenueCat targeting alone.
 
-## Code impact (owed, not done)
+## Code impact (✅ written 2026-09-24 — ships with build 9; 0214 + the webhook still to be applied by the PO)
+
+Done: `plans-core.ts` (tier × cadence by package id), P-8 (`subscription.tsx`), `billing-store.native.ts` (RevenueCat),
+`0214_store_subscriptions.sql` (offer choice, webhook write path, Early Bird seats incl. MA7-D5 release),
+`supabase/functions/revenuecat-webhook`, and the forbidden-ID patterns. Still owed: P-8 wireframe, Launch
+Checklist §4.3, the landing page's pricing. The original list:
 
 - `src/domain/billing/plans-core.ts` — the `'founder'` slot is a one-time lifetime today (`renews` false);
   it becomes a set of renewing Early Bird plans. The `'lifetime'` slot is dead.

@@ -29,6 +29,7 @@ import { CoachBubble } from '@/components/forge/CoachBubble';
 import { KeyboardPrimerProvider } from '@/components/forge/KeyboardPrimer';
 import { OverlayBoundary } from '@/components/overlay-boundary';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { useStoreIdentity } from '@/lib/billing';
 import { ProfileProvider, useProfile } from '@/lib/profile';
 import { PushProvider } from '@/lib/push';
 import { SettingsProvider } from '@/lib/settings';
@@ -230,6 +231,8 @@ function RootNavigator() {
    * strips `join-squad` out of the tree and the `?code=` with it. See `lib/pending-invite.tsx`.
    */
   usePendingInvite(route);
+  // RevenueCat's user id = the signed-in athlete, so the purchase webhook knows whose row to write.
+  useStoreIdentity(session?.user?.id ?? null);
 
   if (route === 'splash') return <BootLoading />;
   return (

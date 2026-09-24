@@ -74,6 +74,7 @@ reinstall, or a tester needs one of these.
 | **Apple Watch companion, Phase 2/3 bridge** | `modules/watch-bridge/` native half | built, proven only in TypeScript |
 | **Barcode scanning (Log Food)** | `expo-camera` | barcode is TYPED for now; the camera path is not built |
 | **Scan a nutrition label (Create Food)** | `expo-camera` (same module) | not drawn, by choice, until the camera exists |
+| **Paywall: buying Premium / Premium AI** | `react-native-purchases` 10.10.2 (RevenueCat) | built 09-24, inert on build 8 (`billingAvailable()` false: "Plans aren't available on this device yet") |
 
 **When cutting build 9:** re-run `fingerprint:compare` afterwards, move the OTA lane to the new runtime,
 and keep build 8 fed until testers have reinstalled.
@@ -892,6 +893,10 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 ---
 
 ## ✅ Recently Completed (last ~20 milestones)
+
+### 0000000000000000000000. Paywall wired to RevenueCat (2026-09-24, Monetization · Amendment 007 · ✅ committed on `feat/route-map` · ⏳ **0214 NOT applied** · ⏳ **`revenuecat-webhook` NOT deployed** · ⏳ build 9 · 25/25 plans tests · 4245/4245 all tests · tsc 0 · lint clean)
+
+RevenueCat project set up by the PO + Claude in Chrome (10 products, `premium`/`coach_ai`, offerings `default`/`early_bird`/`tester_ai`). App: `plans-core.ts` is now tier × cadence keyed by RevenueCat PACKAGE id (Founder/Lifetime gone); P-8 shows Premium / Premium AI tabs, yearly first, the store's trial, Early Bird spots left; a Premium member is offered only the AI step in their own group; the Premium AI switch is admin-only. Server (`0214`): `my_paywall_offer()` picks the offering; `apply_store_event()` (called by the new `revenuecat-webhook` Edge Function) writes `store_subscriptions` → `athlete_entitlement`, claims the lowest free Early Bird seat on a production purchase or trial and gives it back when a trial ends unpaid; sandbox purchases grant access but never take a seat; a GRANT's Premium is never touched; `comped_tester` column + `set-comped-testers-0214.sql` (the 12). Every scenario was run against a local Postgres (PGlite) with 0145's tables copied verbatim. ⚠ Restore only re-syncs the store; if a purchase predates the webhook, the server row needs the event replayed from RevenueCat.
 
 ### 0000000000000000000000. Food search: fewer, better results, a real "1 item", and FatSecret wired in (2026-09-24, Nutrition · ✅ **`food-search` REVISION 7 DEPLOYED** by PO paste (probe 401 = live) · ✅ **OTA TO BUILD 8** iOS `01a0d4a7-51d3-7021-8312-f43ed3f26f96` (Android `01a0d4a7-51d3-7263…`) on runtime `47944f2e…`, fingerprint MATCHED build `3f67281b…`, manifest returned this id · commits `5c075772` (function) + `8d450b92` (app) on `feat/route-map`, app commit cherry-picked to `ota/build8-js` · 284/284 nutrition tests · tsc 0 · lint clean · **web NOT deployed** · ✅ **LATER SAME DAY: FatSecret LIVE** — PO saw McDonald's Big Mac with real calories as Restaurant data after four fixes (`2251bbd6` fallback + logs + USDA retry, `2b7860eb` premier scope, `bd33b31e` weightless servings); checklist line 78 ticked)
 
