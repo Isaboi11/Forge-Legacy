@@ -15,7 +15,12 @@ import {
 } from '../grocery.ts';
 import { GROCERY } from '../grocery-data.ts';
 import { cooksOf, feedsDay, planWeek } from '../meal-planner.ts';
-import { INGREDIENTS, RECIPE_SOURCES } from '../recipes-data.ts';
+import { INGREDIENTS } from '../recipes-data.ts';
+import { setForgeRecipes } from '../meal-planner.ts';
+// The app ships no Forge recipes since 2026-09-24; the planner is tested against the 40 retired ones.
+import { STARTER_RECIPES as RECIPE_SOURCES } from './fixtures/starter-recipes.ts';
+
+setForgeRecipes(RECIPE_SOURCES);
 
 const PREFS = { diet: 'anything', allergens: [], dislikes: [], meals: ['breakfast', 'lunch', 'dinner'], cookMinutes: null, household: 2, weeklyBudgetUsd: null };
 const TARGET = { kcal: 2500, protein: 180, carb: 270, fat: 80 };

@@ -299,6 +299,9 @@ export default function MealPlanScreen() {
 
   /* Locks + logged meals — everything a rebuild keeps (logged meals are frozen, Rules §3). */
   const keptCount = week && prefs ? Object.keys(keptLocks(week, prefs)).length : 0;
+  /* Nothing planned anywhere means the book is empty, not that the setup is wrong. Forge ships no recipes
+     since 2026-09-24, so say where recipes come from rather than "No lunch fits your setup" seven times. */
+  const weekEmpty = !!week && week.days.every((day) => day.items.length === 0);
 
   return (
     <View style={styles.screen}>
@@ -321,6 +324,14 @@ export default function MealPlanScreen() {
           </View>
           {prefs && target ? (
             <Text style={styles.lede}>{`Built around ${grouped(target.kcal)} cal a day · cooking for ${prefs.household}.`}</Text>
+          ) : null}
+          {weekEmpty ? (
+            <View style={styles.short}>
+              <Text style={styles.shortText}>No recipes to plan from yet.</Text>
+              <Pressable accessibilityRole="button" hitSlop={6} onPress={() => router.push('/my-recipes')}>
+                <Text style={styles.shortLink}>Add one in My Recipes</Text>
+              </Pressable>
+            </View>
           ) : null}
         </View>
 

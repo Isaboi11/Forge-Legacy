@@ -108,8 +108,8 @@ export function deriveRecipe(src: RecipeSource): Recipe {
   };
 }
 
-/** Forge's starter library. */
-export const RECIPES: readonly Recipe[] = RECIPE_SOURCES.map(deriveRecipe);
+/** Forge's own library — empty since 2026-09-24 until the PO's recipes land (`recipes-data.ts`). */
+export let RECIPES: readonly Recipe[] = RECIPE_SOURCES.map(deriveRecipe);
 
 /* ── the recipe book: Forge's recipes + the athlete's own ───────────────── */
 
@@ -158,6 +158,20 @@ const VIEW_BY_ID: Record<string, RecipeView> = Object.fromEntries(RECIPE_SOURCES
 let USER_RECIPES: Recipe[] = [];
 
 export const recipeView = (id: string): RecipeView | undefined => VIEW_BY_ID[id];
+
+/**
+ * Replace Forge's own library. The app never calls this (it ships `RECIPE_SOURCES`); the planner, grocery
+ * and recipe-view tests load the 40 retired starter recipes through it so they still plan from a real book.
+ */
+export function setForgeRecipes(sources: readonly RecipeSource[]): void {
+  for (const r of RECIPES) {
+    delete RECIPE_BY_ID[r.id];
+    delete VIEW_BY_ID[r.id];
+  }
+  RECIPES = sources.map(deriveRecipe);
+  for (const r of RECIPES) RECIPE_BY_ID[r.id] = r;
+  for (const s of sources) VIEW_BY_ID[s.id] = starterView(s);
+}
 
 /** Replace the athlete's recipes in the book. `plannable` are the ones the planner may pick. */
 export function registerUserRecipes(entries: { recipe: Recipe; view: RecipeView; plannable: boolean }[]): void {
@@ -448,6 +462,15 @@ export function planWeek({ prefs, target, seed, locked }: PlanInput): PlanDay[] 
         return;
       }
       const aim = (shares[s] ?? 0) * target.kcal;
+      /* ⚠ If every candidate is already on today's plate, the slot is left EMPTY and the day goes on. The
+         old loop just ended, reaching no complete day, so a one-recipe book (the PO's own, 2026-09-24,
+         after the starter 40 were removed) planned nothing at all. */
+      if (lists[i].every((r) => picks.some((x) => x?.r.id === r.id))) {
+        picks.push(null);
+        walk(i + 1, picks, t, pen, proteins);
+        picks.pop();
+        return;
+      }
       for (const r of lists[i]) {
         if (picks.some((x) => x?.r.id === r.id)) continue;
         const portion = bestPortion(r, aim);
