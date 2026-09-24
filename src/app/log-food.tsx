@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -92,6 +92,8 @@ export default function LogFoodScreen() {
      which fit under a keyboard in a sheet. It takes the meal and day so it can log what it creates. */
   const goCreateFood = () => router.push({ pathname: '/create-food', params: { date: iso, meal } });
 
+  /* Back from My Foods & Meals, a food or meal may have been edited or deleted — re-read the lists. */
+  useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
   const { data: recents } = useQuery(fetchRecentFoods, [reloads]);
   const { data: favorites } = useQuery(fetchFavorites, [reloads]);
   const { data: myFoods } = useQuery(fetchMyFoods, [reloads]);
@@ -252,6 +254,17 @@ export default function LogFoodScreen() {
         {!searching && rows.length === 0 && !(results == null && filter === 'meals' && (savedMeals ?? []).length) ? (
           <Text style={styles.empty}>{emptyCopy(filter, results, query)}</Text>
         ) : null}
+
+        {/* The door to My Foods & Meals — where these two lists are edited, deleted and (meals) built. */}
+        {results == null && (filter === 'mine' || filter === 'meals') ? (
+          <Pressable
+            accessibilityRole="button"
+            style={styles.more}
+            onPress={() => router.push({ pathname: '/my-foods', params: filter === 'meals' ? { tab: 'meals' } : {} })}
+          >
+            <Text style={styles.footerAction}>{filter === 'meals' ? 'Edit or build meals' : 'Edit or delete my foods'}</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
 
       {/* quiet secondary actions */}
@@ -400,7 +413,7 @@ function emptyCopy(filter: Filter, results: CatalogFood[] | null, query: string)
     case 'mine':
       return 'No foods of your own yet. Create Food adds one from a label.';
     case 'meals':
-      return 'No saved meals yet. Log a meal, then save it from Nutrition Home.';
+      return 'No saved meals yet. Build one below, or save a meal you already logged.';
     default:
       return 'Nothing logged yet. Search for a food to start.';
   }

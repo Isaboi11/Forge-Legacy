@@ -4,6 +4,7 @@ import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
 import { opsFor, overlayDay, type OutboxOp } from '@/domain/nutrition/outbox';
 import { isFirstRun } from '@/domain/nutrition/first-run';
+import type { SavedItemRow } from '@/domain/nutrition/my-foods';
 import type { MealPlanPrefs } from '@/domain/nutrition/meal-plan-setup';
 import type { GroceryState } from '@/domain/nutrition/grocery';
 import { registerAll, type UserRecipe } from '@/domain/nutrition/user-recipes';
@@ -589,10 +590,20 @@ export async function fetchRecentFoods(limit = 30): Promise<RecentFood[]> {
     .limit(limit * 4);
   if (error) return remembered<RecentFood[]>(id, `recents:${limit}`, error, () => [], []);
 
+  /* A custom food the athlete deleted in My Foods & Meals must not come back through Recent. Only asked
+     when a custom row is there to check; a failed read keeps them all rather than hiding real foods. */
+  const rows = (data ?? []) as Record<string, any>[];
+  let liveCustom: Set<string> | null = null;
+  if (rows.some((r) => r.source === 'custom')) {
+    const mine = await supabase.from('user_foods').select('id').eq('athlete_id', id);
+    if (!mine.error) liveCustom = new Set(((mine.data ?? []) as { id: string }[]).map((r) => r.id));
+  }
+
   const seen = new Set<string>();
   const out: RecentFood[] = [];
-  for (const r of (data ?? []) as Record<string, any>[]) {
+  for (const r of rows) {
     if (seen.has(r.source_key)) continue;
+    if (liveCustom && r.source === 'custom' && !liveCustom.has(r.source_key)) continue;
     seen.add(r.source_key);
     out.push({
       key: r.source_key,
@@ -790,6 +801,9 @@ export interface SavedMeal {
   name: string;
   kcal: number;
   itemCount: number;
+  /** Each food's name, for My Foods & Meals' row line. */
+  itemNames: string[];
+  createdAt: string;
 }
 
 export async function fetchSavedMeals(): Promise<SavedMeal[]> {
@@ -797,7 +811,7 @@ export async function fetchSavedMeals(): Promise<SavedMeal[]> {
   if (!id) return [];
   const { data, error } = await supabase
     .from('saved_meals')
-    .select('id, name, saved_meal_items(kcal)')
+    .select('id, name, created_at, saved_meal_items(kcal, name)')
     .eq('athlete_id', id)
     .order('name');
   return remembered<SavedMeal[]>(
@@ -806,22 +820,22 @@ export async function fetchSavedMeals(): Promise<SavedMeal[]> {
     error,
     () =>
       ((data ?? []) as Record<string, any>[]).map((r) => {
-        const items = (r.saved_meal_items ?? []) as { kcal: number }[];
+        const items = (r.saved_meal_items ?? []) as { kcal: number; name: string }[];
         return {
           id: r.id,
           name: r.name,
           kcal: Math.round(items.reduce((sum, i) => sum + Number(i.kcal), 0)),
           itemCount: items.length,
+          itemNames: items.map((i) => i.name),
+          createdAt: r.created_at ?? '',
         };
       }),
     [],
   );
 }
 
-/** Logging a saved meal writes every one of its foods into the day, in one tap. */
-export async function logSavedMeal(mealId: string, iso: string, meal: MealSlot): Promise<LogEntry[]> {
-  const id = await athleteId();
-  if (!id) return [];
+/** A saved meal's foods as the table holds them — what logging it writes, and what its editor opens on. */
+async function readSavedMealItems(id: string, mealId: string): Promise<Record<string, any>[]> {
   const columns = 'source, source_key, name, brand, serving_label, grams, quantity, kcal, protein, carb, fat';
   const read = (withMicros: boolean) =>
     supabase
@@ -834,13 +848,14 @@ export async function logSavedMeal(mealId: string, iso: string, meal: MealSlot):
     microsColumn = false;
     ({ data, error } = await read(false));
   }
-  const items = await remembered<Record<string, any>[]>(
-    id,
-    `savedMeal:${mealId}`,
-    error,
-    () => (data ?? []) as Record<string, any>[],
-    [],
-  );
+  return remembered<Record<string, any>[]>(id, `savedMeal:${mealId}`, error, () => (data ?? []) as Record<string, any>[], []);
+}
+
+/** Logging a saved meal writes every one of its foods into the day, in one tap. */
+export async function logSavedMeal(mealId: string, iso: string, meal: MealSlot): Promise<LogEntry[]> {
+  const id = await athleteId();
+  if (!id) return [];
+  const items = await readSavedMealItems(id, mealId);
   if (!items.length) return [];
 
   return addEntries(
@@ -923,6 +938,79 @@ export async function saveMealFromDay(name: string, iso: string, meal: MealSlot)
     ({ error: itemsError } = await supabase.from('saved_meal_items').insert(list.map((r) => item(r, false))));
   }
   if (itemsError) throw itemsError;
+}
+
+/** One saved meal's foods, for the editor in My Foods & Meals. */
+export async function fetchSavedMealItems(mealId: string): Promise<SavedItemRow[]> {
+  const id = await athleteId();
+  if (!id) return [];
+  return (await readSavedMealItems(id, mealId)) as SavedItemRow[];
+}
+
+/**
+ * Create or rewrite a saved meal from the editor.
+ *
+ * ⚠ **NEW ITEMS GO IN BEFORE OLD ONES COME OUT.** There is no transaction from the client, so a rewrite
+ * that deleted first and then failed to insert would leave the athlete's "Usual breakfast" EMPTY. This
+ * order can only fail toward a meal that briefly holds both lists, and the retry cleans that up.
+ *
+ * Days already logged are untouched: a diary row is a snapshot, not a pointer to the meal.
+ */
+export async function saveSavedMeal(mealId: string | null, name: string, rows: SavedItemRow[]): Promise<string> {
+  const id = await athleteId();
+  if (!id) throw new Error('Sign in to save a meal');
+
+  let target = mealId;
+  if (target) {
+    const { error } = await supabase.from('saved_meals').update({ name }).eq('id', target).eq('athlete_id', id);
+    if (error) throw error;
+  } else {
+    const { data, error } = await supabase.from('saved_meals').insert({ athlete_id: id, name }).select('id').single();
+    if (error || !data) throw error ?? new Error('The meal was not saved');
+    target = (data as { id: string }).id;
+  }
+
+  const item = (r: SavedItemRow, withMicros: boolean) => {
+    const { micros, ...rest } = r;
+    return { meal_id: target, ...rest, ...(withMicros ? { micros: micros ?? null } : {}) };
+  };
+  const wanted = microsColumn !== false;
+  let { data: added, error: insertError } = await supabase.from('saved_meal_items').insert(rows.map((r) => item(r, wanted))).select('id');
+  if (insertError && wanted && isMissingColumn(insertError)) {
+    microsColumn = false;
+    ({ data: added, error: insertError } = await supabase.from('saved_meal_items').insert(rows.map((r) => item(r, false))).select('id'));
+  }
+  if (insertError) throw insertError;
+
+  if (mealId) {
+    const keep = ((added ?? []) as { id: string }[]).map((r) => r.id);
+    let del = supabase.from('saved_meal_items').delete().eq('meal_id', mealId);
+    if (keep.length) del = del.not('id', 'in', `(${keep.join(',')})`);
+    const { error } = await del;
+    if (error) throw error;
+  }
+  return target as string;
+}
+
+/** Items cascade with the meal (0205). Days that logged it keep their rows. */
+export async function deleteSavedMeal(mealId: string): Promise<void> {
+  const id = await athleteId();
+  if (!id) return;
+  const { error } = await supabase.from('saved_meals').delete().eq('id', mealId).eq('athlete_id', id);
+  if (error) throw error;
+}
+
+/**
+ * Delete one of the athlete's own foods. It leaves search, My Foods and Favourites (a favourite is a
+ * pointer, and a pointer to nothing opens "this food is gone"). Diary rows and saved-meal items that
+ * used it are snapshots and keep their numbers.
+ */
+export async function deleteUserFood(foodId: string): Promise<void> {
+  const id = await athleteId();
+  if (!id) return;
+  const { error } = await supabase.from('user_foods').delete().eq('id', foodId).eq('athlete_id', id);
+  if (error) throw error;
+  await supabase.from('food_favorites').delete().eq('athlete_id', id).eq('food_key', foodId);
 }
 
 export interface UserFoodInput {
