@@ -11,7 +11,6 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
 ## Where we are
 - **Waiting on others:** Apple (bank verification) · Apple (Small Business Program)
 - **PO to-do:** find a lawyer · decide if Nutrition ships in the first release · write the recipes
-- **PO to-do (paywall, 09-24):** paste `pending-0214.sql` + `set-comped-testers-0214.sql` · deploy the `revenuecat-webhook` function · add the webhook in RevenueCat
 - **Claude to-do:** build 9 (paywall, mic, form check, barcode)
 
 ## Pricing (Monetization Amendment 007, locked 2026-09-23)
@@ -49,8 +48,9 @@ No lifetime plan. United States only at launch.
   group · Founder/Lifetime removed · Premium AI switch now admin-only. Our server picks the offer (`0214`).
   Works on build 9 only; web and build 8 say "Plans aren't available on this device yet."
   - ✅ `pending-0214.sql` applied 09-24 (0 · 0 · 0 · 100 · admins-only, as predicted) · ✅ `set-comped-testers-0214.sql` applied 09-24 (12 rows)
-  - ⬜ PO: deploy Edge Function `revenuecat-webhook` with **Verify JWT OFF** · set secret `REVENUECAT_WEBHOOK_AUTH`
-  - ⬜ PO: RevenueCat → Integrations → Webhooks → URL of that function + the same secret as the Authorization header
+  - ✅ Edge Function `revenuecat-webhook` deployed, Verify JWT OFF, secret `REVENUECAT_WEBHOOK_AUTH` set — 09-24
+    (⬜ delete the misspelled leftover secret `REVENUE_WEBHOOK_AUTH`; nothing uses it)
+  - ✅ RevenueCat webhook "Supabase entitlement" → that function — 09-24; test event returned 200 `{"outcome":"ignored"}`
   - ✅ PO 09-24: `alex.review` also sees Tester AI, so Apple can review that product (12 comped accounts: 11 testers + alex.review; `poop` was deleted)
 - 🔨 RevenueCat — PO signed up 09-23
   - ✅ Project + iOS app (bundle ID `com.qest4.forgelegacy`) — 09-24
