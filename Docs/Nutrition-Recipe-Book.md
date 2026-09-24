@@ -41,7 +41,7 @@ the poster's beef bacon.
 **Poster said:** 573 cal · 51 P. **Ours:** 653 cal · 53 P. Most of the gap is sun-dried tomatoes
 packed in oil, and USDA's "low fat" cream cheese being richer than a UK/AU "light" one.
 - **Stand-in:** Italian herbs = dried oregano (USDA has no blend).
-- Sodium is high (4 tsp salt across 8 servings, as the source has it). Worth cutting to 2–3 tsp?
+- Salt halved to 2 tsp for the batch (the source has 4). PO's call, 2026-09-24.
 - Keeps 3 days. Reheats great, so it can feed a later lunch.
 - **Batch (8):** 1400 g chicken breast · 350 g dry basmati · 450 g skim milk · 110 g parmesan ·
   190 g light cream cheese · 25 g light butter · 40 g garlic · 90 g white + 200 g red onion ·

@@ -288,9 +288,10 @@ export const RECIPE_SOURCES: readonly RecipeSource[] = [
     name: "Chicken Alfredo sheet-pan rice", minutes: 60, batch: true, equipment: ["Large sheet pan"],
     // Batch of 8: 1400 g chicken breast, 350 g dry rice, 450 g skim milk, 110 g parmesan, 190 g light cream cheese,
     // 25 g light butter, 40 g garlic, 90 g white + 200 g red onion, 200 g sun-dried tomatoes, 40 g olive oil,
-    // a handful of parsley, and the spices (4 tsp salt, 10 tsp Italian herbs, 5 tsp paprika…).
+    // a handful of parsley, and the spices (2 tsp salt — halved from the source's 4 at the PO's call, 2026-09-24 —
+    // 10 tsp Italian herbs, 5 tsp paprika…).
     ingredients: [
-      ['chicken_breast', 175], ['olive_oil', 5], ['salt', 3], ['italian_herbs', 1.25], ['parsley_dried', 0.25], ['garlic_powder', 1.55],
+      ['chicken_breast', 175], ['olive_oil', 5], ['salt', 1.5], ['italian_herbs', 1.25], ['parsley_dried', 0.25], ['garlic_powder', 1.55],
       ['onion_powder', 1.2], ['paprika', 1.44], ['chili_flakes', 0.56], ['light_butter', 3], ['garlic', 5], ['onion', 36],
       ['skim_milk', 56], ['parmesan', 14], ['light_cream_cheese', 24], ['white_rice', 44], ['sundried_tomatoes', 25], ['parsley', 4],
     ],
