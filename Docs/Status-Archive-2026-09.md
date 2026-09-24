@@ -4,6 +4,19 @@ Overflow from `Forge-Legacy-Master-Status.md` § Recently Completed, moved **ver
 
 ---
 
+### 0. ⭐ Tap a superset exercise and its sets open right there — see and change every set without leaving the pairing (2026-09-12, Active Workout — **W9-Amendment-014 LOCKED** (amends W9-A4-D4) · commit `c1fed35` on `feat/route-map` (**not pushed**) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a0958c-cd98-75ff-9e41-dfd6e0fe3ae0` on runtime `47944f2e…` (fingerprint MATCHED `3f67281b…` first; manifest returned it to a build-8 iOS client), Android `01a0958c-cd98-7510…`; picked as `e585d7b` on `ota/build8-js` (**not pushed**; tsc 0; 3,407/3,407 there, 3,456/3,456 on main) · no migration · ⛔ **WEB NOT DEPLOYED** · ⏳ **NOT SEEN BY A HUMAN**)
+
+PO, mid-superset: *"touch one of the workouts and it expands into the full card … so I can see and adjust all sets"*;
+asked in place vs its own card, chose **in place**. ⚠ **THE FEATURE ALREADY EXISTED AND WAS UNUSABLE TWICE OVER** — since
+`260e7f3` (Aug 9) only the member's *name text* opened it, with nothing drawn to say so, and the card it opened showed **no
+set table**: the table's guard was still `isSuperset` (`4fb0ae4`, Aug 3) when `260e7f3` moved the hero's to `ssFused`.
+Now the whole row (tag, name, goal) toggles the member's table open inside the superset card; chevron turns; Log Set stays
+its own tap; one member at a time; "Open full card" keeps the old drill-down (which now shows its sets). The table is one
+component, `SetTable`, drawn in both places and keyed by exercise index throughout (the value-pop and fuse had closed over
+`exIdx`); the inline copy drops its own card + the tour anchors and borrows 10pt of card padding so six fixed cells fit at
+360pt (a test does that arithmetic on the live styles). ⚠ **One-member Add Set / trash now re-state `groupRounds`**
+(`syncSupersetRounds`) — only "+ Round" did, so a 4-set row beside a 3-set press would have saved and templated as 3 rounds.
+
 ### 0. ⭐ A rower reads in metres by default — Preferences: Meters | Miles (2026-09-11, cardio units · commit `05e5a0b` on `feat/route-map` (pushed) · ✅ **OTA TO BUILD 8 VERIFIED** iOS `01a09197-b488-7f40-a937-43472e255a23` on runtime `47944f2e…` (fingerprint MATCHED `3f67281b…`; manifest returned it), Android `01a09197-b488-730c…`; picked onto `ota/build8-js` (pushed; tsc 0; 3,395/3,395 there, 3,441/3,441 on main) · no migration (`app_prefs` is jsonb) · ⛔ **WEB NOT DEPLOYED** · ⏳ **NOT SEEN BY A HUMAN**)
 
 PO: *"default meters"*. `distanceUnitFor(activity, metric, rowUnit = 'm')` — a rower is metres in either system;
