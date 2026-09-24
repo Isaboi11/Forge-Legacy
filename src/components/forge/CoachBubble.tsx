@@ -7,7 +7,7 @@ import { flColor } from '@/constants/foundation';
 
 import { hasMetHolt } from '@/lib/coach-thread';
 import { useCoachDoor } from '@/hooks/useCoachDoor';
-import { loadProgramDraft } from '@/lib/program-draft';
+import { clearProgramDraft, loadDraftTold, loadProgramDraft, setDraftTold } from '@/lib/program-draft';
 import { useCeremony } from '@/hooks/useCeremony';
 import { useTour } from '@/hooks/useTour';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
@@ -114,6 +114,16 @@ export function CoachBubble() {
    * the one line that was actually shown.
    */
   const [seenDraft, setSeenDraft] = useState<string | null>(null);
+  /*
+   * Where the draft lives, so the tap can open it. PO, 2026-09-24: *"When I click on coach holt though it
+   * doesn't show the program."* The tap opened the generic chat, which knows nothing about the draft — the
+   * coach mentioned a program and then could not show it. An edit/duplicate session only resumes when the
+   * builder is entered with the same `o`/`id` it was started with (a bare entry throws it away), so both
+   * are carried here.
+   */
+  const [draftRoute, setDraftRoute] = useState<{ o?: string; id?: string }>({});
+  /** The draft sheet — open with the name it was opened about, closed at `null`. */
+  const [draftSheet, setDraftSheet] = useState<string | null>(null);
 
   /*
    * ══ AN INTRODUCTION IS THE ONE GENERIC LINE THAT EARNS ITS PLACE ══
@@ -189,12 +199,21 @@ export function CoachBubble() {
   useEffect(() => {
     if (!HOME_SURFACES.has(pathname)) return;
     let alive = true;
-    void loadProgramDraft().then((d) => {
+    void Promise.all([loadProgramDraft(), loadDraftTold()]).then(([d, told]) => {
       if (!alive) return;
       const hasContent = d?.days?.some((day) => day.main.length > 0) ?? false;
+      const name = hasContent && d?.name ? d.name : null;
+      /* No draft any more (saved or discarded) — forget the "told" mark, so a later draft that happens to
+         share the name is still news. */
+      if (!name && told) void setDraftTold(null);
+      /* Both set in one pass, so the line never flashes before the "already told" mark arrives. */
+      setSeenDraft(told);
       /* ⚠ SET TO NULL, NOT MERELY LEFT ALONE. The old read could only ever turn the line ON — there was
          no branch that took it back down — so even re-reading would not have cleared a saved draft. */
-      setDraftName(hasContent && d?.name ? d.name : null);
+      setDraftName(name);
+      setDraftRoute(
+        d && (d.mode === 'edit' || d.mode === 'dup') && d.srcId ? { o: d.mode, id: d.srcId } : {},
+      );
     });
     return () => {
       alive = false;
@@ -223,7 +242,8 @@ export function CoachBubble() {
     /*
      * ⚠ THE TAP ANSWERS WHATEVER HE ACTUALLY SAID. If the line on screen is an invitation, opening the
      * generic chat sheet would be the coach ignoring his own sentence — the PO asked for the opposite:
-     * *"have him prompt your way there."* The introduction and the draft teaser still open the sheet.
+     * *"have him prompt your way there."* The draft teaser opens its own sheet the same way; only the
+     * introduction opens the chat.
      */
     if (!introducing && !teaser && nudge) {
       setNudgeOpen(true);
@@ -232,13 +252,35 @@ export function CoachBubble() {
          the seven-day gap out every time somebody opens the sheet to read the line properly. */
       return;
     }
+    /* ⚠ THE DRAFT LINE OPENS THE DRAFT, not the generic chat — see `draftRoute`. */
+    if (!introducing && teaser && draftName) {
+      retireDraftLine();
+      setDraftSheet(draftName);
+      return;
+    }
     setMet(true);
-    /* THE TAP IS THE ANSWER, so the line is spent by it. Leaving it up meant closing the sheet and being
-       told the same thing again by the coach you had just been talking to — which is the definition of
-       the nag §3.5 forbids. Whether they act on the draft is their business; being informed of it is
-       something that has now definitively happened. */
-    setSeenDraft(draftName);
     openSheet();
+  };
+
+  /*
+   * THE TAP OR THE X IS THE ANSWER, so the line is spent by it — and spent for good, not for this launch
+   * (see `setDraftTold`). Whether they act on the draft is their business; being informed of it is
+   * something that has now definitively happened.
+   */
+  const retireDraftLine = () => {
+    setSeenDraft(draftName);
+    void setDraftTold(draftName);
+  };
+
+  const openDraft = () => {
+    setDraftSheet(null);
+    router.push({ pathname: '/program-builder', params: draftRoute });
+  };
+
+  const discardDraft = () => {
+    setDraftSheet(null);
+    setDraftName(null);
+    void clearProgramDraft().then(() => setDraftTold(null));
   };
 
   /* DERIVED, not a second piece of state — the line is simply the fact, minus the ones already told. */
@@ -368,12 +410,31 @@ export function CoachBubble() {
         </BottomSheet>
       ) : null}
 
+      {/* The draft he mentioned — open it, or let it go. Swiping away keeps it (the builder still has it). */}
+      <BottomSheet open={draftSheet !== null} onClose={() => setDraftSheet(null)} title="Coach Holt">
+        <Text style={styles.nudgeLine}>
+          {draftSheet} is still in the builder. Pick up where you left off, or discard it for good.
+        </Text>
+        <View style={styles.nudgeActions}>
+          <Button variant="primary" fullWidth onPress={openDraft} accessibilityLabel="Open the program">
+            Open it
+          </Button>
+          <Button variant="destructive" fullWidth onPress={discardDraft} accessibilityLabel="Discard the program">
+            Discard
+          </Button>
+          <Button variant="text" fullWidth onPress={() => setDraftSheet(null)} accessibilityLabel="Not now">
+            Not now
+          </Button>
+        </View>
+      </BottomSheet>
+
       {/* Placement is the caller’s: 18px above the tab bar, 20 from the right edge (PROMPT §3.1). The
           Active Workout mounts the same component at its own height, above its action bar. */}
       <CoachSays
       line={line}
       named={introducing}
       onPress={openCoach}
+      onDismiss={!introducing && teaser ? retireDraftLine : undefined}
       openLabel="Open Coach Holt"
       style={{ bottom: 96 + insets.bottom, right: 20 }}
     />

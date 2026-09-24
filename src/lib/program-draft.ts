@@ -57,3 +57,32 @@ export async function clearProgramDraft(kind: DraftKind = 'program'): Promise<vo
     // best-effort
   }
 }
+
+/**
+ * Which program draft Coach Holt has already told the athlete about — by NAME.
+ *
+ * ⚠ PERSISTED, NOT COMPONENT STATE. PO, 2026-09-24: *"Every time I open the app a text bubble is there
+ * saying '8-week run and lift block is still sitting in the builder'… i keep exiting out of that text
+ * bubble but he keeps saying it."* The "already told" mark lived in `useState`, so every launch forgot
+ * it while the draft itself (AsyncStorage) survived — once-per-draft became once-per-launch.
+ *
+ * Cleared by the bubble when it sees no draft, so a later draft with the same name is still news.
+ */
+const TOLD_KEY = 'forge_program_draft_told_v1';
+
+export async function loadDraftTold(): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(TOLD_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export async function setDraftTold(name: string | null): Promise<void> {
+  try {
+    if (name) await AsyncStorage.setItem(TOLD_KEY, name);
+    else await AsyncStorage.removeItem(TOLD_KEY);
+  } catch {
+    // best-effort — worst case he says it once more
+  }
+}
