@@ -54,6 +54,9 @@ export const INGREDIENTS = {
   arugula: { fdcId: 169387, name: "Rocket (arugula)", kcal: 25, protein: 2.58, fat: 0.66, carb: 3.65, allergens: [], diet: "plant", us: { kind: 'cup', grams: 20 } },
   avocado: { fdcId: 171706, name: "Avocado", kcal: 167, protein: 1.96, fat: 15.41, carb: 8.64, allergens: [], diet: "plant", us: { kind: 'each', grams: 136, one: "avocado", many: "avocados" } },
   bagel: { fdcId: 174899, name: "Plain bagel", kcal: 264, protein: 10.56, fat: 1.32, carb: 52.38, allergens: ["gluten", "sesame"], diet: "plant", us: { kind: 'each', grams: 105, one: "bagel", many: "bagels" } },
+  // ⚠ STAND-IN (2026-09-24): SR Legacy has no bagel thin or low-carb bagel. Wheat bagel (167533) at a
+  // bagel thin's weight, 46 g — same dough, half the bagel. Replace when a thin is sourced.
+  bagel_thin: { fdcId: 167533, name: "Bagel thin", kcal: 250, protein: 10.2, fat: 1.53, carb: 48.89, allergens: ["gluten"], diet: "plant", us: { kind: 'each', grams: 46, one: "bagel thin", many: "bagel thins" } },
   banana: { fdcId: 173944, name: "Banana", kcal: 89, protein: 1.09, fat: 0.33, carb: 22.84, allergens: [], diet: "plant", us: { kind: 'each', grams: 118, one: "medium banana", many: "medium bananas" } },
   barley: { fdcId: 170284, name: "Pearl barley, dry", kcal: 352, protein: 9.91, fat: 1.16, carb: 77.72, allergens: ["gluten"], diet: "plant", us: { kind: 'cup', grams: 200 } },
   beef_jerky: { fdcId: 167536, name: "Beef jerky", kcal: 410, protein: 33.2, fat: 25.6, carb: 11, allergens: ["soy", "gluten"], diet: "meat", us: { kind: 'oz' } },
@@ -78,6 +81,8 @@ export const INGREDIENTS = {
   cinnamon: { fdcId: 171320, name: "Ground cinnamon", kcal: 247, protein: 3.99, fat: 1.24, carb: 80.59, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 2.6 } },
   coconut_milk: { fdcId: 170173, name: "Coconut milk, canned", kcal: 197, protein: 2.02, fat: 21.33, carb: 2.81, allergens: [], diet: "plant", us: { kind: 'cup', grams: 226 } },
   cod: { fdcId: 171955, name: "Cod fillet", kcal: 82, protein: 17.81, fat: 0.67, carb: 0, allergens: ["fish"], diet: "fish", us: { kind: 'oz' } },
+  cheddar_slice: { fdcId: 170899, name: "Cheddar, sliced", kcal: 410, protein: 24.25, fat: 33.82, carb: 2.13, allergens: ["dairy"], diet: "animal", us: { kind: 'each', grams: 21, one: "slice", many: "slices" } },
+  cottage_cheese_nonfat: { fdcId: 172181, name: "Cottage cheese, fat-free", kcal: 72, protein: 10.34, fat: 0.29, carb: 6.66, allergens: ["dairy"], diet: "animal", us: { kind: 'cup', grams: 145 } },
   cottage_cheese: { fdcId: 172182, name: "Cottage cheese, 2%", kcal: 81, protein: 10.45, fat: 2.27, carb: 4.76, allergens: ["dairy"], diet: "animal", us: { kind: 'cup', grams: 226 } },
   cream_cheese: { fdcId: 173418, name: "Cream cheese", kcal: 350, protein: 6.15, fat: 34.44, carb: 5.52, allergens: ["dairy"], diet: "animal", us: { kind: 'tsp', grams: 4.83 } },
   cucumber: { fdcId: 168409, name: "Cucumber", kcal: 15, protein: 0.65, fat: 0.11, carb: 3.63, allergens: [], diet: "plant", us: { kind: 'cup', grams: 104 } },
@@ -85,10 +90,12 @@ export const INGREDIENTS = {
   curry_powder: { fdcId: 170924, name: "Curry powder", kcal: 325, protein: 14.29, fat: 14.01, carb: 55.83, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 2 } },
   deli_turkey: { fdcId: 172941, name: "Sliced turkey breast", kcal: 106, protein: 14.81, fat: 3.77, carb: 2.2, allergens: [], diet: "meat", us: { kind: 'each', grams: 16, one: "slice", many: "slices" } },
   edamame: { fdcId: 168411, name: "Edamame, shelled", kcal: 121, protein: 11.91, fat: 5.2, carb: 8.91, allergens: ["soy"], diet: "plant", us: { kind: 'cup', grams: 155 } },
+  egg_white: { fdcId: 172183, name: "Egg whites", kcal: 52, protein: 10.9, fat: 0.17, carb: 0.73, allergens: ["eggs"], diet: "animal", us: { kind: 'cup', grams: 243 } },
   egg: { fdcId: 171287, name: "Eggs", kcal: 143, protein: 12.56, fat: 9.51, carb: 0.72, allergens: ["eggs"], diet: "animal", us: { kind: 'each', grams: 50, one: "large egg", many: "large eggs" } },
   feta: { fdcId: 173420, name: "Feta, crumbled", kcal: 265, protein: 14.21, fat: 21.49, carb: 3.88, allergens: ["dairy"], diet: "animal", us: { kind: 'cup', grams: 150 } },
   flour: { fdcId: 168894, name: "All-purpose flour", kcal: 364, protein: 10.33, fat: 0.98, carb: 76.31, allergens: ["gluten"], diet: "plant", us: { kind: 'cup', grams: 125 } },
   flour_tortilla: { fdcId: 175037, name: "Flour tortilla (10-inch)", kcal: 306, protein: 8.2, fat: 7.99, carb: 49.38, allergens: ["gluten"], diet: "plant", us: { kind: 'each', grams: 72, one: "tortilla", many: "tortillas" } },
+  garlic_powder: { fdcId: 171325, name: "Garlic powder", kcal: 331, protein: 16.55, fat: 0.73, carb: 72.73, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 3.1 } },
   garlic: { fdcId: 169230, name: "Garlic", kcal: 149, protein: 6.36, fat: 0.5, carb: 33.06, allergens: [], diet: "plant", us: { kind: 'each', grams: 3, one: "clove", many: "cloves" } },
   ginger: { fdcId: 169231, name: "Fresh ginger, grated", kcal: 80, protein: 1.82, fat: 0.75, carb: 17.77, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 2 } },
   granola: { fdcId: 171646, name: "Granola", kcal: 489, protein: 13.67, fat: 24.31, carb: 53.88, allergens: ["gluten", "tree_nuts"], diet: "plant", us: { kind: 'cup', grams: 122 } },
@@ -110,10 +117,33 @@ export const INGREDIENTS = {
   mushrooms: { fdcId: 169251, name: "Mushrooms, sliced", kcal: 22, protein: 3.09, fat: 0.34, carb: 3.26, allergens: [], diet: "plant", us: { kind: 'cup', grams: 70 } },
   oats: { fdcId: 173904, name: "Rolled oats", kcal: 379, protein: 13.15, fat: 6.52, carb: 67.7, allergens: ["gluten"], diet: "plant", us: { kind: 'cup', grams: 81 } },
   olive_oil: { fdcId: 171413, name: "Olive oil", kcal: 884, protein: 0, fat: 100, carb: 0, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 4.5 } },
+  onion_powder: { fdcId: 171327, name: "Onion powder", kcal: 341, protein: 10.41, fat: 1.04, carb: 79.12, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 2.4 } },
   onion: { fdcId: 170000, name: "Onion", kcal: 40, protein: 1.1, fat: 0.1, carb: 9.34, allergens: [], diet: "plant", us: { kind: 'each', grams: 150, one: "large onion", many: "large onions" } },
   orange: { fdcId: 169097, name: "Orange", kcal: 47, protein: 0.94, fat: 0.12, carb: 11.75, allergens: [], diet: "plant", us: { kind: 'each', grams: 131, one: "orange", many: "oranges" } },
   oregano: { fdcId: 171328, name: "Dried oregano", kcal: 265, protein: 9, fat: 4.28, carb: 68.92, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 1 } },
   paprika: { fdcId: 171329, name: "Smoked paprika", kcal: 282, protein: 14.14, fat: 12.89, carb: 53.99, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 2.3 } },
+  // ── Added 2026-09-24 for the PO's first recipes. Same source (SR Legacy 2018-04), same rules. ──
+  // ⚠ STAND-IN: SR Legacy has no "Italian seasoning" blend; dried oregano (its main herb) carries it.
+  italian_herbs: { fdcId: 171328, name: "Italian herbs, dried", kcal: 265, protein: 9, fat: 4.28, carb: 68.92, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 1 } },
+  parsley_dried: { fdcId: 170930, name: "Dried parsley", kcal: 292, protein: 26.63, fat: 5.48, carb: 50.64, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 0.5 } },
+  parsley: { fdcId: 170416, name: "Fresh parsley, chopped", kcal: 36, protein: 2.97, fat: 0.79, carb: 6.33, allergens: [], diet: "plant", us: { kind: 'cup', grams: 60 } },
+  chili_flakes: { fdcId: 170932, name: "Chilli flakes", kcal: 318, protein: 12.01, fat: 17.27, carb: 56.63, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 1.8 } },
+  skim_milk: { fdcId: 171269, name: "Milk, skim", kcal: 34, protein: 3.37, fat: 0.08, carb: 4.96, allergens: ["dairy"], diet: "animal", us: { kind: 'cup', grams: 245 } },
+  light_cream_cheese: { fdcId: 169079, name: "Light cream cheese", kcal: 208, protein: 7.85, fat: 16.67, carb: 6.73, allergens: ["dairy"], diet: "animal", us: { kind: 'cup', grams: 240 } },
+  light_butter: { fdcId: 173581, name: "Light butter", kcal: 499, protein: 3.3, fat: 55.1, carb: 0, allergens: ["dairy"], diet: "animal", us: { kind: 'tsp', grams: 4.7 } },
+  sundried_tomatoes: { fdcId: 169384, name: "Sun-dried tomatoes in oil, drained", kcal: 213, protein: 5.06, fat: 14.08, carb: 23.33, allergens: [], diet: "plant", us: { kind: 'cup', grams: 110 } },
+  ground_beef_95: { fdcId: 171790, name: "Extra-lean ground beef (95%)", kcal: 137, protein: 21.41, fat: 5, carb: 0, allergens: [], diet: "meat", us: { kind: 'oz' } },
+  tomato_paste: { fdcId: 170459, name: "Tomato paste", kcal: 82, protein: 4.32, fat: 0.47, carb: 18.91, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 5.3 } },
+  // Regular barbecue sauce: SR Legacy has no reduced-calorie one, so this reads a little high.
+  bbq_sauce: { fdcId: 174523, name: "Barbecue sauce", kcal: 172, protein: 0.82, fat: 0.63, carb: 40.77, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 5.7 } },
+  balsamic: { fdcId: 172241, name: "Balsamic vinegar", kcal: 88, protein: 0.49, fat: 0, carb: 17.03, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 5.3 } },
+  brown_sugar: { fdcId: 168833, name: "Brown sugar", kcal: 380, protein: 0.12, fat: 0, carb: 98.09, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 4.6 } },
+  // ⚠ STAND-IN: SR Legacy has no brioche. A plain hamburger roll's numbers at a brioche bun's weight (60 g);
+  // tagged eggs + dairy as well, because brioche carries both.
+  burger_bun: { fdcId: 172796, name: "Brioche burger bun", kcal: 279, protein: 9.77, fat: 3.91, carb: 50.12, allergens: ["gluten", "eggs", "dairy"], diet: "animal", us: { kind: 'each', grams: 60, one: "bun", many: "buns" } },
+  american_cheese_light: { fdcId: 173455, name: "Reduced-fat American cheese", kcal: 240, protein: 17.6, fat: 14.1, carb: 10.6, allergens: ["dairy"], diet: "animal", us: { kind: 'each', grams: 21, one: "slice", many: "slices" } },
+  mozzarella_light: { fdcId: 171244, name: "Part-skim mozzarella", kcal: 295, protein: 23.75, fat: 19.78, carb: 5.58, allergens: ["dairy"], diet: "animal", us: { kind: 'cup', grams: 113 } },
+  turkey_bacon: { fdcId: 174592, name: "Turkey bacon", kcal: 226, protein: 15.94, fat: 16.93, carb: 1.89, allergens: [], diet: "meat", us: { kind: 'each', grams: 16, one: "slice", many: "slices" } },
   parmesan: { fdcId: 171247, name: "Parmesan, grated", kcal: 420, protein: 28.42, fat: 27.84, carb: 13.91, allergens: ["dairy"], diet: "animal", us: { kind: 'tsp', grams: 1.67 } },
   pasta: { fdcId: 169736, name: "Orzo or pasta, dry", kcal: 371, protein: 13.04, fat: 1.51, carb: 74.67, allergens: ["gluten"], diet: "plant", us: { kind: 'oz' } },
   peach: { fdcId: 169928, name: "Peach", kcal: 39, protein: 0.91, fat: 0.25, carb: 9.54, allergens: [], diet: "plant", us: { kind: 'each', grams: 150, one: "medium peach", many: "medium peaches" } },
@@ -203,4 +233,63 @@ export interface RecipeSource {
  * per serving) and the planner, Recipe screen and Grocery List pick it up. Until then the planner draws
  * only from My Recipes. The 40 live on as test data in `__tests__/fixtures/starter-recipes.ts`.
  */
-export const RECIPE_SOURCES: readonly RecipeSource[] = [];
+export const RECIPE_SOURCES: readonly RecipeSource[] = [
+  /*
+   * The PO's recipes, from 2026-09-24. Each started from a recipe the PO found online. Ingredients and
+   * method are facts and free to use; name, wording, brands and the poster's macros are not, so all four
+   * are Forge's own here: plain ingredients, steps rewritten, numbers from USDA via the table above.
+   * Amounts are the source batch divided by its servings.
+   */
+  {
+    id: 'p01', slot: 'breakfast', mealTypes: ["breakfast"], leftoverDays: 4, reheat: 'ok', proteinSource: 'egg', format: "sandwich",
+    name: "Egg and turkey bacon breakfast bagels", minutes: 40, batch: true, equipment: ["8×8-inch baking dish"],
+    // Batch of 8: 16 slices turkey bacon, 8 eggs, 500 g egg whites, 300 g fat-free cottage cheese, 5 g parmesan,
+    // 1 tsp each onion + garlic powder, 8 bagel thins, 8 cheddar slices.
+    ingredients: [['turkey_bacon', 32], ['egg', 50], ['egg_white', 63], ['cottage_cheese_nonfat', 38], ['parmesan', 0.6], ['onion_powder', 0.3], ['garlic_powder', 0.4], ['bagel_thin', 46], ['cheddar_slice', 21]],
+    steps: [
+      { title: "Crisp the bacon", text: "Cook the turkey bacon in a pan over medium heat until crisp, 3–4 minutes a side. Cut each slice in half.", min: 10 },
+      { title: "Mix the eggs", text: "Heat the oven to 350°F. Blend the cottage cheese until smooth, then whisk it with the eggs, egg whites, parmesan, and onion and garlic powder." },
+      { title: "Bake the egg layer", text: "Pour into a lined 8×8-inch dish — a small dish keeps the layer thick enough to cut. Bake 20–25 minutes, until set in the middle (160°F). Cool, then cut into 8 squares.", min: 25 },
+      { title: "Build", text: "Toast the bagel thins. Fill each with an egg square, a slice of cheddar and four half-slices of bacon." },
+      { title: "Store and reheat", text: "Wrap each in foil and freeze for up to 2 months. Move one to the fridge the night before. Unwrap, wrap in a damp paper towel and microwave 2–4 minutes until hot through (165°F)." },
+    ],
+  },
+  {
+    id: 'p02', slot: 'dinner', mealTypes: ["lunch", "dinner"], leftoverDays: 3, reheat: 'great', proteinSource: 'chicken', format: "rice bowl",
+    name: "Chicken Alfredo sheet-pan rice", minutes: 60, batch: true, equipment: ["Large sheet pan"],
+    // Batch of 8: 1400 g chicken breast, 350 g dry rice, 450 g skim milk, 110 g parmesan, 190 g light cream cheese,
+    // 25 g light butter, 40 g garlic, 90 g white + 200 g red onion, 200 g sun-dried tomatoes, 40 g olive oil,
+    // a handful of parsley, and the spices (4 tsp salt, 10 tsp Italian herbs, 5 tsp paprika…).
+    ingredients: [
+      ['chicken_breast', 175], ['olive_oil', 5], ['salt', 3], ['italian_herbs', 1.25], ['parsley_dried', 0.25], ['garlic_powder', 1.55],
+      ['onion_powder', 1.2], ['paprika', 1.44], ['chili_flakes', 0.56], ['light_butter', 3], ['garlic', 5], ['onion', 36],
+      ['skim_milk', 56], ['parmesan', 14], ['light_cream_cheese', 24], ['white_rice', 44], ['sundried_tomatoes', 25], ['parsley', 4],
+    ],
+    steps: [
+      { title: "Season the chicken", text: "Cut the chicken into bite-size cubes. Toss with the olive oil, most of the salt, half the Italian herbs, the dried parsley, garlic and onion powder, most of the paprika and the chilli flakes." },
+      { title: "Cook the rice", text: "Boil the rice in plenty of salted water until tender, about 12 minutes. Drain.", min: 15 },
+      { title: "Make the sauce", text: "Melt the light butter over medium heat. Soften the chopped garlic and white onion, 5 minutes. Add a pinch of salt and herbs, then the milk, parmesan and cream cheese. Stir until smooth and thick.", min: 10 },
+      { title: "Roast the chicken", text: "Spread the chicken on a lined sheet pan and roast at 400°F for 18 minutes, then broil 5 minutes until golden (165°F inside). Lift the chicken out and keep the juices in the pan.", min: 23 },
+      { title: "Roast the vegetables", text: "Add the red onion, sun-dried tomatoes, fresh parsley and the rest of the paprika and herbs to the pan juices. Spread flat and roast 15 minutes.", min: 15 },
+      { title: "Finish", text: "Fold the rice through the vegetables until coated. Serve with the chicken and the sauce. Keeps 3 days in the fridge; reheat until hot through (165°F)." },
+    ],
+  },
+  {
+    id: 'p03', slot: 'dinner', mealTypes: ["lunch", "dinner"], leftoverDays: 2, reheat: 'ok', proteinSource: 'beef', format: "burger",
+    name: "Honey barbecue beef sliders", minutes: 35, batch: true, equipment: [],
+    // Batch of 6: 800 g 95% lean beef, 30 g tomato paste, 60 g barbecue sauce, 2 tsp honey, the spices,
+    // 1 red onion with balsamic + 1 tsp brown sugar, 6 brioche buns, 6 reduced-fat American slices, 250 g mozzarella.
+    ingredients: [
+      ['ground_beef_95', 133], ['paprika', 0.77], ['garlic_powder', 1.03], ['onion_powder', 0.8], ['pepper', 0.38], ['salt', 2],
+      ['tomato_paste', 5], ['garlic', 1.25], ['bbq_sauce', 10], ['honey', 2.3], ['onion', 25], ['balsamic', 2.5], ['brown_sugar', 0.7],
+      ['burger_bun', 60], ['american_cheese_light', 21], ['mozzarella_light', 42],
+    ],
+    steps: [
+      { title: "Cook the beef", text: "Brown the beef in a large pan over medium-high heat, breaking it up, until no pink remains (160°F). Stir in the paprika, garlic and onion powder, pepper, salt, tomato paste and garlic.", min: 10 },
+      { title: "Glaze it", text: "Add the barbecue sauce and honey and simmer 2 minutes until sticky.", min: 2 },
+      { title: "Caramelise the onion", text: "Slice the red onion and cook it in a lightly oiled pan until soft, 8 minutes. Add a splash of balsamic and the brown sugar and cook until jammy.", min: 10 },
+      { title: "Build and bake", text: "Heat the oven to 375°F. Fill each bun with beef, onion, a slice of American cheese and the mozzarella. Bake 10–12 minutes until the cheese melts.", min: 12 },
+      { title: "Store and reheat", text: "Wrap cooled sliders in foil and refrigerate up to 2 days. Microwave 30–60 seconds, then air-fry to crisp until hot through (165°F)." },
+    ],
+  },
+];
