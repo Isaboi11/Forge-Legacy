@@ -60,11 +60,32 @@
 
 ---
 
+## 📦 Build 9 queue: native features that an OTA cannot deliver
+
+**PO 2026-09-24:** hold native work for ONE build instead of a build per feature. Every feature that needs
+a new binary goes on this list the moment it comes up. Build 8 (`3f67281b…`, runtime `47944f2e…`) keeps
+getting everything else by OTA. ⚠ Do not hold build 9 forever: ship it once the list is worth a
+reinstall, or a tester needs one of these.
+
+| Feature | Native piece | JS status |
+|---|---|---|
+| **Talk to Holt (the mic)** | `expo-speech-recognition` + config plugin | shipped, inert on build 8 (`requireOptionalNativeModule`) |
+| **Form check (film a set)** | `expo-video-thumbnails` | shipped, inert (`formCheckAvailable()` is false) |
+| **Apple Watch companion, Phase 2/3 bridge** | `modules/watch-bridge/` native half | built, proven only in TypeScript |
+| **Barcode scanning (Log Food)** | `expo-camera` | barcode is TYPED for now; the camera path is not built |
+| **Scan a nutrition label (Create Food)** | `expo-camera` (same module) | not drawn, by choice, until the camera exists |
+
+**When cutting build 9:** re-run `fingerprint:compare` afterwards, move the OTA lane to the new runtime,
+and keep build 8 fed until testers have reinstalled.
+
 ## 🏃 Current Sprint
 
 > **▶ 2026-09-23 — THE APPLE ACCOUNT IS NOW FORGE LEGACY LLC (Organization), PO reported.** Supersedes every
 > "still Individual" line below. **Submission work now runs from ONE list: `Docs/App-Store-Submission-Checklist.md`**
-> — read it and update it as items move. Next up: Agreements, Tax & Banking.
+> — read it and update it as items move. Same day: Paid Apps accepted (pending bank + W-9), DSA switched to
+> TRADER, Small Business Program applied, manual release set. ⭐ **PRICING CHANGED — Monetization Amendment 007
+> LOCKED:** no lifetime, no Founder AI; first 100 subscribers get ~15% off for as long as they stay subscribed
+> (Premium $12.99/$99.99, Premium AI $16.99/$144.99); supersedes MA6-D6/D7. Paywall code still shows $149 Founder.
 
 > **⛔ 2026-08-19 — A SUBMISSION BLOCKER THAT WAS ON NO LAUNCH DOCUMENT, AND IT IS NOW CLOSED IN CODE.**
 > **App Store Guideline 1.2** requires filtering · reporting **with timely responses** · **blocking** ·
