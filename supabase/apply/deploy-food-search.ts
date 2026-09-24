@@ -351,6 +351,8 @@ async function usdaSearch(query: string, limit: number): Promise<Food[]> {
   let res = await ask();
   if (res.status === 400 || res.status >= 500) {
     console.log(`usda search ${res.status}, retrying once`);
+    // An immediate retry failed the same way once; a short pause has not.
+    await new Promise((r) => setTimeout(r, 400));
     res = await ask();
   }
   if (!res.ok) {
@@ -454,8 +456,10 @@ async function fatsecretToken(): Promise<string | null> {
       authorization: `Basic ${btoa(`${FS_ID}:${FS_SECRET}`)}`,
       'content-type': 'application/x-www-form-urlencoded',
     },
-    // `barcode` is its own scope and is Premier-only; `basic` alone cannot look a UPC up.
-    body: 'grant_type=client_credentials&scope=basic barcode',
+    // `barcode` is its own scope and is Premier-only; `basic` alone cannot look a UPC up. `premier` is
+    // what `foods/search/v3` and `food/v4` need — without it every search answered code 14, "Missing
+    // scope: scope 'premier'" INSIDE a 200 (seen 2026-09-24 once the logs could say so).
+    body: 'grant_type=client_credentials&scope=basic premier barcode',
   });
   // ⚠ The expected failure here is an un-allowlisted IP (see the header). It is not an outage, and it
   // must not take the whole search down — the caller treats an empty list as "this source had nothing".
@@ -630,17 +634,28 @@ function tidy(query: string, foods: Food[]): Food[] {
     )
     .map((r) => r.f);
 
-  const seen = new Set<string>();
-  return ranked.filter((f) => {
-    // Plurals folded too, so "Bananas, raw" and "Banana, raw" are one food.
-    const sig = nameWords(f)
+  // Plurals folded too, so "Bananas, raw" and "Banana, raw" are one food.
+  const sigOf = (f: Food) =>
+    nameWords(f)
       .map((w) => (w.length > 3 ? w.replace(/e?s$/, '') : w))
       .sort()
       .join(' ');
-    if (seen.has(sig)) return false;
-    seen.add(sig);
-    return true;
-  });
+  // One slot per signature, at the rank of its best copy. ⚠ The copy that FILLS it is the restaurant's
+  // own (FatSecret) when there is one: "Big Mac" by McDonald's beats USDA's "Big Mac (McDonalds)" survey
+  // estimate — PO, 2026-09-24, FatSecret's Big Mac was being merged away behind USDA's.
+  const slot = new Map<string, Food>();
+  const order: string[] = [];
+  for (const f of ranked) {
+    const sig = sigOf(f);
+    const held = slot.get(sig);
+    if (!held) {
+      slot.set(sig, f);
+      order.push(sig);
+    } else if (f.source === 'fs' && held.source !== 'fs') {
+      slot.set(sig, f);
+    }
+  }
+  return order.map((sig) => slot.get(sig)!);
 }
 
 // ── The cache ────────────────────────────────────────────────────────────────
