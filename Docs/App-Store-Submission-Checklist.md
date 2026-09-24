@@ -10,15 +10,16 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
 
 ## Where we are
 - **Waiting on others:** Apple (bank verification) · Apple (Small Business Program)
-- **PO to-do:** find a lawyer · decide if Nutrition ships in the first release · write the recipes
-- **Claude to-do:** build 9 (paywall, mic, form check, barcode)
+- **PO to-do:** find a lawyer · decide if Nutrition ships in the first release · write the recipes ·
+  RevenueCat tidy-up (move the .p8, rename the project, delete `$rc_*` packages, delete `REVENUE_WEBHOOK_AUTH`)
+- **Claude to-do:** build 9 (paywall, mic, form check, barcode) → sandbox purchase test
 
 ## Pricing (Monetization Amendment 007, locked 2026-09-23)
 | Who | Premium | Premium AI |
 |---|---|---|
 | Everyone | $14.99/mo · $119.99/yr | $19.99/mo · $169.99/yr |
 | First 100 subscribers (Early Bird, while subscribed) | $12.99/mo · $99.99/yr | $16.99/mo · $144.99/yr |
-| The 14 comped testers | Free forever | Add AI: $7.99/mo · $69.99/yr |
+| The comped testers (11 + review account `alex.review`) | Free forever | Add AI: $7.99/mo · $69.99/yr |
 
 Free plan stays $0. 7-day free trial on **yearly plans only**; cancel within 7 days = never charged.
 No lifetime plan. United States only at launch.
@@ -52,7 +53,7 @@ No lifetime plan. United States only at launch.
     (⬜ delete the misspelled leftover secret `REVENUE_WEBHOOK_AUTH`; nothing uses it)
   - ✅ RevenueCat webhook "Supabase entitlement" → that function — 09-24; test event returned 200 `{"outcome":"ignored"}`
   - ✅ PO 09-24: `alex.review` also sees Tester AI, so Apple can review that product (12 comped accounts: 11 testers + alex.review; `poop` was deleted)
-- 🔨 RevenueCat — PO signed up 09-23
+- ✅ RevenueCat set up — 09-24 (tidy-up items below still open)
   - ✅ Project + iOS app (bundle ID `com.qest4.forgelegacy`) — 09-24
   - ✅ In-App Purchase key (.p8) uploaded to RevenueCat — 09-24 (Key ID `A8T8CTT9TS`).
     ⬜ Move the .p8 from Downloads to `Forge Legacy Documents` (personal OneDrive) — NEVER in the repo
@@ -65,7 +66,7 @@ No lifetime plan. United States only at launch.
   - ✅ Code: adapter over `react-native-purchases` 10.10.2 — 09-24 (`src/lib/billing-store.native.ts`; native → build 9 only)
 - ⬜ Referral reward: "1 month free" offer for a referrer who is already paying (referrer only)
 - ⬜ Review screenshot on each subscription (after the paywall is updated)
-- ⬜ Sandbox test: buy, force-quit, reinstall, restore
+- ⬜ Sandbox test on build 9: buy, force-quit, reinstall, restore — then check `store_events` shows `applied`
 
 ## 3. Store listing
 - ✅ Description, age rating, reviewer account, support URL
