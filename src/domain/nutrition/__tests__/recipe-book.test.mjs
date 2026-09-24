@@ -25,9 +25,14 @@ test('every shipped recipe is well-formed', () => {
   }
 });
 
-test('every shipped recipe’s calories agree with its macros (4/4/9, within 8%)', () => {
+test('every shipped recipe’s calories agree with its macros (4/4/9, fibre at 0–2, within 8%)', () => {
   for (const r of RECIPES.filter((x) => RECIPE_SOURCES.some((s) => s.id === x.id))) {
-    const fromMacros = r.protein * 4 + r.carb * 4 + r.fat * 9;
-    assert.ok(Math.abs(fromMacros - r.kcal) / r.kcal < 0.08, `${r.id}: ${r.kcal} kcal vs ${Math.round(fromMacros)} from macros`);
+    /* Label data (USDA Branded) counts fibre anywhere from 0 cal/g (insoluble — a low-carb tortilla's
+       110 cal only adds up at 0) to ~2 (soluble). So the macros give a RANGE, and the calories must sit in it. */
+    const src = RECIPE_SOURCES.find((s) => s.id === r.id);
+    const fiber = src.ingredients.reduce((t, [key, g]) => t + ((INGREDIENTS[key].fiber ?? 0) * g) / 100, 0);
+    const low = r.protein * 4 + (r.carb - fiber) * 4 + r.fat * 9;
+    const high = low + fiber * 2;
+    assert.ok(r.kcal >= low * 0.92 && r.kcal <= high * 1.08, `${r.id}: ${r.kcal} kcal vs ${Math.round(low)}–${Math.round(high)} from macros`);
   }
 });
