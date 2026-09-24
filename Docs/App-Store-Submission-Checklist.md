@@ -48,7 +48,7 @@ No lifetime plan. United States only at launch.
   Early Bird prices + spots left while they last · Tester AI shown ONLY to comped testers · never a second
   group · Founder/Lifetime removed · Premium AI switch now admin-only. Our server picks the offer (`0214`).
   Works on build 9 only; web and build 8 say "Plans aren't available on this device yet."
-  - ✅ `pending-0214.sql` applied 09-24 (0 · 0 · 0 · 100 · admins-only, as predicted) · ⬜ `set-comped-testers-0214.sql`
+  - ✅ `pending-0214.sql` applied 09-24 (0 · 0 · 0 · 100 · admins-only, as predicted) · ✅ `set-comped-testers-0214.sql` applied 09-24 (12 rows)
   - ⬜ PO: deploy Edge Function `revenuecat-webhook` with **Verify JWT OFF** · set secret `REVENUECAT_WEBHOOK_AUTH`
   - ⬜ PO: RevenueCat → Integrations → Webhooks → URL of that function + the same secret as the Authorization header
   - ✅ PO 09-24: `alex.review` also sees Tester AI, so Apple can review that product (12 comped accounts: 11 testers + alex.review; `poop` was deleted)
