@@ -20,6 +20,10 @@ Update `Forge-Legacy-Master-Status.md` whenever major work is completed or proje
 
 If information from conversation history conflicts with the dashboard, identify the discrepancy rather than assuming either source is correct.
 
+## App Store Submission Checklist
+
+`Docs/App-Store-Submission-Checklist.md` is THE checklist for getting Forge Legacy submitted to Apple. Read it before any launch, App Store Connect, paywall, or "what's left before we submit" work. When an item's status changes, update that file in the same session (with the date). Do not start a new list in chat — work from this one and keep its format simple.
+
 ### Status Commands
 
 When the user issues one of these commands, respond as defined:
