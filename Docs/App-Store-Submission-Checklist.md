@@ -86,7 +86,8 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
   restaurant foods from FatSecret, retries USDA's random failures (OTA `01a0d4a7` + function rev 7+)
 - ✅ Confirm `FDC_API_KEY` in production + FatSecret console steps (Premier Free granted 09-23 — barcode + US data unlocked) — **done 2026-09-24**: IP allowlist + secrets set, token scope `basic premier barcode`, PO saw McDonald's Big Mac with real calories as Restaurant data
 - ✅ The 40 starter recipes removed — 09-24 (PO: writing their own; OTA `01a0d506`). Meal Plan now points to My Recipes
-- 🔨 PO's own recipes — send them to Claude (USDA numbers + allergy tags worked out) or add in My Recipes;
+- 🔨 PO's own recipes — 6 in and on build 8 (09-24, OTA `01a0d585`; review list `Docs/Nutrition-Recipe-Book.md`).
+  Send more to Claude (USDA numbers + allergy tags worked out) or add in My Recipes;
   include 15-minute meals and vegan
 - ⬜ Gentle message for sustained under-eating (needs PO's wording) — **must-do before opening**
 - ⬜ Holt's 4 safety fixes (Coach Holt stress test, Decision Queue #36) — **must-do before opening**
