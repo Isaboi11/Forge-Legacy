@@ -13,25 +13,26 @@ method are facts and free to use. The poster's name for the dish, wording, produ
 counts are theirs, so Forge renames the dish, rewrites the steps, uses plain ingredients, and computes
 its own numbers. Brands are never named.
 
-**Why our numbers differ from the poster's.** Theirs use specific products (beef bacon, low-carb
-bagels, reduced-calorie sauce, local "light" cheeses) that USDA's generic data doesn't have. Ours
-describe the plain version you'd buy in a US store. Stand-ins are listed per recipe.
+**Specific products.** When a recipe needs one (a low-carb wrap, a brioche bun), its numbers come from
+USDA's brand-name database: real US label data, still USDA, and brands are never shown in the app.
+Where even that has no match, a stand-in is named in the recipe's notes.
 
 | # | Recipe | Meal | Serves | Per serving | Allergens | Review |
 |---|---|---|---|---|---|---|
-| p01 | Egg and turkey bacon breakfast bagels | Breakfast | 8 | 410 cal · 32 P · 28 C · 18 F | Dairy · Eggs · Gluten | ⬜ |
+| p01 | Egg and turkey bacon breakfast bagels | Breakfast | 8 | 375 cal · 37 P · 23 C · 20 F | Dairy · Eggs · Gluten · Soy · Sesame | ⬜ |
 | p02 | Chicken Alfredo sheet-pan rice | Lunch or dinner | 8 | 653 cal · 53 P · 57 C · 23 F | Dairy | ⬜ |
-| p03 | Honey barbecue beef sliders | Lunch or dinner | 6 | 578 cal · 49 P · 47 C · 21 F | Dairy · Eggs · Gluten | ⬜ |
-| p04 | Crispy sheet-pan beef tacos (2 tacos) | Lunch or dinner | 7½ | 699 cal · 53 P · 54 C · 30 F | Dairy · Eggs · Gluten | ⬜ |
+| p03 | Honey barbecue beef sliders | Lunch or dinner | 6 | 560 cal · 48 P · 41 C · 22 F | Dairy · Eggs · Gluten | ⬜ |
+| p04 | Crispy sheet-pan beef tacos (2 tacos) | Lunch or dinner | 7½ | 606 cal · 57 P · 48 C · 29 F | Dairy · Eggs · Gluten | ⬜ |
 | p05 | Stuffed s'mores protein cookies | Snack | 6 | 215 cal · 14 P · 20 C · 9 F | Peanuts · Dairy · Eggs · Gluten · Soy | ⬜ |
-| p06 | Crispy pepperoni pizza chicken burritos | Lunch or dinner | 10 | 705 cal · 69 P · 45 C · 26 F | Dairy · Gluten | ⬜ |
+| p06 | Crispy pepperoni pizza chicken burritos | Lunch or dinner | 10 | 595 cal · 73 P · 42 C · 27 F | Dairy · Gluten | ⬜ |
 
 ---
 
 ## p01 · Egg and turkey bacon breakfast bagels
-**Poster said:** 470 cal · 40 P. **Ours:** 410 cal · 32 P. The gap is beef bacon (the poster's pick)
-vs turkey bacon, and a high-protein low-carb bagel vs a plain bagel thin.
-- **Stand-in:** bagel thin = USDA wheat bagel at a thin's 46 g (USDA has no bagel thin).
+**Poster said:** 470 cal · 40 P. **Ours:** 375 cal · 37 P. Ours is lighter mainly from turkey bacon vs
+the poster's beef bacon.
+- **Real product:** a low-carb bagel from USDA's brand database (46 g, 80 cal). Its label lists soy and
+  sesame, so the recipe is tagged for both.
 - Keeps 4 days in the fridge, 2 months frozen. Reheats OK.
 - **Batch (8):** 16 slices turkey bacon · 8 eggs · 500 g egg whites · 300 g fat-free cottage cheese ·
   5 g parmesan · 1 tsp each onion + garlic powder · 8 bagel thins · 8 slices cheddar.
@@ -47,9 +48,9 @@ packed in oil, and USDA's "low fat" cream cheese being richer than a UK/AU "ligh
   200 g sun-dried tomatoes · 40 g olive oil · handful of parsley · spices.
 
 ## p03 · Honey barbecue beef sliders
-**Poster said:** 513 cal · 47 P. **Ours:** 578 cal · 49 P. The gap is USDA's regular barbecue sauce
-(no reduced-calorie version in the data) and a 60 g brioche bun.
-- **Stand-in:** brioche bun = USDA plain hamburger roll at 60 g, tagged eggs + dairy because brioche has both.
+**Poster said:** 513 cal · 47 P. **Ours:** 560 cal · 48 P.
+- **Real products:** a reduced-calorie barbecue sauce and a 57 g brioche bun, from USDA's brand database.
+  This brioche's label lists egg and wheat but no milk.
 - Garlic butter left out; it's optional in the source.
 - Keeps 2 days. Reheats OK.
 - **Batch (6):** 800 g 95% lean beef · 30 g tomato paste · 60 g barbecue sauce · 2 tsp honey · spices ·
@@ -58,9 +59,8 @@ packed in oil, and USDA's "low fat" cream cheese being richer than a UK/AU "ligh
 
 
 ## p04 · Crispy sheet-pan beef tacos
-**Poster said:** 294 cal a taco (588 for two). **Ours:** 699 for two tacos. The gap is the wrap. USDA
-has no low-carb one, so a flour tortilla's numbers stand in at a mini wrap's 30 g. The light mayo in the
-sauce is richer than theirs too.
+**Poster said:** 294 cal a taco (588 for two). **Ours:** 606 for two. Close.
+- **Real product:** a low-carb mini wrap from USDA's brand database (28 g, 45 cal).
 - **One serving = 2 tacos.** The source makes 15, so the batch is divided by 7½.
 - Keeps 3 days (sauce separate). Reheats OK: oven or air fryer.
 - **Batch (15 tacos):** 1200 g 95% lean beef · 200 g tomato paste · 200 g onion · 200 g bell pepper ·
@@ -74,8 +74,8 @@ sauce is richer than theirs too.
 - 12 dough balls sandwiched into **6 cookies**; 1 cookie = 1 serving. Keeps 4 days.
 
 ## p06 · Crispy pepperoni pizza chicken burritos
-**Poster said:** 517 cal · 65 P. **Ours:** 705 cal · 69 P. The gap is the tortilla. USDA only has
-a regular 10-inch flour tortilla (about 220 cal), not a low-carb one (about 70–110).
+**Poster said:** 517 cal · 65 P. **Ours:** 595 cal · 73 P.
+- **Real product:** the large low-carb tortilla the source names, from USDA's brand database (71 g, 110 cal).
 - **Turkey pepperoni** used. The source allows beef, turkey or regular, and turkey is the lean choice.
 - Hot sauce kept in (optional in the source).
 - Keeps 4 days, freezes 2 months. Reheats great.

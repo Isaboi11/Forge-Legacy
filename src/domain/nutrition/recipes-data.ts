@@ -9,6 +9,10 @@
  * may be kept and shown forever (Architecture §4). US measures (cup / tsp / each) take their gram
  * weights from the same release's `food_portion.csv`.
  *
+ * ⚠ SINCE 2026-09-24 A FEW ROWS COME FROM USDA BRANDED FOODS (label data, also CC0), where the PO's recipes
+ * name a product SR Legacy lacks (low-carb wraps and bagels, brioche, reduced-calorie sauce). Their fdcIds are
+ * 7 digits; brands are never shown. Those rows carry `fiber`, because label calories count fibre at ~2 cal/g.
+ *
  * Weights are as BOUGHT AND COOKED FROM: raw meat and fish, dry rice, pasta, grains and lentils — what a
  * recipe asks you to weigh, and what a grocery list must buy.
  *
@@ -46,6 +50,8 @@ export interface Ingredient {
   protein: number;
   fat: number;
   carb: number;
+  /** Per 100 g — only where it matters: a high-fibre product (a low-carb wrap) whose calories 4/4/9 would overstate. */
+  fiber?: number;
   allergens: readonly Allergen[];
   diet: DietClass;
   us: UsMeasure;
@@ -57,9 +63,8 @@ export const INGREDIENTS = {
   arugula: { fdcId: 169387, name: "Rocket (arugula)", kcal: 25, protein: 2.58, fat: 0.66, carb: 3.65, allergens: [], diet: "plant", us: { kind: 'cup', grams: 20 } },
   avocado: { fdcId: 171706, name: "Avocado", kcal: 167, protein: 1.96, fat: 15.41, carb: 8.64, allergens: [], diet: "plant", us: { kind: 'each', grams: 136, one: "avocado", many: "avocados" } },
   bagel: { fdcId: 174899, name: "Plain bagel", kcal: 264, protein: 10.56, fat: 1.32, carb: 52.38, allergens: ["gluten", "sesame"], diet: "plant", us: { kind: 'each', grams: 105, one: "bagel", many: "bagels" } },
-  // ⚠ STAND-IN (2026-09-24): SR Legacy has no bagel thin or low-carb bagel. Wheat bagel (167533) at a
-  // bagel thin's weight, 46 g — same dough, half the bagel. Replace when a thin is sourced.
-  bagel_thin: { fdcId: 167533, name: "Bagel thin", kcal: 250, protein: 10.2, fat: 1.53, carb: 48.89, allergens: ["gluten"], diet: "plant", us: { kind: 'each', grams: 46, one: "bagel thin", many: "bagel thins" } },
+  // USDA Branded 2596973 (label: 80 cal, 9 P, 18 C incl. 16 fibre per 46 g bagel). Brand not shown in the app.
+  low_carb_bagel: { fdcId: 2596973, name: "Low-carb bagel", kcal: 174, protein: 19.57, fat: 5.43, carb: 39.13, fiber: 34.8, allergens: ["gluten", "soy", "sesame"], diet: "plant", us: { kind: 'each', grams: 46, one: "bagel", many: "bagels" } },
   banana: { fdcId: 173944, name: "Banana", kcal: 89, protein: 1.09, fat: 0.33, carb: 22.84, allergens: [], diet: "plant", us: { kind: 'each', grams: 118, one: "medium banana", many: "medium bananas" } },
   barley: { fdcId: 170284, name: "Pearl barley, dry", kcal: 352, protein: 9.91, fat: 1.16, carb: 77.72, allergens: ["gluten"], diet: "plant", us: { kind: 'cup', grams: 200 } },
   beef_jerky: { fdcId: 167536, name: "Beef jerky", kcal: 410, protein: 33.2, fat: 25.6, carb: 11, allergens: ["soy", "gluten"], diet: "meat", us: { kind: 'oz' } },
@@ -137,20 +142,20 @@ export const INGREDIENTS = {
   sundried_tomatoes: { fdcId: 169384, name: "Sun-dried tomatoes in oil, drained", kcal: 213, protein: 5.06, fat: 14.08, carb: 23.33, allergens: [], diet: "plant", us: { kind: 'cup', grams: 110 } },
   ground_beef_95: { fdcId: 171790, name: "Extra-lean ground beef (95%)", kcal: 137, protein: 21.41, fat: 5, carb: 0, allergens: [], diet: "meat", us: { kind: 'oz' } },
   tomato_paste: { fdcId: 170459, name: "Tomato paste", kcal: 82, protein: 4.32, fat: 0.47, carb: 18.91, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 5.3 } },
-  // Regular barbecue sauce: SR Legacy has no reduced-calorie one, so this reads a little high.
-  bbq_sauce: { fdcId: 174523, name: "Barbecue sauce", kcal: 172, protein: 0.82, fat: 0.63, carb: 40.77, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 5.7 } },
+  // USDA Branded 1626824, a reduced-calorie sauce (20 cal / 2 tbsp) — what the source asks for.
+  bbq_sauce: { fdcId: 1626824, name: "Reduced-calorie barbecue sauce", kcal: 61, protein: 0, fat: 0, carb: 15.15, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 5.5 } },
   balsamic: { fdcId: 172241, name: "Balsamic vinegar", kcal: 88, protein: 0.49, fat: 0, carb: 17.03, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 5.3 } },
   brown_sugar: { fdcId: 168833, name: "Brown sugar", kcal: 380, protein: 0.12, fat: 0, carb: 98.09, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 4.6 } },
-  // ⚠ STAND-IN: SR Legacy has no brioche. A plain hamburger roll's numbers at a brioche bun's weight (60 g);
-  // tagged eggs + dairy as well, because brioche carries both.
-  burger_bun: { fdcId: 172796, name: "Brioche burger bun", kcal: 279, protein: 9.77, fat: 3.91, carb: 50.12, allergens: ["gluten", "eggs", "dairy"], diet: "animal", us: { kind: 'each', grams: 60, one: "bun", many: "buns" } },
+  // USDA Branded 2376856, a real brioche bun at 57 g. Its label lists egg and wheat, no milk.
+  burger_bun: { fdcId: 2376856, name: "Brioche burger bun", kcal: 282, protein: 8.82, fat: 7.05, carb: 45.86, fiber: 7.1, allergens: ["gluten", "eggs"], diet: "animal", us: { kind: 'each', grams: 57, one: "bun", many: "buns" } },
   american_cheese_light: { fdcId: 173455, name: "Reduced-fat American cheese", kcal: 240, protein: 17.6, fat: 14.1, carb: 10.6, allergens: ["dairy"], diet: "animal", us: { kind: 'each', grams: 21, one: "slice", many: "slices" } },
   mozzarella_light: { fdcId: 171244, name: "Part-skim mozzarella", kcal: 295, protein: 23.75, fat: 19.78, carb: 5.58, allergens: ["dairy"], diet: "animal", us: { kind: 'cup', grams: 113 } },
   cilantro: { fdcId: 169997, name: "Fresh cilantro, chopped", kcal: 23, protein: 2.13, fat: 0.52, carb: 3.67, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 0.33 } },
   avocado_oil: { fdcId: 173573, name: "Avocado oil (or spray)", kcal: 884, protein: 0, fat: 100, carb: 0, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 4.5 } },
-  // ⚠ STAND-IN: SR Legacy has no low-carb wrap. A flour tortilla's numbers at a mini wrap's 30 g — a real
-  // low-carb wrap has less carbohydrate and more fibre than this.
-  mini_wrap: { fdcId: 175037, name: "Mini flour wrap", kcal: 306, protein: 8.2, fat: 7.99, carb: 49.38, allergens: ["gluten"], diet: "plant", us: { kind: 'each', grams: 30, one: "mini wrap", many: "mini wraps" } },
+  // USDA Branded 2657253, a low-carb wrap at taco size (label: 45 cal, 12 C incl. 9 fibre per 28 g).
+  mini_wrap: { fdcId: 2657253, name: "Low-carb mini wrap", kcal: 161, protein: 14.29, fat: 7.14, carb: 42.86, fiber: 32.1, allergens: ["gluten"], diet: "plant", us: { kind: 'each', grams: 28, one: "mini wrap", many: "mini wraps" } },
+  // USDA Branded 2676733, the same low-carb line at burrito size (label: 110 cal, 32 C incl. 28 fibre per 71 g).
+  low_carb_tortilla: { fdcId: 2676733, name: "Low-carb tortilla (large)", kcal: 155, protein: 14.08, fat: 8.45, carb: 45.07, fiber: 39.4, allergens: ["gluten"], diet: "plant", us: { kind: 'each', grams: 71, one: "tortilla", many: "tortillas" } },
   light_mayo: { fdcId: 173594, name: "Light mayonnaise", kcal: 238, protein: 0.37, fat: 22.22, carb: 9.23, allergens: ["eggs"], diet: "animal", us: { kind: 'tsp', grams: 5 } },
   hot_sauce: { fdcId: 174527, name: "Hot sauce", kcal: 11, protein: 0.51, fat: 0.37, carb: 1.75, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 4.7 } },
   baking_powder: { fdcId: 172804, name: "Baking powder", kcal: 51, protein: 0.1, fat: 0, carb: 24.1, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 4.6 } },
@@ -268,13 +273,13 @@ export const RECIPE_SOURCES: readonly RecipeSource[] = [
     id: 'p01', slot: 'breakfast', mealTypes: ["breakfast"], leftoverDays: 4, reheat: 'ok', proteinSource: 'egg', format: "sandwich",
     name: "Egg and turkey bacon breakfast bagels", minutes: 40, batch: true, equipment: ["8×8-inch baking dish"],
     // Batch of 8: 16 slices turkey bacon, 8 eggs, 500 g egg whites, 300 g fat-free cottage cheese, 5 g parmesan,
-    // 1 tsp each onion + garlic powder, 8 bagel thins, 8 cheddar slices.
-    ingredients: [['turkey_bacon', 32], ['egg', 50], ['egg_white', 63], ['cottage_cheese_nonfat', 38], ['parmesan', 0.6], ['onion_powder', 0.3], ['garlic_powder', 0.4], ['bagel_thin', 46], ['cheddar_slice', 21]],
+    // 1 tsp each onion + garlic powder, 8 low-carb bagels, 8 cheddar slices.
+    ingredients: [['turkey_bacon', 32], ['egg', 50], ['egg_white', 63], ['cottage_cheese_nonfat', 38], ['parmesan', 0.6], ['onion_powder', 0.3], ['garlic_powder', 0.4], ['low_carb_bagel', 46], ['cheddar_slice', 21]],
     steps: [
       { title: "Crisp the bacon", text: "Cook the turkey bacon in a pan over medium heat until crisp, 3–4 minutes a side. Cut each slice in half.", min: 10 },
       { title: "Mix the eggs", text: "Heat the oven to 350°F. Blend the cottage cheese until smooth, then whisk it with the eggs, egg whites, parmesan, and onion and garlic powder." },
       { title: "Bake the egg layer", text: "Pour into a lined 8×8-inch dish — a small dish keeps the layer thick enough to cut. Bake 20–25 minutes, until set in the middle (160°F). Cool, then cut into 8 squares.", min: 25 },
-      { title: "Build", text: "Toast the bagel thins. Fill each with an egg square, a slice of cheddar and four half-slices of bacon." },
+      { title: "Build", text: "Toast the bagels. Fill each with an egg square, a slice of cheddar and four half-slices of bacon." },
       { title: "Store and reheat", text: "Wrap each in foil and freeze for up to 2 months. Move one to the fridge the night before. Unwrap, wrap in a damp paper towel and microwave 2–4 minutes until hot through (165°F)." },
     ],
   },
@@ -302,11 +307,11 @@ export const RECIPE_SOURCES: readonly RecipeSource[] = [
     id: 'p03', slot: 'dinner', mealTypes: ["lunch", "dinner"], leftoverDays: 2, reheat: 'ok', proteinSource: 'beef', format: "burger",
     name: "Honey barbecue beef sliders", minutes: 35, batch: true, equipment: [],
     // Batch of 6: 800 g 95% lean beef, 30 g tomato paste, 60 g barbecue sauce, 2 tsp honey, the spices,
-    // 1 red onion with balsamic + 1 tsp brown sugar, 6 brioche buns, 6 reduced-fat American slices, 250 g mozzarella.
+    // 1 red onion with balsamic + 1 tsp brown sugar, 6 brioche buns (57 g), 6 reduced-fat American slices, 250 g mozzarella.
     ingredients: [
       ['ground_beef_95', 133], ['paprika', 0.77], ['garlic_powder', 1.03], ['onion_powder', 0.8], ['pepper', 0.38], ['salt', 2],
       ['tomato_paste', 5], ['garlic', 1.25], ['bbq_sauce', 10], ['honey', 2.3], ['onion', 25], ['balsamic', 2.5], ['brown_sugar', 0.7],
-      ['burger_bun', 60], ['american_cheese_light', 21], ['mozzarella_light', 42],
+      ['burger_bun', 57], ['american_cheese_light', 21], ['mozzarella_light', 42],
     ],
     steps: [
       { title: "Cook the beef", text: "Brown the beef in a large pan over medium-high heat, breaking it up, until no pink remains (160°F). Stir in the paprika, garlic and onion powder, pepper, salt, tomato paste and garlic.", min: 10 },
@@ -325,7 +330,7 @@ export const RECIPE_SOURCES: readonly RecipeSource[] = [
     ingredients: [
       ['ground_beef_95', 160], ['tomato_paste', 26.7], ['onion', 26.7], ['red_pepper', 26.7], ['avocado_oil', 3], ['salt', 2.4],
       ['paprika', 1.53], ['oregano', 0.53], ['garlic_powder', 1.65], ['onion_powder', 1.28], ['cumin', 0.84], ['cilantro', 0.27],
-      ['mini_wrap', 60], ['mozzarella_light', 43], ['yogurt', 40], ['light_mayo', 16], ['hot_sauce', 13.3], ['honey', 6.7], ['parsley', 0.67],
+      ['mini_wrap', 56], ['mozzarella_light', 43], ['yogurt', 40], ['light_mayo', 16], ['hot_sauce', 13.3], ['honey', 6.7], ['parsley', 0.67],
     ],
     steps: [
       { title: "Make the sauce", text: "Stir together the yogurt, light mayo, hot sauce, honey, a pinch of smoked paprika and onion powder, and some chopped parsley. Chill until serving." },
@@ -358,12 +363,11 @@ export const RECIPE_SOURCES: readonly RecipeSource[] = [
     id: 'p06', slot: 'dinner', mealTypes: ["lunch", "dinner"], leftoverDays: 4, reheat: 'great', proteinSource: 'chicken', format: "burrito",
     name: "Crispy pepperoni pizza chicken burritos", minutes: 45, batch: true, equipment: [],
     // Batch of 10: 1.7 kg chicken breast, 200 g turkey pepperoni (the source allows beef, turkey or regular) in the filling + 4 slices outside each, 350 g pizza sauce,
-    // 80 g parmesan, 5 garlic cloves, 200 g light cream cheese, 100 ml hot sauce, 10 large tortillas
-    // (flour tortilla stands in for a low-carb one), 25 g mozzarella inside + 20 g reduced-fat cheddar outside each.
+    // 80 g parmesan, 5 garlic cloves, 200 g light cream cheese, 100 ml hot sauce, 10 large low-carb tortillas, 25 g mozzarella inside + 20 g reduced-fat cheddar outside each.
     ingredients: [
       ['chicken_breast', 170], ['olive_oil', 0.45], ['salt', 0.6], ['garlic_powder', 0.31], ['onion_powder', 0.24], ['paprika', 0.23],
       ['turkey_pepperoni', 28], ['pizza_sauce', 35], ['parmesan', 8], ['garlic', 1.5], ['light_cream_cheese', 20], ['italian_herbs', 0.15],
-      ['hot_sauce', 10], ['parsley', 1], ['flour_tortilla', 72], ['mozzarella_light', 25], ['light_cheddar', 20],
+      ['hot_sauce', 10], ['parsley', 1], ['low_carb_tortilla', 71], ['mozzarella_light', 25], ['light_cheddar', 20],
     ],
     steps: [
       { title: "Cook the chicken", text: "Slice the chicken into thin fillets, toss with the oil, salt, garlic and onion powder and paprika. Cook over medium-high heat 4–6 minutes a side (165°F inside). Rest, then dice small.", min: 12 },
