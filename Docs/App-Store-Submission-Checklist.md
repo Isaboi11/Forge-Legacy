@@ -46,10 +46,11 @@ No lifetime plan. United States only at launch.
 - ⬜ Paywall code: Early Bird prices while spots last · Tester AI shown ONLY to the 14 testers ·
   never offer a second group to someone already subscribed · remove the old $149 Founder offer
 - 🔨 RevenueCat — PO signed up 09-23
-  - ⬜ Project + iOS app (bundle ID `com.qest4.forgelegacy`)
-  - 🔨 In-App Purchase key (.p8) — generated + downloaded 09-24 (Key ID `A8T8CTT9TS`); PO uploading it to
-    RevenueCat. Back up the .p8 in `Forge Legacy Documents` (personal OneDrive) — NEVER in the repo
-  - ⬜ Confirm the RevenueCat email · rename the project to "Forge Legacy"
+  - ✅ Project + iOS app (bundle ID `com.qest4.forgelegacy`) — 09-24
+  - ✅ In-App Purchase key (.p8) uploaded to RevenueCat — 09-24 (Key ID `A8T8CTT9TS`).
+    ⬜ Move the .p8 from Downloads to `Forge Legacy Documents` (personal OneDrive) — NEVER in the repo
+  - ⬜ Enter the Small Business Program start date in RevenueCat (App settings) once Apple approves
+  - ✅ RevenueCat email confirmed — 09-24 · ⬜ rename the project to "Forge Legacy" (it reads "Create an app called Forge Legacy LLC")
   - ⬜ 10 products imported · entitlements `premium` + `coach_ai` · offerings for regular / Early Bird / Tester AI
   - ⬜ Public iOS SDK key (`appl_…`) given to Claude — never the secret `sk_…` key or the .p8
   - ⬜ Code: adapter in `src/lib/billing.ts` over `react-native-purchases` (native → build 9 only)
