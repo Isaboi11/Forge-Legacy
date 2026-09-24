@@ -1,4 +1,5 @@
-/* ⚠ GENERATED — regenerate with scripts/nutrition/gen_grocery_ts.py (see grocery.py's header).
+/* ⚠ SINCE 2026-09-24 EDITED BY HAND (the PO's recipes brought new ingredients) — re-running
+ * scripts/nutrition/gen_grocery_ts.py would drop them.
  *
  * How each ingredient is BOUGHT: its aisle, the unit a store sells it in, whether it is a pantry staple
  * (starts in "Have it"), and a price where a public government source has one:
@@ -121,6 +122,22 @@ export const GROCERY: Record<string, GroceryItemMeta> = {
   burger_bun: { name: "Brioche burger buns", aisle: "Pantry", buy: { kind: 'pack', grams: 360, unit: "pack of 6" }, staple: false, price: null },
   american_cheese_light: { name: "Reduced-fat American slices", aisle: "Dairy & Eggs", buy: { kind: 'pack', grams: 340, unit: "pack" }, staple: false, price: null },
   mozzarella_light: { name: "Part-skim mozzarella", aisle: "Dairy & Eggs", buy: { kind: 'pack', grams: 227, unit: "bag" }, staple: false, price: null },
+  cilantro: { name: "Fresh cilantro", aisle: "Produce", buy: { kind: 'pack', grams: 60, unit: "bunch" }, staple: false, price: null },
+  avocado_oil: { name: "Avocado oil spray", aisle: "Pantry", buy: { kind: 'pack', grams: 142, unit: "can" }, staple: true, price: null },
+  mini_wrap: { name: "Low-carb mini wraps", aisle: "Pantry", buy: { kind: 'pack', grams: 300, unit: "pack of 10" }, staple: false, price: null },
+  light_mayo: { name: "Light mayonnaise", aisle: "Pantry", buy: { kind: 'pack', grams: 443, unit: "jar" }, staple: false, price: null },
+  hot_sauce: { name: "Hot sauce", aisle: "Pantry", buy: { kind: 'pack', grams: 150, unit: "bottle" }, staple: false, price: null },
+  baking_powder: { name: "Baking powder", aisle: "Pantry", buy: { kind: 'pack', grams: 230, unit: "can" }, staple: true, price: null },
+  applesauce: { name: "Unsweetened applesauce", aisle: "Pantry", buy: { kind: 'pack', grams: 680, unit: "jar" }, staple: false, price: null },
+  pb_light: { name: "Reduced-fat peanut butter", aisle: "Pantry", buy: { kind: 'pack', grams: 510, unit: "jar" }, staple: false, price: null },
+  vanilla: { name: "Vanilla extract", aisle: "Pantry", buy: { kind: 'pack', grams: 50, unit: "bottle" }, staple: true, price: null },
+  choc_chips: { name: "Mini chocolate chips", aisle: "Pantry", buy: { kind: 'pack', grams: 283, unit: "bag" }, staple: false, price: null },
+  marshmallow_creme: { name: "Marshmallow creme", aisle: "Pantry", buy: { kind: 'pack', grams: 198, unit: "jar" }, staple: false, price: null },
+  milk_chocolate: { name: "Milk chocolate bar", aisle: "Pantry", buy: { kind: 'pack', grams: 100, unit: "bar" }, staple: false, price: null },
+  turkey_pepperoni: { name: "Sliced turkey pepperoni", aisle: "Meat & Fish", buy: { kind: 'pack', grams: 170, unit: "pack" }, staple: false, price: null },
+  pepperoni: { name: "Sliced pepperoni", aisle: "Meat & Fish", buy: { kind: 'pack', grams: 170, unit: "pack" }, staple: false, price: null },
+  pizza_sauce: { name: "Pizza sauce", aisle: "Pantry", buy: { kind: 'pack', grams: 400, unit: "jar" }, staple: false, price: null },
+  light_cheddar: { name: "Reduced-fat shredded cheddar", aisle: "Dairy & Eggs", buy: { kind: 'pack', grams: 227, unit: "bag" }, staple: false, price: null },
   oregano: { name: "Dried oregano", aisle: "Spices", buy: { kind: 'pack', grams: 20, unit: "jar" }, staple: true, price: null },
   paprika: { name: "Smoked paprika", aisle: "Spices", buy: { kind: 'pack', grams: 60, unit: "jar" }, staple: true, price: null },
   parmesan: { name: "Parmesan", aisle: "Dairy & Eggs", buy: { kind: 'pack', grams: 142, unit: "wedge" }, staple: false, price: null },

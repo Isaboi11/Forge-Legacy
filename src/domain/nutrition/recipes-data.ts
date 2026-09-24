@@ -1,4 +1,7 @@
-/* ⚠ GENERATED — do not hand-edit numbers. Regenerate with scripts/nutrition (see usda.py's header).
+/* ⚠ SINCE 2026-09-24 THIS FILE IS EDITED BY HAND, NOT REGENERATED. The starter 40 came from
+ * scripts/nutrition; re-running gen_recipes_ts.py would bring them back and drop the PO's recipes. A new
+ * ingredient's numbers are still copied from SR Legacy by fdcId (`python usda.py <words>`), never typed
+ * from memory, and `recipe-book.test.mjs` checks every shipped recipe.
  *
  * Every per-100 g figure below is copied by script from USDA FoodData Central, SR Legacy 2018-04
  * (`food_nutrient.csv`: 1008 energy kcal · 1003 protein · 1004 fat · 1005 carbohydrate), keyed by the
@@ -143,6 +146,27 @@ export const INGREDIENTS = {
   burger_bun: { fdcId: 172796, name: "Brioche burger bun", kcal: 279, protein: 9.77, fat: 3.91, carb: 50.12, allergens: ["gluten", "eggs", "dairy"], diet: "animal", us: { kind: 'each', grams: 60, one: "bun", many: "buns" } },
   american_cheese_light: { fdcId: 173455, name: "Reduced-fat American cheese", kcal: 240, protein: 17.6, fat: 14.1, carb: 10.6, allergens: ["dairy"], diet: "animal", us: { kind: 'each', grams: 21, one: "slice", many: "slices" } },
   mozzarella_light: { fdcId: 171244, name: "Part-skim mozzarella", kcal: 295, protein: 23.75, fat: 19.78, carb: 5.58, allergens: ["dairy"], diet: "animal", us: { kind: 'cup', grams: 113 } },
+  cilantro: { fdcId: 169997, name: "Fresh cilantro, chopped", kcal: 23, protein: 2.13, fat: 0.52, carb: 3.67, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 0.33 } },
+  avocado_oil: { fdcId: 173573, name: "Avocado oil (or spray)", kcal: 884, protein: 0, fat: 100, carb: 0, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 4.5 } },
+  // ⚠ STAND-IN: SR Legacy has no low-carb wrap. A flour tortilla's numbers at a mini wrap's 30 g — a real
+  // low-carb wrap has less carbohydrate and more fibre than this.
+  mini_wrap: { fdcId: 175037, name: "Mini flour wrap", kcal: 306, protein: 8.2, fat: 7.99, carb: 49.38, allergens: ["gluten"], diet: "plant", us: { kind: 'each', grams: 30, one: "mini wrap", many: "mini wraps" } },
+  light_mayo: { fdcId: 173594, name: "Light mayonnaise", kcal: 238, protein: 0.37, fat: 22.22, carb: 9.23, allergens: ["eggs"], diet: "animal", us: { kind: 'tsp', grams: 5 } },
+  hot_sauce: { fdcId: 174527, name: "Hot sauce", kcal: 11, protein: 0.51, fat: 0.37, carb: 1.75, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 4.7 } },
+  baking_powder: { fdcId: 172804, name: "Baking powder", kcal: 51, protein: 0.1, fat: 0, carb: 24.1, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 4.6 } },
+  applesauce: { fdcId: 171695, name: "Unsweetened applesauce", kcal: 42, protein: 0.17, fat: 0.1, carb: 11.27, allergens: [], diet: "plant", us: { kind: 'cup', grams: 244 } },
+  pb_light: { fdcId: 172458, name: "Reduced-fat peanut butter", kcal: 520, protein: 25.9, fat: 34, carb: 35.65, allergens: ["peanuts"], diet: "plant", us: { kind: 'tsp', grams: 6 } },
+  vanilla: { fdcId: 173471, name: "Vanilla extract", kcal: 288, protein: 0.06, fat: 0.06, carb: 12.65, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 4.2 } },
+  // Semisweet chips are often made on dairy lines with soy lecithin — tagged both, conservatively.
+  choc_chips: { fdcId: 167976, name: "Mini chocolate chips", kcal: 480, protein: 4.2, fat: 30, carb: 63.9, allergens: ["dairy", "soy"], diet: "animal", us: { kind: 'cup', grams: 173 } },
+  // Marshmallow creme is whipped with egg white (no gelatin), so eggs — and vegetarian, not vegan.
+  marshmallow_creme: { fdcId: 169664, name: "Marshmallow creme", kcal: 322, protein: 0.8, fat: 0.3, carb: 79, allergens: ["eggs"], diet: "animal", us: { kind: 'oz' } },
+  milk_chocolate: { fdcId: 167587, name: "Milk chocolate", kcal: 535, protein: 7.65, fat: 29.66, carb: 59.4, allergens: ["dairy", "soy"], diet: "animal", us: { kind: 'each', grams: 6, one: "square", many: "squares" } },
+  pepperoni: { fdcId: 174575, name: "Pepperoni, sliced", kcal: 504, protein: 19.25, fat: 46.28, carb: 1.18, allergens: [], diet: "meat", us: { kind: 'each', grams: 2, one: "slice", many: "slices" } },
+  // SR Legacy's only turkey pepperoni is a branded record (174593); the brand is not shown.
+  turkey_pepperoni: { fdcId: 174593, name: "Turkey pepperoni, sliced", kcal: 243, protein: 30.99, fat: 11.52, carb: 3.78, allergens: [], diet: "meat", us: { kind: 'each', grams: 2, one: "slice", many: "slices" } },
+  pizza_sauce: { fdcId: 172880, name: "Pizza sauce", kcal: 54, protein: 2.18, fat: 1.15, carb: 8.66, allergens: [], diet: "plant", us: { kind: 'cup', grams: 252 } },
+  light_cheddar: { fdcId: 173439, name: "Reduced-fat cheddar, shredded", kcal: 173, protein: 24.35, fat: 7, carb: 1.91, allergens: ["dairy"], diet: "animal", us: { kind: 'cup', grams: 113 } },
   turkey_bacon: { fdcId: 174592, name: "Turkey bacon", kcal: 226, protein: 15.94, fat: 16.93, carb: 1.89, allergens: [], diet: "meat", us: { kind: 'each', grams: 16, one: "slice", many: "slices" } },
   parmesan: { fdcId: 171247, name: "Parmesan, grated", kcal: 420, protein: 28.42, fat: 27.84, carb: 13.91, allergens: ["dairy"], diet: "animal", us: { kind: 'tsp', grams: 1.67 } },
   pasta: { fdcId: 169736, name: "Orzo or pasta, dry", kcal: 371, protein: 13.04, fat: 1.51, carb: 74.67, allergens: ["gluten"], diet: "plant", us: { kind: 'oz' } },
@@ -290,6 +314,63 @@ export const RECIPE_SOURCES: readonly RecipeSource[] = [
       { title: "Caramelise the onion", text: "Slice the red onion and cook it in a lightly oiled pan until soft, 8 minutes. Add a splash of balsamic and the brown sugar and cook until jammy.", min: 10 },
       { title: "Build and bake", text: "Heat the oven to 375°F. Fill each bun with beef, onion, a slice of American cheese and the mozzarella. Bake 10–12 minutes until the cheese melts.", min: 12 },
       { title: "Store and reheat", text: "Wrap cooled sliders in foil and refrigerate up to 2 days. Microwave 30–60 seconds, then air-fry to crisp until hot through (165°F)." },
+    ],
+  },
+  {
+    id: 'p04', slot: 'dinner', mealTypes: ["lunch", "dinner"], leftoverDays: 3, reheat: 'ok', proteinSource: 'beef', format: "taco",
+    name: "Crispy sheet-pan beef tacos", minutes: 55, batch: true, equipment: ["Large sheet pan"],
+    // Batch of 15 tacos; ONE SERVING = 2 TACOS, so the batch is divided by 7.5. 1200 g 95% lean beef,
+    // 200 g tomato paste, 200 g onion, 200 g bell pepper, 15 mini wraps, 320 g mozzarella; sauce: 300 g yogurt,
+    // 120 g light mayo, 100 g hot sauce, 50 g honey. Spices summed across beef, vegetables and sauce.
+    ingredients: [
+      ['ground_beef_95', 160], ['tomato_paste', 26.7], ['onion', 26.7], ['red_pepper', 26.7], ['avocado_oil', 3], ['salt', 2.4],
+      ['paprika', 1.53], ['oregano', 0.53], ['garlic_powder', 1.65], ['onion_powder', 1.28], ['cumin', 0.84], ['cilantro', 0.27],
+      ['mini_wrap', 60], ['mozzarella_light', 43], ['yogurt', 40], ['light_mayo', 16], ['hot_sauce', 13.3], ['honey', 6.7], ['parsley', 0.67],
+    ],
+    steps: [
+      { title: "Make the sauce", text: "Stir together the yogurt, light mayo, hot sauce, honey, a pinch of smoked paprika and onion powder, and some chopped parsley. Chill until serving." },
+      { title: "Roast the vegetables", text: "Heat the oven to 375°F. Spread the chopped onion and bell pepper on a lined sheet pan, spray with avocado oil, season with some of the salt and spices, and roast 15 minutes.", min: 15 },
+      { title: "Add the beef", text: "Spread the beef over the vegetables with the tomato paste, cilantro and the rest of the spices. Mix, flatten, and spray lightly." },
+      { title: "Bake the beef", text: "Bake 6 minutes, break it up, then bake 6 more until lightly crisp and no pink remains (160°F). Stir in a splash of water so it stays juicy.", min: 12 },
+      { title: "Crisp the tacos", text: "Dip each wrap in the pan juices, fill with beef and mozzarella, fold, and bake 12 minutes, turning halfway, until golden. Serve with the sauce.", min: 12 },
+      { title: "Store and reheat", text: "Refrigerate up to 3 days, sauce separately. Reheat in the oven or air fryer until crisp and hot through (165°F)." },
+    ],
+  },
+  {
+    id: 'p05', slot: 'snacks', mealTypes: ["snacks"], leftoverDays: 4, reheat: 'cold', proteinSource: 'dairy', format: "cookie",
+    name: "Stuffed s'mores protein cookies", minutes: 20, batch: true, equipment: [],
+    // Batch of 6 filled cookies (12 dough balls, sandwiched): 45 g whey + 15 g casein (casein as whey — SR
+    // Legacy has no casein powder), 30 g flour, 3 g baking powder, 30 g applesauce, 35 g Greek yogurt,
+    // 100 g reduced-fat peanut butter, 10 ml vanilla, 30 g mini chips; filling 18 g marshmallow creme, 35 g milk chocolate.
+    ingredients: [
+      ['whey', 10], ['flour', 5], ['baking_powder', 0.5], ['applesauce', 5], ['greek_yogurt', 5.8], ['pb_light', 16.7],
+      ['vanilla', 1.5], ['choc_chips', 5], ['marshmallow_creme', 3], ['milk_chocolate', 5.8],
+    ],
+    steps: [
+      { title: "Mix the dry", text: "Heat the oven to 350°F. Whisk the flour, protein powder and baking powder together." },
+      { title: "Make the dough", text: "Stir in the peanut butter, applesauce, Greek yogurt and vanilla until it forms a dough. Fold in the chocolate chips." },
+      { title: "Fill", text: "Divide into 12 balls and press them slightly flat on a lined sheet. Top six with a square of milk chocolate and ½ tsp marshmallow creme, cover with the other six and pinch the edges shut." },
+      { title: "Bake", text: "Bake about 7 minutes — they should look barely set. Overbaked, they turn dry.", min: 7 },
+      { title: "Cool completely", text: "Leave them on the sheet until fully cool; warm, they fall apart. Keep in an airtight box up to 4 days." },
+    ],
+  },
+  {
+    id: 'p06', slot: 'dinner', mealTypes: ["lunch", "dinner"], leftoverDays: 4, reheat: 'great', proteinSource: 'chicken', format: "burrito",
+    name: "Crispy pepperoni pizza chicken burritos", minutes: 45, batch: true, equipment: [],
+    // Batch of 10: 1.7 kg chicken breast, 200 g turkey pepperoni (the source allows beef, turkey or regular) in the filling + 4 slices outside each, 350 g pizza sauce,
+    // 80 g parmesan, 5 garlic cloves, 200 g light cream cheese, 100 ml hot sauce, 10 large tortillas
+    // (flour tortilla stands in for a low-carb one), 25 g mozzarella inside + 20 g reduced-fat cheddar outside each.
+    ingredients: [
+      ['chicken_breast', 170], ['olive_oil', 0.45], ['salt', 0.6], ['garlic_powder', 0.31], ['onion_powder', 0.24], ['paprika', 0.23],
+      ['turkey_pepperoni', 28], ['pizza_sauce', 35], ['parmesan', 8], ['garlic', 1.5], ['light_cream_cheese', 20], ['italian_herbs', 0.15],
+      ['hot_sauce', 10], ['parsley', 1], ['flour_tortilla', 72], ['mozzarella_light', 25], ['light_cheddar', 20],
+    ],
+    steps: [
+      { title: "Cook the chicken", text: "Slice the chicken into thin fillets, toss with the oil, salt, garlic and onion powder and paprika. Cook over medium-high heat 4–6 minutes a side (165°F inside). Rest, then dice small.", min: 12 },
+      { title: "Make the filling", text: "In the same pan, crisp the pepperoni. Add back the chicken with the pizza sauce, parmesan, chopped garlic, cream cheese, Italian herbs and hot sauce. Stir about 5 minutes until melted and combined. Add parsley.", min: 7 },
+      { title: "Roll", text: "Warm a tortilla, spoon a tenth of the filling and the mozzarella down the middle, and roll tightly." },
+      { title: "Crisp the outside", text: "Lay 4 pepperoni slices in a hot pan, scatter the cheddar over them and set the burrito on top, seam down. When the cheese is crisp, flip and brown the other side. Repeat.", min: 20 },
+      { title: "Store and reheat", text: "Refrigerate up to 4 days or freeze up to 2 months. Reheat in an air fryer or oven until hot through (165°F)." },
     ],
   },
 ];
