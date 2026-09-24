@@ -73,3 +73,19 @@ fallback behind USDA and Open Food Facts.
 
 `supabase/functions/food-search/index.ts` already no-ops when those secrets are unset and starts calling
 FatSecret on the next request once they exist.
+
+## Third reply, 2026-09-23 — Premier Free provisioned
+
+James (fatsecret Platform API Support), 7:09 PM:
+
+> We have provisioned your API key with free **Premier Free** access and look forward to seeing what you
+> build. You now have access to Premier features (barcode scanning, auto-complete search, and food
+> categories) and our US data set.
+>
+> Please ensure you comply with the terms of use and in particular attribution (only relevant once you
+> have finished development and are live).
+
+**What this settles:** the `barcode` scope that `fatsecretToken()` already requests (`basic barcode`) is
+now granted — before this, asking for it would have failed the token call. US data set is on.
+Attribution ("Powered by fatsecret") is required at go-live; every `fs` result already carries it.
+The two console steps above are still the only thing between us and live FatSecret results.
