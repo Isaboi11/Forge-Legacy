@@ -5,8 +5,9 @@
  * name and a vendor can be dropped without touching a screen:
  *
  *   1. **USDA FoodData Central** — primary. CC0 public domain, so a log row may keep its numbers forever.
- *   2. **Open Food Facts** — barcode fallback. ⚠ ODbL share-alike: its rows are kept in their own table,
- *      never merged with ours, and are labelled "Community data" in the UI.
+ *   2. **Open Food Facts** — the biggest packaged-food set (barcodes AND, since 2026-09-25, typed search).
+ *      ⚠ ODbL share-alike: its rows are kept in their own table, never merged with ours, and are
+ *      labelled "Community data" in the UI.
  *   3. **FatSecret** — restaurants and branded misses. **WRITTEN AND DORMANT** (see below).
  *
  * ══ ⚠ WHY FATSECRET IS DORMANT ══
@@ -256,14 +257,14 @@ async function usdaPortions(ids: string[]): Promise<Map<string, Serving[]>> {
   return out;
 }
 
-async function usdaSearch(query: string, limit: number): Promise<Food[]> {
+async function usdaSearch(query: string, limit: number, dataType = 'Foundation,SR Legacy,Survey (FNDDS),Branded'): Promise<Food[]> {
   const url = new URL('https://api.nal.usda.gov/fdc/v1/foods/search');
   url.searchParams.set('api_key', FDC_KEY);
   url.searchParams.set('query', query);
   url.searchParams.set('pageSize', String(limit));
   // Generic foods first: they are what someone typing "chicken breast" means, and they carry full
   // nutrient panels. Branded follows for the packaged case.
-  url.searchParams.set('dataType', 'Foundation,SR Legacy,Survey (FNDDS),Branded');
+  url.searchParams.set('dataType', dataType);
 
   // ⚠ USDA's gateway answers a bare nginx "400 Bad Request" to a request it accepted a second earlier
   // (seen 2026-09-24: "Big mac" 400, then 24 results). One retry for that, never for 429/403.
@@ -301,9 +302,17 @@ async function withPortions(foods: Food[]): Promise<Food[]> {
   );
 }
 
+/**
+ * USDA has no barcode endpoint, but the Branded set's `gtinUpc` is a searchable FIELD.
+ *
+ * ⚠ A BARE NUMBER IS A FULL-TEXT SEARCH, AND IT ALMOST NEVER FINDS THE PRODUCT. Measured 2026-09-25: the
+ * old `query=16000275287` found none of Cheerios, Diet Coke, Pringles or a Clif bar; `gtinUpc:<code>` found
+ * the Clif bar and a Quest bar the PO had just failed to scan. Brands file the code as 12, 13 or 14
+ * digits, so all three forms are asked for in one OR query.
+ */
 async function usdaBarcode(gtin: string): Promise<Food[]> {
-  // USDA has no barcode endpoint; the Branded set carries `gtinUpc` and the search index covers it.
-  const found = await usdaSearch(gtin.replace(/^0+/, ''), 5);
+  const forms = [...new Set([gtin.slice(-12), gtin.slice(-13), gtin])];
+  const found = await usdaSearch(forms.map((c) => `gtinUpc:${c}`).join(' OR '), 5, 'Branded');
   return found.filter((f) => f.gtin && f.gtin === gtin);
 }
 
@@ -515,6 +524,55 @@ async function fatsecretBarcode(gtin: string): Promise<Food[]> {
   // Stamp the code we scanned so the 24-hour cache answers the next scan of it.
   return food ? [{ ...food, gtin }] : [];
 }
+
+/**
+ * Open Food Facts typed search — its search service (search-a-licious), not the old `cgi/search.pl`,
+ * which allows 10 requests a minute. ~1 s measured. Rows without calories or a name are dropped: a
+ * community entry with no energy value is not a food anyone can log.
+ */
+async function offSearch(query: string, limit: number): Promise<Food[]> {
+  const url = new URL('https://search.openfoodfacts.org/search');
+  url.searchParams.set('q', query);
+  url.searchParams.set('page_size', String(limit * 2));
+  url.searchParams.set('fields', 'code,product_name,brands,nutriments,serving_size,serving_quantity');
+  const res = await fetch(url, { headers: { 'user-agent': OFF_UA, accept: 'application/json' }, signal: AbortSignal.timeout(SLOW_MS.extra) });
+  if (!res.ok) {
+    console.log(`off search ${res.status}`);
+    return [];
+  }
+  const body = await res.json();
+  const out: Food[] = [];
+  for (const p of body.hits ?? []) {
+    const n = p.nutriments ?? {};
+    const kcal = num(n['energy-kcal_100g']);
+    const code = String(p.code ?? '').replace(/\D/g, '');
+    if (!p.product_name || kcal == null || !code) continue;
+    const servings: Serving[] = [{ label: '100 g', grams: 100 }];
+    const servingGrams = num(p.serving_quantity);
+    if (p.serving_size) servings.unshift({ label: String(p.serving_size), grams: servingGrams });
+    const brands = Array.isArray(p.brands) ? p.brands.join(', ') : p.brands;
+    out.push({
+      key: `off:${code.replace(/^0+/, '')}`,
+      source: 'off',
+      sourceId: code.replace(/^0+/, ''),
+      name: String(p.product_name).trim(),
+      brand: brands ? String(brands) : null,
+      gtin: normaliseGtin(code),
+      kcal100: kcal,
+      protein100: num(n.proteins_100g),
+      carb100: num(n.carbohydrates_100g),
+      fat100: num(n.fat_100g),
+      servings,
+      micros: offMicros(n),
+      attribution: 'Data from Open Food Facts (ODbL)',
+    });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+/** A food with all three macros — preferred over one that knows only its calories. */
+const complete = (f: Food) => f.kcal100 != null && f.protein100 != null && f.carb100 != null && f.fat100 != null;
 
 // ── Fewer, better results ────────────────────────────────────────────────────
 
@@ -792,9 +850,22 @@ Deno.serve(async (req) => {
       if (found.length) return json({ foods: found });
     }
 
-    let foods = await withPortions(await usdaBarcode(gtin));
-    if (!foods.length) foods = await offBarcode(gtin);
-    if (!foods.length) foods = await fatsecretBarcode(gtin).catch(() => []);
+    /*
+     * ⚠ ALL THREE AT ONCE, NOT ONE AFTER ANOTHER. PO, 2026-09-25: a protein bar scanned and "didn't pull
+     * up the food". In series each source had 6 s, so a miss could take 20 s before the app gave up.
+     * In parallel the answer is as slow as the slowest source and never slower. The licence order still
+     * decides which answer wins — USDA (CC0), then FatSecret, then Open Food Facts — but a row with all
+     * three macros beats one that knows only its calories.
+     */
+    const started = Date.now();
+    const [usda, off, fs] = await Promise.all([
+      usdaBarcode(gtin).then(withPortions).catch((e) => (console.log(`usda barcode failed: ${e}`), [] as Food[])),
+      offBarcode(gtin).catch((e) => (console.log(`off barcode failed: ${e}`), [] as Food[])),
+      fatsecretBarcode(gtin).catch((e) => (console.log(`fatsecret barcode failed: ${e}`), [] as Food[])),
+    ]);
+    console.log(`barcode ${gtin}: usda ${usda.length}, fatsecret ${fs.length}, off ${off.length}, ${Date.now() - started} ms`);
+    const all = [...usda, ...fs, ...off];
+    const foods = [...all.filter(complete), ...all.filter((f) => !complete(f))];
     await cache(foods);
     return json({ foods });
   }
@@ -807,21 +878,22 @@ Deno.serve(async (req) => {
 
   // Sources run in parallel: a slow or dormant one must not hold up the rest of the results.
   const started = Date.now();
-  const [usda, fs] = await Promise.all([
+  const [usda, fs, off] = await Promise.all([
     usdaSearch(q, limit - ours.length).catch((e) => (console.log(`usda search failed: ${e}`), [] as Food[])),
     fatsecretSearch(q, 10).catch((e) => (console.log(`fatsecret search failed: ${e}`), [] as Food[])),
+    offSearch(q, 8).catch((e) => (console.log(`off search failed: ${e}`), [] as Food[])),
   ]);
   // One line per search in the dashboard's Logs tab: how many each source gave, and how long it took.
-  console.log(`search "${q}": cached ${ours.length}, usda ${usda.length}, fatsecret ${fs.length}, ${Date.now() - started} ms`);
+  console.log(`search "${q}": cached ${ours.length}, usda ${usda.length}, fatsecret ${fs.length}, off ${off.length}, ${Date.now() - started} ms`);
 
-  // Both sources came back empty (a limit, an outage, a timeout). Answer from the catalogue at any age
+  // Every source came back empty (a limit, an outage, a timeout). Answer from the catalogue at any age
   // rather than "Nothing found" — PO, 2026-09-24, "nothing found for big mac".
-  if (!usda.length && !fs.length && !ours.length) {
+  if (!usda.length && !fs.length && !off.length && !ours.length) {
     const old = await cached(q, limit, true);
     return json({ foods: tidy(q, old) });
   }
 
-  const fetched = new Set([...usda, ...fs].map((f) => f.key));
+  const fetched = new Set([...usda, ...fs, ...off].map((f) => f.key));
 
   /*
    * De-duplicate by key, ours first — a cached row and a fresh one are the same food.
@@ -830,10 +902,13 @@ Deno.serve(async (req) => {
    * appending FatSecret after it and slicing to `limit` cut FatSecret off every time — the PO searched
    * "big mac" on 2026-09-24 and saw only USDA rows.
    */
+  /* Open Food Facts rides third in each round: its names are the least curated ("Quest protein bar" ×8,
+     no flavour), so it fills gaps rather than leading. PO, 2026-09-25: "searching all of the data bases". */
   const interleaved: Food[] = [];
-  for (let i = 0; i < Math.max(usda.length, fs.length); i++) {
+  for (let i = 0; i < Math.max(usda.length, fs.length, off.length); i++) {
     if (fs[i]) interleaved.push(fs[i]);
     if (usda[i]) interleaved.push(usda[i]);
+    if (off[i]) interleaved.push(off[i]);
   }
   const seen = new Set(ours.map((f) => f.key));
   const merged = [...ours];

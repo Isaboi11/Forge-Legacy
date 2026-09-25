@@ -531,7 +531,9 @@ function BarcodeSheet({
             every time the sheet closes. */}
         {ScanCamera && open ? <ScanCamera paused={busy} onScan={find} /> : null}
         <Text style={styles.sheetNote}>
-          {ScanCamera ? 'Or type the number under the barcode.' : 'Type the number under the barcode.'}
+          {ScanCamera
+            ? 'Hold the barcode a few inches away until it sharpens. Or type the number under it.'
+            : 'Type the number under the barcode.'}
         </Text>
         <TextInput
           value={code}
