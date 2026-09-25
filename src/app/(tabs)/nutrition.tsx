@@ -293,7 +293,7 @@ export default function NutritionScreen() {
         {/* ── macro rings ───────────────────────────────────────────────── */}
         <View style={styles.macroRow}>
           <MacroRing label="Protein" value={eaten.protein} target={targets?.protein ?? null} color={flColor.greenMuted} />
-          <MacroRing label="Carbs" value={eaten.carb} target={targets?.carb ?? null} color={flColor.bronze400} />
+          <MacroRing label="Carbs" value={eaten.carb} target={targets?.carb ?? null} color={flColor.plumMuted} />
           <MacroRing label="Fat" value={eaten.fat} target={targets?.fat ?? null} color={flColor.blueMuted} />
         </View>
 
