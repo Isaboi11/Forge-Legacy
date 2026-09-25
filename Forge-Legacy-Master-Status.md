@@ -900,6 +900,10 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### ⭐ Onboarding theme chooser is stone cards — PO mockup (2026-09-25, `a3750922`, ONB-A7-D1 amended) · ✅ web `index-24a8494c08ee2f439182ff646a4e8487.js` (200 + hash-matched; `deploy/holt-v2` + this commit) · ✅ OTA build 9 iOS `01a0dae2-f28a-7ce4…` (`ota/build9-js` + this commit, fingerprint `b322e3de` MATCHED, manifest verified)
+
+"Choose the Forge that feels like yours." Forge · Dark and Alabaster · Light are full-width cards cut from their own stone, with the radio top-right and a bronze border + filled check when chosen. The stone art is cut from the PO's mockup and is soft at phone resolution; higher-res art drops in at `assets/images/onboarding/theme-{forge,alabaster}.png`. The screen background is still the usual plate (the mockup shows veined stone). ⏳ Not yet seen by the PO.
+
 ### 000000000000000000000000. ⭐ Holt changes your program, remembers past chats, finds recipes, reads a form check clearly, and tells you your squad was notified (2026-09-25, Coach AI · **Coach-AI-Amendment-002** + **Holt-Voice-Amendment-002** LOCKED by PO · commits `09bc5231` `33ac5f6b` `9ea037ac` · 4360/4360 tests · tsc 0 · lint clean · ✅ **0217, 0218, 0220 APPLIED** (§3 read back as predicted) · ✅ **coach-ask, coach-form-check, recipe-photo-read DEPLOYED** by the PO (paste headers made plain ASCII after a line-1 parse failure) · ✅ web `index-9cf981e2ec6fb5a12ef02bcc990e00ab.js` (200 + hash-matched, from `deploy/holt-v2` = `deploy/care-line` + these commits) · ✅ OTA build 9 iOS `01a0dab6-5d6b-7853…` / Android `01a0dab6-5d6b-70ba…` (lane `ota/build9-js` `180a823c`, stacked on the community-foods OTA, fingerprint MATCHED, manifest verified) · ⏳ not yet seen working live)
 
 PO 09-25 asked for five things after Holt's read tools went live. All built; nothing is live yet.
