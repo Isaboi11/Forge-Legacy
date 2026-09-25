@@ -233,9 +233,15 @@ export default function SubscriptionScreen() {
    * ⚠ THE STORE CONFIRMS BEFORE WE DO. The webhook writes the purchase a moment after Apple's sheet
    * closes, so entitlement is re-read a few times rather than once — otherwise a paying athlete sees
    * "Free" for the first seconds after paying, which reads as being charged for nothing.
+   *
+   * ⚠ AND IT RUNS AFTER EVERY ATTEMPT, NOT ONLY A CONFIRMED ONE (sandbox test, 2026-09-25). When Apple
+   *   stops mid-purchase to ask for the Apple ID password, StoreKit can hand the app an error or a
+   *   cancel and then complete the transaction in the background. The webhook landed 5 s later, but the
+   *   screen had been told "no purchase" and never re-read — it showed Free until a force-quit. Reads are
+   *   free and harmless, so the tail is a full minute and every outcome but "unavailable" starts it.
    */
   const settle = () => {
-    for (const ms of [1500, 4000, 8000, 15000]) {
+    for (const ms of [1500, 4000, 8000, 15000, 30000, 60000]) {
       setTimeout(() => {
         refetch();
         refetchOffer();
@@ -260,7 +266,11 @@ export default function SubscriptionScreen() {
     } else if (outcome === 'unavailable') {
       setNotice('Purchases aren’t available on this device yet.');
     } else if (outcome === 'failed') {
-      setNotice('Couldn’t start the purchase. Try again.');
+      setNotice(PURCHASE_FAILED);
+      settle();
+    } else {
+      // Cancelled — still re-read, quietly: an Apple ID sign-in can report a cancel and then complete.
+      settle();
     }
   };
 
@@ -466,7 +476,8 @@ export default function SubscriptionScreen() {
             a scrolling screen where "above the button" is always true.
           */}
           <View style={[styles.commitBar, { paddingBottom: 15 + insets.bottom }]}>
-            {notice ? (
+            {/* A "couldn't start" that the store went on to complete is no longer true once Premium lands. */}
+            {notice && !(notice === PURCHASE_FAILED && isPremium) ? (
               <Text style={styles.notice} accessibilityLiveRegion="polite">
                 {notice}
               </Text>
@@ -536,6 +547,8 @@ function RestoreLink({ busy, onPress }: { busy: boolean; onPress: () => void }) 
 }
 
 // ── Premium ──────────────────────────────────────────────────────────────────
+
+const PURCHASE_FAILED = 'Couldn’t start the purchase. Try again.';
 
 const KIND_LABEL: Record<string, string> = {
   MONTHLY: 'Monthly',
