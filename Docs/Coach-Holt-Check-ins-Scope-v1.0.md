@@ -47,6 +47,27 @@ A check-in is **the numbers plus one human line** that fits the day, for example
 - Nothing logged yet: *"Your day: 2,400 cal and 180 g protein to aim for."* It **never** says *"you
   haven't logged"* (P-5 §3.2e forbids absence-referencing).
 
+### The gap line: close it with what's on the list (PO, 2026-09-24)
+
+PO: *"Saying stuff like, looks like you need 15 g more of protein. Did you end up getting that yogurt on the
+grocery list? That would be perfect."*
+
+When a macro is short later in the day, Holt names the gap **and one item that closes it, from the
+athlete's own Grocery List**:
+
+- *"Looks like you need 15 g more protein. Did you end up getting that Greek yogurt on your list? A cup would
+  cover it."*
+- Already bought: *"You've got Greek yogurt from this week's shop. A cup would cover the last 15 g."*
+- Nothing on the list fits: the gap line only (*"15 g protein to go"*). Holt never invents a food the athlete
+  doesn't have in a check-in. Suggestions from outside the list belong to the Kitchen, where they're asked for.
+
+**How the item is picked (code, not model):** list items (bought, have, or still to buy) whose portion covers
+the gap without going past the day's calories, preferring bought over to-buy and a common portion ("a cup",
+"two eggs"). The 15 g and the "a cup would cover it" come from the ingredient table's numbers, like every figure
+Holt says. **Never for a calorie shortfall that is really under-eating:** the care response takes over (§4).
+It appears in a check-in the athlete set up, and in Holt's chat when opened in the afternoon or evening,
+at most once a day.
+
 **The numbers are never written by a model** (NUT-D4); they come from the diary. **The human line comes
 from a written library** of coach lines, picked by rules (training day, rest day, race soon, streak,
 protein gap). No AI call per push, so there's no cost per reminder and no chance of an unsafe sentence at
