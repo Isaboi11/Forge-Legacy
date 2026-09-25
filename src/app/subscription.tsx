@@ -1,5 +1,18 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  AppState,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
@@ -19,27 +32,32 @@ import {
   AI_BENEFITS,
   AUTO_RENEWAL_NOTE,
   CADENCE_COPY,
+  PAYWALL_FAQ,
   REASSURANCE,
   TIER_COPY,
   TIER_DISCLOSURE,
+  TIER_NOTE_SHORT,
   TRIAL_NOTE,
   cadenceOf,
-  comparisonRows,
+  compactComparisonRows,
   defaultSelection,
-  earlyBirdSeatLine,
   premiumBenefitLines,
   rowsFor,
   tierOf,
   tierSaving,
   tiersOn,
   trialLabel,
+  usageIsNear,
   usageRows,
   type BenefitLine,
+  type CompactRow,
   type PlanSlot,
   type PlanTier,
   type StorePlan,
+  type UsageRow,
 } from '@/domain/billing/plans-core';
-import type { CapKey } from '@/domain/entitlement/caps-core';
+import type { CapKey, Caps } from '@/domain/entitlement/caps-core';
+import { LEGAL } from '@/domain/settings/content';
 import { billing, billingAvailable, openManageSubscriptions } from '@/lib/billing';
 import { ENTITLEMENT_RETRY_MESSAGE, useEntitlementState } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
@@ -52,19 +70,24 @@ import { useQuery } from '@/lib/useQuery';
  * Amendment-003` via server config; plans and offers: Amendments 006 (Free → Premium → Premium AI) and
  * 007 (no lifetime; Early Bird for the first 100; the testers' AI add-on). Launch Checklist item 4.1.
  *
+ * ══ ⭐ DECISION FIRST — THE PO'S REDESIGN, 2026-09-25 ══
+ *
+ * The screen used to read hero → benefits → comparison → usage → plans → price → button, so the price sat
+ * two screens down. It now reads, top to bottom:
+ *
+ *   hero → Premium / Premium AI → founding-price note → yearly / monthly → START TRIAL → renewal terms →
+ *   "See what's included" → benefits → AI upsell (or AI benefits) → Free vs. Premium → "Your data is
+ *   yours" → usage → FAQ → Restore → Terms · Privacy
+ *
+ * Nothing was removed; the explanations moved below the decision. Two contextual moves: the usage card
+ * jumps up beside the price once any allowance is 80% spent (it is now this athlete's reason to buy), and
+ * a compact buy bar appears only after the main button has scrolled away.
+ *
  * ══ ⚠ WHICH PRICES THIS ATHLETE SEES IS THE SERVER'S ANSWER ══
  *
  * `my_paywall_offer()` (0214) names the RevenueCat offering — regular, Early Bird, or the testers' add-on —
  * or nothing, when the athlete already holds a subscription in a group this screen must not sell them a
  * second of. A Premium subscriber is offered only the AI step, inside their own group.
- *
- * ══ ⚠ THE DESIGN AND THE SPEC DISAGREED, AND THE SPLIT WAS DECIDED BY THE PO ══
- *
- * The `.dc` predates the pricing lock of 2026-08-12. It carries a three-plan ladder at typed prices, no
- * Founder or Lifetime row, no Coach AI disclosure, and benefit copy promising analytics, Communities and
- * "unlimited Squads" — none of which exist and the last of which the tier cannot deliver (M7-D15). So:
- * **the design governs the visual language, the locked spec governs every number, plan and claim.**
- * The deltas are listed at the bottom of this comment.
  *
  * ══ ⚠ THIS SCREEN CANNOT MAKE ANYBODY PREMIUM ══
  *
@@ -76,27 +99,23 @@ import { useQuery } from '@/lib/useQuery';
  *
  * P-8 §80 and P8W-D3 are binding. Every price is the localized string the store returned; the only
  * derived figure is the annual saving percentage, computed in `plans-core.ts` from two platform prices
- * and rendered as nothing at all when it cannot be stood behind.
+ * and rendered as nothing at all when it cannot be stood behind. The button names the trial ("Start
+ * 7-day free trial") only when the store says the selected plan carries one, and never names a price.
+ *
+ * ══ ⚠ P8W-D4 STILL HOLDS: WHAT PREMIUM DOES NOT INCLUDE SITS ABOVE EVERY BUY BUTTON ══
+ *
+ * The PO asked for the full sentence to leave the sticky bar. The rule is about its existence and place,
+ * not its wording, so: above the main button it is the hero's own sentence ("Upgrade to Premium AI for
+ * the full AI coach"), and the sticky bar carries `TIER_NOTE_SHORT` — one short line, Premium only.
  *
  * ══ DELTAS vs the `.dc`, all deliberate ══
  *  · Header reads "Subscription", not "Membership" — §2.1/§7 lock it twice, including in the a11y table.
- *  · The picker sits above the buy button (§3.2's diagram) rather than under the hero. ⚠ §11.2's prose
- *    says "between the reassurance line and the usage review" and contradicts its own §3.2 diagram; the
- *    diagram is the v1.1 revision and putting plan → disclosure → button adjacent is the whole point of
- *    P8W-D4. Flagged for the spec's next amendment rather than silently resolved.
- *  · The social-proof line ("Thousands of photos. Years of chapters.") is DROPPED. It is an unverifiable
- *    claim on a purchase screen for a product with 20 testers — pricing plan, Legal §8: claims must be
- *    true.
- *  · The buy button reads "Continue", not the design's "Start Premium · [price]" — §11.5 locks both the
- *    label and its hint. (No price appears in this comment either: §9 says grep for one and find none.)
- *  · The `.dc`'s fineprint ("Renews automatically until cancelled — cancel anytime") is replaced by a
- *    renewal disclosure worded clear of the five claims `content.test.mjs` guards, plus the trial terms
- *    whenever the selected plan carries a trial the store actually grants.
- *  · Benefit rows are the five the caps enforce, not the `.dc`'s analytics/Communities/share-layout list.
- *  · A per-month price is rendered only when the STORE supplies one. The `.dc` divides its annual figure
- *    by twelve and prints the result; deriving a currency string Forge was never handed is how a wrong
- *    price reaches a purchase screen.
- *  · DEFERRED: the accent-palette treatment and the `.dc`'s noise overlay, as elsewhere in the app.
+ *  · The social-proof line ("Thousands of photos. Years of chapters.") is DROPPED — an unverifiable claim.
+ *  · Benefit rows are the ones the caps enforce, not the `.dc`'s analytics/Communities/share-layout list.
+ *  · A per-month price is rendered only when the STORE supplies one.
+ *  · No mountain or other artwork in the hero — PO, 2026-09-25: the stone texture is the foundation.
+ *  · The Early Bird seat count is gone (PO: no inventory-style scarcity). "Founding price" states the
+ *    locked promise instead — MA7-D3: the price holds for as long as they stay subscribed.
  */
 
 /** The Forge mark, filled — ported verbatim from the `.dc`'s hero and loading insignia. */
@@ -120,8 +139,21 @@ function ForgeMark({ size }: { size: number }) {
 }
 
 function Check({ size = 13, color = flColor.bronze300 }: { size?: number; color?: string }) {
+  return <EngravedIcon name="check" size={size} color={color} />;
+}
+
+/** The engraved set has no infinity; this is one stroke in the same weight. */
+function InfinityMark({ size = 24, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
-    <EngravedIcon name="check" size={size} color={color} />
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M7 8.5c-2 0-3.5 1.5-3.5 3.5S5 15.5 7 15.5c3.2 0 6.8-7 10-7 2 0 3.5 1.5 3.5 3.5S19 15.5 17 15.5c-3.2 0-6.8-7-10-7Z"
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
   );
 }
 
@@ -132,17 +164,58 @@ const BRONZE_DISC = [flColor.bronze300, flColor.bronze400, flColor.bronzeDark] a
  * The icon and supporting sentence for each benefit, keyed by the cap that makes it true.
  *
  * ⚠ KEYED, NOT INDEXED. The headline of each row comes from `premiumBenefitLines()` so the squad number
- * tracks config; pairing the two lists by array position would mislabel every row below any reordering,
- * which is the kind of mistake that puts the wrong promise beside the wrong number on a purchase screen.
+ * tracks config; pairing the two lists by array position would mislabel every row below any reordering.
+ *
+ * Basic Holt gets its own title (PO 09-25): "Unlimited Basic Holt programs, including in your workout"
+ * made Basic Holt, Holt AI, Basic Holt programs and Basic Holt days read as four products. It is one —
+ * the rulebook coach — and the numbers live in the comparison table.
  */
-const BENEFIT_META: Partial<Record<CapKey, { icon: SymbolName; detail: string; starred?: boolean }>> = {
-  // Legacy leads, and is the only starred row — the design's ordering, and the thing no competitor can copy.
-  photos: { icon: 'book', detail: 'Every progress photo and video kept, with no ceiling to work around.', starred: true },
+const BENEFIT_META: Partial<Record<CapKey, { icon: SymbolName; detail: string; title?: string; note?: string }>> = {
+  photos: { icon: 'book', detail: 'Every progress photo and video kept, with no ceiling to work around.' },
   programs: { icon: 'dumbbell', detail: 'Build, generate and receive as many programs as your training asks for.' },
   squads: { icon: 'squad', detail: 'Lead more than one squad at a time.' },
   imports: { icon: 'spark', detail: 'Bring a coach’s spreadsheet across whenever you need to.' },
-  holt_programs: { icon: 'medal', detail: 'Holt’s rulebook coaching: a full program for any goal, and help during the set. The AI coach is Premium AI.' },
+  holt_programs: {
+    icon: 'medal',
+    title: 'Basic Holt coaching',
+    detail: 'Rulebook-based coaching, program guidance and in-workout support.',
+    note: 'Included with Premium.',
+  },
 };
+
+const USAGE_ICON: Partial<Record<CapKey, SymbolName>> = {
+  programs: 'dumbbell',
+  photos: 'book',
+  squads: 'squad',
+  imports: 'spark',
+  holt_programs: 'medal',
+  holt_days_per_month: 'medal',
+};
+
+const AI_ICON: SymbolName[] = ['spark', 'target', 'eye', 'book'];
+
+/** The words above the tier switch. They change with it — the rest of the page keeps its shape. */
+function heroCopy(tier: PlanTier | null, paid: Caps | null): { eyebrow: string; title: string; body: string } {
+  if (tier === 'premium_ai') {
+    return {
+      eyebrow: 'Forge Premium AI',
+      title: 'Everything in Premium.\nPlus Holt AI.',
+      body: 'Your full AI coach for programming, training questions, photo analysis and plan adjustments.',
+    };
+  }
+  if (tier === 'ai_addon') {
+    return { eyebrow: 'Holt AI', title: 'Add the AI coach\nto your Premium.', body: TIER_DISCLOSURE.ai_addon };
+  }
+  // ⚠ Squads are NOT unlimited (M7-D15) — the count comes from config, and is left out rather than guessed.
+  const squads = paid && Number.isFinite(paid.squads) && paid.squads > 1 ? `, plus ${paid.squads} squads` : '';
+  return {
+    eyebrow: 'Forge Premium',
+    title: 'Everything you build,\nkept for life.',
+    body: `Unlimited programs, photos, imports and Basic Holt${squads}. Upgrade to Premium AI for the full AI coach.`,
+  };
+}
+
+const PURCHASE_FAILED = 'Couldn’t start the purchase. Try again.';
 
 export default function SubscriptionScreen() {
   const router = useRouter();
@@ -177,6 +250,19 @@ export default function SubscriptionScreen() {
   const [busy, setBusy] = useState<'purchase' | 'restore' | null>(null);
   /** The inline messages §4 specifies for restore. Never an alert — the screen stays where it is. */
   const [notice, setNotice] = useState<string | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  /**
+   * Where the page's landmarks sit in the scroll content, written by `onLayout` and read only inside
+   * handlers — never during render (react-compiler rule).
+   */
+  const scrollRef = useRef<ScrollView>(null);
+  const marks = useRef({ pricing: 0, ctaEnd: 0, included: 0 });
+  /** The compact buy bar shows only once the main button has scrolled out of view. */
+  const [showSticky, setShowSticky] = useState(false);
+  /** The bronze pill of the tier switch, gliding between segments (~200 ms, PO 09-25). */
+  const [pill] = useState(() => new Animated.Value(0));
+  const [switchWidth, setSwitchWidth] = useState(0);
 
   /**
    * ⚠ RE-CHECKED ON FOREGROUND (§5.2), BECAUSE "MANAGE SUBSCRIPTION" LEAVES THE APP.
@@ -223,11 +309,18 @@ export default function SubscriptionScreen() {
   const selected = chosen && rows.some((r) => r.slot === chosen) ? chosen : defaultSelection(rows);
   const selectedPlan = rows.find((r) => r.slot === selected) ?? null;
   const canBuy = offering != null && selectedPlan != null;
+  const trial = trialLabel(selectedPlan?.trialDays ?? null);
+  const ctaLabel = trial ? `Start ${trial}` : 'Continue';
+  const aiSelected = activeTier === 'premium_ai' || activeTier === 'ai_addon';
 
-  const seatLine =
-    offering === 'early_bird' && offer?.seatsRemaining != null && offer.seatsRemaining > 0
-      ? earlyBirdSeatLine(offer.seatsRemaining)
-      : null;
+  /** Switch tiers. Every tier change comes through here, so the pill always glides to match. */
+  const selectTier = (t: PlanTier, reveal = false) => {
+    const index = tiers.indexOf(t);
+    if (index >= 0) Animated.timing(pill, { toValue: index, duration: 200, useNativeDriver: true }).start();
+    setChosenTier(t);
+    setChosen(null);
+    if (reveal) scrollRef.current?.scrollTo({ y: Math.max(0, marks.current.pricing - 16), animated: true });
+  };
 
   /**
    * ⚠ THE STORE CONFIRMS BEFORE WE DO. The webhook writes the purchase a moment after Apple's sheet
@@ -319,6 +412,22 @@ export default function SubscriptionScreen() {
     if (!opened) setNotice('Couldn’t open your subscription settings.');
   };
 
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const end = marks.current.ctaEnd;
+    const next = end > 0 && e.nativeEvent.contentOffset.y > end;
+    setShowSticky((prev) => (prev === next ? prev : next));
+  };
+  const onPricingLayout = (e: LayoutChangeEvent) => {
+    marks.current.pricing = e.nativeEvent.layout.y;
+  };
+  const onCtaEndLayout = (e: LayoutChangeEvent) => {
+    marks.current.ctaEnd = e.nativeEvent.layout.y;
+  };
+  const onIncludedLayout = (e: LayoutChangeEvent) => {
+    marks.current.included = e.nativeEvent.layout.y;
+  };
+  const toIncluded = () => scrollRef.current?.scrollTo({ y: Math.max(0, marks.current.included - 12), animated: true });
+
   const header = viaGate || viaOnboarding
     ? { onClose: back, onBack: undefined }
     : { onBack: back, onClose: undefined };
@@ -338,23 +447,111 @@ export default function SubscriptionScreen() {
               : 'unavailable';
   const retryPicker = pickerEmpty === 'offer-failed' ? refetchOffer : refetchPlans;
 
-  const picker = (
-    <PlanPicker
-      tiers={tiers}
-      activeTier={activeTier}
-      onTier={(t) => {
-        setChosenTier(t);
-        setChosen(null);
-      }}
-      rows={rows}
-      plans={plans}
-      selected={selected}
-      onSelect={setChosen}
-      seatLine={seatLine}
-      empty={pickerEmpty}
-      onRetry={retryPicker}
-    />
+  const paid = config?.paid ?? null;
+  const benefits = premiumBenefitLines(paid);
+  const usage = usageRows(snapshot?.caps ?? null, snapshot?.usage ?? null);
+  const usageNear = usageIsNear(usage);
+  const comparison = compactComparisonRows(config?.free ?? null, paid);
+  const hero = heroCopy(activeTier, paid);
+  /* A "couldn't start" that the store went on to complete is no longer true once Premium lands. */
+  const shownNotice = notice && !(notice === PURCHASE_FAILED && isPremium) ? notice : null;
+  const segment = tiers.length > 0 && switchWidth > 0 ? (switchWidth - 8) / tiers.length : 0;
+
+  /*
+   * ── THE DECISION ZONE ── tier → price → button → terms. Returned as a fragment so its landmarks are
+   * direct children of the scroll content, which is what makes their `onLayout` y a scroll position.
+   */
+  const decision = (
+    <>
+      {tiers.length > 1 ? (
+        <View
+          style={styles.tabs}
+          accessibilityRole="tablist"
+          onLayout={(e) => setSwitchWidth(e.nativeEvent.layout.width)}
+        >
+          {segment > 0 ? (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.tabPill,
+                {
+                  width: segment,
+                  transform: [{ translateX: pill.interpolate({ inputRange: [0, 1], outputRange: [0, segment] }) }],
+                },
+              ]}
+            />
+          ) : null}
+          {tiers.map((t) => {
+            const on = t === activeTier;
+            return (
+              <Pressable
+                key={t}
+                onPress={() => selectTier(t)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: on }}
+                accessibilityLabel={TIER_COPY[t].title}
+                style={styles.tab}
+              >
+                <Text style={[styles.tabText, on && styles.tabTextOn]}>{TIER_COPY[t].title}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+
+      <View onLayout={onPricingLayout} />
+
+      {/* ⚠ STATES THE LOCKED PROMISE, NOT A COUNT (MA7-D3). Only on the Early Bird offering, where it is true. */}
+      {offering === 'early_bird' && rows.length > 0 ? (
+        <View style={styles.founding} accessible accessibilityLabel="Founding price. Keep this price for as long as you stay subscribed.">
+          <Text style={styles.foundingTitle}>Founding price</Text>
+          <Text style={styles.foundingLine}>Keep this price for as long as you stay subscribed.</Text>
+        </View>
+      ) : null}
+
+      <PlanRows
+        empty={pickerEmpty}
+        onRetry={retryPicker}
+        rows={rows}
+        plans={plans}
+        activeTier={activeTier}
+        selected={selected}
+        onSelect={setChosen}
+      />
+
+      {canBuy ? (
+        <View style={styles.cta}>
+          <Button variant="primary" fullWidth disabled={busy != null} onPress={onContinue} accessibilityLabel={ctaLabel}>
+            {busy === 'purchase' ? 'Opening…' : ctaLabel}
+          </Button>
+        </View>
+      ) : null}
+      {shownNotice ? (
+        <Text style={styles.notice} accessibilityLiveRegion="polite">
+          {shownNotice}
+        </Text>
+      ) : null}
+      {rows.length > 0 ? (
+        <>
+          {/* MA6-D11: the trial terms sit beside the button. Every plan renews (MA7-D1), so that line always shows. */}
+          {trial ? <Text style={styles.trialLine}>{trial}. Cancel anytime.</Text> : null}
+          <Text style={styles.fineprint}>
+            {trial ? `${TRIAL_NOTE} ` : ''}
+            {AUTO_RENEWAL_NOTE}
+          </Text>
+        </>
+      ) : null}
+      {viaOnboarding && !isPremium ? (
+        /* Leaving an offer nobody asked for is a named, full-contrast choice — not a faint × alone. */
+        <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Continue with Free" style={styles.linkRow}>
+          <Text style={styles.freeText}>Continue with Free</Text>
+        </Pressable>
+      ) : null}
+      <View onLayout={onCtaEndLayout} />
+    </>
   );
+
+  const usageCard = usage.length > 0 ? <UsageCard rows={usage} near={usageNear} /> : null;
 
   return (
     <View style={styles.root}>
@@ -387,61 +584,154 @@ export default function SubscriptionScreen() {
       ) : (
         <>
           <ScrollView
-            contentContainerStyle={styles.body}
+            ref={scrollRef}
+            contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom + (canBuy ? 96 : 0) }]}
             showsVerticalScrollIndicator={false}
+            onScroll={onScroll}
+            scrollEventThrottle={32}
           >
-            {/* HERO — the design's bronze insignia, overline, tagline and current-plan chip. */}
+            {/* HERO — insignia, overline, the one serif line, and a concrete sentence. No artwork (PO 09-25). */}
             <View style={styles.hero}>
               <LinearGradient colors={BRONZE_DISC} locations={[0, 0.52, 1]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.heroDisc}>
-                <ForgeMark size={34} />
+                <ForgeMark size={30} />
               </LinearGradient>
-              <Text style={styles.overline}>Forge Premium</Text>
-              <Text style={styles.tagline}>
-                {isPremium ? 'Your legacy, preserved for life.' : 'Everything you build, kept for life.'}
-              </Text>
-              <Text style={styles.principle}>
-                The training engine is always free. Premium is for the permanence, scale and story around it.
-              </Text>
-
-              <View style={styles.chip} accessibilityLabel={`Current plan: ${planName(isPremium, coachAi)}`}>
-                <Text style={styles.chipLabel}>Current plan</Text>
-                <View style={[styles.chipValue, isPremium ? styles.chipValuePremium : styles.chipValueFree]}>
-                  <Text style={isPremium ? styles.chipTextPremium : styles.chipTextFree}>
-                    {planName(isPremium, coachAi)}
-                  </Text>
-                </View>
-              </View>
+              {isPremium ? (
+                <>
+                  <Text style={styles.overline}>{coachAi ? 'Forge Premium AI' : 'Forge Premium'}</Text>
+                  <Text style={styles.tagline}>Your legacy,{'\n'}preserved for life.</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.overline}>{hero.eyebrow}</Text>
+                  <Text style={styles.tagline}>{hero.title}</Text>
+                  <Text style={styles.principle}>{hero.body}</Text>
+                </>
+              )}
             </View>
 
             {isPremium ? (
-              <PremiumState
-                kind={snapshot?.premiumKind ?? null}
-                until={snapshot?.premiumUntil ?? null}
-                seat={snapshot?.founderSeat ?? null}
-                coachAi={coachAi}
-                benefits={premiumBenefitLines(config?.paid ?? null)}
-                upgrade={tiers.length > 0 ? picker : null}
-              />
+              <>
+                <PlanCard
+                  kind={snapshot?.premiumKind ?? null}
+                  until={snapshot?.premiumUntil ?? null}
+                  seat={snapshot?.founderSeat ?? null}
+                  coachAi={coachAi}
+                />
+                {/* The one thing left to offer a Premium athlete: the AI step, from their own group only. */}
+                {tiers.length > 0 ? (
+                  <>
+                    <SectionLabel>Add Holt AI</SectionLabel>
+                    <Text style={styles.sectionLead}>{TIER_DISCLOSURE[activeTier ?? 'premium_ai']}</Text>
+                    {decision}
+                    <AiBenefits />
+                  </>
+                ) : null}
+                {/* No comparison table and no usage review in Premium (§3.4) — nothing left to compare. */}
+                <SectionLabel>What Premium unlocks</SectionLabel>
+                <BenefitList benefits={benefits} />
+                <OwnershipCard />
+                <View style={styles.manage}>
+                  <Button variant="secondary" fullWidth onPress={onManage} accessibilityLabel="Manage Subscription">
+                    Manage Subscription
+                  </Button>
+                </View>
+                {!canBuy && shownNotice ? <Text style={styles.notice}>{shownNotice}</Text> : null}
+              </>
             ) : (
-              <FreeState
-                benefits={premiumBenefitLines(config?.paid ?? null)}
-                comparison={comparisonRows(config?.free ?? null, config?.paid ?? null)}
-                usage={usageRows(snapshot?.caps ?? null, snapshot?.usage ?? null)}
-                picker={picker}
-              />
+              <>
+                {decision}
+
+                {/* Near a limit, usage is this athlete's reason to buy — so it moves up beside the price. */}
+                {usageNear ? (
+                  <>
+                    <SectionLabel>Your usage</SectionLabel>
+                    {usageCard}
+                  </>
+                ) : null}
+
+                <Pressable onPress={toIncluded} accessibilityRole="button" accessibilityLabel="See what’s included" style={styles.seeMore}>
+                  <EngravedIcon name="chevron-down" size={16} color={flColor.bronze400} />
+                  <View style={styles.seeMoreRow}>
+                    <View style={styles.seeMoreRule} />
+                    <Text style={styles.seeMoreText}>See what’s included</Text>
+                    <View style={styles.seeMoreRule} />
+                  </View>
+                </Pressable>
+
+                <View onLayout={onIncludedLayout} />
+                {aiSelected ? (
+                  <>
+                    <SectionLabel>What’s included</SectionLabel>
+                    <Text style={styles.sectionLead}>Everything in Premium, plus:</Text>
+                    <AiBenefits />
+                  </>
+                ) : (
+                  <>
+                    <SectionLabel>What’s included</SectionLabel>
+                    <BenefitList benefits={benefits} />
+                    {tiers.includes('premium_ai') ? (
+                      <>
+                        <SectionLabel>Want the full AI coach?</SectionLabel>
+                        <Pressable
+                          onPress={() => selectTier('premium_ai', true)}
+                          accessibilityRole="button"
+                          accessibilityLabel="Holt AI. Included with Premium AI. Shows Premium AI plans."
+                          style={({ pressed }) => [styles.card, styles.upsell, pressed && styles.pressed]}
+                        >
+                          <View style={styles.benefitIcon}>
+                            <ForgeSymbol name="spark" size={18} color={flColor.bronze300} />
+                          </View>
+                          <View style={styles.benefitText}>
+                            <Text style={styles.benefitTitle}>Holt AI</Text>
+                            <Text style={styles.benefitDetail}>
+                              Ask your coach anything in plain language. Analyze photos, make program changes, answer training questions and adapt your plan.
+                            </Text>
+                            <Text style={styles.upsellLink}>Included with Premium AI →</Text>
+                          </View>
+                        </Pressable>
+                      </>
+                    ) : null}
+                  </>
+                )}
+
+                {comparison.length > 0 ? (
+                  <>
+                    <SectionLabel>Free vs. Premium</SectionLabel>
+                    <ComparisonTable rows={comparison} />
+                  </>
+                ) : null}
+                <OwnershipCard />
+
+                {!usageNear && usageCard ? (
+                  <>
+                    <SectionLabel>Your usage</SectionLabel>
+                    {usageCard}
+                  </>
+                ) : null}
+              </>
             )}
 
-            {rows.length > 0 ? (
-              <>
-                {trialLabel(selectedPlan?.trialDays ?? null) ? (
-                  <Text style={styles.fineprint}>
-                    {trialLabel(selectedPlan?.trialDays ?? null)}. {TRIAL_NOTE}
-                  </Text>
-                ) : null}
-                {/* Required before purchase. Every plan renews now (MA7-D1), so it always shows. */}
-                <Text style={styles.fineprint}>{AUTO_RENEWAL_NOTE}</Text>
-              </>
-            ) : null}
+            <SectionLabel>FAQs</SectionLabel>
+            <View style={styles.card}>
+              {PAYWALL_FAQ.map((f, i) => {
+                const open = openFaq === i;
+                return (
+                  <View key={f.q} style={i > 0 && styles.rowBorder}>
+                    <Pressable
+                      onPress={() => setOpenFaq(open ? null : i)}
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: open }}
+                      accessibilityLabel={f.q}
+                      style={styles.faqRow}
+                    >
+                      <Text style={styles.faqQ}>{f.q}</Text>
+                      <EngravedIcon name={open ? 'chevron-up' : 'chevron-down'} size={14} color={flColor.gray600} />
+                    </Pressable>
+                    {open ? <Text style={styles.faqA}>{f.a}</Text> : null}
+                  </View>
+                );
+              })}
+            </View>
 
             {admin === true ? (
               <>
@@ -464,66 +754,40 @@ export default function SubscriptionScreen() {
                 </View>
               </>
             ) : null}
+
+            {/* Always available, in both states (§5.3). Visually secondary — never inside the bronze button. */}
+            <RestoreLink busy={busy === 'restore'} onPress={onRestore} />
+            <View style={styles.legal}>
+              <Pressable onPress={() => void Linking.openURL(`https://${LEGAL.terms.host}`)} accessibilityRole="link" hitSlop={8}>
+                <Text style={styles.legalText}>Terms of Service</Text>
+              </Pressable>
+              <Text style={styles.legalDot}>·</Text>
+              <Pressable onPress={() => void Linking.openURL(`https://${LEGAL.privacy.host}`)} accessibilityRole="link" hitSlop={8}>
+                <Text style={styles.legalText}>Privacy Policy</Text>
+              </Pressable>
+            </View>
           </ScrollView>
 
           {/*
-            THE COMMIT BAR — the design's fixed footer, carrying the one thing the design did not have.
-
-            ⚠ THE DISCLOSURE SITS HERE, ABOVE THE BUTTON, AND THAT PLACEMENT IS THE REQUIREMENT (P8W-D4).
-            A buyer who pays and later finds the feature they wanted is on another plan is the classic
-            deceptive-practices fact pattern; putting the sentence in the terms instead of on the purchase
-            surface is precisely the failure the rule exists to prevent. A sticky bar is the only place on
-            a scrolling screen where "above the button" is always true.
+            THE COMPACT BUY BAR — only once the main button has scrolled away (PO 09-25).
+            ⚠ P8W-D4: what Premium does not include still sits above this button, in one short line.
           */}
-          <View style={[styles.commitBar, { paddingBottom: 15 + insets.bottom }]}>
-            {/* A "couldn't start" that the store went on to complete is no longer true once Premium lands. */}
-            {notice && !(notice === PURCHASE_FAILED && isPremium) ? (
-              <Text style={styles.notice} accessibilityLiveRegion="polite">
-                {notice}
+          {canBuy && showSticky && selectedPlan && activeTier ? (
+            <View style={[styles.commitBar, { paddingBottom: 12 + insets.bottom }]}>
+              {shownNotice ? <Text style={styles.notice}>{shownNotice}</Text> : null}
+              <Text style={styles.stickyPlan}>
+                {TIER_COPY[activeTier].title} · {selectedPlan.priceLabel}/{cadenceOf(selectedPlan.slot) === 'annual' ? 'year' : 'month'}
               </Text>
-            ) : null}
-
-            {!isPremium || canBuy ? (
-              <>
-                <Text style={styles.disclosure}>{TIER_DISCLOSURE[activeTier ?? 'premium']}</Text>
-                <Button
-                  variant="primary"
-                  fullWidth
-                  disabled={!canBuy || busy != null}
-                  onPress={onContinue}
-                  accessibilityLabel="Continue"
-                >
-                  {busy === 'purchase' ? 'Opening…' : 'Continue'}
-                </Button>
-              </>
-            ) : (
-              <Button variant="primary" fullWidth onPress={onManage} accessibilityLabel="Manage Subscription">
-                Manage Subscription
+              {TIER_NOTE_SHORT[activeTier] ? <Text style={styles.disclosure}>{TIER_NOTE_SHORT[activeTier]}</Text> : null}
+              <Button variant="primary" fullWidth disabled={busy != null} onPress={onContinue} accessibilityLabel={ctaLabel}>
+                {busy === 'purchase' ? 'Opening…' : ctaLabel}
               </Button>
-            )}
-            {isPremium && canBuy ? (
-              <Pressable onPress={onManage} accessibilityRole="button" accessibilityLabel="Manage Subscription" style={styles.restore}>
-                <Text style={styles.restoreText}>Manage Subscription</Text>
-              </Pressable>
-            ) : null}
-            <RestoreLink busy={busy === 'restore'} onPress={onRestore} />
-            {viaOnboarding && !isPremium ? (
-              /* Leaving an offer nobody asked for is a named, full-contrast choice — not a faint ×
-                 alone. Free is a real plan, and saying so is what makes the offer honest. */
-              <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Continue with Free" style={styles.restore}>
-                <Text style={styles.freeText}>Continue with Free</Text>
-              </Pressable>
-            ) : null}
-          </View>
+            </View>
+          ) : null}
         </>
       )}
     </View>
   );
-}
-
-function planName(isPremium: boolean, coachAi: boolean): string {
-  if (!isPremium) return coachAi ? 'Holt AI' : 'Free';
-  return coachAi ? 'Premium AI' : 'Premium';
 }
 
 /** Always available, in both states (§5.3). Never opens a child screen. */
@@ -535,7 +799,7 @@ function RestoreLink({ busy, onPress }: { busy: boolean; onPress: () => void }) 
       accessibilityRole="button"
       accessibilityLabel="Restore Purchases"
       accessibilityHint="Checks for previous purchases on this account"
-      style={styles.restore}
+      style={[styles.linkRow, styles.restore]}
     >
       {busy ? (
         <ActivityIndicator size="small" color={flColor.gray600} />
@@ -548,8 +812,6 @@ function RestoreLink({ busy, onPress }: { busy: boolean; onPress: () => void }) 
 
 // ── Premium ──────────────────────────────────────────────────────────────────
 
-const PURCHASE_FAILED = 'Couldn’t start the purchase. Try again.';
-
 const KIND_LABEL: Record<string, string> = {
   MONTHLY: 'Monthly',
   ANNUAL: 'Yearly',
@@ -561,7 +823,7 @@ function renewLine(kind: string | null, until: string | null, seat: number | nul
     const when = formatDate(until);
     // "Paid through", not "Renews": the athlete may have turned auto-renew off, and only Apple knows.
     if (!when) return null;
-    return seat != null ? `Paid through ${when}. Early Bird price.` : `Paid through ${when}.`;
+    return seat != null ? `Paid through ${when}. Founding price.` : `Paid through ${when}.`;
   }
   // No kind and no date is every athlete during testing: `default_tier` is PREMIUM and nobody has paid.
   return kind == null ? 'No billing on this account.' : null;
@@ -577,169 +839,43 @@ function formatDate(iso: string): string | null {
   }
 }
 
-function PremiumState({
-  kind,
-  until,
-  seat,
-  coachAi,
-  benefits,
-  upgrade,
-}: {
-  kind: string | null;
-  until: string | null;
-  seat: number | null;
-  coachAi: boolean;
-  benefits: BenefitLine[];
-  upgrade: React.ReactNode;
-}) {
+function PlanCard({ kind, until, seat, coachAi }: { kind: string | null; until: string | null; seat: number | null; coachAi: boolean }) {
   const line = renewLine(kind, until, seat);
   const name = coachAi ? 'Forge Premium AI' : 'Forge Premium';
   const cadence = kind ? KIND_LABEL[kind] : undefined;
   return (
-    <>
-      <View style={styles.planCard}>
-        <Text style={styles.planCardLabel}>Your plan</Text>
-        <Text style={styles.planCardValue}>{cadence ? `${name} · ${cadence}` : name}</Text>
-        {line ? <Text style={styles.planCardLine}>{line}</Text> : null}
-      </View>
-
-      {/* No comparison table and no usage review in Premium (§3.4) — there is nothing left to compare
-          against, and no limit to be proximate to. */}
-      <SectionLabel>What Premium unlocks</SectionLabel>
-      <BenefitList benefits={benefits} />
-
-      <Text style={styles.reassurance}>{REASSURANCE}</Text>
-
-      {/* The one thing left to offer a Premium athlete: the AI step, from their own group only. */}
-      {upgrade ? (
-        <>
-          <SectionLabel>Add Holt AI</SectionLabel>
-          {upgrade}
-        </>
-      ) : null}
-    </>
+    <View style={styles.planCard}>
+      <Text style={styles.planCardLabel}>Your plan</Text>
+      <Text style={styles.planCardValue}>{cadence ? `${name} · ${cadence}` : name}</Text>
+      {line ? <Text style={styles.planCardLine}>{line}</Text> : null}
+    </View>
   );
 }
 
-// ── Free ─────────────────────────────────────────────────────────────────────
-
-function FreeState({
-  benefits,
-  comparison,
-  usage,
-  picker,
-}: {
-  benefits: BenefitLine[];
-  comparison: { key: string; free: string; premium: string }[];
-  usage: { key: string; label: string; value: string }[];
-  picker: React.ReactNode;
-}) {
-  return (
-    <>
-      <SectionLabel>What Premium unlocks</SectionLabel>
-      <BenefitList benefits={benefits} />
-
-      {comparison.length > 0 ? (
-        <>
-          <SectionLabel>At a glance</SectionLabel>
-          {/*
-            ⚠ LAID OUT ROW-MAJOR, WHICH IS AN ACCESSIBILITY DECISION AND NOT A STYLING ONE.
-            Two column containers would look identical and read as "3 programs, 75 photos, 1 squad…"
-            followed by an unattached list of Premium values — the pairing that makes a comparison a
-            comparison is lost, and §7 requires each row to announce as "Free: x, Premium: y". So each
-            row is one accessible element carrying both cells; the divider and the bronze wash are
-            per-cell and stack back into the two columns the design draws.
-          */}
-          <View style={styles.glance}>
-            <View style={styles.glanceRow} accessibilityRole="header">
-              <View style={styles.glanceCellFree}>
-                <Text style={styles.glanceHeadFree}>Free</Text>
-              </View>
-              <View style={styles.glanceCellPremium}>
-                <Text style={styles.glanceHeadPremium}>Premium</Text>
-              </View>
-            </View>
-            {comparison.map((r) => (
-              /* `accessible` is what collapses the two cells into ONE spoken row — without it the label
-                 is set but the children stay in the tree and the pairing is lost again. */
-              <View key={r.key} accessible style={styles.glanceRow} accessibilityLabel={`Free: ${r.free}. Premium: ${r.premium}.`}>
-                <View style={styles.glanceCellFree}>
-                  <Check size={12} color={flColor.gray600} />
-                  <Text style={styles.glanceFreeText}>{r.free}</Text>
-                </View>
-                <View style={styles.glanceCellPremium}>
-                  <Check size={12} color={flColor.bronze300} />
-                  <Text style={styles.glancePremiumText}>{r.premium}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        </>
-      ) : null}
-
-      <Text style={styles.reassurance}>{REASSURANCE}</Text>
-
-      {/*
-        YOUR USAGE — proximity to the limits, on the athlete's own terms (P-8 architecture §3).
-        It exists so nobody first learns where a ceiling is by hitting it. Informational only: it never
-        suggests deleting anything, because Never Charge For History means there is nothing to delete
-        your way out of.
-      */}
-      {usage.length > 0 ? (
-        <>
-          <SectionLabel>Your usage</SectionLabel>
-          <View style={styles.card}>
-            {usage.map((u, i) => (
-              <View key={u.key} style={[styles.usageRow, i > 0 && styles.rowBorder]}>
-                <Text style={styles.usageLabel}>{u.label}</Text>
-                <Text
-                  style={styles.usageValue}
-                  accessibilityLabel={`${u.label}: ${u.value}`}
-                >
-                  {u.value}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </>
-      ) : null}
-
-      <SectionLabel>Choose your plan</SectionLabel>
-      {picker}
-    </>
-  );
-}
-
-// ── the plan picker ──────────────────────────────────────────────────────────
+// ── the plan rows ────────────────────────────────────────────────────────────
 
 type PickerEmpty = 'loading' | 'unavailable' | 'offer-failed' | 'plans-failed';
 
 /**
- * Tier tabs (only when there is more than one to choose between), then that tier's yearly and monthly
- * rows. Used for a Free athlete choosing a plan and for a Premium athlete adding Holt AI.
+ * The selected tier's yearly and monthly rows. Yearly leads and is the larger card (MA6-D10); monthly is
+ * deliberately quieter. The billed amount is always the largest price on screen.
  */
-function PlanPicker({
-  tiers,
-  activeTier,
-  onTier,
-  rows,
-  plans,
-  selected,
-  onSelect,
-  seatLine,
+function PlanRows({
   empty,
   onRetry,
+  rows,
+  plans,
+  activeTier,
+  selected,
+  onSelect,
 }: {
-  tiers: PlanTier[];
-  activeTier: PlanTier | null;
-  onTier: (t: PlanTier) => void;
-  rows: StorePlan[];
-  plans: StorePlan[];
-  selected: PlanSlot | null;
-  onSelect: (slot: PlanSlot) => void;
-  seatLine: string | null;
   empty: PickerEmpty | null;
   onRetry: () => void;
+  rows: StorePlan[];
+  plans: StorePlan[];
+  activeTier: PlanTier | null;
+  selected: PlanSlot | null;
+  onSelect: (slot: PlanSlot) => void;
 }) {
   if (empty) {
     /*
@@ -770,119 +906,67 @@ function PlanPicker({
   }
 
   const saving = activeTier ? tierSaving(plans, activeTier) : null;
-  const aiTier = activeTier === 'premium_ai' || activeTier === 'ai_addon';
 
   return (
-    <>
-      {tiers.length > 1 ? (
-        <View style={styles.tabs} accessibilityRole="tablist">
-          {tiers.map((t) => {
-            const on = t === activeTier;
-            return (
-              <Pressable
-                key={t}
-                onPress={() => onTier(t)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: on }}
-                accessibilityLabel={TIER_COPY[t].title}
-                style={[styles.tab, on && styles.tabOn]}
-              >
-                <Text style={[styles.tabText, on && styles.tabTextOn]}>{TIER_COPY[t].title}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      ) : null}
-
-      {aiTier ? (
-        <View style={[styles.card, styles.aiCard]}>
-          {AI_BENEFITS.map((b, i) => (
-            <View key={b.title} style={[styles.benefitRow, i > 0 && styles.rowBorder]}>
-              <View style={styles.benefitIcon}>
-                <ForgeSymbol name={i === 0 ? 'spark' : 'book'} size={18} color={flColor.bronze300} />
+    <View style={styles.plans} accessibilityRole="radiogroup">
+      {rows.map((p) => {
+        const on = p.slot === selected;
+        const cadence = cadenceOf(p.slot);
+        const annual = cadence === 'annual';
+        const copy = CADENCE_COPY[cadence];
+        const showSaving = annual && saving != null;
+        const trial = trialLabel(p.trialDays);
+        /*
+         * ⚠ THE SAVING AND THE TRIAL MUST RIDE ON THE ROW'S OWN LABEL (§11.5). The row is one accessible
+         * element, so anything inside it is never announced separately.
+         */
+        const spoken = [
+          activeTier ? TIER_COPY[activeTier].title : null,
+          copy.title,
+          p.priceLabel,
+          showSaving ? `${saving} compared to monthly` : null,
+          trial,
+          on ? 'selected' : 'not selected',
+        ]
+          .filter(Boolean)
+          .join(', ');
+        return (
+          <Pressable
+            key={p.slot}
+            onPress={() => onSelect(p.slot)}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: on }}
+            accessibilityLabel={spoken}
+            style={[styles.planRow, annual ? styles.planRowLead : styles.planRowQuiet, on && styles.planRowOn]}
+          >
+            {copy.badge && annual ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{copy.badge}</Text>
               </View>
-              <View style={styles.benefitText}>
-                <Text style={styles.benefitTitle}>{b.title}</Text>
-                <Text style={styles.benefitDetail}>{b.detail}</Text>
-              </View>
+            ) : null}
+            <View style={[styles.radio, on && styles.radioOn]}>{on ? <Check size={12} color={flColor.onBronze} /> : null}</View>
+            <View style={styles.planText}>
+              <Text style={[styles.planTitle, !annual && styles.planTitleQuiet]}>{copy.title}</Text>
+              <Text style={styles.planCadence}>{copy.cadence}</Text>
+              {trial ? <Text style={styles.planTrial}>{trial}</Text> : null}
             </View>
-          ))}
-          <Text style={styles.allowance}>{AI_ALLOWANCE_NOTE}</Text>
-        </View>
-      ) : null}
-
-      {/* ⚠ LIVE OR ABSENT (P8W-D5). The count is the server's own, and it only renders while seats are
-          left — an unverifiable scarcity claim is worse than none. */}
-      {seatLine ? (
-        <View style={styles.earlyBird} accessible accessibilityLabel={`Early Bird price. ${seatLine}. Kept for as long as you stay subscribed.`}>
-          <Text style={styles.earlyBirdTitle}>Early Bird price · {seatLine}</Text>
-          <Text style={styles.earlyBirdLine}>Kept for as long as you stay subscribed.</Text>
-        </View>
-      ) : null}
-
-      <View style={styles.plans} accessibilityRole="radiogroup">
-        {rows.map((p) => {
-          const on = p.slot === selected;
-          const cadence = cadenceOf(p.slot);
-          const copy = CADENCE_COPY[cadence];
-          const showSaving = cadence === 'annual' && saving != null;
-          const trial = trialLabel(p.trialDays);
-          /*
-           * ⚠ THE SAVING AND THE TRIAL MUST RIDE ON THE ROW'S OWN LABEL (§11.5).
-           *
-           * The row is one accessible element, so anything inside it is never announced separately — a
-           * screen-reader user would hear "Yearly, <the price>, selected" and never learn there was a
-           * saving or a free trial. Those are the facts the picker exists to convey.
-           */
-          const spoken = [
-            activeTier ? TIER_COPY[activeTier].title : null,
-            copy.title,
-            p.priceLabel,
-            showSaving ? `${saving} compared to monthly` : null,
-            trial,
-            on ? 'selected' : 'not selected',
-          ]
-            .filter(Boolean)
-            .join(', ');
-          return (
-            <Pressable
-              key={p.slot}
-              onPress={() => onSelect(p.slot)}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: on }}
-              accessibilityLabel={spoken}
-              style={[styles.planRow, on && styles.planRowOn]}
-            >
-              {copy.badge ? (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{copy.badge}</Text>
+            <View style={styles.planPrice}>
+              <Text style={[styles.priceText, !annual && styles.priceTextQuiet]}>{p.priceLabel}</Text>
+              {p.pricePerMonthLabel && annual ? <Text style={styles.perMonth}>{p.pricePerMonthLabel}/mo</Text> : null}
+              {showSaving ? (
+                <View style={styles.savePill}>
+                  <Text style={styles.saveText}>{saving}</Text>
                 </View>
               ) : null}
-              <View style={[styles.radio, on && styles.radioOn]}>{on ? <Check size={12} color={flColor.onBronze} /> : null}</View>
-              <View style={styles.planText}>
-                <Text style={styles.planTitle}>{copy.title}</Text>
-                <Text style={styles.planCadence}>{copy.cadence}</Text>
-                {trial ? <Text style={styles.planSeats}>{trial}</Text> : null}
-              </View>
-              {/* MA6-D10: the billed amount is always the largest price on screen. */}
-              <View style={styles.planPrice}>
-                <Text style={styles.priceText}>{p.priceLabel}</Text>
-                {p.pricePerMonthLabel ? <Text style={styles.perMonth}>{p.pricePerMonthLabel}/mo</Text> : null}
-                {showSaving ? (
-                  <View style={styles.savePill}>
-                    <Text style={styles.saveText}>{saving}</Text>
-                  </View>
-                ) : null}
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
-    </>
+            </View>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
-// ── shared pieces ────────────────────────────────────────────────────────────
+// ── the information zone ─────────────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: string }) {
   return <Text style={styles.sectionLabel}>{children}</Text>;
@@ -896,14 +980,101 @@ function BenefitList({ benefits }: { benefits: BenefitLine[] }) {
         const meta = BENEFIT_META[b.key];
         if (!meta) return null;
         return (
-          <View key={b.key} style={[styles.benefitRow, i > 0 && styles.rowBorder, meta.starred && styles.benefitStarred]}>
+          <View key={b.key} style={[styles.benefitRow, i > 0 && styles.rowBorder]}>
             <View style={styles.benefitIcon}>
               <ForgeSymbol name={meta.icon} size={18} color={flColor.bronze300} />
             </View>
             <View style={styles.benefitText}>
-              <Text style={styles.benefitTitle}>{b.line}</Text>
+              <Text style={styles.benefitTitle}>{meta.title ?? b.line}</Text>
               <Text style={styles.benefitDetail}>{meta.detail}</Text>
+              {meta.note ? <Text style={styles.benefitNote}>{meta.note}</Text> : null}
             </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function AiBenefits() {
+  return (
+    <View style={styles.card}>
+      {AI_BENEFITS.map((b, i) => (
+        <View key={b.title} style={[styles.benefitRow, i > 0 && styles.rowBorder]}>
+          <View style={styles.benefitIcon}>
+            <ForgeSymbol name={AI_ICON[i] ?? 'spark'} size={18} color={flColor.bronze300} />
+          </View>
+          <View style={styles.benefitText}>
+            <Text style={styles.benefitTitle}>{b.title}</Text>
+            <Text style={styles.benefitDetail}>{b.detail}</Text>
+          </View>
+        </View>
+      ))}
+      <Text style={styles.allowance}>{AI_ALLOWANCE_NOTE} How it works is in the FAQs below.</Text>
+    </View>
+  );
+}
+
+/**
+ * ⚠ LAID OUT ROW-MAJOR, WHICH IS AN ACCESSIBILITY DECISION AND NOT A STYLING ONE. Each row is one
+ * accessible element carrying both cells, so it announces as "Programs. Free: 3. Premium: Unlimited."
+ * (§7) rather than two unattached columns.
+ */
+function ComparisonTable({ rows }: { rows: CompactRow[] }) {
+  return (
+    <View style={styles.card}>
+      <View style={styles.cmpRow} accessibilityRole="header">
+        <Text style={styles.cmpLabel} />
+        <Text style={styles.cmpHeadFree}>Free</Text>
+        <Text style={styles.cmpHeadPremium}>Premium</Text>
+      </View>
+      {rows.map((r) => (
+        <View key={r.key} accessible style={[styles.cmpRow, styles.rowBorder]} accessibilityLabel={`${r.label}. Free: ${r.free}. Premium: ${r.premium}.`}>
+          <Text style={styles.cmpLabel}>{r.label}</Text>
+          <Text style={styles.cmpFree}>{r.free}</Text>
+          <Text style={styles.cmpPremium}>{r.premium}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** Never Charge For History (Monetization Amendment 001 §2) — the locked sentence, verbatim. */
+function OwnershipCard() {
+  return (
+    <View style={[styles.card, styles.ownership]} accessible accessibilityLabel={`Your data is yours. ${REASSURANCE}`}>
+      <View style={styles.ownershipIcon}>
+        <InfinityMark size={24} />
+      </View>
+      <View style={styles.benefitText}>
+        <Text style={styles.benefitTitle}>Your data is yours</Text>
+        <Text style={styles.benefitDetail}>{REASSURANCE}</Text>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * YOUR USAGE — proximity to the limits, on the athlete's own terms (P-8 architecture §3). Informational
+ * only: it never suggests deleting anything. At 80%+ a row is emphasised in bronze, at 100% it says the
+ * limit is reached — never red (PO 09-25).
+ */
+function UsageCard({ rows, near }: { rows: UsageRow[]; near: boolean }) {
+  return (
+    <View style={styles.card}>
+      {rows.map((u, i) => {
+        const hot = u.fill != null && u.fill >= 0.8;
+        const full = u.fill != null && u.fill >= 1;
+        const value = full && u.value !== 'Used' ? `${u.value} · Limit reached` : u.value;
+        return (
+          <View key={u.key} style={[styles.usageRow, near && styles.usageRowTight, i > 0 && styles.rowBorder]}>
+            <View style={styles.usageIcon}>
+              <ForgeSymbol name={USAGE_ICON[u.key] ?? 'target'} size={15} color={hot ? flColor.bronze300 : flColor.gray600} />
+            </View>
+            <Text style={[styles.usageLabel, !hot && near && styles.usageLabelQuiet]}>{u.label}</Text>
+            <Text style={[styles.usageValue, hot && styles.usageValueHot]} accessibilityLabel={`${u.label}: ${value}`}>
+              {value}
+            </Text>
           </View>
         );
       })}
@@ -913,6 +1084,7 @@ function BenefitList({ benefits }: { benefits: BenefitLine[] }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: flColor.base },
+  pressed: { opacity: 0.8 },
   aiRow: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 15 },
   aiText: { flex: 1 },
   aiSwitch: { width: 44, height: 26, borderRadius: flRadius.pill, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 2 },
@@ -924,12 +1096,13 @@ const styles = StyleSheet.create({
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30, gap: 16 },
   retryText: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400, textAlign: 'center' },
   retryBtn: { minWidth: 140 },
-  body: { paddingHorizontal: 20, paddingBottom: 30 },
+  body: { paddingHorizontal: 20 },
 
-  hero: { alignItems: 'center', paddingTop: 4 },
+  // ── decision zone ──
+  hero: { alignItems: 'center', paddingTop: 2, paddingBottom: 18 },
   heroDisc: {
-    width: 60,
-    height: 60,
+    width: 52,
+    height: 52,
     borderRadius: flRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
@@ -941,166 +1114,65 @@ const styles = StyleSheet.create({
     letterSpacing: 2.4,
     textTransform: 'uppercase',
     color: flColor.bronze400,
-    marginTop: 15,
+    marginTop: 13,
   },
   tagline: {
     fontFamily: flFont.display,
-    fontSize: 27,
+    fontSize: 30,
     fontWeight: '700',
-    lineHeight: 32,
+    lineHeight: 35,
     color: flColor.cream100,
     textAlign: 'center',
-    marginTop: 9,
-    maxWidth: 300,
+    marginTop: 8,
   },
   principle: {
     fontSize: 13.5,
-    lineHeight: 21,
+    lineHeight: 20,
     color: flColor.gray400,
     textAlign: 'center',
-    marginTop: 11,
-    maxWidth: 300,
+    marginTop: 10,
+    maxWidth: 320,
   },
-
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-    marginTop: 17,
-    paddingLeft: 14,
-    paddingRight: 7,
-    paddingVertical: 6,
-    borderRadius: flRadius.pill,
-    borderWidth: 1,
-    borderColor: flColor.charcoal600,
-    backgroundColor: flColor.surfaceRecessed,
-  },
-  chipLabel: { fontSize: 9.5, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600 },
-  chipValue: { paddingHorizontal: 11, paddingVertical: 3, borderRadius: flRadius.pill, borderWidth: 1 },
-  chipValuePremium: { backgroundColor: flColor.bronze400, borderColor: flColor.bronzeBorder },
-  chipValueFree: { backgroundColor: flColor.charcoal800, borderColor: flColor.charcoal500 },
-  chipTextPremium: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: flColor.onBronze },
-  chipTextFree: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, color: flColor.gray400 },
-
-  planCard: {
-    marginTop: 20,
-    padding: 18,
-    borderRadius: flRadius.lg,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    backgroundColor: flColor.charcoal900,
-    boxShadow: flShadow.card,
-  },
-  planCardLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
-  planCardValue: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', color: flColor.cream100, marginTop: 6 },
-  planCardLine: { fontSize: 12.5, color: flColor.gray400, marginTop: 5 },
-
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 1.6,
-    textTransform: 'uppercase',
-    color: flColor.bronze400,
-    marginTop: 28,
-    marginBottom: 12,
-  },
-  card: {
-    borderRadius: flRadius.lg,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.charcoal900,
-    boxShadow: flShadow.card,
-    overflow: 'hidden',
-  },
-  rowBorder: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
-
-  benefitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 13, padding: 15 },
-  benefitStarred: { backgroundColor: flColor.bronzeTint },
-  benefitIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: flRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: flColor.surfaceRecessed,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-  },
-  benefitText: { flex: 1 },
-  benefitTitle: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
-  benefitDetail: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400, marginTop: 3 },
-
-  glance: {
-    borderRadius: flRadius.lg,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
-    backgroundColor: flColor.charcoal900,
-    boxShadow: flShadow.card,
-    overflow: 'hidden',
-  },
-  glanceRow: { flexDirection: 'row', alignItems: 'stretch' },
-  glanceCellFree: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRightWidth: 1,
-    borderRightColor: flColor.charcoal700,
-  },
-  glanceCellPremium: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    backgroundColor: flColor.bronzeTint,
-  },
-  glanceHeadFree: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray400, paddingVertical: 7 },
-  glanceHeadPremium: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze300, paddingVertical: 7 },
-  glanceFreeText: { flex: 1, fontSize: 12, lineHeight: 16, color: flColor.gray400 },
-  glancePremiumText: { flex: 1, fontSize: 12, lineHeight: 16, color: flColor.cream100 },
-
-  reassurance: { fontSize: 12, lineHeight: 19, color: flColor.gray600, textAlign: 'center', marginTop: 16, paddingHorizontal: 10 },
-
-  usageRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 13, paddingHorizontal: 15 },
-  usageLabel: { fontSize: 13.5, color: flColor.cream100 },
-  usageValue: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
 
   tabs: {
     flexDirection: 'row',
-    gap: 6,
     padding: 4,
-    marginBottom: 12,
+    marginBottom: 14,
     borderRadius: flRadius.pill,
     borderWidth: 1,
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal800,
   },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 36, borderRadius: flRadius.pill },
-  tabOn: { backgroundColor: flColor.bronzeSolid },
-  tabText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
+  tabPill: {
+    position: 'absolute',
+    top: 4,
+    bottom: 4,
+    left: 4,
+    borderRadius: flRadius.pill,
+    backgroundColor: flColor.bronzeSolid,
+  },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 40 },
+  tabText: { fontSize: 14, fontWeight: '600', color: flColor.gray400 },
   tabTextOn: { color: flColor.onBronze },
-  aiCard: { marginBottom: 12 },
-  allowance: { fontSize: 11.5, color: flColor.gray600, paddingHorizontal: 15, paddingBottom: 13 },
-  earlyBird: { marginBottom: 12, alignItems: 'center' },
-  earlyBirdTitle: { fontSize: 12.5, fontWeight: '700', color: flColor.bronze300 },
-  earlyBirdLine: { fontSize: 11.5, color: flColor.gray400, marginTop: 2 },
+
+  founding: { alignItems: 'center', marginBottom: 12 },
+  foundingTitle: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze300 },
+  foundingLine: { fontSize: 12, color: flColor.gray400, marginTop: 3 },
+
   pickerLoading: { padding: 22, alignItems: 'center' },
-  plans: { gap: 11 },
+  plans: { gap: 10 },
   planRow: {
     position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 13,
-    padding: 16,
     borderRadius: flRadius.lg,
     borderWidth: 1,
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
   },
+  planRowLead: { paddingHorizontal: 16, paddingVertical: 18 },
+  planRowQuiet: { paddingHorizontal: 16, paddingVertical: 12 },
   planRowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
   badge: {
     position: 'absolute',
@@ -1124,12 +1196,14 @@ const styles = StyleSheet.create({
   },
   radioOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeSolid },
   planText: { flex: 1 },
-  planTitle: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  planTitle: { fontSize: 16, fontWeight: '600', color: flColor.cream100 },
+  planTitleQuiet: { fontSize: 15 },
   planCadence: { fontSize: 12, color: flColor.gray600, marginTop: 2 },
-  planSeats: { fontSize: 11.5, fontWeight: '600', color: flColor.bronze400, marginTop: 4 },
+  planTrial: { fontSize: 12, fontWeight: '600', color: flColor.bronze400, marginTop: 4 },
   planPrice: { alignItems: 'flex-end', gap: 3 },
-  priceText: { fontFamily: flFont.display, fontSize: 21, fontWeight: '700', color: flColor.cream100 },
-  perMonth: { fontSize: 11.5, fontWeight: '600', color: flColor.gray400 },
+  priceText: { fontFamily: flFont.display, fontSize: 24, fontWeight: '700', color: flColor.cream100 },
+  priceTextQuiet: { fontSize: 19 },
+  perMonth: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
   savePill: {
     paddingHorizontal: 8,
     paddingVertical: 1,
@@ -1139,23 +1213,124 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorderSubtle,
   },
   saveText: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
-
   emptyPlans: { fontSize: 13, lineHeight: 20, color: flColor.gray400, padding: 16, textAlign: 'center' },
   emptyRetry: { fontSize: 13, fontWeight: '700', color: flColor.bronze400, textAlign: 'center', paddingBottom: 16 },
 
-  fineprint: { fontSize: 10.5, lineHeight: 16, color: flColor.gray600, textAlign: 'center', marginTop: 16, paddingHorizontal: 8 },
+  cta: { marginTop: 16 },
+  notice: { fontSize: 12.5, color: flColor.bronze400, textAlign: 'center', marginTop: 10 },
+  trialLine: { fontSize: 12.5, color: flColor.gray400, textAlign: 'center', marginTop: 12 },
+  fineprint: { fontSize: 10.5, lineHeight: 15, color: flColor.gray600, textAlign: 'center', marginTop: 5, paddingHorizontal: 10 },
+  linkRow: { alignItems: 'center', justifyContent: 'center', paddingVertical: 8, minHeight: 36 },
+  freeText: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
+
+  seeMore: { alignItems: 'center', marginTop: 22, gap: 4 },
+  seeMoreRow: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'stretch' },
+  seeMoreRule: { flex: 1, height: 1, backgroundColor: flColor.bronzeBorderSubtle },
+  seeMoreText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
+
+  // ── information zone ──
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    color: flColor.bronze400,
+    marginTop: 26,
+    marginBottom: 10,
+  },
+  sectionLead: { fontSize: 13, color: flColor.gray400, marginTop: -4, marginBottom: 10 },
+  card: {
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal900,
+    boxShadow: flShadow.card,
+    overflow: 'hidden',
+  },
+  rowBorder: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+
+  benefitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 13, paddingHorizontal: 15, paddingVertical: 13 },
+  benefitIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: flRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: flColor.surfaceRecessed,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+  },
+  benefitText: { flex: 1 },
+  benefitTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
+  benefitDetail: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400, marginTop: 3 },
+  benefitNote: { fontSize: 12, fontWeight: '600', color: flColor.bronze400, marginTop: 6 },
+  allowance: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600, paddingHorizontal: 15, paddingBottom: 13 },
+
+  upsell: { flexDirection: 'row', alignItems: 'flex-start', gap: 13, padding: 15, borderColor: flColor.bronzeBorder },
+  upsellLink: { fontSize: 12.5, fontWeight: '700', color: flColor.bronze300, marginTop: 8 },
+
+  cmpRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 10 },
+  cmpLabel: { flex: 1.6, fontSize: 13, color: flColor.cream100 },
+  cmpHeadFree: { flex: 1, fontSize: 10.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600, textAlign: 'center' },
+  cmpHeadPremium: { flex: 1, fontSize: 10.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze300, textAlign: 'center' },
+  cmpFree: { flex: 1, fontSize: 13, color: flColor.gray400, textAlign: 'center' },
+  cmpPremium: { flex: 1, fontSize: 13, fontWeight: '600', color: flColor.bronze300, textAlign: 'center' },
+
+  ownership: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 15, marginTop: 12 },
+  ownershipIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.surfaceRecessed,
+  },
+
+  usageRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, paddingHorizontal: 15 },
+  usageRowTight: { paddingVertical: 10 },
+  usageIcon: { width: 22, alignItems: 'center' },
+  usageLabel: { flex: 1, fontSize: 13.5, color: flColor.cream100 },
+  usageLabelQuiet: { color: flColor.gray400 },
+  usageValue: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
+  usageValueHot: { color: flColor.bronze300, fontWeight: '700' },
+
+  faqRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 15, paddingVertical: 13 },
+  faqQ: { flex: 1, fontSize: 13.5, lineHeight: 19, color: flColor.cream100 },
+  faqA: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400, paddingHorizontal: 15, paddingBottom: 14, marginTop: -4 },
+
+  planCard: {
+    padding: 18,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.charcoal900,
+    boxShadow: flShadow.card,
+  },
+  planCardLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  planCardValue: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', color: flColor.cream100, marginTop: 6 },
+  planCardLine: { fontSize: 12.5, color: flColor.gray400, marginTop: 5 },
+  manage: { marginTop: 22 },
+
+  restore: { marginTop: 20 },
+  restoreText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
+  legal: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 6 },
+  legalText: { fontSize: 11.5, color: flColor.gray600, textDecorationLine: 'underline' },
+  legalDot: { fontSize: 11.5, color: flColor.gray600 },
 
   commitBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     paddingHorizontal: 20,
-    paddingTop: 13,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: flColor.charcoal700,
     backgroundColor: flColor.base,
-    gap: 9,
+    gap: 7,
   },
-  notice: { fontSize: 12.5, color: flColor.bronze400, textAlign: 'center' },
-  disclosure: { fontSize: 12, lineHeight: 17, color: flColor.gray400, textAlign: 'center' },
-  restore: { alignItems: 'center', justifyContent: 'center', paddingVertical: 6, minHeight: 32 },
-  restoreText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
-  freeText: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
+  stickyPlan: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100, textAlign: 'center' },
+  disclosure: { fontSize: 11.5, lineHeight: 15, color: flColor.gray400, textAlign: 'center' },
 });

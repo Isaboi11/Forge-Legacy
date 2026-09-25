@@ -29,6 +29,11 @@ import {
   tiersOn,
   trialLabel,
   usageRows,
+  PAYWALL_FAQ,
+  TIER_NOTE_SHORT,
+  USAGE_NEAR,
+  compactComparisonRows,
+  usageIsNear,
 } from '../plans-core.ts';
 
 /**
@@ -313,8 +318,8 @@ test('each tier says what it does NOT include, above the buy button (P8W-D4 unde
 test('Premium AI never promises unlimited AI, or a feature that is not built (MA6-D4, P-8 §8)', () => {
   const text = [...AI_BENEFITS.map((b) => `${b.title} ${b.detail}`), AI_ALLOWANCE_NOTE].join(' ');
   assert.ok(!/unlimited/i.test(text));
-  // Form check waits on build 9; photo food logging is unbuilt.
-  assert.ok(!/form check|film|meal from a photo|food/i.test(text));
+  // Form check shipped in build 9 (the review build); photo food logging is still unbuilt.
+  assert.ok(!/meal from a photo|food/i.test(text));
 });
 
 test('Never Charge For History is restated identically, not paraphrased', () => {
@@ -369,4 +374,41 @@ test('no price string or product id is hardcoded anywhere in the P-8 surface (P-
       assert.ok(!re.test(code), `${f} contains ${why} — ${re}`);
     }
   }
+});
+
+// ── the decision-first redesign (PO 2026-09-25) ──────────────────────────────
+
+test('the compact table states numbers, and never promises unlimited squads (M7-D15)', () => {
+  const rows = compactComparisonRows(FREE_CAPS, PAID_CAPS);
+  const by = Object.fromEntries(rows.map((r) => [r.key, r]));
+  assert.deepEqual(rows.map((r) => r.key), ['programs', 'photos', 'squads', 'imports', 'holt_programs', 'holt_days_per_month']);
+  assert.equal(by.programs.free, '3');
+  assert.equal(by.programs.premium, 'Unlimited'); // 500 is an abuse guard, not the promise
+  assert.equal(by.squads.premium, '5');
+  assert.equal(by.holt_days_per_month.free, '2/mo');
+  assert.deepEqual(compactComparisonRows(null, PAID_CAPS), []);
+});
+
+test('usage moves up only once an allowance is 80% spent', () => {
+  const base = { programs: 0, shortPrograms: 0, photos: 0, videos: 0, squads: 0, templates: 0, imports: 0, holtPrograms: 0, holtDays: 0 };
+  assert.equal(usageIsNear(usageRows(FREE_CAPS, base)), false);
+  assert.equal(usageIsNear(usageRows(FREE_CAPS, { ...base, photos: 59 })), false); // 78.7%
+  assert.equal(usageIsNear(usageRows(FREE_CAPS, { ...base, photos: 60 })), true); // 80%
+  const full = usageRows(FREE_CAPS, { ...base, programs: 3 });
+  assert.equal(full.find((r) => r.key === 'programs').fill, 1);
+  assert.equal(USAGE_NEAR, 0.8);
+  // No ceiling, no fill — an unlimited row can never trigger the move.
+  assert.ok(usageRows(PAID_CAPS, base).filter((r) => r.key !== 'programs' && r.key !== 'photos' && r.key !== 'squads').every((r) => r.fill == null));
+});
+
+test('the FAQ quantifies nothing the server owns and promises nothing unbuilt', () => {
+  const text = PAYWALL_FAQ.map((f) => `${f.q} ${f.a}`).join(' ');
+  assert.ok(!/\d+\s*(credits|messages)/i.test(text), 'the AI allowance is unset until measured (MA6-D4)');
+  assert.ok(!/unlimited/i.test(text));
+  assert.ok(!/Founder/.test(text));
+  assert.equal(PAYWALL_FAQ.length, 6);
+});
+
+test('P8W-D4 survives in the sticky bar: Premium says where Holt AI is', () => {
+  assert.match(TIER_NOTE_SHORT.premium, /Premium AI/);
 });

@@ -255,6 +255,17 @@ export const AUTO_RENEWAL_NOTE =
 /** Beside the buy button when the selected plan carries a trial (MA6-D11: the terms sit next to it). */
 export const TRIAL_NOTE = 'Cancel before the trial ends and you won’t be charged.';
 
+/**
+ * P8W-D4 in the fewest words, for the sticky buy bar (PO redesign 09-25 asked for the full sentence to go).
+ * The rule is that the scoping sits above EVERY buy button; the sticky one carries this. Premium AI and the
+ * add-on need none — their own name says what is in them.
+ */
+export const TIER_NOTE_SHORT: Record<PlanTier, string | null> = {
+  premium: 'Holt AI, the AI coach, is in Premium AI.',
+  premium_ai: null,
+  ai_addon: null,
+};
+
 export const TIER_COPY: Record<PlanTier, { title: string }> = {
   premium: { title: 'Premium' },
   premium_ai: { title: 'Premium AI' },
@@ -267,12 +278,15 @@ export const CADENCE_COPY: Record<Cadence, { title: string; cadence: string; bad
 };
 
 /**
- * What Premium AI adds, as built today (P-8 §8: built features only). Holt AI answers and edits, and it
- * reads a program from a photo. Form check waits on build 9 and photo food logging is unbuilt, so neither
- * is listed. MA6-D4: an allowance, never "unlimited".
+ * What Premium AI adds, as built today (P-8 §8: built features only). Holt AI answers from the athlete's
+ * own data, changes a program from any message (Coach-AI-Amendment-002), reads a set on video (form check,
+ * build 9 — the build that goes to review) and reads a program from a photo. Photo food logging is unbuilt,
+ * so it is not listed. MA6-D4: an allowance, never "unlimited".
  */
 export const AI_BENEFITS: readonly { title: string; detail: string }[] = [
-  { title: 'Holt AI', detail: 'Ask your coach anything in plain words, and have it change your plan for you.' },
+  { title: 'Holt AI', detail: 'Ask your coach anything in plain words. It knows your training and answers from it.' },
+  { title: 'Smart program changes', detail: 'Ask Holt to change your program around your goals, schedule, equipment or recovery.' },
+  { title: 'Form check', detail: 'Film a set and Holt AI reads your form: what’s working, what to fix, and a cue for the next set.' },
   { title: 'Import from a photo', detail: 'Snap a coach’s program and Holt AI reads it into the builder.' },
 ];
 export const AI_ALLOWANCE_NOTE = 'Includes a generous monthly AI allowance.';
@@ -403,6 +417,11 @@ export interface UsageRow {
   label: string;
   /** "38 of 75", or "Used" for the allowances that are a boolean wearing a counter's clothes. */
   value: string;
+  /**
+   * How full the allowance is, 0–1, or null when it has no ceiling. Drives only where the usage card
+   * sits and which rows it emphasises (PO redesign 09-25) — it never changes a number.
+   */
+  fill: number | null;
 }
 
 const USAGE_LABEL: Partial<Record<CapKey, string>> = {
@@ -451,6 +470,95 @@ export function usageRows(caps: Caps | null, usage: Usage | null): UsageRow[] {
     const used = usage[field];
     const value =
       ONE_SHOT.has(key) && cap === 1 ? (used >= 1 ? 'Used' : 'Available') : usageLabel(used, cap);
-    return { key, label, value };
+    const fill = cap === UNLIMITED || cap <= 0 || !Number.isFinite(used) ? null : Math.min(1, Math.max(0, used) / cap);
+    return { key, label, value, fill };
   }).filter((r): r is UsageRow => r != null);
 }
+
+/**
+ * The share of an allowance at which the usage card stops being a footnote (PO redesign 09-25: "approximately
+ * 80%+"). Below it the card sits near the bottom of P-8; at or above it the card moves up beside the price,
+ * because it is now the reason this athlete in particular might buy.
+ */
+export const USAGE_NEAR = 0.8;
+
+export function usageIsNear(rows: readonly UsageRow[]): boolean {
+  return rows.some((r) => r.fill != null && r.fill >= USAGE_NEAR);
+}
+
+// ── the compact comparison (PO redesign 09-25) ───────────────────────────────
+
+/**
+ * The same six rows as `comparisonRows`, as a label and two bare values — "3" against "Unlimited".
+ *
+ * The numbers carry the difference, so the noun moves into the row label and the cells stay short. Built
+ * from the same `premiumPhrase` rule: Premium's squad ceiling is stated (M7-D15), every other paid ceiling
+ * is an abuse guard and reads "Unlimited".
+ */
+const COMPACT_LABEL: Partial<Record<CapKey, string>> = {
+  programs: 'Programs',
+  photos: 'Photos',
+  squads: 'Squads',
+  imports: 'Imports',
+  holt_programs: 'Basic Holt programs',
+  holt_days_per_month: 'Basic Holt days',
+};
+
+export interface CompactRow {
+  key: CapKey;
+  label: string;
+  free: string;
+  premium: string;
+}
+
+function compactValue(key: CapKey, cap: number): string {
+  if (cap === UNLIMITED || cap < 0) return 'Unlimited';
+  return key === 'holt_days_per_month' ? `${cap}/mo` : String(cap);
+}
+
+export function compactComparisonRows(free: Caps | null, paid: Caps | null): CompactRow[] {
+  if (!free || !paid) return [];
+  return COMPARISON_KEYS.map((key) => ({
+    key,
+    label: COMPACT_LABEL[key] ?? key,
+    free: compactValue(key, free[key]),
+    premium: PREMIUM_STATES_ITS_CEILING.has(key) ? compactValue(key, paid[key]) : 'Unlimited',
+  }));
+}
+
+// ── the FAQ (PO redesign 09-25) ──────────────────────────────────────────────
+
+/**
+ * Six short answers, so the explanations leave the buying path.
+ *
+ * ⚠ EVERY ANSWER IS A CLAIM ON THE SCREEN THAT TAKES THE MONEY. No number the server owns is typed here
+ *   (the allowance is unset until measured — MA6-D4 — so it is described, never quantified), and the
+ *   cancel answer points at the App Store, which is where cancelling actually happens.
+ */
+export const PAYWALL_FAQ: readonly { q: string; a: string }[] = [
+  {
+    q: 'What’s the difference between Premium and Premium AI?',
+    a: 'Premium removes the limits on everything you build and includes Basic Holt, the rulebook coach. Premium AI is everything in Premium, plus Holt AI, the coach you can talk to.',
+  },
+  {
+    q: 'What happens after my free trial?',
+    a: 'When the trial ends, your subscription starts and your App Store account is charged. Cancel before it ends and you won’t be charged.',
+  },
+  {
+    q: 'Can I cancel anytime?',
+    a: 'Yes. Cancel in your App Store account settings. You keep your plan until the end of the period you’ve paid for.',
+  },
+  {
+    q: 'Will I lose my data if I cancel?',
+    a: 'No. Everything you’ve already built is yours — forever. Going back to Free deletes nothing; the Free limits only apply to what you add next.',
+  },
+  {
+    q: 'How does the AI allowance work?',
+    a: 'Premium AI includes a monthly AI allowance that resets each month. A message uses a little; reading a photo or checking your form uses more. Basic Holt is never counted against it.',
+  },
+  {
+    q: 'Can I restore my purchase?',
+    a: 'Yes. Tap Restore Purchases below while signed in with the Apple ID you bought with.',
+  },
+];
+
