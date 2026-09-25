@@ -253,7 +253,14 @@ export default function NutritionScreen() {
         <NutritionCareLine care={care} style={styles.careLine} />
 
         {/* ── calorie ring ──────────────────────────────────────────────── */}
-        <View style={styles.heroWrap}>
+        {/* The rings are the door back into Daily targets. Every other link to it only shows while no
+            target exists, so once one was set there was no way to change it from this tab. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Edit daily targets"
+          onPress={() => router.push('/nutrition-targets')}
+          style={styles.heroWrap}
+        >
           <View style={styles.heroGlow} pointerEvents="none" />
           <Svg width={RING.box} height={RING.box} viewBox={`0 0 ${RING.box} ${RING.box}`}>
             <Circle cx={RING.box / 2} cy={RING.box / 2} r={RING.r} fill="none" stroke={flColor.charcoal600} strokeWidth={RING.stroke} />
@@ -290,14 +297,19 @@ export default function NutritionScreen() {
               </Pressable>
             )}
           </View>
-        </View>
+        </Pressable>
 
         {/* ── macro rings ───────────────────────────────────────────────── */}
-        <View style={styles.macroRow}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Edit macro targets"
+          onPress={() => router.push('/nutrition-targets')}
+          style={styles.macroRow}
+        >
           <MacroRing label="Protein" value={eaten.protein} target={targets?.protein ?? null} color={flColor.greenMuted} />
           <MacroRing label="Carbs" value={eaten.carb} target={targets?.carb ?? null} color={flColor.plumMuted} />
           <MacroRing label="Fat" value={eaten.fat} target={targets?.fat ?? null} color={flColor.blueMuted} />
-        </View>
+        </Pressable>
 
         {/* ── actions ───────────────────────────────────────────────────── */}
         <View style={styles.actions}>

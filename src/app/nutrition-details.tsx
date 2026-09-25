@@ -217,9 +217,20 @@ export default function NutritionDetailsScreen() {
 
           <View style={styles.cardFoot}>
             <Text style={styles.footLabel}>Target range</Text>
-            <Text style={styles.footValue}>
-              {summary.band ? `${grouped(summary.band.lo)} – ${grouped(summary.band.hi)} cal` : 'No target set'}
-            </Text>
+            <View style={styles.footRight}>
+              <Text style={styles.footValue}>
+                {summary.band ? `${grouped(summary.band.lo)} – ${grouped(summary.band.hi)} cal` : 'No target set'}
+              </Text>
+              {/* Always here, set or not — the only other doors to Daily targets vanish once one exists. */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Edit daily targets"
+                hitSlop={8}
+                onPress={() => router.push('/nutrition-targets')}
+              >
+                <Text style={styles.gapAction}>Edit</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
 
@@ -417,6 +428,7 @@ const styles = StyleSheet.create({
     borderTopColor: flColor.charcoal700,
   },
   footLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600 },
+  footRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   footValue: { fontSize: 11.5, color: flColor.gray400 },
   bandNote: { paddingTop: 12, paddingHorizontal: 2, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
 
