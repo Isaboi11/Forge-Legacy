@@ -78,7 +78,7 @@ reinstall, or a tester needs one of these.
 
 **✅ BUILD 9 CUT 2026-09-25** — EAS `6c59b9c9`, commit `f7704585`, on TestFlight (submission `38ff62e2`). Everything in the table above is in it; nothing is device-tested yet. Commits after `f7704585` reach it only by OTA.
 
-**OTA 1 to build 9 (09-25):** barcode fix only (`de8772a6` → `310114e4` on `ota/build9`, worktree `C:/Users/isaia/forge-b9-ota`), iOS update `01a0da07-25dc-705c…` on runtime `b322e3de…`. ⚠ That worktree needed `.gitignore`, `eas.json` and `modules/*/ios` copied BYTE-FOR-BYTE from the main tree (LF): its autocrlf checkout wrote CRLF and broke the fingerprint. Server half (`food-search`: parallel sources, USDA `gtinUpc`, Open Food Facts typed search) ⏳ needs the PO to redeploy the function.
+**OTA 1 to build 9 (09-25):** barcode fix only (`de8772a6` → `310114e4` on `ota/build9`, worktree `C:/Users/isaia/forge-b9-ota`), iOS update `01a0da07-25dc-705c…` on runtime `b322e3de…`. ⚠ That worktree needed `.gitignore`, `eas.json` and `modules/*/ios` copied BYTE-FOR-BYTE from the main tree (LF): its autocrlf checkout wrote CRLF and broke the fingerprint. Server half (`food-search`: parallel sources, USDA `gtinUpc`, Open Food Facts typed search) ✅ redeployed by the PO 09-25.
 
 **When cutting build 9:** re-run `fingerprint:compare` afterwards, move the OTA lane to the new runtime,
 and keep build 8 fed until testers have reinstalled.
