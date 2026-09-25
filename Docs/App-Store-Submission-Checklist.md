@@ -6,11 +6,11 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
 
 ✅ done · 🔨 in progress · ⏳ waiting on someone else · ⬜ not started
 
-**Last updated:** 2026-09-24
+**Last updated:** 2026-09-25
 
 ## Where we are
 - **Waiting on others:** Apple (bank verification) · Apple (Small Business Program)
-- **PO to-do:** find a lawyer · decide if Nutrition ships in the first release · write the recipes ·
+- **PO to-do:** find a lawyer · ~~decide if Nutrition ships~~ (09-25: yes, opens on approval) · write the recipes ·
   RevenueCat tidy-up (rename the project, delete `$rc_*` packages, delete `REVENUE_WEBHOOK_AUTH`) — handed to Claude in Chrome 09-24
 - **Claude to-do:** build 9 (paywall, mic, form check, barcode) → sandbox purchase test
 
@@ -104,9 +104,14 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
 - ⬜ Holt meal plans — Amendment 002 LOCKED 09-24 (`ce224fac`); not built yet
 - ✅ Barcode camera + label scan built — 09-24/25, ship in build 9 (iPhone only; hidden on build 8 + web) · ⬜ test both on a phone
 - ⬜ Photo food logging (Premium AI) — next to discuss; needs no new build
-- ⬜ Open `0206` to more testers, then lift the gate
+- ⏳ Lift the gate — 09-25: PO decided Nutrition opens to everyone **on App Store approval**, not before.
+  `supabase/apply/pending-0216.sql` is written (one function; no app update needed) — run it on ship day (§6)
 
 ## 6. Ship day
+- ⬜ Open Nutrition to everyone: paste `supabase/apply/pending-0216.sql` (09-25). First clear §5's two
+  "must-do before opening" items (under-eating message, privacy policy nutrition section)
+- ⬜ forgelegacy.app: swap "Get TestFlight invite" for the App Store link (site went live 09-25 as the
+  Clean v2 design; TestFlight emails land in `testflight_requests`)
 - ⬜ Phase F: default to Free + remove "free while testing" (4 files, see GO-LIVE)
 - ✅ Build 9 built + uploaded to TestFlight — 09-25 (EAS `6c59b9c9`, commit `f7704585`). Watch Swift + label reader compiled first try. ⚠ Apple 401 on the stored key: the PO had to run build + submit interactively; the first EAS submit sat IN_QUEUE 1h+ and was cancelled · ⬜ test on device
 - ⬜ Add the 10 subscriptions for review together with build 9
