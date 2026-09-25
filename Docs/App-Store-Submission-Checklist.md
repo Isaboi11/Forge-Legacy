@@ -97,7 +97,8 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
   app now says "Couldn't connect to food search" with Try again (Log Food + the meal editor). Not deployed yet
 - ✅ First-time welcome screen for the tab — built 09-24 (`eefe43dd`), on web; not yet seen by the PO
 - ⬜ "This looks wrong" report on a food
-- ⬜ Data export includes nutrition
+- ✅ Data export includes nutrition — 09-24: with food data, Export My Data gives one .zip (workouts.csv +
+  food log, targets, my foods, my meals, my recipes, meal plans, grocery items you added); without, the same CSV. Not deployed yet
 - ⬜ Holt meal plans — Amendment 002 LOCKED 09-24 (`ce224fac`); not built yet
 - ⬜ Barcode camera + label scan → build 9 (the function side of barcode is live)
 - ⬜ Photo food logging (Premium AI) — next to discuss; needs no new build

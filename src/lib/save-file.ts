@@ -17,7 +17,8 @@ import { Share } from 'react-native';
  */
 export async function saveTextFile(
   name: string,
-  text: string,
+  /** Text for a CSV; bytes for a ZIP (Export My Data with nutrition). `File.write` takes either. */
+  text: string | Uint8Array,
   /**
    * ⚠ ACCEPTED AND UNUSED ON NATIVE, DELIBERATELY. The web twin needs it for the Blob's type; iOS takes
    * the type from the file's own extension and `ShareOptions` has no field for it (`dialogTitle`,
