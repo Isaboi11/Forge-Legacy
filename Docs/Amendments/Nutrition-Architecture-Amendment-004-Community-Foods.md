@@ -1,6 +1,6 @@
 # Forge Legacy — Nutrition Architecture Amendment 004
 ## Community Foods: a barcode one athlete adds, every athlete finds
-### Status: Proposed | 2026-09-25 — concept approved by the PO; four decisions open (§4)
+### Status: LOCKED | 2026-09-25 — PO answered §4 the same day
 
 **Authority:** `Nutrition-Architecture-v1.0.md` §4 (sources) · **NUT-D7** (*"private by default; sharing is
 always explicit"*) · `P-6-Amendment-002-Nutrition-Data.md` **P6-A2-D1** (owner-only tables) and **P6-A2-D4**
@@ -41,12 +41,12 @@ self-consistency rules, and confirmed by a human before saving.
 
 ---
 
-## Section 3 — Decisions (proposed)
+## Section 3 — Decisions
 
 **CF-D1 — Sharing is a choice made on the food, never a setting.** Create Food shows one control, only when
 the food has a barcode: *"Share with Forge — the next person who scans this finds it."* No account-wide
 toggle exists (P6-A2-D2 holds). This is P6-A2-D4's "one deliberate act per item", so **P-6 needs no
-amendment.** Whether the box starts ticked is **open (§4 Q1).**
+amendment.** The box starts **ticked** (§4 Q1).
 
 **CF-D2 — Only barcoded foods can be shared.** A barcode is what makes a food the same product for everyone.
 "Mum's lasagna" and "overnight oats" are personal and have no control to share them.
@@ -84,18 +84,18 @@ before USDA/FatSecret are needed, so it **saves** FatSecret calls against the 5,
 
 ---
 
-## Section 4 — Open decisions for the PO
+## Section 4 — Decisions the PO made (2026-09-25: "Yes / Yes / Not yet / Yes")
 
-| # | Question | Recommendation |
+| # | Question | Decision |
 |---|---|---|
-| Q1 | Does "Share with Forge" start **ticked**? | **Ticked.** It only appears on a barcoded food the databases missed, where sharing is plainly the point. The choice is visible and one tap undoes it. ⚠ NUT-D7 says sharing is "always explicit"; a pre-ticked box can be read as not explicit, so this needs your call. |
-| Q2 | When an athlete **deletes their account**, do their shared foods go too? | **Keep them.** They are anonymous facts about a product, not about the athlete. Deletion severs the contributor id. The Privacy Policy must say so. |
-| Q3 | Send shared foods **on to Open Food Facts** as well? | **Not in V1.** ODbL share-alike and their contribution API are a separate licence read. Revisit once the table has volume. |
-| Q4 | Can Free athletes contribute, or Premium only? | **Everyone.** Barcode is free (MA6-D8), and every contributor makes the product better for paying users. |
+| Q1 | Does "Share with Forge" start **ticked**? | ✅ **Ticked (PO).** It only appears on a barcoded food the databases missed, where sharing is plainly the point. The choice is visible, labelled, and one tap undoes it. The PO accepted this reading of NUT-D7 knowingly: the act is still per item and on screen. |
+| Q2 | When an athlete **deletes their account**, do their shared foods go too? | ✅ **Kept (PO).** They are anonymous facts about a product, not about the athlete. Deletion severs the contributor id. The Privacy Policy must say so. |
+| Q3 | Send shared foods **on to Open Food Facts** as well? | ✅ **Not yet (PO).** ODbL share-alike and their contribution API are a separate licence read. Revisit once the table has volume. |
+| Q4 | Can Free athletes contribute, or Premium only? | ✅ **Everyone (PO).** Barcode is free (MA6-D8), and every contributor makes the product better for paying users. |
 
 ---
 
-## Section 5 — What gets built (after the PO locks §4)
+## Section 5 — What gets built
 
 | Piece | Where | Notes |
 |---|---|---|
@@ -118,3 +118,4 @@ before USDA/FatSecret are needed, so it **saves** FatSecret calls against the 5,
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-09-25 | Proposed. Concept approved by the PO; §4 Q1–Q4 open. |
+| 1.0 | 2026-09-25 | LOCKED. PO: ticked by default · kept on account deletion · not to Open Food Facts yet · everyone can share. |
