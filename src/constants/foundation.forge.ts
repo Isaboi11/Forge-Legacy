@@ -75,6 +75,8 @@ export const flColor = {
   greenMuted: '#5A9E68',
   redMuted: '#BE5A4C',
   blueMuted: '#568AAE',
+  /** Carbs, on Nutrition's macro rings (PO, 2026-09-24: the carb ring was bronze, the same as calories). Beside green protein and blue fat; not red, which reads as "over". */
+  plumMuted: '#9C7BB5',
 
   overlayDark: 'rgba(0, 0, 0, 0.75)',
   innerHighlight: 'rgba(255, 255, 255, 0.04)',
