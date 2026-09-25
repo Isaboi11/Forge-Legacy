@@ -7,12 +7,18 @@ import {
   clipIsLong,
   FORM_CLIP_MS,
   FORM_CLIP_SECONDS,
+  FORM_ENCOURAGE_FALLBACK,
+  FORM_ENCOURAGE_REFILM,
   FORM_FIX_MAX,
   FORM_FRAME_BASE64_CHARS,
   FORM_FRAME_MAX_EDGE,
   FORM_FRAMES_MAX,
   FORM_FRAMES_MIN,
   FORM_GOOD_MAX,
+  FORM_LABEL_CUE,
+  FORM_LABEL_FIX_ONE,
+  FORM_LABEL_FIX_TWO,
+  FORM_LABEL_GOOD,
   FORM_LINE_CHARS,
   FORM_NO_READ,
   FORM_OUTPUT_CAP,
@@ -234,6 +240,7 @@ test('a clean read passes through unchanged', () => {
       looksGood: ['Depth is there on every rep.', 'Your brace holds.'],
       fix: ['The bar drifts forward out of the bottom.'],
       cue: 'chest through the bar',
+      encourage: 'This is a good base. Film the next heavy set.',
     },
     'Back Squat',
   );
@@ -242,6 +249,7 @@ test('a clean read passes through unchanged', () => {
     looksGood: ['Depth is there on every rep.', 'Your brace holds.'],
     fix: ['The bar drifts forward out of the bottom.'],
     cue: 'chest through the bar',
+    encourage: 'This is a good base. Film the next heavy set.',
   });
 });
 
@@ -351,40 +359,120 @@ test('the guard still runs on parsed JSON — not only on an object handed in di
 // What Holt says
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
-test('the summary reads as Holt: the good, the biggest fix, then the cue', () => {
-  const lines = formCheckSummary({
+/** Every line of a view, labels included, in reading order — what the athlete's eye actually passes over. */
+const allText = (view) => [view.lift, ...view.sections.flatMap((s) => [s.label ?? '', ...s.lines])].filter(Boolean);
+
+test('the read has a fixed shape: what works, two fixes in order, the cue, then encouragement (PO 2026-09-25)', () => {
+  const view = formCheckSummary({
     lift: 'Back Squat',
     looksGood: ['Depth is there on every rep.'],
     fix: ['The bar drifts forward out of the bottom.', 'Your brace goes at the turnaround.'],
     cue: 'chest through the bar',
+    encourage: "Film the next heavy set and we'll see the bar path tighten up.",
   });
-  assert.deepEqual(lines, [
-    'Back Squat — Depth is there on every rep.',
-    'The bar drifts forward out of the bottom.',
-    'Then: Your brace goes at the turnaround.',
-    'Next set, think: "chest through the bar"',
+  assert.equal(view.lift, 'Back Squat');
+  assert.deepEqual(view.sections, [
+    { kind: 'good', label: FORM_LABEL_GOOD, lines: ['Depth is there on every rep.'] },
+    {
+      kind: 'fix',
+      label: FORM_LABEL_FIX_TWO,
+      lines: ['First, the bar drifts forward out of the bottom.', 'Then, your brace goes at the turnaround.'],
+    },
+    { kind: 'cue', label: FORM_LABEL_CUE, lines: ['Think: "chest through the bar"'] },
+    { kind: 'encourage', label: null, lines: ["Film the next heavy set and we'll see the bar path tighten up."] },
   ]);
   // Holt-Voice: plain text only.
-  for (const line of lines) assert.ok(!/[*_#•]|^\d\./.test(line), `markdown in: ${line}`);
+  for (const line of allText(view)) assert.ok(!/[*_#•]|^\d\./.test(line), `markdown in: ${line}`);
 });
 
-test('the lift is still named when there is nothing good to say', () => {
-  const lines = formCheckSummary({ lift: 'Deadlift', looksGood: [], fix: ['The hips shoot up early.'], cue: '' });
-  assert.equal(lines.length, 2);
-  assert.ok(lines[0].startsWith('Deadlift —'));
-  assert.equal(lines[1], 'The hips shoot up early.');
+test('one fix says ONE thing and has no "First"/"Then"; two fixes never say "one thing"', () => {
+  const one = formCheckSummary({
+    lift: 'Bench',
+    looksGood: ['Your setup is tight and the same every rep.'],
+    fix: ['Elbows flare.'],
+    cue: '"squeeze the bar apart"',
+    encourage: 'Good base.',
+  });
+  const fixOne = one.sections.find((s) => s.kind === 'fix');
+  assert.equal(fixOne.label, FORM_LABEL_FIX_ONE);
+  assert.deepEqual(fixOne.lines, ['Elbows flare.']);
+  // A quoted cue is not double-quoted.
+  assert.deepEqual(one.sections.find((s) => s.kind === 'cue').lines, ['Think: "squeeze the bar apart"']);
+
+  const two = formCheckSummary({ lift: 'Deadlift', looksGood: [], fix: ['Hips rise first.', 'I lose the bar at lockout.'], cue: '', encourage: '' });
+  assert.equal(two.sections.find((s) => s.kind === 'fix').label, FORM_LABEL_FIX_TWO);
+  assert.ok(!allText(two).some((l) => /one thing/i.test(l)), 'the old "one thing I\'d change" bug');
+  // "I" is not lowercased after "Then,".
+  assert.deepEqual(two.sections.find((s) => s.kind === 'fix').lines, ['First, hips rise first.', 'Then, I lose the bar at lockout.']);
 });
 
-test('one fix means no "Then" line, and a quoted cue is not double-quoted', () => {
-  const lines = formCheckSummary({ lift: 'Bench', looksGood: [], fix: ['Elbows flare.'], cue: '"squeeze the bar apart"' });
-  assert.ok(!lines.some((l) => l.startsWith('Then:')));
-  assert.equal(lines[lines.length - 1], 'Next set, think: "squeeze the bar apart"');
+test('praise comes first and the closing line comes last, whatever else is there', () => {
+  const view = formCheckSummary({ lift: 'Squat', looksGood: ['Brace holds.', 'Tempo is even.'], fix: ['Knees cave on the way up.'], cue: 'knees out', encourage: 'Keep going.' });
+  assert.deepEqual(view.sections.map((s) => s.kind), ['good', 'fix', 'cue', 'encourage']);
+  assert.deepEqual(view.sections[0].lines, ['Brace holds.', 'Tempo is even.']);
+});
+
+test('the read never ends without encouragement — a scripted line stands in when the model\'s is missing', () => {
+  const base = { lift: 'Front Squat', looksGood: ['Elbows stay high.'], fix: ['The bar drifts forward.'], cue: 'elbows up' };
+  for (const read of [{ ...base, encourage: '' }, { ...base, encourage: '   ' }, base]) {
+    const last = formCheckSummary(read).sections.at(-1);
+    assert.equal(last.kind, 'encourage');
+    assert.ok(FORM_ENCOURAGE_FALLBACK.includes(last.lines[0]), `not a scripted line: ${last.lines[0]}`);
+  }
+  // Deterministic: the same read always closes the same way.
+  assert.deepEqual(formCheckSummary({ ...base, encourage: '' }), formCheckSummary({ ...base, encourage: '' }));
+  // Nothing looked good (almost always an unreadable clip): the fallback is about the next clip.
+  const unread = formCheckSummary({ lift: 'Squat', looksGood: [], fix: ['I cannot see the bar — film from the side.'], cue: '', encourage: '' });
+  assert.equal(unread.sections.at(-1).lines[0], FORM_ENCOURAGE_REFILM);
+  assert.ok(!unread.sections.some((s) => s.kind === 'good'), 'no invented praise');
+});
+
+test('every scripted line passes the same guard, and keeps the voice rules', () => {
+  for (const line of [...FORM_ENCOURAGE_FALLBACK, FORM_ENCOURAGE_REFILM]) {
+    assert.equal(bannedFamily(line), null, `the guard would drop: ${line}`);
+    assert.ok(line.length <= FORM_LINE_CHARS);
+    assert.ok(!line.includes('!'), 'no exclamation mark on a line that praises nothing in particular');
+    assert.ok(!/champ|buddy|king|beast|you got this|let'?s go/i.test(line), `hype in: ${line}`);
+  }
+  for (const label of [FORM_LABEL_GOOD, FORM_LABEL_FIX_ONE, FORM_LABEL_FIX_TWO, FORM_LABEL_CUE]) {
+    assert.ok(!/[*_#•:]/.test(label), `a label is a word, not markup: ${label}`);
+  }
+});
+
+test('the guard runs on encourage, and dropping it does not drop the read', () => {
+  const read = sanitizeFormRead(
+    {
+      looksGood: ['Depth is there.'],
+      fix: ['The bar drifts forward.'],
+      cue: 'mid-foot',
+      encourage: 'Keep it up and it will stop hurting soon.',
+    },
+    'Squat',
+  );
+  assert.equal(read.encourage, '', 'a medical promise in the closing line is dropped like any other');
+  assert.deepEqual(read.fix, ['The bar drifts forward.']);
+  // …and the screen still closes on a scripted line rather than on the fix.
+  assert.ok(FORM_ENCOURAGE_FALLBACK.includes(formCheckSummary(read).sections.at(-1).lines[0]));
+
+  for (const bad of ['That weight looks safe for you now.', 'Next week try 225 lb.', "You're leaning out nicely.", 'See a physio and then film it again.']) {
+    assert.equal(sanitizeFormRead({ fix: ['Hips rise first.'], encourage: bad }).encourage, '', `kept: ${bad}`);
+  }
+  // A good closing line survives, sentence by sentence.
+  const kept = sanitizeFormRead({ fix: ['Hips rise first.'], encourage: 'This is a good base. Film the next heavy set.' });
+  assert.equal(kept.encourage, 'This is a good base. Film the next heavy set.');
+  // A missing field is an empty string, never undefined.
+  assert.equal(sanitizeFormRead({ fix: ['Hips rise first.'] }).encourage, '');
+});
+
+test('encouragement alone is not a read', () => {
+  assert.equal(sanitizeFormRead({ looksGood: [], fix: [], cue: '', encourage: 'Film another set.' }), null);
 });
 
 test('no read is a plain next step, never an apology or a verdict', () => {
-  assert.deepEqual(formCheckSummary(null), [FORM_NO_READ]);
-  assert.deepEqual(formCheckSummary(undefined), [FORM_NO_READ]);
-  assert.deepEqual(formCheckSummary({ lift: 'Squat', looksGood: [], fix: [], cue: '' }), [FORM_NO_READ]);
+  const none = { lift: '', sections: [{ kind: 'none', label: null, lines: [FORM_NO_READ] }] };
+  assert.deepEqual(formCheckSummary(null), none);
+  assert.deepEqual(formCheckSummary(undefined), none);
+  assert.deepEqual(formCheckSummary({ lift: 'Squat', looksGood: [], fix: [], cue: '', encourage: 'Nice.' }), none);
   assert.ok(!/sorry|failed|error/i.test(FORM_NO_READ));
   assert.ok(/film/i.test(FORM_NO_READ), 'it says what to do next');
 });

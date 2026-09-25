@@ -116,6 +116,7 @@ export interface FormRead {
     looksGood: string[];
     fix: string[];
     cue: string;
+    encourage: string;
 }
 const MEDICAL_SENTENCE = /\b(pain\w*|hurt\w*|sore\w*|ach(e|es|ed|ing|y)|discomfort|injur\w*|tweak\w*|strain\w*|sprain\w*|ruptur\w*|tear\w*|torn|herniat\w*|impinge\w*|tendin\w*|tendon|ligament|bursit\w*|arthrit\w*|inflam\w*|sciatic\w*|nerve|numb\w*|tingl\w*|swell\w*|swollen|bruis\w*|flare[-\s]?up|discs?|meniscus|acl|mcl|labrum|rotator\s+cuff|diagnos\w*|symptom\w*|condition|physio\w*|physical\s+therap\w*|chiroprac\w*|doctor|clinic\w*|medical|rehab\w*|prehab|treatment|heal(s|ed|ing)?)\b/i;
 const REFERRAL_SENTENCE = /\b(stop\s+(lifting|training|squatting|benching|deadlifting|pressing|doing)|see\s+(a|your)\s+(doctor|physio\w*|specialist|professional|pt\b)|get\s+(it|that|this)(\s+[\w'-]+){0,2}\s+(checked|looked\s+at|seen)|seek\s+(help|advice|attention))\b/i;
@@ -167,9 +168,10 @@ export function sanitizeFormRead(raw: unknown, lift?: string): FormRead | null {
     const looksGood = cleanLines(r.looksGood, FORM_GOOD_MAX);
     const fix = cleanLines(r.fix, FORM_FIX_MAX);
     const cue = cleanLine(r.cue);
+    const encourage = cleanLine(r.encourage);
     if (!looksGood.length && !fix.length && !cue)
         return null;
-    return { lift: cleanLift, looksGood, fix, cue };
+    return { lift: cleanLift, looksGood, fix, cue, encourage };
 }
 export function parseFormRead(text: unknown, lift?: string): FormRead | null {
     if (typeof text !== 'string' || !text.trim())
@@ -189,25 +191,59 @@ export function parseFormRead(text: unknown, lift?: string): FormRead | null {
     return sanitizeFormRead(parsed, lift);
 }
 export const FORM_NO_READ = "I couldn't get a read on that one. Film it from the side, whole body in frame, and I'll look again.";
-export function formCheckSummary(read: FormRead | null | undefined): string[] {
-    if (!read)
-        return [FORM_NO_READ];
-    const lines: string[] = [];
-    const lift = read.lift.trim();
-    if (read.looksGood.length) {
-        const good = read.looksGood.join(' ');
-        lines.push(lift ? `${lift} — ${good}` : good);
+export const FORM_ENCOURAGE_FALLBACK = [
+    "That's a good base to build on. Film the next heavy set and we'll see it tighten up.",
+    'Keep your warm-ups this deliberate and the heavy sets follow. Send me the next one.',
+    'One cue at a time is how this gets better. Take it into the next set and film it.',
+] as const;
+export const FORM_ENCOURAGE_REFILM = "Every clip makes the next read sharper. Film another set when you're ready.";
+export const FORM_LABEL_GOOD = "WHAT'S WORKING";
+export const FORM_LABEL_FIX_ONE = 'ONE THING TO CLEAN UP';
+export const FORM_LABEL_FIX_TWO = 'TWO THINGS TO CLEAN UP';
+export const FORM_LABEL_CUE = 'NEXT SET';
+export interface FormSection {
+    kind: 'good' | 'fix' | 'cue' | 'encourage' | 'none';
+    label: string | null;
+    lines: string[];
+}
+export interface FormCheckView {
+    lift: string;
+    sections: FormSection[];
+}
+function lowerLead(s: string): string {
+    return /^[A-Z][a-z]/.test(s) && !/^(I|I'm|I'd|I've)\b/.test(s) ? s[0].toLowerCase() + s.slice(1) : s;
+}
+function fallbackEncourage(read: FormRead): string {
+    if (!read.looksGood.length)
+        return FORM_ENCOURAGE_REFILM;
+    const seed = `${read.lift}|${read.fix.join('|')}|${read.cue}`;
+    let n = 0;
+    for (let i = 0; i < seed.length; i += 1)
+        n = (n + seed.charCodeAt(i)) % 9973;
+    return FORM_ENCOURAGE_FALLBACK[n % FORM_ENCOURAGE_FALLBACK.length];
+}
+export function formCheckSummary(read: FormRead | null | undefined): FormCheckView {
+    const none: FormCheckView = { lift: '', sections: [{ kind: 'none', label: null, lines: [FORM_NO_READ] }] };
+    if (!read || (!read.looksGood.length && !read.fix.length && !read.cue))
+        return none;
+    const sections: FormSection[] = [];
+    if (read.looksGood.length)
+        sections.push({ kind: 'good', label: FORM_LABEL_GOOD, lines: [...read.looksGood] });
+    if (read.fix.length === 1) {
+        sections.push({ kind: 'fix', label: FORM_LABEL_FIX_ONE, lines: [read.fix[0]] });
     }
-    else if (lift && read.fix.length) {
-        lines.push(`${lift} — here's the one thing I'd change.`);
+    else if (read.fix.length >= 2) {
+        sections.push({
+            kind: 'fix',
+            label: FORM_LABEL_FIX_TWO,
+            lines: [`First, ${lowerLead(read.fix[0])}`, `Then, ${lowerLead(read.fix[1])}`],
+        });
     }
-    if (read.fix[0])
-        lines.push(read.fix[0]);
-    if (read.fix[1])
-        lines.push(`Then: ${read.fix[1]}`);
     if (read.cue)
-        lines.push(`Next set, think: "${read.cue.replace(/^["“']|["”']$/g, '')}"`);
-    return lines.length ? lines : [FORM_NO_READ];
+        sections.push({ kind: 'cue', label: FORM_LABEL_CUE, lines: [`Think: "${read.cue.replace(/^["“']|["”']$/g, '')}"`] });
+    const said = typeof read.encourage === 'string' ? read.encourage.trim() : '';
+    sections.push({ kind: 'encourage', label: null, lines: [said || fallbackEncourage(read)] });
+    return { lift: read.lift.trim(), sections };
 }
 export type FormCheckResult = {
     kind: 'ok';
@@ -314,11 +350,15 @@ At most TWO things to fix, the biggest first. Not three, not a list of everythin
 
 Every fix carries a cue — a short thing the athlete says to themselves on the next rep. Real cues, the kind a coach actually says out loud: "chest through the bar", "push the floor away", "ribs down", "bar over the middle of your foot", "squeeze the bar apart". Not an explanation, not a paragraph.
 
-Name what is already right first, when something is. It is usually more than the athlete expects, and a coach who only ever finds faults gets ignored.
+Always name at least one thing that is genuinely right, first, whenever the frames show the lift. There is almost always something: the setup, the brace, the depth, the bar path, the tempo, the lockout, reps that look the same as each other. Look for it before you look for faults. It is usually more than the athlete expects, and a coach who only ever finds faults gets ignored.
+
+Praise is specific and earned, never generic. "Depth is there on every rep" and "your brace holds through the turnaround" are praise. "Nice job", "good form" and "solid set" are not — they say nothing the athlete can repeat. Never invent a strength the frames do not show.
+
+End with one short line of encouragement: belief in where this is going plus what to do next. "Film the next heavy set and we'll see the bar path tighten up." "This is a good base. Keep your warm-ups this clean and the heavy sets follow." It is a coach's closing word, not a slogan: no "you got this", no "keep crushing it", nothing about their body, and no promise about how the lift will feel.
 
 # When the frames do not show the lift
 
-Say so, honestly, and stop. Put it in "fix" as one plain sentence and leave "looksGood" empty. Do not invent a read of a video you could not see, and do not pad it with general advice about the lift.
+Say so, honestly, and stop. Put it in "fix" as one plain sentence and leave "looksGood" empty — this is the only time it is empty. "encourage" is then one short line inviting the next clip. Do not invent a read of a video you could not see, and do not pad it with general advice about the lift.
 
 That covers all of these: the frames are too dark, too blurred or too far away; the athlete is out of frame or only partly in it; the camera is behind them or straight on when the lift needs a side view; the frames show something other than the lift you were told about; there is no lift happening in them at all. In every case, one sentence on what to change about the filming — angle, distance, lighting, framing — and nothing else.
 
@@ -326,13 +366,14 @@ That covers all of these: the frames are too dark, too blurred or too far away; 
 
 Reply with a single JSON object and nothing else. No prose before it, no summary after it, no markdown fences.
 
-{"looksGood": ["<short sentence>", "..."], "fix": ["<the biggest thing, one sentence>", "<the second, only if there is one>"], "cue": "<one short thing to say to themselves on the next rep>"}
+{"looksGood": ["<short sentence>", "..."], "fix": ["<the biggest thing, one sentence>", "<the second, only if there is one>"], "cue": "<one short thing to say to themselves on the next rep>", "encourage": "<one short closing sentence: belief plus what to do next>"}
 
-- "looksGood": 0 to 3 short sentences. Empty array when the frames cannot be read.
+- "looksGood": 1 to 3 short, specific sentences whenever the frames show the lift. Empty array only when the frames cannot be read.
 - "fix": 0 to 2 short sentences, biggest first. This is also where the honest "I can't see it" sentence goes.
 - "cue": one short phrase, no more than a few words, in the athlete's own second person. Empty string when there is nothing to cue.
-- Every sentence is plain text. No markdown, no headings, no bullets, no numbering, no emoji.
-- Keep the whole thing short. Four sentences of Holt is better than twelve of anybody else.`;
+- "encourage": exactly one short sentence, always present. Every rule above applies to it too.
+- Every sentence is plain text. No markdown, no headings, no bullets, no numbering, no emoji. The app adds its own labels, so do not write "Good:" or "Fix:" yourself.
+- Keep the whole thing short. Five sentences of Holt is better than twelve of anybody else.`;
 interface Body {
     lift?: unknown;
     frames?: unknown;

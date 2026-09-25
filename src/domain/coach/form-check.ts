@@ -109,7 +109,7 @@ export const FORM_FRAME_COMPRESS = 0.7;
 export const FORM_FRAME_BASE64_CHARS = 6_990_000;
 export const FORM_TOTAL_BASE64_CHARS = 14_000_000;
 
-/** CA-D5: the form-check output cap. A ceiling, not a target — the answer is four short sentences. */
+/** CA-D5: the form-check output cap. A ceiling, not a target — the answer is five or six short sentences. */
 export const FORM_OUTPUT_CAP = 900;
 
 /** The lift name, and the athlete's optional note. Both go in the user turn; neither is the cache key. */
@@ -214,14 +214,18 @@ export function capFrames(frames: unknown): string[] | null {
 /**
  * What Holt says about a set, after the guard has been over it.
  *
- * Deliberately three narrow fields rather than prose. A shape is a channel, and a narrow channel is the
+ * Deliberately four narrow fields rather than prose. A shape is a channel, and a narrow channel is the
  * cheapest safety mechanism there is: there is no `assessment`, no `severity`, no `risk`, no `recommended
  * weight`, so a model inclined to produce one has nowhere to put it.
  */
 export interface FormRead {
   /** The lift, as the athlete named it. Echoed back so the line reads as being about their set. */
   lift: string;
-  /** What is already right. Up to {@link FORM_GOOD_MAX} short sentences. May be empty. */
+  /**
+   * What is already right. Up to {@link FORM_GOOD_MAX} short sentences. The prompt REQUIRES at least one
+   * whenever the frames show the lift (PO 2026-09-25: *"more praise or direction"*), but it is still a
+   * model's answer, so this may be empty — and is, on purpose, when the frames could not be read.
+   */
   looksGood: string[];
   /**
    * What to change, biggest first, at most {@link FORM_FIX_MAX}.
@@ -232,6 +236,12 @@ export interface FormRead {
   fix: string[];
   /** One thing to say to themselves on the next rep. May be empty. */
   cue: string;
+  /**
+   * The closing line: belief plus what to do next (PO 2026-09-25: *"Encouragement."*). Guarded like every
+   * other field, so it may come back EMPTY — the guard only drops. {@link formCheckSummary} is what
+   * guarantees the athlete never sees a read without one, by closing on a scripted line instead.
+   */
+  encourage: string;
 }
 
 // ── The banned families ────────────────────────────────────────────────────
@@ -376,10 +386,12 @@ export function sanitizeFormRead(raw: unknown, lift?: string): FormRead | null {
   const looksGood = cleanLines(r.looksGood, FORM_GOOD_MAX);
   const fix = cleanLines(r.fix, FORM_FIX_MAX);
   const cue = cleanLine(r.cue);
+  const encourage = cleanLine(r.encourage);
 
   // Nothing survived in either direction: there is no read here, and saying so is the honest outcome.
+  // `encourage` does not count — a pep talk about a set nobody could see is not a read.
   if (!looksGood.length && !fix.length && !cue) return null;
-  return { lift: cleanLift, looksGood, fix, cue };
+  return { lift: cleanLift, looksGood, fix, cue, encourage };
 }
 
 /**
@@ -412,35 +424,94 @@ export const FORM_NO_READ =
   "I couldn't get a read on that one. Film it from the side, whole body in frame, and I'll look again.";
 
 /**
- * The read as the lines Holt actually says, in order, top to bottom.
+ * The closing lines Holt falls back on when the model's `encourage` was missing or the guard dropped it.
  *
- * Holt-Voice-Amendment-001: plain text, no markdown, no labels, short lines someone can read between
- * sets, specific rather than generic. So there is no "Good:" / "Fix:" heading anywhere in here — the
- * first line is what went right, then the biggest thing to change, then the second one if there is one,
- * then the cue as a thing to say to themselves.
+ * ⚠ SCRIPTED, FIXED, AND HELD TO THE SAME GUARD BY A TEST — this is not the guard writing a sentence (it
+ * still only drops); it is the summary refusing to end a read on a fault. Belief plus a next step, no
+ * exclamation mark, nothing about the body, nothing that sounds like a verdict. Chosen by the read's own
+ * text rather than at random, so the same read always closes the same way.
+ */
+export const FORM_ENCOURAGE_FALLBACK = [
+  "That's a good base to build on. Film the next heavy set and we'll see it tighten up.",
+  'Keep your warm-ups this deliberate and the heavy sets follow. Send me the next one.',
+  'One cue at a time is how this gets better. Take it into the next set and film it.',
+] as const;
+
+/** The fallback when nothing looked good — almost always a clip Holt could not read. About the next clip. */
+export const FORM_ENCOURAGE_REFILM = "Every clip makes the next read sharper. Film another set when you're ready.";
+
+/** The eyebrow over each part of the read. Uppercase in the source so the plain-text form reads the same. */
+export const FORM_LABEL_GOOD = "WHAT'S WORKING";
+export const FORM_LABEL_FIX_ONE = 'ONE THING TO CLEAN UP';
+export const FORM_LABEL_FIX_TWO = 'TWO THINGS TO CLEAN UP';
+export const FORM_LABEL_CUE = 'NEXT SET';
+
+/** One part of the read: an eyebrow (or none, for the closing line) and the sentences under it. */
+export interface FormSection {
+  kind: 'good' | 'fix' | 'cue' | 'encourage' | 'none';
+  label: string | null;
+  lines: string[];
+}
+
+/** The read as the screen draws it: which lift, then the parts in order. */
+export interface FormCheckView {
+  lift: string;
+  sections: FormSection[];
+}
+
+/** "The bar drifts…" → "the bar drifts…" after "First, ". Leaves "I", "RDL" and "Romanian" alone. */
+function lowerLead(s: string): string {
+  return /^[A-Z][a-z]/.test(s) && !/^(I|I'm|I'd|I've)\b/.test(s) ? s[0].toLowerCase() + s.slice(1) : s;
+}
+
+function fallbackEncourage(read: FormRead): string {
+  if (!read.looksGood.length) return FORM_ENCOURAGE_REFILM;
+  const seed = `${read.lift}|${read.fix.join('|')}|${read.cue}`;
+  let n = 0;
+  for (let i = 0; i < seed.length; i += 1) n = (n + seed.charCodeAt(i)) % 9973;
+  return FORM_ENCOURAGE_FALLBACK[n % FORM_ENCOURAGE_FALLBACK.length];
+}
+
+/**
+ * The read as Holt says it, in four parts, always in this order: what's working, what to clean up, the
+ * cue for the next set, and a closing line.
+ *
+ * ⚠ LABELS ARE HERE ON PURPOSE, OVERRIDING THE EARLIER NO-LABELS CHOICE (PO, 2026-09-25). The first
+ * version followed Holt-Voice-Amendment-001's "no labels" literally, and the PO found the result *"a
+ * little confusing"* — praise, fixes and the cue ran together as unmarked grey lines and he could not tell
+ * at a glance which was which. So each part now has a short eyebrow. Everything else in the voice rule
+ * still holds: plain text, no markdown, short sentences someone can read between sets.
  *
  * The fix order is the model's, which the prompt requires to be biggest first, and `sanitizeFormRead`
- * preserves. "Then" on the second line is what makes the ordering audible instead of implied.
+ * preserves. With two, "First," and "Then," make the order audible; with one, the label says "ONE THING"
+ * (the old line said "the one thing I'd change" even when there were two).
+ *
+ * The closing line is never missing: the model's `encourage` when it survived the guard, otherwise a
+ * scripted one ({@link FORM_ENCOURAGE_FALLBACK}). A read that ends on a fault is the thing the PO asked
+ * to stop.
  */
-export function formCheckSummary(read: FormRead | null | undefined): string[] {
-  if (!read) return [FORM_NO_READ];
-  const lines: string[] = [];
-  const lift = read.lift.trim();
+export function formCheckSummary(read: FormRead | null | undefined): FormCheckView {
+  const none: FormCheckView = { lift: '', sections: [{ kind: 'none', label: null, lines: [FORM_NO_READ] }] };
+  if (!read || (!read.looksGood.length && !read.fix.length && !read.cue)) return none;
+  const sections: FormSection[] = [];
 
-  if (read.looksGood.length) {
-    const good = read.looksGood.join(' ');
-    lines.push(lift ? `${lift} — ${good}` : good);
-  } else if (lift && read.fix.length) {
-    // Without a "what's good" line the lift is never named, and the first thing Holt says reads as being
-    // about nothing in particular.
-    lines.push(`${lift} — here's the one thing I'd change.`);
+  if (read.looksGood.length) sections.push({ kind: 'good', label: FORM_LABEL_GOOD, lines: [...read.looksGood] });
+
+  if (read.fix.length === 1) {
+    sections.push({ kind: 'fix', label: FORM_LABEL_FIX_ONE, lines: [read.fix[0]] });
+  } else if (read.fix.length >= 2) {
+    sections.push({
+      kind: 'fix',
+      label: FORM_LABEL_FIX_TWO,
+      lines: [`First, ${lowerLead(read.fix[0])}`, `Then, ${lowerLead(read.fix[1])}`],
+    });
   }
 
-  if (read.fix[0]) lines.push(read.fix[0]);
-  if (read.fix[1]) lines.push(`Then: ${read.fix[1]}`);
-  if (read.cue) lines.push(`Next set, think: "${read.cue.replace(/^["“']|["”']$/g, '')}"`);
+  if (read.cue) sections.push({ kind: 'cue', label: FORM_LABEL_CUE, lines: [`Think: "${read.cue.replace(/^["“']|["”']$/g, '')}"`] });
 
-  return lines.length ? lines : [FORM_NO_READ];
+  const said = typeof read.encourage === 'string' ? read.encourage.trim() : '';
+  sections.push({ kind: 'encourage', label: null, lines: [said || fallbackEncourage(read)] });
+  return { lift: read.lift.trim(), sections };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────

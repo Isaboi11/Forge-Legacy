@@ -145,6 +145,21 @@ test('the prompt carries every rule the PO’s instruction binds this feature to
   assert.ok(s.includes('Banned: emoji'));
 });
 
+test('the prompt REQUIRES earned praise and a closing line of encouragement (PO 2026-09-25)', () => {
+  const s = system();
+  for (const rule of [
+    'Always name at least one thing that is genuinely right',
+    'Praise is specific and earned, never generic',
+    'Never invent a strength the frames do not show',
+    'End with one short line of encouragement',
+    '"encourage": "<one short closing sentence',
+    '"encourage": exactly one short sentence, always present. Every rule above applies to it too.',
+    'Empty array only when the frames cannot be read',
+  ]) assert.ok(s.includes(rule), `missing from SYSTEM: ${rule}`);
+  // The voice rule on "!" still stands next to the new praise rule.
+  assert.ok(s.includes('At most one exclamation mark, and only on something genuinely excellent.'));
+});
+
 test('the LAST thing before the answer is the code guard, not the prompt', () => {
   const guard = at('const read = parseFormRead(text, lift);');
   const answer = at('return json({ ok: true, read, remaining: reserved.remaining });');

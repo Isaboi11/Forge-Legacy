@@ -8,13 +8,13 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { CRISIS_KICKER, CRISIS_STOP, CARE_KICKER, CARE_STOP, MEDICAL_STOP, STOP_KICKER, URGENT_KICKER, URGENT_STOP } from '@/domain/coach/chat-core';
-import { FORM_CLIP_SECONDS, FORM_NO_READ, formCheckSummary, type FormRead } from '@/domain/coach/form-check';
+import { FORM_CLIP_SECONDS, formCheckSummary, type FormCheckView } from '@/domain/coach/form-check';
 import { formCheck, formCheckAvailable, framesFromVideo, pickFormVideo } from '@/data/form-check-live';
 import { usePremiumAi } from '@/lib/entitlement';
 import { callerModalGone, useMediaPicker } from '@/lib/useMediaPicker';
 
 /**
- * FORM CHECK — film a set, Holt reads the frames, and says one thing to change.
+ * FORM CHECK — film a set, Holt reads the frames: what's working, what to clean up, a cue, and a push.
  *
  * ══ WHY A SCREEN AND NOT A TURN IN THE CHAT ══
  *
@@ -39,7 +39,7 @@ const COMMON = ['Back Squat', 'Bench Press', 'Deadlift', 'Overhead Press', 'Fron
 type Stage =
   | { step: 'lift' }
   | { step: 'working'; label: string }
-  | { step: 'read'; lines: string[]; read: FormRead | null }
+  | { step: 'read'; view: FormCheckView }
   | { step: 'stopped'; kicker: string; text: string }
   | { step: 'problem'; text: string; sub: string };
 
@@ -83,9 +83,9 @@ export default function FormCheckScreen() {
     const res = await formCheck(chosen, frames, note);
     switch (res.kind) {
       case 'ok':
-        return setStage({ step: 'read', lines: formCheckSummary(res.read), read: res.read });
+        return setStage({ step: 'read', view: formCheckSummary(res.read) });
       case 'unreadable':
-        return setStage({ step: 'read', lines: [FORM_NO_READ], read: null });
+        return setStage({ step: 'read', view: formCheckSummary(null) });
       case 'stopped':
         return setStage({
           step: 'stopped',
@@ -130,13 +130,29 @@ export default function FormCheckScreen() {
               </View>
             ) : null}
 
+            {/* Before the read, not under it: "I read the first ten seconds" is useful while they can still refilm. */}
+            {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+
             {stage.step === 'read' ? (
               <View style={styles.read}>
-                {stage.lines.map((l, i) => (
-                  <Text key={i} style={i === 0 ? styles.readLead : styles.readLine}>
-                    {l}
-                  </Text>
-                ))}
+                {stage.view.lift ? <Text style={styles.readLift}>{stage.view.lift}</Text> : null}
+                {/* One eyebrow per part (PO 2026-09-25: the unlabelled version read as "a little confusing"). */}
+                {stage.view.sections.map((s) =>
+                  s.kind === 'encourage' ? (
+                    <Text key={s.kind} style={styles.readClose}>
+                      {s.lines.join(' ')}
+                    </Text>
+                  ) : (
+                    <View key={s.kind} style={styles.readSection}>
+                      {s.label ? <Text style={styles.readLabel}>{s.label}</Text> : null}
+                      {s.lines.map((l, i) => (
+                        <Text key={i} style={s.kind === 'none' ? styles.readLead : styles.readLine}>
+                          {l}
+                        </Text>
+                      ))}
+                    </View>
+                  ),
+                )}
               </View>
             ) : null}
 
@@ -153,8 +169,6 @@ export default function FormCheckScreen() {
                 <Text style={styles.problemSub}>{stage.sub}</Text>
               </View>
             ) : null}
-
-            {notice ? <Text style={styles.notice}>{notice}</Text> : null}
 
             <Text style={styles.label}>WHICH LIFT</Text>
             <View style={styles.chips}>
@@ -217,9 +231,13 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, borderRadius: flRadius.md, color: flColor.cream100, padding: 12, fontSize: 15 },
   working: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
   workingText: { color: flColor.gray400, fontSize: 14 },
-  read: { backgroundColor: flColor.charcoal800, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, padding: 16, gap: 8 },
+  read: { backgroundColor: flColor.charcoal800, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, padding: 16, gap: 16 },
+  readLift: { color: flColor.cream100, fontSize: 18, lineHeight: 24, fontFamily: flFont.display },
+  readSection: { gap: 6 },
+  readLabel: { color: flColor.bronzeInk, fontSize: 11, fontWeight: '600', letterSpacing: 2.4, textTransform: 'uppercase' },
   readLead: { color: flColor.cream100, fontSize: 16, lineHeight: 23, fontFamily: flFont.display },
-  readLine: { color: flColor.gray400, fontSize: 15, lineHeight: 22 },
+  readLine: { color: flColor.cream100, fontSize: 15, lineHeight: 22 },
+  readClose: { color: flColor.gray400, fontSize: 15, lineHeight: 22, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: flColor.charcoal600, paddingTop: 14 },
   stop: { backgroundColor: flColor.charcoal800, borderRadius: flRadius.lg, padding: 16, gap: 6 },
   stopKicker: { color: flColor.gray600, fontSize: 11, letterSpacing: 1.2 },
   stopText: { color: flColor.cream100, fontSize: 15, lineHeight: 22 },
