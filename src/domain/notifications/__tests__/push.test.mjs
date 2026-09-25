@@ -96,13 +96,23 @@ const SQL = readFileSync(resolve(ROOT, 'supabase/migrations/0164_challenge_joine
  * presence assertions read it.
  */
 const SQL_0187 = readFileSync(resolve(ROOT, 'supabase/migrations/0187_one_notification_per_start.sql'), 'utf8');
-/* 0202 — the newest `set_training_status` AND the newest body of both preference functions. */
+/* 0202 — the newest body of both preference functions. (Its `set_training_status` is superseded by 0217's.) */
 const SQL_0202 = readFileSync(
   resolve(ROOT, 'supabase/migrations/0202_one_start_per_session_and_prefs_on.sql'),
   'utf8',
 );
 
 const SQL_PREFS = SQL_0202;
+/*
+ * 0217 — the newest `set_training_status`: 0202's body verbatim plus a RETURN value that says whether
+ * this call newly announced the start to the squad. The presence assertions read it (`SQL_PRESENCE`);
+ * the preference functions stay 0202's.
+ */
+const SQL_0217 = readFileSync(
+  resolve(ROOT, 'supabase/migrations/0217_training_status_reports_announcement.sql'),
+  'utf8',
+);
+const SQL_PRESENCE = SQL_0217;
 
 /** Every migration paired with the bundle that gets pasted into the dashboard. */
 const BUNDLES = [
@@ -123,6 +133,7 @@ const BUNDLES = [
   ['0164_challenge_joined_and_invite_push', 'pending-0164', SQL],
   ['0187_one_notification_per_start', 'pending-0187', SQL_0187],
   ['0202_one_start_per_session_and_prefs_on', 'pending-0202', SQL_0202],
+  ['0217_training_status_reports_announcement', 'pending-0217', SQL_0217],
 ];
 
 /**
@@ -956,7 +967,7 @@ test('the two-argument push_register_token is dropped, not left beside the three
  * being killed — so the schema has to be the one that knows a repeated statement is one fact.
  */
 test('an active session keeps the stamp it already has, so a start is announced once', () => {
-  const body = fnBody('set_training_status', SQL_0202);
+  const body = fnBody('set_training_status', SQL_PRESENCE);
 
   assert.match(body, /when not p_active then null/, 'a finish must still clear presence outright');
   assert.match(
@@ -994,7 +1005,7 @@ test('an active session keeps the stamp it already has, so a start is announced 
  * the whole behaviour, so each is asserted separately rather than as one blob:
  */
 test('a leave holds the announcement, a finish clears it', () => {
-  const body = fnBody('set_training_status', SQL_0202);
+  const body = fnBody('set_training_status', SQL_PRESENCE);
 
   assert.match(
     body,
@@ -1009,7 +1020,7 @@ test('a leave holds the announcement, a finish clears it', () => {
   // Presence and identity are set from the same expression on a start, so a resumed session is restored
   // to the time it really began rather than reading "0 min" to the whole squad.
   assert.match(
-    fnBody('set_training_status', SQL_0202),
+    fnBody('set_training_status', SQL_PRESENCE),
     /training_since = case\s*when not p_active then null\s*when profiles\.training_announced_at/,
     'a start must derive training_since from the announcement stamp, not from a fresh now()',
   );
@@ -1044,6 +1055,60 @@ test('a leave holds the announcement, a finish clears it', () => {
  * other window would either re-announce inside a live session or go silent on a genuinely new one.
  */
 test('the hold window is the presence ceiling the readers already use', () => {
-  assert.match(fnBody('set_training_status', SQL_0202), /interval '4 hours'/);
+  assert.match(fnBody('set_training_status', SQL_PRESENCE), /interval '4 hours'/);
   assert.match(branchOf(fnBody('notification_events_for'), 'squad_training_started'), /interval '4 hours'/);
+});
+
+// ── 0217: the start tells the athlete whether the squad was notified ──────────
+
+/**
+ * PO, 2026-09-25: Coach Holt says "your squad just got a notification" — and only when it is TRUE. The
+ * server is the only party that knows, so `set_training_status` now answers `{announced, squads,
+ * teammates}`. These pin the three ways it could lie.
+ */
+test('0217: the write is 0202’s, byte for byte — only a return value was added', () => {
+  const update = (src) => {
+    const body = fnBody('set_training_status', src).replace(/\r/g, '');
+    const at = body.indexOf('update public.profiles');
+    return body.slice(at, body.indexOf('where id = auth.uid();', at));
+  };
+  assert.equal(update(SQL_0217), update(SQL_0202), '0217 changed what a start WRITES — it may only add what it RETURNS');
+});
+
+test('0217: "announced" is a FRESH stamp only — a resume or a re-assert inside the window is false', () => {
+  const body = fnBody('set_training_status', SQL_0217);
+  // The stamp as it stood BEFORE the update, read under a row lock.
+  assert.match(body, /select profiles\.training_announced_at, profiles\.visibility\s+into v_prev_announced, v_visibility[\s\S]*?for update;/);
+  assert.ok(body.indexOf('for update;') < body.indexOf('update public.profiles'), 'the prior stamp must be read BEFORE the update');
+  // Exactly the complement of the hold arm: no stamp, or one older than the ceiling.
+  assert.match(
+    body,
+    /v_fresh := p_active\s+and \(v_prev_announced is null or v_prev_announced <= now\(\) - interval '4 hours'\);/,
+    'a start is news only when the hold arm would NOT keep the old stamp',
+  );
+  assert.match(body, /'announced', v_fresh and v_teammates > 0/, 'announced to nobody is not announced');
+});
+
+test('0217: the three gates are the trigger’s and the union’s — nobody is claimed who was not told', () => {
+  const body = fnBody('set_training_status', SQL_0217);
+  assert.match(body, /public\.vis_clears\(coalesce\(v_visibility ->> 'training', 'squads'\), 'squad'\)/, 'a private athlete is never announced (branch 15)');
+  assert.match(body, /join public\.squads s on s\.id = mine\.squad_id and s\.training_alerts/, 'the leader’s switch');
+  assert.match(body, /m\.user_id <> auth\.uid\(\)/, 'the athlete is not their own audience');
+  assert.match(body, /and m\.notify_start/, 'the recipient’s switch');
+  // And the trigger that actually sends it walks the same join.
+  const trig = fnBody('push_tg_training_started', SQL_0153);
+  assert.match(trig, /s\.training_alerts/);
+  assert.match(trig, /m\.notify_start/);
+});
+
+test('0217: return type change is a drop + create, and 0202’s posture comes back with it', () => {
+  assert.match(SQL_0217, /drop function if exists public\.set_training_status\(boolean, text, boolean\);/);
+  assert.match(SQL_0217, /drop function if exists public\.set_training_status\(boolean, text\);/);
+  assert.match(SQL_0217, /create function public\.set_training_status\([\s\S]*?returns jsonb\s+language plpgsql\s+security definer/);
+  assert.match(SQL_0217, /set search_path = public, pg_temp/);
+  assert.match(SQL_0217, /revoke all on function public\.set_training_status\(boolean, text, boolean\) from public;/);
+  assert.match(SQL_0217, /revoke all on function public\.set_training_status\(boolean, text, boolean\) from anon;/);
+  assert.match(SQL_0217, /grant execute on function public\.set_training_status\(boolean, text, boolean\) to authenticated;/);
+  // No caller → null, which the client reads as "say nothing".
+  assert.match(fnBody('set_training_status', SQL_0217), /if auth\.uid\(\) is null then\s+return null;/);
 });

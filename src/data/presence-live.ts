@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { parseTrainingAnnouncement, type TrainingAnnouncement } from '@/domain/coach/squad-announce';
 
 /**
  * Training presence — who from your circle is mid-workout (migration 0086).
@@ -48,9 +49,13 @@ export interface TrainingAthlete {
  * failure modes are not symmetric: a wrong `true` announces one extra time, a wrong `false` SILENCES the
  * athlete's next real workout for up to four hours.
  */
-export async function setTrainingStatus(active: boolean, label?: string, done = true): Promise<void> {
+export async function setTrainingStatus(
+  active: boolean,
+  label?: string,
+  done = true,
+): Promise<TrainingAnnouncement | null> {
   try {
-    const { error } = await supabase.rpc('set_training_status', { p_active: active, p_label: label ?? null, p_done: done });
+    const { data, error } = await supabase.rpc('set_training_status', { p_active: active, p_label: label ?? null, p_done: done });
     /*
      * ⚠ THE DATABASE IS PASTED BY HAND, SO THIS CLIENT CAN REACH A PHONE FIRST.
      *
@@ -65,9 +70,18 @@ export async function setTrainingStatus(active: boolean, label?: string, done = 
      */
     if (error && (error as { code?: string }).code === 'PGRST202') {
       await supabase.rpc('set_training_status', { p_active: active, p_label: label ?? null });
+      return null; // a pre-0202 database cannot vouch for an announcement
     }
+    if (error) return null;
+    /*
+     * 0217 — `{announced, squads, teammates}`. A database still on 0202 returns VOID, which arrives as
+     * `null` and parses to `null`: Holt then says nothing about the squad, which is the only safe
+     * direction for a line that claims they were notified.
+     */
+    return parseTrainingAnnouncement(data);
   } catch {
     // An unapplied 0086, or an offline device. Neither should interrupt a workout.
+    return null;
   }
 }
 

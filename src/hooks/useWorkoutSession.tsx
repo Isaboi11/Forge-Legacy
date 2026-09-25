@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 import { setTrainingStatus } from '@/data/presence-live'
+import type { TrainingAnnouncement } from '@/domain/coach/squad-announce'
 import { clearLiveSession } from '@/data/live-session-live'
 import { invalidateEarnedMoments } from '@/hooks/useEarnedMoments'
 import { prefetchDemoLoops } from '@/lib/demo-loop-prefetch'
@@ -36,6 +37,22 @@ export type WorkoutSessionContextValue = {
    * is over and the next one is genuinely news.
    */
   leaveWorkout: () => void
+  /**
+   * The server's word that THIS session's start notified the squad (0217) — or null.
+   *
+   * Set only when `set_training_status` answers `announced: true` for the call `startWorkout` made, and
+   * only if that session is still the current one when the answer lands. A resume, a re-assert after the
+   * app was killed, a private athlete or a database without 0217 all leave it null, so Holt's "your
+   * squad just got a notification" can only ever follow a real one. Cleared by every way a session ends.
+   */
+  announcement: SessionAnnouncement | null
+}
+
+export type SessionAnnouncement = TrainingAnnouncement & {
+  /** The session it was about — `session.workoutName` at the time of the start. */
+  workoutName: string
+  /** `session.startedAt` of that start: what pins Holt's wording, and what ties it to one session. */
+  startedAt: string
 }
 
 const WorkoutSessionContext = createContext<WorkoutSessionContextValue | null>(null)
@@ -69,6 +86,9 @@ function setLiveWorkoutPresence(active: boolean, workoutName?: string, done = tr
 export function WorkoutSessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<WorkoutSession | null>(null)
   const staleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [announcement, setAnnouncement] = useState<SessionAnnouncement | null>(null)
+  /** Bumped by every start and every stop, so only the newest start's answer can land (see `startWorkout`). */
+  const startSeq = useRef(0)
   // Safe here: this provider mounts INSIDE ProfileProvider (_layout.tsx). Only `sex` is read, to
   // pick which render of each demo loop to warm — the same variant rule ExerciseLoop applies.
   const { profile } = useProfile()
@@ -96,6 +116,8 @@ export function WorkoutSessionProvider({ children }: { children: React.ReactNode
       invalidateEarnedMoments()
       clearStaleTimer()
       setSession(null)
+      startSeq.current += 1 // an answer still in flight is about a session that just ended
+      setAnnouncement(null)
       setLiveWorkoutPresence(false, undefined, done)
       // The published plan-and-log (0181) goes with the presence. Finish, abandon, leave and the stale
       // timer all arrive here, so a row can only outlive its session by the read's own 4-hour ceiling.
@@ -113,8 +135,22 @@ export function WorkoutSessionProvider({ children }: { children: React.ReactNode
 
   const startWorkout = useCallback(
     (workoutName: string, lifts: SessionLift[] = []) => {
-      setSession({ workoutName, startedAt: new Date().toISOString(), lifts })
-      setLiveWorkoutPresence(true, workoutName)
+      const startedAt = new Date().toISOString()
+      setSession({ workoutName, startedAt, lifts })
+      setAnnouncement(null)
+      /*
+       * Still fire-and-forget — nothing waits on this. What changed (0217) is that the answer is kept:
+       * when the server says THIS start notified the squad, Holt says so on the workout screen.
+       *
+       * ⚠ THE SEQUENCE GUARD. The answer lands after a network round trip, and the session it describes
+       * may be over by then (started, backed out, started another). Only the latest start may set it, and
+       * any stop in between invalidates it — a stale "your squad just got a notification" about a session
+       * that no longer exists is the one thing this line must never say.
+       */
+      const seq = ++startSeq.current
+      void setTrainingStatus(true, workoutName).then((result) => {
+        if (result?.announced && startSeq.current === seq) setAnnouncement({ ...result, workoutName, startedAt })
+      })
 
       // Warm every planned lift's demo loop while the athlete is still racking up — the clips are
       // ~1MB each and the hero slot otherwise cold-fetches each one on its first view mid-workout.
@@ -141,6 +177,7 @@ export function WorkoutSessionProvider({ children }: { children: React.ReactNode
         finishWorkout: endSession,
         abandonWorkout: endSession,
         leaveWorkout: leaveSession,
+        announcement,
       }}
     >
       {children}

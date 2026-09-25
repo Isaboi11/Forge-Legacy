@@ -4,6 +4,34 @@ import assert from 'node:assert/strict';
 import { coachLine } from '../coach-says.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 0217 — "YOUR SQUAD JUST GOT A NOTIFICATION" goes first, and only before the first set
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('the squad announcement outranks every other line at the start of a session', () => {
+  const got = coachLine({
+    announce: "Your squad just got a notification that you started Upper A. Let's get after it.",
+    setsDoneThisSession: 0,
+    live: 'Next set, 195.',
+    progression: 'Go to 190.',
+    planCue: 'Brace first.',
+  });
+  assert.equal(got?.source, 'announce');
+});
+
+test('the announcement retires at the first logged set of the session, and the lines underneath resume', () => {
+  const got = coachLine({ announce: 'Your squad just got pinged.', setsDoneThisSession: 1, planCue: 'Brace first.' });
+  assert.deepEqual(got, { text: 'Brace first.', source: 'plan' });
+});
+
+test('a closed (null) announcement falls straight through — the X reveals the plan cue', () => {
+  assert.deepEqual(coachLine({ announce: null, setsDoneThisSession: 0, planCue: 'Brace first.' }), {
+    text: 'Brace first.',
+    source: 'plan',
+  });
+  assert.equal(coachLine({ announce: '   ' }), null, 'whitespace is nothing');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // THE ORDER — most recent wins
 // ─────────────────────────────────────────────────────────────────────────────
 

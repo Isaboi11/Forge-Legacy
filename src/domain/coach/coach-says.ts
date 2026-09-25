@@ -17,6 +17,8 @@
  * Most recent wins, because the athlete is standing in front of a bar and the newest fact is the one
  * that changes what they do next:
  *
+ *   0. `announce` — the squad was just notified this session started (0217). Only before the first
+ *      set of the session, and only until closed.
  *   1. `live` — about the set they just finished. Ten seconds old.
  *   2. `progression` — about their last session on this lift. Days old.
  *   3. `planCue` — what the author wrote about this movement. Timeless.
@@ -31,10 +33,24 @@
  * Pure and node-testable: no React, no RN, no storage, no runtime `@` imports.
  */
 
-/** Which of the three the line came from. The caller may attribute; it does not have to. */
-export type CoachLineSource = 'live' | 'progression' | 'plan';
+/** Which of the four the line came from. The caller may attribute; it does not have to. */
+export type CoachLineSource = 'announce' | 'live' | 'progression' | 'plan';
 
 export interface CoachLineInput {
+  /**
+   * ⚠ **THE SQUAD WAS JUST TOLD — AND IT OUTRANKS EVERYTHING, BRIEFLY.** (PO, 2026-09-25)
+   *
+   * `squadAnnouncedLine()`'s sentence, present only when the server confirmed this start notified the
+   * squad (0217). It is the newest fact of all at the moment a session opens, and the one the athlete
+   * cannot find out any other way, so it goes first.
+   *
+   * It is also a START line, so it retires the moment the session has begun: once ANY set of the
+   * session is logged (`setsDoneThisSession`), or when the athlete closes it — the caller passes null
+   * for a dismissed announcement, so the lines underneath surface on the same render.
+   */
+  announce?: string | null;
+  /** Sets logged across the whole session. Only the announcement reads it. */
+  setsDoneThisSession?: number;
   /**
    * A line about the set just logged — the mid-set nudge. Null whenever there is nothing to say, which
    * is most sets and every set at the quietest intensity.
@@ -144,6 +160,9 @@ export function coachLine(input: CoachLineInput): CoachLine | null {
    * every line the coin exists to carry, gone before it could be read.
    */
   const started = (input.setsDoneThisExercise ?? 0) > 0;
+
+  const announce = clean(input.announce);
+  if (announce && (input.setsDoneThisSession ?? 0) === 0) return { text: announce, source: 'announce' };
 
   const live = clean(input.live);
   if (live && !spent(input.liveUpTo, heaviest)) return { text: live, source: 'live' };

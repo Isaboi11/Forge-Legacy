@@ -65,6 +65,7 @@ import {
 } from '@/domain/workout/partner-credit';
 import { durText, supersetLabels } from '@/domain/program/prescription';
 import { coachLine } from '@/domain/coach/coach-says';
+import { squadAnnouncedLine } from '@/domain/coach/squad-announce';
 import { profileFor } from '@/domain/coach/rulebook/intensity';
 import { intraSetSuggestion } from '@/domain/coach/intra-set';
 import { addSuggestions, swapSuggestions } from '@/domain/coach/session-suggest';
@@ -418,7 +419,7 @@ export default function WorkoutScreen() {
       refetchMemories();
     }, [refetchMemories]),
   );
-  const { session: liveSession, startWorkout, finishWorkout, abandonWorkout, leaveWorkout } = useWorkoutSession();
+  const { session: liveSession, startWorkout, finishWorkout, abandonWorkout, leaveWorkout, announcement } = useWorkoutSession();
   /**
    * ⚠ THIS SESSION IS OVER AND MUST NOT BE RE-ANNOUNCED. Latched by the three ways out below.
    *
@@ -2666,7 +2667,29 @@ export default function WorkoutScreen() {
     (m, s) => (s.done && s.weight != null && (m == null || s.weight > m) ? s.weight : m),
     null,
   );
+  /*
+   * ⚠ "YOUR SQUAD JUST GOT A NOTIFICATION" — ONLY WHEN THE SERVER SAID SO (0217, PO 2026-09-25).
+   *
+   * `announcement` is non-null only when `set_training_status` confirmed THIS start notified the squad,
+   * and it is matched to the live session's `startedAt` so an answer about an earlier session can never
+   * speak over this one. Pinned to that start by `pickOnce`, so the wording holds across re-renders.
+   *
+   * Passed as null once the athlete has closed it — keyed on the TEXT, like every other line (see
+   * `dismissedSay`) — so `coachLine` falls straight through to the lines underneath on the same render.
+   */
+  const announceText =
+    announcement && liveSession && announcement.startedAt === liveSession.startedAt
+      ? squadAnnouncedLine({
+          announcement,
+          session: announcement.workoutName,
+          register: coachProfile.register,
+          slot: announcement.startedAt,
+        })
+      : null;
   const saysRaw = coachLine({
+    announce: announceText && announceText !== dismissedSay ? announceText : null,
+    /* Retires at the first logged set of the SESSION — it is a start line, not an exercise line. */
+    setsDoneThisSession: session.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0),
     /* Scoped to the exercise it was said about — a nudge about bench press has nothing to say once the
        athlete is standing at a squat rack, and the coin would otherwise carry it there. */
     live: intraLine?.ei === exIdx ? intraLine.text : null,
@@ -2790,7 +2813,16 @@ export default function WorkoutScreen() {
    * X would stop working.
    */
   const saysFull = saysRaw
-    ? { ...saysRaw, text: saysRaw.source === 'plan' ? `${inUnits(saysRaw.text)} — that holds for every set.` : inUnits(saysRaw.text) }
+    ? {
+        ...saysRaw,
+        text:
+          saysRaw.source === 'plan'
+            ? `${inUnits(saysRaw.text)} — that holds for every set.`
+            : /* No weights in it, and its text is what `dismissedSay` compares against — untouched. */
+              saysRaw.source === 'announce'
+              ? saysRaw.text
+              : inUnits(saysRaw.text),
+      }
     : null;
   /* Closed by the athlete, and only while he is still saying the same thing. See `dismissedSay`. */
   const says = saysFull && saysFull.text === dismissedSay ? null : saysFull;

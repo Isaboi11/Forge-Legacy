@@ -497,3 +497,77 @@ export function sayOnce(slot: string, key: InWorkoutKey, register: Register, tok
 
 /** Every table, for the tests that walk them all. */
 export const IN_WORKOUT_LINES = LINES;
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════════
+// SESSION START — "YOUR SQUAD JUST GOT A NOTIFICATION" (Holt-Voice-Amendment-002)
+// ════════════════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * What Holt says at the start of a session when the server confirms the squad was just notified (0217).
+ *
+ * ⚠ A SEPARATE TABLE FROM `LINES`, AND IT IS THE AMENDMENT'S SCOPE MADE CONCRETE. HV-A2-D2 lets these,
+ * and only these, carry start-of-session energy — *"Let's get after it"*, *"Make them proud"*, *"Let's
+ * kill it today"* — that HV-D2 keeps out of every other line Holt says. Folded into `LINES` they would
+ * either fail the in-workout tests or loosen them for every key.
+ *
+ * Every variant, by rule (HV-A2-D1):
+ *   · NAMES WHAT HAPPENED — the squad, and that it was notified / told / pinged. The line is a receipt
+ *     first and a pep talk second; an athlete must never have to guess why Holt is talking.
+ *   · NEVER PROMISES A BUZZ. "Got a notification" is true because the start is in every eligible
+ *     teammate's notification feed the moment the server answers; whether a lock screen lit up depends
+ *     on their settings, which Holt does not know.
+ *   · `{squad}` is "squad" or "squads", so no line puts a present-tense verb after it ("knows"/"know").
+ *   · `named` lines carry `{session}`; `unnamed` lines are the same sentences without it.
+ *   · At most one "!" (HV-D3 / HV-A2-D3).
+ *
+ * The register is the intensity dial's volume (HV-D6): `quiet` is a warm receipt, `plain` is the PO's
+ * *"Let's get after it"*, `direct` is the most energy he has — still no slogans.
+ */
+export const SQUAD_ANNOUNCED_LINES: Record<Register, { named: readonly string[]; unnamed: readonly string[] }> = {
+  quiet: {
+    named: [
+      'Your {squad} just got a notification that you started {session}. Have a good one.',
+      'Your {squad} got word you started {session}. One set at a time.',
+      'Told your {squad} you started {session}. Settle in and enjoy the work.',
+      'Your {squad} just heard that {session} is underway. Good to have you here.',
+    ],
+    unnamed: [
+      'Your {squad} just got a notification that you started training. Have a good one.',
+      'Your {squad} got word you are training. One set at a time.',
+      'Told your {squad} you started training. Settle in and enjoy the work.',
+      'Your {squad} just heard that you are training. Good to have you here.',
+    ],
+  },
+  plain: {
+    named: [
+      "Your {squad} just got a notification that you started {session}. Let's get after it.",
+      "Told your {squad} you're training — {session} is on. Make them proud.",
+      "Notification's out: your {squad} got word you started {session}. Let's go get it.",
+      "Your {squad} just got pinged that {session} is underway. Let's make this one count.",
+      "Your {squad} got notified you started {session}. Let's get after it today.",
+    ],
+    unnamed: [
+      "Your {squad} just got a notification that you started training. Let's get after it.",
+      "Told your {squad} you're training. Make them proud.",
+      "Notification's out: your {squad} got word you're training. Let's go get it.",
+      "Your {squad} just got pinged that you're training. Let's make this one count.",
+      "Your {squad} got notified you started a session. Let's get after it today.",
+    ],
+  },
+  direct: {
+    named: [
+      "Your {squad} just got pinged that you started {session}. Let's kill it today.",
+      "Notification's out — your {squad} got word {session} is on. Make them proud today.",
+      "Your {squad} just got a notification that you started {session}. Let's get after it!",
+      "Told your {squad} you're on {session}. Now give them something to talk about.",
+      "Your {squad} got notified you started {session}. Let's go make it count.",
+    ],
+    unnamed: [
+      "Your {squad} just got pinged that you're training. Let's kill it today.",
+      "Notification's out — your {squad} got word you're training. Make them proud today.",
+      "Your {squad} just got a notification that you started training. Let's get after it!",
+      "Told your {squad} you're training. Now give them something to talk about.",
+      "Your {squad} got notified you started a session. Let's go make it count.",
+    ],
+  },
+};
