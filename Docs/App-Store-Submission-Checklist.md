@@ -73,7 +73,7 @@ No lifetime plan. United States only at launch.
 - ✅ Description, age rating, reviewer account, support URL
 - ✅ Redo screenshots before submitting — 09-25: PO uploaded the new set
 - ✅ Release set to "Manually release this version" — 09-23
-- ⬜ App Privacy labels (after the paywall; add food data if Nutrition ships)
+- ⬜ App Privacy labels (after the paywall; add food data + "Other User Content" for community foods before Nutrition opens)
 
 ## 4. Legal
 - 🔨 Mock review done 09-25 (`Docs/Legal/Mock-Legal-Review-2026-09-25.md`): policy + Terms FAIL as is — false 200 m
@@ -104,6 +104,8 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
   app now says "Couldn't connect to food search" with Try again (Log Food + the meal editor). Not deployed yet
 - ✅ First-time welcome screen for the tab — built 09-24 (`eefe43dd`), on web; not yet seen by the PO
 - ⬜ "This looks wrong" report on a food
+- 🔨 Community foods (Amendment 004) — 09-25: a missed barcode becomes everyone's; `0219` applied, food-search redeployed, on build 9 OTA · ⬜ first share seen on a device
+- ✅ Scan a recipe from a screenshot into My Recipes — 09-25 (`487dc325`, `0220`)
 - ✅ Data export includes nutrition — 09-24: with food data, Export My Data gives one .zip (workouts.csv +
   food log, targets, my foods, my meals, my recipes, meal plans, grocery items you added); without, the same CSV. Not deployed yet
 - ⬜ Holt meal plans — Amendment 002 LOCKED 09-24 (`ce224fac`); not built yet
