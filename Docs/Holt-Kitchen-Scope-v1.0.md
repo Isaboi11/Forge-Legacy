@@ -31,6 +31,23 @@ over and over. Give a couple of options, then ask if they want other options."*
 4. **Tap an option** → the full recipe: ingredients with amounts, steps, and the numbers.
    Then **Log it** (to the right meal) or **Save to My Recipes** (so the planner can use it from then on).
 
+## 1b. "What do I have?" comes from the Grocery List (PO, 2026-09-24)
+
+PO: *"Could be cool if he took from the completed grocery list … so he can suggest what they have."*
+
+- **Your pantry, without typing it.** The Grocery List already stores, per week, what was checked off as
+  **bought** and what was marked **Have it** (`meal_plan_weeks.grocery`, 0212: `checked` / `have` /
+  `extras`). Tapping *What can I make?* with nothing typed starts from this week's bought + have items, then
+  last week's.
+- **Holt confirms before cooking with it:** *"From your list: chicken thighs, rice, spinach, eggs, feta.
+  Anything gone?"* with each item as a chip to remove, plus *Add something*. Typed words always win over the list.
+- **Freshness is respected, not guessed.** Fresh produce, meat and fish bought more than 7 days ago show as
+  *"still good?"* instead of being assumed. Pantry staples (rice, oil, spices) are assumed until removed.
+- **Meals already cooked count.** Ingredients the planner's logged meals used this week are subtracted first,
+  so Holt doesn't build dinner on chicken that went into Monday's lunch.
+- **No new data and no new permission.** It reads the athlete's own list, owner-only like every nutrition
+  table (P6-A2-D1).
+
 ## 2. Robust and never repetitive (the core ask)
 
 | Mechanism | What it does |
