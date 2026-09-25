@@ -5,7 +5,11 @@
 **Reads with:** `Nutrition-Architecture-v1.0.md` NUT-D4, NUT-D5, NUT-D6, §6 (meal-plan pipeline), §10
 (safety), §12 Phase 4 · `domain/coach/medical-routing.ts` · `Coach-Holt-Stress-Test-2026-09-21.md`
 (Decision Queue #36).
-**Status:** ⏳ **PROPOSED, NOT LOCKED.** Needs the PO's lock. Nothing in it is built.
+**Status:** 🔒 **LOCKED — PO, 2026-09-24** (from phone): *"He doesn't prescribe diets but he can build a week plan
+based off of your macro goals right? Like, that's the whole point of a coach. Just helping reach goals from facts.
+And you should be able to talk about budgets too and even say I have 15 min for lunch what's a good recipe."*
+That is D1 + D3 as written. D7 and D8 are added from the same message. The two open questions take their
+defaults. Nothing in it is built yet (see the preconditions).
 **Trigger:** PO, 2026-09-23, asked to *"Unlock Holt meal plans"* the same day NUT-A1-D3 was locked.
 
 ---
@@ -75,6 +79,22 @@ A plan draws **only** from Forge-tagged recipes and the athlete's own tagged rec
 athlete names is a hard filter at step 1, and **unknown allergen status counts as excluded**. The model
 cannot re-admit a recipe. Every plan carries the "check labels" line.
 
+### NUT-A2-D7 — Budget and time are in scope (PO, 2026-09-24)
+
+*"Plan my week for $80"*, *"I have 15 minutes for lunch, what's good?"*, *"cheaper this week"* all become
+constraint-patch fields: `weeklyBudgetUsd` and `cookMinutes` (per slot where asked), the same fields Meal Plan
+Setup already stores. The **estimate** comes from the Grocery List's public prices (USDA ERS / BLS), which
+count unpriced items rather than inventing them. Holt says *"about $74, 3 items not priced"*, never a price of
+his own (D2).
+
+### NUT-A2-D8 — Holt's own dishes can join a plan once the app has checked them
+
+Reconciles D5 with `Holt-Kitchen-Scope-v1.0` (locked the same day). A dish Holt writes in the Kitchen may enter
+a plan **only after** it is saved to My Recipes. By then every ingredient is matched to USDA, its numbers are
+the app's, and its allergens are derived from those ingredients. An unmatched ingredient keeps the dish out of
+plans (unknown allergen status counts as excluded, D5). So the library stops being the long pole: a thin book
+plus the Kitchen can fill a week, and every number and allergen tag is still code's.
+
 ### NUT-A2-D6 — Premium AI only, PO-only until launch
 
 `coach_ai` (0203), like every other Holt AI job, and inside the Nutrition preview allowlist (0206).
@@ -101,8 +121,8 @@ This amendment can be locked now, but it **cannot be built yet**:
 
 | # | Question | Default if not answered |
 |---|---|---|
-| 1 | May Holt **suggest** a snack when a day can't fit (*"Tuesday is 140 short — add yogurt?"*)? | Yes. The planner found the gap, and Holt only names it |
-| 2 | A plan Holt builds: saved straight away, or shown as a draft to accept? | **Draft to accept**, like program edits (CA-D12) |
+| 1 | May Holt **suggest** a snack when a day can't fit (*"Tuesday is 140 short — add yogurt?"*)? | **Yes (default taken at lock).** The planner found the gap, and Holt only names it |
+| 2 | A plan Holt builds: saved straight away, or shown as a draft to accept? | **Draft to accept (default taken at lock)**, like program edits (CA-D12) and Holt Everywhere rule 2 |
 
 ---
 
@@ -123,3 +143,4 @@ This amendment can be locked now, but it **cannot be built yet**:
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-09-23 | Proposed. NUT-A2-D1…D6. Not locked. |
+| 1.1 | 2026-09-24 | **LOCKED by the PO.** D7 (budget and time) and D8 (Kitchen dishes join plans once checked) added. Open questions take their defaults. |

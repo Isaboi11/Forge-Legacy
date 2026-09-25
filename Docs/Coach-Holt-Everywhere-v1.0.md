@@ -64,9 +64,10 @@ This extends **the same pattern** (words → a checked action → confirm → do
 
 - **Holt's Kitchen:** the four picks are LOCKED (PO: "Perfect"). Premium AI only · Holt's chat AND a *What can
   I make?* button on Nutrition · 3 options · 30-day memory.
-- **Amendment 002 (Holt builds meal plans):** the PO's direction here ("the same with planning a week or
-  groceries") matches 002's substance. **⏳ Needs one explicit "lock 002"** before it's marked locked,
-  because 002 also narrows CA-D10 ("does not prescribe diets").
+- **Amendment 002 (Holt builds meal plans): 🔒 LOCKED 2026-09-24.** PO: *"He doesn't prescribe diets but he
+  can build a week plan based off of your macro goals … the whole point of a coach."* Plus budgets (*"plan my
+  week for $80"*) and time (*"15 minutes for lunch"*), added as NUT-A2-D7, and Kitchen dishes joining plans
+  once checked (NUT-A2-D8).
 
 ## 5. Order
 
