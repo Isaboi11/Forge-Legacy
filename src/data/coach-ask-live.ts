@@ -119,6 +119,8 @@ export async function askHolt(
         question: q,
         history: trimHistory(history, ASK_HISTORY_MAX),
         context,
+        // The device's clock, so Holt's lookups (`ask-tools.ts`) date a workout on the athlete's calendar.
+        tz: new Date().getTimezoneOffset(),
         ...(options.model ? { model: options.model } : {}),
       }),
       signal: options.signal,

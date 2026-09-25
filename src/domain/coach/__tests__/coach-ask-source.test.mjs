@@ -63,6 +63,11 @@ test('the system prompt carries the rules the brief asks for', () => {
     '1 to 5 short sentences',
     'Plain text only',
     'If you do not know where something is, say so rather than inventing a screen.',
+    // The athlete's data is looked up, never disclaimed (ask-tools.ts; the bench question that started it).
+    '# Looking things up',
+    "Never say you don't have their data",
+    'You can only see this athlete\'s own records.',
+    'Body metrics are read only when the athlete asks',
   ]) assert.ok(system.includes(rule), `missing: ${rule}`);
 });
 

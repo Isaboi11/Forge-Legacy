@@ -19,7 +19,11 @@
  *      model, and must not be billed for saying so.
  *   1. Reserve the credit (`coach_ai_spend_credits`, p_action 'message' — CA-D8: an `ask` message is one
  *      credit) BEFORE the model call.
- *   2. Stream the model's reply to the client as SSE.
+ *   2. Stream the model's reply to the client as SSE. When he needs the athlete's data he calls a read
+ *      tool (`ask-tools.ts`: lift history, workouts, records, cardio, program, goals, honors, profile,
+ *      food log, and body metrics only when asked); the function runs it AS THE ATHLETE (their JWT, RLS,
+ *      and an explicit own-id filter), hands back the result, and streams the next round — at most
+ *      `ASK_TOOL_ROUNDS`, then he must answer with what he has. CA-D10 / CA-D11 `training_history`.
  *   3. Record what it actually cost (`coach_ai_record_usage`, all four token counts) when the stream ends —
  *      however it ends, including the athlete closing the sheet mid-reply.
  *
@@ -57,6 +61,8 @@ import {
   trimHistory,
   utf8Decoder,
 } from '../../../src/domain/coach/ask-wire.ts';
+// ⚠ HIS READ TOOLS — the athlete's own data, green-tier and read-only (Preflight Gates Part 2).
+import { ASK_TOOL_ROUNDS, ASK_TOOLS, runAskTool } from '../../../src/domain/coach/ask-tools.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -124,7 +130,20 @@ Some messages start with reference material from the app: the athlete's program,
 - When the question is why their plan looks the way it does and a reason is provided, use that reason. It is what the engine actually decided. Do not invent a different reason.
 - When the athlete's logged training is provided (their top lifts, best recent sets, estimated one-rep-max trend, sessions a week), answer questions about their progress and loads from those numbers, in the units given. Estimated maxes are estimates; say so if you lean on one. Do not invent sessions or numbers that are not there.
 - A message may also carry "What you know about this athlete": short notes of things the athlete told you before. Use them where they matter (a lift they hate, a day they can't train) without reciting them, and never treat them as more than what the athlete said.
-- When nothing relevant is provided, answer from general coaching knowledge. Never pretend the app told you something it did not, and never claim to see their logged sessions, weights or history unless they are in the message.
+- When a question is general ("how many sets should a beginner do"), answer from general coaching knowledge. Never pretend the app told you something it did not.
+
+# Looking things up
+
+You have read tools for this athlete's own records in the app: every logged workout and set, lift history and estimated maxes, personal records, runs and other cardio, their programs and where they are in them, their goals, honors and rank, their training settings and equipment, their food log, and — only when this message asks about it — their bodyweight and measurements.
+
+- Whenever the answer depends on what this athlete has logged or set up — their progress, a lift, a session, a PR, their week, their program, their goals, their runs, what they ate — look it up with a tool before answering. Never say you don't have their data, can't see their history, or that they should check the app, until a tool has come back empty.
+- Call the tools straight away, with no words before them. Call several at once when a question needs several. Then answer from what came back.
+- Every number you give about the athlete comes from a tool result or the message, in the units it came in. If a lookup comes back empty, say plainly that nothing is logged for it yet. If a lookup fails, say you couldn't pull it just now; do not guess.
+- A lift name that matches several logged lifts: answer about the closest one and mention the others by name if it matters.
+- An estimated 1RM is an estimate; say so if you lean on one. Progress means comparing then and now: name the numbers ("your best bench went from 205×5 in March to 225×5 last week").
+- Answering about their numbers may take a sentence or two more than usual. Lead with the answer, keep it plain text, and never paste a table or the raw lookup.
+- You can only see this athlete's own records. You cannot see other athletes, squads, friends or feeds; if asked, say so.
+- Body metrics are read only when the athlete asks about their own bodyweight or measurements. Never bring them up yourself, and never comment on their body beyond the numbers they asked for.
 
 # The app, so answers about it are right
 
@@ -164,6 +183,8 @@ interface Body {
   context?: unknown;
   /** Optional, one of ALLOWED_MODELS. Anything else runs the default. */
   model?: string;
+  /** The device's `getTimezoneOffset()`, so the tools speak in the athlete's own dates. Absent reads as UTC. */
+  tz?: number;
 }
 
 /** The code guard's verdict as a route the app has copy for, or null to carry on. */
@@ -263,6 +284,17 @@ Deno.serve(async (req) => {
 
   const model = body.model && ALLOWED_MODELS.includes(body.model) ? body.model : MODEL;
 
+  // The athlete's clock, so a tool's "2026-09-22" is THEIR Monday (`getTimezoneOffset()`, minutes).
+  const tz = typeof body.tz === 'number' && Number.isInteger(body.tz) && Math.abs(body.tz) <= 840 ? body.tz : 0;
+  // Resolved on the first tool call only — a question that needs no data pays nothing for it.
+  const jwt = authorization.replace(/^Bearer\s+/i, '');
+  let uidOnce: Promise<string | null> | null = null;
+  const uidOf = () =>
+    (uidOnce ??= supabase.auth.getUser(jwt).then(
+      (r: { data: { user: { id: string } | null } }) => r.data.user?.id ?? null,
+      () => null,
+    ));
+
   const record = (u: { input: number; output: number; cacheRead: number; cacheWrite: number }, m: string, uncharged: boolean) =>
     supabase.rpc('coach_ai_record_usage', {
       p_action: action,
@@ -275,9 +307,17 @@ Deno.serve(async (req) => {
       p_uncharged: uncharged,
     }).then(() => undefined, () => undefined);
 
-  let upstream: Response;
-  try {
-    upstream = await fetch('https://api.anthropic.com/v1/messages', {
+  // The conversation as the model sees it, grown by each tool round (assistant tool calls, then results).
+  // deno-lint-ignore no-explicit-any
+  const convo: { role: 'user' | 'assistant'; content: any }[] = messages;
+
+  /**
+   * One model call. `ASK_TOOLS` render BEFORE the system block, so the system block's `cache_control`
+   * caches both — the tool list is as stable as `SYSTEM` and must stay that way. The last round sends
+   * `tool_choice: none`, so a model that keeps reaching for data still has to answer with what it has.
+   */
+  const callModel = (last: boolean) =>
+    fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'x-api-key': ANTHROPIC_API_KEY,
@@ -291,10 +331,16 @@ Deno.serve(async (req) => {
         // A short conversational answer, not reasoning — same settings as `coach-interpret`. Haiku 4.5
         // takes neither `effort` nor the disabled-thinking form; it runs without thinking when absent.
         ...(model === HAIKU ? {} : { thinking: { type: 'disabled' }, output_config: { effort: 'low' } }),
+        tools: ASK_TOOLS,
+        ...(last ? { tool_choice: { type: 'none' } } : {}),
         system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-        messages,
+        messages: convo,
       }),
     });
+
+  let upstream: Response;
+  try {
+    upstream = await callModel(false);
   } catch {
     await record({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, model, true);
     return new Response(sseLine({ error: 'upstream_unreachable', detail: null }), { headers: SSE_HEADERS });
@@ -312,7 +358,10 @@ Deno.serve(async (req) => {
     );
   }
 
-  // ── 3. Relay the stream, and record what it cost however it ends ───────────
+  // ── 3. Relay the stream — through any tool rounds — and record what it cost however it ends ─────
+  //
+  // Usage is SUMMED across rounds: each round is a billed call, and the meter must see all of them. The
+  // credit is still one (CA-D8: an `ask` message is one credit, however many reads it took).
   const usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
   let servedBy = model;
   let stop: string | null = null;
@@ -322,15 +371,8 @@ Deno.serve(async (req) => {
     recorded = true;
     await record(usage, servedBy, uncharged);
   };
-  const takeUsage = (u: Record<string, unknown> | undefined) => {
-    if (!u) return;
-    if (typeof u.input_tokens === 'number') usage.input = u.input_tokens;
-    if (typeof u.output_tokens === 'number') usage.output = u.output_tokens;
-    if (typeof u.cache_read_input_tokens === 'number') usage.cacheRead = u.cache_read_input_tokens;
-    if (typeof u.cache_creation_input_tokens === 'number') usage.cacheWrite = u.cache_creation_input_tokens;
-  };
 
-  const reader = upstream.body.getReader();
+  let reader = upstream.body.getReader();
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream<Uint8Array>({
@@ -343,54 +385,137 @@ Deno.serve(async (req) => {
         }
       };
       const decoder = utf8Decoder();
-      let carry = '';
       let failed: { error: string; detail: string | null } | null = null;
       let sawText = false;
+      let rounds = 0;
 
       try {
-        read: while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const parsed = parseSse(decoder.decode(value), carry);
-          carry = parsed.carry;
-          for (const ev of parsed.events) {
-            let msg: Record<string, unknown>;
-            try {
-              msg = JSON.parse(ev.data);
-            } catch {
-              continue;
-            }
-            switch (msg.type) {
-              case 'message_start': {
-                const m = msg.message as { model?: string; usage?: Record<string, unknown> } | undefined;
-                if (m?.model) servedBy = m.model;
-                takeUsage(m?.usage);
-                break;
+        turn: while (true) {
+          // This round's usage. `message_delta` reports the message's cumulative output, so a round is
+          // taken whole and then added — never added event by event.
+          const ru = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+          const takeUsage = (u: Record<string, unknown> | undefined) => {
+            if (!u) return;
+            if (typeof u.input_tokens === 'number') ru.input = u.input_tokens;
+            if (typeof u.output_tokens === 'number') ru.output = u.output_tokens;
+            if (typeof u.cache_read_input_tokens === 'number') ru.cacheRead = u.cache_read_input_tokens;
+            if (typeof u.cache_creation_input_tokens === 'number') ru.cacheWrite = u.cache_creation_input_tokens;
+          };
+          // The assistant's content blocks this round, rebuilt from the stream so a tool round can be
+          // replayed to the model exactly.
+          const blocks: { type: string; text: string; id?: string; name?: string; json: string }[] = [];
+          let roundStop: string | null = null;
+          let roundText = false;
+          let carry = '';
+
+          read: while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const parsed = parseSse(decoder.decode(value), carry);
+            carry = parsed.carry;
+            for (const ev of parsed.events) {
+              let msg: Record<string, unknown>;
+              try {
+                msg = JSON.parse(ev.data);
+              } catch {
+                continue;
               }
-              case 'content_block_delta': {
-                const d = msg.delta as { type?: string; text?: string } | undefined;
-                if (d?.type === 'text_delta' && d.text) {
-                  sawText = true;
-                  send({ t: d.text });
+              switch (msg.type) {
+                case 'message_start': {
+                  const m = msg.message as { model?: string; usage?: Record<string, unknown> } | undefined;
+                  if (m?.model) servedBy = m.model;
+                  takeUsage(m?.usage);
+                  break;
                 }
-                break;
+                case 'content_block_start': {
+                  const b = msg.content_block as { type?: string; id?: string; name?: string } | undefined;
+                  if (typeof msg.index === 'number' && b?.type) blocks[msg.index] = { type: b.type, text: '', id: b.id, name: b.name, json: '' };
+                  break;
+                }
+                case 'content_block_delta': {
+                  const at = typeof msg.index === 'number' ? blocks[msg.index] : undefined;
+                  const d = msg.delta as { type?: string; text?: string; partial_json?: string } | undefined;
+                  if (d?.type === 'text_delta' && d.text) {
+                    // A reply that resumes after a tool round must not run into the words before it.
+                    if (!roundText && sawText) send({ t: ' ' });
+                    sawText = true;
+                    roundText = true;
+                    if (at) at.text += d.text;
+                    send({ t: d.text });
+                  } else if (d?.type === 'input_json_delta' && typeof d.partial_json === 'string' && at) {
+                    at.json += d.partial_json;
+                  }
+                  break;
+                }
+                case 'message_delta': {
+                  const d = msg.delta as { stop_reason?: string } | undefined;
+                  if (d?.stop_reason) roundStop = d.stop_reason;
+                  takeUsage(msg.usage as Record<string, unknown> | undefined);
+                  break;
+                }
+                case 'error': {
+                  const e = msg.error as { type?: string; message?: string } | undefined;
+                  failed = { error: 'upstream_error', detail: `${e?.type ?? 'error'}: ${e?.message ?? ''}`.slice(0, 300) };
+                  break read;
+                }
+                default:
+                  // ping, content_block_stop, message_stop — nothing to relay.
+                  break;
               }
-              case 'message_delta': {
-                const d = msg.delta as { stop_reason?: string } | undefined;
-                if (d?.stop_reason) stop = d.stop_reason;
-                takeUsage(msg.usage as Record<string, unknown> | undefined);
-                break;
-              }
-              case 'error': {
-                const e = msg.error as { type?: string; message?: string } | undefined;
-                failed = { error: 'upstream_error', detail: `${e?.type ?? 'error'}: ${e?.message ?? ''}`.slice(0, 300) };
-                break read;
-              }
-              default:
-                // ping, content_block_start/stop, message_stop — nothing to relay.
-                break;
             }
           }
+
+          usage.input += ru.input;
+          usage.output += ru.output;
+          usage.cacheRead += ru.cacheRead;
+          usage.cacheWrite += ru.cacheWrite;
+          stop = roundStop;
+          if (failed || roundStop !== 'tool_use') break turn;
+
+          // ── A tool round: run the reads as THIS athlete, hand back the results, and go again ───────
+          rounds += 1;
+          const uid = await uidOf();
+          const inputOf = (json: string): unknown => {
+            try {
+              return json ? JSON.parse(json) : {};
+            } catch {
+              return null;
+            }
+          };
+          const calls = blocks.filter((b) => b && b.type === 'tool_use' && b.id && b.name);
+          const results = await Promise.all(
+            calls.map(async (c) => {
+              const input = inputOf(c.json);
+              if (input === null) return { type: 'tool_result', tool_use_id: c.id, content: 'The tool input was not valid JSON.', is_error: true };
+              if (!uid) return { type: 'tool_result', tool_use_id: c.id, content: 'Not signed in.', is_error: true };
+              const r = await runAskTool(c.name as string, input, { db: supabase, uid, question, tz });
+              return { type: 'tool_result', tool_use_id: c.id, content: r.text, ...(r.isError ? { is_error: true } : {}) };
+            }),
+          );
+          convo.push({
+            role: 'assistant',
+            content: blocks
+              .filter((b) => b && ((b.type === 'text' && b.text) || (b.type === 'tool_use' && b.id && b.name)))
+              .map((b) =>
+                b.type === 'text' ? { type: 'text', text: b.text } : { type: 'tool_use', id: b.id, name: b.name, input: inputOf(b.json) ?? {} },
+              ),
+          });
+          convo.push({ role: 'user', content: results });
+
+          let next: Response;
+          try {
+            next = await callModel(rounds >= ASK_TOOL_ROUNDS);
+          } catch (e) {
+            failed = { error: 'upstream_unreachable', detail: String((e as Error)?.message ?? e).slice(0, 300) };
+            break turn;
+          }
+          if (!next.ok || !next.body) {
+            const raw = await next.text().catch(() => '');
+            console.error('anthropic round', rounds, next.status, raw.slice(0, 800));
+            failed = { error: 'upstream_error', detail: `${next.status} ${upstreamReason(raw)}`.slice(0, 300) };
+            break turn;
+          }
+          reader = next.body.getReader();
         }
       } catch (e) {
         failed = { error: 'upstream_dropped', detail: String((e as Error)?.message ?? e).slice(0, 300) };
