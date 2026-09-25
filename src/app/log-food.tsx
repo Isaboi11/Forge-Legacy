@@ -34,6 +34,7 @@ import {
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { useQuery } from '@/lib/useQuery';
+import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 
 /**
  * Log Food — built to `Log Food.dc.html`, wired to the diary (0205) and `food-search`.
@@ -166,6 +167,8 @@ export default function LogFoodScreen() {
     showToast(`${food.name} · ${macros.kcal} cal added to ${MEAL_LABELS[meal]}`);
   };
 
+  const barBottom = useBarBottom(SCREEN_BOTTOM_GAP);
+
   const rows = useMemo(() => buildRows({ results, filter, recents, favorites, myFoods }), [results, filter, recents, favorites, myFoods]);
   /* A search shows its best ten; "Show more" opens the rest for THAT query only, so the next one starts short again. */
   const [moreFor, setMoreFor] = useState<string | null>(null);
@@ -291,14 +294,22 @@ export default function LogFoodScreen() {
         ) : null}
       </ScrollView>
 
-      {/* quiet secondary actions */}
-      <View style={styles.footer}>
-        <Pressable accessibilityRole="button" onPress={() => setQuickOpen(true)}>
+      {/* quiet secondary actions. ⚠ The bottom pad is the app's anchored-bar gap, not a fixed 28: a fixed
+          pad ignored the home indicator and sat these two in the iPhone's swipe zone (PO, 09-24). */}
+      <View style={[styles.footer, { paddingBottom: barBottom }]}>
+        <Pressable accessibilityRole="button" style={styles.footerButton} onPress={() => setQuickOpen(true)}>
           <Text style={styles.footerAction}>Quick Add</Text>
         </Pressable>
-        <View style={styles.footerDot} />
-        <Pressable accessibilityRole="button" onPress={goCreateFood}>
+        <Pressable accessibilityRole="button" style={styles.footerButton} onPress={goCreateFood}>
           <Text style={styles.footerAction}>Create Food</Text>
+        </Pressable>
+        {/* The meal builder lives in My Foods & Meals; this is its front door (PO: "is there a create meal page?"). */}
+        <Pressable
+          accessibilityRole="button"
+          style={styles.footerButton}
+          onPress={() => router.push({ pathname: '/my-foods', params: { newMeal: '1' } })}
+        >
+          <Text style={styles.footerAction}>Create Meal</Text>
         </Pressable>
       </View>
 
@@ -649,17 +660,17 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 14,
-    paddingTop: 14,
-    paddingBottom: 28,
-    paddingHorizontal: 20,
+    /* Three actions, no separator dots: with dots and the old padding the row measured ~406 pt, wider than
+       any iPhone. Spread evenly it is ~330 pt, which fits the 375 pt SE with room for SF Pro's width. */
+    justifyContent: 'space-evenly',
+    paddingTop: 6,
+    paddingHorizontal: 12,
     borderTopWidth: 1,
     borderTopColor: flColor.charcoal700,
     backgroundColor: flColor.charcoal900,
   },
   footerAction: { fontSize: 12, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray400 },
-  footerDot: { width: 4, height: 4, borderRadius: flRadius.round, backgroundColor: flColor.charcoal500 },
+  footerButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
 
   sheetBody: { gap: 12, paddingBottom: 8 },
   sheetNote: { fontSize: 13, color: flColor.gray400, lineHeight: 19 },
