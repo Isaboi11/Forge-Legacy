@@ -9,9 +9,9 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
 **Last updated:** 2026-09-25
 
 ## Where we are
-- **Waiting on others:** Apple (bank verification) · Apple (Small Business Program)
+- **Waiting on others:** Apple (Small Business Program — no word as of 09-25)
 - **PO to-do:** find a lawyer · ~~decide if Nutrition ships~~ (09-25: yes, opens on approval) · write the recipes ·
-  RevenueCat tidy-up (rename the project, delete `$rc_*` packages, delete `REVENUE_WEBHOOK_AUTH`) — PO running it with Claude in Chrome 09-25
+  ~~RevenueCat tidy-up~~ (done 09-25)
 - **Claude to-do:** build 9 (paywall, mic, form check, barcode) → sandbox purchase test
 
 ## Pricing (Monetization Amendment 007, locked 2026-09-23)
@@ -28,15 +28,15 @@ No lifetime plan. United States only at launch.
 
 ## 1. Apple account
 - ✅ Account is Forge Legacy LLC (Organization) — 09-23
-- 🔨 Agreements, Tax & Banking
+- ✅ Agreements, Tax & Banking — all Active 09-25
   - ✅ Paid Apps agreement accepted — 09-23 (reads "Pending User Info" until bank + tax are in)
   - ✅ Bank account entered — 09-24 (Zions business account; holder `FORGE LEGACY LLC`, Business type).
     Apple verifies it over a few days
   - ✅ Tax form (W-9) submitted — 09-24 (line 1 "Forge Legacy LLC"; LLC – Disregarded Entity; Non-Exempt Payee).
     Worth a one-line CPA confirmation of the TIN choice (two-tier chain via Altimealix)
-  - ⬜ Agreement reads **Active** (if still "Pending User Info" after bank + tax, ask Apple on the existing thread)
+  - ✅ Agreement reads **Active** — 09-25 (Paid Apps effective Sep 23 2026 – Aug 4 2027; bank, W-9, DSA also Active)
 - ✅ EU trader declaration — Trader, on the account and the app — 09-23
-- ⏳ Small Business Program (30% → 15%) — applied 09-23, waiting on Apple
+- ⏳ Small Business Program (30% → 15%) — applied 09-23, waiting on Apple (no word 09-25)
 - ✅ App set to United States only, price Free — 09-23
 
 ## 2. Subscriptions & paywall
@@ -50,17 +50,17 @@ No lifetime plan. United States only at launch.
   Works on build 9 only; web and build 8 say "Plans aren't available on this device yet."
   - ✅ `pending-0214.sql` applied 09-24 (0 · 0 · 0 · 100 · admins-only, as predicted) · ✅ `set-comped-testers-0214.sql` applied 09-24 (12 rows)
   - ✅ Edge Function `revenuecat-webhook` deployed, Verify JWT OFF, secret `REVENUECAT_WEBHOOK_AUTH` set — 09-24
-    (⬜ delete the misspelled leftover secret `REVENUE_WEBHOOK_AUTH`; nothing uses it)
+    (✅ misspelled leftover `REVENUE_WEBHOOK_AUTH` deleted 09-25)
   - ✅ RevenueCat webhook "Supabase entitlement" → that function — 09-24; test event returned 200 `{"outcome":"ignored"}`
   - ✅ PO 09-24: `alex.review` also sees Tester AI, so Apple can review that product (12 comped accounts: 11 testers + alex.review; `poop` was deleted)
-- ✅ RevenueCat set up — 09-24 (tidy-up items below still open)
+- ✅ RevenueCat set up — 09-24 (tidy-up done 09-25)
   - ✅ Project + iOS app (bundle ID `com.qest4.forgelegacy`) — 09-24
   - ✅ In-App Purchase key (.p8) uploaded to RevenueCat — 09-24 (Key ID `A8T8CTT9TS`).
     ✅ .p8 moved to `OneDrive\Desktop\Forge Legacy Documents` (personal OneDrive) — 09-24. NEVER in the repo
   - ⬜ Enter the Small Business Program start date in RevenueCat (App settings) once Apple approves
-  - ✅ RevenueCat email confirmed — 09-24 · ⬜ rename the project to "Forge Legacy" (it reads "Create an app called Forge Legacy LLC")
+  - ✅ RevenueCat email confirmed — 09-24 · ✅ project renamed "Forge Legacy" — 09-25
   - ✅ 10 products added by hand · entitlements `premium` (8) + `coach_ai` (6) · offerings `default` (Current) / `early_bird` / `tester_ai` — 09-24 (Claude in Chrome)
-  - ⬜ Delete the leftover `$rc_monthly` / `$rc_annual` packages in `default` (Test Store only; the app ignores them)
+  - ✅ Leftover `$rc_monthly` / `$rc_annual` packages deleted from `default` — 09-25 (4 premium packages + all 10 products intact)
   - ⬜ Optional: App Store Connect API key in RevenueCat, so it can check the product IDs against Apple
   - ✅ Public iOS SDK key (`appl_…`) given to Claude — 09-24 (in `src/lib/billing-store.native.ts`)
   - ✅ Code: adapter over `react-native-purchases` 10.10.2 — 09-24 (`src/lib/billing-store.native.ts`; native → build 9 only)
