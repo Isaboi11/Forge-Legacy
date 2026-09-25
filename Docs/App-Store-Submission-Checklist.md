@@ -108,6 +108,6 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
 
 ## 6. Ship day
 - ⬜ Phase F: default to Free + remove "free while testing" (4 files, see GO-LIVE)
-- ⬜ Build 9 (RevenueCat, mic, form check, barcode, label scan, Watch) — ready 09-25, waiting on the PO to allow `eas build`
+- ✅ Build 9 built + uploaded to TestFlight — 09-25 (EAS `6c59b9c9`, commit `f7704585`). Watch Swift + label reader compiled first try. ⚠ Apple 401 on the stored key: the PO had to run build + submit interactively; the first EAS submit sat IN_QUEUE 1h+ and was cancelled · ⬜ test on device
 - ⬜ Add the 10 subscriptions for review together with build 9
 - ⬜ Check Apple's agreement banner · clean tree · all gates green · submit

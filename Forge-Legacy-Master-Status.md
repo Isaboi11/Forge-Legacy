@@ -76,6 +76,8 @@ reinstall, or a tester needs one of these.
 | **Scan a nutrition label (Create Food)** | `expo-camera` + NEW local `modules/label-reader` (Apple Vision, on-device, free) | built 09-25 to `Scan Nutrition Label v2.dc.html` (A1–C2); parser `domain/nutrition/label-read.ts` tested on HAND-BUILT fixtures — first real iPhone read is the real test. ⚠ Swift never compiled here: build 9 is its first compile |
 | **Paywall: buying Premium / Premium AI** | `react-native-purchases` 10.10.2 (RevenueCat) | built 09-24, inert on build 8 (`billingAvailable()` false: "Plans aren't available on this device yet") |
 
+**✅ BUILD 9 CUT 2026-09-25** — EAS `6c59b9c9`, commit `f7704585`, on TestFlight (submission `38ff62e2`). Everything in the table above is in it; nothing is device-tested yet. Commits after `f7704585` reach it only by OTA.
+
 **When cutting build 9:** re-run `fingerprint:compare` afterwards, move the OTA lane to the new runtime,
 and keep build 8 fed until testers have reinstalled.
 
