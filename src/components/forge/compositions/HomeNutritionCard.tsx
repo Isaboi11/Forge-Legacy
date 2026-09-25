@@ -4,7 +4,7 @@ import { useFocusEffect } from 'expo-router';
 
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { NutritionTabIcon } from '@/components/forge/primitives/icons/NavIcons';
-import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { flColor, flRadius } from '@/constants/foundation';
 import { fetchDay } from '@/data/nutrition-live';
 import { localToday, totals } from '@/domain/nutrition/day';
 import { homeNutritionView, type MacroKey } from '@/domain/nutrition/home-card';
@@ -12,17 +12,20 @@ import { useNutritionAccess } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
 
 /**
- * NUTRITION ON HOME: the PO's mockup (2026-09-24), redrawn with the four notes from its review:
+ * NUTRITION ON HOME: TWO LINES, option A (PO, 2026-09-24).
  *
- *   1. CARBS ARE PLUM. Calories keep bronze, so no two bars share a colour, and the colours are the ones
- *      Nutrition Home's rings use (protein green, carbs plum, fat blue). One key, learned once.
- *   2. THE NUTRITION TAB'S OWN FLAME, not the Forge mark, so the card reads as a door to that tab.
- *   3. NEVER A ROW OF ZEROS. Nothing logged shows the day's targets; no target shows what was eaten and an
- *      invitation. The words are `homeNutritionView`'s, which is where every state is tested.
- *   4. It is ONE button with one sentence for a screen reader, not seven loose numbers.
+ * The first cut (the PO's own mockup, built at full size) took half a screen and its 40pt "190" competed
+ * with the workout card, which is Home's lead. PO: *"pretty minimal … a quick look and not taking over the
+ * page."* Two options were drawn; A was chosen, and the bars were kept on purpose: they are the half-second
+ * read, which is the whole reason for a card on Home; the rings on Nutrition are the long look.
  *
- * Shown only to an athlete with Nutrition access, and not until the day has loaded, so it never flashes
- * zeros on the way in. It re-reads on focus, so a meal logged a moment ago is on it when they come back.
+ *   line 1 — flame · "190 / 2,610 cal" · "2,420 left" · chevron
+ *   line 2 — ● Protein 16 /175g · ● Carbs 14 /300g · ● Fat 8 /80g, each over a 4pt bar
+ *
+ * Colours are Nutrition Home's rings (protein green, carbs PLUM, fat blue), so one key is learned once. The
+ * words and every state (nothing logged, no target, past a target) are `homeNutritionView`'s, and tested.
+ * One button, one screen-reader sentence. Hidden without Nutrition access, and until the day has loaded,
+ * so it never flashes zeros. It re-reads on focus.
  */
 const MACRO_COLOR: Record<MacroKey, string> = {
   protein: flColor.greenMuted,
@@ -46,60 +49,42 @@ export function HomeNutritionCard({ onOpen }: { onOpen: () => void }) {
       accessibilityHint="Opens Nutrition"
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
-      <View style={styles.head}>
-        <NutritionTabIcon color={flColor.bronze400} />
-        <Text style={styles.eyebrow}>Nutrition</Text>
-        <View style={styles.headSpacer} />
-        <ChevronRightIcon size={18} color={flColor.bronze400} />
+      <View style={styles.line}>
+        <NutritionTabIcon color={flColor.bronze400} size={18} />
+        <Text style={styles.kcal} numberOfLines={1}>
+          {v.kcal}
+          <Text style={styles.kcalOf}>{` ${v.kcalOf}`}</Text>
+        </Text>
+        <Text style={styles.right} numberOfLines={1}>
+          {v.right}
+        </Text>
+        <ChevronRightIcon size={16} color={flColor.bronze400} />
       </View>
 
-      <View style={styles.body}>
-        <View style={styles.calories}>
-          <Text style={styles.bigValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-            {v.calories.value}
-          </Text>
-          <Text style={[styles.label, { color: flColor.bronze400 }]} numberOfLines={1}>
-            {v.calories.label}
-          </Text>
-          <Bar fraction={v.calories.fraction} color={flColor.bronze400} />
-          <Text style={styles.sub} numberOfLines={1}>
-            {v.calories.sub}
-          </Text>
-        </View>
-
-        <View style={styles.divider} />
-
+      <View style={styles.macros}>
         {v.macros.map((m) => (
           <View key={m.key} style={styles.macro}>
-            <Text style={styles.macroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-              {m.value}
-              <Text style={styles.macroUnit}>{m.unit}</Text>
-            </Text>
-            <Text style={[styles.label, { color: MACRO_COLOR[m.key] }]} numberOfLines={1}>
-              {m.label}
-            </Text>
-            <Bar fraction={m.fraction} color={MACRO_COLOR[m.key]} />
-            <Text style={styles.sub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-              {m.sub || ' '}
-            </Text>
+            <View style={styles.macroText}>
+              <View style={[styles.dot, { backgroundColor: MACRO_COLOR[m.key] }]} />
+              <Text style={styles.macroLine} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                {`${m.label} `}
+                <Text style={styles.macroValue}>{m.value}</Text>
+                {` ${m.of}`}
+              </Text>
+            </View>
+            {v.bars ? (
+              <View style={styles.track}>
+                {m.fraction > 0 ? (
+                  /* A width PERCENTAGE of a track that has a real width (a flex child of the macro column).
+                     A sliver (min 4%) so "some" never reads as "none". */
+                  <View style={[styles.fill, { width: `${Math.max(4, Math.round(m.fraction * 100))}%`, backgroundColor: MACRO_COLOR[m.key] }]} />
+                ) : null}
+              </View>
+            ) : null}
           </View>
         ))}
       </View>
     </Pressable>
-  );
-}
-
-/**
- * A progress bar. The fill is a WIDTH PERCENTAGE of a track with a real width: the track is a flex child
- * of a column that has one, so the percentage resolves. A tiny non-zero day still shows a sliver
- * (min 4%) so "some" never reads as "none".
- */
-function Bar({ fraction, color }: { fraction: number; color: string }) {
-  const pct = fraction > 0 ? Math.max(4, Math.round(fraction * 100)) : 0;
-  return (
-    <View style={styles.track}>
-      {pct > 0 ? <View style={[styles.fill, { width: `${pct}%`, backgroundColor: color }]} /> : null}
-    </View>
   );
 }
 
@@ -109,27 +94,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
-    paddingHorizontal: 18,
-    paddingTop: 16,
-    paddingBottom: 18,
-    gap: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
   },
   cardPressed: { opacity: 0.88 },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  eyebrow: { fontSize: 12.5, fontWeight: '600', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.gray400 },
-  headSpacer: { flex: 1 },
 
-  body: { flexDirection: 'row', alignItems: 'stretch' },
-  calories: { flex: 1.25, minWidth: 0, gap: 6 },
-  divider: { width: 1, backgroundColor: flColor.charcoal600, marginHorizontal: 14 },
-  macro: { flex: 1, minWidth: 0, gap: 6, paddingRight: 8 },
+  line: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  kcal: { flexShrink: 1, fontSize: 19, fontWeight: '700', color: flColor.cream100, fontVariant: ['tabular-nums'] },
+  kcalOf: { fontSize: 14, fontWeight: '500', color: flColor.gray400 },
+  right: { marginLeft: 'auto', fontSize: 13, color: flColor.gray400, fontVariant: ['tabular-nums'] },
 
-  bigValue: { fontFamily: flFont.display, fontSize: 40, lineHeight: 46, color: flColor.cream100, fontVariant: ['tabular-nums'] },
-  macroValue: { fontSize: 21, lineHeight: 26, fontWeight: '700', color: flColor.cream100, fontVariant: ['tabular-nums'] },
-  macroUnit: { fontSize: 14, fontWeight: '600', color: flColor.gray400 },
-  label: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase' },
-  sub: { fontSize: 12.5, color: flColor.gray400, fontVariant: ['tabular-nums'] },
+  macros: { flexDirection: 'row', gap: 14 },
+  macro: { flex: 1, minWidth: 0, gap: 7 },
+  macroText: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dot: { width: 7, height: 7, borderRadius: flRadius.round },
+  macroLine: { flexShrink: 1, fontSize: 12, color: flColor.gray400, fontVariant: ['tabular-nums'] },
+  macroValue: { fontWeight: '600', color: flColor.cream100 },
 
-  track: { height: 5, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal700, overflow: 'hidden', marginTop: 2 },
+  track: { height: 4, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal700, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: flRadius.pill },
 });
