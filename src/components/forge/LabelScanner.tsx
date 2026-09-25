@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { Button } from '@/components/forge/composites/Button';
 import { Card } from '@/components/forge/composites/Surface';
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { readLabelPhoto, type LabelScan } from '@/lib/label-scan';
 import { useMediaPicker } from '@/lib/useMediaPicker';
@@ -131,14 +131,10 @@ export function LabelScanner({
 
       {/* header */}
       <View style={[styles.header, { top: insets.top + 4 }]}>
-        <IconButton label="Close" onPress={onClose}>
-          <Path d="M6 6l12 12M18 6L6 18" />
-        </IconButton>
+        <IconButton label="Close" onPress={onClose} icon="close" />
         <Text style={styles.headerTitle}>Scan label</Text>
         {live ? (
-          <IconButton label="Flash" onPress={() => setTorch((v) => !v)} on={torch}>
-            <Path d="M13 3L5 14h6l-1 7 8-11h-6z" />
-          </IconButton>
+          <IconButton label="Flash" onPress={() => setTorch((v) => !v)} on={torch} icon="lightning" />
         ) : (
           <View style={styles.headerSpacer} />
         )}
@@ -158,11 +154,7 @@ export function LabelScanner({
       {live ? (
         <View style={[styles.controls, { bottom: 44 + insets.bottom }]}>
           <View style={styles.controlSide}>
-            <IconButton label="Choose from photos" onPress={fromPhotos}>
-              <Rect x={4} y={5} width={16} height={14} rx={2} />
-              <Circle cx={9} cy={10} r={1.6} />
-              <Path d="M20 16l-5-5-8 8" />
-            </IconButton>
+            <IconButton label="Choose from photos" onPress={fromPhotos} icon="image" />
             <Text style={styles.controlLabel}>Photos</Text>
           </View>
           <Pressable
@@ -269,12 +261,12 @@ function IconButton({
   label,
   onPress,
   on = false,
-  children,
+  icon,
 }: {
   label: string;
   onPress: () => void;
   on?: boolean;
-  children: ReactNode;
+  icon: EngravedName;
 }) {
   return (
     <Pressable
@@ -285,18 +277,7 @@ function IconButton({
       hitSlop={6}
       style={styles.iconButton}
     >
-      <Svg
-        width={20}
-        height={20}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={on ? flColor.bronze300 : OVER_CAMERA.text}
-        strokeWidth={1.9}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {children}
-      </Svg>
+      <EngravedIcon name={icon} size={20} color={on ? flColor.bronze300 : OVER_CAMERA.text} />
     </Pressable>
   );
 }

@@ -17,7 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color, space } from '@/constants/tokens'
 import { CARD } from './_cardTokens'
 import type { MediaCardState } from './types'
@@ -77,12 +77,12 @@ export function MediaCard({
             {isLoading && <ActivityIndicator size="large" color={color.accent.primary} />}
             {isError && (
               <View style={styles.errorContent}>
-                <Feather name="alert-circle" size={28} color={color.danger} />
+                <EngravedIcon name="warning" size={28} color={color.danger} />
                 <Text style={styles.errorText}>Failed to load</Text>
               </View>
             )}
             {!isLoading && !isError && (
-              <Feather name="image" size={30} color={color.text.tertiary} />
+              <EngravedIcon name="image" size={30} color={color.text.tertiary} />
             )}
           </View>
         )}
@@ -108,7 +108,7 @@ export function MediaCard({
         {/* Selected indicator */}
         {isSelected && (
           <View style={styles.selectedBadge}>
-            <Feather name="check" size={14} color={color.text.inverse} />
+            <EngravedIcon name="check" size={14} color={color.text.inverse} />
           </View>
         )}
       </View>

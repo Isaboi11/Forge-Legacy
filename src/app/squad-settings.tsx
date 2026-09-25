@@ -3,7 +3,6 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -17,6 +16,7 @@ import { InputField } from '@/components/forge/composites/InputField';
 import { ForgeTextArea } from '@/components/forge/inputs/ForgeTextArea';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { ReportSheet } from '@/components/ReportSheet';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import {
   DEFAULT_SQUAD_NOTIF,
   deleteSquad,
@@ -915,116 +915,46 @@ function NotifSwitch({ on, disabled = false, onToggle, label }: { on: boolean; d
 
 // ── glyphs ──
 function CrownGlyph({ size = 12 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={flColor.bronze300}>
-      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
-    </Svg>
-  );
+  return <EngravedIcon name="crown" size={size} />;
 }
 function ChevronMini() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 5l7 7-7 7" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-right" size={17} color={flColor.gray600} />;
 }
 function InviteGlyph({ size = 16 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={9} cy={8} r={3.2} />
-      <Path d="M3.4 19a5.6 5.6 0 0 1 11.2 0" />
-      <Path d="M18 7.5v5M20.5 10h-5" />
-    </Svg>
-  );
+  return <EngravedIcon name="user-plus" size={size} />;
 }
 function TrashGlyph() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.redMuted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 7h16" />
-      <Path d="M9 7V5h6v2" />
-      <Path d="M6.5 7l1 13h9l1-13" />
-      <Path d="M10 11v6M14 11v6" />
-    </Svg>
-  );
+  return <EngravedIcon name="trash" size={17} color={flColor.redMuted} />;
 }
 function ShieldGlyph() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
-    </Svg>
-  );
+  return <EngravedIcon name="shield" size={16} />;
 }
 function CalendarGlyph() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Rect x={4} y={5} width={16} height={16} rx={2} />
-      <Path d="M4 9h16M8 3v4M16 3v4" />
-    </Svg>
-  );
+  return <EngravedIcon name="calendar" size={16} />;
 }
 function LockGlyph() {
-  return (
-    <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Rect x={5} y={11} width={14} height={9} rx={1.5} />
-      <Path d="M8 11V8a4 4 0 0 1 8 0v3" />
-    </Svg>
-  );
+  return <EngravedIcon name="lock" size={11} />;
 }
 function GlobeMini() {
-  return (
-    <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={9} />
-      <Path d="M3.5 12h17M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18" />
-    </Svg>
-  );
+  return <EngravedIcon name="globe" size={11} />;
 }
 function BellGlyph() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-      <Path d="M13.7 21a2 2 0 0 1-3.4 0" />
-    </Svg>
-  );
+  return <EngravedIcon name="bell" size={18} />;
 }
 function FlameGlyph() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />
-    </Svg>
-  );
+  return <EngravedIcon name="flame" size={18} />;
 }
 function SwordsGlyph() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M14.5 4H20v5.5L9 20.5l-5.5-5.5z" />
-      <Path d="M4 4h5.5L20 14.5V20h-5.5" />
-    </Svg>
-  );
+  return <EngravedIcon name="swords" size={18} />;
 }
 function TargetGlyph() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={8} />
-      <Circle cx={12} cy={12} r={4.4} />
-      <Circle cx={12} cy={12} r={1.2} />
-    </Svg>
-  );
+  return <EngravedIcon name="target" size={18} />;
 }
 function FlagGlyph() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6 21V4" />
-      <Path d="M6 5h11l-2 3 2 3H6" />
-    </Svg>
-  );
+  return <EngravedIcon name="flag" size={17} />;
 }
 function DoorGlyph() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.redMuted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M14 4H6v16h8" />
-      <Path d="M11 12h9M17 9l3 3-3 3" />
-    </Svg>
-  );
+  return <EngravedIcon name="exit" size={17} color={flColor.redMuted} />;
 }
 
 const styles = StyleSheet.create({

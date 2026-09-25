@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { moveInOrder, type ReorderScope } from '@/domain/program/schedule-edit';
 import { useListReorder } from '@/hooks/useListReorder';
@@ -23,19 +23,15 @@ export interface ReorderRow {
   pinned: boolean;
 }
 
-const GRIP = 'M4 9h16M4 15h16';
-const UP = 'M18 15l-6-6-6 6';
-const DOWN = 'M6 9l6 6 6-6';
+const GRIP: EngravedName = 'reorder';
+const UP: EngravedName = 'chevron-up';
+const DOWN: EngravedName = 'chevron-down';
 /** Row height + gap. The drag maths steps by this exact pitch, so it is one number in one place. */
 const ROW = 56;
 const GAP = 8;
 
-function Glyph({ d, size = 16, color }: { d: string; size?: number; color: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={d} />
-    </Svg>
-  );
+function Glyph({ d, size = 16, color }: { d: EngravedName; size?: number; color: string }) {
+  return <EngravedIcon name={d} size={size} color={color} />;
 }
 
 /**

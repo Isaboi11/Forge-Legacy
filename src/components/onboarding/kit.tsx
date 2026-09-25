@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, type DimensionValue, type TextInputProps } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 
 /**
@@ -45,9 +45,7 @@ export function ProgressHeader({
     <View style={[s.progressRow, { paddingTop: 8 + insets.top }]}>
       {onBack ? (
         <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} style={s.back}>
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M15 18l-6-6 6-6" />
-          </Svg>
+          <EngravedIcon name="chevron-left" size={20} color={flColor.gray400} />
         </Pressable>
       ) : (
         <View style={s.back} />

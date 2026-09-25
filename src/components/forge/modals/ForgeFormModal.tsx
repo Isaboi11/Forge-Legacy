@@ -21,7 +21,7 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
 import { useOverlayTransition } from './_useOverlayTransition'
@@ -106,7 +106,7 @@ export function ForgeFormModal({
                   hitSlop={(MODAL.TAP_MIN - MODAL.CLOSE_BTN) / 2}
                   style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
                 >
-                  <Feather name="x" size={14} color={color.text.secondary} />
+                  <EngravedIcon name="close" size={14} color={color.text.secondary} />
                 </Pressable>
               ) : null}
             </View>
@@ -123,7 +123,7 @@ export function ForgeFormModal({
               {/* Inline validation error */}
               {errorMessage ? (
                 <View style={styles.errorRow}>
-                  <Feather name="alert-circle" size={14} color={color.danger} />
+                  <EngravedIcon name="warning" size={14} color={color.danger} />
                   <Text style={styles.errorText}>{errorMessage}</Text>
                 </View>
               ) : null}

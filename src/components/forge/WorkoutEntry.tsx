@@ -3,9 +3,9 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View, useWindowDimension
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
 
 import { Button } from '@/components/forge/composites/Button';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont } from '@/constants/foundation';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 import type { ResolvedArtwork } from '@/domain/home-artwork/types';
@@ -234,11 +234,7 @@ function useEntryRise() {
 }
 
 function PlusGlyph() {
-  return (
-    <Svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.4} strokeLinecap="round">
-      <Path d="M12 5v14M5 12h14" />
-    </Svg>
-  );
+  return <EngravedIcon name="plus" size={26} color={flColor.bronze300} />;
 }
 
 const styles = StyleSheet.create({

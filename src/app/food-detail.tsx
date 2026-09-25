@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -216,9 +216,7 @@ export default function FoodDetailScreen() {
                   router.push({ pathname: '/create-food', params: { food: food.key, mode: 'edit', date: iso, meal } })
                 }
               >
-                <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-                  <Path d="M4 20h4L19 9a2.8 2.8 0 10-4-4L4 16v4z" />
-                </Svg>
+                <EngravedIcon name="edit" size={19} color={flColor.gray400} />
               </Pressable>
             ) : null}
           <Pressable
@@ -232,17 +230,7 @@ export default function FoodDetailScreen() {
               refetchFavorites();
             }}
           >
-            <Svg
-              width={20}
-              height={20}
-              viewBox="0 0 24 24"
-              fill={isFavorite ? flColor.bronze400 : 'none'}
-              stroke={isFavorite ? flColor.bronze400 : flColor.gray400}
-              strokeWidth={1.7}
-              strokeLinejoin="round"
-            >
-              <Path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />
-            </Svg>
+            <EngravedIcon name="star" size={20} color={isFavorite ? undefined : flColor.gray400} />
           </Pressable>
           </View>
         }
@@ -275,9 +263,7 @@ export default function FoodDetailScreen() {
               style={styles.roundButton}
               onPress={() => setAmount(stepAmount(amount, -stepFor(unit)))}
             >
-              <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round">
-                <Path d="M5 12h14" />
-              </Svg>
+              <EngravedIcon name="minus" size={17} color={flColor.bronze400} />
             </Pressable>
 
             <View style={styles.amountWrap}>
@@ -298,9 +284,7 @@ export default function FoodDetailScreen() {
               style={styles.roundButton}
               onPress={() => setAmount(stepAmount(amount, stepFor(unit)))}
             >
-              <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round">
-                <Path d="M12 5v14M5 12h14" />
-              </Svg>
+              <EngravedIcon name="plus" size={17} color={flColor.bronze400} />
             </Pressable>
           </View>
 
@@ -345,19 +329,7 @@ export default function FoodDetailScreen() {
               onPress={() => setMoreOpen((v) => !v)}
             >
               <Text style={styles.sectionLabel}>More nutrients</Text>
-              <Svg
-                width={14}
-                height={14}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke={flColor.gray600}
-                strokeWidth={2.2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ transform: [{ rotate: moreOpen ? '180deg' : '0deg' }] }}
-              >
-                <Path d="M6 9l6 6 6-6" />
-              </Svg>
+              <EngravedIcon name={moreOpen ? 'chevron-up' : 'chevron-down'} size={14} color={flColor.gray600} />
             </Pressable>
             {moreOpen ? (
               <View>
@@ -385,9 +357,7 @@ export default function FoodDetailScreen() {
           <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
             <Text style={styles.mealLineLabel}>Adding to</Text>
             <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
-            <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M6 9l6 6 6-6" />
-            </Svg>
+            <EngravedIcon name="chevron-down" size={13} color={flColor.bronze400} />
           </Pressable>
         )}
         <Button variant="primary" fullWidth disabled={!macros || macros.kcal <= 0 || saving} onPress={add}>

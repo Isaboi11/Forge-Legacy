@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
@@ -445,37 +445,21 @@ export default function AddPhotoScreen() {
 // ── glyphs ──
 function MedalGlyph({ size = 20, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M12 2l2.6 7.1H22l-6 4.4 2.3 7.1-6.3-4.6-6.3 4.6 2.3-7.1-6-4.4h7.4z" />
-    </Svg>
+    <EngravedIcon name="medal" size={size} color={engravedTint(color)} />
   );
 }
 function CameraGlyph({ size = 22, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.2-2h8.2l1.2 2h2.2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z" />
-      <Path d="M15.2 13a3.2 3.2 0 1 1-6.4 0 3.2 3.2 0 0 1 6.4 0z" />
-    </Svg>
+    <EngravedIcon name="camera" size={size} color={engravedTint(color)} />
   );
 }
 function ChevronGlyph({ dir, size = 18, color = flColor.bronze300 }: { dir: 'left' | 'right'; size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={dir === 'left' ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6'} />
-    </Svg>
+    <EngravedIcon name={dir === 'left' ? 'chevron-left' : 'chevron-right'} size={size} color={color} />
   );
 }
 function StarGlyph({ filled, size = 19 }: { filled: boolean; size?: number }) {
-  const d = 'M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z';
-  return filled ? (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={flColor.bronze300}>
-      <Path d={d} />
-    </Svg>
-  ) : (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.7} strokeLinejoin="round">
-      <Path d={d} />
-    </Svg>
-  );
+  return <EngravedIcon name="star" size={size} color={filled ? undefined : flColor.gray600} />;
 }
 
 const styles = StyleSheet.create({

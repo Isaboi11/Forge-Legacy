@@ -2,8 +2,9 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
 
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -285,9 +286,7 @@ export default function WorkoutsScreen() {
           hitSlop={8}
           style={({ pressed }) => [styles.discoverBack, pressed ? styles.pressed : null]}
         >
-          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="square">
-            <Path d="M15 5l-7 7 7 7" />
-          </Svg>
+          <EngravedIcon name="chevron-left" size={16} color={flColor.bronze400} />
           <Text style={styles.discoverBackText}>Back</Text>
         </Pressable>
       ) : null}
@@ -508,10 +507,9 @@ export default function WorkoutsScreen() {
               <Text style={styles.heroTitle}>Find Your Next Program</Text>
               <Text style={styles.heroBody}>Search programs, single workouts, or browse by focus.</Text>
               <View style={styles.searchWrap}>
-                <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" style={styles.searchIcon}>
-                  <Circle cx={11} cy={11} r={7} />
-                  <Path d="M20 20l-3.2-3.2" />
-                </Svg>
+                <View style={styles.searchIcon}>
+                  <EngravedIcon name="search" size={17} color={flColor.gray600} />
+                </View>
                 <TextInput
                   style={styles.search}
                   value={query}
@@ -524,9 +522,7 @@ export default function WorkoutsScreen() {
                 />
                 {query ? (
                   <Pressable onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={10} style={styles.searchClear}>
-                    <Glyph size={16} color={flColor.gray400}>
-                      <Path d="M6 6l12 12M18 6L6 18" />
-                    </Glyph>
+                    <EngravedIcon name="close" size={16} color={flColor.gray400} />
                   </Pressable>
                 ) : null}
               </View>
@@ -734,60 +730,31 @@ function FirstRunDoor({ icon, title, sub, onPress }: { icon: ReactNode; title: s
   );
 }
 
-// ── inline glyphs (Forged DNA: square caps / miter joins on structural marks) ──
-function Glyph({ children, size = 20, color = flColor.bronze300 }: { children: ReactNode; size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      {children}
-    </Svg>
-  );
-}
+// ── inline glyphs ──
 function LightbulbIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z" />
-    </Svg>
-  );
+  return <EngravedIcon name="lightbulb" size={22} />;
 }
-function PlusIcon({ color = flColor.bronze400 }: { color?: string }) {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter">
-      <Path d="M12 6v12M6 12h12" />
-    </Svg>
-  );
+/** No colour → the engraved gradient (a door's subject); a colour → flat (the header control). */
+function PlusIcon({ color }: { color?: string }) {
+  return <EngravedIcon name="plus" size={22} color={color} />;
 }
 function StackIcon() {
-  return <Glyph><Path d="M12 3l9 4.5-9 4.5-9-4.5zM3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5" /></Glyph>;
+  return <EngravedIcon name="layers" size={20} />;
 }
 function TemplateIcon() {
-  return <Glyph><Path d="M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6" /></Glyph>;
+  return <EngravedIcon name="document" size={20} />;
 }
 function DumbbellIcon() {
-  return <Glyph><Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" /></Glyph>;
+  return <EngravedIcon name="dumbbell" size={20} />;
 }
 function HistoryIcon() {
-  return (
-    <Glyph>
-      <Path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-      <Path d="M3 4v4h4" />
-      <Path d="M12 8v4l3 2" />
-    </Glyph>
-  );
+  return <EngravedIcon name="history" size={20} />;
 }
 function HammerIcon() {
-  return (
-    <Glyph size={18} color={flColor.onBronze}>
-      <Path d="M13.5 4.5l6 6-2.5 2.5-6-6zM11 7L4 14M4 14l6 6M10 20l7-7" />
-    </Glyph>
-  );
+  return <EngravedIcon name="hammer" size={18} color={flColor.onBronze} />;
 }
 function CompassIcon() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={9} />
-      <Path d="M15.5 8.5l-2 5-5 2 2-5z" />
-    </Svg>
-  );
+  return <EngravedIcon name="compass" size={18} />;
 }
 /**
  * The heroes' background detail — a weight plate in outline, bronze at 7%, bled off the right edge.
@@ -807,16 +774,16 @@ function HeroPlate({ style }: { style: StyleProp<ViewStyle> }) {
   );
 }
 /** One mark per program family, for the focus chips. */
-const FOCUS_PATHS: Record<ProgramFamily, ReactNode> = {
-  Strength: <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />,
-  Conditioning: <Path d="M13 3l-7 10h5l-1 8 7-10h-5z" />,
-  'Muscle Building': <Path d="M5 19c0-5 2-9 5-11l2-4 3 1-1 4c3 1 5 4 5 7v3z" />,
-  'Full Body & Home': <Path d="M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5" />,
-  Mobility: <Path d="M12 5.5a1.5 1.5 0 1 0 0-.01M12 8v6M7 10l5-1 5 1M9 21l3-7 3 7" />,
-  Running: <Path d="M14 5.5a1.5 1.5 0 1 0 0-.01M9 20l2.5-5 3-2-1-4-3.5 2-1.5 3M14.5 9l3 2 1.5-1" />,
+const FOCUS_ICON: Record<ProgramFamily, EngravedName> = {
+  Strength: 'barbell',
+  Conditioning: 'lightning',
+  'Muscle Building': 'dumbbell',
+  'Full Body & Home': 'home',
+  Mobility: 'bodyweight',
+  Running: 'runner',
 };
 function FocusIcon({ family }: { family: ProgramFamily }) {
-  return <Glyph size={18}>{FOCUS_PATHS[family]}</Glyph>;
+  return <EngravedIcon name={FOCUS_ICON[family]} size={18} />;
 }
 
 const styles = StyleSheet.create({

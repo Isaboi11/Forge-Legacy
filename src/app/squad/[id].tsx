@@ -5,7 +5,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -57,6 +56,7 @@ import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker }
 import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { useQuery } from '@/lib/useQuery';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchPlannedWorkout, takePostedWorkout } from '@/data/planned-workout-live';
 import { useUnits } from '@/lib/settings';
 import { callerModalGone, useMediaPicker } from '@/lib/useMediaPicker';
@@ -1653,177 +1653,70 @@ function MemberRow({
 }
 
 function DotsIcon({ color = flColor.bronze400 }: { color?: string }) {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill={color}>
-      <Circle cx={12} cy={5} r={1.7} />
-      <Circle cx={12} cy={12} r={1.7} />
-      <Circle cx={12} cy={19} r={1.7} />
-    </Svg>
-  );
+  return <EngravedIcon name="more" size={17} color={color} />;
 }
 
 // ── glyphs ──
 function OverflowIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill={flColor.cream100}>
-      <Circle cx={12} cy={5} r={1.7} />
-      <Circle cx={12} cy={12} r={1.7} />
-      <Circle cx={12} cy={19} r={1.7} />
-    </Svg>
-  );
+  return <EngravedIcon name="more" size={22} color={flColor.cream100} />;
 }
 function PeopleIcon({ size = 15, color = flColor.gray400 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={9} cy={8} r={3.2} />
-      <Path d="M3.4 19a5.6 5.6 0 0 1 11.2 0" />
-      <Path d="M16 5.3a3.2 3.2 0 0 1 0 5.4" />
-      <Path d="M18.2 19a5.6 5.6 0 0 0-3-4.9" />
-    </Svg>
-  );
+  return <EngravedIcon name="people" size={size} color={engravedTint(color)} />;
 }
 function PencilIcon() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 20h9" />
-      <Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-    </Svg>
-  );
+  return <EngravedIcon name="edit" size={16} color={flColor.gray400} />;
 }
 function ChevronIcon({ color = flColor.bronze400 }: { color?: string }) {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 5l7 7-7 7" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-right" size={17} color={color} />;
 }
 function TargetIcon() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={8} />
-      <Circle cx={12} cy={12} r={4.6} />
-      <Circle cx={12} cy={12} r={1.3} />
-    </Svg>
-  );
+  return <EngravedIcon name="target" size={18} />;
 }
 function GearIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={3} />
-      <Path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </Svg>
-  );
+  return <EngravedIcon name="settings" size={20} />;
 }
 function ChevronRight({ color = flColor.gray600, size = 17 }: { color?: string; size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 5l7 7-7 7" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-right" size={size} color={color} />;
 }
 function HallCrownIcon() {
-  return (
-    <Svg width={21} height={21} viewBox="0 0 24 24" fill={flColor.onBronze}>
-      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
-    </Svg>
-  );
+  return <EngravedIcon name="crown" size={21} color={flColor.onBronze} />;
 }
 function ArrowUpIcon({ color = flColor.bronze400, size = 12 }: { color?: string; size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 19V5M6 11l6-6 6 6" />
-    </Svg>
-  );
+  return <EngravedIcon name="arrow-up" size={size} color={color} />;
 }
 function SwordsIcon() {
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M14.5 17.5 L3 6 L3 3 L6 3 L17.5 14.5" />
-      <Path d="M13 19 L19 13" />
-      <Path d="M14.5 6.5 L18 3 L21 3 L21 6 L17.5 9.5" />
-      <Path d="M5 14 L9 18" />
-    </Svg>
-  );
+  return <EngravedIcon name="swords" size={19} />;
 }
 function BookIcon() {
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 6.5C10.5 5 8.5 4.5 4 4.5v13c4.5 0 6.5.5 8 2 1.5-1.5 3.5-2 8-2v-13c-4.5 0-6.5.5-8 2z" />
-      <Path d="M12 6.5v13" />
-    </Svg>
-  );
+  return <EngravedIcon name="book" size={19} />;
 }
 function InviteIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={9} cy={8} r={3.4} />
-      <Path d="M3.5 20a5.5 5.5 0 0 1 11 0" />
-      <Path d="M18 7v6M15 10h6" />
-    </Svg>
-  );
+  return <EngravedIcon name="user-plus" size={20} />;
 }
 function CrownIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill={flColor.bronze300}>
-      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
-    </Svg>
-  );
+  return <EngravedIcon name="crown" size={20} />;
 }
 function TrashIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.redMuted} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 7h16" />
-      <Path d="M9 7V5h6v2" />
-      <Path d="M6.5 7l1 13h9l1-13" />
-      <Path d="M10 11v6M14 11v6" />
-    </Svg>
-  );
+  return <EngravedIcon name="trash" size={20} color={flColor.redMuted} />;
 }
 
 function PlusGlyph({ size = 14 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 5v14M5 12h14" />
-    </Svg>
-  );
+  return <EngravedIcon name="plus" size={size} color={flColor.bronze300} />;
 }
 function ChevronDownGlyph() {
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6 9l6 6 6-6" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-down" size={14} color={flColor.gray400} />;
 }
 function BannerGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6 3h12v16l-6-4-6 4z" />
-      <Path d="M9 8h6" />
-    </Svg>
-  );
+  return <EngravedIcon name="banner" size={size} color={engravedTint(color)} />;
 }
 function PlayMini() {
-  return (
-    <Svg width={11} height={11} viewBox="0 0 24 24" fill={flColor.cream100}>
-      <Path d="M8 5v14l11-7z" />
-    </Svg>
-  );
+  return <EngravedIcon name="play" size={11} color={flColor.cream100} />;
 }
 function VideoPlusGlyph() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M3.5 7.5h9v9h-9z" />
-      <Path d="M12.5 10.5l5-2.6v8.2l-5-2.6" />
-      <Path d="M6 9.5v5M8.5 12h-5" />
-    </Svg>
-  );
+  return <EngravedIcon name="video" size={22} />;
 }
 function CloseX({ size = 22 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6 6l12 12M18 6L6 18" />
-    </Svg>
-  );
+  return <EngravedIcon name="close" size={size} color={flColor.cream100} />;
 }
 const styles = StyleSheet.create({
   root: { flex: 1 },

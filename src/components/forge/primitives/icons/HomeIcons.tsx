@@ -9,12 +9,17 @@
  * §11.3) but is not yet integrated into the codebase — this local set keeps
  * Home pixel-faithful to the approved design without inventing a bespoke
  * one-off per screen. Fold into a full Phosphor integration when that lands.
+ *
+ * ⭐ 2026-09-25: the everyday glyphs (chevron, barbell, calendar, squad, friends, flame) now draw from
+ * the PO's engraved set via `EngravedIcon`. The plan sheet and the Forge mark have no engraved twin and
+ * keep their own drawing.
  */
 
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
-import Svg, { Circle, Defs, LinearGradient, Path, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg'
+import Svg, { Defs, LinearGradient, Path, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg'
 import { flColor } from '@/constants/foundation'
+import { EngravedIcon, engravedTint } from './EngravedIcon'
 
 export interface HomeIconProps {
   size?: number
@@ -22,11 +27,7 @@ export interface HomeIconProps {
 }
 
 export function ChevronRightIcon({ size = 20, color = flColor.gray600 }: HomeIconProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M9 6l6 6-6 6" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8} />
-    </Svg>
-  )
+  return <EngravedIcon name="chevron-right" size={size} color={color} />
 }
 
 /**
@@ -62,75 +63,23 @@ export function PlanSheetIcon({ size = 21, color = flColor.bronze400 }: HomeIcon
 }
 
 export function BarbellIcon({ size = 21, color = flColor.bronze400 }: HomeIconProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="square"
-        strokeLinejoin="miter" strokeMiterlimit={8}
-      />
-    </Svg>
-  )
+  return <EngravedIcon name="barbell" size={size} color={engravedTint(color)} />
 }
 
 export function CalendarIcon({ size = 21, color = flColor.bronze400 }: HomeIconProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Rect x={4} y={5} width={16} height={15} rx={2.5} stroke={color} strokeWidth={2} />
-      <Path
-        d="M4 9.5h16M8.5 3v4M15.5 3v4"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="square"
-        strokeLinejoin="miter" strokeMiterlimit={8}
-      />
-    </Svg>
-  )
+  return <EngravedIcon name="calendar" size={size} color={engravedTint(color)} />
 }
 
 export function SquadIcon({ size = 27, color = flColor.bronze400 }: HomeIconProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M12 3.6c-2.3.3-3.1 2-3.1 3.6M12 3.6c2.3.3 3.1 2 3.1 3.6M6 13a6 6 0 0 1 12 0M6 13v2.4a4 4 0 0 0 2.6 3.7M18 13v2.4a4 4 0 0 1-2.6 3.7M12 7.2v9.3M9 12.6h6"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="square"
-        strokeLinejoin="miter" strokeMiterlimit={8}
-      />
-    </Svg>
-  )
+  return <EngravedIcon name="people" size={size} color={engravedTint(color)} />
 }
 
 export function FriendsIcon({ size = 25, color = flColor.gray600 }: HomeIconProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx={9} cy={8} r={3} stroke={color} strokeWidth={2} />
-      <Path
-        d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6M17.5 20a6 6 0 0 0-2-4.5"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="square"
-        strokeLinejoin="miter" strokeMiterlimit={8}
-      />
-    </Svg>
-  )
+  return <EngravedIcon name="partners" size={size} color={engravedTint(color)} />
 }
 
 export function FlameIcon({ size = 18, color = '#E0913F' }: HomeIconProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="square"
-        strokeLinejoin="miter" strokeMiterlimit={8}
-      />
-    </Svg>
-  )
+  return <EngravedIcon name="flame" size={size} color={engravedTint(color)} />
 }
 
 /**

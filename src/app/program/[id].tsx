@@ -1,13 +1,13 @@
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
 import { AskHoltSheet } from '@/components/forge/AskHoltSheet';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ReorderWeekSheet } from '@/components/forge/ReorderWeekSheet';
 import { ScreenBackground } from '@/components/screen-background';
@@ -109,16 +109,14 @@ import { equipmentLabel } from '@/components/forge/EquipIcon';
  * successor graph these authored programs don't have.
  */
 
-const CHEVRON = 'M6 9l6 6 6-6';
-
 /** A saved program's id is a uuid; a catalog program's is its definition slug. */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function Glyph({ d, size = 16, color, width = 2, flip = false }: { d: string; size?: number; color: string; width?: number; flip?: boolean }) {
+function Glyph({ name, size = 16, color, flip = false }: { name: EngravedName; size?: number; color: string; flip?: boolean }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" style={flip ? styles.flip : undefined}>
-      <Path d={d} />
-    </Svg>
+    <View style={flip ? styles.flip : undefined}>
+      <EngravedIcon name={name} size={size} color={engravedTint(color)} />
+    </View>
   );
 }
 
@@ -1350,7 +1348,7 @@ export default function ProgramDetailScreen() {
                 <Text style={styles.swapName} numberOfLines={1}>
                   {dayLabel(d, di)}
                 </Text>
-                <Glyph d={CHEVRON} color={flColor.gray600} />
+                <Glyph name="chevron-down" color={flColor.gray600} />
               </Pressable>
             ));
           })()}
@@ -1553,7 +1551,7 @@ function WeekCard({
         style={[styles.weekHead, current && styles.weekHeadCurrent]}
       >
         {week.complete ? (
-          <Glyph d="M20 6L9 17l-5-5" color={flColor.greenMuted} width={2.4} />
+          <Glyph name="check" color={flColor.greenMuted} />
         ) : current ? (
           <View style={styles.currentDot} />
         ) : (
@@ -1561,7 +1559,7 @@ function WeekCard({
         )}
         <Text style={[styles.weekLabel, current && styles.weekLabelCurrent]}>Week {week.week}</Text>
         <Text style={[styles.weekMeta, week.complete && styles.weekMetaDone]}>{meta}</Text>
-        <Glyph d={CHEVRON} color={flColor.gray600} flip={open} />
+        <Glyph name="chevron-down" color={flColor.gray600} flip={open} />
       </Pressable>
 
       {open ? (
@@ -1576,7 +1574,7 @@ function WeekCard({
               accessibilityLabel={`Reorder the sessions in week ${week.week}`}
               style={styles.weekReorder}
             >
-              <Glyph d="M4 9h16M4 15h16" color={flColor.bronze300} width={2} />
+              <Glyph name="reorder" color={flColor.bronze300} />
               <Text style={styles.weekReorderText}>Reorder this week</Text>
             </Pressable>
           ) : null}
@@ -1612,7 +1610,7 @@ function WeekCard({
                       while both are in the same index space, and `buildLog` now files by mark, so one
                       source is one fewer thing that can drift. */}
                   {d.skipped ? <Text style={styles.skippedChip}>Skipped</Text> : null}
-                  <Glyph d={CHEVRON} color={flColor.gray600} flip={dayOpen} />
+                  <Glyph name="chevron-down" color={flColor.gray600} flip={dayOpen} />
                 </Pressable>
 
                 {/* Any OUTSTANDING session can be trained or passed over, not just the next one in line

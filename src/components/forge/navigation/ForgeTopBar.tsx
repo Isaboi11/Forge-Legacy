@@ -14,7 +14,8 @@ import {
   Text,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
+import { FeatherNameIcon } from '@/components/forge/FeatherNameIcon'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { color, space } from '@/constants/tokens'
 import { NAV } from './_navigationTokens'
@@ -97,7 +98,7 @@ export function ForgeTopBar({
               accessibilityRole="button"
               style={({ pressed }) => [styles.circularBtn, pressed && styles.circularBtnPressed]}
             >
-              <Feather name={action.iconName as 'search'} size={NAV.ICON_TOP} color={color.text.primary} />
+              <FeatherNameIcon name={action.iconName} size={NAV.ICON_TOP} color={color.text.primary} />
             </Pressable>
           ))}
         </View>
@@ -121,7 +122,7 @@ export function ForgeTopBar({
               accessibilityRole="button"
               style={({ pressed }) => [styles.iconBtn, pressed && styles.iconPressed]}
             >
-              <Feather name="chevron-left" size={NAV.ICON_BACK} color={color.text.primary} />
+              <EngravedIcon name="chevron-left" size={NAV.ICON_BACK} color={color.text.primary} />
             </Pressable>
           ) : null}
           <View style={styles.flex} />
@@ -152,7 +153,7 @@ export function ForgeTopBar({
           </View>
           {showAvatar ? (
             <View style={styles.avatar}>
-              <Feather name="user" size={20} color={color.text.secondary} />
+              <EngravedIcon name="user" size={20} color={color.text.secondary} />
             </View>
           ) : null}
           {_renderTrailing(trailingActions, showSearch, showNotification, notificationCount, loading)}
@@ -229,12 +230,12 @@ function _renderTrailing(
       {loading && <ActivityIndicator size="small" color={color.accent.primary} />}
       {showSearch && (
         <View style={styles.iconBtn}>
-          <Feather name="search" size={NAV.ICON_TOP} color={color.text.primary} />
+          <EngravedIcon name="search" size={NAV.ICON_TOP} color={color.text.primary} />
         </View>
       )}
       {showNotification && (
         <View style={[styles.iconBtn, { position: 'relative' }]}>
-          <Feather name="bell" size={NAV.ICON_TOP} color={color.text.primary} />
+          <EngravedIcon name="bell" size={NAV.ICON_TOP} color={color.text.primary} />
           {(notificationCount !== undefined && notificationCount > 0) || true ? (
             <View style={styles.dotBadge} />
           ) : null}
@@ -248,7 +249,7 @@ function _renderTrailing(
           accessibilityRole="button"
           style={({ pressed }) => [styles.iconBtn, pressed && styles.iconPressed]}
         >
-          <Feather name={action.iconName as 'more-vertical'} size={NAV.ICON_TOP} color={color.text.primary} />
+          <FeatherNameIcon name={action.iconName} size={NAV.ICON_TOP} color={color.text.primary} />
           {action.badge && <View style={styles.dotBadge} />}
         </Pressable>
       ))}

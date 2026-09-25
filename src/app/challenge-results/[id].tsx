@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { CrownArt } from '@/components/forge/compositions/CrownArt';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -452,11 +452,7 @@ function BadgeRow({ badge: b }: { badge: ChallengeBadge }) {
 }
 
 function FlameGlyph({ size = 18, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />
-    </Svg>
-  );
+  return <EngravedIcon name="flame" size={size} color={engravedTint(color)} />;
 }
 
 function Closing({ result: r, onBack }: { result: ChallengeResultsDetail; onBack: () => void }) {
@@ -514,78 +510,34 @@ const MEDAL_COPPER = '#B07C4E';
 
 // ── glyphs ──
 function CrownGlyph({ size = 15, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
-    </Svg>
-  );
+  return <EngravedIcon name="crown" size={size} color={engravedTint(color)} />;
 }
 function MedalGlyph({ size = 20, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={14.5} r={4.8} />
-      <Circle cx={12} cy={14.5} r={1.8} />
-      <Path d="M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4" />
-    </Svg>
-  );
+  return <EngravedIcon name="medal" size={size} color={engravedTint(color)} />;
 }
 function DumbbellGlyph({ size = 20, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
-    </Svg>
-  );
+  return <EngravedIcon name="dumbbell" size={size} color={engravedTint(color)} />;
 }
 function SquadGlyph({ size = 20, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={9} cy={8} r={3.2} />
-      <Path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5" />
-      <Path d="M16 6.5a3 3 0 0 1 0 5.6M17.5 19c0-2.2-.8-3.8-2-4.8" />
-    </Svg>
-  );
+  return <EngravedIcon name="people" size={size} color={engravedTint(color)} />;
 }
 function SparkGlyph({ size = 20, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18" />
-    </Svg>
-  );
+  return <EngravedIcon name="spark" size={size} color={engravedTint(color)} />;
 }
 function CalendarGlyph({ size = 15, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 6.5h16v14H4zM4 10.5h16M8.5 3.5v4M15.5 3.5v4" />
-    </Svg>
-  );
+  return <EngravedIcon name="calendar" size={size} color={engravedTint(color)} />;
 }
 function ShieldGlyph({ size = 18, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3l7.5 3v6c0 4.4-3.1 8.1-7.5 9.4C7.6 20.1 4.5 16.4 4.5 12V6L12 3z" />
-    </Svg>
-  );
+  return <EngravedIcon name="shield" size={size} color={engravedTint(color)} />;
 }
 function ArrowUpGlyph({ size = 18, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 19V5M6 11l6-6 6 6" />
-    </Svg>
-  );
+  return <EngravedIcon name="rank-up" size={size} color={engravedTint(color)} />;
 }
 function BookGlyph({ size = 16, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 4.5h6a2.5 2.5 0 0 1 2.5 2.5v13a2 2 0 0 0-2-2H4zM20 4.5h-6A2.5 2.5 0 0 0 11.5 7v13a2 2 0 0 1 2-2H20z" />
-    </Svg>
-  );
+  return <EngravedIcon name="book" size={size} color={engravedTint(color)} />;
 }
 function SwordsGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M14.5 14.5L21 21M19 3l-9 9M5 3l9 9M9.5 14.5L3 21" />
-    </Svg>
-  );
+  return <EngravedIcon name="swords" size={size} color={engravedTint(color)} />;
 }
 
 const styles = StyleSheet.create({

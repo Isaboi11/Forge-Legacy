@@ -17,7 +17,8 @@ import {
   Text,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
+import { FeatherNameIcon } from '@/components/forge/FeatherNameIcon'
 import { color } from '@/constants/tokens'
 import { NAV } from './_navigationTokens'
 import type { ForgeOverflowMenuProps, MenuItem, MenuItemVariant } from './types'
@@ -125,7 +126,7 @@ function Trigger({
         style={({ pressed }) => [styles.dropdownTrigger, pressed && styles.triggerPressed]}
       >
         <Text style={styles.dropdownTriggerLabel}>{label}</Text>
-        <Feather name="chevron-down" size={18} color={color.text.primary} />
+        <EngravedIcon name="chevron-down" size={18} color={color.text.primary} />
       </Pressable>
     )
   }
@@ -138,7 +139,7 @@ function Trigger({
       accessibilityRole="button"
       style={({ pressed }) => [styles.dotsTrigger, pressed && styles.triggerPressed]}
     >
-      <Feather name={iconName} size={NAV.ICON_TOP} color={color.text.primary} />
+      <FeatherNameIcon name={iconName} size={NAV.ICON_TOP} color={color.text.primary} />
     </Pressable>
   )
 }
@@ -210,8 +211,8 @@ function MenuItemRow({
       ]}
     >
       {item.iconName ? (
-        <Feather
-          name={item.iconName as 'edit'}
+        <FeatherNameIcon
+          name={item.iconName}
           size={NAV.ICON_MENU}
           color={isSelected ? color.accent.primary : isDestructive ? color.destructive : color.text.secondary}
         />

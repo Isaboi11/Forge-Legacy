@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -19,6 +18,7 @@ import { useToast } from '@/hooks/useCeremony';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { itemByKey } from '@/domain/exercise-picker/data';
 import { ExercisePoster } from '@/components/forge/ExercisePoster';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import {
   deleteTemplate,
   duplicateTemplate,
@@ -70,44 +70,18 @@ import {
  * attributes, so the parser dropped the second and its hover never applied at all.
  */
 
-/** The equipment glyph, engraved in its disc. Mirrors the design's five hand-authored shapes. */
+/** The equipment glyph, engraved in its disc. Bodyweight, Cardio, and anything unmapped get the figure. */
 function EquipGlyph({ cls }: { cls: string }) {
-  const p = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-  if (cls === 'Free Weight') {
-    return (
-      <Svg width={18} height={18} viewBox="0 0 24 24">
-        <Path d="M6.5 9v6" {...p} /><Path d="M17.5 9v6" {...p} /><Path d="M4 10.5v3" {...p} /><Path d="M20 10.5v3" {...p} /><Path d="M6.5 12h11" {...p} />
-      </Svg>
-    );
-  }
-  if (cls === 'Machine') {
-    return (
-      <Svg width={18} height={18} viewBox="0 0 24 24">
-        <Path d="M5 3v18" {...p} /><Path d="M5 7h9a3 3 0 0 1 0 6H9" {...p} /><Path d="M9 13v5" {...p} />
-      </Svg>
-    );
-  }
-  if (cls === 'Accessory' || cls === 'Conditioning') {
-    return (
-      <Svg width={18} height={18} viewBox="0 0 24 24">
-        <Path d="M12 3v6" {...p} /><Path d="M8.5 9h7l-1 5a2.5 2.5 0 0 1-5 0z" {...p} />
-      </Svg>
-    );
-  }
-  // Bodyweight, Cardio, and anything unmapped — the figure, head first.
   return (
-    <Svg width={18} height={18} viewBox="0 0 24 24">
-      <Circle cx={12} cy={6} r={2.4} {...p} /><Path d="M6 20c0-4.2 2.8-7 6-7s6 2.8 6 7" {...p} />
-    </Svg>
+    <EngravedIcon
+      name={cls === 'Free Weight' ? 'dumbbell' : cls === 'Machine' ? 'machine' : cls === 'Accessory' || cls === 'Conditioning' ? 'cable' : 'bodyweight'}
+      size={18}
+    />
   );
 }
 
 function Chevron({ size = 15 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path d="M9 6l6 6-6 6" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-right" size={size} color={flColor.gray600} />;
 }
 
 export default function TemplateDetailScreen() {
@@ -317,9 +291,7 @@ export default function TemplateDetailScreen() {
               onPress={() => void start()}
               accessibilityLabel="Start this workout"
               icon={
-                <Svg width={14} height={14} viewBox="0 0 24 24">
-                  <Path d="M7 5l12 7-12 7z" fill={flColor.cream100} />
-                </Svg>
+                <EngravedIcon name="play" size={14} color={flColor.cream100} />
               }
             >
               Start Workout
@@ -331,10 +303,7 @@ export default function TemplateDetailScreen() {
                 accessibilityLabel="Edit this template"
                 style={({ pressed }) => [styles.secondaryBtn, pressed ? styles.pressed : null]}
               >
-                <Svg width={15} height={15} viewBox="0 0 24 24">
-                  <Path d="M12 20h9" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" />
-                  <Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" />
-                </Svg>
+                <EngravedIcon name="edit" size={15} color={flColor.gray400} />
                 <Text style={styles.secondaryText}>Edit</Text>
               </Pressable>
               <Pressable
@@ -343,10 +312,7 @@ export default function TemplateDetailScreen() {
                 accessibilityLabel="Duplicate this template"
                 style={({ pressed }) => [styles.secondaryBtn, pressed ? styles.pressed : null]}
               >
-                <Svg width={15} height={15} viewBox="0 0 24 24">
-                  <Path d="M9 9h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinejoin="round" />
-                  <Path d="M5 15V5a2 2 0 0 1 2-2h10" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" />
-                </Svg>
+                <EngravedIcon name="copy" size={15} color={flColor.gray400} />
                 <Text style={styles.secondaryText}>Duplicate</Text>
               </Pressable>
               <Pressable
@@ -355,11 +321,7 @@ export default function TemplateDetailScreen() {
                 accessibilityLabel="More actions"
                 style={({ pressed }) => [styles.moreBtn, pressed ? styles.pressed : null]}
               >
-                <Svg width={18} height={18} viewBox="0 0 24 24">
-                  <Circle cx={5} cy={12} r={1.7} fill={flColor.gray400} />
-                  <Circle cx={12} cy={12} r={1.7} fill={flColor.gray400} />
-                  <Circle cx={19} cy={12} r={1.7} fill={flColor.gray400} />
-                </Svg>
+                <EngravedIcon name="more" size={18} color={flColor.gray400} />
               </Pressable>
             </View>
           </View>
@@ -383,10 +345,7 @@ export default function TemplateDetailScreen() {
           accessibilityLabel="Rename template"
           style={({ pressed }) => [styles.moreRow, pressed ? styles.pressed : null]}
         >
-          <Svg width={18} height={18} viewBox="0 0 24 24">
-            <Path d="M12 20h9" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" />
-            <Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
+          <EngravedIcon name="edit" size={18} color={flColor.gray400} />
           <Text style={styles.moreRowText}>Rename template</Text>
         </Pressable>
         <Pressable
@@ -398,9 +357,7 @@ export default function TemplateDetailScreen() {
           accessibilityLabel="Delete template"
           style={({ pressed }) => [styles.destructiveRow, pressed ? styles.pressed : null]}
         >
-          <Svg width={18} height={18} viewBox="0 0 24 24">
-            <Path d="M5 7h14M9 7V5h6v2M8 7l1 13h6l1-13" fill="none" stroke={flColor.redMuted} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
+          <EngravedIcon name="trash" size={18} color={flColor.redMuted} />
           <Text style={styles.destructiveText}>Delete template</Text>
         </Pressable>
         <Pressable onPress={() => setMoreOpen(false)} accessibilityRole="button" accessibilityLabel="Cancel" style={styles.cancelRow}>

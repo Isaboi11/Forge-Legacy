@@ -3,13 +3,14 @@ import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, Share, Sty
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SquadCrest } from '@/components/forge/SquadCrest';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchSquadInvite, regenerateSquadCode } from '@/data/squad-live';
 import { fetchMyReferralCode } from '@/data/referral-live';
 import { referralLinkFor } from '@/domain/referral/referral-core';
@@ -398,73 +399,28 @@ function QrImage({ matrix, size: maxSize }: { matrix: QrMatrix; size: number }) 
 
 // ── glyphs ──
 function ClockIcon() {
-  return (
-    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={8.5} />
-      <Path d="M12 7v5l3.5 2" />
-    </Svg>
-  );
+  return <EngravedIcon name="clock" size={12} />;
 }
 function CopyIcon() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 9h10v10H9z" />
-      <Path d="M5 15V5h10" />
-    </Svg>
-  );
+  return <EngravedIcon name="copy" size={17} color={flColor.bronze300} />;
 }
 function RefreshIcon() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 12a8 8 0 0 1 13.7-5.7L20 8" />
-      <Path d="M20 4v4h-4" />
-      <Path d="M20 12a8 8 0 0 1-13.7 5.7L4 16" />
-      <Path d="M4 20v-4h4" />
-    </Svg>
-  );
+  return <EngravedIcon name="refresh" size={16} color={flColor.gray400} />;
 }
 function LinkIcon() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9.5 14.5l5-5" />
-      <Path d="M8 12l-2 2a3 3 0 0 0 4.2 4.2l2-2" />
-      <Path d="M16 12l2-2a3 3 0 0 0-4.2-4.2l-2 2" />
-    </Svg>
-  );
+  return <EngravedIcon name="link" size={18} />;
 }
 function CheckIcon({ color = flColor.bronze300 }: { color?: string }) {
-  return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4 4 10-10" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={15} color={color} />;
 }
 function ShareGlyph() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={18} cy={5} r={2.6} />
-      <Circle cx={6} cy={12} r={2.6} />
-      <Circle cx={18} cy={19} r={2.6} />
-      <Path d="M8.3 10.7l7.4-4.4M8.3 13.3l7.4 4.4" />
-    </Svg>
-  );
+  return <EngravedIcon name="share" size={22} />;
 }
 function MessageGlyph() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 5.5h16v11H9l-4 3z" />
-    </Svg>
-  );
+  return <EngravedIcon name="chat" size={22} />;
 }
 function QrGlyph() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 4h6v6H4z" />
-      <Path d="M14 4h6v6h-6z" />
-      <Path d="M4 14h6v6H4z" />
-      <Path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z" />
-    </Svg>
-  );
+  return <EngravedIcon name="qr-code" size={22} />;
 }
 
 const styles = StyleSheet.create({

@@ -8,7 +8,7 @@
 
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color, space } from '@/constants/tokens'
 import { NAV } from './_navigationTokens'
 import type { ForgeStepNavigationProps, Step } from './types'
@@ -251,7 +251,7 @@ function StepCircle({ step, size }: { step: Step; size: number }) {
       isDisabled  && sc.circleDisabled,
     ]}>
       {isCompleted ? (
-        <Feather name="check" size={size * 0.55} color={color.text.inverse} strokeWidth={2.4} />
+        <EngravedIcon name="check" size={size * 0.55} color={color.text.inverse} />
       ) : null}
       {isCurrent && (
         <View style={sc.ringOuter} />
@@ -275,7 +275,7 @@ function NumberCircle({ step, index, size }: { step: Step; index: number; size: 
       isDisabled  && sc.circleDisabled,
     ]}>
       {isCompleted ? (
-        <Feather name="check" size={size * 0.5} color={color.text.inverse} />
+        <EngravedIcon name="check" size={size * 0.5} color={color.text.inverse} />
       ) : (
         <Text style={[
           sc.indexText,

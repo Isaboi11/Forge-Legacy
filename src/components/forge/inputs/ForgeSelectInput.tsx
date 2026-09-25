@@ -17,7 +17,7 @@ import {
   Text,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color } from '@/constants/tokens'
 import { INP } from './_inputTokens'
 import { getBorderColor, getBgColor, getGlow, getHelperColor, resolveHelper } from './_inputUtils'
@@ -127,10 +127,10 @@ export function ForgeSelectInput({
             {displayText}
           </Text>
           {showLoading && <ActivityIndicator size="small" color={color.accent.primary} />}
-          {showSuccess && <Feather name="check" size={INP.ICON_SIZE} color={color.accent.primary} />}
-          {showError && <Feather name="alert-circle" size={INP.ICON_SIZE} color={color.danger} />}
+          {showSuccess && <EngravedIcon name="check" size={INP.ICON_SIZE} color={color.accent.primary} />}
+          {showError && <EngravedIcon name="warning" size={INP.ICON_SIZE} color={color.danger} />}
           {showChevron && (
-            <Feather
+            <EngravedIcon
               name={isOpen ? 'chevron-up' : 'chevron-down'}
               size={INP.ICON_SIZE}
               color={color.text.secondary}
@@ -182,7 +182,7 @@ export function ForgeSelectInput({
                           {opt.label}
                         </Text>
                         {isSelected && (
-                          <Feather
+                          <EngravedIcon
                             name="check"
                             size={16}
                             color={color.accent.primary}

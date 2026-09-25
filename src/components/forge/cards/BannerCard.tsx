@@ -16,7 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon'
 import { LinearGradient } from 'expo-linear-gradient'
 import { color, space } from '@/constants/tokens'
 import { CARD } from './_cardTokens'
@@ -29,12 +29,12 @@ export interface BannerCardProps {
   onCTAPress?: () => void
   onDismiss?: () => void
   /** Custom icon; defaults vary per variant */
-  iconName?: React.ComponentProps<typeof Feather>['name']
+  iconName?: EngravedName
   variant?: BannerVariant
 }
 
 const VARIANT_CONFIG: Record<BannerVariant, {
-  icon: React.ComponentProps<typeof Feather>['name']
+  icon: EngravedName
   accentColor: string
   bgStart: string
   bgEnd: string
@@ -61,7 +61,7 @@ const VARIANT_CONFIG: Record<BannerVariant, {
     textColor: color.info,
   },
   warning: {
-    icon: 'alert-triangle',
+    icon: 'warning',
     accentColor: color.warning,
     bgStart: CARD.BANNER_WARNING_BG,
     bgEnd: 'rgba(200,169,126,0)',
@@ -70,7 +70,7 @@ const VARIANT_CONFIG: Record<BannerVariant, {
     textColor: color.warning,
   },
   success: {
-    icon: 'check-circle',
+    icon: 'check',
     accentColor: color.success,
     bgStart: CARD.BANNER_SUCCESS_BG,
     bgEnd: 'rgba(90,158,104,0)',
@@ -79,7 +79,7 @@ const VARIANT_CONFIG: Record<BannerVariant, {
     textColor: color.success,
   },
   error: {
-    icon: 'alert-circle',
+    icon: 'warning',
     accentColor: color.danger,
     bgStart: CARD.BANNER_ERROR_BG,
     bgEnd: 'rgba(168,82,82,0)',
@@ -127,9 +127,9 @@ export function BannerCard({
       {/* Leading icon */}
       <View style={[styles.iconBox, { backgroundColor: cfg.iconBg }]}>
         {variant === 'bronze' ? (
-          <Feather name={icon} size={22} color={color.text.inverse} />
+          <EngravedIcon name={icon} size={22} color={color.text.inverse} />
         ) : (
-          <Feather name={icon} size={22} color={cfg.accentColor} />
+          <EngravedIcon name={icon} size={22} color={cfg.accentColor} />
         )}
       </View>
 
@@ -144,14 +144,14 @@ export function BannerCard({
         {ctaLabel ? (
           <TouchableOpacity onPress={onCTAPress} style={styles.ctaRow}>
             <Text style={[styles.ctaLabel, { color: cfg.accentColor }]}>{ctaLabel}</Text>
-            <Feather name="arrow-right" size={12} color={cfg.accentColor} />
+            <EngravedIcon name="arrow-right" size={12} color={cfg.accentColor} />
           </TouchableOpacity>
         ) : null}
       </View>
 
       {/* Dismiss */}
       <Pressable onPress={handleDismiss} hitSlop={10} style={styles.dismiss}>
-        <Feather name="x" size={16} color={color.text.tertiary} />
+        <EngravedIcon name="close" size={16} color={color.text.tertiary} />
       </Pressable>
     </View>
   )

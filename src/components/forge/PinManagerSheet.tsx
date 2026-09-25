@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flRadius } from '@/constants/foundation';
 import { fetchPinManager, pinCandidate, unpin } from '@/data/legacy-pins-live';
 import { canPinMore, pinCountLabel, pinFor, type PinCandidate, type PinRef } from '@/domain/legacy/pins';
@@ -92,9 +92,9 @@ export function PinManagerSheet({ open, onClose }: { open: boolean; onClose: (ch
                   >
                     <Text style={styles.sectionLabel}>{g.label}</Text>
                     <Text style={styles.sectionCount}>{g.items.length}</Text>
-                    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ transform: [{ rotate: isCollapsed ? '-90deg' : '0deg' }] }}>
-                      <Path d="M6 9l6 6 6-6" />
-                    </Svg>
+                    <View style={{ transform: [{ rotate: isCollapsed ? '-90deg' : '0deg' }] }}>
+                      <EngravedIcon name="chevron-down" size={14} color={flColor.bronze400} />
+                    </View>
                   </Pressable>
 
                   {isCollapsed
@@ -124,9 +124,7 @@ export function PinManagerSheet({ open, onClose }: { open: boolean; onClose: (ch
                               </Text>
                             </View>
                             <View style={[styles.mark, pinned && styles.markOn]}>
-                              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={pinned ? flColor.onBronze : flColor.bronze300} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-                                <Path d={pinned ? 'M5 12.5l4.5 4.5L19 6.5' : 'M12 5v14M5 12h14'} />
-                              </Svg>
+                              <EngravedIcon name={pinned ? 'check' : 'plus'} size={14} color={pinned ? flColor.onBronze : flColor.bronze300} />
                             </View>
                           </Pressable>
                         );

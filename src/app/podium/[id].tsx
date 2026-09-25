@@ -4,10 +4,11 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Defs, FeTurbulence, Filter, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, FeTurbulence, Filter, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { initials } from '@/components/forge/composites/Avatar/AvatarGlyph';
 import { ScreenBackground } from '@/components/screen-background';
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { CHALLENGE_TYPES, fetchChallengeResults, formatScore, type ChallengeResultsDetail, type FinalStanding } from '@/data/challenges-live';
 import { markPodiumSeen } from '@/lib/podium-seen';
@@ -761,25 +762,17 @@ function CrownGlyph({ size = 42, color = flColor.bronze300 }: { size?: number; c
 }
 function MedalGlyph({ size = 20, color }: { size?: number; color: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={14.5} r={4.8} />
-      <Circle cx={12} cy={14.5} r={1.8} />
-      <Path d="M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4" />
-    </Svg>
+    <EngravedIcon name="medal" size={size} color={engravedTint(color)} />
   );
 }
 function ChevronsGlyph({ size = 15, color = flColor.gray600 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6 5l7 7-7 7M13 5l7 7-7 7" />
-    </Svg>
+    <EngravedIcon name="skip" size={size} color={color} />
   );
 }
 function ArrowGlyph({ size = 18, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12h14M13 6l6 6-6 6" />
-    </Svg>
+    <EngravedIcon name="arrow-right" size={size} color={color} />
   );
 }
 

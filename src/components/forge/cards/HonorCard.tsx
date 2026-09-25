@@ -12,7 +12,7 @@
 
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon'
 import { LinearGradient } from 'expo-linear-gradient'
 import { color, space, shadow } from '@/constants/tokens'
 import { CARD } from './_cardTokens'
@@ -21,8 +21,8 @@ import type { HonorCardState } from './types'
 export interface HonorCardProps {
   name: string
   category?: string
-  /** Icon name (Feather) rendered inside the badge circle */
-  iconName?: React.ComponentProps<typeof Feather>['name']
+  /** Engraved icon name rendered inside the badge circle */
+  iconName?: EngravedName
   state?: HonorCardState
   onPress?: () => void
 }
@@ -30,7 +30,7 @@ export interface HonorCardProps {
 export function HonorCard({
   name,
   category,
-  iconName = 'award',
+  iconName = 'medal',
   state = 'locked',
   onPress,
 }: HonorCardProps) {
@@ -85,12 +85,12 @@ export function HonorCard({
             style={styles.badge}
           >
             <View style={[styles.badgeGlow, isFeatured && styles.badgeGlowFeatured]} />
-            <Feather name={iconName} size={28} color={badgeIconColor} />
+            <EngravedIcon name={iconName} size={28} color={badgeIconColor} />
           </LinearGradient>
         ) : (
           <View style={[styles.badge, styles.badgeLocked]}>
-            <Feather
-              name={isHidden ? 'help-circle' : 'lock'}
+            <EngravedIcon
+              name={isHidden ? 'eye-off' : 'lock'}
               size={24}
               color={color.text.tertiary}
             />

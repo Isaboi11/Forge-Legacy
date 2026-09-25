@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -68,17 +68,6 @@ import { usePersist } from '@/hooks/usePersist';
  * comes back with the filter applied. Without a profile it still works, generically, off each
  * equipment's `environments`.
  */
-
-function Glyph({ d, size = 16, color, width = 1.9 }: { d: string; size?: number; color: string; width?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={d} />
-    </Svg>
-  );
-}
-
-const STAR = 'M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8-4.2-4.1 5.9-.9z';
-const CHEVRON = 'M9 6l6 6-6 6';
 
 export default function ExerciseLibraryScreen() {
   const persist = usePersist();
@@ -201,9 +190,7 @@ export default function ExerciseLibraryScreen() {
           hitSlop={8}
           style={styles.starBtn}
         >
-          <Svg width={17} height={17} viewBox="0 0 24 24" fill={fav ? flColor.bronze300 : 'none'} stroke={fav ? flColor.bronze300 : flColor.charcoal500} strokeWidth={1.8} strokeLinejoin="round">
-            <Path d={STAR} />
-          </Svg>
+          <EngravedIcon name="star" size={17} color={fav ? undefined : flColor.charcoal500} />
         </Pressable>
       </Pressable>
     );
@@ -217,10 +204,9 @@ export default function ExerciseLibraryScreen() {
       {/* search + filter */}
       <View style={styles.searchRow}>
         <TourAnchor id="library-search" style={styles.searchWrap}>
-          <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" style={styles.searchIcon}>
-            <Circle cx={11} cy={11} r={7} />
-            <Path d="M20 20l-3.2-3.2" />
-          </Svg>
+          <View style={styles.searchIcon}>
+            <EngravedIcon name="search" size={17} color={flColor.gray600} />
+          </View>
           <TextInput
             style={styles.search}
             value={query}
@@ -243,7 +229,7 @@ export default function ExerciseLibraryScreen() {
           accessibilityLabel="Filter"
           style={[styles.filterBtn, active && styles.filterBtnOn]}
         >
-          <Glyph d="M3 5h18l-7 8v5l-4 2v-7z" size={20} color={active ? flColor.bronze300 : flColor.gray400} />
+          <EngravedIcon name="filter" size={20} color={active ? flColor.bronze300 : flColor.gray400} />
           {active ? (
             <View style={styles.filterBadge}>
               <Text style={styles.filterBadgeText}>{filterCount(filters)}</Text>
@@ -263,7 +249,7 @@ export default function ExerciseLibraryScreen() {
               style={styles.chip}
             >
               <Text style={styles.chipText}>{c.label}</Text>
-              <Glyph d="M18 6L6 18M6 6l12 12" size={11} color={flColor.bronze300} width={2.4} />
+              <EngravedIcon name="close" size={11} color={flColor.bronze300} />
             </Pressable>
           ))}
           <Pressable onPress={() => setFilters(EMPTY_LIBRARY_FILTERS)} accessibilityRole="button" accessibilityLabel="Clear filters" style={styles.clearBtn}>
@@ -509,7 +495,7 @@ function HubSection({ title, onViewAll, children }: { title: string; onViewAll?:
         {onViewAll ? (
           <Pressable onPress={onViewAll} accessibilityRole="button" accessibilityLabel={`View all ${title}`} style={styles.viewAll}>
             <Text style={styles.viewAllText}>View all</Text>
-            <Glyph d={CHEVRON} size={13} color={flColor.bronze400} width={2} />
+            <EngravedIcon name="chevron-right" size={13} color={flColor.bronze400} />
           </Pressable>
         ) : null}
       </View>

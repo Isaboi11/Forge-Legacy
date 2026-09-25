@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import Svg, { Path } from 'react-native-svg'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation'
 
@@ -44,9 +44,7 @@ export function AcceptCommitment({ accepted, onToggle, label = 'I accept these v
     >
       <View style={[styles.box, accepted ? styles.boxOn : null]}>
         {accepted ? (
-          <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M5 12.5l4 4 10-10" />
-          </Svg>
+          <EngravedIcon name="check" size={13} color={flColor.onBronze} />
         ) : null}
       </View>
       <Text style={[styles.acceptLabel, accepted ? styles.acceptLabelOn : null]}>{label}</Text>

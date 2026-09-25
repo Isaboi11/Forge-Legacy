@@ -105,6 +105,7 @@ import { SessionCoachSheet } from '@/components/forge/SessionCoachSheet';
 import { PlaylistSheet } from '@/components/forge/composites/Playlist';
 import { JoinRequestBanner } from '@/components/forge/JoinRequestBanner';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { playlistLabel } from '@/domain/workout/playlist';
 import { enrichSessionExercises, equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
 import { familyOfExercise } from '@/domain/home-artwork/bridges';
@@ -3507,16 +3508,11 @@ export default function WorkoutScreen() {
               hitSlop={8}
               style={({ pressed }) => [styles.overflowBtn, pressed && styles.ctlPressed]}
             >
-              <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.2-2h8.2l1.2 2h2.2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z" />
-                <Circle cx={12} cy={13} r={3.2} />
-              </Svg>
+              <EngravedIcon name="camera" size={19} color={flColor.gray400} />
               {(memories ?? []).length > 0 ? <View style={styles.memoryBadge} /> : null}
             </Pressable>
           <Pressable ref={optionsRef} onPress={() => setOptionsOpen(true)} accessibilityRole="button" accessibilityLabel="Workout options" hitSlop={8} style={({ pressed }) => [styles.overflowBtn, pressed && styles.ctlPressed]}>
-            <Svg width={20} height={20} viewBox="0 0 24 24" fill={flColor.gray400}>
-              <Path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
-            </Svg>
+            <EngravedIcon name="more" size={20} color={flColor.gray400} />
           </Pressable>
           </>
         }
@@ -3544,9 +3540,7 @@ export default function WorkoutScreen() {
                 <Text style={styles.restMiniText}>+15</Text>
               </Pressable>
               <Pressable onPress={restSkip} accessibilityRole="button" accessibilityLabel="Skip rest" hitSlop={6} style={({ pressed }) => [styles.restMiniBtn, pressed && styles.ctlPressed]}>
-                <Svg width={14} height={14} viewBox="0 0 24 24" fill={flColor.gray400}>
-                  <Path d="M5 5l9 7-9 7zM17 5h2v14h-2z" />
-                </Svg>
+                <EngravedIcon name="skip-forward" size={14} color={flColor.gray400} />
               </Pressable>
             </View>
           ) : (
@@ -3569,14 +3563,10 @@ export default function WorkoutScreen() {
             <View style={[styles.restChip, restEnabled ? styles.restChipOn : null]}>
               {restMode === 'manual' ? (
                 <Pressable onPress={startRest} accessibilityRole="button" accessibilityLabel="Start rest now" hitSlop={10} style={({ pressed }) => [styles.restStart, pressed && styles.ctlPressed]}>
-                  <Svg width={12} height={12} viewBox="0 0 24 24" fill={flColor.bronze300}>
-                    <Path d="M7 4l12 8-12 8z" />
-                  </Svg>
+                  <EngravedIcon name="play" size={12} color={flColor.bronze300} />
                 </Pressable>
               ) : (
-                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={restEnabled ? flColor.bronze400 : flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="3 2.4">
-                  <Path d="M12 5a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 9v4l2.5 1.5M9 2h6" />
-                </Svg>
+                <EngravedIcon name="timer" size={16} color={restEnabled ? flColor.bronze400 : flColor.gray600} />
               )}
               <Pressable
                 onPress={() => (restEnabled ? openDuration() : cycleRest())}
@@ -3625,13 +3615,9 @@ export default function WorkoutScreen() {
         hitSlop={{ top: 4, bottom: 4, right: 12 }}
         style={({ pressed }) => [styles.allExRow, pressed && styles.ctlPressed]}
       >
-        <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
-        </Svg>
+        <EngravedIcon name="list" size={15} />
         <Text style={styles.allExText}>All Exercises</Text>
-        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M9 6l6 6-6 6" />
-        </Svg>
+        <EngravedIcon name="chevron-right" size={14} color={flColor.bronze400} />
       </Pressable>
 
       {/*
@@ -3690,9 +3676,7 @@ export default function WorkoutScreen() {
                   accessibilityLabel="Back to the superset"
                   style={styles.ssBackBar}
                 >
-                  <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <Path d="M15 18l-6-6 6-6" />
-                  </Svg>
+                  <EngravedIcon name="chevron-left" size={15} color={flColor.bronze400} />
                   <Text style={styles.ssBackText}>Back to the superset</Text>
                 </Pressable>
               ) : null}
@@ -3725,9 +3709,7 @@ export default function WorkoutScreen() {
                       accessibilityLabel={amrapLeft != null ? 'Stop the AMRAP clock' : 'Start the AMRAP clock'}
                       style={[styles.amrapBtn, amrapLeft != null ? styles.amrapBtnOn : null]}
                     >
-                      <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={amrapLeft != null ? flColor.cream100 : flColor.bronze300} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-                        {amrapLeft != null ? <Path d="M7 6h10v12H7z" /> : <Path d="M12 5a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 9v4l2.5 1.5M9 2h6" />}
-                      </Svg>
+                      <EngravedIcon name={amrapLeft != null ? 'stop' : 'timer'} size={15} color={amrapLeft != null ? flColor.cream100 : flColor.bronze300} />
                       <Text style={[styles.amrapBtnText, amrapLeft != null ? styles.amrapBtnTextOn : null]}>
                         {amrapLeft != null ? fmtMMSS(amrapLeft) : `Start ${durText(block.capSec)}`}
                       </Text>
@@ -3783,9 +3765,7 @@ export default function WorkoutScreen() {
                             <View style={styles.ssBody}>
                               <View style={styles.ssNameRow}>
                                 <Text style={styles.ssName} numberOfLines={1}>{mex.name}</Text>
-                                <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={isNext || setsOpen ? flColor.bronze400 : flColor.gray600} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                                  <Path d={setsOpen ? 'M6 9l6 6 6-6' : 'M9 6l6 6-6 6'} />
-                                </Svg>
+                                <EngravedIcon name={setsOpen ? 'chevron-down' : 'chevron-right'} size={13} color={isNext || setsOpen ? flColor.bronze400 : flColor.gray600} />
                               </View>
                               {mset ? (
                                 <Text style={[styles.ssSet, mset.done && styles.ssSetDone]}>
@@ -3834,9 +3814,7 @@ export default function WorkoutScreen() {
                               style={({ pressed }) => [styles.ssFullCard, pressed && styles.ctlPressed]}
                             >
                               <Text style={styles.ssFullCardText}>Open full card</Text>
-                              <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                                <Path d="M9 6l6 6-6 6" />
-                              </Svg>
+                              <EngravedIcon name="chevron-right" size={12} color={flColor.bronze400} />
                             </Pressable>
                           </View>
                         ) : null}
@@ -3856,9 +3834,7 @@ export default function WorkoutScreen() {
                       );
                     })}
                     <Pressable onPress={addSupersetRound} accessibilityRole="button" accessibilityLabel="Add a round" style={({ pressed }) => [styles.ssAddRound, pressed && styles.ctlPressed]}>
-                      <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round">
-                        <Path d="M12 5v14M5 12h14" />
-                      </Svg>
+                      <EngravedIcon name="plus" size={13} color={flColor.bronze400} />
                       <Text style={styles.ssAddRoundText}>Round</Text>
                     </Pressable>
                   </View>
@@ -3912,14 +3888,10 @@ export default function WorkoutScreen() {
                               is what the spec means by "expand with padding, not size". A 15pt icon
                               inside a 15pt Pressable is a control an athlete with chalk on cannot hit. */}
                           <Pressable onPress={() => setFavorite((v) => !v)} accessibilityRole="button" accessibilityLabel="Save exercise" hitSlop={15} style={({ pressed }) => [styles.heroIconBtn, pressed && styles.ctlPressed]}>
-                            <Svg width={15} height={15} viewBox="0 0 24 24" fill={favorite ? flColor.bronze300 : 'none'} stroke={favorite ? flColor.bronze300 : flIcon.inactive} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-                              <Path d="M6 4h12v17l-6-4-6 4z" />
-                            </Svg>
+                            <EngravedIcon name="bookmark" size={15} color={favorite ? flColor.bronze300 : flIcon.inactive} />
                           </Pressable>
                           <Pressable onPress={() => setHero(true)} accessibilityRole="button" accessibilityLabel="Collapse exercise details" hitSlop={15} style={({ pressed }) => [styles.heroIconBtn, pressed && styles.ctlPressed]}>
-                            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flIcon.inactive} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-                              <Path d="M18 15l-6-6-6 6" />
-                            </Svg>
+                            <EngravedIcon name="chevron-up" size={15} color={flIcon.inactive} />
                           </Pressable>
                         </View>
                       </View>
@@ -3933,9 +3905,7 @@ export default function WorkoutScreen() {
                           warm up" true from the other end: you could not add one, and if a program gave
                           you one the logger called it a main lift anyway. */}
                       <View style={styles.heroEquipRow}>
-                        <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flIcon.bronze} strokeWidth={1.8} strokeLinecap="square">
-                          <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
-                        </Svg>
+                        <EngravedIcon name="barbell" size={11} />
                         <Text style={[styles.heroEquip, ex.section !== 'main' && styles.heroEquipSection]}>
                           {SECTION_LABEL[ex.section]}
                         </Text>
@@ -3989,10 +3959,7 @@ export default function WorkoutScreen() {
                         accessibilityLabel={liftHist ? `How to ${ex.name}` : `First time on ${ex.name} — see how it's done`}
                         style={({ pressed }) => [styles.howTo, liftHist ? null : styles.howToFirst, pressed ? styles.howToPressed : null]}
                       >
-                        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.6}>
-                          <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" />
-                          <Path d="M10 8.5l6 3.5-6 3.5z" fill={flColor.bronze300} stroke="none" />
-                        </Svg>
+                        <EngravedIcon name="play" size={14} />
                         <Text style={styles.howToText}>{liftHist ? 'How To' : "First time — here's how"}</Text>
                       </Pressable>
                     </View>
@@ -4027,10 +3994,7 @@ export default function WorkoutScreen() {
                       style={({ pressed }) => [styles.plinthCol, styles.plinthColFirst, pressed && goalEditable ? styles.plinthColPressed : null]}
                     >
                       <View style={styles.plinthLabelRow}>
-                        <Svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke={flIcon.bronze} strokeWidth={2}>
-                          <Circle cx={12} cy={12} r={8} />
-                          <Circle cx={12} cy={12} r={2.5} fill={flIcon.bronze} stroke="none" />
-                        </Svg>
+                        <EngravedIcon name="target" size={9} />
                         <Text style={[styles.plinthLabel, styles.plinthLabelLive]}>Goal</Text>
                       </View>
                       <View style={styles.plinthValueRow}>
@@ -4044,9 +4008,9 @@ export default function WorkoutScreen() {
                           starts swallowing the cell's own press, and the brief was layout-only.
                         */}
                         {goalEditable ? (
-                          <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={styles.goalPencil}>
-                            <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-                          </Svg>
+                          <View style={styles.goalPencil}>
+                            <EngravedIcon name="edit" size={11} />
+                          </View>
                         ) : null}
                       </View>
                       {/* ⚠ `per leg` LIVES HERE NOW, AND IT HAD TO LAND SOMEWHERE. It used to print under
@@ -4067,9 +4031,7 @@ export default function WorkoutScreen() {
                     */}
                     <View style={[styles.plinthCol, styles.plinthColBest, styles.plinthColRuled]}>
                       <View style={styles.plinthLabelRow}>
-                        <Svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke={flIcon.inactive} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                          <Path d="M6 4h12v3a6 6 0 0 1-12 0zM6 7H4a2 2 0 0 1 0-4h2M18 7h2a2 2 0 0 0 0-4h-2M9 20h6M12 13v7" />
-                        </Svg>
+                        <EngravedIcon name="trophy" size={9} color={flIcon.inactive} />
                         <Text style={styles.plinthLabel}>Best</Text>
                       </View>
                       <Text style={[styles.plinthBestVal, plinthFigureStyle(bestFigure)]}>{bestFigure}</Text>
@@ -4100,9 +4062,7 @@ export default function WorkoutScreen() {
                         style={({ pressed }) => [styles.plinthCol, styles.plinthColRuled, styles.plinthColWide, pressed && styles.plinthColPressed]}
                       >
                         <View style={styles.plinthLabelRow}>
-                          <Svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round">
-                            <Path d="M4 5h16M4 12h16M4 19h10" />
-                          </Svg>
+                          <EngravedIcon name="list" size={10} color={flColor.gray600} />
                           {/* ⚠ `LAST NOTE`, NOT `LAST TIME` — the label has to say WHAT the value is, the
                               way `Goal` and `Best` do, or the column reads as a third statistic and the
                               eye stops on it looking for a number (W9-A10-D2). The PO asked for "Note From
@@ -4146,9 +4106,9 @@ export default function WorkoutScreen() {
               ) : (
                 <Pressable onPress={() => setHero(false)} accessibilityRole="button" accessibilityLabel="Expand exercise details" style={({ pressed }) => [styles.heroStrip, pressed && styles.ctlPressed]}>
                   <View style={styles.heroStripThumb}>
-                    <Svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" opacity={0.16}>
-                      <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
-                    </Svg>
+                    <View style={styles.heroStripGlyph}>
+                      <EngravedIcon name="barbell" size={26} />
+                    </View>
                   </View>
                   <View style={styles.heroStripText}>
                     {/* ⚠ DRAWN IN BOTH HERO FACES, for the same reason the plan cue below is: the hero
@@ -4183,9 +4143,7 @@ export default function WorkoutScreen() {
                       </Text>
                     ) : null}
                   </View>
-                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                    <Path d="M6 9l6 6 6-6" />
-                  </Svg>
+                  <EngravedIcon name="chevron-down" size={18} color={flColor.gray600} />
                 </Pressable>
               )}
 
@@ -4258,9 +4216,7 @@ export default function WorkoutScreen() {
                   accessibilityLabel={ex.note ? `Edit your note on ${ex.name}` : `Add a note about ${ex.name} for next time`}
                   style={({ pressed }) => [styles.exerciseNoteRow, pressed ? styles.exerciseNotePressed : null]}
                 >
-                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={ex.note ? flColor.bronze400 : flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                    <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5" />
-                  </Svg>
+                  <EngravedIcon name="document" size={14} color={engravedTint(ex.note ? flColor.bronze400 : flColor.gray600)} />
                   <Text style={[styles.exerciseNoteText, ex.note ? styles.exerciseNoteTextSet : null]} numberOfLines={2}>
                     {ex.note ? ex.note : 'Add a note for next time'}
                   </Text>
@@ -4271,9 +4227,7 @@ export default function WorkoutScreen() {
                   and no count between them: position lives in All Exercises, progress in "Done". */}
               <View style={styles.nav}>
                 <Pressable disabled={exIdx === 0} onPress={() => goExercise(exIdx - 1)} accessibilityRole="button" accessibilityLabel="Previous exercise" style={({ pressed }) => [styles.navArrow, pressed && styles.ctlPressed]}>
-                  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={exIdx === 0 ? flColor.charcoal500 : flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <Path d="M15 6l-6 6 6 6" />
-                  </Svg>
+                  <EngravedIcon name="chevron-left" size={22} color={exIdx === 0 ? flColor.charcoal500 : flColor.bronze400} />
                 </Pressable>
                 <NextArrow disabled={isLastEx} ready={nextReady} onPress={() => goExercise(exIdx + 1)} />
               </View>
@@ -4624,9 +4578,7 @@ export default function WorkoutScreen() {
         <View style={styles.sealWrap} pointerEvents="none">
           <View style={styles.sealCard}>
             <View style={styles.sealMedal}>
-              <Svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M20 6L9 17l-5-5" />
-              </Svg>
+              <EngravedIcon name="check" size={30} color={flColor.onBronze} />
             </View>
             <Text style={styles.sealKicker}>Exercise Complete</Text>
             <Text style={styles.sealName}>{seal.name}</Text>
@@ -4650,9 +4602,7 @@ export default function WorkoutScreen() {
           <Pressable style={styles.prBackdrop} onPress={() => setPrPrompt(null)} accessibilityLabel="Dismiss" />
           <View style={styles.prCard}>
             <View style={styles.prMedal}>
-              <Svg width={28} height={28} viewBox="0 0 24 24" fill={flColor.onBronze}>
-                <Path d="M12 2l2.6 7.1H22l-6 4.4 2.3 7.1-6.3-4.6-6.3 4.6 2.3-7.1-6-4.4h7.4z" />
-              </Svg>
+              <EngravedIcon name="star" size={28} color={flColor.onBronze} />
             </View>
             <Text style={styles.prKicker}>New Personal Record</Text>
             <Text style={styles.prName}>{prPrompt.name}</Text>
@@ -4706,9 +4656,7 @@ export default function WorkoutScreen() {
                 </Text>
               </View>
               <Pressable onPress={toggleWheel} accessibilityRole="button" accessibilityLabel={wheelMode ? 'Type the values' : 'Use the wheel'} style={({ pressed }) => [styles.pickerToggle, pressed && styles.ctlPressed]}>
-                <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-                  {wheelMode ? <Path d="M2 6h20v12H2zM6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" /> : <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2" />}
-                </Svg>
+                <EngravedIcon name={wheelMode ? 'keyboard' : 'clock'} size={15} color={flColor.gray400} />
                 <Text style={styles.pickerToggleText}>{wheelMode ? 'Type' : 'Wheel'}</Text>
               </Pressable>
             </View>
@@ -4994,9 +4942,7 @@ export default function WorkoutScreen() {
                           {status} · {done}/{total} sets{w != null ? ` · ${w} ${unitLabel(units)}` : ''}
                         </Text>
                       </View>
-                      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                        <Path d="M9 6l6 6-6 6" />
-                      </Svg>
+                      <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} />
                     </Pressable>
                     {/*
                       ══ THE SECOND WAY TO TAKE AN EXERCISE OUT, AND THE ONE THAT SCALES ══
@@ -5025,9 +4971,7 @@ export default function WorkoutScreen() {
                         hitSlop={10}
                         style={({ pressed }) => [styles.ovRemove, pressed && styles.ctlPressed]}
                       >
-                        <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                          <Path d="M18 6L6 18M6 6l12 12" />
-                        </Svg>
+                        <EngravedIcon name="close" size={16} color={flColor.gray600} />
                       </Pressable>
                     ) : null}
                   </View>
@@ -5063,7 +5007,7 @@ export default function WorkoutScreen() {
                 onPress={openWorkoutName}
                 title="Name this workout"
                 sub={session.workoutName}
-                icon={<><Path d="M12 20h9" /><Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></>}
+                icon="edit"
               />
               {/* THE AUTHOR'S CUE, restated where the athlete goes looking for instructions. Not a
                   row you can press: it belongs to the plan, and the athlete edits their own note
@@ -5071,9 +5015,7 @@ export default function WorkoutScreen() {
               {ex.coachNote ? (
                 <View style={styles.optRow}>
                   <View style={styles.optIcon}>
-                    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                      <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v5M12 16h.01" />
-                    </Svg>
+                    <EngravedIcon name="info" size={19} />
                   </View>
                   <View style={styles.optText}>
                     <Text style={styles.optTitle}>The plan says</Text>
@@ -5088,7 +5030,7 @@ export default function WorkoutScreen() {
                 onPress={openNote}
                 title={ex.note ? 'Edit your note' : 'Add a note'}
                 sub={ex.note ? ex.note : `How ${ex.name} is feeling today`}
-                icon={<><Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><Path d="M14 2v6h6M8 13h8M8 17h5" /></>}
+                icon="document"
               />
               {/*
                 ══ WHAT IS NOT HERE, AND WHY ══
@@ -5115,13 +5057,7 @@ export default function WorkoutScreen() {
                 }}
                 title="Trained with"
                 sub={taggedPartners.length ? `${taggedPartners.length} tagged` : 'Credit whoever is here with you'}
-                icon={
-                  <>
-                    <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <Circle cx={9} cy={7} r={4} />
-                    <Path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                  </>
-                }
+                icon="people"
               />
               <OptionRow
                 onPress={() => {
@@ -5130,13 +5066,7 @@ export default function WorkoutScreen() {
                 }}
                 title="Invite someone to join"
                 sub={`They’ll start where you are — ${ex.name}`}
-                icon={
-                  <>
-                    <Path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                    <Circle cx={9} cy={7} r={4} />
-                    <Path d="M19 8v6M22 11h-6" />
-                  </>
-                }
+                icon="user-plus"
               />
               {/* §8.5. The sub-line names what's attached, so the row reports the state instead of
                   making you open the sheet to find out. */}
@@ -5144,12 +5074,7 @@ export default function WorkoutScreen() {
                 onPress={openPlaylistSheet}
                 title={session.playlist ? 'Change the playlist' : 'Attach a playlist'}
                 sub={session.playlist ? playlistLabel(session.playlist) : 'Spotify or Apple Music — a link, not a player'}
-                icon={
-                  <>
-                    <Path d="M9 18V5l11-2v13" />
-                    <Path d="M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM20 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
-                  </>
-                }
+                icon="music"
               />
               {/* §13.2 — an empty session cannot be saved. The footer button this replaced carried no
                   such guard, so "End Workout" on a session with nothing logged ran the whole save. */}
@@ -5159,7 +5084,7 @@ export default function WorkoutScreen() {
                 disabled={!hasLoggedSet(session)}
                 title="End workout"
                 sub={hasLoggedSet(session) ? 'Finish and save your session' : 'Log at least one set to save'}
-                icon={<Rect x={6} y={6} width={12} height={12} rx={1.5} />}
+                icon="stop"
               />
             </ScrollView>
           </View>
@@ -5257,9 +5182,7 @@ export default function WorkoutScreen() {
                       </View>
                       <View style={[styles.pCheck, on && styles.pCheckOn]}>
                         {on ? (
-                          <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-                            <Path d="M20 6L9 17l-5-5" />
-                          </Svg>
+                          <EngravedIcon name="check" size={13} color={flColor.onBronze} />
                         ) : null}
                       </View>
                     </Pressable>
@@ -5825,15 +5748,11 @@ function SetTable({ exercise: ex, ei, units, soundOn, liftHist, flash, pop, show
                     </Pressable>
                     {isDone ? (
                       <Pressable onPress={() => onUncomplete(ei, si)} accessibilityRole="button" accessibilityLabel={`Mark set ${si + 1} incomplete`} style={({ pressed }) => [styles.cCheck, styles.checkDoneBtn, pressed && styles.checkDoneBtnPressed]}>
-                        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.greenMuted} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-                          <Path d="M5 13l4 4 10-11" />
-                        </Svg>
+                        <EngravedIcon name="check" size={14} color={flColor.greenMuted} />
                       </Pressable>
                     ) : isCurrent ? (
                       <Pressable onPress={() => onComplete(ei, si)} accessibilityRole="button" accessibilityLabel={`Complete set ${si + 1}`} style={({ pressed }) => [styles.cCheck, styles.checkCurrent, pressed && styles.checkCurrentPressed]}>
-                        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                          <Path d="M5 13l4 4 10-11" />
-                        </Svg>
+                        <EngravedIcon name="check" size={14} color={flColor.bronze300} />
                       </Pressable>
                     ) : (
                       <View style={[styles.cCheck, styles.checkPending]} />
@@ -5855,11 +5774,7 @@ function SetTable({ exercise: ex, ei, units, soundOn, liftHist, flash, pop, show
                       accessibilityLabel={`Remove set ${si + 1}`}
                       style={({ pressed }) => [styles.trashBtn, pressed && styles.trashBtnPressed]}
                     >
-                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.redMuted} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-                        <Path d="M4 7h16" />
-                        <Path d="M9 7V5h6v2" />
-                        <Path d="M6.5 7l1 13h9l1-13" />
-                      </Svg>
+                      <EngravedIcon name="trash" size={14} color={flColor.redMuted} />
                     </Pressable>
                   ) : null}
                 </View>
@@ -5899,9 +5814,7 @@ function SetTable({ exercise: ex, ei, units, soundOn, liftHist, flash, pop, show
 function AddSetButton({ onPress }: { onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Add set" style={({ pressed }) => [styles.addSet, pressed && styles.ctlPressed]}>
-      <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round">
-        <Path d="M12 5v14M5 12h14" />
-      </Svg>
+      <EngravedIcon name="plus" size={15} color={flColor.bronze300} />
       <Text style={styles.addSetText}>Add Set</Text>
     </Pressable>
   );
@@ -5954,9 +5867,7 @@ function NextArrow({ disabled, ready, onPress }: { disabled: boolean; ready: boo
   return (
     <Pressable disabled={disabled} onPress={onPress} accessibilityRole="button" accessibilityLabel="Next exercise" style={({ pressed }) => [styles.navArrow, pressed && styles.ctlPressed]}>
       <Animated.View style={{ transform: [{ translateX: x }] }}>
-        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={disabled ? flColor.charcoal500 : flColor.bronze400} strokeWidth={ready ? 2.6 : 2} strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M9 6l6 6-6 6" />
-        </Svg>
+        <EngravedIcon name="chevron-right" size={22} color={disabled ? flColor.charcoal500 : flColor.bronze400} />
       </Animated.View>
     </Pressable>
   );
@@ -6107,7 +6018,7 @@ function SetField({
   );
 }
 
-function OptionRow({ onPress, title, sub, icon, tint, danger, disabled }: { onPress: () => void; title: string; sub: string; icon: ReactNode; tint?: boolean; danger?: boolean; disabled?: boolean }) {
+function OptionRow({ onPress, title, sub, icon, tint, danger, disabled }: { onPress: () => void; title: string; sub: string; icon: EngravedName; tint?: boolean; danger?: boolean; disabled?: boolean }) {
   return (
     <Pressable
       onPress={onPress}
@@ -6118,9 +6029,7 @@ function OptionRow({ onPress, title, sub, icon, tint, danger, disabled }: { onPr
       style={[styles.optRow, tint && styles.optRowTint, danger && styles.optRowDanger, disabled && styles.optRowDisabled]}
     >
       <View style={[styles.optIcon, danger && styles.optIconDanger]}>
-        <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={danger ? flColor.redMuted : flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-          {icon}
-        </Svg>
+        <EngravedIcon name={icon} size={19} color={danger ? flColor.redMuted : undefined} />
       </View>
       <View style={styles.optText}>
         <Text style={[styles.optTitle, danger && styles.optTitleDanger]}>{title}</Text>
@@ -6584,6 +6493,7 @@ const styles = StyleSheet.create({
   // hero collapsed strip
   heroStrip: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorder, borderRadius: flRadius.xl, paddingVertical: 9, paddingHorizontal: 12, boxShadow: flShadow.card },
   heroStripThumb: { width: 46, height: 46, borderRadius: flRadius.md, overflow: 'hidden', backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: flColor.charcoal600, alignItems: 'center', justifyContent: 'center' },
+  heroStripGlyph: { opacity: 0.16 },
   heroStripText: { flex: 1, minWidth: 0, gap: 3 },
   /* A kicker, not a pill. It sits above the name in the one-line strip, so it has to cost as little
      vertical space as possible — 9.5pt tracked-out bronze is the app's established "this is what the

@@ -3,8 +3,8 @@ import type { ComponentType } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { requireOptionalNativeModule } from 'expo';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -185,9 +185,7 @@ export default function LogFoodScreen() {
       <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
         <Text style={styles.mealLineLabel}>Adding to</Text>
         <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
-        <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M6 9l6 6 6-6" />
-        </Svg>
+        <EngravedIcon name="chevron-down" size={13} color={flColor.bronze400} />
       </Pressable>
 
       {/* search + barcode */}
@@ -200,17 +198,12 @@ export default function LogFoodScreen() {
             autoCorrect={false}
             returnKeyType="search"
             leadingIcon={
-              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                <Circle cx={11} cy={11} r={6.5} />
-                <Path d="M16 16l4 4" />
-              </Svg>
+              <EngravedIcon name="search" size={18} color={flColor.gray600} />
             }
           />
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Scan barcode" style={styles.scanButton} onPress={() => setBarcodeOpen(true)}>
-          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round">
-            <Path d="M4 6v12M7.5 6v12M11 6v12M14 6v12M17.5 6v12M21 6v12" />
-          </Svg>
+          <EngravedIcon name="barcode-scan" size={16} />
         </Pressable>
       </View>
 
@@ -614,9 +607,7 @@ function NumberField({ label, value, onChange }: { label: string; value: string;
 
 const AddCircle = () => (
   <View style={styles.addCircle}>
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round">
-      <Path d="M12 5v14M5 12h14" />
-    </Svg>
+    <EngravedIcon name="plus" size={17} color={flColor.bronze400} />
   </View>
 );
 

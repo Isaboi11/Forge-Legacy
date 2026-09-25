@@ -10,7 +10,8 @@
 
 import React from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon'
+import { FeatherNameIcon } from '../FeatherNameIcon'
 import { color } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
 import { ForgeModal } from './ForgeModal'
@@ -80,9 +81,9 @@ export function ForgeConfirmationModal({
         {/* Tone icon circle */}
         <View style={[styles.iconCircle, { backgroundColor: iconBg, borderColor: iconBorder }]}>
           {iconName ? (
-            <Feather name={iconName as 'alert-triangle'} size={24} color={iconColor} />
+            <FeatherNameIcon name={iconName} size={24} color={iconColor} />
           ) : (
-            <Feather name={_defaultIcon(tone)} size={24} color={iconColor} />
+            <EngravedIcon name={_defaultIcon(tone)} size={24} color={iconColor} />
           )}
         </View>
 
@@ -98,10 +99,9 @@ export function ForgeConfirmationModal({
   )
 }
 
-function _defaultIcon(tone: ConfirmationTone): 'check' | 'alert-triangle' | 'alert-octagon' {
+function _defaultIcon(tone: ConfirmationTone): EngravedName {
   if (tone === 'success') return 'check'
-  if (tone === 'warning') return 'alert-triangle'
-  return 'alert-octagon'
+  return 'warning'
 }
 
 function _toneStyles(tone: ConfirmationTone) {

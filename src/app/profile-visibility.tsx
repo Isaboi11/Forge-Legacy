@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { Toast } from '@/components/forge/composites/Toast';
 import { ScreenBackground } from '@/components/screen-background';
@@ -33,8 +33,6 @@ import { useQuery } from '@/lib/useQuery';
  * where their requests can read it. Saves on every tap. Rank, Standard and Honors are core identity and
  * are always visible — the callout says so, and they are not listed.
  */
-
-const EYE = 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z';
 
 export default function ProfileVisibilityScreen() {
   const router = useRouter();
@@ -220,9 +218,7 @@ export default function ProfileVisibilityScreen() {
         durationMs={2000}
         onDismiss={() => setToast(false)}
         icon={
-          <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <Path d={EYE} />
-          </Svg>
+          <EngravedIcon name="eye" size={15} color={flColor.onBronze} />
         }
       />
     </View>

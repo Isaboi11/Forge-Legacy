@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -347,9 +347,7 @@ export default function MyFoodsScreen() {
                   style={styles.xBtn}
                   onPress={() => setItems((a) => a.filter((_, k) => k !== j))}
                 >
-                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2.4} strokeLinecap="round">
-                    <Path d="M6 6l12 12M18 6L6 18" />
-                  </Svg>
+                  <EngravedIcon name="close" size={14} color={flColor.gray400} />
                 </Pressable>
               </View>
             ))}
@@ -386,9 +384,7 @@ export default function MyFoodsScreen() {
                           {[mine ? 'My food' : null, `${fmt(add.per.kcal)} cal per ${add.unit}`].filter(Boolean).join(' · ')}
                         </Text>
                       </View>
-                      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.2} strokeLinecap="round">
-                        <Path d="M12 5v14M5 12h14" />
-                      </Svg>
+                      <EngravedIcon name="plus" size={16} color={flColor.bronze400} />
                     </Pressable>
                   );
                 })}
@@ -434,9 +430,7 @@ export default function MyFoodsScreen() {
               onPress={() => (sheetFood ? editFood(sheetFood.key) : sheetMeal ? openMeal(sheetMeal) : undefined)}
             >
               <Text style={styles.menuText}>{sheet.kind === 'food' ? 'Edit food' : 'Edit meal'}</Text>
-              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M9 6l6 6-6 6" />
-              </Svg>
+              <EngravedIcon name="chevron-right" size={14} color={flColor.gray400} />
             </Pressable>
             <Pressable accessibilityRole="button" style={styles.menuRow} onPress={() => setSheet({ ...sheet, step: 'confirm' })}>
               <Text style={styles.menuText}>Delete</Text>
@@ -480,23 +474,14 @@ function ListRow({ name, meta, kcal, onEdit, onMore }: { name: string; meta: str
         </Text>
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel={`Options for ${name}`} style={styles.moreBtn} onPress={onMore}>
-        <Svg width={16} height={16} viewBox="0 0 24 24" fill={flColor.gray400}>
-          <Circle cx={12} cy={5} r={1.6} />
-          <Circle cx={12} cy={12} r={1.6} />
-          <Circle cx={12} cy={19} r={1.6} />
-        </Svg>
+        <EngravedIcon name="more" size={16} color={flColor.gray400} />
       </Pressable>
     </View>
   );
 }
 
 function SearchGlyph() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round">
-      <Circle cx={11} cy={11} r={7} />
-      <Path d="M20 20l-4-4" />
-    </Svg>
-  );
+  return <EngravedIcon name="search" size={18} color={flColor.gray400} />;
 }
 
 const styles = StyleSheet.create({

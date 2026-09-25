@@ -17,7 +17,7 @@ import {
   Text,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color, space, size } from '@/constants/tokens'
 import { ForgeToggle } from '../inputs/ForgeToggle'
 import { ForgeCheckbox } from '../inputs/ForgeCheckbox'
@@ -27,8 +27,8 @@ import type { CompactTrailingVariant } from './types'
 export interface CompactListCardProps {
   title: string
   subtitle?: string
-  /** Feather icon name for the leading icon box */
-  iconName?: React.ComponentProps<typeof Feather>['name']
+  /** Engraved icon name for the leading icon box */
+  iconName?: EngravedName
   /** URI for avatar image (renders circle instead of icon box) */
   avatarInitials?: string
   trailingVariant?: CompactTrailingVariant
@@ -76,7 +76,7 @@ export function CompactListCard({
   const trailing = (() => {
     switch (trailingVariant) {
       case 'chevron':
-        return <Feather name="chevron-right" size={size.iconInline} color={color.text.tertiary} />
+        return <EngravedIcon name="chevron-right" size={size.iconInline} color={color.text.tertiary} />
 
       case 'badge':
         return badgeLabel ? (
@@ -144,7 +144,7 @@ export function CompactListCard({
         </View>
       ) : iconName ? (
         <View style={styles.iconBox}>
-          <Feather name={iconName} size={size.iconCard} color={color.text.secondary} />
+          <EngravedIcon name={iconName} size={size.iconCard} />
         </View>
       ) : null}
 

@@ -3,9 +3,9 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -68,12 +68,6 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
  * It replaced a plain text field that asked for `YYYY-MM-DD`, the one place in the app where an athlete
  * met a date that wasn't month-day-year. It stays optional; the design allows an undated accomplishment.
  */
-
-const STAR = 'M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z';
-const CHEVRON = 'M9 6l6 6-6 6';
-const TRASH = 'M5 7h14M9 7V5h6v2M8 7l1 13h6l1-13';
-const PLUS = 'M12 5v14M5 12h14';
-const CAMERA = 'M4 8h3l1.5-2h7L17 8h3v11H4zM12 16.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6z';
 
 type ChapterOpt = { id: string; label: string; active: boolean };
 type ViewState = { mode: 'list' } | { mode: 'detail'; id: string } | { mode: 'form'; id?: string };
@@ -162,14 +156,14 @@ export default function AccomplishmentsScreen() {
         onBack={() => router.back()}
         actions={
           <Pressable ref={addRef} onPress={() => setView({ mode: 'form' })} accessibilityRole="button" accessibilityLabel="Add accomplishment" hitSlop={8} style={styles.addBtn}>
-            <Glyph d={PLUS} size={22} color={flColor.bronze300} width={2} />
+            <EngravedIcon name="plus" size={22} color={flColor.bronze300} />
           </Pressable>
         }
       />
 
       {list.length === 0 ? (
         <View style={styles.empty}>
-          <Glyph d={STAR} size={30} color={flColor.charcoal500} width={1.6} />
+          <EngravedIcon name="star" size={30} />
           <Text style={styles.emptyText}>Add your first accomplishment — a milestone you&rsquo;re proud of, in your own words.</Text>
           <Button variant="primary" onPress={() => setView({ mode: 'form' })} accessibilityLabel="Add Accomplishment">
             Add Accomplishment
@@ -189,9 +183,7 @@ export default function AccomplishmentsScreen() {
               <TourAnchor key={a.id} id={ai === 0 ? 'accomplishments-list' : undefined}>
               <Pressable onPress={() => setView({ mode: 'detail', id: a.id })} accessibilityRole="button" accessibilityLabel={a.name} style={styles.row}>
                 <TourAnchor id={ai === 0 ? 'accomplishments-featured' : undefined}>
-                  <Svg width={16} height={16} viewBox="0 0 24 24" fill={a.featured ? flColor.bronze300 : 'none'} stroke={a.featured ? flColor.bronze300 : flColor.gray600} strokeWidth={1.5} strokeLinejoin="round">
-                    <Path d={STAR} />
-                  </Svg>
+                  <EngravedIcon name="star" size={16} color={a.featured ? undefined : flColor.gray600} />
                 </TourAnchor>
                 <View style={styles.rowText}>
                   <Text style={styles.rowName} numberOfLines={1}>
@@ -199,7 +191,7 @@ export default function AccomplishmentsScreen() {
                   </Text>
                   {sub ? <Text style={styles.rowSub} numberOfLines={1}>{sub}</Text> : null}
                 </View>
-                <Glyph d={CHEVRON} size={16} color={flColor.gray600} width={2} />
+                <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} />
               </Pressable>
               </TourAnchor>
             );
@@ -300,9 +292,7 @@ function AccomplishmentDetail({
       <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         {featured ? (
           <View style={styles.featBadge}>
-            <Svg width={11} height={11} viewBox="0 0 24 24" fill={flColor.bronze300} stroke="none">
-              <Path d={STAR} />
-            </Svg>
+            <EngravedIcon name="star" size={11} />
             <Text style={styles.featBadgeText}>Featured</Text>
           </View>
         ) : null}
@@ -341,7 +331,7 @@ function AccomplishmentDetail({
         </View>
 
         <Pressable onPress={() => setDelOpen(true)} accessibilityRole="button" accessibilityLabel="Delete accomplishment" style={styles.deleteBtn}>
-          <Glyph d={TRASH} size={15} color={flColor.emberFlame} width={1.9} />
+          <EngravedIcon name="trash" size={15} color={flColor.emberFlame} />
           <Text style={styles.deleteText}>Delete Accomplishment</Text>
         </Pressable>
       </ScrollView>
@@ -385,7 +375,7 @@ function FeaturedReplaceSheet({
         <View style={styles.replaceList}>
           {current.map((a) => (
             <View key={a.id} style={styles.replaceRow}>
-              <Glyph d={STAR} size={15} color={flColor.bronze300} width={0} fill={flColor.bronze300} />
+              <EngravedIcon name="star" size={15} />
               <Text style={styles.replaceItemName} numberOfLines={1}>
                 {a.name}
               </Text>
@@ -540,7 +530,7 @@ function AccomplishmentForm({
                 <ActivityIndicator color={flColor.bronze400} />
               ) : (
                 <>
-                  <Glyph d={CAMERA} size={22} color={flColor.bronze400} width={1.7} />
+                  <EngravedIcon name="camera" size={22} />
                   <Text style={styles.mediaDropText}>Add a photo or video</Text>
                   <Text style={styles.mediaDropSub}>The medal, the finish line, the lift</Text>
                 </>
@@ -676,7 +666,7 @@ function ChapterChip({ label, sub, on, onPress }: { label: string; sub?: string;
         <Text style={[styles.chapterChipLabel, on && styles.chapterChipLabelOn]}>{label}</Text>
         {sub ? <Text style={styles.chapterChipSub}>{sub}</Text> : null}
       </View>
-      {on ? <Glyph d="M5 12.5l4 4 10-10" size={15} color={flColor.bronze300} width={2.4} /> : null}
+      {on ? <EngravedIcon name="check" size={15} color={flColor.bronze300} /> : null}
     </Pressable>
   );
 }
@@ -684,14 +674,6 @@ function ChapterChip({ label, sub, on, onPress }: { label: string; sub?: string;
 function Redirect({ onDone }: { onDone: () => void }) {
   onDone();
   return null;
-}
-
-function Glyph({ d, size = 16, color, width = 1.9, fill = 'none' }: { d: string; size?: number; color: string; width?: number; fill?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={d} />
-    </Svg>
-  );
 }
 
 const styles = StyleSheet.create({

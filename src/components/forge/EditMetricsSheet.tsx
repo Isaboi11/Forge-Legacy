@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { METRIC_CAP } from '@/lib/metric-selection';
 import type { MetricSeries } from '@/data/progress-hub-live';
@@ -89,10 +89,10 @@ export function EditMetricsSheet({
               <View key={m.id} style={styles.row}>
                 <View style={styles.arrows}>
                   <Pressable onPress={() => move(m.id, -1)} disabled={idx === 0} accessibilityRole="button" accessibilityLabel={`Move ${m.name} up`} hitSlop={6}>
-                    <Glyph d="M6 15l6-6 6 6" color={idx === 0 ? flColor.charcoal500 : flColor.bronze400} />
+                    <EngravedIcon name="chevron-up" size={18} color={idx === 0 ? flColor.charcoal500 : flColor.bronze400} />
                   </Pressable>
                   <Pressable onPress={() => move(m.id, 1)} disabled={idx === selectedRows.length - 1} accessibilityRole="button" accessibilityLabel={`Move ${m.name} down`} hitSlop={6}>
-                    <Glyph d="M6 9l6 6 6-6" color={idx === selectedRows.length - 1 ? flColor.charcoal500 : flColor.bronze400} />
+                    <EngravedIcon name="chevron-down" size={18} color={idx === selectedRows.length - 1 ? flColor.charcoal500 : flColor.bronze400} />
                   </Pressable>
                 </View>
                 <Row metric={m} />
@@ -127,14 +127,6 @@ function Row({ metric }: { metric: MetricSeries }) {
       </Text>
       <Text style={styles.rowCat}>{metric.category}</Text>
     </View>
-  );
-}
-
-function Glyph({ d, color }: { d: string; color: string }) {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={d} />
-    </Svg>
   );
 }
 

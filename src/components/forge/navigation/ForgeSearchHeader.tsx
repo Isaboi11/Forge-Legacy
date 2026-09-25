@@ -24,7 +24,7 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color } from '@/constants/tokens'
 import { NAV } from './_navigationTokens'
 import type { ForgeSearchHeaderProps } from './types'
@@ -63,7 +63,7 @@ export function ForgeSearchHeader({
             accessibilityRole="button"
             style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
           >
-            <Feather name="arrow-left" size={20} color={color.text.secondary} />
+            <EngravedIcon name="arrow-left" size={20} color={color.text.secondary} />
           </Pressable>
         ) : null}
 
@@ -77,7 +77,7 @@ export function ForgeSearchHeader({
           accessibilityLabel={accessibilityLabel}
           accessibilityRole="search"
         >
-          <Feather name="search" size={NAV.ICON_SEARCH} color={color.text.tertiary} />
+          <EngravedIcon name="search" size={NAV.ICON_SEARCH} color={color.text.tertiary} />
           {value ? (
             <Text style={styles.defaultFieldText} numberOfLines={1}>{value}</Text>
           ) : (
@@ -93,7 +93,7 @@ export function ForgeSearchHeader({
             accessibilityRole="button"
             style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
           >
-            <Feather name="sliders" size={20} color={color.text.secondary} />
+            <EngravedIcon name="sliders" size={20} color={color.text.secondary} />
           </Pressable>
         ) : null}
       </View>
@@ -113,12 +113,9 @@ export function ForgeSearchHeader({
             style={styles.fieldIcon}
           />
         ) : (
-          <Feather
-            name="search"
-            size={NAV.ICON_SEARCH}
-            color={color.accent.primary}
-            style={styles.fieldIcon}
-          />
+          <View style={styles.fieldIcon}>
+            <EngravedIcon name="search" size={NAV.ICON_SEARCH} color={color.accent.primary} />
+          </View>
         )}
 
         <TextInput
@@ -148,7 +145,7 @@ export function ForgeSearchHeader({
             style={styles.clearBtn}
           >
             <View style={styles.clearCircle}>
-              <Feather name="x" size={NAV.ICON_CLEAR} color={color.text.secondary} />
+              <EngravedIcon name="close" size={NAV.ICON_CLEAR} color={color.text.secondary} />
             </View>
           </Pressable>
         ) : null}

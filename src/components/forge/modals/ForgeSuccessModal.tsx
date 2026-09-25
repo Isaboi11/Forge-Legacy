@@ -21,7 +21,7 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Feather } from '@expo/vector-icons'
+import { FeatherNameIcon } from '../FeatherNameIcon'
 import { color, elevation } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
 import { useOverlayTransition } from './_useOverlayTransition'
@@ -100,7 +100,7 @@ export function ForgeSuccessModal({
               { transform: [{ scale: panel.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }] },
             ]}
           >
-            <Feather name={iconName as 'award'} size={44} color={color.text.inverse} />
+            <FeatherNameIcon name={iconName} size={44} color={color.text.inverse} />
             <Animated.View
               pointerEvents="none"
               style={[

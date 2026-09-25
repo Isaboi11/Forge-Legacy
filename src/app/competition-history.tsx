@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -370,33 +370,16 @@ function HistoryRow({ past: p, onPress }: { past: PastChallenge; onPress: () => 
 
 // ── glyphs ──
 function CrownGlyph({ size = 16, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
-    </Svg>
-  );
+  return <EngravedIcon name="crown" size={size} color={engravedTint(color)} />;
 }
 function SearchGlyph({ size = 15, color = flColor.gray600 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round">
-      <Circle cx={11} cy={11} r={6.5} />
-      <Path d="M16 16l4 4" />
-    </Svg>
-  );
+  return <EngravedIcon name="search" size={size} color={color} />;
 }
 function ClearGlyph({ size = 14, color = flColor.gray600 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round">
-      <Path d="M6 6l12 12M18 6L6 18" />
-    </Svg>
-  );
+  return <EngravedIcon name="close" size={size} color={color} />;
 }
 function SwordsGlyph({ size = 28, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M14.5 14.5L21 21M19 3l-9 9M5 3l9 9M9.5 14.5L3 21" />
-    </Svg>
-  );
+  return <EngravedIcon name="swords" size={size} color={engravedTint(color)} />;
 }
 
 const styles = StyleSheet.create({

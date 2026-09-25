@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -10,6 +9,7 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { fetchSquad } from '@/data/squad-live';
@@ -278,51 +278,28 @@ function RecordHistory({ record, onHolder }: { record: SquadRecord; onHolder: (h
   );
 }
 
-// ── glyphs (the design's own hand-rolled paths, not ForgeSymbols) ──
+// ── glyphs ──
 function RecordGlyph({ kind }: { kind: SquadRecordKind }) {
-  const paths: Record<SquadRecordKind, string[]> = {
-    heaviest_lift: ['M12 20V6', 'M6 12l6-6 6 6'],
-    biggest_session: ['M4 20V10', 'M9 20V4', 'M14 20v-8', 'M19 20v-5'],
-    most_workouts_month: ['M6.5 9v6', 'M17.5 9v6', 'M4 10.5v3', 'M20 10.5v3', 'M6.5 12h11'],
-    longest_run: ['M3 15.6v-3c0-.5.4-.8.9-.6l3.3.8 2.6-2.9c.4-.5 1.2-.4 1.5.2l.7 1.5 6 1.7c1.2.3 2 1.1 2 2.4v.7c0 .4-.3.7-.7.7H4c-.6 0-1-.5-1-1z'],
-    most_prs_month: ['M12 3.4l2.1 4.7 5.1.5-3.8 3.4 1.1 5L12 14l-4.6 2.4 1.1-5-3.8-3.4 5.1-.5z'],
+  const names: Record<SquadRecordKind, EngravedName> = {
+    heaviest_lift: 'pr',
+    biggest_session: 'bar-chart',
+    most_workouts_month: 'barbell',
+    longest_run: 'shoe',
+    most_prs_month: 'star',
   };
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      {paths[kind].map((d, i) => (
-        <Path key={i} d={d} />
-      ))}
-    </Svg>
-  );
+  return <EngravedIcon name={names[kind]} size={19} />;
 }
 function ArrowUpGlyph({ size = 10, color = flColor.bronze400 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 19V5M6 11l6-6 6 6" />
-    </Svg>
-  );
+  return <EngravedIcon name="arrow-up" size={size} color={color} />;
 }
 function ArrowRightGlyph({ size = 15, color = flColor.gray600 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12h13M13 6l6 6-6 6" />
-    </Svg>
-  );
+  return <EngravedIcon name="arrow-right" size={size} color={color} />;
 }
 function FlameGlyph({ size = 20, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />
-    </Svg>
-  );
+  return <EngravedIcon name="flame" size={size} color={engravedTint(color)} />;
 }
 function BookGlyph({ size = 18, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 6.5C10.5 5 8.5 4.5 4 4.5v13c4.5 0 6.5.5 8 2 1.5-1.5 3.5-2 8-2v-13c-4.5 0-6.5.5-8 2z" />
-      <Path d="M12 6.5v13" />
-    </Svg>
-  );
+  return <EngravedIcon name="book" size={size} color={engravedTint(color)} />;
 }
 
 const styles = StyleSheet.create({

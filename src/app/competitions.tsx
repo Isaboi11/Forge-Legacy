@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -437,66 +437,38 @@ function StatCell({ value, label }: { value: string; label: string }) {
   );
 }
 
-// ── glyphs (the design's own type paths) ──
+// ── glyphs ──
+const TYPE_ICON: Record<ChallengeType, EngravedName> = {
+  MOST_WORKOUTS: 'dumbbell',
+  MOST_VOLUME: 'bar-chart',
+  MOST_DURATION: 'clock',
+  MAX_LIFT: 'pr',
+  MOST_PRS: 'star',
+  DISTANCE_TOTAL: 'shoe',
+  MOST_DAYS: 'calendar',
+  MOST_REPS: 'reps',
+  EARLY_BIRD: 'sunrise',
+  MOST_VARIETY: 'variety',
+  GAIN_MAX_LIFT: 'trend-up',
+  GAIN_VOLUME: 'trend-up',
+  GAIN_REPS: 'trend-up',
+  GAIN_DISTANCE: 'trend-up',
+};
 function TypeGlyph({ type, size = 15, color = flColor.bronze400 }: { type: ChallengeType; size?: number; color?: string }) {
-  const paths: Record<ChallengeType, string[]> = {
-    MOST_WORKOUTS: ['M6.5 9v6', 'M17.5 9v6', 'M4 10.5v3', 'M20 10.5v3', 'M6.5 12h11'],
-    MOST_VOLUME: ['M4 20V10', 'M9 20V4', 'M14 20v-8', 'M19 20v-5'],
-    MOST_DURATION: ['M12 7v5l3.5 2'],
-    MAX_LIFT: ['M12 20V6', 'M6 12l6-6 6 6'],
-    MOST_PRS: ['M12 3.4l2.1 4.7 5.1.5-3.8 3.4 1.1 5L12 14l-4.6 2.4 1.1-5-3.8-3.4 5.1-.5z'],
-    DISTANCE_TOTAL: ['M3 15.6v-3c0-.5.4-.8.9-.6l3.3.8 2.6-2.9c.4-.5 1.2-.4 1.5.2l.7 1.5 6 1.7c1.2.3 2 1.1 2 2.4v.7c0 .4-.3.7-.7.7H4c-.6 0-1-.5-1-1z'],
-    MOST_DAYS: ['M4 6.5h16v14H4zM4 10.5h16M8 3.5v3M16 3.5v3', 'M8.5 15l2 2 4-4'],
-    MOST_REPS: ['M4 12h3M17 12h3', 'M9 8.5v7M15 8.5v7', 'M9 12h6'],
-    EARLY_BIRD: ['M12 17.5a5.5 5.5 0 0 1 0-11', 'M3.5 20h17', 'M12 3.5v1.5M5 6.5l1 1M19 6.5l-1 1'],
-    MOST_VARIETY: ['M5 5.5h5v5H5zM14 5.5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z'],
-    GAIN_MAX_LIFT: ['M4 18l5-5 3.5 3.5L20 8', 'M15 8h5v5'],
-    GAIN_VOLUME: ['M4 18l5-5 3.5 3.5L20 8', 'M15 8h5v5'],
-    GAIN_REPS: ['M4 18l5-5 3.5 3.5L20 8', 'M15 8h5v5'],
-    GAIN_DISTANCE: ['M4 18l5-5 3.5 3.5L20 8', 'M15 8h5v5'],
-  };
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      {type === 'MOST_DURATION' ? <Circle cx={12} cy={12} r={8.5} /> : null}
-      {paths[type].map((d, i) => (
-        <Path key={i} d={d} />
-      ))}
-    </Svg>
-  );
+  return <EngravedIcon name={TYPE_ICON[type]} size={size} color={engravedTint(color)} />;
 }
 function SwordsGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M14.5 17.5 L3 6 L3 3 L6 3 L17.5 14.5" />
-      <Path d="M13 19 L19 13" />
-      <Path d="M14.5 6.5 L18 3 L21 3 L21 6 L17.5 9.5" />
-      <Path d="M5 14 L9 18" />
-    </Svg>
-  );
+  return <EngravedIcon name="swords" size={size} color={engravedTint(color)} />;
 }
 function TrophyGlyph({ size = 16, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M8 4h8v5a4 4 0 0 1-8 0z" />
-      <Path d="M8 4H5.5a2 2 0 0 0 0 4H8M16 4h2.5a2 2 0 0 1 0 4H16" />
-      <Path d="M12 13v3M9 20h6" />
-    </Svg>
-  );
+  return <EngravedIcon name="trophy" size={size} color={engravedTint(color)} />;
 }
 
 function CrownRowGlyph() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill={flColor.bronze300}>
-      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
-    </Svg>
-  );
+  return <EngravedIcon name="crown" size={20} />;
 }
 function ChevronRowGlyph() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 5l7 7-7 7" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-right" size={17} color={flColor.gray600} />;
 }
 
 const styles = StyleSheet.create({

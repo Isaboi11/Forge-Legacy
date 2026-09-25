@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flRadius } from '@/constants/foundation';
 import { fetchProgram, type SavedProgram } from '@/data/programs-live';
@@ -244,9 +244,7 @@ function Row({
       </View>
       <View style={[styles.check, on ? styles.checkOn : null]}>
         {on ? (
-          <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M5 13l4.5 4.5L19 7" />
-          </Svg>
+          <EngravedIcon name="check" size={12} color={flColor.bronze300} />
         ) : null}
       </View>
     </Pressable>

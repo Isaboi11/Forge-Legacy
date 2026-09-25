@@ -19,11 +19,11 @@
  */
 
 import React from 'react'
-import Svg, { Path } from 'react-native-svg'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { flColor, flRadius } from '@/constants/foundation'
 import { useTourAnchor } from '@/hooks/useTourAnchors'
 import type { TourAnchorId } from '@/domain/onboarding/tour-plan'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 
 export interface QuickActionsRowProps {
   onTrainTogether: () => void
@@ -39,18 +39,10 @@ export interface QuickActionsRowProps {
 }
 
 function FlameIcon() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3s5 4.2 5 8.6a5 5 0 0 1-10 0C7 9 9 7 9 7s.6 2 1.6 2.6C11.4 8 12 5.6 12 3z" />
-    </Svg>
-  )
+  return <EngravedIcon name="flame" size={17} />
 }
 function TrophyIcon() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M6 4v6a6 6 0 0 0 12 0V4M12 16v4M8.5 20h7" />
-    </Svg>
-  )
+  return <EngravedIcon name="trophy" size={17} />
 }
 
 export function QuickActionsRow({

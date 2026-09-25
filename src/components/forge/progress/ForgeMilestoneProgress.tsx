@@ -1,7 +1,7 @@
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color } from '@/constants/tokens'
 import { PROG } from './_progressTokens'
 import type { ForgeMilestoneProgressProps, MilestoneNode } from './types'
@@ -123,7 +123,7 @@ function MilestoneNodeView({
           end={{ x: 1, y: 1 }}
           style={[styles.nodeInner, { width: nodeSize, height: nodeSize, borderRadius: r, borderColor: PROG.NODE_BORDER }]}
         >
-          <Feather name="check" size={14} color={color.text.inverse} strokeWidth={3} />
+          <EngravedIcon name="check" size={14} color={color.text.inverse} />
         </LinearGradient>
       ) : milestone.state === 'current' ? (
         <View style={[styles.nodeInner, nodeStyle, { width: nodeSize, height: nodeSize, borderRadius: r }]}>
@@ -131,7 +131,7 @@ function MilestoneNodeView({
         </View>
       ) : (
         <View style={[styles.nodeInner, nodeStyle, { width: nodeSize, height: nodeSize, borderRadius: r }]}>
-          <Feather name="lock" size={12} color={color.text.tertiary} />
+          <EngravedIcon name="lock" size={12} color={color.text.tertiary} />
         </View>
       )}
     </View>

@@ -19,9 +19,10 @@
  */
 
 import React from 'react';
-import Svg, { Circle, Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { FlameIcon } from '../../primitives/icons/HomeIcons';
+import { EngravedIcon, engravedTint } from '../../primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 // `formatProgramMeta` now comes from the domain, NOT from the fixture module. It was the only value
 // this production component pulled out of `post-placeholder`, and that one edge compiled every
@@ -47,98 +48,43 @@ export function RoleBadge({ role }: { role: PostRole }) {
 type GlyphProps = { size?: number; color?: string };
 /** CANONICALIZED to the detail version (design set is silent on it). */
 export function CommentGlyph({ size = 16, color = flColor.gray400 }: GlyphProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M4 5h16v11H8l-4 4z" />
-    </Svg>
-  );
+  return <EngravedIcon name="chat" size={size} color={engravedTint(color)} />;
 }
 /** CANONICALIZED to the detail version (design set is silent on it). */
 export function BookmarkGlyph({ size = 17, color = flColor.gray400 }: GlyphProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M6 3h12v18l-6-4-6 4z" />
-    </Svg>
-  );
+  return <EngravedIcon name="bookmark" size={size} color={engravedTint(color)} />;
 }
 export function ShareGlyph({ size = 17, color = flColor.gray400 }: GlyphProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Circle cx={6} cy={12} r={2.4} />
-      <Circle cx={17} cy={6} r={2.4} />
-      <Circle cx={17} cy={18} r={2.4} />
-      <Path d="M8.1 10.9l6.8-3.8M8.1 13.1l6.8 3.8" />
-    </Svg>
-  );
+  return <EngravedIcon name="share" size={size} color={engravedTint(color)} />;
 }
 function HonorGlyph({ size = 26, color = flColor.bronze300 }: GlyphProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M12 3l7 3v5c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6z" />
-      <Path d="M9 11l2 2 4-4" />
-    </Svg>
-  );
+  return <EngravedIcon name="shield-check" size={size} color={engravedTint(color)} />;
 }
 function DumbbellGlyph({ size = 22, color = flColor.bronze300 }: GlyphProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
-    </Svg>
-  );
+  return <EngravedIcon name="dumbbell" size={size} color={engravedTint(color)} />;
 }
 function PlayGlyph({ size = 20, color = flColor.cream100 }: GlyphProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M8 6.5l10 5.5-10 5.5z" />
-    </Svg>
-  );
+  return <EngravedIcon name="play" size={size} color={engravedTint(color)} />;
 }
 function ClockGlyph({ size = 13, color = flColor.bronze400 }: GlyphProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Circle cx={12} cy={12} r={9} />
-      <Path d="M12 7v5l3 2" />
-    </Svg>
-  );
+  return <EngravedIcon name="clock" size={size} color={engravedTint(color)} />;
 }
 function TrainGlyph({ size = 17, color = flColor.bronze300 }: GlyphProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Circle cx={7.5} cy={8} r={2.4} />
-      <Circle cx={16.5} cy={8} r={2.4} />
-      <Path d="M3 19a4.5 4.5 0 0 1 9 0M12 19a4.5 4.5 0 0 1 9 0" />
-    </Svg>
-  );
+  return <EngravedIcon name="people" size={size} color={engravedTint(color)} />;
 }
 function ProgramKindGlyph({ size = 13, color = flColor.bronze300 }: GlyphProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M4 5.5h13a1.5 1.5 0 0 1 1.5 1.5v11.5H6a2 2 0 0 0-2 2zM4 5.5v14M8 9.5h7M8 13h7" />
-    </Svg>
-  );
+  return <EngravedIcon name="book" size={size} color={engravedTint(color)} />;
 }
 function SwordsGlyph({ size = 16, color = flColor.bronze300 }: GlyphProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M5 4.5L18 17.5M19 4.5L6 17.5M12.7 15.8L16.3 12.2M7.7 12.2L11.3 15.8" />
-    </Svg>
-  );
+  return <EngravedIcon name="swords" size={size} color={engravedTint(color)} />;
 }
 /** The check-in confirm mark (feed CheckGlyph == detail BigCheckGlyph — same path, not drift). */
 function CheckinCheckGlyph({ size = 24, color = flColor.bronze300 }: GlyphProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M5 12.5l4.5 4.5L19 7" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={size} color={engravedTint(color)} />;
 }
 /** The poll-choice tick (detail-only; feed never renders polls). */
 function PollTickGlyph({ size = 14, color = flColor.bronze300 }: GlyphProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M20 6L9 17l-5-5" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={size} color={engravedTint(color)} />;
 }
 
 /** Source-faithful radial glow behind the achievement / honor plate (defined ONCE — sanctioned change). */

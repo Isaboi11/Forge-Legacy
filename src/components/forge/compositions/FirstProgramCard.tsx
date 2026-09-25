@@ -1,8 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Defs, FeTurbulence, Filter, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, FeTurbulence, Filter, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { BarbellIcon, FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 
 /**
@@ -64,9 +65,7 @@ export function FirstProgramCard({ onBuild, onStart }: { onBuild: () => void; on
             end={flGradient.bronzeFill.end}
             style={styles.buildFill}
           >
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-              <Path d="M4 20h16M6 20V9l6-4 6 4v11M10 20v-5h4v5" stroke={flColor.emberFlame} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
+            <EngravedIcon name="hammer" size={18} color={flColor.emberFlame} />
             <Text style={styles.buildText}>Build Program</Text>
           </LinearGradient>
         </Pressable>

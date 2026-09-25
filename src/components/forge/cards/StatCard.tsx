@@ -10,7 +10,7 @@
 
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color, space, size } from '@/constants/tokens'
 import { BaseCard } from './BaseCard'
 import { CARD } from './_cardTokens'
@@ -20,17 +20,17 @@ export interface StatCardProps {
   label: string
   value: string
   secondary?: string
-  /** Icon name (Feather) shown next to the label */
-  iconName?: React.ComponentProps<typeof Feather>['name']
+  /** Engraved icon name shown next to the label */
+  iconName?: EngravedName
   trend?: TrendDirection
   trendValue?: string
   state?: StatCardState
   onPress?: () => void
 }
 
-const TREND_ICON: Record<TrendDirection, React.ComponentProps<typeof Feather>['name']> = {
-  up:      'trending-up',
-  down:    'trending-down',
+const TREND_ICON: Record<TrendDirection, EngravedName> = {
+  up:      'trend-up',
+  down:    'trend-up',
   neutral: 'minus',
 }
 
@@ -68,10 +68,10 @@ export function StatCard({
       <View style={styles.labelRow}>
         <Text style={styles.label}>{label}</Text>
         {iconName && !isLocked && (
-          <Feather name={iconName} size={size.iconInline} color={color.text.tertiary} />
+          <EngravedIcon name={iconName} size={size.iconInline} />
         )}
         {isLocked && (
-          <Feather name="lock" size={size.iconInline} color={color.text.tertiary} />
+          <EngravedIcon name="lock" size={size.iconInline} color={color.text.tertiary} />
         )}
       </View>
 
@@ -88,7 +88,9 @@ export function StatCard({
       {/* Trend row */}
       {trend && trendValue && !isLocked ? (
         <View style={styles.trendRow}>
-          <Feather name={TREND_ICON[trend]} size={13} color={trendColor} />
+          <View style={trend === 'down' ? styles.trendDown : undefined}>
+            <EngravedIcon name={TREND_ICON[trend]} size={13} color={trendColor} />
+          </View>
           <Text style={[styles.trendValue, { color: trendColor }]}>{trendValue}</Text>
         </View>
       ) : null}
@@ -97,6 +99,8 @@ export function StatCard({
 }
 
 const styles = StyleSheet.create({
+  /** No engraved trend-down — the trend-up glyph, mirrored. */
+  trendDown: { transform: [{ scaleY: -1 }] },
   locked: {
     opacity: 0.55,
   },

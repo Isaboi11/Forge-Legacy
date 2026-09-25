@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
 import { BeforeAfterSlider } from '@/components/forge/BeforeAfterSlider';
 import { TransformationLayout } from '@/components/forge/TransformationLayout';
@@ -29,6 +28,7 @@ import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 import { openPlaylist, PlaylistChip } from '@/components/forge/composites/Playlist';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { playlistFromRow } from '@/domain/workout/playlist';
 
 /**
@@ -475,9 +475,7 @@ export default function SquadPostRoute() {
                   style={({ pressed }) => [styles.openSession, pressed ? { opacity: 0.85 } : null]}
                 >
                   <Text style={styles.openSessionText}>See every set</Text>
-                  <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <Path d="M9 6l6 6-6 6" />
-                  </Svg>
+                  <EngravedIcon name="chevron-right" size={15} color={flColor.bronze300} />
                 </Pressable>
               ) : null}
             </>
@@ -808,36 +806,19 @@ function OwnerBadge() {
 }
 
 function CommentGlyph() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 5.5h16v11H9l-4 3z" />
-    </Svg>
-  );
+  return <EngravedIcon name="chat" size={16} color={flColor.gray400} />;
 }
 function SendIcon({ active }: { active: boolean }) {
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={active ? flColor.bronze300 : flColor.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 12l16-7-7 16-2.5-6.5z" />
-    </Svg>
-  );
+  return <EngravedIcon name="send" size={19} color={active ? flColor.bronze300 : flColor.gray600} />;
 }
 
 /** The Report affordance in the app bar. A flag reads as "report" without a label at this size. */
 function MoreGlyph() {
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2.4} strokeLinecap="round">
-      <Path d="M12 5h.01M12 12h.01M12 19h.01" />
-    </Svg>
-  );
+  return <EngravedIcon name="more" size={19} color={flColor.gray400} />;
 }
 
 function FlagGlyph() {
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 21V4" />
-      <Path d="M4 4h12l-2 4 2 4H4" />
-    </Svg>
-  );
+  return <EngravedIcon name="flag" size={19} color={flColor.gray400} />;
 }
 
 const styles = StyleSheet.create({

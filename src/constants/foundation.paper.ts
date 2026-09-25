@@ -251,6 +251,14 @@ export const flIcon = {
   inactive: '#8B8377', // --fl-icon-inactive
   containerBg: flColor.iconContainerBg,
   containerBorder: flColor.bronzeBorderSubtle,
+  /**
+   * The engraved icons, one step darker than Forge's. Forge's top stop `#F3D9AE` is near-cream and would vanish
+   * on this ground; these reuse the palette's own bronzes (`bronze400` → `bronze600` → `bronzeDark`), so the top
+   * of every glyph clears 3:1 on base the way `flIcon.bronze` already does.
+   */
+  engravedTop: flColor.bronze400,
+  engravedMid: flColor.bronze600,
+  engravedBottom: flColor.bronzeDark,
 } as const satisfies FlIcon;
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
 import { Image } from 'expo-image';
 
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { themeScrim } from '@/constants/theme-scrim';
 import { HoltMark } from '@/components/forge/HoltMark';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { useSheetDrag } from '@/hooks/useSheetDrag';
 import { INTENSITY_LEVELS, type IntensityLevel } from '@/domain/coach/rulebook/intensity';
 import type { IntensityProposal } from '@/domain/coach/intensity-learning';
@@ -65,26 +65,10 @@ const INTENSITY_CHIP: Record<IntensityLevel, string> = {
  * scales: an icon is allowed where it carries meaning the text cannot.
  */
 const INTENSITY_ICON: Record<IntensityLevel, React.ReactNode> = {
-  reminders: (
-    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M20 14a2 2 0 0 1-2 2H8l-4 3V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" />
-    </Svg>
-  ),
-  steady: (
-    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M3 12c2.5-5 4.5-5 7 0s4.5 5 7 0" />
-    </Svg>
-  ),
-  push: (
-    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.emberFlame} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3c3 4 5 6 5 9a5 5 0 0 1-10 0c0-1.4.6-2.6 1.6-3.8.7 1 1.4 1.5 2.1 1.5C10.4 8 11 5.6 12 3z" />
-    </Svg>
-  ),
-  drive: (
-    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.emberFlame} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M13 2L5 13h6l-1 9 8-11h-6z" />
-    </Svg>
-  ),
+  reminders: <EngravedIcon name="chat" size={13} />,
+  steady: <EngravedIcon name="wave" size={13} />,
+  push: <EngravedIcon name="flame" size={13} color={flColor.emberFlame} />,
+  drive: <EngravedIcon name="lightning" size={13} color={flColor.emberFlame} />,
 };
 
 
@@ -269,9 +253,7 @@ export function SessionCoachSheet({
             </Text>
           </View>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" style={styles.close}>
-            <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round">
-              <Path d="M6 6l12 12M18 6L6 18" />
-            </Svg>
+            <EngravedIcon name="close" size={19} color={flColor.gray400} />
           </Pressable>
         </View>
         </View>
@@ -355,11 +337,7 @@ export function SessionCoachSheet({
                         hitSlop={8}
                         style={styles.whyRow}
                       >
-                        <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round">
-                          <Circle cx={12} cy={12} r={9} />
-                          <Path d="M12 11v5" />
-                          <Path d="M12 7.6v.6" />
-                        </Svg>
+                        <EngravedIcon name="info" size={15} />
                         <Text style={styles.whyText}>
                           Why {weight} {unit}?
                         </Text>
@@ -377,10 +355,7 @@ export function SessionCoachSheet({
                         <Text style={styles.useText}>
                           Use {weight} {unit}
                         </Text>
-                        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                          <Path d="M5 12h13" />
-                          <Path d="M13 6l6 6-6 6" />
-                        </Svg>
+                        <EngravedIcon name="arrow-right" size={14} color={flColor.cream100} />
                       </Pressable>
                     ) : null}
                   </View>
@@ -473,31 +448,16 @@ export function SessionCoachSheet({
                 accessibilityLabel={`Balance today's workout. ${addPicks.reason}`}
                 style={({ pressed }) => [styles.balance, pressed && styles.rowPressed]}
               >
-                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.greenMuted} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                  <Path d="M12 4v16" />
-                  <Path d="M7 8h10" />
-                  <Path d="M7 8l-3 6h6z" />
-                  <Path d="M17 8l3 6h-6z" />
-                </Svg>
+                <EngravedIcon name="balance" size={22} color={flColor.greenMuted} />
                 <View style={styles.grow}>
                   <Text style={styles.rowLabel}>Balance today&rsquo;s workout</Text>
                   <Text style={styles.rowSub} numberOfLines={2}>
                     {addPicks.reason}
                   </Text>
                 </View>
-                <Svg
-                  width={17}
-                  height={17}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke={flColor.gray600}
-                  strokeWidth={1.8}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={balanceOpen ? styles.chevOpen : undefined}
-                >
-                  <Path d="M9 5l7 7-7 7" />
-                </Svg>
+                <View style={balanceOpen ? styles.chevOpen : undefined}>
+                  <EngravedIcon name="chevron-right" size={17} color={flColor.gray600} />
+                </View>
               </Pressable>
               {balanceOpen ? (
                 <View style={styles.balanceOpen}>
@@ -660,19 +620,9 @@ function Row({
       </View>
       {/* Down when it is open, right when it leads away. One glyph rotated, so the two can never
           disagree about which direction the row goes. */}
-      <Svg
-        width={17}
-        height={17}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={accent ? flColor.bronze400 : flColor.gray600}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={expanded ? styles.chevOpen : undefined}
-      >
-        <Path d="M9 5l7 7-7 7" />
-      </Svg>
+      <View style={expanded ? styles.chevOpen : undefined}>
+        <EngravedIcon name="chevron-right" size={17} color={accent ? flColor.bronze400 : flColor.gray600} />
+      </View>
     </Pressable>
   );
 }

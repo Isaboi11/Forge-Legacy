@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { Button } from '@/components/forge/composites/Button';
@@ -223,11 +223,7 @@ function cardioLine(e: LiveExercise, metric: boolean, rowUnit: RowUnit): string 
 
 function CheckGlyph({ small = false }: { small?: boolean }) {
   const s = small ? 13 : 16;
-  return (
-    <Svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={flColor.greenMuted} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M20 6L9 17l-5-5" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={s} color={flColor.greenMuted} />;
 }
 
 const styles = StyleSheet.create({

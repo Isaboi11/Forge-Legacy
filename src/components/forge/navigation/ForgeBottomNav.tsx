@@ -9,7 +9,7 @@
 
 import React from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { FeatherNameIcon } from '@/components/forge/FeatherNameIcon'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { color } from '@/constants/tokens'
 import { NAV } from './_navigationTokens'
@@ -58,7 +58,7 @@ function NavTab({ item }: { item: BottomNavItem }) {
 
       {/* Icon with optional badge */}
       <View style={styles.iconWrap}>
-        <Feather name={iconName as 'home'} size={NAV.ICON_NAV} color={iconColor} />
+        <FeatherNameIcon name={iconName} size={NAV.ICON_NAV} color={iconColor} />
         {(hasBadge || (badgeCount !== undefined && badgeCount > 0)) && (
           <View style={styles.badge}>
             {badgeCount !== undefined && badgeCount > 0 && (

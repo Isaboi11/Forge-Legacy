@@ -16,7 +16,7 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color } from '@/constants/tokens'
 import { INP } from './_inputTokens'
 import { getBorderColor, getBgColor, getGlow, getHelperColor, resolveHelper } from './_inputUtils'
@@ -77,7 +77,7 @@ export function ForgePasswordInput({
         ]}
       >
         {/* Lock icon — always present */}
-        <Feather name="lock" size={INP.ICON_SIZE} color={color.text.tertiary} />
+        <EngravedIcon name="lock" size={INP.ICON_SIZE} color={color.text.tertiary} />
 
         <TextInput
           value={value}
@@ -95,8 +95,8 @@ export function ForgePasswordInput({
         />
 
         {showLoading && <ActivityIndicator size="small" color={color.accent.primary} />}
-        {showSuccess && <Feather name="check" size={INP.ICON_SIZE} color={color.accent.primary} />}
-        {showError && <Feather name="alert-circle" size={INP.ICON_SIZE} color={color.danger} />}
+        {showSuccess && <EngravedIcon name="check" size={INP.ICON_SIZE} color={color.accent.primary} />}
+        {showError && <EngravedIcon name="warning" size={INP.ICON_SIZE} color={color.danger} />}
         {showEye && (
           <Pressable
             onPress={() => setRevealed(r => !r)}
@@ -104,7 +104,7 @@ export function ForgePasswordInput({
             accessibilityLabel={revealed ? 'Hide password' : 'Show password'}
             hitSlop={8}
           >
-            <Feather
+            <EngravedIcon
               name={revealed ? 'eye-off' : 'eye'}
               size={INP.ICON_SIZE_EYE}
               color={color.text.secondary}

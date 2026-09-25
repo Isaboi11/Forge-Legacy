@@ -3,8 +3,8 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ScreenBackground } from '@/components/screen-background';
@@ -693,96 +693,49 @@ function ReviewRow({ label, value, last = false }: { label: string; value: strin
 }
 
 // ── glyphs ──
+const TYPE_ICON: Record<ChallengeType, EngravedName> = {
+  MOST_WORKOUTS: 'dumbbell',
+  MOST_VOLUME: 'bar-chart',
+  MOST_DURATION: 'clock',
+  MAX_LIFT: 'pr',
+  MOST_PRS: 'star',
+  DISTANCE_TOTAL: 'shoe',
+  MOST_DAYS: 'calendar',
+  MOST_REPS: 'reps',
+  EARLY_BIRD: 'sunrise',
+  MOST_VARIETY: 'variety',
+  GAIN_MAX_LIFT: 'trend-up',
+  GAIN_VOLUME: 'trend-up',
+  GAIN_REPS: 'trend-up',
+  GAIN_DISTANCE: 'trend-up',
+};
 function TypeGlyph({ type, size = 16, color = flColor.bronze300 }: { type: ChallengeType; size?: number; color?: string }) {
-  const paths: Record<ChallengeType, string[]> = {
-    MOST_WORKOUTS: ['M6.5 9v6', 'M17.5 9v6', 'M4 10.5v3', 'M20 10.5v3', 'M6.5 12h11'],
-    MOST_VOLUME: ['M4 20V10', 'M9 20V4', 'M14 20v-8', 'M19 20v-5'],
-    MOST_DURATION: ['M12 7v5l3.5 2'],
-    MAX_LIFT: ['M12 20V6', 'M6 12l6-6 6 6'],
-    MOST_PRS: ['M12 3.4l2.1 4.7 5.1.5-3.8 3.4 1.1 5L12 14l-4.6 2.4 1.1-5-3.8-3.4 5.1-.5z'],
-    DISTANCE_TOTAL: ['M3 15.6v-3c0-.5.4-.8.9-.6l3.3.8 2.6-2.9c.4-.5 1.2-.4 1.5.2l.7 1.5 6 1.7c1.2.3 2 1.1 2 2.4v.7c0 .4-.3.7-.7.7H4c-.6 0-1-.5-1-1z'],
-    MOST_DAYS: ['M4 6.5h16v14H4zM4 10.5h16M8 3.5v3M16 3.5v3', 'M8.5 15l2 2 4-4'],
-    MOST_REPS: ['M4 12h3M17 12h3', 'M9 8.5v7M15 8.5v7', 'M9 12h6'],
-    EARLY_BIRD: ['M12 17.5a5.5 5.5 0 0 1 0-11', 'M3.5 20h17', 'M12 3.5v1.5M5 6.5l1 1M19 6.5l-1 1'],
-    MOST_VARIETY: ['M5 5.5h5v5H5zM14 5.5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z'],
-    GAIN_MAX_LIFT: ['M4 18l5-5 3.5 3.5L20 8', 'M15 8h5v5'],
-    GAIN_VOLUME: ['M4 18l5-5 3.5 3.5L20 8', 'M15 8h5v5'],
-    GAIN_REPS: ['M4 18l5-5 3.5 3.5L20 8', 'M15 8h5v5'],
-    GAIN_DISTANCE: ['M4 18l5-5 3.5 3.5L20 8', 'M15 8h5v5'],
-  };
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      {type === 'MOST_DURATION' ? <Circle cx={12} cy={12} r={8.5} /> : null}
-      {paths[type].map((d, i) => (
-        <Path key={i} d={d} />
-      ))}
-    </Svg>
-  );
+  return <EngravedIcon name={TYPE_ICON[type]} size={size} color={engravedTint(color)} />;
 }
 function SwordsGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M14.5 17.5 L3 6 L3 3 L6 3 L17.5 14.5" />
-      <Path d="M13 19 L19 13" />
-      <Path d="M14.5 6.5 L18 3 L21 3 L21 6 L17.5 9.5" />
-      <Path d="M5 14 L9 18" />
-    </Svg>
-  );
+  return <EngravedIcon name="swords" size={size} color={engravedTint(color)} />;
 }
 function PodiumGlyph({ size = 15, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 20V10h6v10" />
-      <Path d="M3 20v-6h6M15 20v-8h6v8" />
-    </Svg>
-  );
+  return <EngravedIcon name="podium" size={size} color={engravedTint(color)} />;
 }
 function ClockGlyph({ size = 11, color = flColor.bronze400 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={8.5} />
-      <Path d="M12 7v5l3.5 2" />
-    </Svg>
-  );
+  return <EngravedIcon name="clock" size={size} color={engravedTint(color)} />;
 }
 function PeopleGlyph({ size = 11, color = flColor.bronze400 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={9} cy={8} r={3.2} />
-      <Path d="M3.4 19a5.6 5.6 0 0 1 11.2 0" />
-      <Path d="M16 5.3a3.2 3.2 0 0 1 0 5.4" />
-      <Path d="M18.2 19a5.6 5.6 0 0 0-3-4.9" />
-    </Svg>
-  );
+  return <EngravedIcon name="people" size={size} color={engravedTint(color)} />;
 }
 function CalendarGlyph({ size = 14, color = flColor.bronze400 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 6.5h16v14H4zM4 10.5h16M8 3.5v3M16 3.5v3" />
-    </Svg>
-  );
+  return <EngravedIcon name="calendar" size={size} color={engravedTint(color)} />;
 }
 function ChevronGlyph({ size = 17, color = flColor.gray600 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 5l7 7-7 7" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-right" size={size} color={color} />;
 }
 function CheckGlyph({ size = 12, color = '#6E8E74' }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4 4 10-10" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={size} color={color} />;
 }
 
 function TickGlyph() {
-  return (
-    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4.5 4.5L19 7" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={12} color={flColor.onBronze} />;
 }
 
 const styles = StyleSheet.create({

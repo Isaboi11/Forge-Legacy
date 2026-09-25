@@ -16,7 +16,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  */
 import { Animated, Easing, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path, Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -26,6 +26,7 @@ import { themeScrim } from '@/constants/theme-scrim';
 import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { HoltMark } from '@/components/forge/HoltMark';
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { usePremiumAi } from '@/lib/entitlement';
 import { interpretTyped, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
@@ -2113,14 +2114,11 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
             onPress={() => setMenu((v) => !v)}
             accessibilityLabel="Start something new"
             expanded={menu}
-          >
-            <Path d="M12 5v14M5 12h14" />
-          </HeaderAction>
+            icon="plus"
+          />
           {/* §4.9 — it collapses to the bubble, and it DOES end the conversation. The comment here used
               to say the opposite; it had been wrong since 2026-08-11, when closing started clearing. */}
-          <HeaderAction label="CLOSE" onPress={collapse} accessibilityLabel="Close" pad>
-            <Path d="M6 6l12 12M18 6L6 18" />
-          </HeaderAction>
+          <HeaderAction label="CLOSE" onPress={collapse} accessibilityLabel="Close" pad icon="close" />
         </View>
 
         {/*
@@ -2468,9 +2466,7 @@ function CoachHome({ onOpener }: { onOpener: (opener: string) => void }) {
             {/* `marginTop: auto` is what keeps the three arrows on one baseline when the subs are
                 different lengths — the design calls it out by name. Keep it. */}
             <View style={styles.homeArrow}>
-              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M5 12h14M13 6l6 6-6 6" />
-              </Svg>
+              <EngravedIcon name="arrow-right" size={15} color={flColor.bronze400} />
             </View>
           </Pressable>
         ))}
@@ -2489,36 +2485,11 @@ function CoachHome({ onOpener }: { onOpener: (opener: string) => void }) {
                 shape is most of what separates rows that are otherwise identical, and the glyph does the
                 rest. */}
             <View style={[styles.homeGlyph, r.icon === 'question' && styles.homeGlyphRound]}>
-              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                {r.icon === 'camera' ? (
-                  <>
-                    <Path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h2L9 4h6l1.5 2h2A2.5 2.5 0 0 1 21 8.5v9A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z" />
-                    <Path d="M12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
-                  </>
-                ) : r.icon === 'document' ? (
-                  <>
-                    <Path d="M6.5 3.5h7L18 8v12.5h-11.5z" />
-                    <Path d="M13.5 3.5V8H18" />
-                  </>
-                ) : r.icon === 'shelf' ? (
-                  /* Three spines stood on a shelf — the fourteen programs you are stood in front of, which
-                     is the picture the question is about. Not a magnifying glass: this is not a search. */
-                  <>
-                    <Path d="M5 4.5v13M9.5 4.5v13M14 5.5l3.5 12.2" />
-                    <Path d="M3 19.5h18" />
-                  </>
-                ) : (
-                  <>
-                    <Path d="M9.3 9.2a2.8 2.8 0 115.4 1.4c-.8 1.1-2.1 1.4-2.1 2.9" />
-                    <Path d="M12.6 17.2h-.01" />
-                  </>
-                )}
-              </Svg>
+              {/* The shelf is "which to choose" — compare, not a search. */}
+              <EngravedIcon name={HOME_ROW_GLYPH[r.icon] ?? 'info'} size={14} />
             </View>
             <Text style={styles.homeRowLabel}>{r.label}</Text>
-            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M9 6l6 6-6 6" />
-            </Svg>
+            <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} />
           </Pressable>
         ))}
       </View>
@@ -2528,28 +2499,10 @@ function CoachHome({ onOpener }: { onOpener: (opener: string) => void }) {
 
 /** BUILD dumbbell · TODAY calendar · ADJUST sliders — 22×22, 1.8 stroke, bronze (§3). */
 function HomeCardIcon({ tag }: { tag: HomeCardTag }) {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      {tag === 'BUILD' ? (
-        <>
-          <Path d="M7 8.5v7M17 8.5v7" />
-          <Path d="M4.5 10v4M19.5 10v4" />
-          <Path d="M7 12h10" />
-        </>
-      ) : tag === 'TODAY' ? (
-        <>
-          <Path d="M5 5.5h14v14H5z" />
-          <Path d="M8.5 3.5v4M15.5 3.5v4M5 10h14" />
-        </>
-      ) : (
-        <>
-          <Path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
-          <Path d="M15 4.8v4.4M9 14.8v4.4" />
-        </>
-      )}
-    </Svg>
-  );
+  return <EngravedIcon name={tag === 'BUILD' ? 'dumbbell' : tag === 'TODAY' ? 'calendar' : 'sliders'} size={22} />;
 }
+
+const HOME_ROW_GLYPH: Record<string, EngravedName> = { camera: 'camera', document: 'document', shelf: 'compare', question: 'info' };
 
 type HomeCardTag = (typeof HOME_CARDS)[number]['tag'];
 
@@ -2752,10 +2705,7 @@ function MeTurn({ text, at }: { text: string; at?: number }) {
       </View>
       <View style={styles.meMeta}>
         {clock ? <Text style={styles.meTime}>{clock}</Text> : null}
-        <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze600} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M1.5 13l4 4L13 8" />
-          <Path d="M9 17l1.5 1.5L22 7" />
-        </Svg>
+        <EngravedIcon name="double-check" size={13} color={engravedTint(flColor.bronze600)} />
       </View>
     </View>
   );
@@ -2769,7 +2719,7 @@ function MeTurn({ text, at }: { text: string; at?: number }) {
  */
 function HeaderAction({
   label,
-  children,
+  icon,
   onPress,
   accessibilityLabel,
   on = false,
@@ -2777,7 +2727,7 @@ function HeaderAction({
   expanded,
 }: {
   label: string;
-  children: React.ReactNode;
+  icon: EngravedName;
   onPress: () => void;
   accessibilityLabel: string;
   on?: boolean;
@@ -2793,9 +2743,7 @@ function HeaderAction({
       hitSlop={8}
       style={[styles.headerAction, pad && styles.headerActionPad]}
     >
-      <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={on ? flColor.bronze300 : flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-        {children}
-      </Svg>
+      <EngravedIcon name={icon} size={20} color={on ? flColor.bronze300 : flColor.gray600} />
       <Text style={[styles.headerActionLabel, on && styles.headerActionLabelOn]} numberOfLines={1}>
         {label}
       </Text>
@@ -2838,28 +2786,15 @@ function MenuRow({ label, onPress, divided = false }: { label: string; onPress: 
 }
 
 function MicGlyph({ color }: { color: string }) {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z" />
-      <Path d="M19 11a7 7 0 0 1-14 0M12 18v3" />
-    </Svg>
-  );
+  return <EngravedIcon name="microphone" size={18} color={color} />;
 }
 
 function StopGlyph({ color }: { color: string }) {
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill={color}>
-      <Path d="M6 6h12v12H6z" />
-    </Svg>
-  );
+  return <EngravedIcon name="stop" size={14} color={color} />;
 }
 
 function SendGlyph({ color }: { color: string }) {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12h14M13 6l6 6-6 6" />
-    </Svg>
-  );
+  return <EngravedIcon name="arrow-right" size={17} color={color} />;
 }
 
 /**
@@ -2927,9 +2862,7 @@ function BuildingCard() {
             <View key={label} style={styles.buildStep}>
               <View style={styles.buildIcon}>
                 {done ? (
-                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-                    <Path d="M20 6L9 17l-5-5" />
-                  </Svg>
+                  <EngravedIcon name="check" size={14} color={flColor.bronze400} />
                 ) : null}
               </View>
               <Text style={[styles.buildStepText, done && styles.buildStepDone, active && styles.buildStepActive]}>
@@ -3083,9 +3016,7 @@ function TurnView({
     case 'saved':
       return (
         <View style={styles.saved}>
-          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M20 6L9 17l-5-5" />
-          </Svg>
+          <EngravedIcon name="check" size={16} color={flColor.bronze400} />
           <Text style={styles.savedText}>{turn.text}</Text>
         </View>
       );
@@ -3238,9 +3169,7 @@ function Answers({
             style={({ pressed }) => [styles.importRow, pressed && styles.ctlOn]}
           >
             <Text style={styles.importText}>{c.label}</Text>
-            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M9 5l7 7-7 7" />
-            </Svg>
+            <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} />
           </Pressable>
         ))}
       </View>
@@ -3401,11 +3330,7 @@ function MultiLimitAnswers({ chips, answer, onChip }: { chips: Chip[]; answer: s
 
 /** §6's check — bronze-bright, and drawn only when a control is actually chosen. */
 function Tick({ size }: { size: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M20 6L9 17l-5-5" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={size} color={flColor.bronze300} />;
 }
 
 /** `"Beginner — new to lifting"` → `['Beginner', 'new to lifting']`. No dash → title only. */
@@ -3524,9 +3449,7 @@ function PlanPreview({
     <View style={styles.previewWrap}>
       <View style={styles.previewBar}>
         <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Back to the conversation" style={styles.previewBack}>
-          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M15 18l-6-6 6-6" />
-          </Svg>
+          <EngravedIcon name="chevron-left" size={18} color={flColor.cream100} />
         </Pressable>
         <Text style={styles.previewTitle} numberOfLines={1}>
           {program?.title ?? day?.title ?? 'Your plan'}
@@ -3614,9 +3537,7 @@ function PreviewWeek({ week, defaultOpen }: { week: ProgramCard['weeks'][number]
           {/* No chevron on a week with nothing to open — an endurance block's weeks are mileage, not
               named sessions, and an affordance that does nothing is worse than none. */}
           {has ? (
-            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              {open ? <Path d="M18 15l-6-6-6 6" /> : <Path d="M6 9l6 6 6-6" />}
-            </Svg>
+            <EngravedIcon name={open ? 'chevron-up' : 'chevron-down'} size={15} color={flColor.gray600} />
           ) : null}
         </View>
       </Pressable>
@@ -3655,10 +3576,7 @@ function PreviewWeek({ week, defaultOpen }: { week: ProgramCard['weeks'][number]
 function DraftBanner() {
   return (
     <View style={styles.draftBanner}>
-      <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <Rect x={4} y={10.5} width={16} height={10} rx={2} />
-        <Path d="M8 10.5V7a4 4 0 018 0" />
-      </Svg>
+      <EngravedIcon name="lock" size={12} />
       <Text style={styles.draftBannerText}>DRAFT — NOT SAVED YET</Text>
     </View>
   );
@@ -3754,9 +3672,7 @@ function ProgramCardView({
           style={({ pressed }) => [styles.previewRow, pressed && styles.previewRowPressed]}
         >
           <Text style={styles.previewRowText}>Preview program</Text>
-          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M9 6l6 6-6 6" />
-          </Svg>
+          <EngravedIcon name="chevron-right" size={16} color={flColor.bronze400} />
         </Pressable>
         )}
       </CardSurface>
@@ -3797,9 +3713,7 @@ function WeekRow({ week }: { week: ProgramCard['weeks'][number] }) {
         {/* No chevron on a week with nothing to open — an affordance that does nothing is worse than
             none, and an endurance block's weeks are mileage rather than named sessions. */}
         {has ? (
-          <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            {open ? <Path d="M18 15l-6-6-6 6" /> : <Path d="M6 9l6 6 6-6" />}
-          </Svg>
+          <EngravedIcon name={open ? 'chevron-up' : 'chevron-down'} size={15} color={flColor.gray600} />
         ) : null}
       </Pressable>
       {open ? (
@@ -3896,9 +3810,7 @@ function DayCardView({
           style={({ pressed }) => [styles.previewRow, pressed && styles.previewRowPressed]}
         >
           <Text style={styles.previewRowText}>Preview session</Text>
-          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M9 6l6 6-6 6" />
-          </Svg>
+          <EngravedIcon name="chevron-right" size={16} color={flColor.bronze400} />
         </Pressable>
         )}
       </CardSurface>
@@ -3955,9 +3867,7 @@ function PickCardView({ card, onChip }: { card: PickCard; onChip: (c: Chip) => v
       <View style={styles.pickReasons}>
         {card.because.map((b) => (
           <View key={b} style={styles.pickReasonRow}>
-            <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M20 6L9 17l-5-5" />
-            </Svg>
+            <EngravedIcon name="check" size={13} color={flColor.bronze400} />
             <Text style={styles.pickReason}>{b}</Text>
           </View>
         ))}
@@ -4008,9 +3918,7 @@ function PickCardView({ card, onChip }: { card: PickCard; onChip: (c: Chip) => v
           <Text style={styles.pickAltLabel}>
             Or have a look at <Text style={styles.pickAltName}>{card.runnerUpName}</Text>
           </Text>
-          <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round">
-            <Path d="M9 6l6 6-6 6" />
-          </Svg>
+          <EngravedIcon name="chevron-right" size={15} color={flColor.gray600} />
         </Pressable>
       ) : null}
     </View>
@@ -4056,18 +3964,13 @@ function ExplainerView({ name }: { name: string }) {
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={'Open ' + name} style={styles.explain}>
       <View style={styles.explainIcon}>
-        <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M12 3a9 9 0 100 18 9 9 0 000-18z" />
-          <Path d="M10 8.5l6 3.5-6 3.5z" />
-        </Svg>
+        <EngravedIcon name="play" size={16} />
       </View>
       <View style={styles.explainText}>
         <Text style={styles.explainName}>{name}</Text>
         <Text style={styles.explainSub}>Setup · cues · common mistakes</Text>
       </View>
-      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round">
-        <Path d="M9 6l6 6-6 6" />
-      </Svg>
+      <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} />
     </Pressable>
   );
 }

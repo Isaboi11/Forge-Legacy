@@ -8,7 +8,7 @@
 
 import React from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color, space } from '@/constants/tokens'
 import { NAV } from './_navigationTokens'
 import type { ForgePaginationProps } from './types'
@@ -96,7 +96,7 @@ function NumbersPagination({ total, current, onPress }: ForgePaginationProps) {
         accessibilityState={{ disabled: current === 0 }}
         style={({ pressed }) => [styles.numBtn, pressed && styles.numBtnPressed, current === 0 && styles.numBtnDisabled]}
       >
-        <Feather name="chevron-left" size={18} color={color.text.secondary} />
+        <EngravedIcon name="chevron-left" size={18} color={color.text.secondary} />
       </Pressable>
 
       {visiblePages.map((page, i) =>
@@ -136,7 +136,7 @@ function NumbersPagination({ total, current, onPress }: ForgePaginationProps) {
         accessibilityState={{ disabled: current === total - 1 }}
         style={({ pressed }) => [styles.numBtn, pressed && styles.numBtnPressed, current === total - 1 && styles.numBtnDisabled]}
       >
-        <Feather name="chevron-right" size={18} color={color.text.secondary} />
+        <EngravedIcon name="chevron-right" size={18} color={color.text.secondary} />
       </Pressable>
     </View>
   )
@@ -167,7 +167,7 @@ function FractionPagination({ total, current, onPress }: ForgePaginationProps) {
         accessibilityState={{ disabled: current === 0 }}
         style={[styles.fractionBtn, current === 0 && styles.numBtnDisabled]}
       >
-        <Feather name="chevron-left" size={18} color={color.text.secondary} />
+        <EngravedIcon name="chevron-left" size={18} color={color.text.secondary} />
       </Pressable>
 
       <View style={styles.fractionText}>
@@ -189,7 +189,7 @@ function FractionPagination({ total, current, onPress }: ForgePaginationProps) {
           current === total - 1 && styles.numBtnDisabled,
         ]}
       >
-        <Feather name="chevron-right" size={18} color={color.accent.primary} />
+        <EngravedIcon name="chevron-right" size={18} color={color.accent.primary} />
       </Pressable>
     </View>
   )

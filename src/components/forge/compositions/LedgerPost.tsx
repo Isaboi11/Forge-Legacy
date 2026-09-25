@@ -38,11 +38,11 @@ import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { MediaThumb } from '@/components/forge/MediaThumb';
 import { AckGlyph } from '@/components/forge/AckGlyph';
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ACK_LABEL, fmtDuration, type AckKind, type WorkoutSummary } from '@/data/squad-feed-live';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { displayWeight, type UnitSystem } from '@/domain/settings/units';
@@ -537,95 +537,33 @@ export function EndOfLedger() {
 }
 
 // ── glyphs ──
-const MARKER_PATHS: Record<LedgerMarker, ReactNode> = {
-  workout: (
-    <>
-      <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
-    </>
-  ),
-  /* The running shoe `CardioBlockCard`'s Glyph draws for a run — copied, not approximated, so the
-     post's marker and the logger's cardio band are the same sport in the same hand. */
-  cardio: (
-    <>
-      <Path d="M3 15.6v-3c0-.5.4-.8.9-.6l3.3.8 2.6-2.9c.4-.5 1.2-.4 1.5.2l.7 1.5 6 1.7c1.2.3 2 1.1 2 2.4v.7c0 .4-.3.7-.7.7H4c-.6 0-1-.5-1-1z" />
-    </>
-  ),
-  pr: (
-    <>
-      <Path d="M11 3c.4 3.4 1.6 4.6 5 5-3.4.4-4.6 1.6-5 5-.4-3.4-1.6-4.6-5-5 3.4-.4 4.6-1.6 5-5z" />
-      <Path d="M18 13.5c.2 1.4.7 1.9 2.1 2.1-1.4.2-1.9.7-2.1 2.1-.2-1.4-.7-1.9-2.1-2.1 1.4-.2 1.9-.7 2.1-2.1z" />
-    </>
-  ),
-  goal: (
-    <>
-      <Circle cx={12} cy={12} r={8} />
-      <Circle cx={12} cy={12} r={4} />
-      <Circle cx={12} cy={12} r={0.9} />
-    </>
-  ),
-  formcheck: (
-    <>
-      <Path d="M4 6.5h11v11H4z" />
-      <Path d="M15 10.5l5-3v9l-5-3z" />
-    </>
-  ),
-  milestone: (
-    <>
-      <Path d="M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4" />
-      <Circle cx={12} cy={15} r={4.8} />
-    </>
-  ),
-  announcement: (
-    <>
-      <Path d="M4 10v4h3l6 4V6l-6 4z" />
-      <Path d="M17 9.5a4 4 0 0 1 0 5" />
-    </>
-  ),
-  transformation: (
-    <>
-      <Path d="M4 5h6v14H4zM14 5h6v14h-6z" />
-      <Path d="M12 9v6" />
-    </>
-  ),
+const MARKER_ICON: Record<LedgerMarker, EngravedName> = {
+  workout: 'dumbbell',
+  cardio: 'shoe',
+  pr: 'pr',
+  goal: 'target',
+  formcheck: 'video',
+  milestone: 'milestone',
+  announcement: 'megaphone',
+  transformation: 'transformation',
 };
 function MarkerGlyph({ kind }: { kind: LedgerMarker }) {
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      {MARKER_PATHS[kind]}
-    </Svg>
-  );
+  return <EngravedIcon name={MARKER_ICON[kind]} size={14} />;
 }
 /* ⚠ `FlameGlyph` WAS DELETED HERE, NOT ORPHANED. It drew the one mark this row had when every
    acknowledgement looked the same; the flame now lives in `AckGlyph` as the `respect` case, beside the
    other three. Leaving it behind would read as a second, competing flame for somebody to reach for. */
 function CommentGlyph() {
-  return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 5.5h16v10H9l-5 4z" />
-    </Svg>
-  );
+  return <EngravedIcon name="chat" size={15} color={flColor.gray600} />;
 }
 function PlayGlyph() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill={flColor.cream100}>
-      <Path d="M8 5l12 7-12 7z" />
-    </Svg>
-  );
+  return <EngravedIcon name="play" size={18} color={flColor.cream100} />;
 }
 function MusicGlyph() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 18V5l11-2v13" />
-      <Path d="M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM20 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
-    </Svg>
-  );
+  return <EngravedIcon name="music" size={22} />;
 }
 function ChevronGlyph() {
-  return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 6l6 6-6 6" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-right" size={15} color={flColor.gray600} />;
 }
 
 const styles = StyleSheet.create({

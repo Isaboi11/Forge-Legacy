@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { Button } from '@/components/forge/composites/Button';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { BarbellIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { programGymCoverage, recommendProgramOptions, type ProgramView } from '@/domain/onboarding/recommend';
@@ -109,9 +110,7 @@ function StepHeader({ step, total = 3, onBack }: { step: number; total?: number;
   return (
     <View style={styles.stepHeader}>
       <Pressable onPress={onBack} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back" style={styles.backBtn}>
-        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-          <Path d="M15 18l-6-6 6-6" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
+        <EngravedIcon name="chevron-left" size={18} color={flColor.gray400} />
       </Pressable>
       <Text style={styles.stepLabel}>Step {step} of {total}</Text>
     </View>
@@ -129,9 +128,7 @@ function LevelRow({ mark, title, subtitle, onPress }: { mark: string; title: str
         <Text style={styles.rowTitle}>{title}</Text>
         <Text style={styles.rowSub}>{subtitle}</Text>
       </View>
-      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-        <Path d="M9 18l6-6-6-6" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-      </Svg>
+      <EngravedIcon name="chevron-right" size={18} color={flColor.gray600} />
     </Pressable>
   );
 }
@@ -159,9 +156,7 @@ function OptionRow({ title, subtitle, selected, onPress, right }: { title: strin
 function StarButton({ filled, onPress }: { filled: boolean; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel={filled ? 'Main focus' : 'Make main focus'} style={styles.rightSlot}>
-      <Svg width={20} height={20} viewBox="0 0 24 24" fill={filled ? flColor.bronze300 : 'none'} stroke={filled ? flColor.bronze300 : flColor.gray400} strokeWidth={1.5} strokeLinejoin="round">
-        <Path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-      </Svg>
+      <EngravedIcon name="star" size={20} color={filled ? undefined : flColor.gray400} />
     </Pressable>
   );
 }
@@ -171,9 +166,7 @@ function CheckBox({ checked }: { checked: boolean }) {
   return (
     <View style={[styles.checkbox, checked && styles.checkboxOn]}>
       {checked ? (
-        <Svg width={13} height={13} viewBox="0 0 24 24" fill="none">
-          <Path d="M20 6L9 17l-5-5" stroke={flColor.base} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
+        <EngravedIcon name="check" size={13} color={flColor.base} />
       ) : null}
     </View>
   );

@@ -10,7 +10,7 @@
 
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color, space } from '@/constants/tokens'
 import { BaseCard } from './BaseCard'
 import { CARD } from './_cardTokens'
@@ -81,10 +81,10 @@ export function WorkoutCard({
           {/* State label */}
           <View style={styles.stateRow}>
             {isCompleted && (
-              <Feather name="check-circle" size={12} color={accentColor} />
+              <EngravedIcon name="check" size={12} color={accentColor} />
             )}
             {isMissed && (
-              <Feather name="x-circle" size={12} color={accentColor} />
+              <EngravedIcon name="close" size={12} color={accentColor} />
             )}
             <Text style={[styles.stateLabel, { color: accentColor }]}>{stateLabel}</Text>
           </View>
@@ -92,7 +92,7 @@ export function WorkoutCard({
 
         {/* Chevron */}
         {onPress ? (
-          <Feather name="chevron-right" size={16} color={color.text.tertiary} />
+          <EngravedIcon name="chevron-right" size={16} color={color.text.tertiary} />
         ) : null}
       </View>
     </BaseCard>

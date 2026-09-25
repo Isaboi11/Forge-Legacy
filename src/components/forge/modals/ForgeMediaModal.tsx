@@ -18,6 +18,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
 import type { ForgeMediaModalProps } from './types'
@@ -74,7 +75,7 @@ export function ForgeMediaModal({
             hitSlop={(MODAL.TAP_MIN - 34) / 2}
             style={({ pressed }) => [styles.chromeBtn, pressed && styles.chromeBtnPressed]}
           >
-            <Feather name="x" size={15} color={color.text.primary} />
+            <EngravedIcon name="close" size={15} color={color.text.primary} />
           </Pressable>
 
           {/* Context badge (e.g. "Form Check") */}

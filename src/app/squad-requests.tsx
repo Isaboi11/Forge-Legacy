@@ -3,7 +3,6 @@ import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, V
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -14,6 +13,7 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SquadCrest } from '@/components/forge/SquadCrest';
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchSquad } from '@/data/squad-live';
 import {
   approveSquadJoinRequest,
@@ -419,57 +419,24 @@ function Rise({ children, duration = 420 }: { children: React.ReactNode; duratio
   return <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }}>{children}</Animated.View>;
 }
 
-// ── glyphs (verbatim from the design's inline SVGs) ──
+// ── glyphs ──
 function ClockGlyph({ size = 12, color = flColor.gray600 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={8.5} />
-      <Path d="M12 7v5l3.5 2" />
-    </Svg>
-  );
+  return <EngravedIcon name="clock" size={size} color={engravedTint(color)} />;
 }
 function CheckGlyph({ size = 16, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.3} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4 4 10-10" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={size} color={color} />;
 }
 function XGlyph({ size = 15, color = flColor.gray600 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.1} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6 6l12 12" />
-      <Path d="M18 6L6 18" />
-    </Svg>
-  );
+  return <EngravedIcon name="close" size={size} color={color} />;
 }
 function PeopleGlyph({ size = 13, color = flColor.bronze400 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={8} cy={8.5} r={2.7} />
-      <Path d="M3.4 18a4.6 4.6 0 0 1 9.2 0" />
-      <Circle cx={16.5} cy={8} r={2.4} />
-      <Path d="M15 13.4a4.4 4.4 0 0 1 5.6 4.2" />
-    </Svg>
-  );
+  return <EngravedIcon name="people" size={size} color={engravedTint(color)} />;
 }
 function DotsGlyph({ size = 18, color = flColor.gray600 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Circle cx={5} cy={12} r={1.7} />
-      <Circle cx={12} cy={12} r={1.7} />
-      <Circle cx={19} cy={12} r={1.7} />
-    </Svg>
-  );
+  return <EngravedIcon name="more" size={size} color={color} />;
 }
 function ShareGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 16V4" />
-      <Path d="M8 7.5L12 3.5l4 4" />
-      <Path d="M5 13v6.5h14V13" />
-    </Svg>
-  );
+  return <EngravedIcon name="share" size={size} color={engravedTint(color)} />;
 }
 
 const styles = StyleSheet.create({

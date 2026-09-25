@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { Toast } from '@/components/forge/composites/Toast';
@@ -33,52 +33,24 @@ import { useQuery } from '@/lib/useQuery';
  * bodyweight note, the live commit-bar summary — is the design's.
  */
 
-/**
- * Icons matched to `Forge Home Gym.dc.html` — its per-item `ICONS` (keyed here by id, not label) with the
- * group `GROUP_ICON` as the fallback, so every item shows the design's exact glyph.
- */
-const GROUP_GLYPH: Record<HomeGymGroup, string[]> = {
-  'Barbell & rack': ['M6.5 9v6', 'M17.5 9v6', 'M4 10.5v3', 'M20 10.5v3', 'M6.5 12h11'],
-  'Free weights': ['M7 8.5v7', 'M17 8.5v7', 'M4.5 10v4', 'M19.5 10v4', 'M7 12h10'],
-  'Machines & cable': ['M6 3v18', 'M6 6h8a4 4 0 0 1 0 8h-2', 'M12 14v5'],
-  Cardio: ['M3 12h4l2-6 4 12 2-8 2 2h2'],
-  'Bodyweight & rigs': ['M4 4v6', 'M20 4v6', 'M4 6h16', 'M9 6v4', 'M15 6v4'],
-  'Bands & accessories': ['M4 8c6 6 10 6 16 0', 'M4 14c6 6 10 6 16 0'],
+/** One engraved mark per group, with a per-item override (by id, not label) where the set has a closer one. */
+const GROUP_GLYPH: Record<HomeGymGroup, EngravedName> = {
+  'Barbell & rack': 'barbell',
+  'Free weights': 'dumbbell',
+  'Machines & cable': 'machine',
+  Cardio: 'cardio',
+  'Bodyweight & rigs': 'bodyweight',
+  'Bands & accessories': 'band',
 };
 
-/** The design's per-item `ICONS`, by id. Anything absent falls back to its group glyph. */
-const ITEM_GLYPH: Record<string, string[]> = {
-  barbell: ['M6.5 9v6', 'M17.5 9v6', 'M4 10.5v3', 'M20 10.5v3', 'M6.5 12h11'],
-  rack: ['M5 4v16', 'M19 4v16', 'M5 9h14', 'M3 4h4', 'M17 4h4'],
-  dumbbells: ['M7 8.5v7', 'M17 8.5v7', 'M4.5 10v4', 'M19.5 10v4', 'M7 12h10'],
-  kettlebells: ['M9 8a3 3 0 0 1 6 0', 'M8 8h8l1.5 6a5 5 0 0 1-10 0z'],
-  bench: ['M3 10h18', 'M5 10v7', 'M19 10v7', 'M3 13h4', 'M17 13h4'],
-  pullup: ['M4 4v6', 'M20 4v6', 'M4 6h16', 'M9 6v4', 'M15 6v4'],
-  bands: ['M4 8c6 6 10 6 16 0', 'M4 14c6 6 10 6 16 0'],
-  minibands: ['M4 8c6 6 10 6 16 0', 'M4 14c6 6 10 6 16 0'],
-  cable: ['M6 3v18', 'M6 6h8a4 4 0 0 1 0 8h-2', 'M12 14v5'],
-  treadmill: ['M3 12h4l2-6 4 12 2-8 2 2h2'],
-  rower: ['M3 12h4l2-6 4 12 2-8 2 2h2'],
-  bike: ['M3 12h4l2-6 4 12 2-8 2 2h2'],
-  airbike: ['M3 12h4l2-6 4 12 2-8 2 2h2'],
-  elliptical: ['M3 12h4l2-6 4 12 2-8 2 2h2'],
-  jumprope: ['M3 12h4l2-6 4 12 2-8 2 2h2'],
+const ITEM_GLYPH: Record<string, EngravedName> = {
+  bands: 'band',
+  minibands: 'band',
+  cable: 'cable',
+  treadmill: 'runner',
+  bike: 'bicycle',
+  airbike: 'bicycle',
 };
-
-const CHECK = 'M5 12.5l4 4 10-10';
-const HOUSE = ['M4 11l8-6 8 6', 'M6 10v9h12v-9', 'M10 19v-5h4v5'];
-const RUNNER = ['M13 4.5a1.6 1.6 0 1 0 0-.1', 'M9 21l2.5-5 3-2 1-4', 'M7 11l4-2 4 1 3 3', 'M15.5 10l2 5'];
-const STAR = 'M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8-4.2-4.1 5.9-.9z';
-
-function Paths({ d, size = 18, color, width = 1.9 }: { d: string[]; size?: number; color: string; width?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
-      {d.map((p) => (
-        <Path key={p} d={p} />
-      ))}
-    </Svg>
-  );
-}
 
 export default function HomeGymScreen() {
   const router = useRouter();
@@ -151,7 +123,7 @@ export default function HomeGymScreen() {
         {/* intro */}
         <View style={styles.intro}>
           <View style={styles.microRow}>
-            <Paths d={HOUSE} size={15} color={flColor.bronze400} />
+            <EngravedIcon name="home" size={15} />
             <Text style={styles.micro}>Your equipment</Text>
           </View>
           <Text style={styles.h1}>What&rsquo;s in your gym?</Text>
@@ -179,13 +151,11 @@ export default function HomeGymScreen() {
                   >
                     <View style={styles.cardTop}>
                       <View style={[styles.disc, sel && styles.discOn]}>
-                        <Paths d={ITEM_GLYPH[item.id] ?? GROUP_GLYPH[g.group]} size={17} color={sel ? flColor.bronze300 : flColor.gray600} />
+                        <EngravedIcon name={ITEM_GLYPH[item.id] ?? GROUP_GLYPH[g.group]} size={17} color={sel ? undefined : flColor.gray600} />
                       </View>
                       {sel ? (
                         <View style={styles.check}>
-                          <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                            <Path d={CHECK} />
-                          </Svg>
+                          <EngravedIcon name="check" size={13} color={flColor.onBronze} />
                         </View>
                       ) : null}
                     </View>
@@ -200,12 +170,7 @@ export default function HomeGymScreen() {
 
         {/* bodyweight is never a choice */}
         <View style={styles.note}>
-          <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-            <Circle cx={13.5} cy={4.6} r={1.9} />
-            {RUNNER.slice(1).map((p) => (
-              <Path key={p} d={p} />
-            ))}
-          </Svg>
+          <EngravedIcon name="bodyweight" size={19} color={flColor.gray600} />
           <Text style={styles.noteText}>Bodyweight training is always available — no equipment needed.</Text>
         </View>
       </ScrollView>
@@ -215,9 +180,7 @@ export default function HomeGymScreen() {
         <Text style={styles.summary}>{ownedSummary(owned.length)}</Text>
         <Button variant="primary" fullWidth onPress={onSave} disabled={saving} accessibilityLabel="Save my home gym">
           <View style={styles.saveInner}>
-            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d={STAR} />
-            </Svg>
+            <EngravedIcon name="star" size={15} color={flColor.onBronze} />
             <Text style={styles.saveText}>Save My Home Gym</Text>
           </View>
         </Button>

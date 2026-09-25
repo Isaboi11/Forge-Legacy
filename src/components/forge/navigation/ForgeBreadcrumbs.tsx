@@ -8,7 +8,7 @@
 
 import React from 'react'
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color } from '@/constants/tokens'
 import { NAV } from './_navigationTokens'
 import type { ForgeBreadcrumbsProps } from './types'
@@ -51,7 +51,7 @@ export function ForgeBreadcrumbs({ items }: ForgeBreadcrumbsProps) {
             )}
 
             {!isLast && (
-              <Feather
+              <EngravedIcon
                 name="chevron-right"
                 size={NAV.SEP_ICON}
                 color={color.text.tertiary}

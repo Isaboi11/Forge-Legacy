@@ -3,8 +3,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -370,41 +370,27 @@ function SquadHeader({ label, star = false }: { label: string; star?: boolean })
 // ── glyphs ──
 function PlusIcon({ size = 22, stroke = flColor.bronze300 }: { size?: number; stroke?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 5v14M5 12h14" />
-    </Svg>
+    <EngravedIcon name="plus" size={size} color={stroke} />
   );
 }
 function SearchIcon() {
   return (
-    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={11} cy={11} r={7} />
-      <Path d="M16 16l4.5 4.5" />
-    </Svg>
+    <EngravedIcon name="search" size={24} color={flColor.bronze300} />
   );
 }
 function ChevronIcon() {
   return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 5l7 7-7 7" />
-    </Svg>
+    <EngravedIcon name="chevron-right" size={18} color={flColor.bronze400} />
   );
 }
 function StarIcon({ filled = false, size = 18 }: { filled?: boolean; size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? flColor.bronze300 : 'none'} stroke={filled ? flColor.bronze300 : flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 2.6l2.65 6.02 6.55.55-4.98 4.3 1.5 6.4L12 16.9l-5.72 3.47 1.5-6.4-4.98-4.3 6.55-.55z" />
-    </Svg>
+    <EngravedIcon name="star" size={size} color={filled ? undefined : flColor.gray600} />
   );
 }
 function PeopleGlyph({ size = 15, color = flColor.gray600 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={9} cy={8} r={3.2} />
-      <Path d="M3.4 19a5.6 5.6 0 0 1 11.2 0" />
-      <Path d="M16 5.3a3.2 3.2 0 0 1 0 5.4" />
-      <Path d="M18.2 19a5.6 5.6 0 0 0-3-4.9" />
-    </Svg>
+    <EngravedIcon name="people" size={size} color={engravedTint(color)} />
   );
 }
 

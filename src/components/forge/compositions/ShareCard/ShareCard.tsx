@@ -8,11 +8,11 @@
  */
 
 import React from 'react'
-import Svg, { Circle, Path } from 'react-native-svg'
 import { StyleSheet, Text, View, type TextStyle } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation'
 import { ForgeMarkIcon } from '../../primitives/icons/HomeIcons'
+import { EngravedIcon, type EngravedName } from '../../primitives/icons/EngravedIcon'
 import type { FieldEmphasis, ShareContent, ShareKind } from '@/domain/share/content'
 
 export interface ShareCardProps {
@@ -22,24 +22,22 @@ export interface ShareCardProps {
   includeName: boolean
 }
 
+const KIND_ICON: Record<ShareKind, EngravedName> = {
+  accomplishment: 'star',
+  honor: 'shield-check',
+  goal: 'target',
+  pr: 'pr',
+  chapter: 'bookmark',
+  rank: 'rank-up',
+  program: 'document',
+  transformation: 'transformation',
+  workout: 'dumbbell',
+}
+
 function KindGlyph({ kind }: { kind: ShareKind }) {
-  const p = { stroke: flColor.bronze300, strokeWidth: 2, fill: 'none', strokeLinecap: 'square' as const, strokeLinejoin: 'miter' as const, strokeMiterlimit: 8 }
-  const paths: Record<ShareKind, React.ReactNode> = {
-    accomplishment: <Path d="M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z" {...p} />,
-    honor: <><Path d="M12 3l7 3v5c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6z" {...p} /><Path d="M9 11l2 2 4-4" {...p} /></>,
-    goal: <><Circle cx={12} cy={12} r={8} {...p} /><Circle cx={12} cy={12} r={3} {...p} /><Path d="M12 2v3M12 19v3M2 12h3M19 12h3" {...p} /></>,
-    pr: <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" {...p} strokeLinecap="square" strokeLinejoin="miter" />,
-    chapter: <Path d="M4 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-7-3-7 3z" {...p} />,
-    rank: <><Path d="M12 3.5l6.5 2.8v4.7c0 4.3-2.8 7.1-6.5 8.5-3.7-1.4-6.5-4.2-6.5-8.5V6.3z" {...p} /><Path d="M9.5 12l1.8 1.8L15 10" {...p} /></>,
-    program: <><Path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" {...p} /><Path d="M8 12h8M8 16h5" {...p} /></>,
-    transformation: <><Path d="M4 7h3l1.5-2h7L17 7h3v12H4z" {...p} /><Circle cx={12} cy={13} r={3.4} {...p} /></>,
-    workout: <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" {...p} strokeLinecap="square" strokeLinejoin="miter" />,
-  }
   return (
     <View style={styles.glyph}>
-      <Svg width={30} height={30} viewBox="0 0 24 24">
-        {paths[kind]}
-      </Svg>
+      <EngravedIcon name={KIND_ICON[kind]} size={30} />
     </View>
   )
 }

@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import type { ProgressCardPhoto, ProgressPostCard as ProgressCardData } from '@/data/squad-feed-live';
 import { PREVIEW_W, clampIndex, formatSpec, gridColumns } from '@/domain/share/progress-card';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
@@ -224,12 +225,7 @@ function ForgeMark({ size }: { size: number }) {
 }
 
 export function CameraGlyph({ size = 14, color = flColor.charcoal500 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 8.5h3l1.5-2h7l1.5 2h3v10H4z" />
-      <Circle cx={12} cy={13} r={3.5} />
-    </Svg>
-  );
+  return <EngravedIcon name="camera" size={size} color={engravedTint(color)} />;
 }
 
 const styles = StyleSheet.create({

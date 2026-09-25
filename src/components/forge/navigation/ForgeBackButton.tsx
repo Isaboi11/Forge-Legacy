@@ -8,7 +8,7 @@
 
 import React from 'react'
 import { Pressable, StyleSheet, Text } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color, shadow } from '@/constants/tokens'
 import { NAV } from './_navigationTokens'
 import type { BackButtonVariant, ForgeBackButtonProps } from './types'
@@ -36,7 +36,7 @@ export function ForgeBackButton({
           pressed && !isDisabled && styles.circularPressed,
         ]}
       >
-        <Feather name="chevron-left" size={NAV.ICON_BACK} color={color.text.primary} />
+        <EngravedIcon name="chevron-left" size={NAV.ICON_BACK} color={color.text.primary} />
       </Pressable>
     )
   }
@@ -55,7 +55,7 @@ export function ForgeBackButton({
           pressed && !isDisabled && styles.floatingPressed,
         ]}
       >
-        <Feather
+        <EngravedIcon
           name="chevron-left"
           size={NAV.ICON_BACK - 2}
           color={isDisabled ? color.text.tertiary : color.text.primary}
@@ -78,7 +78,7 @@ export function ForgeBackButton({
           pressed && !isDisabled && styles.pressed,
         ]}
       >
-        <Feather
+        <EngravedIcon
           name="chevron-left"
           size={NAV.ICON_BACK}
           color={isDisabled ? color.text.tertiary : color.text.primary}
@@ -104,7 +104,7 @@ export function ForgeBackButton({
         pressed && !isDisabled && styles.pressed,
       ]}
     >
-      <Feather
+      <EngravedIcon
         name="chevron-left"
         size={NAV.ICON_BACK}
         color={isDisabled ? color.text.tertiary : color.text.primary}

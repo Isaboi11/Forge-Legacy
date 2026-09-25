@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -250,44 +250,32 @@ const MEDAL_COPPER = '#B07C4E';
 
 // ── glyphs ──
 function CrownGlyph({ size = 20, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
-    </Svg>
-  );
+  return <EngravedIcon name="crown" size={size} color={engravedTint(color)} />;
 }
 function ChevronGlyph({ size = 16, color = flColor.gray600 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 6l6 6-6 6" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-right" size={size} color={color} />;
 }
 
-/** The design's per-type icon set, keyed off the metric rather than a typed label string. */
-const TYPE_PATH: Record<ChallengeType, string> = {
-  MOST_WORKOUTS: 'M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11',
-  MOST_VOLUME: 'M4 20V10M9 20V4M14 20v-8M19 20v-5',
-  MAX_LIFT: 'M12 19V5M6 11l6-6 6 6',
-  MOST_DURATION: 'M12 7v5l3.5 2M12 3.5a8.5 8.5 0 1 1 0 17 8.5 8.5 0 0 1 0-17z',
-  MOST_PRS: 'M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18',
-  DISTANCE_TOTAL: 'M4 18s2-9 8-9 8 9 8 9',
-  MOST_DAYS: 'M4 6.5h16v14H4zM4 10.5h16M8.5 3.5v4M15.5 3.5v4',
-  MOST_REPS: 'M5 12h14M5 7h14M5 17h9',
-  EARLY_BIRD: 'M12 4v3M12 17v3M4 12h3M17 12h3M12 8.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7z',
-  MOST_VARIETY: 'M5 6h6v6H5zM13 6h6v6h-6zM5 14h6v6H5zM13 14h6v6h-6z',
-  GAIN_MAX_LIFT: 'M4 18l5-6 4 3 7-8',
-  GAIN_VOLUME: 'M4 18l5-6 4 3 7-8',
-  GAIN_REPS: 'M4 18l5-6 4 3 7-8',
-  GAIN_DISTANCE: 'M4 18l5-6 4 3 7-8',
+/** One mark per challenge metric, keyed off the metric rather than a typed label string. */
+const TYPE_ICON: Record<ChallengeType, EngravedName> = {
+  MOST_WORKOUTS: 'dumbbell',
+  MOST_VOLUME: 'bar-chart',
+  MOST_DURATION: 'clock',
+  MAX_LIFT: 'pr',
+  MOST_PRS: 'star',
+  DISTANCE_TOTAL: 'shoe',
+  MOST_DAYS: 'calendar',
+  MOST_REPS: 'reps',
+  EARLY_BIRD: 'sunrise',
+  MOST_VARIETY: 'variety',
+  GAIN_MAX_LIFT: 'trend-up',
+  GAIN_VOLUME: 'trend-up',
+  GAIN_REPS: 'trend-up',
+  GAIN_DISTANCE: 'trend-up',
 };
 
 function TypeGlyph({ type }: { type: ChallengeType }) {
-  return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={TYPE_PATH[type]} />
-    </Svg>
-  );
+  return <EngravedIcon name={TYPE_ICON[type]} size={15} />;
 }
 
 const styles = StyleSheet.create({

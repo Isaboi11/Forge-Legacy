@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -72,10 +72,6 @@ import { usePersist } from '@/hooks/usePersist';
    The kinds come first, then one example from each end of the range. */
 const GOAL_HINT =
   'Anything this chapter is for — a lift, a bodyweight, a distance, a habit. “Squat 405 lb” · “Run 100 miles” · “Train 3× a week”';
-
-const PLUS = 'M12 5v14M5 12h14';
-const CHEVRON = 'M9 6l6 6-6 6';
-const PENCIL = 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z';
 
 // Auto-tracking: each metric determines its own unit; the tracked-progress options; the distance activities.
 const AUTO_UNIT: Record<MetricKind, string> = { manual: '', exercise_max: 'lb', distance_total: 'mi', workout_count: 'workouts', volume_total: 'lb', time_total: 'hrs', pr_count: 'PRs', body_weight: 'lb', body_measure: 'in' };
@@ -213,7 +209,7 @@ function GoalHub({
     if (!data.chapterId) {
       return (
         <Empty
-          icon="M4 5a1 1 0 0 1 1-1h11l-2.2 3L16 10H5v9"
+          icon="flag"
           title="Goals live inside chapters."
           sub="Start a chapter to begin pursuing a goal."
           cta="Start a Chapter"
@@ -262,12 +258,12 @@ function GoalHub({
         <TourAnchor id="goals-add">
         {!primary ? (
           <Pressable onPress={() => onAdd(true)} accessibilityRole="button" accessibilityLabel="Add a chapter goal" style={styles.addBtn}>
-            <Glyph d={PLUS} size={17} color={flColor.bronze300} width={2} />
+            <EngravedIcon name="plus" size={17} color={flColor.bronze300} />
             <Text style={styles.addText}>Add a Chapter Goal</Text>
           </Pressable>
         ) : (
           <Pressable onPress={() => onAdd(false)} accessibilityRole="button" accessibilityLabel="Add a supporting goal" style={styles.addBtn}>
-            <Glyph d={PLUS} size={17} color={flColor.bronze300} width={2} />
+            <EngravedIcon name="plus" size={17} color={flColor.bronze300} />
             <Text style={styles.addText}>Add a Supporting Goal</Text>
           </Pressable>
         )}
@@ -334,7 +330,7 @@ function GoalRow({ goal, onPress }: { goal: Goal; onPress: () => void }) {
           {progressLabel(goal)}
         </Text>
       </View>
-      <Glyph d={CHEVRON} size={16} color={flColor.gray600} width={2} />
+      <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} />
     </Pressable>
   );
 }
@@ -390,7 +386,7 @@ function GoalDetail({ goal, chapterName, insets, onBack, onEdit, onChanged }: { 
         actions={
           !done ? (
             <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel="Edit goal" hitSlop={8} style={styles.iconBtn}>
-              <Glyph d={PENCIL} size={18} color={flColor.gray400} />
+              <EngravedIcon name="edit" size={18} color={flColor.gray400} />
             </Pressable>
           ) : undefined
         }
@@ -408,7 +404,7 @@ function GoalDetail({ goal, chapterName, insets, onBack, onEdit, onChanged }: { 
               <>
                 {isAutoTracked(goal) ? (
                   <View style={styles.autoNote}>
-                    <Glyph d="M12 2a10 10 0 1 0 10 10M12 6v6l4 2" size={15} color={flColor.bronze300} width={1.8} />
+                    <EngravedIcon name="clock" size={15} />
                     <Text style={styles.autoNoteText}>Tracked automatically from your workouts</Text>
                   </View>
                 ) : (
@@ -426,7 +422,7 @@ function GoalDetail({ goal, chapterName, insets, onBack, onEdit, onChanged }: { 
                     accessibilityLabel="Update progress"
                     style={styles.updateBtn}
                   >
-                    <Glyph d={PENCIL} size={16} color={flColor.bronze300} width={2} />
+                    <EngravedIcon name="edit" size={16} color={flColor.bronze300} />
                     <Text style={styles.updateText}>Update Progress</Text>
                   </Pressable>
                 )}
@@ -988,18 +984,11 @@ function Field({ label, counter, hint, children }: { label: string; counter?: st
   );
 }
 
-function Empty({ icon, circle, title, sub, cta, onCta }: { icon?: string; circle?: boolean; title: string; sub: string; cta: string; onCta: () => void }) {
+function Empty({ icon, circle, title, sub, cta, onCta }: { icon?: EngravedName; circle?: boolean; title: string; sub: string; cta: string; onCta: () => void }) {
   return (
     <View style={styles.empty}>
       <View style={styles.emptyIcon}>
-        {circle ? (
-          <Svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke={flColor.charcoal500} strokeWidth={1.5}>
-            <Circle cx={12} cy={12} r={8} />
-            <Circle cx={12} cy={12} r={3.4} />
-          </Svg>
-        ) : (
-          <Glyph d={icon ?? PLUS} size={30} color={flColor.charcoal500} width={1.5} />
-        )}
+        <EngravedIcon name={circle ? 'target' : (icon ?? 'plus')} size={30} />
       </View>
       <Text style={styles.emptyTitle}>{title}</Text>
       <Text style={styles.emptySub}>{sub}</Text>
@@ -1007,16 +996,6 @@ function Empty({ icon, circle, title, sub, cta, onCta }: { icon?: string; circle
         {cta}
       </Button>
     </View>
-  );
-}
-
-function Glyph({ d, size = 16, color, width = 1.9 }: { d: string; size?: number; color: string; width?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
-      {d.split('M').filter(Boolean).map((seg) => (
-        <Path key={seg} d={`M${seg}`} />
-      ))}
-    </Svg>
   );
 }
 

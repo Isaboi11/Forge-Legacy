@@ -10,8 +10,8 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
-import Svg, { Path, Rect } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -606,54 +606,27 @@ function ActionRow({
 }
 
 function Chevron() {
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 6l6 6-6 6" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-right" size={14} color={flColor.gray400} />;
 }
 
 function CheckGlyph() {
-  return (
-    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4.5 4.5L19 7.5" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={12} color={flColor.bronze400} />;
 }
 
 function LockGlyph({ shut, small }: { shut: boolean; small?: boolean }) {
-  const size = small ? 14 : 17;
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={small ? 2.2 : 2} strokeLinecap="round" strokeLinejoin="round">
-      <Rect x={5} y={11} width={14} height={10} rx={2} />
-      <Path d={shut ? 'M8 11V8a4 4 0 0 1 8 0v3' : 'M8 11V8a4 4 0 0 1 7.5-2'} />
-    </Svg>
-  );
+  return <EngravedIcon name={shut ? 'lock' : 'unlock'} size={small ? 14 : 17} />;
 }
 
 function LogGlyph({ logged }: { logged: boolean }) {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={logged ? 'M5 12.5l4.5 4.5L19 7.5' : 'M12 5v14M5 12h14'} />
-    </Svg>
-  );
+  return <EngravedIcon name={logged ? 'check' : 'plus'} size={17} />;
 }
 
 function BookGlyph() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" />
-      <Path d="M9 9h6M9 13h6" />
-    </Svg>
-  );
+  return <EngravedIcon name="book" size={17} />;
 }
 
 function SwapGlyph() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 8h13l-3-3M20 16H7l3 3" />
-    </Svg>
-  );
+  return <EngravedIcon name="swap" size={17} />;
 }
 
 const styles = StyleSheet.create({

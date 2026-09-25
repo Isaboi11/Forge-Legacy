@@ -12,12 +12,12 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { HonorMedallion } from '@/components/honor/HonorMedallion';
 import { MediaThumb } from '@/components/forge/MediaThumb';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ForgeSymbol, type SymbolName } from '@/components/forge/ForgeSymbol';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import type { Accomplishment, Chapter, FeaturedMoment, Goal, Honor, TimelineEntry } from '@/types/legacy';
@@ -270,9 +270,9 @@ export function AccomplishmentCard({ item, onPress }: { item: Accomplishment; on
         </View>
         {item.mediaKind === 'video' ? (
           <View style={s.accPlay}>
-            <Svg width={12} height={12} viewBox="0 0 24 24" style={{ marginLeft: 2 }}>
-              <Path d="M9 7.5l8 4.5-8 4.5z" fill={flColor.bronze300} />
-            </Svg>
+            <View style={{ marginLeft: 2 }}>
+              <EngravedIcon name="play" size={12} />
+            </View>
           </View>
         ) : null}
       </View>
@@ -308,34 +308,16 @@ export function HonorInsignia({ honor, onPress }: { honor: Honor; onPress?: () =
 
 // ── inline glyphs (moved verbatim) ──
 export function SealIcon({ size = 17 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Circle cx={12} cy={9} r={6} />
-      <Path d="M8.5 14l-1.5 7 5-3 5 3-1.5-7" />
-    </Svg>
-  );
+  return <EngravedIcon name="seal" size={size} />;
 }
 export function CheckIcon() {
-  return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M20 6L9 17l-5-5" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={15} />;
 }
 export function CalendarIcon() {
-  return (
-    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Rect x={3} y={5} width={18} height={16} rx={2} />
-      <Path d="M3 9h18M8 3v4M16 3v4" />
-    </Svg>
-  );
+  return <EngravedIcon name="calendar" size={13} color={flColor.gray600} />;
 }
 export function StarIcon({ filled }: { filled?: boolean } = {}) {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill={filled ? flColor.bronze300 : 'none'} stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      <Path d="M12 3l2.6 5.6 6 .5-4.6 4 1.4 6-5.4-3.2-5.4 3.2 1.4-6-4.6-4 6-.5z" />
-    </Svg>
-  );
+  return <EngravedIcon name="star" size={17} color={filled ? undefined : flColor.gray600} />;
 }
 
 // Styles moved verbatim from legacy.tsx (same values ⇒ render-identical).

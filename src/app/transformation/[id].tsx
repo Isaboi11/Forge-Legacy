@@ -3,12 +3,12 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { deleteTransformationEntry, fetchTransformationEntries, filledPoses, type PoseKey } from '@/data/transformation-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -235,9 +235,7 @@ export default function TransformationEntryRoute() {
           <View style={styles.siblings}>
             {older ? (
               <Pressable onPress={() => router.push({ pathname: '/transformation/[id]', params: { id: older.id } })} accessibilityRole="button" accessibilityLabel={`Earlier · ${older.label}`} style={styles.sibBtn}>
-                <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                  <Path d="M15 6l-6 6 6 6" />
-                </Svg>
+                <EngravedIcon name="chevron-left" size={15} color={flColor.gray400} />
                 <Text style={styles.sibText}>Earlier · {older.label}</Text>
               </Pressable>
             ) : (
@@ -246,9 +244,7 @@ export default function TransformationEntryRoute() {
             {newer ? (
               <Pressable onPress={() => router.push({ pathname: '/transformation/[id]', params: { id: newer.id } })} accessibilityRole="button" accessibilityLabel={`Later · ${newer.label}`} style={styles.sibBtn}>
                 <Text style={styles.sibText}>Later · {newer.label}</Text>
-                <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                  <Path d="M9 6l6 6-6 6" />
-                </Svg>
+                <EngravedIcon name="chevron-right" size={15} color={flColor.gray400} />
               </Pressable>
             ) : (
               <View />
@@ -260,9 +256,7 @@ export default function TransformationEntryRoute() {
       {/* actions */}
       <View style={styles.footer}>
         <Pressable onPress={() => router.push({ pathname: '/transformation-compare', params: { b: entry.id } })} accessibilityRole="button" accessibilityLabel="Compare" style={styles.compareBtn}>
-          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#F7F5F1" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M4 5h6v14H4zM14 5h6v14h-6z" />
-          </Svg>
+          <EngravedIcon name="compare" size={16} color="#F7F5F1" />
           <Text style={styles.compareText}>Compare</Text>
         </Pressable>
         {/*
@@ -280,12 +274,7 @@ export default function TransformationEntryRoute() {
           accessibilityLabel="Share"
           style={styles.shareBtn}
         >
-          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-            <Circle cx={6} cy={12} r={2.4} />
-            <Circle cx={17} cy={6} r={2.4} />
-            <Circle cx={17} cy={18} r={2.4} />
-            <Path d="M8.1 10.9l6.8-3.8M8.1 13.1l6.8 3.8" />
-          </Svg>
+          <EngravedIcon name="share" size={18} color={flColor.gray400} />
         </Pressable>
       </View>
 
@@ -301,10 +290,7 @@ export default function TransformationEntryRoute() {
             accessibilityLabel="Edit entry"
             style={styles.actionRow}
           >
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M12 20h9" />
-              <Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-            </Svg>
+            <EngravedIcon name="edit" size={18} />
             <Text style={styles.actionLabel}>Edit entry</Text>
           </Pressable>
           <Pressable
@@ -316,9 +302,7 @@ export default function TransformationEntryRoute() {
             accessibilityLabel="Delete entry"
             style={[styles.actionRow, styles.actionRowDivided]}
           >
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.redMuted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M5 7h14M9 7V5h6v2M8 7l1 13h6l1-13" />
-            </Svg>
+            <EngravedIcon name="trash" size={18} color={flColor.redMuted} />
             <Text style={[styles.actionLabel, styles.actionLabelDanger]}>Delete entry</Text>
           </Pressable>
         </View>
@@ -364,18 +348,12 @@ function TopBar({ onBack, onOverflow }: { onBack: () => void; onOverflow?: () =>
   return (
     <View style={[styles.topBar, { height: 56 + insets.top, paddingTop: insets.top }]}>
       <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" style={styles.topBtn} hitSlop={6}>
-        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M15 5l-7 7 7 7" />
-        </Svg>
+        <EngravedIcon name="chevron-left" size={22} color={flColor.gray400} />
       </Pressable>
       <Text style={styles.topTitle}>Transformation Entry</Text>
       {onOverflow ? (
         <Pressable onPress={onOverflow} accessibilityRole="button" accessibilityLabel="Entry options" style={styles.topBtn} hitSlop={6}>
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill={flColor.gray400}>
-            <Circle cx={12} cy={5} r={1.7} />
-            <Circle cx={12} cy={12} r={1.7} />
-            <Circle cx={12} cy={19} r={1.7} />
-          </Svg>
+          <EngravedIcon name="more" size={20} color={flColor.gray400} />
         </Pressable>
       ) : (
         <View style={styles.topBtn} />
@@ -385,19 +363,10 @@ function TopBar({ onBack, onOverflow }: { onBack: () => void; onOverflow?: () =>
 }
 
 function PlayGlyph({ size = 16 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={flColor.bronze300}>
-      <Path d="M9 7.5l8 4.5-8 4.5z" />
-    </Svg>
-  );
+  return <EngravedIcon name="play" size={size} />;
 }
 function CameraGlyph() {
-  return (
-    <Svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 7h3l1.5-2h7L17 7h3v12H4z" />
-      <Circle cx={12} cy={13} r={3.4} />
-    </Svg>
-  );
+  return <EngravedIcon name="camera" size={26} color={flColor.gray600} />;
 }
 
 const styles = StyleSheet.create({

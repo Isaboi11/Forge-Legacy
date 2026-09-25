@@ -30,10 +30,10 @@
 
 import React from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import Svg, { Path } from 'react-native-svg'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { flColor, flRadius } from '@/constants/foundation'
 import { ForgeMarkIcon } from '@/components/forge/primitives/icons/HomeIcons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 
 export interface AppBarProps {
   title?: React.ReactNode
@@ -53,19 +53,11 @@ export interface AppBarProps {
 }
 
 function BackChevron() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-      <Path d="M15 5l-7 7 7 7" stroke={flColor.cream100} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8} />
-    </Svg>
-  )
+  return <EngravedIcon name="chevron-left" size={22} color={flColor.cream100} />
 }
 
 function CloseX() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path d="M6 6l12 12M18 6L6 18" stroke={flColor.cream100} strokeWidth={2} strokeLinecap="square" />
-    </Svg>
-  )
+  return <EngravedIcon name="close" size={20} color={flColor.cream100} />
 }
 
 export function AppBar({ title, subtitle, onBack, onClose, avatar, onAvatar, actions, transparent = false }: AppBarProps) {

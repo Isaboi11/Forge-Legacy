@@ -24,7 +24,8 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
+import { FeatherNameIcon } from '../FeatherNameIcon'
 import { color, size } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
 import { useOverlayTransition } from './_useOverlayTransition'
@@ -128,7 +129,7 @@ export function ForgeModal({
                 {/* Left: illustration or icon box */}
                 {illustration ?? (iconName ? (
                   <View style={styles.iconBox}>
-                    <Feather name={iconName as 'award'} size={20} color={color.accent.primary} />
+                    <FeatherNameIcon name={iconName} size={20} color={color.accent.primary} />
                   </View>
                 ) : null)}
 
@@ -157,7 +158,7 @@ export function ForgeModal({
                     hitSlop={(MODAL.TAP_MIN - MODAL.CLOSE_BTN) / 2}
                     style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
                   >
-                    <Feather name="x" size={14} color={color.text.secondary} />
+                    <EngravedIcon name="close" size={14} color={color.text.secondary} />
                   </Pressable>
                 ) : null}
               </View>

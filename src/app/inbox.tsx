@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -488,86 +488,40 @@ function glyphFor(kind: ForgeNotification['kind']) {
 
 /** A page with lines on it — the plan, as distinct from the people glyphs the invites use. */
 function ProgramGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6 3h9l4 4v14H6z" />
-      <Path d="M9 11h7M9 15h7" />
-    </Svg>
-  );
+  return <EngravedIcon name="document" size={size} color={engravedTint(color)} />;
 }
 
 function SwordsGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M14.5 14.5L21 21M19 3l-9 9M5 3l9 9M9.5 14.5L3 21" />
-    </Svg>
-  );
+  return <EngravedIcon name="swords" size={size} color={engravedTint(color)} />;
 }
 
 // ── glyphs ──
 function BellGlyph({ size = 20, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3a6 6 0 0 0-6 6c0 4-1.5 5.5-2 6h16c-.5-.5-2-2-2-6a6 6 0 0 0-6-6z" />
-      <Path d="M10 19a2 2 0 0 0 4 0" />
-    </Svg>
-  );
+  return <EngravedIcon name="bell" size={size} color={engravedTint(color)} />;
 }
 function PlusGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 5v14M5 12h14" />
-    </Svg>
-  );
+  return <EngravedIcon name="plus" size={size} color={engravedTint(color)} />;
 }
 function CheckGlyph({ size = 11, color = '#8FB295' }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4 4 10-10" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={size} color={color} />;
 }
 function XGlyph({ size = 11, color = flColor.gray600 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6 6l12 12" />
-      <Path d="M18 6L6 18" />
-    </Svg>
-  );
+  return <EngravedIcon name="close" size={size} color={color} />;
 }
 function PeopleGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={9} cy={8} r={3.2} />
-      <Path d="M3.4 19a5.6 5.6 0 0 1 11.2 0" />
-      <Path d="M16 5.3a3.2 3.2 0 0 1 0 5.4" />
-      <Path d="M18.2 19a5.6 5.6 0 0 0-3-4.9" />
-    </Svg>
-  );
+  return <EngravedIcon name="people" size={size} color={engravedTint(color)} />;
 }
 /** A check-in is a clip; the disc says so before the sentence does. */
 function PlayGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
-      <Path d="M8 5.5v13l11-6.5z" />
-    </Svg>
-  );
+  return <EngravedIcon name="play" size={size} color={engravedTint(color)} />;
 }
 /** Somebody wrote something back (0135). */
 function SpeechGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H9l-5 4V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5z" />
-    </Svg>
-  );
+  return <EngravedIcon name="chat" size={size} color={engravedTint(color)} />;
 }
 /** Filled, not outlined: a reaction is given, not pending. */
 function HeartGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
-      <Path d="M12 20.5l-1.5-1.35C5.2 14.4 2 11.5 2 7.95 2 5.06 4.24 2.9 7 2.9c1.56 0 3.06.72 4 1.86.94-1.14 2.44-1.86 4-1.86 2.76 0 5 2.16 5 5.05 0 3.55-3.2 6.45-8.5 11.2z" />
-    </Svg>
-  );
+  return <EngravedIcon name="heart" size={size} color={engravedTint(color)} />;
 }
 
 const styles = StyleSheet.create({

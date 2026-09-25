@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
@@ -258,9 +258,7 @@ export default function MealPlanSetupScreen() {
                       >
                         <Text style={styles.tagText}>{food}</Text>
                         <View style={styles.tagX}>
-                          <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2.6} strokeLinecap="round">
-                            <Path d="M6 6l12 12M18 6L6 18" />
-                          </Svg>
+                          <EngravedIcon name="close" size={11} color={flColor.gray400} />
                         </View>
                       </Pressable>
                     ))}
@@ -284,9 +282,7 @@ export default function MealPlanSetupScreen() {
                         <Text style={[styles.choiceText, on && styles.choiceTextOn]}>{m.label}</Text>
                         <View style={[styles.box, on && styles.boxOn]}>
                           {on ? (
-                            <Svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
-                              <Path d="M5 12.5l4.5 4.5L19 7.5" />
-                            </Svg>
+                            <EngravedIcon name="check" size={10} color={flColor.onBronze} />
                           ) : null}
                         </View>
                       </Pressable>
@@ -394,11 +390,7 @@ function Choice({ label, on, role, onPress }: { label: string; on: boolean; role
 }
 
 function Glyph({ kind, dim }: { kind: 'plus' | 'minus'; dim: boolean }) {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={dim ? flColor.charcoal500 : flColor.gray400} strokeWidth={2.4} strokeLinecap="round">
-      <Path d={kind === 'plus' ? 'M12 5v14M5 12h14' : 'M5 12h14'} />
-    </Svg>
-  );
+  return <EngravedIcon name={kind} size={16} color={dim ? flColor.charcoal500 : flColor.gray400} />;
 }
 
 const styles = StyleSheet.create({

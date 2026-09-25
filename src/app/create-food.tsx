@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -543,18 +543,13 @@ function ScanCard({ onPress }: { onPress: () => void }) {
   return (
     <Pressable accessibilityRole="button" accessibilityLabel="Scan label" onPress={onPress} style={styles.scanCard}>
       <View style={styles.scanIcon}>
-        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" />
-          <Path d="M8 9h8M8 12h8M8 15h5" />
-        </Svg>
+        <EngravedIcon name="barcode-scan" size={18} />
       </View>
       <View style={styles.scanCopy}>
         <Text style={styles.scanTitle}>Scan label</Text>
         <Text style={styles.scanSub}>Fill from a Nutrition Facts photo</Text>
       </View>
-      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M9 6l6 6-6 6" />
-      </Svg>
+      <EngravedIcon name="chevron-right" size={14} color={flColor.bronze400} />
     </Pressable>
   );
 }
@@ -597,29 +592,11 @@ function ScanSummary({ scan, onView, onRescan }: { scan: ScanState; onView: () =
 }
 
 function Chevron({ color = flColor.bronze400, rotated = false }: { color?: string; rotated?: boolean }) {
-  return (
-    <Svg
-      width={14}
-      height={14}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={2.2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ transform: [{ rotate: rotated ? '180deg' : '0deg' }] }}
-    >
-      <Path d="M6 9l6 6 6-6" />
-    </Svg>
-  );
+  return <EngravedIcon name={rotated ? 'chevron-up' : 'chevron-down'} size={14} color={color} />;
 }
 
 function Check() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4.5 4.5L19 7.5" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={16} color={flColor.bronze400} />;
 }
 
 const styles = StyleSheet.create({

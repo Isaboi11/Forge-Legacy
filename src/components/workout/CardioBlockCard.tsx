@@ -3,6 +3,7 @@ import { Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from '
 import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { Button } from '@/components/forge/composites/Button';
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { useWallClockTimer } from '@/hooks/useWallClockTimer';
 import { cardioTimerKey } from '@/domain/workout/cardio-timer-store';
@@ -875,9 +876,7 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
 
         {logged ? (
           <View style={styles.loggedBadge}>
-            <Svg width={10} height={10} viewBox="0 0 24 24">
-              <Path d="M20 6L9 17l-5-5" fill="none" stroke={flColor.greenMuted} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
+            <EngravedIcon name="check" size={10} color={flColor.greenMuted} />
             <Text style={styles.loggedBadgeText}>LOGGED</Text>
           </View>
         ) : null}
@@ -1391,9 +1390,7 @@ function Field({
               hitSlop={10}
               style={styles.fieldPencil}
             >
-              <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" opacity={0.9}>
-                <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-              </Svg>
+              <EngravedIcon name="edit" size={12} color={flColor.bronze400} />
             </Pressable>
           </View>
         ) : (
@@ -1412,37 +1409,10 @@ function Field({
   );
 }
 
-/** The shared symbol set, drawn locally — same paths as `forge-symbols.js`. */
+/** The activity symbol, from the engraved set. Anything without its own glyph wears the shoe, as before. */
+const GLYPH: Record<string, EngravedName> = { bicycle: 'bicycle', footprints: 'footprints', stopwatch: 'timer' };
 function Glyph({ name, size, color }: { name: string; size: number; color: string }) {
-  const p = { fill: 'none' as const, stroke: color, strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-  if (name === 'bicycle') {
-    return (
-      <Svg width={size} height={size} viewBox="0 0 24 24">
-        <Circle cx={5.5} cy={15.5} r={3.2} {...p} /><Circle cx={18.5} cy={15.5} r={3.2} {...p} />
-        <Path d="M5.5 15.5l4-7h6M9.5 8.5l3 7M18.5 15.5l-3-7" {...p} />
-      </Svg>
-    );
-  }
-  if (name === 'footprints') {
-    return (
-      <Svg width={size} height={size} viewBox="0 0 24 24">
-        <Path d="M8 4.5c1.4 0 2.2 1.5 2.2 3.3 0 1.4-.6 2.7-2.2 2.7s-2.2-1.3-2.2-2.7C5.6 6 6.6 4.5 8 4.5z" {...p} />
-        <Path d="M16 8.5c1.4 0 2.2 1.5 2.2 3.3 0 1.4-.6 2.7-2.2 2.7s-2.2-1.3-2.2-2.7C13.8 10 14.6 8.5 16 8.5z" {...p} />
-      </Svg>
-    );
-  }
-  if (name === 'stopwatch') {
-    return (
-      <Svg width={size} height={size} viewBox="0 0 24 24">
-        <Circle cx={12} cy={13.5} r={7} {...p} /><Path d="M12 6.5V4M9.8 3.5h4.4M12 13.5l3-2.4" {...p} />
-      </Svg>
-    );
-  }
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path d="M3 15.6v-3c0-.5.4-.8.9-.6l3.3.8 2.6-2.9c.4-.5 1.2-.4 1.5.2l.7 1.5 6 1.7c1.2.3 2 1.1 2 2.4v.7c0 .4-.3.7-.7.7H4c-.6 0-1-.5-1-1z" {...p} />
-    </Svg>
-  );
+  return <EngravedIcon name={GLYPH[name] ?? 'shoe'} size={size} color={engravedTint(color)} />;
 }
 
 const styles = StyleSheet.create({
