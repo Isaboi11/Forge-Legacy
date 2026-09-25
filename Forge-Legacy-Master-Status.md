@@ -896,7 +896,7 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
-### 00000000000000000000000. ⭐ Holt looks up your data instead of saying he doesn't have it — read tools in `coach-ask` (2026-09-25, Coach AI · CA-D10/CA-D11 `training_history` · ✅ built + tested · ⏳ **`coach-ask` NOT redeployed** · ⏳ client `tz` not deployed (optional) · 4313/4313 all tests · tsc 0 · lint clean)
+### 00000000000000000000000. ⭐ Holt looks up your data instead of saying he doesn't have it — read tools in `coach-ask` (2026-09-25, Coach AI · CA-D10/CA-D11 `training_history` · ✅ built + tested · ⏳ **`coach-ask` NOT redeployed** · ✅ client `tz` LIVE: web `index-e5aa29d043a5da459b0b85e0e2ed8359.js` (200 + hash-matched, alias and deployment URL) from `46f1aceb`+tz; OTA iOS `01a0d9ca-9e15-7529…` to build 8 (fingerprint MATCHED `47944f2e…`, manifest verified), lane `9a392dd4` · 4313/4313 all tests · tsc 0 · lint clean)
 
 PO, Premium AI on: asked Holt *"what my progress with my bench was"* and he said he didn't have that data. **The data was always there; Holt only saw it when a regex allowed it.** `isTrainingQuestion` attached a ~400-char summary only on matching phrasings. "What's my progress with my bench" matched; *"what's my bench progress"*, *"show me my bench progress"*, *"what's my bench max"*, *"what's my squat PR"* did not. Even on a match, the summary held only the top 5 lifts by frequency and never put the named lift first. With nothing attached, the prompt told him *never claim to see their logged sessions*, so he disclaimed.
 
@@ -910,7 +910,7 @@ PO, Premium AI on: asked Holt *"what my progress with my bench was"* and he said
 
 **To ship:** paste `supabase/apply/deploy-coach-ask.ts` into Dashboard → Edge Functions → `coach-ask` → Deploy. ⚠ **The paste copy is now ~96 KB** (was 34 KB; the tools inline to ~53 KB). The largest pastes known to have landed are coach-interpret at 49 KB and food-search at 47 KB. A 74 KB paste was once cut off at ~40 KB (`compact-deploy.mjs`). If the editor shows `Expected '}', got <eof>`, the deploy simply fails and the old function stays live. Fallback: `npx supabase login` + `npx supabase functions deploy coach-ask`, run by the PO (bundles `src/` itself, no paste). That alone fixes the bench question (without `tz`, dates read as UTC, so a late-evening workout can show as the next day for US athletes). The client change (`tz` in `coach-ask-live.ts`) is a pure `src/` change: web deploy + OTA, no build needed. Either order is safe.
 
-⏳ **Open for the PO:** CA-D10 still has Holt redirect *far* off-topic questions (taxes, politics). The PO asked for "ask him anything, like Claude or ChatGPT". Loosening that is a one-paragraph prompt change, but it is a product/cost call, not made here.
+⏳ ✅ **PO 2026-09-25: scope stays training and nutrition.** The CA-D10 far-off-topic redirect is kept as is.
 
 ### 0000000000000000000000. Paywall wired to RevenueCat (2026-09-24, Monetization · Amendment 007 · ✅ committed on `feat/route-map` · ⏳ **0214 NOT applied** · ⏳ **`revenuecat-webhook` NOT deployed** · ⏳ build 9 · 25/25 plans tests · 4245/4245 all tests · tsc 0 · lint clean)
 
