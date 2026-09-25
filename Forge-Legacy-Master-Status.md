@@ -900,6 +900,10 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### ⭐ Subscription screen is decision-first — PO redesign (2026-09-25, `16f7831f` + purchase-refresh fix `1672d332`) · tests 29/29 · tsc/lint clean · ⏳ NOT deployed, not yet seen on a device
+
+Order: hero → Premium/Premium AI → founding-price note → yearly/monthly → Start 7-day free trial → terms → See what's included → benefits → AI upsell / AI benefits → compact Free vs. Premium → Your data is yours → usage (moves up at 80%+) → FAQ → Restore → Terms · Privacy. Seat count removed ("Founding price" states MA7-D3). P8W-D4 kept: the hero sentence covers the main button and `TIER_NOTE_SHORT` covers the sticky bar. ⚠ `P-8-Subscription-Wireframe-Spec.md` is now further out of date — the rewrite MA6 already owed should describe this layout. Also fixed: after a purchase that needed an Apple ID sign-in, the screen stayed on Free until a force-quit; it now re-checks after every attempt for a minute.
+
 ### ⭐ Onboarding theme chooser is stone cards — PO mockup (2026-09-25, `a3750922`, ONB-A7-D1 amended) · ✅ web `index-24a8494c08ee2f439182ff646a4e8487.js` (200 + hash-matched; `deploy/holt-v2` + this commit) · ✅ OTA build 9 iOS `01a0dae2-f28a-7ce4…` (`ota/build9-js` + this commit, fingerprint `b322e3de` MATCHED, manifest verified)
 
 "Choose the Forge that feels like yours." Forge · Dark and Alabaster · Light are full-width cards cut from their own stone, with the radio top-right and a bronze border + filled check when chosen. The stone art is cut from the PO's mockup and is soft at phone resolution; higher-res art drops in at `assets/images/onboarding/theme-{forge,alabaster}.png`. The screen background is still the usual plate (the mockup shows veined stone). ⏳ Not yet seen by the PO.
