@@ -130,14 +130,14 @@ export default function MyFoodsScreen() {
 
   /* ── meal editor ── */
   const [fq, setFq] = useState('');
-  const [search, setSearch] = useState<{ q: string; foods: CatalogFood[] }>({ q: '', foods: [] });
+  const [search, setSearch] = useState<{ q: string; foods: CatalogFood[]; failed: boolean }>({ q: '', foods: [], failed: false });
   useEffect(() => {
     const term = fq.trim();
     if (term.length < 2) return;
     let live = true;
     const timer = setTimeout(async () => {
       const found = await searchFoods(term);
-      if (live) setSearch({ q: term, foods: found.filter(looksSane) });
+      if (live) setSearch({ q: term, foods: found.foods.filter(looksSane), failed: found.failed });
     }, 350);
     return () => {
       live = false;
@@ -150,6 +150,7 @@ export default function MyFoodsScreen() {
   const libHits = term.length >= 2 && search.q === term ? search.foods : [];
   const results = [...mineHits.map((f) => ({ food: f, mine: true })), ...libHits.map((f) => ({ food: f, mine: false }))].slice(0, 6);
   const searching = term.length >= 2 && search.q !== term;
+  const searchFailed = term.length >= 2 && search.q === term && search.failed;
 
   const setItems = (fn: (items: MealItem[]) => MealItem[]) => setEditor((e) => (e ? { ...e, items: fn(e.items) } : e));
   const totals = editor ? mealTotals(editor.items) : { kcal: 0, protein: 0 };
@@ -395,7 +396,9 @@ export default function MyFoodsScreen() {
             ) : null}
             {searching && !results.length ? <Text style={styles.noResults}>Searching…</Text> : null}
             {term.length >= 2 && !searching && !results.length ? (
-              <Text style={styles.noResults}>No foods match. Try a simpler word, like “chicken”.</Text>
+              <Text style={styles.noResults}>
+                {searchFailed ? 'Couldn’t connect to food search. Check your signal and try again.' : 'No foods match. Try a simpler word, like “chicken”.'}
+              </Text>
             ) : null}
 
             {editor.id ? (
