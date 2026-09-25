@@ -316,12 +316,13 @@ export default function LogFoodScreen() {
           setBarcodeOpen(false);
           router.push({ pathname: '/food-detail', params: { key: food.key, date: iso, meal } });
         }}
-        onNotFound={() => {
+        onNotFound={(digits) => {
           setBarcodeOpen(false);
           /* Where Scan label exists, Create Food says "No barcode match" itself, above the Scan label
              card (`Scan Nutrition Label v2.dc.html` A2) — a toast on top of that would say it twice. */
           if (labelScanAvailable()) {
-            router.push({ pathname: '/create-food', params: { date: iso, meal, from: 'barcode' } });
+            /* The barcode travels with it: Amendment 004 shares the food under it, so the next scan finds it. */
+            router.push({ pathname: '/create-food', params: { date: iso, meal, from: 'barcode', gtin: digits } });
             return;
           }
           goCreateFood();
@@ -497,7 +498,7 @@ function BarcodeSheet({
   open: boolean;
   onClose: () => void;
   onFound: (food: CatalogFood) => void;
-  onNotFound: () => void;
+  onNotFound: (digits: string) => void;
 }) {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
@@ -511,7 +512,7 @@ function BarcodeSheet({
       setBusy(false);
       setCode('');
       if (found.length) onFound(found[0]);
-      else onNotFound();
+      else onNotFound(digits);
     },
     [onFound, onNotFound],
   );

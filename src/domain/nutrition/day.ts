@@ -35,7 +35,7 @@ export interface LogEntry {
   carb: number;
   fat: number;
   /** Where the numbers came from, and what they point at. `quick` has no food behind it, so no key. */
-  source: 'usda' | 'off' | 'fs' | 'custom' | 'quick';
+  source: 'usda' | 'off' | 'fs' | 'custom' | 'quick' | 'community';
   sourceKey?: string | null;
   /** What this portion weighs. Null for a Quick Add, and for a serving no source gave a weight for. */
   grams?: number | null;

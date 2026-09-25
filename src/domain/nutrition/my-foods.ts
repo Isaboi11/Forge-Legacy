@@ -13,7 +13,7 @@ import { MAY_STORE_MICROS, defaultServing, portionLabel, portionMacros, servingO
  * ⚠ **MICROS ARE PER 100 g** on every row (see `food-detail.tsx`), so they never scale with quantity.
  */
 
-export type ItemSource = 'usda' | 'off' | 'fs' | 'custom' | 'quick';
+export type ItemSource = 'usda' | 'off' | 'fs' | 'custom' | 'quick' | 'community';
 
 export interface MealItem {
   source: ItemSource;

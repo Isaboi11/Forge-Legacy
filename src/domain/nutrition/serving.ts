@@ -17,7 +17,7 @@ export interface Serving {
 
 export interface CatalogFood {
   key: string;
-  source: 'usda' | 'off' | 'fs' | 'custom';
+  source: 'usda' | 'off' | 'fs' | 'custom' | 'community';
   name: string;
   brand?: string | null;
   kcal100: number | null;
@@ -44,7 +44,7 @@ export interface PortionMacros {
 }
 
 /** Sources that may keep micronutrients (§4). FatSecret's permission covers calories and macros only. */
-export const MAY_STORE_MICROS: ReadonlySet<string> = new Set(['usda', 'custom', 'off']);
+export const MAY_STORE_MICROS: ReadonlySet<string> = new Set(['usda', 'custom', 'off', 'community']);
 
 /** What a source badge says on Food Detail. */
 export const SOURCE_LABEL: Record<string, string> = {
@@ -53,6 +53,8 @@ export const SOURCE_LABEL: Record<string, string> = {
   fs: 'Restaurant data',
   custom: 'Yours',
   quick: 'Quick add',
+  // Amendment 004: foods Forge athletes shared after a barcode missed. Open Food Facts keeps "Community data".
+  community: 'Forge athletes',
 };
 
 const round = (n: number, dp = 0): number => {

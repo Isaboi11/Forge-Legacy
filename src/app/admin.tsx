@@ -35,7 +35,13 @@ import {
   setErrorStatus,
   type ErrorOccurrence,
 } from '@/data/admin-live';
-import { fetchAdminReports, resolveReport } from '@/data/moderation-live';
+import {
+  deleteCommunityFood,
+  fetchAdminCommunityFoods,
+  fetchAdminReports,
+  resolveReport,
+  restoreCommunityFood,
+} from '@/data/moderation-live';
 import { column, RANGES, rangeLabel, rangeToDays, type RangeKey } from '@/domain/admin/series';
 import { pctOf } from '@/domain/admin/chart-core';
 import { useQuery } from '@/lib/useQuery';
@@ -100,6 +106,16 @@ export default function AdminScreen() {
   /* Reports (0171). Same reasoning as feedback above — deliberately NOT range-scoped, because an open
      report is not less open because the chips say 7D. */
   const reports = useQuery(() => fetchAdminReports(50, null), []);
+  /* Shared foods (0219, Amendment 004). Not range-scoped: a hidden food is a to-do, like a report. */
+  const sharedFoods = useQuery(() => fetchAdminCommunityFoods(false), []);
+  const moderateFood = async (key: string, action: 'restore' | 'delete') => {
+    try {
+      await (action === 'restore' ? restoreCommunityFood(key) : deleteCommunityFood(key));
+      await sharedFoods.refetch();
+    } catch {
+      /* The row keeps its state, visibly. A food that silently vanishes from the queue is the worse failure. */
+    }
+  };
 
   /* Errors (0176). ⚠ RANGE-SCOPED, and it is the one operator queue that should be — unlike a support
      ticket, a crash from six weeks ago on a build nobody is running is genuinely not a to-do item. The
@@ -432,6 +448,60 @@ export default function AdminScreen() {
                         </Text>
                       </View>
                     ))}
+                  </View>
+                )}
+              </>
+            ) : null}
+          </Section>
+        </SectionCard>
+
+        {/* ── Shared foods (0219, Amendment 004) ───────────────────────── */}
+        <SectionCard
+          title="Shared foods"
+          subtitle="Foods athletes shared after a barcode missed. Three reports hide one; restore it if the numbers are right, delete it if they are not."
+        >
+          <Section state={sharedFoods}>
+            {sharedFoods.data ? (
+              <>
+                <StatLine label="Shared" value={sharedFoods.data.length} />
+                <StatLine label="Hidden by reports" value={sharedFoods.data.filter((f) => f.hidden).length} />
+                <StatLine label="Confirmed by 2+" value={sharedFoods.data.filter((f) => f.confirmations >= 2).length} />
+                {sharedFoods.data.filter((f) => f.hidden || f.reports > 0).length === 0 ? null : (
+                  <View style={styles.feedbackList}>
+                    {sharedFoods.data
+                      .filter((f) => f.hidden || f.reports > 0)
+                      .map((f) => (
+                        <View key={f.key} style={styles.feedbackRow}>
+                          <View style={styles.feedbackHead}>
+                            <Text style={styles.feedbackKind}>{f.hidden ? 'hidden' : `${f.reports} report${f.reports === 1 ? '' : 's'}`}</Text>
+                            <Text style={styles.feedbackWho} numberOfLines={1}>
+                              {[f.name, f.brand].filter(Boolean).join(' · ')}
+                            </Text>
+                            <Text style={styles.feedbackWhen}>{signupDate(f.updatedAt)}</Text>
+                          </View>
+                          <Text style={styles.feedbackMeta}>
+                            {`${f.gtin} · per 100 g: ${f.kcal100} kcal · P ${f.protein100} · C ${f.carb100} · F ${f.fat100} · ${f.submissions} submitted`}
+                          </Text>
+                          <View style={styles.reportActions}>
+                            <Pressable
+                              onPress={() => void moderateFood(f.key, 'restore')}
+                              accessibilityRole="button"
+                              accessibilityLabel="Restore shared food"
+                              style={styles.reportAction}
+                            >
+                              <Text style={styles.reportActionLabel}>Restore</Text>
+                            </Pressable>
+                            <Pressable
+                              onPress={() => void moderateFood(f.key, 'delete')}
+                              accessibilityRole="button"
+                              accessibilityLabel="Delete shared food"
+                              style={styles.reportAction}
+                            >
+                              <Text style={styles.reportActionLabel}>Delete</Text>
+                            </Pressable>
+                          </View>
+                        </View>
+                      ))}
                   </View>
                 )}
               </>

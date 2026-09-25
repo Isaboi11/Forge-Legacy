@@ -9,6 +9,9 @@
  *      ⚠ ODbL share-alike: its rows are kept in their own table, never merged with ours, and are
  *      labelled "Community data" in the UI.
  *   3. **FatSecret** — restaurants and branded misses. **WRITTEN AND DORMANT** (see below).
+ *   4. **Community** — foods Forge athletes shared from Create Food after a barcode missed
+ *      (Nutrition Architecture Amendment 004, `0219`). Read through the CALLER's client so RLS hides a
+ *      reported or hidden entry; never cached into `food_catalog` — it already lives in our database.
  *
  * ══ ⚠ WHY FATSECRET IS DORMANT ══
  *
@@ -73,7 +76,7 @@ interface Serving {
 
 interface Food {
   key: string; // `<source>:<id>`
-  source: 'usda' | 'off' | 'fs';
+  source: 'usda' | 'off' | 'fs' | 'community';
   sourceId: string;
   name: string;
   brand: string | null;
@@ -571,6 +574,41 @@ async function offSearch(query: string, limit: number): Promise<Food[]> {
   return out;
 }
 
+// ── Community (Amendment 004) ────────────────────────────────────────────────
+
+const COMMUNITY_COLUMNS = 'key, gtin, name, brand, kcal_100, protein_100, carb_100, fat_100, servings, micros, confirmations';
+
+function communityFood(r: Record<string, any>): Food {
+  return {
+    key: r.key,
+    source: 'community',
+    sourceId: r.gtin,
+    name: r.name,
+    brand: r.brand,
+    gtin: r.gtin,
+    kcal100: num(r.kcal_100),
+    protein100: num(r.protein_100),
+    carb100: num(r.carb_100),
+    fat100: num(r.fat_100),
+    servings: r.servings ?? [],
+    micros: r.micros ?? null,
+    // CF-D5: two or more athletes agreeing is shown as confirmed.
+    attribution: Number(r.confirmations) >= 2 ? 'Added by Forge athletes · confirmed' : 'Added by Forge athletes',
+  };
+}
+
+/* ⚠ `client` is the CALLER's (anon key + their token), so `community_foods_read` applies: an entry they
+   reported, or one three athletes hid, is simply not returned. The service role would show both. */
+async function communityByGtin(client: ReturnType<typeof createClient>, gtin: string): Promise<Food[]> {
+  const { data } = await client.from('community_foods').select(COMMUNITY_COLUMNS).eq('gtin', gtin).limit(1);
+  return (data ?? []).map(communityFood);
+}
+
+async function communitySearch(client: ReturnType<typeof createClient>, query: string, limit: number): Promise<Food[]> {
+  const { data } = await client.from('community_foods').select(COMMUNITY_COLUMNS).ilike('name', `%${query}%`).limit(limit);
+  return (data ?? []).map(communityFood);
+}
+
 /** A food with all three macros — preferred over one that knows only its calories. */
 const complete = (f: Food) => f.kcal100 != null && f.protein100 != null && f.carb100 != null && f.fat100 != null;
 
@@ -686,7 +724,9 @@ async function purgeStaleFatSecret(admin: ReturnType<typeof createClient>): Prom
   await admin.from('food_catalog').delete().eq('source', 'fs').lt('fetched_at', fsExpiry());
 }
 
-async function cache(foods: Food[]): Promise<void> {
+async function cache(all: Food[]): Promise<void> {
+  // Community foods already live in our own table (0219); `food_catalog`'s source check would refuse them.
+  const foods = all.filter((f) => f.source !== 'community');
   if (!foods.length) return;
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
   await admin.from('food_catalog').upsert(
@@ -858,13 +898,17 @@ Deno.serve(async (req) => {
      * three macros beats one that knows only its calories.
      */
     const started = Date.now();
-    const [usda, off, fs] = await Promise.all([
+    const [usda, off, fs, community] = await Promise.all([
       usdaBarcode(gtin).then(withPortions).catch((e) => (console.log(`usda barcode failed: ${e}`), [] as Food[])),
       offBarcode(gtin).catch((e) => (console.log(`off barcode failed: ${e}`), [] as Food[])),
       fatsecretBarcode(gtin).catch((e) => (console.log(`fatsecret barcode failed: ${e}`), [] as Food[])),
+      communityByGtin(supabase, gtin).catch((e) => (console.log(`community barcode failed: ${e}`), [] as Food[])),
     ]);
-    console.log(`barcode ${gtin}: usda ${usda.length}, fatsecret ${fs.length}, off ${off.length}, ${Date.now() - started} ms`);
-    const all = [...usda, ...fs, ...off];
+    console.log(
+      `barcode ${gtin}: usda ${usda.length}, fatsecret ${fs.length}, community ${community.length}, off ${off.length}, ${Date.now() - started} ms`,
+    );
+    // CF-D5: community ranks above Open Food Facts — a person confirmed it against the label.
+    const all = [...usda, ...fs, ...community, ...off];
     const foods = [...all.filter(complete), ...all.filter((f) => !complete(f))];
     await cache(foods);
     return json({ foods });
@@ -878,22 +922,23 @@ Deno.serve(async (req) => {
 
   // Sources run in parallel: a slow or dormant one must not hold up the rest of the results.
   const started = Date.now();
-  const [usda, fs, off] = await Promise.all([
+  const [usda, fs, off, community] = await Promise.all([
     usdaSearch(q, limit - ours.length).catch((e) => (console.log(`usda search failed: ${e}`), [] as Food[])),
     fatsecretSearch(q, 10).catch((e) => (console.log(`fatsecret search failed: ${e}`), [] as Food[])),
     offSearch(q, 8).catch((e) => (console.log(`off search failed: ${e}`), [] as Food[])),
+    communitySearch(supabase, q, 5).catch((e) => (console.log(`community search failed: ${e}`), [] as Food[])),
   ]);
   // One line per search in the dashboard's Logs tab: how many each source gave, and how long it took.
-  console.log(`search "${q}": cached ${ours.length}, usda ${usda.length}, fatsecret ${fs.length}, off ${off.length}, ${Date.now() - started} ms`);
+  console.log(`search "${q}": cached ${ours.length}, usda ${usda.length}, fatsecret ${fs.length}, community ${community.length}, off ${off.length}, ${Date.now() - started} ms`);
 
   // Every source came back empty (a limit, an outage, a timeout). Answer from the catalogue at any age
   // rather than "Nothing found" — PO, 2026-09-24, "nothing found for big mac".
-  if (!usda.length && !fs.length && !off.length && !ours.length) {
+  if (!usda.length && !fs.length && !off.length && !community.length && !ours.length) {
     const old = await cached(q, limit, true);
     return json({ foods: tidy(q, old) });
   }
 
-  const fetched = new Set([...usda, ...fs, ...off].map((f) => f.key));
+  const fetched = new Set([...usda, ...fs, ...community, ...off].map((f) => f.key));
 
   /*
    * De-duplicate by key, ours first — a cached row and a fresh one are the same food.
@@ -905,9 +950,10 @@ Deno.serve(async (req) => {
   /* Open Food Facts rides third in each round: its names are the least curated ("Quest protein bar" ×8,
      no flavour), so it fills gaps rather than leading. PO, 2026-09-25: "searching all of the data bases". */
   const interleaved: Food[] = [];
-  for (let i = 0; i < Math.max(usda.length, fs.length, off.length); i++) {
+  for (let i = 0; i < Math.max(usda.length, fs.length, community.length, off.length); i++) {
     if (fs[i]) interleaved.push(fs[i]);
     if (usda[i]) interleaved.push(usda[i]);
+    if (community[i]) interleaved.push(community[i]);
     if (off[i]) interleaved.push(off[i]);
   }
   const seen = new Set(ours.map((f) => f.key));

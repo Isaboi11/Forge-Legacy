@@ -23,7 +23,15 @@ import {
   type UnitChoice,
 } from '@/domain/nutrition/detail';
 import { MAY_STORE_MICROS, portionLabel, portionMacros, SOURCE_LABEL } from '@/domain/nutrition/serving';
-import { addEntries, fetchDay, fetchFoodByKey, fetchFavorites, setFavorite, updateEntry } from '@/data/nutrition-live';
+import {
+  addEntries,
+  fetchDay,
+  fetchFoodByKey,
+  fetchFavorites,
+  reportCommunityFood,
+  setFavorite,
+  updateEntry,
+} from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { useQuery } from '@/lib/useQuery';
 
@@ -72,6 +80,7 @@ export default function FoodDetailScreen() {
     (MEAL_SLOTS as readonly string[]).includes(String(params.meal)) ? (params.meal as MealSlot) : 'breakfast',
   );
   const [mealPickerOpen, setMealPickerOpen] = useState(false);
+  const [reported, setReported] = useState(false);
   const [pickedUnit, setPickedUnit] = useState<number | null>(null);
   const [amountText, setAmountText] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -345,6 +354,22 @@ export default function FoodDetailScreen() {
         ) : null}
 
         {food.attribution ? <Text style={styles.attribution}>{food.attribution}</Text> : null}
+        {/* Amendment 004 CF-D6 — no text asked for; it hides for this athlete at once, for everyone at 3 */}
+        {food.source === 'community' ? (
+          <Pressable
+            accessibilityRole="button"
+            disabled={reported}
+            onPress={async () => {
+              setReported(true);
+              const ok = await reportCommunityFood(food.key);
+              showToast(ok ? 'Thanks — it’s hidden for you and flagged for review' : 'Couldn’t send that. Try again.');
+              if (!ok) setReported(false);
+            }}
+            style={styles.reportLink}
+          >
+            <Text style={styles.reportText}>{reported ? 'Reported' : 'Numbers look wrong?'}</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
 
       {/* commit */}
@@ -494,6 +519,8 @@ const styles = StyleSheet.create({
   extraLabel: { fontSize: 14, color: flColor.gray400 },
   extraValue: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   attribution: { paddingTop: 18, paddingHorizontal: 2, fontSize: 11, color: flColor.gray600 },
+  reportLink: { alignSelf: 'flex-start', paddingTop: 10, paddingBottom: 4, paddingHorizontal: 2 },
+  reportText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400, textDecorationLine: 'underline' },
 
   footer: {
     gap: 10,

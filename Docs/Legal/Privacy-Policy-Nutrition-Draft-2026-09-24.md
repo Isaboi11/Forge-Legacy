@@ -27,10 +27,23 @@ out of your meal plan.
 **Your nutrition data is visible to you only.** There is no setting that shares it, and it never
 appears to your squads, your friends, in search or in notifications. If you post a meal or a recipe to
 a squad, the post never includes calories, macros, your weight, your targets or your eating history.
+The one exception is a food you choose to share, described next.
+
+**Sharing a food you scanned.** When you scan a barcode Forge doesn't know, you can create the food
+yourself, and a "Share with Forge" box (ticked unless you untick it) adds that product to a shared list
+so the next person who scans the same barcode finds it. What is shared is the product only: its barcode,
+name, brand, serving size and nutrition numbers. **Nothing that identifies you is shown to anyone.** We
+keep a private record of who shared each food so we can deal with abuse, and no other user can see it.
+Anyone can report a shared food's numbers as wrong. If you delete your account, the foods you shared
+stay in the list as anonymous product information, and our record linking them to you is removed.
+*(Added 2026-09-25: Nutrition Architecture Amendment 004.)*
 
 **Looking up a food.** When you search for a food or scan a barcode, the words you typed or the barcode
 number are sent, through our own servers, to food databases: USDA FoodData Central, FatSecret and Open
-Food Facts. They never receive your name, email or account. The foods found are kept in a shared
+Food Facts. If our servers find nothing for a barcode, your phone asks Open Food Facts directly, which
+means Open Food Facts sees your device's internet address, as any website you visit would. They never
+receive your name, email or account.
+*(Added 2026-09-25: the phone-side barcode fallback.)* The foods found are kept in a shared
 reference list inside Forge, so the next search is faster. That list records the food, never who
 searched for it.
 

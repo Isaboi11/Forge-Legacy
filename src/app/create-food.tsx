@@ -25,7 +25,14 @@ import {
 } from '@/domain/nutrition/create-food';
 import { LABEL_FIELDS } from '@/domain/nutrition/label-read';
 import { portionLabel, portionMacros } from '@/domain/nutrition/serving';
-import { addEntries, createUserFood, fetchFoodByKey, updateUserFood } from '@/data/nutrition-live';
+import {
+  addEntries,
+  createUserFood,
+  fetchFoodByKey,
+  shareCommunityFood,
+  updateUserFood,
+  type ShareRefusal,
+} from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { labelScanAvailable, takeLabelScan } from '@/lib/label-scan';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -72,7 +79,7 @@ const EMPTY: Fields = { name: '', brand: '', amount: '', unitWeight: '', cal: ''
 export default function CreateFoodScreen() {
   const router = useRouter();
   const { showToast } = useToast();
-  const params = useLocalSearchParams<{ meal?: string; date?: string; food?: string; mode?: string; from?: string }>();
+  const params = useLocalSearchParams<{ meal?: string; date?: string; food?: string; mode?: string; from?: string; gtin?: string }>();
   const { width } = useWindowDimensions();
 
   const iso = typeof params.date === 'string' && params.date ? params.date : localToday();
@@ -91,6 +98,10 @@ export default function CreateFoodScreen() {
   const [scan, setScan] = useState<ScanState | null>(null);
   const [labelOpen, setLabelOpen] = useState(false);
   const canScan = !editing && labelScanAvailable();
+  /* Amendment 004 (LOCKED): a food made after a barcode missed can be shared under that barcode. The box
+     starts ticked (PO, Q1) and appears ONLY with a barcode (CF-D2) — "overnight oats" stays personal. */
+  const gtin = !editing && typeof params.gtin === 'string' ? params.gtin.replace(/\D/g, '') : '';
+  const [shareIt, setShareIt] = useState(true);
 
   /* A scan lands here on the way back from the camera. Taken once, so a later focus cannot re-apply
      it over the athlete's edits. A rescan replaces every nutrient — misses become blanks — and keeps
@@ -208,6 +219,7 @@ export default function CreateFoodScreen() {
     return {
       name: f.name.trim(),
       brand: f.brand.trim() || null,
+      gtin: gtin || null,
       kcal100: perHundred(String(calories.calories), g),
       protein100: perHundred(f.protein, g),
       carb100: perHundred(f.carb, g),
@@ -226,6 +238,14 @@ export default function CreateFoodScreen() {
       const food = editing ? await updateUserFood(editId, input) : await createUserFood(input);
       if (!food) return;
 
+      /* Shared AFTER the athlete's own copy is saved, so a refusal costs them nothing: the toast says
+         "saved", and adds why it was not shared. */
+      let shared: { shared: boolean; reason: ShareRefusal | null } | null = null;
+      if (!editing && gtin && shareIt) {
+        shared = await shareCommunityFood({ ...input, gtin }, scan ? 'label_scan' : 'typed');
+      }
+      const shareNote = !shared ? '' : shared.shared ? ' · shared with Forge' : ` · not shared: ${SHARE_REFUSAL[shared.reason ?? 'unavailable']}`;
+
       if (thenLog && !editing) {
         const serving = input.servings[0];
         const macros = portionMacros(food, { serving, quantity: 1 });
@@ -242,13 +262,13 @@ export default function CreateFoodScreen() {
             macros,
           },
         ]);
-        showToast(`${food.name} added to ${MEAL_LABELS[meal]}`);
+        showToast(`${food.name} added to ${MEAL_LABELS[meal]}${shareNote}`);
         router.dismissAll?.();
         router.replace('/nutrition');
         return;
       }
 
-      showToast(editing ? 'Changes saved' : `${food.name} saved to My Foods`);
+      showToast(editing ? 'Changes saved' : `${food.name} saved to My Foods${shareNote}`);
       router.back();
     } catch (e) {
       showToast(errorMessage(e));
@@ -423,6 +443,22 @@ export default function CreateFoodScreen() {
           </View>
         ) : null}
 
+        {/* Amendment 004 CF-D1 — one choice on this food, only when it has a barcode */}
+        {gtin ? (
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: shareIt }}
+            onPress={() => setShareIt((v) => !v)}
+            style={styles.shareRow}
+          >
+            <View style={[styles.shareBox, shareIt && styles.shareBoxOn]}>{shareIt ? <ShareTick /> : null}</View>
+            <View style={styles.shareCopy}>
+              <Text style={styles.shareTitle}>Share with Forge</Text>
+              <Text style={styles.shareSub}>The next person who scans this barcode finds it. Your name is never shown.</Text>
+            </View>
+          </Pressable>
+        ) : null}
+
         {/* A3 — "Brand sits below More nutrients" once a scan has filled the rest */}
         {scan ? (
           <View style={styles.brandAfter}>
@@ -532,6 +568,20 @@ export default function CreateFoodScreen() {
 /* ── pieces ──────────────────────────────────────────────────────────────── */
 
 const LABEL_PHOTO_HEIGHT = 440;
+
+/** What the toast says when the server's CF-D4 gate refused to share (the food itself is always saved). */
+const SHARE_REFUSAL: Record<ShareRefusal, string> = {
+  barcode: 'the barcode didn’t check out',
+  incomplete: 'add protein, carbs and fat to share it',
+  numbers: 'the calories and macros don’t add up',
+  name: 'that name can’t be shared',
+  signed_out: 'sharing isn’t available right now',
+  unavailable: 'sharing isn’t available right now',
+};
+
+function ShareTick() {
+  return <EngravedIcon name="check" size={13} color={flColor.base} />;
+}
 
 /** "Forge isn't confident about this value." The only thing a bronze dot means on this screen. */
 function CheckDot() {
@@ -665,6 +715,22 @@ const styles = StyleSheet.create({
   labelWithDot: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   sectionScanned: { paddingTop: 18, paddingBottom: 10 },
   brandAfter: { paddingTop: 18 },
+  shareRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginTop: 22, paddingVertical: 4, paddingHorizontal: 2 },
+  shareBox: {
+    width: 22,
+    height: 22,
+    marginTop: 1,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: flColor.charcoal500,
+    backgroundColor: flColor.surfaceRecessed,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shareBoxOn: { backgroundColor: flColor.bronze400, borderColor: flColor.bronze400 },
+  shareCopy: { flex: 1, gap: 3 },
+  shareTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
+  shareSub: { fontSize: 12.5, lineHeight: 17.5, color: flColor.gray600 },
   group: { gap: 18 },
 
   sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingTop: 30, paddingBottom: 12, paddingHorizontal: 2 },

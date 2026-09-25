@@ -190,3 +190,54 @@ export async function resolveReport(
   });
   if (error) throw new Error(error.message);
 }
+
+/* ── Community foods (Nutrition Architecture Amendment 004, 0219) ──────────────────────────────────
+
+   Hidden entries are the queue: three athletes said the numbers were wrong. Restore clears the reports;
+   delete removes the food and every submission for its barcode. Behind 0129's admin_guard(). */
+
+export interface AdminCommunityFood {
+  key: string;
+  gtin: string;
+  name: string;
+  brand: string | null;
+  kcal100: number;
+  protein100: number;
+  carb100: number;
+  fat100: number;
+  confirmations: number;
+  hidden: boolean;
+  reports: number;
+  submissions: number;
+  updatedAt: string;
+}
+
+export async function fetchAdminCommunityFoods(hiddenOnly = false): Promise<AdminCommunityFood[] | null> {
+  const { data, error } = await supabase.rpc('admin_community_foods', { p_hidden_only: hiddenOnly, p_limit: 100 });
+  if (error || !Array.isArray(data)) return null;
+  return (data as Record<string, unknown>[]).map((r) => ({
+    key: String(r.key ?? ''),
+    gtin: String(r.gtin ?? ''),
+    name: String(r.name ?? ''),
+    brand: typeof r.brand === 'string' ? r.brand : null,
+    kcal100: Number(r.kcal_100 ?? 0),
+    protein100: Number(r.protein_100 ?? 0),
+    carb100: Number(r.carb_100 ?? 0),
+    fat100: Number(r.fat_100 ?? 0),
+    confirmations: Number(r.confirmations ?? 0),
+    hidden: r.hidden === true,
+    reports: Number(r.reports ?? 0),
+    submissions: Number(r.submissions ?? 0),
+    updatedAt: typeof r.updated_at === 'string' ? r.updated_at : '',
+  }));
+}
+
+export async function restoreCommunityFood(key: string): Promise<void> {
+  const { error } = await supabase.rpc('admin_restore_community_food', { p_key: key });
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteCommunityFood(key: string): Promise<void> {
+  const { error } = await supabase.rpc('admin_delete_community_food', { p_key: key });
+  if (error) throw new Error(error.message);
+}

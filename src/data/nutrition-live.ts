@@ -374,7 +374,7 @@ export async function fetchTargetsOn(iso: string): Promise<Targets | null> {
 
 export interface NewEntry {
   meal: MealSlot;
-  source: 'usda' | 'off' | 'fs' | 'custom' | 'quick';
+  source: 'usda' | 'off' | 'fs' | 'custom' | 'quick' | 'community';
   sourceKey?: string | null;
   name: string;
   brand?: string | null;
@@ -567,7 +567,7 @@ export async function mealHasFood(iso: string, meal: MealSlot): Promise<boolean>
 
 export interface RecentFood {
   key: string;
-  source: 'usda' | 'off' | 'fs' | 'custom';
+  source: 'usda' | 'off' | 'fs' | 'custom' | 'community';
   name: string;
   brand: string | null;
   servingLabel: string | null;
@@ -716,6 +716,31 @@ export async function fetchFoodByKey(key: string): Promise<CatalogFood | null> {
     const { data, error } = await supabase.functions.invoke('food-search', { body: { key } });
     if (error) return null;
     return normaliseFoods(data)[0] ?? null;
+  }
+
+  /* Amendment 004: a food another athlete shared. Read under `community_foods_read`, so one this athlete
+     reported, or one three athletes hid, comes back as gone — which is what it now is, for them. */
+  if (key.startsWith('cf:')) {
+    const { data } = await supabase
+      .from('community_foods')
+      .select('key, name, brand, kcal_100, protein_100, carb_100, fat_100, servings, micros, confirmations')
+      .eq('key', key)
+      .maybeSingle();
+    if (!data) return null;
+    const r = data as Record<string, any>;
+    return {
+      key: r.key,
+      source: 'community',
+      name: r.name,
+      brand: r.brand,
+      kcal100: Number(r.kcal_100),
+      protein100: Number(r.protein_100),
+      carb100: Number(r.carb_100),
+      fat100: Number(r.fat_100),
+      servings: (r.servings ?? []) as Serving[],
+      micros: r.micros ?? null,
+      attribution: Number(r.confirmations) >= 2 ? 'Added by Forge athletes · confirmed' : 'Added by Forge athletes',
+    };
   }
 
   if (key.includes(':')) {
@@ -1067,11 +1092,15 @@ export interface UserFoodInput {
   servings: Serving[];
   /** Per 100 g, from the label (0207). Omitted keys are nutrients the label did not state. */
   micros?: Record<string, number> | null;
+  /** The barcode, when the food was made after a scan missed (Amendment 004). `user_foods.gtin`, 0205. */
+  gtin?: string | null;
 }
 
 const userFoodRow = (food: UserFoodInput) => ({
   name: food.name,
   brand: food.brand ?? null,
+  // Only when known: an edit that does not carry the barcode must not erase it.
+  ...(food.gtin ? { gtin: food.gtin } : {}),
   kcal_100: food.kcal100,
   protein_100: food.protein100,
   carb_100: food.carb100,
@@ -1125,6 +1154,45 @@ export async function createUserFood(food: UserFoodInput): Promise<CatalogFood |
   if (error || !data) throw error;
 
   return asCatalogFood((data as { id: string }).id, food);
+}
+
+/* ── Community foods (Nutrition Architecture Amendment 004, 0219) ─────────────────────────────────── */
+
+/** Why a food was saved but not shared — the server's CF-D4 reasons, plus one for "the server said nothing". */
+export type ShareRefusal = 'signed_out' | 'barcode' | 'incomplete' | 'numbers' | 'name' | 'unavailable';
+
+/**
+ * Share a food the athlete just created, under its barcode, so the next scan finds it.
+ *
+ * ⚠ **A REFUSAL IS AN ANSWER, NOT AN ERROR.** The athlete's own food is already saved when this runs;
+ * "Saved to My Foods — not shared: …" is the whole consequence. A network failure or a database without
+ * `0219` answers `unavailable` rather than throwing into a save that already succeeded.
+ */
+export async function shareCommunityFood(
+  food: UserFoodInput & { gtin: string },
+  entry: 'label_scan' | 'typed',
+): Promise<{ shared: boolean; reason: ShareRefusal | null }> {
+  const { data, error } = await supabase.rpc('share_community_food', {
+    p_gtin: food.gtin,
+    p_name: food.name,
+    p_brand: food.brand ?? null,
+    p_kcal_100: food.kcal100,
+    p_protein_100: food.protein100,
+    p_carb_100: food.carb100,
+    p_fat_100: food.fat100,
+    p_servings: food.servings,
+    p_micros: food.micros ?? null,
+    p_entry: entry,
+  });
+  if (error || !data) return { shared: false, reason: 'unavailable' };
+  const r = data as { shared?: boolean; reason?: ShareRefusal | null };
+  return { shared: r.shared === true, reason: r.shared ? null : (r.reason ?? 'unavailable') };
+}
+
+/** "Numbers look wrong?" (CF-D6). The reporter stops seeing it at once; three reports hide it for everyone. */
+export async function reportCommunityFood(key: string): Promise<boolean> {
+  const { error } = await supabase.rpc('report_community_food', { p_key: key });
+  return !error;
 }
 
 /** Edit a food the athlete already made. Same column fallback, same reasoning. */
