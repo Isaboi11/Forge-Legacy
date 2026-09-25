@@ -24,17 +24,24 @@ const at = (needle) => {
 test('guard → credit → model, in that order', () => {
   const guard = at('const guarded = guardRoute(question)');
   const spend = at("rpc('coach_ai_spend_credits', { p_action: action })");
-  const model = at("fetch('https://api.anthropic.com/v1/messages'");
+  // The ask's model call — the end-of-chat summary has its own, earlier in the file, behind its own meter.
+  const model = SRC.indexOf("fetch('https://api.anthropic.com/v1/messages'", spend);
   assert.ok(guard < spend && spend < model);
-  assert.match(SRC, /const action = 'message';/);
+  const sumSpend = at("rpc('coach_ai_spend_credits', { p_action: 'summary' })");
+  assert.ok(sumSpend < SRC.indexOf("fetch('https://api.anthropic.com/v1/messages'", sumSpend));
+  // An ask meters 'message'; only an ask the athlete TAPPED for online search meters 'web' (0218).
+  assert.ok(SRC.includes("const action = allowWeb ? 'web' : 'message';"));
+  assert.ok(SRC.includes('const allowWeb = body.allowWeb === true;'));
   // A guarded question returns a route and nothing else.
   assert.match(SRC, /if \(guarded\) return json\(\{ route: guarded \}\);/);
 });
 
 test('history is never sent beyond 8 turns — trimmed on the server, from the wire module', () => {
   assert.match(SRC, /const history = trimHistory\(body\.history, ASK_HISTORY_MAX\);/);
-  // The raw body history is read in exactly one place: that trim.
-  assert.equal(SRC.match(/body\.history/g).length, 1);
+  // The raw body history is only ever read through a trim: the ask's (8 turns) and the end-of-chat
+  // summary's (0218) — never handed to the model as the client sent it.
+  assert.equal(SRC.match(/body\.history/g).length, 2);
+  assert.match(SRC, /const turns = trimHistory\(body\.history, SUMMARY_TURNS\);/);
   // …and the app trims too, before sending.
   assert.match(LIVE, /history: trimHistory\(history, ASK_HISTORY_MAX\)/);
 });

@@ -204,7 +204,12 @@ export interface Chip {
    * plan itself — the thread is persisted as JSON, so the pending plan lives in the sheet and a chip
    * restored after a reload finds nothing and says so.
    */
-  typedEdit?: 'answer' | 'this_week' | 'rest_of_block' | 'apply' | 'cancel';
+  typedEdit?: 'answer' | 'this_week' | 'rest_of_block' | 'apply' | 'cancel' | 'undo';
+  /**
+   * "Find one online" — Holt found nothing in the recipe book and offered to look (Coach-AI-Amendment-002).
+   * Carries what to look for. Tapping it is the athlete's consent: only that ask carries web search.
+   */
+  webSearch?: string;
   label: string;
   /** What tapping it fills in. The typed path resolves to the same thing — see `interpret`. */
   /* Widened to ChatState so a chip can carry `dayFocus`, which describes one WORKOUT rather than the

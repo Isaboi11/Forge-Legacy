@@ -46,6 +46,7 @@ function fakeSupabase(log) {
       order: () => b,
       limit: () => b,
       maybeSingle: () => Promise.resolve({ data: rows[0] ?? null, error: null }),
+      insert: (row) => (log.inserts.push([table, row]), Promise.resolve({ error: null })),
       then: (ok, bad) => Promise.resolve({ data: rows, error: null }).then(ok, bad),
     };
     return b;
@@ -219,4 +220,101 @@ test('the medical guard still runs before any model call or credit', async (t) =
   const body = await res.json();
   assert.equal(body.route, 'medical_stop');
   assert.equal(log.rpcs.length, 0);
+});
+
+// ── Coach-AI-Amendment-002: actions, web search on a tap, and the end-of-chat summary ────────────────
+
+const actionRound = () =>
+  sse([
+    { type: 'message_start', message: { model: 'claude-sonnet-5', usage: { input_tokens: 800, output_tokens: 1 } } },
+    { type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'tu_e', name: 'propose_program_edit', input: {} } },
+    { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{"op":"swap","exercise":"bench","to":"dumbbell press","day":"Monday"}' } },
+    { type: 'content_block_stop', index: 0 },
+    { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 30 } },
+    { type: 'message_stop' },
+  ]);
+
+test('a program change is FORWARDED to the app to confirm — never applied on the server', async (t) => {
+  const log = { reads: [], rpcs: [], inserts: [], jwt: null, requests: [] };
+  const replies = [actionRound(), answerRound('Set it up for you. Check it and tap to confirm.')];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (_url, init) => (log.requests.push(JSON.parse(init.body)), replies.shift());
+  t.after(() => (globalThis.fetch = realFetch));
+  const handler = await loadFunction(log);
+  const events = await ask(handler, 'can you swap bench for dumbbell press on monday');
+
+  const action = events.find((e) => e.action);
+  assert.deepEqual(action.action, { name: 'propose_program_edit', input: { op: 'swap', exercise: 'bench', to: 'dumbbell press', day: 'Monday' } });
+  // The server wrote nothing: no program read, no update.
+  assert.ok(!log.reads.some((r) => r.table === 'programs'), 'the function must not touch programs for an action');
+  // The model was told the app has it, and must not claim it is done.
+  const [, result] = log.requests[1].messages.slice(-2);
+  assert.match(result.content[0].content, /Do not say it is done/);
+  assert.ok(events.find((e) => e.done));
+});
+
+test('web search is offered only on a TAPPED ask, and that ask meters as web', async (t) => {
+  const log = { reads: [], rpcs: [], inserts: [], jwt: null, requests: [] };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (_url, init) => (log.requests.push(JSON.parse(init.body)), answerRound('Found one.'));
+  t.after(() => (globalThis.fetch = realFetch));
+  const handler = await loadFunction(log);
+
+  await ask(handler, 'any ideas for dinner');
+  assert.ok(!log.requests[0].tools.some((x) => x.type?.startsWith('web_search')), 'no web search without the tap');
+  assert.equal(log.rpcs.find(([n]) => n === 'coach_ai_spend_credits')[1].p_action, 'message');
+
+  log.rpcs.length = 0;
+  const res = await handler(
+    new Request('http://fake', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer jwt-abc', 'content-type': 'application/json' },
+      body: JSON.stringify({ question: 'Find me a recipe online: high-protein chili', allowWeb: true }),
+    }),
+  );
+  await res.text();
+  const webReq = log.requests[1];
+  assert.ok(webReq.tools.some((x) => x.type === 'web_search_20260209' && x.max_uses === 2));
+  // The reads and actions come first, in the same order, so each variant keeps one cached prefix.
+  assert.deepEqual(webReq.tools.slice(0, -1).map((x) => x.name), log.requests[0].tools.map((x) => x.name));
+  assert.match(webReq.messages.at(-1).content, /tapped "Find one online"/);
+  assert.equal(log.rpcs.find(([n]) => n === 'coach_ai_spend_credits')[1].p_action, 'web');
+});
+
+test('the end of a chat writes one summary as the athlete, via the Premium AI gate, on Haiku', async (t) => {
+  const log = { reads: [], rpcs: [], inserts: [], jwt: null, requests: [] };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (_url, init) => {
+    log.requests.push(JSON.parse(init.body));
+    return new Response(
+      JSON.stringify({
+        content: [{ type: 'text', text: 'Asked how their bench is going; up from 205x5 to 225x5. Said their shoulder hurts on dips.' }],
+        usage: { input_tokens: 300, output_tokens: 40 },
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  };
+  t.after(() => (globalThis.fetch = realFetch));
+  const handler = await loadFunction(log);
+  const res = await handler(
+    new Request('http://fake', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer jwt-abc', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'summarize',
+        question: '',
+        history: [
+          { role: 'athlete', text: "what's my bench progress" },
+          { role: 'holt', text: 'Up from 205x5 to 225x5.' },
+          { role: 'athlete', text: 'nice, thanks' },
+        ],
+      }),
+    }),
+  );
+  assert.deepEqual(await res.json(), { ok: true, saved: true });
+  assert.equal(log.requests[0].model, 'claude-haiku-4-5');
+  assert.equal(log.rpcs[0][0], 'coach_ai_spend_credits');
+  assert.equal(log.rpcs[0][1].p_action, 'summary');
+  // The medical sentence never reached storage.
+  assert.deepEqual(log.inserts, [['holt_chat_summaries', { summary: 'Asked how their bench is going; up from 205x5 to 225x5.' }]]);
 });

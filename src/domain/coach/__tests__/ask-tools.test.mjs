@@ -294,3 +294,88 @@ test('the tool list is stable, closed, and read-only by name', () => {
     assert.ok(!RED.test(t.name), t.name);
   }
 });
+
+// ── Actions, recipes, and past chats (Coach-AI-Amendment-002) ─────────────────────────────────────────
+
+import { actionAck, ASK_ACTIONS, ASK_ACTION_NAMES, cleanSummary, formatPastChats, formatRecipes, narrowRecipes, transcriptOf } from '../ask-tools.ts';
+import { EDIT_OPS, EDIT_SCOPES, VOLUME_DIRECTIONS, VOLUME_TARGETS, narrowEdit } from '../interpret-narrow.ts';
+import { readAskEvent } from '../ask-wire.ts';
+import { medicalRoute } from '../medical-routing.ts';
+
+test("propose_program_edit speaks exactly the chat's own EditIntent — no op the resolver cannot take", () => {
+  const edit = ASK_ACTIONS.find((a) => a.name === 'propose_program_edit');
+  const p = edit.input_schema.properties;
+  assert.deepEqual(p.op.enum, [...EDIT_OPS]);
+  assert.deepEqual(p.scope.enum, [...EDIT_SCOPES]);
+  assert.deepEqual(p.target.enum, [...VOLUME_TARGETS]);
+  assert.deepEqual(p.direction.enum, [...VOLUME_DIRECTIONS]);
+  // Whatever the model sends is narrowed on the device by the same function the typed path uses.
+  assert.deepEqual(narrowEdit({ op: 'swap', exercise: 'bench', to: 'dumbbell press', day: 'Monday', junk: 1 }), {
+    op: 'swap',
+    exercise: 'bench',
+    to: 'dumbbell press',
+    day: 'Monday',
+  });
+});
+
+test('actions are never reads: they are not in ASK_TOOLS, and nothing runs them server-side', async () => {
+  for (const name of ASK_ACTION_NAMES) {
+    assert.ok(!ASK_TOOLS.some((t) => t.name === name), name);
+    const r = await runAskTool(name, {}, { db: { from: () => assert.fail('an action must not read') }, uid: 'a', question: 'x', tz: 0 });
+    assert.equal(r.isError, true, `${name} must be unknown to the read runner`);
+  }
+  assert.match(actionAck('propose_program_edit'), /Do not say it is done/);
+});
+
+test('the app reads an action off the stream', () => {
+  assert.deepEqual(readAskEvent(JSON.stringify({ action: { name: 'propose_program_edit', input: { op: 'skip', day: 'Friday' } } })), {
+    action: { name: 'propose_program_edit', input: { op: 'skip', day: 'Friday' } },
+  });
+  assert.equal(readAskEvent(JSON.stringify({ action: { input: {} } })), null);
+});
+
+const BOOK = narrowRecipes([
+  { id: 'p01', name: 'Chicken Rice Bowl', mine: false, meals: ['lunch', 'dinner'], minutes: 25, kcal: 612, protein: 48, carb: 70, fat: 14, allergens: [], ingredients: ['chicken breast', 'white rice', 'broccoli'] },
+  { id: 'u:1', name: "Mom's Turkey Chili", mine: true, meals: ['dinner'], minutes: 50, kcal: 540, protein: 44, carb: 38, fat: 20, allergens: [], ingredients: ['ground turkey', 'kidney beans'] },
+  { id: 'p02', name: 'Overnight Oats', mine: false, meals: ['breakfast', 'snack'], minutes: 5, kcal: 410, protein: 22, carb: 58, fat: 9, allergens: ['milk'], ingredients: ['oats', 'greek yogurt'] },
+  { name: 'no id — dropped' },
+]);
+
+test('the recipe book: matched on names and ingredients, the app numbers quoted, their own first', () => {
+  assert.equal(BOOK.length, 3);
+  const chicken = formatRecipes(BOOK, { query: 'chicken' });
+  assert.match(chicken, /Chicken Rice Bowl — 612 kcal, 48 g protein, 70 g carbs, 14 g fat; 25 min; lunch\/dinner/);
+  assert.ok(!chicken.includes('Oats'));
+  const dinner = formatRecipes(BOOK, { meal: 'dinner' });
+  assert.ok(dinner.indexOf("Mom's Turkey Chili (their own recipe)") < dinner.indexOf('Chicken Rice Bowl'), 'their own recipe first');
+  assert.match(formatRecipes(BOOK, { query: 'oats' }), /contains milk/);
+  assert.match(formatRecipes(BOOK, { query: 'salmon' }), /Nothing in their recipe book matches "salmon"\. You can offer an online search/);
+  assert.match(formatRecipes(BOOK, { maxMinutes: 10 }), /Overnight Oats/);
+  assert.match(formatRecipes([], {}), /offer_online_recipe_search/);
+});
+
+test('get_recipes reads the book the device sent, and touches no table', async () => {
+  const r = await runAskTool('get_recipes', { query: 'chili' }, { db: { from: () => assert.fail('no db') }, uid: 'a', question: 'x', tz: 0, recipes: BOOK });
+  assert.equal(r.isError, false);
+  assert.match(r.text, /Turkey Chili/);
+});
+
+test('a chat summary keeps what was decided and drops anything the medical guard would stop', () => {
+  const stops = (s) => medicalRoute(s) !== 'clear';
+  assert.equal(
+    cleanSummary('Asked about bench progress; it went from 205x5 to 225x5. Said they tore their rotator cuff last year. Wants Sundays for long runs.', stops),
+    'Asked about bench progress; it went from 205x5 to 225x5. Wants Sundays for long runs.',
+  );
+  assert.equal(cleanSummary('NOTHING', stops), null);
+  assert.equal(cleanSummary('  ', stops), null);
+  assert.ok(cleanSummary('x'.repeat(900) + '.', stops).length <= 500);
+  assert.equal(
+    transcriptOf([
+      { role: 'athlete', text: 'how is my bench' },
+      { role: 'holt', text: 'Up 10%.' },
+    ]),
+    'Athlete: how is my bench\nHolt: Up 10%.',
+  );
+  assert.match(formatPastChats([{ summary: 'Moved the long run to Sunday.', created_at: '2026-09-20T23:00:00Z' }], 300), /2026-09-20: Moved the long run to Sunday\./);
+  assert.match(formatPastChats([], 0), /No earlier conversations/);
+});

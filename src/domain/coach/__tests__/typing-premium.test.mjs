@@ -114,7 +114,7 @@ test('⚠ the streamed reply is ONE growing turn, cleared of `streaming` when it
 test('⚠ conversation memory is this conversation, eight turns, into both AI jobs', () => {
   assert.match(sheet, /\.slice\(-8\)/);
   assert.match(sheet, /interpretTyped\(text, q, m === 'day' \? 'day' : 'program', constraints, history, await loadNotes\(\)\)/);
-  assert.match(sheet, /askHolt\(text, history, context,/);
+  assert.match(sheet, /askHolt\(\s*text,\s*history,\s*context,/);
 });
 
 test('⚠ a typed edit is resolved, confirmed, and applied only on a tap — never saved on its own', () => {

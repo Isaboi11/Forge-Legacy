@@ -175,7 +175,96 @@ export const ASK_TOOLS: AskToolDef[] = [
       "The athlete's logged bodyweight and measurements over time. ONLY when their current message asks about their own bodyweight or measurements — never to volunteer it. Returns nothing otherwise.",
     input_schema: { type: 'object', properties: {}, additionalProperties: false },
   },
+  {
+    name: 'get_past_chats',
+    description:
+      "Short summaries of your last conversations with this athlete (newest first, up to ten), written when each chat ended. Use when they refer to something you talked about before ('like we discussed', 'what did you say about…', 'last time'), or when picking up an earlier plan would help.",
+    input_schema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'get_recipes',
+    description:
+      "Search the app's recipe book and the athlete's own saved recipes. Each result carries the APP's calories and macros per serving, prep minutes, meal types and allergens. Use for any 'what should I make/eat', recipe or meal-idea question BEFORE suggesting anything. Filter by words (dish, ingredient, style), meal, time or protein.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: "Words to match against names and ingredients ('chicken', 'rice bowl', 'oats'). Optional." },
+        meal: { type: 'string', enum: ['breakfast', 'lunch', 'dinner', 'snacks', 'any'], description: "Default 'any'." },
+        max_minutes: { type: 'integer', description: 'Only recipes that take at most this long. Optional.' },
+        min_protein: { type: 'integer', description: 'Only recipes with at least this many grams of protein per serving. Optional.' },
+      },
+      additionalProperties: false,
+    },
+  },
 ];
+
+/**
+ * ACTIONS — tools the model calls to make the APP do something, not to read. The function never runs
+ * them: it forwards them to the device as an `{action}` stream event and tells the model the app is
+ * handling it. The athlete always confirms on the device before anything changes (Coach-Holt-Everywhere
+ * rule 2; Coach-Chat-Design-Brief §5.6).
+ */
+export const ASK_ACTIONS: AskToolDef[] = [
+  {
+    name: 'propose_program_edit',
+    description:
+      "Change the athlete's running program. The app resolves it against the real program, shows the athlete the change, and applies it only if they tap to confirm — you never change anything yourself. Use whenever they ask you to change their program (swap an exercise, change sets or reps, change a run's distance or time, move or skip a session, add or remove an exercise, rebuild a day, more or less volume for a muscle group). Use their words for exercises and days; never invent a number they did not give. One call per change.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        op: {
+          type: 'string',
+          enum: ['swap', 'sets', 'reps', 'distance', 'duration', 'rebuild', 'move', 'skip', 'add', 'remove', 'volume'],
+          description:
+            "swap: exercise→to · sets/reps: exercise + the number · distance (miles) / duration (minutes): a run or cardio item · rebuild: a whole day · move: day→to ('Friday', 'first') · skip: a day, or a whole week · add/remove: exercise · volume: target + direction.",
+        },
+        exercise: { type: 'string', description: "The movement as the athlete named it ('bench'). For add, the one to add." },
+        to: { type: 'string', description: "swap: the replacement as named. move: where the session goes ('Friday', 'first', 'last')." },
+        day: { type: 'string', description: "The day or session as named ('Monday', 'leg day', 'tomorrow', 'Upper B')." },
+        week: { type: 'string', description: "skip only: a whole week as said ('next week', 'week 5')." },
+        target: {
+          type: 'string',
+          enum: ['glutes', 'arms', 'biceps', 'triceps', 'shoulders', 'chest', 'back', 'legs', 'quads', 'hamstrings', 'calves', 'core', 'cardio'],
+          description: 'volume only: the muscle group (or cardio).',
+        },
+        direction: { type: 'string', enum: ['more', 'less'], description: 'volume only.' },
+        sets: { type: 'integer', description: 'Only a number the athlete gave.' },
+        reps: { type: 'integer', description: 'Only a number the athlete gave.' },
+        miles: { type: 'number', description: 'Only a number the athlete gave.' },
+        minutes: { type: 'integer', description: 'Only a number the athlete gave.' },
+        scope: {
+          type: 'string',
+          enum: ['this_week', 'rest_of_block'],
+          description: "Only when the athlete said it ('just this week' / 'from now on'); otherwise leave it out and the app asks.",
+        },
+      },
+      required: ['op'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'offer_online_recipe_search',
+    description:
+      "Offer to find a recipe online. Call this when get_recipes found nothing that fits what the athlete wants. The app shows them a 'Find one online' button; searching happens only if they tap it. Say in one line that nothing in their book fits and that you can look online.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        looking_for: { type: 'string', description: "What to search for, in a few words ('high-protein vegetarian chili')." },
+      },
+      required: ['looking_for'],
+      additionalProperties: false,
+    },
+  },
+];
+
+export const ASK_ACTION_NAMES: readonly string[] = ASK_ACTIONS.map((a) => a.name);
+
+/** What the model gets back after an action — the app has it now; he says one line and stops. */
+export function actionAck(name: string): string {
+  return name === 'propose_program_edit'
+    ? 'The app is showing the athlete this change to confirm. Do not say it is done. In one short line, tell them to check it and tap to confirm; if you also need to answer something else, do that first.'
+    : "The app is showing the athlete a 'Find one online' button. In one short line, say nothing in their book fits and you can look online if they want.";
+}
 
 export type AskToolName = (typeof ASK_TOOLS)[number]['name'];
 
@@ -876,7 +965,140 @@ export const isBodyQuestion = (text: string): boolean => BODY.test(text ?? '');
  */
 export type AskDb = { from: (table: string) => any };
 
+// ── Recipes ──────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * One recipe as the DEVICE computed it — the app's own per-serving numbers (`meal-planner.ts`
+ * `deriveRecipe` / `user-recipes.ts` `toBook`, from USDA ingredient data). The model quotes these and
+ * never makes up its own (NUT-D4: "any number it emits is discarded").
+ */
+export interface RecipeCard {
+  id: string;
+  name: string;
+  mine: boolean;
+  meals: string[];
+  minutes: number;
+  kcal: number;
+  protein: number;
+  carb: number;
+  fat: number;
+  allergens: string[];
+  ingredients: string[];
+}
+
+/** `recipes-data.ts` `PlanSlot`. */
+const MEALS = ['breakfast', 'lunch', 'dinner', 'snacks'];
+
+/** The recipe list a client sent, narrowed: whatever arrives, at most 300 well-formed cards. */
+export function narrowRecipes(v: unknown): RecipeCard[] {
+  if (!Array.isArray(v)) return [];
+  const s = (x: unknown, n: number) => (typeof x === 'string' ? x.trim().slice(0, n) : '');
+  const n = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) && x >= 0 && x < 10000 ? Math.round(x) : 0);
+  const out: RecipeCard[] = [];
+  for (const r of v) {
+    if (!r || typeof r !== 'object') continue;
+    const o = r as Record<string, unknown>;
+    const id = s(o.id, 60);
+    const name = s(o.name, 80);
+    if (!id || !name) continue;
+    out.push({
+      id,
+      name,
+      mine: o.mine === true,
+      meals: Array.isArray(o.meals) ? o.meals.filter((m): m is string => typeof m === 'string' && MEALS.includes(m)) : [],
+      minutes: n(o.minutes),
+      kcal: n(o.kcal),
+      protein: n(o.protein),
+      carb: n(o.carb),
+      fat: n(o.fat),
+      allergens: Array.isArray(o.allergens) ? o.allergens.filter((a): a is string => typeof a === 'string').slice(0, 12).map((a) => a.slice(0, 20)) : [],
+      ingredients: Array.isArray(o.ingredients) ? o.ingredients.filter((a): a is string => typeof a === 'string').slice(0, 20).map((a) => a.slice(0, 40)) : [],
+    });
+    if (out.length >= 300) break;
+  }
+  return out;
+}
+
+/** get_recipes' text: the best matches, the athlete's own first on a tie. */
+export function formatRecipes(cards: readonly RecipeCard[], q: { query?: string | null; meal?: string | null; maxMinutes?: number | null; minProtein?: number | null }): string {
+  if (cards.length === 0) return 'The recipe book is empty (or Nutrition is not on for this account). You can offer an online search with offer_online_recipe_search.';
+  const words = liftTokens(q.query ?? '').filter((w) => w.length > 2);
+  const scored = cards
+    .filter((c) => !q.meal || q.meal === 'any' || c.meals.includes(q.meal))
+    .filter((c) => !q.maxMinutes || c.minutes <= q.maxMinutes)
+    .filter((c) => !q.minProtein || c.protein >= q.minProtein)
+    .map((c) => {
+      const hay = liftTokens(`${c.name} ${c.ingredients.join(' ')}`);
+      // A stray short word ("s" from "Mom's") must not match everything that starts with it.
+      const hits = words.filter((w) => hay.some((h) => h.startsWith(w) || (h.length >= 4 && w.startsWith(h)))).length;
+      return { c, hits };
+    })
+    .filter((x) => words.length === 0 || x.hits > 0)
+    .sort((a, b) => b.hits - a.hits || Number(b.c.mine) - Number(a.c.mine) || b.c.protein - a.c.protein);
+  if (scored.length === 0) {
+    return `Nothing in their recipe book matches${q.query ? ` "${q.query}"` : ''}. You can offer an online search with offer_online_recipe_search.`;
+  }
+  const lines = [`${scored.length} match${scored.length === 1 ? '' : 'es'} in the recipe book (numbers are the app's, per serving):`];
+  for (const { c } of scored.slice(0, 6)) {
+    lines.push(
+      `${c.name}${c.mine ? ' (their own recipe)' : ''} — ${c.kcal} kcal, ${c.protein} g protein, ${c.carb} g carbs, ${c.fat} g fat; ${c.minutes} min; ${
+        c.meals.join('/') || 'any meal'
+      }${c.allergens.length ? `; contains ${c.allergens.join(', ')}` : ''}. Main ingredients: ${c.ingredients.slice(0, 6).join(', ')}.`,
+    );
+  }
+  return lines.join('\n');
+}
+
+// ── Past chats ───────────────────────────────────────────────────────────────────────────────────────
+
+/** How many past-chat summaries are kept (mirrors the 0218 trigger). */
+export const CHAT_SUMMARIES_KEPT = 10;
+/** The 0218 column, and the check. */
+export const CHAT_SUMMARY_CHARS = 500;
+
+/**
+ * The prompt for the summariser (a Haiku call when a chat ends). Stable, so it caches — Haiku caches
+ * only past 4,096 tokens, so in practice it is billed in full; it is small, which is the point.
+ */
+export const SUMMARY_SYSTEM = `You write Coach Holt's private memory of a chat with an athlete in a training app. Given the chat, write 1 to 3 short plain sentences, at most 400 characters in total, that Holt would want to know next time: what the athlete asked or wanted, what was decided, built or changed, and anything they said about themselves that matters for coaching (schedule, likes, dislikes, goals, equipment).
+
+Rules:
+- Write about the athlete in the third person ("Asked how their bench is progressing; it went from 205x5 to 225x5 since March.").
+- Only what was actually said in the chat. Never guess or infer.
+- Never include anything about health, pain, injury, illness, medication, supplements, pregnancy, mental health, or their body or weight.
+- If nothing worth remembering happened (a greeting, a single tap), reply with exactly: NOTHING
+- Plain text only. No lists, no markdown, no quotation marks around the whole thing.`;
+
+/**
+ * The summary as it will be stored: trimmed, capped, and with every sentence the medical guard catches
+ * removed (the guard is passed in — this file cannot import it). Null when nothing worth storing is left.
+ */
+export function cleanSummary(raw: string, stops: (sentence: string) => boolean): string | null {
+  const t = (raw ?? '').replace(/\s+/g, ' ').trim();
+  if (!t || /^nothing\.?$/i.test(t)) return null;
+  const sentences = t.match(/[^.!?]+[.!?]*/g) ?? [t];
+  const kept = sentences.map((x) => x.trim()).filter((x) => x && !stops(x));
+  const out = kept.join(' ').trim();
+  if (out.length < 10) return null;
+  return out.length > CHAT_SUMMARY_CHARS ? `${out.slice(0, CHAT_SUMMARY_CHARS - 1).trimEnd()}…` : out;
+}
+
+/** The chat as the summariser reads it. Only the words — no chips, no cards. */
+export function transcriptOf(turns: readonly { role: 'athlete' | 'holt'; text: string }[]): string {
+  return turns
+    .map((t) => `${t.role === 'athlete' ? 'Athlete' : 'Holt'}: ${t.text.replace(/\s+/g, ' ').trim().slice(0, 600)}`)
+    .join('\n')
+    .slice(0, 8000);
+}
+
+export function formatPastChats(rows: readonly { summary: string; created_at: string }[], tz: number): string {
+  if (rows.length === 0) return 'No earlier conversations saved yet.';
+  return [`Your last ${rows.length} conversation${rows.length === 1 ? '' : 's'} with this athlete, newest first:`, ...rows.map((r) => `${localDate(r.created_at, tz)}: ${r.summary}`)].join('\n');
+}
+
 export interface AskToolContext {
+  /** The recipe book as the device computed it (`narrowRecipes`). Empty when none was sent. */
+  recipes?: readonly RecipeCard[];
   db: AskDb;
   /** The caller's user id, from their JWT. Every query filters on it as well as relying on RLS. */
   uid: string;
@@ -1173,6 +1395,29 @@ export async function runAskTool(name: string, input: unknown, ctx: AskToolConte
           if (parts.length) lines.push(`${b.logged_on}: ${parts.join(', ')}`);
         }
         return { text: cap(lines.join('\n')), isError: false };
+      }
+      case 'get_past_chats': {
+        const { data } = await ctx.db
+          .from('holt_chat_summaries')
+          .select('summary, created_at')
+          .eq('athlete_id', ctx.uid)
+          .order('created_at', { ascending: false })
+          .limit(CHAT_SUMMARIES_KEPT);
+        return { text: cap(formatPastChats((data ?? []) as { summary: string; created_at: string }[], ctx.tz)), isError: false };
+      }
+      case 'get_recipes': {
+        const meal = typeof i.meal === 'string' && (MEALS.includes(i.meal) || i.meal === 'any') ? i.meal : 'any';
+        return {
+          text: cap(
+            formatRecipes(ctx.recipes ?? [], {
+              query: typeof i.query === 'string' ? i.query.slice(0, 80) : null,
+              meal,
+              maxMinutes: i.max_minutes == null ? null : clampInt(i.max_minutes, 0, 1, 600),
+              minProtein: i.min_protein == null ? null : clampInt(i.min_protein, 0, 1, 300),
+            }),
+          ),
+          isError: false,
+        };
       }
       default:
         return { text: `Unknown tool: ${name}`, isError: true };

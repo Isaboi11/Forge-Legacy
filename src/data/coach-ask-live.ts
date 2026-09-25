@@ -12,6 +12,7 @@ import {
   type AskTurn,
 } from '@/domain/coach/ask-wire';
 import type { AskSources } from '@/domain/coach/ask-context';
+import type { RecipeCard } from '@/domain/coach/ask-tools';
 import { catalogForMatching } from '@/domain/exercise-picker/data';
 import { getExerciseDetailCoaching } from '@/domain/exercise-coaching/integration';
 
@@ -37,9 +38,18 @@ export type { AskContext, AskTurn } from '@/domain/coach/ask-wire';
  * answer, so the caller can say "the app failed" rather than making Holt look arbitrary.
  */
 
+/** Something Holt asked the app to do, still in the model's words — the sheet narrows and confirms it. */
+export interface AskAction {
+  name: string;
+  input: unknown;
+}
+
 export type AskResult =
-  /** Holt answered. `complete` is false when the stream broke after some words had already arrived. */
-  | { kind: 'answer'; text: string; remaining: number | null; complete: boolean }
+  /**
+   * Holt answered. `complete` is false when the stream broke after some words had already arrived.
+   * `actions` are what he asked the app to do (a program change to confirm, an online-search offer).
+   */
+  | { kind: 'answer'; text: string; remaining: number | null; complete: boolean; actions: AskAction[] }
   /** Self-harm, an emergency now, or disordered eating — the caller shows CRISIS_ / URGENT_ / CARE_STOP. */
   | { kind: 'crisis' }
   | { kind: 'urgent' }
@@ -56,6 +66,10 @@ export interface AskOptions {
   signal?: AbortSignal;
   /** One of the function's ALLOWED_MODELS, for the routing benchmark (CA-D7). */
   model?: string;
+  /** The athlete TAPPED "Find one online" — only then does the function carry web search (and meter 'web'). */
+  allowWeb?: boolean;
+  /** The recipe book with the app's own numbers (`holtRecipeCardsLive`), for Holt's `get_recipes`. */
+  recipes?: readonly RecipeCard[];
 }
 
 const FUNCTION_URL = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/coach-ask`;
@@ -122,6 +136,8 @@ export async function askHolt(
         // The device's clock, so Holt's lookups (`ask-tools.ts`) date a workout on the athlete's calendar.
         tz: new Date().getTimezoneOffset(),
         ...(options.model ? { model: options.model } : {}),
+        ...(options.allowWeb ? { allowWeb: true } : {}),
+        ...(options.recipes?.length ? { recipes: options.recipes } : {}),
       }),
       signal: options.signal,
     });
@@ -140,6 +156,7 @@ export async function askHolt(
     let remaining: number | null = null;
     let finished = false;
     let failure: string | null = null;
+    const actions: AskAction[] = [];
 
     while (!finished) {
       const { done, value } = await reader.read();
@@ -152,6 +169,8 @@ export async function askHolt(
         if ('t' in e) {
           text += e.t;
           onText(text);
+        } else if ('action' in e) {
+          actions.push(e.action);
         } else if ('error' in e) {
           failure = e.detail ? `${e.error}: ${e.detail}` : e.error;
           finished = true;
@@ -166,13 +185,14 @@ export async function askHolt(
 
     const said = text.trim();
     if (failure) {
-      return said ? { kind: 'answer', text: said, remaining: null, complete: false } : { kind: 'offline', detail: failure };
+      return said ? { kind: 'answer', text: said, remaining: null, complete: false, actions } : { kind: 'offline', detail: failure };
     }
-    if (!said) return { kind: 'offline', detail: finished ? 'empty_reply' : 'stream_ended' };
-    return { kind: 'answer', text: said, remaining, complete: finished };
+    // A reply that is only an action (a change to confirm) is still an answer — the card is the reply.
+    if (!said && actions.length === 0) return { kind: 'offline', detail: finished ? 'empty_reply' : 'stream_ended' };
+    return { kind: 'answer', text: said, remaining, complete: finished, actions };
   } catch (e) {
     const said = text.trim();
-    if (said && !options.signal?.aborted) return { kind: 'answer', text: said, remaining: null, complete: false };
+    if (said && !options.signal?.aborted) return { kind: 'answer', text: said, remaining: null, complete: false, actions: [] };
     return { kind: 'offline', detail: String((e as Error)?.message ?? e).slice(0, 200) };
   }
 }

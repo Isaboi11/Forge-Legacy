@@ -219,7 +219,12 @@ export type AskStreamEvent =
       remaining: number | null;
       stop?: string | null;
     }
-  | { error: string; detail?: string | null };
+  | { error: string; detail?: string | null }
+  /**
+   * Something Holt asked the APP to do (`ask-tools.ts` `ASK_ACTIONS`) — a program change to confirm, or
+   * the "Find one online" offer. The input is the model's and is narrowed again on the device.
+   */
+  | { action: { name: string; input: unknown } };
 
 /** A `data:` payload from the function, narrowed; null for anything unrecognised. */
 export function readAskEvent(data: string): AskStreamEvent | null {
@@ -233,6 +238,10 @@ export function readAskEvent(data: string): AskStreamEvent | null {
   const o = v as Record<string, unknown>;
   if (typeof o.t === 'string') return { t: o.t };
   if (typeof o.error === 'string') return { error: o.error, detail: typeof o.detail === 'string' ? o.detail : null };
+  if (o.action && typeof o.action === 'object') {
+    const a = o.action as Record<string, unknown>;
+    return typeof a.name === 'string' ? { action: { name: a.name, input: a.input ?? {} } } : null;
+  }
   if (o.done === true) {
     const u = (o.usage ?? {}) as Record<string, unknown>;
     const n = (x: unknown) => (typeof x === 'number' ? x : 0);

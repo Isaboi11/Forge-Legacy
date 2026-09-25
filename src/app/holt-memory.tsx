@@ -20,6 +20,7 @@ import {
   updateNote,
   type HoltNote,
 } from '@/data/holt-notes-live';
+import { deleteChatSummary, fetchChatSummaries, type ChatSummary } from '@/data/holt-chats-live';
 import { useToast } from '@/hooks/useCeremony';
 import { useQuery } from '@/lib/useQuery';
 
@@ -30,6 +31,10 @@ import { useQuery } from '@/lib/useQuery';
  * Holt acts on about a person must be something that person can see and undo — a hidden memory is where
  * a wrong fact would live forever. So every note Holt keeps (`holt_notes`, 0204) is listed here, each
  * with Edit and Delete, and nothing about them is hidden anywhere else.
+ *
+ * RECENT CONVERSATIONS (Coach-AI-Amendment-002, 0218): the short summary Holt keeps of each of his last ten
+ * chats, which he reads back only when a question needs it. Same rule — every one is listed, and Delete
+ * makes him forget that chat.
  *
  * ⚠ NO ADD PATH, ON PURPOSE. Notes come from what the athlete tells Holt in a conversation; this screen
  *   is the audit and the undo, not a second place to write them.
@@ -45,6 +50,8 @@ export default function HoltMemoryRoute() {
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const { data, loading, refetch } = useQuery(fetchNotes, []);
+  const chats = useQuery(fetchChatSummaries, []);
+  const [confirmChat, setConfirmChat] = useState<ChatSummary | null>(null);
 
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const [confirm, setConfirm] = useState<HoltNote | null>(null);
@@ -89,6 +96,21 @@ export default function HoltMemoryRoute() {
     showToast('Holt has forgotten that.');
     await refetch();
   };
+
+  const forgetChat = async (c: ChatSummary) => {
+    setConfirmChat(null);
+    setBusy(true);
+    const ok = await deleteChatSummary(c.id);
+    setBusy(false);
+    if (!ok) {
+      showToast('That didn’t delete. Try again.');
+      return;
+    }
+    showToast('Holt has forgotten that conversation.');
+    await chats.refetch();
+  };
+
+  const pastChats = chats.data ?? [];
 
   return (
     <View style={styles.root}>
@@ -176,6 +198,33 @@ export default function HoltMemoryRoute() {
             </View>
           </>
         )}
+
+        {pastChats.length > 0 ? (
+          <>
+            <Text style={styles.count}>Recent conversations</Text>
+            <Text style={styles.lead}>A short note from each of your last {pastChats.length === 1 ? 'chat' : `${pastChats.length} chats`}, so Holt can pick up where you left off.</Text>
+            <View style={styles.list}>
+              {pastChats.map((c) => (
+                <View key={c.id} style={styles.row}>
+                  <Text style={styles.date}>{new Date(c.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</Text>
+                  <Text style={styles.note}>{c.summary}</Text>
+                  <View style={styles.rowActions}>
+                    <Pressable
+                      onPress={() => setConfirmChat(c)}
+                      disabled={busy}
+                      accessibilityRole="button"
+                      accessibilityLabel="Delete this conversation"
+                      hitSlop={8}
+                      style={({ pressed }) => (pressed || busy ? styles.pressed : null)}
+                    >
+                      <Text style={styles.delete}>Delete</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </>
+        ) : null}
       </ScrollView>
 
       <ConfirmSheet
@@ -187,6 +236,17 @@ export default function HoltMemoryRoute() {
         cancelLabel="Keep it"
         onConfirm={() => {
           if (confirm) void remove(confirm);
+        }}
+      />
+      <ConfirmSheet
+        open={confirmChat != null}
+        onClose={() => setConfirmChat(null)}
+        headline="Forget this conversation?"
+        body="Holt won’t be able to look back on it."
+        confirmLabel="Delete"
+        cancelLabel="Keep it"
+        onConfirm={() => {
+          if (confirmChat) void forgetChat(confirmChat);
         }}
       />
     </View>
@@ -227,6 +287,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
   },
   note: { fontSize: 15, lineHeight: 21, color: flColor.cream100 },
+  date: { fontSize: 11, fontWeight: '600', letterSpacing: 0.6, color: flColor.gray400 },
   rowActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 20 },
   edit: { fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
   delete: { fontSize: 13, fontWeight: '600', color: flColor.redMuted },

@@ -35,6 +35,10 @@ const KEY = 'forge_coach_thread_v1';
 const MET_KEY = 'forge_coach_met_v1';
 const MAX_TURNS = 100;
 
+/** The conversation as last saved — what `endThread` hands to whoever remembers it. */
+let current: Turn[] | null = null;
+let onEnd: ((turns: Turn[]) => void) | null = null;
+
 /**
  * ⚠ **A STORED INTRODUCTION IS NOT A CONVERSATION, AND TREATING IT AS ONE BRICKED THE SHEET.**
  *
@@ -84,13 +88,45 @@ export async function saveThread(turns: Turn[]): Promise<void> {
        every restored line replay its typewriter, so the conversation would appear to be written afresh
        each time the sheet opens. */
     const settled = turns.slice(-MAX_TURNS).map((t) => (t.kind === 'holt' ? { ...t, live: false } : t));
+    current = settled;
     await AsyncStorage.setItem(KEY, JSON.stringify(settled));
   } catch {
     // Best-effort: losing the thread costs the conversation, never the training.
   }
 }
 
+/**
+ * Who is told when a conversation ENDS (Coach-AI-Amendment-002: Holt keeps a short summary of each chat).
+ * The sheet registers the summariser here; `null` unregisters. Module-level rather than a ref in the
+ * sheet, because `collapse` runs inside `PanResponder` and the unmount cleanup runs after the sheet's own
+ * effects are gone — both reach this, neither can reach a component.
+ */
+export function whenThreadEnds(fn: ((turns: Turn[]) => void) | null): void {
+  onEnd = fn;
+}
+
+/**
+ * The athlete ENDED the conversation (closed Holt, started a new chat, or the sheet went away) — tell the
+ * summariser, then clear it exactly as `clearThread` does.
+ *
+ * ⚠ NOT `clearThread`, WHICH STAYS SILENT ON PURPOSE. `first-run.ts` clears the thread when a DIFFERENT
+ * athlete signs in; summarising then would write one person's chat into the next person's memory.
+ */
+export async function endThread(): Promise<void> {
+  const ended = current;
+  current = null;
+  if (ended && onEnd) {
+    try {
+      onEnd(ended);
+    } catch {
+      // A memory that fails to save never stops the conversation from ending.
+    }
+  }
+  return clearThread();
+}
+
 export async function clearThread(): Promise<void> {
+  current = null;
   /* ⚠ BEFORE THE AWAIT, AND OUTSIDE THE `try`. Deleting is the easy half; the flag is what makes it
      stick, and it must be set even if storage itself throws. */
   stopWrites();

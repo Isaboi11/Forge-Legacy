@@ -28,13 +28,16 @@ import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/Confirm
 import { HoltMark } from '@/components/forge/HoltMark';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
-import { usePremiumAi } from '@/lib/entitlement';
+import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
 import { interpretTyped, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
 import { addNotes, fetchNotes } from '@/data/holt-notes-live';
 import { askBriefLive } from '@/data/holt-training-live';
 import { gapReplyLive, isGapQuestion } from '@/data/training-gaps-live';
 import { useUnits } from '@/lib/settings';
-import { askHolt, askSourcesLive, type AskTurn } from '@/data/coach-ask-live';
+import { askHolt, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
+import { summarizeChat } from '@/data/holt-chats-live';
+import { holtRecipeCardsLive } from '@/data/holt-recipes-live';
+import { narrowEdit } from '@/domain/coach/interpret-narrow';
 import { buildAskContext } from '@/domain/coach/ask-context';
 import { resolveEditIntent, type EditIntentResolution } from '@/domain/coach/edit-intent';
 import { resolveAvoid } from '@/domain/coach/avoid';
@@ -111,7 +114,7 @@ import { appliedSentence } from '@/domain/coach/learned-preference';
 import { canDoExercise } from '@/domain/home-gym/equipment';
 import { fetchActiveProgram } from '@/data/programs-live';
 import { fetchHomeGym } from '@/data/home-gym-live';
-import { clearThread, hasMetHolt, loadThread, rememberMetHolt, saveThread } from '@/lib/coach-thread';
+import { endThread, hasMetHolt, loadThread, rememberMetHolt, saveThread, whenThreadEnds } from '@/lib/coach-thread';
 import { clearsOnUnmount, type Exit } from '@/domain/coach/thread-lifecycle';
 import { forgetExperience, loadExperience, rememberExperience } from '@/lib/coach-memory';
 import {
@@ -120,6 +123,7 @@ import {
   startProgram,
   updateProgram,
   skipProgramSession,
+  unskipProgramSession,
   type ProgramDay,
   type ProgramStructure,
   type SavedProgram,
@@ -209,8 +213,29 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
   /* Typing to Holt is the Premium AI add-on — the PO only, for now (`coach_ai`, fails closed). Everyone
      else keeps the taps; `TYPING_ENABLED` stays the public switch. */
   const premiumAi = usePremiumAi();
+  const nutritionAccess = useNutritionAccess();
   const { units } = useUnits();
   const canType = TYPING_ENABLED || premiumAi;
+
+  /*
+   * ══ HOLT REMEMBERS THE CHAT (Coach-AI-Amendment-002) ══
+   *
+   * When the conversation ENDS, a 2–3 line summary is written server-side and the last ten are what his
+   * `get_past_chats` tool reads. Premium AI only — for anyone else nothing is sent (the function would
+   * refuse anyway). Never unregistered on unmount: the unmount cleanup below is itself one of the ends.
+   */
+  useEffect(() => {
+    whenThreadEnds(
+      premiumAi
+        ? (turns) =>
+            void summarizeChat(
+              turns
+                .filter((x): x is Extract<Turn, { kind: 'me' | 'holt' }> => (x.kind === 'me' || x.kind === 'holt') && x.text.trim() !== '')
+                .map((x) => ({ role: x.kind === 'me' ? 'athlete' : 'holt', text: x.text })),
+            )
+        : null,
+    );
+  }, [premiumAi]);
 
   /*
    * §2.9 — the sheet RISES: translateY 100% → 0 over 250ms with the system's ease-out, and reverses in
@@ -266,7 +291,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
        `thread-lifecycle`, so a `say()` still in flight cannot put the conversation back. The gate lives
        there rather than in a ref here because `collapse` is handed to `PanResponder.create`, which runs
        during render, and react-compiler rejects a ref reaching render at all. */
-    void clearThread();
+    void endThread();
     Animated.timing(rise, {
       toValue: 0,
       duration: 200,
@@ -535,7 +560,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
    */
   useEffect(
     () => () => {
-      if (clearsOnUnmount(ending.current)) void clearThread();
+      if (clearsOnUnmount(ending.current)) void endThread();
     },
     [],
   );
@@ -915,7 +940,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
   });
 
   const newChat = () => {
-    void clearThread();
+    void endThread();
     setEdit(null);
     setMode(null);
     setBuilt(null);
@@ -1165,7 +1190,12 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
   /* ── a change the athlete typed ────────────────────────────────────────────────────────────────── */
 
   /** The plan waiting for "Do it", and the question waiting for an answer. Refs: a plan holds a function. */
-  const pendingEdit = useRef<{ programId: string; plan: Extract<EditIntentResolution, { ok: true }>['plan'] } | null>(null);
+  const pendingEdit = useRef<{ programId: string; before: ProgramStructure; plan: Extract<EditIntentResolution, { ok: true }>['plan'] } | null>(null);
+  /**
+   * The last change Holt made, so "Undo" can put it back (Coach-Holt-Everywhere rule 2). One level: the
+   * structure as it was before, or the sessions a skip marked. Cleared the moment it is used.
+   */
+  const lastEdit = useRef<{ programId: string; before: ProgramStructure } | { programId: string; skipped: SessionMark[] } | null>(null);
   const pendingEditAsk = useRef<{ intent: EditIntent; ask: string } | null>(null);
 
   /**
@@ -1199,7 +1229,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
       );
       return;
     }
-    pendingEdit.current = { programId: active.id, plan: res.plan };
+    pendingEdit.current = { programId: active.id, before: active.structure, plan: res.plan };
     pendingEditAsk.current = null;
     say(
       { kind: 'holt', text: `${res.plan.label}. Want it?` },
@@ -1244,6 +1274,24 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
       pendingEdit.current = null;
       return say({ kind: 'holt', text: 'Left it as it was.' });
     }
+    if (chip.typedEdit === 'undo') {
+      const le = lastEdit.current;
+      lastEdit.current = null;
+      if (!le) return say({ kind: 'holt', text: 'Nothing to undo — that one is already settled.' });
+      setBusy('thinking');
+      try {
+        /* The structure goes back exactly as it was; a skip is un-marked session by session. Both keep
+           the session count, so the live-edit guard (0123/0175) has nothing to refuse. */
+        if ('before' in le) await updateProgram(le.programId, le.before);
+        else for (const at of le.skipped) await unskipProgramSession(le.programId, at.weekIndex, at.dayIndex);
+        say({ kind: 'holt', text: 'Put it back the way it was.' });
+      } catch (e) {
+        say({ kind: 'error', text: 'That did not undo.', sub: e instanceof Error ? e.message : String(e), action: 'Open the program to check it.' });
+      } finally {
+        setBusy(null);
+      }
+      return;
+    }
     const pe = pendingEdit.current;
     if (!pe) return say({ kind: 'holt', text: "That change went stale. Tell me again and I'll set it up." });
     const scope: EditScope | undefined =
@@ -1259,13 +1307,22 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
          saying "done" is the defect this branch exists to prevent. The RPC ignores a session already done. */
       if (pe.plan.kind === 'skip') {
         for (const at of pe.plan.sessions) await skipProgramSession(pe.programId, at.weekIndex, at.dayIndex);
+        lastEdit.current = { programId: pe.programId, skipped: pe.plan.sessions.map((at) => ({ weekIndex: at.weekIndex, dayIndex: at.dayIndex, state: 'skipped' as const })) };
       } else {
         await updateProgram(pe.programId, res.structure);
+        lastEdit.current = { programId: pe.programId, before: pe.before };
       }
       pendingEdit.current = null;
       say(
         { kind: 'holt', text: pick('edit_done') },
-        { kind: 'chips', chips: [{ label: 'Change something else', patch: {} }, { label: 'Show me the program', patch: {}, goTo: '/(tabs)' }] },
+        {
+          kind: 'chips',
+          chips: [
+            { label: 'Undo', patch: {}, typedEdit: 'undo' },
+            { label: 'Change something else', patch: {} },
+            { label: 'Show me the program', patch: {}, goTo: '/(tabs)' },
+          ],
+        },
       );
     } catch (e) {
       say({
@@ -1595,13 +1652,39 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
       .map((x) => ({ role: x.kind === 'me' ? 'athlete' : 'holt', text: x.text }));
 
   /**
+   * ══ WHAT HOLT ASKED THE APP TO DO ══
+   *
+   * `coach-ask` forwards his action tools (`ask-tools.ts` `ASK_ACTIONS`) instead of running them. A program
+   * change goes through `editByWords` — the same resolver, the same confirm chips and the same invariants
+   * as a change the athlete typed as a command — so the model never gets a more powerful edit path than
+   * the athlete's own thumb (edit-ops header). The online offer is a chip, and tapping it is the consent.
+   * True when something was shown, so the caller adds nothing on top.
+   */
+  const actOn = async (actions: AskAction[], asked: string): Promise<boolean> => {
+    const edit = actions.find((a) => a.name === 'propose_program_edit');
+    const intent = edit ? narrowEdit(edit.input) : null;
+    if (intent) {
+      await editByWords(intent);
+      return true;
+    }
+    const web = actions.find((a) => a.name === 'offer_online_recipe_search');
+    if (web && nutritionAccess) {
+      const want = (web.input as { looking_for?: unknown } | null)?.looking_for;
+      const lookingFor = (typeof want === 'string' && want.trim() ? want : asked).trim().slice(0, 80);
+      say({ kind: 'chips', chips: [{ label: 'Find one online', patch: {}, webSearch: lookingFor }] });
+      return true;
+    }
+    return false;
+  };
+
+  /**
    * ══ HOLT ANSWERS, WORD BY WORD (CA-D10, §4.3 streaming) ══
    *
    * The reply is ONE Holt turn that grows as the stream arrives (`streaming` until it is complete), so the
    * first words land in about a second instead of after the whole paragraph. The active program and any
    * exercise he is asked about travel as context — the coaching records, not his memory.
    */
-  const askAloud = async (text: string, history: AskTurn[], q: ReturnType<typeof nextQuestion>) => {
+  const askAloud = async (text: string, history: AskTurn[], q: ReturnType<typeof nextQuestion>, opts: { allowWeb?: boolean } = {}) => {
     /**
      * ══ "WHAT DO I NEED TO WORK ON?" IS ANSWERED HERE, WITHOUT A MODEL ══
      *
@@ -1645,25 +1728,35 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
       },
       askSourcesLive(),
     );
+    /* The recipe book with the app's own numbers — it reaches the model only if he calls get_recipes. */
+    const recipes = await holtRecipeCardsLive(nutritionAccess).catch(() => []);
     let started = false;
-    const r = await askHolt(text, history, context, (acc) => {
-      if (!started) {
-        started = true;
-        setBusy(null);
-        say({ kind: 'holt', text: acc, streaming: true });
-        return;
-      }
-      setThread((t) => {
-        const i = t.length - 1;
-        const last = t[i];
-        return last?.kind === 'holt' && last.streaming ? [...t.slice(0, i), { ...last, text: acc }] : t;
-      });
-    });
+    const r = await askHolt(
+      text,
+      history,
+      context,
+      (acc) => {
+        if (!started) {
+          started = true;
+          setBusy(null);
+          say({ kind: 'holt', text: acc, streaming: true });
+          return;
+        }
+        setThread((t) => {
+          const i = t.length - 1;
+          const last = t[i];
+          return last?.kind === 'holt' && last.streaming ? [...t.slice(0, i), { ...last, text: acc }] : t;
+        });
+      },
+      { allowWeb: opts.allowWeb, recipes },
+    );
     setBusy(null);
     setThread((t) => t.map((x) => (x.kind === 'holt' && x.streaming ? { ...x, streaming: undefined } : x)));
     switch (r.kind) {
       case 'answer':
-        if (!started) say({ kind: 'holt', text: r.text });
+        if (!started && r.text) say({ kind: 'holt', text: r.text });
+        /* What he asked the APP to do — a change to confirm, or the online-search offer. */
+        if (await actOn(r.actions, text)) return;
         /* Asked mid-build: the question on the table comes back. Asked about a program with none open: the
            door to build one, since the coach-ask prompt has him offer to build it. */
         if (q) say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
@@ -1687,6 +1780,17 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
           action: 'Ask me again in a moment.',
         });
     }
+  };
+
+  /**
+   * A chip on screen was tapped. "Find one online" asks Holt again WITH web search — the tap is the
+   * athlete's consent, and only that one ask carries it (Coach-AI-Amendment-002). Everything else is
+   * `tapChip`, unchanged. Declared after `askAloud` because it calls it.
+   */
+  const onChip = (chip: Chip) => {
+    if (!chip.webSearch) return tapChip(chip);
+    say({ kind: 'me', text: chip.label });
+    void askAloud(`Find me a recipe online: ${chip.webSearch}`, historyFrom(thread), null, { allowWeb: true });
   };
 
   /**
@@ -2234,7 +2338,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
                     /* §5's live turn is the one still on the table: brighter text, a lit mark. Everything
                        above it is history and steps back a level of contrast. */
                     live={bi === blocks.length - 1}
-                    onChip={tapChip}
+                    onChip={onChip}
                     handoff={handoff}
                   />
                 </TurnEnter>
@@ -2242,7 +2346,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
             }
             return (
               <TurnEnter key={b.key}>
-                <TurnView turn={b.turn} onChip={tapChip} handoff={handoff} />
+                <TurnView turn={b.turn} onChip={onChip} handoff={handoff} />
               </TurnEnter>
             );
           })}
