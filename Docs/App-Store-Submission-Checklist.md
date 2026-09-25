@@ -91,7 +91,9 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
   Send more to Claude (USDA numbers + allergy tags worked out) or add in My Recipes;
   include 15-minute meals and vegan
 - ⬜ Gentle message for sustained under-eating (needs PO's wording) — **must-do before opening**
-- ⬜ Holt's 4 safety fixes (Coach Holt stress test, Decision Queue #36) — **must-do before opening**
+- ✅ Holt's 4 safety fixes (Coach Holt stress test, Decision Queue #36) — fixed 09-21 (`d7ce6dde`), on build 8.
+  Re-verified 09-24: 0 limitation breaks in 1,800 programs + 5,760 days + 480 race plans (controls fire);
+  edits land on the right day in all 127 rest-day patterns (5,888 edits; the old code fails 6,404)
 - ⬜ Privacy policy nutrition section — **must-do before opening**
 - ✅ Search failure message — 09-24: a failed source falls back to saved foods, and with no connection the
   app now says "Couldn't connect to food search" with Try again (Log Food + the meal editor). Not deployed yet
