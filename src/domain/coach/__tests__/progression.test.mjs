@@ -356,3 +356,38 @@ test('⚠ a short session is never described as short', () => {
     assert.match(p.message, /135 lb/, p.message);
   }
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REPS MATTER, NOT ONLY THE WEIGHT (PO, 2026-09-24)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const curls = (over = {}) =>
+  ask({ exerciseName: 'Dumbbell Curl', pattern: 'Elbow Flexion', equipment: 'dumbbell', prescription: { sets: 3, reps: 8 }, ...over });
+
+test('30 lb × 20 last time and 8 reps today: heavier, never "stay on 30"', () => {
+  const p = progressionFor(curls({ history: [session(30, [20])] }));
+  assert.equal(p.action, 'add_weight');
+  assert.ok(p.suggestedWeight > 30, `went to ${p.suggestedWeight}`);
+  assert.ok(p.suggestedWeight <= 37.5, 'capped at +25% because Epley runs high past ~10 reps');
+  assert.equal(p.suggestedReps, 8);
+  assert.doesNotMatch(p.message, /stay|hold|same again/i);
+  assert.match(p.message, /20/, 'the line names the reps that earned it');
+});
+
+test('the overshoot reads the FEWEST reps at the weight, so one strong set cannot carry a weak one', () => {
+  const strong = progressionFor(curls({ history: [session(30, [20, 20])] }));
+  const mixed = progressionFor(curls({ history: [session(30, [20, 11])] }));
+  assert.equal(mixed.action, 'add_weight');
+  assert.ok(mixed.suggestedWeight <= strong.suggestedWeight, `${mixed.suggestedWeight} must not exceed ${strong.suggestedWeight}`);
+  assert.match(mixed.message, /11/, 'the line quotes the 11, not the 20');
+});
+
+test('a normal top-of-range week still moves one step, not the overshoot jump', () => {
+  const p = progressionFor(ask({ history: [session(135, [12, 12, 12])] }));
+  assert.equal(p.suggestedWeight, 140);
+});
+
+test('a bodyweight lift never gets a load from the overshoot rule', () => {
+  const p = progressionFor(ask({ exerciseName: 'Push-up', history: [session(0, [30, 30, 30])] }));
+  assert.equal(p.suggestedWeight, 0);
+});
