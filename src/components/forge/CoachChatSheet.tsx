@@ -462,7 +462,16 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
 
   const say = useCallback((...turns: Turn[]) => setThread((t) => [...t, ...stamped(turns)]), []);
 
+  /*
+   * Follow the conversation to its newest line — but ONLY once there is a conversation.
+   *
+   * ⚠ PO, 2026-09-25 (screenshots): Holt opened scrolled past his own greeting, with Coach Home jammed
+   * under the header. The greeting and Home arrive as turns too, so this effect chased each one to the
+   * bottom before the athlete had said a word. Until they say (or tap) something, the sheet stays at
+   * the top: the greeting, then Home, exactly as designed.
+   */
   useEffect(() => {
+    if (!thread.some((t) => t.kind === 'me')) return;
     const id = setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 60);
     return () => clearTimeout(id);
   }, [thread, busy]);
