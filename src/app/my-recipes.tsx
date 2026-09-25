@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -43,7 +43,12 @@ import {
   withoutIngredient,
   type RecipeForm,
 } from '@/domain/nutrition/user-recipes';
+import { draftFromRead, importToast, ingredientFrom, unmatchedNote, type UnmatchedLine } from '@/domain/nutrition/recipe-import';
+import { recipePhotoError } from '@/domain/nutrition/recipe-photo-read';
 import { fetchMealPlanWeek, fetchUserRecipes, saveUserRecipe } from '@/data/nutrition-live';
+import { readRecipePhoto } from '@/data/recipe-photo-live';
+import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
+import { callerModalGone, pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -52,7 +57,14 @@ const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
 const ALLERGEN_LABEL = Object.fromEntries(ALLERGENS.map((a) => [a.key, a.label])) as Record<string, string>;
 const FILTERS: { key: PlanSlot | 'all'; label: string }[] = [{ key: 'all', label: 'All' }, ...MEAL_TYPES];
 
-type Pick = { key: IngredientKey; unit: 'g' | 'portion'; qty: number; index: number | null };
+/** `line` — the unmatched photo line this pick resolves; it leaves the list once the ingredient is added. */
+type Pick = { key: IngredientKey; unit: 'g' | 'portion'; qty: number; index: number | null; line?: number };
+
+const UNMATCHED_WHY: Record<UnmatchedLine['reason'], string> = {
+  no_match: 'Not in Forge’s foods. Search for something close, or drop it.',
+  ambiguous: 'Which one is it?',
+  amount: 'Couldn’t read the amount. Tap to set it.',
+};
 
 /**
  * My Recipes — built to `My Recipes.dc.html` (Claude Design b029488a), wired to `user_recipes` (0213).
@@ -65,7 +77,12 @@ type Pick = { key: IngredientKey; unit: 'g' | 'portion'; qty: number; index: num
  *
  * Deltas from the `.dc`, each deliberate:
  *  · Its preview fixtures (two sample recipes) are not seeded — a real list starts empty.
- *  · "Paste a recipe" and "Scan a recipe" show as "Soon", exactly as the `.dc` draws them.
+ *  · "Paste a recipe" shows as "Soon", exactly as the `.dc` draws it. "Scan a recipe" is LIVE (PO
+ *    2026-09-25) for athletes with Premium AI and Nutrition, and hidden for everyone else: a screenshot is
+ *    read by `recipe-photo-read`, matched to the catalogue by `draftFromRead`, and opens as an UNSAVED,
+ *    UNCONFIRMED draft of this same form. Lines Forge can't match with certainty are listed as written
+ *    under "Not matched" for the athlete to pick or drop — never guessed (Kitchen-Scope §3.4), and the
+ *    totals say they are approximate until then. Library only: see `pickImageFromLibrary` on the camera.
  *  · Ingredient search covers Forge's 106-ingredient USDA catalogue (the `.dc` searched its own
  *    50-food list); the athlete's Create Food items are not offered yet, as they carry no allergen tags.
  */
@@ -102,6 +119,16 @@ export default function MyRecipesScreen() {
   const [editAllergens, setEditAllergens] = useState(false);
   const [focusStep, setFocusStep] = useState(-1);
   const [saving, setSaving] = useState(false);
+  /* Recipe photo import — lines the draft could not match, and the read's own status. */
+  const [unmatched, setUnmatched] = useState<UnmatchedLine[]>([]);
+  const [fromPhoto, setFromPhoto] = useState(false);
+  const [scanBusy, setScanBusy] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const scanning = useRef(false);
+  const premiumAi = usePremiumAi();
+  const nutritionAccess = useNutritionAccess();
+  /* Both, or the row is not there at all: the server refuses either way (0203's meter, the 403). */
+  const scanOn = premiumAi && nutritionAccess;
 
   const shown = filterList(list, q, filter);
 
@@ -112,7 +139,58 @@ export default function MyRecipesScreen() {
   const missing = form ? missingLine(form) : '';
   const results = foodQ.trim() ? searchFoods(foodQ, 6) : [];
 
+  const clearImport = () => {
+    setUnmatched([]);
+    setFromPhoto(false);
+  };
+
+  /*
+   * ⚠ ONE READ AT A TIME, HELD BY A REF — a fast double tap would otherwise pay for two reads before the
+   * busy state renders (the same guard as `program-import.tsx`).
+   */
+  const scanRecipe = async () => {
+    if (scanning.current) return;
+    scanning.current = true;
+    setAddSheet(false);
+    setScanError(null);
+    try {
+      // The add sheet is a modal; iOS drops a picker presented over one that is still closing.
+      await callerModalGone();
+      const picked = await pickImagesFromLibrary(1);
+      if (picked === 'failed') {
+        setScanError('That picture couldn’t be opened. Take a screenshot of the recipe and upload that instead.');
+        return;
+      }
+      if (!picked.length) return;
+      setScanBusy(true);
+      const r = await readRecipePhoto(picked[0]);
+      if (r.kind !== 'ok') {
+        setScanError(recipePhotoError(r));
+        return;
+      }
+      const draft = draftFromRead(r.read);
+      setPick(null);
+      setFoodQ('');
+      setEditAllergens(false);
+      setUnmatched(draft.unmatched);
+      setFromPhoto(true);
+      setForm(draft.form);
+      showToast(importToast(draft));
+    } finally {
+      setScanBusy(false);
+      scanning.current = false;
+    }
+  };
+
+  /** Pick a catalogue food for an unmatched line — with the page's amount when it converts for that food. */
+  const pickForLine = (lineIndex: number, key: IngredientKey) => {
+    const line = unmatched[lineIndex];
+    const ing = line ? ingredientFrom(key, line.quantity, line.unit) : null;
+    setPick(ing ? { key, unit: ing.unit, qty: ing.qty, index: null, line: lineIndex } : { key, unit: 'portion', qty: 1, index: null, line: lineIndex });
+  };
+
   const closeForm = () => {
+    clearImport();
     setPick(null);
     setFoodQ('');
     setEditAllergens(false);
@@ -129,6 +207,7 @@ export default function MyRecipesScreen() {
       const saved = await saveUserRecipe({ ...draft, id: form.editId });
       showToast(savedToast(saved));
       setReloads((n) => n + 1);
+      clearImport();
       if (form.editId && params.edit) router.back();
       else {
         setForm(null);
@@ -161,6 +240,20 @@ export default function MyRecipesScreen() {
               <Text style={styles.title}>My recipes</Text>
               {list.length ? <Text style={styles.lede}>{`${list.length} saved ${list.length === 1 ? 'recipe' : 'recipes'}`}</Text> : null}
             </View>
+
+            {scanBusy ? (
+              <View style={styles.scanStatus} accessibilityLiveRegion="polite">
+                <ActivityIndicator color={flColor.bronze400} />
+                <Text style={styles.scanStatusText}>Reading your recipe…</Text>
+              </View>
+            ) : scanError ? (
+              <View style={styles.scanStatus} accessibilityLiveRegion="polite">
+                <Text style={styles.scanError}>{scanError}</Text>
+                <Pressable accessibilityRole="button" hitSlop={6} onPress={() => setScanError(null)}>
+                  <Text style={styles.editLink}>Dismiss</Text>
+                </Pressable>
+              </View>
+            ) : null}
 
             {list.length ? (
               <>
@@ -229,7 +322,7 @@ export default function MyRecipesScreen() {
             ) : null}
           </ScrollView>
           <View style={styles.footer}>
-            <Button variant="primary" fullWidth onPress={() => setAddSheet(true)}>
+            <Button variant="primary" fullWidth disabled={scanBusy} onPress={() => setAddSheet(true)}>
               Add recipe
             </Button>
           </View>
@@ -241,6 +334,9 @@ export default function MyRecipesScreen() {
             <View style={styles.identityForm}>
               <Text style={styles.eyebrow}>My recipes</Text>
               <Text style={styles.title}>{form.editId ? 'Edit recipe' : 'New recipe'}</Text>
+              {fromPhoto ? (
+                <Text style={styles.lede}>Read from your picture. Nothing is saved until you do: check the amounts and confirm the allergens.</Text>
+              ) : null}
             </View>
 
             <InputField label="Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="e.g. Chicken burrito bowls" maxLength={40} />
@@ -312,6 +408,7 @@ export default function MyRecipesScreen() {
               <Text style={styles.totWhole}>
                 {form.ingredients.length ? `Whole recipe ${fmt(t.kcal)} cal · ${y} ${y === 1 ? 'serving' : 'servings'}` : 'Adds up as you add ingredients'}
               </Text>
+              {unmatched.length ? <Text style={styles.totApprox}>{unmatchedNote(unmatched.length)}</Text> : null}
             </View>
 
             {form.ingredients.map((x, i) => {
@@ -336,6 +433,54 @@ export default function MyRecipesScreen() {
                 </View>
               );
             })}
+
+            {/* the photo's lines Forge could not match with certainty — shown as written, never guessed */}
+            {unmatched.length ? (
+              <View style={styles.unmatched}>
+                <View style={styles.labelRow}>
+                  <Text style={styles.fieldLabel}>Not matched</Text>
+                  <Text style={styles.fieldHint}>Pick a match or drop it</Text>
+                </View>
+                {unmatched.map((u, i) => (
+                  <View key={`${u.text}-${i}`} style={styles.unRow}>
+                    <View style={styles.unTop}>
+                      <View style={styles.ingText}>
+                        <Text style={styles.ingName} numberOfLines={2}>
+                          {u.text}
+                        </Text>
+                        <Text style={styles.ingAmount}>{UNMATCHED_WHY[u.reason]}</Text>
+                      </View>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Drop ${u.text}`}
+                        style={styles.xBtn}
+                        onPress={() => setUnmatched((all) => all.filter((_, j) => j !== i))}
+                      >
+                        <XGlyph />
+                      </Pressable>
+                    </View>
+                    <View style={styles.chipsWrap}>
+                      {u.candidates.map((k) => (
+                        <Pressable
+                          key={k}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Use ${INGREDIENTS[k].name} for ${u.text}`}
+                          style={styles.allergenChip}
+                          onPress={() => pickForLine(i, k)}
+                        >
+                          <Text style={styles.chipText}>{INGREDIENTS[k].name}</Text>
+                        </Pressable>
+                      ))}
+                      {u.reason !== 'amount' ? (
+                        <Pressable accessibilityRole="button" hitSlop={6} onPress={() => setFoodQ(u.food)}>
+                          <Text style={styles.editLink}>Search</Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : null}
 
             <View style={styles.searchWrap}>
               <InputField value={foodQ} onChange={setFoodQ} placeholder="Search foods to add" accessibilityLabel="Search foods" leadingIcon={<SearchGlyph />} />
@@ -524,18 +669,23 @@ export default function MyRecipesScreen() {
       <BottomSheet open={addSheet} onClose={() => setAddSheet(false)} title="Add a recipe">
         <View style={styles.methods}>
           {[
-            { title: 'Enter manually', sub: 'Build a recipe from ingredients.', soon: false },
-            { title: 'Paste a recipe', sub: 'Paste text or a recipe link.', soon: true },
-            { title: 'Scan a recipe', sub: 'Take a photo or upload one.', soon: true },
-          ].map((m, j) => (
+            { id: 'manual', title: 'Enter manually', sub: 'Build a recipe from ingredients.', soon: false },
+            { id: 'paste', title: 'Paste a recipe', sub: 'Paste text or a recipe link.', soon: true },
+            ...(scanOn ? [{ id: 'scan', title: 'Scan a recipe', sub: 'Upload a screenshot or photo of one. You check it before it’s saved.', soon: false }] : []),
+          ].map((m, j, all) => (
             <Pressable
               key={m.title}
               accessibilityRole="button"
               accessibilityState={{ disabled: m.soon }}
               disabled={m.soon}
-              style={[styles.method, j < 2 && styles.methodDivider]}
+              style={[styles.method, j < all.length - 1 && styles.methodDivider]}
               onPress={() => {
+                if (m.id === 'scan') {
+                  void scanRecipe();
+                  return;
+                }
                 setAddSheet(false);
+                clearImport();
                 setForm(blankForm());
               }}
             >
@@ -609,6 +759,7 @@ export default function MyRecipesScreen() {
               fullWidth
               onPress={() => {
                 setForm(withIngredient(form, { key: pick.key, g: pickG, unit: pick.unit, qty: pick.qty }, pick.index));
+                if (pick.line != null) setUnmatched((all) => all.filter((_, j) => j !== pick.line));
                 setPick(null);
                 setFoodQ('');
               }}
@@ -812,6 +963,15 @@ const styles = StyleSheet.create({
   totMacroVal: { fontSize: 16, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
   totMacroLabel: { fontSize: 12, color: flColor.gray400 },
   totWhole: { fontSize: 12, color: flColor.gray400 },
+  totApprox: { marginTop: -6, fontSize: 12, fontWeight: '600', color: flColor.bronze400 },
+
+  scanStatus: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 2, paddingBottom: 14 },
+  scanStatusText: { fontSize: 14, color: flColor.gray400 },
+  scanError: { flex: 1, fontSize: 13.5, lineHeight: 20, color: flColor.cream100 },
+
+  unmatched: { paddingTop: 6 },
+  unRow: { gap: 8, paddingVertical: 10, paddingLeft: 2, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  unTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 
   ingRow: {
     flexDirection: 'row',

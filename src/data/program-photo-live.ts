@@ -44,8 +44,9 @@ export type { PhotoReadResult };
  * `useMediaPicker` has already downscaled and re-encoded to JPEG by the time we see a uri, so this is a
  * read rather than a conversion. The `fetch` + `FileReader` pair is the one `share-image.ts` uses and
  * is the pattern that works on web and native alike — `expo-file-system` does not exist on web.
+ * Exported for `recipe-photo-live.ts`, which reads a picked recipe the same way.
  */
-async function readAsBase64(uri: string): Promise<{ data: string; mediaType: string } | null> {
+export async function readAsBase64(uri: string): Promise<{ data: string; mediaType: string } | null> {
   try {
     const res = await fetch(uri);
     if (!res.ok) return null;
