@@ -105,7 +105,7 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
 - ✅ First-time welcome screen for the tab — built 09-24 (`eefe43dd`), on web; not yet seen by the PO
 - ⬜ "This looks wrong" report on a food
 - 🔨 Community foods (Amendment 004) — 09-25: a missed barcode becomes everyone's; `0219` applied, food-search redeployed, on build 9 OTA · ⬜ first share seen on a device
-- ✅ Scan a recipe from a screenshot into My Recipes — 09-25 (`487dc325`, `0220`)
+- 🔨 Scan a recipe from a screenshot into My Recipes — built 09-25 (`487dc325`) · ⬜ PO pastes `pending-0220.sql` + deploys the photo function
 - ✅ Data export includes nutrition — 09-24: with food data, Export My Data gives one .zip (workouts.csv +
   food log, targets, my foods, my meals, my recipes, meal plans, grocery items you added); without, the same CSV. Not deployed yet
 - ⬜ Holt meal plans — Amendment 002 LOCKED 09-24 (`ce224fac`); not built yet
