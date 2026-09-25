@@ -67,7 +67,7 @@ No lifetime plan. United States only at launch.
 - ⬜ Referral reward: "1 month free" offer for a referrer who is already paying (referrer only)
 - ⬜ Review screenshot on each subscription: one paywall screenshot from build 9 uploaded to each product's
   "Review Information" box (Apple-only, never shown on the store). Premium tab for Premium/Early Bird, AI tab for AI/Tester AI
-- ⬜ Sandbox test on build 9: buy, force-quit, reinstall, restore — then check `store_events` shows `applied`
+- ⬜ Sandbox test on build 9: buy, force-quit, reinstall, restore — then check `store_events` shows `applied` · 09-25: first try showed no plans — every account is Premium while testing, so the test account needs a FREE `athlete_entitlement` row first
 
 ## 3. Store listing
 - ✅ Description, age rating, reviewer account, support URL
