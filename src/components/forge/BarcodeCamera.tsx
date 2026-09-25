@@ -24,6 +24,12 @@ export function BarcodeCamera({ paused, onScan }: { paused: boolean; onScan: (di
   /* One read per open. The camera reports the same code many times a second; without this lock one
      can of beans would fire a lookup per frame until the sheet closed. */
   const [locked, setLocked] = useState(false);
+  /* ⚠ THE DEFAULT LENS CANNOT FOCUS UP CLOSE. PO, 2026-09-25: "the camera wouldn't focus when the barcode
+     was close". expo-camera opens `builtInWideAngleCamera`, whose minimum focus distance is ~15-20 cm on
+     recent iPhones — a barcode held closer stays blurred. On a Pro iPhone the "Back Triple Camera" is the
+     virtual device whose ultra-wide lens focuses from ~2 cm (the Camera app's macro), so it is chosen when
+     the phone has it. Other iPhones keep the default and the sheet's copy asks for a few inches. */
+  const [lens, setLens] = useState<string | undefined>(undefined);
 
   if (!permission) return null;
 
@@ -58,6 +64,11 @@ export function BarcodeCamera({ paused, onScan }: { paused: boolean; onScan: (di
       <CameraView
         style={StyleSheet.absoluteFill}
         facing="back"
+        selectedLens={lens}
+        onAvailableLensesChanged={({ lenses }) => {
+          const macro = lenses.find((l) => /triple/i.test(l));
+          if (macro && macro !== lens) setLens(macro);
+        }}
         barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }}
         onBarcodeScanned={paused || locked ? undefined : handle}
       />

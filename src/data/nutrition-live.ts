@@ -2,6 +2,7 @@ import type { LogEntry, MealSlot, Targets } from '@/domain/nutrition/day';
 import { localToday } from '@/domain/nutrition/day';
 import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
+import { offProductToFood } from '@/domain/nutrition/off-product';
 import { opsFor, overlayDay, type OutboxOp } from '@/domain/nutrition/outbox';
 import { isFirstRun } from '@/domain/nutrition/first-run';
 import type { SavedItemRow } from '@/domain/nutrition/my-foods';
@@ -640,11 +641,42 @@ export interface FoodSearch {
   failed: boolean;
 }
 
-/** Barcode lookup. An empty list means "not found", which is the Create Food path, not an error. */
+/**
+ * Barcode lookup. An empty list means "not found", which is the Create Food path, not an error.
+ *
+ * `food-search` asks USDA, FatSecret and Open Food Facts at once. When that answer is empty — or the call
+ * failed — the PHONE asks Open Food Facts itself, which is what Nutrition Architecture §4 specified all
+ * along: its per-IP limit is the phone's own here, not a quota shared by every Edge Function. PO,
+ * 2026-09-25: a protein bar scanned and "didn't pull up the food".
+ */
 export async function lookupBarcode(barcode: string): Promise<CatalogFood[]> {
   const { data, error } = await supabase.functions.invoke('food-search', { body: { barcode } });
-  if (error) return [];
-  return normaliseFoods(data);
+  const found = error ? [] : normaliseFoods(data);
+  if (found.length) return found;
+  const off = await offOnDevice(barcode);
+  return off ? [off] : [];
+}
+
+/** One Open Food Facts product, read from the phone. Null on a miss, a timeout or no signal. */
+async function offOnDevice(code: string): Promise<CatalogFood | null> {
+  const digits = code.replace(/\D/g, '').replace(/^0+/, '');
+  if (!digits) return null;
+  /* A plain controller + timer, not `AbortSignal.timeout`: React Native's AbortSignal is a polyfill that
+     may not have the static, and a TypeError here would read as "not found" with nothing in any log. */
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), 8000);
+  try {
+    const res = await fetch(
+      `https://world.openfoodfacts.org/api/v2/product/${digits}.json?fields=code,product_name,brands,nutriments,serving_size,serving_quantity`,
+      { headers: { accept: 'application/json' }, signal: abort.signal },
+    );
+    if (!res.ok) return null;
+    return offProductToFood(await res.json());
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function normaliseFoods(data: unknown): CatalogFood[] {
@@ -709,6 +741,9 @@ export async function fetchFoodByKey(key: string): Promise<CatalogFood | null> {
           r.source === 'off' ? 'Data from Open Food Facts (ODbL)' : r.source === 'fs' ? 'Powered by fatsecret' : null,
       };
     }
+    /* A scan the PHONE found on Open Food Facts (`lookupBarcode`'s fallback) was never cached — the
+       catalogue is server-written only — so read it again from the phone rather than calling it gone. */
+    if (key.startsWith('off:')) return offOnDevice(key.slice(4));
     return null;
   }
 
