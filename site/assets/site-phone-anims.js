@@ -92,7 +92,7 @@
         h('div', { style: { flex: 'none', margin: '0 ' + cq(18), height: cq(3), borderRadius: 2, background: 'rgba(255,255,255,0.08)' } }, h('div', { style: { width: (prog * 100).toFixed(1) + '%', height: '100%', borderRadius: 2, background: 'linear-gradient(90deg,#8C6838,#CDA063)' } })),
         h('div', { style: { flex: 'none', margin: cq(16) + ' ' + cq(14) + ' 0', padding: cq(14), borderRadius: cq(16), background: CARD, border: '1px solid rgba(191,143,79,0.3)', display: 'flex', flexDirection: 'column', gap: cq(14) } },
           h('div', { style: { display: 'flex', gap: cq(14) } },
-            h('div', { style: { width: cq(100), height: cq(126), flex: 'none', borderRadius: cq(12), overflow: 'hidden', background: '#2B2723', border: '1px solid rgba(255,255,255,0.08)' } }, h('img', { src: R('assets/landing/bench-demo-frame.jpg'), alt: '', style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block', transform: 'translateY(' + (press * 2.5).toFixed(2) + '%) scale(1.06)' } })),
+            h('div', { style: { width: cq(100), height: cq(126), flex: 'none', borderRadius: cq(12), overflow: 'hidden', background: '#2B2723', border: '1px solid rgba(255,255,255,0.08)' } }, h('img', { src: R('assets/landing/bench-press-loop.webp'), alt: '', style: { width: '100%', height: '100%', objectFit: 'contain', display: 'block' } })),
             h('div', { style: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: cq(8) } },
               h('span', { style: { fontFamily: DISP, fontSize: cq(19), fontWeight: 600, lineHeight: 1.15 } }, 'Barbell Bench Press'),
               h('span', { style: { fontSize: cq(10), fontWeight: 700, letterSpacing: '0.14em', color: MUTE } }, 'MAIN LIFT'),
