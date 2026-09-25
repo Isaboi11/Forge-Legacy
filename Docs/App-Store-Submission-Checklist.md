@@ -93,12 +93,12 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
 - ⬜ Gentle message for sustained under-eating (needs PO's wording) — **must-do before opening**
 - ⬜ Holt's 4 safety fixes (Coach Holt stress test, Decision Queue #36) — **must-do before opening**
 - ⬜ Privacy policy nutrition section — **must-do before opening**
-- 🔨 Search failure message — 09-24: a failed source now falls back to saved foods; the app still says
-  "Nothing found" if the phone has no connection (should say "couldn't connect")
-- ⬜ First-time welcome screen for the tab (needs a design)
+- ✅ Search failure message — 09-24: a failed source falls back to saved foods, and with no connection the
+  app now says "Couldn't connect to food search" with Try again (Log Food + the meal editor). Not deployed yet
+- ✅ First-time welcome screen for the tab — built 09-24 (`eefe43dd`), on web; not yet seen by the PO
 - ⬜ "This looks wrong" report on a food
 - ⬜ Data export includes nutrition
-- ⬜ Holt meal plans — Amendment 002 written, NOT locked (PO)
+- ⬜ Holt meal plans — Amendment 002 LOCKED 09-24 (`ce224fac`); not built yet
 - ⬜ Barcode camera + label scan → build 9 (the function side of barcode is live)
 - ⬜ Photo food logging (Premium AI) — next to discuss; needs no new build
 - ⬜ Open `0206` to more testers, then lift the gate

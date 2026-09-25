@@ -624,11 +624,20 @@ export async function fetchRecentFoods(limit = 30): Promise<RecentFood[]> {
  * Food Facts, FatSecret when its keys exist) — the app never learns which source answered beyond the
  * badge and the attribution line it must show.
  */
-export async function searchFoods(q: string): Promise<CatalogFood[]> {
-  if (q.trim().length < 2) return [];
+export async function searchFoods(q: string): Promise<FoodSearch> {
+  if (q.trim().length < 2) return { foods: [], failed: false };
   const { data, error } = await supabase.functions.invoke('food-search', { body: { q: q.trim() } });
-  if (error) return [];
-  return normaliseFoods(data);
+  if (error) return { foods: [], failed: true };
+  return { foods: normaliseFoods(data), failed: false };
+}
+
+/**
+ * `failed` means the search never got an answer (no signal, or the function erred), which is not the
+ * same as "no matches". Collapsing the two told an athlete with no bars that the food does not exist.
+ */
+export interface FoodSearch {
+  foods: CatalogFood[];
+  failed: boolean;
 }
 
 /** Barcode lookup. An empty list means "not found", which is the Create Food path, not an error. */

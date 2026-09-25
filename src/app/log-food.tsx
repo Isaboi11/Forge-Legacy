@@ -81,7 +81,8 @@ export default function LogFoodScreen() {
      query under two characters — which react-compiler rejects (cascading renders) and which also raced:
      a stale reply could land after a newer keystroke. Keyed, a reply that does not match what is in the
      box is simply not this search's answer. */
-  const [search, setSearch] = useState<{ q: string; foods: CatalogFood[] }>({ q: '', foods: [] });
+  const [search, setSearch] = useState<{ q: string; foods: CatalogFood[]; failed: boolean }>({ q: '', foods: [], failed: false });
+  const [tries, setTries] = useState(0);
   const [reloads, setReloads] = useState(0);
 
   const [barcodeOpen, setBarcodeOpen] = useState(params.scan === '1');
@@ -107,19 +108,25 @@ export default function LogFoodScreen() {
     let live = true;
     const timer = setTimeout(async () => {
       const found = await searchFoods(q);
-      if (live) setSearch({ q, foods: found.filter(looksSane) });
+      if (live) setSearch({ q, foods: found.foods.filter(looksSane), failed: found.failed });
     }, 350);
     return () => {
       live = false;
       clearTimeout(timer);
     };
-  }, [query]);
+  }, [query, tries]);
 
   const trimmed = query.trim();
   const isSearching = trimmed.length >= 2;
   /** Null means "not searching" — the filters and their lists own the screen instead. */
   const results = isSearching && search.q === trimmed ? search.foods : null;
   const searching = isSearching && search.q !== trimmed;
+  const failed = results != null && search.failed;
+  /* Clearing the answer first puts "Searching…" back up while the retry is out. */
+  const retry = () => {
+    setSearch({ q: '', foods: [], failed: false });
+    setTries((n) => n + 1);
+  };
 
 
   /** One tap: the food's default serving, quantity 1, straight into the day. */
@@ -252,7 +259,12 @@ export default function LogFoodScreen() {
         ) : null}
 
         {!searching && rows.length === 0 && !(results == null && filter === 'meals' && (savedMeals ?? []).length) ? (
-          <Text style={styles.empty}>{emptyCopy(filter, results, query)}</Text>
+          <Text style={styles.empty}>{emptyCopy(filter, results, query, failed)}</Text>
+        ) : null}
+        {!searching && failed ? (
+          <Pressable accessibilityRole="button" style={styles.more} onPress={retry}>
+            <Text style={styles.footerAction}>Try again</Text>
+          </Pressable>
         ) : null}
 
         {/* The door to My Foods & Meals — where these two lists are edited, deleted and (meals) built. */}
@@ -405,7 +417,8 @@ function pointerFood(key: string, name: string, brand: string | null): CatalogFo
   };
 }
 
-function emptyCopy(filter: Filter, results: CatalogFood[] | null, query: string): string {
+function emptyCopy(filter: Filter, results: CatalogFood[] | null, query: string, failed: boolean): string {
+  if (failed) return 'Couldn’t connect to food search. Check your signal and try again.';
   if (results) return `Nothing found for "${query.trim()}". Try a simpler word, or Create Food.`;
   switch (filter) {
     case 'favorites':
