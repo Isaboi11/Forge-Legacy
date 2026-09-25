@@ -1,6 +1,6 @@
 # Coach Holt Check-ins and Reminders: Scope v1.0
 
-**Status:** SCOPE. PO direction 2026-09-24, from phone. Not built. Three decisions open (§8).
+**Status:** SCOPE, decisions LOCKED. PO 2026-09-24, from phone. Not built.
 **Builds on:** `Nutrition-Architecture-Amendment-003` NUT-A3-D4 (tell Holt your preferences) ·
 `P-5-Notifications-Architecture.md` §3.2e (the five rules for any timed push) ·
 `P-5-Amendment-003-Training-Briefing.md` (the one timed push that exists) · `0120` push pipeline ·
@@ -98,7 +98,13 @@ A push shows on the lock screen. Food numbers are private data (P-6 Amendment 00
 - **No new app build is needed.** Push, time pickers and the chat already exist on build 8. This is a
   migration, the sender change and screens (OTA).
 
-## 8. Decisions for the PO
+## 8. Decisions (PO, 2026-09-24)
+
+**HC-D1: everyone.** Reminders can be set from Settings by every athlete. Setting one by typing to Holt stays Premium AI.
+**HC-D2: lock screen.** The athlete chooses when setting a reminder up. Default: numbers hidden (*"Holt · your 3 pm check-in"*).
+**HC-D3: Holt's offer, two chances.** Holt offers once (after the first target is set). If the athlete says no or ignores it, he offers **once more about a month later**. That second offer says it can be changed any time in Settings. After that, never again unprompted.
+
+### Original options (kept for the record)
 
 1. **Who gets it:** everyone (set from Settings) plus Premium AI (set by typing to Holt)? Or Premium AI only?
    *Recommendation: everyone, because reminders cost almost nothing. Typing to Holt stays Premium AI.*
