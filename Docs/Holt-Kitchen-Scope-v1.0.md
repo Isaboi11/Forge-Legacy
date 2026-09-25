@@ -1,6 +1,7 @@
 # Holt's Kitchen: "What can I make?" Scope v1.0
 
-**Status:** SCOPE. PO direction 2026-09-24 (from phone). Not built. Four decisions open (§9).
+**Status:** SCOPE, decisions LOCKED (PO 2026-09-24: "Perfect"; all four recommendations in §9 taken). Not built.
+Part of `Coach-Holt-Everywhere-v1.0.md`.
 **Product:** Premium AI (`coach_ai`), metered through `coach_ai_spend_credits` like every Holt AI call.
 **Reads with:** `Nutrition-Architecture-v1.0` NUT-D4 (the model never writes a number), NUT-D5 (floors, no
 recommendations under 18), NUT-D6 (allergens), §6 step 7 ("I have chicken, eggs and rice") ·
@@ -104,7 +105,7 @@ says "too many calories", never "you shouldn't", and never recommends eating les
 7. Eval set before release: 50 real pantries × 3 asks. Pass = zero allergen misses, zero model-written
    numbers, no repeated dish within one pantry's three asks, every meat/egg step has its temperature.
 
-## 9. Decisions for the PO
+## 9. Decisions (LOCKED 2026-09-24: Premium AI only · chat AND a Nutrition button · 3 options · 30 days)
 
 1. **Premium AI only?** *Recommendation: yes. It's an AI call per ask.*
 2. **Where it lives:** Holt's chat only, or also a *What can I make?* button on Nutrition Home?
