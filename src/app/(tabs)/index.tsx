@@ -24,7 +24,10 @@ import { WeeklyReviewCard } from '@/components/forge/WeeklyReviewCard';
 import { fetchWeeklyReview, type WeeklyReview } from '@/data/weekly-review-live';
 import { reviewWindowOpen } from '@/domain/coach/rulebook/review';
 import { getRetiredReviewWeeks, isWeekRetired, retireReviewWeek } from '@/lib/weekly-review-seen';
-import { useEntitlement } from '@/lib/entitlement';
+import { useEntitlement, useNutritionAccess } from '@/lib/entitlement';
+import { fetchDay } from '@/data/nutrition-live';
+import { localToday, totals } from '@/domain/nutrition/day';
+import { homeFoodLine } from '@/domain/nutrition/home-line';
 import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow';
 import { TrainingNowSheet } from '@/components/forge/TrainingNowSheet';
 import { todaysPrinciple } from '@/data/home-principles';
@@ -109,6 +112,40 @@ function GetStartedRow({ label, sub, icon, onPress }: { label: string; sub: stri
         <Text style={styles.startedLabel}>{label}</Text>
         <Text style={styles.startedSub} numberOfLines={1}>
           {sub}
+        </Text>
+      </View>
+      <ChevronRightIcon size={16} color={flColor.bronze400} />
+    </Pressable>
+  );
+}
+
+/**
+ * TODAY'S FOOD — one line under the day's training (Nutrition-Architecture-Amendment-003 NUT-A3-D1).
+ *
+ * Only for an athlete who can use Nutrition AND has a target; otherwise nothing renders, never a zero or a
+ * nag. It re-reads on focus, so a meal logged a moment ago is on it when the athlete comes back. The words
+ * are `homeFoodLine`'s: facts, no verdict. Styled as a Get Started row, because it is a door, not a card.
+ */
+function FoodTodayLine({ onOpen }: { onOpen: () => void }) {
+  const mayUseNutrition = useNutritionAccess();
+  const [reloads, setReloads] = useState(0);
+  useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
+  const { data } = useQuery(async () => (mayUseNutrition ? fetchDay(localToday()) : null), [mayUseNutrition, reloads]);
+  if (!mayUseNutrition || !data?.targets) return null;
+
+  const line = homeFoodLine(totals(data.entries), data.entries.length > 0, data.targets);
+  return (
+    <Pressable
+      onPress={onOpen}
+      accessibilityRole="button"
+      accessibilityLabel={`Food today: ${line.title}, ${line.sub}`}
+      style={({ pressed }) => [styles.startedRow, pressed ? styles.pathPressed : null]}
+    >
+      <View style={styles.startedText}>
+        <Text style={styles.startedSub}>Food today</Text>
+        <Text style={styles.startedLabel}>{line.title}</Text>
+        <Text style={styles.startedSub} numberOfLines={1}>
+          {line.sub}
         </Text>
       </View>
       <ChevronRightIcon size={16} color={flColor.bronze400} />
@@ -1091,6 +1128,8 @@ export default function HomeScreen() {
               />
             </TourAnchor>
           ) : null}
+
+          <FoodTodayLine onOpen={() => router.push('/nutrition')} />
 
           {/* GET STARTED — the arrival rows, where the "How do you want to start?" chooser used to sit
               (ONB-A6-D1/D2). The hero above is the offer; these only point. */}
