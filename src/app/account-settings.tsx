@@ -33,8 +33,11 @@ import {
 import { useAuth } from '@/lib/auth';
 import { useTier } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
-import { fetchExportWorkouts } from '@/data/export-live';
+import { fetchExportNutrition, fetchExportWorkouts } from '@/data/export-live';
+import { RECIPE_BY_ID } from '@/domain/nutrition/meal-planner';
 import { countSets, exportBaseName, toCsv } from '@/domain/settings/export-core';
+import { hasNutrition, nutritionCsvFiles, toZipEntries } from '@/domain/settings/export-nutrition';
+import { zipStore } from '@/domain/settings/zip';
 import { saveTextFile } from '@/lib/save-file';
 import { useTour } from '@/hooks/useTour';
 import { TOUR_RETIRED } from '@/lib/screen-prompts';
@@ -124,14 +127,33 @@ export default function AccountSettingsScreen() {
     setExporting(true);
     void (async () => {
       try {
-        const workouts = await fetchExportWorkouts();
-        const res = await saveTextFile(`${exportBaseName(new Date())}.csv`, toCsv(workouts));
+        const [workouts, food] = await Promise.all([fetchExportWorkouts(), fetchExportNutrition()]);
+        const now = new Date();
+        /* No food data: the same single CSV as always. Food data: one ZIP, workouts.csv plus the
+           nutrition CSVs (`export-nutrition.ts` says why). */
+        const withFood = hasNutrition(food);
+        const res = withFood
+          ? await saveTextFile(
+              `${exportBaseName(now)}.zip`,
+              zipStore(
+                toZipEntries([
+                  { name: 'workouts.csv', text: toCsv(workouts) },
+                  ...nutritionCsvFiles(food, (id) => RECIPE_BY_ID[id]?.name ?? null),
+                ]),
+                now,
+              ),
+              'application/zip',
+            )
+          : await saveTextFile(`${exportBaseName(now)}.csv`, toCsv(workouts));
         if (res.ok) {
           const sets = countSets(workouts);
+          const foods = food.entries.length;
           showToast(
-            workouts.length === 0
+            workouts.length === 0 && !withFood
               ? 'Nothing logged yet — the file has its headings and no rows.'
-              : `${workouts.length} workout${workouts.length === 1 ? '' : 's'} · ${sets} set${sets === 1 ? '' : 's'}. Photos aren’t included.`,
+              : `${workouts.length} workout${workouts.length === 1 ? '' : 's'} · ${sets} set${sets === 1 ? '' : 's'}${
+                  withFood ? ` · ${foods} food${foods === 1 ? '' : 's'} logged` : ''
+                }. Photos aren’t included.`,
           );
         } else if (res.reason) {
           showToast(res.reason);

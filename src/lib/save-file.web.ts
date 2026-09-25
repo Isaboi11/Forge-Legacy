@@ -14,7 +14,7 @@
  */
 export async function saveTextFile(
   name: string,
-  text: string,
+  text: string | Uint8Array,
   mime = 'text/csv',
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   if (typeof document === 'undefined' || typeof URL?.createObjectURL !== 'function') {
@@ -24,7 +24,11 @@ export async function saveTextFile(
     /* A BOM, and it is not decoration: Excel on Windows reads a UTF-8 CSV as the system codepage without
        one, so an exercise name with an accent or a curly apostrophe arrives mangled. Every other reader
        ignores it. */
-    const blob = new Blob([`﻿${text}`], { type: `${mime};charset=utf-8` });
+    const blob =
+      typeof text === 'string'
+        ? new Blob([`﻿${text}`], { type: `${mime};charset=utf-8` })
+        : /* Bytes (a ZIP) go in untouched: a BOM or a charset would corrupt a binary file. */
+          new Blob([text as BlobPart], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
