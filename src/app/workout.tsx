@@ -1572,10 +1572,16 @@ export default function WorkoutScreen() {
      * Writing the duration is what makes the completed hold a record of the hold rather than a done
      * checkbox with no data behind it.
      */
+    /* "The same again" (`ghostSet`): an untyped weight takes the faded one on the row, and an untyped rep
+       count takes the faded reps. The prescription still wins for reps, so this only changes a set with
+       no rep target. Filled here, on the athlete's own tap, and never before. */
+    const fromEx = from.exercises[ei];
+    const ghost = fromEx ? ghostSet(fromEx, si, liftHistory?.get(liftId(fromEx)) ?? null, units) : { weight: null, reps: null };
     const ns = patchSet(from, ei, si, (set) => ({
       ...set,
       done: true,
-      actualReps: set.actualReps ?? (set.toFailure || set.targetSec != null ? null : set.targetReps),
+      weight: set.weight ?? ghost.weight,
+      actualReps: set.actualReps ?? (set.toFailure || set.targetSec != null ? null : ghost.reps ?? set.targetReps),
       durationSec: set.targetSec != null ? set.durationSec ?? set.targetSec : set.durationSec,
     }));
     setSession(ns);
@@ -5536,6 +5542,36 @@ function swapExercise(ex: SessionExercise, p: PickedExercise): SessionExercise {
  * 375pt phone does not have inside the card's padding. The anchors belong to the ONE table the
  * walkthrough points at — registering the same id twice would aim the spotlight at whichever mounted last.
  */
+/**
+ * "The same again": the faded numbers on the live set, and what its check logs when nothing was typed.
+ * PO, 2026-09-24: *"the set that I'm on should have the last weight and reps as a faded number … in case I
+ * just want to press the check and go to the next set and it auto fills."*
+ *
+ * Weight: the last set logged TODAY → the prescription (a percentage program's bar) → the same set LAST
+ * session (canonical pounds → the athlete's units via `exactWeight`, exactly as `Prev` converts). A zero
+ * from history is a bodyweight set and is not carried as a load.
+ * Reps: the prescription wins whenever there is one, so a program asking for 8 means 8 even after a
+ * 20-rep week. Then the last set today, then last session. A to-failure or timed set gets no reps; that
+ * number is only ever the athlete's to say.
+ *
+ * ⚠ NOTHING IS WRITTEN UNTIL THE CHECK. An unlogged row never carries a weight (see `prefillWeight`:
+ * a phantom lift can announce a phantom record). The athlete's own tap on the check is what turns
+ * these into a logged set, which is the same act as typing them.
+ */
+function ghostSet(ex: SessionExercise, si: number, hist: LiftHistory | null, units: UnitSystem): { weight: number | null; reps: number | null } {
+  const set = ex.sets[si];
+  if (!set) return { weight: null, reps: null };
+  const earlier = ex.sets.slice(0, si).reverse();
+  const last = hist?.sessions[0]?.sets[si];
+  const weight =
+    earlier.find((s) => s.done && s.weight != null)?.weight ??
+    set.targetWeight ??
+    (last?.weight != null && last.weight > 0 ? exactWeight(last.weight, units).value : null);
+  if (set.toFailure || set.targetSec != null) return { weight, reps: null };
+  const reps = set.targetReps > 0 ? set.targetReps : (earlier.find((s) => s.done && s.actualReps != null)?.actualReps ?? last?.reps ?? null);
+  return { weight, reps };
+}
+
 type SetTableProps = {
   exercise: SessionExercise;
   ei: number;
@@ -5636,6 +5672,8 @@ function SetTable({ exercise: ex, ei, units, soundOn, liftHist, flash, pop, show
           /* Null on a first-ever lift, and on any set position last session did not reach. */
           const rowPrev = prevAtIndex(si);
           const prevWeight = prevWeightAt(si);
+          /* The live set's faded "same again" (`ghostSet`), which is what its check logs if nothing is typed. */
+          const ghost = isCurrent ? ghostSet(ex, si, liftHist, units) : null;
           const weightShown = weightText(set);
           /*
            * ══ ONE SLOT FOR THE ASK AND THE ANSWER (W9-A9-D2) ══
@@ -5660,7 +5698,9 @@ function SetTable({ exercise: ex, ei, units, soundOn, liftHist, flash, pop, show
               ? 'MAX'
               : set.targetSec != null
                 ? durText(set.targetSec) || '—'
-                : targetRepsText(set);
+                : !(set.targetReps > 0) && ghost?.reps != null
+                  ? String(ghost.reps)
+                  : targetRepsText(set);
           const repsColor = isDone ? flColor.cream100 : repsAnswered ? flColor.bronze300 : flColor.gray600;
           /*
            * ══ THE GOAL READS AS A SUGGESTION, NOT AN ENTRY (W9-A13) ══
@@ -5738,6 +5778,8 @@ function SetTable({ exercise: ex, ei, units, soundOn, liftHist, flash, pop, show
                 <Pressable style={({ pressed }) => [styles.cWeight, styles.fieldBox, isCurrent && styles.fieldBoxLive, pressed && styles.cellBtnPressed]} onPress={() => onEdit(ei, si, 'weight')} accessibilityRole="button" accessibilityLabel={`Edit weight, set ${si + 1}`}>
                   {set.weight != null ? (
                     popCell(si, 'weight', <Text style={[styles.fieldNum, weightShown.length > 4 ? styles.fieldNumSm : null, { color: valColor }]} numberOfLines={1}>{weightShown}</Text>)
+                  ) : ghost?.weight != null ? (
+                    <Text style={[styles.fieldNum, styles.fieldNumFaded, String(ghost.weight).length > 4 ? styles.fieldNumSm : null]} numberOfLines={1}>{ghost.weight}</Text>
                   ) : set.targetWeight != null ? (
                     <Text style={[styles.fieldNum, styles.fieldNumFaded, String(set.targetWeight).length > 4 ? styles.fieldNumSm : null]} numberOfLines={1}>{set.targetWeight}</Text>
                   ) : (
