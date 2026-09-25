@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import type { ComponentType } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { requireOptionalNativeModule } from 'expo';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -46,12 +48,22 @@ import { useQuery } from '@/lib/useQuery';
  * distinct rather than collapsing them into one. (An in-file portion sheet did the second job until
  * `Food Detail.dc.html` arrived; the sheet is gone rather than left as a second way to do the same thing.)
  *
- * ⚠ **BARCODE IS TYPED, NOT SCANNED — FOR NOW.** `expo-camera` is a native module: adding it needs a new
- * binary, so a camera cannot reach the current build over the air, and the PO reviews on the web preview
- * where the camera path differs again. The lookup, the fallbacks (USDA → Open Food Facts) and the
- * not-found → Create Food route are all real and tested by hand today; the scanner is a lens on the same
- * call, and lands with the next binary (Nutrition Architecture §5, Phase 1).
+ * ⚠ **BARCODE IS SCANNED ON BUILD 9+, TYPED EVERYWHERE ELSE.** `expo-camera` is a native module, so the
+ * viewfinder exists only in a binary built after it was added. `BarcodeCamera` is `require`d only when
+ * `ExpoCamera` is present (see `ScanCamera` below); build 8 and the web preview keep the typed box, which
+ * stays under the camera on build 9 too for a code the camera cannot read. Both feed the same
+ * `lookupBarcode` call and the same not-found → Create Food route (Nutrition Architecture §5, Phase 1).
  */
+
+/**
+ * The viewfinder, or `null` on a build without the camera module. Never a top-level import:
+ * `expo-camera` throws on load when its native half is missing, which would crash this screen on build 8.
+ */
+const ScanCamera: ComponentType<{ paused: boolean; onScan: (digits: string) => void }> | null =
+  Platform.OS !== 'web' && requireOptionalNativeModule('ExpoCamera')
+    ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+      (require('@/components/forge/BarcodeCamera') as typeof import('@/components/forge/BarcodeCamera')).BarcodeCamera
+    : null;
 
 type Filter = 'recent' | 'favorites' | 'mine' | 'meals';
 
@@ -479,22 +491,29 @@ function BarcodeSheet({
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const look = useCallback(async () => {
-    const digits = code.replace(/\D/g, '');
-    if (digits.length < 8) return;
-    setBusy(true);
-    const found = await lookupBarcode(digits);
-    setBusy(false);
-    setCode('');
-    if (found.length) onFound(found[0]);
-    else onNotFound();
-  }, [code, onFound, onNotFound]);
+  const find = useCallback(
+    async (raw: string) => {
+      const digits = raw.replace(/\D/g, '');
+      if (digits.length < 8) return;
+      setBusy(true);
+      const found = await lookupBarcode(digits);
+      setBusy(false);
+      setCode('');
+      if (found.length) onFound(found[0]);
+      else onNotFound();
+    },
+    [onFound, onNotFound],
+  );
+  const look = useCallback(() => find(code), [code, find]);
 
   return (
     <BottomSheet open={open} onClose={onClose} title="Barcode">
       <View style={styles.sheetBody}>
+        {/* Mounted only while the sheet is open, so the camera is off (and its one-read lock reset)
+            every time the sheet closes. */}
+        {ScanCamera && open ? <ScanCamera paused={busy} onScan={find} /> : null}
         <Text style={styles.sheetNote}>
-          Type the number under the barcode. Camera scanning arrives with the next app build.
+          {ScanCamera ? 'Or type the number under the barcode.' : 'Type the number under the barcode.'}
         </Text>
         <TextInput
           value={code}

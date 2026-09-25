@@ -10,7 +10,7 @@
     "backgroundColor": "#0E0E12",
     "ios": {
       "bundleIdentifier": "com.qest4.forgelegacy",
-      "buildNumber": "8",
+      "buildNumber": "9",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -65,7 +65,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Forge Legacy uses your photo library so you can add a squad photo, share progress in the feed, send a set to Coach Holt for a form check, and build your transformation gallery.",
-          "cameraPermission": "Forge Legacy uses your camera so you can record squad check-in videos, film a set for Coach Holt to check your form, and capture photos on the spot.",
+          "cameraPermission": "Forge Legacy uses your camera so you can record squad check-in videos, film a set for Coach Holt to check your form, capture photos on the spot, and scan a food's barcode.",
           "microphonePermission": "Forge Legacy uses your microphone so you can talk to Coach Holt, and so your check-in and form-check videos have sound."
         }
       ],
@@ -86,6 +86,14 @@
       "expo-web-browser",
       "react-native-compressor",
       "@bacons/apple-targets",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Forge Legacy uses your camera so you can record squad check-in videos, film a set for Coach Holt to check your form, capture photos on the spot, and scan a food's barcode.",
+          "microphonePermission": "Forge Legacy uses your microphone so you can talk to Coach Holt, and so your check-in and form-check videos have sound.",
+          "barcodeScannerEnabled": true
+        }
+      ],
       [
         "expo-speech-recognition",
         {
