@@ -5,11 +5,30 @@ import { useFocusEffect } from 'expo-router';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { NutritionTabIcon } from '@/components/forge/primitives/icons/NavIcons';
 import { flColor, flRadius } from '@/constants/foundation';
-import { fetchDay } from '@/data/nutrition-live';
+import { fetchDay, fetchGroceryState, fetchMealPlanPrefs, fetchMealPlanWeek, fetchUserRecipes } from '@/data/nutrition-live';
 import { localToday, totals } from '@/domain/nutrition/day';
+import { GAP_LINE_FROM_HOUR, gapLine, pantryFrom, type PantryItem } from '@/domain/nutrition/gap-line';
+import { groceryList, planSignature, stateFor } from '@/domain/nutrition/grocery';
+import { mondayOf, planIsReadable } from '@/domain/nutrition/meal-planner';
 import { homeNutritionView, type MacroKey } from '@/domain/nutrition/home-card';
 import { useNutritionAccess } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
+
+/**
+ * This week's Grocery List as a pantry: bought, have-it and still to buy (`pantryFrom`). Built the same way
+ * the Grocery List screen builds it. `fetchUserRecipes` registers the athlete's own recipes into the book
+ * before `groceryList` reads it, and a stored week naming a recipe that no longer exists is skipped, never
+ * half-read.
+ */
+async function loadPantry(todayIso: string): Promise<PantryItem[]> {
+  const monday = mondayOf(todayIso);
+  const [, week, prefs, saved] = await Promise.all([fetchUserRecipes(), fetchMealPlanWeek(monday), fetchMealPlanPrefs(), fetchGroceryState(monday)]);
+  if (!week || !planIsReadable(week.days)) return [];
+  const household = prefs?.household ?? 1;
+  const list = groceryList(week.days, household);
+  const state = stateFor(saved, list, planSignature(week.days, household));
+  return pantryFrom(list.items.map((i) => i.key), state);
+}
 
 /**
  * NUTRITION ON HOME: TWO LINES, option A (PO, 2026-09-24).
@@ -38,14 +57,21 @@ export function HomeNutritionCard({ onOpen }: { onOpen: () => void }) {
   const [reloads, setReloads] = useState(0);
   useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
   const { data } = useQuery(async () => (mayUseNutrition ? fetchDay(localToday()) : null), [mayUseNutrition, reloads]);
+  /* The gap line (Check-ins scope §3, LOCKED): only asked for in the afternoon, with a target and something
+     logged, so the grocery list is not read on every morning open. */
+  const hour = new Date().getHours();
+  const wantGap = !!data?.targets && (data?.entries.length ?? 0) > 0 && hour >= GAP_LINE_FROM_HOUR;
+  const { data: pantry } = useQuery(async () => (wantGap ? loadPantry(localToday()) : null), [wantGap, reloads]);
   if (!mayUseNutrition || !data) return null;
 
-  const v = homeNutritionView(totals(data.entries), data.entries.length > 0, data.targets);
+  const eaten = totals(data.entries);
+  const v = homeNutritionView(eaten, data.entries.length > 0, data.targets);
+  const gap = pantry ? gapLine({ eaten, logged: data.entries.length > 0, target: data.targets, hour, pantry }) : null;
   return (
     <Pressable
       onPress={onOpen}
       accessibilityRole="button"
-      accessibilityLabel={v.a11y}
+      accessibilityLabel={gap ? `${v.a11y} Holt: ${gap}` : v.a11y}
       accessibilityHint="Opens Nutrition"
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
@@ -84,6 +110,13 @@ export function HomeNutritionCard({ onOpen }: { onOpen: () => void }) {
           </View>
         ))}
       </View>
+
+      {gap ? (
+        <Text style={styles.gap}>
+          <Text style={styles.gapWho}>Holt · </Text>
+          {gap}
+        </Text>
+      ) : null}
     </Pressable>
   );
 }
@@ -111,6 +144,9 @@ const styles = StyleSheet.create({
   dot: { width: 7, height: 7, borderRadius: flRadius.round },
   macroLine: { flexShrink: 1, fontSize: 12, color: flColor.gray400, fontVariant: ['tabular-nums'] },
   macroValue: { fontWeight: '600', color: flColor.cream100 },
+
+  gap: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
+  gapWho: { fontWeight: '600', color: flColor.bronze400 },
 
   track: { height: 4, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal700, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: flRadius.pill },
