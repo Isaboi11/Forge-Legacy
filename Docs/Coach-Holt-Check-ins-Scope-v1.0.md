@@ -47,7 +47,7 @@ A check-in is **the numbers plus one human line** that fits the day, for example
 - Nothing logged yet: *"Your day: 2,400 cal and 180 g protein to aim for."* It **never** says *"you
   haven't logged"* (P-5 §3.2e forbids absence-referencing).
 
-### The gap line: close it with what's on the list (PO, 2026-09-24)
+### The gap line: close it with what's on the list (🔒 LOCKED, PO 2026-09-24)
 
 PO: *"Saying stuff like, looks like you need 15 g more of protein. Did you end up getting that yogurt on the
 grocery list? That would be perfect."*
