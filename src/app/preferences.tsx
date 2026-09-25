@@ -93,6 +93,7 @@ export default function PreferencesScreen() {
   const setRowUnit = (rowUnit: RowUnit) => commit({ ...prefs, rowUnit });
   const setToggle = (key: ExperienceKey, on: boolean) => commit({ ...prefs, [key]: on });
   const setIntensity = (coachIntensity: IntensityLevel) => commit({ ...prefs, coachIntensity });
+  const setHoltTips = (on: boolean) => commit({ ...prefs, holtTips: on ? 'on' : 'off' });
 
   /**
    * ⚠ THIS ONE DOES NOT USE `commit`, AND THE DIFFERENCE MATTERS.
@@ -266,6 +267,20 @@ export default function PreferencesScreen() {
                   </Pressable>
                 );
               })}
+            </View>
+          </View>
+          {/* PO, 2026-09-24: "some people probably don't want him that involved." One switch for his quiet
+              in-app notes; the reminders a person asks him for are not affected. */}
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <View style={styles.iconTile}>
+                <ForgeSymbol name="spark" size={18} color={flColor.bronze300} />
+              </View>
+              <View style={styles.rowText}>
+                <Text style={styles.rowLabel}>Tips from Holt</Text>
+                <Text style={styles.rowHint}>Short notes on Home, like what’s left to hit your protein today</Text>
+              </View>
+              <SettingsToggle value={prefs.holtTips !== 'off'} onChange={setHoltTips} accessibilityLabel="Tips from Holt" />
             </View>
           </View>
 
