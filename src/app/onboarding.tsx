@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -620,16 +621,16 @@ export default function Onboarding() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           {step === 'theme' ? (
             <>
-              <Heading eyebrow="Before we begin" title="Choose your look" body="Dark or light. You can change it any time in Preferences." />
-              <View style={styles.tileStack}>
+              <Heading eyebrow="Before we begin" title={'Choose the Forge\nthat feels like yours.'} body="You can change this anytime in Preferences." />
+              <View style={styles.themeStack}>
                 {THEME_OPTIONS.map((t) => (
-                  <SelectTile
+                  <ThemeCard
                     key={t.id}
+                    name={t.id}
                     title={t.id === 'forge' ? `${t.label} · Dark` : `${t.label} · Light`}
                     desc={t.hint}
                     selected={themePick === t.id}
                     onPress={() => setThemePick(t.id)}
-                    right={<ThemeSwatch name={t.id} />}
                   />
                 ))}
               </View>
@@ -958,25 +959,76 @@ export default function Onboarding() {
 
 // ── local pieces ──
 /**
- * A thumbnail of each theme — its ground, a line of its ink and a bar of its metal.
+ * Each theme's card is a piece of its own stone — dark iron veined with bronze, white stone veined with
+ * brass (PO mockup, 2026-09-25).
  *
- * ⚠ LITERAL COLOURS ON PURPOSE. This is a picture of a theme, drawn identically whichever theme is
+ * ⚠ LITERAL COLOURS ON PURPOSE. Each card is a picture of a theme, drawn identically whichever theme is
  *   running, so it cannot use role tokens — `flColor.cream100` is near-white in Forge and dark ink in
- *   Alabaster, and would draw each preview in the wrong theme's ink. Values are the two palettes' own
- *   ground / primary text / bronze (`foundation.forge.ts`, `foundation.paper.ts`).
+ *   Alabaster, and would draw each card in the wrong theme's ink. Metals are the two palettes' own
+ *   bronze (`foundation.forge.ts`, `foundation.paper.ts`); grounds match the stone art's left edge.
+ *
+ * The stone art is cut from the PO's mockup with its left edge faded out, so the card's ground shows
+ * through behind the text. Swap in higher-resolution art at the same paths; nothing else changes.
  */
-const SWATCH: Record<ThemeName, { ground: string; ink: string; metal: string; edge: string }> = {
-  forge: { ground: '#0C1013', ink: '#F0EDE8', metal: '#BA8654', edge: '#2E2E35' },
-  paper: { ground: '#F6F2E8', ink: '#28231D', metal: '#A47A3D', edge: '#CDBD9F' },
+const THEME_CARD: Record<
+  ThemeName,
+  { ground: string; ink: string; desc: string; metal: string; edge: string; ring: string; art: number; artAspect: number }
+> = {
+  forge: {
+    ground: '#1A1A18', ink: '#F0EDE8', desc: '#CFC9BF', metal: '#BA8654', edge: '#34322E', ring: '#D8D2C8',
+    art: require('@/assets/images/onboarding/theme-forge.png'), artAspect: 531 / 705,
+  },
+  paper: {
+    ground: '#E0D3C5', ink: '#1E1A15', desc: '#5A5249', metal: '#A47A3D', edge: '#C9B89F', ring: '#5A5249',
+    art: require('@/assets/images/onboarding/theme-alabaster.png'), artAspect: 396 / 705,
+  },
 };
-function ThemeSwatch({ name }: { name: ThemeName }) {
-  const c = SWATCH[name];
+const THEME_CARD_HEIGHT = 196;
+function ThemeCard({
+  name,
+  title,
+  desc,
+  selected,
+  onPress,
+}: {
+  name: ThemeName;
+  title: string;
+  desc: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const c = THEME_CARD[name];
   return (
-    <View style={[styles.swatch, { backgroundColor: c.ground, borderColor: c.edge }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <View style={[styles.swatchLine, { backgroundColor: c.ink }]} />
-      <View style={[styles.swatchLine, styles.swatchLineShort, { backgroundColor: c.ink, opacity: 0.5 }]} />
-      <View style={[styles.swatchBar, { backgroundColor: c.metal }]} />
-    </View>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: selected }}
+      accessibilityLabel={`${title}. ${desc}`}
+      style={({ pressed }) => [
+        styles.themeCard,
+        { backgroundColor: c.ground, borderColor: selected ? c.metal : c.edge },
+        selected && styles.themeCardOn,
+        pressed && styles.themeCardPressed,
+      ]}
+    >
+      <Image
+        source={c.art}
+        resizeMode="cover"
+        style={[styles.themeArt, { width: THEME_CARD_HEIGHT * c.artAspect }]}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      />
+      <View style={[styles.themeDash, { backgroundColor: selected ? c.metal : c.desc }]} />
+      <Text style={[styles.themeTitle, { color: c.ink }]}>{title}</Text>
+      <Text style={[styles.themeDesc, { color: c.desc }]}>{desc}</Text>
+      <View style={[styles.themeRadio, selected ? { backgroundColor: c.metal, borderColor: c.metal } : { borderColor: c.ring }]}>
+        {selected ? (
+          <Svg width={14} height={14} viewBox="0 0 24 24">
+            <Path d="M5 12.5l4.5 4.5L19 7.5" stroke={c.ground} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </Svg>
+        ) : null}
+      </View>
+    </Pressable>
   );
 }
 function Group({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
@@ -1020,10 +1072,32 @@ const styles = StyleSheet.create({
   avatarRow: { alignItems: 'center', gap: 10, paddingVertical: 6 },
   avatarPressed: { opacity: 0.7 },
   optional: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },
-  swatch: { width: 56, height: 44, borderRadius: 8, borderWidth: 1, padding: 7, gap: 4, justifyContent: 'center' },
-  swatchLine: { height: 3, borderRadius: 2, width: '80%' },
-  swatchLineShort: { width: '55%' },
-  swatchBar: { height: 7, borderRadius: 3, width: '100%', marginTop: 2 },
+  themeStack: { gap: 16 },
+  themeCard: {
+    height: THEME_CARD_HEIGHT,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+  },
+  themeCardOn: { borderWidth: 1.5 },
+  themeCardPressed: { opacity: 0.85 },
+  themeArt: { position: 'absolute', right: 0, top: 0, height: THEME_CARD_HEIGHT },
+  themeDash: { width: 30, height: 2.5, borderRadius: 2, marginBottom: 14 },
+  themeTitle: { fontFamily: flFont.display, fontSize: 30, fontWeight: '600', lineHeight: 36, letterSpacing: -0.3 },
+  themeDesc: { fontFamily: flFont.sans, fontSize: 15, lineHeight: 22, marginTop: 8, maxWidth: '62%' },
+  themeRadio: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   suggestRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   suggestChip: { paddingVertical: 8, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed },

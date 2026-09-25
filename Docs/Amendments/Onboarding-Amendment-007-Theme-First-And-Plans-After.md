@@ -21,8 +21,10 @@
 
 ## 2. Decisions
 
-**ONB-A7-D1 — The theme is the first onboarding question.** "Choose your look": **Forge · Dark** and
-**Alabaster · Light**, each with a thumbnail of its own ground, ink and metal. Current theme pre-selected.
+**ONB-A7-D1 — The theme is the first onboarding question.** "Choose the Forge that feels like yours.":
+**Forge · Dark** and **Alabaster · Light**, each a full-width card cut from its own stone (dark iron veined
+with bronze; white stone veined with brass), radio top-right, bronze border + filled check when chosen
+(PO mockup, 2026-09-25 — replaced the small ground/ink/metal thumbnail). Current theme pre-selected.
 It is first because changing theme **reloads the app** (every stylesheet freezes its colours at import):
 at step one there is no answer yet to lose. Coming back up on a non-default theme resumes at the account
 step. The choice is device-local until the account is finished, then copied to `app_prefs.theme` so
