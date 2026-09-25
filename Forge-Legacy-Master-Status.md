@@ -80,7 +80,7 @@ reinstall, or a tester needs one of these.
 
 **OTA 1 to build 9 (09-25):** barcode fix only (`de8772a6` → `310114e4` on `ota/build9`, worktree `C:/Users/isaia/forge-b9-ota`), iOS update `01a0da07-25dc-705c…` on runtime `b322e3de…`. ⚠ That worktree needed `.gitignore`, `eas.json` and `modules/*/ios` copied BYTE-FOR-BYTE from the main tree (LF): its autocrlf checkout wrote CRLF and broke the fingerprint. Server half (`food-search`: parallel sources, USDA `gtinUpc`, Open Food Facts typed search) ✅ redeployed by the PO 09-25.
 
-**Community foods — Nutrition Amendment 004 LOCKED 09-25** (`e7fe30d2`; build-9 OTA 2 from `ota/build9`). ✅ **`0219` APPLIED** — §3 read `0 · 0 · 0 · true · true`, exactly as predicted. ✅ `food-search` redeployed by the PO with community as the 4th source. ⏳ Nobody has shared a food on a device yet. Privacy draft updated; ⚠ the App Store privacy label should gain "Other User Content" before Nutrition opens.
+**Community foods — Nutrition Amendment 004 LOCKED 09-25** (`e7fe30d2`; OTA to build 9 from `ota/build9-js` as `97b4344e`, combined with the icons + care line. ⚠ ONE OTA branch per build: a separate `ota/build9` publish briefly overwrote them — `ota/build9` is retired). ✅ **`0219` APPLIED** — §3 read `0 · 0 · 0 · true · true`, exactly as predicted. ✅ `food-search` redeployed by the PO with community as the 4th source. ⏳ Nobody has shared a food on a device yet. Privacy draft updated; ⚠ the App Store privacy label should gain "Other User Content" before Nutrition opens.
 
 **When cutting build 9:** re-run `fingerprint:compare` afterwards, move the OTA lane to the new runtime,
 and keep build 8 fed until testers have reinstalled.
