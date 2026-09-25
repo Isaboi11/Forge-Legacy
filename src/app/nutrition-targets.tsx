@@ -86,12 +86,15 @@ export default function NutritionTargetsScreen() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [sheet, setSheet] = useState<'pace' | 'method' | null>(null);
   const [weighInOpen, setWeighInOpen] = useState(false);
-  const [goal, setGoal] = useState<Goal>('lose');
+  /* null until the athlete picks one: the default depends on the care line below. */
+  const [pickedGoal, setGoal] = useState<Goal | null>(null);
   const [rate, setRate] = useState(1);
   /* ⚠ THE CARE LINE (`domain/nutrition/care-line.ts`). While it is on, the screen still works (nothing is
-     blocked), but a LOSE goal is held to the slowest pace: it is neither pre-selected faster nor offered
-     faster, in the stepper or the sheet. The athlete's own pick comes back if the line is dismissed. */
+     blocked), but the goal starts on MAINTAIN (PO 09-25), and a LOSE goal is held to the slowest pace: it
+     is neither pre-selected faster nor offered faster, in the stepper or the sheet. The athlete's own pick
+     comes back if the line is dismissed. */
   const care = useCareLine();
+  const goal: Goal = pickedGoal ?? (care.active ? 'maintain' : 'lose');
   const slowestOnly = care.active && goal === 'lose';
   const pace = slowestOnly ? paceOptions('lose')[0] : rate;
   const [saving, setSaving] = useState(false);
