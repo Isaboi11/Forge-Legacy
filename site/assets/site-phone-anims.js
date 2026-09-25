@@ -1,4 +1,4 @@
-/* Forge Legacy site — animated phone screens. FLPhoneAnims.get(React) -> { workout, seal, build, nutrition, holtStart, holtBuild } */
+/* Forge Legacy site — animated phone screens. FLPhoneAnims.get(React) -> { heroDay, workout, startTrain, programWeeks, seal, build, nutrition, foodLog, labelScan, ... } */
 (function () {
   let cache = null;
   const R = p => { const id = 'r_' + p.replace(/^.*\//, '').replace(/\.[^.]+$/, '').replace(/[^a-z0-9]/gi, '_'); return (window.__resources && window.__resources[id]) || p; };
@@ -59,7 +59,14 @@
         h('div', { style: { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', opacity: op } }, status(), ...kids));
     }
     const fmt = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
-    const ic = (id, size) => window.ForgeSymbols ? window.ForgeSymbols.create(React, id, { size: size || 16, strokeWidth: 1.8 }) : null;
+    /* The PO's engraved set (assets/forge-engraved.js), same tone rule as the app: no colour = the bronze
+       gradient, for symbols that mean something; a colour = flat, for controls and state. */
+    const ic = (id, size, color, x) => { const s = size || 16; return window.ForgeEngraved ? h('span', { 'aria-hidden': 'true', style: S({ display: 'flex', flex: 'none', width: cq(s), height: cq(s) }, x), dangerouslySetInnerHTML: { __html: window.ForgeEngraved.svg(id, { size: s, color }).replace('width="' + s + '" height="' + s + '"', 'width="100%" height="100%"') } }) : null; };
+    /* The app's tab bar (app-tabs.tsx): Home · Workouts · Legacy (raised) · Squads · Nutrition. */
+    const tabBar = (active, x) => h('div', { style: S({ flex: 'none', display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', alignItems: 'end', padding: cq(8) + ' 0 ' + cq(24), borderTop: '1px solid ' + LINE, background: '#0E0D0B' }, x) },
+      [['home', 'Home'], ['barbell', 'Workouts'], ['book', 'Legacy'], ['people', 'Squads'], ['flame', 'Nutrition']].map(x2 => { const on = x2[1] === active, mid = x2[1] === 'Legacy';
+        return h('span', { key: x2[1], style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: cq(4), fontSize: cq(9.5), color: on ? BB : DIM } },
+          h('span', { style: { width: cq(mid ? 40 : 24), height: cq(mid ? 32 : 24), borderRadius: cq(10), border: mid ? '1px solid rgba(191,143,79,0.45)' : 'none', background: mid ? '#1A1712' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, ic(x2[0], 17, on || mid ? undefined : DIM)), x2[1]); }));
 
     /* ── Active workout ── */
     function Workout(p) {
@@ -77,14 +84,14 @@
       const setRow = (n, state, weight, tapAt) => {
         const done = state === 'done', act = state === 'active', c = done ? GREEN : act ? B : DIM;
         return h('div', { key: n, style: { display: 'grid', gridTemplateColumns: cq(50) + ' 1fr 1fr ' + cq(46) + ' ' + cq(40), alignItems: 'center', gap: cq(6), height: cq(54), padding: '0 ' + cq(10), borderRadius: cq(12), background: done ? GBG : act ? 'rgba(191,143,79,0.06)' : 'transparent', border: '1px solid ' + (done ? GL : act ? 'rgba(191,143,79,0.5)' : 'transparent'), transition: 'background .3s, border-color .3s' } },
-          h('span', { style: { display: 'flex', alignItems: 'center', gap: cq(6) } }, h('span', { style: { width: cq(24), height: cq(24), borderRadius: '50%', border: '1.5px solid ' + c, color: c, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(12) } }, n), done ? h('span', { style: { color: GREEN, fontSize: cq(13), fontWeight: 700 } }, '✓') : null),
+          h('span', { style: { display: 'flex', alignItems: 'center', gap: cq(6) } }, h('span', { style: { width: cq(24), height: cq(24), borderRadius: '50%', border: '1.5px solid ' + c, color: c, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(12) } }, n), done ? ic('check', 13, GREEN) : null),
           reps(state === 'idle'), weight,
           h('span', { style: { height: cq(34), borderRadius: cq(8), border: '1px solid ' + (act ? 'rgba(191,143,79,0.55)' : 'rgba(255,255,255,0.12)'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: DISP, fontSize: cq(16), color: state === 'idle' ? DIM : INK } }, state === 'idle' ? '—' : '8'),
-          h('span', { style: { position: 'relative', justifySelf: 'center', width: cq(30), height: cq(30), borderRadius: '50%', border: '1.5px solid ' + c, background: done ? 'rgba(111,174,123,0.22)' : 'transparent', color: c, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(14), fontWeight: 700, transform: tapAt ? pressT(t, tapAt) : 'none', transition: 'background .25s' } }, state === 'idle' ? '' : '✓', tapAt ? tapDot(t, tapAt) : null));
+          h('span', { style: { position: 'relative', justifySelf: 'center', width: cq(30), height: cq(30), borderRadius: '50%', border: '1.5px solid ' + c, background: done ? 'rgba(111,174,123,0.22)' : 'transparent', color: c, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(14), fontWeight: 700, transform: tapAt ? pressT(t, tapAt) : 'none', transition: 'background .25s' } }, state === 'idle' ? '' : ic('check', 15, c), tapAt ? tapDot(t, tapAt) : null));
       };
       const C = 339.29;
       return frame({ t, L, fref: ref, radius: p.radius, label: 'Active workout: logging 245 pounds for set two of bench press, checking it off, and the rest timer counting down' },
-        h('div', { style: { flex: 'none', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(8) + ' ' + cq(18) } }, h('span', { style: { fontSize: cq(24), lineHeight: 1, color: INK } }, '‹'), h('span', { style: { flex: 1, fontFamily: DISP, fontSize: cq(17), fontWeight: 600 } }, p.hero ? 'Chest Day' : 'Freestyle Workout'), h('span', { style: { fontSize: cq(18), color: MUTE } }, '⋮')),
+        h('div', { style: { flex: 'none', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(8) + ' ' + cq(18) } }, ic('chevron-left', 22, INK), h('span', { style: { flex: 1, fontFamily: DISP, fontSize: cq(17), fontWeight: 600 } }, p.hero ? 'Chest Day' : 'Freestyle Workout'), ic('more', 20, MUTE)),
         h('div', { style: { flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: cq(6) + ' ' + cq(18) } },
           h('span', { style: { fontSize: cq(11), fontWeight: 700, letterSpacing: '0.12em', color: MUTE } }, h('span', { style: { color: B } }, d2 ? '2' : '1'), ' / 3 DONE'),
           mini ? h('span', { style: S({ display: 'flex', alignItems: 'center', gap: cq(10), height: cq(32), padding: '0 ' + cq(12), borderRadius: 999, border: '1px solid rgba(191,143,79,0.45)', background: '#15130F', fontSize: cq(11), color: MUTE }, rise(t, MN + 200, 300, 0)) }, h('span', { style: { fontFamily: DISP, fontSize: cq(15), color: INK } }, fmt(left)), '−15', h('span', { style: { color: B } }, '❚❚'), '+15')
@@ -97,7 +104,7 @@
               h('span', { style: { fontFamily: DISP, fontSize: cq(19), fontWeight: 600, lineHeight: 1.15 } }, 'Barbell Bench Press'),
               h('span', { style: { fontSize: cq(10), fontWeight: 700, letterSpacing: '0.14em', color: MUTE } }, 'MAIN LIFT'),
               h('span', { style: { alignSelf: 'flex-start', padding: cq(3) + ' ' + cq(8), borderRadius: cq(4), border: '1px solid rgba(191,143,79,0.4)', fontSize: cq(9.5), fontWeight: 700, letterSpacing: '0.12em', color: B } }, 'STRENGTH'),
-              h('span', { style: { fontSize: cq(12.5), color: B } }, '▷ How To'))),
+              h('span', { style: { display: 'flex', alignItems: 'center', gap: cq(5), fontSize: cq(12.5), color: B } }, ic('play', 13, B), 'How To'))),
           h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', paddingTop: cq(12), borderTop: '1px solid ' + LINE } },
             [['LAST', '225 × 6', INK], ['GOAL', '3 × 8', B], ['BEST', '—', INK]].map(s => h('span', { key: s[0], style: { display: 'flex', flexDirection: 'column', gap: cq(4) } }, lbl(s[0], s[0] === 'GOAL' ? B : DIM, { fontSize: cq(9) }), h('span', { style: { fontFamily: DISP, fontSize: cq(15), color: s[2] } }, s[1]))))),
         h('div', { style: { flex: 'none', margin: cq(12) + ' ' + cq(14) + ' 0', padding: cq(10), borderRadius: cq(16), background: '#12110E', display: 'flex', flexDirection: 'column', gap: cq(8) } },
@@ -161,34 +168,33 @@
       const sc = t < SB ? 0 : t < SC ? 1 : t < SD ? 2 : t < SE ? 3 : 4;
       const sIn = a => { const k = ez(cl((t - a) / 340)); return { opacity: k, transform: 'translateX(' + ((1 - k) * 7).toFixed(2) + '%)' }; };
       const wrap = (a, kids) => h('div', { style: S({ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }, a ? sIn(a) : null) }, kids);
-      const top = (glyph, title) => h('div', { style: { flex: 'none', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(10) + ' ' + cq(18), borderBottom: '1px solid ' + LINE } }, h('span', { style: { fontSize: cq(20), lineHeight: 1, color: INK, width: cq(16) } }, glyph), h('span', { style: { fontFamily: DISP, fontSize: cq(16), fontWeight: 600 } }, title));
+      const top = (glyph, title) => h('div', { style: { flex: 'none', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(10) + ' ' + cq(18), borderBottom: '1px solid ' + LINE } }, ic(glyph === '‹' ? 'chevron-left' : 'close', 20, INK), h('span', { style: { fontFamily: DISP, fontSize: cq(16), fontWeight: 600 } }, title));
       let body;
       if (sc === 0) {
         body = wrap(0, [
-          h('div', { key: 'h', style: { flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: cq(10) + ' ' + cq(18) } }, h('span', { style: { fontFamily: DISP, fontSize: cq(20), fontWeight: 600 } }, 'Workouts'), h('span', { style: { fontSize: cq(22), color: B } }, '+')),
+          h('div', { key: 'h', style: { flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: cq(10) + ' ' + cq(18) } }, h('span', { style: { fontFamily: DISP, fontSize: cq(20), fontWeight: 600 } }, 'Workouts'), ic('plus', 22, B)),
           h('div', { key: 's', style: { flex: 'none', margin: '0 ' + cq(16), padding: cq(3), borderRadius: cq(10), background: '#15130F', border: '1px solid ' + LINE, display: 'grid', gridTemplateColumns: '1fr 1fr' } }, h('span', { style: { height: cq(32), borderRadius: cq(8), background: '#2A241C', border: '1px solid rgba(191,143,79,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(12.5), fontWeight: 600 } }, 'My Workouts'), h('span', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(12.5), color: MUTE } }, 'Discover')),
           h('div', { key: 'b', style: { flex: 'none', padding: cq(26) + ' ' + cq(18) + ' 0', display: 'flex', flexDirection: 'column', gap: cq(10) } },
             lbl('No active program'), h('span', { style: { fontFamily: DISP, fontSize: cq(27), fontWeight: 600, lineHeight: 1.1 } }, 'Build What’s Next'),
             h('span', { style: { fontSize: cq(13), lineHeight: 1.45, color: MUTE } }, 'Create your own program, or let Forge find one built for your goals.'),
             h('div', { style: { display: 'flex', gap: cq(10), marginTop: cq(8) } }, btn(['Build My Own', tapDot(t, A1)], { transform: pressT(t, A1), textTransform: 'none', letterSpacing: 0, fontSize: cq(13.5) }), btn2('Find Me One', { textTransform: 'none', letterSpacing: 0, fontSize: cq(13.5) }))),
           h('div', { key: 'l', style: { flex: 'none', padding: cq(28) + ' ' + cq(16) + ' 0', display: 'flex', flexDirection: 'column', gap: cq(8) } }, lbl('Your library', MUTE, { padding: '0 ' + cq(2) }),
-            ['Programs', 'Workout Templates'].map(s => h('span', { key: s, style: { height: cq(54), padding: '0 ' + cq(16), borderRadius: cq(12), background: CARD, border: '1px solid ' + LINE, display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: cq(14) } }, s, h('span', { style: { color: MUTE } }, '›')))),
+            ['Programs', 'Workout Templates'].map(s => h('span', { key: s, style: { height: cq(54), padding: '0 ' + cq(16), borderRadius: cq(12), background: CARD, border: '1px solid ' + LINE, display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: cq(14) } }, s, ic('chevron-right', 15, MUTE)))),
           h('div', { key: 'sp', style: { flex: 1 } }),
-          h('div', { key: 'tb', style: { flex: 'none', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', padding: cq(10) + ' 0 ' + cq(26), borderTop: '1px solid ' + LINE, background: '#0E0D0B' } },
-            [['home', 'Home'], ['barbell', 'Workouts'], ['book', 'Legacy'], ['squad', 'Squads']].map(x => h('span', { key: x[1], style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: cq(4), fontSize: cq(10), color: x[1] === 'Workouts' ? B : DIM } }, ic(x[0], 16), x[1])))]);
+          h('div', { key: 'tb' }, tabBar('Workouts'))]);
       } else if (sc === 1) {
         const opt = (g, ti, d, at) => h('span', { key: ti, style: { position: 'relative', display: 'flex', alignItems: 'center', gap: cq(14), padding: cq(16), borderRadius: cq(14), background: t >= (at || 1e9) - 100 && t < (at || 0) + 400 ? '#1C1914' : CARD, border: '1px solid ' + (at && t >= at - 100 ? 'rgba(191,143,79,0.55)' : LINE), transform: at ? pressT(t, at) : 'none' } },
-          h('span', { style: { width: cq(42), height: cq(42), flex: 'none', borderRadius: cq(10), background: '#1E1B17', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(17), color: g === '⟷' ? B : MUTE } }, g),
+          h('span', { style: { width: cq(42), height: cq(42), flex: 'none', borderRadius: cq(10), background: '#1E1B17', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, ic(g, 22)),
           h('span', { style: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: cq(4) } }, h('span', { style: { fontFamily: DISP, fontSize: cq(16), fontWeight: 600 } }, ti), h('span', { style: { fontSize: cq(11.5), lineHeight: 1.4, color: MUTE } }, d)),
-          h('span', { style: { color: MUTE } }, '›'), at ? tapDot(t, at) : null);
+          ic('chevron-right', 15, MUTE), at ? tapDot(t, at) : null);
         body = wrap(SB, [top('×', 'Build a Program'),
           h('div', { key: 'c', style: { flex: 1, padding: cq(26) + ' ' + cq(16), display: 'flex', flexDirection: 'column', gap: cq(12) } },
             h('span', { style: { alignSelf: 'center', width: cq(30), height: '1.5px', background: B } }),
             h('span', { style: { textAlign: 'center', fontFamily: DISP, fontSize: cq(23), fontWeight: 600 } }, 'How do you want to start?'),
             h('span', { style: { textAlign: 'center', fontSize: cq(12.5), color: MUTE, marginBottom: cq(10) } }, 'Choose the option that works best for you.'),
-            opt('≡', 'Paste a program', 'Paste a written workout or upload a PDF and Forge will build it for you.'),
-            opt('◎', 'Upload pictures', 'Screenshots or photos of a program. Forge will convert them.', A2),
-            opt('⟷', 'Build from scratch', 'Answer a few questions and Forge will help build your program.'))]);
+            opt('document', 'Paste a program', 'Paste a written workout or upload a PDF and Forge will build it for you.'),
+            opt('camera', 'Upload pictures', 'Screenshots or photos of a program. Forge will convert them.', A2),
+            opt('hammer', 'Build from scratch', 'Answer a few questions and Forge will help build your program.'))]);
       } else if (sc === 2) {
         const days = [['DAY 1 · UPPER', 'Bench 4×6', 'Row 4×8', 'OHP 3×10'], ['DAY 2 · LOWER', 'Squat 4×5', 'RDL 3×8', 'Lunge 3×10'], ['DAY 3 · UPPER', 'Incline 4×8', 'Pull-up 4×6', 'Dips 3×12']];
         const ready = t >= PH[2] + 400;
@@ -221,7 +227,7 @@
             h('span', { style: { fontSize: cq(12.5), color: MUTE, marginBottom: cq(8) } }, '3 days · 8 weeks · Built from your photos'),
             days.map((d, i) => h('span', { key: d[0], style: S({ display: 'flex', alignItems: 'center', gap: cq(14), padding: cq(14), borderRadius: cq(14), background: CARD, border: '1px solid ' + BL }, rise(t, SE + 400 + i * 220)) },
               h('span', { style: { display: 'flex', flexDirection: 'column', gap: cq(4), flex: 1, minWidth: 0 } }, lbl(d[0], B, { fontSize: cq(9.5) }), h('span', { style: { fontFamily: DISP, fontSize: cq(16), fontWeight: 600 } }, d[1]), h('span', { style: { fontSize: cq(12), color: MUTE } }, d[2])),
-              h('span', { style: { fontSize: cq(11.5), color: MUTE } }, '3 lifts'), h('span', { style: { color: MUTE } }, '›'))),
+              h('span', { style: { fontSize: cq(11.5), color: MUTE } }, '3 lifts'), ic('chevron-right', 15, MUTE))),
             h('span', { style: S({ fontSize: cq(12), lineHeight: 1.45, color: MUTE, marginTop: cq(4) }, rise(t, SE + 1300)) }, 'Check anything Forge read wrong before you save.')),
           h('div', { key: 'f', style: S({ flex: 'none', display: 'flex', gap: cq(10), padding: cq(12) + ' ' + cq(16) + ' ' + cq(30) }, rise(t, SE + 1200)) },
             saved ? btn2('✓  Saved', { color: B, borderColor: 'rgba(191,143,79,0.45)' }) : btn(['Save program', tapDot(t, A4)], { transform: pressT(t, A4) }))]);
@@ -238,11 +244,11 @@
       const kUp = ez(cl((t - CT) / 1000)), kRe = ez(cl((t - PL - 150) / 700));
       const val = k => Math.round((V1[k] + (V2[k] - V1[k]) * kRe) * kUp);
       const cal = val('cal');
-      const macros = [['Protein', 'p', 4, B], ['Carbs', 'c', 4, '#A8834F'], ['Fat', 'f', 9, '#86683F']];
+      const macros = [['Protein', 'p', 4, '#5A9E68'], ['Carbs', 'c', 4, '#9C7BB5'], ['Fat', 'f', 9, '#568AAE']];
       const tri = (lab, on, at) => h('span', { key: lab, style: { position: 'relative', height: cq(40), borderRadius: cq(10), background: on ? 'rgba(191,143,79,0.12)' : CARD, border: '1px solid ' + (on ? 'rgba(191,143,79,0.6)' : LINE), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(13), fontWeight: on ? 600 : 500, color: on ? BB : MUTE, transform: at ? pressT(t, at) : 'none' } }, lab, at ? tapDot(t, at) : null);
       return frame({ t, L, fref: ref, radius: p.radius, label: 'Daily targets: pick Lose, Forge calculates 2,370 calories with protein, carbs and fat, then recalculates when the pace changes' },
         h('div', { style: { flex: 1, minHeight: 0, padding: cq(6) + ' ' + cq(18) + ' 0', display: 'flex', flexDirection: 'column', gap: cq(10) } },
-          h('span', { style: { fontSize: cq(22), lineHeight: 1, color: B } }, '‹'),
+          ic('chevron-left', 22, B),
           lbl('Nutrition', B, { marginTop: cq(6) }),
           h('span', { style: { fontFamily: DISP, fontSize: cq(26), fontWeight: 600, marginTop: cq(-4) } }, 'Daily targets'),
           h('div', { style: { padding: cq(3), borderRadius: 999, background: '#15130F', border: '1px solid ' + LINE, display: 'grid', gridTemplateColumns: '1fr 1fr' } }, h('span', { style: { height: cq(34), borderRadius: 999, background: '#26221D', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(12.5), fontWeight: 600 } }, 'Recommended'), h('span', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(12.5), color: MUTE } }, 'Manual')),
@@ -270,10 +276,10 @@
       h('img', { src: R('assets/coach-holt-mark.png'), alt: '', style: { width: cq(40), height: cq(40), borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(191,143,79,0.5)', display: 'block' } }),
       h('span', { style: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: cq(3) } }, h('span', { style: { fontFamily: DISP, fontSize: cq(18), fontWeight: 600, letterSpacing: '0.06em', color: B, whiteSpace: 'nowrap' } }, 'COACH HOLT'),
         h('span', { style: { display: 'flex', alignItems: 'center', gap: cq(5), fontSize: cq(9), fontWeight: 700, letterSpacing: '0.14em', color: MUTE } }, 'YOUR COACH', h('span', { style: { width: cq(5), height: cq(5), borderRadius: '50%', background: GREEN } }), 'READY')),
-      h('span', { style: { fontSize: cq(20), color: MUTE } }, '+'), h('span', { style: { fontSize: cq(20), color: MUTE, marginLeft: cq(12) } }, '×'));
+      ic('plus', 20, MUTE), ic('close', 20, MUTE, { marginLeft: cq(12) }));
     const composer = (ph) => h('div', { style: { flex: 'none', display: 'flex', alignItems: 'center', gap: cq(8), padding: cq(10) + ' ' + cq(14) + ' ' + cq(28), borderTop: '1px solid ' + LINE } },
       h('span', { style: { flex: 1, height: cq(40), borderRadius: cq(20), background: '#171512', border: '1px solid rgba(255,255,255,0.08)', padding: '0 ' + cq(14), display: 'flex', alignItems: 'center', fontSize: cq(13.5), color: DIM } }, ph),
-      h('span', { style: { width: cq(40), height: cq(40), borderRadius: '50%', background: '#24211C', color: DIM, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(17), fontWeight: 700 } }, '↑'));
+      h('span', { style: { width: cq(40), height: cq(40), borderRadius: '50%', background: '#24211C', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, ic('arrow-up', 18, DIM)));
     const avatar = s => h('img', { src: R('assets/coach-holt-mark.png'), alt: '', style: { width: cq(s), height: cq(s), borderRadius: '50%', objectFit: 'cover', flex: 'none', border: '1px solid rgba(191,143,79,0.5)', display: 'block' } });
     const dots = t => h('span', { style: { display: 'flex', gap: cq(5), padding: cq(4) + ' 0' } }, [0, 1, 2].map(i => h('span', { key: i, style: { width: cq(7), height: cq(7), borderRadius: '50%', background: B, opacity: 0.3 + 0.7 * Math.max(0, Math.sin(t / 160 - i * 0.9)) } })));
     const userB = (t, k, at, text) => h('div', { key: k, style: S({ alignSelf: 'flex-end', flex: 'none', maxWidth: '78%', padding: cq(10) + ' ' + cq(14), borderRadius: cq(18) + ' ' + cq(18) + ' ' + cq(5) + ' ' + cq(18), background: FILL, color: '#FBF6EC', fontSize: cq(14.5), lineHeight: 1.4 }, rise(t, at)) }, text);
@@ -296,7 +302,7 @@
         content = h('div', { style: { flex: 1, minHeight: 0, padding: cq(22) + ' ' + cq(16), display: 'flex', flexDirection: 'column', gap: cq(10), opacity: out } },
           h('span', { style: { fontFamily: DISP, fontSize: cq(25), fontWeight: 600 } }, 'Good evening, Isa.'), h('span', { style: { fontSize: cq(13.5), color: MUTE, marginTop: cq(-4) } }, 'What are we working on?'),
           h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: cq(8), marginTop: cq(10) } }, card('Build', 'Build a program', 'Built around your goals and schedule.', TP), card('Today', 'What should I train?', 'A session from your recent training.'), card('Adjust', 'Change my program', 'Swap lifts, days or volume.')),
-          ['I already have a program', 'Ask Holt something'].map(s => h('span', { key: s, style: { display: 'flex', justifyContent: 'space-between', padding: cq(14) + ' ' + cq(4), borderBottom: '1px solid ' + LINE, fontSize: cq(13.5) } }, s, h('span', { style: { color: MUTE } }, '›'))));
+          ['I already have a program', 'Ask Holt something'].map(s => h('span', { key: s, style: { display: 'flex', justifyContent: 'space-between', padding: cq(14) + ' ' + cq(4), borderBottom: '1px solid ' + LINE, fontSize: cq(13.5) } }, s, ic('chevron-right', 15, MUTE))));
       } else {
         const m = [];
         m.push(userB(t, 'u1', U1, 'Build me a program'));
@@ -332,7 +338,7 @@
         h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: cq(10) + ' ' + cq(8), padding: cq(10) + ' 0', borderTop: '1px solid ' + LINE, borderBottom: '1px solid ' + LINE } },
           stats.map((s, i) => h('span', { key: s[1], style: S({ display: 'flex', flexDirection: 'column', gap: cq(3) }, rise(t, ST + i * 130, 280, 6)) }, h('span', { style: { fontFamily: DISP, fontSize: cq(s[0].length > 6 ? 13.5 : 17), lineHeight: 1.15 } }, s[0]), lbl(s[1], B, { fontSize: cq(8) })))),
         ['WK 1', 'WK 2', 'WK 3'].map((w, i) => h('div', { key: w, style: S({ display: 'flex', flexDirection: 'column' }, rise(t, WK + i * 140, 280, 6)) },
-          h('span', { style: { display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(6) + ' 0', fontSize: cq(12.5) } }, lbl(w, B, { fontSize: cq(9), width: cq(34) }), h('span', { style: { flex: 1 } }, '5 sessions'), h('span', { style: { color: MUTE, transform: i === 0 && open ? 'rotate(180deg)' : 'none', transition: 'transform .3s' } }, '⌄')),
+          h('span', { style: { display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(6) + ' 0', fontSize: cq(12.5) } }, lbl(w, B, { fontSize: cq(9), width: cq(34) }), h('span', { style: { flex: 1 } }, '5 sessions'), ic('chevron-down', 14, MUTE, { transform: i === 0 && open ? 'rotate(180deg)' : 'none', transition: 'transform .3s' })),
           i === 0 && open ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: cq(5), margin: cq(2) + ' 0 ' + cq(6) + ' ' + cq(12), paddingLeft: cq(12), borderLeft: '1px solid ' + LINE } },
             sess.map((s, j) => h('span', { key: s[0], style: S({ display: 'flex', gap: cq(10), fontSize: cq(12), color: '#CFC6B8' }, rise(t, EX + 100 + j * 110, 240, 4)) }, h('span', { style: { color: DIM, width: cq(10) } }, s[0]), s[1]))) : null)),
         h('div', { style: S({ display: 'flex', gap: cq(8), marginTop: cq(4) }, rise(t, BT)) },
@@ -342,14 +348,17 @@
     }
 
     /* ── shared: honor medals ── */
+    /* The app's HonorMedallion: a bronze-metallic ring over a recessed face holding the honor's engraved
+       glyph. The glyph is drawn at 24px and scaled with the medal so its strokes stay engraved-weight. */
     const medal = (m, s, x) => {
-      const A = window.ForgeHonorArt; let el = null;
-      try { el = A ? A.create(React, Object.assign({ id: m.mark, tier: 2 }, m), { face: 'struck', size: 64, style: { width: '100%', height: '100%', display: 'block' } }) : null; } catch (e) { el = null; }
-      return h('span', { style: S({ position: 'relative', width: cq(s), height: cq(s), flex: 'none', borderRadius: '50%', background: 'radial-gradient(circle at 50% 35%, #2A231A 0%, #110F0C 75%)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(191,143,79,0.35)', display: 'flex', padding: cq(s * 0.04) }, x) }, el);
+      const pad = Math.max(3, s * 0.085);
+      return h('span', { style: S({ position: 'relative', width: cq(s), height: cq(s), flex: 'none', borderRadius: '50%', padding: cq(pad), background: 'linear-gradient(145deg,#E8C58E 0%,#B8844C 38%,#7A5530 70%,#C69A62 100%)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.35), 0 0 ' + cq(s * 0.22) + ' rgba(191,143,79,0.22)', display: 'flex' }, x) },
+        h('span', { style: { flex: 1, borderRadius: '50%', background: '#09090B', border: '1px solid rgba(191,143,79,0.4)', boxShadow: 'inset 0 2px 7px rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' } },
+          h('span', { style: { display: 'flex', width: '52%', height: '52%' } }, window.ForgeEngraved ? h('span', { 'aria-hidden': 'true', style: { display: 'flex', width: '100%', height: '100%' }, dangerouslySetInnerHTML: { __html: window.ForgeEngraved.svg(m.glyph, { size: 24 }).replace('width="24" height="24"', 'width="100%" height="100%"') } }) : null)));
     };
-    const M = { bench: { name: 'Bench 225', cat: 'strength', mark: 'str-bench', ex: '225' }, squat: { name: 'Squat 225', cat: 'strength', mark: 'str-squat', ex: '225' }, dead: { name: 'Deadlift 315', cat: 'strength', mark: 'str-dead', ex: '315' }, goal: { name: 'First Goal', cat: 'goals', mark: 'goal-struck' }, seal: { name: 'Chapter sealed', cat: 'chapters', mark: 'chp-seal', tier: 3 }, held: { name: '10 Workouts in a Chapter', cat: 'chapters', mark: 'chp-held', ex: 'X' } };
+    const M = { bench: { name: 'Bench 225', glyph: 'barbell' }, squat: { name: 'Squat 225', glyph: 'pr' }, dead: { name: 'Deadlift 315', glyph: 'anvil' }, goal: { name: 'First Goal', glyph: 'target' }, seal: { name: 'Chapter sealed', glyph: 'seal' }, held: { name: '10 Workouts in a Chapter', glyph: 'flame' } };
     const medCell = (m, s, cap, sub, x) => h('span', { key: cap, style: S({ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: cq(6), textAlign: 'center', minWidth: 0 }, x) }, medal(m, s), h('span', { style: { fontSize: cq(10.5), lineHeight: 1.25, color: INK } }, cap), h('span', { style: { fontSize: cq(9), color: DIM } }, sub));
-    const backHead = (title, sub, right) => h('div', { style: { flex: 'none', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(8) + ' ' + cq(18) + ' ' + cq(12), borderBottom: '1px solid ' + LINE } }, h('span', { style: { fontSize: cq(24), lineHeight: 1, color: INK } }, '‹'),
+    const backHead = (title, sub, right) => h('div', { style: { flex: 'none', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(8) + ' ' + cq(18) + ' ' + cq(12), borderBottom: '1px solid ' + LINE } }, ic('chevron-left', 22, INK),
       h('span', { style: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: cq(2) } }, h('span', { style: { fontFamily: DISP, fontSize: cq(17), fontWeight: 600, whiteSpace: 'nowrap' } }, title), sub ? h('span', { style: { fontSize: cq(11), color: MUTE } }, sub) : null), right || null);
     const glyphDisc = (txt, s) => h('span', { style: { width: cq(s), height: cq(s), flex: 'none', borderRadius: '50%', background: '#1E1B17', border: '1px solid rgba(191,143,79,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(s * 0.36), fontWeight: 700, letterSpacing: '0.04em', color: BB } }, txt);
 
@@ -365,8 +374,8 @@
         const row = (n, done, tapAt) => h('div', { key: n, style: { display: 'flex', alignItems: 'center', gap: cq(12), height: cq(52), padding: '0 ' + cq(12), borderRadius: cq(12), background: done ? GBG : 'rgba(191,143,79,0.06)', border: '1px solid ' + (done ? GL : 'rgba(191,143,79,0.5)'), transition: 'background .3s, border-color .3s' } },
           h('span', { style: { width: cq(24), height: cq(24), borderRadius: '50%', border: '1.5px solid ' + (done ? GREEN : B), color: done ? GREEN : B, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(12) } }, n),
           h('span', { style: { flex: 1, fontFamily: DISP, fontSize: cq(16) } }, '225 lb × 5'),
-          h('span', { style: { position: 'relative', width: cq(30), height: cq(30), borderRadius: '50%', border: '1.5px solid ' + (done ? GREEN : B), background: done ? 'rgba(111,174,123,0.22)' : 'transparent', color: done ? GREEN : B, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(14), fontWeight: 700, transform: tapAt ? pressT(t, tapAt) : 'none' } }, '✓', tapAt ? tapDot(t, tapAt) : null));
-        base = [h('div', { key: 'h', style: { flex: 'none', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(8) + ' ' + cq(18) } }, h('span', { style: { fontSize: cq(24), lineHeight: 1 } }, '‹'), h('span', { style: { flex: 1, fontFamily: DISP, fontSize: cq(17), fontWeight: 600 } }, 'Freestyle Workout')),
+          h('span', { style: { position: 'relative', width: cq(30), height: cq(30), borderRadius: '50%', border: '1.5px solid ' + (done ? GREEN : B), background: done ? 'rgba(111,174,123,0.22)' : 'transparent', color: done ? GREEN : B, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(14), fontWeight: 700, transform: tapAt ? pressT(t, tapAt) : 'none' } }, ic('check', 15, done ? GREEN : B), tapAt ? tapDot(t, tapAt) : null));
+        base = [h('div', { key: 'h', style: { flex: 'none', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(8) + ' ' + cq(18) } }, ic('chevron-left', 22, INK), h('span', { style: { flex: 1, fontFamily: DISP, fontSize: cq(17), fontWeight: 600 } }, 'Freestyle Workout')),
           h('div', { key: 'c', style: { margin: cq(12) + ' ' + cq(14) + ' 0', padding: cq(14), borderRadius: cq(16), background: CARD, border: '1px solid rgba(191,143,79,0.3)', display: 'flex', flexDirection: 'column', gap: cq(10) } },
             h('span', { style: { fontFamily: DISP, fontSize: cq(20), fontWeight: 600 } }, 'Barbell Bench Press'), lbl('Goal · 225 × 5', B, { fontSize: cq(9.5), marginBottom: cq(4) }),
             row(1, true), row(2, true), row(3, d, d ? 0 : CK))];
@@ -440,32 +449,55 @@
       const k = ez(cl((t - UP) / 900));
       const base = p.hero ? { cal: 310, p: 12, c: 58, f: 5 } : { cal: 1625, p: 107, c: 166, f: 53 }, add = { cal: 225, p: 35, c: 14, f: 5 }, goal = { cal: 2500, p: 190, c: 250, f: 80 };
       const v = key => Math.round(base[key] + add[key] * k);
+      /* The app's Nutrition tab ((tabs)/nutrition.tsx): a bronze calorie ring over its ember glow with the
+         flame, macro rings in protein green · carbs plum · fat blue, Log Food, the Scan / Meal Plan pair. */
+      const PRO = '#5A9E68', CARB = '#9C7BB5', FATC = '#568AAE', CALR = '#BA8654';
       const ring = (s, frac, sw, col) => { const r = 50 - sw / 2, C2 = 2 * Math.PI * r; return h('svg', { viewBox: '0 0 100 100', style: { position: 'absolute', inset: 0, width: '100%', height: '100%' } },
-        h('circle', { cx: 50, cy: 50, r, fill: 'none', stroke: 'rgba(255,255,255,0.08)', strokeWidth: sw }),
+        h('circle', { cx: 50, cy: 50, r, fill: 'none', stroke: '#24242A', strokeWidth: sw }),
         h('circle', { cx: 50, cy: 50, r, fill: 'none', stroke: col, strokeWidth: sw, strokeLinecap: 'round', strokeDasharray: C2.toFixed(2), strokeDashoffset: (C2 * (1 - cl(frac))).toFixed(2), transform: 'rotate(-90 50 50)' })); };
-      const small = (key, name, col) => h('span', { key: name, style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: cq(6) } },
-        h('span', { style: { position: 'relative', width: cq(70), height: cq(70), display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' } }, ring(70, v(key) / goal[key], 7, col), h('span', { style: { fontFamily: DISP, fontSize: cq(16) } }, v(key) + 'g'), h('span', { style: { fontSize: cq(9), color: MUTE } }, name)),
-        h('span', { style: { fontSize: cq(9.5), color: DIM } }, Math.round(v(key) / goal[key] * 100) + '% of ' + goal[key] + 'g'));
-      const meal = (n, food, cal, x) => h('div', { key: n, style: S({ display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(10) + ' ' + cq(12), borderRadius: cq(12), background: CARD, border: '1px solid ' + LINE }, x) }, h('span', { style: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: cq(2) } }, h('span', { style: { fontSize: cq(13), fontWeight: 600 } }, n), h('span', { style: { fontSize: cq(11), color: MUTE } }, food)), h('span', { style: { fontSize: cq(12), color: B } }, cal + ' cal'));
+      const small = (key, name, col) => h('span', { key: name, style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: cq(5) } },
+        h('span', { style: { position: 'relative', width: cq(76), height: cq(76), display: 'flex', alignItems: 'center', justifyContent: 'center' } }, ring(76, v(key) / goal[key], 9.5, col), h('span', { style: { position: 'relative', fontSize: cq(16), fontWeight: 700 } }, v(key), h('span', { style: { fontSize: cq(10), fontWeight: 600 } }, 'g'))),
+        h('span', { style: { fontSize: cq(9.5), fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: MUTE } }, name),
+        h('span', { style: { fontSize: cq(10), color: DIM } }, 'of ' + goal[key] + 'g'));
+      const meal = (slot, name, sum, cal, x) => h('div', { key: slot, style: S({ flex: 'none', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(10) + ' ' + cq(12), borderRadius: cq(14), background: CARD, border: '1px solid ' + LINE }, x) },
+        h('span', { style: { width: cq(42), height: cq(42), flex: 'none', borderRadius: cq(8), background: '#09090B', border: '1px solid #24242A', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, ic('bowl', 20)),
+        h('span', { style: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: cq(2) } }, lbl(slot, B, { fontSize: cq(8.5) }), h('span', { style: { fontSize: cq(13), fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, name), h('span', { style: { fontSize: cq(10.5), color: DIM, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, sum)),
+        h('span', { style: { fontSize: cq(13), fontWeight: 700 } }, cal));
+      const emptyMeal = slot => h('div', { key: slot, style: { flex: 'none', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(10) + ' ' + cq(12), borderRadius: cq(14), border: '1px dashed #2E2E34' } },
+        h('span', { style: { width: cq(42), height: cq(42), flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, ic('plus', 18, '#4A4A52')),
+        h('span', { style: { flex: 1, display: 'flex', flexDirection: 'column', gap: cq(2) } }, lbl(slot, DIM, { fontSize: cq(8.5) }), h('span', { style: { fontSize: cq(12.5), color: MUTE } }, 'Nothing logged yet')),
+        h('span', { style: { fontSize: cq(10.5), fontWeight: 600, color: B } }, 'Copy yesterday'));
+      const added = t >= UP + 250, newMeal = meal(MEAL, 'Greek Yogurt, Plain', '1.5 cups', 225, rise(t, UP + 250));
+      const meals = p.hero ? [added ? newMeal : emptyMeal('Breakfast'), meal('Snack', 'Banana & Oats', 'Banana · rolled oats', 310)]
+        : [meal('Breakfast', 'Protein Oatmeal', 'Oats · banana · protein powder', 540), added ? newMeal : emptyMeal('Snack')];
+      const pair = (glyph, label, tag) => h('span', { key: label, style: { position: 'relative', flex: 1, height: cq(42), borderRadius: cq(10), background: '#16140F', border: '1px solid rgba(255,255,255,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: cq(8), fontSize: cq(11.5), fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: INK } }, ic(glyph, 16), label,
+        tag ? h('span', { style: { position: 'absolute', top: cq(-7), right: cq(8), padding: cq(1.5) + ' ' + cq(5), borderRadius: cq(4), background: '#131316', border: '1px solid rgba(191,143,79,0.35)', fontSize: cq(7.5), letterSpacing: '0.1em', color: '#C99767' } }, 'Premium') : null);
       const inDetail = t >= PK + 250, serv = t >= PL ? 1.5 : 1, sk = ez(cl((t - PL) / 400));
       const results = [['Greek Yogurt, Plain', '1 cup · 150 cal'], ['Greek Yogurt, Vanilla', '1 cup · 190 cal'], ['Greek Yogurt Bar', '1 bar · 110 cal']];
       const typed = t < TY ? '' : Q.slice(0, Math.min(Q.length, Math.floor((t - TY) / 70)));
       const toast = t >= SC + 250 && t < SC + 3200 ? Math.min(ez(cl((t - SC - 250) / 300)), 1 - ez(cl((t - SC - 2900) / 300))) : 0;
       return frame({ t, L, fref: ref, radius: p.radius, label: 'Logging food: search for greek yogurt, pick it, change the serving to one and a half cups, add it, and the calorie and macro rings fill' },
-        h('div', { style: { flex: 1, minHeight: 0, padding: cq(4) + ' ' + cq(16) + ' 0', display: 'flex', flexDirection: 'column', gap: cq(10) } },
-          h('div', { style: { display: 'flex', alignItems: 'center', gap: cq(10) } }, h('img', { src: R('assets/welcome-logo-carved.png'), alt: '', style: { width: cq(24), height: cq(24), objectFit: 'contain' } }), h('span', { style: { flex: 1, fontFamily: DISP, fontSize: cq(21), fontWeight: 600 } }, 'Nutrition')),
-          h('div', { style: { display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' } }, h('span', { style: { display: 'flex', flexDirection: 'column', gap: cq(2) } }, h('span', { style: { fontFamily: DISP, fontSize: cq(17) } }, 'Today'), h('span', { style: { fontSize: cq(11), color: MUTE } }, p.hero ? 'Sep 25, 2026' : 'Sep 16, 2026')), h('span', { style: { fontSize: cq(11.5), color: B } }, 'See Details ›')),
-          h('div', { style: { position: 'relative', alignSelf: 'center', width: cq(168), height: cq(168), display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: cq(2) } }, ring(168, v('cal') / goal.cal, 6, 'url(#flcal)'),
-            h('svg', { width: 0, height: 0, style: { position: 'absolute' } }, h('defs', null, h('linearGradient', { id: 'flcal', x1: 0, y1: 0, x2: 1, y2: 1 }, h('stop', { offset: '0%', stopColor: '#8C6838' }), h('stop', { offset: '100%', stopColor: BB })))),
-            h('span', { style: { fontFamily: DISP, fontSize: cq(32) } }, v('cal').toLocaleString('en-US')), h('span', { style: { fontSize: cq(13), color: INK } }, 'calories'), h('span', { style: { fontSize: cq(10.5), color: DIM } }, 'of 2,500')),
-          h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)' } }, small('p', 'Protein', '#6FAE7B'), small('c', 'Carbs', B), small('f', 'Fat', '#C98A5E')),
-          btn(['+  Log Food', tapDot(t, LG)], { flex: 'none', textTransform: 'none', letterSpacing: 0, fontFamily: DISP, fontSize: cq(16), fontWeight: 500, background: 'linear-gradient(180deg,#3A2E1E 0%,#2A2117 100%)', color: INK, transform: pressT(t, LG) }),
-          h('div', { style: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: cq(4) } }, h('span', { style: { fontFamily: DISP, fontSize: cq(16) } }, 'Today’s Meals'), h('span', { style: { fontSize: cq(11.5), color: B } }, 'View All ›')),
-          t >= UP + 250 ? meal(MEAL, 'Greek Yogurt, Plain · 1.5 cups', 225, rise(t, UP + 250)) : null,
-          ...(p.hero ? [meal('Pre-workout', 'Banana, oats', 310)] : [meal('Breakfast', 'Protein Oatmeal', 540), meal('Lunch', 'Chicken Burrito Bowl', 620)])),
-        toast > 0.01 ? h('div', { style: { position: 'absolute', top: cq(44), left: cq(18), right: cq(18), zIndex: 12, display: 'flex', alignItems: 'center', gap: cq(10), padding: cq(12) + ' ' + cq(14), borderRadius: cq(12), background: '#1C1914', border: '1px solid rgba(191,143,79,0.4)', boxShadow: '0 12px 30px rgba(0,0,0,0.5)', fontSize: cq(13), opacity: toast, transform: 'translateY(' + ((1 - toast) * -8).toFixed(1) + 'px)' } }, h('span', { style: { color: B, fontWeight: 700 } }, '✓'), 'Added to ' + MEAL + ' · 225 cal') : null,
+        h('div', { style: { flex: 1, minHeight: 0, overflow: 'hidden', padding: cq(2) + ' ' + cq(16) + ' 0', display: 'flex', flexDirection: 'column', gap: cq(10) } },
+          h('div', { style: { flex: 'none', display: 'flex', alignItems: 'center', gap: cq(10) } }, h('img', { src: R('assets/welcome-logo-carved.png'), alt: '', style: { width: cq(24), height: cq(24), objectFit: 'contain' } }), h('span', { style: { flex: 1, fontFamily: DISP, fontSize: cq(21), fontWeight: 600 } }, 'Nutrition'), ic('calendar', 20), glyphDisc('IA', 30)),
+          h('div', { style: { flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+            h('span', { style: { display: 'flex', alignItems: 'center', gap: cq(10) } }, ic('chevron-left', 16, '#BA8654'), h('span', { style: { display: 'flex', flexDirection: 'column', gap: cq(1) } }, h('span', { style: { fontFamily: DISP, fontSize: cq(18) } }, 'Today'), h('span', { style: { fontSize: cq(9.5), fontWeight: 500, letterSpacing: '0.12em', color: DIM } }, p.hero ? 'SEP 25, 2026' : 'SEP 16, 2026')), ic('chevron-right', 16, '#3A3A40')),
+            h('span', { style: { display: 'flex', alignItems: 'center', gap: cq(4), fontSize: cq(11), fontWeight: 600, color: '#BA8654' } }, 'See Details', ic('chevron-right', 12, '#BA8654'))),
+          h('div', { style: { flex: 'none', position: 'relative', alignSelf: 'center', width: cq(178), height: cq(178), display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: cq(3) } },
+            h('span', { style: { position: 'absolute', inset: cq(20), borderRadius: '50%', background: 'rgba(186,134,84,0.07)', boxShadow: '0 0 ' + cq(70) + ' ' + cq(28) + ' rgba(186,134,84,0.10)' } }),
+            ring(178, v('cal') / goal.cal, 7.5, CALR),
+            ic('flame', 18, '#E0913F', { position: 'relative' }), h('span', { style: { position: 'relative', fontFamily: DISP, fontSize: cq(38), lineHeight: 1 } }, v('cal').toLocaleString('en-US')),
+            h('span', { style: { position: 'relative', fontSize: cq(9), fontWeight: 600, letterSpacing: '0.2em', color: '#BA8654' } }, 'CALORIES'),
+            h('span', { style: { position: 'relative', fontSize: cq(10.5), color: MUTE } }, 'of 2,500 · ' + (goal.cal - v('cal')).toLocaleString('en-US') + ' left')),
+          h('div', { style: { flex: 'none', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: cq(8), paddingTop: cq(4) } }, small('p', 'Protein', PRO), small('c', 'Carbs', CARB), small('f', 'Fat', FATC)),
+          h('div', { style: { flex: 'none', display: 'flex', flexDirection: 'column', gap: cq(8), marginTop: cq(4) } },
+            btn([ic('plus', 16, '#FFFFFF'), 'Log Food', tapDot(t, LG)], { flex: 'none', height: cq(44), transform: pressT(t, LG) }),
+            h('div', { style: { display: 'flex', gap: cq(8) } }, pair('barcode-scan', 'Scan'), pair('calendar', 'Meal Plan', true))),
+          h('div', { style: { flex: 'none', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: cq(8) } }, h('span', { style: { fontFamily: DISP, fontSize: cq(16) } }, 'Today’s Meals'), h('span', { style: { fontSize: cq(9.5), fontWeight: 600, letterSpacing: '0.12em', color: DIM } }, v('cal').toLocaleString('en-US') + ' CAL')),
+          ...meals),
+        tabBar('Nutrition'),
+        toast > 0.01 ? h('div', { style: { position: 'absolute', top: cq(44), left: cq(18), right: cq(18), zIndex: 12, display: 'flex', alignItems: 'center', gap: cq(10), padding: cq(12) + ' ' + cq(14), borderRadius: cq(12), background: '#1C1914', border: '1px solid rgba(191,143,79,0.4)', boxShadow: '0 12px 30px rgba(0,0,0,0.5)', fontSize: cq(13), opacity: toast, transform: 'translateY(' + ((1 - toast) * -8).toFixed(1) + 'px)' } }, ic('check', 15, B), 'Added to ' + MEAL + ' · 225 cal') : null,
         sheet > 0.01 ? h('div', { style: { position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(0,0,0,' + (0.5 * sheet).toFixed(3) + ')' } },
-          h('div', { style: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '80%', borderRadius: cq(22) + ' ' + cq(22) + ' 0 0', background: '#14120F', borderTop: '1px solid rgba(191,143,79,0.25)', transform: 'translateY(' + ((1 - sheet) * 100).toFixed(1) + '%)', display: 'flex', flexDirection: 'column', gap: cq(12), padding: cq(10) + ' ' + cq(16) + ' ' + cq(28) } },
+          h('div', { style: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '62%', borderRadius: cq(22) + ' ' + cq(22) + ' 0 0', background: '#14120F', borderTop: '1px solid rgba(191,143,79,0.25)', transform: 'translateY(' + ((1 - sheet) * 100).toFixed(1) + '%)', display: 'flex', flexDirection: 'column', gap: cq(12), padding: cq(10) + ' ' + cq(16) + ' ' + cq(28) } },
             h('span', { style: { alignSelf: 'center', width: cq(38), height: cq(4), borderRadius: 3, background: 'rgba(255,255,255,0.18)' } }),
             h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } }, h('span', { style: { fontFamily: DISP, fontSize: cq(20), fontWeight: 600 } }, 'Log Food'), h('span', { style: { padding: cq(4) + ' ' + cq(10), borderRadius: 999, border: '1px solid rgba(191,143,79,0.4)', fontSize: cq(11), color: B } }, MEAL)),
             h('div', { style: { padding: cq(3), borderRadius: cq(10), background: '#0E0D0B', border: '1px solid ' + LINE, display: 'grid', gridTemplateColumns: 'repeat(3,1fr)' } }, ['Search', 'Scan', 'My Foods'].map((s, i) => h('span', { key: s, style: { height: cq(30), borderRadius: cq(8), background: i === 0 ? '#26221D' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(12), fontWeight: i === 0 ? 600 : 500, color: i === 0 ? INK : MUTE } }, s))),
@@ -476,8 +508,8 @@
                   [['Calories', 150, 225, ''], ['Protein', 23, 35, 'g'], ['Carbs', 9, 14, 'g'], ['Fat', 3, 5, 'g']].map(m => h('span', { key: m[0], style: { display: 'flex', flexDirection: 'column', gap: cq(4) } }, h('span', { style: { fontFamily: DISP, fontSize: cq(m[3] ? 17 : 24) } }, Math.round(m[1] + (m[2] - m[1]) * sk) + m[3]), lbl(m[0], m[3] ? MUTE : B, { fontSize: cq(8.5) })))),
                 h('div', { style: { flex: 1 } }),
                 h('div', { style: { display: 'flex' } }, btn(['Add to ' + MEAL, tapDot(t, AD)], { transform: pressT(t, AD) })))
-              : [h('div', { key: 's', style: { display: 'flex', alignItems: 'center', gap: cq(8), height: cq(44), padding: '0 ' + cq(14), borderRadius: cq(12), background: '#0E0D0B', border: '1px solid ' + (typed ? 'rgba(191,143,79,0.5)' : LINE), fontSize: cq(14) } }, h('span', { style: { color: DIM } }, '⌕'), typed ? h('span', null, typed) : h('span', { style: { color: DIM } }, 'Search foods'), t >= TY && t < PK && Math.floor(t / 420) % 2 === 0 ? h('span', { style: { width: '1.5px', height: cq(17), background: B } }) : null),
-                ...(t >= RS ? results.map((r, i) => h('div', { key: r[0], style: S({ position: 'relative', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(12) + ' ' + cq(12), borderRadius: cq(12), background: i === 0 && t >= PK - 100 ? '#1C1914' : CARD, border: '1px solid ' + (i === 0 && t >= PK - 100 ? 'rgba(191,143,79,0.5)' : LINE), transform: i === 0 ? pressT(t, PK) : 'none' }, rise(t, RS + i * 120, 260, 6)) }, h('span', { style: { flex: 1, display: 'flex', flexDirection: 'column', gap: cq(2) } }, h('span', { style: { fontSize: cq(13.5), fontWeight: 600 } }, r[0]), h('span', { style: { fontSize: cq(11), color: MUTE } }, r[1])), h('span', { style: { width: cq(28), height: cq(28), borderRadius: '50%', border: '1px solid rgba(191,143,79,0.45)', color: B, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(16) } }, '+'), i === 0 ? tapDot(t, PK) : null)) : [])])) : null);
+              : [h('div', { key: 's', style: { display: 'flex', alignItems: 'center', gap: cq(8), height: cq(44), padding: '0 ' + cq(14), borderRadius: cq(12), background: '#0E0D0B', border: '1px solid ' + (typed ? 'rgba(191,143,79,0.5)' : LINE), fontSize: cq(14) } }, ic('search', 16, DIM), typed ? h('span', null, typed) : h('span', { style: { color: DIM } }, 'Search foods'), t >= TY && t < PK && Math.floor(t / 420) % 2 === 0 ? h('span', { style: { width: '1.5px', height: cq(17), background: B } }) : null),
+                ...(t >= RS ? results.map((r, i) => h('div', { key: r[0], style: S({ position: 'relative', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(12) + ' ' + cq(12), borderRadius: cq(12), background: i === 0 && t >= PK - 100 ? '#1C1914' : CARD, border: '1px solid ' + (i === 0 && t >= PK - 100 ? 'rgba(191,143,79,0.5)' : LINE), transform: i === 0 ? pressT(t, PK) : 'none' }, rise(t, RS + i * 120, 260, 6)) }, h('span', { style: { flex: 1, display: 'flex', flexDirection: 'column', gap: cq(2) } }, h('span', { style: { fontSize: cq(13.5), fontWeight: 600 } }, r[0]), h('span', { style: { fontSize: cq(11), color: MUTE } }, r[1])), h('span', { style: { width: cq(28), height: cq(28), borderRadius: '50%', border: '1px solid rgba(191,143,79,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, ic('plus', 15, B)), i === 0 ? tapDot(t, PK) : null)) : [])])) : null);
     }
     const sIn2 = (t, a) => { const k = ez(cl((t - a) / 320)); return { opacity: k, transform: 'translateX(' + ((1 - k) * 6).toFixed(2) + '%)' }; };
 
@@ -506,8 +538,8 @@
           h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: cq(10) } },
             h('div', { style: { padding: cq(14), borderRadius: cq(14), background: c.card, border: '1px solid ' + c.line, display: 'flex', flexDirection: 'column', gap: cq(6) } }, lbl('Current program', c.mute, { fontSize: cq(8.5) }), h('span', { style: { fontFamily: DISP, fontSize: cq(15) } }, 'Powerbuilding II'), h('span', { style: { fontSize: cq(11), color: c.mute } }, '12 / 32 workouts'), h('span', { style: { height: cq(3), borderRadius: 2, background: c.track } }, h('span', { style: { display: 'block', width: '37%', height: '100%', borderRadius: 2, background: c.b } }))),
             h('div', { style: { padding: cq(14), borderRadius: cq(14), background: c.card, border: '1px solid ' + c.line, display: 'flex', flexDirection: 'column', gap: cq(6) } }, lbl('Mission', c.mute, { fontSize: cq(8.5) }), h('span', { style: { fontFamily: DISP, fontSize: cq(15) } }, 'Squat 405 lb'), h('span', { style: { fontSize: cq(11), color: c.mute } }, 'Your long-term objective')))),
-        h('div', { style: { flex: 'none', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', padding: cq(10) + ' 0 ' + cq(26), borderTop: '1px solid ' + c.line } },
-          [['home', 'Home'], ['barbell', 'Workouts'], ['book', 'Legacy'], ['squad', 'Squads']].map(x => h('span', { key: x[1], style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: cq(4), fontSize: cq(10), color: x[1] === 'Home' ? c.b : c.dim } }, ic(x[0], 16), x[1]))));
+        h('div', { style: { flex: 'none', display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', padding: cq(10) + ' 0 ' + cq(26), borderTop: '1px solid ' + c.line } },
+          [['home', 'Home'], ['barbell', 'Workouts'], ['book', 'Legacy'], ['people', 'Squads'], ['flame', 'Nutrition']].map(x => h('span', { key: x[1], style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: cq(4), fontSize: cq(9.5), color: x[1] === 'Home' ? c.b : c.dim } }, ic(x[0], 17, x[1] === 'Home' ? c.b : c.dim), x[1]))));
       const op = reduce() ? 1 : (t < 350 ? t / 350 : t > L - 600 ? cl((L - t) / 600) : 1);
       return h('div', { ref, role: 'img', 'aria-label': 'The home screen switching from Dark mode to Paper mode and back', style: { containerType: 'inline-size', position: 'relative', width: '100%', aspectRatio: '1320/2868', borderRadius: p.radius == null ? 29 : p.radius, overflow: 'hidden', background: '#0D0C0B', fontFamily: 'var(--fl-font-sans)' } },
         h('div', { style: { position: 'absolute', inset: 0, opacity: op } },
@@ -571,7 +603,7 @@
             return h('div', { key: r[0], style: { display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(9) + ' ' + cq(12), borderRadius: cq(12), background: here ? '#1A1712' : 'transparent', border: '1px solid ' + (here ? 'rgba(191,143,79,0.5)' : 'transparent'), transition: 'background .45s, border-color .45s' } },
               bImg(r[2], 34, { filter: next ? 'grayscale(1) brightness(0.5)' : 'none', transition: 'filter .45s' }),
               h('span', { style: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: cq(2) } }, h('span', { style: { display: 'flex', alignItems: 'center', gap: cq(8), fontFamily: DISP, fontSize: cq(15), color: next ? DIM : INK } }, r[0], here ? h('span', { style: { padding: cq(2) + ' ' + cq(7), borderRadius: 999, background: FILL, fontFamily: 'var(--fl-font-sans)', fontSize: cq(8), fontWeight: 700, letterSpacing: '0.1em', color: '#FBF6EC' } }, 'YOU ARE HERE') : null), r[1] && !next ? h('span', { style: { fontSize: cq(11), color: MUTE } }, r[1]) : null),
-              h('span', { style: { color: DIM } }, '›')); })),
+              ic('chevron-right', 15, DIM)); })),
           h('span', { style: S({ marginTop: cq(6), fontSize: cq(12.5), color: MUTE }, rise(t, UP + 1400)) }, 'Rank never goes down. Take a year off and you’re still a Craftsman.')));
     }
 
@@ -593,13 +625,13 @@
       const toast = t >= TST && t < TST + 2900 ? Math.min(ez(cl((t - TST) / 300)), 1 - ez(cl((t - TST - 2600) / 300))) : 0;
       const scanIc = h('svg', { width: '55%', height: '55%', viewBox: '0 0 24 24', fill: 'none', stroke: B, strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('path', { d: 'M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2' }), h('path', { d: 'M8 9h8M8 12h8M8 15h5' }));
       const form = h('div', { style: { flex: 1, minHeight: 0, padding: cq(2) + ' ' + cq(18) + ' 0', display: 'flex', flexDirection: 'column', gap: cq(12) } },
-        h('span', { style: { fontSize: cq(22), color: B, lineHeight: 1, height: cq(24) } }, '‹'),
+        ic('chevron-left', 22, B),
         h('span', { style: { fontFamily: DISP, fontSize: cq(27), fontWeight: 600, lineHeight: 1.1 } }, 'Create food'),
         !filled
           ? h('div', { style: { position: 'relative', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(10) + ' ' + cq(12), borderRadius: cq(14), background: '#1A1814', border: '1px solid ' + BL, boxShadow: '0 10px 24px -12px rgba(0,0,0,0.7)', transform: pressT(t, TP) } },
               h('span', { style: { flex: 'none', width: cq(34), height: cq(34), borderRadius: cq(9), background: INB, border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, scanIc),
               h('span', { style: { flex: 1, display: 'flex', flexDirection: 'column', gap: cq(2) } }, h('span', { style: { fontSize: cq(14.5), fontWeight: 600 } }, 'Scan label'), h('span', { style: { fontSize: cq(11.5), color: MUTE } }, 'Fill from a Nutrition Facts photo')),
-              h('span', { style: { color: B, fontSize: cq(16) } }, '›'), tapDot(t, TP))
+              ic('chevron-right', 16, B), tapDot(t, TP))
           : h('div', { style: S({ display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(10) + ' ' + cq(12), borderRadius: cq(12), background: 'rgba(191,143,79,0.10)', border: '1px solid ' + BL }, rise(t, BK + 60)) },
               h('span', { style: { flex: 'none', width: cq(28), height: cq(36), borderRadius: cq(5), background: 'linear-gradient(180deg,#E4DED3,#BDB6A8)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: cq(3), padding: '0 ' + cq(4) } }, h('span', { style: { height: cq(3), background: '#2A2620' } }), [0, 1, 2, 3].map(i => h('span', { key: i, style: { height: '1px', background: '#6B655B' } }))),
               h('span', { style: { flex: 1, display: 'flex', flexDirection: 'column', gap: cq(3) } }, h('span', { style: { fontSize: cq(13.5), fontWeight: 600 } }, 'Label scanned'), h('span', { style: { display: 'flex', alignItems: 'center', gap: cq(5), fontSize: cq(11.5), color: MUTE } }, '15 filled ·', h('span', { style: { width: cq(6), height: cq(6), borderRadius: '50%', background: BB } }), '1 to check')),
@@ -646,7 +678,7 @@
           corner('tl'), corner('tr'), corner('bl'), corner('br'),
           reading && scanK < 1 ? h('span', { style: { position: 'absolute', left: cq(8), right: cq(8), top: (scanK * 100).toFixed(2) + '%', height: 2, background: BB, boxShadow: '0 0 16px 3px rgba(205,160,99,0.5)' } }) : null),
         h('div', { style: { position: 'absolute', left: 0, right: 0, top: 0 } }, status()),
-        h('div', { style: { position: 'absolute', left: cq(18), right: cq(18), top: cq(62), display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: cq(15) } }, h('span', { style: { width: cq(30), color: INK, fontSize: cq(18) } }, '✕'), h('span', { style: { fontWeight: 600 } }, 'Scan label'), h('span', { style: { width: cq(30), textAlign: 'right', color: reading ? 'transparent' : INK } }, '⚡︎')),
+        h('div', { style: { position: 'absolute', left: cq(18), right: cq(18), top: cq(62), display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: cq(15) } }, h('span', { style: { width: cq(30) } }, ic('close', 20, INK)), h('span', { style: { fontWeight: 600 } }, 'Scan label'), h('span', { style: { width: cq(30), textAlign: 'right', color: reading ? 'transparent' : INK } }, '⚡︎')),
         h('div', { style: { position: 'absolute', left: 0, right: 0, top: cq(528), display: 'flex', justifyContent: 'center' } },
           h('span', { style: { flex: 'none', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: cq(8), padding: cq(7) + ' ' + cq(14), borderRadius: 999, background: 'rgba(10,10,10,0.75)', border: '1px solid ' + (reading ? 'rgba(191,143,79,0.45)' : 'rgba(255,255,255,0.12)'), fontSize: cq(12.5), fontWeight: 600 } },
             reading ? h('span', { style: { width: cq(6), height: cq(6), borderRadius: '50%', background: BB, opacity: 0.4 + 0.6 * Math.abs(Math.sin(t / 220)) } }) : null, reading ? 'Reading label…' : aligned ? 'Hold still' : 'Flat · bright · no glare')),
@@ -659,6 +691,122 @@
         form,
         toast > 0.01 ? h('div', { style: { position: 'absolute', top: cq(44), left: cq(18), right: cq(18), zIndex: 12, display: 'flex', alignItems: 'center', gap: cq(10), padding: cq(12) + ' ' + cq(14), borderRadius: cq(12), background: '#1C1914', border: '1px solid rgba(191,143,79,0.4)', boxShadow: '0 12px 30px rgba(0,0,0,0.5)', fontSize: cq(13), opacity: toast, transform: 'translateY(' + ((1 - toast) * -8).toFixed(1) + 'px)' } }, h('span', { style: { color: B, fontWeight: 700 } }, '✓'), 'Saved to My Foods · 230 cal') : null,
         camera);
+    }
+
+    /* ── Open the app, start training: Home → Start Workout → the squat session ── */
+    function StartTrain(p) {
+      const L = 12600, [t, ref] = useClock(L, 7400);
+      const ST = 2300, GO = 2650, TW = 4300, CK = 6200, RS = 6650;
+      const inW = t >= GO, wk = ez(cl((t - GO) / 420));
+      const typed = t < TW + 150 ? '' : t < TW + 330 ? '2' : t < TW + 510 ? '27' : '275';
+      const typing = t >= TW && t < CK, d1 = t >= CK;
+      const el = t >= RS ? (t - RS) / 1000 : 0, left = Math.max(0, 150 - Math.floor(el)), clock = inW ? Math.floor((t - GO) / 1000) : 0;
+      const card = (kids, x) => h('div', { style: S({ padding: cq(14), borderRadius: cq(16), background: CARD, border: '1px solid rgba(191,143,79,0.22)', display: 'flex', flexDirection: 'column', gap: cq(6) }, x) }, kids);
+      const home = h('div', { style: { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', opacity: 1 - 0.6 * wk, transform: 'translateX(' + (-28 * wk).toFixed(2) + '%)' } },
+        h('div', { style: { flex: 'none', display: 'flex', alignItems: 'center', gap: cq(10), padding: cq(6) + ' ' + cq(18) + ' ' + cq(10), borderBottom: '1px solid ' + LINE } },
+          h('img', { src: R('assets/welcome-logo-carved.png'), alt: '', style: { width: cq(22), height: cq(22), objectFit: 'contain' } }), h('span', { style: { flex: 1, fontFamily: DISP, fontSize: cq(16), fontWeight: 600 } }, 'Forge Legacy'),
+          h('span', { style: { position: 'relative', display: 'flex' } }, ic('people', 20), h('span', { style: { position: 'absolute', top: cq(-4), right: cq(-6), width: cq(13), height: cq(13), borderRadius: '50%', background: '#BA8654', color: '#0D0C0B', fontSize: cq(8), fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '2')),
+          glyphDisc('IA', 32)),
+        h('div', { style: { flex: 1, minHeight: 0, overflow: 'hidden', padding: cq(18) + ' ' + cq(18) + ' 0', display: 'flex', flexDirection: 'column', gap: cq(9) } },
+          lbl('Chapter III', MUTE, { fontSize: cq(10), letterSpacing: '0.18em' }),
+          h('span', { style: { fontFamily: DISP, fontSize: cq(36), fontWeight: 600, lineHeight: 1, letterSpacing: '0.02em' } }, 'THE REBUILD'),
+          h('span', { style: { display: 'flex', alignItems: 'center', gap: cq(8) } }, h('span', { style: { flex: 1, height: '1px', background: LINE } }), h('span', { style: { width: cq(6), height: cq(6), border: '1px solid ' + B, transform: 'rotate(45deg)' } }), h('span', { style: { flex: 1, height: '1px', background: LINE } })),
+          lbl('Week 6 · Day 2', INK, { fontSize: cq(11) }),
+          h('span', { style: { paddingLeft: cq(12), borderLeft: '2px solid ' + B, fontFamily: DISP, fontStyle: 'italic', fontSize: cq(15), lineHeight: 1.4, color: B } }, 'The number fades. The discipline remains.'),
+          card([
+            h('div', { key: 'r', style: { display: 'flex', alignItems: 'center', gap: cq(14) } },
+              h('span', { style: { width: cq(46), height: cq(46), flex: 'none', borderRadius: '50%', border: '1px solid rgba(191,143,79,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, ic('dumbbell', 22)),
+              h('span', { style: { display: 'flex', flexDirection: 'column', gap: cq(3) } }, lbl('Today’s workout', MUTE, { fontSize: cq(9) }), h('span', { style: { fontFamily: DISP, fontSize: cq(24), fontWeight: 600, lineHeight: 1.05 } }, 'Lower Body A'), h('span', { style: { fontSize: cq(12.5), color: MUTE } }, 'Squat'))),
+            h('span', { key: 'e', style: { display: 'flex', alignItems: 'center', gap: cq(8), padding: cq(8) + ' 0', marginTop: cq(4), borderTop: '1px solid ' + LINE } }, ic('document', 14), lbl('6 exercises', INK, { flex: 1, fontSize: cq(9.5) }), ic('chevron-right', 14, MUTE)),
+            btn([ic('flame', 15, '#FFFFFF'), 'Start workout', tapDot(t, ST)], { key: 'b', flex: 'none', transform: pressT(t, ST) })], { marginTop: cq(6), padding: cq(16) }),
+          h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: cq(10) } },
+            card([lbl('Current program', MUTE, { key: 'l', fontSize: cq(8.5) }), h('span', { key: 'n', style: { fontFamily: DISP, fontSize: cq(15) } }, 'Powerbuilding II'), h('span', { key: 's', style: { fontSize: cq(11), color: MUTE } }, '12 / 32 workouts'), h('span', { key: 'b', style: { height: cq(3), borderRadius: 2, background: 'rgba(255,255,255,0.08)' } }, h('span', { style: { display: 'block', width: '37%', height: '100%', borderRadius: 2, background: B } }))]),
+            card([lbl('Mission', MUTE, { key: 'l', fontSize: cq(8.5) }), h('span', { key: 'n', style: { fontFamily: DISP, fontSize: cq(15) } }, 'Squat 405 lb'), h('span', { key: 's', style: { fontSize: cq(11), color: MUTE } }, 'Your long-term objective'), h('span', { key: 'g', style: { display: 'flex', alignItems: 'center', gap: cq(6), fontSize: cq(10.5), color: MUTE } }, ic('target', 13), '2 goals remaining')]))),
+        tabBar('Home'));
+      const setRow = (n, state, weight, tapAt) => {
+        const done = state === 'done', act = state === 'active', c = done ? GREEN : act ? B : DIM;
+        return h('div', { key: n, style: { display: 'grid', gridTemplateColumns: cq(44) + ' 1fr 1fr ' + cq(40), alignItems: 'center', gap: cq(6), height: cq(50), padding: '0 ' + cq(10), borderRadius: cq(12), background: done ? GBG : act ? 'rgba(191,143,79,0.06)' : 'transparent', border: '1px solid ' + (done ? GL : act ? 'rgba(191,143,79,0.5)' : 'transparent'), transition: 'background .3s, border-color .3s' } },
+          h('span', { style: { width: cq(24), height: cq(24), borderRadius: '50%', border: '1.5px solid ' + c, color: c, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(12) } }, n),
+          h('span', { style: { textAlign: 'center', fontFamily: DISP, fontSize: cq(16), color: state === 'idle' ? DIM : INK } }, '6', h('span', { style: { fontFamily: 'var(--fl-font-sans)', fontSize: cq(9), letterSpacing: '0.1em', color: DIM } }, ' REPS')),
+          weight,
+          h('span', { style: { position: 'relative', justifySelf: 'center', width: cq(30), height: cq(30), borderRadius: '50%', border: '1.5px solid ' + c, background: done ? 'rgba(111,174,123,0.22)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: tapAt ? pressT(t, tapAt) : 'none', transition: 'background .25s' } }, state === 'idle' ? null : ic('check', 15, c), tapAt ? tapDot(t, tapAt) : null));
+      };
+      const wBox = (txt, on, kids) => h('span', { style: { position: 'relative', height: cq(34), borderRadius: cq(8), border: '1px solid ' + (on ? 'rgba(191,143,79,0.55)' : 'rgba(255,255,255,0.10)'), display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1px', fontFamily: DISP, fontSize: cq(16), color: txt === '—' ? DIM : INK } }, txt, kids);
+      const caret = typing && typed && Math.floor(t / 420) % 2 === 0 ? h('span', { key: 'c', style: { width: '1.5px', height: cq(17), background: B } }) : null;
+      const workout = inW ? h('div', { style: { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: BGD, boxShadow: '-12px 0 30px rgba(0,0,0,0.55)', transform: 'translateX(' + ((1 - wk) * 100).toFixed(2) + '%)' } },
+        h('div', { style: { flex: 'none', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(8) + ' ' + cq(18) } }, ic('chevron-left', 22, INK), h('span', { style: { flex: 1, display: 'flex', flexDirection: 'column', gap: cq(1) } }, h('span', { style: { fontFamily: DISP, fontSize: cq(17), fontWeight: 600 } }, 'Lower Body A'), h('span', { style: { fontSize: cq(11), color: MUTE } }, fmt(clock) + ' · Week 6, Day 2')), ic('more', 20, MUTE)),
+        h('div', { style: { flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: cq(6) + ' ' + cq(18) } },
+          h('span', { style: { fontSize: cq(11), fontWeight: 700, letterSpacing: '0.12em', color: MUTE } }, h('span', { style: { color: B } }, d1 ? '1' : '0'), ' / 6 DONE'),
+          t >= RS ? h('span', { style: S({ display: 'flex', alignItems: 'center', gap: cq(8), height: cq(30), padding: '0 ' + cq(12), borderRadius: 999, border: '1px solid rgba(191,143,79,0.45)', background: '#15130F', fontSize: cq(10), fontWeight: 700, letterSpacing: '0.1em', color: MUTE }, rise(t, RS, 300, 0)) }, ic('timer', 13), 'REST', h('span', { style: { fontFamily: DISP, fontSize: cq(15), letterSpacing: 0, color: INK } }, fmt(left)))
+            : h('span', { style: { display: 'flex', alignItems: 'center', gap: cq(8), height: cq(30), padding: '0 ' + cq(10), borderRadius: 999, border: '1px solid ' + LINE, fontSize: cq(9.5), fontWeight: 700, letterSpacing: '0.1em', color: DIM } }, 'REST TIMER', h('span', { style: { width: cq(26), height: cq(14), borderRadius: 999, background: 'rgba(191,143,79,0.5)' } }))),
+        h('div', { style: { flex: 'none', margin: '0 ' + cq(18), height: cq(3), borderRadius: 2, background: 'rgba(255,255,255,0.08)' } }, h('div', { style: { width: (d1 ? 4 + 12 * ez(cl((t - CK) / 500)) : 4).toFixed(1) + '%', height: '100%', borderRadius: 2, background: 'linear-gradient(90deg,#8C6838,#CDA063)' } })),
+        h('div', { style: S({ flex: 'none', margin: cq(16) + ' ' + cq(14) + ' 0', padding: cq(14), borderRadius: cq(16), background: CARD, border: '1px solid rgba(191,143,79,0.3)', display: 'flex', flexDirection: 'column', gap: cq(14) }, null) },
+          h('div', { style: { display: 'flex', gap: cq(14) } },
+            h('div', { style: { width: cq(100), height: cq(118), flex: 'none', borderRadius: cq(12), overflow: 'hidden', background: '#2B2723', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center' } }, h('img', { src: R('assets/landing/squat-loop.webp'), alt: '', style: { width: '100%', height: '100%', objectFit: 'contain', display: 'block' } })),
+            h('div', { style: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: cq(8) } },
+              h('span', { style: { fontFamily: DISP, fontSize: cq(19), fontWeight: 600, lineHeight: 1.15 } }, 'Barbell Back Squat'),
+              h('span', { style: { fontSize: cq(10), fontWeight: 700, letterSpacing: '0.14em', color: MUTE } }, 'MAIN LIFT'),
+              h('span', { style: { alignSelf: 'flex-start', padding: cq(3) + ' ' + cq(8), borderRadius: cq(4), border: '1px solid rgba(191,143,79,0.4)', fontSize: cq(9.5), fontWeight: 700, letterSpacing: '0.12em', color: B } }, 'STRENGTH'),
+              h('span', { style: { display: 'flex', alignItems: 'center', gap: cq(5), fontSize: cq(12.5), color: B } }, ic('play', 13, B), 'How To'))),
+          h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', paddingTop: cq(12), borderTop: '1px solid ' + LINE } },
+            [['LAST', '265 × 6', INK], ['GOAL', '4 × 6', B], ['BEST', '295 × 3', INK]].map(s => h('span', { key: s[0], style: { display: 'flex', flexDirection: 'column', gap: cq(4) } }, lbl(s[0], s[0] === 'GOAL' ? B : DIM, { fontSize: cq(9) }), h('span', { style: { fontFamily: DISP, fontSize: cq(15), color: s[2] } }, s[1]))))),
+        h('div', { style: S({ flex: 'none', margin: cq(12) + ' ' + cq(14) + ' 0', padding: cq(10), borderRadius: cq(16), background: '#12110E', display: 'flex', flexDirection: 'column', gap: cq(6) }, null) },
+          h('div', { style: { display: 'grid', gridTemplateColumns: cq(44) + ' 1fr 1fr ' + cq(40), gap: cq(6), padding: '0 ' + cq(10), fontSize: cq(9), fontWeight: 700, letterSpacing: '0.12em', color: DIM } }, h('span', null, 'SET'), h('span', { style: { textAlign: 'center' } }, 'TARGET'), h('span', { style: { textAlign: 'center' } }, 'LB'), h('span', null)),
+          setRow(1, d1 ? 'done' : 'active', wBox(typed || '—', typing, [caret, h('span', { key: 'd' }, tapDot(t, TW))]), d1 ? 0 : CK),
+          setRow(2, d1 ? 'active' : 'idle', wBox(d1 ? '275' : '—', false)),
+          setRow(3, 'idle', wBox('—', false)),
+          setRow(4, 'idle', wBox('—', false))),
+        h('div', { style: { flex: 1 } }),
+        h('div', { style: { flex: 'none', display: 'flex', gap: cq(10), padding: cq(12) + ' ' + cq(14) + ' ' + cq(30), borderTop: '1px solid ' + LINE, background: '#0E0D0B' } }, btn('Finish workout'), btn2('Add exercise'))) : null;
+      const op = reduce() ? 1 : (t < 350 ? t / 350 : t > L - 600 ? cl((L - t) / 600) : 1);
+      return h('div', { ref, role: 'img', 'aria-label': 'Open the app: Home shows today’s workout, Lower Body A. One tap on Start Workout opens the session at Barbell Back Squat, 275 pounds is logged for the first set and the rest timer starts', style: { containerType: 'inline-size', position: 'relative', width: '100%', aspectRatio: '1320/2868', borderRadius: p.radius == null ? 29 : p.radius, overflow: 'hidden', background: BGD, fontFamily: 'var(--fl-font-sans)', color: INK } },
+        h('div', { style: { position: 'absolute', inset: 0, opacity: op, display: 'flex', flexDirection: 'column' } }, status(), h('div', { style: { position: 'relative', flex: 1, minHeight: 0 } }, home, workout)));
+    }
+
+    /* ── Run a program week by week: scroll to the schedule, open Week 1, open a day ── */
+    const IE_DAYS = [
+      ['Squat & Sled', '8 planned', [['', 'Barbell Back Squat', '4 × 6'], ['', 'Dumbbell Romanian Deadlift', '3 × 10'], ['', 'Bulgarian Split Squat', '3 × 8 / leg'], ['Engine — Sled Ladder · 3 rounds', 'A1  Sled Push', '30 s'], ['', 'A2  Kettlebell Swing', '15'], ['', 'A3  Burpee', '10']]],
+      ['Press & Rope', '8 planned', [['', 'Barbell Bench Press', '4 × 6'], ['', 'Barbell Overhead Press', '3 × 8'], ['', 'Incline Dumbbell Press', '3 × 10'], ['Engine — Rope & Burpee · 3 rounds', 'A1  Battle Rope Slams', '30 s'], ['', 'A2  Burpee', '10'], ['', 'A3  Ski Erg', '45 s']]],
+      ['Engine: Intervals', '9 planned'], ['Hinge & Drag', '8 planned'], ['Pull & Bike', '8 planned'], ['Engine: Long', '6 planned']];
+    function ProgramWeeks(p) {
+      const L = 15600, [t, ref] = useClock(L, 7600);
+      const SC0 = 1300, SC1 = 3300, W1 = 4000, D1 = 6000, D2 = 9600;
+      const sRef = useRef(null), cRef = useRef(null);
+      /* How far to scroll = where the schedule heading sits, measured after layout (cq units scale with the phone). */
+      const [target, setTarget] = useState(0);
+      React.useLayoutEffect(() => { if (!sRef.current || !cRef.current) return; const v = sRef.current.offsetTop - cRef.current.offsetTop - 6; if (Math.abs(v - target) > 0.5) setTarget(v); });
+      const sk = ez(cl((t - SC0) / (SC1 - SC0)));
+      const wOpen = t >= W1 + 120, openDay = t >= D2 + 120 ? 1 : t >= D1 + 120 ? 0 : -1;
+      const chip = s => h('span', { key: s, style: { padding: cq(6) + ' ' + cq(11), borderRadius: 999, border: '1px solid rgba(255,255,255,0.12)', fontSize: cq(11.5), color: INK } }, s);
+      const bullet = s => h('span', { key: s, style: { display: 'flex', gap: cq(10), fontSize: cq(12.5), lineHeight: 1.4, color: '#CFC6B8' } }, h('span', { style: { width: cq(6), height: cq(6), flex: 'none', marginTop: cq(6), background: B, transform: 'rotate(45deg)' } }), s);
+      const week = (n, on) => h('div', { key: 'w' + n, style: { flex: 'none', borderRadius: cq(12), border: '1px solid ' + (on ? 'rgba(191,143,79,0.5)' : LINE), background: CARD, overflow: 'hidden', transition: 'border-color .3s' } },
+        h('div', { style: { position: 'relative', display: 'flex', alignItems: 'center', gap: cq(12), height: cq(44), padding: '0 ' + cq(14), transform: n === 1 ? pressT(t, W1) : 'none' } },
+          h('span', { style: { width: cq(14), height: cq(14), borderRadius: '50%', border: '1.5px solid ' + (on ? B : DIM), display: 'flex', alignItems: 'center', justifyContent: 'center' } }, on ? h('span', { style: { width: cq(6), height: cq(6), borderRadius: '50%', background: B } }) : null),
+          h('span', { style: { flex: 1, fontSize: cq(14.5), fontWeight: 600, color: on ? BB : INK } }, 'Week ' + n), h('span', { style: { fontSize: cq(11), color: MUTE } }, '6 workouts'),
+          ic('chevron-down', 14, MUTE, { transform: on ? 'rotate(180deg)' : 'none', transition: 'transform .3s' }), n === 1 ? tapDot(t, W1) : null),
+        n === 1 && on ? h('div', { style: { borderTop: '1px solid ' + LINE } }, IE_DAYS.map((d, i) => { const open = openDay === i, tapAt = i === 0 ? D1 : i === 1 ? D2 : 0;
+          return h('div', { key: d[0], style: S({ borderTop: i ? '1px solid ' + LINE : 'none', background: open ? 'rgba(191,143,79,0.05)' : 'transparent' }, rise(t, W1 + 180 + i * 90, 260, 6)) },
+            h('div', { style: { position: 'relative', display: 'flex', alignItems: 'center', gap: cq(12), height: cq(46), padding: '0 ' + cq(14), transform: tapAt ? pressT(t, tapAt) : 'none' } },
+              h('span', { style: { width: cq(22), height: cq(22), flex: 'none', borderRadius: cq(5), border: '1px solid ' + (open ? 'rgba(191,143,79,0.6)' : 'rgba(255,255,255,0.14)'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cq(10.5), color: open ? B : MUTE } }, i + 1),
+              h('span', { style: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: cq(1) } }, h('span', { style: { fontSize: cq(13.5), fontWeight: 600 } }, d[0]), h('span', { style: { fontSize: cq(10.5), color: DIM } }, d[1])),
+              ic('chevron-down', 13, DIM, { transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .3s' }), tapAt ? tapDot(t, tapAt) : null),
+            open ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: cq(6), padding: '0 ' + cq(14) + ' ' + cq(12) + ' ' + cq(48) } }, d[2].map((x, j) => h('div', { key: x[1], style: S({ display: 'flex', flexDirection: 'column', gap: cq(4) }, rise(t, (i === 0 ? D1 : D2) + 200 + j * 90, 240, 4)) },
+              x[0] ? lbl(x[0], B, { fontSize: cq(8), marginTop: cq(4) }) : null,
+              h('span', { style: { display: 'flex', justifyContent: 'space-between', gap: cq(8), fontSize: cq(12) } }, h('span', null, x[1]), h('span', { style: { color: DIM, whiteSpace: 'nowrap' } }, x[2]))))) : null); })) : null);
+      const content = h('div', { ref: cRef, style: { display: 'flex', flexDirection: 'column', gap: cq(10), padding: cq(8) + ' ' + cq(18) + ' ' + cq(40), transform: 'translateY(' + (-target * sk).toFixed(1) + 'px)' } },
+        h('span', { style: { fontFamily: DISP, fontSize: cq(30), fontWeight: 600, lineHeight: 1.05 } }, 'Iron & Engine'),
+        h('span', { style: { display: 'flex', flexDirection: 'column', gap: cq(2) } }, h('span', { style: { fontSize: cq(12.5), fontWeight: 600, color: MUTE } }, 'Conditioning · Advanced'), h('span', { style: { fontSize: cq(12), color: DIM } }, '6 weeks · 6 days / week')),
+        h('span', { style: { fontSize: cq(12.5), lineHeight: 1.55, color: '#CFC6B8' } }, 'Six weeks, six days a week, barbell strength and honest conditioning in the same block. IRON is four lifts that never change: squat, bench, pull-up, deadlift. ENGINE is the other two days and the finisher on every one of them.'),
+        lbl('What this builds', MUTE, { fontSize: cq(9), marginTop: cq(6) }),
+        ['Build barbell strength across four primary lifts', 'Develop conditioning that survives a heavy session', 'Hold six training days a week for six weeks', 'Learn to pace a finisher instead of surviving it'].map(bullet),
+        lbl('Equipment', MUTE, { fontSize: cq(9), marginTop: cq(6) }),
+        h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: cq(7) } }, ['Barbell', 'Battle Rope', 'Bodyweight', 'Cable Machine', 'Dumbbell', 'Kettlebell', 'Sled'].map(chip)),
+        h('div', { ref: sRef, style: { display: 'flex', flexDirection: 'column', gap: cq(4), marginTop: cq(14) } }, lbl('The schedule', B, { fontSize: cq(9.5) }), h('span', { style: { fontSize: cq(11.5), color: MUTE } }, 'Open any week to see the workouts you will train.')),
+        [1, 2, 3, 4, 5, 6].map(n => week(n, n === 1 && wOpen)));
+      return frame({ t, L, fref: ref, radius: p.radius, label: 'A program, week by week: the Iron & Engine page scrolls down to its schedule, Week 1 opens to six workouts, then Squat & Sled and Press & Rope open to show every lift' },
+        h('div', { style: { flex: 'none', display: 'flex', alignItems: 'center', gap: cq(12), padding: cq(6) + ' ' + cq(18) + ' ' + cq(8) } }, ic('chevron-left', 22, INK), h('img', { src: R('assets/welcome-logo-carved.png'), alt: '', style: { width: cq(20), height: cq(20), objectFit: 'contain' } }), h('span', { style: { flex: 1 } }), h('span', { style: { padding: cq(4) + ' ' + cq(10), borderRadius: 999, border: '1px solid ' + LINE, fontSize: cq(9.5), fontWeight: 700, letterSpacing: '0.12em', color: MUTE } }, 'PREVIEW')),
+        h('div', { style: { flex: 1, minHeight: 0, overflow: 'hidden', WebkitMaskImage: 'linear-gradient(180deg, transparent 0, #000 3%, #000 94%, transparent 100%)', maskImage: 'linear-gradient(180deg, transparent 0, #000 3%, #000 94%, transparent 100%)' } }, content),
+        h('div', { style: { flex: 'none', display: 'flex', flexDirection: 'column', gap: cq(8), padding: cq(12) + ' ' + cq(14) + ' ' + cq(28), borderTop: '1px solid ' + LINE, background: '#0E0D0B' } }, btn('Start program', { flex: 'none' }), btn2('Add to planned', { flex: 'none' })));
     }
 
     /* ── Hero: a morning with Forge (gym → bench → car → kitchen) ── */
@@ -813,7 +961,7 @@
       if (bi === 0) screen = run(HeroCoach, Math.min(lt * K, 5700));
       else if (bi === 1) screen = run(Workout, Math.min(700 + lt * 0.8, 6300), { hero: true });
       else if (bi === 2) { if (lt < SW) { screen = run(Seal, Math.min(1200 + lt * 0.8, 4900), { hero: true }); sub = lt > SW - 280 ? cl((SW - lt) / 280) : 1; } else { screen = run(SquadMine, Math.min((lt - SW) * 0.8, 5300)); sub = cl((lt - SW) / 280); } }
-      else screen = run(FoodLog, Math.min(900 + lt, 8900), { hero: true });
+      else screen = run(FoodLog, lt < 1900 ? 700 : Math.min(700 + (lt - 1900) * 1.15, 8900), { hero: true });
       const phone = h('div', { style: { position: 'absolute', left: '50%', top: '58%', width: '40%', transform: 'translate(-50%,-50%)', borderRadius: 'clamp(22px,4.4vw,36px)', padding: 'clamp(5px,0.9vw,8px)', background: '#1A1714', boxShadow: '0 50px 90px -30px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.06)' } },
         h('div', { style: { position: 'relative', borderRadius: rad, overflow: 'hidden', background: '#0D0C0B', opacity: pOp * sub } }, h(ClockC.Provider, { value: beat.clock }, screen)));
       const chipK = reduce() ? 1 : ez(cl((lt - 150) / 450));
@@ -829,7 +977,7 @@
         tabs);
     }
 
-    return { heroDay: HeroDay, workout: Workout, seal: Seal, build: Build, nutrition: Nutrition, holtStart: HoltStart, holtBuild: HoltBuild, honor: Honor, chapter: Chapter, foodLog: FoodLog, theme: Theme, squad: Squad, rank: Rank, labelScan: LabelScan };
+    return { heroDay: HeroDay, workout: Workout, seal: Seal, build: Build, nutrition: Nutrition, holtStart: HoltStart, holtBuild: HoltBuild, honor: Honor, chapter: Chapter, foodLog: FoodLog, theme: Theme, squad: Squad, rank: Rank, labelScan: LabelScan, startTrain: StartTrain, programWeeks: ProgramWeeks, _clock: ExtT /* freeze a frame: <_clock.Provider value={ms}> */ };
   }
   window.FLPhoneAnims = { get(React) { if (!cache) cache = build(React); return cache; } };
 })();
