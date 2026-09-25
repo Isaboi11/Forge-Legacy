@@ -18,9 +18,9 @@ can remind if they want or that he will send a message keeping them updated."*
   calories and protein. Say 'stop the 3 pm check-in' any time."*
 - **At 3 pm a push arrives** even with the app closed. Tapping it opens Nutrition (or wherever the reminder
   points).
-- **Holt offers first, too,** where it fits: after someone sets a target, or after a week of logging,
-  Holt can say once *"Want me to check in each afternoon with where you're at?"* Yes sets it up; No is
-  remembered and never asked again.
+- **Holt offers first, too:** after someone sets their first target, Holt says *"Want me to check in each
+  afternoon with where you're at?"* Yes sets it up. After a no, he offers once more about a month later,
+  mentioning it can be changed any time in Settings, then never again (HC-D3).
 - **See and manage them in one place:** Settings → Notifications → *Holt check-ins* lists every reminder with
   its time, a switch and Delete. The same can be done by typing to Holt.
 
@@ -75,8 +75,9 @@ protein gap). No AI call per push, so there's no cost per reminder and no chance
 
 ## 6. Lock-screen privacy
 
-A push shows on the lock screen. Food numbers are private data (P-6 Amendment 002). **Open decision (§8
-#2)**: whether numbers show on the lock screen, or only *"Holt · your 3 pm check-in"* until it's opened.
+A push shows on the lock screen. Food numbers are private data (P-6 Amendment 002). **Decided (HC-D2):**
+the athlete chooses when setting it up; by default the push reads only *"Holt · your 3 pm check-in"* and
+the numbers are inside the app.
 
 ## 7. How it's built
 
