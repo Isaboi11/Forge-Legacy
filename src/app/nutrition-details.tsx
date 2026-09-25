@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { NutritionCareLine, useCareLine } from '@/components/forge/NutritionCareLine';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -70,6 +71,8 @@ export default function NutritionDetailsScreen() {
     [from, to],
   );
   const { data: history } = useQuery(useCallback(() => fetchTargetHistory(to), [to]), [to]);
+  /* The care line speaks about THIS week, so it sits over this week's bars and not over a week seven back. */
+  const care = useCareLine();
 
   const week = useMemo(() => {
     const byIso = new Map<string, DayTotals>((totals ?? []).map((d) => [d.iso, d]));
@@ -143,6 +146,9 @@ export default function NutritionDetailsScreen() {
             <Text style={styles.summaryLabel}>Days in range</Text>
           </View>
         </View>
+
+        {/* the care line, above the week bars */}
+        {atNewest ? <NutritionCareLine care={care} style={styles.careLine} /> : null}
 
         {/* the chart */}
         <View style={styles.card}>
@@ -337,6 +343,7 @@ const styles = StyleSheet.create({
   summaryValue: { fontSize: 17, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
   summaryLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600 },
 
+  careLine: { marginBottom: 14 },
   card: {
     paddingTop: 52,
     paddingHorizontal: 16,
