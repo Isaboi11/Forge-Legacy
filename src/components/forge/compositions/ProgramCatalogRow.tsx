@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
 import { Pill } from '@/components/forge/composites/Pill';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { flColor, flRadius, flShadow } from '@/constants/foundation';
 import type { Program } from '@/domain/training/schema';
@@ -27,9 +27,7 @@ export function ProgramCatalogRow({ program, held, onPress }: { program: Program
       style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}
     >
       <View style={styles.tile}>
-        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M12 3l9 4.5-9 4.5-9-4.5zM3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5" />
-        </Svg>
+        <EngravedIcon name="layers" size={20} />
       </View>
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>

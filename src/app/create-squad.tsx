@@ -4,8 +4,8 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -324,35 +324,16 @@ function CsField({
 
 // ── glyphs ──
 function ForgeGlyph({ color }: { color: string }) {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill={color}>
-      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
-    </Svg>
-  );
+  return <EngravedIcon name="crown" size={17} color={engravedTint(color)} />;
 }
 function CheckMark() {
-  return (
-    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#6E8E74" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4 4 10-10" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={12} color={'#6E8E74'} />;
 }
 function LockGlyph() {
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 10.5h14v9H5z" />
-      <Path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
-    </Svg>
-  );
+  return <EngravedIcon name="lock" size={14} />;
 }
 function GlobeGlyph() {
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={8.5} />
-      <Path d="M3.5 12h17" />
-      <Path d="M12 3.5c2.4 2.3 3.7 5.3 3.7 8.5s-1.3 6.2-3.7 8.5c-2.4-2.3-3.7-5.3-3.7-8.5S9.6 5.8 12 3.5z" />
-    </Svg>
-  );
+  return <EngravedIcon name="globe" size={14} />;
 }
 
 const styles = StyleSheet.create({

@@ -17,7 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color, space } from '@/constants/tokens'
 import { CARD } from './_cardTokens'
 import type { FeedPostCardState } from './types'
@@ -105,7 +105,7 @@ export function FeedPostCard({
       {/* Pinned label */}
       {isPinned && (
         <View style={styles.pinnedRow}>
-          <Feather name="bookmark" size={11} color={color.accent.primary} />
+          <EngravedIcon name="bookmark" size={11} />
           <Text style={styles.pinnedLabel}>Pinned</Text>
         </View>
       )}
@@ -130,7 +130,7 @@ export function FeedPostCard({
         {/* More options */}
         {onMorePress ? (
           <TouchableOpacity onPress={onMorePress} hitSlop={10} style={styles.moreBtn}>
-            <Feather name="more-horizontal" size={16} color={color.text.tertiary} />
+            <EngravedIcon name="more" size={16} color={color.text.tertiary} />
           </TouchableOpacity>
         ) : null}
       </View>
@@ -154,10 +154,10 @@ export function FeedPostCard({
       {/* Reaction row */}
       <View style={styles.reactions}>
         <TouchableOpacity onPress={onLikePress} style={styles.reactionBtn} activeOpacity={0.7}>
-          <Feather
-            name={liked ? 'heart' : 'heart'}
+          <EngravedIcon
+            name="heart"
             size={16}
-            color={liked ? color.accent.primary : color.text.tertiary}
+            color={liked ? undefined : color.text.tertiary}
           />
           {likeCount > 0 ? (
             <Text style={[styles.reactionCount, liked && styles.reactionCountActive]}>
@@ -167,7 +167,7 @@ export function FeedPostCard({
         </TouchableOpacity>
 
         <TouchableOpacity onPress={onCommentPress} style={styles.reactionBtn} activeOpacity={0.7}>
-          <Feather name="message-circle" size={16} color={color.text.tertiary} />
+          <EngravedIcon name="chat" size={16} color={color.text.tertiary} />
           {commentCount > 0 ? (
             <Text style={styles.reactionCount}>{commentCount}</Text>
           ) : null}
@@ -176,7 +176,7 @@ export function FeedPostCard({
         <View style={styles.reactionSpacer} />
 
         <TouchableOpacity onPress={onSharePress} style={styles.reactionBtn} activeOpacity={0.7}>
-          <Feather name="share-2" size={15} color={color.text.tertiary} />
+          <EngravedIcon name="share" size={15} color={color.text.tertiary} />
         </TouchableOpacity>
       </View>
     </Pressable>

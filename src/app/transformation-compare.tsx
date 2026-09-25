@@ -3,11 +3,11 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BeforeAfterSlider } from '@/components/forge/BeforeAfterSlider';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import {
   elapsedBetween,
   fetchTransformationEntries,
@@ -173,9 +173,7 @@ export default function TransformationCompareRoute() {
           accessibilityLabel={adjusting ? 'Finish adjusting' : 'Adjust photos'}
           style={[styles.adjustBtn, adjusting ? styles.adjustBtnOn : styles.adjustBtnOff]}
         >
-          <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={adjusting ? flColor.bronze300 : flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M5 9l-3 3 3 3M19 9l3 3-3 3M9 5l3-3 3 3M9 19l3 3 3-3M12 4v16M4 12h16" />
-          </Svg>
+          <EngravedIcon name="move" size={14} color={adjusting ? flColor.bronze300 : flColor.gray400} />
           <Text style={[styles.adjustText, adjusting ? styles.adjustTextOn : null]}>{adjusting ? 'Done adjusting' : 'Adjust photos'}</Text>
         </Pressable>
         {adjusting ? (
@@ -246,11 +244,7 @@ export default function TransformationCompareRoute() {
           accessibilityLabel="Share this comparison"
           style={styles.shareBtn}
         >
-          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
-            <Path d="M16 6l-4-4-4 4" />
-            <Path d="M12 2v14" />
-          </Svg>
+          <EngravedIcon name="share" size={16} />
           <Text style={styles.shareText}>Share this comparison</Text>
         </Pressable>
       </ScrollView>
@@ -287,9 +281,7 @@ function TopBar({ onBack }: { onBack: () => void }) {
   return (
     <View style={[styles.topBar, { height: 56 + insets.top, paddingTop: insets.top }]}>
       <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" style={styles.topBtn} hitSlop={6}>
-        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M15 5l-7 7 7 7" />
-        </Svg>
+        <EngravedIcon name="chevron-left" size={22} color={flColor.gray400} />
       </Pressable>
       <Text style={styles.topTitle}>Compare</Text>
       <View style={styles.topBtn} />
@@ -303,9 +295,7 @@ function SelectBox({ label, onPress }: { label: string; onPress: () => void }) {
       <Text style={styles.selectText} numberOfLines={1}>
         {label}
       </Text>
-      <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M6 9l6 6 6-6" />
-      </Svg>
+      <EngravedIcon name="chevron-down" size={15} color={flColor.gray400} />
     </Pressable>
   );
 }

@@ -1,9 +1,9 @@
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { GOAL_UNITS, type SquadGoalMetric } from '@/data/squad-live';
 import { fetchSquadPost, type WeeklyRecap } from '@/data/squad-feed-live';
@@ -195,32 +195,13 @@ function Stat({ value, label, divided = false }: { value: string; label: string;
 }
 
 function BannerGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6 3h12v16l-6-4-6 4z" />
-      <Path d="M9 8h6" />
-    </Svg>
-  );
+  return <EngravedIcon name="banner" size={size} color={engravedTint(color)} />;
 }
 function TrophyGlyph({ size = 16, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M8 4h8v5a4 4 0 0 1-8 0z" />
-      <Path d="M8 4H5.5a2 2 0 0 0 0 4H8" />
-      <Path d="M16 4h2.5a2 2 0 0 1 0 4H16" />
-      <Path d="M12 13v3M9 20h6M10 20l.6-4M14 20l-.6-4" />
-    </Svg>
-  );
+  return <EngravedIcon name="trophy" size={size} color={engravedTint(color)} />;
 }
 function MedalGlyph({ size = 16, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M8.5 3 L12 9" />
-      <Path d="M15.5 3 L12 9" />
-      <Circle cx={12} cy={15} r={5.4} />
-      <Circle cx={12} cy={15} r={2.1} />
-    </Svg>
-  );
+  return <EngravedIcon name="medal" size={size} color={engravedTint(color)} />;
 }
 
 const styles = StyleSheet.create({

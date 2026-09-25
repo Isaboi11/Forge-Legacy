@@ -4,6 +4,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -659,9 +660,7 @@ function PinnedCard({ pin, onPress }: { pin: Pin; onPress: () => void }) {
           />
           {pin.isVideo ? (
             <View style={styles.pinPlay}>
-              <Svg width={14} height={14} viewBox="0 0 24 24" style={{ marginLeft: 2 }}>
-                <Path d="M9 7.5l8 4.5-8 4.5z" fill={flColor.bronze300} />
-              </Svg>
+              <EngravedIcon name="play" size={14} />
             </View>
           ) : null}
         </>
@@ -787,9 +786,7 @@ function ProgressBadge({ rankFamily, rankLevel, sex, onPress }: { rankFamily?: R
 // ── inline glyphs ──
 function PlusIcon({ color = flColor.bronze400 }: { color?: string }) {
   return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="square">
-      <Path d="M12 5v14M5 12h14" />
-    </Svg>
+    <EngravedIcon name="plus" size={18} color={color} />
   );
 }
 /**

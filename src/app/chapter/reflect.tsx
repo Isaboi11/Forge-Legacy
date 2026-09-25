@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { ScreenBackground } from '@/components/screen-background';
@@ -30,11 +30,6 @@ import { useQuery } from '@/lib/useQuery';
  * irreversible, so a back arrow is kept on BOTH paths to cancel without sealing. An exit while there's
  * unsaved text raises the M-6 discard ConfirmSheet.
  */
-
-const BACK = 'M15 5l-7 7 7 7';
-const CHECK = 'M20 6L9 17l-5-5';
-const CHEVRON_DOWN = 'M6 9l6 6 6-6';
-const ARROW = 'M5 12h14M13 6l6 6-6 6';
 
 const PROMPTS = [
   'What part of this chapter challenged you the most?',
@@ -152,7 +147,7 @@ export default function ChapterReflectionScreen() {
         {isPost ? (
           <>
             <Pressable onPress={attemptExit} accessibilityRole="button" accessibilityLabel="Cancel" style={styles.barBtn} hitSlop={8}>
-              <Glyph d={BACK} size={22} color={flColor.gray400} width={1.9} />
+              <EngravedIcon name="chevron-left" size={22} color={flColor.gray400} />
             </Pressable>
             <Text style={styles.barTitle}>Reflection</Text>
             <View style={styles.barBtn} />
@@ -171,7 +166,7 @@ export default function ChapterReflectionScreen() {
             <Text style={styles.range}>{header.range}</Text>
             {header.goalLine ? (
               <View style={styles.goalRow}>
-                {header.goalAchieved ? <Glyph d={CHECK} size={16} color={flColor.bronze300} width={2.4} /> : null}
+                {header.goalAchieved ? <EngravedIcon name="check" size={16} color={flColor.bronze300} /> : null}
                 <Text style={[styles.goalLine, !header.goalAchieved && styles.goalLineDim]}>{header.goalLine}</Text>
               </View>
             ) : null}
@@ -204,7 +199,7 @@ export default function ChapterReflectionScreen() {
 
                 <Pressable onPress={() => setPromptsOpen((v) => !v)} accessibilityRole="button" accessibilityLabel="Need a prompt" style={styles.promptToggle}>
                   <Text style={styles.promptToggleText}>Need a prompt?</Text>
-                  <Glyph d={CHEVRON_DOWN} size={14} color={flColor.gray600} width={2} rotate={promptsOpen ? 180 : 0} />
+                  <EngravedIcon name={promptsOpen ? 'chevron-up' : 'chevron-down'} size={14} color={flColor.gray600} />
                 </Pressable>
                 {promptsOpen ? (
                   <View style={styles.prompts}>
@@ -277,7 +272,7 @@ export default function ChapterReflectionScreen() {
           <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.3} overlay={{ flat: 'rgba(5,5,5,0.72)' }} />
           <ScrollView contentContainerStyle={[styles.sealedScroll, { paddingTop: insets.top + 28, paddingBottom: 190 + insets.bottom }]} showsVerticalScrollIndicator={false}>
             <View style={styles.savedMark}>
-              <Glyph d={CHECK} size={26} color={flColor.onBronze} width={2.4} />
+              <EngravedIcon name="check" size={26} color={flColor.onBronze} />
             </View>
 
             <Text style={styles.sealedEyebrow}>{isPost ? 'Reflection Saved' : 'Chapter Sealed'}</Text>
@@ -288,7 +283,7 @@ export default function ChapterReflectionScreen() {
             {/* The outcome line — an achieved primary goal names itself, otherwise this is the chapter. */}
             {data?.outcomeHeadline && data.outcomeHeadline !== `${data.number} — ${data.title}` ? (
               <View style={styles.sealedOutcome}>
-                <Glyph d={CHECK} size={15} color={flColor.bronze300} width={2.4} />
+                <EngravedIcon name="check" size={15} color={flColor.bronze300} />
                 <Text style={styles.sealedOutcomeText}>{data.outcomeHeadline}</Text>
               </View>
             ) : null}
@@ -328,14 +323,14 @@ export default function ChapterReflectionScreen() {
               <Button variant="primary" fullWidth onPress={() => router.replace('/chapter/new')} accessibilityLabel="Begin your next chapter">
                 <View style={styles.continueInner}>
                   <Text style={styles.continueText}>Begin Your Next Chapter</Text>
-                  <Glyph d={ARROW} size={16} color="#F7F5F1" width={2.2} />
+                  <EngravedIcon name="arrow-right" size={16} color="#F7F5F1" />
                 </View>
               </Button>
             ) : (
               <Button variant="primary" fullWidth onPress={leave} accessibilityLabel="Continue">
                 <View style={styles.continueInner}>
                   <Text style={styles.continueText}>Continue</Text>
-                  <Glyph d={ARROW} size={16} color="#F7F5F1" width={2.2} />
+                  <EngravedIcon name="arrow-right" size={16} color="#F7F5F1" />
                 </View>
               </Button>
             )}
@@ -348,14 +343,6 @@ export default function ChapterReflectionScreen() {
         </View>
       ) : null}
     </View>
-  );
-}
-
-function Glyph({ d, size = 16, color, width = 1.9, rotate = 0 }: { d: string; size?: number; color: string; width?: number; rotate?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" style={rotate ? { transform: [{ rotate: `${rotate}deg` }] } : undefined}>
-      <Path d={d} />
-    </Svg>
   );
 }
 

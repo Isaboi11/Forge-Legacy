@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -490,25 +490,17 @@ function FriendsMark() {
 // ── glyphs ──
 function InfoGlyph({ size = 13, color = flColor.gray600 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round">
-      <Circle cx={12} cy={12} r={9} />
-      <Path d="M12 11v5M12 7.6v.6" />
-    </Svg>
+    <EngravedIcon name="info" size={size} color={color} />
   );
 }
 function WarnGlyph({ size = 13, color = '#A97E68' }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round">
-      <Path d="M12 4.5l8.5 15H3.5z" />
-      <Path d="M12 10v4M12 16.6v.6" />
-    </Svg>
+    <EngravedIcon name="warning" size={size} color={color} />
   );
 }
 function CheckGlyph({ size = 13, color = '#8FB295' }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 13l4.5 4.5L19 7" />
-    </Svg>
+    <EngravedIcon name="check" size={size} color={color} />
   );
 }
 

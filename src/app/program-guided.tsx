@@ -35,7 +35,6 @@
  */
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -83,6 +82,7 @@ import {
 } from '@/domain/program/guided-steps';
 import { draftFromStructure, makeDays, newDraft } from '@/lib/program-draft-model';
 import { PHOTO_IMPORT_LIVE } from '@/components/forge/ImportSpreadsheetSheet';
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { usePremiumAi } from '@/lib/entitlement';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { saveProgramDraft } from '@/lib/program-draft';
@@ -602,9 +602,7 @@ function Guided() {
               hitSlop={8}
               style={styles.modalClose}
             >
-              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round">
-                <Path d="M6 6l12 12M18 6L6 18" />
-              </Svg>
+              <EngravedIcon name="close" size={18} color={flColor.gray400} />
             </Pressable>
             <SlidersGlyph />
             <Text style={styles.modalTitle}>Want full control?</Text>
@@ -708,9 +706,7 @@ function StartCard({
         <Text style={styles.startTitle}>{title}</Text>
         <Text style={styles.startSub}>{sub}</Text>
       </View>
-      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round">
-        <Path d="M9 5l7 7-7 7" />
-      </Svg>
+      <EngravedIcon name="chevron-right" size={16} color={flColor.gray400} />
     </Pressable>
   );
 }
@@ -738,76 +734,32 @@ function DayTile({ n, recommended, selected, onPress }: { n: number; recommended
   );
 }
 
-const G = { fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 function DocGlyph() {
-  return (
-    <Svg width={26} height={26} viewBox="0 0 24 24" {...G} stroke={flColor.gray400}>
-      <Rect x={5} y={3} width={14} height={18} rx={2} />
-      <Path d="M9 8h6M9 12h6M9 16h4" />
-    </Svg>
-  );
+  return <EngravedIcon name="document" size={26} color={flColor.gray400} />;
 }
 function CameraGlyph() {
-  return (
-    <Svg width={26} height={26} viewBox="0 0 24 24" {...G} stroke={flColor.gray400}>
-      <Path d="M4 8h3l2-3h6l2 3h3v11H4z" />
-      <Circle cx={12} cy={13} r={3.5} />
-    </Svg>
-  );
+  return <EngravedIcon name="camera" size={26} color={flColor.gray400} />;
 }
 function BarbellGlyph({ color }: { color: string }) {
-  return (
-    <Svg width={26} height={26} viewBox="0 0 24 24" {...G} stroke={color}>
-      <Path d="M3 10v4M6 8v8M18 8v8M21 10v4M6 12h12" />
-    </Svg>
-  );
+  return <EngravedIcon name="barbell" size={26} color={engravedTint(color)} />;
 }
 function BarsGlyph({ color }: { color: string }) {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24" {...G} stroke={color}>
-      <Path d="M6 20v-6M12 20V9M18 20V4" />
-    </Svg>
-  );
+  return <EngravedIcon name="bar-chart" size={24} color={engravedTint(color)} />;
 }
 function LayersGlyph({ color }: { color: string }) {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24" {...G} stroke={color}>
-      <Path d="M12 4l9 5-9 5-9-5z" />
-      <Path d="M3 14l9 5 9-5" />
-    </Svg>
-  );
+  return <EngravedIcon name="layers" size={24} color={engravedTint(color)} />;
 }
 function TrendGlyph({ color }: { color: string }) {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24" {...G} stroke={color}>
-      <Path d="M3 17l6-6 4 4 8-8" />
-      <Path d="M15 7h6v6" />
-    </Svg>
-  );
+  return <EngravedIcon name="trend-up" size={24} color={engravedTint(color)} />;
 }
 function BoltGlyph({ color }: { color: string }) {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24" {...G} stroke={color}>
-      <Path d="M13 3L5 14h6l-1 7 8-11h-6z" />
-    </Svg>
-  );
+  return <EngravedIcon name="lightning" size={24} color={engravedTint(color)} />;
 }
 function ArrowGlyph() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" {...G} stroke={flColor.onBronze} strokeWidth={2}>
-      <Path d="M5 12h14M13 6l6 6-6 6" />
-    </Svg>
-  );
+  return <EngravedIcon name="arrow-right" size={16} color={flColor.onBronze} />;
 }
 function SlidersGlyph() {
-  return (
-    <Svg width={34} height={34} viewBox="0 0 24 24" {...G} stroke={flColor.gray400}>
-      <Path d="M4 7h16M4 12h16M4 17h16" />
-      <Circle cx={9} cy={7} r={1.8} />
-      <Circle cx={15} cy={12} r={1.8} />
-      <Circle cx={8} cy={17} r={1.8} />
-    </Svg>
-  );
+  return <EngravedIcon name="sliders" size={34} color={flColor.gray400} />;
 }
 
 function StepBtn({

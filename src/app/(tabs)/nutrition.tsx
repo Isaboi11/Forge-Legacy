@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { Button } from '@/components/forge/composites/Button';
@@ -195,10 +196,7 @@ export default function NutritionScreen() {
             onPress={() => setIso(todayIso)}
             style={styles.barAction}
           >
-            <Svg width={21} height={21} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M4.5 6.5h15v13h-15z" />
-              <Path d="M4.5 10h15M8.5 4v4M15.5 4v4" />
-            </Svg>
+            <EngravedIcon name="calendar" size={21} />
           </Pressable>
         }
       />
@@ -273,9 +271,7 @@ export default function NutritionScreen() {
               completely untappable, on the one screen a brand-new athlete starts from. `box-none` lets
               the children stay interactive while the wrapper itself still passes touches through. */}
           <View style={styles.heroCentre} pointerEvents="box-none">
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.emberFlame} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />
-            </Svg>
+            <EngravedIcon name="flame" size={22} color={flColor.emberFlame} />
             <Text style={styles.heroValue}>{headline.value}</Text>
             <Text style={styles.heroLabel}>{headline.label}</Text>
             {targets ? (
@@ -411,9 +407,7 @@ function MealCard({
     return (
       <Pressable accessibilityRole="button" onPress={onPress} style={styles.emptyMeal}>
         <View style={styles.emptyIcon}>
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.charcoal500} strokeWidth={1.8} strokeLinecap="round">
-            <Path d="M12 5v14M5 12h14" />
-          </Svg>
+          <EngravedIcon name="plus" size={20} color={flColor.charcoal500} />
         </View>
         <View style={styles.mealBody}>
           <Text style={styles.emptyEyebrow}>{group.label}</Text>
@@ -431,10 +425,7 @@ function MealCard({
   return (
     <Surface variant="card" radius="lg" onPress={onPress} style={styles.mealCard}>
       <View style={styles.mealThumb}>
-        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze600} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M4 11h16a8 8 0 0 1-16 0z" />
-          <Path d="M3 19h18" />
-        </Svg>
+        <EngravedIcon name="bowl" size={22} />
       </View>
       <View style={styles.mealBody}>
         <Text style={styles.mealEyebrow}>{group.label}</Text>
@@ -452,12 +443,8 @@ function MealCard({
   );
 }
 
-function Chevron({ direction, color, size = 18, width = 1.9 }: { direction: 'left' | 'right'; color: string; size?: number; width?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={direction === 'left' ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'} />
-    </Svg>
-  );
+function Chevron({ direction, color, size = 18 }: { direction: 'left' | 'right'; color: string; size?: number; width?: number }) {
+  return <EngravedIcon name={direction === 'left' ? 'chevron-left' : 'chevron-right'} size={size} color={color} />;
 }
 
 /*
@@ -466,24 +453,11 @@ function Chevron({ direction, color, size = 18, width = 1.9 }: { direction: 'lef
  * white label as a near-black mark on bronze — which is exactly what the PO saw on LOG FOOD. Any icon
  * handed to a primary Button takes the same token its label does.
  */
-const Plus = () => (
-  <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={2.1} strokeLinecap="round">
-    <Path d="M12 5v14M5 12h14" />
-  </Svg>
-);
+const Plus = () => <EngravedIcon name="plus" size={17} color={flColor.onBronze} />;
 
-const ScanGlyph = () => (
-  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round">
-    <Path d="M4 6v12M7.5 6v12M11 6v12M14 6v12M17.5 6v12M21 6v12" />
-  </Svg>
-);
+const ScanGlyph = () => <EngravedIcon name="barcode-scan" size={16} />;
 
-const CalendarGlyph = () => (
-  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M4.5 6.5h15v13h-15z" />
-    <Path d="M4.5 10h15M8.5 4v4M15.5 4v4" />
-  </Svg>
-);
+const CalendarGlyph = () => <EngravedIcon name="calendar" size={16} />;
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: flColor.base },

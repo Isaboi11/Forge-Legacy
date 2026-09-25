@@ -2,12 +2,12 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { ScreenBackground } from '@/components/screen-background';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flRadius, flShadow } from '@/constants/foundation';
 import { fetchMyPrograms, type SavedProgram } from '@/data/programs-live';
@@ -118,9 +118,7 @@ export default function ProgramsScreen() {
             accessibilityLabel="Build a program"
             style={({ pressed }) => [styles.createRow, pressed ? styles.createRowPressed : null]}
           >
-            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round">
-              <Path d="M12 5v14M5 12h14" />
-            </Svg>
+            <EngravedIcon name="plus" size={16} color={flColor.bronze300} />
             <Text style={styles.createRowText}>Build a Program</Text>
           </Pressable>
         </View>

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { ScreenBackground } from '@/components/screen-background';
@@ -44,9 +44,6 @@ import { useToast } from '@/hooks/useCeremony';
  * no error state of its own — but `createChapter` still translates the partial unique index's `23505`
  * into a sentence, because a deep link or a second device can arrive here anyway.
  */
-
-const BACK = 'M15 5l-7 7 7 7';
-const ARROW = 'M5 12h14M13 6l6 6-6 6';
 
 export default function NewChapterScreen() {
   const router = useRouter();
@@ -134,7 +131,7 @@ export default function NewChapterScreen() {
           style={styles.barBtn}
           hitSlop={8}
         >
-          <Glyph d={BACK} size={22} color={flColor.gray400} width={1.9} />
+          <EngravedIcon name="chevron-left" size={22} color={flColor.gray400} />
         </Pressable>
         <Text style={styles.barTitle}>{step === 'name' ? 'New Chapter' : 'First Goal'}</Text>
         <View style={styles.barBtn} />
@@ -238,7 +235,7 @@ export default function NewChapterScreen() {
             <Button variant="primary" fullWidth disabled={!nameOk} onPress={() => setStep('goal')} accessibilityLabel="Next">
               <View style={styles.ctaInner}>
                 <Text style={styles.ctaText}>Next</Text>
-                <Glyph d={ARROW} size={16} color="#F7F5F1" width={2.2} />
+                <EngravedIcon name="arrow-right" size={16} color="#F7F5F1" />
               </View>
             </Button>
           ) : (
@@ -266,14 +263,6 @@ export default function NewChapterScreen() {
         }}
       />
     </View>
-  );
-}
-
-function Glyph({ d, size = 16, color, width = 1.9 }: { d: string; size?: number; color: string; width?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={d} />
-    </Svg>
   );
 }
 

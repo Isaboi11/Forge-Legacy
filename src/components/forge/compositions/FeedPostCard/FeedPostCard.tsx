@@ -15,10 +15,10 @@
  * is placeholder (no feed backend).
  */
 
-import Svg, { Circle } from 'react-native-svg'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Avatar } from '../../composites/Avatar'
 import { FlameIcon } from '../../primitives/icons/HomeIcons'
+import { EngravedIcon } from '../../primitives/icons/EngravedIcon'
 import { BookmarkGlyph, CommentGlyph, PostContentBlock, RoleBadge, ShareGlyph } from '../PostContent'
 import { flColor, flRadius, flShadow } from '@/constants/foundation'
 import { type FeedPost } from '@/data/post-placeholder'
@@ -126,13 +126,7 @@ function authorIdentity(post: FeedPost, presence: boolean, showTag: boolean) {
 
 // ── local glyph (feed-specific: horizontal options dots) ──
 function OverflowIcon() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill={flColor.gray600}>
-      <Circle cx={5} cy={12} r={1.7} />
-      <Circle cx={12} cy={12} r={1.7} />
-      <Circle cx={19} cy={12} r={1.7} />
-    </Svg>
-  )
+  return <EngravedIcon name="more" size={18} color={flColor.gray600} />
 }
 
 const styles = StyleSheet.create({

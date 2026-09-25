@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReducedMotion } from 'react-native-reanimated';
@@ -31,6 +31,7 @@ import { recapSummaryFrom, fetchWorkoutShares } from '@/data/squad-feed-live';
 import { fetchTodaysChapterPhotos, type ChapterPhoto } from '@/data/photos-live';
 import { fetchRecentPlaylists } from '@/data/playlists-live';
 import { ShareSessionSheet } from '@/components/forge/ShareSessionSheet';
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import type { PriorShare } from '@/domain/share/fanout';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { forgeOr } from '@/constants/theme-scrim';
@@ -1041,14 +1042,9 @@ export default function WorkoutComplete() {
         <SafeTop />
         <View style={styles.recHeader}>
           <Pressable onPress={() => setStage(from)} accessibilityRole="button" accessibilityLabel="Back" style={styles.recBack}>
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M15 5l-7 7 7 7" />
-            </Svg>
+            <EngravedIcon name="chevron-left" size={22} color={flColor.gray400} />
           </Pressable>
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="square" strokeLinejoin="miter">
-            <Path d="M12 6.5C10 5 7 4.5 4 5v12c3-.5 6 0 8 1.5" />
-            <Path d="M12 6.5C14 5 17 4.5 20 5v12c-3-.5-6 0-8 1.5z" />
-          </Svg>
+          <EngravedIcon name="book" size={20} />
           <Text style={styles.recHeaderTitle}>The Record</Text>
         </View>
         <ScrollView contentContainerStyle={styles.recScroll} showsVerticalScrollIndicator={false}>
@@ -1067,10 +1063,7 @@ export default function WorkoutComplete() {
               {shownName}
               {data.dateLabel ? ` · Sealed ${data.dateLabel}` : ''}
             </Text>
-            <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M12 20h9" />
-              <Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-            </Svg>
+            <EngravedIcon name="edit" size={13} />
           </Pressable>
 
           <View style={styles.recEvidence}>
@@ -1231,10 +1224,7 @@ export default function WorkoutComplete() {
             <Text style={styles.longGameCopy}>This session is now permanent — another entry in a chapter still being written.</Text>
             <View style={styles.chapterCard}>
               <View style={styles.chapterGlyph}>
-                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="square" strokeLinejoin="miter">
-                  <Path d="M12 6.5C10 5 7 4.5 4 5v12c3-.5 6 0 8 1.5" />
-                  <Path d="M12 6.5C14 5 17 4.5 20 5v12c-3-.5-6 0-8 1.5z" />
-                </Svg>
+                <EngravedIcon name="book" size={20} />
               </View>
               <View style={styles.chapterText}>
                 <Text style={styles.chapterName}>{data.chapterName ?? 'Your Chapter'}</Text>
@@ -1456,20 +1446,13 @@ function CaptureRow({
       <Text style={[styles.capRowLabel, filled ? styles.capRowLabelFilled : null]} numberOfLines={1}>
         {label}
       </Text>
-      <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M9 6l6 6-6 6" />
-      </Svg>
+      <EngravedIcon name="chevron-right" size={15} color={flColor.gray600} />
     </Pressable>
   );
 }
 
 function PencilGlyph({ size = 18, color = flColor.bronze400 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 20h9" />
-      <Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-    </Svg>
-  );
+  return <EngravedIcon name="edit" size={size} color={engravedTint(color)} />;
 }
 
 /** One figure on the share card. Smaller and quieter than `Stat` — the card is 238px wide. */
@@ -1502,51 +1485,15 @@ function deltaLabel(d: ExerciseDelta, units: import('@/domain/settings/units').U
   const w = exactWeight(d.n, units);
   return `+${w.value} ${w.unit}`;
 }
-// Exact forge-symbols glyphs: laurel (honor) · spark (pr) · medal (milestone) · flame (consistency).
-const HERO_GLYPHS: Record<CompletionHero['kind'], ReactNode> = {
-  honor: (
-    <>
-      <Path d="M10.61 19.17L9.91 19.00L9.24 18.76L8.59 18.45L7.97 18.09L7.40 17.67L6.87 17.19L6.38 16.66L5.95 16.09L5.58 15.48L5.27 14.83L5.03 14.16L4.85 13.47L4.74 12.76L4.70 12.05L4.73 11.33L4.83 10.63L5.00 9.93L5.24 9.26L5.54 8.61L5.90 7.99L6.32 7.41L6.80 6.88L7.32 6.40L7.89 5.96L8.50 5.59L9.15 5.28" />
-      <Path d="M9.50 18.86Q7.63 18.13 6.21 19.09Q7.75 19.84 9.50 18.86Z" fill={flColor.bronze300} stroke="none" />
-      <Path d="M7.21 17.51Q5.50 15.95 3.58 16.40Q4.92 17.84 7.21 17.51Z" fill={flColor.bronze300} stroke="none" />
-      <Path d="M5.55 15.43Q4.49 13.31 2.48 13.03Q3.24 14.91 5.55 15.43Z" fill={flColor.bronze300} stroke="none" />
-      <Path d="M4.75 12.89Q4.52 10.59 2.80 9.63Q2.83 11.61 4.75 12.89Z" fill={flColor.bronze300} stroke="none" />
-      <Path d="M4.92 10.23Q5.46 8.24 4.33 6.89Q3.72 8.55 4.92 10.23Z" fill={flColor.bronze300} stroke="none" />
-      <Path d="M6.02 7.81Q7.06 6.39 6.57 4.97Q5.58 6.10 6.02 7.81Z" fill={flColor.bronze300} stroke="none" />
-      <Path d="M7.92 5.95Q9.10 5.19 9.14 4.00Q8.08 4.56 7.92 5.95Z" fill={flColor.bronze300} stroke="none" />
-      <Path d="M13.39 19.17L14.09 19.00L14.76 18.76L15.41 18.45L16.03 18.09L16.60 17.67L17.13 17.19L17.62 16.66L18.05 16.09L18.42 15.48L18.73 14.83L18.97 14.16L19.15 13.47L19.26 12.76L19.30 12.05L19.27 11.33L19.17 10.63L19.00 9.93L18.76 9.26L18.46 8.61L18.10 7.99L17.68 7.41L17.20 6.88L16.68 6.40L16.11 5.96L15.50 5.59L14.85 5.28" />
-      <Path d="M14.50 18.86Q16.37 18.13 17.79 19.09Q16.25 19.84 14.50 18.86Z" fill={flColor.bronze300} stroke="none" />
-      <Path d="M16.79 17.51Q18.50 15.95 20.42 16.40Q19.08 17.84 16.79 17.51Z" fill={flColor.bronze300} stroke="none" />
-      <Path d="M18.45 15.43Q19.51 13.31 21.52 13.03Q20.76 14.91 18.45 15.43Z" fill={flColor.bronze300} stroke="none" />
-      <Path d="M19.25 12.89Q19.48 10.59 21.20 9.63Q21.17 11.61 19.25 12.89Z" fill={flColor.bronze300} stroke="none" />
-      <Path d="M19.08 10.23Q18.54 8.24 19.67 6.89Q20.28 8.55 19.08 10.23Z" fill={flColor.bronze300} stroke="none" />
-      <Path d="M17.98 7.81Q16.94 6.39 17.43 4.97Q18.42 6.10 17.98 7.81Z" fill={flColor.bronze300} stroke="none" />
-      <Path d="M16.08 5.95Q14.90 5.19 14.86 4.00Q15.92 4.56 16.08 5.95Z" fill={flColor.bronze300} stroke="none" />
-      <Path d="M10.61 19.17L14.99 21.27" />
-      <Path d="M13.39 19.17L9.01 21.27" />
-    </>
-  ),
-  pr: (
-    <>
-      <Path d="M11 3c.4 3.4 1.6 4.6 5 5-3.4.4-4.6 1.6-5 5-.4-3.4-1.6-4.6-5-5 3.4-.4 4.6-1.6 5-5z" />
-      <Path d="M18 13c.2 1.7.8 2.3 2.5 2.5-1.7.2-2.3.8-2.5 2.5-.2-1.7-.8-2.3-2.5-2.5 1.7-.2 2.3-.8 2.5-2.5z" />
-    </>
-  ),
-  milestone: (
-    <>
-      <Circle cx={12} cy={14.5} r={4.8} />
-      <Circle cx={12} cy={14.5} r={1.8} />
-      <Path d="M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4" />
-    </>
-  ),
-  consistency: <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />,
+// The design's glyphs: laurel (honor) · spark (pr) · medal (milestone) · flame (consistency).
+const HERO_GLYPHS: Record<CompletionHero['kind'], EngravedName> = {
+  honor: 'laurel',
+  pr: 'spark',
+  milestone: 'medal',
+  consistency: 'flame',
 };
 function HeroGlyph({ kind, size = 22 }: { kind: CompletionHero['kind']; size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-      {HERO_GLYPHS[kind]}
-    </Svg>
-  );
+  return <EngravedIcon name={HERO_GLYPHS[kind]} size={size} />;
 }
 /** The "one true thing" — featured (honor/PR) dominates; standard (milestone/consistency) is a quiet line. */
 function Hero({ hero }: { hero: CompletionHero }) {
@@ -1594,46 +1541,23 @@ function Hero({ hero }: { hero: CompletionHero }) {
 }
 
 function CameraGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.2-2h8.2l1.2 2h2.2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z" />
-      <Path d="M15.2 13a3.2 3.2 0 1 1-6.4 0 3.2 3.2 0 0 1 6.4 0z" />
-    </Svg>
-  );
+  return <EngravedIcon name="camera" size={size} color={engravedTint(color)} />;
 }
 
 /** §5's music-note mark — the same glyph the chip and the ⋯ Options row use. */
 function BowlGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 11h16a8 8 0 0 1-16 0z" />
-      <Path d="M3 19h18" />
-    </Svg>
-  );
+  return <EngravedIcon name="bowl" size={size} color={engravedTint(color)} />;
 }
 
 function NoteGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 18V5l11-2v13" />
-      <Path d="M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM20 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
-    </Svg>
-  );
+  return <EngravedIcon name="music" size={size} color={engravedTint(color)} />;
 }
 
 function TemplateGlyph({ size = 15, color = flColor.bronze400 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 4h14v16H5zM8.5 8.5h7M8.5 12h7M8.5 15.5h4" />
-    </Svg>
-  );
+  return <EngravedIcon name="document" size={size} color={engravedTint(color)} />;
 }
 function CheckGlyph({ size = 15, color = '#8FB295' }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4.5 4.5L19 7" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={size} color={color} />;
 }
 
 /**

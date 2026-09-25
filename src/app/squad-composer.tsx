@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -41,6 +40,7 @@ import {
   mediaFromPick,
   useTransformationPick,
 } from '@/components/forge/compositions/TransformationPicker';
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { errorMessage } from '@/lib/useQuery';
 import { UploadError } from '@/lib/storage-upload';
 import { useMediaPicker } from '@/lib/useMediaPicker';
@@ -780,19 +780,10 @@ function RecapStat({ n, label }: { n: string; label: string }) {
 }
 
 function ChevronRight() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 5l7 7-7 7" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-right" size={17} color={flColor.bronze400} />;
 }
 function PlusInCircle() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={9} />
-      <Path d="M12 8v8M8 12h8" />
-    </Svg>
-  );
+  return <EngravedIcon name="plus" size={20} color={flColor.bronze300} />;
 }
 
 function MediaAttach({ media, uploading, pct, onPick, onRemove, videoOnly = false }: { media: SquadMedia | null; uploading: boolean; pct: number; onPick: () => void; onRemove: () => void; videoOnly?: boolean }) {
@@ -882,102 +873,43 @@ function Area({ label, value, onChange, placeholder, rows }: { label: string; va
 // ── glyphs ──
 function TypeGlyph({ type, locked = false }: { type: SquadPostType; locked?: boolean }) {
   const c = locked ? flColor.gray600 : flColor.bronze300;
-  const props = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: c, strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-  switch (type) {
-    case 'progress':
-      return (
-        <Svg {...props}>
-          <Path d="M4 8.5h3l1.5-2h7l1.5 2h3v10H4z" />
-          <Circle cx={12} cy={13} r={3.5} />
-        </Svg>
-      );
-    // Retired from the palette, kept so a legacy check-in still draws its own mark wherever one is asked for.
-    case 'checkin':
-      return (
-        <Svg {...props}>
-          <Path d="M5 12.5l4 4 10-10" />
-        </Svg>
-      );
-    case 'recap':
-      return (
-        <Svg {...props}>
-          <Path d="M6.5 8v8M17.5 8v8M4 10v4M20 10v4M6.5 12h11" />
-        </Svg>
-      );
-    case 'pr':
-      return (
-        <Svg {...props}>
-          <Path d="M7 5h10v3a5 5 0 0 1-10 0z" />
-          <Path d="M7 6H4v1.5a3.5 3.5 0 0 0 3.5 3.5M17 6h3v1.5A3.5 3.5 0 0 1 16.5 11M9.5 14h5M12 11v3M8.5 18.5h7" />
-        </Svg>
-      );
-    case 'formcheck':
-      return (
-        <Svg {...props}>
-          <Path d="M3.5 7h11v10h-11z" />
-          <Path d="M14.5 10.2l6-3.2v10l-6-3.2z" />
-        </Svg>
-      );
-    case 'discussion':
-      return (
-        <Svg {...props}>
-          <Path d="M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4 19.5l1.3-4A7.5 7.5 0 1 1 20 11.5z" />
-        </Svg>
-      );
-    default: // announcement
-      return (
-        <Svg {...props}>
-          <Path d="M4 9v6h3l8 4V5L7 9z" />
-          <Path d="M18 9a4 4 0 0 1 0 6" />
-        </Svg>
-      );
-  }
+  const name: EngravedName =
+    type === 'progress'
+      ? 'camera'
+      : type === 'checkin'
+        ? 'check'
+        : type === 'recap'
+          ? 'barbell'
+          : type === 'pr'
+            ? 'pr'
+            : type === 'formcheck'
+              ? 'video'
+              : type === 'discussion'
+                ? 'chat'
+                : 'megaphone';
+  return <EngravedIcon name={name} size={20} color={engravedTint(c)} />;
 }
 function LockIcon() {
-  return (
-    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Rect x={5} y={11} width={14} height={9} rx={1.5} />
-      <Path d="M8 11V8a4 4 0 0 1 8 0v3" />
-    </Svg>
-  );
+  return <EngravedIcon name="lock" size={12} color={flColor.gray600} />;
 }
 function ShieldIcon() {
   return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 1 }}>
-      <Path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
-    </Svg>
+    <View style={{ marginTop: 1 }}>
+      <EngravedIcon name="shield" size={15} />
+    </View>
   );
 }
 function MediaIcon() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Rect x={3} y={5} width={18} height={14} rx={2} />
-      <Path d="M3 16l5-5 4 4 3-3 6 6" />
-      <Circle cx={9} cy={9} r={1.4} />
-    </Svg>
-  );
+  return <EngravedIcon name="image" size={18} />;
 }
 function VideoIcon() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M3.5 7h11v10h-11z" />
-      <Path d="M14.5 10.2l6-3.2v10l-6-3.2z" />
-    </Svg>
-  );
+  return <EngravedIcon name="video" size={18} />;
 }
 function PlayIcon() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill={flColor.bronze300}>
-      <Path d="M8 5v14l11-7z" />
-    </Svg>
-  );
+  return <EngravedIcon name="play" size={18} />;
 }
 function CloseIcon() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#F0EDE8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6 6l12 12M18 6L6 18" />
-    </Svg>
-  );
+  return <EngravedIcon name="close" size={16} color="#F0EDE8" />;
 }
 
 const styles = StyleSheet.create({

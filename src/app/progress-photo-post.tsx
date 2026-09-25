@@ -9,6 +9,7 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
 import { ScreenBackground } from '@/components/screen-background';
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { addSquadPost, type ProgressCardPhoto, type ProgressPostCard as ProgressCardData } from '@/data/squad-feed-live';
 import { fetchTransformationEntries, XFORM_POSES, type PoseKey, type TransformationEntry } from '@/data/transformation-live';
@@ -413,9 +414,7 @@ export default function ProgressPhotoPostRoute() {
                   )}
                   {on ? (
                     <View style={styles.poseCheck}>
-                      <Svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
-                        <Path d="M20 6L9 17l-5-5" />
-                      </Svg>
+                      <EngravedIcon name="check" size={9} color={flColor.onBronze} />
                     </View>
                   ) : null}
                 </View>
@@ -530,51 +529,13 @@ function StyleDiagram({ id, on }: { id: ProgressStyle; on: boolean }) {
 
 function ToggleIcon({ which, on }: { which: keyof ProgressIncl; on: boolean }) {
   const c = on ? flColor.bronze300 : flColor.gray600;
-  const p = { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: c, strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-  switch (which) {
-    case 'date':
-      return (
-        <Svg {...p}>
-          <Rect x={4.5} y={6.5} width={15} height={13} rx={1.5} />
-          <Path d="M4.5 10.5h15M8.5 4v4M15.5 4v4" />
-        </Svg>
-      );
-    case 'meta':
-      return (
-        <Svg {...p} strokeWidth={2}>
-          <Path d="M5 19V11M10 19V6M15 19v-6M20 19V9" />
-        </Svg>
-      );
-    case 'chapter':
-      return (
-        <Svg {...p}>
-          <Path d="M5 4.5h11l3 3v12H5z" />
-          <Path d="M9 11h6M9 14.5h4" />
-        </Svg>
-      );
-    case 'name':
-      return (
-        <Svg {...p}>
-          <Circle cx={12} cy={8} r={3.2} />
-          <Path d="M5 20a7 7 0 0 1 14 0" />
-        </Svg>
-      );
-    default: // pose labels
-      return (
-        <Svg {...p}>
-          <Path d="M4 8h16M4 12h10M4 16h7" />
-        </Svg>
-      );
-  }
+  const name: EngravedName =
+    which === 'date' ? 'calendar' : which === 'meta' ? 'bar-chart' : which === 'chapter' ? 'book' : which === 'name' ? 'user' : 'list';
+  return <EngravedIcon name={name} size={14} color={engravedTint(c)} />;
 }
 
 function CameraIcon() {
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.charcoal500} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 8.5h3l1.5-2h7l1.5 2h3v10H4z" />
-      <Circle cx={12} cy={13} r={3.5} />
-    </Svg>
-  );
+  return <EngravedIcon name="camera" size={14} color={flColor.charcoal500} />;
 }
 /** Neutral marks, not brand assets — the official ones go in under each platform's guidelines. */
 function InstagramIcon() {
@@ -595,30 +556,13 @@ function FacebookIcon() {
   );
 }
 function SaveIcon() {
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3.5v11M8 11l4 4 4-4M5 20h14" />
-    </Svg>
-  );
+  return <EngravedIcon name="download" size={19} color={flColor.bronze400} />;
 }
 function DotsIcon() {
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill={flColor.bronze400}>
-      <Circle cx={6} cy={12} r={1.5} />
-      <Circle cx={12} cy={12} r={1.5} />
-      <Circle cx={18} cy={12} r={1.5} />
-    </Svg>
-  );
+  return <EngravedIcon name="more" size={19} color={flColor.bronze400} />;
 }
 function ShareGlyph() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#F7F5F1" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={6} cy={12} r={2.4} />
-      <Circle cx={17} cy={6} r={2.4} />
-      <Circle cx={17} cy={18} r={2.4} />
-      <Path d="M8.1 10.9l6.8-3.8M8.1 13.1l6.8 3.8" />
-    </Svg>
-  );
+  return <EngravedIcon name="share" size={16} color="#F7F5F1" />;
 }
 
 const styles = StyleSheet.create({

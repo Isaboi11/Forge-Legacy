@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { EquipIcon } from '@/components/forge/EquipIcon';
 import { ExercisePoster } from '@/components/forge/ExercisePoster';
@@ -41,14 +41,6 @@ import { useProfile } from '@/lib/profile';
  *  · Replace / Actions block — it needs a live workout slot to replace INTO. Reached from a past
  *    session's detail there is nothing to swap, so the block is absent rather than inert.
  */
-
-function Glyph({ d, size = 16, color, width = 1.8 }: { d: string; size?: number; color: string; width?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={d} />
-    </Svg>
-  );
-}
 
 export default function ExerciseDetailScreen() {
   const router = useRouter();
@@ -191,7 +183,7 @@ export default function ExerciseDetailScreen() {
             {c.commonMistakes.map((m) => (
               <View key={m} style={styles.mistakeRow}>
                 <View style={styles.mistakeMark}>
-                  <Glyph d="M18 6L6 18M6 6l12 12" size={11} color={flColor.redMuted} width={2.4} />
+                  <EngravedIcon name="close" size={11} color={flColor.redMuted} />
                 </View>
                 <Text style={styles.body}>{m}</Text>
               </View>
@@ -244,7 +236,7 @@ export default function ExerciseDetailScreen() {
                       {a.equip} · {a.note}
                     </Text>
                   </View>
-                  <Glyph d="M9 6l6 6-6 6" size={16} color={flColor.gray600} width={2} />
+                  <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} />
                 </Pressable>
               ))}
             </View>

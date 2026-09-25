@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -9,6 +8,7 @@ import { SkeletonCard } from '@/components/forge/cards/SkeletonCard';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { BUBBLE_SIZE, HoltMark } from '@/components/forge/HoltMark';
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fmtDuration } from '@/data/squad-feed-live';
 import { formatWeekRange, weekHero } from '@/domain/coach/rulebook/review';
 import { displayWeight } from '@/domain/settings/units';
@@ -322,12 +322,7 @@ function Stat({ value, unit, label }: { value: string; unit?: string; label: str
 /** The squad recap's honor glyph, so an honor looks the same one level down. */
 function MedalGlyph({ size = 16, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M8.5 3 L12 9" />
-      <Path d="M15.5 3 L12 9" />
-      <Circle cx={12} cy={15} r={5.4} />
-      <Circle cx={12} cy={15} r={2.1} />
-    </Svg>
+    <EngravedIcon name="medal" size={size} color={engravedTint(color)} />
   );
 }
 

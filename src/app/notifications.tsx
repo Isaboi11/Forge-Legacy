@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -45,9 +45,6 @@ import { useQuery } from '@/lib/useQuery';
  * question — everything else fires when the thing it is about happens. The days and hour live in
  * `briefing_schedule`, not in `notif_prefs`, and are revealed only once the toggle is on.
  */
-
-const SHIELD = 'M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z';
-const CHECK = 'M8.5 12.5l2.5 2.5 5-5';
 
 /**
  * The one promise this screen makes about what a notification will NOT contain.
@@ -208,10 +205,7 @@ export default function NotificationsScreen() {
           {/* always-delivered callout */}
           <View style={styles.callout}>
             <View style={styles.calloutIcon}>
-              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-                <Path d={SHIELD} />
-                <Path d={CHECK} />
-              </Svg>
+              <EngravedIcon name="shield-check" size={18} />
             </View>
             <View style={styles.rowText}>
               <Text style={styles.calloutTitle}>{ALWAYS_DELIVERED.title}</Text>

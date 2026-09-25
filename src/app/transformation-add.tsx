@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -25,6 +24,7 @@ import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { forgeOr, themeGround } from '@/constants/theme-scrim';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 
 /**
  * New / Edit Progress Set — built to the Add overlay of `Forge Transformation.dc.html`, wired to real
@@ -362,9 +362,7 @@ function TopBar({ title, onClose }: { title: string; onClose: () => void }) {
   return (
     <View style={[styles.topBar, { height: 56 + insets.top, paddingTop: insets.top }]}>
       <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cancel" style={styles.topBtn} hitSlop={6}>
-        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M6 6l12 12M18 6L6 18" />
-        </Svg>
+        <EngravedIcon name="close" size={22} color={flColor.gray400} />
       </Pressable>
       <Text style={styles.topTitle}>{title}</Text>
       <View style={styles.topBtn} />
@@ -385,19 +383,16 @@ function PoseSlot({ url, uploading, onPick, onRemove }: { url?: string; uploadin
       <View style={styles.slotFilled}>
         <Image source={{ uri: url }} style={styles.slotImage} contentFit="cover" />
         <Pressable onPress={onRemove} accessibilityRole="button" accessibilityLabel="Remove photo" style={styles.slotRemove} hitSlop={6}>
-          <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#F0EDE8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M6 6l12 12M18 6L6 18" />
-          </Svg>
+          <EngravedIcon name="close" size={14} color="#F0EDE8" />
         </Pressable>
       </View>
     );
   }
   return (
     <Pressable onPress={onPick} accessibilityRole="button" accessibilityLabel="Add photo" style={[styles.slot, styles.slotEmpty]}>
-      <Svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" opacity={0.55}>
-        <Path d="M4 7h3.4l1.2-2h6.8L16.6 7H20v12H4z" />
-        <Circle cx={12} cy={13} r={3.1} />
-      </Svg>
+      <View style={styles.slotIcon}>
+        <EngravedIcon name="camera" size={26} />
+      </View>
     </Pressable>
   );
 }
@@ -418,9 +413,7 @@ function VideoSlot({ url, uploading, onPick, onRemove }: { url: string | null; u
         </View>
         <Text style={styles.videoText}>Clip attached</Text>
         <Pressable onPress={onRemove} accessibilityRole="button" accessibilityLabel="Remove clip" style={styles.slotRemove} hitSlop={6}>
-          <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#F0EDE8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M6 6l12 12M18 6L6 18" />
-          </Svg>
+          <EngravedIcon name="close" size={14} color="#F0EDE8" />
         </Pressable>
       </View>
     );
@@ -434,11 +427,7 @@ function VideoSlot({ url, uploading, onPick, onRemove }: { url: string | null; u
 }
 
 function PlayGlyph({ color, size }: { color: string; size: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M8 5v14l11-7z" />
-    </Svg>
-  );
+  return <EngravedIcon name="play" size={size} color={engravedTint(color)} />;
 }
 
 const DASH = { borderStyle: 'dashed' as const };
@@ -471,6 +460,7 @@ const styles = StyleSheet.create({
   poseCell: { flexBasis: '30%', flexGrow: 1, alignItems: 'center', gap: 10 },
   slot: { width: '100%', aspectRatio: 3 / 4, borderRadius: flRadius.xl, alignItems: 'center', justifyContent: 'center' },
   slotEmpty: { borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(186, 134, 84,0.06)', ...DASH },
+  slotIcon: { opacity: 0.55 },
   slotBusy: { borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
   slotFilled: { width: '100%', aspectRatio: 3 / 4, borderRadius: flRadius.xl, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, position: 'relative' },
   slotImage: { width: '100%', height: '100%' },

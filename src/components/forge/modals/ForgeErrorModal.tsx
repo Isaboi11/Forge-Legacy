@@ -10,7 +10,7 @@
 
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { FeatherNameIcon } from '../FeatherNameIcon'
 import { color } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
 import { ForgeModal } from './ForgeModal'
@@ -45,7 +45,7 @@ export function ForgeErrorModal({
       <View style={styles.content}>
         {/* Danger icon circle */}
         <View style={styles.iconCircle}>
-          <Feather name={icon as 'wifi-off'} size={24} color={color.danger} />
+          <FeatherNameIcon name={icon} size={24} color={color.danger} />
         </View>
 
         {/* Text */}

@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import type { RankHistory } from '@/data/rank-live';
 import { clinchingSession, rungIndex } from '@/domain/rank/history';
@@ -91,9 +91,7 @@ export function RankRungSheet({
               <Text style={[styles.saying, !reached && styles.sayingAhead]}>{rankAscent(target.family, target.level)}</Text>
             </View>
             <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" hitSlop={6} style={({ pressed }) => [styles.close, pressed && { opacity: 0.7 }]}>
-              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round">
-                <Path d="M6 6l12 12M18 6L6 18" />
-              </Svg>
+              <EngravedIcon name="close" size={15} color={flColor.gray400} />
             </Pressable>
           </View>
         ) : undefined
@@ -192,9 +190,7 @@ function Standards({ rows, standing = false }: { rows: StandardRow[] | 'start' |
         <View key={r.key} style={[styles.row, i > 0 && styles.rowRule]}>
           <View style={[styles.mark, r.met ? styles.markMet : null]}>
             {r.met ? (
-              <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M5 12.5l4.5 4.5L19 7.5" />
-              </Svg>
+              <EngravedIcon name="check" size={11} color={flColor.onBronze} />
             ) : null}
           </View>
           <View style={styles.rowText}>
@@ -220,11 +216,7 @@ function SeeAll({ onPress }: { onPress: () => void }) {
 }
 
 function Chevron() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 6l6 6-6 6" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-right" size={16} color={flColor.bronze400} />;
 }
 
 const styles = StyleSheet.create({

@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
@@ -207,13 +207,7 @@ export default function JoinSquadRoute() {
 }
 
 function TicketIcon() {
-  return (
-    <Svg width={34} height={34} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h13A1.5 1.5 0 0 1 20 8.5v2a2 2 0 0 0 0 3v2A1.5 1.5 0 0 1 18.5 17h-13A1.5 1.5 0 0 1 4 15.5v-2a2 2 0 0 0 0-3z" />
-      <Path d="M13 7v10" strokeDasharray="1.5 2.4" />
-      <Circle cx={9} cy={12} r={0.6} fill={flColor.bronze300} />
-    </Svg>
-  );
+  return <EngravedIcon name="ticket" size={34} />;
 }
 
 const styles = StyleSheet.create({

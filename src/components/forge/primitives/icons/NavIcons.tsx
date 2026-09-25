@@ -1,5 +1,10 @@
 /**
  * CLA-C02 — Icon (bottom-nav tab glyphs)
+ *
+ * ⭐ 2026-09-25: drawn from the PO's engraved set (`EngravedIcon`). The active tab (bronze) wears the
+ * engraved gradient; inactive tabs stay flat grey. Same five meanings as before — only the drawing moved.
+ * The history below is the pre-engraved port.
+ *
  * Tier: 1 (Primitive)
  * Spec: Forge Home.dc.html `tabItems` (line 371) → `ForgeSymbols.SYMBOLS`
  * (design_reference `forge-symbols.js`, "Navigation" category). All five glyphs
@@ -9,94 +14,24 @@
  */
 
 import React from 'react'
-import Svg, { Circle, Path } from 'react-native-svg'
 import { flColor } from '@/constants/foundation'
+import { EngravedIcon, engravedTint, type EngravedName } from './EngravedIcon'
 
 export interface NavIconProps {
   size?: number
   color?: string
 }
 
-/** Shared Forged-DNA wrapper (matches ForgeSymbols.create). */
-function Glyph({ size = 22, color = flColor.gray600, children }: NavIconProps & { children: React.ReactNode }) {
-  return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="square"
-      strokeLinejoin="miter"
-      strokeMiterlimit={8}
-    >
-      {children}
-    </Svg>
-  )
+function tab(name: EngravedName) {
+  return function TabIcon({ size = 22, color = flColor.gray600 }: NavIconProps) {
+    return <EngravedIcon name={name} size={size} color={engravedTint(color)} />
+  }
 }
 
-// home: '<path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/>'
-export function HomeTabIcon(props: NavIconProps) {
-  return (
-    <Glyph {...props}>
-      <Path d="M4 11l8-7 8 7" />
-      <Path d="M6 10v9h12v-9" />
-    </Glyph>
-  )
-}
-
-// workouts: barbell — '<path d="M6.5 9v6"/><path d="M17.5 9v6"/><path d="M4 10.5v3"/><path d="M20 10.5v3"/><path d="M6.5 12h11"/>'
-export function WorkoutsTabIcon(props: NavIconProps) {
-  return (
-    <Glyph {...props}>
-      <Path d="M6.5 9v6" />
-      <Path d="M17.5 9v6" />
-      <Path d="M4 10.5v3" />
-      <Path d="M20 10.5v3" />
-      <Path d="M6.5 12h11" />
-    </Glyph>
-  )
-}
-
-// legacy: open book — '<path d="M12 6.5C10 5 7 4.5 4 5v12c3-.5 6 0 8 1.5"/><path d="M12 6.5C14 5 17 4.5 20 5v12c-3-.5-6 0-8 1.5z"/>'
-export function LegacyTabIcon(props: NavIconProps) {
-  return (
-    <Glyph {...props}>
-      <Path d="M12 6.5C10 5 7 4.5 4 5v12c3-.5 6 0 8 1.5" />
-      <Path d="M12 6.5C14 5 17 4.5 20 5v12c-3-.5-6 0-8 1.5z" />
-    </Glyph>
-  )
-}
-
-// squads: '<circle cx="7.5" cy="8" r="2.7"/><circle cx="16.5" cy="8" r="2.7"/><path d="M3 19.5a4.5 4.5 0 0 1 9 0"/><path d="M12 19.5a4.5 4.5 0 0 1 9 0"/>'
-export function SquadsTabIcon(props: NavIconProps) {
-  return (
-    <Glyph {...props}>
-      <Circle cx={7.5} cy={8} r={2.7} />
-      <Circle cx={16.5} cy={8} r={2.7} />
-      <Path d="M3 19.5a4.5 4.5 0 0 1 9 0" />
-      <Path d="M12 19.5a4.5 4.5 0 0 1 9 0" />
-    </Glyph>
-  )
-}
-
-// nutrition: flame — ForgeSymbols `flame` (category "Progress"), the same glyph the calorie ring
-// carries in `Nutrition Home.dc.html`. NUT-D1 put Nutrition in the fifth, right-most slot.
-export function NutritionTabIcon(props: NavIconProps) {
-  return (
-    <Glyph {...props}>
-      <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />
-    </Glyph>
-  )
-}
-
-// community: explore compass — '<circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>'
-export function CommunityTabIcon(props: NavIconProps) {
-  return (
-    <Glyph {...props}>
-      <Circle cx={12} cy={12} r={8.5} />
-      <Path d="M15.5 8.5l-2 5-5 2 2-5z" />
-    </Glyph>
-  )
-}
+export const HomeTabIcon = tab('home')
+export const WorkoutsTabIcon = tab('barbell')
+export const LegacyTabIcon = tab('book')
+export const SquadsTabIcon = tab('people')
+/** NUT-D1 put Nutrition in the fifth, right-most slot; the flame is the calorie ring's glyph. */
+export const NutritionTabIcon = tab('flame')
+export const CommunityTabIcon = tab('compass')

@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { Pill } from '@/components/forge/composites/Pill';
 import { ScreenBackground } from '@/components/screen-background';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { grouped, localToday } from '@/domain/nutrition/day';
@@ -312,10 +312,7 @@ export default function RecipeScreen() {
                 );
               }}
             >
-              <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-                <Rect x={5} y={11} width={14} height={10} rx={2} />
-                <Path d={isLocked ? 'M8 11V8a4 4 0 0 1 8 0v3' : 'M8 11V8a4 4 0 0 1 7.5-2'} />
-              </Svg>
+              <EngravedIcon name={isLocked ? 'lock' : 'unlock'} size={12} />
               <Text style={styles.link}>{isLocked ? 'Locked' : 'Lock'}</Text>
             </Pressable>
           </View>

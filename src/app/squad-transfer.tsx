@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SquadCrest } from '@/components/forge/SquadCrest';
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchSquad, transferSquadOwnership } from '@/data/squad-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
@@ -196,35 +196,16 @@ function Fact({ icon, text, divided = false }: { icon: React.ReactNode; text: st
 
 // ── glyphs ──
 function CrownGlyph({ color = flColor.bronze300, size = 15 }: { color?: string; size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
-    </Svg>
-  );
+  return <EngravedIcon name="crown" size={size} color={engravedTint(color)} />;
 }
 function PeopleGlyph() {
-  return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={9} cy={8} r={3.2} />
-      <Path d="M3.4 19a5.6 5.6 0 0 1 11.2 0" />
-      <Path d="M16 5.3a3.2 3.2 0 0 1 0 5.4M18.2 19a5.6 5.6 0 0 0-3-4.9" />
-    </Svg>
-  );
+  return <EngravedIcon name="people" size={15} />;
 }
 function ShieldGlyph() {
-  return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
-    </Svg>
-  );
+  return <EngravedIcon name="shield" size={15} />;
 }
 function ClockGlyph() {
-  return (
-    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={8.5} />
-      <Path d="M12 7v5l3.5 2" />
-    </Svg>
-  );
+  return <EngravedIcon name="clock" size={12} color={flColor.gray600} />;
 }
 
 const styles = StyleSheet.create({

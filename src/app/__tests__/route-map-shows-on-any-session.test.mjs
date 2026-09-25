@@ -122,14 +122,14 @@ test('the cardio row opens the map, and only when there is one to open', () => {
   assert.match(DETAIL, /disabled=\{!tappable\}/, 'a routeless cardio row is pressable again');
   assert.match(
     DETAIL,
-    /\{tappable \? <Glyph d="M9 6l6 6-6 6"/,
+    /\{tappable \? <EngravedIcon name="chevron-right"/,
     'the chevron is drawn on a row that goes nowhere — the arrow is the promise it breaks',
   );
 });
 
 test('a run does not wear a dumbbell', () => {
   // `equipmentForCatalogKey` has no answer for a cardio key, so EquipIcon fell back to iron. Same bug
-  // the hero already fixed; the shoe is now one constant used by both.
-  assert.match(DETAIL, /const SHOE = 'M3 15\.6v-3/, 'the shoe path is no longer named once');
-  assert.match(DETAIL, /cardio \? \(\s*<Glyph d=\{SHOE\}/, 'a cardio row no longer draws the shoe');
+  // the hero already fixed. Since 2026-09-25 both draw the engraved `shoe` rather than a local path.
+  assert.match(DETAIL, /isStrength \? \([\s\S]*?\) : \(\s*<EngravedIcon name="shoe"/, 'the hero no longer draws the shoe for a run');
+  assert.match(DETAIL, /cardio \? \(\s*<EngravedIcon name="shoe"/, 'a cardio row no longer draws the shoe');
 });

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { playRestDing, primeDing } from '@/lib/ding';
 import { clockText, holdProgress, holdRemaining, holdResult } from '@/domain/workout/hold-timer';
@@ -132,10 +133,13 @@ export function HoldTimer({
               strokeDashoffset={2 * Math.PI * 15.6 * (1 - progress)}
               transform="rotate(-90 18 18)"
             />
-          ) : (
-            <Path d="M14.5 12l9 6-9 6z" fill={flColor.bronze300} />
-          )}
+          ) : null}
         </Svg>
+        {running ? null : (
+          <View style={styles.play} pointerEvents="none">
+            <EngravedIcon name="play" size={14} />
+          </View>
+        )}
       </View>
       <View style={styles.text}>
         <Text style={[styles.clock, running ? styles.clockRunning : null]}>{clockText(remaining)}</Text>
@@ -160,6 +164,7 @@ const styles = StyleSheet.create({
   btnRunning: { borderColor: flColor.bronze400, backgroundColor: 'rgba(176,124,68,0.12)' },
   pressed: { opacity: 0.85 },
   ring: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  play: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
   text: { minWidth: 42 },
   clock: { fontFamily: flFont.display, fontSize: 15, fontWeight: '700', color: flColor.cream100, fontVariant: ['tabular-nums'] },
   clockRunning: { color: flColor.bronze300 },

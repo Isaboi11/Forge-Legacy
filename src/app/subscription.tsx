@@ -9,6 +9,7 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { ForgeSymbol, type SymbolName } from '@/components/forge/ForgeSymbol';
 import { ScreenBackground } from '@/components/screen-background';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { isAppAdmin } from '@/data/admin-live';
@@ -120,9 +121,7 @@ function ForgeMark({ size }: { size: number }) {
 
 function Check({ size = 13, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4 4 10-10" />
-    </Svg>
+    <EngravedIcon name="check" size={size} color={color} />
   );
 }
 

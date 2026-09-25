@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button/Button';
@@ -14,6 +13,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { deleteTemplate, fetchTemplates, reorderTemplates, templateSummary, type WorkoutTemplate } from '@/data/templates-live';
 import { ReorderTemplatesSheet } from '@/components/forge/ReorderTemplatesSheet';
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchWeekTemplates, weekSummary } from '@/data/week-templates-live';
 import { STARTER_TEMPLATES, starterMeta, starterSummary, suggestedStarters } from '@/domain/workout/starter-templates';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
@@ -451,30 +451,22 @@ function usedLabel(iso: string | null): string {
 // ── glyphs ──
 function PlusGlyph({ size = 22, color = flColor.bronze400 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round">
-      <Path d="M12 5v14M5 12h14" />
-    </Svg>
+    <EngravedIcon name="plus" size={size} color={color} />
   );
 }
 function PlayGlyph({ size = 13, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M7 5l12 7-12 7z" />
-    </Svg>
+    <EngravedIcon name="play" size={size} color={engravedTint(color)} />
   );
 }
 function Chevron({ size = 15 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 5l7 7-7 7" />
-    </Svg>
+    <EngravedIcon name="chevron-right" size={size} color={flColor.bronze400} />
   );
 }
 function LinesGlyph({ size = 26, color = flColor.bronze400 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.6} strokeLinecap="round">
-      <Path d="M4 6h16M4 12h16M4 18h10" />
-    </Svg>
+    <EngravedIcon name="list" size={size} color={engravedTint(color)} />
   );
 }
 

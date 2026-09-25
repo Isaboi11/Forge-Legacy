@@ -15,7 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color, space } from '@/constants/tokens'
 import { BaseCard } from './BaseCard'
 import { CARD } from './_cardTokens'
@@ -84,7 +84,7 @@ export function ChallengeCard({
           <Text style={[styles.chipText, isExpired && styles.chipTextMuted]}>{type}</Text>
         </View>
         <View style={styles.timeframeRow}>
-          <Feather name="clock" size={11} color={color.text.tertiary} />
+          <EngravedIcon name="clock" size={11} color={color.text.tertiary} />
           <Text style={styles.timeframe}>{timeframe}</Text>
         </View>
       </View>
@@ -97,7 +97,7 @@ export function ChallengeCard({
       {/* Participants */}
       {participantCount !== undefined ? (
         <View style={styles.participantsRow}>
-          <Feather name="users" size={12} color={color.text.tertiary} />
+          <EngravedIcon name="people" size={12} color={color.text.tertiary} />
           <Text style={styles.participants}>
             {participantCount} {participantCount === 1 ? 'participant' : 'participants'}
           </Text>

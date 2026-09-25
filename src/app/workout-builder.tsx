@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
@@ -62,6 +61,7 @@ import {
 import { errorMessage } from '@/lib/useQuery';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { equipmentLabel } from '@/components/forge/EquipIcon';
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 
 /**
  * W-25 Free Workout Builder — plan a session, then keep it (and start it).
@@ -362,9 +362,7 @@ export default function WorkoutBuilderScreen() {
             accessibilityLabel="Import from a spreadsheet"
             style={({ pressed }) => [styles.importLink, pressed ? styles.importPressed : null]}
           >
-            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M12 3v12M8 11l4 4 4-4M4 19h16" />
-            </Svg>
+            <EngravedIcon name="download" size={15} color={flColor.gray600} />
             <Text style={styles.importLinkText}>Import from a spreadsheet</Text>
           </Pressable>
         </View>
@@ -435,9 +433,7 @@ export default function WorkoutBuilderScreen() {
               ))}
 
               <Pressable onPress={() => addExercise(sec.key)} accessibilityRole="button" accessibilityLabel={`Add ${sec.addLabel}`} style={styles.addBtn}>
-                <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round">
-                  <Path d="M12 5v14M5 12h14" />
-                </Svg>
+                <EngravedIcon name="plus" size={15} color={flColor.bronze300} />
                 <Text style={styles.addText}>Add {sec.addLabel}</Text>
               </Pressable>
 
@@ -447,9 +443,7 @@ export default function WorkoutBuilderScreen() {
                 accessibilityLabel={`Add a cardio block to ${sec.label.toLowerCase()}`}
                 style={styles.addBtn}
               >
-                <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round">
-                  <Path d="M12 5v14M5 12h14" />
-                </Svg>
+                <EngravedIcon name="plus" size={15} color={flColor.bronze300} />
                 <Text style={styles.addText}>Add a cardio block</Text>
               </Pressable>
             </View>
@@ -639,13 +633,13 @@ function Row({
         </View>
         <View style={styles.ctrls}>
           <Pressable onPress={first ? undefined : onUp} disabled={first} accessibilityRole="button" accessibilityLabel={`Move ${item.name} up`} style={styles.ctrl}>
-            <Glyph d="M18 15l-6-6-6 6" color={first ? flColor.charcoal500 : flColor.gray400} />
+            <Glyph name="chevron-up" color={first ? flColor.charcoal500 : flColor.gray400} />
           </Pressable>
           <Pressable onPress={last ? undefined : onDown} disabled={last} accessibilityRole="button" accessibilityLabel={`Move ${item.name} down`} style={styles.ctrl}>
-            <Glyph d="M6 9l6 6 6-6" color={last ? flColor.charcoal500 : flColor.gray400} />
+            <Glyph name="chevron-down" color={last ? flColor.charcoal500 : flColor.gray400} />
           </Pressable>
           <Pressable onPress={onRemove} accessibilityRole="button" accessibilityLabel={`Remove ${item.name}`} style={styles.ctrl}>
-            <Glyph d="M5 7h14M9 7V5h6v2M8 7l1 13h6l1-13" color={flColor.redMuted} />
+            <Glyph name="trash" color={flColor.redMuted} />
           </Pressable>
         </View>
       </View>
@@ -726,7 +720,7 @@ function Row({
         style={({ pressed }) => [styles.exNoteRow, pressed ? styles.exNotePressed : null]}
       >
         <Glyph
-          d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5"
+          name="document"
           size={13}
           color={item.coachNote ? flColor.bronze400 : flColor.gray600}
         />
@@ -737,7 +731,7 @@ function Row({
 
       {!last ? (
         <Pressable onPress={onPair} accessibilityRole="button" accessibilityLabel={`Superset ${item.name} with the exercise below`} style={styles.pairLink}>
-          <Glyph d="M9 7H6a5 5 0 0 0 0 10h3M15 7h3a5 5 0 0 1 0 10h-3M8 12h8" size={14} color={flColor.bronze400} />
+          <Glyph name="link" size={14} color={flColor.bronze400} />
           <Text style={styles.pairLinkText}>{pairing ? 'Add the next one to this superset' : 'Superset with the next exercise'}</Text>
         </Pressable>
       ) : null}
@@ -749,25 +743,21 @@ function Stepper({ label, value, onUp, onDown, name }: { label: string; value: s
   return (
     <View style={styles.stepper}>
       <Pressable onPress={onDown} accessibilityRole="button" accessibilityLabel={`Fewer ${label} for ${name}`} style={styles.stepBtn}>
-        <Glyph d="M5 12h14" size={15} color={flColor.gray400} />
+        <Glyph name="minus" size={15} color={flColor.gray400} />
       </Pressable>
       <View style={styles.stepValue}>
         <Text style={styles.stepNum}>{value}</Text>
         <Text style={styles.stepUnit}>{label}</Text>
       </View>
       <Pressable onPress={onUp} accessibilityRole="button" accessibilityLabel={`More ${label} for ${name}`} style={styles.stepBtn}>
-        <Glyph d="M12 5v14M5 12h14" size={15} color={flColor.gray400} />
+        <Glyph name="plus" size={15} color={flColor.gray400} />
       </Pressable>
     </View>
   );
 }
 
-function Glyph({ d, color, size = 17 }: { d: string; color: string; size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={d} />
-    </Svg>
-  );
+function Glyph({ name, color, size = 17 }: { name: EngravedName; color: string; size?: number }) {
+  return <EngravedIcon name={name} size={size} color={engravedTint(color)} />;
 }
 
 // ── plumbing ────────────────────────────────────────────────────────────────

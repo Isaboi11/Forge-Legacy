@@ -17,7 +17,7 @@ import {
   View,
 } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color } from '@/constants/tokens'
 import { INP } from './_inputTokens'
 import { getBorderColor, getBgColor, getGlow, getHelperColor, resolveHelper } from './_inputUtils'
@@ -120,7 +120,7 @@ export function ForgeDateInput({
             disabled && styles.disabled,
           ]}
         >
-          <Feather name="calendar" size={INP.ICON_SIZE} color={color.text.tertiary} />
+          <EngravedIcon name="calendar" size={INP.ICON_SIZE} color={color.text.tertiary} />
 
           <Text
             style={[styles.displayText, !value && styles.placeholder]}
@@ -130,8 +130,8 @@ export function ForgeDateInput({
           </Text>
 
           {showLoading && <ActivityIndicator size="small" color={color.accent.primary} />}
-          {showSuccess && <Feather name="check" size={INP.ICON_SIZE} color={color.accent.primary} />}
-          {showError && <Feather name="alert-circle" size={INP.ICON_SIZE} color={color.danger} />}
+          {showSuccess && <EngravedIcon name="check" size={INP.ICON_SIZE} color={color.accent.primary} />}
+          {showError && <EngravedIcon name="warning" size={INP.ICON_SIZE} color={color.danger} />}
         </View>
       </Pressable>
       {displayHelper && (

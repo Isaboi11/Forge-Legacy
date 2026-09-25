@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Animated, PanResponder, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -347,9 +347,7 @@ function SwipeRow({
         >
           <View style={[styles.box, checked && styles.boxOn]}>
             {checked ? (
-              <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.onBronze} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M5 12.5l4.5 4.5L19 7.5" />
-              </Svg>
+              <EngravedIcon name="check" size={12} color={flColor.onBronze} />
             ) : null}
           </View>
         </Pressable>
@@ -365,19 +363,11 @@ function SwipeRow({
 }
 
 function Chevron() {
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 6l6 6-6 6" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-right" size={14} color={flColor.gray400} />;
 }
 
 function HouseGlyph() {
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
-    </Svg>
-  );
+  return <EngravedIcon name="home" size={14} />;
 }
 
 const styles = StyleSheet.create({

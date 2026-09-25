@@ -17,7 +17,7 @@ import {
   Text,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
 import { ForgeModal } from './ForgeModal'
@@ -134,7 +134,7 @@ function StatusIndicator({ status }: { status: LoadingStatus }) {
   if (status === 'success') {
     return (
       <View style={[styles.circle, styles.circleSuccess]}>
-        <Feather name="check" size={24} color={color.text.inverse} strokeWidth={3} />
+        <EngravedIcon name="check" size={24} color={color.text.inverse} />
       </View>
     )
   }
@@ -142,7 +142,7 @@ function StatusIndicator({ status }: { status: LoadingStatus }) {
   if (status === 'failure') {
     return (
       <View style={[styles.circle, styles.circleFailure]}>
-        <Feather name="x" size={22} color={color.text.inverse} />
+        <EngravedIcon name="close" size={22} color={color.text.inverse} />
       </View>
     )
   }

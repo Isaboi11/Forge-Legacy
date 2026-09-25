@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
@@ -314,9 +314,7 @@ export default function NutritionDetailsScreen() {
 
 function Arrow({ direction, color, size = 18 }: { direction: 'left' | 'right'; color: string; size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={direction === 'left' ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6'} />
-    </Svg>
+    <EngravedIcon name={direction === 'left' ? 'chevron-left' : 'chevron-right'} size={size} color={color} />
   );
 }
 

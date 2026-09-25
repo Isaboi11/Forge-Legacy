@@ -21,7 +21,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color, space } from '@/constants/tokens'
 import { CARD } from './_cardTokens'
 import type { LegacyCardState } from './types'
@@ -95,7 +95,7 @@ export function LegacyCard({
       {/* Lock overlay */}
       {isLocked && (
         <View style={styles.lockRow}>
-          <Feather name="lock" size={14} color={color.text.tertiary} />
+          <EngravedIcon name="lock" size={14} color={color.text.tertiary} />
           <Text style={styles.lockLabel}>Locked</Text>
         </View>
       )}
@@ -103,7 +103,7 @@ export function LegacyCard({
       {/* State label (featured / achieved) */}
       {(isFeatured || isAchieved) && (
         <View style={styles.badgeRow}>
-          {isAchieved && <Feather name="check-circle" size={13} color={color.accent.primary} />}
+          {isAchieved && <EngravedIcon name="check" size={13} />}
           <Text style={styles.stateBadge}>
             {isFeatured ? 'Featured' : 'Achieved'}
           </Text>
@@ -127,7 +127,7 @@ export function LegacyCard({
           activeOpacity={0.75}
         >
           <Text style={styles.ctaLabel}>{ctaLabel}</Text>
-          <Feather name="arrow-right" size={14} color={color.text.inverse} />
+          <EngravedIcon name="arrow-right" size={14} color={color.text.inverse} />
         </TouchableOpacity>
       ) : null}
     </Pressable>

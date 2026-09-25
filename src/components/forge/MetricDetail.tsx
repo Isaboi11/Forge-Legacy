@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
 import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
@@ -87,7 +88,7 @@ export function MetricDetail({ metric, onClose }: { metric: MetricSeries; onClos
 
       <View style={[styles.bar, { paddingTop: insets.top + 6 }]}>
         <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Back" style={styles.barBtn} hitSlop={8}>
-          <Glyph d="M15 5l-7 7 7 7" size={22} color={flColor.gray400} />
+          <EngravedIcon name="chevron-left" size={22} color={flColor.gray400} />
         </Pressable>
         <Text style={styles.barTitle} numberOfLines={1}>
           {metric.name}
@@ -214,14 +215,6 @@ function Stat({ label, value }: { label: string; value: string }) {
       <Text style={styles.statVal}>{value}</Text>
       <Text style={styles.statLbl}>{label}</Text>
     </View>
-  );
-}
-
-function Glyph({ d, size, color, width = 1.9 }: { d: string; size: number; color: string; width?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={d} />
-    </Svg>
   );
 }
 

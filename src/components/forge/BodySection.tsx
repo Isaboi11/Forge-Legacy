@@ -5,6 +5,7 @@ import Svg, { Circle, Line, Path } from 'react-native-svg';
 
 import { LogWeightSheet } from '@/components/forge/LogWeightSheet';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { fetchBodyEntries } from '@/data/body-metrics-live';
 import { exactWeight } from '@/domain/settings/units';
@@ -65,13 +66,13 @@ export function BodySection() {
       <View style={styles.section}>
         <Pressable onPress={() => setEnabled(true)} accessibilityRole="button" accessibilityLabel="Track body metrics" style={styles.cta}>
           <View style={styles.ctaIcon}>
-            <Glyph d="M3 12h4l3 8 4-16 3 8h4" size={17} color={flColor.gray400} width={1.8} />
+            <EngravedIcon name="pulse" size={17} color={flColor.gray400} />
           </View>
           <View style={styles.ctaText}>
             <Text style={styles.ctaTitle}>Track body metrics</Text>
             <Text style={styles.ctaSub}>Optional — bodyweight &amp; measurements, only if you want them.</Text>
           </View>
-          <Glyph d="M12 5v14M5 12h14" size={16} color={flColor.bronze400} width={2} />
+          <EngravedIcon name="plus" size={16} color={flColor.bronze400} />
         </Pressable>
       </View>
     );
@@ -95,7 +96,7 @@ export function BodySection() {
           <TurnOff onPress={() => setEnabled(false)} />
         </View>
         <Pressable onPress={() => setLogOpen(true)} accessibilityRole="button" accessibilityLabel="Log first weigh-in" style={styles.emptyLog}>
-          <Glyph d="M12 5v14M5 12h14" size={16} color={flColor.bronze400} width={2} />
+          <EngravedIcon name="plus" size={16} color={flColor.bronze400} />
           <Text style={styles.emptyLogText}>Log your first weigh-in</Text>
         </Pressable>
         {logSheet}
@@ -146,7 +147,7 @@ export function BodySection() {
             <SettingsToggle value={showTrend} onChange={setShowTrend} accessibilityLabel="Show change" />
           </View>
           <Pressable onPress={() => setLogOpen(true)} accessibilityRole="button" accessibilityLabel="Log weigh-in" style={styles.logBtn}>
-            <Glyph d="M12 5v14M5 12h14" size={13} color={flColor.bronze400} width={2} />
+            <EngravedIcon name="plus" size={13} color={flColor.bronze400} />
             <Text style={styles.logText}>Log</Text>
           </Pressable>
         </View>
@@ -216,7 +217,7 @@ export function BodySection() {
             style={styles.photos}
           >
             <View style={styles.photosIcon}>
-              <Glyph d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6l8-3z" size={16} color={flColor.bronze300} width={1.7} />
+              <EngravedIcon name="shield" size={16} />
             </View>
             <View style={styles.photosText}>
               {/* ⚠ Holt's voice (HV-D2/D5): the change is the athlete's PROGRESS, named specifically,
@@ -226,19 +227,19 @@ export function BodySection() {
               <Text style={styles.photosTitle}>{driftLine(targetDrift, null).title}</Text>
               <Text style={styles.photosSub}>{driftLine(targetDrift, null).detail}</Text>
             </View>
-            <Glyph d="M9 5l7 7-7 7" size={16} color={flColor.bronze400} width={1.9} />
+            <EngravedIcon name="chevron-right" size={16} color={flColor.bronze400} />
           </Pressable>
         ) : null}
 
         <Pressable onPress={() => router.push('/transformation')} accessibilityRole="button" accessibilityLabel="Progress photos" style={styles.photos}>
           <View style={styles.photosIcon}>
-            <Glyph d="M4 7h3l1.5-2h7L17 7h3v12H4z M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" size={16} color={flColor.bronze300} width={1.7} />
+            <EngravedIcon name="camera" size={16} />
           </View>
           <View style={styles.photosText}>
             <Text style={styles.photosTitle}>Progress photos</Text>
             <Text style={styles.photosSub}>Take new progress pics</Text>
           </View>
-          <Glyph d="M9 5l7 7-7 7" size={16} color={flColor.bronze400} width={1.9} />
+          <EngravedIcon name="chevron-right" size={16} color={flColor.bronze400} />
         </Pressable>
       </View>
 
@@ -265,14 +266,6 @@ function TurnOff({ onPress }: { onPress: () => void }) {
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Turn off body metrics">
       <Text style={styles.turnOff}>Turn off body metrics</Text>
     </Pressable>
-  );
-}
-
-function Glyph({ d, size, color, width = 1.9 }: { d: string; size: number; color: string; width?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={d} />
-    </Svg>
   );
 }
 

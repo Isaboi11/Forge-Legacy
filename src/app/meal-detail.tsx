@@ -2,8 +2,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { Animated, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -255,9 +255,7 @@ export default function MealDetailScreen() {
             style={styles.moreButton}
             onPress={() => setSheet('meal')}
           >
-            <Svg width={20} height={20} viewBox="0 0 24 24" fill={flColor.gray400}>
-              <Path d="M12 3.3a1.7 1.7 0 110 3.4 1.7 1.7 0 010-3.4zm0 7a1.7 1.7 0 110 3.4 1.7 1.7 0 010-3.4zm0 7a1.7 1.7 0 110 3.4 1.7 1.7 0 010-3.4z" />
-            </Svg>
+            <EngravedIcon name="more" size={20} color={flColor.gray400} />
           </Pressable>
         }
       />
@@ -285,19 +283,9 @@ export default function MealDetailScreen() {
             <TotalMacro label="Carbs" value={sum.carb} />
             <TotalMacro label="Fat" value={sum.fat} />
             {entries.length ? (
-              <Svg
-                width={12}
-                height={12}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke={flColor.gray600}
-                strokeWidth={2.4}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={styles.totalsChevron}
-              >
-                <Path d="M9 6l6 6-6 6" />
-              </Svg>
+              <View style={styles.totalsChevron}>
+                <EngravedIcon name="chevron-right" size={12} color={flColor.gray600} />
+              </View>
             ) : null}
           </View>
         </Pressable>
@@ -474,9 +462,7 @@ export default function MealDetailScreen() {
                     <Text style={[styles.slotLabel, on && styles.slotLabelOn]}>{s.label}</Text>
                     {s.note ? <Text style={styles.slotNote}>{s.note}</Text> : null}
                     {on ? (
-                      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                        <Path d="M5 12.5l4.5 4.5L19 7.5" />
-                      </Svg>
+                      <EngravedIcon name="check" size={16} color={flColor.bronze400} />
                     ) : (
                       <View style={styles.slotCheckGap} />
                     )}

@@ -17,7 +17,7 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color, elevation } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
 import { useOverlayTransition } from './_useOverlayTransition'
@@ -82,7 +82,7 @@ export function ForgePremiumModal({
           {/* Illustration banner */}
           <View style={styles.banner}>
             {illustration ?? (
-              <Feather name="shield" size={46} color={color.accent.highlight} strokeWidth={1.4} />
+              <EngravedIcon name="shield" size={46} />
             )}
             {/* Close button floated top-right */}
             {onClose ? (
@@ -93,7 +93,7 @@ export function ForgePremiumModal({
                 hitSlop={(MODAL.TAP_MIN - 28) / 2}
                 style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
               >
-                <Feather name="x" size={13} color={color.text.secondary} />
+                <EngravedIcon name="close" size={13} color={color.text.secondary} />
               </Pressable>
             ) : null}
           </View>
@@ -116,7 +116,7 @@ export function ForgePremiumModal({
                 {benefits.map(b => (
                   <View key={b.key} style={styles.benefitRow}>
                     <View style={styles.checkCircle}>
-                      <Feather name="check" size={11} color={color.accent.primary} strokeWidth={3} />
+                      <EngravedIcon name="check" size={11} color={color.accent.primary} />
                     </View>
                     <Text style={styles.benefitLabel}>{b.label}</Text>
                   </View>

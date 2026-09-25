@@ -1,9 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
 
 import { flColor, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { BUBBLE_SHADOW, BUBBLE_SIZE, HoltMark } from '@/components/forge/HoltMark';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 
 /**
  * THE COIN IS THE COACH — one mark, one bubble, everywhere Holt speaks.
@@ -131,9 +131,7 @@ export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, 
               hitSlop={12}
               style={({ pressed }) => [styles.close, pressed && styles.closePressed]}
             >
-              <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2.6} strokeLinecap="round">
-                <Path d="M6 6l12 12M18 6L6 18" />
-              </Svg>
+              <EngravedIcon name="close" size={11} color={flColor.gray400} />
             </Pressable>
           ) : null}
         </Pressable>

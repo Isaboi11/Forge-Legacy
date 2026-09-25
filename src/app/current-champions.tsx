@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -57,21 +57,21 @@ import { themeGround, themeScrim } from '@/constants/theme-scrim';
  * what the existing "Hall of Champions" row already is.
  */
 
-const TYPE_PATH: Record<ChallengeType, string> = {
-  MOST_WORKOUTS: 'M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11',
-  MOST_VOLUME: 'M4 20V10M9 20V4M14 20v-8M19 20v-5',
-  MAX_LIFT: 'M12 19V5M6 11l6-6 6 6',
-  MOST_DURATION: 'M12 7v5l3.5 2',
-  MOST_PRS: 'M12 3.5l2.6 5.6 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.9l6-.8z',
-  DISTANCE_TOTAL: 'M4 18s2-9 8-9 8 9 8 9',
-  MOST_DAYS: 'M4 6.5h16v14H4zM4 10.5h16M8.5 3.5v4M15.5 3.5v4',
-  MOST_REPS: 'M5 12h14M5 7h14M5 17h9',
-  EARLY_BIRD: 'M12 4v3M12 17v3M4 12h3M17 12h3',
-  MOST_VARIETY: 'M5 6h6v6H5zM13 6h6v6h-6zM5 14h6v6H5zM13 14h6v6h-6z',
-  GAIN_MAX_LIFT: 'M4 18l5-6 4 3 7-8',
-  GAIN_VOLUME: 'M4 18l5-6 4 3 7-8',
-  GAIN_REPS: 'M4 18l5-6 4 3 7-8',
-  GAIN_DISTANCE: 'M4 18l5-6 4 3 7-8',
+const TYPE_ICON: Record<ChallengeType, EngravedName> = {
+  MOST_WORKOUTS: 'dumbbell',
+  MOST_VOLUME: 'bar-chart',
+  MOST_DURATION: 'clock',
+  MAX_LIFT: 'pr',
+  MOST_PRS: 'star',
+  DISTANCE_TOTAL: 'shoe',
+  MOST_DAYS: 'calendar',
+  MOST_REPS: 'reps',
+  EARLY_BIRD: 'sunrise',
+  MOST_VARIETY: 'variety',
+  GAIN_MAX_LIFT: 'trend-up',
+  GAIN_VOLUME: 'trend-up',
+  GAIN_REPS: 'trend-up',
+  GAIN_DISTANCE: 'trend-up',
 };
 
 export default function CurrentChampionsScreen() {
@@ -331,20 +331,11 @@ function TitleTile({ title: t, onPress }: { title: ChampionTitle; onPress: () =>
 
 // ── glyphs ──
 function CrownGlyph({ size = 22, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
-    </Svg>
-  );
+  return <EngravedIcon name="crown" size={size} color={engravedTint(color)} />;
 }
 
 function TypeGlyph({ type, size = 15 }: { type: ChallengeType; size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      {type === 'MOST_DURATION' || type === 'EARLY_BIRD' ? <Circle cx={12} cy={12} r={8.5} /> : null}
-      <Path d={TYPE_PATH[type]} />
-    </Svg>
-  );
+  return <EngravedIcon name={TYPE_ICON[type]} size={size} />;
 }
 
 const styles = StyleSheet.create({

@@ -18,7 +18,7 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Feather } from '@expo/vector-icons'
+import { FeatherNameIcon } from '../FeatherNameIcon'
 import { color } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
 import { useOverlayTransition } from './_useOverlayTransition'
@@ -197,8 +197,8 @@ function ActionItem({
       ]}
     >
       {item.iconName ? (
-        <Feather
-          name={item.iconName as 'edit'}
+        <FeatherNameIcon
+          name={item.iconName}
           size={20}
           color={isDestructive ? color.danger : isSelected ? color.accent.primary : color.text.secondary}
         />

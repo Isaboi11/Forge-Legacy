@@ -16,7 +16,7 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color } from '@/constants/tokens'
 import { INP } from './_inputTokens'
 import { getBorderColor, getBgColor, getGlow, getHelperColor, resolveHelper } from './_inputUtils'
@@ -80,7 +80,7 @@ export function ForgeSearchInput({
       >
         {/* Magnifier — always left, muted opacity */}
         <View style={styles.searchIcon}>
-          <Feather name="search" size={INP.ICON_SIZE} color={color.text.tertiary} />
+          <EngravedIcon name="search" size={INP.ICON_SIZE} color={color.text.tertiary} />
         </View>
 
         <TextInput
@@ -106,8 +106,8 @@ export function ForgeSearchInput({
             hitSlop={8}
             style={styles.clearBtn}
           >
-            <Feather
-              name="x"
+            <EngravedIcon
+              name="close"
               size={INP.ICON_SIZE_CLEAR}
               color={color.text.secondary}
             />

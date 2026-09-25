@@ -2,9 +2,9 @@ import { type ReactNode, useCallback, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
-import Svg, { Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor } from '@/constants/foundation';
 import { DOWNSCALE_COMPRESS, downscaleTarget } from '@/lib/image-downscale-core';
@@ -528,21 +528,10 @@ function SourceRow({ icon, label, onPress, divided = false }: { icon: ReactNode;
 }
 
 function CameraGlyph() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 8h3l1.5-2h7L17 8h3v11H4z" />
-      <Path d="M12 16.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-    </Svg>
-  );
+  return <EngravedIcon name="camera" size={20} />;
 }
 function LibraryGlyph() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M8 4h12v12H8z" />
-      <Path d="M4 8v10a2 2 0 0 0 2 2h10" />
-      <Path d="M11 11.5l2.2 2.2L16 11l4 4" />
-    </Svg>
-  );
+  return <EngravedIcon name="image" size={20} />;
 }
 
 const styles = StyleSheet.create({

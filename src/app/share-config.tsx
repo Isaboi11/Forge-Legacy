@@ -3,10 +3,11 @@ import type { GestureResponderHandlers } from 'react-native';
 import { Animated, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 import { TransformationLayout } from '@/components/forge/TransformationLayout';
 import { SquadSelectList, selectedSquads } from '@/components/forge/SquadSelectList';
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { shareSummary, shareTargets, shareVerb } from '@/domain/share/fanout';
 import { addSquadPost, type ComparePair, type EntryTemplate, type PoseShot, type ShareTemplate, type TransformationLayoutData } from '@/data/squad-feed-live';
 import { fetchFriendLists } from '@/data/friends-live';
@@ -393,9 +394,7 @@ export default function ShareConfigRoute() {
         <View style={styles.header}>
           <Text style={styles.title}>Share Transformation</Text>
           <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Close" style={styles.closeBtn}>
-            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M6 6l12 12M18 6L6 18" />
-            </Svg>
+            <EngravedIcon name="close" size={16} color={flColor.gray400} />
           </Pressable>
         </View>
 
@@ -615,46 +614,19 @@ function AnvilGlyph() {
   );
 }
 function CameraGlyph() {
-  return (
-    <Svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 7h3.4l1.2-2h6.8L16.6 7H20v12H4z" />
-      <Circle cx={12} cy={13} r={3.2} />
-    </Svg>
-  );
+  return <EngravedIcon name="camera" size={30} />;
 }
 function SquadIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
-      <Path d="M3 19v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1" />
-      <Path d="M16 5.5a3 3 0 0 1 0 6M18 14h.5a4 4 0 0 1 4 4v1" />
-    </Svg>
-  );
+  return <EngravedIcon name="people" size={22} />;
 }
 function FriendsIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.cream100} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={8} r={3.4} />
-      <Path d="M5 20a7 7 0 0 1 14 0" />
-    </Svg>
-  );
+  return <EngravedIcon name="user" size={22} />;
 }
 function SaveIcon() {
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 4v11M8 11l4 4 4-4M5 19h14" />
-    </Svg>
-  );
+  return <EngravedIcon name="download" size={19} />;
 }
 function ShareDots({ color = flColor.bronze300 }: { color?: string }) {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={6} cy={12} r={2.4} />
-      <Circle cx={17} cy={6} r={2.4} />
-      <Circle cx={17} cy={18} r={2.4} />
-      <Path d="M8.1 10.9l6.8-3.8M8.1 13.1l6.8 3.8" />
-    </Svg>
-  );
+  return <EngravedIcon name="share" size={16} color={engravedTint(color)} />;
 }
 
 const styles = StyleSheet.create({

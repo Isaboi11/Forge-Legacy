@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -10,6 +9,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { Button } from '@/components/forge/composites/Button';
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchSquadGoalDetail, GOAL_UNITS, type GoalContribution, type PastGoal } from '@/data/squad-live';
 import { barPct, milestones, pctOf, projectedClose, recentPace, sharePct } from '@/domain/squad/goal-progress';
 import { earlyLabel } from '@/domain/squad/goal-state';
@@ -202,9 +202,7 @@ export default function SquadGoalScreen() {
             hitSlop={8}
             style={styles.barBtn}
           >
-            <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-            </Svg>
+            <EngravedIcon name="edit" size={17} color={flColor.gray600} />
           </Pressable>
         ) : undefined
       }
@@ -550,53 +548,23 @@ function ContribRow({
   );
 }
 
-const stroke = { fill: 'none' as const, strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-
 function TargetGlyph({ size = 15, color = flColor.bronze400 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" stroke={color} {...stroke}>
-      <Circle cx={12} cy={12} r={8.5} />
-      <Circle cx={12} cy={12} r={4.6} />
-      <Circle cx={12} cy={12} r={1.2} fill={color} stroke="none" />
-    </Svg>
-  );
+  return <EngravedIcon name="target" size={size} color={engravedTint(color)} />;
 }
 function FlameGlyph() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" stroke={flColor.bronze400} {...stroke}>
-      <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />
-    </Svg>
-  );
+  return <EngravedIcon name="flame" size={20} />;
 }
 function CalendarGlyph() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" stroke={flColor.bronze400} {...stroke}>
-      <Path d="M4 6h16v14H4zM4 10h16M9 3v4M15 3v4" />
-    </Svg>
-  );
+  return <EngravedIcon name="calendar" size={20} />;
 }
 function MedalGlyph() {
-  return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" stroke={flColor.bronze400} {...stroke}>
-      <Circle cx={12} cy={14.5} r={4.8} />
-      <Circle cx={12} cy={14.5} r={1.8} />
-      <Path d="M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4" />
-    </Svg>
-  );
+  return <EngravedIcon name="medal" size={15} />;
 }
 function CheckGlyph({ color }: { color: string }) {
-  return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4 4 10-10" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={15} color={color} />;
 }
 function DumbbellGlyph() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" stroke={flColor.bronze300} {...stroke}>
-      <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
-    </Svg>
-  );
+  return <EngravedIcon name="barbell" size={17} />;
 }
 
 const styles = StyleSheet.create({

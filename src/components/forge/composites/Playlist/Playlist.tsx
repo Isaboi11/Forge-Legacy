@@ -19,11 +19,11 @@
 import React, { useState } from 'react'
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
-import Svg, { Path } from 'react-native-svg'
 
 import { Button } from '../Button'
 import { BottomSheet } from '../BottomSheet'
 import { InputField } from '../InputField'
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon'
 import { flColor, flFont, flRadius } from '@/constants/foundation'
 import { artLabel } from '@/domain/workout/playlist-art'
 import { usePlaylistArt } from '@/lib/usePlaylistArt'
@@ -56,12 +56,7 @@ export async function openPlaylist(link: WorkoutPlaylistLink): Promise<boolean> 
 }
 
 function NoteGlyph({ size = 15, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 18V5l11-2v13" />
-      <Path d="M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM20 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
-    </Svg>
-  )
+  return <EngravedIcon name="music" size={size} color={engravedTint(color)} />
 }
 
 export interface PlaylistChipProps {
@@ -100,16 +95,12 @@ export function PlaylistChip({ link, onOpen, onEdit, onRemove }: PlaylistChipPro
 
       {onEdit ? (
         <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel="Edit this playlist" hitSlop={8} style={styles.chipAction}>
-          <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M4 20h4L19 9l-4-4L4 16zM14.5 5.5l4 4" />
-          </Svg>
+          <EngravedIcon name="edit" size={15} color={flColor.gray400} />
         </Pressable>
       ) : null}
       {onRemove ? (
         <Pressable onPress={onRemove} accessibilityRole="button" accessibilityLabel="Remove this playlist" hitSlop={8} style={styles.chipAction}>
-          <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M6 6l12 12M18 6L6 18" />
-          </Svg>
+          <EngravedIcon name="close" size={15} color={flColor.gray400} />
         </Pressable>
       ) : null}
     </View>

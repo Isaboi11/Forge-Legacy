@@ -1,0 +1,97 @@
+/**
+ * For library components whose public props still take a Feather icon NAME (modals, top bar, bottom nav,
+ * overflow menu): draws the engraved equivalent, and falls back to Feather only for a name the engraved
+ * set has no counterpart for. `color` follows `engravedTint` — a bronze becomes the gradient, anything
+ * else (grey, white on bronze, red) stays flat.
+ */
+
+import React from 'react'
+import { Feather } from '@expo/vector-icons'
+import { EngravedIcon, engravedTint, type EngravedName } from './primitives/icons/EngravedIcon'
+
+const FEATHER_TO_ENGRAVED: Record<string, EngravedName> = {
+  x: 'close',
+  'x-circle': 'close',
+  check: 'check',
+  'check-circle': 'check',
+  'alert-circle': 'warning',
+  'alert-triangle': 'warning',
+  'alert-octagon': 'warning',
+  info: 'info',
+  lock: 'lock',
+  unlock: 'unlock',
+  'chevron-left': 'chevron-left',
+  'chevron-right': 'chevron-right',
+  'chevron-up': 'chevron-up',
+  'chevron-down': 'chevron-down',
+  'arrow-left': 'arrow-left',
+  'arrow-right': 'arrow-right',
+  'arrow-up': 'arrow-up',
+  'arrow-down': 'arrow-down',
+  search: 'search',
+  minus: 'minus',
+  plus: 'plus',
+  users: 'people',
+  user: 'user',
+  'user-plus': 'user-plus',
+  sliders: 'sliders',
+  filter: 'filter',
+  shield: 'shield',
+  share: 'share',
+  'share-2': 'share',
+  'more-horizontal': 'more',
+  'message-circle': 'chat',
+  'message-square': 'chat',
+  image: 'image',
+  camera: 'camera',
+  video: 'video',
+  mic: 'microphone',
+  clock: 'clock',
+  calendar: 'calendar',
+  bookmark: 'bookmark',
+  bell: 'bell',
+  'bell-off': 'bell-off',
+  trash: 'trash',
+  'trash-2': 'trash',
+  edit: 'edit',
+  'edit-2': 'edit',
+  'edit-3': 'edit',
+  copy: 'copy',
+  link: 'link',
+  send: 'send',
+  download: 'download',
+  upload: 'upload',
+  'upload-cloud': 'upload',
+  'log-out': 'exit',
+  'refresh-cw': 'refresh',
+  'rotate-cw': 'refresh',
+  eye: 'eye',
+  'eye-off': 'eye-off',
+  home: 'home',
+  settings: 'settings',
+  award: 'medal',
+  star: 'star',
+  heart: 'heart',
+  flag: 'flag',
+  target: 'target',
+  activity: 'pulse',
+  'trending-up': 'trend-up',
+  'bar-chart': 'bar-chart',
+  'bar-chart-2': 'bar-chart',
+  zap: 'lightning',
+  book: 'book',
+  'book-open': 'book',
+  file: 'document',
+  'file-text': 'document',
+  list: 'list',
+  play: 'play',
+  compass: 'compass',
+  globe: 'globe',
+  'map-pin': 'route',
+}
+
+export function FeatherNameIcon({ name, size, color }: { name: string; size: number; color: string }) {
+  const engraved = FEATHER_TO_ENGRAVED[name]
+  if (engraved) return <EngravedIcon name={engraved} size={size} color={engravedTint(color)} />
+  return <Feather name={name as 'circle'} size={size} color={color} />
+}

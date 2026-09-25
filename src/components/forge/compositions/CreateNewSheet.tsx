@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import type { EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { PHOTO_IMPORT_LIVE } from '@/components/forge/ImportSpreadsheetSheet';
 import { START_ICON, StartOptionRow } from '@/components/forge/compositions/StartStrengthSheet';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
@@ -40,11 +40,11 @@ export interface CreateNewSheetProps {
   onFreestyle: () => void;
 }
 
-const ICON = {
-  program: <Path d="M12 3l9 4.5-9 4.5-9-4.5zM3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5" />,
-  importProgram: <Path d="M12 3v12M7 10l5 5 5-5M4 17v3h16v-3" />,
-  paste: <Path d="M9 4h6v3H9zM7 5.5H5V21h14V5.5h-2M8.5 12h7M8.5 16h5" />,
-  photo: <Path d="M4 7h3l2-2.5h6L17 7h3v12H4zM12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />,
+const ICON: Record<'program' | 'importProgram' | 'paste' | 'photo', EngravedName> = {
+  program: 'layers',
+  importProgram: 'download',
+  paste: 'copy',
+  photo: 'camera',
 };
 
 export function CreateNewSheet({ open, onClose, onFreestyle }: CreateNewSheetProps) {

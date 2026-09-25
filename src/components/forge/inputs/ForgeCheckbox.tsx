@@ -14,7 +14,7 @@ import {
   Text,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color } from '@/constants/tokens'
 import { INP } from './_inputTokens'
 
@@ -73,10 +73,10 @@ export function ForgeCheckbox({
         ]}
       >
         {checked && !indeterminate && (
-          <Feather name="check" size={14} color={color.text.inverse} strokeWidth={2.6} />
+          <EngravedIcon name="check" size={14} color={color.text.inverse} />
         )}
         {indeterminate && (
-          <Feather name="minus" size={14} color={color.text.inverse} strokeWidth={2.6} />
+          <EngravedIcon name="minus" size={14} color={color.text.inverse} />
         )}
       </View>
       {label && (

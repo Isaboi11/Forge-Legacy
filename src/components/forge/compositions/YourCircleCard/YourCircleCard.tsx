@@ -29,12 +29,12 @@
  */
 
 import React, { useMemo } from 'react'
-import Svg, { Path } from 'react-native-svg'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { flColor, flFont, flRadius, flShadow, flType } from '@/constants/foundation'
 import { Avatar } from '../../composites/Avatar'
 import { SectionHeader } from '../../composites/SectionHeader'
 import { ChevronRightIcon } from '../../primitives/icons/HomeIcons'
+import { EngravedIcon } from '../../primitives/icons/EngravedIcon'
 import { minutesTraining, othersLine, type TrainingAthlete } from '@/data/presence-live'
 
 export interface FriendActivity {
@@ -88,10 +88,7 @@ function mostRelevantFirst(users: TrainingAthlete[]): TrainingAthlete[] {
 function ProgressGlyph() {
   return (
     <View style={styles.glyphBadge}>
-      <Svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit={8}>
-        <Path d="M12 20V4" />
-        <Path d="M6 10l6-6 6 6" />
-      </Svg>
+      <EngravedIcon name="arrow-up" size={10} />
     </View>
   )
 }

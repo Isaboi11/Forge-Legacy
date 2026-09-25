@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button/Button';
@@ -418,9 +418,7 @@ function SelectRow({ label, summary, onPress }: { label: string; summary: string
         <Text style={styles.selectSummary} numberOfLines={1}>
           {summary}
         </Text>
-        <Svg width={15} height={15} viewBox="0 0 24 24">
-          <Path d="M9 6l6 6-6 6" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
+        <EngravedIcon name="chevron-right" size={15} color={flColor.gray600} />
       </Pressable>
     </>
   );

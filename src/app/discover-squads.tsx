@@ -3,8 +3,8 @@ import { Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
@@ -434,53 +434,24 @@ function DiscoverSkeleton() {
   );
 }
 
-// ── glyphs (verbatim from the design's inline SVGs) ──
+// ── glyphs ──
 function SearchGlyph() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={10.5} cy={10.5} r={6} />
-      <Path d="M15 15l5 5" />
-    </Svg>
-  );
+  return <EngravedIcon name="search" size={17} color={flColor.gray600} />;
 }
 function CheckGlyph({ size = 15, color = flColor.gray400 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.3} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4 4 10-10" />
-    </Svg>
-  );
+  return <EngravedIcon name="check" size={size} color={color} />;
 }
 function PlusGlyph({ size = 15, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 5v14M5 12h14" />
-    </Svg>
-  );
+  return <EngravedIcon name="plus" size={size} color={color} />;
 }
 function LockGlyph({ size = 12, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Rect x={5} y={10.5} width={14} height={9} rx={2} />
-      <Path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
-    </Svg>
-  );
+  return <EngravedIcon name="lock" size={size} color={engravedTint(color)} />;
 }
 function PeopleGlyph({ size = 12, color = flColor.gray600 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={9} cy={8} r={3.2} />
-      <Path d="M3.4 19a5.6 5.6 0 0 1 11.2 0" />
-      <Path d="M16 5.3a3.2 3.2 0 0 1 0 5.4" />
-      <Path d="M18.2 19a5.6 5.6 0 0 0-3-4.9" />
-    </Svg>
-  );
+  return <EngravedIcon name="people" size={size} color={engravedTint(color)} />;
 }
 function FlameGlyph({ size = 13, color = flColor.gray600 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />
-    </Svg>
-  );
+  return <EngravedIcon name="flame" size={size} color={engravedTint(color)} />;
 }
 
 const styles = StyleSheet.create({

@@ -8,8 +8,8 @@ import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -505,11 +505,7 @@ function ProgressCompare({ post }: { post: FeedPost }) {
 }
 
 function PlusGlyph() {
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.2} strokeLinecap="round">
-      <Path d="M12 5v14M5 12h14" />
-    </Svg>
-  );
+  return <EngravedIcon name="plus" size={14} color={flColor.bronze300} />;
 }
 
 
@@ -631,28 +627,12 @@ function shortAgo(iso: string): string {
 
 // ── glyphs ──
 function FriendsGlyph({ size = 20, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={9} cy={8} r={3.4} />
-      <Path d="M3.5 20a5.5 5.5 0 0 1 11 0M16 6.6a3 3 0 0 1 0 5.8M18.5 20c0-2.3-.9-4-2.2-5" />
-    </Svg>
-  );
+  return <EngravedIcon name="partners" size={size} color={engravedTint(color)} />;
 }
 function ReactionGlyph({ kind, on }: { kind: Reaction; on: boolean }) {
   const color = on ? flColor.bronze300 : flColor.gray600;
-  const d =
-    kind === 'respect'
-      ? 'M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z'
-      : kind === 'honor'
-        ? 'M12 20c-4-1-6-4-6-8 3 0 5 1 6 3 1-2 3-3 6-3 0 4-2 7-6 8z'
-        : kind === 'support'
-          ? 'M12 20s-7-4.3-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.7-7 9-7 9z'
-          : 'M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11';
-  return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={d} />
-    </Svg>
-  );
+  const name = kind === 'respect' ? 'flame' : kind === 'honor' ? 'laurel' : kind === 'support' ? 'heart' : 'dumbbell';
+  return <EngravedIcon name={name} size={15} color={engravedTint(color)} />;
 }
 /* ⚠ `CommentGlyph`, `PlayGlyph` and `MedalGlyph` are gone with the card. The comment bubble and the
    play disc live in `LedgerPost` now, drawn once for both feeds; the medal belonged to the bronze

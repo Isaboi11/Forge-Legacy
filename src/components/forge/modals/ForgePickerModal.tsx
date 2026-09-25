@@ -23,7 +23,8 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
+import { FeatherNameIcon } from '../FeatherNameIcon'
 import { color } from '@/constants/tokens'
 import { MODAL } from './_modalTokens'
 import { useOverlayTransition } from './_useOverlayTransition'
@@ -162,7 +163,7 @@ export function ForgePickerModal({
               hitSlop={(MODAL.TAP_MIN - 28) / 2}
               style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
             >
-              <Feather name="x" size={12} color={color.text.secondary} />
+              <EngravedIcon name="close" size={12} color={color.text.secondary} />
             </Pressable>
           </View>
 
@@ -181,7 +182,7 @@ export function ForgePickerModal({
                     hitSlop={(MODAL.TAP_MIN - 28) / 2}
                     style={({ pressed }) => [styles.navBtn, pressed && styles.closeBtnPressed]}
                   >
-                    <Feather name="chevron-left" size={14} color={color.text.secondary} />
+                    <EngravedIcon name="chevron-left" size={14} color={color.text.secondary} />
                   </Pressable>
                   <Pressable
                     onPress={() => shiftMonth(1)}
@@ -190,7 +191,7 @@ export function ForgePickerModal({
                     hitSlop={(MODAL.TAP_MIN - 28) / 2}
                     style={({ pressed }) => [styles.navBtn, pressed && styles.closeBtnPressed]}
                   >
-                    <Feather name="chevron-right" size={14} color={color.text.secondary} />
+                    <EngravedIcon name="chevron-right" size={14} color={color.text.secondary} />
                   </Pressable>
                 </View>
               </View>
@@ -246,7 +247,7 @@ export function ForgePickerModal({
           {/* Search + filters */}
           <View style={styles.searchArea}>
             <View style={styles.searchField}>
-              <Feather name="search" size={16} color={color.text.tertiary} />
+              <EngravedIcon name="search" size={16} color={color.text.tertiary} />
               <TextInput
                 value={searchValue}
                 onChangeText={onSearchChange}
@@ -261,7 +262,7 @@ export function ForgePickerModal({
               />
               {searchValue.length > 0 ? (
                 <Pressable onPress={() => onSearchChange?.('')} hitSlop={8}>
-                  <Feather name="x-circle" size={16} color={color.text.tertiary} />
+                  <EngravedIcon name="close" size={16} color={color.text.tertiary} />
                 </Pressable>
               ) : null}
             </View>
@@ -369,8 +370,8 @@ function PickerRow({
       ]}
     >
       {item.iconName ? (
-        <Feather
-          name={item.iconName as 'activity'}
+        <FeatherNameIcon
+          name={item.iconName}
           size={18}
           color={isSelected ? color.accent.primary : color.text.secondary}
         />
@@ -384,7 +385,7 @@ function PickerRow({
         ) : null}
       </View>
       {isSelected ? (
-        <Feather name="check" size={18} color={color.accent.primary} />
+        <EngravedIcon name="check" size={18} color={color.accent.primary} />
       ) : null}
     </Pressable>
   )

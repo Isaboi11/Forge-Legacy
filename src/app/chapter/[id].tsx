@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
@@ -42,10 +42,6 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
  * path), uploads to the public `chapter-photos` bucket, then writes the row (migration 0085).
  */
 
-const CHEVRON = 'M9 6l6 6-6 6';
-const FLAME = 'M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z';
-const CHECK = 'M5 12.5l4 4 10-10';
-const DASH = 'M6 12h12';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** "Oct 2026" — a goal's expected/target date (0025 `target_date`), month + year. */
@@ -147,11 +143,11 @@ export default function ChapterDetailScreen() {
         <Pressable onPress={openRename} accessibilityRole="button" accessibilityLabel={`${data.title}. Tap to rename this chapter.`}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>{data.title}</Text>
-            <Glyph d={PENCIL} size={15} color={flColor.bronze400} width={1.7} />
+            <EngravedIcon name="edit" size={15} color={flColor.bronze400} />
           </View>
         </Pressable>
         <View style={styles.statusRow}>
-          {data.isActive ? <View style={styles.dot} /> : <Glyph d={FLAME} size={14} color={flColor.bronze300} width={1.7} />}
+          {data.isActive ? <View style={styles.dot} /> : <EngravedIcon name="flame" size={14} />}
           <Text style={styles.status}>{data.isActive ? 'ACTIVE' : 'SEALED'}</Text>
           <Text style={styles.statusDim}>·</Text>
           <Text style={styles.statusDim}>{data.statusLabel}</Text>
@@ -183,7 +179,7 @@ export default function ChapterDetailScreen() {
                     {primary.targetDate ? <Text style={styles.expected}>Expected by {monthYear(primary.targetDate)}</Text> : <View />}
                     <View style={styles.viewGoalLink}>
                       <Text style={styles.viewGoal}>View Goal</Text>
-                      <Glyph d={CHEVRON} size={14} color={flColor.bronze400} width={2} />
+                      <EngravedIcon name="chevron-right" size={14} color={flColor.bronze400} />
                     </View>
                   </View>
                 </Pressable>
@@ -205,7 +201,7 @@ export default function ChapterDetailScreen() {
                 <Text style={styles.allText}>
                   {goalCount} {goalCount === 1 ? 'Goal' : 'Goals'}
                 </Text>
-                <Glyph d={CHEVRON} size={15} color={flColor.bronze400} width={2} />
+                <EngravedIcon name="chevron-right" size={15} color={flColor.bronze400} />
               </Pressable>
             ) : null}
 
@@ -252,7 +248,7 @@ export default function ChapterDetailScreen() {
               </TourAnchor>
               <View style={styles.outcomeCard}>
                 <View style={styles.outcomeHead}>
-                  <Glyph d={CHECK} size={18} color={flColor.bronze300} width={2.4} />
+                  <EngravedIcon name="check" size={18} color={flColor.bronze300} />
                   <Text style={styles.outcomeHeadline}>{data.outcomeHeadline}</Text>
                 </View>
                 <View style={styles.statGrid}>
@@ -274,7 +270,7 @@ export default function ChapterDetailScreen() {
                   const done = isAchieved(g);
                   return (
                     <View key={g.id} style={styles.outcomeRow}>
-                      <Glyph d={done ? CHECK : DASH} size={16} color={done ? '#5FA271' : flColor.gray600} width={2.2} />
+                      <EngravedIcon name={done ? 'check' : 'minus'} size={16} color={done ? '#5FA271' : flColor.gray600} />
                       <Text style={[styles.outcomeName, !done && styles.outcomeUndone]} numberOfLines={1}>
                         {g.name}
                         {g.isPrimary ? ' · Primary' : ''}
@@ -365,7 +361,7 @@ export default function ChapterDetailScreen() {
             <Text style={styles.sealCopy}>You&rsquo;ve built everything this chapter contains. When you&rsquo;re ready, seal it permanently.</Text>
             <Button variant="primary" fullWidth onPress={goSeal} accessibilityLabel="Seal chapter">
               <View style={styles.sealInner}>
-                <Glyph d={FLAME} size={16} color="#F7F5F1" width={1.8} />
+                <EngravedIcon name="flame" size={16} color="#F7F5F1" />
                 <Text style={styles.sealText}>Seal Chapter</Text>
               </View>
             </Button>
@@ -408,15 +404,8 @@ export default function ChapterDetailScreen() {
   );
 }
 
-const PENCIL = 'M4 20h4L19 9a2 2 0 0 0-3-3L5 17v3z';
-
 function CameraGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.2-2h8.2l1.2 2h2.2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z" />
-      <Path d="M15.2 13a3.2 3.2 0 1 1-6.4 0 3.2 3.2 0 0 1 6.4 0z" />
-    </Svg>
-  );
+  return <EngravedIcon name="camera" size={size} color={engravedTint(color)} />;
 }
 
 function SupportingRow({ goal, onPress }: { goal: Goal; onPress: () => void }) {
@@ -439,14 +428,6 @@ function SupportingRow({ goal, onPress }: { goal: Goal; onPress: () => void }) {
         </View>
       ) : null}
     </Pressable>
-  );
-}
-
-function Glyph({ d, size = 16, color, width = 1.9 }: { d: string; size?: number; color: string; width?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={d} />
-    </Svg>
   );
 }
 

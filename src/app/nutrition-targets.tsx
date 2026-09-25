@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
@@ -677,25 +677,19 @@ function Radio({ on }: { on: boolean }) {
 
 function Chevron() {
   return (
-    <Svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6 9l6 6 6-6" />
-    </Svg>
+    <EngravedIcon name="chevron-down" size={10} color={flColor.gray600} />
   );
 }
 
 function Glyph({ kind, dim }: { kind: 'plus' | 'minus'; dim: boolean }) {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={dim ? flColor.charcoal500 : flColor.gray400} strokeWidth={2.4} strokeLinecap="round">
-      <Path d={kind === 'plus' ? 'M12 5v14M5 12h14' : 'M5 12h14'} />
-    </Svg>
-  );
+  return <EngravedIcon name={kind} size={16} color={dim ? flColor.charcoal500 : flColor.gray400} />;
 }
 
 function ShieldGlyph() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={styles.shieldIcon}>
-      <Path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6l8-3z" />
-    </Svg>
+    <View style={styles.shieldIcon}>
+      <EngravedIcon name="shield" size={16} />
+    </View>
   );
 }
 

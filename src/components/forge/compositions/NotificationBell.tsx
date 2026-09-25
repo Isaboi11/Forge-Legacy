@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { usePathname, useRouter } from 'expo-router'
-import Svg, { Path } from 'react-native-svg'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 
 import { fetchUnreadNotificationCount } from '@/data/notifications-live'
 import { useQuery } from '@/lib/useQuery'
@@ -28,10 +28,7 @@ export function NotificationBell() {
       style={styles.btn}
       hitSlop={6}
     >
-      <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M12 3a6 6 0 0 0-6 6c0 4-1.5 5.5-2 6h16c-.5-.5-2-2-2-6a6 6 0 0 0-6-6z" />
-        <Path d="M10 19a2 2 0 0 0 4 0" />
-      </Svg>
+      <EngravedIcon name="bell" size={24} />
       {count > 0 ? (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{count > 9 ? '9+' : count}</Text>

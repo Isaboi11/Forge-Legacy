@@ -245,6 +245,10 @@ export const flIcon = {
   inactive: flColor.gray600,
   containerBg: flColor.iconContainerBg,
   containerBorder: flColor.bronzeBorderSubtle,
+  /** The engraved icon set's top → middle → bottom bronze (`EngravedIcon`). Copied from the PO's SVGs. */
+  engravedTop: '#F3D9AE',
+  engravedMid: '#C99767',
+  engravedBottom: '#7E5C3B',
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────

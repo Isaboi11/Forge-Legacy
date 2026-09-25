@@ -15,7 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { Feather } from '@expo/vector-icons'
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color, space } from '@/constants/tokens'
 import { BaseCard } from './BaseCard'
 import { CARD } from './_cardTokens'
@@ -108,7 +108,7 @@ export function ProgramCard({
 
       {isCompleted && (
         <View style={styles.completedRow}>
-          <Feather name="check-circle" size={14} color={color.success} />
+          <EngravedIcon name="check" size={14} color={color.success} />
           <Text style={[styles.meta, { color: color.success }]}>Completed</Text>
         </View>
       )}
@@ -124,7 +124,9 @@ export function ProgramCard({
         activeOpacity={0.75}
       >
         {isLocked && (
-          <Feather name="lock" size={14} color={color.text.secondary} style={styles.ctaIcon} />
+          <View style={styles.ctaIcon}>
+            <EngravedIcon name="lock" size={14} color={color.text.secondary} />
+          </View>
         )}
         <Text style={[styles.ctaLabel, isCompleted && styles.ctaLabelMuted]}>
           {CTA_LABEL[state]}

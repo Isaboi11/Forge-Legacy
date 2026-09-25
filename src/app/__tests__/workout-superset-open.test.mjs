@@ -84,7 +84,7 @@ test('the whole member row toggles its sets open, in place, with a chevron that 
   assert.match(hit, /styles\.ssTag\b/, 'the A1/A2 tag is outside the tap target');
   assert.match(hit, /styles\.ssName\b/, 'the name is outside the tap target');
   assert.match(hit, /styles\.ssSet\b/, 'the goal line is outside the tap target');
-  assert.match(hit, /d=\{setsOpen \? 'M6 9l6 6 6-6' : 'M9 6l6 6-6 6'\}/, 'the chevron no longer says which way the row goes');
+  assert.match(hit, /name=\{setsOpen \? 'chevron-down' : 'chevron-right'\}/, 'the chevron no longer says which way the row goes');
   assert.match(hit, /accessibilityState=\{\{ expanded: setsOpen \}\}/, 'a screen reader cannot tell the row is open');
 });
 

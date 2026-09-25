@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { fetchPlannedSession, fetchTemplates, templateSummary } from '@/data/templates-live';
@@ -238,9 +238,7 @@ export default function TrainInviteScreen() {
 
 function CheckGlyph({ size = 18, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4.5 4.5L19 7" />
-    </Svg>
+    <EngravedIcon name="check" size={size} color={color} />
   );
 }
 

@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } fr
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Button } from '@/components/forge/composites/Button';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 
 /**
@@ -97,27 +98,11 @@ function RingMark({ size, dotted }: { size: number; dotted: boolean }) {
   );
 }
 
-const glyph = { fill: 'none', stroke: flColor.gray400, strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
+const Plus = () => <EngravedIcon name="plus" size={17} />;
 
-const Plus = () => (
-  <Svg width={17} height={17} viewBox="0 0 24 24" {...glyph}>
-    <Path d="M12 5v14M5 12h14" />
-  </Svg>
-);
+const Clock = () => <EngravedIcon name="clock" size={17} />;
 
-const Clock = () => (
-  <Svg width={17} height={17} viewBox="0 0 24 24" {...glyph}>
-    <Circle cx={12} cy={12} r={8} />
-    <Path d="M12 4v8l5.5 5.5" />
-  </Svg>
-);
-
-const Calendar = () => (
-  <Svg width={17} height={17} viewBox="0 0 24 24" {...glyph}>
-    <Path d="M4.5 6.5h15v13h-15z" />
-    <Path d="M4.5 10h15M8.5 4v4M15.5 4v4" />
-  </Svg>
-);
+const Calendar = () => <EngravedIcon name="calendar" size={17} />;
 
 const styles = StyleSheet.create({
   root: { flex: 1 },

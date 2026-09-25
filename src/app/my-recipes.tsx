@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -10,6 +9,7 @@ import { InputField } from '@/components/forge/composites/InputField';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { Pill } from '@/components/forge/composites/Pill';
 import { ScreenBackground } from '@/components/screen-background';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { localToday } from '@/domain/nutrition/day';
@@ -657,43 +657,32 @@ function Stepper({
 
 function SearchGlyph() {
   return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round">
-      <Circle cx={11} cy={11} r={7} />
-      <Path d="M20 20l-4-4" />
-    </Svg>
+    <EngravedIcon name="search" size={18} color={flColor.gray400} />
   );
 }
 
 function XGlyph() {
   return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2.4} strokeLinecap="round">
-      <Path d="M6 6l12 12M18 6L6 18" />
-    </Svg>
+    <EngravedIcon name="close" size={14} color={flColor.gray400} />
   );
 }
 
 function PlusGlyph({ small }: { small?: boolean }) {
   const s = small ? 13 : 16;
   return (
-    <Svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={small ? 2.6 : 2.2} strokeLinecap="round">
-      <Path d="M12 5v14M5 12h14" />
-    </Svg>
+    <EngravedIcon name="plus" size={s} color={flColor.bronze400} />
   );
 }
 
 function CheckGlyph() {
   return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12.5l4.5 4.5L19 7.5" />
-    </Svg>
+    <EngravedIcon name="check" size={14} color={flColor.bronze300} />
   );
 }
 
 function Chevron() {
   return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 6l6 6-6 6" />
-    </Svg>
+    <EngravedIcon name="chevron-right" size={14} color={flColor.gray400} />
   );
 }
 

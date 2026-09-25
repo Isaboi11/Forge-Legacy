@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { readProgramPhoto } from '@/data/program-photo-live';
 import { catalogForMatching, resolveExerciseName } from '@/domain/exercise-picker/data';
@@ -347,10 +347,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
             accessibilityLabel="Upload a PDF"
             style={({ pressed }) => [styles.impFileBtn, pressed ? styles.impPressed : null]}
           >
-            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
-              <Path d="M14 3v6h6" />
-            </Svg>
+            <EngravedIcon name="document" size={15} color={flColor.gray600} />
             {/* PDF and nothing else — that is what a purchased program arrives as (PO, 2026-08-27), and
                 the spreadsheet types came out on 2026-09-20: *"I don't think we're going to keep a csv
                 there. No need."* The PDF's text goes into the box above like any paste; see
@@ -373,11 +370,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
                 photoBusy ? styles.impBusy : null,
               ]}
             >
-              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <Circle cx={8.5} cy={8.5} r={1.5} />
-                <Path d="M21 15l-5-5L5 21" />
-              </Svg>
+              <EngravedIcon name="image" size={15} color={flColor.gray600} />
               <Text style={styles.impFileText}>
                 {photoBusy ? 'Reading your screenshot…' : 'Or read a screenshot'}
               </Text>
@@ -653,9 +646,7 @@ export function ImportPreview({
                           hitSlop={10}
                           style={({ pressed }) => [styles.impRemove, pressed ? styles.impPressed : null]}
                         >
-                          <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2.6} strokeLinecap="round">
-                            <Path d="M6 6l12 12M18 6L6 18" />
-                          </Svg>
+                          <EngravedIcon name="close" size={11} color={flColor.gray600} />
                         </Pressable>
                       </View>
                     ))}
@@ -673,9 +664,7 @@ export function ImportPreview({
               accessibilityLabel="Add another week"
               style={({ pressed }) => [styles.impAddWeek, pressed ? styles.impPressed : null]}
             >
-              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M12 5v14M5 12h14" />
-              </Svg>
+              <EngravedIcon name="plus" size={15} color={flColor.bronze300} />
               <Text style={styles.impAddWeekText}>Add another week</Text>
             </Pressable>
           ) : null}

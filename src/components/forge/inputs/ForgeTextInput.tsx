@@ -16,10 +16,11 @@ import {
   View,
 } from 'react-native'
 import { Feather } from '@expo/vector-icons'
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color } from '@/constants/tokens'
 import { INP } from './_inputTokens'
 import { getBorderColor, getBgColor, getGlow, getHelperColor, resolveHelper } from './_inputUtils'
-import type { InputBaseProps } from './_types'
+import type { InputBaseProps, InputIconName } from './_types'
 
 export interface ForgeTextInputProps extends InputBaseProps {
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'
@@ -88,7 +89,7 @@ export function ForgeTextInput({
         ]}
       >
         {iconLeft && (
-          <Feather name={iconLeft as any} size={INP.ICON_SIZE} color={color.text.tertiary} />
+          <InputIcon name={iconLeft} />
         )}
         <TextInput
           value={value}
@@ -108,15 +109,29 @@ export function ForgeTextInput({
           onSubmitEditing={onSubmitEditing}
         />
         {showLoading && <ActivityIndicator size="small" color={color.accent.primary} />}
-        {showSuccess && <Feather name="check" size={INP.ICON_SIZE} color={color.accent.primary} />}
-        {showError && <Feather name="alert-circle" size={INP.ICON_SIZE} color={color.danger} />}
-        {showRight && <Feather name={iconRight as any} size={INP.ICON_SIZE} color={color.text.tertiary} />}
+        {showSuccess && <EngravedIcon name="check" size={INP.ICON_SIZE} color={color.accent.primary} />}
+        {showError && <EngravedIcon name="warning" size={INP.ICON_SIZE} color={color.danger} />}
+        {showRight && iconRight && <InputIcon name={iconRight} />}
       </View>
       {displayHelper && (
         <Text style={[styles.helper, { color: helperColor }]}>{displayHelper}</Text>
       )}
     </View>
   )
+}
+
+/** Slot icons in the engraved set; the few with no engraved counterpart stay Feather. */
+const ENGRAVED_SLOT: Partial<Record<InputIconName, EngravedName>> = {
+  search: 'search', lock: 'lock', eye: 'eye', 'eye-off': 'eye-off', calendar: 'calendar', clock: 'clock',
+  user: 'user', link: 'link', check: 'check', x: 'close', 'alert-circle': 'warning', plus: 'plus',
+  minus: 'minus', edit: 'edit', 'chevron-down': 'chevron-down', 'chevron-up': 'chevron-up',
+}
+
+function InputIcon({ name }: { name: InputIconName }) {
+  const engraved = ENGRAVED_SLOT[name]
+  return engraved
+    ? <EngravedIcon name={engraved} size={INP.ICON_SIZE} color={color.text.tertiary} />
+    : <Feather name={name} size={INP.ICON_SIZE} color={color.text.tertiary} />
 }
 
 const styles = StyleSheet.create({

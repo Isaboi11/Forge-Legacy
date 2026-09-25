@@ -1,8 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
+import Svg from 'react-native-svg';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flRadius } from '@/constants/foundation';
 
 /**
@@ -36,13 +37,11 @@ export interface StartStrengthSheetProps {
 }
 
 /** The option glyphs, shared with Home's Start a Workout sheet so one door never wears two icons. */
-export const START_ICON = {
-  template: <Path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5" />,
-  buildFirst: <Path d="M6.5 6.5h11M6.5 12h11M6.5 17.5h11M3 6.5h.01M3 12h.01M3 17.5h.01M20 4v5M22.5 6.5h-5" />,
-  buildAsYouGo: <Path d="M12 3l2.2 5.9L20 11l-5.8 2.1L12 19l-2.2-5.9L4 11l5.8-2.1z" />,
-  cardio: (
-    <Path d="M2.5 17.5h19M3 17.5v-3.2c0-.6.4-1 1-1.1l3.6-.6 2.6-4.1 2 1 1.6-1.1c.9 2.3 3 3.6 5.6 4.1.9.2 1.6 1 1.6 1.9v3.1M9 11.3l1.6.9M10.4 9.6l1.5.9" />
-  ),
+export const START_ICON: Record<'template' | 'buildFirst' | 'buildAsYouGo' | 'cardio', EngravedName> = {
+  template: 'document',
+  buildFirst: 'list-plus',
+  buildAsYouGo: 'spark',
+  cardio: 'shoe',
 };
 
 /** The copy both sheets say, so Home's rows and this sheet's rows are one sentence each, not two. */
@@ -73,13 +72,14 @@ export function StartStrengthSheet({ open, onClose, onFreestyle }: StartStrength
 
 /**
  * One way to start: a bronze glyph in a ring, a title, one line of why, a chevron.
+ * `icon` is an engraved icon name, or raw 24-unit svg paths (still drawn in the bronze stroke).
  *
  * ⚠ THE EDGE IS A NEUTRAL HAIRLINE, NOT BRONZE. These rows wore `bronzeBorder` at 40% plus a bronze rim
  * shadow, so a sheet of three read as a form of three outlined fields — and bronze on every edge stops
  * being an accent (PO rule, 2026-08-24: *"bronze is not a border colour"*). The bronze now lives in the
  * glyph and the chevron, which is where the eye should land; the pressed state is what warms the edge.
  */
-export function StartOptionRow({ title, sub, icon, onPress }: { title: string; sub: string; icon: React.ReactNode; onPress: () => void }) {
+export function StartOptionRow({ title, sub, icon, onPress }: { title: string; sub: string; icon: EngravedName | React.ReactNode; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
@@ -88,17 +88,19 @@ export function StartOptionRow({ title, sub, icon, onPress }: { title: string; s
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
       <View style={styles.ring}>
-        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-          {icon}
-        </Svg>
+        {typeof icon === 'string' ? (
+          <EngravedIcon name={icon as EngravedName} size={20} />
+        ) : (
+          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+            {icon}
+          </Svg>
+        )}
       </View>
       <View style={styles.body}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.sub}>{sub}</Text>
       </View>
-      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M9 6l6 6-6 6" />
-      </Svg>
+      <EngravedIcon name="chevron-right" size={18} color={flColor.bronze400} />
     </Pressable>
   );
 }

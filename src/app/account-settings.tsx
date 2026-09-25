@@ -3,9 +3,9 @@ import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, Style
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Constants from 'expo-constants';
-import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
@@ -67,21 +67,8 @@ import { TOUR_RETIRED } from '@/lib/screen-prompts';
  * The design's version string `2.4.1 (build 318)` is placeholder copy; this reports the real one.
  */
 
-const CHEVRON = 'M9 6l6 6-6 6';
-const BULB = 'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.4c.7.7 1 1.3 1 2.1h6c0-.8.3-1.4 1-2.1A6 6 0 0 0 12 3z';
-
 /** The design's bronze-metallic disc: a vertical light→dark bronze sweep behind the initials. */
 const AVATAR_STOPS = [flColor.bronze300, flColor.bronze400, flColor.bronzeDark] as const;
-
-function Glyph({ d, size = 15, color, width = 1.9 }: { d: string; size?: number; color: string; width?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
-      {d.split('M').filter(Boolean).map((seg) => (
-        <Path key={seg} d={`M${seg}`} />
-      ))}
-    </Svg>
-  );
-}
 
 export default function AccountSettingsScreen() {
   /*
@@ -245,7 +232,7 @@ export default function AccountSettingsScreen() {
               {rankLine(me?.rankFamily, me?.rankLevel) ? <Text style={styles.rank}>{rankLine(me?.rankFamily, me?.rankLevel)}</Text> : null}
               {me?.handle ? <Text style={styles.handle}>@{me.handle}</Text> : null}
             </View>
-            <Glyph d={CHEVRON} size={18} color={flColor.gray600} />
+            <EngravedIcon name="chevron-right" size={18} color={flColor.gray600} />
           </Pressable>
 
           {/* guided tips — hidden while the tour is retired; see `TOUR_RETIRED` for how to bring it back */}
@@ -255,7 +242,7 @@ export default function AccountSettingsScreen() {
               <View style={styles.card}>
                 <View style={styles.row}>
                   <View style={styles.iconTile}>
-                    <Glyph d={BULB} size={18} color={flColor.bronze300} />
+                    <EngravedIcon name="lightbulb" size={18} />
                   </View>
                   <View style={styles.rowText}>
                     <Text style={styles.rowLabel}>Guided Tips</Text>
@@ -293,7 +280,7 @@ export default function AccountSettingsScreen() {
                     <Text style={[styles.rowLabel, row.destructive && styles.rowLabelDanger]}>{row.label}</Text>
                     <View style={styles.rowRight}>
                       {row.value ? <Text style={styles.rowValue}>{row.value}</Text> : null}
-                      <Glyph d={CHEVRON} color={row.destructive ? flColor.redMuted : flColor.gray600} width={2} />
+                      <EngravedIcon name="chevron-right" size={15} color={row.destructive ? flColor.redMuted : flColor.gray600} />
                     </View>
                   </Pressable>
                 ))}

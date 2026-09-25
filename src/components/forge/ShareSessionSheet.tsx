@@ -1,9 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Linking, Platform, Pressable, Share, StyleSheet, Text, TextInput, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SquadSelectList, selectedSquads } from '@/components/forge/SquadSelectList';
 import { flColor, flRadius } from '@/constants/foundation';
 import { useToast } from '@/hooks/useCeremony';
@@ -385,9 +385,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
       {sharedResult ? (
         <View style={styles.sharedWrap} accessibilityRole="alert" accessibilityLabel={sharedResult}>
           <View style={styles.sharedDisc}>
-            <Svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M20 6L9 17l-5-5" />
-            </Svg>
+            <EngravedIcon name="check" size={26} />
           </View>
           <Text style={styles.sharedTitle}>Shared</Text>
           <Text style={styles.sharedLine}>{sharedResult}</Text>
@@ -481,9 +479,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
               >
                 <View style={[styles.mapBox, shareRoute && styles.mapBoxOn]}>
                   {shareRoute ? (
-                    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.charcoal900} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
-                      <Path d="M20 6L9 17l-5-5" />
-                    </Svg>
+                    <EngravedIcon name="check" size={12} color={flColor.charcoal900} />
                   ) : null}
                 </View>
                 <View style={styles.mapText}>
@@ -498,9 +494,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
               toast is the other half and it is gone in three seconds. */}
           {already ? (
             <View style={styles.already} accessibilityRole="text" accessibilityLabel={already}>
-              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M20 6L9 17l-5-5" />
-              </Svg>
+              <EngravedIcon name="check" size={14} color={flColor.bronze300} />
               <Text style={styles.alreadyText}>{already}</Text>
             </View>
           ) : null}
@@ -633,51 +627,21 @@ function OutsideRow({
   );
 }
 
-const ICON = { size: 22, stroke: flColor.bronze400, width: 1.7 } as const;
+const ICON_SIZE = 22;
 function FriendsGlyph() {
-  return (
-    <Svg width={ICON.size} height={ICON.size} viewBox="0 0 24 24" fill="none" stroke={ICON.stroke} strokeWidth={ICON.width} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={9} cy={8} r={3.2} />
-      <Path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6S13.9 16 14.5 19" />
-      <Path d="M16.2 6.2a3 3 0 0 1 0 5.6M17.5 14.6c2 .5 3.2 2 3.6 4.4" />
-    </Svg>
-  );
+  return <EngravedIcon name="partners" size={ICON_SIZE} />;
 }
 function SquadGlyph() {
-  return (
-    <Svg width={ICON.size} height={ICON.size} viewBox="0 0 24 24" fill="none" stroke={ICON.stroke} strokeWidth={ICON.width} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={7} r={2.7} />
-      <Circle cx={5.4} cy={10.4} r={2.2} />
-      <Circle cx={18.6} cy={10.4} r={2.2} />
-      <Path d="M7.4 18c.5-2.5 2.3-3.8 4.6-3.8S16.1 15.5 16.6 18" />
-      <Path d="M2.5 18c.3-1.9 1.4-2.9 3-3.1M21.5 18c-.3-1.9-1.4-2.9-3-3.1" />
-    </Svg>
-  );
+  return <EngravedIcon name="people" size={ICON_SIZE} />;
 }
 function BothGlyph() {
-  return (
-    <Svg width={ICON.size} height={ICON.size} viewBox="0 0 24 24" fill="none" stroke={ICON.stroke} strokeWidth={ICON.width} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={9} cy={12} r={5.2} />
-      <Circle cx={15} cy={12} r={5.2} />
-    </Svg>
-  );
+  return <EngravedIcon name="layers" size={ICON_SIZE} />;
 }
 function MessageGlyph() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M20 12a7.5 7.5 0 0 1-8 7.4L7 21l.7-3A7.5 7.5 0 1 1 20 12z" />
-    </Svg>
-  );
+  return <EngravedIcon name="chat" size={17} color={flColor.gray400} />;
 }
 function MoreGlyph() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={6} cy={12} r={2.5} />
-      <Circle cx={17} cy={6} r={2.5} />
-      <Circle cx={17} cy={18} r={2.5} />
-      <Path d="M8.2 10.8l6.6-3.6M8.2 13.2l6.6 3.6" />
-    </Svg>
-  );
+  return <EngravedIcon name="share" size={17} color={flColor.gray400} />;
 }
 
 const styles = StyleSheet.create({

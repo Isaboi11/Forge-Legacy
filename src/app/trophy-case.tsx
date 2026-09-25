@@ -2,13 +2,13 @@ import { useMemo, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
@@ -437,34 +437,16 @@ function Shell({ children, onBack }: { children: ReactNode; onBack: () => void }
 
 // ── glyphs ──
 function CrownGlyph({ size = 16, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M3 8l4 3.5L12 5l5 6.5L21 8l-1.6 10.5H4.6L3 8z" />
-    </Svg>
-  );
+  return <EngravedIcon name="crown" size={size} color={engravedTint(color)} />;
 }
 function MedalGlyph({ size = 16, color = flColor.gray400 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={14.5} r={4.8} />
-      <Circle cx={12} cy={14.5} r={1.8} />
-      <Path d="M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4" />
-    </Svg>
-  );
+  return <EngravedIcon name="medal" size={size} color={engravedTint(color)} />;
 }
 function SwordsGlyph({ size = 26, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M14.5 14.5L21 21M19 3l-9 9M5 3l9 9M9.5 14.5L3 21" />
-    </Svg>
-  );
+  return <EngravedIcon name="swords" size={size} color={engravedTint(color)} />;
 }
 function ChevronGlyph({ size = 15, color = flColor.bronze400 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 6l6 6-6 6" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-right" size={size} color={color} />;
 }
 
 const styles = StyleSheet.create({

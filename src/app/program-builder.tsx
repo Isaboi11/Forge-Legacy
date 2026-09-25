@@ -3,7 +3,6 @@ import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, V
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenBoundary } from '@/components/screen-boundary';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -73,6 +72,7 @@ import { useProfile } from '@/lib/profile';
 import type { Sex } from '@/domain/profile/schema';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import type { TourAnchorId } from '@/domain/onboarding/tour-plan';
 import {
@@ -164,20 +164,9 @@ const dayName = (day: ProgramDay) => (day.name.trim() ? day.name : `Day ${day.le
 const ellipsis = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
-function Glyph({ d, size = 13, color, width = 2.2 }: { d: string; size?: number; color: string; width?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={d} />
-    </Svg>
-  );
+function Glyph({ name, size = 13, color }: { name: EngravedName; size?: number; color?: string }) {
+  return <EngravedIcon name={name} size={size} color={color} />;
 }
-
-const CHECK = 'M20 6L9 17l-5-5';
-const CROSS = 'M18 6L6 18M6 6l12 12';
-const PLUS = 'M12 5v14M5 12h14';
-const DOTS = 'M12 5.4v.2M12 11.9v.2M12 18.4v.2';
-/** The stacked rules W-26 uses for a template — the same mark, so the shortcut names its destination. */
-const LINES = 'M4 6h16M4 12h16M4 18h10';
 
 /**
  * The design's `pbRise` entry animation (`opacity 0→1`, `translateY 8→0`, `--fl-ease-out`) on the body of
@@ -933,7 +922,7 @@ function ProgramBuilderScreen() {
                 <Text style={styles.cardioRowName}>{a.name}</Text>
                 <Text style={styles.cardioRowSub}>{a.sub}</Text>
               </View>
-              <Glyph d="M9 6l6 6-6 6" size={15} color={flColor.gray600} width={2} />
+              <Glyph name="chevron-right" size={15} color={flColor.gray600} />
             </Pressable>
           ))}
         </View>
@@ -1167,7 +1156,7 @@ function ProgramBuilderScreen() {
               >
                 {done ? (
                   <View style={styles.doneMark}>
-                    <Glyph d={CHECK} size={11} color={flColor.bronze300} width={2.8} />
+                    <Glyph name="check" size={11} color={flColor.bronze300} />
                   </View>
                 ) : current ? (
                   <View style={styles.jumpCurrentDot} />
@@ -1209,12 +1198,12 @@ function ProgramBuilderScreen() {
             accessibilityLabel="Use a week you have saved"
             style={({ pressed }) => [styles.templateLink, pressed ? styles.pressed : null]}
           >
-            <Glyph d={LINES} size={16} color={flColor.bronze300} width={1.8} />
+            <Glyph name="list" size={16} />
             <View style={styles.templateLinkText}>
               <Text style={styles.templateLinkTitle}>Use a saved week</Text>
               <Text style={styles.templateLinkSub}>One of your week templates becomes this week</Text>
             </View>
-            <Glyph d="M9 6l6 6-6 6" size={15} color={flColor.gray600} width={2} />
+            <Glyph name="chevron-right" size={15} color={flColor.gray600} />
           </Pressable>
           {weekSheet
             ? (() => {
@@ -1514,7 +1503,7 @@ function TemplateDayRow({
           {daySectionsSummary(rows)} · {meta}
         </Text>
       </View>
-      <Glyph d="M9 6l6 6-6 6" size={15} color={flColor.gray600} width={2} />
+      <Glyph name="chevron-right" size={15} color={flColor.gray600} />
     </Pressable>
   );
 }
@@ -1592,7 +1581,7 @@ function WeekTemplateSheet({
                   {weekSummary(w)} · {note}
                 </Text>
               </View>
-              <Glyph d="M9 6l6 6-6 6" size={15} color={flColor.gray600} width={2} />
+              <Glyph name="chevron-right" size={15} color={flColor.gray600} />
             </Pressable>
           );
         })}
@@ -1693,7 +1682,7 @@ function SetupView({
       >
         {context ? (
           <View style={styles.contextBanner}>
-            <Glyph d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" size={16} color={flColor.bronze300} width={1.8} />
+            <Glyph name="edit" size={16} />
             <Text style={styles.contextText}>{context}</Text>
           </View>
         ) : null}
@@ -1778,9 +1767,7 @@ function SetupView({
           accessibilityLabel="Import from a spreadsheet"
           style={({ pressed }) => [styles.importLink, pressed ? styles.pressed : null]}
         >
-          <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M12 3v12M8 11l4 4 4-4M4 19h16" />
-          </Svg>
+          <EngravedIcon name="download" size={15} color={flColor.gray600} />
           <Text style={styles.importLinkText}>Import from a spreadsheet</Text>
         </Pressable>
 
@@ -1843,7 +1830,7 @@ function SetupView({
                     </View>
                     {built ? (
                       <View style={styles.doneMark}>
-                        <Glyph d={CHECK} size={12} color={flColor.bronze300} width={2.6} />
+                        <Glyph name="check" size={12} color={flColor.bronze300} />
                       </View>
                     ) : (
                       <View style={styles.todoMark} />
@@ -1855,7 +1842,7 @@ function SetupView({
                     accessibilityLabel={`Week ${i + 1} options`}
                     style={styles.rowMenu}
                   >
-                    <Glyph d={DOTS} size={18} color={flColor.gray600} width={2.6} />
+                    <Glyph name="more" size={18} color={flColor.gray600} />
                   </Pressable>
                 </View>
               );
@@ -1888,7 +1875,7 @@ function SetupView({
                   </View>
                   {built ? (
                     <View style={styles.doneMark}>
-                      <Glyph d={CHECK} size={12} color={flColor.bronze300} width={2.6} />
+                      <Glyph name="check" size={12} color={flColor.bronze300} />
                     </View>
                   ) : null}
                 </Pressable>
@@ -1898,7 +1885,7 @@ function SetupView({
                   accessibilityLabel={`${dayName(day)} options`}
                   style={styles.rowMenu}
                 >
-                  <Glyph d={DOTS} size={18} color={flColor.gray600} width={2.6} />
+                  <Glyph name="more" size={18} color={flColor.gray600} />
                 </Pressable>
               </View>
             );
@@ -1993,9 +1980,9 @@ function UseSavedWeekRow({ onPress }: { onPress: () => void }) {
       accessibilityLabel="Fill this week from a week you have saved"
       style={({ pressed }) => [styles.useWeekRow, pressed ? styles.pressed : null]}
     >
-      <Glyph d={LINES} size={14} color={flColor.bronze400} width={1.8} />
+      <Glyph name="list" size={14} />
       <Text style={styles.useWeekText}>Use a saved week</Text>
-      <Glyph d="M9 6l6 6-6 6" size={14} color={flColor.gray600} width={2} />
+      <Glyph name="chevron-right" size={14} color={flColor.gray600} />
     </Pressable>
   );
 }
@@ -2034,7 +2021,7 @@ function WeekDaysView({
         onBack={onBack}
         actions={
           <Pressable onPress={onOpenWeekSheet} accessibilityRole="button" accessibilityLabel="Week options" hitSlop={6} style={styles.barBtn}>
-            <Glyph d={DOTS} size={18} color={flColor.gray400} width={2.6} />
+            <Glyph name="more" size={18} color={flColor.gray400} />
           </Pressable>
         }
       />
@@ -2074,12 +2061,12 @@ function WeekDaysView({
                   </View>
                   {done ? (
                     <View style={styles.doneMark}>
-                      <Glyph d={CHECK} size={12} color={flColor.bronze300} width={2.6} />
+                      <Glyph name="check" size={12} color={flColor.bronze300} />
                     </View>
                   ) : null}
                 </Pressable>
                 <Pressable onPress={() => onOpenDayMenu(i)} accessibilityRole="button" accessibilityLabel={`${dayName(day)} options`} style={styles.rowMenu}>
-                  <Glyph d={DOTS} size={18} color={flColor.gray600} width={2.6} />
+                  <Glyph name="more" size={18} color={flColor.gray600} />
                 </Pressable>
               </View>
             );
@@ -2101,7 +2088,7 @@ function WeekDaysView({
 function CheckRow({ ok, label }: { ok: boolean; label: string }) {
   return (
     <View style={styles.checkRow}>
-      <Glyph d={ok ? CHECK : CROSS} size={15} color={ok ? flColor.bronze300 : flColor.gray600} width={2.4} />
+      <Glyph name={ok ? 'check' : 'close'} size={15} color={ok ? flColor.bronze300 : flColor.gray600} />
       <Text style={[styles.checkLabel, ok && styles.checkLabelOk]}>{label}</Text>
     </View>
   );
@@ -2259,7 +2246,7 @@ function DayBuilder({
                       accessibilityLabel={`Add ${sec.addLabel}`}
                       style={styles.addBtn}
                     >
-                      <Glyph d={PLUS} size={15} color={flColor.bronze300} width={2} />
+                      <Glyph name="plus" size={15} color={flColor.bronze300} />
                       <Text style={styles.addText}>Add {sec.addLabel}</Text>
                     </Pressable>
                   </TourAnchor>
@@ -2292,14 +2279,14 @@ function DayBuilder({
           accessibilityLabel="Fill this day from a template"
           style={({ pressed }) => [styles.templateLink, pressed ? styles.pressed : null]}
         >
-          <Glyph d={LINES} size={16} color={flColor.bronze300} width={1.8} />
+          <Glyph name="list" size={16} />
           <View style={styles.templateLinkText}>
             <Text style={styles.templateLinkTitle}>Use a template</Text>
             <Text style={styles.templateLinkSub}>
               {total > 0 ? 'Add one of your saved workouts, or a Forge session, to this day' : 'Start this day from one of your saved workouts, or a Forge session'}
             </Text>
           </View>
-          <Glyph d="M9 6l6 6-6 6" size={15} color={flColor.gray600} width={2} />
+          <Glyph name="chevron-right" size={15} color={flColor.gray600} />
         </Pressable>
       </Animated.ScrollView>
 
@@ -2328,7 +2315,7 @@ function DayBuilder({
               fullWidth
               onPress={onNext}
               accessibilityLabel={`Save and go to ${nextLabelFull ?? nextLabel}`}
-              trailingIcon={<Glyph d="M9 6l6 6-6 6" size={15} color="#F7F5F1" width={2.2} />}
+              trailingIcon={<Glyph name="chevron-right" size={15} color="#F7F5F1" />}
             >
               Save &amp; go to {nextLabel}
             </Button>
@@ -2468,7 +2455,7 @@ function ExerciseCard({
             accessibilityLabel={`Move ${item.name} up`}
             style={styles.exCtrl}
           >
-            <Glyph d="M18 15l-6-6-6 6" color={first ? flColor.charcoal500 : flColor.gray400} />
+            <Glyph name="chevron-up" color={first ? flColor.charcoal500 : flColor.gray400} />
           </Pressable>
           <Pressable
             onPress={last ? undefined : onDown}
@@ -2477,10 +2464,10 @@ function ExerciseCard({
             accessibilityLabel={`Move ${item.name} down`}
             style={styles.exCtrl}
           >
-            <Glyph d="M6 9l6 6 6-6" color={last ? flColor.charcoal500 : flColor.gray400} />
+            <Glyph name="chevron-down" color={last ? flColor.charcoal500 : flColor.gray400} />
           </Pressable>
           <Pressable onPress={onRemove} accessibilityRole="button" accessibilityLabel={`Remove ${item.name}`} style={styles.exCtrl}>
-            <Glyph d="M5 7h14M9 7V5h6v2M8 7l1 13h6l1-13" color={flColor.redMuted} />
+            <Glyph name="trash" color={flColor.redMuted} />
           </Pressable>
         </View>
       </View>
@@ -2489,7 +2476,7 @@ function ExerciseCard({
           something below to join to — the last row in a section has nothing to pair with. */}
       {!last ? (
         <Pressable onPress={onPair} accessibilityRole="button" accessibilityLabel={`Superset ${item.name} with the exercise below`} style={styles.pairLink}>
-          <Glyph d="M9 7H6a5 5 0 0 0 0 10h3M15 7h3a5 5 0 0 1 0 10h-3M8 12h8" size={14} color={flColor.bronze400} />
+          <Glyph name="link" size={14} />
           <Text style={styles.pairLinkText}>{pairing ? 'Add the next one to this superset' : 'Superset with the next exercise'}</Text>
         </Pressable>
       ) : null}
@@ -2616,9 +2603,9 @@ function ExerciseCard({
         style={({ pressed }) => [styles.exNoteRow, pressed ? styles.exNotePressed : null]}
       >
         <Glyph
-          d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5"
+          name="document"
           size={13}
-          color={item.coachNote ? flColor.bronze400 : flColor.gray600}
+          color={engravedTint(item.coachNote ? flColor.bronze400 : flColor.gray600)}
         />
         <Text style={[styles.exNoteText, item.coachNote ? styles.exNoteTextSet : null]} numberOfLines={2}>
           {item.coachNote ? item.coachNote : 'Add a coaching note'}
@@ -2631,29 +2618,7 @@ function ExerciseCard({
 /** The activity glyph — same paths as `forge-symbols.js`, keyed off ACTIVITY and never equipment. */
 function ActivityGlyph({ activity, size, color }: { activity: CardioActivity; size: number; color: string }) {
   const name = activitySymbol(activity);
-  const p = { fill: 'none' as const, stroke: color, strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-  if (name === 'bicycle') {
-    return (
-      <Svg width={size} height={size} viewBox="0 0 24 24">
-        <Circle cx={5.5} cy={15.5} r={3.2} {...p} />
-        <Circle cx={18.5} cy={15.5} r={3.2} {...p} />
-        <Path d="M5.5 15.5l4-7h6M9.5 8.5l3 7M18.5 15.5l-3-7" {...p} />
-      </Svg>
-    );
-  }
-  if (name === 'footprints') {
-    return (
-      <Svg width={size} height={size} viewBox="0 0 24 24">
-        <Path d="M8 4.5c1.4 0 2.2 1.5 2.2 3.3 0 1.4-.6 2.7-2.2 2.7s-2.2-1.3-2.2-2.7C5.6 6 6.6 4.5 8 4.5z" {...p} />
-        <Path d="M16 8.5c1.4 0 2.2 1.5 2.2 3.3 0 1.4-.6 2.7-2.2 2.7s-2.2-1.3-2.2-2.7C13.8 10 14.6 8.5 16 8.5z" {...p} />
-      </Svg>
-    );
-  }
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path d="M3 15.6v-3c0-.5.4-.8.9-.6l3.3.8 2.6-2.9c.4-.5 1.2-.4 1.5.2l.7 1.5 6 1.7c1.2.3 2 1.1 2 2.4v.7c0 .4-.3.7-.7.7H4c-.6 0-1-.5-1-1z" {...p} />
-    </Svg>
-  );
+  return <EngravedIcon name={name === 'bicycle' ? 'bicycle' : name === 'footprints' ? 'footprints' : 'shoe'} size={size} color={engravedTint(color)} />;
 }
 
 function RoundStep({ label, sign, onPress }: { label: string; sign: string; onPress: () => void }) {

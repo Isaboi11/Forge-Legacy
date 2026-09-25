@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import Svg, { Circle, Path } from 'react-native-svg';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -13,6 +12,7 @@ import { usePlansAfterOnboarding } from '@/hooks/usePlansAfterOnboarding';
 import { ChevronRightIcon, ForgeMarkIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader/SectionHeader';
 import { LegacyTabIcon } from '@/components/forge/primitives/icons/NavIcons';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ChapterTitleBlock } from '@/components/forge/compositions/ChapterTitleBlock';
 import { TodaysWorkoutCard } from '@/components/forge/compositions/TodaysWorkoutCard';
 import { ProgramMissionGrid } from '@/components/forge/compositions/ProgramMissionGrid';
@@ -88,11 +88,7 @@ function splitChapterTitle(full: string): { number: string; name: string } {
 /** The goal mark — the same target the Mission column wears, so the row and the tile it becomes agree. */
 function GoalGlyph() {
   return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="square">
-      <Circle cx={12} cy={12} r={8} />
-      <Circle cx={12} cy={12} r={3} />
-      <Path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-    </Svg>
+    <EngravedIcon name="target" size={22} />
   );
 }
 
@@ -1303,9 +1299,7 @@ export default function HomeScreen() {
                 <Text style={styles.startSub}>Choose how you want to train.</Text>
               </View>
               <Pressable onPress={closeElse} accessibilityRole="button" accessibilityLabel="Close" hitSlop={6} style={({ pressed }) => [styles.startClose, pressed ? styles.pathPressed : null]}>
-                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray400} strokeWidth={2} strokeLinecap="round">
-                  <Path d="M6 6l12 12M18 6L6 18" />
-                </Svg>
+                <EngravedIcon name="close" size={16} color={flColor.gray400} />
               </Pressable>
             </View>
           ) : undefined

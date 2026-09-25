@@ -2,8 +2,8 @@ import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
@@ -312,102 +312,36 @@ function EventGlyph({ kind, color }: { kind: TimelineKind; color: string }) {
       return <SparkGlyph size={s} color={color} />;
   }
 }
-/*
- * ══ THESE ARE THE LIBRARY'S PATHS, NOT LOOKALIKES ══
- *
- * Each of the three below was hand-drawn here and diverged from `forge-symbols.js` — the same library
- * `ForgeSymbol.tsx` already ports and that the Legacy tab and Chapter Detail already draw from. The
- * chapter emblem was the visible casualty: the old "book" was
- *
- *     M4 5.5A2 2 0 0 1 6 4h5v16H6a2 2 0 0 0-2 1.5zM20 5.5A2 2 0 0 0 18 4h-5v16h5a2 2 0 0 1 2 1.5z
- *
- * — two tall boxy slabs spanning y 4→21.5 in a 24 viewBox, so vertically off-centre by three quarters
- * of a unit and bottom-heavy. Stroked near-black on a solid bronze coin at 15px it read as a dark blob,
- * not an open book. The canonical path is two curves that actually look like facing pages.
- *
- * The same file drew a bespoke flame and a shield missing the design's inner chevron. All three now
- * carry the library's own `d`, so the timeline agrees with every other surface that draws a chapter.
- * (`Legacy-Timeline-Wireframe-Spec-L2.md` specifies no emblem at all — the mark is a `.dc` invention —
- * so the authority here is the symbol library, and it is now being followed.)
- */
+/* The engraved set. Bronze → the gradient; onBronze (on the coin) and grey (a meta line) stay flat. */
 function BookGlyph({ size = 14, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 6.5C10 5 7 4.5 4 5v12c3-.5 6 0 8 1.5" />
-      <Path d="M12 6.5C14 5 17 4.5 20 5v12c-3-.5-6 0-8 1.5z" />
-    </Svg>
-  );
+  return <EngravedIcon name="book" size={size} color={engravedTint(color)} />;
 }
 function FlameGlyph({ size = 14, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z" />
-    </Svg>
-  );
+  return <EngravedIcon name="flame" size={size} color={engravedTint(color)} />;
 }
 function ShieldGlyph({ size = 14, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3.4l6.8 2.6v5.3c0 4.2-2.8 7-6.8 8.6-4-1.6-6.8-4.4-6.8-8.6V6L12 3.4z" />
-      {/* The chevron the hand-drawn copy dropped — without it a rank-up reads as a plain crest. */}
-      <Path d="M8.8 11l3.2 2.2 3.2-2.2" />
-    </Svg>
-  );
+  return <EngravedIcon name="rank-up" size={size} color={engravedTint(color)} />;
 }
 function MedalGlyph({ size = 14, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={14.5} r={4.8} />
-      {/* The library's inner ring, which the hand-drawn copy left out — a medal without it is a coin. */}
-      <Circle cx={12} cy={14.5} r={1.8} />
-      <Path d="M8.8 10.4L6 4h4l2 3.2L14 4h4l-2.8 6.4" />
-    </Svg>
-  );
+  return <EngravedIcon name="medal" size={size} color={engravedTint(color)} />;
 }
 function TargetGlyph({ size = 14, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8}>
-      <Circle cx={12} cy={12} r={8.5} />
-      <Circle cx={12} cy={12} r={4.4} />
-      <Circle cx={12} cy={12} r={1} fill={color} />
-    </Svg>
-  );
+  return <EngravedIcon name="target" size={size} color={engravedTint(color)} />;
 }
 function StarGlyph({ size = 14, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinejoin="round">
-      <Path d="M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z" />
-    </Svg>
-  );
+  return <EngravedIcon name="star" size={size} color={engravedTint(color)} />;
 }
 function CameraGlyph({ size = 14, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.2-2h8.2l1.2 2h2.2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z" />
-      <Circle cx={12} cy={13} r={3.2} />
-    </Svg>
-  );
+  return <EngravedIcon name="camera" size={size} color={engravedTint(color)} />;
 }
 function SparkGlyph({ size = 14, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3v5M12 16v5M3 12h5M16 12h5M6 6l3.2 3.2M14.8 14.8L18 18M18 6l-3.2 3.2M9.2 14.8L6 18" />
-    </Svg>
-  );
+  return <EngravedIcon name="spark" size={size} color={engravedTint(color)} />;
 }
 function QuoteGlyph({ size = 14, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 7H5v5h4v-2c0 2.4-1 3.6-3 4M19 7h-4v5h4v-2c0 2.4-1 3.6-3 4" />
-    </Svg>
-  );
+  return <EngravedIcon name="quote" size={size} color={engravedTint(color)} />;
 }
 function ChevronGlyph({ size = 16, color = flColor.gray600 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M9 6l6 6-6 6" />
-    </Svg>
-  );
+  return <EngravedIcon name="chevron-right" size={size} color={color} />;
 }
 
 const styles = StyleSheet.create({

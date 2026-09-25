@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Animated, ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
@@ -259,11 +259,7 @@ function HonorDetailSheet({ honor, onClose, onShare }: { honor: HubHonor; onClos
         </View>
 
         <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel="Share honor" style={styles.shareBtn}>
-          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
-            <Path d="M16 6l-4-4-4 4" />
-            <Path d="M12 2v13" />
-          </Svg>
+          <EngravedIcon name="share" size={16} color={flColor.bronze300} />
           <Text style={styles.shareText}>Share Honor</Text>
         </Pressable>
       </Animated.View>
@@ -275,13 +271,7 @@ function EmptyHonors() {
   return (
     <View style={styles.empty}>
       <View style={styles.emptyMark}>
-        <Svg width={34} height={34} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-          <Path d="M8 4h8v3.5a4 4 0 0 1-8 0z" />
-          <Path d="M8 5.5H5.3c0 2.4 1 3.6 2.9 3.9" />
-          <Path d="M16 5.5h2.7c0 2.4-1 3.6-2.9 3.9" />
-          <Path d="M12 12v4" />
-          <Path d="M9 20h6l-.5-4h-5z" />
-        </Svg>
+        <EngravedIcon name="trophy" size={34} />
       </View>
       <Text style={styles.emptyTitle}>No honors yet</Text>
       <Text style={styles.emptyBody}>

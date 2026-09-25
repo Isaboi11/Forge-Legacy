@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -563,9 +563,7 @@ export default function ExercisePickerScreen() {
           </Text>
         </View>
         {sel ? (
-          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M20 6L9 17l-5-5" />
-          </Svg>
+          <EngravedIcon name="check" size={18} color={flColor.bronze300} />
         ) : (
           <View style={styles.emptyMark} />
         )}
@@ -583,9 +581,7 @@ export default function ExercisePickerScreen() {
         onBack={() => router.back()}
         actions={
           <Pressable onPress={openFilter} accessibilityRole="button" accessibilityLabel="Filter" hitSlop={6} style={styles.filterBtn}>
-            <Svg width={21} height={21} viewBox="0 0 24 24" fill="none" stroke={hasFilters ? flColor.bronze300 : flColor.gray400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M3 5h18l-7 8v5l-4 2v-7z" />
-            </Svg>
+            <EngravedIcon name="filter" size={21} color={hasFilters ? flColor.bronze300 : flColor.gray400} />
             {hasFilters ? (
               <View style={styles.filterBadge}>
                 <Text style={styles.filterBadgeText}>{appliedChips.length}</Text>
@@ -622,10 +618,9 @@ export default function ExercisePickerScreen() {
           <Text style={styles.multiHint}>Tick more than one to add them as a superset.</Text>
         ) : null}
         <View style={styles.searchWrap}>
-          <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" style={styles.searchIcon}>
-            <Circle cx={11} cy={11} r={7} />
-            <Path d="M20 20l-3.2-3.2" />
-          </Svg>
+          <View style={styles.searchIcon}>
+            <EngravedIcon name="search" size={17} color={flColor.gray600} />
+          </View>
           <TextInput
             style={styles.search}
             value={search}
@@ -707,9 +702,7 @@ export default function ExercisePickerScreen() {
               {supersetOn ? (
                 /* The tick is the ROW's fill colour, not a fixed dark — the box it sits in is white
                    (`onBronze`) once checked, so the mark has to be bronze to exist at all. */
-                <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronzeSolid} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round">
-                  <Path d="M4 12.5l5.2 5.2L20 7" />
-                </Svg>
+                <EngravedIcon name="check" size={13} color={flColor.bronzeSolid} />
               ) : null}
             </View>
             <View style={styles.ssText}>
@@ -775,9 +768,7 @@ export default function ExercisePickerScreen() {
             {appliedChips.map((c) => (
               <Pressable key={`${c.group}-${c.value}`} onPress={() => removeApplied(c.group, c.value)} accessibilityRole="button" accessibilityLabel={`Remove ${c.label}`} style={styles.appliedChip}>
                 <Text style={styles.appliedChipText}>{c.label}</Text>
-                <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.4} strokeLinecap="round">
-                  <Path d="M18 6L6 18M6 6l12 12" />
-                </Svg>
+                <EngravedIcon name="close" size={12} color={flColor.bronze300} />
               </Pressable>
             ))}
             <Pressable onPress={() => setApplied(EMPTY_FILTERS)} accessibilityRole="button" accessibilityLabel="Clear filters" style={styles.clearBtn}>
@@ -832,9 +823,7 @@ export default function ExercisePickerScreen() {
                     >
                       <Text style={styles.catRowLabel} numberOfLines={1}>{c.label}</Text>
                       <Text style={styles.catRowCount}>{c.count}</Text>
-                      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                        <Path d="M9 6l6 6-6 6" />
-                      </Svg>
+                      <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} />
                     </Pressable>
                   ))}
                 </View>
@@ -874,19 +863,14 @@ export default function ExercisePickerScreen() {
               accessibilityLabel="Add your own exercise"
               style={({ pressed }) => [styles.ownRow, pressed ? styles.ownRowPressed : null]}
             >
-              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="round">
-                <Path d="M12 5v14M5 12h14" />
-              </Svg>
+              <EngravedIcon name="plus" size={15} color={flColor.bronze400} />
               <Text style={styles.ownRowText}>Add your own exercise</Text>
             </Pressable>
           </>
         ) : (
           <View style={styles.empty}>
             <View style={styles.emptyIcon}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-                <Circle cx={11} cy={11} r={7} />
-                <Path d="M20 20l-3.2-3.2" />
-              </Svg>
+              <EngravedIcon name="search" size={24} />
             </View>
             <Text style={styles.emptyTitle}>No matches</Text>
             <Text style={styles.emptyBody}>Nothing fits that search and filter. Try clearing a filter or a different term.</Text>
@@ -1024,10 +1008,7 @@ export default function ExercisePickerScreen() {
             </Text>
             <Pressable onPress={commitReplace} accessibilityRole="button" accessibilityLabel="Just this session" style={styles.persistRow}>
               <View style={styles.persistIcon}>
-                <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-                  <Circle cx={12} cy={12} r={9} />
-                  <Path d="M12 7v5l3 2" />
-                </Svg>
+                <EngravedIcon name="clock" size={19} />
               </View>
               <View style={styles.persistText}>
                 <Text style={styles.persistName}>Just this session</Text>
@@ -1036,9 +1017,7 @@ export default function ExercisePickerScreen() {
             </Pressable>
             <Pressable onPress={commitReplace} accessibilityRole="button" accessibilityLabel="This and future workouts" style={[styles.persistRow, styles.persistRowHi]}>
               <View style={styles.persistIcon}>
-                <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-                  <Path d="M5 4h14v16l-7-4-7 4z" />
-                </Svg>
+                <EngravedIcon name="bookmark" size={19} />
               </View>
               <View style={styles.persistText}>
                 <Text style={styles.persistName}>This &amp; future workouts</Text>
@@ -1053,9 +1032,7 @@ export default function ExercisePickerScreen() {
       {toast ? (
         <View style={styles.toast}>
           <View style={styles.toastCheck}>
-            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M20 6L9 17l-5-5" />
-            </Svg>
+            <EngravedIcon name="check" size={14} color={flColor.bronze300} />
           </View>
           <Text style={styles.toastText} numberOfLines={2}>
             {replacingName} replaced with {toast.to}

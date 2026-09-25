@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
 import { flColor, flRadius } from '@/constants/foundation';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import type { SquadSummary } from '@/data/squad-live';
 
 /**
@@ -76,9 +76,7 @@ export function SquadSelectList({ squads, selected, onChange, disabled, hint }: 
             >
               <View style={[styles.box, on ? styles.boxOn : styles.boxOff]}>
                 {on ? (
-                  <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                    <Path d="M5 12.5l4.5 4.5L19 7" />
-                  </Svg>
+                  <EngravedIcon name="check" size={13} color={flColor.bronze300} />
                 ) : null}
               </View>
               <View style={styles.rowText}>

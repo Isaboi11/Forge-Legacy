@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/useCeremony';
 import { MetricDetail } from '@/components/forge/MetricDetail';
 import { EditMetricsSheet } from '@/components/forge/EditMetricsSheet';
 import { BodySection } from '@/components/forge/BodySection';
+import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { useUnits } from '@/lib/settings';
 
 /**
@@ -230,7 +231,7 @@ export default function ProgressHubScreen() {
               <Text style={styles.sectionLabel}>Strength &amp; Performance</Text>
             </TourAnchor>
             <Pressable onPress={() => setEditOpen(true)} accessibilityRole="button" accessibilityLabel="Edit metrics" style={styles.editLink}>
-              <Glyph d={PATHS.pencil} size={13} color={flColor.bronze400} />
+              <Glyph name="edit" size={13} color={flColor.bronze400} />
               <Text style={styles.editText}>Edit</Text>
             </Pressable>
           </View>
@@ -276,7 +277,7 @@ export default function ProgressHubScreen() {
             <StatCell value={`${data.consistency.avgPerWeek}`} label="Avg / Week" />
           </View>
           <View style={styles.streakRow}>
-            <Glyph d={PATHS.flame} size={14} color={flColor.gray600} width={1.7} />
+            <EngravedIcon name="flame" size={14} />
             <Text style={styles.streakText}>
               Best streak · <Text style={styles.streakVal}>{data.consistency.bestStreakWeeks} weeks</Text>
             </Text>
@@ -342,19 +343,8 @@ export default function ProgressHubScreen() {
 // ── pieces ──
 const ROMAN = ['', 'I', 'II', 'III', 'IV'] as const;
 
-const PATHS = {
-  pencil: 'M4 20h4L18.5 9.5a2 2 0 0 0-2.8-2.8L5 17.2z M13.5 6.5l4 4',
-  flame: 'M12 3c2.2 3 4 4.6 4 8a4 4 0 0 1-8 0c0-1.6.5-2.7 1.2-3.4.2 1.1 1 1.7 1.6 1.7C10.2 8 11 5.2 12 3z',
-  pulse: 'M3 12h4l3 8 4-16 3 8h4',
-  plus: 'M12 5v14M5 12h14',
-  trendUp: 'M7 17L17 7M9 7h8v8',} as const;
-
-function Glyph({ d, size, color, width = 1.9 }: { d: string; size: number; color: string; width?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={d} />
-    </Svg>
-  );
+function Glyph({ name, size, color }: { name: EngravedName; size: number; color: string }) {
+  return <EngravedIcon name={name} size={size} color={engravedTint(color)} />;
 }
 
 /**
@@ -469,7 +459,7 @@ function StrengthTile({ metric, onPress }: { metric: MetricSeries; onPress: () =
         {/* Was hardcoded "lb" here, then hardcoded again inside `currentLabel` when it moved. It now
             takes the athlete's system, so a metric athlete reads kg on their own progress. */}
         <Text style={styles.tileValue}>{currentLabel(metric, units)}</Text>
-        {metric.improving ? <Glyph d={PATHS.trendUp} size={13} color={flColor.bronze300} width={2} /> : <Text style={styles.tileFlat}>—</Text>}
+        {metric.improving ? <Glyph name="trend-up" size={13} color={flColor.bronze300} /> : <Text style={styles.tileFlat}>—</Text>}
       </View>
       {s ? (
         <Svg viewBox="0 0 82 30" width="100%" height={26} preserveAspectRatio="none" style={styles.spark}>
@@ -497,9 +487,7 @@ function StatCell({ value, label }: { value: string; label: string }) {
 
 function Chevron({ right }: { right?: boolean }) {
   return (
-    <Svg width={right ? 18 : 16} height={right ? 18 : 16} viewBox="0 0 24 24" fill="none" stroke={right ? flColor.bronze400 : flColor.gray600} strokeWidth={right ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={right ? 'M9 6l6 6-6 6' : 'M6 9l6 6 6-6'} />
-    </Svg>
+    <EngravedIcon name={right ? 'chevron-right' : 'chevron-down'} size={right ? 18 : 16} color={right ? flColor.bronze400 : flColor.gray600} />
   );
 }
 

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -10,6 +9,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import {
@@ -458,62 +458,33 @@ function ActionRow({ icon, label, onPress, divided = false, danger = false }: { 
 
 // ── glyphs ──
 function PlusGlyph({ size = 22, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 5v14M5 12h14" />
-    </Svg>
-  );
+  return <EngravedIcon name="plus" size={size} color={color} />;
 }
 function CompareGlyph({ size = 20 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 5h6v14H4zM14 5h6v14h-6z" />
-    </Svg>
-  );
+  return <EngravedIcon name="compare" size={size} />;
 }
 function PlayGlyph({ size = 12, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M8 5v14l11-7z" />
-    </Svg>
-  );
+  return <EngravedIcon name="play" size={size} color={engravedTint(color)} />;
 }
 function BellGlyph() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={flColor.gray600} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-      <Path d="M13.7 21a2 2 0 0 1-3.4 0" />
-    </Svg>
-  );
+  return <EngravedIcon name="bell" size={16} color={flColor.gray600} />;
 }
 function CameraGlyph({ size = 24 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" opacity={0.5}>
-      <Path d="M4 7h3.4l1.2-2h6.8L16.6 7H20v12H4z" />
-      <Circle cx={12} cy={13} r={3.1} />
-    </Svg>
+    <View style={styles.cameraGlyph}>
+      <EngravedIcon name="camera" size={size} />
+    </View>
   );
 }
 function PencilGlyph() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 20h4L18.5 9.5a2 2 0 0 0-2.8-2.8L5 17.2z" />
-      <Path d="M13.5 6.5l4 4" />
-    </Svg>
-  );
+  return <EngravedIcon name="edit" size={20} />;
 }
 function TrashGlyph() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.redMuted} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 7h16" />
-      <Path d="M9 7V5h6v2" />
-      <Path d="M6.5 7l1 13h9l1-13" />
-      <Path d="M10 11v6M14 11v6" />
-    </Svg>
-  );
+  return <EngravedIcon name="trash" size={20} color={flColor.redMuted} />;
 }
 
 const styles = StyleSheet.create({
+  cameraGlyph: { opacity: 0.5 },
   root: { flex: 1 },
   barTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.cream100 },
   barBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round },

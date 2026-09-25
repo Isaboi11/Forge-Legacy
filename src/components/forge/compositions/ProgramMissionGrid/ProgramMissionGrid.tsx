@@ -7,7 +7,6 @@
  */
 
 import React from 'react'
-import Svg, { Circle, Path } from 'react-native-svg'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 // No `flRadius` / `flShadow` any more — nothing here has a corner or an edge to cast one.
 import { flColor, flFont } from '@/constants/foundation'
@@ -16,6 +15,7 @@ import type { TourAnchorId } from '@/domain/onboarding/tour-plan'
 import { ProgressBar } from '../../composites/ProgressBar'
 import { SectionHeader } from '../../composites/SectionHeader'
 import { ChevronRightIcon } from '../../primitives/icons/HomeIcons'
+import { EngravedIcon } from '../../primitives/icons/EngravedIcon'
 
 export interface ProgramMissionGridProps {
   /**
@@ -70,13 +70,7 @@ function ColumnHeader({ label }: { label: string }) {
 }
 
 function TargetIcon() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
-      <Circle cx={12} cy={12} r={8} stroke={flColor.bronze400} strokeWidth={2} />
-      <Circle cx={12} cy={12} r={3} stroke={flColor.bronze400} strokeWidth={2} />
-      <Path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke={flColor.bronze400} strokeWidth={2} strokeLinecap="square" />
-    </Svg>
-  )
+  return <EngravedIcon name="target" size={17} />
 }
 
 export function ProgramMissionGrid({

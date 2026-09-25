@@ -4,12 +4,12 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
-import Svg, { Path, Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
+import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
@@ -667,67 +667,47 @@ function EventGlyph({ event }: { event: string }) {
 }
 function StarGlyph({ size = 12, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z" />
-    </Svg>
+    <EngravedIcon name="star" size={size} color={engravedTint(color)} />
   );
 }
 function FlameGlyph({ size = 12, color = flColor.gray400 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 3s5 4.2 5 8.6a5 5 0 0 1-10 0C7 9 9 7 9 7s.6 2 1.6 2.6C11.4 8 12 5.6 12 3z" />
-    </Svg>
+    <EngravedIcon name="flame" size={size} color={engravedTint(color)} />
   );
 }
 function BookGlyph({ size = 12, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 5.5A2 2 0 0 1 6 4h5v16H6a2 2 0 0 0-2 1.5zM20 5.5A2 2 0 0 0 18 4h-5v16h5a2 2 0 0 1 2 1.5z" />
-    </Svg>
+    <EngravedIcon name="book" size={size} color={engravedTint(color)} />
   );
 }
 function PlayGlyph({ size = 11, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M8 5v14l11-7z" />
-    </Svg>
+    <EngravedIcon name="play" size={size} color={engravedTint(color)} />
   );
 }
 function LayersGlyph({ size = 9, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.4} strokeLinejoin="round">
-      <Rect x={3} y={3} width={14} height={14} rx={2} />
-      <Path d="M21 7v12a2 2 0 0 1-2 2H7" />
-    </Svg>
+    <EngravedIcon name="layers" size={size} color={engravedTint(color)} />
   );
 }
 function PlusGlyph({ size = 21, color = flColor.bronze400 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round">
-      <Path d="M12 5v14M5 12h14" />
-    </Svg>
+    <EngravedIcon name="plus" size={size} color={color} />
   );
 }
 function CompareGlyph({ size = 20, color = flColor.bronze400 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinejoin="round">
-      <Rect x={3} y={4} width={7} height={16} rx={1} />
-      <Rect x={14} y={4} width={7} height={16} rx={1} />
-    </Svg>
+    <EngravedIcon name="compare" size={size} color={engravedTint(color)} />
   );
 }
 function CloseGlyph({ size = 22, color = flColor.gray400 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round">
-      <Path d="M6 6l12 12M18 6L6 18" />
-    </Svg>
+    <EngravedIcon name="close" size={size} color={color} />
   );
 }
 function ChevronGlyph({ dir, size = 20, color = flColor.gray400 }: { dir: 'left' | 'right'; size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={dir === 'left' ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6'} />
-    </Svg>
+    <EngravedIcon name={dir === 'left' ? 'chevron-left' : 'chevron-right'} size={size} color={color} />
   );
 }
 

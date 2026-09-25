@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
@@ -60,11 +61,7 @@ function Glyph({ d, size = 16, color, width = 1.8 }: { d: string; size?: number;
   );
 }
 
-const TROPHY = 'M7 4h10v3a5 5 0 0 1-10 0zM7 5H4v1a3 3 0 0 0 3 3M17 5h3v1a3 3 0 0 1-3 3M9 15h6M12 12v3M8 21h8';
-
-/* CardioBlockCard's own shoe. It was inlined in the hero to stop a run wearing a dumbbell; the
-   exercise rows below needed the same glyph for the same reason, so it is named once. */
-const SHOE = 'M3 15.6v-3c0-.5.4-.8.9-.6l3.3.8 2.6-2.9c.4-.5 1.2-.4 1.5.2l.7 1.5 6 1.7c1.2.3 2 1.1 2 2.4v.7c0 .4-.3.7-.7.7H4c-.6 0-1-.5-1-1z';
+/* The shoe stands in for a run in the hero and the exercise rows, so a run never wears a dumbbell. */
 
 export default function ActivityDetailScreen() {
   const router = useRouter();
@@ -139,12 +136,7 @@ export default function ActivityDetailScreen() {
         actions={
           data && data.viewer !== 'shared' ? (
             <Pressable onPress={() => setShareOpen(true)} accessibilityRole="button" accessibilityLabel="Share this session" hitSlop={8}>
-              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze300} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <Circle cx={6} cy={12} r={2.5} />
-                <Circle cx={17} cy={6} r={2.5} />
-                <Circle cx={17} cy={18} r={2.5} />
-                <Path d="M8.2 10.8l6.6-3.6M8.2 13.2l6.6 3.6" />
-              </Svg>
+              <EngravedIcon name="share" size={20} color={flColor.bronze300} />
             </Pressable>
           ) : null
         }
@@ -265,7 +257,7 @@ function Body({
           screen is otherwise identical to the one showing your own training. */}
       {shared ? (
         <View style={styles.sharedBanner}>
-          <Glyph d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" size={14} color={flColor.bronze300} width={1.7} />
+          <EngravedIcon name="user" size={14} />
           <Text style={styles.sharedBannerText}>{detail.authorName}&apos;s session · shared with you</Text>
         </View>
       ) : null}
@@ -279,12 +271,7 @@ function Body({
           {isStrength ? (
             <EquipIcon equip={detail.exercises[0]?.equip ?? undefined} size={24} />
           ) : (
-            <Glyph
-              d={SHOE}
-              size={24}
-              color={flColor.bronze400}
-              width={1.7}
-            />
+            <EngravedIcon name="shoe" size={24} />
           )}
         </View>
         <View style={styles.heroText}>
@@ -301,10 +288,7 @@ function Body({
               hitSlop={8}
             >
               <Text style={styles.title}>{title}</Text>
-              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M12 20h9" />
-                <Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-              </Svg>
+              <EngravedIcon name="edit" size={14} color={flColor.bronze400} />
             </Pressable>
           )}
           <Text style={styles.programTag}>{programTag(detail)}</Text>
@@ -313,7 +297,7 @@ function Body({
 
       {detail.milestones.map((m) => (
         <View key={m} style={styles.milestone}>
-          <Glyph d={TROPHY} size={13} color={flColor.bronze300} width={2} />
+          <EngravedIcon name="trophy" size={13} />
           <Text style={styles.milestoneText}>{m}</Text>
         </View>
       ))}
@@ -409,7 +393,7 @@ function Body({
                           {/* The same shoe the hero wears, for the same reason: `equipmentForCatalogKey`
                               has no answer for a cardio key, so the iron fallback put a dumbbell on a run. */}
                           {cardio ? (
-                            <Glyph d={SHOE} size={19} color={flColor.bronze400} width={1.7} />
+                            <EngravedIcon name="shoe" size={19} />
                           ) : (
                             <ExercisePoster exerciseId={ex.catalogKey} radius={18} fallback={<EquipIcon equip={ex.equip ?? undefined} size={19} />} />
                           )}
@@ -419,7 +403,7 @@ function Body({
                         </Text>
                         {/* No chevron on a row that goes nowhere — the arrow is the promise this row
                             was breaking. */}
-                        {tappable ? <Glyph d="M9 6l6 6-6 6" size={16} color={flColor.gray600} width={2} /> : null}
+                        {tappable ? <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} /> : null}
                       </Pressable>
                       {ex.sets.length ? (
                         <View style={styles.setList}>
@@ -527,13 +511,13 @@ function Body({
           style={({ pressed }) => [styles.summaryRow, pressed ? styles.summaryRowPressed : null]}
         >
           <View style={styles.summaryIcon}>
-            <Glyph d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" size={17} color={flColor.bronze400} />
+            <EngravedIcon name="shield" size={17} />
           </View>
           <View style={styles.summaryText}>
             <Text style={styles.summaryTitle}>See the full summary</Text>
             <Text style={styles.summarySub}>The seal, the volume, and the session in full</Text>
           </View>
-          <Glyph d="M9 6l6 6-6 6" size={16} color={flColor.bronze400} width={2} />
+          <EngravedIcon name="chevron-right" size={16} color={flColor.bronze400} />
         </Pressable>
       )}
     </ScrollView>
@@ -552,7 +536,7 @@ function AttrRow({ label, value, onPress, external }: { label: string; value: st
         external ? (
           <Glyph d="M7 17L17 7M9 7h8v8" size={15} color={flColor.bronze400} width={2} />
         ) : (
-          <Glyph d="M9 6l6 6-6 6" size={16} color={flColor.gray600} width={2} />
+          <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} />
         )
       ) : null}
     </>
