@@ -255,6 +255,8 @@ test('app prefs default to imperial, haptics/sound on, reduce-motion off, analyt
     rowUnit: 'm',
     // PO, 2026-09-24: "have him suggest one time and ask if it's helpful." Absence = not asked yet.
     holtTips: 'ask',
+    // The Nutrition care line has never been dismissed until somebody dismisses it.
+    careLineUntil: null,
   });
 });
 
@@ -274,7 +276,7 @@ test('exactly the toggles with a real consumer today are marked live', () => {
 
 test('sanitizePrefs coerces each field and survives a malformed blob', () => {
   const p = sanitizePrefs({ units: 'metric', haptics: false, sound: 'loud', reduceMotion: true });
-  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge', rowUnit: 'm', holtTips: 'ask' });
+  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge', rowUnit: 'm', holtTips: 'ask', careLineUntil: null });
   assert.deepEqual(sanitizePrefs('nope'), APP_PREFS_DEFAULTS);
   assert.equal(sanitizePrefs({ units: 'stones' }).units, 'imperial', 'an unknown system falls back');
 });
@@ -284,6 +286,13 @@ test('Tips from Holt: three states, validated, and absence means ask once', () =
   assert.equal(sanitizePrefs({ holtTips: 'off' }).holtTips, 'off');
   assert.equal(sanitizePrefs({ holtTips: 'on' }).holtTips, 'on');
   assert.equal(sanitizePrefs({ holtTips: true }).holtTips, 'ask', 'a stray boolean is not an answer');
+});
+
+test('the care line dismissal is a date or nothing', () => {
+  assert.equal(sanitizePrefs({}).careLineUntil, null);
+  assert.equal(sanitizePrefs({ careLineUntil: '2026-10-25' }).careLineUntil, '2026-10-25');
+  assert.equal(sanitizePrefs({ careLineUntil: 'soon' }).careLineUntil, null);
+  assert.equal(sanitizePrefs({ careLineUntil: 30 }).careLineUntil, null);
 });
 
 test('a stored rower unit is validated — and absence means metres', () => {

@@ -9,6 +9,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { Pill } from '@/components/forge/composites/Pill';
 import { LogWeightSheet } from '@/components/forge/LogWeightSheet';
+import { NutritionCareLine, useCareLine } from '@/components/forge/NutritionCareLine';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
@@ -87,6 +88,12 @@ export default function NutritionTargetsScreen() {
   const [weighInOpen, setWeighInOpen] = useState(false);
   const [goal, setGoal] = useState<Goal>('lose');
   const [rate, setRate] = useState(1);
+  /* ⚠ THE CARE LINE (`domain/nutrition/care-line.ts`). While it is on, the screen still works (nothing is
+     blocked), but a LOSE goal is held to the slowest pace: it is neither pre-selected faster nor offered
+     faster, in the stepper or the sheet. The athlete's own pick comes back if the line is dismissed. */
+  const care = useCareLine();
+  const slowestOnly = care.active && goal === 'lose';
+  const pace = slowestOnly ? paceOptions('lose')[0] : rate;
   const [saving, setSaving] = useState(false);
   /* Dismissed for this visit only — the prompt is about the target, not about a preference. */
   const [reviewed, setReviewed] = useState(false);
@@ -115,7 +122,7 @@ export default function NutritionTargetsScreen() {
   const facts: AthleteFacts = { sex, weightLb, birthYear, heightIn, activity };
   const blocker = blockerFor(facts, todayIso);
   const burn = burnFor(facts, todayIso);
-  const rec = burn ? recommend(facts, burn, goal, rate, todayIso) : null;
+  const rec = burn ? recommend(facts, burn, goal, pace, todayIso) : null;
 
   const rows = useMemo(() => historyRows(history ?? [], todayIso), [history, todayIso]);
   const currentRow = history?.length ? history[history.length - 1] : null;
@@ -397,6 +404,9 @@ export default function NutritionTargetsScreen() {
                   </>
                 ) : null}
 
+                {/* the care line, above the goal and pace */}
+                <NutritionCareLine care={care} style={styles.careLine} />
+
                 {/* goal */}
                 <Text style={[styles.sectionLabel, styles.sectionSolo]}>Goal</Text>
                 <View style={styles.goalRow}>
@@ -427,24 +437,24 @@ export default function NutritionTargetsScreen() {
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel="Slower"
-                      disabled={rate <= 0.25}
+                      disabled={pace <= 0.25}
                       style={styles.paceStep}
                       onPress={() => setRate((r) => Math.max(0.25, r - 0.25))}
                     >
-                      <Glyph kind="minus" dim={rate <= 0.25} />
+                      <Glyph kind="minus" dim={pace <= 0.25} />
                     </Pressable>
                     <Pressable accessibilityRole="button" accessibilityLabel="Choose pace" style={styles.paceValue} onPress={() => setSheet('pace')}>
-                      <Text style={styles.paceValueText}>{paceLabel(rate)}</Text>
+                      <Text style={styles.paceValueText}>{paceLabel(pace)}</Text>
                       <Chevron />
                     </Pressable>
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel="Faster"
-                      disabled={rate >= maxPace(goal)}
+                      disabled={slowestOnly || pace >= maxPace(goal)}
                       style={styles.paceStep}
                       onPress={() => setRate((r) => Math.min(maxPace(goal), r + 0.25))}
                     >
-                      <Glyph kind="plus" dim={rate >= maxPace(goal)} />
+                      <Glyph kind="plus" dim={slowestOnly || pace >= maxPace(goal)} />
                     </Pressable>
                   </View>
                 ) : null}
@@ -580,8 +590,10 @@ export default function NutritionTargetsScreen() {
 
       <BottomSheet open={sheet === 'pace'} onClose={() => setSheet(null)} title="Pace">
         <View style={styles.sheetBody}>
-          {paceOptions(goal).map((option) => {
-            const on = Math.abs(rate - option) < 0.01;
+          {paceOptions(goal)
+            .filter((option) => !slowestOnly || option <= pace)
+            .map((option) => {
+            const on = Math.abs(pace - option) < 0.01;
             const preview = burn ? recommend(facts, burn, goal, option, todayIso) : null;
             let sub = preview ? `${grouped(preview.kcal)} cal / day` : '';
             if (preview?.held === 'cap') sub += ` · held at ${preview.burn.lossCap.toFixed(1)} lb, 1% of bodyweight`;
@@ -745,6 +757,7 @@ const styles = StyleSheet.create({
 
   sectionLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray600 },
   sectionSolo: { paddingTop: 30, paddingBottom: 12, paddingHorizontal: 2 },
+  careLine: { marginTop: 30 },
 
   basedOn: {
     flexDirection: 'row',

@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 
+import { useCareLine } from '@/components/forge/NutritionCareLine';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { NutritionTabIcon } from '@/components/forge/primitives/icons/NavIcons';
 import { flColor, flRadius } from '@/constants/foundation';
@@ -76,13 +77,16 @@ export function HomeNutritionCard({ onOpen }: { onOpen: () => void }) {
   /* The gap line (Check-ins scope §3, LOCKED): only asked for in the afternoon, with a target and something
      logged, so the grocery list is not read on every morning open. */
   const hour = new Date().getHours();
-  const wantGap = loaded && tips !== 'off' && !!data?.targets && (data?.entries.length ?? 0) > 0 && hour >= GAP_LINE_FROM_HOUR;
+  /* ⚠ SILENT WHILE THE CARE LINE IS ON. `gapLine` already goes quiet under half of TODAY's target, but a week
+     of very low days can end in one ordinary day, and a snack nudge on it would talk past the care line. */
+  const care = useCareLine(reloads);
+  const wantGap = loaded && care.known && !care.active && tips !== 'off' && !!data?.targets && (data?.entries.length ?? 0) > 0 && hour >= GAP_LINE_FROM_HOUR;
   const { data: pantry } = useQuery(async () => (wantGap ? loadPantry(localToday()) : null), [wantGap, reloads]);
   if (!mayUseNutrition || !data) return null;
 
   const eaten = totals(data.entries);
   const v = homeNutritionView(eaten, data.entries.length > 0, data.targets);
-  const gap = pantry ? gapLine({ eaten, logged: data.entries.length > 0, target: data.targets, hour, pantry }) : null;
+  const gap = pantry && !care.active ? gapLine({ eaten, logged: data.entries.length > 0, target: data.targets, hour, pantry }) : null;
   return (
     <Pressable
       onPress={onOpen}

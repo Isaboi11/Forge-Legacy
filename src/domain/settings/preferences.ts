@@ -87,6 +87,13 @@ export interface AppPrefs {
    * Pushes are not governed here; a reminder only exists because the athlete asked for it.
    */
   holtTips: HoltTips;
+  /**
+   * The Nutrition care line's dismissal (`domain/nutrition/care-line.ts`): the first day, `YYYY-MM-DD`, the line
+   * may show again. `null` = never dismissed. "I only log some meals" sets it 30 days out, "Got it" 7.
+   * Server-backed like `holtTips`, so a dismissal on the phone holds on the web too. No migration: `app_prefs`
+   * is a JSONB blob and this is one more key in it.
+   */
+  careLineUntil: string | null;
 }
 
 export const APP_PREFS_DEFAULTS: AppPrefs = {
@@ -99,6 +106,7 @@ export const APP_PREFS_DEFAULTS: AppPrefs = {
   theme: DEFAULT_THEME,
   rowUnit: 'm',
   holtTips: 'ask',
+  careLineUntil: null,
 };
 
 export type HoltTips = 'ask' | 'on' | 'off';
@@ -139,6 +147,7 @@ export function sanitizePrefs(raw: unknown): AppPrefs {
     if (isThemeName(r.theme)) out.theme = r.theme;
     if (r.rowUnit === 'm' || r.rowUnit === 'road') out.rowUnit = r.rowUnit;
     if (r.holtTips === 'ask' || r.holtTips === 'on' || r.holtTips === 'off') out.holtTips = r.holtTips;
+    if (typeof r.careLineUntil === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.careLineUntil)) out.careLineUntil = r.careLineUntil;
   }
   return out;
 }

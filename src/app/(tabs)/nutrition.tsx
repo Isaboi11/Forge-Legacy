@@ -7,6 +7,7 @@ import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { Button } from '@/components/forge/composites/Button';
+import { NutritionCareLine, useCareLine } from '@/components/forge/NutritionCareLine';
 import { NutritionFirstRun } from '@/components/forge/NutritionFirstRun';
 import { Surface } from '@/components/forge/composites/Surface';
 import { ScreenBackground } from '@/components/screen-background';
@@ -96,6 +97,8 @@ export default function NutritionScreen() {
   const mayGoForward = canGoForward(iso, todayIso) || !!foodAhead;
   /* Any return to the tab re-reads — food logged on another screen has to be here when you come back. */
   useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
+  /* The care line (`domain/nutrition/care-line.ts`): about the athlete's last seven days, not the day on screen. */
+  const care = useCareLine(reloads);
   /* `Nutrition First Run.dc.html` — never touched the tab. Re-read on every return, so the first food
      logged from the welcome brings the athlete back to Home. Unknown answers Home (`first-run.ts`). */
   const { data: firstRun, settled: firstRunSettled } = useQuery(isNutritionFirstRun, [reloads]);
@@ -245,6 +248,9 @@ export default function NutritionScreen() {
             <Chevron direction="right" color={flColor.bronze400} size={14} width={2.2} />
           </Pressable>
         </View>
+
+        {/* ── the care line: top of the day, above everything the day holds ── */}
+        <NutritionCareLine care={care} style={styles.careLine} />
 
         {/* ── calorie ring ──────────────────────────────────────────────── */}
         <View style={styles.heroWrap}>
@@ -518,6 +524,7 @@ const styles = StyleSheet.create({
   premiumTagText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze300 },
 
   mealsHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 2, paddingBottom: 12 },
+  careLine: { marginBottom: 18 },
   mealsTitle: { fontFamily: flFont.display, fontSize: 19, color: flColor.cream100, letterSpacing: -0.2 },
   mealsTotal: { fontSize: 11, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.gray600 },
 
