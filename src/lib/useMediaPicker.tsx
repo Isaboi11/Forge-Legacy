@@ -103,6 +103,7 @@ export interface MediaPickConfig {
   videoMaxDuration?: number; // silently clamped to MAX_VIDEO_SECONDS; omit unless a surface wants LESS
   cameraType?: ImagePicker.CameraType; // camera-only (e.g. front for a selfie check-in)
   directCamera?: boolean; // skip the chooser and open the camera straight away (library is not offered)
+  directLibrary?: boolean; // skip the chooser and open the library — for a screen that IS the camera (Scan label's Photos)
 }
 
 type Resolver = (asset: ImagePicker.ImagePickerAsset | null) => void;
@@ -444,6 +445,10 @@ export function useMediaPicker() {
         }
         if (config.directCamera) {
           void launch(config, 'camera', false); // straight to the camera, no chooser
+          return;
+        }
+        if (config.directLibrary) {
+          void launch(config, 'library', false);
           return;
         }
         setCfg(config);

@@ -33,6 +33,7 @@ import {
   searchFoods,
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
+import { labelScanAvailable } from '@/lib/label-scan';
 import { useQuery } from '@/lib/useQuery';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 
@@ -324,6 +325,12 @@ export default function LogFoodScreen() {
         }}
         onNotFound={() => {
           setBarcodeOpen(false);
+          /* Where Scan label exists, Create Food says "No barcode match" itself, above the Scan label
+             card (`Scan Nutrition Label v2.dc.html` A2) — a toast on top of that would say it twice. */
+          if (labelScanAvailable()) {
+            router.push({ pathname: '/create-food', params: { date: iso, meal, from: 'barcode' } });
+            return;
+          }
           goCreateFood();
           showToast('Not in the database — add it yourself');
         }}

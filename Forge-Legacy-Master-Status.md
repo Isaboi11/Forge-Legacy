@@ -72,8 +72,8 @@ reinstall, or a tester needs one of these.
 | **Talk to Holt (the mic)** | `expo-speech-recognition` + config plugin | shipped, inert on build 8 (`requireOptionalNativeModule`) |
 | **Form check (film a set)** | `expo-video-thumbnails` | shipped, inert (`formCheckAvailable()` is false) |
 | **Apple Watch companion, Phase 2/3 bridge** | `modules/watch-bridge/` native half | built, proven only in TypeScript |
-| **Barcode scanning (Log Food)** | `expo-camera` | barcode is TYPED for now; the camera path is not built |
-| **Scan a nutrition label (Create Food)** | `expo-camera` (same module) | not drawn, by choice, until the camera exists |
+| **Barcode scanning (Log Food)** | `expo-camera` | built 09-24 (`3e12f564`): viewfinder in the Barcode sheet where `ExpoCamera` exists; typed box everywhere else |
+| **Scan a nutrition label (Create Food)** | `expo-camera` + NEW local `modules/label-reader` (Apple Vision, on-device, free) | built 09-25 to `Scan Nutrition Label v2.dc.html` (A1–C2); parser `domain/nutrition/label-read.ts` tested on HAND-BUILT fixtures — first real iPhone read is the real test. ⚠ Swift never compiled here: build 9 is its first compile |
 | **Paywall: buying Premium / Premium AI** | `react-native-purchases` 10.10.2 (RevenueCat) | built 09-24, inert on build 8 (`billingAvailable()` false: "Plans aren't available on this device yet") |
 
 **When cutting build 9:** re-run `fingerprint:compare` afterwards, move the OTA lane to the new runtime,

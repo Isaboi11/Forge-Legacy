@@ -102,12 +102,12 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
 - ✅ Data export includes nutrition — 09-24: with food data, Export My Data gives one .zip (workouts.csv +
   food log, targets, my foods, my meals, my recipes, meal plans, grocery items you added); without, the same CSV. Not deployed yet
 - ⬜ Holt meal plans — Amendment 002 LOCKED 09-24 (`ce224fac`); not built yet
-- ⬜ Barcode camera + label scan → build 9 (the function side of barcode is live)
+- ✅ Barcode camera + label scan built — 09-24/25, ship in build 9 (iPhone only; hidden on build 8 + web) · ⬜ test both on a phone
 - ⬜ Photo food logging (Premium AI) — next to discuss; needs no new build
 - ⬜ Open `0206` to more testers, then lift the gate
 
 ## 6. Ship day
 - ⬜ Phase F: default to Free + remove "free while testing" (4 files, see GO-LIVE)
-- ⬜ Build 9 (RevenueCat, mic, form check, barcode)
+- ⬜ Build 9 (RevenueCat, mic, form check, barcode, label scan, Watch) — ready 09-25, waiting on the PO to allow `eas build`
 - ⬜ Add the 10 subscriptions for review together with build 9
 - ⬜ Check Apple's agreement banner · clean tree · all gates green · submit

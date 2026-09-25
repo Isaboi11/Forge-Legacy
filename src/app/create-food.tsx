@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -9,7 +9,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
-import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
 import {
   checkCalories,
@@ -23,9 +23,11 @@ import {
   unitNeedsWeight,
   validateFood,
 } from '@/domain/nutrition/create-food';
+import { LABEL_FIELDS } from '@/domain/nutrition/label-read';
 import { portionLabel, portionMacros } from '@/domain/nutrition/serving';
 import { addEntries, createUserFood, fetchFoodByKey, updateUserFood } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
+import { labelScanAvailable, takeLabelScan } from '@/lib/label-scan';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 
@@ -40,14 +42,28 @@ import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
  * ⚠ **EVERY NUMBER IS CONVERTED IN ONE PLACE** (`domain/nutrition/create-food`, NUT-D4). A label states
  * ONE SERVING and the catalogue stores PER 100 g; this file positions fields and never divides.
  *
- * ⚠ **"SCAN LABEL" IS NOT DRAWN YET, AND THAT IS THE HONEST CHOICE.** The `.dc` has a camera frame and a
- * Capture button that fills the form by reading the panel. `expo-camera` is native — it cannot reach
- * build 8 over the air, exactly as the barcode scanner cannot (Log Food's header says so) — and there is
- * no label OCR behind it either. Drawing the frame and a button that only apologises is the defect class
- * this codebase names by hand ("a button whose only behaviour is a coming-soon toast"), so the mode
- * switch is hidden — which is exactly what the `.dc`'s own `showScan: false` renders. Build 9 brings
- * the camera; the mode tabs and the capture pane get built then, against a scanner that exists.
+ * ⭐ **SCAN LABEL — `Scan Nutrition Label v2.dc.html` A1–A5.** The Scan label card opens the camera route
+ * (`app/scan-label.tsx`); the read comes back through `takeLabelScan()` on focus and FILLS this same form —
+ * there is no second "review" screen. A bronze dot means only "Forge isn't confident about this value"
+ * (`domain/nutrition/label-read`), a miss is a plain blank, and editing a dotted field clears its dot:
+ * the athlete has checked it. The card renders only where `labelScanAvailable()` — build 9+ on an
+ * iPhone — so build 8 and the web keep the form exactly as it was, with nothing that apologises.
  */
+
+/** What a scan left on the form. Counts are from the read; `doubts` shrinks as the athlete checks. */
+interface ScanState {
+  photoUri: string;
+  partial: boolean;
+  filled: number;
+  /** How many had a dot when the scan landed. A dot cleared by checking becomes a filled value. */
+  unsure: number;
+  missing: number;
+  /** Field keys with a dot. `serving` covers the amount and unit together. */
+  doubts: Record<string, true>;
+  /** The name was empty when the scan landed, so it is promoted to the next task (A3). Fixed for the
+      scan — the layout must not jump while they type it. */
+  askName: boolean;
+}
 
 type Fields = Record<string, string>;
 
@@ -56,7 +72,8 @@ const EMPTY: Fields = { name: '', brand: '', amount: '', unitWeight: '', cal: ''
 export default function CreateFoodScreen() {
   const router = useRouter();
   const { showToast } = useToast();
-  const params = useLocalSearchParams<{ meal?: string; date?: string; food?: string; mode?: string }>();
+  const params = useLocalSearchParams<{ meal?: string; date?: string; food?: string; mode?: string; from?: string }>();
+  const { width } = useWindowDimensions();
 
   const iso = typeof params.date === 'string' && params.date ? params.date : localToday();
   const editId = params.mode === 'edit' && typeof params.food === 'string' && params.food ? params.food : null;
@@ -71,6 +88,46 @@ export default function CreateFoodScreen() {
   const [saving, setSaving] = useState(false);
   const [unitKey, setUnitKey] = useState('g');
   const [edited, setEdited] = useState<Fields | null>(null);
+  const [scan, setScan] = useState<ScanState | null>(null);
+  const [labelOpen, setLabelOpen] = useState(false);
+  const canScan = !editing && labelScanAvailable();
+
+  /* A scan lands here on the way back from the camera. Taken once, so a later focus cannot re-apply
+     it over the athlete's edits. A rescan replaces every nutrient — misses become blanks — and keeps
+     the name and brand they may already have typed. */
+  useFocusEffect(
+    useCallback(() => {
+      const landed = takeLabelScan();
+      if (!landed) return;
+      const r = landed.read;
+      const values: Fields = {};
+      const doubts: Record<string, true> = {};
+      for (const key of LABEL_FIELDS) {
+        const v = r.fields[key];
+        values[key] = v?.value ?? '';
+        if (v && !v.sure) doubts[key] = true;
+      }
+      if (r.serving) {
+        values.amount = r.serving.amount;
+        values.unitWeight = r.serving.unitWeight;
+        if (!r.serving.sure) doubts.serving = true;
+        setUnitKey(r.serving.unitKey);
+      }
+      const base = edited ?? EMPTY;
+      setEdited({ ...base, ...values });
+      setScan({
+        photoUri: landed.photoUri,
+        partial: r.outcome === 'partial',
+        filled: r.filled,
+        unsure: r.unsure,
+        missing: r.missing,
+        doubts,
+        askName: !base.name.trim(),
+      });
+      /* "More nutrients opens automatically when it holds a blank or a dot." */
+      setMoreOpen(MORE_NUTRIENTS.some((n) => !values[n.key] || doubts[n.key]));
+    }, [edited]),
+  );
 
   const { data: existing } = useQuery(
     useCallback(() => (editId ? fetchFoodByKey(editId) : Promise.resolve(null)), [editId]),
@@ -108,9 +165,25 @@ export default function CreateFoodScreen() {
   }, [existing]);
 
   const f = edited ?? loaded ?? EMPTY;
+  /** Touching a dotted field is checking it — the dot goes. */
+  const checked = (key: string) => {
+    if (!scan?.doubts[key]) return;
+    const { [key]: _gone, ...rest } = scan.doubts;
+    setScan({ ...scan, doubts: rest });
+  };
   const set = (key: string) => (v: string) => setEdited({ ...f, [key]: v });
-  const setNumber = (key: string) => (v: string) =>
+  const setNumber = (key: string) => (v: string) => {
+    checked(key === 'amount' || key === 'unitWeight' ? 'serving' : key);
     setEdited({ ...f, [key]: v.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').slice(0, 6) });
+  };
+  /* The serving amount alone keeps a label's fraction — "2/3" is what the package says. */
+  const setAmount = (v: string) => {
+    checked('serving');
+    setEdited({ ...f, amount: v.replace(/[^0-9./ ]/g, '').replace(/\s+/g, ' ').slice(0, 8) });
+  };
+  const dot = (key: string) => (scan?.doubts[key] ? <CheckDot /> : undefined);
+  const blank = scan ? '—' : '0';
+  const moreToCheck = MORE_NUTRIENTS.filter((n) => scan?.doubts[n.key]).length;
 
   const unit = unitByKey(unitKey);
   const needsWeight = unitNeedsWeight(unit);
@@ -193,25 +266,64 @@ export default function CreateFoodScreen() {
       <AppBar title="" transparent onBack={() => router.back()} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>{editing ? 'Edit food' : 'Create food'}</Text>
+        <Text style={[styles.title, canScan && !scan && styles.titleWithScan, scan && styles.titleScanned]}>
+          {editing ? 'Edit food' : 'Create food'}
+        </Text>
 
-        {/* identity */}
-        <View style={styles.group}>
-          <InputField label="Name" placeholder="e.g. Overnight oats" value={f.name} onChange={set('name')} maxLength={60} />
-          <InputField label="Brand (optional)" placeholder="e.g. Trader Joe’s" value={f.brand} onChange={set('brand')} maxLength={40} />
-        </View>
+        {/* A1 / A2 — the shortcut into the form, and the one line of context after a barcode miss */}
+        {canScan && !scan ? (
+          <>
+            {params.from === 'barcode' ? (
+              <View style={styles.missNote}>
+                <Text style={styles.missTitle}>No barcode match</Text>
+                <Text style={styles.missText}>You can still scan the Nutrition Facts label.</Text>
+              </View>
+            ) : null}
+            <ScanCard onPress={() => router.push('/scan-label')} />
+          </>
+        ) : null}
+
+        {/* A3 / A4 — what the scan did */}
+        {scan ? <ScanSummary scan={scan} onView={() => setLabelOpen(true)} onRescan={() => router.push('/scan-label')} /> : null}
+
+        {/* identity — after a scan the name is the next task, and the brand waits below More nutrients */}
+        {scan?.askName ? (
+          <>
+            <Text style={styles.namePrompt}>Almost done — add a food name</Text>
+            <View style={styles.nameRing}>
+              <InputField
+                accessibilityLabel="Name"
+                placeholder="e.g. Honey oat cereal"
+                value={f.name}
+                onChange={set('name')}
+                maxLength={60}
+                autoFocus
+              />
+            </View>
+          </>
+        ) : (
+          <View style={styles.group}>
+            <InputField label="Name" placeholder="e.g. Overnight oats" value={f.name} onChange={set('name')} maxLength={60} />
+            {scan ? null : (
+              <InputField label="Brand (optional)" placeholder="e.g. Trader Joe’s" value={f.brand} onChange={set('brand')} maxLength={40} />
+            )}
+          </View>
+        )}
 
         {/* serving */}
-        <Text style={[styles.sectionLabel, styles.sectionSolo]}>Serving size</Text>
+        <View style={[styles.sectionSolo, styles.labelWithDot, scan && styles.sectionScanned]}>
+          <Text style={styles.sectionLabel}>Serving size</Text>
+          {dot('serving')}
+        </View>
         <View style={styles.servingRow}>
           <Text style={styles.servingLead}>1 serving =</Text>
           <View style={styles.servingAmount}>
             <InputField
               accessibilityLabel="Serving amount"
               placeholder="80"
-              keyboardType="decimal-pad"
+              keyboardType="numbers-and-punctuation"
               value={f.amount}
-              onChange={setNumber('amount')}
+              onChange={setAmount}
             />
           </View>
           <Pressable
@@ -246,13 +358,14 @@ export default function CreateFoodScreen() {
         ) : null}
 
         {/* nutrition */}
-        <View style={styles.sectionRow}>
+        <View style={[styles.sectionRow, scan && styles.sectionScanned]}>
           <Text style={styles.sectionLabel}>Nutrition per serving</Text>
           {perLabel ? <Text style={styles.sectionNote}>{perLabel}</Text> : null}
         </View>
         <View style={styles.group}>
           <InputField
             label="Calories"
+            labelAccessory={dot('cal')}
             placeholder={calories.placeholder}
             keyboardType="number-pad"
             value={f.cal}
@@ -260,13 +373,13 @@ export default function CreateFoodScreen() {
           />
           <View style={styles.macroRow}>
             <View style={styles.macroCell}>
-              <InputField label="Protein g" placeholder="0" keyboardType="decimal-pad" value={f.protein} onChange={setNumber('protein')} />
+              <InputField label="Protein g" labelAccessory={dot('protein')} placeholder={blank} keyboardType="decimal-pad" value={f.protein} onChange={setNumber('protein')} />
             </View>
             <View style={styles.macroCell}>
-              <InputField label="Carbs g" placeholder="0" keyboardType="decimal-pad" value={f.carb} onChange={setNumber('carb')} />
+              <InputField label="Carbs g" labelAccessory={dot('carb')} placeholder={blank} keyboardType="decimal-pad" value={f.carb} onChange={setNumber('carb')} />
             </View>
             <View style={styles.macroCell}>
-              <InputField label="Fat g" placeholder="0" keyboardType="decimal-pad" value={f.fat} onChange={setNumber('fat')} />
+              <InputField label="Fat g" labelAccessory={dot('fat')} placeholder={blank} keyboardType="decimal-pad" value={f.fat} onChange={setNumber('fat')} />
             </View>
           </View>
           {calories.helper ? (
@@ -282,23 +395,38 @@ export default function CreateFoodScreen() {
           onPress={() => setMoreOpen((v) => !v)}
         >
           <Text style={styles.sectionLabel}>More nutrients</Text>
-          <Chevron color={flColor.gray600} rotated={moreOpen} />
+          <View style={styles.moreRight}>
+            {moreToCheck > 0 ? (
+              <View style={styles.labelWithDot}>
+                <CheckDot />
+                <Text style={styles.toCheck}>{moreToCheck} to check</Text>
+              </View>
+            ) : null}
+            <Chevron color={flColor.gray600} rotated={moreOpen} />
+          </View>
         </Pressable>
         {moreOpen ? (
           <View style={styles.moreGrid}>
             {macroFields.map((n) => (
               <View key={n.key} style={styles.moreCell}>
-                <InputField label={n.label} placeholder="0" keyboardType="decimal-pad" value={f[n.key] ?? ''} onChange={setNumber(n.key)} />
+                <InputField label={n.label} labelAccessory={dot(n.key)} placeholder={blank} keyboardType="decimal-pad" value={f[n.key] ?? ''} onChange={setNumber(n.key)} />
               </View>
             ))}
             <Text style={styles.vitaminLabel}>Vitamins &amp; minerals</Text>
             {vitaminFields.map((n) => (
               <View key={n.key} style={styles.moreCell}>
-                <InputField label={n.label} placeholder="0" keyboardType="decimal-pad" value={f[n.key] ?? ''} onChange={setNumber(n.key)} />
+                <InputField label={n.label} labelAccessory={dot(n.key)} placeholder={blank} keyboardType="decimal-pad" value={f[n.key] ?? ''} onChange={setNumber(n.key)} />
               </View>
             ))}
             {/* An empty box is not a zero — `extrasPerHundred` drops it rather than claiming none. */}
             <Text style={styles.moreNote}>Leave anything the label doesn’t state blank. Blank means unknown, not zero.</Text>
+          </View>
+        ) : null}
+
+        {/* A3 — "Brand sits below More nutrients" once a scan has filled the rest */}
+        {scan ? (
+          <View style={styles.brandAfter}>
+            <InputField label="Brand (optional)" placeholder="e.g. Trader Joe’s" value={f.brand} onChange={set('brand')} maxLength={40} />
           </View>
         ) : null}
       </ScrollView>
@@ -338,6 +466,7 @@ export default function CreateFoodScreen() {
                 accessibilityState={{ selected: on }}
                 style={styles.sheetRow}
                 onPress={() => {
+                  checked('serving');
                   setUnitKey(u.key);
                   setUnitsOpen(false);
                 }}
@@ -347,6 +476,30 @@ export default function CreateFoodScreen() {
               </Pressable>
             );
           })}
+        </View>
+      </BottomSheet>
+
+      {/* A5 — the photo, so values can be checked without picking the package back up */}
+      <BottomSheet open={labelOpen} onClose={() => setLabelOpen(false)} title="Original label">
+        <View style={styles.labelSheet}>
+          <ScrollView
+            style={styles.labelZoom}
+            maximumZoomScale={4}
+            minimumZoomScale={1}
+            centerContent
+            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
+          >
+            {scan ? (
+              <Image
+                source={{ uri: scan.photoUri }}
+                style={{ width: width - 40, height: LABEL_PHOTO_HEIGHT }}
+                resizeMode="contain"
+                accessibilityLabel="Captured label photo"
+              />
+            ) : null}
+          </ScrollView>
+          <Text style={styles.zoomHint}>Pinch to zoom</Text>
         </View>
       </BottomSheet>
 
@@ -377,6 +530,71 @@ export default function CreateFoodScreen() {
 }
 
 /* ── pieces ──────────────────────────────────────────────────────────────── */
+
+const LABEL_PHOTO_HEIGHT = 440;
+
+/** "Forge isn't confident about this value." The only thing a bronze dot means on this screen. */
+function CheckDot() {
+  return <View accessible accessibilityLabel="Check this value" style={styles.checkDot} />;
+}
+
+/** A1 — shorter than a card, one-line subtitle: a shortcut into the form, not a mode. */
+function ScanCard({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel="Scan label" onPress={onPress} style={styles.scanCard}>
+      <View style={styles.scanIcon}>
+        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" />
+          <Path d="M8 9h8M8 12h8M8 15h5" />
+        </Svg>
+      </View>
+      <View style={styles.scanCopy}>
+        <Text style={styles.scanTitle}>Scan label</Text>
+        <Text style={styles.scanSub}>Fill from a Nutrition Facts photo</Text>
+      </View>
+      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M9 6l6 6-6 6" />
+      </Svg>
+    </Pressable>
+  );
+}
+
+/** A3 / A4 — the strip under the title: the photo, what was found, Rescan. */
+function ScanSummary({ scan, onView, onRescan }: { scan: ScanState; onView: () => void; onRescan: () => void }) {
+  const checking = Object.keys(scan.doubts).length;
+  const filled = scan.filled + (scan.unsure - checking);
+  const needs = `${checking} ${checking === 1 ? 'needs' : 'need'} checking`;
+  return (
+    <View style={[styles.summary, scan.partial && styles.summaryPartial]}>
+      <Pressable accessibilityRole="button" accessibilityLabel="View original label" onPress={onView} style={styles.thumb}>
+        <Image source={{ uri: scan.photoUri }} style={styles.thumbImage} resizeMode="cover" />
+      </Pressable>
+      <View style={styles.summaryCopy}>
+        <Text style={styles.summaryTitle}>{scan.partial ? 'Label partially scanned' : 'Label scanned'}</Text>
+        {scan.partial ? (
+          <Text style={styles.summaryLine}>
+            {[`${filled} filled`, checking > 0 ? needs : null, scan.missing > 0 ? `${scan.missing} not found` : null]
+              .filter(Boolean)
+              .join(' · ')}
+          </Text>
+        ) : (
+          <View style={styles.labelWithDot}>
+            <Text style={styles.summaryLine}>{checking > 0 ? `${filled} filled ·` : `${filled} filled`}</Text>
+            {checking > 0 ? (
+              <>
+                <CheckDot />
+                <Text style={styles.summaryLine}>{needs}</Text>
+              </>
+            ) : null}
+          </View>
+        )}
+      </View>
+      <Button variant="text" onPress={onRescan}>
+        Rescan
+      </Button>
+    </View>
+  );
+}
 
 function Chevron({ color = flColor.bronze400, rotated = false }: { color?: string; rotated?: boolean }) {
   return (
@@ -410,6 +628,66 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 28 },
 
   title: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100, letterSpacing: -0.3, lineHeight: 34, paddingHorizontal: 2, paddingBottom: 20 },
+  titleWithScan: { paddingBottom: 16 },
+  titleScanned: { paddingBottom: 12 },
+
+  /* A1 — the Scan label card */
+  scanCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 22,
+    borderRadius: flRadius.lg,
+    backgroundColor: flColor.charcoal700,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    boxShadow: `${flShadow.borderInset}, ${flShadow.card}`,
+  },
+  scanIcon: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: flRadius.md,
+    backgroundColor: flColor.surfaceRecessed,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+  },
+  scanCopy: { flex: 1, gap: 2 },
+  scanTitle: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  scanSub: { fontSize: 12.5, color: flColor.gray600 },
+
+  /* A2 — after a barcode miss */
+  missNote: { gap: 3, paddingHorizontal: 2, paddingBottom: 10 },
+  missTitle: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
+  missText: { fontSize: 12.5, lineHeight: 17.5, color: flColor.gray600 },
+
+  /* A3 / A4 — the scan summary */
+  summary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: flRadius.md,
+    backgroundColor: flColor.bronzeTint,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+  },
+  summaryPartial: { marginBottom: 0 },
+  thumb: { width: 34, height: 44, borderRadius: 6, overflow: 'hidden', borderWidth: 1, borderColor: flColor.charcoal500, backgroundColor: flColor.charcoal700 },
+  thumbImage: { width: '100%', height: '100%' },
+  summaryCopy: { flex: 1, gap: 3 },
+  summaryTitle: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
+  summaryLine: { fontSize: 12.5, lineHeight: 17.5, color: flColor.gray400 },
+  namePrompt: { paddingTop: 18, paddingBottom: 8, paddingHorizontal: 2, fontSize: 14, fontWeight: '600', color: flColor.bronze300 },
+  nameRing: { borderRadius: flRadius.md, boxShadow: `0 0 0 1.5px ${flColor.bronze400}, ${flShadow.glowSubtle}` },
+  checkDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: flColor.bronze300 },
+  labelWithDot: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  sectionScanned: { paddingTop: 18, paddingBottom: 10 },
+  brandAfter: { paddingTop: 18 },
   group: { gap: 18 },
 
   sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingTop: 30, paddingBottom: 12, paddingHorizontal: 2 },
@@ -452,6 +730,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: flColor.charcoal700,
   },
+  moreRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  toCheck: { fontSize: 12, color: flColor.gray400 },
   moreGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingTop: 6 },
   moreCell: { width: '47.5%', minWidth: 0 },
   vitaminLabel: { width: '100%', fontSize: 10.5, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray600, paddingTop: 10, paddingHorizontal: 2 },
@@ -474,6 +754,15 @@ const styles = StyleSheet.create({
   saveOnlyOff: { opacity: 0.4 },
 
   sheetBody: { paddingBottom: 8 },
+  labelSheet: { gap: 14, paddingBottom: 12 },
+  labelZoom: {
+    height: LABEL_PHOTO_HEIGHT,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal800,
+  },
+  zoomHint: { fontSize: 12.5, color: flColor.gray600, textAlign: 'center' },
   sheetRow: {
     flexDirection: 'row',
     alignItems: 'center',

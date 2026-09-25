@@ -120,10 +120,11 @@ test('every row of the chooser declares that it came from the sheet', () => {
 });
 
 test('the direct paths skip the wait, because no sheet was ever shown', () => {
-  // Desktop web and `directCamera` never open the chooser; making them wait would add latency for
-  // nothing. Asserted so the flag keeps meaning "a modal is on screen" rather than drifting to "always".
+  // Desktop web, `directCamera` and `directLibrary` (Scan label's Photos) never open the chooser; making
+  // them wait would add latency for nothing. Asserted so the flag keeps meaning "a modal is on screen"
+  // rather than drifting to "always".
   const direct = [...src.matchAll(/launch\(config,\s*'(camera|library)',\s*(true|false)\)/g)].map((m) => `${m[1]}:${m[2]}`);
-  assert.deepEqual(direct.sort(), ['camera:false', 'library:false'], 'a direct launch is waiting on a sheet that never opened');
+  assert.deepEqual(direct.sort(), ['camera:false', 'library:false', 'library:false'], 'a direct launch is waiting on a sheet that never opened');
 });
 
 test('the sheet reports its real dismissal, and the fallback exists for platforms that cannot', () => {

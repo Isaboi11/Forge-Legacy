@@ -56,8 +56,18 @@ export const unitByKey = (key: string): FoodUnit => FOOD_UNITS.find((u) => u.key
 /** True when the athlete has to tell us what one of these weighs before the food can be scaled. */
 export const unitNeedsWeight = (unit: FoodUnit): boolean => unit.gramsPer == null;
 
-const toNumber = (v: string): number => {
-  const n = Number.parseFloat(v);
+/**
+ * A field's number. Also reads a label's fractions — "2/3" and "1 1/2" — because Scan label fills the
+ * serving amount exactly as the package prints it (`Scan Nutrition Label v2.dc.html` shows "2/3 cup").
+ * `parseFloat` alone would read "2/3" as 2 and triple the serving.
+ */
+export const toNumber = (v: string): number => {
+  const s = v.trim();
+  const mixed = /^(\d+)\s+(\d+)\s*\/\s*(\d+)$/.exec(s);
+  if (mixed) return Number(mixed[3]) > 0 ? Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3]) : 0;
+  const frac = /^(\d+(?:\.\d+)?)\s*\/\s*(\d+)$/.exec(s);
+  if (frac) return Number(frac[2]) > 0 ? Number(frac[1]) / Number(frac[2]) : 0;
+  const n = Number.parseFloat(s);
   return Number.isFinite(n) ? n : 0;
 };
 
@@ -101,8 +111,11 @@ export function labelServing(amount: string, unit: FoodUnit, grams: number): Ser
   if (unit.key === 'g' || unit.key === 'ml' || unit.key === 'oz') {
     return { label: `${pretty} ${unit.short}`, grams };
   }
-  const word = pretty === 1 || /s$/i.test(unit.short) ? unit.short : `${unit.short}s`;
-  return { label: `${pretty} ${word}`, grams };
+  /* A fraction keeps its printed form — "2/3 cup", not "0.67 cups". One or less is singular. */
+  const fraction = amount.includes('/');
+  const shown = fraction ? amount.trim().replace(/\s*\/\s*/, '/') : String(pretty);
+  const word = count <= 1 || /s$/i.test(unit.short) ? unit.short : `${unit.short}s`;
+  return { label: `${shown} ${word}`, grams };
 }
 
 /* ── calories vs macros ───────────────────────────────────────────────────── */

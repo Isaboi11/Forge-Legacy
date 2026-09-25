@@ -371,6 +371,8 @@ function RootNavigator() {
         <Stack.Screen name="food-detail" />
         <Stack.Screen name="meal-detail" />
         <Stack.Screen name="create-food" />
+        {/* Scan label — the camera over Create Food (`Scan Nutrition Label v2.dc.html`). Build 9+, iPhone only. */}
+        <Stack.Screen name="scan-label" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="nutrition-details" />
         <Stack.Screen name="nutrition-targets" />
         <Stack.Screen name="meal-plan-setup" />

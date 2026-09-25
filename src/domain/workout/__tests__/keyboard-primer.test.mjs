@@ -73,12 +73,22 @@ const ALWAYS_MOUNTED = new Set([
   'src/components/forge/inputs/ForgeSearchInput.tsx',
 ]);
 
+/**
+ * Files whose `autoFocus` field mounts on ARRIVAL, not behind a tap, and only in the native app.
+ *
+ * Create Food's "Almost done — add a food name" field appears when a Scan label read lands on the way
+ * back from the camera (`Scan Nutrition Label v2.dc.html` A3). There is no tap to prime inside, and
+ * Scan label exists only on the iPhone app (`labelScanAvailable()`), so iOS Safari — the browser this
+ * primer exists for — never mounts it.
+ */
+const NATIVE_ARRIVAL = new Set(['src/app/create-food.tsx']);
+
 test('a field that mounts behind a tap primes the keyboard first', () => {
   const offenders = [];
 
   for (const file of walk(SRC)) {
     const rel = relative(ROOT, file).split('\\').join('/');
-    if (ALWAYS_MOUNTED.has(rel)) continue;
+    if (ALWAYS_MOUNTED.has(rel) || NATIVE_ARRIVAL.has(rel)) continue;
 
     const body = code(readFileSync(file, 'utf8'));
     const fields = (body.match(/\bautoFocus\b/g) ?? []).length;

@@ -15,6 +15,8 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation'
 
 export interface InputFieldProps extends Omit<TextInputProps, 'onChange' | 'onChangeText' | 'style'> {
   label?: string
+  /** Drawn after the label on the same line — Scan label's "check this value" dot. Not read as part of the label. */
+  labelAccessory?: React.ReactNode
   value: string
   onChange: (v: string) => void
   helper?: string
@@ -40,6 +42,7 @@ const NO_WEB_OUTLINE = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as unkn
 
 export function InputField({
   label,
+  labelAccessory,
   value,
   onChange,
   helper,
@@ -57,7 +60,14 @@ export function InputField({
 
   return (
     <View>
-      {label != null ? <Text style={styles.label}>{label}</Text> : null}
+      {label != null && labelAccessory ? (
+        <View style={styles.labelRow}>
+          <Text style={[styles.label, styles.labelInRow]}>{label}</Text>
+          {labelAccessory}
+        </View>
+      ) : label != null ? (
+        <Text style={styles.label}>{label}</Text>
+      ) : null}
 
       <View
         style={[
@@ -104,6 +114,8 @@ const styles = StyleSheet.create({
     color: flColor.bronze400,
     marginBottom: 9,
   },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 9 },
+  labelInRow: { marginBottom: 0 },
   well: {
     flexDirection: 'row',
     alignItems: 'center',
