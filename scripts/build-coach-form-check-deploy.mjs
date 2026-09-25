@@ -20,18 +20,18 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FUNCTION = 'supabase/functions/coach-form-check/index.ts';
 export const DEPLOY_COPY = 'supabase/apply/deploy-coach-form-check.ts';
 
-const HEADER = `// ═══════════════════════════════════════════════════════════════════════════════════════════════
-// DASHBOARD PASTE COPY of supabase/functions/coach-form-check/index.ts — GENERATED, DO NOT EDIT.
+const HEADER = `// ===============================================================================================
+// DASHBOARD PASTE COPY of supabase/functions/coach-form-check/index.ts - GENERATED, DO NOT EDIT.
 //
 // The real function imports src/domain/coach/medical-routing.ts and src/domain/coach/form-check.ts, which
 // the Supabase dashboard editor cannot reach. This copy inlines those modules in place of their import
 // lines; nothing else differs. Regenerate with \`node scripts/build-coach-form-check-deploy.mjs\`.
 //
-// Supabase dashboard → Edge Functions → Deploy a new function → "Via Editor" → name it
-// coach-form-check → replace the editor contents with this whole file → Deploy.
+// Supabase dashboard -> Edge Functions -> Deploy a new function -> "Via Editor" -> name it
+// coach-form-check -> replace the editor contents with this whole file -> Deploy.
 // ANTHROPIC_API_KEY is already set (coach-interpret, coach-ask and program-photo-read use the same secret).
-// \`form_check\` is already priced in coach_ai_config.action_credits (migration 0144) — no migration needed.
-// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// \`form_check\` is already priced in coach_ai_config.action_credits (migration 0144) - no migration needed.
+// ===============================================================================================
 
 `;
 

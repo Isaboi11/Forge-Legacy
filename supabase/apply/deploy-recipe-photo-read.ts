@@ -1,14 +1,14 @@
-// ═══════════════════════════════════════════════════════════════════════════════════════════════
-// DASHBOARD PASTE COPY of supabase/functions/recipe-photo-read/index.ts — GENERATED, DO NOT EDIT.
+// ===============================================================================================
+// DASHBOARD PASTE COPY of supabase/functions/recipe-photo-read/index.ts - GENERATED, DO NOT EDIT.
 //
 // The real function imports src/domain/nutrition/recipe-photo-read.ts, which the Supabase dashboard
 // editor cannot reach. This copy inlines that module in place of its import line; nothing else differs.
 // Regenerate with `node scripts/build-recipe-photo-read-deploy.mjs`.
 //
-// Supabase dashboard → Edge Functions → Deploy a new function → "Via Editor" → name it
-// recipe-photo-read → replace the editor contents with this whole file → Deploy.
+// Supabase dashboard -> Edge Functions -> Deploy a new function -> "Via Editor" -> name it
+// recipe-photo-read -> replace the editor contents with this whole file -> Deploy.
 // ANTHROPIC_API_KEY is already set (coach-interpret, coach-ask and program-photo-read use the same secret).
-// ⚠ Apply supabase/apply/pending-0220.sql FIRST — it prices `recipe_photo`; until then every read answers
+// ! Apply supabase/apply/pending-0220.sql FIRST - it prices `recipe_photo`; until then every read answers
 // "meter unavailable".
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
