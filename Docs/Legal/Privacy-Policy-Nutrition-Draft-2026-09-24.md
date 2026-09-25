@@ -44,10 +44,11 @@ a safe minimum.
 
 Add to the list:
 
-- **Anthropic.** Powers the Coach Holt AI features, for accounts that have them. When you ask Holt
-  something, the question and the training (or, for a food question, nutrition) details needed to answer
-  it are sent to Anthropic. They never include your name, email or photos. Anthropic does not use them
-  to train its models.
+- **Anthropic.** Powers the Coach Holt AI features, for accounts that have them. When you use an AI
+  feature, what that feature needs is sent to Anthropic: your question, the training or nutrition details
+  needed to answer it, and, for photo import or form check, the photo or video frames you chose. Your name
+  and email are never sent. Under its commercial terms, Anthropic does not train its models on this data.
+  *(Corrected 2026-09-25: the earlier "never photos" was false; see `Mock-Legal-Review-2026-09-25.md`.)*
 - **USDA FoodData Central, FatSecret and Open Food Facts.** Food databases. They receive only a search
   term or barcode (see Food and nutrition).
 - **RevenueCat.** *(Only once subscriptions ship in build 9.)* Processes App Store purchases so the app

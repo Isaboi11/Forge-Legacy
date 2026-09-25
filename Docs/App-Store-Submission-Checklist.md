@@ -11,7 +11,7 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
 ## Where we are
 - **Waiting on others:** Apple (bank verification) · Apple (Small Business Program)
 - **PO to-do:** find a lawyer · ~~decide if Nutrition ships~~ (09-25: yes, opens on approval) · write the recipes ·
-  RevenueCat tidy-up (rename the project, delete `$rc_*` packages, delete `REVENUE_WEBHOOK_AUTH`) — handed to Claude in Chrome 09-24
+  RevenueCat tidy-up (rename the project, delete `$rc_*` packages, delete `REVENUE_WEBHOOK_AUTH`) — PO running it with Claude in Chrome 09-25
 - **Claude to-do:** build 9 (paywall, mic, form check, barcode) → sandbox purchase test
 
 ## Pricing (Monetization Amendment 007, locked 2026-09-23)
@@ -65,18 +65,21 @@ No lifetime plan. United States only at launch.
   - ✅ Public iOS SDK key (`appl_…`) given to Claude — 09-24 (in `src/lib/billing-store.native.ts`)
   - ✅ Code: adapter over `react-native-purchases` 10.10.2 — 09-24 (`src/lib/billing-store.native.ts`; native → build 9 only)
 - ⬜ Referral reward: "1 month free" offer for a referrer who is already paying (referrer only)
-- ⬜ Review screenshot on each subscription (after the paywall is updated)
+- ⬜ Review screenshot on each subscription: one paywall screenshot from build 9 uploaded to each product's
+  "Review Information" box (Apple-only, never shown on the store). Premium tab for Premium/Early Bird, AI tab for AI/Tester AI
 - ⬜ Sandbox test on build 9: buy, force-quit, reinstall, restore — then check `store_events` shows `applied`
 
 ## 3. Store listing
 - ✅ Description, age rating, reviewer account, support URL
-- ⬜ Redo screenshots before submitting — 09-24: the current set predates recent changes and has no Nutrition
-  (take them after the paywall + Nutrition decision so they show the app as it ships)
+- ✅ Redo screenshots before submitting — 09-25: PO uploaded the new set
 - ✅ Release set to "Manually release this version" — 09-23
 - ⬜ App Privacy labels (after the paywall; add food data if Nutrition ships)
 
 ## 4. Legal
-- ⬜ Lawyer reviews Terms + Privacy Policy
+- 🔨 Mock review done 09-25 (`Docs/Legal/Mock-Legal-Review-2026-09-25.md`): policy + Terms FAIL as is — false 200 m
+  route trim, Anthropic gets photos/video frames, missing providers, Terms say "no subscription"; Washington
+  My Health My Data Act needs a consent step. ⬜ Claude applies the text fixes · ⬜ Lawyer reviews Terms + Privacy Policy
+- ⬜ Terms + Privacy links on the paywall (Apple 3.1.2) and in the App Store description
 
 ## 5. Nutrition (only if it ships in the first release — PO to decide)
 Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web preview NOT updated with it.
@@ -90,11 +93,12 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
 - 🔨 PO's own recipes — 6 in and on build 8 (09-24, OTA `01a0d585`; review list `Docs/Nutrition-Recipe-Book.md`).
   Send more to Claude (USDA numbers + allergy tags worked out) or add in My Recipes;
   include 15-minute meals and vegan
-- ⬜ Gentle message for sustained under-eating (needs PO's wording) — **must-do before opening**
+- 🔨 Gentle message for sustained under-eating — 09-25: PO said "come up with something"; wording in the mock review
+  (passes); being built — **must-do before opening**
 - ✅ Holt's 4 safety fixes (Coach Holt stress test, Decision Queue #36) — fixed 09-21 (`d7ce6dde`), on build 8.
   Re-verified 09-24: 0 limitation breaks in 1,800 programs + 5,760 days + 480 race plans (controls fire);
   edits land on the right day in all 127 rest-day patterns (5,888 edits; the old code fails 6,404)
-- ⬜ Privacy policy nutrition section — **must-do before opening**
+- 🔨 Privacy policy nutrition section — draft fixed per the mock review 09-25 — **must-do before opening**
 - ✅ Search failure message — 09-24: a failed source falls back to saved foods, and with no connection the
   app now says "Couldn't connect to food search" with Try again (Log Food + the meal editor). Not deployed yet
 - ✅ First-time welcome screen for the tab — built 09-24 (`eefe43dd`), on web; not yet seen by the PO
