@@ -67,6 +67,7 @@ export type InWorkoutKey =
   | 'prog_bw_up'
   | 'prog_bw_hold'
   | 'prog_add_weight'
+  | 'prog_overshoot'
   | 'prog_add_rep'
   | 'prog_hold_top'
   | 'prog_hold_short'
@@ -78,7 +79,7 @@ export type InWorkoutKey =
   | 'effort_heavy_min';
 
 /** The only keys that may exclaim — each one is a win (HV-D3). */
-export const WIN_KEYS: readonly InWorkoutKey[] = ['set_advance', 'prog_add_weight', 'prog_bw_up', 'intra_up'];
+export const WIN_KEYS: readonly InWorkoutKey[] = ['set_advance', 'prog_add_weight', 'prog_overshoot', 'prog_bw_up', 'intra_up'];
 
 type RegisterTable = Record<Register, readonly string[]>;
 
@@ -377,6 +378,13 @@ const LINES: Record<InWorkoutKey, RegisterTable> = {
     ],
   },
   // At the top already, holding. Consistency, said warmly.
+  /* Last time was a different rep scheme: {best} reps at {weight}, today asks for {reps}. The new weight is
+     worked out from what they did, so the line says so, never "stay". (PO, 2026-09-24, 30 lb × 20 → 8 reps.) */
+  prog_overshoot: same([
+    '{best} reps at {weight} last time is well past {top}. {lift} goes to {next} today for {reps}.',
+    'You did {best} at {weight} on {lift}. For {reps} reps, {next} is your weight.',
+    '{lift}: {best} reps at {weight} says you are ready. {next} for {reps} today.',
+  ]),
   prog_hold_top: same([
     'Stay at {weight} on {lift} and hold {target}.',
     '{weight} on {lift} for {target} again. Make them clean.',

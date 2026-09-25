@@ -27,6 +27,7 @@
  */
 
 import { sayOnce, type InWorkoutKey, type Register, type SayTokens } from './rulebook/in-workout-voice.ts';
+import { e1rm } from '../workout/metrics.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // INPUT
@@ -351,6 +352,9 @@ export interface ProgressionInput {
  * let a good month three weeks ago argue with a bad week now, and the athlete is standing in front of the
  * bar wanting one number.
  */
+/** Reps past the top of today's range that mean last session was a different rep scheme (see the overshoot branch). */
+export const OVERSHOOT_MARGIN = 3;
+
 export function progressionFor(input: ProgressionInput): Progression {
   const { prescription: rx, pattern, experience } = input;
   const top = rx.repsMax ?? rx.reps;
@@ -424,6 +428,36 @@ export function progressionFor(input: ProgressionInput): Progression {
       message: everySetAtBottom
         ? line('bw_up', 'prog_bw_up', { best, target })
         : line('bw_hold', 'prog_bw_hold', { reps: rx.reps, sets: rx.sets }),
+      basis,
+    };
+  }
+
+  /*
+   * ── FAR PAST TODAY'S REPS: THE LOAD CATCHES UP, NOT ONE STEP ─────────────────────────────────────
+   *
+   * PO, 2026-09-24: *"I did 30lb dumbbells for 20 reps on curls. I'm doing 8 reps today and holt told me
+   * to stay on 30."* Two faults met. The add-weight branch below also needs as many sets at the weight as
+   * today asks for, so one big set against a 3 × 8 fell through to "hold". And even when it fires it adds
+   * ONE step, which answers "you topped the range" but not "you did 20 when today asks for 8".
+   *
+   * So when every set at the working weight beat today's TOP by `OVERSHOOT_MARGIN` or more, last session
+   * was a different rep scheme. The weight is worked out from it: Epley (`e1rm`, the app's one estimate)
+   * from the FEWEST reps at that weight, back down to today's top. It is conservative three ways:
+   * the fewest reps, the top of today's range rather than the bottom, and a ceiling of +25% because Epley
+   * runs high past ~10 reps. Rounded DOWN to a loadable notch, and never less than one normal step.
+   * 30 × 20 against 8 → e1RM 50 → 39.5 for 8 → capped at 37.5.
+   */
+  const fewest = Math.min(...at.map((s) => s.reps));
+  if (step > 0 && fewest >= top + OVERSHOOT_MARGIN) {
+    const notch = loadableStep(input.equipment) || step;
+    const forTop = e1rm(weight, fewest) / (1 + top / 30);
+    const ceiling = weight * 1.25;
+    const next = Math.max(weight + step, Math.floor(Math.min(forTop, ceiling) / notch) * notch);
+    return {
+      action: 'add_weight',
+      suggestedWeight: next,
+      suggestedReps: rx.reps,
+      message: line('overshoot', 'prog_overshoot', { best: fewest, weight: fmt(weight), next: fmt(next), reps: rx.reps, top }),
       basis,
     };
   }
