@@ -253,6 +253,8 @@ test('app prefs default to imperial, haptics/sound on, reduce-motion off, analyt
     theme: 'forge',
     // PO, 2026-09-11: "default meters" — a rower reads metres unless the athlete chose miles.
     rowUnit: 'm',
+    // PO, 2026-09-24: "have him suggest one time and ask if it's helpful." Absence = not asked yet.
+    holtTips: 'ask',
   });
 });
 
@@ -272,9 +274,16 @@ test('exactly the toggles with a real consumer today are marked live', () => {
 
 test('sanitizePrefs coerces each field and survives a malformed blob', () => {
   const p = sanitizePrefs({ units: 'metric', haptics: false, sound: 'loud', reduceMotion: true });
-  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge', rowUnit: 'm' });
+  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge', rowUnit: 'm', holtTips: 'ask' });
   assert.deepEqual(sanitizePrefs('nope'), APP_PREFS_DEFAULTS);
   assert.equal(sanitizePrefs({ units: 'stones' }).units, 'imperial', 'an unknown system falls back');
+});
+
+test('Tips from Holt: three states, validated, and absence means ask once', () => {
+  assert.equal(sanitizePrefs({}).holtTips, 'ask');
+  assert.equal(sanitizePrefs({ holtTips: 'off' }).holtTips, 'off');
+  assert.equal(sanitizePrefs({ holtTips: 'on' }).holtTips, 'on');
+  assert.equal(sanitizePrefs({ holtTips: true }).holtTips, 'ask', 'a stray boolean is not an answer');
 });
 
 test('a stored rower unit is validated — and absence means metres', () => {

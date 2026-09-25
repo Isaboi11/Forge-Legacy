@@ -76,6 +76,17 @@ export interface AppPrefs {
    * screen can take it synchronously. See `distanceUnitFor`.
    */
   rowUnit: RowUnit;
+  /**
+   * "Tips from Holt": his short in-app notes, such as the gap line on the Home Nutrition card (*"15 g protein
+   * to go. Did you pick up the Greek yogurt on your list?"*). PO, 2026-09-24: *"some people probably don't want
+   * him that involved."* and then *"have him suggest one time and ask if it's helpful and if they want that
+   * for the future."* So it has THREE states, and absence is the first:
+   *   · `ask`: nobody has answered yet. The first tip shows WITH "Helpful? Keep these · No thanks".
+   *   · `on`: they said keep them. Tips show quietly.
+   *   · `off`: they said no, or switched it off in Preferences. The tip is never loaded.
+   * Pushes are not governed here; a reminder only exists because the athlete asked for it.
+   */
+  holtTips: HoltTips;
 }
 
 export const APP_PREFS_DEFAULTS: AppPrefs = {
@@ -87,7 +98,10 @@ export const APP_PREFS_DEFAULTS: AppPrefs = {
   coachIntensity: DEFAULT_INTENSITY,
   theme: DEFAULT_THEME,
   rowUnit: 'm',
+  holtTips: 'ask',
 };
+
+export type HoltTips = 'ask' | 'on' | 'off';
 
 export type ExperienceKey = 'haptics' | 'sound' | 'reduceMotion';
 
@@ -124,6 +138,7 @@ export function sanitizePrefs(raw: unknown): AppPrefs {
     }
     if (isThemeName(r.theme)) out.theme = r.theme;
     if (r.rowUnit === 'm' || r.rowUnit === 'road') out.rowUnit = r.rowUnit;
+    if (r.holtTips === 'ask' || r.holtTips === 'on' || r.holtTips === 'off') out.holtTips = r.holtTips;
   }
   return out;
 }

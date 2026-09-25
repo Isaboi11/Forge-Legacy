@@ -12,6 +12,9 @@ import { groceryList, planSignature, stateFor } from '@/domain/nutrition/grocery
 import { mondayOf, planIsReadable } from '@/domain/nutrition/meal-planner';
 import { homeNutritionView, type MacroKey } from '@/domain/nutrition/home-card';
 import { useNutritionAccess } from '@/lib/entitlement';
+import { useAppPrefs } from '@/lib/settings';
+import { saveAppPrefs } from '@/data/settings-live';
+import type { HoltTips } from '@/domain/settings/preferences';
 import { useQuery } from '@/lib/useQuery';
 
 /**
@@ -54,13 +57,26 @@ const MACRO_COLOR: Record<MacroKey, string> = {
 
 export function HomeNutritionCard({ onOpen }: { onOpen: () => void }) {
   const mayUseNutrition = useNutritionAccess();
+  /* Preferences → Coaching → "Tips from Holt". Off means the gap line never loads, not merely hides.
+     `ask` (nobody has answered) shows the tip WITH the question, once, per the PO: "have him suggest one
+     time and ask if it's helpful and if they want that for the future." The answer is saved to prefs, so
+     it holds on every device, and Preferences shows the same switch. */
+  const { prefs, loaded, refetch } = useAppPrefs();
+  const [answered, setAnswered] = useState<HoltTips | null>(null);
+  const tips = answered ?? prefs.holtTips;
+  const answer = (choice: 'on' | 'off') => {
+    setAnswered(choice); // the card answers at once; the write follows
+    void saveAppPrefs({ ...prefs, holtTips: choice })
+      .then(() => refetch())
+      .catch(() => setAnswered(null));
+  };
   const [reloads, setReloads] = useState(0);
   useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
   const { data } = useQuery(async () => (mayUseNutrition ? fetchDay(localToday()) : null), [mayUseNutrition, reloads]);
   /* The gap line (Check-ins scope §3, LOCKED): only asked for in the afternoon, with a target and something
      logged, so the grocery list is not read on every morning open. */
   const hour = new Date().getHours();
-  const wantGap = !!data?.targets && (data?.entries.length ?? 0) > 0 && hour >= GAP_LINE_FROM_HOUR;
+  const wantGap = loaded && tips !== 'off' && !!data?.targets && (data?.entries.length ?? 0) > 0 && hour >= GAP_LINE_FROM_HOUR;
   const { data: pantry } = useQuery(async () => (wantGap ? loadPantry(localToday()) : null), [wantGap, reloads]);
   if (!mayUseNutrition || !data) return null;
 
@@ -117,6 +133,19 @@ export function HomeNutritionCard({ onOpen }: { onOpen: () => void }) {
           {gap}
         </Text>
       ) : null}
+      {gap && tips === 'ask' ? (
+        <View style={styles.ask}>
+          <Text style={styles.askText}>Helpful? You can change this any time in Preferences.</Text>
+          <View style={styles.askRow}>
+            <Pressable onPress={() => answer('on')} accessibilityRole="button" hitSlop={8} style={({ pressed }) => [styles.askBtn, pressed && styles.cardPressed]}>
+              <Text style={styles.askYes}>Keep these</Text>
+            </Pressable>
+            <Pressable onPress={() => answer('off')} accessibilityRole="button" hitSlop={8} style={({ pressed }) => [styles.askBtn, pressed && styles.cardPressed]}>
+              <Text style={styles.askNo}>No thanks</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
     </Pressable>
   );
 }
@@ -147,6 +176,12 @@ const styles = StyleSheet.create({
 
   gap: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
   gapWho: { fontWeight: '600', color: flColor.bronze400 },
+  ask: { gap: 8, paddingTop: 10, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  askText: { fontSize: 12, color: flColor.gray600 },
+  askRow: { flexDirection: 'row', gap: 18 },
+  askBtn: { paddingVertical: 4 },
+  askYes: { fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  askNo: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
 
   track: { height: 4, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal700, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: flRadius.pill },
