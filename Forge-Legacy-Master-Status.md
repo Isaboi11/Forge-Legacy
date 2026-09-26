@@ -85,6 +85,12 @@ reinstall, or a tester needs one of these.
 **When cutting build 9:** re-run `fingerprint:compare` afterwards, move the OTA lane to the new runtime,
 and keep build 8 fed until testers have reinstalled.
 
+**Build 10 queue (native, not started):**
+
+| Feature | Native piece | Why |
+|---|---|---|
+| **Form check body tracking** | NEW local module over Apple Vision body pose (same pattern as `modules/label-reader`) | Eval 09-25: Holt's dot lands on the exact body part only 6/18. Pose puts it on the real joint, finds each rep's top/bottom, and gives depth/tempo numbers. Plan §5.1 Phase 3. Re-test with `scripts/form-check-eval.mjs` |
+
 ## 🏃 Current Sprint
 
 > **▶ 2026-09-23 — THE APPLE ACCOUNT IS NOW FORGE LEGACY LLC (Organization), PO reported.** Supersedes every
