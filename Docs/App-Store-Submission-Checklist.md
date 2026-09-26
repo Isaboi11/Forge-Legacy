@@ -114,7 +114,9 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
   food log, targets, my foods, my meals, my recipes, meal plans, grocery items you added); without, the same CSV. Not deployed yet
 - ⬜ Holt meal plans — Amendment 002 LOCKED 09-24 (`ce224fac`); not built yet
 - ✅ Barcode camera + label scan built — 09-24/25, ship in build 9 (iPhone only; hidden on build 8 + web) · ⬜ test both on a phone
-- ⬜ Photo food logging (Premium AI) — next to discuss; needs no new build
+- 🔨 Photo food logging (Premium AI) — built 09-26 (`728de7fd`): the photo names the foods, the numbers come from
+  food search; 3 credits, ~1¢/photo, photo not stored · ⬜ PO pastes `pending-0223.sql` (after 0222) + deploys
+  `meal-photo-read` · ⬜ web/OTA publish · ⬜ PO confirms model-estimated portions (NUT-D4) · ⬜ design pass (no .dc)
 - ⏳ Lift the gate — 09-25: PO decided Nutrition opens to everyone **on App Store approval**, not before.
   `supabase/apply/pending-0216.sql` is written (one function; no app update needed) — run it on ship day (§6)
 
