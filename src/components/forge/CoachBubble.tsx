@@ -30,7 +30,19 @@ import { fetchNudgeHistory, fetchNudgeSignals, markNudge } from '@/data/nudge-li
  * That is the moment the coach is worth having one tap away. Everywhere else you have already decided and
  * gone somewhere specific, and the useful thing the app can do is get out of the way.
  */
-const HOME_SURFACES = new Set(['/', '/workouts', '/legacy', '/squads']);
+const HOME_SURFACES = new Set(['/', '/workouts', '/legacy', '/squads', '/nutrition']);
+
+/**
+ * ══ KITCHEN MODE — THE SAME HOLT, ON NUTRITION ══
+ *
+ * PO, 2026-09-25: *"same holt in kitchen mode"* (`Docs/Holt-Kitchen-Mode-v1.0.md`). On the Nutrition tab
+ * the mark wears a chef's hat and the sheet opens on the kitchen doors. Same chat, same memory.
+ *
+ * ⚠ THE TRAINING LINES STAY OFF IT. The nudges, the unsaved-program teaser and the introduction are all
+ * about training ("I build the training. Tap me for a program…"), and saying them over a food diary is
+ * the coach answering a question nobody on this screen asked. In the kitchen he is the mark alone.
+ */
+const KITCHEN_SURFACE = '/nutrition';
 
 /**
  * The coach, one tap from anywhere.
@@ -66,6 +78,7 @@ const HOME_SURFACES = new Set(['/', '/workouts', '/legacy', '/squads']);
  */
 export function CoachBubble() {
   const pathname = usePathname();
+  const kitchen = pathname === KITCHEN_SURFACE;
   /*
    * ⚠ THE BUBBLE GROWS INTO THE SHEET — it does not push a route, and that was the design's call over
    * the brief's. `Coach Holt Chat.dc.html`: *"tapping it grows the mark into the sheet rather than
@@ -174,7 +187,7 @@ export function CoachBubble() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!HOME_SURFACES.has(pathname)) return;
+    if (!HOME_SURFACES.has(pathname) || kitchen) return;
     let alive = true;
     void (async () => {
       const [signals, history] = await Promise.all([fetchNudgeSignals(), fetchNudgeHistory()]);
@@ -187,7 +200,7 @@ export function CoachBubble() {
     return () => {
       alive = false;
     };
-  }, [pathname]);
+  }, [pathname, kitchen]);
 
   /*
    * RE-READ ON ARRIVAL, not once on mount. `usePathname` already re-renders this component on every
@@ -197,7 +210,7 @@ export function CoachBubble() {
    * `clearProgramDraft` is the thing being observed.
    */
   useEffect(() => {
-    if (!HOME_SURFACES.has(pathname)) return;
+    if (!HOME_SURFACES.has(pathname) || kitchen) return;
     let alive = true;
     void Promise.all([loadProgramDraft(), loadDraftTold()]).then(([d, told]) => {
       if (!alive) return;
@@ -218,7 +231,7 @@ export function CoachBubble() {
     return () => {
       alive = false;
     };
-  }, [pathname]);
+  }, [pathname, kitchen]);
 
   useEffect(() => {
     let alive = true;
@@ -239,6 +252,11 @@ export function CoachBubble() {
    * for and is all this side is entitled to claim.
    */
   const openCoach = () => {
+    if (kitchen) {
+      setMet(true);
+      openSheet();
+      return;
+    }
     /*
      * ⚠ THE TAP ANSWERS WHATEVER HE ACTUALLY SAID. If the line on screen is an invitation, opening the
      * generic chat sheet would be the coach ignoring his own sentence — the PO asked for the opposite:
@@ -297,9 +315,12 @@ export function CoachBubble() {
    * and still opens him; the introduction simply waits until the first session is logged, when there is
    * something for a coach to build on. Unknown (`null`) reads as "not yet", so nothing flashes.
    */
-  const introducing = met === false && (sessions ?? 0) > 0;
-  /* Introduction, then the draft they already started, then an invitation. See `nudge` above. */
-  const line = introducing
+  const introducing = !kitchen && met === false && (sessions ?? 0) > 0;
+  /* Introduction, then the draft they already started, then an invitation. See `nudge` above. None of
+     them in the kitchen (see `KITCHEN_SURFACE`). */
+  const line = kitchen
+    ? null
+    : introducing
     ? 'I build the training. Tap me for a program or a session.'
     : (teaser ?? nudge?.line ?? null);
   const insets = useSafeAreaInsets();
@@ -337,7 +358,7 @@ export function CoachBubble() {
   const recordedShown = useRef<string | null>(null);
   const nudgeOnScreen =
     Boolean(nudge) && !introducing && !teaser &&
-    !session && !ceremony && tourStatus !== 'running' && HOME_SURFACES.has(pathname);
+    !session && !ceremony && tourStatus !== 'running' && HOME_SURFACES.has(pathname) && !kitchen;
   useEffect(() => {
     if (!nudgeOnScreen || !nudge) return;
     if (recordedShown.current === nudge.def.id) return;
@@ -356,7 +377,7 @@ export function CoachBubble() {
    */
   if (!HOME_SURFACES.has(pathname)) return null;
 
-  if (open) return <CoachChatSheet onClose={closeCoach} intent={intent} />;
+  if (open) return <CoachChatSheet onClose={closeCoach} intent={intent} kitchen={kitchen} />;
 
   return (
     <>
@@ -435,7 +456,8 @@ export function CoachBubble() {
       named={introducing}
       onPress={openCoach}
       onDismiss={!introducing && teaser ? retireDraftLine : undefined}
-      openLabel="Open Coach Holt"
+      openLabel={kitchen ? 'Open Coach Holt in the kitchen' : 'Open Coach Holt'}
+      kitchen={kitchen}
       style={{ bottom: 96 + insets.bottom, right: 20 }}
     />
     </>

@@ -129,7 +129,7 @@ export const SEEKING_ADVICE =
  * call (`care` in the prompt); this is the floor that does not depend on it.
  */
 export const DISORDERED_EATING =
-  /\b(purg(e|es|ed|ing)|throw(ing)?\s+up\s+after\s+(i\s+eat|eating|meals?|food)|make\s+myself\s+(throw\s+up|sick|puke)|starv(e|ing)\s+myself|laxatives?\s+(to|for)\s+(lose|drop|cut)|(eat|eating)\s+(only\s+)?([1-7]\d{2}|[1-9]\d)\s+cal\w*|stop(ped)?\s+eating\s+(to|so)\b)/i;
+  /\b(purg(e|es|ed|ing)|throw(ing)?\s+up\s+after\s+(i\s+eat|eating|meals?|food)|make\s+myself\s+(throw\s+up|sick|puke)|starv(e|ing)\s+myself|laxatives?\s+(to|for)\s+(lose|drop|cut)|(eat|eating)\s+(only\s+)?([1-7]\d{2}|[1-9]\d)\s+cal\w*\b(?!\s+(of|before|pre|after|post|for\s+(breakfast|lunch|dinner|a\s+snack)))|stop(ped)?\s+eating\s+(to|so)\b)/i;
 
 /*
  * ⛔ LEGAL CAUTION (PO, 2026-09-22: *"let's just stay away from anything that would get us into legal
@@ -139,7 +139,76 @@ export const DISORDERED_EATING =
 
 /** A medical condition, medication, pregnancy or a procedure — the answer depends on a clinician. → advice */
 export const MEDICAL_CONTEXT =
-  /\b(pregnan\w*|postpartum|post-partum|breastfeed\w*|breast-feed\w*|c-?section|miscarriage|epilep\w*|diabet\w*|insulin|heart\s+(condition|disease|murmur|attack|problem|issue)s?|arrhythmia|a-?fib|pacemaker|blood\s+pressure|hypertension|asthma|copd|cancer|chemo\w*|osteopor\w*|arthritis|ssris?|antidepressant\w*|medications?|prescription|cortisone|steroid\s+shot|kidney|liver\s+(disease|condition)|hernia|cleared\s+(me|by)|got\s+clearance)\b/i;
+  /\b(pregnan\w*|postpartum|post-partum|breastfeed\w*|breast-feed\w*|c-?section|miscarriage|epilep\w*|diabet\w*|insulin|heart\s+(condition|disease|murmur|attack|problem|issue)s?|arrhythmia|a-?fib|pacemaker|blood\s+pressure|hypertension|asthma|copd|cancer|chemo\w*|osteopor\w*|arthritis|ssris?|antidepressant\w*|medications?|prescription|cortisone|steroid\s+shot|kidney\s+(disease|stones?|failure|function|problems?|issues?|condition|transplant|damage|infection)|ckd|liver\s+(disease|condition)|hernia|cleared\s+(me|by)|got\s+clearance)\b/i;
+
+/*
+ * ══ THE KITCHEN'S STOPS (Chef Holt stress test, 2026-09-25 — `Docs/Chef-Holt-Stress-Test-2026-09-25.md`) ══
+ *
+ * Kitchen Mode invites food questions, and 288 of 3,137 simulated ones that must stop went past the code
+ * guard to a model. The PO's 09-22 rule is that these stop in CODE. Each family below came from that run.
+ */
+
+/** Conditions, drugs and tests that make eating a clinical question. → advice (the dietitian copy) */
+export const NUTRITION_MEDICAL =
+  /\b(thyroid|hypothyroid\w*|hyperthyroid\w*|hashimoto\w*|cholesterol|statins?|a1c|pre-?diabet\w*|ibs|irritable\s+bowel|crohn'?s?|colitis|gerd|acid\s+reflux|gout|celiac|coeliac|pcos|polycystic|ozempic|wegovy|mounjaro|zepbound|semaglutide|tirzepatide|glp-?1|metformin|blood\s*work|lab\s+(results?|work)|blood\s+tests?|blood\s+thinners?|warfarin|eliquis|gastric\s+(sleeve|bypass|band)|bariatric|lap[-\s]?band|anemi\w*|anaemi\w*|iron\s+deficien\w*|(am\s+i|could\s+i\s+be|do\s+i\s+have|i\s+think\s+i'?m|i\s+think\s+i\s+(am|have)|think\s+i'?m)\s+(\w+\s+){0,2}(lactose\s+intolerant|gluten\s+intolerant|intolerant|allergic|celiac|an?\s+(food\s+)?allergy))\b/i;
+
+/**
+ * Restriction a coach must not help with: fasting and cleanses, "as low as possible", a daily intake under
+ * 1,200, a target set under it, binge-restrict, days without food, crash weight cuts, laxatives and
+ * diuretics in any word order, shame after eating. → care
+ */
+export const RESTRICTION =
+  /\b((water|dry|juice|bone\s+broth)\s+fast\w*|(juice\s+)?cleanse\w*|detox\w*|lowest\s+(calories|cals?|possible)|as\s+(few|little|low)\s+(calories|cals?\s+)?as\s+possible|([1-9]\d{2}|1[01]\d{2})\s*(cal\w*|kcal)\s+(a|per|each)\s+day|(target|goal|calories|cals?)\s+(to|at|of)\s+([1-9]\d{2}|1[01]\d{2})\b(?!\s*(protein|carbs?|g\b|grams?))|binge\w*\s+(and|then)\s+(then\s+)?(don'?t|not|stop|skip|starve|fast|purge|restrict)|(haven'?t|have\s+not|didn'?t|did\s+not|not)\s+eaten?\s+(anything\s+)?(in|for)\s+(\d+|a\s+few|two|three|four|several)\s+days|(cut|lose|drop)\s+(\d{2,}|[5-9])\s*(lbs?|pounds|kg|kilos?)\s+(in|by|within)\s+(a|one|1|2|two|3|three|a\s+few)\s+(week|days?)|laxatives?|diuretics?|water\s+pills|(feel|felt|feeling)\s+(so\s+)?(fat|disgusting|gross|ashamed|guilty)(\s+(and|&)\s+\w+)?\s+(after|when)\s+(i\s+)?(eat|eating|ate))\b/i;
+
+/**
+ * Under 18 (NUT-D5): no recommended targets. Only with a cut, a diet or a number — "I'm 16, easy dinner?"
+ * still gets a recipe, and "I'm sixteen, I want to get bigger and faster" is still a training request.
+ */
+export const MINOR_AGE = /\b(i'?m|i\s+am|im)\s+(1[0-7]|thirteen|fourteen|fifteen|sixteen|seventeen)\b(?!\s*(lbs?|pounds|kg|min|minutes|miles|reps|%))/i;
+export const MINOR_TOPIC =
+  /\b(cut(ting)?\s+(to|down|weight|\d)|(lose|losing|drop|dropping)\s+(\w+\s+){0,2}(weight|lbs?|pounds|kg|fat)|diet(ing)?\b|calorie\w*|cals?\b|macros?|deficit|fasting)/i;
+
+/** A reaction or a blocked airway at the table. → urgent */
+export const FOOD_URGENT =
+  /\b((lips?|tongue|face|mouth|throat)\s+(is\s+|are\s+|feels?\s+|started\s+|keeps?\s+)?(swell\w*|swollen|closing|tight(ening)?)|anaphyla\w*|epi-?pens?|allergic\s+reaction|(i'?m|i\s+am|he'?s|she'?s|they'?re|someone\s+is|is)\s+choking|chok(ed|ing)\s+on|can'?t\s+swallow|hives\s+(and|with)\s+(trouble|can'?t|hard))\b/i;
+
+/*
+ * ⛔ TYPOS MUST NOT DEFEAT A STOP. "I awnt to die", "I want to uhrt ymself", "I'm on lbood thinners" and
+ * "alxatives to drop water weight" all passed (stress test 2026-09-25). Tokens one edit (incl. a swap of two
+ * letters) from a word below are read as that word and the whole router runs again. It only ever ADDS a
+ * stop: the corrected text is never used for anything else.
+ *
+ * ⚠ THE LIST IS CHOSEN FOR WHAT IT CAN'T BE CONFUSED WITH. "choking" is one edit from "cooking", "purge" from
+ * "purse", "cleanse" from "cleans", "swelling" from "smelling" — each would turn a kitchen sentence into an
+ * emergency or an eating-disorder stop, so none of them is here. Their exact spellings still stop.
+ */
+const TYPO_WORDS = [
+  'want', 'wanna', 'hurt', 'harm', 'kill', 'killing', 'myself', 'suicide', 'suicidal', 'anymore', 'alive', 'exist', 'reason', 'bleed', 'ending',
+  'blood', 'thinners', 'pressure', 'laxative', 'laxatives', 'diuretic', 'diuretics', 'pregnant', 'diabetic', 'diabetes', 'insulin',
+  'cholesterol', 'ozempic', 'wegovy', 'metformin', 'thyroid', 'lactose', 'intolerant', 'breastfeeding', 'medication', 'medications',
+  /* The restriction phrasings only stop in their full shape ("water fast", "eating N calories till…"), so these
+     are safe to correct: "heating the pan" becomes "eating the pan", which stops nothing. */
+  'eating', 'eaten', "haven't", 'fast', 'disgusting', 'starve', 'lowest', 'possible', 'days', 'calories',
+];
+function oneEdit(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+  if (a.length === b.length) {
+    const diff: number[] = [];
+    for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) diff.push(i);
+    if (diff.length === 1) return true;
+    return diff.length === 2 && diff[1] === diff[0] + 1 && a[diff[0]] === b[diff[1]] && a[diff[1]] === b[diff[0]];
+  }
+  const [s, l] = a.length < b.length ? [a, b] : [b, a];
+  for (let i = 0; i < l.length; i += 1) if (l.slice(0, i) + l.slice(i + 1) === s) return true;
+  return false;
+}
+/** The sentence with near-miss spellings of `TYPO_WORDS` corrected, or null when nothing changed. */
+export function correctedForStops(text: string): string | null {
+  const lower = text.toLowerCase();
+  const fixed = lower.replace(/[a-z']+/g, (w) => (w.length < 4 ? w : TYPO_WORDS.find((c) => oneEdit(w, c)) ?? w));
+  return fixed === lower ? null : fixed;
+}
 
 /** A noise or sensation in a body part, or "is it bad/normal … my <body part>" — a symptom question. → advice */
 const SENSATION = String.raw`(crack\w*|pop|pops|popping|click\w*|grind\w*|clunk\w*|crunch\w*)`;
@@ -189,15 +258,29 @@ export type MedicalRoute =
 export function medicalRoute(text: string): MedicalRoute {
   const t = (text ?? '').trim();
   if (!t) return 'clear';
+  const r = routeOnce(t);
+  if (r !== 'clear') return r;
+  const fixed = correctedForStops(t);
+  return fixed ? routeOnce(fixed) : 'clear';
+}
+
+/**
+ * "Is that bad / is this ok" about FOOD is a food question — "I skip breakfast every day, is that bad" stopped
+ * as a symptom question (stress test 2026-09-25). A body part or discomfort in the sentence keeps the stop.
+ */
+const FOODISH = /\b(eat|eating|ate|food|meal|breakfast|lunch|dinner|snack\w*|recipe|diet|protein|carbs?|sugar|calorie\w*|fruit|coffee)\b/i;
+
+function routeOnce(t: string): MedicalRoute {
   if (CRISIS.test(t)) return 'crisis';
-  if (URGENT.test(t)) return 'urgent';
-  if (DISORDERED_EATING.test(t)) return 'care';
+  if (URGENT.test(t) || FOOD_URGENT.test(t)) return 'urgent';
+  if (DISORDERED_EATING.test(t) || RESTRICTION.test(t)) return 'care';
+  if (MINOR_AGE.test(t) && MINOR_TOPIC.test(t)) return 'care';
   if (DOSE.test(t)) return 'care';
   if (ACUTE.test(t)) return 'acute';
   // "broke my ankle" stops; "broke my PR" does not. The body part is the whole difference.
   if (DAMAGE_NEAR_BODY.test(t)) return 'acute';
-  if (MEDICAL_CONTEXT.test(t) || SYMPTOM_QUESTION.test(t)) return 'advice';
-  if (SEEKING_ADVICE.test(t)) return 'advice';
+  if (MEDICAL_CONTEXT.test(t) || NUTRITION_MEDICAL.test(t) || SYMPTOM_QUESTION.test(t)) return 'advice';
+  if (SEEKING_ADVICE.test(t) && !(FOODISH.test(t) && !BODY_PART.test(t) && !mentionsDiscomfort(t))) return 'advice';
   return 'clear';
 }
 

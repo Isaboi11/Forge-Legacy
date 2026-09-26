@@ -298,7 +298,9 @@ test('the dashboard paste copy is current, and carries both guards', () => {
   assert.ok(committed.includes('export function sanitizeFormRead'));
   assert.ok(committed.includes('Never comment on their body'), 'the prompt survives the comment strip');
   // Comments are stripped (see compact-deploy.mjs) so the dashboard editor does not truncate the paste.
-  assert.ok(committed.length < 40_000, `paste is ${committed.length} chars — the editor cuts off near 40 KB`);
+  // The ceiling was 40 KB on a feared editor cut-off; the PO pasted the ~96 KB coach-ask copy whole on 2026-09-25
+  // and it deployed, so the real limit is at least that. Kept as a guard against runaway growth.
+  assert.ok(committed.length < 100_000, `paste is ${committed.length} chars — larger than any paste proven to work (~96 KB)`);
 });
 
 test('the domain module has no imports, which is what lets it be inlined at all', () => {

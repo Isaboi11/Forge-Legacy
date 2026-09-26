@@ -43,6 +43,16 @@ const MARK_SOURCE = IS_PAPER
   : require('../../../assets/images/coach-holt-mark.png');
 
 /**
+ * Holt in the kitchen: the same coin, wearing a chef's hat (`Docs/Holt-Kitchen-Mode-v1.0.md` §1). Cut from
+ * the PO's approved mockup by `scripts/artwork/holt-chef-hat.py`. Alabaster ships the SAME dark coin — the
+ * PO's sheet calls the flat light version "too flat and loses identity" — so both requires name a file
+ * rather than one being re-ramped. Static literals for the same reason as above.
+ */
+const KITCHEN_SOURCE = IS_PAPER
+  ? require('../../../assets/images/coach-holt-kitchen-paper.png')
+  : require('../../../assets/images/coach-holt-kitchen.png');
+
+/**
  * Coach Holt's mark — a forged bronze medallion, and the only bronze in this feature that moves.
  *
  * ══ IT IS AN IMAGE, NOT A GLYPH ══
@@ -67,7 +77,16 @@ const MARK_SOURCE = IS_PAPER
  */
 export type MarkState = 'idle' | 'thinking' | 'building';
 
-export function HoltMark({ size = 36, state = 'idle' }: { size?: number; state?: MarkState }) {
+export function HoltMark({
+  size = 36,
+  state = 'idle',
+  kitchen = false,
+}: {
+  size?: number;
+  state?: MarkState;
+  /** Kitchen Mode — Holt opened from Nutrition wears the chef's hat. Nowhere else does. */
+  kitchen?: boolean;
+}) {
   const [pulse] = useState(() => new Animated.Value(0));
   const [spin] = useState(() => new Animated.Value(0));
   const still = useReducedMotion();
@@ -147,7 +166,7 @@ export function HoltMark({ size = 36, state = 'idle' }: { size?: number; state?:
         ]}
       >
         <Image
-          source={MARK_SOURCE}
+          source={kitchen ? KITCHEN_SOURCE : MARK_SOURCE}
           style={{ width: size, height: size }}
           resizeMode="cover"
           accessibilityIgnoresInvertColors

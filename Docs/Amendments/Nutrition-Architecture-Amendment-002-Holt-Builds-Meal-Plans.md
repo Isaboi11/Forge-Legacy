@@ -35,6 +35,8 @@ that one door and no others.
 
 ### NUT-A2-D1 — Holt may build, change and explain a meal plan
 
+> ⚠ **2026-09-25:** "Holt still does not set calorie or macro targets" is narrowed by `Nutrition-Architecture-Amendment-005-Holt-Sets-Up-Targets.md` (he fills in the Targets screen; the app computes).
+
 In Holt's chat, *"make me a week of meals"*, *"no fish, quicker lunches"* and *"I've got chicken, eggs and
 rice"* are **in scope**. Holt turns them into a **constraint patch**: diet, allergens, dislikes, time
 cap, household, pantry items, slots to swap. The planner re-runs. He shows the plan and says what he

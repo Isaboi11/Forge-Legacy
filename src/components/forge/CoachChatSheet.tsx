@@ -37,6 +37,21 @@ import { useUnits } from '@/lib/settings';
 import { askHolt, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
 import { summarizeChat } from '@/data/holt-chats-live';
 import { holtRecipeCardsLive } from '@/data/holt-recipes-live';
+import { kitchenLeftLive, kitchenPantryLive } from '@/data/holt-kitchen-live';
+import { fetchNutritionSummary } from '@/data/holt-nutrition-live';
+import {
+  DIETITIAN_STOP,
+  KITCHEN_CARE_STOP,
+  KITCHEN_INTRO,
+  KITCHEN_MAKE_SEED,
+  KITCHEN_UNCLEAR,
+  KITCHEN_UNCLEAR_DOORS,
+  greetKitchen,
+  kitchenContext,
+  kitchenDoorsFor,
+  kitchenWantsTraining,
+  medicalStopIsDietitian,
+} from '@/domain/coach/kitchen';
 import { narrowEdit } from '@/domain/coach/interpret-narrow';
 import { buildAskContext } from '@/domain/coach/ask-context';
 import { resolveEditIntent, type EditIntentResolution } from '@/domain/coach/edit-intent';
@@ -68,6 +83,10 @@ import {
   HELP_TOPICS,
   HOME_CARDS,
   HOME_ROWS,
+  KITCHEN_CARDS,
+  KITCHEN_MAKE_LINE,
+  KITCHEN_ROWS,
+  type KitchenTile,
   isHomeTurn,
   TYPING_ENABLED,
   interpret,
@@ -200,7 +219,16 @@ const DECLINE_IMPORT = "I'll log as I go";
  */
 const BUILD_IT_OUT = 'Build it out';
 
-export function CoachChatSheet({ onClose, intent }: { onClose: () => void; intent?: CoachIntent | null }) {
+export function CoachChatSheet({
+  onClose,
+  intent,
+  kitchen = false,
+}: {
+  onClose: () => void;
+  intent?: CoachIntent | null;
+  /** Opened from Nutrition — Kitchen Mode (`Docs/Holt-Kitchen-Mode-v1.0.md`): the hat, the kitchen doors. */
+  kitchen?: boolean;
+}) {
   const router = useRouter();
   /*
    * ⚠ **THIS SHEET HAD NO GATE AT ALL**, while the dead wizard at `/coach` had two. Free athletes could
@@ -363,7 +391,9 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
 
   /* §6.5 — the introduction is three paragraphs and lands as three beats. Dropping all three at once is
      a wall of text pretending to be a greeting. */
-  const [thread, setThread] = useState<Turn[]>(() => stamped([{ kind: 'holt', text: INTRO[0] }]));
+  /* Met from the kitchen, he introduces himself as the cook (`KITCHEN_INTRO`, same number of beats). */
+  const intro = kitchen ? KITCHEN_INTRO : INTRO;
+  const [thread, setThread] = useState<Turn[]>(() => stamped([{ kind: 'holt', text: intro[0] }]));
   const [introStep, setIntroStep] = useState(1);
   const [draft, setDraft] = useState('');
   /* Declared ABOVE the intro effect, which sets it: a hook cannot close over a const declared below it,
@@ -410,8 +440,8 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
   const [lastCard, setLastCard] = useState<{ program?: ProgramCard; day?: DayCard } | null>(null);
 
   useEffect(() => {
-    if (introStep >= INTRO.length + 1) return undefined;
-    const beat = INTRO[introStep];
+    if (introStep >= intro.length + 1) return undefined;
+    const beat = intro[introStep];
 
     /* Each beat is a typing bubble, then the line lands whole. The pause used to be the paragraph's
        TYPING time plus 450ms, which was right when the words appeared one at a time and is far too long
@@ -438,12 +468,12 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     }, gap);
 
     return () => clearTimeout(id);
-  }, [introStep, intent]);
+  }, [introStep, intent, intro]);
 
   /* DERIVED, not a second piece of state. A beat is pending for exactly as long as the intro effect is
      mid-flight, and that is already what `introStep` says — setting a `busy` flag from the effect body
      would be a synchronous setState in an effect AND a duplicate of a fact we already hold. */
-  const introTyping = INTRO[introStep] != null;
+  const introTyping = intro[introStep] != null;
   /*
    * ⚠ `reading` COLLAPSES TO `thinking` HERE, AND ONLY THE WORD IN THE HEADER KEEPS THE DISTINCTION.
    *
@@ -526,16 +556,16 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
         void rememberMetHolt();
         return; // the intro effect is already running; leave it alone
       }
-      setIntroStep(INTRO.length + 1);
+      setIntroStep(intro.length + 1);
       /* He greets you on arrival — unless he is already stood at the door with the openers up, which is
          what a stored thread ending in chips means. Otherwise every glance would stack another hello. */
       const endsWaiting = stored != null && stored[stored.length - 1]?.kind === 'chips';
-      setThread([...(stored ?? []), ...stamped(endsWaiting ? [] : greetReturning(firstName))]);
+      setThread([...(stored ?? []), ...stamped(endsWaiting ? [] : kitchen ? greetKitchen(firstName) : greetReturning(firstName))]);
     })();
     return () => {
       alive = false;
     };
-  }, [profileLoading, firstName]);
+  }, [profileLoading, firstName, intro.length, kitchen]);
 
   /**
    * ⚠ **NOTHING WRITES AFTER THE CONVERSATION HAS BEEN ENDED.**
@@ -962,7 +992,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
        Their skill level and the kit in their garage did not change because they tapped New chat, and
        making them re-answer either would defeat the point of having read it. */
     setConstraints(athleteFacts);
-    setIntroStep(INTRO.length + 1);
+    setIntroStep(intro.length + 1);
     setThread(stamped(greetReturning(firstName)));
   };
 
@@ -1347,6 +1377,23 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
   };
 
 
+  /*
+   * ══ A KITCHEN DOOR ══ — `KITCHEN_CARDS` / `KITCHEN_ROWS`. "What can I make?" opens the composer with the
+   * question started (typing is Premium AI); everything else, and that one without typing, hands off to the
+   * screen that already does the job, exactly as a `goTo` chip does.
+   */
+  const kitchenDoor = (label: string, door: { goTo?: string; ask?: string }) => {
+    if (door.ask && canType) {
+      say({ kind: 'me', text: label }, { kind: 'holt', text: KITCHEN_MAKE_LINE });
+      setDraft(door.ask);
+      return;
+    }
+    if (!door.goTo) return;
+    say({ kind: 'me', text: label });
+    handOff();
+    router.push(door.goTo as Parameters<typeof router.push>[0]);
+  };
+
   const tapChip = (chip: Chip, echo = true) => {
     if (chip.typedEdit) {
       if (echo) say({ kind: 'me', text: chip.label });
@@ -1592,7 +1639,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
   });
   useEffect(() => {
     if (!intent || intentFired.current) return undefined;
-    if (introStep < INTRO.length + 1) return undefined;
+    if (introStep < intro.length + 1) return undefined;
     intentFired.current = true;
     /* `ask` carries a question the athlete started somewhere else (Form Check's "Ask Holt about this").
        It lands in the composer, NOT sent: sending words they did not type would spend a credit on their
@@ -1613,7 +1660,7 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
           : 'Build me something';
     const id = setTimeout(() => tapChipRef.current({ label, patch: {} }), 240);
     return () => clearTimeout(id);
-  }, [intent, introStep]);
+  }, [intent, introStep, intro.length]);
 
   /* §12.7 — a message sent while Holt is working is HELD, not dropped and not interleaved. The composer
      is dimmed rather than disabled precisely so a thought can be typed while he finishes. */
@@ -1639,7 +1686,9 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
 
   /* Talking to Holt: the phone hears it, and the words go through `sendText` exactly as typed ones do. */
   const dictation = useDictation(sendText);
-  const micShown = dictation.available && !draft.trim();
+  /* The mic stays up while the composer holds only What can I make?'s seed — a voice user must be able to
+     say their ingredients (stress test 2026-09-25). */
+  const micShown = dictation.available && (!draft.trim() || draft === KITCHEN_MAKE_SEED);
 
   /**
    * ══ PREMIUM AI: THE MODEL READS THE SENTENCE ══
@@ -1703,7 +1752,17 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
    * first words land in about a second instead of after the whole paragraph. The active program and any
    * exercise he is asked about travel as context — the coaching records, not his memory.
    */
-  const askAloud = async (text: string, history: AskTurn[], q: ReturnType<typeof nextQuestion>, opts: { allowWeb?: boolean } = {}) => {
+  /** The medical stop in words that fit it: a doctor or dietitian for food and conditions, the physio for an injury. */
+  const medicalStop = (text: string) =>
+    say({ kind: 'stop', text: medicalStopIsDietitian(text, kitchen) ? DIETITIAN_STOP : MEDICAL_STOP });
+  const careStop = () => say({ kind: 'stop', text: kitchen ? KITCHEN_CARE_STOP : CARE_STOP, kicker: CARE_KICKER });
+
+  const askAloud = async (
+    text: string,
+    history: AskTurn[],
+    q: ReturnType<typeof nextQuestion>,
+    opts: { allowWeb?: boolean; kitchen?: boolean } = {},
+  ) => {
     /**
      * ══ "WHAT DO I NEED TO WORK ON?" IS ANSWERED HERE, WITHOUT A MODEL ══
      *
@@ -1718,7 +1777,8 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
      * neglecting is the same shape as an unasked remark about their body, which is the thing this whole
      * feature exists to avoid.
      */
-    if (isGapQuestion(text)) {
+    /* Not in the kitchen: "what do I need to buy for the chili?" matched the gaps question (stress test). */
+    if (!opts.kitchen && isGapQuestion(text)) {
       setBusy('thinking');
       const reply = await gapReplyLive().catch(() => null);
       setBusy(null);
@@ -1729,13 +1789,28 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
       /* Fall through to the ordinary ask only if the local answer failed outright. */
     }
     setBusy('thinking');
-    const active = await Promise.race([
-      fetchActiveProgram().catch(() => null),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
+    /*
+     * ⚠ IN PARALLEL, NOT ONE AFTER ANOTHER (stress test 2026-09-25). These were three awaits in a row before
+     * the model was even called. The kitchen also skips the training program: it answers food, and the
+     * lookup could hold the answer up to its timeout for nothing.
+     */
+    const [active, brief, recipes, pantry, kitchenFood, left] = await Promise.all([
+      opts.kitchen
+        ? Promise.resolve(null)
+        : Promise.race([
+            fetchActiveProgram().catch(() => null),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
+          ]),
+      /* Notes always; the training summary only for a progress/weights question — `askBriefLive` decides, so
+         an ordinary question pays nothing for history it does not need. */
+      askBriefLive(text, units).catch(() => ({ notes: [] as string[], training: null, nutrition: null })),
+      /* The recipe book with the app's own numbers — it reaches the model only if he calls get_recipes. */
+      holtRecipeCardsLive(nutritionAccess).catch(() => []),
+      /* The kitchen's pantry (this week's grocery list) and today's food, whatever the wording. */
+      opts.kitchen && nutritionAccess ? kitchenPantryLive() : Promise.resolve([] as string[]),
+      opts.kitchen && nutritionAccess ? fetchNutritionSummary().catch(() => null) : Promise.resolve(null),
+      opts.kitchen && nutritionAccess ? kitchenLeftLive() : Promise.resolve(null),
     ]);
-    /* Notes always; the training summary only for a progress/weights question — `askBriefLive` decides, so
-       an ordinary question pays nothing for history it does not need. */
-    const brief = await askBriefLive(text, units).catch(() => ({ notes: [] as string[], training: null, nutrition: null }));
     const context = buildAskContext(
       {
         question: text,
@@ -1743,12 +1818,10 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
         program: active ? { structure: { ...active.structure, name: active.name } } : null,
         notes: brief.notes,
         training: brief.training,
-        nutrition: brief.nutrition,
+        nutrition: opts.kitchen ? kitchenContext(brief.nutrition ?? kitchenFood, pantry, undefined, left) : brief.nutrition,
       },
       askSourcesLive(),
     );
-    /* The recipe book with the app's own numbers — it reaches the model only if he calls get_recipes. */
-    const recipes = await holtRecipeCardsLive(nutritionAccess).catch(() => []);
     let started = false;
     const r = await askHolt(
       text,
@@ -1778,17 +1851,24 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
         if (await actOn(r.actions, text)) return;
         /* Asked mid-build: the question on the table comes back. Asked about a program with none open: the
            door to build one, since the coach-ask prompt has him offer to build it. */
+        /* The kitchen's door under the answer — Meal Plan, Targets, My Recipes, Grocery List (`kitchenDoorsFor`). */
+        if (opts.kitchen) {
+          const doors = kitchenDoorsFor(text);
+          if (doors.length) say({ kind: 'chips', chips: doors.map((d) => ({ label: d.label, patch: {}, goTo: d.goTo })) });
+          return;
+        }
         if (q) say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
-        else if (/\b(program|plan|routine|workout|split)\b/i.test(text)) say({ kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] });
+        /* Never in the kitchen: "plan my meals" is not a training program (stress test). */
+        else if (!opts.kitchen && /\b(program|plan|routine|workout|split)\b/i.test(text)) say({ kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] });
         return;
       case 'crisis':
         return say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
       case 'urgent':
         return say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
       case 'care':
-        return say({ kind: 'stop', text: CARE_STOP, kicker: CARE_KICKER });
+        return careStop();
       case 'medical':
-        return say({ kind: 'stop', text: MEDICAL_STOP });
+        return medicalStop(text);
       case 'out_of_credits':
         return say({ kind: 'holt', text: pick('allowance_program') });
       case 'offline':
@@ -1844,9 +1924,9 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
       case 'urgent':
         return say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
       case 'care':
-        return say({ kind: 'stop', text: CARE_STOP, kicker: CARE_KICKER });
+        return careStop();
       case 'medical':
-        return say({ kind: 'stop', text: MEDICAL_STOP });
+        return medicalStop(text);
       case 'out_of_credits':
         return say({ kind: 'holt', text: pick('allowance_program') });
       case 'offline':
@@ -1865,8 +1945,12 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
           return;
         }
         say(
-          { kind: 'holt', text: "I'm here. What are we working on?" },
-          { kind: 'chips', chips: OPENERS.slice(0, 4).map((label) => ({ label, patch: {} })) },
+          kitchen
+            ? { kind: 'holt', text: KITCHEN_UNCLEAR }
+            : { kind: 'holt', text: "I'm here. What are we working on?" },
+          kitchen
+            ? { kind: 'chips', chips: KITCHEN_UNCLEAR_DOORS.map((d) => ({ label: d.label, patch: {}, goTo: d.goTo })) }
+            : { kind: 'chips', chips: OPENERS.slice(0, 4).map((label) => ({ label, patch: {} })) },
         );
         return;
       /* A question mid-conversation is answered, and the question that was on the table comes back —
@@ -1948,12 +2032,22 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     const danger = medicalRoute(text);
     if (danger === 'crisis') return void say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
     if (danger === 'urgent') return void say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
-    if (danger === 'care') return void say({ kind: 'stop', text: CARE_STOP, kicker: CARE_KICKER });
+    if (danger === 'care') return void careStop();
+    /*
+     * ══ THE KITCHEN ══ (Chef Holt stress test 2026-09-25). Every stop is code-first here — a condition or
+     * an injury never reaches a model or spends a credit — and every other line goes to `coach-ask`, which
+     * has the recipe book, the diary and the NUT-D4 rules, unless it is plainly about training.
+     */
+    if (kitchen && danger !== 'clear') return void medicalStop(text);
+    if (kitchen && premiumAi && !kitchenWantsTraining(text)) {
+      void askAloud(text, historyFrom(thread), null, { kitchen: true });
+      return;
+    }
     /* The broad word list stops "my shoulder hurts, swap it" — right for a string matcher, wrong once the
        model reads the sentence (the PO's action-is-fine rule). With Premium AI, `interpretTyped` runs the
        narrow code guard and the model's own medical routing instead. */
     if (!premiumAi && isMedical(text)) {
-      say({ kind: 'stop', text: MEDICAL_STOP });
+      medicalStop(text);
       return;
     }
 
@@ -2211,14 +2305,14 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
             the separation is spacing plus the warm wash, and a hard line under it flattens the header
             into a toolbar. */}
         <View style={styles.header}>
-          <HoltMark size={52} state={waiting ?? 'idle'} />
+          <HoltMark size={52} state={waiting ?? 'idle'} kitchen={kitchen} />
           <View style={styles.headerText}>
             <Text style={styles.headerName}>COACH HOLT</Text>
             {/* `YOUR COACH · ● · READY`. The dot is the ONLY green on this surface, and it is a liveness
                 indicator rather than a colour in the palette — so it stays lit while he works and the
                 word beside it changes instead. */}
             <View style={styles.headerStatusRow}>
-              <Text style={styles.headerStatus}>YOUR COACH</Text>
+              <Text style={styles.headerStatus}>{kitchen ? 'IN THE KITCHEN' : 'YOUR COACH'}</Text>
               <View style={styles.headerDot} />
               <Text style={styles.headerStatus}>
                 {busy === 'building' ? 'BUILDING' : busy === 'reading' ? 'READING' : busy === 'thinking' ? 'THINKING' : 'READY'}
@@ -2333,7 +2427,11 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
             if (b.kind === 'home') {
               return (
                 <TurnEnter key={b.key}>
-                  <CoachHome onOpener={(label) => tapChip({ label, patch: {} })} />
+                  {kitchen ? (
+                    <KitchenHome onDoor={kitchenDoor} />
+                  ) : (
+                    <CoachHome onOpener={(label) => tapChip({ label, patch: {} })} />
+                  )}
                   {/* §4 — the bronze rule only exists once there is a conversation under it. */}
                   {bi < blocks.length - 1 ? <ConversationDivider /> : null}
                 </TurnEnter>
@@ -2619,6 +2717,60 @@ function CoachHome({ onOpener }: { onOpener: (opener: string) => void }) {
     </View>
   );
 }
+
+/**
+ * ══ KITCHEN HOME ══ — Coach Home's exact shape (three cards over quiet rows, the first card carrying the
+ * warm wash), with the kitchen doors. See `KITCHEN_CARDS` for why each goes where it goes.
+ */
+function KitchenHome({ onDoor }: { onDoor: (label: string, door: { goTo?: string; ask?: string }) => void }) {
+  return (
+    <View style={styles.home}>
+      <View style={styles.homeCards}>
+        {KITCHEN_CARDS.map((c: KitchenTile) => (
+          <Pressable
+            key={c.tag}
+            onPress={() => onDoor(c.title, c)}
+            accessibilityRole="button"
+            accessibilityLabel={`${c.title}. ${c.sub}`}
+            style={({ pressed }) => [
+              styles.homeCard,
+              c.tag === 'MAKE' ? styles.homeCardPrimary : styles.homeCardPlain,
+              pressed && styles.homeCardPressed,
+            ]}
+          >
+            <EngravedIcon name={KITCHEN_CARD_GLYPH[c.tag]} size={22} />
+            <Text style={styles.homeTag}>{c.tag}</Text>
+            <Text style={styles.homeCardTitle}>{c.title}</Text>
+            <Text style={styles.homeCardSub}>{c.sub}</Text>
+            <View style={styles.homeArrow}>
+              <EngravedIcon name="arrow-right" size={15} color={flColor.bronze400} />
+            </View>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={styles.homeRows}>
+        {KITCHEN_ROWS.map((r, i) => (
+          <Pressable
+            key={r.label}
+            onPress={() => onDoor(r.label, r)}
+            accessibilityRole="button"
+            accessibilityLabel={r.label}
+            style={({ pressed }) => [styles.homeRow, i === KITCHEN_ROWS.length - 1 && styles.homeRowLast, pressed && styles.homeRowPressed]}
+          >
+            <View style={styles.homeGlyph}>
+              <EngravedIcon name={r.icon} size={14} />
+            </View>
+            <Text style={styles.homeRowLabel}>{r.label}</Text>
+            <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} />
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const KITCHEN_CARD_GLYPH: Record<KitchenTile['tag'], EngravedName> = { MAKE: 'utensils', MACROS: 'target', PLAN: 'calendar' };
 
 /** BUILD dumbbell · TODAY calendar · ADJUST sliders — 22×22, 1.8 stroke, bronze (§3). */
 function HomeCardIcon({ tag }: { tag: HomeCardTag }) {

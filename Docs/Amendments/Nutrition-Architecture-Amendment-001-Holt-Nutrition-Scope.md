@@ -43,6 +43,8 @@ day and your target is 2,500 — you're under most days"* is a review of a fact,
 
 ### NUT-A1-D3 — He still may not prescribe a diet, and CA-D10 is unchanged
 
+> ⚠ **Narrowed 2026-09-25 by `Nutrition-Architecture-Amendment-005-Holt-Sets-Up-Targets.md`:** Holt may set up targets by filling in the Targets screen's inputs; the app computes them (NUT-A5-D1…D3). The rest of D3 stands.
+
 No meal plans, no *"eat 180 g of protein"*, no supplement or macro prescriptions, no calorie targets.
 **Targets are the Targets screen's job**, where NUT-D5's floors are enforced in code. Holt pointing an
 athlete at that screen is the correct move and the only one available to him.

@@ -66,9 +66,11 @@ export interface CoachSaysProps {
   openLabel: string;
   /** Absolute placement, owned by the caller — the tab bar and the action bar sit at different heights. */
   style?: object;
+  /** Kitchen Mode (on Nutrition) — the mark wears the chef's hat. */
+  kitchen?: boolean;
 }
 
-export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, style }: CoachSaysProps) {
+export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, style, kitchen = false }: CoachSaysProps) {
   const said = line?.trim() || null;
 
   return (
@@ -144,7 +146,7 @@ export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, 
         onPress={onPress}
         style={({ pressed }) => [styles.mark, pressed && styles.markPressed]}
       >
-        <HoltMark size={BUBBLE_SIZE} />
+        <HoltMark size={BUBBLE_SIZE} kitchen={kitchen} />
       </Pressable>
     </View>
   );

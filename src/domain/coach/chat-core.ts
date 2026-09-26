@@ -1246,6 +1246,57 @@ export const HOME_ROWS: readonly HomeRow[] = [
 ];
 
 /**
+ * ══ KITCHEN HOME — the doors Holt opens on when he is opened from Nutrition ══
+ *
+ * `Docs/Holt-Kitchen-Mode-v1.0.md` §1: *"the starter chips are kitchen ones: What can I make? · Save a
+ * recipe · Set my macros · Plan my week."* Same turn, same thread — Kitchen Home is a second RENDERING of
+ * the opener turn (see `isHomeTurn`), so nothing stored changes and the conversation is one conversation.
+ *
+ * ⚠ EVERY DOOR GOES SOMEWHERE THAT ALREADY WORKS. `goTo` is a screen that exists today; `ask` starts a
+ * typed question that `coach-ask` already answers from the recipe book (its numbers are the app's, NUT-D4).
+ * The Kitchen jobs that need new functions (the macro interview, recipe links, eating out, cook mode) are
+ * not drawn until they are built — a door that opens onto nothing is worse than no door.
+ */
+export interface KitchenTile {
+  tag: 'MAKE' | 'MACROS' | 'PLAN';
+  title: string;
+  sub: string;
+  /** A route the sheet hands off to. */
+  goTo?: string;
+  /** Words dropped into the composer, UNSENT — sending them would spend a credit on the athlete's behalf. */
+  ask?: string;
+}
+
+export const KITCHEN_CARDS: readonly KitchenTile[] = [
+  {
+    tag: 'MAKE',
+    title: 'What can I make?',
+    sub: "Tell me what you've got. I'll start from your recipe book.",
+    ask: 'What can I make with ',
+    /* Without typing (no Premium AI) the same question is answered by the book itself. */
+    goTo: '/my-recipes',
+  },
+  { tag: 'MACROS', title: 'Set my macros', sub: 'Your weight, activity and goal, worked into daily targets.', goTo: '/nutrition-targets' },
+  { tag: 'PLAN', title: 'Plan my week', sub: 'Meals built around your targets, time and budget.', goTo: '/meal-plan' },
+];
+
+export interface KitchenRow {
+  icon: 'camera' | 'grocery';
+  label: string;
+  goTo: string;
+}
+
+export const KITCHEN_ROWS: readonly KitchenRow[] = [
+  /* My Recipes is where a recipe is saved — typed in, or read from a photo (`recipe-photo-read`). */
+  { icon: 'camera', label: 'Save a recipe', goTo: '/my-recipes' },
+  { icon: 'grocery', label: 'Grocery list', goTo: '/grocery-list' },
+];
+
+/** What he says when "What can I make?" opens the composer. */
+export const KITCHEN_MAKE_LINE =
+  "Tell me what's in the kitchen, or what you're in the mood for. I'll check your recipe book first.";
+
+/**
  * Is this the turn Coach Home is drawn in place of?
  *
  * ⚠ **THE THREAD'S SHAPE IS UNCHANGED, AND THAT IS DELIBERATE.** The introduction still ends in an

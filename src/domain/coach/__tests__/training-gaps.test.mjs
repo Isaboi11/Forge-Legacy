@@ -375,7 +375,8 @@ test('a balanced athlete is told nothing stands out', () => {
 test('⚠ the local gap answer reaches a follow-up through ordinary thread history', () => {
   const sheet = readFileSync(join(COACH, '..', '..', 'components', 'forge', 'CoachChatSheet.tsx'), 'utf8');
 
-  const branch = sheet.slice(sheet.indexOf('if (isGapQuestion(text))'));
+  // `!opts.kitchen && isGapQuestion(text)` since Kitchen Mode (2026-09-25): the kitchen skips the gaps answer.
+  const branch = sheet.slice(sheet.indexOf('isGapQuestion(text)) {'));
   assert.ok(branch.length > 0, 'the gap short-circuit has gone — the feature is unwired');
   const upToReturn = branch.slice(0, branch.indexOf('return;'));
   assert.match(

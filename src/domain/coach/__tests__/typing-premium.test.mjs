@@ -73,7 +73,8 @@ test('⚠ the speech package is never imported — an older binary without it mu
 test('spoken words take the typed path, so every guard and the model see them the same way', () => {
   assert.match(sheet, /const dictation = useDictation\(sendText\);/);
   // The mic replaces the empty send button only where the device can hear.
-  assert.match(sheet, /const micShown = dictation\.available && !draft\.trim\(\);/);
+  // ...and while the composer holds only Kitchen Mode's "What can I make with " seed (2026-09-25).
+  assert.match(sheet, /const micShown = dictation\.available && \(!draft\.trim\(\) \|\| draft === KITCHEN_MAKE_SEED\);/);
   assert.match(sheet, /\{micShown \? \(/);
 });
 
@@ -133,5 +134,6 @@ test('⚠ several things in one message run in order; a skip saves as skip marks
   assert.match(u, /if \(r\.remember\?\.length\) void rememberSaid\(r\.remember\);/);
   const finish = sheet.slice(sheet.indexOf('const finishTypedEdit = async'), sheet.indexOf('const tapChip = (chip'));
   assert.match(finish, /if \(pe\.plan\.kind === 'skip'\) \{\s*for \(const at of pe\.plan\.sessions\) await skipProgramSession\(pe\.programId, at\.weekIndex, at\.dayIndex\);/);
-  assert.match(sheet, /const brief = await askBriefLive\(text, units\)/);
+  // Loaded in parallel with the program and the recipe book since 2026-09-25 (`Promise.all`).
+  assert.match(sheet, /askBriefLive\(text, units\)/);
 });

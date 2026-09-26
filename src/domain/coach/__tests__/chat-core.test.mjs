@@ -705,3 +705,21 @@ test('a General health build terminates and is ready, like every other goal', ()
   assert.ok(asked.includes('time'), 'never asked how long they have');
   assert.ok(!asked.includes('race_when'), 'asked about a race');
 });
+
+/*
+ * Kitchen Mode (`Docs/Holt-Kitchen-Mode-v1.0.md`): every kitchen door must open onto a screen that exists.
+ * A `goTo` whose route file is gone is a card that closes the sheet and lands nowhere.
+ */
+test('every Kitchen door goes to a screen that exists, and "What can I make?" works without typing', async () => {
+  const { KITCHEN_CARDS, KITCHEN_ROWS } = await import('../chat-core.ts');
+  const { existsSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const app = fileURLToPath(new URL('../../../app/', import.meta.url));
+  for (const door of [...KITCHEN_CARDS, ...KITCHEN_ROWS]) {
+    assert.ok(door.goTo, `${door.title ?? door.label} needs a screen to fall back to`);
+    const route = door.goTo.replace(/^\//, '');
+    assert.ok(existsSync(`${app}${route}.tsx`), `${door.goTo} is not a route`);
+  }
+  const make = KITCHEN_CARDS.find((c) => c.tag === 'MAKE');
+  assert.ok(make?.ask, 'MAKE starts a question in the composer');
+});
