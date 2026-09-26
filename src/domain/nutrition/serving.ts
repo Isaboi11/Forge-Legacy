@@ -120,6 +120,7 @@ export function portionLabel(portion: Portion): string {
  * ⚠ A source sanity check, not a nutrition opinion: energy should be about 4P + 4C + 9F. Beyond ±25% the
  * record is wrong (a mis-keyed label, a per-serving figure filed as per-100 g), and a wrong food poisons
  * every day it is logged into. Tolerant on purpose — fibre, alcohol and rounding all move it honestly.
+ * (Absolute slack added 2026-09-26: the photo eval found raw lime and fresh basil filtered out of search.)
  */
 export function looksSane(food: CatalogFood): boolean {
   const kcal = food.kcal100;
@@ -127,7 +128,10 @@ export function looksSane(food: CatalogFood): boolean {
   const fromMacros = (food.protein100 ?? 0) * 4 + (food.carb100 ?? 0) * 4 + (food.fat100 ?? 0) * 9;
   if (fromMacros === 0) return kcal === 0 || kcal < 40; // drinks and spices legitimately report nothing
   if (kcal === 0) return false;
-  return Math.abs(fromMacros - kcal) / kcal <= 0.25;
+  // Low-energy produce misses the ratio honestly: fibre carbs carry ~2 kcal/g, not 4 (a raw lime is 30 kcal
+  // against 46 from its macros). A few kcal is never a mis-keyed record, so a small absolute gap passes.
+  const gap = Math.abs(fromMacros - kcal);
+  return gap <= 20 || gap / kcal <= 0.25;
 }
 
 /** A Quick Add: calories the athlete typed, with optional macros and no food behind them. */

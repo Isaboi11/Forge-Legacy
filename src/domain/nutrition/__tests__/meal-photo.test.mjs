@@ -149,7 +149,15 @@ test('no hit that names the food → no match, and the hits are offered as choic
   assert.deepEqual(r.candidates.map((f) => f.key), ['usda:rice', 'usda:chicken']);
 });
 
-test('a multi-word item needs at least half its words in the hit', () => {
+test('a two-word item needs both words; a longer one two thirds (PO photo eval 2026-09-26)', () => {
+  const veggie = food({ key: 'usda:veg', name: 'Veggie burger, on bun', kcal100: 224, protein100: 12.8, carb100: 30.8, fat100: 5.2 });
+  assert.equal(matchScore({ name: 'burger', search: 'beef burger' }, veggie), -1);
+  const beans = food({ key: 'usda:beans', name: 'Beans, baked, canned, with pork and tomato sauce', kcal100: 94, protein100: 5.2, carb100: 18.8, fat100: 0.9 });
+  assert.equal(matchScore({ name: 'baked gnocchi', search: 'gnocchi baked tomato sauce mozzarella' }, beans), -1);
+  const limeRaw = food({ key: 'usda:lime', name: 'Lime, raw', kcal100: 30, protein100: 0.7, carb100: 7, fat100: 0.2 });
+  const souffle = food({ key: 'usda:souffle', name: 'Lime souffle', kcal100: 326, protein100: 4, carb100: 40, fat100: 16 });
+  assert.equal(pickMatch({ name: 'lime wedge', search: 'lime' }, [souffle, limeRaw]).food?.key, 'usda:lime');
+
   assert.equal(matchScore({ name: 'Chicken caesar wrap', search: 'chicken caesar wrap' }, CHICKEN), -1);
   assert.ok(matchScore({ name: 'Grilled chicken breast', search: 'chicken breast grilled' }, CHICKEN) > 0);
 });

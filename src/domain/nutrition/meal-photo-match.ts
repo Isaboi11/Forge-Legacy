@@ -13,8 +13,10 @@ import type { MealSlot } from './day.ts';
  *
  * ══ ⛔ NEVER A LOOSE MATCH ══
  *
- * A food-search hit joins the plate only when it names the SAME food: at least half of the item's words
- * (and every word of a one-word item) appear in the hit's name or brand. "Rice" never becomes "Rice
+ * A food-search hit joins the plate only when it names the SAME food: every word of a one- or two-word
+ * item, and two thirds of a longer one, appear in the hit's name or brand. Half was too loose — the PO's
+ * photo eval (2026-09-26) matched "beef burger" to "Veggie burger, on bun" and "gnocchi baked tomato sauce
+ * mozzarella" to canned baked beans. "Rice" never becomes "Rice
  * Krispies Treats" because the plural matched; a hit that fails is offered as a CHOICE ("Swap") and the row
  * says "No match yet" until the athlete picks. The same rule `recipe-import.ts` holds for recipes
  * (Holt-Kitchen-Scope §3.4: unmatched is shown as unmatched, never guessed).
@@ -70,8 +72,9 @@ export function words(s: string): string[] {
 }
 
 /**
- * How well a hit names the item: the share of the item's words found in the hit's name + brand (0–1), or
- * -1 when it fails the rule above. Ties go to the shorter name (fewer words the item did not ask for).
+ * How well a hit names the item: the share of the item's words found in the hit's name + brand, shrunk by
+ * every word the item did not ask for (so "Lime, raw" beats "Lime souffle"), or -1 when it fails the rule
+ * above. Always > 0 when it passes.
  */
 export function matchScore(item: Pick<MealItem, 'name' | 'search'>, food: CatalogFood): number {
   const want = new Set([...words(item.search), ...words(item.name)]);
@@ -80,13 +83,13 @@ export function matchScore(item: Pick<MealItem, 'name' | 'search'>, food: Catalo
   const have = new Set(words(`${food.name} ${food.brand ?? ''}`));
   let hitPrimary = 0;
   for (const w of primary) if (have.has(w)) hitPrimary += 1;
-  const need = primary.size === 1 ? 1 : Math.ceil(primary.size / 2);
+  const need = primary.size <= 2 ? primary.size : Math.ceil((primary.size * 2) / 3);
   if (hitPrimary < need) return -1;
   let hitAll = 0;
   for (const w of want) if (have.has(w)) hitAll += 1;
   const coverage = hitAll / want.size;
   const extra = Math.max(0, have.size - hitAll);
-  return coverage - extra * 0.02;
+  return coverage / (1 + extra * 0.15);
 }
 
 /**

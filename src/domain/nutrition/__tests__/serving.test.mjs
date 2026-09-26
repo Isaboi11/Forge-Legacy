@@ -76,6 +76,9 @@ test('the sanity check separates real foods from broken records', () => {
   assert.equal(looksSane({ ...oats, kcal100: 884, protein100: 0, carb100: 0, fat100: 100 }), true);
   // Black coffee: no macros, no calories.
   assert.equal(looksSane({ ...oats, kcal100: 2, protein100: 0, carb100: 0, fat100: 0 }), true);
+  // Raw produce: fibre makes macros overshoot energy, a few kcal is not a broken record (2026-09-26).
+  assert.equal(looksSane({ ...oats, kcal100: 30, protein100: 0.7, carb100: 10.5, fat100: 0.2 }), true); // lime
+  assert.equal(looksSane({ ...oats, kcal100: 23, protein100: 3.2, carb100: 2.7, fat100: 0.6 }), true); // basil
 });
 
 test('quick add never stores a negative', () => {
