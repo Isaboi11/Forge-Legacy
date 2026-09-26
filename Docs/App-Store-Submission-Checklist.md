@@ -73,7 +73,7 @@ No lifetime plan. United States only at launch.
 - ✅ Description, age rating, reviewer account, support URL
 - ✅ Redo screenshots before submitting — 09-25: PO uploaded the new set
 - ✅ Release set to "Manually release this version" — 09-23
-- ⬜ App Privacy labels (after the paywall; add food data + "Other User Content" for community foods before Nutrition opens)
+- 🔨 App Privacy labels — answer sheet v1.1 ready 09-26 (`Docs/App-Store-Privacy-Labels.md`, `6b157bba`: Nutrition, AI, purchases, search log) · ⬜ PO enters them in App Store Connect
 
 ## 4. Legal
 - 🔨 Mock review done 09-25 (`Docs/Legal/Mock-Legal-Review-2026-09-25.md`): policy + Terms FAIL as is — false 200 m
@@ -99,11 +99,11 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
 - ✅ Holt's 4 safety fixes (Coach Holt stress test, Decision Queue #36) — fixed 09-21 (`d7ce6dde`), on build 8.
   Re-verified 09-24: 0 limitation breaks in 1,800 programs + 5,760 days + 480 race plans (controls fire);
   edits land on the right day in all 127 rest-day patterns (5,888 edits; the old code fails 6,404)
-- 🔨 Privacy policy nutrition section — 09-25: second mock-lawyer pass done and written into `site/privacy.html`
-  (nutrition, AI/Anthropic, all providers, route correction, Holt memory, website emails) + new
-  `site/health-data.html` (Washington health-data page, linked from the homepage), commit `94010207`.
-  ⬜ PO runs the wrangler upload + go live (classifier-blocked for Claude) · ⬜ in-app consent for Washington
-  (the policy can't fix that alone; lawyer question #1) · ⬜ Terms still say "no subscription" — **must-do before opening**
+- ✅ Privacy policy + Terms — LIVE 09-26 on forgelegacy.app (Cloudflare `102ae125`; rollback `88c1c53a`):
+  privacy rewrite (nutrition, AI/Anthropic, all providers, route correction, Holt memory) `94010207`, new
+  `/health-data` page, subscription terms (auto-renew, trial, Early Bird, refunds, Apple EULA) `f198ea07`.
+  In-app legal summaries updated too: web `index-4e10f078…` + build 9 iOS `01a0df09-5476…` (lane `da09e79c`).
+  🔨 in-app consent for Washington (Nutrition + AI sharing) — being built 09-26 · ⬜ a real lawyer still signs off
 - ✅ Search failure message — 09-24: a failed source falls back to saved foods, and with no connection the
   app now says "Couldn't connect to food search" with Try again (Log Food + the meal editor). Not deployed yet
 - ✅ First-time welcome screen for the tab — built 09-24 (`eefe43dd`), on web; not yet seen by the PO
