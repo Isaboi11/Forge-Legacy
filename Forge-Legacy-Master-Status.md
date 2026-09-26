@@ -907,6 +907,10 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### ⭐ Meal Plan: choose your own meal for any slot, kept on rebuild (2026-09-26, `3e62afcd` · ✅ WEB `index-de14dc7019ac534a287fc669051f5569.js` (alias MATCH) · ✅ OTA build 9 iOS `01a0df20-d23c-7609…` (`ota/build9-js`, on top of the other session's legal-summaries OTA) · not yet seen by the PO)
+
+PO: "I can't click on breakfast or lunch … I need to be able to add in my own things where I want." Empty slots are tappable (+ Add); a filled meal has "Choose my own". The picker lists all the athlete's recipes (made-for-this-meal first; diet/allergen/dislike breakers left out and counted), plus New recipe and "Ask Holt for a lunch". `placeMeal` locks the pick so Rebuild week keeps it.
+
 ### ⭐ Holt fills the week — empty Meal Plan slots get Holt's dishes, confirmed by the athlete (2026-09-26, `ebdf72f9` · ✅ WEB `index-fc471bbd1b5e2a265756ea4d35e40937.js` (alias MATCH) · ✅ OTA build 9 iOS `01a0defe-acb9-7f41…` (`ota/build9-js`, on top of the other session's meal-photo OTA) · no new function or migration · not yet seen by the PO)
 
 PO's week was one cookie recipe and "No lunch fits your setup yet" everywhere (the book is their six recipes). "Let Holt fill them" asks coach-kitchen once per empty meal inside the setup; only fully-matched dishes within the cook time are offered; a review sheet shows the app's numbers + derived allergens and "Add these and rebuild" is the confirmation (NUT-A2-D8), then they're saved to My Recipes and the week rebuilds. "Add a snack?" no longer offered for a whole empty meal. Also `Docs/Starter-Recipes-Review.md` (the 40 removed starters, for the PO's keep/change/drop).
