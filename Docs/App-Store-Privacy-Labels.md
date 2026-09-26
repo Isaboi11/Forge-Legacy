@@ -1,6 +1,12 @@
 # App Privacy labels — the answer sheet
 
-**v1.0 · 2026-08-19 · Launch Checklist §10.3**
+**v1.1 · 2026-09-26 · Launch Checklist §10.3** (v1.0 2026-08-19)
+
+> ✅ **v1.1 — WHAT CHANGED, AND WHY IT IS NOW SAFE TO SIGN.** The policy was rewritten and went live
+> 2026-09-26 (Cloudflare `102ae125`): Nutrition, the AI features (Anthropic), RevenueCat, food databases,
+> Holt chat memory, community foods, and the route-trim correction. `react-native-purchases` is IN build 9,
+> so §4's flip has happened: **Purchase History is YES.** Rows changed in v1.1 are marked **(v1.1)**.
+> Sign these for build 9 or any later build.
 
 Every answer below is derived from **`site/privacy.html`**, which §10.2 names as the governing document —
 *"declare 10.3 from `site/privacy.html`, not from memory and not from the in-app summary."* The section of
@@ -9,9 +15,6 @@ the policy each answer comes from is cited so the two can be re-checked against 
 > ⚠ **THESE THREE MOVE TOGETHER.** `site/privacy.html` · `src/domain/settings/content.ts` · this sheet.
 > Change any one and re-check the other two. §10.2 records that rule; this file is the third leg of it.
 
-> ⛔ **DO NOT SIGN THESE UNTIL THE SUBMISSION BUILD IS DECIDED.** One answer changes the moment
-> `react-native-purchases` lands — see **§4, The one that flips**. Signing now and shipping the paywall
-> later means a signed declaration that is false about the build in review.
 
 ---
 
@@ -54,7 +57,7 @@ and **Not used for tracking**. So the only column that varies is the purpose.
 | Data type | Purposes | Source |
 |---|---|---|
 | **Fitness** | App Functionality, **Product Personalization** | §2 *Training and health-related data* — workouts, sets, reps, weights, durations, distances, PRs, goals, rank |
-| **Health** | App Functionality, **Product Personalization** | §2 — *"Body measurements you choose to log, where a goal requires one"* |
+| **Health** | App Functionality, **Product Personalization** | §2 — body measurements; **(v1.1)** *Food and nutrition* — food log, calorie/macro targets and the age/sex/height/weight/activity used to set them, food allergies and diet. Allergies filter meal plans (personalization). |
 
 ⚠ **Product Personalization is not optional here and is the answer most likely to be under-declared.** Apple
 defines it as *"customizing what the user sees, such as a list of recommended products, posts, or
@@ -69,8 +72,8 @@ does with health data.
 | **Precise Location** | App Functionality | §2 *Precise location — runs, walks and rides only* |
 
 ⚠ **Background location is enabled** (`app.json`: `isIosBackgroundLocationEnabled: true`), and the policy
-says why in the athlete's own terms. The 200 m route trim is a **storage** guarantee, not a display setting —
-it does not reduce what is *collected*, so it does not change this answer. Do not let it.
+says why in the athlete's own terms. **(v1.1)** The 200 m route trim was vetoed 2026-08-26 and the policy
+now says the full route is saved — the answer was Precise Location before and still is.
 
 *Not collected: Coarse Location.*
 
@@ -80,9 +83,14 @@ it does not reduce what is *collected*, so it does not change this answer. Do no
 |---|---|---|
 | **Photos or Videos** | App Functionality | §2 *Photos and video* — progress/transformation photos, posing video, chapter and accomplishment images, squad check-in video |
 | **Customer Support** | App Functionality | §2 *Support messages and feedback* — the message, plus screen, app version and platform |
-| **Other User Content** | App Functionality | §2 — notes and reflections; *Social activity* — posts, comments, reactions |
+| **Other User Content** | App Functionality | §2 — notes and reflections; *Social activity* — posts, comments, reactions; **(v1.1)** foods, meals and recipes you create, grocery list, summaries of Coach Holt conversations, and **community foods** shared from a barcode scan |
 
 *Not collected: Emails or Text Messages · Audio Data · Gameplay Content.*
+
+**(v1.1) Considered and NOT collected:** photos sent to an AI feature (meal photo, recipe/program photo,
+form-check frames) are processed in real time and not stored by Forge — Apple's definition of "collect" is
+retention beyond servicing the request, so they add nothing beyond the Photos or Videos row above. **Voice:**
+speech-to-text is the phone's own (Apple), Forge receives only the text → not Audio Data.
 
 ### Identifiers
 
@@ -104,6 +112,21 @@ declaration about a real stored value.
 
 *Not collected: Advertising Data · Other Usage Data.*
 
+### Purchases **(v1.1)**
+
+| Data type | Purposes | Source |
+|---|---|---|
+| **Purchase History** | App Functionality | *Purchases* + §4 RevenueCat — plan and status, so the app knows what you have |
+
+### Search History **(v1.1)**
+
+| Data type | Linked? | Purposes | Source |
+|---|---|---|---|
+| **Search History** | **Not linked** to the user | App Functionality | `food-search` writes each food query to its function log (no user id) for debugging. Retained in the log, so it is collected. |
+
+⚠ This is the ONE row that is **not linked**. If the query is removed from that log line
+(`supabase/functions/food-search/index.ts`, the `search "…"` log), this row goes away.
+
 ---
 
 ## 3 · Do NOT declare these — and why each was considered
@@ -112,14 +135,14 @@ Recorded so they read as decisions rather than omissions, and so the next person
 
 | Data type | Answer | Why |
 |---|---|---|
-| **Sensitive Info** | No | Apple's category is racial/ethnic origin, sexual orientation, pregnancy, disability, religious or philosophical belief, trade union membership, political opinion, genetic or biometric data. **Sex and training background are collected** (§2) to calibrate strength standards and rank — neither is in Apple's list. ⚠ A close call, recorded as one. |
-| **Search History** | No | The app has in-app search, but `sanitizeProps()` forbids athlete-authored text in any analytics event (P6-A1-D3), so **queries are never stored**. |
+| **Sensitive Info** | No | **(v1.1)** Food allergies and diet are health data (declared under Health), not in Apple's Sensitive list. Apple's category is racial/ethnic origin, sexual orientation, pregnancy, disability, religious or philosophical belief, trade union membership, political opinion, genetic or biometric data. **Sex and training background are collected** (§2) to calibrate strength standards and rank — neither is in Apple's list. ⚠ A close call, recorded as one. |
+| ~~Search History~~ | **Moved to §2 (v1.1)** | Analytics still never carry queries (P6-A1-D3), but the food-search function log does. |
 | **Browsing History** | No | Not a browser and no web-content history. |
 | **Contacts** | No | No address-book access anywhere. Invites are handled in-app and by share sheet — the share sheet is the OS's, and Forge never reads the contact list. |
 | **Crash Data / Performance Data** | No | **No crash-reporting SDK is installed.** Verified against `package.json` 2026-08-19. |
 | **Other Diagnostic Data** | No | Screen, app version and platform *are* collected with feedback — declared under **Customer Support**, where they belong, rather than twice. |
 | **Payment Info / Credit Info** | No | The app never sees a card. Apple processes every transaction. |
-| **Purchase History** | **No — TODAY.** | ⛔ **See §4.** |
+| ~~Purchase History~~ | **Moved to §2 (v1.1)** | The flip in §4 happened with build 9. |
 | **Environment Scanning · Hands · Head · Other Data** | No | Nothing in the app touches these. |
 
 ---
@@ -151,7 +174,7 @@ was built to enforce, and the reason 10.2 closed cleanly.
 |---|---|---|
 | 10.1 | Privacy + terms URLs | ✅ `forgelegacy.app/privacy` · `/terms`, both 200 |
 | 10.2 | Policy copy corrected before any label signed | ✅ `cc2b5de`, 2026-08-15 |
-| **10.3** | **App Privacy labels** | **This document. Ready to enter — see the §4 gate.** |
+| **10.3** | **App Privacy labels** | **This document, v1.1 — ready to enter for build 9+.** |
 | 10.4 | Support URL | ✅ `forgelegacy.app/support`, 200, verified 08-18 |
 | 10.5 | Screenshots, description, keywords, age rating | ⛔ Not started. ⚠ **One iPhone size (6.5" **or** 6.9"), not two.** ⚠ **Never state the program-catalogue count.** |
 | 10.6 | Seeded reviewer account | ⛔ Not started. The social pillar is unreviewable from an empty account. |
