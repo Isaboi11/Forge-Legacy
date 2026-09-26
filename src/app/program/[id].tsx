@@ -20,6 +20,7 @@ import {
   adoptCatalogProgram,
   deleteProgram,
   endProgram,
+  fetchActiveProgram,
   fetchProgram,
   fetchProgramSessions,
   fetchProgramWorkouts,
@@ -32,6 +33,7 @@ import {
   type SavedProgram,
 } from '@/data/programs-live';
 import { fmtLongDate, spanLabel, workoutsLabel } from '@/domain/program/graduation';
+import { switchProgramCopy, type SwitchProgramCopy } from '@/domain/program/switch-program';
 import { useCoachDoor } from '@/hooks/useCoachDoor';
 import {
   buildLog,
@@ -168,6 +170,8 @@ export default function ProgramDetailScreen() {
   const [openWeek, setOpenWeek] = useState<number | null>(null);
   const [openDay, setOpenDay] = useState<string | null>(null);
   const [sheet, setSheet] = useState<'conflict' | 'end' | 'remove' | null>(null);
+  /** Start was pressed while ANOTHER program is active — W-3 §13's conflict sheet, awaiting an answer. */
+  const [switching, setSwitching] = useState<{ row: SavedProgram; copy: SwitchProgramCopy } | null>(null);
   /** The athlete's owned gear, or null when they have never built a Home Gym. Null shows nothing. */
   const [homeGym, setHomeGym] = useState<string[] | null>(null);
   /** 'gate' = answering before the program starts; 'change' = correcting one mid-run. */
@@ -766,20 +770,56 @@ export default function ProgramDetailScreen() {
           setMaxSheet('gate');
           return;
         }
-        // Future → Active. start_program ends whatever else was active, atomically (0017).
-        await startProgram(row.id);
-        provisionalRef.current = null; // running it is the strongest form of keeping it
-        setProgram({ ...row, state: 'active' });
-        // Land on Home, which is where the change is visible: the new program anchors Today's Workout
-        // and Current Program. Staying here would leave the athlete to go and check for themselves
-        // whether starting actually did anything.
-        router.replace('/(tabs)');
+        /*
+         * THE CONFLICT CHECK (W-3 §13) — `start_program` ends whatever else is active, permanently, as
+         * Ended Early. It used to do that here without a word (QA 2026-09-26 F1). Read fresh at the tap,
+         * not from load, so a program started on another device since is still caught.
+         */
+        const current = await fetchActiveProgram();
+        if (current && current.id !== row.id) {
+          const currentMarks = await fetchProgramSessions(current.id);
+          setSwitching({ row, copy: switchProgramCopy(current.name, progressFromMarks(current.structure, currentMarks), row.name) });
+          return;
+        }
+        await beginProgram(row);
       }
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setBusy(false);
     }
+  };
+
+  // Future → Active. start_program ends whatever else was active, atomically (0017) — callers ask first.
+  const beginProgram = async (row: SavedProgram) => {
+    await startProgram(row.id);
+    provisionalRef.current = null; // running it is the strongest form of keeping it
+    setProgram({ ...row, state: 'active' });
+    // Land on Home, which is where the change is visible: the new program anchors Today's Workout
+    // and Current Program. Staying here would leave the athlete to go and check for themselves
+    // whether starting actually did anything.
+    router.replace('/(tabs)');
+  };
+
+  const confirmSwitch = async () => {
+    const pending = switching;
+    setSwitching(null);
+    if (!pending || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await beginProgram(pending.row);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Cancel keeps everything: the running program untouched, and a row adopted by this Start undone.
+  const cancelSwitch = () => {
+    setSwitching(null);
+    void discardProvisional();
   };
 
   /**
@@ -814,7 +854,8 @@ export default function ProgramDetailScreen() {
       if (kind === 'end') {
         await endProgram(program!.id, 'ended_early');
         setProgram({ ...program!, state: 'ended_early' });
-      } else if (kind === 'remove') {
+      } else if (kind === 'remove' && state !== 'active') {
+        // Never the running program — End Program is that path (QA 2026-09-26 F3).
         await deleteProgram(program!.id);
         router.back();
       }
@@ -1289,8 +1330,12 @@ export default function ProgramDetailScreen() {
             0104 — this hides an action that would otherwise fail rather than being the only thing
             standing in the way. Workouts logged against a removed plan survive either way (0018 nulls
             the link rather than cascading).
+
+            NOR on the ACTIVE program (QA 2026-09-26 F3). "Remove from Planned" on the program you are in
+            the middle of deleted it outright; End Program, beside it, is the way out of a running one.
+            So this only ever shows on a Planned row, which is the state its copy describes.
           */}
-          {terminal || !program ? null : (
+          {terminal || !program || state === 'active' ? null : (
             <Pressable
               onPress={() => setSheet('remove')}
               accessibilityRole="button"
@@ -1432,6 +1477,17 @@ export default function ProgramDetailScreen() {
           onApply={(next) => void applyHoltEdit(next)}
         />
       ) : null}
+
+      <ConfirmSheet
+        open={switching != null}
+        onClose={cancelSwitch}
+        headline={switching?.copy.title ?? ''}
+        body={switching?.copy.body ?? ''}
+        confirmLabel={switching?.copy.confirm ?? ''}
+        cancelLabel={switching?.copy.cancel ?? 'Cancel'}
+        tone="destructive"
+        onConfirm={() => void confirmSwitch()}
+      />
 
       <BottomSheet open={sheet != null} onClose={() => setSheet(null)} title={sheetCopy.title}>
         <View style={styles.sheetBody}>

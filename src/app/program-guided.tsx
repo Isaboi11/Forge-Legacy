@@ -40,11 +40,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
+import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenBoundary } from '@/components/screen-boundary';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { createProgram, startProgram } from '@/data/programs-live';
+import { createProgram, fetchActiveProgram, fetchProgramSessions, startProgram } from '@/data/programs-live';
 import { fetchCoachProfile, EMPTY_COACH_PROFILE } from '@/data/coach-profile-live';
 import { fetchBriefing, saveBriefing } from '@/data/settings-live';
 import { assemble } from '@/domain/coach/assemble';
@@ -80,6 +81,8 @@ import {
   weekPresets,
   type GuidedStep,
 } from '@/domain/program/guided-steps';
+import { progressFromMarks } from '@/domain/program/progress-core';
+import { switchProgramCopy, type SwitchProgramCopy } from '@/domain/program/switch-program';
 import { draftFromStructure, makeDays, newDraft } from '@/lib/program-draft-model';
 import { PHOTO_IMPORT_LIVE } from '@/components/forge/ImportSpreadsheetSheet';
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -126,6 +129,8 @@ function Guided() {
   const profileQ = useQuery(fetchCoachProfile, []);
   const known = profileQ.data ?? EMPTY_COACH_PROFILE;
   const briefingQ = useQuery(fetchBriefing, []);
+  /* Only decides whether "Save for later" is offered. The conflict check itself reads fresh at the tap. */
+  const activeQ = useQuery(fetchActiveProgram, []);
 
   const premiumAi = usePremiumAi();
   const photoOn = PHOTO_IMPORT_LIVE && premiumAi;
@@ -157,6 +162,8 @@ function Guided() {
   const [name, setName] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Save and start was pressed while another program is active — the W-3 §13 question, awaiting an answer. */
+  const [switchCopy, setSwitchCopy] = useState<SwitchProgramCopy | null>(null);
 
   /* ⚠ ONLY THE STRENGTH GOALS ARE OFFERED, and that is the same refusal `first-week.ts` makes: a race
      plan is built backwards from a date this flow never asks for. Someone training for a marathon
@@ -271,14 +278,20 @@ function Guided() {
     router.replace('/program-builder');
   };
 
-  const save = async () => {
+  /**
+   * `start: false` is "Save for later" — the program lands as Planned and whatever is running is left
+   * alone. `start: true` ENDS any active program (`start_program`), so it is only reached through
+   * `onSaveAndStart`, which asks first (QA 2026-09-26 F1).
+   */
+  const save = async (start: boolean) => {
     if (!structure) return;
+    setSwitchCopy(null);
     setSaving(true);
     setError(null);
     try {
       const named = { ...structure, name: effName.trim() || structure.name };
       const { id } = await createProgram(named);
-      await startProgram(id);
+      if (start) await startProgram(id);
       /* ⚠ REMINDERS ARE A SEPARATE WRITE AND A SOFT ONE. `briefing_schedule` is when the briefing
          FIRES, never when the athlete trains (migration `0159` states that rule in its own header), so
          a failure here must not cost them the program they just built. */
@@ -297,6 +310,31 @@ function Guided() {
     } finally {
       setSaving(false);
     }
+  };
+
+  /**
+   * THE CONFLICT CHECK (W-3 §13). Read fresh at the tap rather than from `activeQ`, so a program started
+   * on another device since this screen opened is still caught before it is silently ended.
+   */
+  const onSaveAndStart = async () => {
+    if (!structure || saving) return;
+    setSaving(true);
+    setError(null);
+    let copy: SwitchProgramCopy | null = null;
+    try {
+      const current = await fetchActiveProgram();
+      if (current) {
+        const marks = await fetchProgramSessions(current.id);
+        copy = switchProgramCopy(current.name, progressFromMarks(current.structure, marks), effName);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Couldn’t save that program. Try again.');
+      setSaving(false);
+      return;
+    }
+    setSaving(false);
+    if (copy) setSwitchCopy(copy);
+    else void save(true);
   };
 
   const stepNumber = index + 1;
@@ -570,9 +608,15 @@ function Guided() {
       <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
         {step === 'review' ? (
           <>
-            <Button variant="primary" fullWidth onPress={save} disabled={saving || structure == null}>
+            <Button variant="primary" fullWidth onPress={() => void onSaveAndStart()} disabled={saving || structure == null}>
               {saving ? 'Saving…' : 'Save and start'}
             </Button>
+            {/* Only when there is a running program to keep — otherwise saving and starting costs nothing. */}
+            {activeQ.data ? (
+              <Button variant="secondary" fullWidth onPress={() => void save(false)} disabled={saving || structure == null}>
+                Save for later
+              </Button>
+            ) : null}
             <Pressable onPress={() => void openInBuilder()} accessibilityRole="button">
               <Text style={styles.quiet}>Change exercises in the full builder</Text>
             </Pressable>
@@ -591,6 +635,17 @@ function Guided() {
         )}
       </View>
       ) : null}
+
+      <ConfirmSheet
+        open={switchCopy != null}
+        onClose={() => setSwitchCopy(null)}
+        headline={switchCopy?.title ?? ''}
+        body={switchCopy?.body ?? ''}
+        confirmLabel={switchCopy?.confirm ?? ''}
+        cancelLabel={switchCopy?.cancel ?? 'Cancel'}
+        tone="destructive"
+        onConfirm={() => void save(true)}
+      />
 
       <Modal visible={confirmManual} transparent animationType="fade" onRequestClose={() => setConfirmManual(false)}>
         <View style={styles.modalScrim}>
