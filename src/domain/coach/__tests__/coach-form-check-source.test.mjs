@@ -151,6 +151,11 @@ test('the prompt carries every rule the PO’s instruction binds this feature to
     'Never give a number for a load or a max',
     'Never guess at what you cannot see',
     'At most TWO things to fix, the biggest first',
+    'Zero is a real answer',
+    'never write a fix and then hedge it',
+    'Never mention frame numbers',
+    'a screen recording of a phone',
+    'they are not this athlete',
     '# When the frames do not show the lift',
     'Reply with a single JSON object and nothing else',
   ]) assert.ok(s.includes(rule), `missing from SYSTEM: ${rule}`);

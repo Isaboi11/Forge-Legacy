@@ -495,9 +495,24 @@ function sentences(line: string): string[] {
 /** One line of the read, with every banned sentence removed. Empty string when nothing survives. */
 function cleanLine(raw: unknown): string {
   if (typeof raw !== 'string') return '';
-  const flat = raw.replace(/\s+/g, ' ').trim().slice(0, FORM_LINE_CHARS);
+  const flat = raw.replace(/\s+/g, ' ').trim();
   if (!flat) return '';
-  const kept = sentences(flat).filter((s) => !isBannedSentence(s));
+  // ⚠ WHOLE SENTENCES ONLY. Slicing the raw text at FORM_LINE_CHARS put "…rather than a" on screen (eval
+  // 09-25). Keep sentences while they fit; a first sentence that is too long on its own is cut at a word.
+  const kept: string[] = [];
+  let used = 0;
+  for (const s of sentences(flat).filter((x) => !isBannedSentence(x))) {
+    if (used + s.length + (kept.length ? 1 : 0) > FORM_LINE_CHARS) {
+      if (!kept.length) {
+        const cut = s.slice(0, FORM_LINE_CHARS - 1);
+        const at = cut.lastIndexOf(' ');
+        kept.push(`${(at > 40 ? cut.slice(0, at) : cut).replace(/[\s,;:—-]+$/, '')}…`);
+      }
+      break;
+    }
+    kept.push(s);
+    used += s.length + (kept.length > 1 ? 1 : 0);
+  }
   return kept.join(' ').trim();
 }
 

@@ -687,6 +687,19 @@ test('the coaching notes are built from the library record and capped', () => {
   assert.ok(capKnown('x'.repeat(5000)).length <= FORM_KNOWN_CHARS);
 });
 
+test('a long line keeps whole sentences and is never cut mid-word (eval 09-25)', () => {
+  const long =
+    'From the start the knees are already well bent and the shins pushed forward, more squat-shaped than hip-hinge. Push the hips back first so the bar breaks from a hamstring stretch rather than a squat.';
+  const read = sanitizeFormRead({ looksGood: ['Grip is even.'], fix: [long] }, 'Deadlift');
+  assert.ok(read.fix[0].length <= 200);
+  assert.ok(/[.!?…]$/.test(read.fix[0]), `ends mid-sentence: ${read.fix[0]}`);
+  assert.ok(!/rather than a$/.test(read.fix[0]), 'no dangling fragment');
+  const three = sanitizeFormRead({ looksGood: ['Grip is even.'], fix: [`${long} Film the next heavy set from the side.`] }, 'Deadlift');
+  assert.ok(three.fix[0].endsWith('squat.'), `the third sentence is dropped whole: ${three.fix[0]}`);
+  const one = sanitizeFormRead({ looksGood: ['x ok.'], fix: ['word '.repeat(80).trim()] }, 'Squat');
+  assert.ok(one.fix[0].endsWith('…') && one.fix[0].length <= 200);
+});
+
 test('the last saved read is only a date and a fix', () => {
   assert.deepEqual(capLast({ date: 'Aug 14', fix: 'Bar drifts forward.', note: 'my knee hurts' }), { date: 'Aug 14', fix: 'Bar drifts forward.' });
   assert.equal(capLast({ date: '', fix: 'x' }), null);
