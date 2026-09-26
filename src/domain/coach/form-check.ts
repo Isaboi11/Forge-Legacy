@@ -54,15 +54,21 @@
  * How many stills a read is built from.
  *
  * Three is the floor because a lift has a top, a bottom and a turnaround, and two frames cannot show
- * which way the bar was travelling. Six is the ceiling because every frame is a whole image on the
- * request — the cost of a read is very nearly linear in this number — and a squat filmed for eight
- * seconds does not contain a seventh moment worth paying for.
+ * which way the bar was travelling.
+ *
+ * ⚠ TEN BY DEFAULT, TWELVE AT MOST (PO 2026-09-25: *"it needs to be able to do every angle"*). The first
+ * version sent five, two seconds apart — about one rep apart — so each still caught a different rep at a
+ * random point and the model rarely saw a bottom position at all. From the side that was thin; from the
+ * front or behind, where the useful detail (knees tracking, a hip shift, the bar tilting) lives in one
+ * moment of the rep, it was usually nothing, and Holt said the angle was the problem. Ten stills a second
+ * apart land on every phase of a rep somewhere across the set. They are sent SMALLER
+ * ({@link FORM_FRAME_MAX_EDGE}), so the bill stays about where five large ones put it.
  */
 export const FORM_FRAMES_MIN = 3;
-export const FORM_FRAMES_MAX = 6;
+export const FORM_FRAMES_MAX = 12;
 
-/** What the app asks for when nothing says otherwise: the four moments of a rep, plus one. */
-export const FORM_FRAMES_DEFAULT = 5;
+/** What the app asks for when nothing says otherwise: about one still a second across the window. */
+export const FORM_FRAMES_DEFAULT = 10;
 
 /**
  * How much of the clip is read, in seconds.
@@ -72,11 +78,13 @@ export const FORM_FRAMES_DEFAULT = 5;
  * outright would be the app throwing away work someone already did; silently reading the middle of it
  * would be worse, because a read of the wrong reps is indistinguishable from a bad read.
  *
- * Ten seconds is a working set of most things and comfortably more than one rep, which is all a technique
- * read needs. `MAX_VIDEO_SECONDS` in `useMediaPicker` (30) is the app-wide recording ceiling and stays
- * where it is; this is narrower because reading is not storing.
+ * ⚠ THIRTY, TO MATCH THE TRIM SCREEN (`Coach Holt Form Check.dc.html` 02, PO 2026-09-25: *"Defaults to
+ * the whole clip, up to 30 s"*). It was ten, which read the walk-up and unrack of a camera-roll clip and
+ * missed the reps. The athlete now drags the handles around the reps they care about, and the frame
+ * count scales with the window they chose ({@link formFrameCount}) — a tight trim is read densely.
+ * Same number as `MAX_VIDEO_SECONDS` in `useMediaPicker`, the app-wide recording ceiling.
  */
-export const FORM_CLIP_SECONDS = 10;
+export const FORM_CLIP_SECONDS = 30;
 export const FORM_CLIP_MS = FORM_CLIP_SECONDS * 1000;
 
 /**
@@ -86,11 +94,12 @@ export const FORM_CLIP_MS = FORM_CLIP_SECONDS * 1000;
  * The Messages API scales any image whose long edge is over 1568px, and costs an image at roughly
  * (width × height) / 750 tokens, so pixels are the bill. A form read looks at a silhouette and a bar:
  * where the hips are relative to the knees, whether the bar tracked over the mid-foot, whether the
- * elbows moved. 1024 carries all of that on a phone-shot frame and costs about a third of what 1568
- * would. It is deliberately smaller than `MAX_EDGE` (1600) in `image-downscale-core.ts`, which sizes
+ * elbows moved. 768 carries all of that on a phone-shot frame at about 440 tokens a still, so ten of
+ * them cost roughly what five at 1024 did — and more moments of the rep beat more pixels of fewer
+ * moments. It is deliberately smaller than `MAX_EDGE` (1600) in `image-downscale-core.ts`, which sizes
  * photos that get STORED and looked at by people.
  */
-export const FORM_FRAME_MAX_EDGE = 1024;
+export const FORM_FRAME_MAX_EDGE = 768;
 
 /** JPEG quality for a frame. It is read once by a model and never displayed, so this is lower than 0.85. */
 export const FORM_FRAME_COMPRESS = 0.7;
@@ -103,7 +112,7 @@ export const FORM_FRAME_COMPRESS = 0.7;
  * image between the limit and whatever we allowed spends a credit and then fails upstream, so the
  * athlete pays and is told the service is down when the true answer was "too large".
  *
- * A 1024px JPEG at 0.7 is ~120 KB, so a six-frame request is ~1 MB and nothing legitimate is anywhere
+ * A 768px JPEG at 0.7 is ~70 KB, so a twelve-frame request is ~1 MB and nothing legitimate is anywhere
  * near either number. Anything that is came from a client that skipped the resize.
  */
 export const FORM_FRAME_BASE64_CHARS = 6_990_000;
@@ -135,49 +144,49 @@ export const FORM_GOOD_MAX = 3;
 export const FORM_ACTION = 'form_check';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
-// Which moments to sample
+// What the athlete (and the app) add to the request
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** How far inside each end of the sampled window a frame may sit, as a fraction of it. */
-const EDGE_INSET = 0.5;
-
 /**
- * The timestamps to grab, in milliseconds, in time order.
- *
- * Evenly spaced across the sampled window, each frame sitting at the MIDDLE of its own slice rather than
- * on a boundary. That is not tidiness: a thumbnail at t=0 is the frame before anybody moved, and a
- * thumbnail at exactly the duration is past the last decodable frame on some encoders and comes back as
- * a black image or an error. Midpoints of N equal slices cannot land on either end, whatever N is.
- *
- * `count` is clamped into [{@link FORM_FRAMES_MIN}, {@link FORM_FRAMES_MAX}] and the window is clamped to
- * {@link FORM_CLIP_MS}, so a caller cannot ask for two frames or for a minute of video by passing a
- * bigger number. A duration that is missing, zero or nonsense is treated as a full-length clip — the
- * caller does not always know how long the file is, and guessing evenly is better than refusing.
+ * "What should I look at?" (design 01). `Everything` is the absence of a focus, so it is never sent.
+ * A fixed list rather than free text: the athlete's own words already have the note field, which is
+ * medical-guarded; these go into the prompt as-is and must not be a second free-text channel.
  */
-export function frameTimestamps(durationMs: unknown, count: number = FORM_FRAMES_DEFAULT): number[] {
-  const n = Math.min(FORM_FRAMES_MAX, Math.max(FORM_FRAMES_MIN, Math.round(Number(count) || 0) || FORM_FRAMES_DEFAULT));
-  const raw = typeof durationMs === 'number' && Number.isFinite(durationMs) && durationMs > 0 ? durationMs : FORM_CLIP_MS;
-  const window = Math.min(raw, FORM_CLIP_MS);
-  const slice = window / n;
-  const out: number[] = [];
-  for (let i = 0; i < n; i += 1) out.push(Math.round(slice * (i + EDGE_INSET)));
-  return out;
-}
+export const FORM_FOCUS = ['Depth', 'Bar path', 'Knees', 'Back', 'Lockout', 'Tempo'] as const;
+export type FormFocus = (typeof FORM_FOCUS)[number];
 
-/** Is the clip longer than the window we read? (What {@link formClipNotice} answers in words.) */
-export function clipIsLong(durationMs: unknown): boolean {
-  return typeof durationMs === 'number' && Number.isFinite(durationMs) && durationMs > FORM_CLIP_MS + 500;
+export function capFocus(raw: unknown): FormFocus[] {
+  if (!Array.isArray(raw)) return [];
+  return FORM_FOCUS.filter((f) => raw.includes(f));
 }
 
 /**
- * What to tell the athlete about a clip longer than the window, or null when there is nothing to say.
- *
- * ⚠ SAID BEFORE THE READ, NOT AFTER. "I read the first ten seconds" is useful while they can still refilm;
- * attached to the answer it reads as an excuse for it.
+ * The lift's coaching notes from the app's own library (`exercise-coaching`), so Holt checks the known
+ * faults and uses the cues the exercise page already teaches (Plan §5.2). Built by the app from a
+ * catalogue record; capped here because the function re-checks everything a client sends.
  */
-export function formClipNotice(durationMs: unknown): string | null {
-  if (!clipIsLong(durationMs)) return null;
-  return `That clip is longer than I need — I'll read the first ${FORM_CLIP_SECONDS} seconds of it.`;
+export const FORM_KNOWN_CHARS = 1400;
+
+export function capKnown(raw: unknown): string {
+  if (typeof raw !== 'string') return '';
+  return raw.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, FORM_KNOWN_CHARS);
+}
+
+/**
+ * The last SAVED read of this lift, so Holt can say what changed (design 05's trend tags and his
+ * "Your bar path has cleaned up since August"). Date + the fix only — never the athlete's note.
+ */
+export interface FormLast {
+  date: string;
+  fix: string;
+}
+
+export function capLast(raw: unknown): FormLast | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const date = typeof r.date === 'string' ? r.date.replace(/[^\w ,-]/g, '').trim().slice(0, 20) : '';
+  const fix = typeof r.fix === 'string' ? r.fix.replace(/\s+/g, ' ').trim().slice(0, FORM_LINE_CHARS) : '';
+  return date && fix ? { date, fix } : null;
 }
 
 /**
@@ -207,6 +216,34 @@ export function capFrames(frames: unknown): string[] | null {
   return kept.length >= FORM_FRAMES_MIN ? kept : null;
 }
 
+/**
+ * When each frame was taken, in milliseconds — narrowed to something safe to label the frames with, or
+ * null to send them unlabelled.
+ *
+ * The model is told the second each still came from, because a set is several reps and ten stills land on
+ * different phases of different reps: knowing that frame 4 is 3.5 s in and frame 5 is 4.5 s in is what lets
+ * it piece one rep together out of several. Optional on the wire — an older app sends none, and a list that
+ * does not line up one-to-one with the frames, is out of order or is out of range is dropped rather than
+ * trusted, because a wrong label is worse than none.
+ */
+export function capFrameTimes(times: unknown, frameCount: number): number[] | null {
+  if (!Array.isArray(times) || times.length < frameCount || frameCount < 1) return null;
+  const out: number[] = [];
+  for (let i = 0; i < frameCount; i += 1) {
+    const t = times[i];
+    if (typeof t !== 'number' || !Number.isFinite(t) || t < 0 || t > 10 * FORM_CLIP_MS) return null;
+    if (i > 0 && t <= out[i - 1]) return null;
+    out.push(Math.round(t));
+  }
+  return out;
+}
+
+/** "Frame 3 of 10 (2.5 s in):" — the label that goes before each still in the user turn. */
+export function frameLabel(index: number, total: number, timeMs?: number | null): string {
+  const at = typeof timeMs === 'number' && Number.isFinite(timeMs) ? ` (${(timeMs / 1000).toFixed(1)} s in)` : '';
+  return `Frame ${index + 1} of ${total}${at}:`;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // The read
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -230,8 +267,9 @@ export interface FormRead {
   /**
    * What to change, biggest first, at most {@link FORM_FIX_MAX}.
    *
-   * ⚠ ALSO WHERE HONESTY LIVES. If the frames do not show the lift clearly, the model is told to say so
-   * here and stop, rather than inventing a read of a video it could not see.
+   * ⚠ ALSO WHERE HONESTY LIVES. If no frame shows the lift at all (dark, blurred, nobody in shot), the
+   * model says so here and stops rather than inventing a read. A camera ANGLE is never that case — every
+   * angle gets a read of what it shows (PO 2026-09-25).
    */
   fix: string[];
   /** One thing to say to themselves on the next rep. May be empty. */
@@ -242,6 +280,80 @@ export interface FormRead {
    * guarantees the athlete never sees a read without one, by closing on a scripted line instead.
    */
   encourage: string;
+  /** Which way the camera was facing, as the model judged it. Null when it did not say. */
+  view: FormView | null;
+  /** Holt's opening line — *"From the front, three reps."* Guarded like every other sentence. */
+  viewLine: string;
+  /** How many reps the frames show. A count, not a verdict; null when unsure. */
+  reps: number | null;
+  /**
+   * Where on the athlete's own frame each fix is — the design's bronze dot / dashed line (04, 04b).
+   * `fix` is the index into {@link FormRead.fix}; `frame` is 0-based into the frames that were sent.
+   * Coordinates are fractions of the frame (0–1 from the top-left). A mark the model got wrong costs a
+   * misplaced dot on a picture of their own set; it carries no words, so the guard has nothing to read.
+   */
+  marks: FormMark[];
+  /** One catalogue drill by name (*"Pause Squat"*), or ''. The app shows it only if the name resolves. */
+  drill: string;
+  /** Against the last saved read of this lift, when the app sent one. Null on a first read. */
+  trend: FormTrend | null;
+  /** One sentence on what changed since the last saved read, or ''. Guarded. */
+  progress: string;
+}
+
+export type FormView = 'side' | 'front' | 'behind' | 'diagonal' | 'other';
+export type FormTrend = 'better' | 'same' | 'new';
+
+export interface FormMark {
+  fix: number;
+  frame: number;
+  kind: 'dot' | 'line';
+  /** 0–1 across. Ignored for a line, which spans the frame. */
+  x: number;
+  /** 0–1 down. */
+  y: number;
+  /** The rep the frame is in, 1-based, or null when the model did not say. */
+  rep: number | null;
+}
+
+const VIEWS: readonly FormView[] = ['side', 'front', 'behind', 'diagonal', 'other'];
+const TRENDS: readonly FormTrend[] = ['better', 'same', 'new'];
+
+const unit = (v: unknown): number | null =>
+  typeof v === 'number' && Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : null;
+
+/**
+ * The marks, narrowed: only for a fix that survived the guard, only on a frame that was sent, at most one
+ * per fix. `frameCount` is how many frames went up, so an index outside them is dropped, not clamped.
+ */
+export function cleanMarks(raw: unknown, fixCount: number, frameCount: number): FormMark[] {
+  if (!Array.isArray(raw) || fixCount < 1 || frameCount < 1) return [];
+  const out: FormMark[] = [];
+  const seen = new Set<number>();
+  for (const m of raw) {
+    if (!m || typeof m !== 'object') continue;
+    const r = m as Record<string, unknown>;
+    const fix = typeof r.fix === 'number' ? Math.round(r.fix) : -1;
+    // The model counts frames from 1, as the labels do.
+    const frame = typeof r.frame === 'number' ? Math.round(r.frame) - 1 : -1;
+    if (fix < 0 || fix >= fixCount || seen.has(fix) || frame < 0 || frame >= frameCount) continue;
+    const kind = r.kind === 'line' ? 'line' : 'dot';
+    const y = unit(r.y);
+    const x = kind === 'line' ? 0.5 : unit(r.x);
+    if (y == null || x == null) continue;
+    const rep = typeof r.rep === 'number' && r.rep >= 1 && r.rep <= 50 ? Math.round(r.rep) : null;
+    seen.add(fix);
+    out.push({ fix, frame, kind, x, y, rep });
+  }
+  return out;
+}
+
+/** A drill name the app may try to resolve against the catalogue. Plain words only, and guarded. */
+function cleanDrill(raw: unknown): string {
+  if (typeof raw !== 'string') return '';
+  const name = raw.replace(/\s+/g, ' ').trim();
+  if (!name || name.length > FORM_LIFT_CHARS || /[.!?:;]/.test(name) || isBannedSentence(name)) return '';
+  return name;
 }
 
 // ── The banned families ────────────────────────────────────────────────────
@@ -376,7 +488,7 @@ function cleanLines(raw: unknown, max: number): string[] {
  * `lift` is taken from the REQUEST by the caller, not trusted from the model, so a model that renames the
  * exercise cannot put words in the athlete's mouth about what they were doing.
  */
-export function sanitizeFormRead(raw: unknown, lift?: string): FormRead | null {
+export function sanitizeFormRead(raw: unknown, lift?: string, frameCount: number = FORM_FRAMES_MAX): FormRead | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const r = raw as Record<string, unknown>;
 
@@ -391,7 +503,38 @@ export function sanitizeFormRead(raw: unknown, lift?: string): FormRead | null {
   // Nothing survived in either direction: there is no read here, and saying so is the honest outcome.
   // `encourage` does not count — a pep talk about a set nobody could see is not a read.
   if (!looksGood.length && !fix.length && !cue) return null;
-  return { lift: cleanLift, looksGood, fix, cue, encourage };
+  // `fix` indices shift when the guard drops a line, so marks are re-keyed by surviving position: a
+  // mark for a dropped fix is dropped with it rather than landing on its neighbour.
+  const rawFix: unknown[] = Array.isArray(r.fix) ? r.fix : typeof r.fix === 'string' ? [r.fix] : [];
+  const keptIdx: number[] = [];
+  for (let i = 0; i < rawFix.length && keptIdx.length < FORM_FIX_MAX; i += 1) if (cleanLine(rawFix[i])) keptIdx.push(i);
+  const remapped = Array.isArray(r.marks)
+    ? (r.marks as unknown[]).map((m) => {
+        if (!m || typeof m !== 'object') return m;
+        const f = (m as { fix?: unknown }).fix;
+        return { ...(m as object), fix: keptIdx.indexOf(typeof f === 'number' ? Math.round(f) : -1) };
+      })
+    : [];
+
+  const view = typeof r.view === 'string' && (VIEWS as readonly string[]).includes(r.view) ? (r.view as FormView) : null;
+  const reps = typeof r.reps === 'number' && r.reps >= 1 && r.reps <= 50 ? Math.round(r.reps) : null;
+  const trendRaw = typeof r.vsLast === 'string' ? r.vsLast : typeof r.trend === 'string' ? r.trend : '';
+  const trend = (TRENDS as readonly string[]).includes(trendRaw) ? (trendRaw as FormTrend) : null;
+
+  return {
+    lift: cleanLift,
+    looksGood,
+    fix,
+    cue,
+    encourage,
+    view,
+    viewLine: cleanLine(r.viewLine),
+    reps,
+    marks: cleanMarks(remapped, fix.length, frameCount),
+    drill: cleanDrill(r.drill),
+    trend,
+    progress: cleanLine(r.progress),
+  };
 }
 
 /**
@@ -400,7 +543,7 @@ export function sanitizeFormRead(raw: unknown, lift?: string): FormRead | null {
  * Fences first because a model asked for bare JSON wraps it in ```json anyway often enough to matter, and
  * a read lost to a markdown habit costs the athlete a credit for nothing.
  */
-export function parseFormRead(text: unknown, lift?: string): FormRead | null {
+export function parseFormRead(text: unknown, lift?: string, frameCount?: number): FormRead | null {
   if (typeof text !== 'string' || !text.trim()) return null;
   const stripped = text.replace(/```[a-zA-Z]*\n?/g, '').trim();
   const start = stripped.indexOf('{');
@@ -412,174 +555,5 @@ export function parseFormRead(text: unknown, lift?: string): FormRead | null {
   } catch {
     return null;
   }
-  return sanitizeFormRead(parsed, lift);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────────────────────────────
-// What Holt says
-// ─────────────────────────────────────────────────────────────────────────────────────────────────────
-
-/** When there is no read. Not an apology and not a verdict on the athlete — just what to do next. */
-export const FORM_NO_READ =
-  "I couldn't get a read on that one. Film it from the side, whole body in frame, and I'll look again.";
-
-/**
- * The closing lines Holt falls back on when the model's `encourage` was missing or the guard dropped it.
- *
- * ⚠ SCRIPTED, FIXED, AND HELD TO THE SAME GUARD BY A TEST — this is not the guard writing a sentence (it
- * still only drops); it is the summary refusing to end a read on a fault. Belief plus a next step, no
- * exclamation mark, nothing about the body, nothing that sounds like a verdict. Chosen by the read's own
- * text rather than at random, so the same read always closes the same way.
- */
-export const FORM_ENCOURAGE_FALLBACK = [
-  "That's a good base to build on. Film the next heavy set and we'll see it tighten up.",
-  'Keep your warm-ups this deliberate and the heavy sets follow. Send me the next one.',
-  'One cue at a time is how this gets better. Take it into the next set and film it.',
-] as const;
-
-/** The fallback when nothing looked good — almost always a clip Holt could not read. About the next clip. */
-export const FORM_ENCOURAGE_REFILM = "Every clip makes the next read sharper. Film another set when you're ready.";
-
-/** The eyebrow over each part of the read. Uppercase in the source so the plain-text form reads the same. */
-export const FORM_LABEL_GOOD = "WHAT'S WORKING";
-export const FORM_LABEL_FIX_ONE = 'ONE THING TO CLEAN UP';
-export const FORM_LABEL_FIX_TWO = 'TWO THINGS TO CLEAN UP';
-export const FORM_LABEL_CUE = 'NEXT SET';
-
-/** One part of the read: an eyebrow (or none, for the closing line) and the sentences under it. */
-export interface FormSection {
-  kind: 'good' | 'fix' | 'cue' | 'encourage' | 'none';
-  label: string | null;
-  lines: string[];
-}
-
-/** The read as the screen draws it: which lift, then the parts in order. */
-export interface FormCheckView {
-  lift: string;
-  sections: FormSection[];
-}
-
-/** "The bar drifts…" → "the bar drifts…" after "First, ". Leaves "I", "RDL" and "Romanian" alone. */
-function lowerLead(s: string): string {
-  return /^[A-Z][a-z]/.test(s) && !/^(I|I'm|I'd|I've)\b/.test(s) ? s[0].toLowerCase() + s.slice(1) : s;
-}
-
-function fallbackEncourage(read: FormRead): string {
-  if (!read.looksGood.length) return FORM_ENCOURAGE_REFILM;
-  const seed = `${read.lift}|${read.fix.join('|')}|${read.cue}`;
-  let n = 0;
-  for (let i = 0; i < seed.length; i += 1) n = (n + seed.charCodeAt(i)) % 9973;
-  return FORM_ENCOURAGE_FALLBACK[n % FORM_ENCOURAGE_FALLBACK.length];
-}
-
-/**
- * The read as Holt says it, in four parts, always in this order: what's working, what to clean up, the
- * cue for the next set, and a closing line.
- *
- * ⚠ LABELS ARE HERE ON PURPOSE, OVERRIDING THE EARLIER NO-LABELS CHOICE (PO, 2026-09-25). The first
- * version followed Holt-Voice-Amendment-001's "no labels" literally, and the PO found the result *"a
- * little confusing"* — praise, fixes and the cue ran together as unmarked grey lines and he could not tell
- * at a glance which was which. So each part now has a short eyebrow. Everything else in the voice rule
- * still holds: plain text, no markdown, short sentences someone can read between sets.
- *
- * The fix order is the model's, which the prompt requires to be biggest first, and `sanitizeFormRead`
- * preserves. With two, "First," and "Then," make the order audible; with one, the label says "ONE THING"
- * (the old line said "the one thing I'd change" even when there were two).
- *
- * The closing line is never missing: the model's `encourage` when it survived the guard, otherwise a
- * scripted one ({@link FORM_ENCOURAGE_FALLBACK}). A read that ends on a fault is the thing the PO asked
- * to stop.
- */
-export function formCheckSummary(read: FormRead | null | undefined): FormCheckView {
-  const none: FormCheckView = { lift: '', sections: [{ kind: 'none', label: null, lines: [FORM_NO_READ] }] };
-  if (!read || (!read.looksGood.length && !read.fix.length && !read.cue)) return none;
-  const sections: FormSection[] = [];
-
-  if (read.looksGood.length) sections.push({ kind: 'good', label: FORM_LABEL_GOOD, lines: [...read.looksGood] });
-
-  if (read.fix.length === 1) {
-    sections.push({ kind: 'fix', label: FORM_LABEL_FIX_ONE, lines: [read.fix[0]] });
-  } else if (read.fix.length >= 2) {
-    sections.push({
-      kind: 'fix',
-      label: FORM_LABEL_FIX_TWO,
-      lines: [`First, ${lowerLead(read.fix[0])}`, `Then, ${lowerLead(read.fix[1])}`],
-    });
-  }
-
-  if (read.cue) sections.push({ kind: 'cue', label: FORM_LABEL_CUE, lines: [`Think: "${read.cue.replace(/^["“']|["”']$/g, '')}"`] });
-
-  const said = typeof read.encourage === 'string' ? read.encourage.trim() : '';
-  sections.push({ kind: 'encourage', label: null, lines: [said || fallbackEncourage(read)] });
-  return { lift: read.lift.trim(), sections };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────────────────────────────
-// The wire
-// ─────────────────────────────────────────────────────────────────────────────────────────────────────
-
-/**
- * What a form check came back as, in the app's words — the same split `photo-read-result.ts` makes, and
- * for the reason the coach brief §6 gives: *"offline and error must be visibly different from a
- * refusal."* Three things that look identical to someone holding a phone feel very different once they
- * are told which one happened.
- */
-export type FormCheckResult =
-  | { kind: 'ok'; read: FormRead; remaining: number | null }
-  /** The code guard stopped it before the model and before any credit. The chat has copy for each route. */
-  | { kind: 'stopped'; route: 'crisis' | 'urgent' | 'care' | 'medical_stop' }
-  /** We looked at the frames and could not read the lift in them. A better clip may work. */
-  | { kind: 'unreadable' }
-  /** The frames were not usable as a request at all — only reachable if the device resize was skipped. */
-  | { kind: 'bad_frames' }
-  /** The month's credits are gone. A commercial state, not a verdict on the set. */
-  | { kind: 'out_of_credits'; remaining: number; allowance: number }
-  /** No Premium AI on this account — 0203's gate answers with an allowance of 0, which is not a used-up month. */
-  | { kind: 'not_entitled' }
-  /** This build cannot pull frames out of a video (see `form-check-live.ts`). Not a failure of the clip. */
-  | { kind: 'unavailable_here' }
-  /** We reached the server and IT failed — no key, meter down, model error. Not the athlete's connection. */
-  | { kind: 'unavailable' }
-  /** The app failed. Never conflated with the two above. */
-  | { kind: 'offline' };
-
-/** The function's JSON body — from a 200 or a non-2xx alike — as a result. */
-export function formResultFrom(body: unknown, lift?: string): FormCheckResult {
-  if (!body || typeof body !== 'object') return { kind: 'unavailable' };
-  const d = body as {
-    ok?: boolean;
-    read?: unknown;
-    route?: string;
-    reason?: string;
-    remaining?: number;
-    allowance?: number;
-  };
-
-  if (d.route === 'crisis' || d.route === 'urgent' || d.route === 'care' || d.route === 'medical_stop') {
-    return { kind: 'stopped', route: d.route };
-  }
-
-  if (d.ok) {
-    // ⚠ THE GUARD RUNS ON THIS END TOO. The function already sanitised; doing it again costs nothing and
-    // means a stale deployment of the function cannot put a medical sentence on the screen of a current
-    // build. Same reason `coach-ask` re-trims history the app already trimmed: a peer is not a boundary.
-    const read = sanitizeFormRead(d.read, lift);
-    if (!read) return { kind: 'unreadable' };
-    return { kind: 'ok', read, remaining: typeof d.remaining === 'number' ? d.remaining : null };
-  }
-
-  switch (d.reason) {
-    case 'unreadable':
-      return { kind: 'unreadable' };
-    case 'bad_request':
-    case 'too_large':
-      return { kind: 'bad_frames' };
-    case 'out_of_credits':
-      if (!d.allowance) return { kind: 'not_entitled' };
-      return { kind: 'out_of_credits', remaining: d.remaining ?? 0, allowance: d.allowance };
-    default:
-      // `unconfigured`, `meter_unavailable`, `upstream_error`, `upstream_unreachable`, or a reason this
-      // build has never heard of. The server failed, and none of that is a statement about the set.
-      return { kind: 'unavailable' };
-  }
+  return sanitizeFormRead(parsed, lift, frameCount);
 }

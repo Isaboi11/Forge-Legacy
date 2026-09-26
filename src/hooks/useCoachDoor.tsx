@@ -39,7 +39,12 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
  * *"I don't know which of these to choose"* from the Discover shelf into the conversation, so he opens
  * already reading the catalogue rather than offering to replace it with something he wrote.
  */
-export type CoachIntent = 'build' | 'import' | 'recommend';
+/**
+ * ⚠ `ask` OPENS HIM WITH A QUESTION ALREADY STARTED — Form Check's "Ask Holt about this"
+ * (`Coach Holt Form Check.dc.html` 04). The words travel in `lib/coach-ask-seed.ts` and land in the
+ * composer unsent; see `CoachChatSheet`.
+ */
+export type CoachIntent = 'build' | 'import' | 'recommend' | 'ask';
 
 export interface CoachDoorValue {
   /** True while the chat sheet is on screen. Read by `CoachBubble`, which does the rendering. */

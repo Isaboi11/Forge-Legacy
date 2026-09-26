@@ -103,6 +103,7 @@ import {
 import { medicalRoute } from '@/domain/coach/medical-routing';
 import { pick } from '@/domain/coach/rulebook/voice';
 import { setStartChoice } from '@/lib/program-intent';
+import { takeCoachAskSeed } from '@/lib/coach-ask-seed';
 import type { CoachIntent } from '@/hooks/useCoachDoor';
 import { useProfile } from '@/lib/profile';
 import { rationaleFor } from '@/domain/coach/rulebook/rationale';
@@ -1593,6 +1594,15 @@ export function CoachChatSheet({ onClose, intent }: { onClose: () => void; inten
     if (!intent || intentFired.current) return undefined;
     if (introStep < INTRO.length + 1) return undefined;
     intentFired.current = true;
+    /* `ask` carries a question the athlete started somewhere else (Form Check's "Ask Holt about this").
+       It lands in the composer, NOT sent: sending words they did not type would spend a credit on their
+       behalf. They finish the question and press send. */
+    if (intent === 'ask') {
+      const seed = takeCoachAskSeed();
+      if (!seed) return undefined;
+      const id = setTimeout(() => setDraft(seed), 240);
+      return () => clearTimeout(id);
+    }
     /* Every opener already exists and every one is a real chip — the door is only choosing which one the
        athlete would have tapped, having already said so on the previous screen. */
     const label =

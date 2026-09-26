@@ -395,6 +395,8 @@ function RootNavigator() {
         {/* Form check (2026-09-22) — film a set, Holt reads the frames. Its own screen because the camera
             cannot be presented over Holt's sheet. */}
         <Stack.Screen name="form-check" />
+        {/* Form history (2026-09-25) — a lift's saved form reads, timeline + compare (Form Check .dc 05). */}
+        <Stack.Screen name="form-history" />
         <Stack.Screen name="profile-visibility" />
         <Stack.Screen name="notifications" />
         {/* Blocked People (0171). Account Settings → Privacy & Alerts, and the ONLY way to undo a block:
