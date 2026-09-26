@@ -907,6 +907,17 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### ⭐ Full-app QA (two rounds) + the top fixes (2026-09-26 · committed `f01bf9bf` · `4956523c` · `bad8462d` · `b56a34d5` · ⛔ NOT deployed · ⛔ 0225 NOT applied · ⛔ coach-ask / coach-interpret NOT re-pasted)
+
+16 Playwright test lanes drove the live web preview in both themes, using sandbox + claudetest. **311 issues (3 critical, 25 high)** → `Docs/QA/Full-App-QA-2026-09-26.md`. The only flow not covered is onboarding a brand-new account. 41 AI calls. Fixed and committed:
+- **F1 / F3:** Start asks "Switch programs?" (W-3 §13) before ending the running program. Guided adds Save for later. Remove from Planned is gone from the active program.
+- **R2-F1 / R2-F5:** a stopped medical message never reaches the model: one history builder (`chat-history.ts`) on the client, plus `withoutStoppedTurns` in coach-ask and coach-interpret. Streams are per-turn, and the next message waits.
+- **R2-F2:** a block actually blocks. `0225` covers the friend request, inbox, presence, live view and join; the profile hides contact controls.
+- **F2 / F8:** squad goal Save is reachable (pinned footer). Five two-button rows no longer push Save off screen.
+- F5 (privacy text) was already fixed by `f198ea07`.
+
+PO steps: paste `supabase/apply/pending-0225.sql` · re-paste `deploy-coach-ask.ts` + `deploy-coach-interpret.ts` · web deploy + build 9 OTA. Tests 4,527/4,527.
+
 ### ⭐ Meal Plan: choose your own meal for any slot, kept on rebuild (2026-09-26, `3e62afcd` · ✅ WEB `index-de14dc7019ac534a287fc669051f5569.js` (alias MATCH) · ✅ OTA build 9 iOS `01a0df20-d23c-7609…` (`ota/build9-js`, on top of the other session's legal-summaries OTA) · not yet seen by the PO)
 
 PO: "I can't click on breakfast or lunch … I need to be able to add in my own things where I want." Empty slots are tappable (+ Add); a filled meal has "Choose my own". The picker lists all the athlete's recipes (made-for-this-meal first; diet/allergen/dislike breakers left out and counted), plus New recipe and "Ask Holt for a lunch". `placeMeal` locks the pick so Rebuild week keeps it.
