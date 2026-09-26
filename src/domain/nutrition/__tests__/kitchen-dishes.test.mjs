@@ -59,7 +59,8 @@ test('forced spread: a repeated method is dropped; an already-suggested name is 
     { options: [dish(), dish({ name: 'Chicken Burrito Bowl' }), dish({ name: 'Sheet Pan Chicken', method: 'oven' })] },
     ['Old Dish'],
   );
-  assert.deepEqual(out.map((d) => d.name), ['Greek Chicken Rice Bowl', 'Sheet Pan Chicken']);
+  // Spread first (the oven dish is second); the repeated method fills the third slot rather than leaving two.
+  assert.deepEqual(out.map((d) => d.name), ['Greek Chicken Rice Bowl', 'Sheet Pan Chicken', 'Chicken Burrito Bowl']);
   assert.equal(sanitizeKitchenAnswer({ options: [dish()] }, ['greek chicken rice bowl']).length, 0);
 });
 
@@ -88,7 +89,10 @@ test('the request is narrowed; the user turn carries the rules and never a lectu
   assert.equal(r.ask.length, 300);
   assert.equal(r.nudge, null);
   const turn = kitchenUserTurn({ ...r, ask: 'something spicy' });
-  assert.match(turn, /never use: peanuts/);
+  assert.match(turn, /never use, in any form: peanuts \(peanuts, peanut butter/);
+  // An avoided food is never sent as "on hand" (live check 09-26: shrimp on hand + shellfish allergy → a shrimp dish).
+  const safe = kitchenUserTurn(narrowKitchenRequest({ have: ['shrimp', 'salmon', 'chicken breast', 'tofu'], avoid: ['shellfish', 'soy', 'poultry'] }));
+  assert.match(safe, /On hand: salmon\./);
   assert.doesNotMatch(turn, /980/, 'under 18: no numbers steering (NUT-D5)');
 });
 
@@ -155,4 +159,24 @@ test('0222 prices `kitchen` and the bundle carries it', () => {
     assert.match(sql, /create table if not exists public\.kitchen_suggestions/);
   }
   assert.match(b, /raise exception '0222/);
+});
+
+test('the food names in the prompt are the catalogue\'s, current', async () => {
+  const { kitchenFoodsSource, OUT } = await import('../../../../scripts/build-kitchen-foods.mjs');
+  assert.equal(read(OUT), (await kitchenFoodsSource()).replace(/\r\n/g, '\n'), 'run `node --experimental-strip-types scripts/build-kitchen-foods.mjs`');
+  assert.match(read('supabase/functions/coach-kitchen/index.ts'), /\$\{KITCHEN_FOODS\}/);
+});
+
+test('diets are enforced by the app: a vegan never sees cheese, a vegetarian never sees chicken', () => {
+  const veg = dish({ name: 'Tofu Rice Bowl', ingredients: [{ text: '200 g tofu', quantity: 200, unit: 'g', food: 'tofu' }, { text: '2 tbsp peanut butter', quantity: 30, unit: 'g', food: 'peanut butter' }] });
+  const cheesy = dish({ name: 'Bean and Cheese Bake', method: 'oven', ingredients: [{ text: '100 g black beans', quantity: 100, unit: 'g', food: 'black beans' }, { text: '50 g cheddar', quantity: 50, unit: 'g', food: 'cheddar' }] });
+  assert.deepEqual(dishCards([veg, cheesy], [], 'vegan').map((c) => c.name), ['Tofu Rice Bowl'], 'peanut butter is vegan; cheddar is not');
+  assert.deepEqual(dishCards([dish(), veg], [], 'vegetarian').map((c) => c.name), ['Tofu Rice Bowl']);
+});
+
+test('three are shown even when two share a method; names are cut at a word', () => {
+  const out = sanitizeKitchenAnswer({ options: [dish(), dish({ name: 'Chicken Burrito Bowl' }), dish({ name: 'Sheet Pan Chicken', method: 'oven' })] });
+  assert.equal(out.length, 3);
+  const [long] = sanitizeKitchenAnswer({ options: [dish({ name: 'Overnight Oats with Banana and Blueberries and Honey Drizzle' })] });
+  assert.ok(!/Blueberri$|\s$/.test(long.name) && long.name.length <= 48, long.name);
 });

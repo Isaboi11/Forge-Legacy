@@ -24,7 +24,7 @@ const MAX_INGREDIENTS = 18;
 const MAX_STEPS = 10;
 const ASK_CHARS = 300;
 const ITEM_CHARS = 40;
-const NAME_CHARS = 40;
+const NAME_CHARS = 48;
 const WHY_CHARS = 90;
 const TEXT_CHARS = 120;
 const FOOD_CHARS = 60;
@@ -69,9 +69,16 @@ export function kitchenUserTurn(r: KitchenRequest): string {
     const lines: string[] = [];
     if (r.ask)
         lines.push(`What the athlete said: "${r.ask}"`);
-    lines.push(r.have.length ? `On hand: ${r.have.join(', ')}.` : 'On hand: not given — assume a normal pantry and ask nothing.');
-    if (r.avoid.length)
-        lines.push(`Hard rules — never use: ${r.avoid.join(', ')}.`);
+    const keys = r.avoid.map((a) => a.toLowerCase().replace(/\s+/g, '_')).filter((k) => ALLERGEN_WORDS[k] || DIET_WORDS[k]);
+    const have = r.have.filter((h) => !keys.some((k) => (ALLERGEN_WORDS[k] ?? DIET_WORDS[k]).test(h)));
+    lines.push(have.length ? `On hand: ${have.join(', ')}.` : 'On hand: not given — assume a normal pantry and ask nothing.');
+    if (r.avoid.length) {
+        const spelled = r.avoid.map((a) => {
+            const k = a.toLowerCase().replace(/\s+/g, '_');
+            return ALLERGEN_COVERS[k] ? `${a} (${ALLERGEN_COVERS[k]})` : a;
+        });
+        lines.push(`Hard rules — never use, in any form: ${spelled.join('; ')}.`);
+    }
     if (r.exclude.length)
         lines.push(`Already suggested, do not repeat or lightly rename: ${r.exclude.join('; ')}.`);
     if (r.lean)
@@ -158,7 +165,8 @@ function sanitizeDish(raw: unknown): KitchenDish | null {
     if (!raw || typeof raw !== 'object')
         return null;
     const d = raw as Record<string, unknown>;
-    const name = clean(d.name, NAME_CHARS);
+    const full = clean(d.name, 200);
+    const name = full.length <= NAME_CHARS ? full : full.slice(0, NAME_CHARS + 1).replace(/\s+\S*$/, '').replace(/[\s,&-]+$/, '');
     if (!name)
         return null;
     const servings = Math.round(positive(d.servings, 12) ?? 1) || 1;
@@ -201,18 +209,24 @@ export function sanitizeKitchenAnswer(raw: unknown, exclude: readonly string[] =
     const d = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
     const banned = new Set(exclude.map(norm));
     const out: KitchenDish[] = [];
+    const sameMethod: KitchenDish[] = [];
     const methods = new Set<string>();
     for (const o of Array.isArray(d.options) ? d.options : []) {
         const dish = sanitizeDish(o);
         if (!dish || banned.has(norm(dish.name)) || out.some((x) => norm(x.name) === norm(dish.name)))
             continue;
-        if (methods.has(dish.method) && out.length < KITCHEN_OPTIONS)
+        if (methods.has(dish.method)) {
+            sameMethod.push(dish);
             continue;
+        }
         methods.add(dish.method);
         out.push(dish);
         if (out.length >= KITCHEN_OPTIONS)
             break;
     }
+    for (const dish of sameMethod)
+        if (out.length < KITCHEN_OPTIONS)
+            out.push(dish);
     return out;
 }
 export function kitchenFromModelText(text: string, exclude: readonly string[] = []): KitchenDish[] {
@@ -256,6 +270,22 @@ export const ALLERGEN_WORDS: Record<string, RegExp> = {
     fish: /\b(fish|salmon|tuna|cod|tilapia|anchov\w*|sardines?|halibut|trout|fish\s+sauce)\b/i,
     shellfish: /\b(shrimp|prawns?|crab|lobster|scallops?|clams?|mussels?|oysters?|shellfish)\b/i,
     sesame: /\b(sesame|tahini)\b/i,
+};
+export const DIET_WORDS: Record<string, RegExp> = {
+    meat: /\b(beef|pork|steak|bacon|ham|sausage|lamb|veal|jerky|pepperoni|salami|chorizo|meatballs?)\b/i,
+    poultry: /\b(chicken|turkey|duck)\b/i,
+    honey: /\bhoney\b/i,
+};
+export const ALLERGEN_COVERS: Record<string, string> = {
+    peanuts: 'peanuts, peanut butter, peanut oil, satay',
+    tree_nuts: 'almonds, cashews, walnuts, pecans, pistachios, hazelnuts, nut butters and nut milks',
+    dairy: 'milk, cheese, yogurt, butter, cream, ghee, whey',
+    eggs: 'eggs, mayonnaise, egg noodles',
+    gluten: 'wheat, flour, bread, regular pasta and noodles, tortillas, couscous, barley, soy sauce (tamari is fine)',
+    soy: 'soy sauce, tamari, tofu, tempeh, edamame, miso',
+    fish: 'salmon, tuna, cod, tilapia, anchovies, fish sauce',
+    shellfish: 'shrimp, prawns, crab, lobster, scallops, clams, mussels, oysters',
+    sesame: 'sesame oil, sesame seeds, tahini',
 };
 export function allergensByWord(d: KitchenDish): string[] {
     const text = d.ingredients
@@ -458,6 +488,7 @@ function routeOnce(t: string): MedicalRoute {
     return 'clear';
 }
 export const stopsForMedical = (text: string): boolean => medicalRoute(text) !== 'clear';
+export const KITCHEN_FOODS = "all-purpose flour; almonds; apple; avocado; avocado oil; baby spinach; baking powder; balsamic vinegar; banana; beef jerky; black beans; black pepper; blueberries; bok choy; brioche burger bun; broccoli florets; brown or green lentils; brown rice cakes; brown sugar; bulgur; butter; butternut squash; cabbage; canned tomatoes; capers; carrot; cheddar; chia seeds; chicken breast; chicken thighs; chickpeas; chilli flakes; chilli powder; cider vinegar; coconut milk; cod fillet; cottage cheese; cream cheese; cucumber; cumin; curry powder; dried oregano; dried parsley; dry-roasted peanuts; edamame; egg whites; eggs; extra-lean ground beef; feta; firm tofu; flour tortilla; fresh cilantro; fresh ginger; fresh mint; fresh parsley; garlic; garlic powder; granola; grapes; greek yogurt; green beans; ground cinnamon; ground turkey; halloumi; honey; hot sauce; hummus; italian herbs; kale; kidney beans; lean ground beef; lemon juice; light butter; light cream cheese; light mayonnaise; long-grain white rice; low-carb bagel; low-carb mini wrap; low-carb tortilla; mango; marshmallow creme; milk; milk chocolate; mini chocolate chips; mushrooms; olive oil; onion; onion powder; orange; orzo or pasta; parmesan; part-skim mozzarella; peach; peanut butter; pearl barley; pepperoni; pita; pizza sauce; plain bagel; plain yogurt; pork tenderloin; potatoes; quinoa; raisins; raw prawns; red bell pepper; reduced-calorie barbecue sauce; reduced-fat american cheese; reduced-fat cheddar; reduced-fat peanut butter; rice milk; rocket; rolled oats; salmon fillet; salsa; salt; sesame seeds; sirloin steak; sliced turkey breast; smoked paprika; smoked salmon; sour cream; soy sauce; spaghetti; strawberries; sun-dried tomatoes in oil; sweet potato; tahini; teriyaki sauce; tomato paste; tomatoes; tuna in water; turkey bacon; turkey pepperoni; turkey sausage; unsweetened applesauce; vanilla extract; vegetable broth; wheat noodles; whey protein powder; white beans; whole-wheat bread";
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -478,7 +509,7 @@ Write exactly the number of options asked for, as JSON in the fixed shape. Each 
 - Every option uses a different cooking method ("pan", "oven", "no-cook", "bowl", "pot", "grill", "air-fryer", "microwave").
 - At least two options are from different cuisines. When the message says what to lean toward, use it for one option if it fits what they have.
 - Never repeat, or lightly rename, a dish listed as already suggested. "Greek Chicken Bowl" and "Mediterranean Chicken Rice Bowl" are the same dish.
-- Plain, appetizing names a person would say out loud: "Crispy Chicken Fried Rice", "Spinach and Feta Egg Scramble". No brand names. At most 40 characters.
+- Plain, appetizing names a person would say out loud: "Crispy Chicken Fried Rice", "Spinach and Feta Egg Scramble". No brand names. At most 45 characters.
 
 # The fields
 
@@ -492,13 +523,21 @@ Write exactly the number of options asked for, as JSON in the fixed shape. Each 
 - "ingredients": one entry per ingredient, like a printed recipe.
   - "text": the line as a recipe would print it ("6 oz boneless chicken thighs, sliced").
   - "quantity": the amount as a number, or null for "to taste".
-  - "unit": "g", "oz", "lb", "cup", "tbsp", "tsp", "ml", or the counting word ("large", "cloves", "slices", "can"); "" for a plain count ("2 eggs").
-  - "food": the plain food in everyday words, without amount, unit, brand or preparation ("chicken thighs", "long-grain white rice", "feta"). This is what the app matches to its food database, so be plain and specific.
+  - "unit": "g" (see Amounts); "large" for eggs; "" when the quantity is null.
+  - "food": the food, without amount, unit, brand or preparation. **Use one of the app's food names below, written exactly, whenever one fits** — "rice" is "white rice" or "brown rice", "spinach" is "baby spinach", "oil" is "olive oil", "beans" is "black beans". This is what the app matches to its food database; a name it doesn't know leaves the dish's numbers incomplete. Only when nothing on the list is close, write the plain food in everyday words.
 - "steps": 3 to 8 short steps in plain words. Every step a home cook can follow. Include the doneness cue and the safe internal temperature whenever meat, poultry, fish or eggs are cooked (USDA: poultry 165°F, ground meat 160°F, whole cuts of beef, pork and lamb 145°F then rest 3 minutes, fish 145°F).
 
 # Amounts
 
-Real amounts for the servings you give: a portion of protein is usually 4 to 8 oz cooked, rice or pasta about 1/2 to 1 cup cooked, oil a teaspoon to a couple of tablespoons for the whole dish. Never an amount no one cooks.
+**Give every amount by weight: "quantity" in grams and "unit" "g".** The app converts grams exactly; cans, handfuls, pieces and cups often can't be converted. The "text" line can say it the way a cook would ("6 oz chicken thighs"), but "quantity" and "unit" are grams. The only exceptions: eggs are a count (quantity 2, unit "large"), and salt, pepper, dried herbs and spices used "to taste" have quantity null.
+
+**Weigh rice, pasta, noodles, quinoa, couscous, bulgur, barley, lentils and oats DRY (uncooked)** — that is how the app's food data counts them. A serving of rice or pasta is 50 to 90 g dry; oats 40 to 60 g dry.
+
+Real amounts for the servings you give: a portion of meat or fish is usually 110 to 225 g raw, oil 5 to 30 g for the whole dish. Never an amount no one cooks.
+
+# The app's food names
+
+${KITCHEN_FOODS}
 
 # Hard rules
 

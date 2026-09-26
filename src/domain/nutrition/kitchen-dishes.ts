@@ -35,7 +35,7 @@ const MAX_INGREDIENTS = 18;
 const MAX_STEPS = 10;
 const ASK_CHARS = 300;
 const ITEM_CHARS = 40;
-const NAME_CHARS = 40;
+const NAME_CHARS = 48;
 const WHY_CHARS = 90;
 const TEXT_CHARS = 120;
 const FOOD_CHARS = 60;
@@ -91,8 +91,21 @@ export function narrowKitchenRequest(raw: unknown): KitchenRequest {
 export function kitchenUserTurn(r: KitchenRequest): string {
   const lines: string[] = [];
   if (r.ask) lines.push(`What the athlete said: "${r.ask}"`);
-  lines.push(r.have.length ? `On hand: ${r.have.join(', ')}.` : 'On hand: not given — assume a normal pantry and ask nothing.');
-  if (r.avoid.length) lines.push(`Hard rules — never use: ${r.avoid.join(', ')}.`);
+  /*
+   * Live check 2026-09-26: with shrimp on hand and a shellfish allergy, Holt still wrote a shrimp salad (the app
+   * dropped it, leaving two cards; four allergies left ONE). So an avoided food never reaches him as "on hand",
+   * and each allergy is spelled out as the foods it covers.
+   */
+  const keys = r.avoid.map((a) => a.toLowerCase().replace(/\s+/g, '_')).filter((k) => ALLERGEN_WORDS[k] || DIET_WORDS[k]);
+  const have = r.have.filter((h) => !keys.some((k) => (ALLERGEN_WORDS[k] ?? DIET_WORDS[k]).test(h)));
+  lines.push(have.length ? `On hand: ${have.join(', ')}.` : 'On hand: not given — assume a normal pantry and ask nothing.');
+  if (r.avoid.length) {
+    const spelled = r.avoid.map((a) => {
+      const k = a.toLowerCase().replace(/\s+/g, '_');
+      return ALLERGEN_COVERS[k] ? `${a} (${ALLERGEN_COVERS[k]})` : a;
+    });
+    lines.push(`Hard rules — never use, in any form: ${spelled.join('; ')}.`);
+  }
   if (r.exclude.length) lines.push(`Already suggested, do not repeat or lightly rename: ${r.exclude.join('; ')}.`);
   if (r.lean) lines.push(`Lean toward, if it fits: ${[r.lean.cuisine, r.lean.method].filter(Boolean).join(', ')}.`);
   const nudge: Record<KitchenNudge, string> = {
@@ -190,7 +203,9 @@ function saneAmount(i: KitchenIngredient, servings: number): boolean {
 function sanitizeDish(raw: unknown): KitchenDish | null {
   if (!raw || typeof raw !== 'object') return null;
   const d = raw as Record<string, unknown>;
-  const name = clean(d.name, NAME_CHARS);
+  // Cut at a word, never mid-word ("…Blueberri" in the live check).
+  const full = clean(d.name, 200);
+  const name = full.length <= NAME_CHARS ? full : full.slice(0, NAME_CHARS + 1).replace(/\s+\S*$/, '').replace(/[\s,&-]+$/, '');
   if (!name) return null;
   const servings = Math.round(positive(d.servings, 12) ?? 1) || 1;
   const ingredients: KitchenIngredient[] = [];
@@ -237,15 +252,21 @@ export function sanitizeKitchenAnswer(raw: unknown, exclude: readonly string[] =
   const d = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
   const banned = new Set(exclude.map(norm));
   const out: KitchenDish[] = [];
+  const sameMethod: KitchenDish[] = [];
   const methods = new Set<string>();
   for (const o of Array.isArray(d.options) ? d.options : []) {
     const dish = sanitizeDish(o);
     if (!dish || banned.has(norm(dish.name)) || out.some((x) => norm(x.name) === norm(dish.name))) continue;
-    if (methods.has(dish.method) && out.length < KITCHEN_OPTIONS) continue;
+    if (methods.has(dish.method)) {
+      sameMethod.push(dish);
+      continue;
+    }
     methods.add(dish.method);
     out.push(dish);
     if (out.length >= KITCHEN_OPTIONS) break;
   }
+  // Spread first; but two cards where three were asked for is worse than two pan dishes (live check 09-26).
+  for (const dish of sameMethod) if (out.length < KITCHEN_OPTIONS) out.push(dish);
   return out;
 }
 
@@ -299,6 +320,26 @@ export const ALLERGEN_WORDS: Record<string, RegExp> = {
   fish: /\b(fish|salmon|tuna|cod|tilapia|anchov\w*|sardines?|halibut|trout|fish\s+sauce)\b/i,
   shellfish: /\b(shrimp|prawns?|crab|lobster|scallops?|clams?|mussels?|oysters?|shellfish)\b/i,
   sesame: /\b(sesame|tahini)\b/i,
+};
+
+/** A diet's avoided groups (`dietAvoid`), by word — so a vegetarian's chicken is never sent as "on hand". */
+export const DIET_WORDS: Record<string, RegExp> = {
+  meat: /\b(beef|pork|steak|bacon|ham|sausage|lamb|veal|jerky|pepperoni|salami|chorizo|meatballs?)\b/i,
+  poultry: /\b(chicken|turkey|duck)\b/i,
+  honey: /\bhoney\b/i,
+};
+
+/** What each allergy covers, spelled out for the model (the app's own check is `ALLERGEN_WORDS`). */
+export const ALLERGEN_COVERS: Record<string, string> = {
+  peanuts: 'peanuts, peanut butter, peanut oil, satay',
+  tree_nuts: 'almonds, cashews, walnuts, pecans, pistachios, hazelnuts, nut butters and nut milks',
+  dairy: 'milk, cheese, yogurt, butter, cream, ghee, whey',
+  eggs: 'eggs, mayonnaise, egg noodles',
+  gluten: 'wheat, flour, bread, regular pasta and noodles, tortillas, couscous, barley, soy sauce (tamari is fine)',
+  soy: 'soy sauce, tamari, tofu, tempeh, edamame, miso',
+  fish: 'salmon, tuna, cod, tilapia, anchovies, fish sauce',
+  shellfish: 'shrimp, prawns, crab, lobster, scallops, clams, mussels, oysters',
+  sesame: 'sesame oil, sesame seeds, tahini',
 };
 
 /** Allergens a dish's own lines name, by word. The catalogue's tags are added on the device. */

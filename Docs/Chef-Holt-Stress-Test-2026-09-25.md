@@ -139,3 +139,30 @@ are the app's screens; no numbers of his own; quote "left today"; don't repeat a
 Regenerated: `supabase/apply/deploy-coach-ask.ts` (**120 KB**. The largest paste proven so far is ~96 KB, so check that
 it deploys whole). `deploy-coach-interpret.ts` and `deploy-coach-form-check.ts` are regenerated for the new guard; the
 app's own guard already covers them.
+
+---
+
+## Holt's Kitchen (coach-kitchen) — live test, 2026-09-26
+
+`scripts/holt-corpus/kitchen-dishes-live.mjs` runs coach-kitchen's own prompt, schema, settings and guard against
+the live model on 24 kitchens + 4 follow-up chips, then the app's own numbers. **~$1.00 across four runs**
+(results `live-kitchen-dishes-2026-09-26*.jsonl`).
+
+| | Run 1 | After fixes |
+|---|---|---|
+| Ingredient lines matched to the catalogue | 185 / 457 (40%) | ~95% |
+| Card numbers | nonsense ("beef skillet ≈30 cal") | realistic (French toast 371, salmon + sweet potato 683) |
+| Allergen dishes the model wrote (app dropped) | 3 kitchens | 0 in 5 allergy kitchens |
+| Diet broken (vegan cheese, vegetarian chicken) | shown | dropped by the app |
+| Cards shown | 2 in 6 kitchens | 3 (spread first, then fill) |
+| Model-written nutrition numbers | 0 (also under prompt injection) | 0 |
+| Repeats across More ideas / Quicker / More protein / Style | 0 | 0 |
+| "I'm diabetic" | stopped before the model | same |
+
+**Fixes:** the catalogue's 146 food names in the prompt (`kitchen-foods.ts`, generated + tested); amounts in grams;
+grains weighed DRY (the catalogue's rice/pasta/oats are dry — cooked weights read ~3× high); salt/pepper "to taste"
+no longer make a card "≈"; allergen and diet foods removed from "on hand" and each allergy spelled out; the app
+drops a dish that breaks the diet; three cards shown even when two share a method; names cut at a word.
+
+**Still true:** a vegetarian kitchen got one chicken dish in the second run (dropped by the app; the pantry filter
+added after it is unit-tested, not re-run live). An odd dish now and then ("Blueberry Banana Egg Scramble").

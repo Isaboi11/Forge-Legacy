@@ -1810,7 +1810,7 @@ export function CoachChatSheet({
        unavailable/offline — so the question goes to coach-ask, the way the kitchen answered before this. */
     if (r.kind === 'unavailable' || r.kind === 'offline') return void askAloud(k.ask, historyFrom(thread), null, { kitchen: true });
     if (r.kind !== 'ok') return void say({ kind: 'holt', text: kitchenError(r) });
-    const cards = dishCards(r.dishes, rules.allergens);
+    const cards = dishCards(r.dishes, rules.allergens, rules.diet);
     if (!cards.length) return void say({ kind: 'holt', text: kitchenError({ kind: 'none' }) });
     k.shown.push(...cards.map((c) => c.name));
     void rememberKitchenDishesLive(r.dishes.filter((d) => cards.some((c) => c.name === d.name)));

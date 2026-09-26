@@ -42,6 +42,7 @@ import {
   narrowKitchenRequest,
 } from '../../../src/domain/nutrition/kitchen-dishes.ts';
 import { medicalRoute } from '../../../src/domain/coach/medical-routing.ts';
+import { KITCHEN_FOODS } from '../../../src/domain/nutrition/kitchen-foods.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -71,7 +72,7 @@ Write exactly the number of options asked for, as JSON in the fixed shape. Each 
 - Every option uses a different cooking method ("pan", "oven", "no-cook", "bowl", "pot", "grill", "air-fryer", "microwave").
 - At least two options are from different cuisines. When the message says what to lean toward, use it for one option if it fits what they have.
 - Never repeat, or lightly rename, a dish listed as already suggested. "Greek Chicken Bowl" and "Mediterranean Chicken Rice Bowl" are the same dish.
-- Plain, appetizing names a person would say out loud: "Crispy Chicken Fried Rice", "Spinach and Feta Egg Scramble". No brand names. At most 40 characters.
+- Plain, appetizing names a person would say out loud: "Crispy Chicken Fried Rice", "Spinach and Feta Egg Scramble". No brand names. At most 45 characters.
 
 # The fields
 
@@ -85,13 +86,21 @@ Write exactly the number of options asked for, as JSON in the fixed shape. Each 
 - "ingredients": one entry per ingredient, like a printed recipe.
   - "text": the line as a recipe would print it ("6 oz boneless chicken thighs, sliced").
   - "quantity": the amount as a number, or null for "to taste".
-  - "unit": "g", "oz", "lb", "cup", "tbsp", "tsp", "ml", or the counting word ("large", "cloves", "slices", "can"); "" for a plain count ("2 eggs").
-  - "food": the plain food in everyday words, without amount, unit, brand or preparation ("chicken thighs", "long-grain white rice", "feta"). This is what the app matches to its food database, so be plain and specific.
+  - "unit": "g" (see Amounts); "large" for eggs; "" when the quantity is null.
+  - "food": the food, without amount, unit, brand or preparation. **Use one of the app's food names below, written exactly, whenever one fits** — "rice" is "white rice" or "brown rice", "spinach" is "baby spinach", "oil" is "olive oil", "beans" is "black beans". This is what the app matches to its food database; a name it doesn't know leaves the dish's numbers incomplete. Only when nothing on the list is close, write the plain food in everyday words.
 - "steps": 3 to 8 short steps in plain words. Every step a home cook can follow. Include the doneness cue and the safe internal temperature whenever meat, poultry, fish or eggs are cooked (USDA: poultry 165°F, ground meat 160°F, whole cuts of beef, pork and lamb 145°F then rest 3 minutes, fish 145°F).
 
 # Amounts
 
-Real amounts for the servings you give: a portion of protein is usually 4 to 8 oz cooked, rice or pasta about 1/2 to 1 cup cooked, oil a teaspoon to a couple of tablespoons for the whole dish. Never an amount no one cooks.
+**Give every amount by weight: "quantity" in grams and "unit" "g".** The app converts grams exactly; cans, handfuls, pieces and cups often can't be converted. The "text" line can say it the way a cook would ("6 oz chicken thighs"), but "quantity" and "unit" are grams. The only exceptions: eggs are a count (quantity 2, unit "large"), and salt, pepper, dried herbs and spices used "to taste" have quantity null.
+
+**Weigh rice, pasta, noodles, quinoa, couscous, bulgur, barley, lentils and oats DRY (uncooked)** — that is how the app's food data counts them. A serving of rice or pasta is 50 to 90 g dry; oats 40 to 60 g dry.
+
+Real amounts for the servings you give: a portion of meat or fish is usually 110 to 225 g raw, oil 5 to 30 g for the whole dish. Never an amount no one cooks.
+
+# The app's food names
+
+${KITCHEN_FOODS}
 
 # Hard rules
 
