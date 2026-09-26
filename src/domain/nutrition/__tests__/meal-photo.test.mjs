@@ -142,6 +142,20 @@ test('a hit must name the same food — "rice" never becomes Rice Krispies Treat
   assert.equal(pickMatch(item, [RICE_TREAT, RICE]).food.key, 'usda:rice');
 });
 
+test('a hit that is another dish made from the item is never auto-picked (PO eval 2026-09-26)', () => {
+  const dressing = food({ key: 'fs:cd', source: 'fs', name: 'Coleslaw Salad Dressing', kcal100: 387, protein100: 1, carb100: 22, fat100: 33 });
+  assert.equal(matchScore({ name: 'coleslaw salad', search: 'coleslaw slaw salad' }, dressing), -1);
+  const combo = food({ key: 'fs:pm', source: 'fs', name: 'Penne Pasta & Meatballs with Tomato Sauce', brand: 'On-Cor', kcal100: 133, protein100: 6, carb100: 17, fat100: 4.5 });
+  assert.equal(matchScore({ name: 'penne pasta with tomato sauce', search: 'penne pasta tomato sauce' }, combo), -1);
+  const salsa = food({ key: 'fs:cs', source: 'fs', name: 'Fresh Cilantro Salsa', kcal100: 30, protein100: 1, carb100: 6, fat100: 0.2 });
+  const r = pickMatch({ name: 'cilantro garnish', search: 'cilantro fresh' }, [salsa]);
+  assert.equal(r.food, null);
+  assert.deepEqual(r.candidates.map((f) => f.key), ['fs:cs']);
+  // …but a sauce the item asked for is still a sauce.
+  const bbq = food({ key: 'fs:bbq', source: 'fs', name: 'BBQ Sauce', kcal100: 170, protein100: 1, carb100: 40, fat100: 0.6 });
+  assert.ok(matchScore({ name: 'dipping sauce', search: 'bbq sauce' }, bbq) > 0);
+});
+
 test('no hit that names the food → no match, and the hits are offered as choices only', () => {
   const item = { name: 'Harissa', search: 'harissa' };
   const r = pickMatch(item, [RICE, CHICKEN]);

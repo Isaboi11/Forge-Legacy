@@ -72,9 +72,24 @@ export function words(s: string): string[] {
 }
 
 /**
+ * Words that make a hit a DIFFERENT dish from the item: a food that merely contains it, or is made from it.
+ * A hit carrying one the item never said is never auto-picked (still offered as a swap). PO photo eval with
+ * FatSecret, 2026-09-26: coleslaw → "Coleslaw Salad Dressing" (581 kcal), cilantro → "Cilantro Salsa",
+ * penne in tomato sauce → "Penne Pasta & Meatballs" (the meatballs, also on the plate, counted twice).
+ */
+const OTHER_DISH = new Set(
+  words(
+    'dressing salsa sauce soup stew juice pie cake cookie bar chips crisp souffle lasagna casserole sandwich wrap ' +
+      'pizza muffin bread smoothie shake dip spread flavored flavor meatballs vegetables crepe pudding candy cereal ' +
+      'treats burrito taco quesadilla salad noodles pasta rice potato fries stuffed topping glaze filling pesto hummus ' +
+      'guacamole jam jelly',
+  ),
+);
+
+/**
  * How well a hit names the item: the share of the item's words found in the hit's name + brand, shrunk by
- * every word the item did not ask for (so "Lime, raw" beats "Lime souffle"), or -1 when it fails the rule
- * above. Always > 0 when it passes.
+ * every word the item did not ask for, or -1 when it fails the rule above or names another dish
+ * (`OTHER_DISH`). Always > 0 when it passes.
  */
 export function matchScore(item: Pick<MealItem, 'name' | 'search'>, food: CatalogFood): number {
   const want = new Set([...words(item.search), ...words(item.name)]);
@@ -85,6 +100,7 @@ export function matchScore(item: Pick<MealItem, 'name' | 'search'>, food: Catalo
   for (const w of primary) if (have.has(w)) hitPrimary += 1;
   const need = primary.size <= 2 ? primary.size : Math.ceil((primary.size * 2) / 3);
   if (hitPrimary < need) return -1;
+  for (const w of have) if (OTHER_DISH.has(w) && !want.has(w)) return -1;
   let hitAll = 0;
   for (const w of want) if (have.has(w)) hitAll += 1;
   const coverage = hitAll / want.size;
