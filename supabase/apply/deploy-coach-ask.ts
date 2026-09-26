@@ -98,6 +98,26 @@ function routeOnce(t: string): MedicalRoute {
     return 'clear';
 }
 export const stopsForMedical = (text: string): boolean => medicalRoute(text) !== 'clear';
+export function withoutStoppedTurns<T extends {
+    role: string;
+    text: string;
+}>(turns: readonly T[], stops: (text: string) => boolean = stopsForMedical): T[] {
+    const kept: T[] = [];
+    let answering = false;
+    for (const t of turns) {
+        if (t.role !== 'holt')
+            answering = false;
+        if (stops(t.text)) {
+            if (t.role !== 'holt')
+                answering = true;
+            continue;
+        }
+        if (t.role === 'holt' && answering)
+            continue;
+        kept.push(t);
+    }
+    return kept;
+}
 export const ASK_HISTORY_MAX = 8;
 export const ASK_OUTPUT_CAP = 600;
 export const ASK_TURN_CHARS = 1200;
@@ -1833,7 +1853,7 @@ const SUMMARY_MODEL = HAIKU;
 const SUMMARY_TURNS = 40;
 const WEB_SEARCH = { type: 'web_search_20260209', name: 'web_search', max_uses: 2 };
 async function summarize(body: Body, authorization: string): Promise<Response> {
-    const turns = trimHistory(body.history, SUMMARY_TURNS);
+    const turns = withoutStoppedTurns(trimHistory(body.history, SUMMARY_TURNS * 4)).slice(-SUMMARY_TURNS);
     if (turns.filter((t) => t.role === 'athlete').length < 2)
         return json({ ok: true, saved: false, reason: 'too_short' });
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authorization } } });
@@ -1954,7 +1974,7 @@ Deno.serve(async (req) => {
             allowance: reserved?.allowance ?? 0,
         });
     }
-    const history = trimHistory(body.history, ASK_HISTORY_MAX);
+    const history = withoutStoppedTurns(trimHistory(body.history, ASK_HISTORY_MAX * 4)).slice(-ASK_HISTORY_MAX);
     const context = cleanContext(body.context);
     const today = new Date().toISOString().slice(0, 10);
     const messages: {

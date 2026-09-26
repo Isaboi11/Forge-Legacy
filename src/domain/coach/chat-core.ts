@@ -56,10 +56,13 @@ import type { DishCard } from '../nutrition/kitchen-cards.ts';
 /** Which of the three voices a line is in. Text is conversation; a card is an object. Never both. */
 export type Turn =
   /** `at` is epoch ms, stamped when the turn is appended. Absent on threads stored before v2. */
-  | { kind: 'me'; text: string; at?: number }
+  /** `stopped` — the app answered this line with a stop card (medical, care, crisis, urgent). It stays on
+   *  screen and is NEVER sent to a model again: `askHistory` (`chat-history.ts`) drops it (QA R2-F1). */
+  | { kind: 'me'; text: string; at?: number; stopped?: boolean }
   /** `live` types itself out, character by character. Exactly one turn at a time may be live. */
-  /** `streaming` while a coach-ask reply is still arriving; cleared when it is complete. */
-  | { kind: 'holt'; text: string; live?: boolean; at?: number; streaming?: boolean }
+  /** `streaming` while a coach-ask reply is still arriving; cleared when it is complete. `sid` names the
+   *  stream that owns the turn, so two answers in flight never write into each other (QA R2-F5). */
+  | { kind: 'holt'; text: string; live?: boolean; at?: number; streaming?: boolean; sid?: number }
   /** `ctl` is how they are DRAWN (v2 layer 2). Absent → the 2-col chip grid, which is what every
    *  answer used to be. The openers and the help menu carry none, and correctly render as chips. */
   | { kind: 'chips'; chips: Chip[]; ctl?: QuestionControl }

@@ -67,7 +67,9 @@ export async function loadThread(): Promise<Turn[] | null> {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Turn[];
     if (!Array.isArray(parsed) || parsed.length === 0) return null;
-    return isConversation(parsed) ? parsed : null;
+    if (!isConversation(parsed)) return null;
+    /* A thread saved before `saveThread` stripped them can still hold a reply marked "still arriving". */
+    return parsed.map((t) => (t.kind === 'holt' && (t.streaming || t.sid != null) ? { ...t, streaming: undefined, sid: undefined } : t));
   } catch {
     // A thread we cannot read is a thread we start again — never an error in the athlete's face.
     return null;
@@ -87,7 +89,11 @@ export async function saveThread(turns: Turn[]): Promise<void> {
     /* `live` is a transient — it means "this line is typing itself right now". Persisting it would make
        every restored line replay its typewriter, so the conversation would appear to be written afresh
        each time the sheet opens. */
-    const settled = turns.slice(-MAX_TURNS).map((t) => (t.kind === 'holt' ? { ...t, live: false } : t));
+    /* `streaming` and `sid` are transients of the same kind: a reply saved mid-stream would restore as
+       "still arriving" forever and hold every message behind it (QA R2-F5). */
+    const settled = turns
+      .slice(-MAX_TURNS)
+      .map((t) => (t.kind === 'holt' ? { ...t, live: false, streaming: undefined, sid: undefined } : t));
     current = settled;
     await AsyncStorage.setItem(KEY, JSON.stringify(settled));
   } catch {

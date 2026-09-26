@@ -62,7 +62,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 // ⚠ ONE SOURCE FOR THE GUARD. The classifier is a pure domain module so `node --test` can prove it
 // separates real sentences, and so the function and the app can never drift apart on where the line is.
-import { medicalRoute } from '../../../src/domain/coach/medical-routing.ts';
+import { medicalRoute, withoutStoppedTurns } from '../../../src/domain/coach/medical-routing.ts';
 // ⚠ AND ONE SOURCE FOR TRUSTING THE MODEL. Structured outputs are gone (see THE OUTPUT below), so every field
 // the model returns is checked in code, in a pure module `node --test` can prove narrows junk.
 import { narrowHistory, narrowNotes, narrowReply, narrowRoute, parseModelJson } from '../../../src/domain/coach/interpret-narrow.ts';
@@ -387,7 +387,9 @@ Deno.serve(async (req) => {
       : null,
   ].filter(Boolean).join('\n');
   // CA-D1: this job's own earlier turns and nothing else, in the user turn so the system block stays cached.
-  const history = narrowHistory(body.history);
+  // ⛔ QA R2-F1: every earlier turn gets the question's code guard too. A turn that would stop is dropped
+  // (with Holt's reply to it), never answered — a stopped message must not ride along with the next one.
+  const history = withoutStoppedTurns(narrowHistory(body.history));
   const earlier = history.length
     ? `Earlier in this conversation:\n${history.map((t) => `${t.role === 'athlete' ? 'Athlete' : 'Holt'}: ${t.text}`).join('\n')}\n\n`
     : '';

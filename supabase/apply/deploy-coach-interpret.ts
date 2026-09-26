@@ -98,6 +98,26 @@ function routeOnce(t: string): MedicalRoute {
     return 'clear';
 }
 export const stopsForMedical = (text: string): boolean => medicalRoute(text) !== 'clear';
+export function withoutStoppedTurns<T extends {
+    role: string;
+    text: string;
+}>(turns: readonly T[], stops: (text: string) => boolean = stopsForMedical): T[] {
+    const kept: T[] = [];
+    let answering = false;
+    for (const t of turns) {
+        if (t.role !== 'holt')
+            answering = false;
+        if (stops(t.text)) {
+            if (t.role !== 'holt')
+                answering = true;
+            continue;
+        }
+        if (t.role === 'holt' && answering)
+            continue;
+        kept.push(t);
+    }
+    return kept;
+}
 export const ROUTES = [
     'patch', 'answer', 'edit', 'import', 'pick', 'build', 'build_day', 'medical_stop', 'unclear', 'crisis', 'urgent', 'care',
     'multi',
@@ -738,7 +758,7 @@ Deno.serve(async (req) => {
             ? `Already settled, do not re-fill: ${JSON.stringify(body.known)}`
             : null,
     ].filter(Boolean).join('\n');
-    const history = narrowHistory(body.history);
+    const history = withoutStoppedTurns(narrowHistory(body.history));
     const earlier = history.length
         ? `Earlier in this conversation:\n${history.map((t) => `${t.role === 'athlete' ? 'Athlete' : 'Holt'}: ${t.text}`).join('\n')}\n\n`
         : '';

@@ -99,6 +99,26 @@ function routeOnce(t: string): MedicalRoute {
     return 'clear';
 }
 export const stopsForMedical = (text: string): boolean => medicalRoute(text) !== 'clear';
+export function withoutStoppedTurns<T extends {
+    role: string;
+    text: string;
+}>(turns: readonly T[], stops: (text: string) => boolean = stopsForMedical): T[] {
+    const kept: T[] = [];
+    let answering = false;
+    for (const t of turns) {
+        if (t.role !== 'holt')
+            answering = false;
+        if (stops(t.text)) {
+            if (t.role !== 'holt')
+                answering = true;
+            continue;
+        }
+        if (t.role === 'holt' && answering)
+            continue;
+        kept.push(t);
+    }
+    return kept;
+}
 export const FORM_FRAMES_MIN = 3;
 export const FORM_FRAMES_MAX = 12;
 export const FORM_FRAMES_DEFAULT = 10;

@@ -105,15 +105,18 @@ test('a question streams from coach-ask; a request — even phrased as a questio
 
 test('⚠ the streamed reply is ONE growing turn, cleared of `streaming` when it ends', () => {
   const ask = sheet.slice(sheet.indexOf('const askAloud = async'), sheet.indexOf('const understand = async'));
-  assert.match(ask, /say\(\{ kind: 'holt', text: acc, streaming: true \}\)/);
-  assert.match(ask, /last\?\.kind === 'holt' && last\.streaming \? \[\.\.\.t\.slice\(0, i\), \{ \.\.\.last, text: acc \}\] : t/);
-  assert.match(ask, /x\.kind === 'holt' && x\.streaming \? \{ \.\.\.x, streaming: undefined \}/);
+  // By stream id (`sid`), never "the last streaming turn" — two answers in flight wrote into each other (QA R2-F5).
+  assert.match(ask, /say\(\{ kind: 'holt', text: acc, streaming: true, sid \}\)/);
+  assert.match(ask, /x\.kind === 'holt' && x\.sid === sid \? \{ \.\.\.x, text: acc \} : x/);
+  assert.match(ask, /x\.kind === 'holt' && x\.sid === sid && x\.streaming \? \{ \.\.\.x, streaming: undefined \}/);
   for (const route of ['answer', 'crisis', 'urgent', 'care', 'medical', 'out_of_credits', 'offline'])
     assert.match(ask, new RegExp(`case '${route}':`), route);
 });
 
 test('⚠ conversation memory is this conversation, eight turns, into both AI jobs', () => {
-  assert.match(sheet, /\.slice\(-8\)/);
+  // The eight-turn window (and the stopped-line drop, QA R2-F1) lives in the one builder, `askHistory`.
+  assert.match(sheet, /const historyFrom = \(t: Turn\[\]\): AskTurn\[\] => askHistory\(t\);/);
+  assert.match(readFileSync(path.join(here, '../chat-history.ts'), 'utf8'), /export const CHAT_HISTORY_TURNS = 8;/);
   assert.match(sheet, /interpretTyped\(text, q, m === 'day' \? 'day' : 'program', constraints, history, await loadNotes\(\)\)/);
   assert.match(sheet, /askHolt\(\s*text,\s*history,\s*context,/);
 });

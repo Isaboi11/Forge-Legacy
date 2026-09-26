@@ -488,6 +488,26 @@ function routeOnce(t: string): MedicalRoute {
     return 'clear';
 }
 export const stopsForMedical = (text: string): boolean => medicalRoute(text) !== 'clear';
+export function withoutStoppedTurns<T extends {
+    role: string;
+    text: string;
+}>(turns: readonly T[], stops: (text: string) => boolean = stopsForMedical): T[] {
+    const kept: T[] = [];
+    let answering = false;
+    for (const t of turns) {
+        if (t.role !== 'holt')
+            answering = false;
+        if (stops(t.text)) {
+            if (t.role !== 'holt')
+                answering = true;
+            continue;
+        }
+        if (t.role === 'holt' && answering)
+            continue;
+        kept.push(t);
+    }
+    return kept;
+}
 export const KITCHEN_FOODS = "all-purpose flour; almonds; apple; avocado; avocado oil; baby spinach; baking powder; balsamic vinegar; banana; beef jerky; black beans; black pepper; blueberries; bok choy; brioche burger bun; broccoli florets; brown or green lentils; brown rice cakes; brown sugar; bulgur; butter; butternut squash; cabbage; canned tomatoes; capers; carrot; cheddar; chia seeds; chicken breast; chicken thighs; chickpeas; chilli flakes; chilli powder; cider vinegar; coconut milk; cod fillet; cottage cheese; cream cheese; cucumber; cumin; curry powder; dried oregano; dried parsley; dry-roasted peanuts; edamame; egg whites; eggs; extra-lean ground beef; feta; firm tofu; flour tortilla; fresh cilantro; fresh ginger; fresh mint; fresh parsley; garlic; garlic powder; granola; grapes; greek yogurt; green beans; ground cinnamon; ground turkey; halloumi; honey; hot sauce; hummus; italian herbs; kale; kidney beans; lean ground beef; lemon juice; light butter; light cream cheese; light mayonnaise; long-grain white rice; low-carb bagel; low-carb mini wrap; low-carb tortilla; mango; marshmallow creme; milk; milk chocolate; mini chocolate chips; mushrooms; olive oil; onion; onion powder; orange; orzo or pasta; parmesan; part-skim mozzarella; peach; peanut butter; pearl barley; pepperoni; pita; pizza sauce; plain bagel; plain yogurt; pork tenderloin; potatoes; quinoa; raisins; raw prawns; red bell pepper; reduced-calorie barbecue sauce; reduced-fat american cheese; reduced-fat cheddar; reduced-fat peanut butter; rice milk; rocket; rolled oats; salmon fillet; salsa; salt; sesame seeds; sirloin steak; sliced turkey breast; smoked paprika; smoked salmon; sour cream; soy sauce; spaghetti; strawberries; sun-dried tomatoes in oil; sweet potato; tahini; teriyaki sauce; tomato paste; tomatoes; tuna in water; turkey bacon; turkey pepperoni; turkey sausage; unsweetened applesauce; vanilla extract; vegetable broth; wheat noodles; whey protein powder; white beans; whole-wheat bread";
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;

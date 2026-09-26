@@ -23,6 +23,7 @@ import {
   UNDERWORKED_SHARE,
 } from '../training-gaps.ts';
 import { FOCUS_SPEC } from '../rulebook/focus.ts';
+import { askHistory } from '../chat-history.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const COACH = join(HERE, '..');
@@ -385,9 +386,15 @@ test('⚠ the local gap answer reaches a follow-up through ordinary thread histo
     'the gap branch must say() the answer INTO the thread before returning, or the follow-up loses it',
   );
 
-  assert.match(
-    sheet,
-    /\.filter\(\([^)]*\)[^=]*=>\s*\(x\.kind === 'me' \|\| x\.kind === 'holt'\)/,
+  // The filter moved to `askHistory` (chat-history.ts, QA R2-F1) — the sheet's history must still be built
+  // there, and that builder must still admit `holt` turns.
+  assert.match(sheet, /const historyFrom = \(t: Turn\[\]\): AskTurn\[\] => askHistory\(t\);/);
+  const said = askHistory([
+    { kind: 'me', text: 'What do I need to work on?' },
+    { kind: 'holt', text: 'No calf sets in 24 sessions.' },
+  ]);
+  assert.ok(
+    said.some((t) => t.role === 'holt' && /24 sessions/.test(t.text)),
     "historyFrom must still admit 'holt' turns, or no local answer survives into the next question",
   );
 });

@@ -128,6 +128,7 @@ import {
   type Turn,
 } from '@/domain/coach/chat-core';
 import { medicalRoute } from '@/domain/coach/medical-routing';
+import { askHistory, markStopped } from '@/domain/coach/chat-history';
 import { pick } from '@/domain/coach/rulebook/voice';
 import { setStartChoice } from '@/lib/program-intent';
 import { takeCoachAskSeed } from '@/lib/coach-ask-seed';
@@ -265,11 +266,8 @@ export function CoachChatSheet({
     whenThreadEnds(
       premiumAi
         ? (turns) =>
-            void summarizeChat(
-              turns
-                .filter((x): x is Extract<Turn, { kind: 'me' | 'holt' }> => (x.kind === 'me' || x.kind === 'holt') && x.text.trim() !== '')
-                .map((x) => ({ role: x.kind === 'me' ? 'athlete' : 'holt', text: x.text })),
-            )
+            /* The same builder every ask uses — a stopped line is never summarised either (QA R2-F1). */
+            void summarizeChat(askHistory(turns, Infinity))
         : null,
     );
   }, [premiumAi]);
@@ -1695,6 +1693,16 @@ export function CoachChatSheet({
   /* §12.7 — a message sent while Holt is working is HELD, not dropped and not interleaved. The composer
      is dimmed rather than disabled precisely so a thought can be typed while he finishes. */
   const queued = useRef<string[]>([]);
+  /*
+   * ⚠ HOLT IS STILL WORKING WHILE HIS ANSWER STREAMS (QA R2-F5). `busy` clears on the first streamed word so
+   * the typing dots give way to the words — but a second message sent then started a second stream that
+   * wrote into the first one's turn, and both were cut off. The hold is `busy` OR a reply still arriving,
+   * DERIVED from the thread (not a second piece of state), and the drain below waits for both.
+   */
+  const streamingNow = thread.some((x) => x.kind === 'holt' && x.streaming === true);
+  const holding = busy != null || streamingNow;
+  /* Names each coach-ask stream, so its words land in its own turn. Touched only in the ask handler. */
+  const streamSeq = useRef(0);
 
   const send = () => {
     const text = draft.trim();
@@ -1707,7 +1715,7 @@ export function CoachChatSheet({
     /* The echo happens exactly once, HERE, whether the message is handled now or held. Putting it inside
        `process` instead is what made a queued message show up twice — once on send, once on drain. */
     say({ kind: 'me', text });
-    if (busy) {
+    if (holding) {
       queued.current.push(text);
       return;
     }
@@ -1742,12 +1750,11 @@ export function CoachChatSheet({
    * `domain/coach/__tests__/training-gaps.test.mjs` pins this filter for exactly that reason and will go
    * red if it changes. That test is in another module's suite on purpose; read its comment before
    * "fixing" the failure.
+   *
+   * ⛔ The filter lives in `askHistory` (`domain/coach/chat-history.ts`) — it drops every line the app
+   * STOPPED, so a medical message never reaches a model with the next question (QA R2-F1).
    */
-  const historyFrom = (t: Turn[]): AskTurn[] =>
-    t
-      .filter((x): x is Extract<Turn, { kind: 'me' | 'holt' }> => (x.kind === 'me' || x.kind === 'holt') && x.text.trim() !== '')
-      .slice(-8)
-      .map((x) => ({ role: x.kind === 'me' ? 'athlete' : 'holt', text: x.text }));
+  const historyFrom = (t: Turn[]): AskTurn[] => askHistory(t);
 
   /**
    * ══ WHAT HOLT ASKED THE APP TO DO ══
@@ -1783,9 +1790,16 @@ export function CoachChatSheet({
    * exercise he is asked about travel as context — the coaching records, not his memory.
    */
   /** The medical stop in words that fit it: a doctor or dietitian for food and conditions, the physio for an injury. */
+  /*
+   * ⛔ EVERY STOP GOES THROUGH `stopOn` — the card is shown AND the athlete's line that caused it is marked
+   * `stopped` in the same update, so `askHistory` never sends it to a model again (QA R2-F1).
+   */
+  const stopOn = (said: string, card: Turn) => setThread((t) => [...markStopped(t, said), ...stamped([card])]);
   const medicalStop = (text: string) =>
-    say({ kind: 'stop', text: medicalStopIsDietitian(text, kitchen) ? DIETITIAN_STOP : MEDICAL_STOP });
-  const careStop = () => say({ kind: 'stop', text: kitchen ? KITCHEN_CARE_STOP : CARE_STOP, kicker: CARE_KICKER });
+    stopOn(text, { kind: 'stop', text: medicalStopIsDietitian(text, kitchen) ? DIETITIAN_STOP : MEDICAL_STOP });
+  const careStop = (text: string) => stopOn(text, { kind: 'stop', text: kitchen ? KITCHEN_CARE_STOP : CARE_STOP, kicker: CARE_KICKER });
+  const crisisStop = (text: string) => stopOn(text, { kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
+  const urgentStop = (text: string) => stopOn(text, { kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
 
   /*
    * ══ HOLT'S KITCHEN ══ (`Docs/Holt-Kitchen-Scope-v1.0.md`) — three dishes from what they have, written by
@@ -1815,9 +1829,9 @@ export function CoachChatSheet({
     /* "Not now" on the AI consent sheet (MHMDA) — nothing left the phone, and no fallback ask either. */
     if (r.kind === 'no_consent') return void say({ kind: 'holt', text: AI_DECLINED_HOLT });
     if (r.kind === 'stop') {
-      if (r.route === 'crisis') return void say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
-      if (r.route === 'urgent') return void say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
-      if (r.route === 'care') return void careStop();
+      if (r.route === 'crisis') return void crisisStop(k.ask);
+      if (r.route === 'urgent') return void urgentStop(k.ask);
+      if (r.route === 'care') return void careStop(k.ask);
       return void medicalStop(k.ask);
     }
     /* ⚠ CLIENT-FIRST SAFE: until `coach-kitchen` is deployed (and 0222 applied) the call fails as
@@ -1910,6 +1924,9 @@ export function CoachChatSheet({
       askSourcesLive(),
     );
     let started = false;
+    /* ⚠ THIS stream's turn, by id — never "the last streaming turn", which may be another answer's (R2-F5). */
+    streamSeq.current += 1;
+    const sid = streamSeq.current;
     const r = await askHolt(
       text,
       history,
@@ -1917,20 +1934,18 @@ export function CoachChatSheet({
       (acc) => {
         if (!started) {
           started = true;
+          /* The dots give way to the words; the composer keeps holding while `streaming` is set. */
           setBusy(null);
-          say({ kind: 'holt', text: acc, streaming: true });
+          say({ kind: 'holt', text: acc, streaming: true, sid });
           return;
         }
-        setThread((t) => {
-          const i = t.length - 1;
-          const last = t[i];
-          return last?.kind === 'holt' && last.streaming ? [...t.slice(0, i), { ...last, text: acc }] : t;
-        });
+        setThread((t) => t.map((x) => (x.kind === 'holt' && x.sid === sid ? { ...x, text: acc } : x)));
       },
       { allowWeb: opts.allowWeb, recipes },
     );
     setBusy(null);
-    setThread((t) => t.map((x) => (x.kind === 'holt' && x.streaming ? { ...x, streaming: undefined } : x)));
+    /* Only this stream's flag clears — another answer still arriving keeps its own. */
+    setThread((t) => t.map((x) => (x.kind === 'holt' && x.sid === sid && x.streaming ? { ...x, streaming: undefined } : x)));
     switch (r.kind) {
       case 'answer':
         if (!started && r.text) say({ kind: 'holt', text: r.text });
@@ -1949,11 +1964,11 @@ export function CoachChatSheet({
         else if (!opts.kitchen && /\b(program|plan|routine|workout|split)\b/i.test(text)) say({ kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] });
         return;
       case 'crisis':
-        return say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
+        return crisisStop(text);
       case 'urgent':
-        return say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
+        return urgentStop(text);
       case 'care':
-        return careStop();
+        return careStop(text);
       case 'medical':
         return medicalStop(text);
       case 'out_of_credits':
@@ -2016,11 +2031,11 @@ export function CoachChatSheet({
   const respondTo = async (r: InterpretStep | InterpretResult, text: string, q: ReturnType<typeof nextQuestion>, m: ChatMode) => {
     switch (r.kind) {
       case 'crisis':
-        return say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
+        return crisisStop(text);
       case 'urgent':
-        return say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
+        return urgentStop(text);
       case 'care':
-        return careStop();
+        return careStop(text);
       case 'medical':
         return medicalStop(text);
       case 'out_of_credits':
@@ -2128,9 +2143,9 @@ export function CoachChatSheet({
        as an answer to "how many days a week" would be the worst possible reading of it. */
     /* ⛔ A person in danger first — before the injury check, whose copy is a physio referral. */
     const danger = medicalRoute(text);
-    if (danger === 'crisis') return void say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
-    if (danger === 'urgent') return void say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
-    if (danger === 'care') return void careStop();
+    if (danger === 'crisis') return void crisisStop(text);
+    if (danger === 'urgent') return void urgentStop(text);
+    if (danger === 'care') return void careStop(text);
     /*
      * ══ THE KITCHEN ══ (Chef Holt stress test 2026-09-25). Every stop is code-first here — a condition or
      * an injury never reaches a model or spends a credit — and every other line goes to `coach-ask`, which
@@ -2183,12 +2198,12 @@ export function CoachChatSheet({
      const that is declared below it, and react-compiler catches the attempt rather than letting it
      become a stale-closure bug that only shows up under load. */
   useEffect(() => {
-    if (busy || queued.current.length === 0) return;
+    if (holding || queued.current.length === 0) return;
     const next = queued.current.shift();
     // Already echoed when it was queued — `process`, not `send`, or the message appears twice.
     if (next) process(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [busy]);
+  }, [holding]);
 
   /* ── render ────────────────────────────────────────────────────────────────────────────────────── */
 
@@ -2610,7 +2625,7 @@ export function CoachChatSheet({
         {/* The inset below is for the day this returns rather than something anyone can see now — fixed
             alongside the two visible ones so all three stop guessing at the home indicator together. */}
         {preview || !canType ? null : (
-        <View style={[styles.composer, { paddingBottom: 12 + insets.bottom }, busy ? styles.composerBusy : null]}>
+        <View style={[styles.composer, { paddingBottom: 12 + insets.bottom }, holding ? styles.composerBusy : null]}>
           <TextInput
             /* While listening, the words so far — read-only — so the athlete can see they are being heard. */
             value={dictation.listening ? dictation.heard : draft}
@@ -2623,7 +2638,7 @@ export function CoachChatSheet({
                   ? 'The mic is off for Forge — turn it on in Settings'
                   : dictation.problem === 'no_speech'
                     ? 'Didn’t catch that — tap the mic and try again'
-                    : busy
+                    : holding
                       ? 'Holt is working — go ahead, he’ll get it'
                       : dictation.available
                         ? 'Tap an answer, type, or talk'

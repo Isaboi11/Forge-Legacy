@@ -56,7 +56,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 // ⚠ ONE SOURCE FOR THE GUARD — the same classifier `coach-interpret` and the app run.
-import { medicalRoute, mentionsDiscomfort } from '../../../src/domain/coach/medical-routing.ts';
+import { medicalRoute, mentionsDiscomfort, withoutStoppedTurns } from '../../../src/domain/coach/medical-routing.ts';
 // ⚠ ONE SOURCE FOR THE WIRE — the app parses this function's stream with the same module.
 import {
   ASK_HISTORY_MAX,
@@ -255,7 +255,8 @@ const WEB_SEARCH = { type: 'web_search_20260209', name: 'web_search', max_uses: 
  * to the caller — a missed summary is a smaller memory, not an error the athlete should see.
  */
 async function summarize(body: Body, authorization: string): Promise<Response> {
-  const turns = trimHistory(body.history, SUMMARY_TURNS);
+  // ⛔ A stopped line is never summarised (QA R2-F1) — the same drop the ask path makes below.
+  const turns = withoutStoppedTurns(trimHistory(body.history, SUMMARY_TURNS * 4)).slice(-SUMMARY_TURNS);
   if (turns.filter((t) => t.role === 'athlete').length < 2) return json({ ok: true, saved: false, reason: 'too_short' });
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authorization } } });
   // 'summary' costs 0 credits but still passes the Premium AI gate (0203) — the gate is the point.
@@ -382,7 +383,11 @@ Deno.serve(async (req) => {
   //
   // CA-D1: this conversation's last ≤ 8 turns and nothing else. Trimmed HERE even though the app trims,
   // because a client is not a boundary. The context goes in the final USER turn (never the system block).
-  const history = trimHistory(body.history, ASK_HISTORY_MAX);
+  //
+  // ⛔ QA R2-F1: the question is guarded above, and so is EVERY history turn. A stopped message used to ride
+  // along with the next ordinary question and Holt answered it. Any turn the code guard would stop is dropped
+  // (with Holt's reply to it) — never answered. Dropped BEFORE the window is cut, so the window stays full.
+  const history = withoutStoppedTurns(trimHistory(body.history, ASK_HISTORY_MAX * 4)).slice(-ASK_HISTORY_MAX);
   const context = cleanContext(body.context);
   const today = new Date().toISOString().slice(0, 10);
 

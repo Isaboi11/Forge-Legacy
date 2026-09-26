@@ -286,3 +286,33 @@ function routeOnce(t: string): MedicalRoute {
 
 /** Does this sentence stop? The one question every caller actually has. */
 export const stopsForMedical = (text: string): boolean => medicalRoute(text) !== 'clear';
+
+/**
+ * ══ A STOPPED MESSAGE NEVER RIDES ALONG IN THE HISTORY (QA R2-F1, 2026-09-26) ══
+ *
+ * The stop used to guard only the CURRENT message. "I'm 20 weeks pregnant" stopped; the next, ordinary
+ * question carried it to the model in the chat history, and Holt answered the pregnancy. The PO's 09-22
+ * rule is that these topics never reach a model — so the history gets the same check as the question.
+ *
+ * Drops every turn whose words stop (either voice: a client is not a boundary, and a `holt` turn is only
+ * what the client says Holt said), and the Holt turns straight after a dropped athlete turn — his answer
+ * to it, which would carry the topic on its own. Used by the Edge Functions on whatever arrives, and by
+ * the app's one history builder (`chat-history.ts`) before anything is sent.
+ */
+export function withoutStoppedTurns<T extends { role: string; text: string }>(
+  turns: readonly T[],
+  stops: (text: string) => boolean = stopsForMedical,
+): T[] {
+  const kept: T[] = [];
+  let answering = false;
+  for (const t of turns) {
+    if (t.role !== 'holt') answering = false;
+    if (stops(t.text)) {
+      if (t.role !== 'holt') answering = true;
+      continue;
+    }
+    if (t.role === 'holt' && answering) continue;
+    kept.push(t);
+  }
+  return kept;
+}
