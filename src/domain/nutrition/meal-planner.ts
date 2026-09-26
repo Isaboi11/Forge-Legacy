@@ -684,6 +684,67 @@ export function addSnack(days: PlanDay[], d: number, opt: Option): PlanDay[] {
 
 /* ── locks ──────────────────────────────────────────────────────────────── */
 
+/*
+ * ══ THE ATHLETE'S OWN PICK ══ — PO 2026-09-26: *"there needs to be a spot for me to actually build the week just on
+ * my own … I can't click on breakfast or lunch or anything. I need to be able to add in my own things where I want."*
+ *
+ * Any slot, filled or empty, takes any of the athlete's recipes. The pick is LOCKED, so a rebuild keeps it
+ * (`keptLocks` keeps a lock that still `fits` — diet, allergens, dislikes; never the cook-time cap or the slot, so
+ * "tacos for breakfast" is theirs to choose). A filled slot goes through `swapMeal`, which already mends a
+ * leftover the old dinner was feeding.
+ */
+export function placeMeal(
+  days: PlanDay[],
+  locked: Locks,
+  d: number,
+  slot: PlanSlot,
+  recipeId: string,
+  p: MealPlanPrefs,
+  target: Targets,
+  portion = 1,
+): { days: PlanDay[]; locked: Locks } {
+  const i = days[d].items.findIndex((it) => it.slot === slot && !it.extra);
+  let out: { days: PlanDay[]; locked: Locks };
+  if (i >= 0) {
+    out = swapMeal(days, locked, d, i, { recipeId, portion }, p, target);
+  } else {
+    const item: PlanItem = { slot, recipeId, portion, leftover: false };
+    const next = days.map((x, j) => {
+      if (j !== d) return x;
+      const items = [...x.items, item];
+      items.sort((a, b) => (a.extra ? 1 : 0) - (b.extra ? 1 : 0) || SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
+      return { items };
+    });
+    out = { days: next, locked };
+  }
+  const placed = out.days[d].items.find((it) => it.slot === slot && !it.extra)!;
+  return { days: out.days, locked: { ...out.locked, [slotKey(d, placed)]: lockOf(placed) } };
+}
+
+/** Why one of the athlete's recipes can't go in their plan — the hard rules `fits` holds — or null when it can. */
+export function whyNot(r: Recipe, p: MealPlanPrefs): string | null {
+  if (!DIET_OK[p.diet].includes(r.diet)) return `Not ${p.diet}`;
+  const a = r.allergens.find((x) => p.allergens.includes(x));
+  if (a) return `Has ${a.replace(/_/g, ' ')}`;
+  const hay = r.ingredientNames.join(' | ');
+  const dis = p.dislikes.find((x) => stem(x) && hay.includes(stem(x)));
+  return dis ? `Has ${dis}` : null;
+}
+
+/** The athlete's recipes for a slot's picker: the ones made for that meal first, then the rest; rule-breakers out. */
+export function ownPicks(slot: PlanSlot, p: MealPlanPrefs): { recipe: Recipe; forSlot: boolean }[] {
+  return Object.values(RECIPE_BY_ID)
+    .filter((r) => r.id.startsWith('u:') && whyNot(r, p) == null)
+    .map((recipe) => ({ recipe, forSlot: recipe.mealTypes.includes(slot) }))
+    .sort((a, b) => Number(b.forSlot) - Number(a.forSlot) || a.recipe.name.localeCompare(b.recipe.name));
+}
+
+/** How many of the athlete's recipes the picker leaves out, and why the first one is out — said, never silent. */
+export function ownPicksHidden(p: MealPlanPrefs): { count: number; example: string | null } {
+  const out = Object.values(RECIPE_BY_ID).filter((r) => r.id.startsWith('u:') && whyNot(r, p) != null);
+  return { count: out.length, example: out[0] ? `${out[0].name}: ${whyNot(out[0], p)!.toLowerCase()}` : null };
+}
+
 const lockOf = (it: PlanItem): Lock => ({
   recipeId: it.recipeId,
   leftover: it.leftover,

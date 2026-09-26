@@ -29,6 +29,9 @@ import {
   feedsDay,
   itemTotals,
   keptLocks,
+  ownPicks,
+  ownPicksHidden,
+  placeMeal,
   logKey,
   mondayOf,
   portionLabel,
@@ -106,7 +109,7 @@ export default function MealPlanScreen() {
   const dates = useMemo(() => weekDates(monday), [monday]);
 
   const [reloads, setReloads] = useState(0);
-  const [picked, setPicked] = useState<{ d: number; i?: number; mode: 'actions' | 'swap' | 'snack' } | null>(null);
+  const [picked, setPicked] = useState<{ d: number; i?: number; slot?: PlanSlotName; mode: 'actions' | 'swap' | 'snack' | 'pick' } | null>(null);
   /* Back from Edit setup, Targets or Recipe: re-read, so the week reflects what just changed. */
   useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
   /* Recipe's Swap comes back here with a request waiting (`lib/meal-plan-intent.ts`). One read per
@@ -209,9 +212,9 @@ export default function MealPlanScreen() {
 
   const targetKcal = target?.kcal ?? 0;
 
-  const startFill = async () => {
+  const startFill = async (only?: PlanSlotName) => {
     if (!week || !prefs || fill) return;
-    const slots = emptySlots(week.days, prefs.meals);
+    const slots = only ? [only] : emptySlots(week.days, prefs.meals);
     if (!slots.length) return;
     setFill({ phase: 'writing' });
     const [recent, mine] = await Promise.all([recentKitchenDishesLive(), fetchUserRecipes().catch(() => [])]);
@@ -266,7 +269,56 @@ export default function MealPlanScreen() {
     const { d, mode } = sheet;
     const day = week.days[d];
     const total = dayTotals(day).kcal;
-    if (mode === 'snack' && target) {
+    if (mode === 'pick' && sheet.slot && target) {
+      /* ══ CHOOSE MY OWN ══ (PO 09-26: "I need to be able to add in my own things where I want.") Any of the
+         athlete's recipes, made-for-this-meal first; the pick is locked so a rebuild keeps it (`placeMeal`). */
+      const slot = sheet.slot;
+      const picks = ownPicks(slot, prefs);
+      const hidden = ownPicksHidden(prefs);
+      sheetTitle = `${dates[d].name} ${SLOT_LABEL[slot].toLowerCase()}`;
+      sheetMeta = 'Your recipes. What you pick here stays when you rebuild the week.';
+      sheetBody = (
+        <View>
+          <OptionList
+            empty={false}
+            options={picks.map(({ recipe, forSlot }) => ({
+              key: recipe.id,
+              name: recipe.name,
+              cal: recipe.kcal,
+              sub: `${recipe.minutes} min · ${recipe.protein}g protein${forSlot ? '' : ` · not tagged ${SLOT_LABEL[slot].toLowerCase()}`}`,
+              pick: () => void commit({ ...week, ...placeMeal(week.days, week.locked, d, slot, recipe.id, prefs, target) }, `Added to ${dates[d].name} · kept on rebuild`),
+            }))}
+          />
+          {!picks.length ? <Text style={styles.optionEmpty}>No recipes of yours can go in your plans yet.</Text> : null}
+          {hidden.count ? (
+            <Text style={styles.optionEmpty}>{`${hidden.count} of your recipes can't go in your plans (${hidden.example}).`}</Text>
+          ) : null}
+          <View style={styles.actions}>
+            <ActionRow
+              icon={<BookGlyph />}
+              label="New recipe"
+              hint="Type one in or scan a screenshot"
+              onPress={() => {
+                setSheet(null);
+                router.push({ pathname: '/my-recipes', params: { new: '1' } });
+              }}
+            />
+            {canHolt ? (
+              <ActionRow
+                icon={<SwapGlyph />}
+                label={`Ask Holt for a ${SLOT_LABEL[slot].toLowerCase()}`}
+                hint="He writes dishes that fit your setup; you confirm them"
+                last
+                onPress={() => {
+                  setSheet(null);
+                  void startFill(slot);
+                }}
+              />
+            ) : null}
+          </View>
+        </View>
+      );
+    } else if (mode === 'snack' && target) {
       const opts = snackOptions(week.days, d, prefs, target, 3);
       sheetTitle = `Add a snack to ${dates[d].name}`;
       sheetMeta = `${grouped(shortBy(day, targetKcal))} cal short of ${grouped(targetKcal)}.`;
@@ -323,6 +375,9 @@ export default function MealPlanScreen() {
               }}
             />
             <ActionRow icon={<SwapGlyph />} label="Swap meal" chevron onPress={() => setSheet({ d, i, mode: 'swap' })} />
+            {!it.extra ? (
+              <ActionRow icon={<BookGlyph />} label="Choose my own" hint="Any of your recipes · kept when you rebuild" chevron onPress={() => setSheet({ d, i, slot: it.slot, mode: 'pick' })} />
+            ) : null}
             <ActionRow
               icon={<LockGlyph shut={isLocked} />}
               label={isLocked ? 'Locked' : 'Lock meal'}
@@ -548,12 +603,19 @@ export default function MealPlanScreen() {
                   {(prefs?.meals ?? [])
                     .filter((s) => !day.items.some((it) => it.slot === s && !it.extra))
                     .map((s) => (
-                      <View key={`empty-${s}`} style={styles.item}>
+                      <Pressable
+                        key={`empty-${s}`}
+                        style={styles.item}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${dates[d].name} ${SLOT_LABEL[s]}: add your own`}
+                        onPress={() => setSheet({ d, slot: s, mode: 'pick' })}
+                      >
                         <View style={styles.itemText}>
                           <Text style={styles.itemSlot}>{SLOT_LABEL[s]}</Text>
-                          <Text style={styles.itemMeta}>{`No ${SLOT_LABEL[s].toLowerCase()} fits your setup yet.`}</Text>
+                          <Text style={styles.itemMeta}>{`Nothing planned yet.`}</Text>
                         </View>
-                      </View>
+                        <Text style={styles.shortLink}>+ Add</Text>
+                      </Pressable>
                     ))}
 
                   {/* A snack closes a small gap; a whole empty meal is not a snack's job (PO 09-26: "Monday is 2,290
