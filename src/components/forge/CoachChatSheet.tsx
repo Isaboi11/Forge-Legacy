@@ -28,6 +28,8 @@ import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/Confirm
 import { HoltMark } from '@/components/forge/HoltMark';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { AI_DECLINED_HOLT } from '@/domain/consent/consent';
+import { consentForRoute } from '@/lib/consent';
 import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
 import { interpretTyped, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
 import { addNotes, fetchNotes } from '@/data/holt-notes-live';
@@ -1406,10 +1408,15 @@ export function CoachChatSheet({
       );
       return;
     }
-    if (!door.goTo) return;
+    const to = door.goTo;
+    if (!to) return;
     say({ kind: 'me', text: label });
-    handOff();
-    router.push(door.goTo as Parameters<typeof router.push>[0]);
+    /* A nutrition screen asks for the Nutrition consent first, as the tab does (MHMDA). */
+    void consentForRoute(to).then((ok) => {
+      if (!ok) return;
+      handOff();
+      router.push(to as Parameters<typeof router.push>[0]);
+    });
   };
 
   const tapChip = (chip: Chip, echo = true) => {
@@ -1523,9 +1530,14 @@ export function CoachChatSheet({
 
     /* The only chips that leave. `goTo` is a route string the sheet pushes — nothing about training. */
     if (chip.goTo) {
+      const to = chip.goTo;
       say({ kind: 'me', text: chip.label });
-      handOff();
-      router.push(chip.goTo as Parameters<typeof router.push>[0]);
+      /* A nutrition screen asks for the Nutrition consent first, as the tab does (MHMDA). */
+      void consentForRoute(to).then((ok) => {
+        if (!ok) return;
+        handOff();
+        router.push(to as Parameters<typeof router.push>[0]);
+      });
       return;
     }
 
@@ -1800,6 +1812,8 @@ export function CoachChatSheet({
     });
     k.asks += 1;
     setBusy(null);
+    /* "Not now" on the AI consent sheet (MHMDA) — nothing left the phone, and no fallback ask either. */
+    if (r.kind === 'no_consent') return void say({ kind: 'holt', text: AI_DECLINED_HOLT });
     if (r.kind === 'stop') {
       if (r.route === 'crisis') return void say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
       if (r.route === 'urgent') return void say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
@@ -1944,6 +1958,9 @@ export function CoachChatSheet({
         return medicalStop(text);
       case 'out_of_credits':
         return say({ kind: 'holt', text: pick('allowance_program') });
+      /* "Not now" on the AI consent sheet (MHMDA) — nothing left the phone. */
+      case 'no_consent':
+        return say({ kind: 'holt', text: AI_DECLINED_HOLT });
       case 'offline':
         return say({
           kind: 'error',
@@ -2093,6 +2110,8 @@ export function CoachChatSheet({
     setBusy('thinking');
     const r = await interpretTyped(text, q, m === 'day' ? 'day' : 'program', constraints, history, await loadNotes());
     setBusy(null);
+    /* "Not now" on the AI consent sheet (MHMDA) — nothing left the phone. */
+    if (r.kind === 'no_consent') return void say({ kind: 'holt', text: AI_DECLINED_HOLT });
     if (r.remember?.length) void rememberSaid(r.remember);
     /* "Build me a 3 day program and also what's RPE?" — each part answered, in the order it was said. */
     if (r.kind === 'multi') {

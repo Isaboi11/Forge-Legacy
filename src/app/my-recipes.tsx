@@ -50,6 +50,8 @@ import { takeRecipeDraft } from '@/lib/recipe-draft-stash';
 import { readRecipePhoto } from '@/data/recipe-photo-live';
 import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
 import { callerModalGone, pickImagesFromLibrary } from '@/lib/useMediaPicker';
+import { ensureConsent } from '@/lib/consent';
+import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { useToast } from '@/hooks/useCeremony';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -164,6 +166,9 @@ export default function MyRecipesScreen() {
     try {
       // The add sheet is a modal; iOS drops a picker presented over one that is still closing.
       await callerModalGone();
+      /* Asked BEFORE the picker (MHMDA consent). The add sheet is already gone, so the consent sheet can
+         rise, and `ensureConsent` itself waits for IT to go before the picker opens. */
+      if (!(await ensureConsent('ai_sharing'))) return;
       const picked = await pickImagesFromLibrary(1);
       if (picked === 'failed') {
         setScanError('That picture couldn’t be opened. Take a screenshot of the recipe and upload that instead.');
@@ -172,6 +177,10 @@ export default function MyRecipesScreen() {
       if (!picked.length) return;
       setScanBusy(true);
       const r = await readRecipePhoto(picked[0]);
+      if (r.kind === 'no_consent') {
+        setScanError(AI_DECLINED_LINE);
+        return;
+      }
       if (r.kind !== 'ok') {
         setScanError(recipePhotoError(r));
         return;

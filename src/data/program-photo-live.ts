@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
 import {
   READABLE_MEDIA,
   photoResultFrom,
@@ -93,7 +94,7 @@ function fingerprint(base64: string): string {
   return `${base64.length}:${(h >>> 0).toString(36)}`;
 }
 
-export async function readProgramPhoto(uri: string): Promise<PhotoReadResult> {
+export async function readProgramPhoto(uri: string): Promise<PhotoReadResult | NoAiConsent> {
   const file = await readAsBase64(uri);
   // A uri we could not read is the app failing, not the photograph being bad. The athlete would
   // otherwise be told to retake a picture that was never looked at.
@@ -107,6 +108,8 @@ export async function readProgramPhoto(uri: string): Promise<PhotoReadResult> {
   const already = readByContent.get(key);
   if (already) return already;
 
+  /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
+  if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
   try {
     const { data, error } = await supabase.functions.invoke('program-photo-read', {
       body: { image: file.data, mediaType: file.mediaType },

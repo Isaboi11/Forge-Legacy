@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
 import type { CoachConstraints } from '@/domain/coach/constraints';
 import type { Question } from '@/domain/coach/chat-core';
 import { interpret as interpretLocally } from '@/domain/coach/chat-core';
@@ -98,7 +99,7 @@ export async function interpretTyped(
    * chars. Sent in the user turn as "What you know about this athlete:" so answers use it.
    */
   notes: readonly string[] = [],
-): Promise<InterpretResult> {
+): Promise<InterpretResult | NoAiConsent> {
   const trimmed = text.trim();
   if (!trimmed) return { kind: 'unclear' };
   const sentNotes = narrowNotes(notes);
@@ -116,6 +117,8 @@ export async function interpretTyped(
   }
 
   // 2. The paid path.
+  /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
+  if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
   try {
     const { data, error } = await supabase.functions.invoke('coach-interpret', {
       body: {

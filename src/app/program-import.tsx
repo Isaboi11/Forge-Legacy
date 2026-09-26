@@ -48,6 +48,7 @@ import { draftHasContent } from '@/lib/program-draft-model';
 import { usePremiumAi } from '@/lib/entitlement';
 import { draftFromImport } from '@/lib/program-import-draft';
 import { pickImagesFromLibrary } from '@/lib/useMediaPicker';
+import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 
 /** How many photos one import takes. Each is a paid read; six covers a six-day week, one photo a day. */
 const MAX_PHOTOS = 6;
@@ -210,6 +211,11 @@ function ProgramImport() {
       }
       setBusy(photos.length > 1 ? `Reading photo ${i + 1} of ${photos.length}…` : 'Reading your photo…');
       const r = await readProgramPhoto(uri);
+      if (r.kind === 'no_consent') {
+        setBusy(null);
+        setError(AI_DECLINED_LINE);
+        return;
+      }
       if (r.kind !== 'ok') {
         setBusy(null);
         setError(photoError(r, i + 1, photos.length));

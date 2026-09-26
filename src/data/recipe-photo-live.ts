@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
 import { readAsBase64 } from '@/data/program-photo-live';
 import { sniffMediaType } from '@/domain/program/photo-read-result';
 import { RECIPE_PHOTO_MEDIA, recipePhotoResultFrom, type RecipePhotoResult } from '@/domain/nutrition/recipe-photo-read';
@@ -34,7 +35,7 @@ function fingerprint(base64: string): string {
 }
 
 /** Read one picked recipe image. ⚠ NEVER THROWS — it runs behind a button on a screen with unsaved work. */
-export async function readRecipePhoto(uri: string): Promise<RecipePhotoResult> {
+export async function readRecipePhoto(uri: string): Promise<RecipePhotoResult | NoAiConsent> {
   const file = await readAsBase64(uri);
   if (!file) return { kind: 'offline' };
 
@@ -45,6 +46,8 @@ export async function readRecipePhoto(uri: string): Promise<RecipePhotoResult> {
   const already = readByContent.get(key);
   if (already) return already;
 
+  /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
+  if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
   try {
     const { data, error } = await supabase.functions.invoke('recipe-photo-read', {
       body: { image: file.data, mediaType },

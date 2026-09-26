@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
 import { fetchMealPlanPrefs, fetchNutritionProfile } from '@/data/nutrition-live';
 import {
   KITCHEN_MEMORY_DAYS,
@@ -12,7 +13,9 @@ import {
  * HOLT'S KITCHEN — the client half of `coach-kitchen` (Kitchen Scope §6). Never throws: an outage is a
  * result, and the chat has words for each one (`kitchenError`).
  */
-export async function askKitchenLive(req: KitchenRequest): Promise<KitchenResult> {
+export async function askKitchenLive(req: KitchenRequest): Promise<KitchenResult | NoAiConsent> {
+  /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
+  if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
   try {
     const { data, error } = await supabase.functions.invoke('coach-kitchen', { body: req });
     // ⚠ A non-2xx is NOT "offline" — its body is on the error's `context` (see `recipe-photo-live.ts`).

@@ -14,6 +14,8 @@ import { pickTextFile } from '@/lib/pick-text-file';
 import { REPS_MAX, SETS_MAX } from '@/lib/program-draft-model';
 import { importLimitNotes } from '@/lib/program-import-draft';
 import { pickImageFromLibrary } from '@/lib/useMediaPicker';
+import { ensureConsent } from '@/lib/consent';
+import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { usePremiumAi } from '@/lib/entitlement';
 
 /**
@@ -201,6 +203,11 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
    * at editable text they can fix and re-preview, rather than a wrong result and a dead end.
    */
   const onPickPhoto = async () => {
+    /* Asked BEFORE the picker (MHMDA consent); `ensureConsent` waits for its own sheet to go first. */
+    if (!(await ensureConsent('ai_sharing'))) {
+      setImportError(AI_DECLINED_LINE);
+      return;
+    }
     const uri = await pickImageFromLibrary();
     if (!uri) return; // Cancelled. Not an error, and it must not leave one on screen.
 
@@ -241,6 +248,9 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
           break;
         case 'unavailable':
           setImportError('Photo reading isn’t working right now. Try again in a bit, or paste the program as text.');
+          break;
+        case 'no_consent':
+          setImportError(AI_DECLINED_LINE);
           break;
         default:
           setImportError('Couldn’t reach us to read that photo. Check your connection and try again.');

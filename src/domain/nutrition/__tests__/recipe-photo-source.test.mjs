@@ -171,7 +171,12 @@ test('the entry point needs Premium AI AND Nutrition, and is hidden otherwise', 
 
 test('the one picker path, library only, after the sheet is gone; the draft is not saved', () => {
   assert.ok(!/from 'expo-image-picker'/.test(SCREEN));
-  assert.match(SCREEN, /await callerModalGone\(\);\n\s*const picked = await pickImagesFromLibrary\(1\);/);
+  // The AI consent (MHMDA, 0224) is asked between the two: after the add sheet is gone, before the picker —
+  // and `ensureConsent` itself waits for ITS sheet to be gone before it answers.
+  assert.match(
+    SCREEN,
+    /await callerModalGone\(\);\n(?:\s*\/\*[\s\S]*?\*\/\n)?\s*if \(!\(await ensureConsent\('ai_sharing'\)\)\) return;\n\s*const picked = await pickImagesFromLibrary\(1\);/,
+  );
   const scan = SCREEN.slice(at('const scanRecipe = async', SCREEN), at('const pickForLine', SCREEN));
   assert.ok(!/saveUserRecipe/.test(scan), 'a read opens a draft; only Save saves');
   assert.match(scan, /setForm\(draft\.form\);/);

@@ -15,6 +15,7 @@ import { saveWorkoutAsTemplate } from '@/data/templates-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { useUnits } from '@/lib/settings';
+import { consentForRoute } from '@/lib/consent';
 import { useNutritionAccess } from '@/lib/entitlement';
 import { localToday, totals } from '@/domain/nutrition/day';
 import { fetchDay } from '@/data/nutrition-live';
@@ -975,7 +976,8 @@ export default function WorkoutComplete() {
                      second ask. Nothing here nags: an unlogged day simply offers the door. */
                   label={eatenToday > 0 ? `${thousands(eatenToday)} cal logged today` : 'Log what you ate'}
                   filled={eatenToday > 0}
-                  onPress={() => router.push('/log-food')}
+                  /* Outside the Nutrition tab, so it asks for the Nutrition consent itself (MHMDA). */
+                  onPress={() => void consentForRoute('/log-food').then((ok) => ok && router.push('/log-food'))}
                 />
               ) : null}
             </View>

@@ -1,6 +1,7 @@
 import { fetch } from 'expo/fetch';
 
 import { supabase } from '@/lib/supabase';
+import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
 import { medicalRoute } from '@/domain/coach/medical-routing';
 import {
   ASK_HISTORY_MAX,
@@ -59,7 +60,9 @@ export type AskResult =
   /** The month's credits are gone. A commercial state, not a coaching one. */
   | { kind: 'out_of_credits'; remaining: number; allowance: number }
   /** The app failed (network, no session, upstream error). `detail` is for logs, never the athlete. */
-  | { kind: 'offline'; detail?: string | null };
+  | { kind: 'offline'; detail?: string | null }
+  /** The athlete chose "Not now" on the AI consent sheet. Nothing was sent. */
+  | NoAiConsent;
 
 export interface AskOptions {
   /** Abort when the athlete closes the sheet; the promise then resolves `offline`. */
@@ -114,6 +117,9 @@ export async function askHolt(
   const guard = medicalRoute(q);
   if (guard === 'crisis' || guard === 'urgent' || guard === 'care') return { kind: guard };
   if (guard !== 'clear') return { kind: 'medical' };
+
+  /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
+  if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
 
   let text = '';
   try {

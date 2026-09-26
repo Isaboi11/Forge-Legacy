@@ -29,6 +29,8 @@ import { matchMealItems, readMealPhoto } from '@/data/meal-photo-live';
 import { useToast } from '@/hooks/useCeremony';
 import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
 import { useMediaPicker } from '@/lib/useMediaPicker';
+import { ensureConsent } from '@/lib/consent';
+import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 
 /**
@@ -95,6 +97,8 @@ export default function MealPhotoScreen() {
     if (busy.current) return;
     busy.current = true;
     try {
+      /* Asked BEFORE the camera, so nobody takes a photo that then cannot be sent (MHMDA consent). */
+      if (!(await ensureConsent('ai_sharing'))) return;
       const asset = await pick({
         kind: 'images',
         title: 'Photo of your meal',
@@ -103,6 +107,10 @@ export default function MealPhotoScreen() {
       if (!asset) return;
       setStage({ step: 'reading' });
       const r = await readMealPhoto(asset.uri);
+      if (r.kind === 'no_consent') {
+        setStage({ step: 'problem', text: AI_DECLINED_LINE });
+        return;
+      }
       if (r.kind !== 'ok') {
         setStage({ step: 'problem', text: mealPhotoError(r) });
         return;

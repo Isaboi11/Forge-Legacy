@@ -11,6 +11,7 @@ import { fetchBodyEntries } from '@/data/body-metrics-live';
 import { exactWeight } from '@/domain/settings/units';
 import { useBodyGoalSync } from '@/hooks/useBodyGoalSync';
 import { useBodyPrefs } from '@/lib/body-metrics';
+import { consentForRoute } from '@/lib/consent';
 import { useNutritionAccess } from '@/lib/entitlement';
 import { localToday } from '@/domain/nutrition/day';
 import { driftLine, weightDrift } from '@/domain/nutrition/targets';
@@ -211,7 +212,8 @@ export function BodySection() {
 
         {targetDrift ? (
           <Pressable
-            onPress={() => router.push('/nutrition-targets')}
+            /* Outside the Nutrition tab, so it asks for the Nutrition consent itself (MHMDA). */
+            onPress={() => void consentForRoute('/nutrition-targets').then((ok) => ok && router.push('/nutrition-targets'))}
             accessibilityRole="button"
             accessibilityLabel="Review your nutrition targets — your weight has changed since they were set"
             style={styles.photos}

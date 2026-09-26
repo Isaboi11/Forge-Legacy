@@ -1,6 +1,7 @@
 import type { ImagePickerAsset } from 'expo-image-picker';
 
 import { supabase } from '@/lib/supabase';
+import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
 import {
   capFrames,
   FORM_ACTION,
@@ -246,7 +247,7 @@ export interface FormRequest {
  * ⚠ NEVER THROWS. `offline` is the app failing, `unavailable` is the server failing, `unreadable` is a
  * read we genuinely could not get out of those frames (and was not charged for).
  */
-export async function formCheck(req: FormRequest): Promise<FormCheckResult> {
+export async function formCheck(req: FormRequest): Promise<FormCheckResult | NoAiConsent> {
   const cleanLift = (req.lift ?? '').replace(/\s+/g, ' ').trim().slice(0, FORM_LIFT_CHARS);
   const cleanNote = (req.note ?? '').replace(/\s+/g, ' ').trim().slice(0, FORM_NOTE_CHARS);
   if (!cleanLift) return { kind: 'bad_frames' };
@@ -256,6 +257,8 @@ export async function formCheck(req: FormRequest): Promise<FormCheckResult> {
   // Refused by the function before any model call; saying so here saves the round trip.
   if (!capped) return { kind: 'bad_frames' };
 
+  /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
+  if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
   try {
     const { data, error } = await supabase.functions.invoke('coach-form-check', {
       body: {

@@ -26,6 +26,7 @@ import { ForgeSplash } from '@/components/forge-splash';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
 import { PendingSaveDrain } from '@/components/pending-save-drain';
 import { CoachBubble } from '@/components/forge/CoachBubble';
+import { ConsentHost } from '@/components/forge/ConsentSheet';
 import { KeyboardPrimerProvider } from '@/components/forge/KeyboardPrimer';
 import { OverlayBoundary } from '@/components/overlay-boundary';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -171,6 +172,14 @@ export default function RootLayout() {
                         still works. The safe-area fix removes today's cause; this removes the category. */}
                     <OverlayBoundary>
                       <CoachBubble />
+                    </OverlayBoundary>
+                    {/* The health-data consent sheet (MHMDA / Nevada SB 370), raised by `ensureConsent()`
+                        from anywhere — the data layer included. Out here with the bubble so it can rise
+                        over any route and over Holt's own sheet. ⚠ If it ever throws, the boundary takes
+                        it down and every prompt answers "Not now": nothing is collected or sent without a
+                        yes, and the rest of the app keeps working. */}
+                    <OverlayBoundary>
+                      <ConsentHost />
                     </OverlayBoundary>
                     {/* Product-usage events (0131, P-6-Amendment-001). Renders nothing; it is here
                         rather than inside the Stack because inside it would remount on every
@@ -400,6 +409,9 @@ function RootNavigator() {
         {/* Form history (2026-09-25) — a lift's saved form reads, timeline + compare (Form Check .dc 05). */}
         <Stack.Screen name="form-history" />
         <Stack.Screen name="profile-visibility" />
+        {/* Health Data & AI (0224) — Account Settings → Privacy & Alerts. The athlete's two consents
+            (Nutrition, AI sharing), each shown with its date and withdrawable (MHMDA / Nevada SB 370). */}
+        <Stack.Screen name="health-consent" />
         <Stack.Screen name="notifications" />
         {/* Blocked People (0171). Account Settings → Privacy & Alerts, and the ONLY way to undo a block:
             once one lands, that athlete's content is gone from every feed and their profile — carrying the

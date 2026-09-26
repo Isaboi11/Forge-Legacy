@@ -177,6 +177,7 @@ export default function AccountSettingsScreen() {
     hasNotifications: true,
     hasPreferences: true,
     hasHoltMemory: true,
+    hasHealthConsent: true,
     isAdmin: isAdmin === true,
     /* `null` while entitlement is loading or unverifiable, which the row reads as "say nothing". */
     tier: useTier() ?? undefined,

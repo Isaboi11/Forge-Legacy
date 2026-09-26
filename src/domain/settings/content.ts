@@ -154,6 +154,12 @@ export function settingsSections(opts: {
    */
   hasHoltMemory?: boolean;
   /**
+   * "Health Data & AI" (`/health-consent`, 0224) — the athlete's Nutrition and AI-sharing consents, each
+   * with its date and a Withdraw (MHMDA / Nevada SB 370). Flag-gated like the rows above so an undefined
+   * flag keeps the exact menu the tests pin.
+   */
+  hasHealthConsent?: boolean;
+  /**
    * The operator dashboard row (0129/0130). Absent for everybody who is not in `app_admins`, and
    * absent by DEFAULT — an undefined flag must produce exactly the section list every athlete has
    * today, which is what `content.test.mjs` asserts.
@@ -173,6 +179,7 @@ export function settingsSections(opts: {
 
   const privacy: SettingsRow[] = [];
   if (opts.hasVisibility) privacy.push({ key: 'vis', label: 'Profile Visibility', action: { type: 'route', path: '/profile-visibility' } });
+  if (opts.hasHealthConsent) privacy.push({ key: 'health', label: 'Health Data & AI', action: { type: 'route', path: '/health-consent' } });
   if (opts.hasNotifications) privacy.push({ key: 'notif', label: 'Notifications', action: { type: 'route', path: '/notifications' } });
   /*
    * ⚠ UNCONDITIONAL, UNLIKE THE TWO ROWS ABOVE — and that is the point of it.

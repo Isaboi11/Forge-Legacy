@@ -1,6 +1,7 @@
 import { fetch } from 'expo/fetch';
 
 import { supabase } from '@/lib/supabase';
+import { consentAllowsNow } from '@/lib/consent';
 import type { AskTurn } from '@/domain/coach/ask-wire';
 
 /**
@@ -25,6 +26,9 @@ export const SUMMARY_MIN_ATHLETE_TURNS = 2;
 
 export async function summarizeChat(turns: readonly AskTurn[]): Promise<void> {
   if (turns.filter((t) => t.role === 'athlete').length < SUMMARY_MIN_ATHLETE_TURNS) return;
+  /* A summary is written by the model, so it is sharing too — but nobody tapped anything, so it never asks:
+     without a yes already given, the chat simply is not remembered (MHMDA / Nevada SB 370). */
+  if (!consentAllowsNow('ai_sharing')) return;
   try {
     const { data: auth } = await supabase.auth.getSession();
     const jwt = auth.session?.access_token;

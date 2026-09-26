@@ -66,6 +66,8 @@ import { setCoachAskSeed } from '@/lib/coach-ask-seed';
 import { useEntitlementState, usePremiumAi } from '@/lib/entitlement';
 import { writeExerciseInbox } from '@/lib/exercise-inbox';
 import { useMediaPicker } from '@/lib/useMediaPicker';
+import { AI_DECLINED_LINE } from '@/domain/consent/consent';
+import { ensureConsent } from '@/lib/consent';
 
 /**
  * FORM CHECK — built to `design_reference/Forge Modal Library Design (8)/Coach Holt Form Check.dc.html`
@@ -254,6 +256,8 @@ export default function FormCheckScreen() {
   // ── 02 → 03 → 04: the read ───────────────────────────────────────────────────
   const send = async (clip: Picked, startMs: number, endMs: number) => {
     if (!lift) return;
+    /* Asked before a frame is pulled, so the wait is never for nothing (MHMDA consent to share). */
+    if (!(await ensureConsent('ai_sharing'))) return setStage({ step: 'problem', text: AI_DECLINED_LINE });
     const chosen = lift;
     cancelRef.current = false;
     setLanded([]);
@@ -314,6 +318,9 @@ export default function FormCheckScreen() {
         return setStage({ step: 'problem', text: 'That broke on my end. Nothing was charged. Try again in a moment.' });
       case 'offline':
         return setStage({ step: 'problem', text: "I couldn't reach my notes just then. Check your connection and send it again." });
+      /* "Not now" on the AI consent sheet — the frames never left the phone. */
+      case 'no_consent':
+        return setStage({ step: 'problem', text: AI_DECLINED_LINE });
     }
   };
 

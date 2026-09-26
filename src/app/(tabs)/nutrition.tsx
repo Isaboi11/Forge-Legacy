@@ -32,6 +32,8 @@ import {
 import { copyMealFrom, fetchDay, hasFoodAfter, isNutritionFirstRun, mealHasFood } from '@/data/nutrition-live';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 import { useToast } from '@/hooks/useCeremony';
+import { autoPrompts, consentAllows, NUTRITION_DOOR } from '@/domain/consent/consent';
+import { ensureConsent, useConsent, warmConsents } from '@/lib/consent';
 import { useEntitlementState, useNutritionAccess, useTier } from '@/lib/entitlement';
 import { useProfile } from '@/lib/profile';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
@@ -78,6 +80,27 @@ export default function NutritionScreen() {
   const mayUseNutrition = useNutritionAccess();
   const { status: entitlementStatus } = useEntitlementState();
   useEarnedMoments();
+
+  /*
+   * ══ CONSENT BEFORE COLLECTION (MHMDA / Nevada SB 370 — `domain/consent/consent.ts`) ══
+   *
+   * The first time an athlete opens the tab, the consent sheet rises by itself, before anything can be
+   * logged. "Not now" is stored, so it is asked once, not on every visit — the tab then shows its door
+   * (below) and the rest of the app carries on untouched. Existing athletes are asked too: nobody is
+   * grandfathered, because there was never a stored yes to grandfather.
+   *
+   * ⚠ ON FOCUS, NOT ON MOUNT. The tab can be mounted without being looked at; a sheet must never rise
+   * over some other screen because this one exists.
+   */
+  const consent = useConsent();
+  const nutritionConsent = consent.status.nutrition;
+  useFocusEffect(
+    useCallback(() => {
+      if (!mayUseNutrition) return;
+      if (!consent.loaded) return warmConsents();
+      if (autoPrompts(nutritionConsent)) void ensureConsent('nutrition');
+    }, [mayUseNutrition, consent.loaded, nutritionConsent]),
+  );
 
   /* The day being read. Minted once per mount from the device clock, then moved only by the arrows —
      so a session that crosses midnight keeps showing the day the athlete was looking at. */
@@ -157,6 +180,33 @@ export default function NutritionScreen() {
               Nutrition is still being built. It will arrive as part of Forge when it is finished — nothing to
               sign up for.
             </Text>
+          </View>
+        ) : null}
+      </View>
+    );
+  }
+
+  /* No consent, no diary — the door back in. Held blank (not the door) while the stored answer is read,
+     so an athlete who already agreed never sees it flash. */
+  if (!consent.loaded || !consentAllows(nutritionConsent)) {
+    return (
+      <View style={styles.screen}>
+        <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.22)' }} />
+        <AppBar
+          title="Nutrition"
+          transparent
+          avatar={<Avatar name={profile?.name ?? ''} src={profile?.avatarUrl ?? undefined} size="appBar" />}
+          onAvatar={() => router.push('/account-settings')}
+        />
+        {consent.loaded ? (
+          <View style={styles.previewGate}>
+            <Text style={styles.previewTitle}>{NUTRITION_DOOR.title}</Text>
+            <Text style={styles.previewBody}>{NUTRITION_DOOR.body}</Text>
+            <View style={styles.consentAction}>
+              <Button variant="primary" fullWidth onPress={() => void ensureConsent('nutrition')}>
+                {NUTRITION_DOOR.action}
+              </Button>
+            </View>
           </View>
         ) : null}
       </View>
@@ -484,6 +534,7 @@ const styles = StyleSheet.create({
   previewGate: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36, gap: 10 },
   previewTitle: { fontFamily: flFont.display, fontSize: 23, color: flColor.cream100, letterSpacing: -0.2 },
   previewBody: { fontSize: 14, lineHeight: 21, color: flColor.gray400, textAlign: 'center' },
+  consentAction: { alignSelf: 'stretch', marginTop: 12 },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 2 },
   barAction: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },

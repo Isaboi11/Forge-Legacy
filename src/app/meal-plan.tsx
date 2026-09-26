@@ -64,6 +64,8 @@ import { estimateFor, groceryList, stateFor } from '@/domain/nutrition/grocery';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
+import { ensureConsent } from '@/lib/consent';
+import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { askKitchenLive, recentKitchenDishesLive, rememberKitchenDishesLive } from '@/data/coach-kitchen-live';
 import { dishCards, type DishCard } from '@/domain/nutrition/kitchen-cards';
 import { kitchenError, rotationLeanToday } from '@/domain/nutrition/kitchen-dishes';
@@ -216,6 +218,11 @@ export default function MealPlanScreen() {
     if (!week || !prefs || fill) return;
     const slots = only ? [only] : emptySlots(week.days, prefs.meals);
     if (!slots.length) return;
+    /* One consent sheet for the whole fill, before anything is sent (MHMDA). */
+    if (!(await ensureConsent('ai_sharing'))) {
+      showToast(AI_DECLINED_LINE);
+      return;
+    }
     setFill({ phase: 'writing' });
     const [recent, mine] = await Promise.all([recentKitchenDishesLive(), fetchUserRecipes().catch(() => [])]);
     const exclude = [...new Set([...mine.map((u) => u.name), ...recent])].slice(0, 40);
@@ -229,7 +236,8 @@ export default function MealPlanScreen() {
     );
     results.forEach((r, i) => {
       if (r.kind !== 'ok') {
-        if (r.kind !== 'stop') failure = kitchenError(r);
+        if (r.kind === 'no_consent') failure = AI_DECLINED_LINE;
+        else if (r.kind !== 'stop') failure = kitchenError(r);
         return;
       }
       void rememberKitchenDishesLive(r.dishes);
