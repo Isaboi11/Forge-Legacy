@@ -52,6 +52,7 @@ import {
   fetchTargetsOn,
   fetchUserRecipes,
   saveMealPlanWeek,
+  saveUserRecipe,
   togglePlanLog,
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
@@ -59,6 +60,12 @@ import { takeSwapRequest } from '@/lib/meal-plan-intent';
 import { estimateFor, groceryList, stateFor } from '@/domain/nutrition/grocery';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
+import { askKitchenLive, recentKitchenDishesLive, rememberKitchenDishesLive } from '@/data/coach-kitchen-live';
+import { dishCards, type DishCard } from '@/domain/nutrition/kitchen-cards';
+import { kitchenError, rotationLeanToday } from '@/domain/nutrition/kitchen-dishes';
+import { allergenLine, dayHasEmptySlot, emptySlots, fillAsk, fillAvoid, formForPlan, plannable } from '@/domain/nutrition/holt-fill';
+import { recipeFrom } from '@/domain/nutrition/user-recipes';
 
 const takeSwapRequestAsync = () => Promise.resolve(takeSwapRequest());
 
@@ -150,6 +157,16 @@ export default function MealPlanScreen() {
   }, [resolved]);
 
   const [open, setOpen] = useState<Record<number, boolean>>({});
+  /*
+   * ══ HOLT FILLS THE WEEK ══ (`domain/nutrition/holt-fill.ts`). One coach-kitchen call per empty meal, only
+   * fully-matched dishes inside the setup, then a list the athlete confirms before anything is saved.
+   */
+  const premiumAi = usePremiumAi();
+  const nutritionAccess = useNutritionAccess();
+  const canHolt = premiumAi && nutritionAccess;
+  const [fill, setFill] = useState<
+    { phase: 'writing' } | { phase: 'review'; picks: { slot: PlanSlotName; card: DishCard }[] } | { phase: 'saving' } | null
+  >(null);
   const [active, setActive] = useState(0);
   const [busy, setBusy] = useState(false);
 
@@ -191,6 +208,55 @@ export default function MealPlanScreen() {
   };
 
   const targetKcal = target?.kcal ?? 0;
+
+  const startFill = async () => {
+    if (!week || !prefs || fill) return;
+    const slots = emptySlots(week.days, prefs.meals);
+    if (!slots.length) return;
+    setFill({ phase: 'writing' });
+    const [recent, mine] = await Promise.all([recentKitchenDishesLive(), fetchUserRecipes().catch(() => [])]);
+    const exclude = [...new Set([...mine.map((u) => u.name), ...recent])].slice(0, 40);
+    const avoid = fillAvoid(prefs);
+    const picks: { slot: PlanSlotName; card: DishCard }[] = [];
+    let failure: string | null = null;
+    const results = await Promise.all(
+      slots.map((slot, i) =>
+        askKitchenLive({ have: [], ask: fillAsk(slot, prefs), avoid, exclude, nudge: null, lean: rotationLeanToday(i), left: null, minor: false }),
+      ),
+    );
+    results.forEach((r, i) => {
+      if (r.kind !== 'ok') {
+        if (r.kind !== 'stop') failure = kitchenError(r);
+        return;
+      }
+      void rememberKitchenDishesLive(r.dishes);
+      for (const card of plannable(dishCards(r.dishes, prefs.allergens, prefs.diet), prefs.cookMinutes)) picks.push({ slot: slots[i], card });
+    });
+    if (!picks.length) {
+      setFill(null);
+      showToast(failure ?? "Holt couldn't write dishes that fit your setup. Try loosening the cook time.");
+      return;
+    }
+    setFill({ phase: 'review', picks });
+  };
+
+  /* The athlete's tap on the list that showed every dish's allergens — the confirmation `formForPlan` relies on. */
+  const acceptFill = async (picks: { slot: PlanSlotName; card: DishCard }[]) => {
+    if (!week || !prefs || !target) return;
+    setFill({ phase: 'saving' });
+    try {
+      const now = new Date().toISOString();
+      for (const { slot, card } of picks) await saveUserRecipe({ ...recipeFrom(formForPlan(card, slot), '', now), id: null });
+      await fetchUserRecipes(); // registers them in the book before the rebuild reads it
+      await commit(rebuildWeek(week, prefs, target), `Added ${picks.length} of Holt's dishes · week rebuilt`);
+      setReloads((n) => n + 1);
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setFill(null);
+    }
+  };
+  const anyEmpty = !!week && !!prefs && emptySlots(week.days, prefs.meals).length > 0;
 
   /* ── the sheet ── */
   let sheetTitle = '';
@@ -325,7 +391,14 @@ export default function MealPlanScreen() {
           {prefs && target ? (
             <Text style={styles.lede}>{`Built around ${grouped(target.kcal)} cal a day · cooking for ${prefs.household}.`}</Text>
           ) : null}
-          {weekEmpty ? (
+          {anyEmpty && canHolt ? (
+            <View style={styles.short}>
+              <Text style={styles.shortText}>{weekEmpty ? 'No recipes to plan from yet.' : 'Some meals have nothing that fits yet.'}</Text>
+              <Pressable accessibilityRole="button" hitSlop={6} onPress={() => void startFill()} disabled={!!fill}>
+                <Text style={styles.shortLink}>{fill?.phase === 'writing' ? 'Holt is writing…' : 'Let Holt fill them'}</Text>
+              </Pressable>
+            </View>
+          ) : weekEmpty ? (
             <View style={styles.short}>
               <Text style={styles.shortText}>No recipes to plan from yet.</Text>
               <Pressable accessibilityRole="button" hitSlop={6} onPress={() => router.push('/my-recipes')}>
@@ -483,7 +556,18 @@ export default function MealPlanScreen() {
                       </View>
                     ))}
 
-                  {gap > 0 ? (
+                  {/* A snack closes a small gap; a whole empty meal is not a snack's job (PO 09-26: "Monday is 2,290
+                      short. Add a snack?"). With a meal empty, the offer is Holt's dishes — or nothing. */}
+                  {gap > 0 && prefs && dayHasEmptySlot(day, prefs.meals) ? (
+                    canHolt ? (
+                      <View style={styles.short}>
+                        <Text style={styles.shortText}>{`${dates[d].name} is ${grouped(gap)} short.`}</Text>
+                        <Pressable accessibilityRole="button" hitSlop={6} onPress={() => void startFill()} disabled={!!fill}>
+                          <Text style={styles.shortLink}>{fill?.phase === 'writing' ? 'Holt is writing…' : 'Let Holt fill it'}</Text>
+                        </Pressable>
+                      </View>
+                    ) : null
+                  ) : gap > 0 ? (
                     <View style={styles.short}>
                       <Text style={styles.shortText}>{`${dates[d].name} is ${grouped(gap)} short.`}</Text>
                       <Pressable accessibilityRole="button" hitSlop={6} onPress={() => setSheet({ d, mode: 'snack' })}>
@@ -523,6 +607,44 @@ export default function MealPlanScreen() {
           </View>
         </View>
       ) : null}
+
+      {/* Holt's dishes, before anything is saved: each with the allergens the app derived. "Add these" is the
+          athlete confirming them (`formForPlan`). */}
+      <BottomSheet
+        open={fill?.phase === 'review' || fill?.phase === 'saving'}
+        onClose={() => (fill?.phase === 'review' ? setFill(null) : undefined)}
+        title="Holt's dishes for your week"
+      >
+        <View style={styles.sheetBody}>
+          <Text style={styles.sheetMeta}>
+            {"Every number is the app's, from these ingredients. Check the allergens: adding them confirms them for your plans."}
+          </Text>
+          {fill?.phase === 'review'
+            ? fill.picks.map(({ slot, card }, k) => (
+                <View key={`${card.name}-${k}`} style={styles.item}>
+                  <View style={styles.itemText}>
+                    <Text style={styles.itemSlot}>{SLOT_LABEL[slot]}</Text>
+                    <Text style={styles.itemMeta}>{card.name}</Text>
+                    <Text style={styles.itemMeta}>{`${card.minutes ? `${card.minutes} min · ` : ''}${grouped(card.kcal)} cal · ${card.protein} g protein · ${allergenLine(card)}`}</Text>
+                  </View>
+                </View>
+              ))
+            : null}
+          <View style={styles.actions}>
+            <Button
+              variant="primary"
+              fullWidth
+              disabled={fill?.phase !== 'review'}
+              onPress={() => (fill?.phase === 'review' ? void acceptFill(fill.picks) : undefined)}
+            >
+              {fill?.phase === 'saving' ? 'Adding…' : 'Add these and rebuild'}
+            </Button>
+            <Button variant="text" fullWidth onPress={() => setFill(null)} disabled={fill?.phase === 'saving'}>
+              Not now
+            </Button>
+          </View>
+        </View>
+      </BottomSheet>
 
       <BottomSheet open={!!sheet && !!sheetBody} onClose={() => setSheet(null)} title={sheetTitle}>
         <View style={styles.sheetBody}>
