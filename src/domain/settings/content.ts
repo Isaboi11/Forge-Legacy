@@ -38,7 +38,7 @@ export const LEGAL: Record<LegalKey, LegalDocument> = {
   terms: {
     host: 'forgelegacy.app/terms',
     title: 'Terms of Service',
-    updated: 'Last updated · Feb 2026',
+    updated: 'Last updated · Sep 2026',
     body: [
       'Welcome to Forge Legacy. By creating an account and using the app you agree to train responsibly and to the terms set out below.',
       /*
@@ -53,13 +53,15 @@ export const LEGAL: Record<LegalKey, LegalDocument> = {
        */
       'Your Legacy — your ranks, records, and honors — belongs to you. We store it so it follows you across devices, and you may delete it at any time from Account settings.',
       'Forge Legacy is a training companion, not medical advice. Consult a qualified professional before beginning any new program, and stop if something hurts.',
+      'Calorie and macro targets, meal plans and food data are estimates, not medical or dietary advice. Coach Holt’s AI can make mistakes — check anything that matters.',
+      'Paid plans are billed by Apple and renew automatically until you cancel in your iPhone’s Settings, at least 24 hours before the period ends. Apple handles refunds. The full terms, including free trials and Early Bird pricing, are at forgelegacy.app/terms.',
       'These terms may change as the app grows. We’ll surface material changes in-app before they take effect.',
     ],
   },
   privacy: {
     host: 'forgelegacy.app/privacy',
     title: 'Privacy Policy',
-    updated: 'Last updated · Aug 2026',
+    updated: 'Last updated · Sep 2026',
     /*
      * ⚠ THIS LIST SAID "ONLY" AND WAS NOT EXHAUSTIVE, WHICH IS THE ONE THING A COLLECTION LIST MUST NOT
      *   DO. Flagged by the 2026-08-12 launch audit (§4-3): it named workouts, goals and squads, and
@@ -76,7 +78,9 @@ export const LEGAL: Record<LegalKey, LegalDocument> = {
      */
     body: [
       'We collect what the app needs to work: your workouts and records, the goals you set, the chapters you keep, the photos and video you add, and the squads you join.',
-      'Tracked runs, walks and rides read your precise location while the session is running. Route maps are trimmed by 200 metres at each end before they are saved, so your start and finish are never stored — not hidden on screen, removed.',
+      'Tracked runs, walks and rides read your precise location while the session is running. Your full route is saved and is visible to you only; a map appears on a post only when you choose to add it to that post.',
+      'If you use Nutrition, your food log, targets, allergies and preferences are visible to you only. Food searches send only the words or barcode you entered to the food databases.',
+      'If your plan includes the AI features, what a feature needs — your question, the relevant training or nutrition details, and any photo you chose — is sent to our AI provider, Anthropic. Never your name or email.',
       'We record limited usage events — which features get opened — so we know what to build next. They are never sold, never given to advertisers, and never used to track you across other apps.',
       'You control what others see. Visibility is set per-section, and nothing you mark private is shared beyond you.',
       'We never sell your data. You can delete your account, and everything in it, from Account Settings — it is immediate and permanent.',
