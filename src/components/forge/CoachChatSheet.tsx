@@ -38,6 +38,12 @@ import { askHolt, askSourcesLive, type AskAction, type AskTurn } from '@/data/co
 import { summarizeChat } from '@/data/holt-chats-live';
 import { holtRecipeCardsLive } from '@/data/holt-recipes-live';
 import { kitchenLeftLive, kitchenPantryLive } from '@/data/holt-kitchen-live';
+import { askKitchenLive, kitchenRulesLive, recentKitchenDishesLive, rememberKitchenDishesLive } from '@/data/coach-kitchen-live';
+import { addEntries } from '@/data/nutrition-live';
+import { dietAvoid, dishCards, dishLine, type DishCard } from '@/domain/nutrition/kitchen-cards';
+import { isMakeRequest, kitchenError, rotationLeanToday, type KitchenNudge } from '@/domain/nutrition/kitchen-dishes';
+import { localToday } from '@/domain/nutrition/day';
+import { stashRecipeDraft } from '@/lib/recipe-draft-stash';
 import { fetchNutritionSummary } from '@/data/holt-nutrition-live';
 import {
   DIETITIAN_STOP,
@@ -1384,8 +1390,20 @@ export function CoachChatSheet({
    */
   const kitchenDoor = (label: string, door: { goTo?: string; ask?: string }) => {
     if (door.ask && canType) {
-      say({ kind: 'me', text: label }, { kind: 'holt', text: KITCHEN_MAKE_LINE });
+      say({ kind: 'me', text: label });
       setDraft(door.ask);
+      /*
+       * Kitchen Scope §1b: "What can I make?" with nothing typed starts from this week's grocery list, and
+       * Holt confirms before cooking with it. With no list, he asks — and the composer is already started.
+       */
+      void kitchenPantryLive().then((have) =>
+        have.length
+          ? say(
+              { kind: 'holt', text: `From your list: ${have.slice(0, 8).join(', ')}${have.length > 8 ? ', and more' : ''}. Cook with those, or tell me what you've actually got.` },
+              { kind: 'chips', chips: [{ label: 'Cook with those', patch: {}, kitchen: 'go' }] },
+            )
+          : say({ kind: 'holt', text: KITCHEN_MAKE_LINE }),
+      );
       return;
     }
     if (!door.goTo) return;
@@ -1757,6 +1775,61 @@ export function CoachChatSheet({
     say({ kind: 'stop', text: medicalStopIsDietitian(text, kitchen) ? DIETITIAN_STOP : MEDICAL_STOP });
   const careStop = () => say({ kind: 'stop', text: kitchen ? KITCHEN_CARE_STOP : CARE_STOP, kicker: CARE_KICKER });
 
+  /*
+   * ══ HOLT'S KITCHEN ══ (`Docs/Holt-Kitchen-Scope-v1.0.md`) — three dishes from what they have, written by
+   * `coach-kitchen`, numbers by the app (`dishCards`). What was asked is kept, so More ideas / Quicker / More
+   * protein / Different style ask again with everything already on screen excluded (§2). Dishes shown are
+   * remembered for 30 days (`kitchen_suggestions`) and sent back as "already suggested".
+   */
+  const kitchenAsk = useRef<{ ask: string; shown: string[]; asks: number }>({ ask: '', shown: [], asks: 0 });
+  const runKitchen = async (ask: string, nudge: KitchenNudge | null) => {
+    const k = kitchenAsk.current;
+    if (!nudge) k.ask = ask;
+    setBusy('thinking');
+    const [rules, have, recent] = await Promise.all([kitchenRulesLive(), kitchenPantryLive(), recentKitchenDishesLive()]);
+    const left = rules.minor ? null : await kitchenLeftLive();
+    const r = await askKitchenLive({
+      have,
+      ask: k.ask,
+      avoid: [...rules.allergens.map((a) => a.replace(/_/g, ' ')), ...dietAvoid(rules.diet)],
+      exclude: [...new Set([...k.shown, ...recent])].slice(0, 40),
+      nudge,
+      lean: rotationLeanToday(k.asks),
+      left,
+      minor: rules.minor,
+    });
+    k.asks += 1;
+    setBusy(null);
+    if (r.kind === 'stop') {
+      if (r.route === 'crisis') return void say({ kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
+      if (r.route === 'urgent') return void say({ kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
+      if (r.route === 'care') return void careStop();
+      return void medicalStop(k.ask);
+    }
+    /* ⚠ CLIENT-FIRST SAFE: until `coach-kitchen` is deployed (and 0222 applied) the call fails as
+       unavailable/offline — so the question goes to coach-ask, the way the kitchen answered before this. */
+    if (r.kind === 'unavailable' || r.kind === 'offline') return void askAloud(k.ask, historyFrom(thread), null, { kitchen: true });
+    if (r.kind !== 'ok') return void say({ kind: 'holt', text: kitchenError(r) });
+    const cards = dishCards(r.dishes, rules.allergens);
+    if (!cards.length) return void say({ kind: 'holt', text: kitchenError({ kind: 'none' }) });
+    k.shown.push(...cards.map((c) => c.name));
+    void rememberKitchenDishesLive(r.dishes.filter((d) => cards.some((c) => c.name === d.name)));
+    say(
+      { kind: 'holt', text: cards.length > 1 ? "Here's what I'd make. Tap one for the full recipe." : "Here's one I'd make. Tap it for the full recipe." },
+      { kind: 'dishes', dishes: cards, numbers: !rules.minor },
+      { kind: 'holt', text: 'Want different ideas? I can go quicker, higher protein, or a different style.' },
+      {
+        kind: 'chips',
+        chips: [
+          { label: 'More ideas', patch: {}, kitchen: 'more' },
+          { label: 'Quicker', patch: {}, kitchen: 'quicker' },
+          { label: 'More protein', patch: {}, kitchen: 'protein' },
+          { label: 'Different style', patch: {}, kitchen: 'style' },
+        ],
+      },
+    );
+  };
+
   const askAloud = async (
     text: string,
     history: AskTurn[],
@@ -1887,6 +1960,12 @@ export function CoachChatSheet({
    * `tapChip`, unchanged. Declared after `askAloud` because it calls it.
    */
   const onChip = (chip: Chip) => {
+    if (chip.kitchen) {
+      say({ kind: 'me', text: chip.label });
+      const k = kitchenAsk.current;
+      void runKitchen(k.ask || 'What can I make?', chip.kitchen === 'go' ? null : chip.kitchen);
+      return;
+    }
     if (!chip.webSearch) return tapChip(chip);
     say({ kind: 'me', text: chip.label });
     void askAloud(`Find me a recipe online: ${chip.webSearch}`, historyFrom(thread), null, { allowWeb: true });
@@ -2039,6 +2118,10 @@ export function CoachChatSheet({
      * has the recipe book, the diary and the NUT-D4 rules, unless it is plainly about training.
      */
     if (kitchen && danger !== 'clear') return void medicalStop(text);
+    if (kitchen && premiumAi && nutritionAccess && isMakeRequest(text)) {
+      void runKitchen(text, null);
+      return;
+    }
     if (kitchen && premiumAi && !kitchenWantsTraining(text)) {
       void askAloud(text, historyFrom(thread), null, { kitchen: true });
       return;
@@ -2228,6 +2311,21 @@ export function CoachChatSheet({
     : null;
   const handoff: Handoff = {
     liveCard,
+    /* Kitchen Scope §1.4: the full recipe opens in My Recipes, UNSAVED, with the app's numbers. */
+    onOpenDish: (c: DishCard) => {
+      stashRecipeDraft(c.read);
+      leaveFor('/my-recipes?draft=1');
+    },
+    /* Log it — to the dish's meal, today, with the app's per-serving numbers. Only offered when every
+       line matched: an approximate number is never written into the diary (§3.4). */
+    onLogDish: (c: DishCard) => {
+      const meal = c.read.mealType ?? 'dinner';
+      void addEntries(localToday(), [
+        { meal, source: 'quick', name: c.name, servingLabel: '1 serving · Holt', quantity: 1, macros: { kcal: c.kcal, protein: c.protein, carb: c.carb, fat: c.fat, grams: null } },
+      ])
+        .then(() => say({ kind: 'saved', text: `Logged to today's ${meal}.` }))
+        .catch(() => say({ kind: 'holt', text: "That didn't log. Try again from the recipe." }));
+    },
     onPreview: () => setPreview(true),
     onStart: startNow,
     onSave: rebuildable ? rebuild : saveForLater,
@@ -2772,6 +2870,57 @@ function KitchenHome({ onDoor }: { onDoor: (label: string, door: { goTo?: string
 
 const KITCHEN_CARD_GLYPH: Record<KitchenTile['tag'], EngravedName> = { MAKE: 'utensils', MACROS: 'target', PLAN: 'calendar' };
 
+/**
+ * ══ HOLT'S DISHES ══ (Kitchen Scope §1.2) — up to three options as cards: the name, one line of the app's
+ * numbers ("25 min · 640 cal · 52 g protein", "≈" when a line didn't match), and Holt's one-line why. Tapping
+ * the card opens the full recipe in My Recipes, unsaved. **Log it** only appears when every line matched —
+ * an approximate number never goes into the diary.
+ */
+function DishCardsView({
+  dishes,
+  numbers,
+  onOpen,
+  onLog,
+}: {
+  dishes: DishCard[];
+  numbers: boolean;
+  onOpen: (c: DishCard) => void;
+  onLog: (c: DishCard) => void;
+}) {
+  return (
+    <View style={styles.dishList}>
+        {dishes.map((c, i) => (
+          <Pressable
+            key={`${c.name}-${i}`}
+            onPress={() => onOpen(c)}
+            accessibilityRole="button"
+            accessibilityLabel={`${c.name}. ${dishLine(c, numbers)}. ${c.why}. Opens the full recipe.`}
+            style={({ pressed }) => [styles.dishCard, i === 0 ? styles.homeCardPrimary : styles.homeCardPlain, pressed && styles.homeCardPressed]}
+          >
+            <View style={styles.dishTop}>
+              <Text style={styles.homeTag}>{(c.cuisine || c.method).toUpperCase()}</Text>
+              <EngravedIcon name="arrow-right" size={15} color={flColor.bronze400} />
+            </View>
+            <Text style={styles.homeCardTitle}>{c.name}</Text>
+            <Text style={styles.dishNumbers}>{dishLine(c, numbers)}</Text>
+            {c.why ? <Text style={styles.homeCardSub}>{c.why}</Text> : null}
+            {numbers && c.unmatched === 0 ? (
+              <Pressable
+                onPress={() => onLog(c)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel={`Log ${c.name} to today`}
+                style={({ pressed }) => [styles.dishLog, pressed && styles.homeCardPressed]}
+              >
+                <Text style={styles.homeTag}>LOG IT</Text>
+              </Pressable>
+            ) : null}
+          </Pressable>
+        ))}
+    </View>
+  );
+}
+
 /** BUILD dumbbell · TODAY calendar · ADJUST sliders — 22×22, 1.8 stroke, bronze (§3). */
 function HomeCardIcon({ tag }: { tag: HomeCardTag }) {
   return <EngravedIcon name={tag === 'BUILD' ? 'dumbbell' : tag === 'TODAY' ? 'calendar' : 'sliders'} size={22} />;
@@ -2828,7 +2977,7 @@ function clockOf(at: number | undefined): string | null {
  * the counter-offer. What does not: `stop` and `error`, which are their own moment and are already
  * emitted alone.
  */
-const ATTACHES: ReadonlySet<Turn['kind']> = new Set(['chips', 'program', 'day', 'refusal', 'explain', 'saved', 'wall']);
+const ATTACHES: ReadonlySet<Turn['kind']> = new Set(['chips', 'program', 'day', 'refusal', 'explain', 'saved', 'wall', 'dishes']);
 
 type Block =
   | { key: number; kind: 'home' }
@@ -3210,6 +3359,8 @@ interface Handoff {
   onSave: () => void;
   /** "Save for later" everywhere except a multi-week block, which goes to the Builder to be finished. */
   saveLabel: string;
+  onOpenDish: (c: DishCard) => void;
+  onLogDish: (c: DishCard) => void;
 }
 
 function TurnView({
@@ -3287,6 +3438,9 @@ function TurnView({
           <Text style={styles.errorAction}>{turn.action}</Text>
         </View>
       );
+
+    case 'dishes':
+      return <DishCardsView dishes={turn.dishes} numbers={turn.numbers} onOpen={handoff.onOpenDish} onLog={handoff.onLogDish} />;
 
     case 'saved':
       return (
@@ -4384,6 +4538,14 @@ const styles = StyleSheet.create({
   /* ⚠ `marginTop: auto` is load-bearing — it holds the three arrows on one baseline when the three subs
      wrap to different heights. The design names it explicitly. */
   homeArrow: { alignSelf: 'flex-end', marginTop: 'auto', paddingTop: 8 },
+
+  /* Holt's dishes: STACKED, not three across — a dish name and a numbers line need the width. No `flex: 1`
+     here: in a column with an auto height it would collapse the card (RN trap). */
+  dishList: { gap: 8, paddingTop: 4, paddingBottom: 4 },
+  dishCard: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 12, borderRadius: 14, gap: 5 },
+  dishTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  dishNumbers: { fontSize: 12, lineHeight: 16, color: flColor.gray400 },
+  dishLog: { alignSelf: 'flex-start', marginTop: 4, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
 
   /* The two quiet rows: a stacked pair, not cards. Rules top and bottom rather than a container. */
   homeRows: {},

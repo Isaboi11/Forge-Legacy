@@ -47,6 +47,7 @@ import { plannedDays, trainingDays } from '../program/progress-core.ts';
    would drift, and the local `prescriptionText` below is already the shape that drift takes. */
 import { schemeText } from '../program/prescription.ts';
 import type { ProgramStructure } from '@/data/programs-live';
+import type { DishCard } from '../nutrition/kitchen-cards.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE THREAD
@@ -73,7 +74,10 @@ export type Turn =
   | { kind: 'stop'; text: string; kicker?: string }
   | { kind: 'error'; text: string; sub: string; action: string }
   | { kind: 'saved'; text: string }
-  | { kind: 'wall' };
+  | { kind: 'wall' }
+  /** Holt's Kitchen (Kitchen Scope §1): up to three dishes, numbers from the app's catalogue. `numbers` is
+   *  false under 18 (NUT-D5 — recipes yes, calorie steering no). */
+  | { kind: 'dishes'; dishes: DishCard[]; numbers: boolean };
 
 /** Everything on the program card, all of it out of the engine. */
 export interface ProgramCard {
@@ -210,6 +214,8 @@ export interface Chip {
    * Carries what to look for. Tapping it is the athlete's consent: only that ask carries web search.
    */
   webSearch?: string;
+  /** Holt's Kitchen: cook from the list ('go'), or ask again a different way (Kitchen Scope §1.3). */
+  kitchen?: 'go' | 'more' | 'quicker' | 'protein' | 'style';
   label: string;
   /** What tapping it fills in. The typed path resolves to the same thing — see `interpret`. */
   /* Widened to ChatState so a chip can carry `dayFocus`, which describes one WORKOUT rather than the

@@ -46,6 +46,7 @@ import {
 import { draftFromRead, importToast, ingredientFrom, unmatchedNote, type UnmatchedLine } from '@/domain/nutrition/recipe-import';
 import { recipePhotoError } from '@/domain/nutrition/recipe-photo-read';
 import { fetchMealPlanWeek, fetchUserRecipes, saveUserRecipe } from '@/data/nutrition-live';
+import { takeRecipeDraft } from '@/lib/recipe-draft-stash';
 import { readRecipePhoto } from '@/data/recipe-photo-live';
 import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
 import { callerModalGone, pickImagesFromLibrary } from '@/lib/useMediaPicker';
@@ -89,7 +90,13 @@ const UNMATCHED_WHY: Record<UnmatchedLine['reason'], string> = {
 export default function MyRecipesScreen() {
   const router = useRouter();
   const { showToast } = useToast();
-  const params = useLocalSearchParams<{ new?: string; edit?: string }>();
+  const params = useLocalSearchParams<{ new?: string; edit?: string; draft?: string }>();
+  /* A dish Holt wrote ("See the recipe", Kitchen Scope §1.4) arrives as `?draft=1` with the read stashed —
+     taken ONCE, here, and opened unsaved exactly like a scanned recipe. `from` says where it came from. */
+  const [seed] = useState(() => {
+    const read = params.draft === '1' ? takeRecipeDraft() : null;
+    return read ? draftFromRead(read) : null;
+  });
   /* A new step field mounts one commit after the tap that adds it; on iOS Safari its `autoFocus` then
      raises no keyboard. Priming inside the gesture keeps the next step typeable. See `KeyboardPrimer`. */
   const primeKeyboard = useKeyboardPrimer();
@@ -105,7 +112,7 @@ export default function MyRecipesScreen() {
   const weekIds = useMemo(() => new Set((weekQ.data?.days ?? []).flatMap((d) => d.items.map((i) => i.recipeId))), [weekQ.data]);
 
   /* The form: what the route asked for (?new / ?edit) until the athlete opens or closes one themselves. */
-  const [override, setOverride] = useState<{ form: RecipeForm | null } | null>(null);
+  const [override, setOverride] = useState<{ form: RecipeForm | null } | null>(() => (seed ? { form: seed.form } : null));
   const found = params.edit ? list.find((u) => u.id === params.edit) : undefined;
   const paramForm = found ? formFrom(found) : params.new === '1' ? blankForm() : null;
   const form = override ? override.form : paramForm;
@@ -120,8 +127,9 @@ export default function MyRecipesScreen() {
   const [focusStep, setFocusStep] = useState(-1);
   const [saving, setSaving] = useState(false);
   /* Recipe photo import — lines the draft could not match, and the read's own status. */
-  const [unmatched, setUnmatched] = useState<UnmatchedLine[]>([]);
+  const [unmatched, setUnmatched] = useState<UnmatchedLine[]>(() => seed?.unmatched ?? []);
   const [fromPhoto, setFromPhoto] = useState(false);
+  const [fromHolt] = useState(() => seed != null);
   const [scanBusy, setScanBusy] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const scanning = useRef(false);
@@ -336,6 +344,8 @@ export default function MyRecipesScreen() {
               <Text style={styles.title}>{form.editId ? 'Edit recipe' : 'New recipe'}</Text>
               {fromPhoto ? (
                 <Text style={styles.lede}>Read from your picture. Nothing is saved until you do: check the amounts and confirm the allergens.</Text>
+              ) : fromHolt && !form.editId ? (
+                <Text style={styles.lede}>Holt&apos;s dish. The numbers are the app&apos;s, from these ingredients. Nothing is saved until you do: check the amounts and confirm the allergens.</Text>
               ) : null}
             </View>
 

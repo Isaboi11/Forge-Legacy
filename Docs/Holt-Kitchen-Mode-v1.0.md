@@ -141,7 +141,7 @@ supplements).
 
 1. Prerequisites (unchanged): Holt's four safety fixes + the under-eating response + the Terms nutrition clause
 2. Kitchen Mode flag + header + chips (routes to what already works) — ✅ **BUILT 2026-09-25**, not deployed: the Holt bubble on `/nutrition` wears the hat (`CoachBubble` `KITCHEN_SURFACE`, no training lines there); the sheet reads IN THE KITCHEN and opens on Kitchen Home (`KITCHEN_CARDS`: What can I make? → composer with coach-ask, or My Recipes without typing · Set my macros → Targets · Plan my week → Meal Plan; rows: Save a recipe → My Recipes · Grocery list). 4,418/4,418 tests, web export clean. Not yet seen rendered.
-3. K1 (the locked Kitchen scope, built first)
+3. K1 (the locked Kitchen scope, built first) — ✅ **BUILT 2026-09-25**: `coach-kitchen` Edge Function (structured output, no nutrition field; code guard before the credit), `kitchen-dishes.ts` (guard, forced spread, no repeats, USDA safe temps, allergen words), `kitchen-cards.ts` (the app's numbers via `draftFromRead`; an allergen dish is dropped), the dishes card in chat with **Log it** (only when every line matched) and **See the recipe** → My Recipes unsaved (`?draft=1`), More ideas / Quicker / More protein / Different style, 30-day memory in `kitchen_suggestions`. ⏳ Needs the PO to paste `pending-0222.sql` then deploy `deploy-coach-kitchen.ts`; until then the app falls back to coach-ask. Not yet run against the live model
 4. K4/K5 after Amendment 005 · K2 recipe import · K6 snacks · K7 eating out
 5. K13 cook mode · K8 training fuel · K9 meal prep · K15 weekly check-in
 6. K3, K11, K12, K14, K16
