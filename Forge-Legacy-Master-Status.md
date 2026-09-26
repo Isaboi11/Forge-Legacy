@@ -907,6 +907,10 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### ⭐ Holt's Kitchen live — "What can I make?" writes three dishes; the app does the numbers (2026-09-26, `0b06c943` + `bb3efe94` · ✅ `0222` APPLIED (kitchen_weight 2 · rls · 3 policies · 0 rows, as predicted) · ✅ `coach-kitchen` deployed (probed: CORS 200, no-nutrition 403, "I'm diabetic" stopped before the credit) · ✅ WEB `index-86840302187fba5de67cf750d6a9b493.js` (alias MATCH) · ✅ OTA build 9 iOS `01a0dedc-e618-769a…` (`ota/build9-js`; the other session's meal-photo commits deliberately NOT included — their 0223 isn't applied) · not yet seen by the PO)
+
+Live test on 24 kitchens (~$1.00, `Docs/Chef-Holt-Stress-Test-2026-09-25.md`): catalogue match 40% → ~95% (food names in the prompt, grams, grains dry), 0 allergen dishes in 5 allergy kitchens, diets enforced by the app, 0 model-written numbers, no repeats across the four chips.
+
 ### ⭐ Holt in Kitchen Mode on Nutrition — chef hat, kitchen doors, food routing and guards (2026-09-25, `e75fd3d4` · `Docs/Holt-Kitchen-Mode-v1.0.md` 🔒 · Amendment 005 🔒 · stress test `Docs/Chef-Holt-Stress-Test-2026-09-25.md` · 4426/4426 tests · ✅ WEB `index-f3432922a64d78426edde12217a26438.js` (alias 200 + hash MATCH) · ✅ OTA build 9 iOS `01a0dc2e-7145-7667…` (`ota/build9-js`, also carries `2cafcc44`; fingerprint MATCHED `b322e3de…`, manifest verified) · ⏳ `deploy-coach-ask.ts` (120 KB) paste pending · not yet seen by the PO)
 
 Same Holt, opened from Nutrition: chef-hat mark (from the PO's mockup), IN THE KITCHEN header, kitchen doors. A 1,000-user routing stress test took wrong turns from 92% to 1%: kitchen lines go to coach-ask with the pantry and the app's "left today"; new code stops for conditions, restriction, minors cutting and food emergencies, typo-tolerant; doctor/dietitian copy. Live check (~$0.50, 94 replies): allergies respected; ⛔ one recipe repeated in 29/87 replies from a six-recipe book, so `coach-kitchen` (Holt writes dishes) is NEXT, PO-approved.
