@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consumer Health Data — Forge Legacy</title>
+<meta name="description" content="The health data Forge Legacy collects, why, who receives it, and how to exercise your rights.">
+<meta name="robots" content="index, follow">
+<style>
+  /* Bound to the app's tokens (Landing-Page-Design-Brief §1). Never pure #000 or pure #fff. */
+  :root{
+    --bg:#0E0E12; --surface:#111118; --elevated:#18181F; --border:#222229; --base:#09090C;
+    --text:#F0EDE8; --text2:#9E9890; --text3:#666060; --bronze:#C8A97E; --bronze-hi:#DFC49A;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,"SF Pro Text","SF Pro Display",Inter,Roboto,sans-serif;
+    font-size:16px; line-height:1.65; font-weight:400;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:720px; margin:0 auto; padding:56px 24px 96px}
+  header{border-bottom:1px solid var(--border); padding-bottom:28px; margin-bottom:40px}
+  .brand{font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--bronze); margin:0 0 18px}
+  h1{font-size:34px; line-height:1.15; letter-spacing:-.5px; font-weight:600; margin:0 0 14px}
+  .meta{font-size:13px; color:var(--text3); margin:0}
+  h2{font-size:22px; letter-spacing:-.3px; font-weight:600; margin:44px 0 12px}
+  h3{font-size:17px; font-weight:600; margin:28px 0 8px}
+  p,li{color:var(--text2); max-width:68ch}
+  p{margin:0 0 14px}
+  ul{padding-left:20px; margin:0 0 14px}
+  li{margin:0 0 8px}
+  strong{color:var(--text); font-weight:600}
+  a{color:var(--bronze); text-decoration:none; border-bottom:1px solid rgba(200,169,126,.35)}
+  a:hover{color:var(--bronze-hi)}
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:20px 22px; margin:22px 0}
+  .card p:last-child{margin-bottom:0}
+  table{width:100%; border-collapse:collapse; margin:18px 0; font-size:15px; display:block; overflow-x:auto}
+  th,td{text-align:left; padding:12px 14px; border-bottom:1px solid var(--border); vertical-align:top}
+  th{color:var(--text); font-weight:600; font-size:13px; letter-spacing:.4px; text-transform:uppercase}
+  td{color:var(--text2)}
+  footer{border-top:1px solid var(--border); margin-top:64px; padding-top:24px; font-size:13px; color:var(--text3)}
+  footer a{color:var(--text3); border-bottom-color:rgba(102,96,96,.4)}
+  @media (max-width:520px){ h1{font-size:28px} .wrap{padding:40px 20px 72px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="brand">Forge Legacy</p>
+  <h1>Consumer Health Data Privacy Policy</h1>
+  <p class="meta">Last updated 25 September 2026 · Forge Legacy LLC</p>
+</header>
+
+<p>This page is written for the Washington My Health My Data Act, Nevada's consumer health data law, and
+similar state laws, but it applies to everyone who uses Forge Legacy. It adds to our main
+<a href="/privacy">Privacy Policy</a> and does not replace it.</p>
+
+<h2>1 · The health data we collect</h2>
+<ul>
+  <li><strong>Training:</strong> workouts, exercises, sets, weights, durations, distances and
+      personal records.</li>
+  <li><strong>Body:</strong> body weight and measurements you log, progress photos, and the age, sex,
+      height, weight, activity level and goal used to calculate nutrition targets.</li>
+  <li><strong>Nutrition:</strong> the foods you log, your calorie and macro targets, your diet, food
+      allergies and food dislikes.</li>
+  <li><strong>Coaching:</strong> what you tell Coach Holt, summaries of those conversations, and
+      limitations you tell the app about, such as an injury to train around.</li>
+  <li><strong>Media for AI features:</strong> a photo of a meal or a form-check video you choose to send.</li>
+</ul>
+
+<h2>2 · Where it comes from</h2>
+<p>From you, when you enter it, and from your phone when you use a feature that reads it, such as
+location during a tracked run. We do not buy health data or get it from other companies.</p>
+
+<h2>3 · Why we collect it</h2>
+<p>Only to provide the features you use: keeping your training record and food log, calculating targets,
+building programs and meal plans that respect your allergies and limitations, and answering you through
+Coach Holt. We do not use it for advertising, we do not sell it, and we do not use it to build a profile
+about you for anyone else.</p>
+
+<h2>4 · Who receives it</h2>
+<p>Health data is shared only with the service providers that run the app for us, and only what each one
+needs:</p>
+<ul>
+  <li><strong>Supabase</strong>: stores it.</li>
+  <li><strong>Anthropic</strong>: receives the question, the training or nutrition details, and any photo or
+      video frames needed to answer, when you use an AI feature. It does not receive your name or email.</li>
+  <li><strong>Apple</strong>: may process your voice if you use the microphone.</li>
+</ul>
+<p>Food databases (USDA FoodData Central, FatSecret, Open Food Facts) receive only a search term or a
+barcode, never your food log. Other users see your health data only where you choose to share something,
+such as a post in a squad. We have no affiliates that receive it.</p>
+
+<h2>5 · Your rights</h2>
+<p>You can:</p>
+<ul>
+  <li>confirm whether we hold your health data and see it, including a list of who has received it;</li>
+  <li>get a copy (Account Settings → Export My Data);</li>
+  <li>delete it (Account Settings → Delete Account, or ask us);</li>
+  <li>withdraw your consent by stopping use of the feature, or by asking us.</li>
+</ul>
+<p>Write to <a href="mailto:support@forgelegacy.app">support@forgelegacy.app</a> with the subject
+“Health data request”. We will answer within 45 days. If we decline, you can appeal by replying to our
+answer, and we will respond to the appeal within 45 days. If the appeal is declined, Washington residents
+may contact the Washington State Attorney General.</p>
+
+<h2>6 · Contact</h2>
+<p>Forge Legacy LLC · <a href="mailto:support@forgelegacy.app">support@forgelegacy.app</a></p>
+
+<footer>
+  <p>© 2026 Forge Legacy LLC · <a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Service</a> · <a href="/">Home</a></p>
+</footer>
+
+</div>
+</body>
+</html>
