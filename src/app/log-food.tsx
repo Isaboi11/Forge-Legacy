@@ -34,6 +34,7 @@ import {
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { labelScanAvailable } from '@/lib/label-scan';
+import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 
@@ -55,6 +56,9 @@ import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
  * `ExpoCamera` is present (see `ScanCamera` below); build 8 and the web preview keep the typed box, which
  * stays under the camera on build 9 too for a code the camera cannot read. Both feed the same
  * `lookupBarcode` call and the same not-found → Create Food route (Nutrition Architecture §5, Phase 1).
+ *
+ * The camera button beside it opens **Log from Photo** (`meal-photo.tsx`, Premium AI) — shown only to an
+ * athlete with Premium AI AND Nutrition access, and absent (not "Soon") for everyone else.
  */
 
 /**
@@ -100,6 +104,11 @@ export default function LogFoodScreen() {
   const [reloads, setReloads] = useState(0);
 
   const [barcodeOpen, setBarcodeOpen] = useState(params.scan === '1');
+  /* Log from a photo (Premium AI, Nutrition Architecture §2). Both gates, or the button is not there: the
+     server refuses either way (0203's meter, the function's 403) and a door that always refuses is a lie. */
+  const premiumAi = usePremiumAi();
+  const nutritionAccess = useNutritionAccess();
+  const photoOn = premiumAi && nutritionAccess;
   const [quickOpen, setQuickOpen] = useState(false);
 
   /* Create Food is a SCREEN now (`Create Food.dc.html`), not the six-field sheet this file used to
@@ -205,6 +214,16 @@ export default function LogFoodScreen() {
         <Pressable accessibilityRole="button" accessibilityLabel="Scan barcode" style={styles.scanButton} onPress={() => setBarcodeOpen(true)}>
           <EngravedIcon name="barcode-scan" size={16} />
         </Pressable>
+        {photoOn ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Log from a photo"
+            style={styles.scanButton}
+            onPress={() => router.push({ pathname: '/meal-photo', params: { date: iso, meal } })}
+          >
+            <EngravedIcon name="camera" size={16} />
+          </Pressable>
+        ) : null}
       </View>
 
       {/* filters — hidden while searching, because a search spans all of them */}
