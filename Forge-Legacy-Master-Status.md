@@ -907,7 +907,7 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
-### ⭐ Full-app QA (two rounds) + the top fixes (2026-09-26 · committed `f01bf9bf` · `4956523c` · `bad8462d` · `b56a34d5` · ⛔ NOT deployed · ⛔ 0225 NOT applied · ⛔ coach-ask / coach-interpret NOT re-pasted)
+### ⭐ Full-app QA (two rounds) + the top fixes (2026-09-26 · committed `f01bf9bf` · `4956523c` · `bad8462d` · `b56a34d5` · ✅ 0225 APPLIED (readback 8·2·17·true·false·true·false·0·0) · ✅ coach-ask + coach-interpret re-pasted by PO · ✅ WEB `index-1a5654d7ae8dbc5cd69bbce4cb1478d2.js` (alias + deployment URL MATCH) from `ota/build9-js` `840c55ef` (fingerprint MATCHED build 9 `6c59b9c9`) · ⛔ build 9 OTA NOT published — PO runs it)
 
 16 Playwright test lanes drove the live web preview in both themes, using sandbox + claudetest. **311 issues (3 critical, 25 high)** → `Docs/QA/Full-App-QA-2026-09-26.md`. The only flow not covered is onboarding a brand-new account. 41 AI calls. Fixed and committed:
 - **F1 / F3:** Start asks "Switch programs?" (W-3 §13) before ending the running program. Guided adds Save for later. Remove from Planned is gone from the active program.
@@ -916,7 +916,7 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 - **F2 / F8:** squad goal Save is reachable (pinned footer). Five two-button rows no longer push Save off screen.
 - F5 (privacy text) was already fixed by `f198ea07`.
 
-PO steps: paste `supabase/apply/pending-0225.sql` · re-paste `deploy-coach-ask.ts` + `deploy-coach-interpret.ts` · web deploy + build 9 OTA. Tests 4,527/4,527.
+Remaining PO step: the build 9 OTA from `C:/Users/isaia/forge-ota9-wt` (lane `840c55ef`). Tests 4,527/4,527 on main; the lane fails 5 consent/onboarding source tests that read `site/` and old migrations the lane does not carry (none in the fix files).
 
 ### ⭐ Meal Plan: choose your own meal for any slot, kept on rebuild (2026-09-26, `3e62afcd` · ✅ WEB `index-de14dc7019ac534a287fc669051f5569.js` (alias MATCH) · ✅ OTA build 9 iOS `01a0df20-d23c-7609…` (`ota/build9-js`, on top of the other session's legal-summaries OTA) · not yet seen by the PO)
 
