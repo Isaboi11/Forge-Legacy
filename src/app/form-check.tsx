@@ -276,7 +276,7 @@ export default function FormCheckScreen() {
     setStage({ step: 'watching', phase: 1, lift: chosen });
     const last = await lastSavedForm(formLiftKey(chosen.name, chosen.key));
     const known = chosen.key ? knownFromCoaching(coachingContent.getPublished(chosen.key)) : '';
-    const res = await formCheck({ lift: chosen.name, frames: got.frames, times: got.times, note, focus, known, last });
+    const res = await formCheck({ lift: chosen.name, frames: got.frames, times: got.times, sizes: got.sizes, note, focus, known, last });
     /* ⚠ A CANCEL DURING THE MODEL CALL ONLY STOPS THE SCREEN. The request is already out; if it comes back
        readable the function has spent the credit. The athlete asked to stop looking, not for a refund. */
     if (cancelRef.current) return;
@@ -828,7 +828,9 @@ function ReadStage({
   const { read } = r;
   const [useful, setUseful] = useState<boolean | null>(null);
   const [saved, setSaved] = useState<'no' | 'saving' | 'yes' | 'failed'>('no');
-  const [full, setFull] = useState<{ mark: FormMark; text: string } | null>(null);
+  /* `at` is the frame on screen; it starts on Holt's marked frame and ‹ › step through the rest, so a mark
+     that landed one frame off still gets the athlete to the moment he meant. */
+  const [full, setFull] = useState<{ mark: FormMark; text: string; at: number } | null>(null);
 
   const meta = [viewLabel(read.view), read.reps ? `${read.reps} rep${read.reps === 1 ? '' : 's'}` : '', r.at].filter(Boolean).join(' · ');
   const viewLine = read.viewLine || fallbackViewLine(read);
@@ -837,6 +839,11 @@ function ReadStage({
   const fixLabel = read.fix.length >= 2 ? 'TWO THINGS TO CLEAN UP' : 'ONE THING TO CLEAN UP';
   const markFor = (i: number) => read.marks.find((m) => m.fix === i) ?? null;
   const frameTag = (m: FormMark) => [m.rep ? `Rep ${m.rep}` : '', r.times[m.frame] != null ? secs(r.times[m.frame]) : ''].filter(Boolean).join(' · ');
+  const fullTag = (f: { mark: FormMark; at: number }) =>
+    f.at === f.mark.frame
+      ? [frameTag(f.mark), f.mark.shows].filter(Boolean).join(' · ')
+      : [`Frame ${f.at + 1} of ${r.uris.length}`, r.times[f.at] != null ? secs(r.times[f.at]) : ''].filter(Boolean).join(' · ');
+  const step = (d: number) => setFull((f) => (f ? { ...f, at: Math.max(0, Math.min(r.uris.length - 1, f.at + d)) } : f));
 
   const thumbs = (v: boolean) => {
     const next = useful === v ? null : v;
@@ -890,7 +897,7 @@ function ReadStage({
                   <View key={i} style={s.fixItem}>
                     <Text style={s.bubble}>{f}</Text>
                     {m && uri ? (
-                      <Pressable onPress={() => setFull({ mark: m, text: f })} accessibilityRole="button" accessibilityLabel="Open frame full screen">
+                      <Pressable onPress={() => setFull({ mark: m, text: f, at: m.frame })} accessibilityRole="button" accessibilityLabel="Open frame full screen">
                         <MarkedFrame uri={uri} mark={m} height={250} tag={frameTag(m)} />
                       </Pressable>
                     ) : null}
@@ -967,13 +974,39 @@ function ReadStage({
         {full ? (
           <View style={[s.fullRoot, { paddingTop: insets.top }]}>
             <View style={s.fullBar}>
-              <Text style={s.fullTitle}>{frameTag(full.mark) || 'Your frame'}</Text>
+              <Text style={s.fullTitle} numberOfLines={1}>{fullTag(full) || 'Your frame'}</Text>
               <Pressable onPress={() => setFull(null)} style={s.barBtn} accessibilityRole="button" accessibilityLabel="Close" hitSlop={4}>
                 <CloseGlyph color="#F0EDE8" />
               </Pressable>
             </View>
             <View style={s.fullFrame}>
-              <MarkedFrame uri={r.uris[full.mark.frame]} mark={full.mark} fill contain />
+              <MarkedFrame uri={r.uris[full.at]} mark={full.at === full.mark.frame ? full.mark : null} fill contain />
+              {r.uris.length > 1 ? (
+                <>
+                  <Pressable
+                    onPress={() => step(-1)}
+                    disabled={full.at === 0}
+                    style={[s.stepBtn, s.stepLeft, full.at === 0 && s.stepOff]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Previous frame"
+                  >
+                    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#F0EDE8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <Path d="M15 5l-7 7 7 7" />
+                    </Svg>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => step(1)}
+                    disabled={full.at === r.uris.length - 1}
+                    style={[s.stepBtn, s.stepRight, full.at === r.uris.length - 1 && s.stepOff]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Next frame"
+                  >
+                    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#F0EDE8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <Path d="M9 5l7 7-7 7" />
+                    </Svg>
+                  </Pressable>
+                </>
+              ) : null}
             </View>
             <View style={[s.fullSays, { paddingBottom: 34 + insets.bottom }]}>
               <HoltSays text={full.text} label={false} size={32} />
@@ -1127,6 +1160,10 @@ const s = StyleSheet.create({
   markRing: { overflow: 'hidden', borderWidth: 1, borderColor: C.markBd },
   fullTitle: { fontSize: 14, fontWeight: '600', color: 'rgba(240,237,232,0.8)' },
   fullFrame: { flex: 1, marginVertical: 8 },
+  stepBtn: { position: 'absolute', top: '50%', marginTop: -22, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(10,10,10,0.55)', alignItems: 'center', justifyContent: 'center' },
+  stepLeft: { left: 10 },
+  stepRight: { right: 10 },
+  stepOff: { opacity: 0.3 },
   fullSays: { paddingTop: 10, paddingHorizontal: 20 },
 
   center: { flex: 1, justifyContent: 'center', paddingHorizontal: 20 },

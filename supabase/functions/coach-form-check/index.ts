@@ -68,6 +68,7 @@ import { medicalRoute, mentionsDiscomfort } from '../../../src/domain/coach/medi
 import {
   capFocus,
   capFrames,
+  capFrameSizes,
   capFrameTimes,
   capKnown,
   capLast,
@@ -146,7 +147,7 @@ The same goes for frames that are partly blurred, partly dark, or where part of 
 
 # Reading the frames
 
-Frames are numbered from 1, and each is labelled with the second of the clip it was taken at. A set is several reps, so the frames land on different moments of different reps: some catch the top, some the bottom, some the turnaround, some the middle. Put the movement together from all of them. The bottom position and the turnaround usually carry the most coaching, so look for the frames that caught them. Reps that look the same as each other are worth noticing; so is a rep that looks different from the rest.
+Frames are numbered from 1, and each is labelled with the second of the clip it was taken at and its size in pixels. A set is several reps, so the frames land on different moments of different reps: some catch the top, some the bottom, some the turnaround, some the middle. Put the movement together from all of them. The bottom position and the turnaround usually carry the most coaching, so look for the frames that caught them. Reps that look the same as each other are worth noticing; so is a rep that looks different from the rest.
 
 # What you never do
 
@@ -190,7 +191,7 @@ The message after the frames may include any of these. None of them changes a ru
 
 Reply with a single JSON object and nothing else. No prose before it, no summary after it, no markdown fences.
 
-{"view": "<side | front | behind | diagonal | other>", "viewLine": "<one short sentence: the view and how many reps you can see>", "reps": <number of reps visible, or null>, "looksGood": ["<short sentence>", "..."], "fix": ["<the biggest thing, one sentence>", "<the second, only if there is one>"], "marks": [{"fix": 0, "frame": <frame number>, "kind": "<dot | line>", "x": <0 to 1>, "y": <0 to 1>, "rep": <rep number, or null>}], "cue": "<one short thing to say to themselves on the next rep>", "drill": "<one exercise name, or empty>", "vsLast": "<better | same | new>", "progress": "<one short sentence, or empty>", "encourage": "<one short closing sentence: belief plus what to do next>"}
+{"view": "<side | front | behind | diagonal | other>", "viewLine": "<one short sentence: the view and how many reps you can see>", "reps": <number of reps visible, or null>, "looksGood": ["<short sentence>", "..."], "fix": ["<the biggest thing, one sentence>", "<the second, only if there is one>"], "marks": [{"fix": 0, "frame": <frame number>, "shows": "<what that frame shows, a few words>", "kind": "<dot | line>", "x": <pixels from the left>, "y": <pixels from the top>, "rep": <rep number, or null>}], "cue": "<one short thing to say to themselves on the next rep>", "drill": "<one exercise name, or empty>", "vsLast": "<better | same | new>", "progress": "<one short sentence, or empty>", "encourage": "<one short closing sentence: belief plus what to do next>"}
 
 - "view": which way the camera faces the athlete. "other" for overhead, very low, or anything that is none of the four.
 - "viewLine": the first thing the athlete reads. One short sentence naming the view and the reps: "From the front, three reps." Nothing else in it.
@@ -199,7 +200,13 @@ Reply with a single JSON object and nothing else. No prose before it, no summary
 - "looksGood": 1 to 3 short, specific sentences whenever the frames show the lift, from any angle. Empty array only when the frames cannot be read.
 - "fix": 0 to 2 short sentences, biggest first. This is also where the honest "I can't see it" sentence goes.
 - "cue": one short phrase, no more than a few words, in the athlete's own second person. Empty string when there is nothing to cue.
-- "marks": one per fix, same order, so the app can show the athlete the moment you mean. "fix" is the fix's position (0 for the first). "frame" is the number of the frame that shows it best. "kind" is "dot" for a point on the body or the bar — "x" and "y" are that point as fractions of the frame's width and height, measured from the top-left corner — or "line" for a height, such as depth or where the bar sits ("y" only). "rep" is the rep that frame belongs to, if you can tell. Leave a fix out of "marks" rather than guess where it is.
+- "marks": one per fix, same order, so the app can show the athlete their own frame with your mark on it. Choose carefully — the athlete sees exactly the frame you name:
+  - "fix" is the fix's position (0 for the first).
+  - "frame" is the number printed in the label directly before that image. It must SHOW the moment the fix is about: a lockout fault needs a frame at lockout, a depth fault a frame at the bottom, a bar-path fault a frame where the bar is off its line. Check the frame you picked before you answer. If no frame shows that moment, leave the fix out of "marks".
+  - "shows" is what that frame shows, in a few plain words: "lockout, bar overhead", "bottom of the squat", "bar leaving the floor".
+  - "kind" is "dot" for one point — on the bar, a knee, a hip, an elbow — or "line" for a height, such as depth or where the bar sits.
+  - "x" and "y" are that point in PIXELS of that frame, measured from its top-left corner, using the size in its label. Put the dot ON the thing the fix is about: on the bar itself, on the knee itself — never on the background. For a "line", "y" only.
+  - "rep" is the rep that frame belongs to, if you can tell.
 - "drill": optional. The plain name of one standard exercise that trains the biggest fix — "Pause Squat", "Tempo Squat", "Pin Press", "Paused Deadlift", "Goblet Squat". A name only: no sets, no reps, no load. Empty string when nothing fits.
 - "vsLast" and "progress": only when a last saved read was given. "vsLast" is "better" if that fix has visibly improved, "same" if it is still there, "new" if the biggest fix now is a different one. "progress" is one short sentence on that change, in Holt's voice: "In July the bar drifted forward. Now it stays over your mid-foot." With no last read, "vsLast" is "new" and "progress" is an empty string.
 - "encourage": exactly one short sentence, always present. Every rule above applies to it too.
@@ -215,6 +222,8 @@ interface Body {
   frames?: unknown;
   /** Optional: when each frame was taken, in ms. Dropped unless it lines up with the frames. */
   times?: unknown;
+  /** Optional: each frame's `[width, height]` in px, so marks can come back in pixels. */
+  sizes?: unknown;
   /** Optional: "What should I look at?" chips. A fixed list — anything else is dropped. */
   focus?: unknown;
   /** Optional: the lift's coaching notes from the app's library. Reference only. */
@@ -281,6 +290,7 @@ Deno.serve(async (req) => {
   const frames = capFrames(body.frames);
   if (!frames) return json({ ok: false, reason: 'bad_request' }, 400);
   const times = capFrameTimes(body.times, frames.length);
+  const sizes = capFrameSizes(body.sizes, frames.length);
 
   // The caller's JWT is forwarded so the RPCs run as that athlete under RLS. No service key here,
   // deliberately — the same reason `coach-ask` and `program-photo-read` give.
@@ -318,7 +328,7 @@ Deno.serve(async (req) => {
   // same still image twice. The lift and the note follow them, labelled as the athlete's own words.
   const content: unknown[] = [];
   frames.forEach((data, i) => {
-    content.push({ type: 'text', text: frameLabel(i, frames.length, times?.[i]) });
+    content.push({ type: 'text', text: frameLabel(i, frames.length, times?.[i], sizes?.[i]) });
     content.push({ type: 'image', source: { type: 'base64', media_type: MEDIA_TYPE, data } });
   });
   const focus = capFocus(body.focus);
@@ -387,7 +397,7 @@ Deno.serve(async (req) => {
   // exercise cannot put words in the athlete's mouth about what they were doing.
   // A safety refusal is the model declining, not the app failing, and not a verdict on the athlete — it
   // reads as an unreadable clip. Either way nothing is spent: the design says "Not charged."
-  const read = payload?.stop_reason === 'refusal' ? null : parseFormRead(text, lift, frames.length);
+  const read = payload?.stop_reason === 'refusal' ? null : parseFormRead(text, lift, frames.length, sizes);
 
   // ── 4. Spend ONLY for a read, then record what it actually cost ────────────
   //

@@ -20,6 +20,7 @@ import {
   capKnown,
   capLast,
   cleanMarks,
+  capFrameSizes,
   FORM_KNOWN_CHARS,
   frameLabel,
   isBannedSentence,
@@ -141,6 +142,7 @@ test('frame times label the stills only when they line up with them', () => {
   assert.equal(frameLabel(2, 10, 2500), 'Frame 3 of 10 (2.5 s in):');
   assert.equal(frameLabel(0, 4), 'Frame 1 of 4:');
   assert.equal(frameLabel(0, 4, null), 'Frame 1 of 4:');
+  assert.equal(frameLabel(6, 10, 15600, [432, 768]), 'Frame 7 of 10 (15.6 s in, 432 x 768 px):');
 });
 
 test('a trim is read about once a second, and a tight trim densely', () => {
@@ -591,7 +593,7 @@ test('a mark lands only on a frame that was sent, for a fix that survived, once 
     'Back Squat',
     10,
   );
-  assert.deepEqual(read.marks, [{ fix: 0, frame: 4, kind: 'dot', x: 0.58, y: 0.62, rep: 2 }]);
+  assert.deepEqual(read.marks, [{ fix: 0, frame: 4, kind: 'dot', x: 0.58, y: 0.62, rep: 2, shows: '' }]);
 });
 
 test('a mark follows its fix when the guard drops the one before it', () => {
@@ -609,7 +611,7 @@ test('a mark follows its fix when the guard drops the one before it', () => {
     6,
   );
   assert.deepEqual(read.fix, ['The bar drifts forward.']);
-  assert.deepEqual(read.marks, [{ fix: 0, frame: 2, kind: 'line', x: 0.5, y: 0.4, rep: null }]);
+  assert.deepEqual(read.marks, [{ fix: 0, frame: 2, kind: 'line', x: 0.5, y: 0.4, rep: null, shows: '' }]);
 });
 
 test('coordinates are clamped into the frame, and a mark with none is dropped', () => {
@@ -621,7 +623,7 @@ test('coordinates are clamped into the frame, and a mark with none is dropped', 
     2,
     4,
   );
-  assert.deepEqual(marks, [{ fix: 0, frame: 0, kind: 'dot', x: 1, y: 0, rep: null }]);
+  assert.deepEqual(marks, [{ fix: 0, frame: 0, kind: 'dot', x: 1, y: 0, rep: null, shows: '' }]);
 });
 
 test('view, reps, trend and the drill are narrowed to what the screen can draw', () => {
@@ -689,4 +691,24 @@ test('the last saved read is only a date and a fix', () => {
   assert.deepEqual(capLast({ date: 'Aug 14', fix: 'Bar drifts forward.', note: 'my knee hurts' }), { date: 'Aug 14', fix: 'Bar drifts forward.' });
   assert.equal(capLast({ date: '', fix: 'x' }), null);
   assert.equal(capLast('Aug 14'), null);
+});
+
+test('⭐ marks come back in PIXELS of the frame and leave as fractions (PO device test 09-25: dot on the ceiling)', () => {
+  const sizes = [[432, 768], [432, 768], [432, 768]];
+  const marks = cleanMarks([{ fix: 0, frame: 3, kind: 'dot', x: 216, y: 192, shows: 'lockout, bar overhead' }], 1, 3, sizes);
+  assert.deepEqual(marks, [{ fix: 0, frame: 2, kind: 'dot', x: 0.5, y: 0.25, rep: null, shows: 'lockout, bar overhead' }]);
+  // Already 0–1 (an older function, or the app re-checking the function's answer): read as fractions.
+  assert.equal(cleanMarks([{ fix: 0, frame: 1, kind: 'dot', x: 0.4, y: 0.6 }], 1, 3, sizes)[0].x, 0.4);
+  // Off the frame is clamped onto its edge, never drawn outside it.
+  assert.equal(cleanMarks([{ fix: 0, frame: 1, kind: 'dot', x: 900, y: 100 }], 1, 3, sizes)[0].x, 1);
+  // What the frame shows goes through the guard like every other sentence.
+  assert.equal(cleanMarks([{ fix: 0, frame: 1, kind: 'dot', x: 10, y: 10, shows: 'knee pain here' }], 1, 3, sizes)[0].shows, '');
+});
+
+test('frame sizes line up one-to-one with the frames or are dropped', () => {
+  assert.deepEqual(capFrameSizes([[432, 768], [768, 432]], 2), [[432, 768], [768, 432]]);
+  assert.equal(capFrameSizes([[432, 768]], 2), null);
+  assert.equal(capFrameSizes([[432, 768], [0, 432]], 2), null);
+  assert.equal(capFrameSizes([[432, 768], '768x432'], 2), null);
+  assert.equal(capFrameSizes(undefined, 2), null);
 });

@@ -131,9 +131,37 @@ export function capFrameTimes(times: unknown, frameCount: number): number[] | nu
     }
     return out;
 }
-export function frameLabel(index: number, total: number, timeMs?: number | null): string {
-    const at = typeof timeMs === 'number' && Number.isFinite(timeMs) ? ` (${(timeMs / 1000).toFixed(1)} s in)` : '';
-    return `Frame ${index + 1} of ${total}${at}:`;
+export function capFrameSizes(raw: unknown, frameCount: number): [
+    number,
+    number
+][] | null {
+    if (!Array.isArray(raw) || raw.length < frameCount || frameCount < 1)
+        return null;
+    const out: [
+        number,
+        number
+    ][] = [];
+    for (let i = 0; i < frameCount; i += 1) {
+        const v = raw[i];
+        if (!Array.isArray(v) || v.length !== 2)
+            return null;
+        const [w, h] = v;
+        if (typeof w !== 'number' || typeof h !== 'number' || !(w >= 16 && w <= 4096 && h >= 16 && h <= 4096))
+            return null;
+        out.push([Math.round(w), Math.round(h)]);
+    }
+    return out;
+}
+export function frameLabel(index: number, total: number, timeMs?: number | null, size?: [
+    number,
+    number
+] | null): string {
+    const parts: string[] = [];
+    if (typeof timeMs === 'number' && Number.isFinite(timeMs))
+        parts.push(`${(timeMs / 1000).toFixed(1)} s in`);
+    if (size)
+        parts.push(`${size[0]} x ${size[1]} px`);
+    return `Frame ${index + 1} of ${total}${parts.length ? ` (${parts.join(', ')})` : ''}:`;
 }
 export interface FormRead {
     lift: string;
@@ -158,11 +186,15 @@ export interface FormMark {
     x: number;
     y: number;
     rep: number | null;
+    shows: string;
 }
 const VIEWS: readonly FormView[] = ['side', 'front', 'behind', 'diagonal', 'other'];
 const TRENDS: readonly FormTrend[] = ['better', 'same', 'new'];
 const unit = (v: unknown): number | null => typeof v === 'number' && Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : null;
-export function cleanMarks(raw: unknown, fixCount: number, frameCount: number): FormMark[] {
+export function cleanMarks(raw: unknown, fixCount: number, frameCount: number, sizes?: [
+    number,
+    number
+][] | null): FormMark[] {
     if (!Array.isArray(raw) || fixCount < 1 || frameCount < 1)
         return [];
     const out: FormMark[] = [];
@@ -176,13 +208,19 @@ export function cleanMarks(raw: unknown, fixCount: number, frameCount: number): 
         if (fix < 0 || fix >= fixCount || seen.has(fix) || frame < 0 || frame >= frameCount)
             continue;
         const kind = r.kind === 'line' ? 'line' : 'dot';
-        const y = unit(r.y);
-        const x = kind === 'line' ? 0.5 : unit(r.x);
+        const size = sizes?.[frame] ?? null;
+        const rawX = typeof r.x === 'number' ? r.x : null;
+        const rawY = typeof r.y === 'number' ? r.y : null;
+        const inPixels = !!size && ((rawX != null && rawX > 1) || (rawY != null && rawY > 1));
+        const y = unit(inPixels && rawY != null ? rawY / size[1] : rawY);
+        const x = kind === 'line' ? 0.5 : unit(inPixels && rawX != null ? rawX / size[0] : rawX);
         if (y == null || x == null)
             continue;
         const rep = typeof r.rep === 'number' && r.rep >= 1 && r.rep <= 50 ? Math.round(r.rep) : null;
+        const showsRaw = typeof r.shows === 'string' ? r.shows.replace(/\s+/g, ' ').trim().slice(0, 60) : '';
+        const shows = showsRaw && !isBannedSentence(showsRaw) ? showsRaw : '';
         seen.add(fix);
-        out.push({ fix, frame, kind, x, y, rep });
+        out.push({ fix, frame, kind, x, y, rep, shows });
     }
     return out;
 }
@@ -235,7 +273,10 @@ function cleanLines(raw: unknown, max: number): string[] {
     }
     return out;
 }
-export function sanitizeFormRead(raw: unknown, lift?: string, frameCount: number = FORM_FRAMES_MAX): FormRead | null {
+export function sanitizeFormRead(raw: unknown, lift?: string, frameCount: number = FORM_FRAMES_MAX, sizes?: [
+    number,
+    number
+][] | null): FormRead | null {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw))
         return null;
     const r = raw as Record<string, unknown>;
@@ -275,13 +316,16 @@ export function sanitizeFormRead(raw: unknown, lift?: string, frameCount: number
         view,
         viewLine: cleanLine(r.viewLine),
         reps,
-        marks: cleanMarks(remapped, fix.length, frameCount),
+        marks: cleanMarks(remapped, fix.length, frameCount, sizes),
         drill: cleanDrill(r.drill),
         trend,
         progress: cleanLine(r.progress),
     };
 }
-export function parseFormRead(text: unknown, lift?: string, frameCount?: number): FormRead | null {
+export function parseFormRead(text: unknown, lift?: string, frameCount?: number, sizes?: [
+    number,
+    number
+][] | null): FormRead | null {
     if (typeof text !== 'string' || !text.trim())
         return null;
     const stripped = text.replace(/```[a-zA-Z]*\n?/g, '').trim();
@@ -296,7 +340,7 @@ export function parseFormRead(text: unknown, lift?: string, frameCount?: number)
     catch {
         return null;
     }
-    return sanitizeFormRead(parsed, lift, frameCount);
+    return sanitizeFormRead(parsed, lift, frameCount, sizes);
 }
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -344,7 +388,7 @@ The same goes for frames that are partly blurred, partly dark, or where part of 
 
 # Reading the frames
 
-Frames are numbered from 1, and each is labelled with the second of the clip it was taken at. A set is several reps, so the frames land on different moments of different reps: some catch the top, some the bottom, some the turnaround, some the middle. Put the movement together from all of them. The bottom position and the turnaround usually carry the most coaching, so look for the frames that caught them. Reps that look the same as each other are worth noticing; so is a rep that looks different from the rest.
+Frames are numbered from 1, and each is labelled with the second of the clip it was taken at and its size in pixels. A set is several reps, so the frames land on different moments of different reps: some catch the top, some the bottom, some the turnaround, some the middle. Put the movement together from all of them. The bottom position and the turnaround usually carry the most coaching, so look for the frames that caught them. Reps that look the same as each other are worth noticing; so is a rep that looks different from the rest.
 
 # What you never do
 
@@ -388,7 +432,7 @@ The message after the frames may include any of these. None of them changes a ru
 
 Reply with a single JSON object and nothing else. No prose before it, no summary after it, no markdown fences.
 
-{"view": "<side | front | behind | diagonal | other>", "viewLine": "<one short sentence: the view and how many reps you can see>", "reps": <number of reps visible, or null>, "looksGood": ["<short sentence>", "..."], "fix": ["<the biggest thing, one sentence>", "<the second, only if there is one>"], "marks": [{"fix": 0, "frame": <frame number>, "kind": "<dot | line>", "x": <0 to 1>, "y": <0 to 1>, "rep": <rep number, or null>}], "cue": "<one short thing to say to themselves on the next rep>", "drill": "<one exercise name, or empty>", "vsLast": "<better | same | new>", "progress": "<one short sentence, or empty>", "encourage": "<one short closing sentence: belief plus what to do next>"}
+{"view": "<side | front | behind | diagonal | other>", "viewLine": "<one short sentence: the view and how many reps you can see>", "reps": <number of reps visible, or null>, "looksGood": ["<short sentence>", "..."], "fix": ["<the biggest thing, one sentence>", "<the second, only if there is one>"], "marks": [{"fix": 0, "frame": <frame number>, "shows": "<what that frame shows, a few words>", "kind": "<dot | line>", "x": <pixels from the left>, "y": <pixels from the top>, "rep": <rep number, or null>}], "cue": "<one short thing to say to themselves on the next rep>", "drill": "<one exercise name, or empty>", "vsLast": "<better | same | new>", "progress": "<one short sentence, or empty>", "encourage": "<one short closing sentence: belief plus what to do next>"}
 
 - "view": which way the camera faces the athlete. "other" for overhead, very low, or anything that is none of the four.
 - "viewLine": the first thing the athlete reads. One short sentence naming the view and the reps: "From the front, three reps." Nothing else in it.
@@ -397,7 +441,13 @@ Reply with a single JSON object and nothing else. No prose before it, no summary
 - "looksGood": 1 to 3 short, specific sentences whenever the frames show the lift, from any angle. Empty array only when the frames cannot be read.
 - "fix": 0 to 2 short sentences, biggest first. This is also where the honest "I can't see it" sentence goes.
 - "cue": one short phrase, no more than a few words, in the athlete's own second person. Empty string when there is nothing to cue.
-- "marks": one per fix, same order, so the app can show the athlete the moment you mean. "fix" is the fix's position (0 for the first). "frame" is the number of the frame that shows it best. "kind" is "dot" for a point on the body or the bar — "x" and "y" are that point as fractions of the frame's width and height, measured from the top-left corner — or "line" for a height, such as depth or where the bar sits ("y" only). "rep" is the rep that frame belongs to, if you can tell. Leave a fix out of "marks" rather than guess where it is.
+- "marks": one per fix, same order, so the app can show the athlete their own frame with your mark on it. Choose carefully — the athlete sees exactly the frame you name:
+  - "fix" is the fix's position (0 for the first).
+  - "frame" is the number printed in the label directly before that image. It must SHOW the moment the fix is about: a lockout fault needs a frame at lockout, a depth fault a frame at the bottom, a bar-path fault a frame where the bar is off its line. Check the frame you picked before you answer. If no frame shows that moment, leave the fix out of "marks".
+  - "shows" is what that frame shows, in a few plain words: "lockout, bar overhead", "bottom of the squat", "bar leaving the floor".
+  - "kind" is "dot" for one point — on the bar, a knee, a hip, an elbow — or "line" for a height, such as depth or where the bar sits.
+  - "x" and "y" are that point in PIXELS of that frame, measured from its top-left corner, using the size in its label. Put the dot ON the thing the fix is about: on the bar itself, on the knee itself — never on the background. For a "line", "y" only.
+  - "rep" is the rep that frame belongs to, if you can tell.
 - "drill": optional. The plain name of one standard exercise that trains the biggest fix — "Pause Squat", "Tempo Squat", "Pin Press", "Paused Deadlift", "Goblet Squat". A name only: no sets, no reps, no load. Empty string when nothing fits.
 - "vsLast" and "progress": only when a last saved read was given. "vsLast" is "better" if that fix has visibly improved, "same" if it is still there, "new" if the biggest fix now is a different one. "progress" is one short sentence on that change, in Holt's voice: "In July the bar drifted forward. Now it stays over your mid-foot." With no last read, "vsLast" is "new" and "progress" is an empty string.
 - "encourage": exactly one short sentence, always present. Every rule above applies to it too.
@@ -407,6 +457,7 @@ interface Body {
     lift?: unknown;
     frames?: unknown;
     times?: unknown;
+    sizes?: unknown;
     focus?: unknown;
     known?: unknown;
     last?: unknown;
@@ -449,6 +500,7 @@ Deno.serve(async (req) => {
     if (!frames)
         return json({ ok: false, reason: 'bad_request' }, 400);
     const times = capFrameTimes(body.times, frames.length);
+    const sizes = capFrameSizes(body.sizes, frames.length);
     const authorization = req.headers.get('Authorization') ?? '';
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         global: { headers: { Authorization: authorization } },
@@ -474,7 +526,7 @@ Deno.serve(async (req) => {
     }
     const content: unknown[] = [];
     frames.forEach((data, i) => {
-        content.push({ type: 'text', text: frameLabel(i, frames.length, times?.[i]) });
+        content.push({ type: 'text', text: frameLabel(i, frames.length, times?.[i], sizes?.[i]) });
         content.push({ type: 'image', source: { type: 'base64', media_type: MEDIA_TYPE, data } });
     });
     const focus = capFocus(body.focus);
@@ -526,7 +578,7 @@ Deno.serve(async (req) => {
         text: string;
     }) => b.text)
         .join('\n');
-    const read = payload?.stop_reason === 'refusal' ? null : parseFormRead(text, lift, frames.length);
+    const read = payload?.stop_reason === 'refusal' ? null : parseFormRead(text, lift, frames.length, sizes);
     let spent: {
         allowed: boolean;
         credits_spent: number;

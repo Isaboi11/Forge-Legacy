@@ -167,6 +167,8 @@ export interface FormFrames {
   times: number[];
   /** Local (native) or data (web) URIs, one per frame — for design 03's strip and 04's marked frame. */
   uris: string[];
+  /** `[width, height]` of each frame as sent, so Holt's marks can come back in pixels. */
+  sizes: [number, number][];
 }
 
 export interface FrameOptions {
@@ -190,7 +192,7 @@ export interface FrameOptions {
  * here rather than sent.
  */
 export async function framesFromVideo(uri: string, opts: FrameOptions = {}): Promise<FormFrames> {
-  const none: FormFrames = { frames: [], times: [], uris: [] };
+  const none: FormFrames = { frames: [], times: [], uris: [], sizes: [] };
   if (!formCheckAvailable() || !uri) return none;
   const dur = opts.durationMs && opts.durationMs > 0 ? opts.durationMs : FORM_CLIP_SECONDS * 1000;
   const { start, end } = trimWindow(dur, opts.startMs, opts.endMs);
@@ -199,6 +201,7 @@ export async function framesFromVideo(uri: string, opts: FrameOptions = {}): Pro
   const out: string[] = [];
   const at: number[] = [];
   const uris: string[] = [];
+  const sizes: [number, number][] = [];
   for (const timeMs of frameTimestamps(dur, count, start, end)) {
     if (opts.cancelled?.()) return none;
     const f = await grabFrame(uri, timeMs, FORM_FRAME_MAX_EDGE, FORM_FRAME_COMPRESS, true);
@@ -206,13 +209,14 @@ export async function framesFromVideo(uri: string, opts: FrameOptions = {}): Pro
       out.push(f.base64);
       at.push(timeMs);
       uris.push(f.uri);
+      sizes.push([f.width, f.height]);
       opts.onFrame?.(f.uri, timeMs);
     }
   }
   // The same narrowing the function runs on the way in. It keeps order and only ever cuts from the end,
   // so the times and URIs are cut to match.
   const frames = capFrames(out) ?? [];
-  return { frames, times: at.slice(0, frames.length), uris: uris.slice(0, frames.length) };
+  return { frames, times: at.slice(0, frames.length), uris: uris.slice(0, frames.length), sizes: sizes.slice(0, frames.length) };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -223,6 +227,7 @@ export interface FormRequest {
   lift: string;
   frames: string[];
   times?: number[];
+  sizes?: [number, number][];
   note?: string;
   focus?: FormFocus[];
   /** The lift's coaching notes (`knownFromCoaching`), when it is a catalogue exercise. */
@@ -257,6 +262,7 @@ export async function formCheck(req: FormRequest): Promise<FormCheckResult> {
         lift: cleanLift,
         frames: capped,
         times: req.times?.slice(0, capped.length),
+        sizes: req.sizes?.slice(0, capped.length),
         note: cleanNote || undefined,
         focus: req.focus?.length ? req.focus : undefined,
         known: req.known || undefined,

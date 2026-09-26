@@ -40,7 +40,7 @@ test('guard → frames → QUOTE → model → SPEND, in that order', () => {
   const frames = at('const frames = capFrames(body.frames)');
   const quote = at("rpc('coach_ai_quote', { p_action: FORM_ACTION })");
   const model = at("fetch('https://api.anthropic.com/v1/messages'");
-  const parse = at('parseFormRead(text, lift, frames.length)');
+  const parse = at('parseFormRead(text, lift, frames.length, sizes)');
   const spend = at("rpc('coach_ai_spend_credits', { p_action: FORM_ACTION })");
   assert.ok(guard < frames, 'a note about pain must not even be size-checked first');
   assert.ok(frames < quote, 'unusable frames must not even be quoted');
@@ -106,7 +106,8 @@ test('the system block is ONE cached constant with nothing interpolated into it'
 });
 
 test('the frames go in the user turn, in order, each labelled with its position', () => {
-  assert.match(SRC, /text: frameLabel\(i, frames\.length, times\?\.\[i\]\)/);
+  assert.match(SRC, /text: frameLabel\(i, frames\.length, times\?\.\[i\], sizes\?\.\[i\]\)/);
+  assert.match(SRC, /const sizes = capFrameSizes\(body\.sizes, frames\.length\);/);
   assert.match(SRC, /const times = capFrameTimes\(body\.times, frames\.length\);/);
   assert.match(SRC, /type: 'image', source: \{ type: 'base64', media_type: MEDIA_TYPE, data \}/);
   assert.match(SRC, /messages: \[\{ role: 'user', content \}\]/);
@@ -183,7 +184,8 @@ test('the app sends when each frame was taken, and the copy says any angle', () 
   assert.match(LIVE, /times: req\.times\?\.slice\(0, capped\.length\)/);
   assert.match(LIVE, /from any angle/);
   assert.ok(!/film[^.\n]*from the side/i.test(SCREEN), 'the screen must not tell them to film from the side');
-  assert.match(SCREEN, /formCheck\(\{ lift: chosen\.name, frames: got\.frames, times: got\.times, note, focus, known, last \}\)/);
+  assert.match(SCREEN, /formCheck\(\{ lift: chosen\.name, frames: got\.frames, times: got\.times, sizes: got\.sizes, note, focus, known, last \}\)/);
+  assert.match(LIVE, /sizes: req\.sizes\?\.slice\(0, capped\.length\)/);
 });
 
 test('the prompt REQUIRES earned praise and a closing line of encouragement (PO 2026-09-25)', () => {
@@ -202,7 +204,7 @@ test('the prompt REQUIRES earned praise and a closing line of encouragement (PO 
 });
 
 test('the LAST thing between the model and the answer is the code guard, not the prompt', () => {
-  const guard = at('const read = payload?.stop_reason === \'refusal\' ? null : parseFormRead(text, lift, frames.length);');
+  const guard = at('const read = payload?.stop_reason === \'refusal\' ? null : parseFormRead(text, lift, frames.length, sizes);');
   const answer = at('return json({ ok: true, read, remaining: spent?.remaining ?? quote.remaining });');
   assert.ok(guard < answer);
   // Between them: the spend, the usage record, and the refusal — nothing that touches `text`.
@@ -213,8 +215,8 @@ test('the LAST thing between the model and the answer is the code guard, not the
 });
 
 test('the lift echoed back comes from the REQUEST, not from the model', () => {
-  assert.match(SRC, /parseFormRead\(text, lift, frames\.length\)/);
-  assert.match(DOMAIN, /export function sanitizeFormRead\(raw: unknown, lift\?: string, frameCount: number = FORM_FRAMES_MAX\)/);
+  assert.match(SRC, /parseFormRead\(text, lift, frames\.length, sizes\)/);
+  assert.match(DOMAIN, /export function sanitizeFormRead\(\n\s*raw: unknown,\n\s*lift\?: string,/);
 });
 
 test('a model refusal reads as an unreadable clip, not as an app failure — and is not charged', () => {

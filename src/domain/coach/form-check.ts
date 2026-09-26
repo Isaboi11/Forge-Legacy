@@ -238,10 +238,33 @@ export function capFrameTimes(times: unknown, frameCount: number): number[] | nu
   return out;
 }
 
-/** "Frame 3 of 10 (2.5 s in):" — the label that goes before each still in the user turn. */
-export function frameLabel(index: number, total: number, timeMs?: number | null): string {
-  const at = typeof timeMs === 'number' && Number.isFinite(timeMs) ? ` (${(timeMs / 1000).toFixed(1)} s in)` : '';
-  return `Frame ${index + 1} of ${total}${at}:`;
+/**
+ * Each frame's size in pixels, `[width, height]`, narrowed like the times: one per frame or nothing.
+ *
+ * ⚠ WHY THE MODEL IS TOLD THE SIZE (PO device test, 09-25). Marks were asked for as FRACTIONS of the frame
+ * and landed on the ceiling above an overhead press. Vision models point far more reliably in PIXELS of the
+ * image they were shown when they know its dimensions, so the label carries them and the mark comes back
+ * in pixels (`cleanMarks` turns it into a fraction for the screen).
+ */
+export function capFrameSizes(raw: unknown, frameCount: number): [number, number][] | null {
+  if (!Array.isArray(raw) || raw.length < frameCount || frameCount < 1) return null;
+  const out: [number, number][] = [];
+  for (let i = 0; i < frameCount; i += 1) {
+    const v = raw[i];
+    if (!Array.isArray(v) || v.length !== 2) return null;
+    const [w, h] = v;
+    if (typeof w !== 'number' || typeof h !== 'number' || !(w >= 16 && w <= 4096 && h >= 16 && h <= 4096)) return null;
+    out.push([Math.round(w), Math.round(h)]);
+  }
+  return out;
+}
+
+/** "Frame 3 of 10 (2.5 s in, 432 x 768 px):" — the label that goes before each still in the user turn. */
+export function frameLabel(index: number, total: number, timeMs?: number | null, size?: [number, number] | null): string {
+  const parts: string[] = [];
+  if (typeof timeMs === 'number' && Number.isFinite(timeMs)) parts.push(`${(timeMs / 1000).toFixed(1)} s in`);
+  if (size) parts.push(`${size[0]} x ${size[1]} px`);
+  return `Frame ${index + 1} of ${total}${parts.length ? ` (${parts.join(', ')})` : ''}:`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -314,6 +337,8 @@ export interface FormMark {
   y: number;
   /** The rep the frame is in, 1-based, or null when the model did not say. */
   rep: number | null;
+  /** What that frame shows, in a few words ("lockout, bar overhead"). Guarded; '' when absent. */
+  shows: string;
 }
 
 const VIEWS: readonly FormView[] = ['side', 'front', 'behind', 'diagonal', 'other'];
@@ -325,8 +350,12 @@ const unit = (v: unknown): number | null =>
 /**
  * The marks, narrowed: only for a fix that survived the guard, only on a frame that was sent, at most one
  * per fix. `frameCount` is how many frames went up, so an index outside them is dropped, not clamped.
+ *
+ * Coordinates arrive in PIXELS when `sizes` is known (the function tells the model each frame's size) and
+ * leave as fractions — the only unit the screen draws in. A pair that is already 0–1 is read as fractions,
+ * which is what an older function sent and what the app's own re-check sees.
  */
-export function cleanMarks(raw: unknown, fixCount: number, frameCount: number): FormMark[] {
+export function cleanMarks(raw: unknown, fixCount: number, frameCount: number, sizes?: [number, number][] | null): FormMark[] {
   if (!Array.isArray(raw) || fixCount < 1 || frameCount < 1) return [];
   const out: FormMark[] = [];
   const seen = new Set<number>();
@@ -338,12 +367,18 @@ export function cleanMarks(raw: unknown, fixCount: number, frameCount: number): 
     const frame = typeof r.frame === 'number' ? Math.round(r.frame) - 1 : -1;
     if (fix < 0 || fix >= fixCount || seen.has(fix) || frame < 0 || frame >= frameCount) continue;
     const kind = r.kind === 'line' ? 'line' : 'dot';
-    const y = unit(r.y);
-    const x = kind === 'line' ? 0.5 : unit(r.x);
+    const size = sizes?.[frame] ?? null;
+    const rawX = typeof r.x === 'number' ? r.x : null;
+    const rawY = typeof r.y === 'number' ? r.y : null;
+    const inPixels = !!size && ((rawX != null && rawX > 1) || (rawY != null && rawY > 1));
+    const y = unit(inPixels && rawY != null ? rawY / size[1] : rawY);
+    const x = kind === 'line' ? 0.5 : unit(inPixels && rawX != null ? rawX / size[0] : rawX);
     if (y == null || x == null) continue;
     const rep = typeof r.rep === 'number' && r.rep >= 1 && r.rep <= 50 ? Math.round(r.rep) : null;
+    const showsRaw = typeof r.shows === 'string' ? r.shows.replace(/\s+/g, ' ').trim().slice(0, 60) : '';
+    const shows = showsRaw && !isBannedSentence(showsRaw) ? showsRaw : '';
     seen.add(fix);
-    out.push({ fix, frame, kind, x, y, rep });
+    out.push({ fix, frame, kind, x, y, rep, shows });
   }
   return out;
 }
@@ -488,7 +523,12 @@ function cleanLines(raw: unknown, max: number): string[] {
  * `lift` is taken from the REQUEST by the caller, not trusted from the model, so a model that renames the
  * exercise cannot put words in the athlete's mouth about what they were doing.
  */
-export function sanitizeFormRead(raw: unknown, lift?: string, frameCount: number = FORM_FRAMES_MAX): FormRead | null {
+export function sanitizeFormRead(
+  raw: unknown,
+  lift?: string,
+  frameCount: number = FORM_FRAMES_MAX,
+  sizes?: [number, number][] | null,
+): FormRead | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const r = raw as Record<string, unknown>;
 
@@ -530,7 +570,7 @@ export function sanitizeFormRead(raw: unknown, lift?: string, frameCount: number
     view,
     viewLine: cleanLine(r.viewLine),
     reps,
-    marks: cleanMarks(remapped, fix.length, frameCount),
+    marks: cleanMarks(remapped, fix.length, frameCount, sizes),
     drill: cleanDrill(r.drill),
     trend,
     progress: cleanLine(r.progress),
@@ -543,7 +583,7 @@ export function sanitizeFormRead(raw: unknown, lift?: string, frameCount: number
  * Fences first because a model asked for bare JSON wraps it in ```json anyway often enough to matter, and
  * a read lost to a markdown habit costs the athlete a credit for nothing.
  */
-export function parseFormRead(text: unknown, lift?: string, frameCount?: number): FormRead | null {
+export function parseFormRead(text: unknown, lift?: string, frameCount?: number, sizes?: [number, number][] | null): FormRead | null {
   if (typeof text !== 'string' || !text.trim()) return null;
   const stripped = text.replace(/```[a-zA-Z]*\n?/g, '').trim();
   const start = stripped.indexOf('{');
@@ -555,5 +595,5 @@ export function parseFormRead(text: unknown, lift?: string, frameCount?: number)
   } catch {
     return null;
   }
-  return sanitizeFormRead(parsed, lift, frameCount);
+  return sanitizeFormRead(parsed, lift, frameCount, sizes);
 }
