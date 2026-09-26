@@ -103,7 +103,7 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
   privacy rewrite (nutrition, AI/Anthropic, all providers, route correction, Holt memory) `94010207`, new
   `/health-data` page, subscription terms (auto-renew, trial, Early Bird, refunds, Apple EULA) `f198ea07`.
   In-app legal summaries updated too: web `index-4e10f078…` + build 9 iOS `01a0df09-5476…` (lane `da09e79c`).
-  🔨 in-app consent for Washington (Nutrition + AI sharing) — being built 09-26 · ⬜ a real lawyer still signs off
+  🔨 in-app consent for Washington (Nutrition + AI sharing) — built 09-26 `3414c39d` (all 7 AI functions gated client-side; Settings → Health Data & AI to withdraw) · ⬜ PO pastes `pending-0224.sql` · ⬜ publish · ⬜ server-side refusal in the AI functions (follow-up) · ⬜ a real lawyer still signs off
 - ✅ Search failure message — 09-24: a failed source falls back to saved foods, and with no connection the
   app now says "Couldn't connect to food search" with Try again (Log Food + the meal editor). Not deployed yet
 - ✅ First-time welcome screen for the tab — built 09-24 (`eefe43dd`), on web; not yet seen by the PO
