@@ -196,12 +196,16 @@ export default function ActivityDetailScreen() {
               {renameError ?? 'This is how the session appears in your history. Leave it empty to drop the name.'}
             </Text>
             <View style={styles.nameActions}>
-              <Button variant="secondary" fullWidth onPress={() => setRenameOpen(false)} accessibilityLabel="Cancel">
-                Cancel
-              </Button>
-              <Button variant="primary" fullWidth onPress={() => void commitRename()} accessibilityLabel="Save name">
-                {savingName ? 'Saving…' : 'Save Name'}
-              </Button>
+              <View style={styles.nameAction}>
+                <Button variant="secondary" fullWidth onPress={() => setRenameOpen(false)} accessibilityLabel="Cancel">
+                  Cancel
+                </Button>
+              </View>
+              <View style={styles.nameAction}>
+                <Button variant="primary" fullWidth onPress={() => void commitRename()} accessibilityLabel="Save name">
+                  {savingName ? 'Saving…' : 'Save Name'}
+                </Button>
+              </View>
             </View>
           </BottomSheet>
         </>
@@ -584,6 +588,8 @@ const styles = StyleSheet.create({
   nameHint: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray600, marginTop: 10 },
   nameError: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.redMuted, marginTop: 10 },
   nameActions: { flexDirection: 'row', gap: 10, marginTop: 18 },
+  /** Each button's `fullWidth` is `width: 100%` — of THIS cell, not the row; bare in the row, two of them pushed Save off the screen (QA F8). */
+  nameAction: { flex: 1 },
   programTag: { fontSize: 12, fontWeight: '600', color: flColor.gray600 },
 
   milestone: {

@@ -1061,7 +1061,30 @@ export default function SquadDetailRoute() {
       {mediaPickerSheet}
 
       {/* EDIT GOAL SHEET */}
-      <BottomSheet open={activeGoalMode != null} onClose={closeGoalEditor} title={GOAL_SHEET_TITLE[activeGoalMode ?? 'edit']}>
+      <BottomSheet
+        open={activeGoalMode != null}
+        onClose={closeGoalEditor}
+        title={GOAL_SHEET_TITLE[activeGoalMode ?? 'edit']}
+        /* QA F2 (2026-09-26): goal, metric chips, target, two dates and the note run past the 88% cap on
+           an iPhone 14 and an SE, and an unscrolled body cannot shrink — Save Goal sat below the bottom
+           of the screen with no way to reach it. Same fix as Edit Identity: scroll the body, pin the
+           actions, so Save is on screen whatever the body's height and whether or not a keyboard is up. */
+        scroll
+        footer={
+          <>
+            <Button variant="primary" fullWidth disabled={!goalValid || savingGoal} onPress={saveGoal} accessibilityLabel="Save goal">
+              {savingGoal ? 'Saving…' : 'Save Goal'}
+            </Button>
+            {/* Only on an edit of a LIVE goal. The next-goal modes replace a finished goal by saving — offering
+                "Remove" there would be a second, quieter way to do what Save already does. */}
+            {squad.goalTarget != null && activeGoalMode === 'edit' && goalPhase === 'live' ? (
+              <Pressable onPress={removeGoal} accessibilityRole="button" accessibilityLabel="Remove goal" style={styles.removeGoalBtn} hitSlop={6}>
+                <Text style={styles.removeGoalText}>Remove goal</Text>
+              </Pressable>
+            ) : null}
+          </>
+        }
+      >
         <View style={styles.goalSheetBody}>
           <Text style={styles.goalSheetSub}>One shared objective the whole squad pushes toward together.</Text>
           <InputField label="Goal" value={goalTitle} onChange={setGoalTitle} maxLength={60} showCount placeholder="e.g. Run 200 miles together" />
@@ -1113,16 +1136,6 @@ export default function SquadDetailRoute() {
             Progress updates automatically from your squad’s logged workouts. A start date in the past counts
             work already done; leave the end blank and the goal runs until you reach it.
           </Text>
-          <Button variant="primary" fullWidth disabled={!goalValid || savingGoal} onPress={saveGoal} accessibilityLabel="Save goal">
-            {savingGoal ? 'Saving…' : 'Save Goal'}
-          </Button>
-          {/* Only on an edit of a LIVE goal. The next-goal modes replace a finished goal by saving — offering
-              "Remove" there would be a second, quieter way to do what Save already does. */}
-          {squad.goalTarget != null && activeGoalMode === 'edit' && goalPhase === 'live' ? (
-            <Pressable onPress={removeGoal} accessibilityRole="button" accessibilityLabel="Remove goal" style={styles.removeGoalBtn} hitSlop={6}>
-              <Text style={styles.removeGoalText}>Remove goal</Text>
-            </Pressable>
-          ) : null}
         </View>
       </BottomSheet>
 

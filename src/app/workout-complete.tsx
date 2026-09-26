@@ -461,12 +461,16 @@ export default function WorkoutComplete() {
       />
       <Text style={styles.nameHint}>You&apos;ll find it under Workouts → Templates.</Text>
       <View style={styles.nameActions}>
-        <Button variant="secondary" fullWidth onPress={() => setNameOpen(false)} accessibilityLabel="Cancel">
-          Cancel
-        </Button>
-        <Button variant="primary" fullWidth onPress={() => void keepAsTemplate()} accessibilityLabel="Save template">
-          {savingTemplate ? 'Saving…' : 'Save Template'}
-        </Button>
+        <View style={styles.nameAction}>
+          <Button variant="secondary" fullWidth onPress={() => setNameOpen(false)} accessibilityLabel="Cancel">
+            Cancel
+          </Button>
+        </View>
+        <View style={styles.nameAction}>
+          <Button variant="primary" fullWidth onPress={() => void keepAsTemplate()} accessibilityLabel="Save template">
+            {savingTemplate ? 'Saving…' : 'Save Template'}
+          </Button>
+        </View>
       </View>
     </BottomSheet>
   );
@@ -490,12 +494,16 @@ export default function WorkoutComplete() {
       />
       <Text style={styles.nameHint}>This is how the session appears in your history. Leave it empty to drop the name.</Text>
       <View style={styles.nameActions}>
-        <Button variant="secondary" fullWidth onPress={() => setRenameOpen(false)} accessibilityLabel="Cancel">
-          Cancel
-        </Button>
-        <Button variant="primary" fullWidth onPress={() => void commitRename()} accessibilityLabel="Save name">
-          {savingName ? 'Saving…' : 'Save Name'}
-        </Button>
+        <View style={styles.nameAction}>
+          <Button variant="secondary" fullWidth onPress={() => setRenameOpen(false)} accessibilityLabel="Cancel">
+            Cancel
+          </Button>
+        </View>
+        <View style={styles.nameAction}>
+          <Button variant="primary" fullWidth onPress={() => void commitRename()} accessibilityLabel="Save name">
+            {savingName ? 'Saving…' : 'Save Name'}
+          </Button>
+        </View>
       </View>
     </BottomSheet>
   );
@@ -1626,6 +1634,8 @@ const styles = StyleSheet.create({
   nameInput: { paddingHorizontal: 13, paddingVertical: 12, minHeight: 46, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 15, color: flColor.cream100 },
   nameHint: { marginTop: 8, fontSize: 12, color: flColor.gray600 },
   nameActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  /** Each button's `fullWidth` is `width: 100%` — of THIS cell, not the row; bare in the row, two of them pushed Save off the screen (QA F8). */
+  nameAction: { flex: 1 },
 
   templateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 18, paddingVertical: 12 },
   templateRowPressed: { opacity: 0.82 },

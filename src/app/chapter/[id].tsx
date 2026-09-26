@@ -390,12 +390,16 @@ export default function ChapterDetailScreen() {
           {renameError ?? `Shown as “${data.number} — ${renameDraft.trim() || DEFAULT_CHAPTER_I_TITLE}”. The chapter number stays as it is.`}
         </Text>
         <View style={styles.nameActions}>
-          <Button variant="secondary" fullWidth onPress={() => setRenameOpen(false)} accessibilityLabel="Cancel">
-            Cancel
-          </Button>
-          <Button variant="primary" fullWidth onPress={() => void commitRename()} accessibilityLabel="Save chapter name">
-            {savingName ? 'Saving…' : 'Save Name'}
-          </Button>
+          <View style={styles.nameAction}>
+            <Button variant="secondary" fullWidth onPress={() => setRenameOpen(false)} accessibilityLabel="Cancel">
+              Cancel
+            </Button>
+          </View>
+          <View style={styles.nameAction}>
+            <Button variant="primary" fullWidth onPress={() => void commitRename()} accessibilityLabel="Save chapter name">
+              {savingName ? 'Saving…' : 'Save Name'}
+            </Button>
+          </View>
         </View>
       </BottomSheet>
 
@@ -447,6 +451,8 @@ const styles = StyleSheet.create({
   nameHint: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600, marginTop: 8 },
   nameError: { fontSize: 12.5, lineHeight: 18, color: flColor.redMuted, marginTop: 8 },
   nameActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  /** Each button's `fullWidth` is `width: 100%` — of THIS cell, not the row; bare in the row, two of them pushed Save off the screen (QA F8). */
+  nameAction: { flex: 1 },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#5FA271' },
   status: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronze300 },

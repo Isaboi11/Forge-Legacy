@@ -79,9 +79,11 @@ export function StandardEditorSheet({
           <Button variant="secondary" onPress={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" fullWidth disabled={empty || busy} onPress={save}>
-            Save Standard
-          </Button>
+          <View style={styles.saveCell}>
+            <Button variant="primary" fullWidth disabled={empty || busy} onPress={save}>
+              Save Standard
+            </Button>
+          </View>
         </View>
       </View>
     </BottomSheet>
@@ -111,4 +113,6 @@ const styles = StyleSheet.create({
   },
   count: { fontFamily: flFont.sans, fontSize: 11, color: flColor.gray600, textAlign: 'right', marginTop: -6 },
   footer: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  /** `fullWidth` is `width: 100%` — of this cell, the room Cancel leaves. Bare in the row it took the WHOLE row and pushed Save off the right edge (QA F8). */
+  saveCell: { flex: 1 },
 });
