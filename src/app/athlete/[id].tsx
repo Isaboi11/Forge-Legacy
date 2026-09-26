@@ -141,6 +141,15 @@ export default function AthleteProfileScreen() {
    * pair reading everything.
    */
   const { data: blocked, refetch: refetchBlocked } = useQuery(() => isBlockedWith(athleteId), [athleteId]);
+  /*
+   * ⚠ THE ONE EXCEPTION TO THE RULE ABOVE (QA R2-F2): a blocked pair is offered no way to reach each other.
+   * Add Friend, Challenge, Train With / Join Workout and "Training now · View →" are all contact, so none is
+   * drawn while a block stands in EITHER direction. The server refuses them too (0225) — this is the control
+   * not being offered, not the enforcement. `=== false`, not `!blocked`: until the read answers, the
+   * contact controls stay hidden rather than flashing Add Friend at somebody who blocked you.
+   * `isBlockedWith` resolves false on any error, so a failed read never hides them for good.
+   */
+  const contactOpen = blocked === false;
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/squads'));
 
@@ -280,7 +289,7 @@ export default function AthleteProfileScreen() {
           </View>
         </Animated.View>
 
-        {!data.isSelf ? (
+        {!data.isSelf && contactOpen ? (
           <Actions
             state={state}
             busy={busy}
@@ -318,7 +327,7 @@ export default function AthleteProfileScreen() {
 
         {/* Training right now (0086/0089). Absent means EITHER not training or not cleared — a viewer must
             not be able to tell a private athlete from a resting one. */}
-        {training ? (
+        {training && (data.isSelf || contactOpen) ? (
           <Pressable
             onPress={() => router.push({ pathname: '/live-workout/[id]', params: { id: athleteId } })}
             accessibilityRole="button"
