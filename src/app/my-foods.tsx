@@ -43,7 +43,7 @@ import {
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { localToday, mealForHour } from '@/domain/nutrition/day';
-import { filterList, recipeRowMeta, totalsOf, type UserRecipe } from '@/domain/nutrition/user-recipes';
+import { filterList, recipeRowMeta, savedRecipes, totalsOf, type UserRecipe } from '@/domain/nutrition/user-recipes';
 import { logRecipeEaten } from '@/lib/log-recipe';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -87,7 +87,7 @@ export default function MyFoodsScreen() {
   const recipesQ = useQuery(fetchUserRecipes, [reloads]);
   const foods = useMemo(() => foodsQ.data ?? [], [foodsQ.data]);
   const meals = useMemo(() => mealsQ.data ?? [], [mealsQ.data]);
-  const recipes = useMemo(() => recipesQ.data ?? [], [recipesQ.data]);
+  const recipes = useMemo(() => savedRecipes(recipesQ.data ?? []), [recipesQ.data]);
 
   const [tab, setTab] = useState<Tab>(
     params.tab === 'recipes' ? 'recipes' : params.tab === 'meals' || params.newMeal === '1' ? 'meals' : 'foods',

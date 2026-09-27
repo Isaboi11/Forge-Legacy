@@ -172,3 +172,39 @@ test('Rebuild week ends the cleared state', () => {
   assert.equal(r.cleared, false);
   assert.ok(r.days.some((d) => d.items.length > 0));
 });
+
+/* ── Holt's trial dishes + deleting a recipe (PO 09-27) ─────────────────── */
+
+import { ownPicks, registerUserRecipes, withoutRecipe } from '../meal-planner.ts';
+import { savedRecipes } from '../user-recipes.ts';
+
+test('a deleted recipe leaves the week — every meal and leftover of it, its locks and log marks — and nothing else', () => {
+  const s = stored();
+  const gone = s.days[0].items[2].recipeId;
+  const keptLock = { recipeId: s.days[1].items[0].recipeId, leftover: false, portion: 1 };
+  const week = { ...s, locked: { ...s.locked, '1-breakfast': keptLock }, logged: { [`0-dinner-${gone}`]: 'row1', [`1-breakfast-${keptLock.recipeId}`]: 'row2' } };
+  const out = withoutRecipe(week, gone);
+  assert.ok(out.days.every((d) => d.items.every((it) => it.recipeId !== gone)));
+  const before = week.days.flatMap((d) => d.items).filter((it) => it.recipeId !== gone).length;
+  assert.equal(out.days.flatMap((d) => d.items).length, before, 'every other meal is still there');
+  assert.deepEqual(out.locked, { '1-breakfast': keptLock });
+  assert.deepEqual(out.logged, { [`1-breakfast-${keptLock.recipeId}`]: 'row2' });
+  assert.equal(resolveWeek(out, PREFS, 't1', TARGET, '2026-09-28').rebuilt, false, 'the rest of the week is NOT rebuilt');
+});
+
+test('Holt’s unsaved dishes: hidden from every list, plannable — except under “only my recipes”', () => {
+  const base = RECIPES.find((r) => r.mealTypes.includes('dinner'));
+  const dish = (id, trial) => ({ ...base, id, name: id, ...(trial ? { trial: true } : {}) });
+  setForgeRecipes([]);
+  registerUserRecipes([
+    { recipe: dish('u:holt', true), view: { id: 'u:holt', name: 'holt', minutes: 10, equipment: [], steps: [], ingredients: [], mine: true }, plannable: true },
+    { recipe: dish('u:mine', false), view: { id: 'u:mine', name: 'mine', minutes: 10, equipment: [], steps: [], ingredients: [], mine: true }, plannable: true },
+  ]);
+  const dinners = (p) => new Set(planWeek({ prefs: { ...PREFS, meals: ['dinner'], ...p }, target: TARGET, seed: 5, locked: {} }).flatMap((d) => d.items.map((x) => x.recipeId)));
+  assert.ok(dinners({}).has('u:holt'), 'the week may use it');
+  assert.deepEqual([...dinners({ ownRecipesOnly: true })], ['u:mine']);
+  assert.deepEqual(ownPicks('dinner', PREFS).map((x) => x.recipe.id), ['u:mine'], '“choose my own” lists only kept recipes');
+  assert.deepEqual(savedRecipes([{ id: 'u:a', trial: true }, { id: 'u:b' }, { id: 'u:c', trial: false }]).map((u) => u.id), ['u:b', 'u:c']);
+  registerUserRecipes([]);
+  setForgeRecipes(STARTER_RECIPES);
+});

@@ -70,7 +70,15 @@ export interface UserRecipe {
   steps: string[];
   usePlan: boolean;
   createdAt: string;
+  /**
+   * One of Holt's dishes, in the week's plan but NOT in My Recipes until the athlete opens it and saves it
+   * (0227; PO 09-27: "I don't want to save them all cause I haven't even tried them"). Missing = saved.
+   */
+  trial?: boolean;
 }
+
+/** What My Recipes, My Foods, Log Food and Holt's recipe search list: the recipes the athlete KEPT. */
+export const savedRecipes = (list: readonly UserRecipe[]): UserRecipe[] => list.filter((u) => !u.trial);
 
 export const MEAL_TYPES: readonly { key: PlanSlot; label: string }[] = [
   { key: 'breakfast', label: 'Breakfast' },
@@ -248,6 +256,7 @@ export function toBook(u: UserRecipe): { recipe: Recipe; view: RecipeView; plann
     proteinSource: 'mixed',
     format: 'mine',
     keeps: leftoverDays >= 1,
+    ...(u.trial ? { trial: true } : {}),
   };
   const view: RecipeView = {
     id: u.id,

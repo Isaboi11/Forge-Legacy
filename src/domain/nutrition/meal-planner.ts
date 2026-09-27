@@ -43,7 +43,7 @@ import {
  *    already decided, and a same-every-night dinner feeding lunch would make lunch the same too.
  *  · `shareIngredients` rewards a recipe for reusing what the week already buys and lifts the 3-a-week protein
  *    cap (buying chicken once for three dinners is the point); never two of a protein in one day still holds.
- *  · `ownRecipesOnly` plans from My Recipes alone — Forge's library is left out of the pool.
+ *  · `ownRecipesOnly` plans from My Recipes alone — Forge's library and Holt's unsaved (`trial`) dishes are left out.
  *
  * PO answers 2026-09-23: macro targets come from the Targets screen; everyone in the household eats the
  * same portion (so cooked servings = people × portion × meals fed).
@@ -73,6 +73,8 @@ export interface Recipe {
   format: string;
   /** Can a cooked batch feed a later lunch? */
   keeps: boolean;
+  /** One of Holt's dishes the athlete hasn't saved to My Recipes (0227). Plannable — not "my recipes". */
+  trial?: boolean;
 }
 
 const ALLERGEN_ORDER: Allergen[] = ['peanuts', 'tree_nuts', 'dairy', 'eggs', 'gluten', 'soy', 'fish', 'shellfish', 'sesame'];
@@ -305,8 +307,9 @@ export function fits(r: Recipe, p: MealPlanPrefs): boolean {
 export const fitsSlot = (r: Recipe, slot: PlanSlot, p: MealPlanPrefs): boolean =>
   r.mealTypes.includes(slot) && fits(r, p) && (p.cookMinutes == null || r.minutes <= p.cookMinutes);
 
+/* "Only plan from my recipes" leaves out Forge's library AND Holt's unsaved dishes: neither is the athlete's. */
 const pool = (slot: PlanSlot, p: MealPlanPrefs): Recipe[] =>
-  [...(p.ownRecipesOnly ? [] : RECIPES), ...USER_RECIPES].filter((r) => fitsSlot(r, slot, p));
+  [...(p.ownRecipesOnly ? [] : RECIPES), ...USER_RECIPES.filter((r) => !(p.ownRecipesOnly && r.trial))].filter((r) => fitsSlot(r, slot, p));
 
 /* ── the plan's shape ───────────────────────────────────────────────────── */
 
@@ -956,14 +959,14 @@ export function whyNot(r: Recipe, p: MealPlanPrefs): string | null {
 /** The athlete's recipes for a slot's picker: the ones made for that meal first, then the rest; rule-breakers out. */
 export function ownPicks(slot: PlanSlot, p: MealPlanPrefs): { recipe: Recipe; forSlot: boolean }[] {
   return Object.values(RECIPE_BY_ID)
-    .filter((r) => r.id.startsWith('u:') && whyNot(r, p) == null)
+    .filter((r) => r.id.startsWith('u:') && !r.trial && whyNot(r, p) == null)
     .map((recipe) => ({ recipe, forSlot: recipe.mealTypes.includes(slot) }))
     .sort((a, b) => Number(b.forSlot) - Number(a.forSlot) || a.recipe.name.localeCompare(b.recipe.name));
 }
 
 /** How many of the athlete's recipes the picker leaves out, and why the first one is out — said, never silent. */
 export function ownPicksHidden(p: MealPlanPrefs): { count: number; example: string | null } {
-  const out = Object.values(RECIPE_BY_ID).filter((r) => r.id.startsWith('u:') && whyNot(r, p) != null);
+  const out = Object.values(RECIPE_BY_ID).filter((r) => r.id.startsWith('u:') && !r.trial && whyNot(r, p) != null);
   return { count: out.length, example: out[0] ? `${out[0].name}: ${whyNot(out[0], p)!.toLowerCase()}` : null };
 }
 
@@ -1008,6 +1011,21 @@ export interface MealPlanWeek {
   logged: Record<string, string>;
   /** The athlete cleared it (0226 `cleared_at`): Forge fills nothing in until they rebuild or change the setup. */
   cleared?: boolean;
+}
+
+/**
+ * A deleted recipe leaves the week (PO 09-27: *"I should be able to delete off the list of my recipes"*). Every
+ * meal it filled — and every leftover lunch from it — comes off, with its locks and logged marks; the rest of
+ * the week stays exactly as it was. Without this the stored week names a recipe that no longer exists,
+ * `planIsReadable` fails, and `resolveWeek` rebuilds the WHOLE week, throwing away every pick and lock.
+ */
+export function withoutRecipe(week: MealPlanWeek, recipeId: string): MealPlanWeek {
+  return {
+    ...week,
+    days: week.days.map((d) => ({ items: d.items.filter((it) => it.recipeId !== recipeId) })),
+    locked: Object.fromEntries(Object.entries(week.locked).filter(([, l]) => l.recipeId !== recipeId)),
+    logged: Object.fromEntries(Object.entries(week.logged).filter(([k]) => !k.endsWith(`-${recipeId}`))),
+  };
 }
 
 /**

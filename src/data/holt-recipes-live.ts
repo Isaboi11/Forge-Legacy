@@ -1,6 +1,6 @@
 import type { RecipeCard } from '@/domain/coach/ask-tools';
 import { RECIPES, type Recipe } from '@/domain/nutrition/meal-planner';
-import { toBook } from '@/domain/nutrition/user-recipes';
+import { savedRecipes, toBook } from '@/domain/nutrition/user-recipes';
 import { fetchUserRecipes } from '@/data/nutrition-live';
 
 /**
@@ -39,7 +39,7 @@ export async function holtRecipeCardsLive(hasNutrition: boolean): Promise<Recipe
   if (!hasNutrition) return [];
   if (cache && Date.now() - cache.at < TTL_MS) return cache.cards;
   const mine = await fetchUserRecipes().catch(() => []);
-  const cards = [...mine.map((u) => card(toBook(u).recipe, true)), ...RECIPES.map((r) => card(r, false))];
+  const cards = [...savedRecipes(mine).map((u) => card(toBook(u).recipe, true)), ...RECIPES.map((r) => card(r, false))];
   cache = { at: Date.now(), cards };
   return cards;
 }

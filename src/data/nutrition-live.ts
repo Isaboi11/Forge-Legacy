@@ -17,6 +17,7 @@ import {
   logKey,
   portionLabel,
   registerSavedMeals,
+  withoutRecipe,
   type Locks,
   type MealPlanWeek,
   type PlanDay,
@@ -1584,21 +1585,32 @@ const toUserRecipe = (r: Record<string, any>): UserRecipe => ({
   steps: r.steps ?? [],
   usePlan: !!r.use_plan,
   createdAt: r.created_at,
+  ...(r.trial === true ? { trial: true } : {}),
 });
+
+const RECIPE_COLUMNS = 'id, name, meal_types, minutes, yield, ingredients, allergens, confirmed, steps, use_plan, created_at';
+/** 0227's `user_recipes.trial`, latched like `prefs0226`. Before it is pasted every recipe reads as saved. */
+let recipeTrial0227: boolean | null = null;
+const recipeColumns = (withTrial: boolean) => (withTrial ? `${RECIPE_COLUMNS}, trial` : RECIPE_COLUMNS);
 
 /**
  * The athlete's recipes — and, as it reads them, puts them in the recipe book (`registerAll`), so any
  * week naming one resolves. Empty when there are none or `0213` is not pasted yet.
+ *
+ * ⚠ ALL of them, Holt's unsaved `trial` dishes included — a week naming one must still resolve. Screens that
+ * LIST the athlete's recipes pass this through `savedRecipes` (`domain/nutrition/user-recipes.ts`).
  */
 export async function fetchUserRecipes(): Promise<UserRecipe[]> {
   const id = await athleteId();
   if (!id) return [];
-  const { data, error } = await supabase
-    .from('user_recipes')
-    .select('id, name, meal_types, minutes, yield, ingredients, allergens, confirmed, steps, use_plan, created_at')
-    .eq('athlete_id', id)
-    .order('created_at', { ascending: false });
-  const list = error ? [] : ((data ?? []) as Record<string, any>[]).map(toUserRecipe);
+  const read = (withTrial: boolean) =>
+    supabase.from('user_recipes').select(recipeColumns(withTrial)).eq('athlete_id', id).order('created_at', { ascending: false });
+  let { data, error } = await read(recipeTrial0227 !== false);
+  if (error && recipeTrial0227 !== false && isMissingColumn(error)) {
+    recipeTrial0227 = false;
+    ({ data, error } = await read(false));
+  }
+  const list = error ? [] : ((data ?? []) as unknown as Record<string, any>[]).map(toUserRecipe);
   registerAll(list);
   /* Saved meals go in the same book at the same moment — every screen that reads a week calls this first. */
   registerSavedMeals(await fetchPlanMeals(id));
@@ -1636,32 +1648,53 @@ async function fetchPlanMeals(id: string): Promise<PlanMealSource[]> {
   );
 }
 
-/** Insert or update one recipe. Returns it as stored. Throws — the form must not say "saved" when it wasn't. */
+/**
+ * Insert or update one recipe. Returns it as stored. Throws — the form must not say "saved" when it wasn't.
+ * `trial` is written as given (missing = saved); before 0227 it cannot be, and the recipe is saved as a normal one.
+ */
 export async function saveUserRecipe(u: Omit<UserRecipe, 'id' | 'createdAt'> & { id: string | null }): Promise<UserRecipe> {
   const athlete = await athleteId();
   if (!athlete) throw new Error('Not signed in');
   const rowId = u.id ? u.id.replace(/^u:/, '') : uuid();
-  const { data, error } = await supabase
-    .from('user_recipes')
-    .upsert(
-      {
-        id: rowId,
-        athlete_id: athlete,
-        name: u.name,
-        meal_types: u.mealTypes,
-        minutes: u.minutes,
-        yield: u.yield,
-        ingredients: u.ingredients,
-        allergens: u.allergens,
-        confirmed: u.confirmed,
-        steps: u.steps,
-        use_plan: u.usePlan,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'id' },
-    )
-    .select('id, name, meal_types, minutes, yield, ingredients, allergens, confirmed, steps, use_plan, created_at')
-    .single();
+  const row = {
+    id: rowId,
+    athlete_id: athlete,
+    name: u.name,
+    meal_types: u.mealTypes,
+    minutes: u.minutes,
+    yield: u.yield,
+    ingredients: u.ingredients,
+    allergens: u.allergens,
+    confirmed: u.confirmed,
+    steps: u.steps,
+    use_plan: u.usePlan,
+    updated_at: new Date().toISOString(),
+  };
+  const write = (withTrial: boolean) => {
+    const r: Record<string, unknown> = withTrial ? { ...row, trial: !!u.trial } : row;
+    return supabase.from('user_recipes').upsert(r, { onConflict: 'id' }).select(recipeColumns(withTrial)).single();
+  };
+  let { data, error } = await write(recipeTrial0227 !== false);
+  if (error && recipeTrial0227 !== false && isMissingColumn(error)) {
+    recipeTrial0227 = false;
+    ({ data, error } = await write(false));
+  }
   if (error || !data) throw error ?? new Error('Could not save the recipe');
-  return toUserRecipe(data as Record<string, any>);
+  return toUserRecipe(data as unknown as Record<string, any>);
+}
+
+/**
+ * Delete one of the athlete's recipes (PO 09-27). It also comes out of THIS week's stored plan (`withoutRecipe`)
+ * so the rest of the week survives — a week naming a missing recipe is otherwise rebuilt from scratch. Diary
+ * rows are snapshots and keep what was eaten. Throws — the screen must not say "deleted" when it wasn't.
+ */
+export async function deleteUserRecipe(recipeId: string, weekStart: string): Promise<void> {
+  const athlete = await athleteId();
+  if (!athlete) throw new Error('Not signed in');
+  const week = await fetchMealPlanWeek(weekStart);
+  const { error } = await supabase.from('user_recipes').delete().eq('id', recipeId.replace(/^u:/, '')).eq('athlete_id', athlete);
+  if (error) throw error;
+  if (week && week.days.some((d) => d.items.some((it) => it.recipeId === recipeId))) {
+    await saveMealPlanWeek(withoutRecipe(week, recipeId));
+  }
 }

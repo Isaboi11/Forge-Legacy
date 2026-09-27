@@ -41,7 +41,7 @@ import {
   type RecentFood,
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
-import { filterList, recipeRowMeta, type UserRecipe } from '@/domain/nutrition/user-recipes';
+import { filterList, recipeRowMeta, savedRecipes, type UserRecipe } from '@/domain/nutrition/user-recipes';
 import { logRecipeEaten } from '@/lib/log-recipe';
 import { labelScanAvailable } from '@/lib/label-scan';
 import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
@@ -135,7 +135,8 @@ export default function LogFoodScreen() {
   const { data: favorites } = useQuery(fetchFavorites, [reloads]);
   const { data: myFoods } = useQuery(fetchMyFoods, [reloads]);
   const { data: savedMeals } = useQuery(fetchSavedMeals, [reloads]);
-  const { data: myRecipes } = useQuery(fetchUserRecipes, [reloads]);
+  const { data: allRecipes } = useQuery(fetchUserRecipes, [reloads]);
+  const myRecipes = allRecipes ? savedRecipes(allRecipes) : allRecipes;
   /* The recipe whose "How much did you eat?" sheet is open. */
   const [eatRecipe, setEatRecipe] = useState<UserRecipe | null>(null);
   const [eatBusy, setEatBusy] = useState(false);

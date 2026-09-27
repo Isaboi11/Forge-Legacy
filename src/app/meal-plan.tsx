@@ -270,9 +270,11 @@ export default function MealPlanScreen() {
     setFill({ phase: 'saving' });
     try {
       const now = new Date().toISOString();
-      for (const { slot, card } of picks) await saveUserRecipe({ ...recipeFrom(formForPlan(card, slot), '', now), id: null });
+      /* TRIAL (0227): in this week, not in My Recipes — the athlete saves one from its Recipe screen once they've
+         tried it (PO 09-27: "I don't want to save them all cause I haven't even tried them"). */
+      for (const { slot, card } of picks) await saveUserRecipe({ ...recipeFrom(formForPlan(card, slot), '', now), id: null, trial: true });
       await fetchUserRecipes(); // registers them in the book before the rebuild reads it
-      await commit(rebuildWeek(week, prefs, target), `Added ${picks.length} of Holt's dishes · week rebuilt`);
+      await commit(rebuildWeek(week, prefs, target), `Holt's dishes are in your week · open one to save it`);
       setReloads((n) => n + 1);
     } catch (e) {
       showToast(errorMessage(e));
@@ -802,7 +804,7 @@ export default function MealPlanScreen() {
       >
         <View style={styles.sheetBody}>
           <Text style={styles.sheetMeta}>
-            {"Every number is the app's, from these ingredients. Check the allergens: adding them confirms them for your plans."}
+            {"Every number is the app's, from these ingredients. Check the allergens: adding them confirms them for this plan. They go in your week, not My Recipes. Open one you like and tap Save to My Recipes."}
           </Text>
           {fill?.phase === 'review'
             ? fill.picks.map(({ slot, card }, k) => (
@@ -822,7 +824,7 @@ export default function MealPlanScreen() {
               disabled={fill?.phase !== 'review'}
               onPress={() => (fill?.phase === 'review' ? void acceptFill(fill.picks) : undefined)}
             >
-              {fill?.phase === 'saving' ? 'Adding…' : 'Add these and rebuild'}
+              {fill?.phase === 'saving' ? 'Adding…' : 'Use these this week'}
             </Button>
             <Button variant="text" fullWidth onPress={() => setFill(null)} disabled={fill?.phase === 'saving'}>
               Not now

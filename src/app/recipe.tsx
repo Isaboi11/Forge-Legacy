@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View, type NativeScrollEvent, 
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { Pill } from '@/components/forge/composites/Pill';
 import { ScreenBackground } from '@/components/screen-background';
@@ -15,7 +16,15 @@ import { ALLERGENS } from '@/domain/nutrition/meal-plan-setup';
 import { DAY_NAMES, RECIPE_BY_ID, feedsDay, itemTotals, logKey, mondayOf, portionLabel, recipeView, slotKey, toggleLock } from '@/domain/nutrition/meal-planner';
 import { batchNote, ingredientRows, servingsFor, servingsLabel } from '@/domain/nutrition/recipe-view';
 import { EatenSheet } from '@/components/forge/compositions/EatenSheet';
-import { fetchMealPlanPrefs, fetchMealPlanWeek, fetchUserRecipes, saveMealPlanWeek, togglePlanLog } from '@/data/nutrition-live';
+import {
+  deleteUserRecipe,
+  fetchMealPlanPrefs,
+  fetchMealPlanWeek,
+  fetchUserRecipes,
+  saveMealPlanWeek,
+  saveUserRecipe,
+  togglePlanLog,
+} from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { requestSwap } from '@/lib/meal-plan-intent';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
@@ -71,6 +80,8 @@ export default function RecipeScreen() {
   const [busy, setBusy] = useState(false);
   /* "How much did you eat?" — My Recipes only (PO 2026-09-26). */
   const [eatOpen, setEatOpen] = useState(false);
+  /* Delete, asked first (PO 09-27: "I should be able to delete off the list of my recipes"). */
+  const [askDelete, setAskDelete] = useState(false);
 
   /* Where this recipe sits in the week — only when the plan still has it there. */
   const d = params.d != null ? Number(params.d) : NaN;
@@ -143,6 +154,37 @@ export default function RecipeScreen() {
   /* An own food (a scanned or typed label) is in it: Forge can't see its allergens, and its numbers are
      the label's, not USDA's. */
   const hasOwn = src.ingredients.some((x) => x.key.startsWith('own:'));
+  /* One of Holt's dishes, in the week but not in My Recipes until it is saved here (0227). */
+  const isTrial = !!mine?.trial;
+
+  const keepTrial = async () => {
+    if (busy || !mine) return;
+    setBusy(true);
+    try {
+      await saveUserRecipe({ ...mine, id: mine.id, trial: false });
+      setReloads((x) => x + 1);
+      showToast('Saved to My Recipes');
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const removeMine = async () => {
+    if (busy || !mine) return;
+    setBusy(true);
+    try {
+      await deleteUserRecipe(mine.id, monday);
+      setAskDelete(false);
+      showToast(isTrial ? 'Removed' : `Deleted ${mine.name}`);
+      router.back();
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   /* Opened from My Recipes: log what they ATE today, in the recipe's first meal type. */
   const logEaten = async (q: number) => {
@@ -195,6 +237,15 @@ export default function RecipeScreen() {
           <Text style={styles.title}>{r.name}</Text>
           <Text style={styles.lede}>{meta}</Text>
         </View>
+
+        {isTrial ? (
+          <View style={styles.trial}>
+            <Text style={styles.trialText}>Holt’s idea for this week. It isn’t in My Recipes until you save it.</Text>
+            <Button variant="secondary" fullWidth disabled={busy} onPress={() => void keepTrial()}>
+              Save to My Recipes
+            </Button>
+          </View>
+        ) : null}
 
         {/* the numbers */}
         <View style={styles.card}>
@@ -296,6 +347,12 @@ export default function RecipeScreen() {
             </View>
           </View>
         ))}
+
+        {mine ? (
+          <Pressable accessibilityRole="button" hitSlop={6} style={styles.deleteLink} onPress={() => setAskDelete(true)}>
+            <Text style={styles.deleteText}>{isTrial ? 'Don’t use this recipe' : 'Delete recipe'}</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -329,7 +386,7 @@ export default function RecipeScreen() {
             </Pressable>
           </View>
         ) : null}
-        {isMine ? (
+        {isMine && !isTrial ? (
           <Pressable accessibilityRole="button" hitSlop={6} onPress={() => router.push({ pathname: '/my-recipes', params: { edit: r.id } })}>
             <Text style={styles.link}>Edit recipe</Text>
           </Pressable>
@@ -348,6 +405,22 @@ export default function RecipeScreen() {
 
       {/* how much did you eat — My Recipes only; the plan's own portion covers a planned meal */}
       <EatenSheet recipe={eatOpen ? (mine ?? null) : null} busy={busy} onClose={() => setEatOpen(false)} onLog={(q) => void logEaten(q)} />
+
+      <BottomSheet open={askDelete} onClose={() => (busy ? undefined : setAskDelete(false))} title={isTrial ? 'Don’t use this recipe?' : `Delete ${r.name}?`}>
+        <View style={styles.sheetBody}>
+          <Text style={styles.sheetMeta}>
+            {isTrial
+              ? 'It comes out of this week’s plan and won’t be picked again. Anything you logged stays in your diary.'
+              : 'It comes off My Recipes and out of this week’s plan. Anything you logged stays in your diary.'}
+          </Text>
+          <Button variant="destructive" fullWidth disabled={busy} onPress={() => void removeMine()}>
+            {busy ? 'Removing…' : isTrial ? 'Remove it' : 'Delete recipe'}
+          </Button>
+          <Button variant="text" fullWidth disabled={busy} onPress={() => setAskDelete(false)}>
+            Keep it
+          </Button>
+        </View>
+      </BottomSheet>
     </View>
   );
 }
@@ -461,5 +534,20 @@ const styles = StyleSheet.create({
   link: { paddingVertical: 12, paddingHorizontal: 2, fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
   logWrap: { flex: 1, alignItems: 'flex-end' },
   logWrapFull: { alignItems: 'stretch' },
+
+  trial: {
+    gap: 12,
+    marginTop: 18,
+    padding: 16,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal800,
+  },
+  trialText: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400 },
+  deleteLink: { alignSelf: 'center', marginTop: 32 },
+  deleteText: { paddingVertical: 12, paddingHorizontal: 4, fontSize: 13, fontWeight: '600', color: flColor.gray400 },
+  sheetBody: { gap: 10, paddingBottom: 12 },
+  sheetMeta: { marginTop: -8, marginBottom: 4, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
 
 });

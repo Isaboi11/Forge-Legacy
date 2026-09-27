@@ -39,6 +39,7 @@ import {
   planHint,
   qtyLabel,
   recipeFrom,
+  savedRecipes,
   savedToast,
   searchFoods,
   searchOwnFoods,
@@ -138,7 +139,8 @@ export default function MyRecipesScreen() {
   const myFoodsQ = useQuery(fetchMyFoods, [reloads]);
   const weekQ = useQuery(useCallback(() => fetchMealPlanWeek(monday), [monday]), [monday, reloads]);
 
-  const list = useMemo(() => listQ.data ?? [], [listQ.data]);
+  /* Holt's unsaved dishes are in the week, not in My Recipes (0227) — they are saved from their Recipe screen. */
+  const list = useMemo(() => savedRecipes(listQ.data ?? []), [listQ.data]);
   const weekIds = useMemo(() => new Set((weekQ.data?.days ?? []).flatMap((d) => d.items.map((i) => i.recipeId))), [weekQ.data]);
 
   /* The form: what the route asked for (?new / ?edit) until the athlete opens or closes one themselves. */
