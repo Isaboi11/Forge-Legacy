@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Animated, Modal, Pressable, StyleSheet, View } from 'react-native'
+import { Animated, Modal, Platform, Pressable, StyleSheet, View } from 'react-native'
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 
 import { ACTIVE_THEME, flColor } from '@/constants/foundation'
@@ -8,8 +8,14 @@ import { saveAppPrefs } from '@/data/settings-live'
 import { useToast } from '@/hooks/useCeremony'
 import { useAppPrefs } from '@/lib/settings'
 
-/** `expo-splash-screen`'s background (app.json) — the fade lands on the colour the restart opens on. */
-const SPLASH_GROUND = '#0E0E12'
+/**
+ * The fade lands on the colour the restart OPENS on, so the change is one dissolve with no cut:
+ *   · native — the splash's dark ground, in both directions: `applyThemeAndReload` paints the reload
+ *     screen that colour and `AnimatedSplashOverlay` opens on it before dissolving to Alabaster.
+ *   · web — the page reload paints `<html>` in the NEW theme's ground before any JS (`+html.tsx`), so
+ *     the fade goes straight to that one. These are the same two literals `+html.tsx` uses.
+ */
+const GROUND: Record<ThemeName, string> = { forge: '#0E0E12', paper: '#F6F2E8' }
 const FADE_MS = 280
 
 /**
@@ -24,8 +30,8 @@ const FADE_MS = 280
  *
  * ⚠ CHANGING THEME RESTARTS THE APP — the palette is frozen into module-scope stylesheets at launch
  *   (`foundation.ts`). So, exactly like Preferences, it SAVES FIRST and restarts only once the save
- *   landed; a restart into a theme the server rejected would flip back on the next launch. The fade to
- *   the splash colour is what makes the restart read as a deliberate change rather than a crash.
+ *   landed; a restart into a theme the server rejected would flip back on the next launch. The fade (see
+ *   `GROUND`) is what makes the restart read as a deliberate change rather than a crash.
  *
  * ⚠ DISABLED UNTIL PREFS HAVE LOADED. `saveAppPrefs({ ...prefs, theme })` before the read lands would
  *   write the defaults over every other preference (see `SettingsState.loaded`).
@@ -38,6 +44,7 @@ export function ThemeSwitch() {
 
   const target: ThemeName = ACTIVE_THEME === 'paper' ? 'forge' : 'paper'
   const label = target === 'paper' ? 'Switch to light mode' : 'Switch to dark mode'
+  const veil = Platform.OS === 'web' ? GROUND[target] : GROUND.forge
 
   const onPress = () => {
     if (busy || !loaded) return
@@ -71,7 +78,7 @@ export function ThemeSwitch() {
         )}
       </Pressable>
       <Modal visible={busy} transparent animationType="none" statusBarTranslucent>
-        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.veil, { opacity: fade }]} />
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: veil, opacity: fade }]} />
       </Modal>
     </>
   )
@@ -95,5 +102,4 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal800,
   },
   discPressed: { opacity: 0.7 },
-  veil: { backgroundColor: SPLASH_GROUND },
 })

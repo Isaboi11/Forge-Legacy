@@ -96,7 +96,14 @@ export async function applyThemeAndReload(name: ThemeName): Promise<void> {
   await persistTheme(name);
   try {
     const Updates = await import('expo-updates');
-    await Updates.reloadAsync();
+    // ⚠ THE RELOAD SCREEN DEFAULTS TO WHITE (`#ffffff`), and it sits between the old JS and the new —
+    //   the PO saw it as "a big white flash" on every theme change (2026-09-26). It is painted the
+    //   splash's own dark ground instead, because that is exactly what the relaunched app draws first
+    //   (`AnimatedSplashOverlay` opens on the dark ground in BOTH themes, then dissolves to Alabaster's).
+    //   No spinner: the swap takes about a second and a spinner would read as "loading", not a change.
+    await Updates.reloadAsync({
+      reloadScreenOptions: { backgroundColor: '#0E0E12', spinner: { enabled: false }, fade: true },
+    });
   } catch {
     // Reload is unavailable in Expo Go and in a dev client without updates. The preference is already
     // saved, so the next cold start lands on it — never leave the athlete with nothing having happened.
