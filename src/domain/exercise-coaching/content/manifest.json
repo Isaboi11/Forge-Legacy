@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatorVersion": "coach-gen@2",
-  "catalogSize": 797,
+  "catalogSize": 809,
   "completedByBatch": {
     "Machines": [
       "45-degree-leg-press",
@@ -258,6 +258,7 @@
       "dumbbell-walking-lunge",
       "dumbbell-z-press",
       "dumbbell-zottman-curl",
+      "farmer-carry",
       "incline-dumbbell-rear-delt-fly",
       "leaning-dumbbell-lateral-raise",
       "seated-dumbbell-shoulder-press",
@@ -270,6 +271,7 @@
       "single-arm-dumbbell-row",
       "single-leg-dumbbell-calf-raise",
       "single-leg-dumbbell-romanian-deadlift",
+      "suitcase-carry",
       "two-hand-dumbbell-overhead-triceps-extension"
     ],
     "Bodyweight": [
@@ -280,7 +282,6 @@
       "assisted-nordic-curl",
       "assisted-pistol-squat",
       "assisted-pull-up",
-      "axle-deadlift",
       "back-extension",
       "battle-rope-alternating-waves",
       "battle-rope-circles",
@@ -311,7 +312,6 @@
       "copenhagen-plank",
       "cossack-squat",
       "countermovement-jump",
-      "cross-body-carry",
       "cross-body-mountain-climber",
       "crunch",
       "curtsy-lunge",
@@ -325,13 +325,11 @@
       "dragon-flag",
       "drop-to-sprint",
       "explosive-push-up",
-      "farmer-carry",
       "feet-elevated-inverted-row",
       "forearm-plank",
       "forward-hurdle-hop",
       "forward-lunge",
       "frog-pump",
-      "front-rack-carry",
       "glute-bridge",
       "hanging-knee-raise",
       "hanging-leg-raise",
@@ -370,7 +368,6 @@
       "neutral-grip-pull-up",
       "nordic-hamstring-curl",
       "one-arm-pull-up",
-      "overhead-carry",
       "parallel-bar-dip",
       "pike-push-up",
       "pistol-squat",
@@ -419,7 +416,6 @@
       "step-up",
       "step-up-box-jump",
       "straight-bar-dip",
-      "suitcase-carry",
       "superman-hold",
       "suspension-trainer-atomic-push-up",
       "suspension-trainer-biceps-curl",
@@ -448,7 +444,6 @@
       "suspension-trainer-y-raise",
       "tibialis-raise",
       "toes-to-bar",
-      "trap-bar-farmer-carry",
       "triple-hop",
       "tuck-jump",
       "underhand-inverted-row",
@@ -461,6 +456,7 @@
       "windshield-wiper"
     ],
     "Barbell": [
+      "axle-deadlift",
       "barbell-back-squat",
       "barbell-behind-the-neck-press",
       "barbell-bench-press",
@@ -525,7 +521,8 @@
       "barbell-upright-row",
       "barbell-walking-lunge",
       "barbell-yates-row",
-      "barbell-zercher-squat"
+      "barbell-zercher-squat",
+      "trap-bar-farmer-carry"
     ],
     "Bands": [
       "band-anti-rotation-hold",
@@ -580,9 +577,11 @@
       "single-arm-band-row"
     ],
     "Kettlebells": [
+      "cross-body-carry",
       "double-kettlebell-front-squat",
       "double-kettlebell-press",
       "double-kettlebell-swing",
+      "front-rack-carry",
       "kettlebell-around-the-world",
       "kettlebell-bottoms-up-carry",
       "kettlebell-bulgarian-split-squat",
@@ -612,6 +611,7 @@
       "kettlebell-tactical-lunge",
       "kettlebell-thruster",
       "kettlebell-walking-lunge",
+      "overhead-carry",
       "renegade-kettlebell-row",
       "single-arm-kettlebell-floor-press",
       "single-arm-kettlebell-press",
@@ -821,5 +821,5 @@
       "yoke-carry"
     ]
   },
-  "updatedAt": "2026-07-21T02:29:43.117Z"
+  "updatedAt": "2026-09-27T00:38:44.823Z"
 }

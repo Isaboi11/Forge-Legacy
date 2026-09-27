@@ -312,6 +312,8 @@ export const HIDDEN_EXERCISE_IDS: ReadonlySet<string> = new Set([
   // NOT decided from `equipment.environments` — 23 of the 24 strongman movements are tagged
   // "Sled / Prowler", a catch-all bucket for odd objects, so that field reports Commercial Gym even for
   // an atlas stone. This is an editorial split on the implement itself.
+  // (QA F11, 2026-09-26: the catch-all is gone — stones, kegs, logs, yokes and tyres are now
+  // `strongman_implement` and bags are `sandbag` — but the split stays editorial, for the same reason.)
   //
   // KEPT (sleds, prowlers and rope pulls are standard on commercial gym turf, as are sandbag carries,
   // squats and lunges in a functional area): sled-push, heavy-sled-push, forward/backward/lateral-sled-drag,

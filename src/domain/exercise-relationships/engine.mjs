@@ -61,6 +61,7 @@ const EQUIP_INSTABILITY = {
   cable: 1,
   plyo_box: 1,
   sled: 1,
+  strongman_implement: 2,
   cardio: 1,
   barbell: 2,
   resistance_band: 2,
@@ -69,6 +70,7 @@ const EQUIP_INSTABILITY = {
   bodyweight: 2,
   dumbbell: 3,
   kettlebell: 3,
+  sandbag: 3,
   suspension_trainer: 4,
 };
 

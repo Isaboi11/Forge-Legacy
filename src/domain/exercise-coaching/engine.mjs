@@ -62,7 +62,7 @@ export const MOVEMENT_PATTERNS = new Set([
 
 export const SYSTEM_MUSCLE_IDS = new Set(['full_body', 'cardiovascular', 'mobility', 'grip', 'balance']);
 const MUSCLELESS_PATTERNS = new Set(['Cardio / Locomotion', 'Mobility', 'Carry', 'Power / Plyometric']);
-const UNUSUAL_EQUIPMENT = new Set(['sled', 'battle_rope', 'suspension_trainer', 'medicine_ball']);
+const UNUSUAL_EQUIPMENT = new Set(['sled', 'battle_rope', 'suspension_trainer', 'medicine_ball', 'sandbag', 'strongman_implement']);
 
 const DIFFICULTY_ORD = { Beginner: 0, Intermediate: 1, Advanced: 2 };
 
@@ -252,7 +252,8 @@ export function classifyRisk(node) {
     'Squat / Knee Dominant', 'Hinge / Hip Dominant', 'Horizontal Push', 'Vertical Push',
     'Horizontal Pull', 'Vertical Pull',
   ]);
-  const isCompound = compoundPatterns.has(node.movementPattern);
+  // Leg curls are filed under Hinge (QA F11) but are single-joint knee flexion, not a loaded hinge.
+  const isCompound = compoundPatterns.has(node.movementPattern) && !isKneeFlexion(node);
   const guided = node.isMachine || node.equipmentId === 'cardio';
   if (!guided) {
     if (node.isFreeWeight && isCompound && node.difficultyOrd >= 1) return 'Technical';
@@ -477,10 +478,10 @@ const PATTERN_BANK = {
       'Pause briefly where your midsection is working hardest.',
       'Control the return rather than dropping quickly at the end.'],
     tips: ['Move under control — no yanking or rushing the reps.',
-      'Curl your ribs toward your hips rather than pulling with your neck.',
+      'Keep your ribs pulled down toward your hips so your lower back stays quiet.',
       'Keep the tension on your midsection, not your hip flexors or lower back.'],
     mistakes: [
-      { mistake: 'Pulling on the neck or head to complete the rep.', correction: 'Keep your hands light and lead the movement from your midsection.' },
+      { mistake: 'Holding your breath through the hardest part of the rep.', correction: 'Keep breathing in short, controlled breaths while you stay braced.' },
       { mistake: 'Rushing through reps with momentum.', correction: 'Slow each rep down and control both directions.' },
       { mistake: 'Arching the lower back away from a braced position.', correction: 'Keep your ribs down and your midsection tight through the whole rep.' }],
     breathing: 'Exhale as you contract, breathe in as you return.',
@@ -601,7 +602,7 @@ const PATTERN_BANK = {
     tempo: 'Move with control and pause at peak contraction.',
     rom: 'Work through the range where you feel the glute working, without your back compensating.',
     beginner: ['Use no load or a light band until you feel the glute working.'],
-    advanced: ['Add a pause and a band for constant tension through the range.'],
+    advanced: ['Add a one-count pause at peak contraction on every rep.'],
   },
   'Shoulder Isolation': {
     setup: ['Set a tall torso with a slight bend in your elbows.',
@@ -665,12 +666,11 @@ const PATTERN_BANK = {
 /**
  * Metadata-specific coaching bank for hamstring LEG CURLS (knee flexion).
  *
- * The canonical catalog categorises leg curls & hamstring nordic curls under
- * movementPattern "Elbow Flexion" (a name-based miscategorisation — they are
- * knee-flexion hamstring movements, not arm curls). Rather than edit the
- * canonical data, the generator detects them by (pattern = Elbow Flexion AND
- * primary muscle = hamstrings) and coaches them correctly. The underlying
- * catalog miscategorisation is reported for a separate data-correction decision.
+ * The catalogue used to file every leg curl under "Elbow Flexion" (a name-based
+ * miscategorisation). QA F11 (2026-09-26) re-filed them under "Hinge / Hip
+ * Dominant"; the generator matches them by MOVEMENT (hamstring primary + "curl"
+ * in the id — see `isKneeFlexion`) so the bank is right whatever the label says.
+ * Nordic and slider/strap curls have their own banks: neither has a pad.
  */
 const KNEE_FLEXION_BANK = {
   setup: ['Set the pad or ankle strap just above your heels with your legs straight.',
@@ -877,6 +877,600 @@ const isFacePull = (id) => /face-pull/.test(id);
 const isShrug = (id) => /shrug/.test(id);
 const isBackExtension = (id) => /back-extension|superman|roman-chair|glute-ham|hyperextension|reverse-hyper/.test(id);
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Movement banks added by the QA F11 pass (2026-09-26)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Each of these replaces a pattern bank that was coaching a DIFFERENT exercise: a kettlebell swing got
+// deadlift steps ("keep the load brushing your legs"), a chest fly got bench-press steps ("press back to
+// a full lockout"), a Nordic curl got leg-curl-machine steps ("set the pad or ankle strap"), a tibialis
+// raise was told to rise onto its toes. The pattern label is right for grouping and wrong for coaching,
+// so these are matched on the movement itself (`PROFILE_RULES` below), exactly like the leg-extension
+// and dip banks above.
+
+/** Hamstring curls (knee flexion) — detected by movement, whatever pattern the catalogue files them under. */
+const isKneeFlexion = (node) => node.realPrimary.has('hamstrings') && /(^|-)curls?($|-)/.test(node.id);
+/** Dumbbell movements done with ONE dumbbell — "choose a pair" is wrong for them. */
+const SINGLE_IMPLEMENT = /goblet|suitcase|waiter|single-|one-arm|two-hand|pullover|tibialis|swing|sumo|russian-twist|side-bend|concentration|get-up|dead-bug/;
+/** Patterns where the working limb is a leg — a cable does not "yank your arm back" on a squat. */
+const LOWER_BODY_PATTERNS = new Set(['Squat / Knee Dominant', 'Hinge / Hip Dominant', 'Hip Isolation', 'Calf / Ankle']);
+const isNordic = (id) => /nordic/.test(id) && !/reverse-nordic/.test(id);
+const isBridgeCurl = (id) => /sliding-hamstring-curl|suspension-trainer-hamstring-curl/.test(id);
+
+/** Leg-curl setup names the implement actually in use — a band has no pad, a cable has no pad either. */
+function kneeFlexionBank(node) {
+  const first = node.isCable
+    ? 'Attach the ankle strap just above your heel with your leg straight.'
+    : node.isBand
+      ? 'Loop the band just above your heels with your legs straight.'
+      : 'Set the pad just above your heels with your legs straight.';
+  return { ...KNEE_FLEXION_BANK, setup: [first, KNEE_FLEXION_BANK.setup[1]] };
+}
+
+const NORDIC_BANK = {
+  setup: ['Kneel on a pad with your ankles held down securely under a bar, a pad or a partner’s hands.',
+    'Set a straight line from your knees to your shoulders and keep your hands ready in front of you.'],
+  execution: ['Lower your body toward the floor as slowly as you can, resisting with your hamstrings.',
+    'Keep your hips straight so you tip forward as one piece from the knees.',
+    'When you can no longer control the descent, catch yourself with your hands.',
+    'Push lightly off the floor to help yourself back to the start, then reset.'],
+  tips: ['Stay straight from knees to shoulders — the hinge is at the knee, not the hip.',
+    'The slow lowering is the exercise; the way back up can be assisted.',
+    'Only lower as far as you can control, then catch yourself.'],
+  mistakes: [
+    { mistake: 'Bending at the hips to shorten the lever.', correction: 'Squeeze your glutes and keep a straight line from your knees to your shoulders.' },
+    { mistake: 'Dropping the last part of the range uncontrolled.', correction: 'Catch yourself with your hands as soon as you lose control of the lowering.' },
+    { mistake: 'Doing too many reps too soon.', correction: 'Start with a few slow reps and build up across weeks — the soreness from this one is significant.' }],
+  breathing: 'Breathe in at the top, then breathe out slowly as you lower.',
+  tempo: 'Lower as slowly as you can control, then use your hands to return.',
+  rom: 'Lower as far as you can control with a straight body, and let your hands take the rest.',
+  beginner: ['Use a band or partner for assistance, or shorten the range until you can control the lowering.'],
+  advanced: ['Lower all the way to the floor under control, then pull yourself back up with your hamstrings.'],
+};
+
+/** Supine hamstring curl with the heels on sliders or in suspension-trainer foot cradles. */
+const BRIDGE_CURL_BANK = {
+  setup: ['Lie on your back with your heels on the sliders or in the foot cradles and your legs straight.',
+    'Lift your hips off the floor into a bridge before the first rep.'],
+  execution: ['Keeping your hips up, pull your heels toward your glutes by bending your knees.',
+    'Squeeze your hamstrings and glutes when your knees are fully bent.',
+    'Slide your heels back out under control until your legs are nearly straight, hips still up.'],
+  tips: ['Keep your hips high the whole set — if they drop, the hamstrings lose the work.',
+    'Pull with your heels, not your toes.',
+    'Control the slide back out rather than letting your legs shoot straight.'],
+  mistakes: [
+    { mistake: 'Letting the hips sag to the floor as the heels slide out.', correction: 'Keep squeezing your glutes and shorten the slide until your hips stay up.' },
+    { mistake: 'Letting the heels shoot out quickly on the way back.', correction: 'Slide your heels out slowly, fighting it with your hamstrings.' },
+    { mistake: 'Arching the lower back to keep the hips high.', correction: 'Keep your ribs down and lift your hips with your glutes.' }],
+  breathing: 'Exhale as you curl your heels in, breathe in as you slide them out.',
+  tempo: 'Curl with control and slide out for about three counts.',
+  rom: 'Move from nearly straight legs to fully bent knees with your hips up the whole time.',
+  beginner: ['Do both legs together and keep the range short until your hips stay up.'],
+  advanced: ['Work one leg at a time, or slow the slide out to four counts.'],
+};
+
+const SWING_BANK_KB = {
+  setup: ['Stand with your feet a little wider than hip-width and the bell on the floor about a foot in front of you.',
+    'Hinge at your hips with a flat back, grip the handle and tilt the bell back toward you.'],
+  execution: ['Hike the bell back between your legs, high above your knees.',
+    'Snap your hips forward to stand tall and let the bell float up to about chest height.',
+    'Let the bell fall back and hinge only when your forearms reach your hips.',
+    'Finish the set by hiking the bell back one last time and parking it on the floor in front of you.'],
+  tips: ['The hips power the swing — your arms only guide the bell.',
+    'Stand fully tall at the top with your glutes squeezed and your ribs down.',
+    'Keep the bell high between your legs so it passes above your knees.'],
+  mistakes: [
+    { mistake: 'Squatting the swing instead of hinging.', correction: 'Send your hips back with only a soft bend in your knees.' },
+    { mistake: 'Lifting the bell with the arms and shoulders.', correction: 'Keep your arms relaxed and let the hip snap float the bell up.' },
+    { mistake: 'Leaning back at the top of the swing.', correction: 'Finish standing tall, like a standing plank, rather than arching back.' }],
+  breathing: 'Breathe in as the bell travels back, exhale sharply as your hips snap forward.',
+  tempo: 'Keep a steady rhythm — a crisp hip snap and a relaxed fall back.',
+  rom: 'Move from a loaded hinge with the bell behind you to a fully tall standing position.',
+  beginner: ['Practise the hike and a single swing, parking the bell after each rep, before linking reps.'],
+  advanced: ['Increase the bell weight only while every rep finishes with a crisp, tall lockout.'],
+};
+
+/** Kettlebell wording, rewritten for a dumbbell swing (held by one end, vertically). */
+function swingBank(node) {
+  if (node.equipmentId === 'kettlebell') return SWING_BANK_KB;
+  const db = (t) => t.replace(/grip the handle and tilt the bell back toward you/, 'grip the dumbbell by one end and tilt it back toward you')
+    .replace(/the bell/g, 'the dumbbell').replace(/The bell/g, 'The dumbbell').replace(/bell weight/g, 'dumbbell weight');
+  return {
+    ...SWING_BANK_KB,
+    setup: SWING_BANK_KB.setup.map(db),
+    execution: SWING_BANK_KB.execution.map(db),
+    tips: SWING_BANK_KB.tips.map(db),
+    mistakes: SWING_BANK_KB.mistakes.map((m) => ({ mistake: db(m.mistake), correction: db(m.correction) })),
+    beginner: SWING_BANK_KB.beginner.map(db),
+    advanced: SWING_BANK_KB.advanced.map(db),
+  };
+}
+
+/** Barbell / band / standing good morning (the seated and bodyweight versions have their own banks). */
+function goodMorningBank(node) {
+  const first = node.isBand
+    ? 'Stand on the band with your feet about hip-width and loop the top of it across your upper back.'
+    : 'Set the bar across your upper back, below the bony top of your spine, with your feet about hip-width.';
+  return {
+    setup: [first, 'Unlock your knees slightly and brace your midsection before the first rep.'],
+    execution: ['Push your hips straight back and let your torso tip forward with a flat back.',
+      'Lower until you feel a strong hamstring stretch or your torso nears parallel, whichever comes first.',
+      'Drive your hips forward to return to standing.'],
+    tips: ['Keep the same soft bend in your knees for the whole rep.',
+      'The movement happens at your hips — your back stays flat throughout.',
+      'Keep the load pinned to your upper back.'],
+    mistakes: [
+      { mistake: 'Rounding the back to reach a deeper position.', correction: 'Stop where your hamstrings run out of stretch with your back still flat.' },
+      { mistake: 'Bending the knees until it becomes a squat.', correction: 'Keep a fixed, soft knee bend and send your hips back.' },
+      { mistake: 'Leaning back past standing at the top.', correction: 'Stop when you are standing tall with your glutes squeezed.' }],
+    breathing: 'Breathe in and brace at the top, hold it on the way down, exhale as you stand.',
+    tempo: 'Lower for about three counts, then drive up with intent.',
+    rom: 'Lower until you feel a strong hamstring stretch with a flat back.',
+    beginner: ['Learn the movement with a dowel or empty bar before adding load.'],
+    advanced: ['Pause for a count at the bottom of the hinge.'],
+  };
+}
+
+const PULL_THROUGH_BANK = {
+  setup: ['Attach a rope to a low pulley, face away from the stack and take the rope between your legs.',
+    'Walk forward until there is tension on the cable and set your feet a little wider than hip-width.'],
+  execution: ['Push your hips back and let the rope travel back between your legs, keeping your back flat.',
+    'Drive your hips forward to stand tall, squeezing your glutes at the top.',
+    'Let the cable draw your hips back under control for the next rep.'],
+  tips: ['Your arms just hold the rope — the hips do all the work.',
+    'Keep a soft bend in your knees and send your hips straight back.',
+    'Finish tall with your glutes squeezed rather than leaning back.'],
+  mistakes: [
+    { mistake: 'Squatting down instead of pushing the hips back.', correction: 'Keep your shins near vertical and hinge at the hips.' },
+    { mistake: 'Pulling the rope with your arms.', correction: 'Keep your arms long and let your hips move the load.' },
+    { mistake: 'Hyperextending and leaning back at the top.', correction: 'Stop when you are standing tall with your glutes squeezed.' }],
+  breathing: 'Breathe in as your hips travel back, exhale as you drive them forward.',
+  tempo: 'Hinge back for about two counts, then snap your hips forward.',
+  rom: 'Hinge until you feel a hamstring stretch, then stand fully tall.',
+  beginner: ['Start light and pause at the top to feel your glutes finish the rep.'],
+  advanced: ['Add a one-count squeeze at the top of every rep.'],
+};
+
+/** Chest fly — an arc with fixed elbows, not a press. */
+const CHEST_FLY_BANK = {
+  setup: ['Set a slight bend in your elbows and keep it fixed for the whole set.',
+    'Draw your shoulder blades back and down and keep your chest up.'],
+  execution: ['Open your arms wide in an arc until you feel a stretch across your chest.',
+    'Stop when your hands are about level with your chest — do not force the stretch.',
+    'Bring your hands back together along the same arc by squeezing your chest.'],
+  tips: ['Think of hugging a big tree — the arc stays wide and the elbows stay slightly bent.',
+    'Squeeze your chest to bring your hands together, not your arms.',
+    'Control the stretch at the wide end of every rep.'],
+  mistakes: [
+    { mistake: 'Bending and straightening the elbows so the fly turns into a press.', correction: 'Lock in a slight elbow bend and move only at the shoulders.' },
+    { mistake: 'Letting the hands drop well past chest level at the wide end.', correction: 'Stop where you feel a strong chest stretch with your shoulders still pinned back.' },
+    { mistake: 'Letting the shoulders roll forward as the hands meet.', correction: 'Keep your shoulder blades back and your chest up as you squeeze.' }],
+  breathing: 'Breathe in as your arms open, exhale as you bring them together.',
+  tempo: 'Open for about two to three counts, then squeeze back together.',
+  rom: 'Open to a comfortable chest stretch and close until your hands nearly meet.',
+  beginner: ['Use a light load until you can hold the same elbow bend every rep.'],
+  advanced: ['Pause for a count in the stretched position before bringing your hands together.'],
+};
+
+/** Rear-delt fly / reverse fly / pull-apart — the setup line names the position actually used. */
+function rearDeltBank(node) {
+  const id = node.id;
+  const first = /incline/.test(id)
+    ? 'Lie chest-down on an incline bench with the dumbbells hanging under your shoulders.'
+    : /pec-deck|machine/.test(id)
+      ? 'Sit facing the pad with your chest against it and take the handles at shoulder height.'
+      : node.isCable
+        ? 'Set the pulleys at about shoulder height and take the opposite handle in each hand.'
+        : node.isBand
+          ? 'Hold the band in front of you at shoulder height with your hands about shoulder-width apart.'
+          : 'Hinge forward at the hips with a flat back until your torso is close to parallel, the weights hanging under your shoulders.';
+  return {
+    setup: [first, 'Set a slight bend in your elbows and keep your shoulders down away from your ears.'],
+    execution: ['Sweep your arms out and back in a wide arc, leading with the backs of your hands.',
+      'Stop when your arms are in line with your body and squeeze the backs of your shoulders.',
+      'Return under control along the same arc.'],
+    tips: ['Lead with the backs of your hands and keep the elbow bend fixed.',
+      'Keep your shoulders down — shrugging turns this into trap work.',
+      'Use a light load; the rear delts are small muscles.'],
+    mistakes: [
+      { mistake: 'Shrugging the shoulders up toward the ears.', correction: 'Keep your shoulders down and lead with your hands.' },
+      { mistake: 'Bending the elbows and turning the fly into a row.', correction: 'Hold the same slight elbow bend from start to finish.' },
+      { mistake: 'Swinging the torso to move the load.', correction: 'Keep your torso still and lighten the load.' }],
+    breathing: 'Exhale as your arms open, breathe in as they return.',
+    tempo: 'Open with control, pause for a beat, and return for about two counts.',
+    rom: 'Open until your arms are in line with your body, then return until your hands nearly meet.',
+    beginner: ['Start with a very light load and pause at the widest point.'],
+    advanced: ['Hold the open position for two counts on every rep.'],
+  };
+}
+
+const UPRIGHT_ROW_BANK = {
+  setup: ['Hold the load in front of your thighs with a grip about shoulder-width or a little wider.',
+    'Stand tall with your shoulders down and your chest up.'],
+  execution: ['Lead with your elbows and pull the load straight up, close to your body.',
+    'Stop when your elbows reach about shoulder height.',
+    'Lower under control back to your thighs.'],
+  tips: ['Lead with your elbows — keep them higher than your hands.',
+    'Stop at shoulder height; pulling higher pinches the front of the shoulder.',
+    'Keep the load close to your body the whole way.'],
+  mistakes: [
+    { mistake: 'Pulling the elbows well above shoulder height.', correction: 'Stop when your upper arms are about parallel to the floor.' },
+    { mistake: 'Using a very narrow grip that jams the shoulders.', correction: 'Take a grip about shoulder-width or a little wider.' },
+    { mistake: 'Swinging the torso to get the load moving.', correction: 'Stand tall and use a load you can lift without momentum.' }],
+  breathing: 'Exhale as you pull up, breathe in as you lower.',
+  tempo: 'Pull with control and lower for about two counts.',
+  rom: 'Move from arms hanging long to elbows at about shoulder height.',
+  beginner: ['Use a light load and stop a little below shoulder height if the front of your shoulder complains.'],
+  advanced: ['Pause for a count at the top before lowering.'],
+};
+
+/** Lying pullover — the load arcs behind the head with fixed elbows. */
+const PULLOVER_BANK = {
+  setup: ['Lie on a bench with your head supported and hold the load above your chest, elbows slightly bent.',
+    'Brace your midsection so your ribs stay down.'],
+  execution: ['Lower the load back behind your head in an arc, keeping the elbow bend fixed.',
+    'Stop when you feel a strong stretch through your lats and chest, before your ribs flare.',
+    'Pull the load back over your chest along the same arc.'],
+  tips: ['Keep the same slight bend in your elbows the whole time.',
+    'Keep your ribs down as the load travels behind your head.',
+    'Think of pulling with your armpits, not your hands.'],
+  mistakes: [
+    { mistake: 'Bending the elbows so the pullover turns into a triceps extension.', correction: 'Lock in the elbow bend and move only at the shoulders.' },
+    { mistake: 'Arching the lower back and flaring the ribs to reach further.', correction: 'Stop the arc where your ribs start to lift.' },
+    { mistake: 'Letting the load drop quickly into the stretch.', correction: 'Lower slowly and control the bottom of the arc.' }],
+  breathing: 'Breathe in as the load travels back, exhale as you pull it over your chest.',
+  tempo: 'Lower for about three counts, then pull back over with control.',
+  rom: 'Move from the load over your chest to a comfortable stretch behind your head.',
+  beginner: ['Use a light load and a shorter arc until your ribs stay down.'],
+  advanced: ['Pause for a count in the stretched position.'],
+};
+
+/** Straight-arm pulldown / standing cable pullover / machine pullover — arms stay long. */
+function straightArmBank(node) {
+  // The equipment line already covers the pulley or machine setup; this line is the start position.
+  const first = node.isMachine
+    ? 'Set your arms on the pads or handles overhead.'
+    : node.isBand
+      ? 'Take the band with straight arms at about eye level, stepping back until there is tension.'
+      : 'With the pulley set high, take the bar or rope with straight arms at about eye level.';
+  return {
+    setup: [first, node.isMachine ? 'Sit tall with your back against the pad.' : 'Hinge forward slightly at the hips and set your shoulders down.'],
+    execution: ['Pull your hands down toward your thighs in a wide arc, keeping your arms straight.',
+      'Squeeze your lats when your hands reach your thighs.',
+      'Let your arms rise back to about eye level under control.'],
+    tips: ['Keep your elbows almost straight — the arms are levers, not the movers.',
+      'Drive with your lats and keep your shoulders down.',
+      'Keep your torso still rather than rocking to move the load.'],
+    mistakes: [
+      { mistake: 'Bending the elbows so it turns into a pushdown.', correction: 'Keep your arms long and move only at the shoulders.' },
+      { mistake: 'Shrugging the shoulders up at the top.', correction: 'Keep your shoulders down away from your ears throughout.' },
+      { mistake: 'Rocking the torso to move the load.', correction: 'Brace and keep your torso still; lighten the load if you need to.' }],
+    breathing: 'Exhale as you pull down, breathe in as your arms rise.',
+    tempo: 'Pull with control, squeeze for a beat, and return for about two counts.',
+    rom: 'Move from arms at about eye level to hands at your thighs.',
+    beginner: ['Use a light load until you can keep your arms straight every rep.'],
+    advanced: ['Pause for a count with your hands at your thighs.'],
+    focusCue: 'Think of pulling your hands to your hips with your lats, not your arms.',
+  };
+}
+
+const THRUSTER_BANK = {
+  setup: ['Hold the load at your shoulders in a front-rack position with your elbows forward.',
+    'Set your feet about shoulder-width and brace before you descend.'],
+  execution: ['Squat down until your thighs reach about parallel, keeping your chest up.',
+    'Drive up out of the squat and use that momentum to press the load straight overhead in one movement.',
+    'Lower the load back to your shoulders as you descend into the next squat.'],
+  tips: ['The press starts from your legs — drive hard out of the bottom.',
+    'Keep your elbows up in the squat so the load stays on your shoulders.',
+    'Finish with the load stacked over the middle of your foot, arms locked.'],
+  mistakes: [
+    { mistake: 'Pressing before the legs have finished driving.', correction: 'Stand up hard first and let that drive carry the load overhead.' },
+    { mistake: 'Letting the elbows drop and the chest fold in the squat.', correction: 'Keep your elbows high and your chest up at the bottom.' },
+    { mistake: 'Arching the lower back to finish the press.', correction: 'Squeeze your glutes and keep your ribs down at lockout.' }],
+  breathing: 'Breathe in at the top, brace through the squat, exhale as you press out.',
+  tempo: 'Controlled squat, then one continuous drive and press.',
+  rom: 'Squat to about parallel and press to a full overhead lockout.',
+  beginner: ['Practise the front squat and the press separately with light loads first.'],
+  advanced: ['Add load only while the squat and press stay one smooth movement.'],
+};
+
+const LEG_PRESS_BANK = {
+  setup: ['Sit with your back and hips flat against the pad and your feet about shoulder-width on the platform.',
+    'Release the safety handles only once you have the weight under control.'],
+  execution: ['Bend your knees and lower the platform under control toward your chest.',
+    'Stop before your hips or lower back start to lift off the pad.',
+    'Press through your whole foot to straighten your legs, stopping just short of locking your knees.'],
+  tips: ['Keep your hips and lower back pressed into the pad.',
+    'Push through your whole foot, not just your toes.',
+    'Let your knees track in line with your toes.'],
+  mistakes: [
+    { mistake: 'Letting the hips roll up off the pad at the bottom.', correction: 'Shorten the depth to where your lower back stays flat on the pad.' },
+    { mistake: 'Snapping the knees into a hard lockout at the top.', correction: 'Stop just short of lockout and keep a soft bend.' },
+    { mistake: 'Letting the knees cave inward as you press.', correction: 'Push your knees out in line with your toes.' }],
+  breathing: 'Breathe in as you lower, exhale as you press.',
+  tempo: 'Lower for about two counts, then press with intent.',
+  rom: 'Lower as deep as you can with your hips still on the pad, then press to nearly straight legs.',
+  beginner: ['Start light and find the depth where your hips stay down.'],
+  advanced: ['Add a pause at the bottom before pressing.'],
+};
+
+const WALL_SIT_BANK = {
+  setup: ['Set your back flat against a wall and walk your feet out about two feet in front of you.',
+    'Set your feet about hip-width apart.'],
+  execution: ['Slide down the wall until your thighs are about parallel to the floor, knees over your ankles.',
+    'Hold that position with your back flat against the wall for the prescribed time.',
+    'Slide back up the wall when the time is up.'],
+  tips: ['Keep your knees stacked over your ankles, not past your toes.',
+    'Press your whole back into the wall.',
+    'Keep breathing steadily through the hold.'],
+  mistakes: [
+    { mistake: 'Holding too high, with the thighs well above parallel.', correction: 'Walk your feet out and slide lower until your thighs are about parallel.' },
+    { mistake: 'Letting the knees drift inward as the hold gets hard.', correction: 'Push your knees out in line with your toes.' },
+    { mistake: 'Resting the hands on the thighs to take the load.', correction: 'Keep your hands off your legs — cross your arms or hold them out in front.' }],
+  breathing: 'Breathe steadily in and out for the whole hold.',
+  tempo: 'Hold still for the prescribed time.',
+  rom: 'Hold with your thighs about parallel to the floor.',
+  beginner: ['Sit a little higher and build the time before going to parallel.'],
+  advanced: ['Hold a weight on your thighs or lift one foot for part of the hold.'],
+};
+
+const TIBIALIS_BANK = {
+  setup: ['Set up with your heels planted and the resistance over the top of your feet.',
+    'Start with your toes relaxed down toward the floor.'],
+  execution: ['Pull your toes up toward your shins as high as you can.',
+    'Pause for a beat at the top.',
+    'Lower your toes under control.'],
+  tips: ['Keep your heels down — only your toes and forefoot move.',
+    'Pause at the top to feel the front of your shins work.',
+    'Lower slowly rather than letting your toes drop.'],
+  mistakes: [
+    { mistake: 'Rocking the whole body to lift the toes.', correction: 'Keep your body still and move only at the ankle.' },
+    { mistake: 'Cutting the top of the range short.', correction: 'Pull your toes all the way up toward your shins.' },
+    { mistake: 'Letting the toes slap down between reps.', correction: 'Lower under control on every rep.' }],
+  breathing: 'Exhale as you lift your toes, breathe in as you lower.',
+  tempo: 'Lift with control, pause, then lower for about two counts.',
+  rom: 'Move from toes pointed down to toes pulled fully up toward your shins.',
+  beginner: ['Start with no load, standing with your back against a wall.'],
+  advanced: ['Add load or slow the lowering to three counts.'],
+};
+
+/** Shoulder external / internal rotation — the rotator cuff, with the elbow pinned. */
+function cuffRotationBank(node) {
+  const external = /external/.test(node.id);
+  const dir = external ? 'outward, away from your belly' : 'inward, across toward your belly';
+  return {
+    setup: [external
+      ? 'Stand side-on to the anchor with the handle or band in your far hand, pulling across your body.'
+      : 'Stand side-on to the anchor with the handle or band in your near hand, pulling away from your body.',
+    'Pin your working elbow to your side, bent to 90 degrees — a rolled towel between elbow and ribs helps.'],
+    execution: [`Rotate your forearm ${dir}, keeping your elbow pinned to your side.`,
+      'Stop at the end of your comfortable range.',
+      'Return under control to the start.'],
+    tips: ['Keep your elbow glued to your side — your forearm swings like a door.',
+      'Use light resistance; the rotator cuff is a small muscle group.',
+      'Keep your torso still and square.'],
+    mistakes: [
+      { mistake: 'Letting the elbow drift away from your side.', correction: 'Pin your elbow (a towel under it helps) and move only your forearm.' },
+      { mistake: 'Twisting the torso to move more resistance.', correction: 'Lighten the resistance until your torso stays still.' },
+      { mistake: 'Forcing the end of the range.', correction: 'Stop where the movement stays smooth and comfortable.' }],
+    breathing: 'Breathe steadily; exhale as you rotate.',
+    tempo: 'Rotate slowly and return for about two counts.',
+    rom: 'Work through a smooth, comfortable range with the elbow fixed.',
+    beginner: ['Use the lightest band or weight and focus on keeping the elbow pinned.'],
+    advanced: ['Add a one-count pause at the end of the range.'],
+  };
+}
+
+const DISLOCATE_BANK = {
+  setup: ['Check the band has no nicks or tears before you start.',
+    'Stand tall with your ribs down.'],
+  execution: ['Keeping your arms straight, lift the band up over your head and back behind you in one smooth arc.',
+    'Go only as far back as your shoulders allow without bending your elbows or arching your back.',
+    'Bring the band back over your head to the front under control.'],
+  tips: ['Widen your grip if you need to bend your elbows to get over.',
+    'Move slowly — this is a mobility drill, not a strength test.',
+    'Keep your ribs down so the range comes from your shoulders, not your lower back.'],
+  mistakes: [
+    { mistake: 'Using a grip so narrow the elbows bend or the shoulders pinch.', correction: 'Widen your grip until the arc stays smooth with straight arms.' },
+    { mistake: 'Arching the lower back to get the band behind you.', correction: 'Keep your ribs down and stop where your shoulders run out of range.' },
+    { mistake: 'Snapping through the range quickly.', correction: 'Move slowly through the whole arc in both directions.' }],
+  breathing: 'Breathe slowly and steadily through each pass.',
+  tempo: 'Move slowly in both directions.',
+  rom: 'Pass from in front of your hips to behind your back only as far as straight arms allow.',
+  beginner: ['Start with a very wide grip and narrow it gradually over weeks.'],
+  advanced: ['Narrow your grip slightly while keeping your arms straight.'],
+};
+
+/** Planks and side planks are HOLDS — the generic core bank coaches reps ("pause where it's hardest"). */
+const PLANK_BANK = {
+  setup: ['Set your elbows under your shoulders with your forearms flat.',
+    'Step your feet back so your body forms a straight line from head to heels.'],
+  execution: ['Brace hard and hold a straight line from head to heels.',
+    'Keep breathing in short, controlled breaths for the prescribed time.',
+    'Lower your knees to the floor to finish the hold.'],
+  tips: ['Squeeze your glutes and pull your ribs down — a plank is a hard brace, not a rest position.',
+    'Push the floor away with your forearms so your shoulders don’t sink.',
+    'End the hold when the straight line goes, not when the clock does.'],
+  mistakes: [
+    { mistake: 'Letting the hips pike up or sag down.', correction: 'Set a straight line and end the hold when you lose it.' },
+    { mistake: 'Holding your breath through the hold.', correction: 'Keep breathing in short, controlled breaths while you stay braced.' },
+    { mistake: 'Letting the shoulders sink between the shoulder blades.', correction: 'Push the floor away with your forearms throughout.' }],
+  breathing: 'Breathe in short, controlled breaths while staying braced.',
+  tempo: 'Hold still for the prescribed time.',
+  rom: 'Hold a straight line from head to heels.',
+  beginner: ['Hold from your knees, or in shorter bouts, until you can keep the line.'],
+  advanced: ['Squeeze harder for shorter holds, or lengthen the lever by moving your elbows forward.'],
+};
+
+function sidePlankBank(node) {
+  const copenhagen = /copenhagen/.test(node.id);
+  return {
+    setup: copenhagen
+      ? ['Lie on your side with your top leg on a bench — knee on the bench is easier, foot on the bench is harder.',
+        'Stack your bottom elbow directly under your shoulder.']
+      : [node.equipmentId === 'suspension_trainer'
+        ? 'Set your feet in the foot cradles, lie on your side and stack your elbow directly under your shoulder.'
+        : 'Lie on your side and stack your elbow directly under your shoulder.',
+      /modified/.test(node.id) ? 'Bend your knees so your knees, hips and shoulders are in a line.' : 'Stack your feet, or stagger them for balance.'],
+    execution: [copenhagen
+      ? 'Press your top leg down into the bench and lift your hips until your body forms a straight line.'
+      : 'Lift your hips until your body forms a straight line, and hold.',
+    'Breathe steadily for the prescribed time.',
+    'Lower your hips under control and switch sides.'],
+    tips: [copenhagen
+      ? 'This is an adductor exercise as much as a side plank — expect the inner thigh of the top leg to tire first.'
+      : 'Push the floor away with your bottom elbow to keep your shoulder from sinking.',
+    'Keep both hips stacked vertically, as if pressed between two walls.',
+    'End the hold when your hips drop rather than pushing through.'],
+    mistakes: [
+      { mistake: 'Letting the hips sag toward the floor as the hold gets hard.', correction: 'End the set when your hips drop rather than pushing through.' },
+      { mistake: 'Rolling the top hip forward or back.', correction: 'Keep both hips stacked vertically as if pressed between two walls.' },
+      { mistake: 'Holding your breath through the hold.', correction: 'Keep breathing in short, controlled breaths while you stay braced.' }],
+    breathing: 'Breathe in short, controlled breaths while staying braced.',
+    tempo: 'Hold still for the prescribed time on each side.',
+    rom: 'Hold a straight line from head to feet on each side.',
+    beginner: [copenhagen ? 'Put your knee, not your foot, on the bench and hold for short bouts.' : 'Bend your knees to shorten the lever until you can hold the line.'],
+    advanced: [copenhagen ? 'Move to the foot on the bench, then add small lifts of the bottom leg.' : 'Lift the top leg, or add slow hip dips for reps.'],
+  };
+}
+
+/**
+ * Stretches and mobility holds filed under a strength pattern (a triceps stretch under Elbow Extension, a
+ * calf stretch under Calf / Ankle) get the Mobility bank, not the strength one — a stretch has no lockout.
+ */
+const MOBILITY_UNDER_STRENGTH = new Set(['Elbow Extension', 'Calf / Ankle', 'Shoulder Isolation', 'Hip Isolation', 'Squat / Knee Dominant']);
+
+/**
+ * Hip-isolation bank that names the muscle actually working. The shared bank said "squeeze the working
+ * glute" on hip flexion and adduction, where the glute is not the target.
+ */
+const HIP_TARGET = { abductors: 'the side of your hip', adductors: 'your inner thigh', hip_flexors: 'the front of your hip' };
+function hipIsolationBank(node) {
+  const base = PATTERN_BANK['Hip Isolation'];
+  const target = Object.keys(HIP_TARGET).find((m) => node.realPrimary.has(m) && !node.realPrimary.has('glutes'));
+  if (!target) return base;
+  const where = HIP_TARGET[target];
+  const sub = (s) => s.replace(/the working glute/g, where).replace(/the glute contraction/g, 'the contraction');
+  return {
+    ...base,
+    execution: base.execution.map(sub),
+    tips: base.tips.map(sub),
+    mistakes: base.mistakes.map((m) => ({ ...m, mistake: sub(m.mistake), correction: sub(m.correction) })),
+    rom: `Work through the range where you feel ${where} working, without your back compensating.`,
+    beginner: [`Use no load or a light resistance until you feel ${where} working.`],
+  };
+}
+
+/** Scapular push-up / pull-up — the arms stay straight; only the shoulder blades move. */
+function scapularBank(node) {
+  const pull = node.movementPattern === 'Vertical Pull';
+  return {
+    setup: pull
+      ? ['Hang from the bar with a shoulder-width grip and straight arms.', 'Let your shoulders rise toward your ears to start.']
+      : ['Start in a push-up position with your hands under your shoulders and your arms straight.', 'Set a straight line from your head to your heels.'],
+    execution: pull
+      ? ['Keeping your arms straight, pull your shoulder blades down away from your ears so your body rises slightly.',
+        'Hold for a beat at the bottom of the shoulder blades.',
+        'Let your shoulders rise back up under control.']
+      : ['Keeping your arms straight, let your chest sink so your shoulder blades squeeze together.',
+        'Push the floor away to spread your shoulder blades apart and round your upper back slightly.',
+        'Move slowly between the two positions without bending your elbows.'],
+    tips: ['Your elbows stay straight — this is shoulder-blade movement only.',
+      'Move slowly and feel the shoulder blades travel.',
+      'Keep your body still apart from the shoulder blades.'],
+    mistakes: [
+      { mistake: 'Bending the elbows so it turns into a partial rep.', correction: 'Lock your elbows and move only your shoulder blades.' },
+      { mistake: 'Rushing through a tiny range.', correction: 'Slow down and use the full shoulder-blade range in both directions.' },
+      { mistake: pull ? 'Swinging to create the movement.' : 'Letting the hips sag.', correction: pull ? 'Start from a still hang and move only at the shoulders.' : 'Squeeze your glutes and keep a straight line from head to heels.' }],
+    breathing: 'Breathe steadily; exhale as you move into each end position.',
+    tempo: 'Move slowly with a short pause at each end.',
+    rom: 'Use the full range of your shoulder blades with straight arms.',
+    beginner: [pull ? 'Keep your feet on a box to take some of your weight.' : 'Do it from your knees or against a wall.'],
+    advanced: ['Pause for two counts at each end of the range.'],
+    focusCue: pull
+      ? 'Think of pulling your shoulder blades down into your back pockets.'
+      : 'Think of spreading your shoulder blades wide around your ribs at the top.',
+  };
+}
+
+const REVERSE_NORDIC_BANK = {
+  setup: ['Kneel upright on a pad with your knees about hip-width and your feet behind you.',
+    'Set a straight line from your knees to your head and squeeze your glutes.'],
+  execution: ['Lean back slowly as one piece, letting your knees bend, as far as you can control.',
+    'Keep your hips extended so the stretch stays in the front of your thighs.',
+    'Drive back up to upright with your quads.'],
+  tips: ['Stay straight from knees to head — do not fold at the hips.',
+    'Only lean back as far as you can return from.',
+    'Squeeze your glutes the whole time.'],
+  mistakes: [
+    { mistake: 'Bending at the hips to make the lean easier.', correction: 'Squeeze your glutes and keep a straight line from your knees to your head.' },
+    { mistake: 'Leaning back further than you can control.', correction: 'Shorten the range and build it up over weeks.' },
+    { mistake: 'Arching the lower back as you lean.', correction: 'Keep your ribs down and your body in one line.' }],
+  breathing: 'Breathe in as you lean back, exhale as you return.',
+  tempo: 'Lean back for about three counts, then return with control.',
+  rom: 'Lean back only as far as you can return from with a straight body.',
+  beginner: ['Use a small range, or hold a band anchored in front of you for help.'],
+  advanced: ['Lean back further, or pause for a count at the bottom.'],
+};
+
+/** Banded lateral / monster walks — steps, not leg lifts. */
+function bandWalkBank(node) {
+  const monster = /monster/.test(node.id);
+  return {
+    setup: ['Push your hips back into a quarter squat with your feet about hip-width.',
+      'Keep your chest up and your weight through your whole foot.'],
+    execution: [monster
+      ? 'Step forward and out at an angle with one foot, pushing your knee out against the band.'
+      : 'Step sideways with your lead foot, pushing your knee out against the band.',
+    'Follow with the other foot without letting your feet come together.',
+    'Keep tension on the band the whole time and take the same number of steps in each direction.'],
+    tips: ['Keep your knees pushed out against the band on every step.',
+      'Stay low — rising up takes the work off your hips.',
+      'Keep your torso still rather than rocking side to side.'],
+    mistakes: [
+      { mistake: 'Letting the feet come together between steps.', correction: 'Keep your feet at least hip-width apart so the band never goes slack.' },
+      { mistake: 'Rocking the torso to swing the legs.', correction: 'Keep your torso upright and let your hips move your legs.' },
+      { mistake: 'Letting the knees cave inward.', correction: 'Push your knees out in line with your toes on every step.' }],
+    breathing: 'Breathe steadily as you step.',
+    tempo: 'Take slow, deliberate steps.',
+    rom: 'Take steps as wide as you can while keeping your posture.',
+    beginner: ['Use a light band and a shorter distance.'],
+    advanced: ['Move the band down to your ankles or feet to make it harder.'],
+  };
+}
+
+/** Ordered: the first matching rule wins. Each is matched on the movement, not the pattern label. */
+const PROFILE_RULES = [
+  { test: (n) => isKneeFlexion(n) && isNordic(n.id), pick: () => ({ bank: NORDIC_BANK, phrase: 'Nordic curl' }) },
+  { test: (n) => isKneeFlexion(n) && isBridgeCurl(n.id), pick: () => ({ bank: BRIDGE_CURL_BANK, phrase: 'hamstring curl' }) },
+  { test: (n) => isKneeFlexion(n), pick: (n) => ({ bank: kneeFlexionBank(n), phrase: 'leg curl' }) },
+  { test: (n) => n.modality === 'Mobility' && MOBILITY_UNDER_STRENGTH.has(n.movementPattern), pick: () => ({ bank: PATTERN_BANK.Mobility, phrase: 'mobility drill' }) },
+  { test: (n) => /(^|-)swings?($|-)/.test(n.id) && n.movementPattern === 'Hinge / Hip Dominant', pick: (n) => ({ bank: swingBank(n), phrase: 'swing' }) },
+  { test: (n) => /pull-through/.test(n.id), pick: () => ({ bank: PULL_THROUGH_BANK, phrase: 'pull-through' }) },
+  { test: (n) => /good-morning/.test(n.id) && !n.isBodyweight && n.position !== 'seated', pick: (n) => ({ bank: goodMorningBank(n), phrase: 'good morning' }) },
+  { test: (n) => /thruster/.test(n.id), pick: () => ({ bank: THRUSTER_BANK, phrase: 'thruster' }) },
+  { test: (n) => /leg-press/.test(n.id), pick: () => ({ bank: LEG_PRESS_BANK, phrase: 'leg press' }) },
+  { test: (n) => /(^|-)wall-sit($|-)/.test(n.id), pick: () => ({ bank: WALL_SIT_BANK, phrase: 'wall sit' }) },
+  { test: (n) => /tibialis/.test(n.id), pick: () => ({ bank: TIBIALIS_BANK, phrase: 'tibialis raise' }) },
+  { test: (n) => /(^|-)scapular-(push|pull)-up$/.test(n.id), pick: (n) => ({ bank: scapularBank(n), phrase: 'scapular drill' }) },
+  { test: (n) => /reverse-nordic/.test(n.id), pick: () => ({ bank: REVERSE_NORDIC_BANK, phrase: 'reverse Nordic' }) },
+  // A banded or strap push-up is still a push-up, not a bench press ("lower the load toward your chest").
+  { test: (n) => /push-up/.test(n.id) && n.movementPattern === 'Horizontal Push' && !n.isBodyweight, pick: () => BODYWEIGHT_BANKS['Horizontal Push'] },
+  // Bridges filed under Hip Isolation are still bridges, not leg lifts.
+  { test: (n) => /frog-pump|hip-press|glute-drive/.test(n.id), pick: () => ({ bank: HIP_THRUST_BANK, phrase: 'hip thrust' }) },
+  { test: (n) => /lateral-walk|monster-walk/.test(n.id), pick: (n) => ({ bank: bandWalkBank(n), phrase: 'band walk' }) },
+  { test: (n) => /upright-row/.test(n.id), pick: () => ({ bank: UPRIGHT_ROW_BANK, phrase: 'upright row' }) },
+  { test: (n) => /rear-delt|reverse-fly|reverse-pec-deck|pull-apart/.test(n.id), pick: (n) => ({ bank: rearDeltBank(n), phrase: 'rear-delt fly' }) },
+  { test: (n) => /(^|-)(fly|flye|crossover)($|-)|pec-deck/.test(n.id) && n.movementPattern === 'Horizontal Push', pick: () => ({ bank: CHEST_FLY_BANK, phrase: 'fly' }) },
+  { test: (n) => /straight-arm|cable-pullover|machine-pullover/.test(n.id), pick: (n) => ({ bank: straightArmBank(n), phrase: 'straight-arm pulldown' }) },
+  { test: (n) => /(^|-)pullover($|-)/.test(n.id) && n.movementPattern === 'Vertical Pull', pick: () => ({ bank: PULLOVER_BANK, phrase: 'pullover' }) },
+  { test: (n) => /(external|internal)-rotation/.test(n.id) && n.realPrimary.has('rotator_cuff'), pick: (n) => ({ bank: cuffRotationBank(n), phrase: 'rotation' }) },
+  { test: (n) => /dislocate/.test(n.id), pick: () => ({ bank: DISLOCATE_BANK, phrase: 'shoulder pass-through' }) },
+  { test: (n) => /side-plank|copenhagen/.test(n.id), pick: (n) => ({ bank: sidePlankBank(n), phrase: 'side plank' }) },
+  { test: (n) => /^(plank|forearm-plank|rkc-plank)$/.test(n.id), pick: () => ({ bank: PLANK_BANK, phrase: 'plank' }) },
+  { test: (n) => n.movementPattern === 'Hip Isolation', pick: (n) => ({ bank: hipIsolationBank(n), phrase: PATTERN_PHRASE['Hip Isolation'] }) },
+];
+
 /**
  * Metadata-specific bank for SHRUGS. The catalog groups them under "Shoulder
  * Isolation" alongside lateral/front raises, so they inherit "raise to shoulder
@@ -986,7 +1580,8 @@ const FACE_PULL_BANK = {
  * Select the coaching bank + human phrase for a node, applying metadata-specific
  * overrides where a canonical pattern label would otherwise produce wrong
  * coaching:
- *   • Elbow Flexion + hamstrings primary        → leg-curl (knee-flexion) bank.
+ *   • PROFILE_RULES (QA F11)                     → leg curls / Nordics, swings, flies, rear-delt
+ *                                                   flies, upright rows, pullovers, planks, … by movement.
  *   • Squat/Knee + "leg-extension" name          → knee-extension isolation bank.
  *   • Horizontal Push + "dip" name               → dip (vertical press) bank.
  *   • Hinge + "glute-bridge"/"hip-thrust" name   → supine hip-extension bank.
@@ -998,11 +1593,15 @@ const FACE_PULL_BANK = {
  */
 function selectProfile(node) {
   const p = node.movementPattern;
-  if (p === 'Elbow Flexion' && node.realPrimary.has('hamstrings')) {
-    return { bank: KNEE_FLEXION_BANK, phrase: 'leg curl' };
-  }
+  // Movement-specific banks first (QA F11) — leg curls are matched here whatever pattern they carry.
+  for (const rule of PROFILE_RULES) if (rule.test(node)) return rule.pick(node);
   if (p === 'Squat / Knee Dominant' && /leg-extension/.test(node.id)) {
-    return { bank: LEG_EXTENSION_BANK, phrase: 'leg extension' };
+    const first = node.isBand
+      ? 'Sit on a bench with the band looped around your lower shin and anchored behind you.'
+      : node.isCable
+        ? 'Attach the ankle strap to your lower shin and face away from the low pulley.'
+        : LEG_EXTENSION_BANK.setup[0];
+    return { bank: { ...LEG_EXTENSION_BANK, setup: [first, LEG_EXTENSION_BANK.setup[1]] }, phrase: 'leg extension' };
   }
   if (p === 'Horizontal Push' && isDip(node.id)) {
     return { bank: DIP_BANK, phrase: 'dip' };
@@ -1035,6 +1634,7 @@ function selectProfile(node) {
 function equipmentSetupLine(node) {
   switch (node.equipmentId) {
     case 'selectorized_machine':
+      if (/plate-loaded/.test(node.id)) return 'Adjust the seat and any pads so the working joint lines up with the machine’s pivot, and load the plates evenly on both sides.';
       return 'Adjust the seat and any pads so the working joint lines up with the machine’s pivot, set the pin to your working weight, and keep contact with the support pad throughout.';
     case 'smith_machine':
       return 'Set the safety stops, load the bar evenly, and rotate the bar to unlock it from the hooks before your first rep.';
@@ -1043,10 +1643,19 @@ function equipmentSetupLine(node) {
     case 'barbell':
       return 'Load the bar evenly on both sides and secure it with collars before you lift.';
     case 'dumbbell':
-      return 'Choose a pair you can control for every planned rep and get them into position cleanly.';
+      // "Choose a pair" was wrong for goblet squats, suitcase carries and every single-arm movement.
+      return SINGLE_IMPLEMENT.test(node.id) || node.unilateral
+        ? 'Choose a dumbbell you can control for every planned rep and get it into position cleanly.'
+        : 'Choose a pair you can control for every planned rep and get them into position cleanly.';
     case 'kettlebell':
-      return 'Set the bell in a solid rack or hold position with your wrist stacked and neutral.';
+      // Was "Set the bell in a solid rack or hold position" for every bell — a swing, a deadlift and a
+      // row all start with the bell on the floor, not in a rack.
+      return 'Choose a bell you can control for every planned rep and set it in its start position before you begin.';
     case 'resistance_band':
+      // A hand-held or looped band is not anchored to anything.
+      if (/dislocate/.test(node.id)) return 'Hold the band in front of your hips with both hands, much wider than shoulder-width.';
+      if (/pull-apart/.test(node.id)) return 'Hold the band with both hands, wider than shoulder-width, and check it has no nicks or tears.';
+      if (/clamshell|lateral-walk|monster-walk|glute-bridge|hip-thrust/.test(node.id)) return 'Place a loop band just above your knees and check it sits flat before you start.';
       return 'Anchor the band securely, check there is no slack at the start, and expect the tension to rise through the range.';
     case 'suspension_trainer':
       return 'Check the anchor is secure and set the strap length, then load your weight gradually to test it before full reps.';
@@ -1056,6 +1665,10 @@ function equipmentSetupLine(node) {
       return 'Set a box height you can land on comfortably and make sure it is stable and won’t slide.';
     case 'sled':
       return 'Load the sled to a weight you can move steadily and check the surface is clear ahead.';
+    case 'sandbag':
+      return 'Pick a sandbag weight you can control and check the closures are secure before you lift it.';
+    case 'strongman_implement':
+      return 'Check the implement is loaded and secure and the space around you is clear before you lift.';
     case 'battle_rope':
       return 'Anchor the rope securely and take a stable, athletic stance with tension in the line.';
     case 'bodyweight':
@@ -1081,8 +1694,8 @@ function equipmentTip(node) {
   if (node.equipmentId === 'selectorized_machine') return 'Follow the machine’s guided lever path smoothly and control the weight back to the stack.';
   if (node.isCable) return 'Keep steady tension on the cable through the whole range, including the return.';
   if (node.equipmentId === 'dumbbell') return 'Control each dumbbell independently so your stronger side doesn’t take over.';
-  if (node.equipmentId === 'kettlebell') return 'Keep your wrist stacked and the bell path tight to your body.';
-  if (node.equipmentId === 'resistance_band') return 'Match your effort to the band — its resistance climbs toward the end of the range.';
+  if (node.equipmentId === 'kettlebell') return 'Keep the bell close to your body and under control through its whole path.';
+  if (node.equipmentId === 'resistance_band' && !/dislocate/.test(node.id)) return 'Match your effort to the band — its resistance climbs toward the end of the range.';
   if (node.equipmentId === 'suspension_trainer') return 'Set the difficulty with your foot position and how far you lean into the straps.';
   if (node.equipmentId === 'medicine_ball') return 'Move the ball with intent and catch or reset it under control each rep.';
   if (node.isBodyweight) return 'Own the full range of every rep before you add reps or make it harder.';
@@ -1093,8 +1706,12 @@ function equipmentTip(node) {
 function equipmentMistake(node) {
   if (node.equipmentId === 'selectorized_machine') return { mistake: 'Letting the weight stack slam down at the bottom.', correction: 'Control the return so the plates settle without banging.' };
   if (node.equipmentId === 'smith_machine') return { mistake: 'Losing control of the bar against the rails on the way down.', correction: 'Guide the bar down the rails under control every rep.' };
-  if (node.isCable) return { mistake: 'Letting the cable yank your arm back at the end of the rep.', correction: 'Control the return against the cable tension rather than giving in to it.' };
-  if (node.equipmentId === 'resistance_band') return { mistake: 'Letting the band snap you back through the last part of the range.', correction: 'Control the return as the band’s tension pulls you back.' };
+  if (node.isCable) {
+    return LOWER_BODY_PATTERNS.has(node.movementPattern) || isKneeFlexion(node)
+      ? { mistake: 'Letting the cable pull you out of position at the end of the rep.', correction: 'Control the return against the cable tension rather than giving in to it.' }
+      : { mistake: 'Letting the cable yank your arm back at the end of the rep.', correction: 'Control the return against the cable tension rather than giving in to it.' };
+  }
+  if (node.equipmentId === 'resistance_band' && !/dislocate/.test(node.id)) return { mistake: 'Letting the band snap you back through the last part of the range.', correction: 'Control the return as the band’s tension pulls you back.' };
   return null;
 }
 
@@ -1117,14 +1734,14 @@ const MUSCLE_CUE = {
   forearms: 'Keep a firm grip and let your forearms do the work.',
   rotator_cuff: 'Move slowly and keep the effort in the small muscles around your shoulder.',
   erector_spinae: 'Brace your spine and lengthen through your back as you extend.',
-  rectus_abdominis: 'Curl your ribs toward your hips and feel your abs shorten.',
+  rectus_abdominis: 'Brace your abs and keep your ribs pulled down toward your hips.',
   obliques: 'Rotate or bend from your waist and feel the side of your trunk work.',
   transverse_abdominis: 'Brace as if bracing for a punch and keep that tension.',
   hip_flexors: 'Drive your knee up and feel the front of your hip work.',
   glutes: 'Squeeze your glutes hard at the top of each rep.',
   quadriceps: 'Drive through your knees and feel the front of your thighs work.',
   hamstrings: 'Feel the back of your thighs work through the rep.',
-  adductors: 'Squeeze your inner thighs together through the working range.',
+  adductors: 'Feel your inner thighs doing the work through the range.',
   abductors: 'Drive your leg outward and feel the side of your hip work.',
   calves: 'Rise all the way onto your toes and squeeze your calves at the top.',
   tibialis_anterior: 'Pull your toes up toward your shin and feel the front of your shin work.',
@@ -1138,13 +1755,15 @@ const EQUIP_PATH = {
   cable: 'The cable holds constant tension on the muscle through the whole range, including the return.',
   resistance_band: 'The band is lightest at the start and hardest at the end, so it loads the top of the range most.',
   dumbbell: 'Each dumbbell is balanced on its own, so both sides have to pull their own weight.',
-  kettlebell: 'The bell hangs below your hand, so keep your wrist stacked and the path tight.',
+  kettlebell: 'The bell’s weight sits off-centre from the handle, so keep it close and control its path.',
   barbell: 'You balance and drive the bar yourself, so groove the bar path before chasing weight.',
   bodyweight: 'You move and stabilise your own bodyweight, so change leverage to progress rather than adding weight.',
   suspension_trainer: 'You set the difficulty with your foot position and how far you lean into the straps.',
   medicine_ball: 'The ball lets you accelerate and release or catch it, so move it explosively.',
   plyo_box: 'The box fixes the height, so land and stand on it under full control.',
   sled: 'The sled only loads you while you drive it, so keep a steady, forceful pace.',
+  sandbag: 'The sand shifts as you move the bag, so grip it hard and keep it tight to your body.',
+  strongman_implement: 'Strongman implements are awkward by design, so set your grip and position before every rep.',
   battle_rope: 'The rope loads your effort continuously, so keep the waves going at a steady pace.',
   cardio: 'The machine holds a steady resistance, so settle into a pace you can sustain.',
 };
@@ -1155,6 +1774,8 @@ const COMPOUND_PATTERNS = new Set(['Squat / Knee Dominant', 'Hinge / Hip Dominan
 /** Compound vs isolation role, honouring the leg-extension/leg-curl isolation overrides. */
 function roleOf(node) {
   if (/leg-extension/.test(node.id)) return 'isolation';
+  // A leg curl is single-joint knee flexion even though it now sits under the Hinge pattern.
+  if (isKneeFlexion(node)) return 'isolation';
   if (ISO_PATTERNS.has(node.movementPattern)) return 'isolation';
   if (COMPOUND_PATTERNS.has(node.movementPattern)) return 'compound';
   return null;
@@ -1164,6 +1785,7 @@ function roleOf(node) {
 function chainOf(node) {
   const p = node.movementPattern;
   if (/leg-extension/.test(node.id)) return 'open';
+  if (isKneeFlexion(node)) return isNordic(node.id) || isBridgeCurl(node.id) ? 'closed' : 'open';
   if (p === 'Calf / Ankle') return 'closed';
   if (ISO_PATTERNS.has(p)) return 'open';
   if (p === 'Squat / Knee Dominant' || p === 'Hinge / Hip Dominant') return 'closed';
@@ -1183,7 +1805,7 @@ const EQUIP_CLASS = {
   selectorized_machine: 'machine', smith_machine: 'Smith-machine', cable: 'cable', barbell: 'barbell',
   dumbbell: 'dumbbell', kettlebell: 'kettlebell', resistance_band: 'band', bodyweight: 'bodyweight',
   suspension_trainer: 'suspension-trainer', medicine_ball: 'medicine-ball', plyo_box: 'plyometric',
-  sled: 'sled', battle_rope: 'battle-rope', cardio: 'cardio',
+  sled: 'sled', battle_rope: 'battle-rope', cardio: 'cardio', sandbag: 'sandbag', strongman_implement: 'strongman',
 };
 
 /**
@@ -1529,24 +2151,12 @@ const SUPPLANT_BANK = [
  * entries, and taking both produced "stack your elbow" beside "set your elbows … forearms flat".
  */
 const MODIFIER_BANK = [
-  // Core
-  { group: 'plank', match: ['copenhagen'], setup: 'Set your top leg on the bench and stack your shoulder over your elbow.',
-    execution: 'Lift your hips until your body is in a straight line and hold.',
-    tip: 'This is an adductor exercise as much as a side plank — expect the inner thigh to fatigue first.',
-    mistake: { mistake: 'Letting the hips sag toward the floor as the hold gets hard.', correction: 'End the set when your hips drop rather than pushing through.' } },
-  { group: 'plank', match: ['side-plank'], setup: 'Lie on your side and stack your elbow directly under your shoulder.',
-    execution: 'Lift your hips until your body forms a straight line from head to heels, and hold.',
-    tip: 'Push the floor away with your bottom elbow to keep your shoulder from sinking.',
-    mistake: { mistake: 'Rolling the top hip forward or back.', correction: 'Keep both hips stacked vertically as if pressed between two walls.' } },
-  { group: 'plank', match: ['rkc-plank', 'forearm-plank', 'plank'], setup: 'Set your elbows under your shoulders with your forearms flat.',
-    execution: 'Brace hard and hold a straight line from head to heels for the prescribed time.',
-    tip: 'Squeeze your glutes and pull your ribs down — a plank is a hard brace, not a rest position.',
-    mistake: { mistake: 'Letting the hips pike up or sag down.', correction: 'Set a straight line and end the hold when you lose it.' } },
+  // Core — planks and side planks are whole banks now (PROFILE_RULES), not modifiers.
   { group: 'core', match: ['dead-bug', 'bird-dog'], setup: 'Set your lower back flat against the floor before you move a limb.',
     execution: 'Extend opposite limbs slowly while keeping your torso completely still.',
     tip: 'The goal is a trunk that does not move — go only as far as you can without your back arching.',
     mistake: { mistake: 'Rushing the reps so the lower back lifts off the floor.', correction: 'Slow down and shorten the reach until your back stays flat.' } },
-  { group: 'core', match: ['hanging-leg-raise', 'hanging-knee-raise', 'toes-to-bar', 'l-sit'], setup: 'Hang from the bar with your shoulders pulled down away from your ears.',
+  { group: 'core', match: ['hanging-leg-raise', 'hanging-knee-raise', 'toes-to-bar'], setup: 'Hang from the bar with your shoulders pulled down away from your ears.',
     execution: 'Raise your legs by curling your pelvis up, not just by bending at the hip.',
     tip: 'Start each rep from a dead hang and stop swinging before you begin.',
     mistake: { mistake: 'Using a swing to generate the lift.', correction: 'Pause at the bottom until you are still, then lift.' } },
@@ -1567,7 +2177,7 @@ const MODIFIER_BANK = [
     execution: 'Roll slowly, pausing for a few breaths on any spot that feels tight.',
     tip: 'Slow is the whole point — fast rolling passes over the tissue you are trying to reach.',
     mistake: { mistake: 'Rolling quickly back and forth over the area.', correction: 'Cover an inch at a time and pause where it is tender.' } },
-  { group: 'mobility', match: ['-car', 'car-', 'controlled-articular'], setup: 'Set the joint in a neutral position and keep the rest of your body still.',
+  { group: 'mobility', match: ['car', 'controlled-articular'], setup: 'Set the joint in a neutral position and keep the rest of your body still.',
     execution: 'Move the joint slowly through the largest circle you can control.',
     tip: 'Control is the goal — no momentum, and no other joint should move to help.',
     mistake: { mistake: 'Letting the trunk or shoulder swing to make the circle bigger.', correction: 'Shrink the circle until only the target joint is moving.' } },
@@ -1575,7 +2185,7 @@ const MODIFIER_BANK = [
     execution: 'Breathe slowly in through your nose and out for longer than you breathed in.',
     tip: 'Feel the breath expand your ribs sideways, not just lift your chest.',
     mistake: null },
-  { group: 'mobility', match: ['cat-cow', 'thread-the-needle', 'open-book', 'wall-angel', 'thoracic'], setup: 'Set a stable base and move only the segment you are targeting.',
+  { group: 'mobility', match: ['cat-cow', 'thread-the-needle', 'open-book', 'wall-angel', 'wall-slide', 'thoracic'], setup: 'Set a stable base and move only the segment you are targeting.',
     execution: 'Move through the range slowly, one segment at a time.',
     tip: 'Go for a smooth, even bend rather than forcing the end range in one place.',
     mistake: null },
@@ -1636,7 +2246,7 @@ const MODIFIER_BANK = [
   { match: ['pause', 'paused', 'dead-stop', 'deadstop', 'pin'], execution: 'Hold the bottom position still for a full count before you drive back.',
     tip: 'The pause kills the bounce — each rep starts from a dead stop, not a rebound.',
     mistake: { mistake: 'Shortening the pause as the set gets hard.', correction: 'Count the pause out loud so every rep gets the same hold.' } },
-  { match: ['box'], setup: 'Set the box at a height you can reach while keeping good position.',
+  { match: ['box'], patterns: ['Squat / Knee Dominant'], setup: 'Set the box at a height you can reach while keeping good position.',
     tip: 'Touch the box under control rather than dropping onto it.',
     mistake: { mistake: 'Relaxing or rocking back once you touch the box.', correction: 'Stay braced the whole time you are in contact.' } },
   // ── tempo / intent ──
@@ -1649,11 +2259,11 @@ const MODIFIER_BANK = [
     tip: 'Keep breathing through the hold rather than locking your breath down.',
     mistake: { mistake: 'Letting position degrade as the hold gets hard.', correction: 'End the hold when your position breaks, not when the clock does.' } },
   // ── direction ──
-  { match: ['lateral-raise', 'lateral'], tip: 'Lead with your elbow and stop around shoulder height.',
+  { match: ['lateral-raise'], tip: 'Lead with your elbow and stop around shoulder height.',
     mistake: { mistake: 'Swinging the weight up with a hip drive.', correction: 'Slow it down and let the shoulder raise the weight on its own.' } },
   { match: ['front-raise'], tip: 'Raise to about eye level and lower under control.', mistake: null },
-  { match: ['rear-delt', 'reverse'], tip: 'Think about pulling your shoulder blades apart at the top rather than yanking with your arms.', mistake: null },
-  { match: ['overhead'], setup: 'Set your ribs down and squeeze your glutes before you press overhead.',
+  { match: ['rear-delt', 'reverse-fly', 'reverse-pec-deck'], tip: 'Think about pulling your shoulder blades apart at the top rather than yanking with your arms.', mistake: null },
+  { match: ['overhead'], patterns: ['Vertical Push'], setup: 'Set your ribs down and squeeze your glutes before you press overhead.',
     tip: 'Finish with the weight stacked over the middle of your foot, not out in front.',
     mistake: { mistake: 'Arching the lower back to get the weight up.', correction: 'Brace your midsection and stop the rep where your position holds.' } },
   // ── stance ──
@@ -1683,7 +2293,9 @@ const VARIANT_BANK = [...SUPPLANT_BANK.map((v) => ({ ...v, replaces: true })), .
  */
 function variantModifiers(node, limit = 2) {
   const id = String(node.id ?? '').toLowerCase();
-  const matches = VARIANT_BANK.filter((v) => v.match.some((m) => id.includes(m)));
+  const matches = VARIANT_BANK.filter(
+    (v) => v.match.some((m) => matchesToken(id, m)) && (!v.patterns || v.patterns.includes(node.movementPattern)),
+  );
   const supplant = matches.find((v) => v.replaces);
   if (supplant) return [supplant];
 
@@ -1698,6 +2310,20 @@ function variantModifiers(node, limit = 2) {
     if (picked.length >= limit) break;
   }
   return picked;
+}
+
+/**
+ * Does `id` contain `needle` as whole hyphen-separated words (a trailing plural "s" allowed)?
+ *
+ * ⚠ These were plain substring matches, and substrings found things nobody meant (QA F11): '-car' (a
+ * controlled articular rotation) matched every "-carry", so all 23 carries were told to "move the joint
+ * slowly through the largest circle you can control"; 'l-sit' matched "wall-sit" and "ball-sit-up",
+ * which were told to hang from a bar.
+ */
+function matchesToken(id, needle) {
+  // Needles are plain lowercase words and hyphens, so nothing needs escaping.
+  const n = needle.replace(/^-+|-+$/g, '');
+  return new RegExp(`(^|-)${n}s?(-|$)`).test(id);
 }
 
 /** Variant setup/execution may be a single line or several — normalise to an array. */
@@ -1733,8 +2359,12 @@ export function composeContent(node) {
   const eqTip = equipmentTip(node);
   const cueMuscle = primaryCueMuscle(node);
   // muscle-focus for muscled movements; modality cue for cardio/locomotion.
-  const focusCue = (cueMuscle ? MUSCLE_CUE[cueMuscle] : null)
-    ?? (node.movementPattern === 'Cardio / Locomotion' ? cardioModalityCue(node) : null);
+  // A bank may name its own focus cue — the lats cue ("drive your elbows down and back") is wrong for a
+  // straight-arm pulldown or a scapular pull-up, where the elbows never bend.
+  const focusCue = bank.focusCue !== undefined
+    ? bank.focusCue
+    : (cueMuscle ? MUSCLE_CUE[cueMuscle] : null)
+      ?? (node.movementPattern === 'Cardio / Locomotion' ? cardioModalityCue(node) : null);
 
   // coachingTips: variant cue leads (it's the one thing that isn't true of every pattern-mate), then
   // pattern cues → focus cue → equipment flavour → unilateral, capped at 5.

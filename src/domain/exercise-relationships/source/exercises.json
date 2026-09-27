@@ -106,7 +106,7 @@
     "name": "Alternating Lunge Jump",
     "aliases": [],
     "family": "Alternating Lunge Jump",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Squat / Knee Dominant",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -197,7 +197,7 @@
     "aliases": [],
     "family": "Assisted Nordic Curl",
     "equipmentId": "bodyweight",
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Advanced",
     "modality": "Strength"
   },
@@ -236,7 +236,7 @@
     "name": "Atlas Stone Lift",
     "aliases": [],
     "family": "Atlas Stone Lift",
-    "equipmentId": "sled",
+    "equipmentId": "strongman_implement",
     "movementPattern": "Other",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -246,7 +246,7 @@
     "name": "Atlas Stone Load",
     "aliases": [],
     "family": "Atlas Stone Load",
-    "equipmentId": "sled",
+    "equipmentId": "strongman_implement",
     "movementPattern": "Other",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -256,7 +256,7 @@
     "name": "Axle Clean and Press",
     "aliases": [],
     "family": "Axle Clean and Press",
-    "equipmentId": "sled",
+    "equipmentId": "barbell",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -266,7 +266,7 @@
     "name": "Axle Deadlift",
     "aliases": [],
     "family": "Axle Deadlift",
-    "equipmentId": "sled",
+    "equipmentId": "barbell",
     "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -549,7 +549,7 @@
     "aliases": [],
     "family": "Leg Curl",
     "equipmentId": "resistance_band",
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -629,7 +629,7 @@
     "aliases": [],
     "family": "Rear Delt Fly",
     "equipmentId": "resistance_band",
-    "movementPattern": "Horizontal Push",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -678,7 +678,7 @@
     "name": "Band Shoulder Dislocate",
     "aliases": [],
     "family": "Shoulder Dislocate",
-    "equipmentId": "bodyweight",
+    "equipmentId": "resistance_band",
     "movementPattern": "Mobility",
     "difficulty": "Intermediate",
     "modality": "Mobility"
@@ -689,7 +689,7 @@
     "aliases": [],
     "family": "Shoulder External Rotation",
     "equipmentId": "resistance_band",
-    "movementPattern": "Core",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -699,7 +699,7 @@
     "aliases": [],
     "family": "Shoulder Internal Rotation",
     "equipmentId": "resistance_band",
-    "movementPattern": "Core",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -769,7 +769,7 @@
     "aliases": [],
     "family": "Upright Row",
     "equipmentId": "resistance_band",
-    "movementPattern": "Horizontal Pull",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -1531,7 +1531,7 @@
     "aliases": [],
     "family": "Upright Row",
     "equipmentId": "barbell",
-    "movementPattern": "Horizontal Pull",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -1731,7 +1731,7 @@
     "name": "Bounding",
     "aliases": [],
     "family": "Bounding",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -1814,7 +1814,7 @@
     "name": "Broad Jump",
     "aliases": [],
     "family": "Broad Jump",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -1866,7 +1866,7 @@
     "aliases": [],
     "family": "Assisted Nordic Curl",
     "equipmentId": "cable",
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Advanced",
     "modality": "Strength"
   },
@@ -2017,7 +2017,7 @@
     "aliases": [],
     "family": "External Rotation",
     "equipmentId": "cable",
-    "movementPattern": "Core",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -2107,7 +2107,7 @@
     "aliases": [],
     "family": "Internal Rotation",
     "equipmentId": "cable",
-    "movementPattern": "Core",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -2217,7 +2217,7 @@
     "aliases": [],
     "family": "Rear Delt Fly",
     "equipmentId": "cable",
-    "movementPattern": "Horizontal Push",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -2247,7 +2247,7 @@
     "aliases": [],
     "family": "Reverse Fly",
     "equipmentId": "cable",
-    "movementPattern": "Horizontal Push",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -2377,7 +2377,7 @@
     "aliases": [],
     "family": "Leg Curl",
     "equipmentId": "cable",
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -2417,7 +2417,7 @@
     "aliases": [],
     "family": "Upright Row",
     "equipmentId": "cable",
-    "movementPattern": "Horizontal Pull",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -2630,7 +2630,7 @@
     "name": "Countermovement Jump",
     "aliases": [],
     "family": "Countermovement Jump",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -2662,7 +2662,7 @@
     "name": "Cross-Body Carry",
     "aliases": [],
     "family": "Cross-Body Carry",
-    "equipmentId": "sled",
+    "equipmentId": "kettlebell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning",
@@ -3402,7 +3402,7 @@
     "aliases": [],
     "family": "Rear Delt Fly",
     "equipmentId": "dumbbell",
-    "movementPattern": "Horizontal Push",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -3643,7 +3643,7 @@
     "aliases": [],
     "family": "Upright Row",
     "equipmentId": "dumbbell",
-    "movementPattern": "Horizontal Pull",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -3743,7 +3743,7 @@
     "name": "Farmer Carry",
     "aliases": [],
     "family": "Farmer Carry",
-    "equipmentId": "sled",
+    "equipmentId": "dumbbell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning",
@@ -3863,7 +3863,7 @@
     "aliases": [],
     "family": "Forward Hurdle Hop",
     "equipmentId": "plyo_box",
-    "movementPattern": "Hinge / Hip Dominant",
+    "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
   },
@@ -3934,7 +3934,7 @@
     "name": "Front Rack Carry",
     "aliases": [],
     "family": "Front Rack Carry",
-    "equipmentId": "sled",
+    "equipmentId": "kettlebell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning",
@@ -4312,7 +4312,7 @@
     "aliases": [],
     "family": "Hurdle Jump",
     "equipmentId": "plyo_box",
-    "movementPattern": "Hinge / Hip Dominant",
+    "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
   },
@@ -4332,7 +4332,7 @@
     "aliases": [],
     "family": "Rear Delt Fly",
     "equipmentId": "dumbbell",
-    "movementPattern": "Horizontal Push",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -4443,7 +4443,7 @@
     "name": "Keg Carry",
     "aliases": [],
     "family": "Keg Carry",
-    "equipmentId": "sled",
+    "equipmentId": "strongman_implement",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning",
@@ -4454,7 +4454,7 @@
     "name": "Keg Load",
     "aliases": [],
     "family": "Keg Load",
-    "equipmentId": "sled",
+    "equipmentId": "strongman_implement",
     "movementPattern": "Other",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -4464,7 +4464,7 @@
     "name": "Keg Press",
     "aliases": [],
     "family": "Keg Press",
-    "equipmentId": "sled",
+    "equipmentId": "strongman_implement",
     "movementPattern": "Other",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -4923,7 +4923,7 @@
     "name": "Lateral Bound",
     "aliases": [],
     "family": "Lateral Bound",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -4934,7 +4934,7 @@
     "aliases": [],
     "family": "Lateral Hurdle Hop",
     "equipmentId": "plyo_box",
-    "movementPattern": "Hinge / Hip Dominant",
+    "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
   },
@@ -5003,7 +5003,7 @@
     "name": "Log Clean and Press",
     "aliases": [],
     "family": "Log Clean and Press",
-    "equipmentId": "sled",
+    "equipmentId": "strongman_implement",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -5054,7 +5054,7 @@
     "aliases": [],
     "family": "Leg Curl",
     "equipmentId": "selectorized_machine",
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Beginner",
     "modality": "Strength"
   },
@@ -5214,7 +5214,7 @@
     "aliases": [],
     "family": "Rear Delt Fly",
     "equipmentId": "selectorized_machine",
-    "movementPattern": "Horizontal Push",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Beginner",
     "modality": "Strength"
   },
@@ -5314,7 +5314,7 @@
     "aliases": [],
     "family": "Upright Row",
     "equipmentId": "selectorized_machine",
-    "movementPattern": "Horizontal Pull",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Beginner",
     "modality": "Strength"
   },
@@ -5384,7 +5384,7 @@
     "aliases": [],
     "family": "Medicine Ball Overhead Throw",
     "equipmentId": "medicine_ball",
-    "movementPattern": "Horizontal Pull",
+    "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
   },
@@ -5404,7 +5404,7 @@
     "aliases": [],
     "family": "Medicine Ball Rotational Throw",
     "equipmentId": "medicine_ball",
-    "movementPattern": "Horizontal Pull",
+    "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
   },
@@ -5434,7 +5434,7 @@
     "aliases": [],
     "family": "Medicine Ball Shot-Put Throw",
     "equipmentId": "medicine_ball",
-    "movementPattern": "Horizontal Pull",
+    "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
   },
@@ -5454,7 +5454,7 @@
     "aliases": [],
     "family": "Medicine Ball Sit-Up Throw",
     "equipmentId": "medicine_ball",
-    "movementPattern": "Horizontal Pull",
+    "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
   },
@@ -5645,7 +5645,7 @@
     "aliases": [],
     "family": "Nordic Curl",
     "equipmentId": "selectorized_machine",
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Advanced",
     "modality": "Strength"
   },
@@ -5655,7 +5655,7 @@
     "aliases": [],
     "family": "Nordic Hamstring Curl",
     "equipmentId": "bodyweight",
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Advanced",
     "modality": "Strength"
   },
@@ -5704,7 +5704,7 @@
     "name": "Overhead Carry",
     "aliases": [],
     "family": "Overhead Carry",
-    "equipmentId": "sled",
+    "equipmentId": "kettlebell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning",
@@ -5869,7 +5869,7 @@
     "name": "Pogo Jump",
     "aliases": [],
     "family": "Pogo Jump",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -5889,7 +5889,7 @@
     "name": "Power Skip",
     "aliases": [],
     "family": "Power Skip",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -5920,7 +5920,7 @@
     "aliases": [],
     "family": "Prowler Push",
     "equipmentId": "sled",
-    "movementPattern": "Horizontal Pull",
+    "movementPattern": "Other",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
   },
@@ -6121,7 +6121,7 @@
     "name": "Rope Climb",
     "aliases": [],
     "family": "Rope Climb",
-    "equipmentId": "sled",
+    "equipmentId": "bodyweight",
     "movementPattern": "Other",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -6181,7 +6181,7 @@
     "name": "Sandbag Bear Hug Carry",
     "aliases": [],
     "family": "Sandbag Bear Hug Carry",
-    "equipmentId": "sled",
+    "equipmentId": "sandbag",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning",
@@ -6192,7 +6192,7 @@
     "name": "Sandbag Clean",
     "aliases": [],
     "family": "Sandbag Clean",
-    "equipmentId": "sled",
+    "equipmentId": "sandbag",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -6202,7 +6202,7 @@
     "name": "Sandbag Front Carry",
     "aliases": [],
     "family": "Sandbag Front Carry",
-    "equipmentId": "sled",
+    "equipmentId": "sandbag",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning",
@@ -6213,7 +6213,7 @@
     "name": "Sandbag Ground-to-Shoulder",
     "aliases": [],
     "family": "Sandbag Ground-to-Shoulder",
-    "equipmentId": "sled",
+    "equipmentId": "sandbag",
     "movementPattern": "Other",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -6223,7 +6223,7 @@
     "name": "Sandbag Load to Platform",
     "aliases": [],
     "family": "Sandbag Load to Platform",
-    "equipmentId": "sled",
+    "equipmentId": "sandbag",
     "movementPattern": "Other",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -6233,7 +6233,7 @@
     "name": "Sandbag Lunge",
     "aliases": [],
     "family": "Sandbag Lunge",
-    "equipmentId": "sled",
+    "equipmentId": "sandbag",
     "movementPattern": "Squat / Knee Dominant",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -6243,8 +6243,8 @@
     "name": "Sandbag Over-Shoulder Throw",
     "aliases": [],
     "family": "Sandbag Over-Shoulder Throw",
-    "equipmentId": "sled",
-    "movementPattern": "Horizontal Pull",
+    "equipmentId": "sandbag",
+    "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
   },
@@ -6253,7 +6253,7 @@
     "name": "Sandbag Shoulder Carry",
     "aliases": [],
     "family": "Sandbag Shoulder Carry",
-    "equipmentId": "sled",
+    "equipmentId": "sandbag",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning",
@@ -6264,7 +6264,7 @@
     "name": "Sandbag Squat",
     "aliases": [],
     "family": "Sandbag Squat",
-    "equipmentId": "sled",
+    "equipmentId": "sandbag",
     "movementPattern": "Squat / Knee Dominant",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -6346,7 +6346,7 @@
     "aliases": [],
     "family": "Leg Curl",
     "equipmentId": "selectorized_machine",
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Beginner",
     "modality": "Strength"
   },
@@ -6636,7 +6636,7 @@
     "name": "Single-Leg Broad Jump",
     "aliases": [],
     "family": "Broad Jump",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -6686,7 +6686,7 @@
     "name": "Single-Leg Hop",
     "aliases": [],
     "family": "Hop",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -6726,7 +6726,7 @@
     "name": "Single-Leg Pogo Jump",
     "aliases": [],
     "family": "Pogo Jump",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -6737,7 +6737,7 @@
     "aliases": [],
     "family": "Leg Curl",
     "equipmentId": "selectorized_machine",
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Beginner",
     "modality": "Strength"
   },
@@ -6786,7 +6786,7 @@
     "name": "Skater Jump",
     "aliases": [],
     "family": "Skater Jump",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -6848,7 +6848,7 @@
     "aliases": [],
     "family": "Slam Ball Over-Shoulder Throw",
     "equipmentId": "medicine_ball",
-    "movementPattern": "Horizontal Pull",
+    "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
   },
@@ -6919,7 +6919,7 @@
     "aliases": [],
     "family": "Sliding Hamstring Curl",
     "equipmentId": "bodyweight",
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -7098,7 +7098,7 @@
     "name": "Split Squat Jump",
     "aliases": [],
     "family": "Split Squat Jump",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Squat / Knee Dominant",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -7180,7 +7180,7 @@
     "aliases": [],
     "family": "Leg Curl",
     "equipmentId": "selectorized_machine",
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Beginner",
     "modality": "Strength"
   },
@@ -7189,7 +7189,7 @@
     "name": "Standing Long Jump",
     "aliases": [],
     "family": "Long Jump",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -7290,7 +7290,7 @@
     "name": "Suitcase Carry",
     "aliases": [],
     "family": "Suitcase Carry",
-    "equipmentId": "sled",
+    "equipmentId": "dumbbell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning",
@@ -7384,7 +7384,7 @@
     "aliases": [],
     "family": "Suspension Trainer Hamstring Curl",
     "equipmentId": "suspension_trainer",
-    "movementPattern": "Elbow Flexion",
+    "movementPattern": "Hinge / Hip Dominant",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -7716,7 +7716,7 @@
     "name": "Tire Flip",
     "aliases": [],
     "family": "Tire Flip",
-    "equipmentId": "sled",
+    "equipmentId": "strongman_implement",
     "movementPattern": "Other",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -7766,7 +7766,7 @@
     "name": "Trap Bar Farmer Carry",
     "aliases": [],
     "family": "Trap Bar Farmer Carry",
-    "equipmentId": "sled",
+    "equipmentId": "barbell",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning",
@@ -7820,7 +7820,7 @@
     "name": "Triple Hop",
     "aliases": [],
     "family": "Triple Hop",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -7830,7 +7830,7 @@
     "name": "Tuck Jump",
     "aliases": [],
     "family": "Tuck Jump",
-    "equipmentId": "plyo_box",
+    "equipmentId": "bodyweight",
     "movementPattern": "Power / Plyometric",
     "difficulty": "Intermediate",
     "modality": "Power"
@@ -7910,7 +7910,7 @@
     "name": "Viking Press",
     "aliases": [],
     "family": "Viking Press",
-    "equipmentId": "sled",
+    "equipmentId": "strongman_implement",
     "movementPattern": "Vertical Push",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning"
@@ -8051,7 +8051,7 @@
     "name": "Yoke Carry",
     "aliases": [],
     "family": "Yoke Carry",
-    "equipmentId": "sled",
+    "equipmentId": "strongman_implement",
     "movementPattern": "Carry",
     "difficulty": "Intermediate",
     "modality": "Strength / Conditioning",
@@ -8143,7 +8143,7 @@
     "aliases": [],
     "family": "Upright Row",
     "equipmentId": "ez_bar",
-    "movementPattern": "Horizontal Pull",
+    "movementPattern": "Shoulder Isolation",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },

@@ -33,7 +33,8 @@
 /**
  * ⚠ ONE CATALOGUE ODDITY WORTH KNOWING ABOUT, since it explains a strange result rather than causing one.
  *
- * `nordic-hamstring-curl` and `sliding-hamstring-curl` are filed under **Elbow Flexion** in the dataset —
+ * (RESOLVED by the QA F11 catalogue correction, 2026-09-26 — all twelve leg curls are now under Hinge.)
+ * `nordic-hamstring-curl` and `sliding-hamstring-curl` were filed under **Elbow Flexion** in the dataset —
  * a hamstring movement under an arm pattern, presumably because "curl" drove the tagging. That is why an
  * early conditioning plan prescribed a *Sliding Hamstring Curl* as its biceps slot. Listing the real curls
  * first fixes the symptom here; the data itself is not this file's to correct, and a catalogue correction

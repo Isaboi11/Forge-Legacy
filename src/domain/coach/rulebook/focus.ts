@@ -26,8 +26,8 @@
  *
  * `slots` are catalogue `movementPattern` values and `muscles` are catalogue `primaryMuscleIds`, measured
  * against the 733 visible rows: glute-primary work lives under Hinge (49) and Hip Isolation (9);
- * hamstring-primary rows exist only under Elbow Flexion (the leg curls `coherence.ts` keeps out of a
- * biceps slot), so a hamstring focus is honestly an extra hinge. The slot's exercise is chosen from the
+ * hamstring-primary rows sit under Hinge — the leg curls moved there from Elbow Flexion in the QA F11
+ * catalogue correction (2026-09-26) — so a hamstring focus is honestly an extra hinge. The slot's exercise is chosen from the
  * group's own primary movers first, then any movement that works the group at all, then the pattern's
  * usual answer — so a glute slot that can reach a hip thrust gets one, and a room that cannot still gets
  * a hinge rather than nothing.

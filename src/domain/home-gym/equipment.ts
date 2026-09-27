@@ -21,7 +21,8 @@
  *
  * A requirement is satisfied by owning ANY ONE of the listed item ids (OR). An empty requirement
  * means nothing beyond a floor is needed. A requirement naming an id that is NOT in the inventory
- * (`pool`, `bicycle`, `punchbag`, `skierg`, `stairmachine`, `sled`, `battlerope`) is real gear this
+ * (`pool`, `bicycle`, `punchbag`, `skierg`, `stairmachine`, `sled`, `battlerope`, `strongman`,
+ * `climbingrope`, `axle`) is real gear this
  * editor deliberately doesn't offer — those exercises are simply never claimed as trainable at home,
  * which is the honest answer rather than a false yes.
  *
@@ -205,6 +206,11 @@ export const EQUIP_UNLOCK: Record<string, readonly string[]> = {
   // Gear the editor doesn't offer: never claimed as trainable at home.
   sled: ['sled'],
   battle_rope: ['battlerope'],
+  // Split out of `sled` (2026-09-26, QA F11), which had been a catch-all for odd implements. A sandbag is
+  // in the editor, so owning one now unlocks sandbag work; strongman implements are not offered, so
+  // those stay unclaimed at home, exactly as they were under `sled`.
+  sandbag: ['sandbag'],
+  strongman_implement: ['strongman'],
 };
 
 /**
@@ -234,6 +240,12 @@ export const EXERCISE_GEAR: Record<string, readonly string[]> = {
   // ── cardio: gear the editor doesn't offer ─────────────────────────────────
   'stair-climber': ['stairmachine'], stepmill: ['stairmachine'],
   'ski-erg': ['skierg'], 'ski-erg-intervals': ['skierg'],
+  // Filed `bodyweight` since QA F11 (it was a `sled` catch-all) — the rope itself is gear nobody is offered.
+  'rope-climb': ['climbingrope'],
+  // Specialty bars, filed `barbell` since QA F11 (they were `sled`). A straight bar does not stand in:
+  // a trap-bar carry needs the trap bar, and an axle is a thick bar nobody is offered here.
+  'trap-bar-farmer-carry': ['trapbar'],
+  'axle-deadlift': ['axle'], 'axle-clean-and-press': ['axle'],
   'road-cycling': ['bicycle'], 'mountain-biking': ['bicycle'],
   'heavy-bag-boxing': ['punchbag'], 'kickboxing-bag-work': ['punchbag'], 'boxing-mitt-work': ['punchbag'],
   'open-water-swim': ['pool'], 'pool-intervals': ['pool'], 'swimming-backstroke': ['pool'],

@@ -106,6 +106,41 @@ const SUPINE_HIP_EXTENSION: readonly string[] = [
 ];
 
 /**
+ * Leg curls — re-filed from `Elbow Flexion` to `Hinge / Hip Dominant` by the QA F11 catalogue correction
+ * (2026-09-26). The `lower_back` Hinge ban would otherwise have started removing them, which it never
+ * did before the re-filing: they are knee flexion with the hips fixed, not a loaded hinge. Listed so the
+ * correction changes the catalogue label and NOT what a bad-back athlete is offered.
+ */
+const LEG_CURLS: readonly string[] = [
+  'assisted-nordic-curl',
+  'band-leg-curl',
+  'cable-assisted-nordic-curl',
+  'cable-standing-leg-curl',
+  'lying-leg-curl-machine',
+  'nordic-curl-machine',
+  'nordic-hamstring-curl',
+  'seated-leg-curl-machine',
+  'single-leg-seated-leg-curl',
+  'sliding-hamstring-curl',
+  'standing-leg-curl-machine',
+  'suspension-trainer-hamstring-curl',
+];
+
+/**
+ * Rear-delt flies — re-filed from `Horizontal Push` to `Shoulder Isolation` by QA F11. The upright-row
+ * note below records the PO decision that they are KEPT for a shoulder complaint ("the one piece of
+ * direct shoulder work that does not take the joint anywhere it complains about"); the `shoulders` ban on
+ * Shoulder Isolation would otherwise have quietly reversed it.
+ */
+const REAR_DELT_FLIES: readonly string[] = [
+  'band-rear-delt-fly',
+  'cable-rear-delt-fly',
+  'dumbbell-rear-delt-fly',
+  'incline-dumbbell-rear-delt-fly',
+  'machine-rear-delt-fly',
+];
+
+/**
  * Exercises admitted DESPITE their pattern being excluded, keyed by limitation.
  *
  * ⚠ AN EXCEPTION LIST IS ONLY EVER SAFE IN THIS DIRECTION. Adding a key here can only widen what a
@@ -114,9 +149,9 @@ const SUPINE_HIP_EXTENSION: readonly string[] = [
  * the one whose keys are asserted to exist.
  */
 export const LIMITATION_KEEP_KEYS: Record<Limitation, readonly string[]> = {
-  shoulders: [],
+  shoulders: REAR_DELT_FLIES,
   knees: [],
-  lower_back: SUPINE_HIP_EXTENSION,
+  lower_back: [...SUPINE_HIP_EXTENSION, ...LEG_CURLS],
   no_jumping: [],
   no_overhead: [],
   no_barbell: [],
@@ -132,6 +167,11 @@ export const limitationKeepKeys = (l: Limitation): readonly string[] => LIMITATI
 /**
  * The upright row family — all six of them, filed under `Horizontal Pull`.
  *
+ * ⚠ SINCE QA F11 (2026-09-26) THEY ARE FILED UNDER `Shoulder Isolation`, which the `shoulders` ban
+ * already removes — so the six keys that were listed here are gone (the test on `LIMITATION_EXCLUDE_KEYS`
+ * rejects a key its own pattern ban already catches). The history below is kept because it still explains
+ * why the `shoulders` ban has to reach them.
+ *
  * ⚠ **FOUND BY MEASUREMENT, NOT BY REVIEW, AND IT HAD BEEN LIVE THE WHOLE TIME.** A shoulders-limited
  * athlete at a full gym asking for a shoulder day was handed *Band Upright Row · Band Rear Delt Fly ·
  * Kettlebell Clean and Press · Barbell Upright Row · Cable Rear Delt Fly*. Banning `Vertical Push` and
@@ -142,14 +182,6 @@ export const limitationKeepKeys = (l: Limitation): readonly string[] => LIMITATI
  * Rear delt flies are deliberately KEPT. They are the one piece of direct shoulder work that does not
  * take the joint anywhere it complains about, and removing them would leave the day with nothing.
  */
-const UPRIGHT_ROWS: readonly string[] = [
-  'band-upright-row',
-  'barbell-upright-row',
-  'cable-upright-row',
-  'dumbbell-upright-row',
-  'ez-bar-upright-row',
-  'machine-upright-row',
-];
 
 /**
  * Lifts that finish with the load locked out overhead, all filed under `Power / Plyometric`.
@@ -220,9 +252,8 @@ const JUMPS_OUTSIDE_PLYO: readonly string[] = [
   'jump-squat',
   'split-squat-jump',
   'step-up-box-jump',
-  'forward-hurdle-hop',
-  'lateral-hurdle-hop',
-  'hurdle-jump',
+  // The three hurdle hops were here while they were filed under Hinge; QA F11 re-filed them under
+  // Power / Plyometric, which `knees` and `no_jumping` already ban.
   'dumbbell-burpee-deadlift',
 ];
 
@@ -234,7 +265,7 @@ const JUMPS_OUTSIDE_PLYO: readonly string[] = [
  * believes they have been heard, and gets the movement anyway.
  */
 export const LIMITATION_EXCLUDE_KEYS: Record<Limitation, readonly string[]> = {
-  shoulders: [...UPRIGHT_ROWS, ...OVERHEAD_FINISH, ...ARMS_OVERHEAD],
+  shoulders: [...OVERHEAD_FINISH, ...ARMS_OVERHEAD],
   knees: JUMPS_OUTSIDE_PLYO,
   lower_back: [],
   no_jumping: JUMPS_OUTSIDE_PLYO,

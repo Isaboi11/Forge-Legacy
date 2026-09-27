@@ -21,6 +21,7 @@
  *   node src/domain/exercise-coaching/publish.mjs --dry
  */
 import crypto from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { loadStore, loadManifest, writeStore } from './store.mjs';
 
 const args = process.argv.slice(2);
@@ -33,6 +34,13 @@ const DRY = args.includes('--dry');
  * must therefore be the LAST step after a generation pass, and re-running a pass means resetting first.
  */
 const RESET = args.includes('--reset');
+/**
+ * `--reset --ids-file=<ids.json>` returns ONLY the listed records to the pool — for a correction pass
+ * that changes a known subset (QA F11 re-generated the records whose catalogue data or coaching bank was
+ * wrong). Every other Published record, and its approval, is left exactly as it was.
+ */
+const idsFileArg = args.find((a) => a.startsWith('--ids-file='));
+const ONLY_IDS = idsFileArg ? new Set(JSON.parse(readFileSync(idsFileArg.slice('--ids-file='.length), 'utf8'))) : null;
 const actorIdx = args.indexOf('--actor');
 const ACTOR = actorIdx >= 0 ? args[actorIdx + 1] : 'product-owner';
 
@@ -65,12 +73,13 @@ if (!records.length) {
 }
 
 if (RESET) {
+  const inScope = (r) => r.contentStatus === 'Published' && (!ONLY_IDS || ONLY_IDS.has(r.exerciseId));
   const reverted = records.map((r) =>
-    r.contentStatus === 'Published'
+    inScope(r)
       ? { ...r, contentStatus: 'Auto-Validated', approvedBy: null, approvedAt: null }
       : r,
   );
-  const n = records.filter((r) => r.contentStatus === 'Published').length;
+  const n = records.filter(inScope).length;
   writeStore(reverted, loadManifest());
   console.log(`Reset ${n} published records to Auto-Validated. Re-run generation, then publish.`);
   process.exit(0);

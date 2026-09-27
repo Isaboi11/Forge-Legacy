@@ -625,15 +625,9 @@
   },
   {
     "exerciseId": "band-rear-delt-fly",
-    "muscleId": "triceps",
+    "muscleId": "upper_back",
     "role": "Secondary",
     "displayOrder": 1
-  },
-  {
-    "exerciseId": "band-rear-delt-fly",
-    "muscleId": "front_deltoids",
-    "role": "Secondary",
-    "displayOrder": 2
   },
   {
     "exerciseId": "band-reverse-curl",
@@ -715,39 +709,15 @@
   },
   {
     "exerciseId": "band-shoulder-external-rotation",
-    "muscleId": "rectus_abdominis",
-    "role": "Primary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "band-shoulder-external-rotation",
-    "muscleId": "hip_flexors",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "band-shoulder-external-rotation",
-    "muscleId": "obliques",
-    "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "band-shoulder-internal-rotation",
-    "muscleId": "rectus_abdominis",
+    "muscleId": "rotator_cuff",
     "role": "Primary",
     "displayOrder": 1
   },
   {
     "exerciseId": "band-shoulder-internal-rotation",
-    "muscleId": "hip_flexors",
-    "role": "Secondary",
+    "muscleId": "rotator_cuff",
+    "role": "Primary",
     "displayOrder": 1
-  },
-  {
-    "exerciseId": "band-shoulder-internal-rotation",
-    "muscleId": "obliques",
-    "role": "Secondary",
-    "displayOrder": 2
   },
   {
     "exerciseId": "band-split-squat",
@@ -805,13 +775,13 @@
   },
   {
     "exerciseId": "band-straight-arm-pulldown",
-    "muscleId": "biceps",
+    "muscleId": "upper_back",
     "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "band-straight-arm-pulldown",
-    "muscleId": "upper_back",
+    "muscleId": "triceps",
     "role": "Secondary",
     "displayOrder": 2
   },
@@ -835,21 +805,15 @@
   },
   {
     "exerciseId": "band-upright-row",
-    "muscleId": "lats",
-    "role": "Secondary",
-    "displayOrder": 1
+    "muscleId": "traps",
+    "role": "Primary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "band-upright-row",
     "muscleId": "biceps",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "band-upright-row",
-    "muscleId": "rear_deltoids",
-    "role": "Secondary",
-    "displayOrder": 3
+    "displayOrder": 1
   },
   {
     "exerciseId": "band-wood-chop",
@@ -1459,13 +1423,13 @@
   },
   {
     "exerciseId": "barbell-pullover",
-    "muscleId": "biceps",
+    "muscleId": "chest",
     "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "barbell-pullover",
-    "muscleId": "upper_back",
+    "muscleId": "triceps",
     "role": "Secondary",
     "displayOrder": 2
   },
@@ -1789,21 +1753,15 @@
   },
   {
     "exerciseId": "barbell-upright-row",
-    "muscleId": "lats",
-    "role": "Secondary",
-    "displayOrder": 1
+    "muscleId": "traps",
+    "role": "Primary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "barbell-upright-row",
     "muscleId": "biceps",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "barbell-upright-row",
-    "muscleId": "rear_deltoids",
-    "role": "Secondary",
-    "displayOrder": 3
+    "displayOrder": 1
   },
   {
     "exerciseId": "barbell-yates-row",
@@ -2233,21 +2191,9 @@
   },
   {
     "exerciseId": "cable-external-rotation",
-    "muscleId": "rectus_abdominis",
+    "muscleId": "rotator_cuff",
     "role": "Primary",
     "displayOrder": 1
-  },
-  {
-    "exerciseId": "cable-external-rotation",
-    "muscleId": "hip_flexors",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "cable-external-rotation",
-    "muscleId": "obliques",
-    "role": "Secondary",
-    "displayOrder": 2
   },
   {
     "exerciseId": "cable-face-pull",
@@ -2359,21 +2305,9 @@
   },
   {
     "exerciseId": "cable-internal-rotation",
-    "muscleId": "rectus_abdominis",
+    "muscleId": "rotator_cuff",
     "role": "Primary",
     "displayOrder": 1
-  },
-  {
-    "exerciseId": "cable-internal-rotation",
-    "muscleId": "hip_flexors",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "cable-internal-rotation",
-    "muscleId": "obliques",
-    "role": "Secondary",
-    "displayOrder": 2
   },
   {
     "exerciseId": "cable-lat-pulldown",
@@ -2455,13 +2389,13 @@
   },
   {
     "exerciseId": "cable-pullover",
-    "muscleId": "biceps",
+    "muscleId": "chest",
     "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "cable-pullover",
-    "muscleId": "upper_back",
+    "muscleId": "triceps",
     "role": "Secondary",
     "displayOrder": 2
   },
@@ -2473,15 +2407,9 @@
   },
   {
     "exerciseId": "cable-rear-delt-fly",
-    "muscleId": "triceps",
+    "muscleId": "upper_back",
     "role": "Secondary",
     "displayOrder": 1
-  },
-  {
-    "exerciseId": "cable-rear-delt-fly",
-    "muscleId": "front_deltoids",
-    "role": "Secondary",
-    "displayOrder": 2
   },
   {
     "exerciseId": "cable-reverse-curl",
@@ -2497,15 +2425,9 @@
   },
   {
     "exerciseId": "cable-reverse-fly",
-    "muscleId": "triceps",
+    "muscleId": "upper_back",
     "role": "Secondary",
     "displayOrder": 1
-  },
-  {
-    "exerciseId": "cable-reverse-fly",
-    "muscleId": "front_deltoids",
-    "role": "Secondary",
-    "displayOrder": 2
   },
   {
     "exerciseId": "cable-reverse-lunge",
@@ -2719,21 +2641,15 @@
   },
   {
     "exerciseId": "cable-upright-row",
-    "muscleId": "lats",
-    "role": "Secondary",
-    "displayOrder": 1
+    "muscleId": "traps",
+    "role": "Primary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "cable-upright-row",
     "muscleId": "biceps",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "cable-upright-row",
-    "muscleId": "rear_deltoids",
-    "role": "Secondary",
-    "displayOrder": 3
+    "displayOrder": 1
   },
   {
     "exerciseId": "cable-wood-chop",
@@ -2941,21 +2857,21 @@
   },
   {
     "exerciseId": "copenhagen-plank",
-    "muscleId": "rectus_abdominis",
+    "muscleId": "adductors",
     "role": "Primary",
     "displayOrder": 1
   },
   {
     "exerciseId": "copenhagen-plank",
-    "muscleId": "hip_flexors",
-    "role": "Secondary",
-    "displayOrder": 1
+    "muscleId": "obliques",
+    "role": "Primary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "copenhagen-plank",
-    "muscleId": "obliques",
+    "muscleId": "transverse_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
+    "displayOrder": 1
   },
   {
     "exerciseId": "cossack-squat",
@@ -3727,13 +3643,13 @@
   },
   {
     "exerciseId": "dumbbell-pullover",
-    "muscleId": "biceps",
+    "muscleId": "chest",
     "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "dumbbell-pullover",
-    "muscleId": "upper_back",
+    "muscleId": "triceps",
     "role": "Secondary",
     "displayOrder": 2
   },
@@ -3781,15 +3697,9 @@
   },
   {
     "exerciseId": "dumbbell-rear-delt-fly",
-    "muscleId": "triceps",
+    "muscleId": "upper_back",
     "role": "Secondary",
     "displayOrder": 1
-  },
-  {
-    "exerciseId": "dumbbell-rear-delt-fly",
-    "muscleId": "front_deltoids",
-    "role": "Secondary",
-    "displayOrder": 2
   },
   {
     "exerciseId": "dumbbell-renegade-row",
@@ -4069,21 +3979,15 @@
   },
   {
     "exerciseId": "dumbbell-upright-row",
-    "muscleId": "lats",
-    "role": "Secondary",
-    "displayOrder": 1
+    "muscleId": "traps",
+    "role": "Primary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "dumbbell-upright-row",
     "muscleId": "biceps",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "dumbbell-upright-row",
-    "muscleId": "rear_deltoids",
-    "role": "Secondary",
-    "displayOrder": 3
+    "displayOrder": 1
   },
   {
     "exerciseId": "dumbbell-zottman-curl",
@@ -4159,27 +4063,21 @@
   },
   {
     "exerciseId": "forward-hurdle-hop",
-    "muscleId": "glutes",
+    "muscleId": "quadriceps",
     "role": "Primary",
     "displayOrder": 1
   },
   {
     "exerciseId": "forward-hurdle-hop",
-    "muscleId": "erector_spinae",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "forward-hurdle-hop",
-    "muscleId": "rectus_abdominis",
-    "role": "Secondary",
+    "muscleId": "glutes",
+    "role": "Primary",
     "displayOrder": 2
   },
   {
     "exerciseId": "forward-hurdle-hop",
-    "muscleId": "adductors",
+    "muscleId": "calves",
     "role": "Secondary",
-    "displayOrder": 3
+    "displayOrder": 1
   },
   {
     "exerciseId": "forward-lunge",
@@ -4615,27 +4513,21 @@
   },
   {
     "exerciseId": "hurdle-jump",
-    "muscleId": "glutes",
+    "muscleId": "quadriceps",
     "role": "Primary",
     "displayOrder": 1
   },
   {
     "exerciseId": "hurdle-jump",
-    "muscleId": "erector_spinae",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "hurdle-jump",
-    "muscleId": "rectus_abdominis",
-    "role": "Secondary",
+    "muscleId": "glutes",
+    "role": "Primary",
     "displayOrder": 2
   },
   {
     "exerciseId": "hurdle-jump",
-    "muscleId": "adductors",
+    "muscleId": "calves",
     "role": "Secondary",
-    "displayOrder": 3
+    "displayOrder": 1
   },
   {
     "exerciseId": "incline-dumbbell-rear-delt-fly",
@@ -4645,15 +4537,9 @@
   },
   {
     "exerciseId": "incline-dumbbell-rear-delt-fly",
-    "muscleId": "triceps",
+    "muscleId": "upper_back",
     "role": "Secondary",
     "displayOrder": 1
-  },
-  {
-    "exerciseId": "incline-dumbbell-rear-delt-fly",
-    "muscleId": "front_deltoids",
-    "role": "Secondary",
-    "displayOrder": 2
   },
   {
     "exerciseId": "incline-push-up",
@@ -4897,13 +4783,13 @@
   },
   {
     "exerciseId": "kettlebell-pullover",
-    "muscleId": "biceps",
+    "muscleId": "chest",
     "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "kettlebell-pullover",
-    "muscleId": "upper_back",
+    "muscleId": "triceps",
     "role": "Secondary",
     "displayOrder": 2
   },
@@ -5185,27 +5071,21 @@
   },
   {
     "exerciseId": "lateral-hurdle-hop",
-    "muscleId": "glutes",
+    "muscleId": "quadriceps",
     "role": "Primary",
     "displayOrder": 1
   },
   {
     "exerciseId": "lateral-hurdle-hop",
-    "muscleId": "erector_spinae",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "lateral-hurdle-hop",
-    "muscleId": "rectus_abdominis",
-    "role": "Secondary",
+    "muscleId": "glutes",
+    "role": "Primary",
     "displayOrder": 2
   },
   {
     "exerciseId": "lateral-hurdle-hop",
-    "muscleId": "adductors",
+    "muscleId": "calves",
     "role": "Secondary",
-    "displayOrder": 3
+    "displayOrder": 1
   },
   {
     "exerciseId": "lateral-lunge",
@@ -5509,13 +5389,13 @@
   },
   {
     "exerciseId": "machine-pullover",
-    "muscleId": "biceps",
+    "muscleId": "chest",
     "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "machine-pullover",
-    "muscleId": "upper_back",
+    "muscleId": "triceps",
     "role": "Secondary",
     "displayOrder": 2
   },
@@ -5527,15 +5407,9 @@
   },
   {
     "exerciseId": "machine-rear-delt-fly",
-    "muscleId": "triceps",
+    "muscleId": "upper_back",
     "role": "Secondary",
     "displayOrder": 1
-  },
-  {
-    "exerciseId": "machine-rear-delt-fly",
-    "muscleId": "front_deltoids",
-    "role": "Secondary",
-    "displayOrder": 2
   },
   {
     "exerciseId": "machine-seated-row",
@@ -5659,21 +5533,15 @@
   },
   {
     "exerciseId": "machine-upright-row",
-    "muscleId": "lats",
-    "role": "Secondary",
-    "displayOrder": 1
+    "muscleId": "traps",
+    "role": "Primary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "machine-upright-row",
     "muscleId": "biceps",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "machine-upright-row",
-    "muscleId": "rear_deltoids",
-    "role": "Secondary",
-    "displayOrder": 3
+    "displayOrder": 1
   },
   {
     "exerciseId": "mcgill-curl-up",
@@ -5731,123 +5599,111 @@
   },
   {
     "exerciseId": "medicine-ball-overhead-throw",
-    "muscleId": "upper_back",
+    "muscleId": "rectus_abdominis",
     "role": "Primary",
     "displayOrder": 1
   },
   {
     "exerciseId": "medicine-ball-overhead-throw",
     "muscleId": "lats",
+    "role": "Primary",
+    "displayOrder": 2
+  },
+  {
+    "exerciseId": "medicine-ball-overhead-throw",
+    "muscleId": "triceps",
     "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "medicine-ball-overhead-throw",
-    "muscleId": "biceps",
+    "muscleId": "front_deltoids",
     "role": "Secondary",
     "displayOrder": 2
   },
   {
-    "exerciseId": "medicine-ball-overhead-throw",
-    "muscleId": "rear_deltoids",
-    "role": "Secondary",
-    "displayOrder": 3
-  },
-  {
     "exerciseId": "medicine-ball-rotational-throw",
-    "muscleId": "upper_back",
+    "muscleId": "obliques",
     "role": "Primary",
     "displayOrder": 1
   },
   {
     "exerciseId": "medicine-ball-rotational-throw",
-    "muscleId": "lats",
+    "muscleId": "glutes",
     "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "medicine-ball-rotational-throw",
-    "muscleId": "biceps",
+    "muscleId": "rectus_abdominis",
     "role": "Secondary",
     "displayOrder": 2
   },
   {
-    "exerciseId": "medicine-ball-rotational-throw",
-    "muscleId": "rear_deltoids",
-    "role": "Secondary",
-    "displayOrder": 3
-  },
-  {
     "exerciseId": "medicine-ball-shot-put-throw",
-    "muscleId": "upper_back",
+    "muscleId": "obliques",
     "role": "Primary",
     "displayOrder": 1
   },
   {
     "exerciseId": "medicine-ball-shot-put-throw",
-    "muscleId": "lats",
+    "muscleId": "front_deltoids",
+    "role": "Primary",
+    "displayOrder": 2
+  },
+  {
+    "exerciseId": "medicine-ball-shot-put-throw",
+    "muscleId": "triceps",
     "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "medicine-ball-shot-put-throw",
-    "muscleId": "biceps",
+    "muscleId": "glutes",
     "role": "Secondary",
     "displayOrder": 2
   },
   {
-    "exerciseId": "medicine-ball-shot-put-throw",
-    "muscleId": "rear_deltoids",
-    "role": "Secondary",
-    "displayOrder": 3
-  },
-  {
     "exerciseId": "medicine-ball-sit-up-throw",
-    "muscleId": "upper_back",
+    "muscleId": "rectus_abdominis",
     "role": "Primary",
     "displayOrder": 1
   },
   {
     "exerciseId": "medicine-ball-sit-up-throw",
-    "muscleId": "lats",
+    "muscleId": "hip_flexors",
     "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "medicine-ball-sit-up-throw",
-    "muscleId": "biceps",
+    "muscleId": "triceps",
     "role": "Secondary",
     "displayOrder": 2
-  },
-  {
-    "exerciseId": "medicine-ball-sit-up-throw",
-    "muscleId": "rear_deltoids",
-    "role": "Secondary",
-    "displayOrder": 3
   },
   {
     "exerciseId": "medicine-ball-squat-to-throw",
-    "muscleId": "upper_back",
+    "muscleId": "quadriceps",
     "role": "Primary",
     "displayOrder": 1
   },
   {
     "exerciseId": "medicine-ball-squat-to-throw",
     "muscleId": "glutes",
+    "role": "Primary",
+    "displayOrder": 2
+  },
+  {
+    "exerciseId": "medicine-ball-squat-to-throw",
+    "muscleId": "front_deltoids",
     "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "medicine-ball-squat-to-throw",
-    "muscleId": "hamstrings",
+    "muscleId": "triceps",
     "role": "Secondary",
     "displayOrder": 2
-  },
-  {
-    "exerciseId": "medicine-ball-squat-to-throw",
-    "muscleId": "rectus_abdominis",
-    "role": "Secondary",
-    "displayOrder": 3
   },
   {
     "exerciseId": "modified-side-plank",
@@ -6259,27 +6115,9 @@
   },
   {
     "exerciseId": "prowler-push",
-    "muscleId": "upper_back",
+    "muscleId": "full_body",
     "role": "Primary",
     "displayOrder": 1
-  },
-  {
-    "exerciseId": "prowler-push",
-    "muscleId": "lats",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "prowler-push",
-    "muscleId": "biceps",
-    "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "prowler-push",
-    "muscleId": "rear_deltoids",
-    "role": "Secondary",
-    "displayOrder": 3
   },
   {
     "exerciseId": "pseudo-planche-push-up",
@@ -6553,27 +6391,27 @@
   },
   {
     "exerciseId": "sandbag-over-shoulder-throw",
-    "muscleId": "upper_back",
+    "muscleId": "glutes",
     "role": "Primary",
     "displayOrder": 1
   },
   {
     "exerciseId": "sandbag-over-shoulder-throw",
-    "muscleId": "lats",
+    "muscleId": "hamstrings",
+    "role": "Primary",
+    "displayOrder": 2
+  },
+  {
+    "exerciseId": "sandbag-over-shoulder-throw",
+    "muscleId": "erector_spinae",
     "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "sandbag-over-shoulder-throw",
-    "muscleId": "biceps",
+    "muscleId": "traps",
     "role": "Secondary",
     "displayOrder": 2
-  },
-  {
-    "exerciseId": "sandbag-over-shoulder-throw",
-    "muscleId": "rear_deltoids",
-    "role": "Secondary",
-    "displayOrder": 3
   },
   {
     "exerciseId": "sandbag-squat",
@@ -7171,27 +7009,27 @@
   },
   {
     "exerciseId": "slam-ball-over-shoulder-throw",
-    "muscleId": "upper_back",
+    "muscleId": "glutes",
     "role": "Primary",
     "displayOrder": 1
   },
   {
     "exerciseId": "slam-ball-over-shoulder-throw",
-    "muscleId": "lats",
+    "muscleId": "hamstrings",
+    "role": "Primary",
+    "displayOrder": 2
+  },
+  {
+    "exerciseId": "slam-ball-over-shoulder-throw",
+    "muscleId": "erector_spinae",
     "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "slam-ball-over-shoulder-throw",
-    "muscleId": "biceps",
+    "muscleId": "traps",
     "role": "Secondary",
     "displayOrder": 2
-  },
-  {
-    "exerciseId": "slam-ball-over-shoulder-throw",
-    "muscleId": "rear_deltoids",
-    "role": "Secondary",
-    "displayOrder": 3
   },
   {
     "exerciseId": "sled-chest-press",
@@ -7723,13 +7561,13 @@
   },
   {
     "exerciseId": "straight-arm-cable-pulldown",
-    "muscleId": "biceps",
+    "muscleId": "upper_back",
     "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "straight-arm-cable-pulldown",
-    "muscleId": "upper_back",
+    "muscleId": "triceps",
     "role": "Secondary",
     "displayOrder": 2
   },
@@ -8749,9 +8587,27 @@
   },
   {
     "exerciseId": "barbell-thruster",
-    "muscleId": "front_deltoids",
+    "muscleId": "quadriceps",
     "role": "Primary",
     "displayOrder": 1
+  },
+  {
+    "exerciseId": "barbell-thruster",
+    "muscleId": "front_deltoids",
+    "role": "Primary",
+    "displayOrder": 2
+  },
+  {
+    "exerciseId": "barbell-thruster",
+    "muscleId": "glutes",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "barbell-thruster",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "barbell-walking-lunge",
@@ -10117,9 +9973,27 @@
   },
   {
     "exerciseId": "dumbbell-thruster",
-    "muscleId": "front_deltoids",
+    "muscleId": "quadriceps",
     "role": "Primary",
     "displayOrder": 1
+  },
+  {
+    "exerciseId": "dumbbell-thruster",
+    "muscleId": "front_deltoids",
+    "role": "Primary",
+    "displayOrder": 2
+  },
+  {
+    "exerciseId": "dumbbell-thruster",
+    "muscleId": "glutes",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "dumbbell-thruster",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "dumbbell-tibialis-raise",
@@ -10519,9 +10393,27 @@
   },
   {
     "exerciseId": "kettlebell-thruster",
-    "muscleId": "front_deltoids",
+    "muscleId": "quadriceps",
     "role": "Primary",
     "displayOrder": 1
+  },
+  {
+    "exerciseId": "kettlebell-thruster",
+    "muscleId": "front_deltoids",
+    "role": "Primary",
+    "displayOrder": 2
+  },
+  {
+    "exerciseId": "kettlebell-thruster",
+    "muscleId": "glutes",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "kettlebell-thruster",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "kettlebell-walking-lunge",
@@ -10585,8 +10477,20 @@
   },
   {
     "exerciseId": "glute-ham-developer-raise",
-    "muscleId": "erector_spinae",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "glute-ham-developer-raise",
+    "muscleId": "glutes",
+    "role": "Primary",
+    "displayOrder": 2
+  },
+  {
+    "exerciseId": "glute-ham-developer-raise",
+    "muscleId": "erector_spinae",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
@@ -10705,9 +10609,15 @@
   },
   {
     "exerciseId": "medicine-ball-chest-pass",
-    "muscleId": "rectus_abdominis",
+    "muscleId": "chest",
     "role": "Primary",
     "displayOrder": 1
+  },
+  {
+    "exerciseId": "medicine-ball-chest-pass",
+    "muscleId": "triceps",
+    "role": "Primary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "medicine-ball-chest-pass",
@@ -10783,15 +10693,27 @@
   },
   {
     "exerciseId": "medicine-ball-wall-ball",
-    "muscleId": "rectus_abdominis",
+    "muscleId": "quadriceps",
     "role": "Primary",
     "displayOrder": 1
+  },
+  {
+    "exerciseId": "medicine-ball-wall-ball",
+    "muscleId": "glutes",
+    "role": "Primary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "medicine-ball-wall-ball",
     "muscleId": "front_deltoids",
     "role": "Secondary",
     "displayOrder": 1
+  },
+  {
+    "exerciseId": "medicine-ball-wall-ball",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "slam-ball-bear-hug-carry",

@@ -460,3 +460,150 @@ test('integration — only Published content is served; instructions = setup + e
   assert.deepEqual(view.instructions, [...published.setupInstructions, ...published.executionSteps]);
   assert.deepEqual(view.commonMistakes, published.commonMistakes);
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QA F11 (2026-09-26) — COACHING THAT DESCRIBED A DIFFERENT EXERCISE
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Every case below was live, Published text: Farmer Carry and Axle Deadlift said "Load the sled", a
+// Nordic curl described a leg-curl machine, a kettlebell swing got deadlift steps, a Copenhagen plank was
+// coached as a crunch, all 23 carries were told to "move the joint through the largest circle" (the
+// '-car' substring of "carry"). These pin the fix to the catalogue data AND the generator, so neither
+// can quietly drift back.
+
+const howTo = (id) => [...rec(id).setupInstructions, ...rec(id).executionSteps].join(' \n ');
+const visibleText = (id) => {
+  const r = rec(id);
+  return [...r.setupInstructions, ...r.executionSteps, ...r.coachingTips, ...r.cueHierarchy, ...r.commonMistakes,
+    ...r.safetyNotes, ...r.advancedCoachingNotes].join(' \n ');
+};
+const exRow = (id) => sources.exercises.find((e) => e.id === id);
+const primaries = (id) => sources.exerciseMuscles.filter((m) => m.exerciseId === id && m.role === 'Primary').map((m) => m.muscleId);
+
+test('F11 — "sled" is only the equipment of things that are actually sleds', () => {
+  for (const e of sources.exercises.filter((x) => x.equipmentId === 'sled')) {
+    // Hand-over-hand rope pull drags a sled on a rope, so it is one.
+    assert.match(e.id, /sled|prowler|rope-pull/, `${e.id} is filed as a sled`);
+  }
+  assert.equal(exRow('farmer-carry').equipmentId, 'dumbbell');
+  assert.equal(exRow('axle-deadlift').equipmentId, 'barbell');
+  assert.equal(exRow('sandbag-squat').equipmentId, 'sandbag');
+  assert.equal(exRow('atlas-stone-lift').equipmentId, 'strongman_implement');
+  assert.equal(exRow('band-shoulder-dislocate').equipmentId, 'resistance_band');
+});
+
+test('F11 — only sled exercises are told to load a sled', () => {
+  for (const r of records) {
+    const e = exRow(r.exerciseId);
+    if (/sled|prowler|rope-pull/.test(e.id)) continue;
+    assert.doesNotMatch(visibleText(r.exerciseId), /\bsled\b/i, `${e.id} mentions a sled`);
+  }
+});
+
+test('F11 — no leg curl is filed as an arm movement', () => {
+  for (const e of sources.exercises) {
+    if (e.movementPattern !== 'Elbow Flexion') continue;
+    assert.ok(!primaries(e.id).includes('hamstrings'), `${e.id} is a hamstring movement under Elbow Flexion`);
+  }
+  assert.equal(exRow('nordic-hamstring-curl').movementPattern, 'Hinge / Hip Dominant');
+});
+
+test('F11 — a Nordic curl is coached as a Nordic curl, not a machine', () => {
+  const t = howTo('nordic-hamstring-curl');
+  assert.doesNotMatch(t, /\bpad or ankle strap\b|\bstrap\b/i);
+  assert.match(t, /ankles/i);
+  assert.match(t, /lower your body/i);
+  assert.doesNotMatch(howTo('sliding-hamstring-curl'), /\bpad\b/i);
+  assert.match(howTo('lying-leg-curl-machine'), /pad/i, 'the machine still gets its pad');
+  assert.equal(rec('nordic-hamstring-curl').whyItMatters.includes('isolation'), true, 'a leg curl is an isolation movement');
+});
+
+test('F11 — a kettlebell swing is a swing, not a deadlift or a rack hold', () => {
+  for (const id of ['kettlebell-swing', 'single-arm-kettlebell-swing', 'double-kettlebell-swing', 'dumbbell-swing']) {
+    const t = visibleText(id);
+    assert.doesNotMatch(t, /solid rack|brushing your legs|contact with your legs|leaves the floor/i, id);
+    assert.match(t, /hike/i, id);
+  }
+  for (const r of records) {
+    if (exRow(r.exerciseId).equipmentId !== 'kettlebell') continue;
+    assert.doesNotMatch(visibleText(r.exerciseId), /solid rack or hold position/i, r.exerciseId);
+  }
+});
+
+test('F11 — Copenhagen plank targets the adductors and is coached as a hold, not a crunch', () => {
+  assert.ok(primaries('copenhagen-plank').includes('adductors'));
+  assert.ok(!primaries('copenhagen-plank').includes('rectus_abdominis'));
+  const t = visibleText('copenhagen-plank');
+  assert.doesNotMatch(t, /curl your ribs|pulling with your neck|neck or head/i);
+  assert.match(t, /bench/i);
+});
+
+test('F11 — crunch cues stay on crunches', () => {
+  for (const r of records) {
+    if (/crunch|sit-up|curl-up/.test(r.exerciseId)) continue;
+    assert.doesNotMatch(visibleText(r.exerciseId), /curl your ribs toward your hips|pulling with your neck|pulling on the neck/i, r.exerciseId);
+  }
+});
+
+test('F11 — a carry is never coached as a joint circle (the "-car" substring bug)', () => {
+  for (const r of records) {
+    if (exRow(r.exerciseId).movementPattern !== 'Carry') continue;
+    assert.doesNotMatch(visibleText(r.exerciseId), /largest circle|Set the joint/i, r.exerciseId);
+  }
+  assert.match(howTo('hip-car'), /largest circle/i, 'a real CAR still gets its cue');
+});
+
+test('F11 — variant cues match whole words, and only on the patterns they describe', () => {
+  assert.doesNotMatch(visibleText('wall-sit'), /hang from the bar/i);
+  assert.doesNotMatch(visibleText('medicine-ball-sit-up-throw'), /hang from the bar/i);
+  for (const id of ['barbell-overhead-carry', 'barbell-overhead-squat', 'cable-overhead-triceps-extension']) {
+    assert.doesNotMatch(visibleText(id), /before you press overhead/i, id);
+  }
+  assert.match(visibleText('barbell-overhead-press'), /press/i);
+  assert.doesNotMatch(visibleText('box-jump'), /touch the box under control/i);
+});
+
+test('F11 — a cable does not "yank your arm back" on a leg exercise', () => {
+  for (const id of ['cable-hip-abduction', 'cable-squat', 'cable-glute-kickback', 'cable-calf-raise']) {
+    assert.doesNotMatch(visibleText(id), /yank your arm/i, id);
+  }
+  assert.match(visibleText('cable-biceps-curl'), /yank your arm/i, 'arm work keeps the arm wording');
+});
+
+test('F11 — hip isolation names the muscle actually working', () => {
+  assert.doesNotMatch(visibleText('multi-hip-flexion-machine'), /working glute/i);
+  assert.doesNotMatch(visibleText('hip-adductor-machine'), /working glute/i);
+  assert.match(visibleText('hip-adductor-machine'), /inner thigh/i);
+  assert.doesNotMatch(visibleText('hip-adductor-machine'), /\bband\b/i);
+});
+
+test('F11 — flies, rear-delt flies, upright rows and pullovers get their own movement', () => {
+  assert.doesNotMatch(howTo('dumbbell-chest-fly'), /full lockout|toward the middle of your chest/i);
+  assert.match(howTo('dumbbell-chest-fly'), /arc/i);
+  assert.equal(exRow('dumbbell-rear-delt-fly').movementPattern, 'Shoulder Isolation');
+  assert.doesNotMatch(howTo('dumbbell-rear-delt-fly'), /full lockout|toward the middle of your chest/i);
+  assert.equal(exRow('barbell-upright-row').movementPattern, 'Shoulder Isolation');
+  assert.match(visibleText('barbell-upright-row'), /shoulder height/i);
+  assert.doesNotMatch(howTo('dumbbell-pullover'), /chest reaches your hands/i);
+  assert.doesNotMatch(howTo('straight-arm-cable-pulldown'), /chest reaches your hands/i);
+});
+
+test('F11 — a tibialis raise lifts the toes; a leg press is not a squat', () => {
+  assert.doesNotMatch(howTo('tibialis-raise'), /balls of your feet/i);
+  assert.match(howTo('tibialis-raise'), /toes up/i);
+  assert.doesNotMatch(howTo('machine-leg-press'), /stand back up|thighs reach at least parallel/i);
+  assert.match(visibleText('machine-leg-press'), /lockout/i, 'the knee-lockout warning is there');
+});
+
+test('F11 — jumps that never touch a box are not told to set one up', () => {
+  for (const id of ['broad-jump', 'tuck-jump', 'skater-jump', 'pogo-jump']) {
+    assert.equal(exRow(id).equipmentId, 'bodyweight', id);
+    assert.doesNotMatch(visibleText(id), /box height/i, id);
+  }
+  assert.equal(exRow('box-jump').equipmentId, 'plyo_box');
+});
+
+test('F11 — every equipment id in the catalogue exists in equipment.json', () => {
+  const ids = new Set(sources.equipment.map((e) => e.id));
+  for (const e of sources.exercises) assert.ok(ids.has(e.equipmentId), `${e.id} → ${e.equipmentId}`);
+});

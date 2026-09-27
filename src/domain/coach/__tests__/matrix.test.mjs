@@ -35,6 +35,7 @@ import { AUTHORED_GOALS, defaultWeeksFor, stylesForDays } from '../rulebook/skel
 
 import { GOAL_CATEGORY } from '../rulebook/volume.ts';
 import { PATTERN_PREFERENCES } from '../rulebook/preferences.ts';
+import { LIMITATION_KEEP_KEYS } from '../rulebook/limitations.ts';
 import { buildDayWorkout, BODY_PARTS, SPLITS } from '../day.ts';
 
 /*
@@ -490,9 +491,12 @@ test('a bodyweight athlete gets bodyweight movements, not a barbell program with
 test('a limitation removes its movements from the finished program, not just from the candidate list', () => {
   const res = build(constraintsFor('muscle', 'intermediate', 4, 'full_gym', 'shoulders'));
   assert.ok(res.ok);
+  // Rear-delt flies are the PO's deliberate carve-out (LIMITATION_KEEP_KEYS.shoulders); since QA F11 they
+  // are filed under Shoulder Isolation, so they are the one kind of that pattern allowed to survive.
+  const kept = new Set(LIMITATION_KEEP_KEYS.shoulders);
   const patterns = res.assembly.structure.weekPlans
     .flatMap((w) => w.days)
-    .flatMap((d) => d.main.map((e) => (e.catalogKey ? patternOf(e.catalogKey) : null)));
+    .flatMap((d) => d.main.map((e) => (e.catalogKey && !kept.has(e.catalogKey) ? patternOf(e.catalogKey) : null)));
   assert.ok(!patterns.includes('Vertical Push'), 'overhead pressing must not survive anywhere in the block');
   assert.ok(!patterns.includes('Shoulder Isolation'));
 });
@@ -641,22 +645,27 @@ test('restructuring a conditioning block does not delete the conditioning', () =
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * The catalogue files twelve leg curls under `Elbow Flexion` — `nordic-hamstring-curl`,
+ * The catalogue used to file twelve leg curls under `Elbow Flexion` — `nordic-hamstring-curl`,
  * `lying-leg-curl-machine`, `band-leg-curl` and the rest — almost certainly because the word "curl" drove
- * the tagging. Every one lists `hamstrings` as its primary mover. That is how a hamstring curl became
- * somebody's biceps work.
+ * the tagging. That is how a hamstring curl became somebody's biceps work. QA F11 (2026-09-26) re-filed
+ * them under `Hinge / Hip Dominant`, so the guard is now on the data: no hamstring mover may sit in an
+ * arm pattern, and no arm slot in a built program may hold one.
  */
 test('a leg curl is never prescribed as biceps work', () => {
-  const legCurls = POOL.filter(
+  const misfiled = POOL.filter(
     (e) => e.pattern === 'Elbow Flexion' && e.primaryMuscleIds.includes('hamstrings'),
   ).map((e) => e.key);
-  assert.ok(legCurls.length > 0, 'the misfiling still exists in the catalogue — this test is still needed');
+  assert.deepEqual(misfiled, [], 'a hamstring movement is filed under Elbow Flexion again');
 
   const res = build({ ...constraintsFor('muscle', 'intermediate', 4, 'full_gym', 'none') });
-  const used = new Set(
-    res.assembly.structure.weekPlans.flatMap((w) => w.days).flatMap((d) => d.main.map((e) => e.catalogKey)),
-  );
-  for (const k of legCurls) assert.ok(!used.has(k), `${k} was prescribed as an arm movement`);
+  const byKey = new Map(POOL.map((e) => [e.key, e]));
+  for (const d of res.assembly.structure.weekPlans.flatMap((w) => w.days)) {
+    for (const e of d.main) {
+      const item = e.catalogKey ? byKey.get(e.catalogKey) : null;
+      if (item?.pattern !== 'Elbow Flexion') continue;
+      assert.ok(!item.primaryMuscleIds.includes('hamstrings'), `${e.catalogKey} was prescribed as an arm movement`);
+    }
+  }
 });
 
 test('a stretch is never prescribed for sets and reps', () => {

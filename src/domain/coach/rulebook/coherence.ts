@@ -10,6 +10,9 @@
  *
  * So the pattern said arms and the muscle said legs, and the fill step believed the pattern.
  *
+ * (QA F11, 2026-09-26: the catalogue now files those twelve under `Hinge / Hip Dominant`. This rule stays —
+ * it is what catches the NEXT misfiled row, which is why it was written as a rule.)
+ *
  * ══ A RULE, NOT A BLOCKLIST ══
  *
  * The first instinct was to name those twelve keys and skip them. That fixes today and rots immediately:

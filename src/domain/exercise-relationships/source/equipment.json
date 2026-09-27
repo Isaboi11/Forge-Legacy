@@ -130,6 +130,25 @@
     ]
   },
   {
+    "id": "strongman_implement",
+    "name": "Strongman Implement",
+    "category": "Conditioning",
+    "portable": false,
+    "environments": [
+      "Commercial Gym"
+    ]
+  },
+  {
+    "id": "sandbag",
+    "name": "Sandbag",
+    "category": "Accessory",
+    "portable": true,
+    "environments": [
+      "Commercial Gym",
+      "Home Gym"
+    ]
+  },
+  {
     "id": "battle_rope",
     "name": "Battle Rope",
     "category": "Conditioning",
