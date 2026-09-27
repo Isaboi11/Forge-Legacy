@@ -907,6 +907,10 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### Home hides the Nutrition card until macro goals are set (2026-09-26, `979582ba` · ✅ WEB `index-eea4e5a2efd45c5f76635e640e9a315d.js` (deployment + alias MATCH) · ✅ OTA build 9 iOS `01a0e10c-6d6b-782e-a4f5-fe9c4d4998d5` from `ota/build9-js` `6ae945c9`, fingerprint MATCHED)
+
+PO: no macro goals → no Nutrition on Home. `HomeNutritionCard` now returns null without `data.targets`, so `homeNutritionView`'s "Set a target" branch no longer reaches Home. Same day: Rachelle Altamirano added as a nutrition tester (nutrition_preview + PREMIUM/coach_ai grant, SQL handed to PO).
+
 ### Label scan reads "¼ cup"; Create Food says what it still needs (2026-09-26, `20eae5c7` · ✅ WEB `index-43e0c612a56bbeff025b0d5752e99aaa.js` (alias + deployment MATCH, string found live) · ✅ OTA build 9 iOS `01a0e0f9-2d2c-70b7-afff-49566771b3be` from `ota/build9-js` `5d67d953`, fingerprint MATCHED, manifest serves it)
 
 PO scanned maple syrup: serving size not found, Create Food greyed out with placeholder "80" and no reason. readServing now reads fraction glyphs + unbracketed weights + "Serv. Size"; validateFood returns "Still needed: …"; placeholder "Amount". Unverified against the PO's actual photo — if a rescan still misses, get the photo.
