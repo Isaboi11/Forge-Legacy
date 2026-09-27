@@ -210,3 +210,9 @@ test('a form with nothing filled in yields no micros at all, not an empty object
 test('only the nutrients the design actually asks for are read', () => {
   assert.equal(extrasPerHundred({ plutonium: '9' }, 80), null);
 });
+
+test('⚠ a form that cannot save says what it still needs (a silent grey button reads as frozen)', () => {
+  assert.equal(validateFood({ ...base, amount: '' }).reason, 'Still needed: the serving size.');
+  assert.equal(validateFood({ ...base, name: '', amount: '' }).reason, 'Still needed: a name, the serving size.');
+  assert.equal(validateFood({ ...base, cal: '', protein: '', carb: '', fat: '' }).reason, 'Still needed: calories.');
+});

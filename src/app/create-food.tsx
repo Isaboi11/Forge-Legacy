@@ -361,7 +361,7 @@ export default function CreateFoodScreen() {
           <View style={styles.servingAmount}>
             <InputField
               accessibilityLabel="Serving amount"
-              placeholder="80"
+              placeholder="Amount"
               keyboardType="numbers-and-punctuation"
               value={f.amount}
               onChange={setAmount}

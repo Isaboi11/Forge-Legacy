@@ -216,13 +216,30 @@ const unitOf = (u: string): string => (u === 'µg' || u === 'ug' ? 'mcg' : u ===
 
 const PIECE_WORDS = /^(pieces?|bars?|cookies?|slices?|eggs?|links?|patt(?:y|ies)|muffins?|pouch(?:es)?|packets?|containers?|bottles?|cans?|crackers?|pretzels?|chips?|nuggets?|sticks?|scoops?)$/;
 
-/** "2/3 cup (55g)" → { amount '2/3', cup, 82.5 }. Null when nothing weighable is there. */
+/** Labels print "¼ cup" as ONE glyph; the reader only understands digits. "1¼" → "1 1/4", "⅔" → "2/3". */
+const GLYPH_FRACTIONS: Record<string, string> = { '¼': '1/4', '½': '1/2', '¾': '3/4', '⅓': '1/3', '⅔': '2/3', '⅛': '1/8' };
+
+function plainFractions(s: string): string {
+  return s
+    .replace(/⁄/g, '/') // the "fraction slash" some fonts set 1⁄4 with
+    .replace(/(\d)?\s*([¼½¾⅓⅔⅛])/g, (_, whole: string | undefined, glyph: string) =>
+      (whole ? `${whole} ` : '') + GLYPH_FRACTIONS[glyph],
+    );
+}
+
+/**
+ * "2/3 cup (55g)" → { amount '2/3', cup, 82.5 }. Null when nothing weighable is there.
+ *
+ * ⚠ The printed weight is read with OR without its brackets — "1/4 cup (60mL)" and "1/4 cup 60mL" are
+ * the same label, and a missed serving leaves Create Food unable to save (PO, maple syrup, 09-26).
+ */
 export function readServing(raw: string, confident: boolean): ReadServing | null {
-  const t = raw.toLowerCase().replace(/about|approx\.?|serving size/g, ' ').trim();
-  const grams = /\(\s*(\d+(?:\.\d+)?)\s*g\s*\)/.exec(t)?.[1];
-  const ml = /\(\s*(\d+(?:\.\d+)?)\s*ml\s*\)/.exec(t)?.[1];
+  const t = plainFractions(raw.toLowerCase()).replace(/about|approx\.?|serving size/g, ' ').trim();
   const lead = /^(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)\s*([a-zµ.]+)?/.exec(t);
   if (!lead) return null;
+  const rest = t.slice(lead[0].length);
+  const grams = /\(\s*(\d+(?:\.\d+)?)\s*g\s*\)/.exec(t)?.[1] ?? /^\s*(\d+(?:\.\d+)?)\s*g\b/.exec(rest)?.[1];
+  const ml = /\(\s*(\d+(?:\.\d+)?)\s*ml\s*\)/.exec(t)?.[1] ?? /^\s*(\d+(?:\.\d+)?)\s*ml\b/.exec(rest)?.[1];
   const amount = lead[1].replace(/\s+/g, ' ');
   const word = (lead[2] ?? '').replace(/\.$/, '');
   const count = fractionValue(amount);
@@ -264,8 +281,8 @@ export function readLabel(lines: readonly LabelLine[]): LabelRead {
     const t = row.text.toLowerCase();
     const confident = row.confidence >= SURE_AT;
 
-    if (!serving && /serving\s*size/.test(t)) {
-      const after = t.slice(t.search(/serving\s*size/)).replace(/serving\s*size/, '').trim();
+    if (!serving && /serv(?:ing|\.)?\s*size/.test(t)) {
+      const after = t.slice(t.search(/serv(?:ing|\.)?\s*size/)).replace(/serv(?:ing|\.)?\s*size\s*:?/, '').trim();
       const next = rows[i + 1];
       serving = readServing(after, confident) ?? (next ? readServing(next.text, confident && next.confidence >= SURE_AT) : null);
     }

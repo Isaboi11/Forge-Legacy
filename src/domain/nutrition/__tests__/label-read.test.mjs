@@ -213,3 +213,22 @@ test('Create Food reads the fraction a scan fills in', () => {
   assert.equal(labelServing('2/3', cup, 55).label, '2/3 cup');
   assert.equal(labelServing('2', cup, 480).label, '2 cups');
 });
+
+test('servings printed with a fraction GLYPH or without brackets still read (PO, maple syrup, 09-26)', () => {
+  assert.deepEqual(readServing('¼ cup (60mL)', true), { amount: '60', unitKey: 'ml', unitWeight: '', sure: true });
+  assert.deepEqual(readServing('1/4 cup 60mL', true), { amount: '60', unitKey: 'ml', unitWeight: '', sure: true });
+  assert.deepEqual(readServing('1⁄4 cup (60 mL)', true), { amount: '60', unitKey: 'ml', unitWeight: '', sure: true });
+  assert.deepEqual(readServing('1½ cups', true), { amount: '1 1/2', unitKey: 'cup', unitWeight: '', sure: true });
+  assert.deepEqual(readServing('⅔ cup 55g', true), { amount: '2/3', unitKey: 'cup', unitWeight: '82.5', sure: true });
+  // a trailing "g" that is part of a word is not a weight
+  assert.deepEqual(readServing('1 cup 2 grapes', true), { amount: '1', unitKey: 'cup', unitWeight: '', sure: true });
+});
+
+test('a "Serving Size" row read with the glyph fills the serving', () => {
+  const read = readLabel([
+    { text: 'Nutrition Facts', confidence: 0.99, x: 0.1, y: 0.05, w: 0.6, h: 0.05 },
+    { text: 'Serving Size ¼ cup (60mL)', confidence: 0.95, x: 0.1, y: 0.15, w: 0.7, h: 0.04 },
+    { text: 'Calories 200', confidence: 0.95, x: 0.1, y: 0.3, w: 0.6, h: 0.05 },
+  ]);
+  assert.deepEqual(read.serving, { amount: '60', unitKey: 'ml', unitWeight: '', sure: true });
+});

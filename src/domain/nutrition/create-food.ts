@@ -191,8 +191,16 @@ export function validateFood(fields: CreateFoodFields): Validity {
   const grams = servingGrams(fields.amount, unit, fields.unitWeight);
   const { calories } = checkCalories(fields);
 
-  if (!fields.name.trim()) return { ok: false, reason: null };
-  if (!(toNumber(fields.amount) > 0)) return { ok: false, reason: null };
+  /*
+   * ⚠ SAY WHAT IS MISSING. A greyed-out Create button with no reason reads as a frozen screen: a scan
+   * that missed the serving size left the PO stuck with "80" in the box — a placeholder, not a value.
+   */
+  const needed = [
+    fields.name.trim() ? null : 'a name',
+    toNumber(fields.amount) > 0 ? null : 'the serving size',
+    calories > 0 ? null : 'calories',
+  ].filter((x): x is string => x != null);
+  if (needed.length) return { ok: false, reason: `Still needed: ${needed.join(', ')}.` };
   if (grams == null) {
     return {
       ok: false,
