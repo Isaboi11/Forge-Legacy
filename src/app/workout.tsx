@@ -559,6 +559,9 @@ export default function WorkoutScreen() {
   const keyboardInset = useKeyboardInset();
   const [wheelMode, setWheelMode] = useState(false); // typing is the default; the saved pref loads on mount
   const [endConfirmOpen, setEndConfirmOpen] = useState(false);
+  /* The resume prompt's "Discard & start the new one" — asked first, because it deletes logged sets
+     (QA F7). Lives up here with the other hooks; the resume branch returns early. */
+  const [resumeDiscardOpen, setResumeDiscardOpen] = useState(false);
   /**
    * Which exercise the athlete has asked to take OUT, while the confirmation is up. Null = nobody.
    *
@@ -2437,7 +2440,42 @@ export default function WorkoutScreen() {
             setPhase('active');
           }}
           dismissLabel={pendingLaunch ? 'Discard & start the new one' : 'End workout'}
-          onDismiss={async () => {
+          onDismiss={() => {
+            /*
+             * ══ QA F7 — THIS USED TO DELETE THE WORKOUT ON ONE TAP ══
+             *
+             * "End workout" here called `clearSession()` straight away, while the SAME words in the ⋮ menu
+             * mean "Finish and save your session". This prompt only appears when `hasLoggedWork` is true,
+             * so the tap threw away real sets with no confirm and no save.
+             *
+             * Now the words mean one thing everywhere: resume the session and raise the ⋮ menu's own
+             * "End this workout?" sheet, which saves through `finishToSeal`. "Keep training" on that
+             * sheet simply leaves them in the workout they already had. No bout can be running — the
+             * screen just mounted, so `liveBoutIdx` is null.
+             *
+             * The pending-launch case really does discard, so it asks first with the set count.
+             */
+            if (pendingLaunch) {
+              setResumeDiscardOpen(true);
+              return;
+            }
+            setSession(resumable);
+            setPhase('active');
+            setEndConfirmOpen(true);
+          }}
+        />
+        <ConfirmSheet
+          open={resumeDiscardOpen}
+          onClose={() => setResumeDiscardOpen(false)}
+          headline="Discard this workout?"
+          body={(() => {
+            const n = doneSetCount(resumable);
+            return `You’ve logged ${n} ${n === 1 ? 'set' : 'sets'} in ${resumable.workoutName}. ${n === 1 ? 'It' : 'They'} will be deleted and can’t be recovered.`;
+          })()}
+          confirmLabel="Discard & start new"
+          cancelLabel="Keep it"
+          onConfirm={async () => {
+            setResumeDiscardOpen(false);
             await clearSession();
             setResumable(null);
             // Re-enter the mount flow with no saved work in the way, so the parked launch is
