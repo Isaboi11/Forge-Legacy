@@ -5,6 +5,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { NotificationBell } from '@/components/forge/compositions/NotificationBell';
+import { ThemeSwitch } from '@/components/forge/compositions/ThemeSwitch';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -1019,7 +1020,12 @@ export default function HomeScreen() {
 
       <AppBar
         title="Forge Legacy"
-        actions={<NotificationBell />}
+        actions={
+          <>
+            <ThemeSwitch />
+            <NotificationBell />
+          </>
+        }
         avatar={<Avatar name={liveProfile?.name ?? ''} src={liveProfile?.avatarUrl ?? undefined} size="appBar" />}
         onAvatar={() => router.push('/account-settings')}
       />
