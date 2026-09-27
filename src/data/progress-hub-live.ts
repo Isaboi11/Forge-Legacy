@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { countActiveWeeks, mondayWeekKey } from '@/domain/rank/rank';
 import { buildLiftSeries, prDayKey, type LoggedSet, type MetricSeries } from '@/domain/progress/lift-series';
 import { fetchStoredRank } from '@/data/rank-live';
+import { annotateRecords, type RecordRow } from '@/domain/workout/records-core';
 import { fetchMyPrograms, fetchProgramSessions } from '@/data/programs-live';
 import { dayLabel, nextOpenSlot } from '@/domain/program/progress-core';
 import type { RankFamily } from '@/domain/rank-artwork/resolver';
@@ -41,7 +42,7 @@ export interface ProgressHubData {
   chapter: string | null;
   forgingSince: string; // year, e.g. "2024"
   lifetime: number;
-  pinned: string | null; // "Deadlift 495 lb · Personal Record" or null
+  pinned: string | null; // "Deadlift 495 lb × 3 · Personal Record" or null
   metrics: MetricSeries[]; // all the athlete's tracked lifts, dated — sorted most-recent first
   consistency: ConsistencyStats;
   next: NextProgram | null;
@@ -52,7 +53,7 @@ interface WorkoutRow {
   started_at: string;
   duration_sec: number | null;
 }
-interface PRRow {
+interface PRRow extends RecordRow {
   exercise: string;
   achieved_on: string | null;
   created_at: string;
@@ -145,7 +146,7 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
   const [rank, workoutsRes, prRes, chapterRes, myPrograms, loggedSets] = await Promise.all([
     fetchStoredRank(),
     supabase.from('workouts').select('saved_at, started_at, duration_sec').eq('athlete_id', uid).eq('state', 'saved'),
-    supabase.from('personal_records').select('exercise, achieved_on, created_at, load_value, load_reps').eq('athlete_id', uid).eq('measure_kind', 'load'),
+    supabase.from('personal_records').select('exercise, catalog_key, achieved_on, created_at, load_value, load_reps').eq('athlete_id', uid).eq('measure_kind', 'load'),
     supabase.from('chapters').select('name, is_active').eq('athlete_id', uid).eq('is_active', true).maybeSingle(),
     fetchMyPrograms(),
     fetchLoggedSets(uid),
@@ -162,25 +163,28 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
   const earliestYear = dates.length ? dates.reduce((a, b) => (a < b ? a : b)).slice(0, 4) : String(now.getUTCFullYear());
 
   // ── metrics: one point per day trained, per lift, from the sets themselves ──
-  const prs = (prRes.data ?? []) as PRRow[];
-  // Which days were records, so the chart can mark them. `personal_records` stays the authority on
-  // what a record IS; the series only asks it which days had one.
+  /* `annotateRecords` (records-core, QA F9) is the one definition: 1–5 reps, and a first-ever mark is a
+     baseline, not a record — so it rings no day on the chart. */
+  const records = annotateRecords((prRes.data ?? []) as PRRow[]);
+  // Which days were records, so the chart can mark them.
   const prDays = new Set(
-    prs.map((p) => prDayKey(p.exercise, (p.achieved_on ?? p.created_at ?? '').slice(0, 10))),
+    records.filter((r) => r.isRecord).map((r) => prDayKey(r.row.exercise, (r.row.achieved_on ?? r.row.created_at ?? '').slice(0, 10))),
   );
   const metrics: MetricSeries[] = buildLiftSeries(loggedSets, prDays);
 
   // ── pinned: the heaviest weight ACTUALLY MOVED among the big three ──
   // Was the highest Epley e1RM, which put a weight on the athlete's own Progress hero that they had
   // never lifted. `metrics.ts` settled this for records and the same reasoning applies to displaying one.
+  // The same best the Active Workout's Best card shows — heaviest at 1–5 reps (QA F9: this took every
+  // row at any rep count). The reps are stated so it cannot be read against a heavier 8-rep set on the
+  // chart as a contradiction: one is the record, the other the heaviest set.
   let pinned: string | null = null;
   let best = 0;
-  for (const p of prs) {
-    if (p.load_value == null) continue;
-    if (!/dead\s*lift|squat|bench/i.test(p.exercise)) continue;
-    if (p.load_value > best) {
-      best = p.load_value;
-      pinned = `${p.exercise} ${Math.round(p.load_value)} lb · Personal Record`;
+  for (const r of records) {
+    if (!/dead\s*lift|squat|bench/i.test(r.row.exercise)) continue;
+    if (r.weight > best) {
+      best = r.weight;
+      pinned = `${r.row.exercise} ${Math.round(r.weight * 100) / 100} lb × ${r.reps} · Personal Record`;
     }
   }
 

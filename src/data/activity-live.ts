@@ -3,6 +3,8 @@ import type { ActivityRecord, Modality } from '@/domain/activity/history-core';
 import type { ActivityDetail } from '@/domain/activity/detail-core';
 import { playlistFromRow, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
+import { annotateRecords, recordLine, recordsByWorkout } from '@/domain/workout/records-core';
+import { fetchLoadRecordRows, fetchRecordsSetBy } from '@/data/records-live';
 
 /**
  * The athlete's real training log — every saved workout, newest first, shaped for Activity History (W-18).
@@ -24,7 +26,14 @@ type Row = {
   distance: number | null;
   distance_unit: string | null;
   chapter_id: string | null;
-  workout_exercises: { name: string; workout_sets: { id: string }[] | null }[] | null;
+  workout_exercises:
+    | {
+        name: string;
+        catalog_key: string | null;
+        section: string | null;
+        workout_sets: { id: string; weight: number | null; reps: number | null }[] | null;
+      }[]
+    | null;
 };
 
 export async function fetchActivityHistory(limit = 200): Promise<ActivityRecord[]> {
@@ -42,7 +51,8 @@ export async function fetchActivityHistory(limit = 200): Promise<ActivityRecord[
   const { data, error } = await supabase
     .from('workouts')
     .select(
-      'id, workout_name, activity_type, started_at, duration_sec, distance, distance_unit, chapter_id, workout_exercises(name, workout_sets(id))',
+      // `catalog_key`, `section`, `weight`, `reps` — the evidence a PR chip is attributed by (QA F9).
+      'id, workout_name, activity_type, started_at, duration_sec, distance, distance_unit, chapter_id, workout_exercises(name, catalog_key, section, workout_sets(id, weight, reps))',
     )
     .eq('athlete_id', user.id)
     .eq('state', 'saved')
@@ -73,17 +83,28 @@ export async function fetchActivityHistory(limit = 200): Promise<ActivityRecord[
     for (const c of (chRows ?? []) as { id: string; name: string }[]) chapterName.set(c.id, c.name);
   }
 
-  // PRs are dated, not linked to a workout id. A session counts as a PR when one of ITS exercises set a
-  // record on the day it was trained — matching on date alone would credit every session that day.
-  const { data: prRows } = await supabase
-    .from('personal_records')
-    .select('exercise, achieved_on')
-    .eq('athlete_id', user.id);
-  const prKeys = new Set(((prRows ?? []) as { exercise: string; achieved_on: string }[]).map((p) => `${p.achieved_on}|${p.exercise}`));
+  /*
+   * PR CHIPS BELONG TO THE SESSION THAT LIFTED THE RECORD (QA F9). Records carry a date and a lift but no
+   * workout id, and this used to match on date + name — so every session that day containing the lift
+   * wore the chip, including one that benched 135×8 under a "150 lb" trophy. `recordsByWorkout` gives
+   * each record to the session whose own sets hold that weight, and never to a first-ever mark.
+   */
+  const prWorkouts = recordsByWorkout(
+    annotateRecords(await fetchLoadRecordRows(user.id)),
+    rows.map((w) => ({
+      id: w.id,
+      startedAt: w.started_at,
+      exercises: (w.workout_exercises ?? []).map((e) => ({
+        name: e.name,
+        catalogKey: e.catalog_key,
+        section: e.section,
+        sets: e.workout_sets ?? [],
+      })),
+    })),
+  );
 
   return rows.map((w) => {
     const exercises = w.workout_exercises ?? [];
-    const day = w.started_at.slice(0, 10);
     return {
       id: w.id,
       type: asModality(w.activity_type),
@@ -95,7 +116,7 @@ export async function fetchActivityHistory(limit = 200): Promise<ActivityRecord[
       distance: w.distance,
       distanceUnit: w.distance_unit,
       chapterName: w.chapter_id ? (chapterName.get(w.chapter_id) ?? null) : null,
-      pr: exercises.some((e) => prKeys.has(`${day}|${e.name}`)),
+      pr: prWorkouts.has(w.id),
       partners: partnersById.get(w.id) ?? [],
     };
   });
@@ -172,16 +193,9 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
         .maybeSingle();
       return playlistFromRow(r.data as Parameters<typeof playlistFromRow>[0]);
     })(),
-    (async (): Promise<string[]> => {
-      const r = await supabase
-        .from('personal_records')
-        .select('exercise, load_value, load_unit')
-        .eq('athlete_id', user.id)
-        .eq('achieved_on', w.started_at.slice(0, 10));
-      return ((r.data ?? []) as { exercise: string; load_value: number | null; load_unit: string | null }[]).map((p) =>
-        p.load_value ? `${p.load_value} ${p.load_unit ?? 'lb'} ${p.exercise}` : p.exercise,
-      );
-    })(),
+    // The records THIS session set — attributed by its own sets, not by the day (QA F9). Stored pounds,
+    // converted on screen with `fmt`.
+    fetchRecordsSetBy(user.id, w.id, w.started_at).then((recs) => recs.map(recordLine)),
     countOrdinal(user.id, w.started_at, type === 'strength' ? 'strength' : null),
   ]);
 
@@ -201,10 +215,8 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
         .map((s) => ({ setIndex: s.set_index, weight: s.weight, weightUnit: s.weight_unit, reps: s.reps, durationSec: s.duration_sec, floors: s.floors ?? null })),
     }));
 
-  // Only the PRs whose exercise is actually in this session — a record set elsewhere the same day
-  // belongs to that session, not this one.
-  const names = new Set(exercises.map((e) => e.name));
-  const mine = milestones.filter((m: string) => [...names].some((n) => m.includes(n)));
+  // Already this session's own — `fetchRecordsSetBy` attributes by the sets, so nothing to filter.
+  const mine = milestones;
 
   /*
    * The stored shape and climb, when an outdoor bout carried them (0162). One session holds at most

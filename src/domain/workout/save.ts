@@ -5,6 +5,7 @@ import { detectPRs, doneSetCount, PR_MAX_REPS, sessionVolume, type DetectedPR } 
 import { buildAppendExercises, buildSaveExercises, buildSubstitutions, canonicalizeWeights, sessionDurationSec, sessionWorkoutName } from './save-core';
 import type { UnitSystem } from '@/domain/settings/units';
 import { playlistToRow } from './playlist';
+import { bestMark, type RecordRow } from './records-core';
 import type { ActiveSession } from './types';
 
 /** One lift's verdict, as `record_intensity_signals` wants it. */
@@ -75,7 +76,7 @@ export async function saveWorkout(
    */
   const { data: prRows, error: pe } = await supabase
     .from('personal_records')
-    .select('exercise, catalog_key, load_value, load_reps')
+    .select('exercise, catalog_key, load_value, load_reps, achieved_on')
     .eq('athlete_id', user.id)
     .eq('measure_kind', 'load')
     .lte('load_reps', PR_MAX_REPS);
@@ -93,20 +94,13 @@ export async function saveWorkout(
    * exact name instead. It mirrors `lift_best_lb` in 0078, deliberately — two different answers to
    * "which lift is this" is how the two surfaces would drift apart.
    */
+  /* `bestMark` is THE definition of a lift's best (records-core, QA F9) — the Best card on this screen,
+     Progress and Legacy read the same one, so the bar a record must beat is the number they show. */
   const priorBest: Record<string, number | undefined> = {};
-  const bump = (id: string, v: number) => {
-    const seen = priorBest[id];
-    if (seen == null || v > seen) priorBest[id] = v;
-  };
   for (const ex of session.exercises) {
     const id = ex.catalogKey ?? ex.name;
-    for (const r of prRows ?? []) {
-      if (r.load_value == null) continue;
-      const sameLift = ex.catalogKey
-        ? r.catalog_key === ex.catalogKey || (r.catalog_key == null && r.exercise === ex.name)
-        : r.exercise === ex.name;
-      if (sameLift) bump(id, r.load_value);
-    }
+    const mark = bestMark((prRows ?? []) as unknown as RecordRow[], ex);
+    if (mark && (priorBest[id] == null || mark.weight > (priorBest[id] as number))) priorBest[id] = mark.weight;
   }
 
   const prs = detectPRs(session, priorBest);
@@ -409,26 +403,20 @@ export async function continueWorkout(
   /* The same identity rule every other lift-history read uses: catalogue key when there is one, the
      exact name for rows written before 0078 added the column. Two answers to "which lift is this" is how
      a record gets announced twice. */
-  const names = session.exercises.map((e) => e.name);
+  // Every load row, not `.in('exercise', names)`: a lift filed under another name with the same catalogue
+  // key is the same lift, and `bestMark` (records-core, QA F9) is the one definition of its best.
   const { data: prRows } = await supabase
     .from('personal_records')
-    .select('exercise, catalog_key, load_value')
+    .select('exercise, catalog_key, load_value, load_reps, achieved_on')
     .eq('athlete_id', user.id)
     .eq('measure_kind', 'load')
-    .lte('load_reps', PR_MAX_REPS)
-    .in('exercise', names);
+    .lte('load_reps', PR_MAX_REPS);
 
   const priorBest: Record<string, number | undefined> = {};
   for (const ex of session.exercises) {
     const id = ex.catalogKey ?? ex.name;
-    for (const r of prRows ?? []) {
-      const row = r as { exercise: string; catalog_key: string | null; load_value: number | null };
-      if (row.load_value == null) continue;
-      const sameLift = ex.catalogKey
-        ? row.catalog_key === ex.catalogKey || (row.catalog_key == null && row.exercise === ex.name)
-        : row.exercise === ex.name;
-      if (sameLift && (priorBest[id] == null || row.load_value > priorBest[id]!)) priorBest[id] = row.load_value;
-    }
+    const mark = bestMark((prRows ?? []) as unknown as RecordRow[], ex);
+    if (mark && (priorBest[id] == null || mark.weight > (priorBest[id] as number))) priorBest[id] = mark.weight;
   }
 
   /* Detected over a session whose already-saved sets are marked done — so a record set BEFORE the

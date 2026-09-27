@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { playlistFromRow, playlistToRow, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { personalBests, type ActivityKind, type PersonalBest, type UnitSystem } from '@/domain/run/run-core';
 import { fetchPriorSessions } from '@/data/runs-live';
+import { fetchRecordsSetBy } from '@/data/records-live';
 import { completionHeroKind, completionSetCount, e1rm } from '@/domain/workout/metrics';
 import { fetchProgram, fetchProgramSessions } from '@/data/programs-live';
 import { dayLabel, nextOpenSlot, touchedCount } from '@/domain/program/progress-core';
@@ -28,7 +29,7 @@ function fmtDate(iso: string | null): string | null {
 /**
  * W-17 reads the COMMITTED workout back from the DB (real render on committed data — the workout is
  * durable from W-9 Finish; W-17 is presentation after). Volume + per-exercise top set are computed from
- * the persisted sets; PRs come from today's personal_records for this workout's exercises.
+ * the persisted sets; PRs are the records THIS session's own sets set (`fetchRecordsSetBy`, QA F9).
  */
 /* `clock` and `pace2` used to live here — private copies of run-core's `fmtClock` and `fmtPace`, needed
    only because this layer was formatting the cardio line itself. It no longer formats anything; the
@@ -228,11 +229,11 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
 
   const { data: wk, error: we } = await supabase
     .from('workouts')
-    .select('workout_name, duration_sec, chapter_id, reflection, notes, saved_at, program_id, activity_type, distance')
+    .select('workout_name, duration_sec, chapter_id, reflection, notes, saved_at, started_at, program_id, activity_type, distance')
     .eq('id', workoutId)
     .single();
   if (we) throw we;
-  const workout = wk as WorkoutRow & { saved_at: string | null; program_id: string | null };
+  const workout = wk as WorkoutRow & { saved_at: string | null; started_at: string | null; program_id: string | null };
 
   /**
    * "Up next" comes from the program this workout actually belonged to. It used to be looked up by name
@@ -373,44 +374,18 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
     for (const h of hRows ?? []) honorsEarned.push({ honorType: h.honor_type, displayName: h.display_name });
   }
 
-  // PRs from this workout = today's load PRs for these exercises.
   const names = exercises.map((e) => e.name);
-  const today = new Date().toISOString().slice(0, 10);
-  const { data: prRows } = names.length
-    ? await supabase
-        .from('personal_records')
-        .select('exercise, load_value, load_reps')
-        .eq('athlete_id', user.id)
-        .eq('measure_kind', 'load')
-        .eq('achieved_on', today)
-        .in('exercise', names)
-    : { data: [] };
   /*
-   * A BASELINE IS NOT A RECORD, so it does not get the badge.
+   * THE RECORDS THIS SESSION SET — by its own sets, not by "today's rows for these names" (QA F9).
    *
-   * The first mark on a lift is written — the next session needs something to beat — but an athlete's
-   * first ever bench press is not a personal record, it is the start of the data. This asks whether an
-   * EARLIER mark exists for the same lift; if none does, today's row is that start.
-   *
-   * Derived rather than stored: "is this the earliest row for this exercise" is already answerable from
-   * the rows themselves, and a column would be one more thing to write correctly forever.
+   * That read keyed on the device's UTC date and the display name, so a second session the same day
+   * containing the lift was credited with the first one's record. `fetchRecordsSetBy` gives a record to
+   * the session whose sets hold that weight at 1–5 reps, and never to a first-ever mark on a lift: the
+   * first mark is written (the next session needs something to beat) but it is a baseline, not a record.
    */
   const prByExercise = new Map<string, { weight: number; reps: number }>();
-  if ((prRows ?? []).length) {
-    const todaysNames = [...new Set((prRows ?? []).map((p) => p.exercise))];
-    const { data: earlier } = await supabase
-      .from('personal_records')
-      .select('exercise')
-      .eq('athlete_id', user.id)
-      .eq('measure_kind', 'load')
-      .lt('achieved_on', today)
-      .in('exercise', todaysNames);
-    const hasHistory = new Set((earlier ?? []).map((e) => (e as { exercise: string }).exercise));
-    for (const p of prRows ?? []) {
-      if (p.load_value == null) continue;
-      if (!hasHistory.has(p.exercise)) continue; // first mark on this lift — a baseline, not a record
-      prByExercise.set(p.exercise, { weight: p.load_value, reps: p.load_reps ?? 1 });
-    }
+  for (const r of await fetchRecordsSetBy(user.id, workoutId, workout.started_at ?? workout.saved_at ?? new Date().toISOString())) {
+    prByExercise.set(r.exercise, { weight: r.weight, reps: r.reps });
   }
 
   // volume + per-exercise top set (heaviest by e1RM)

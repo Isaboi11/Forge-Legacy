@@ -302,7 +302,8 @@ function Body({
       {detail.milestones.map((m) => (
         <View key={m} style={styles.milestone}>
           <EngravedIcon name="trophy" size={13} />
-          <Text style={styles.milestoneText}>{m}</Text>
+          {/* Stored pounds ("… · 150 lb × 5"), said in the athlete's own units. */}
+          <Text style={styles.milestoneText}>{fmt(m)}</Text>
         </View>
       ))}
 

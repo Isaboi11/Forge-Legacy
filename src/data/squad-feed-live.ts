@@ -1,4 +1,6 @@
 import { supabase } from '@/lib/supabase';
+import { annotateRecords } from '@/domain/workout/records-core';
+import { fetchLoadRecordRows } from '@/data/records-live';
 import type { PriorShare } from '@/domain/share/fanout';
 import { deriveLead, recapCardioFrom, type RecapCardio, type RecapLead } from '@/domain/share/recap-stats';
 import { extensionFor, MAX_CHECKIN_BYTES, MAX_IMAGE_BYTES, uploadToBucket, type UploadOpts } from '@/lib/storage-upload';
@@ -809,17 +811,14 @@ export async function fetchRecentPRs(limit = 15): Promise<RecentPR[]> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
-  const { data, error } = await supabase
-    .from('personal_records')
-    .select('exercise, load_value, load_reps, achieved_on')
-    .eq('athlete_id', user.id)
-    .eq('measure_kind', 'load')
-    .order('achieved_on', { ascending: false })
-    .limit(limit);
-  if (error) return [];
-  return ((data ?? []) as { exercise: string; load_value: number | null; load_reps: number | null; achieved_on: string }[])
-    .filter((p) => p.load_value != null)
-    .map((p) => ({ exercise: p.exercise, value: `${p.load_value} lb`, achievedOn: p.achieved_on }));
+  /* Every row, then the one definition (records-core, QA F9): a first-ever mark is a baseline, not a PR
+     to post about, and whether a row is a record depends on the rows before it — so no `.limit` here. */
+  const rows = await fetchLoadRecordRows(user.id);
+  return annotateRecords(rows)
+    .filter((r) => r.isRecord && r.row.achieved_on)
+    .reverse()
+    .slice(0, limit)
+    .map((r) => ({ exercise: r.row.exercise, value: `${r.weight} lb`, achievedOn: r.row.achieved_on as string }));
 }
 
 /** "18,140" — thousands separators without Intl (Hermes-safe). */

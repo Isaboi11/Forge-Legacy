@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type { HistorySession } from '@/domain/coach/progression';
 import { PR_MAX_REPS } from '@/domain/workout/metrics';
+import { bestMark, sameLift, type LiftMark, type RecordRow } from '@/domain/workout/records-core';
 import type { TrainingSession } from '@/domain/coach/training-summary';
 
 /**
@@ -44,13 +45,11 @@ export interface LiftRef {
   name: string;
 }
 
-/** The athlete's standing mark on a lift: heaviest load for 1–{@link PR_MAX_REPS} reps. */
-export interface LiftBest {
-  weight: number;
-  reps: number;
-  /** ISO date. Null on rows saved before the column was populated — render the mark without a date. */
-  achievedOn: string | null;
-}
+/**
+ * The athlete's standing mark on a lift: heaviest load for 1–{@link PR_MAX_REPS} reps. The definition
+ * lives in `records-core.ts` (`bestMark`) — the same one save-time PR detection, Progress and Legacy use.
+ */
+export type LiftBest = LiftMark;
 
 export interface LiftHistory {
   /** Past sessions of this lift, newest first, at most two. Empty = never done it. */
@@ -84,10 +83,7 @@ function identityFilter(lifts: readonly LiftRef[], nameColumn: 'name' | 'exercis
 }
 
 /** Does this row describe this lift? Key first, name only where the row predates the key. */
-const matches = (lift: LiftRef, row: { catalog_key: string | null; name: string }): boolean =>
-  lift.catalogKey
-    ? row.catalog_key === lift.catalogKey || (row.catalog_key == null && row.name === lift.name)
-    : row.name === lift.name;
+const matches = sameLift;
 
 /**
  * Everything the logger and the coach need to know about these lifts, in two round trips.
@@ -202,27 +198,11 @@ async function fetchBests(
     .or(filter);
   if (error || !data) return out;
 
-  type Row = {
-    exercise: string;
-    catalog_key: string | null;
-    load_value: number | null;
-    load_reps: number | null;
-    achieved_on: string | null;
-  };
-
-  for (const r of data as Row[]) {
-    const weight = Number(r.load_value);
-    if (!Number.isFinite(weight)) continue;
-    const row = { catalog_key: r.catalog_key, name: r.exercise };
-    for (const lift of lifts) {
-      if (!matches(lift, row)) continue;
-      const id = liftId(lift);
-      const held = out.get(id);
-      // Heaviest wins; a tie goes to the one done for more reps, which is the better lift.
-      if (!held || weight > held.weight || (weight === held.weight && (r.load_reps ?? 1) > held.reps)) {
-        out.set(id, { weight, reps: r.load_reps ?? 1, achievedOn: r.achieved_on });
-      }
-    }
+  for (const lift of lifts) {
+    const id = liftId(lift);
+    if (out.has(id)) continue;
+    const best = bestMark(data as unknown as RecordRow[], lift);
+    if (best) out.set(id, best);
   }
 
   return out;

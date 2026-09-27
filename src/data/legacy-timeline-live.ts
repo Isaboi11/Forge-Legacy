@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { countHonorsByChapter, honorsInChapter } from '@/domain/legacy/chapter-tallies';
+import { annotateRecords } from '@/domain/workout/records-core';
 
 /**
  * Legacy Timeline (L-2) — every mark, in order.
@@ -112,11 +113,14 @@ interface EventRow {
   object_name: string;
   chapter_id: string | null;
   occurred_at: string;
+  source_entity_type: string | null;
 }
 
 interface PrRow {
   id: string;
   exercise: string;
+  catalog_key: string | null;
+  created_at: string | null;
   achieved_on: string | null;
   measure_kind: string | null;
   load_value: number | null;
@@ -160,8 +164,8 @@ export async function fetchLegacyTimeline(): Promise<LegacyTimeline> {
 
   const [chapterRes, eventRes, prRes, honorRes] = await Promise.all([
     supabase.from('chapters').select('id, name, start_date, end_date, sealed_at, is_active, workout_count').eq('athlete_id', user.id).order('start_date', { ascending: false }),
-    supabase.from('timeline_events').select('id, event_type, object_name, chapter_id, occurred_at').eq('athlete_id', user.id).order('occurred_at', { ascending: false }),
-    supabase.from('personal_records').select('id, exercise, achieved_on, measure_kind, load_value, load_unit, load_reps').eq('athlete_id', user.id).order('achieved_on', { ascending: false }),
+    supabase.from('timeline_events').select('id, event_type, object_name, chapter_id, occurred_at, source_entity_type').eq('athlete_id', user.id).order('occurred_at', { ascending: false }),
+    supabase.from('personal_records').select('id, exercise, catalog_key, created_at, achieved_on, measure_kind, load_value, load_unit, load_reps').eq('athlete_id', user.id).order('achieved_on', { ascending: false }),
     // The per-chapter honor tally, derived (0098). `chapters.honor_count` reads 0 for every chapter
     // ever created, so this timeline used to label each chapter "0 honors". In the same batch as the
     // other three, so it adds no round trip.
@@ -206,6 +210,10 @@ export async function fetchLegacyTimeline(): Promise<LegacyTimeline> {
 
   // ── stored events ──
   for (const r of eventRows) {
+    /* A PR is derived from `personal_records` below. `save_workout` ALSO writes an ACCOMPLISHMENT event
+       per record ("Bench — 150 lb PR"), so reading both listed every PR twice (QA F9 / legacy-08) — and
+       the event is written for first-ever marks too, which are baselines, not records. */
+    if (r.source_entity_type === 'personal_record') continue;
     const kind = KIND_OF[r.event_type];
     if (!kind) continue; // an event this build can't word is worse than one it words wrongly
     place(
@@ -234,9 +242,18 @@ export async function fetchLegacyTimeline(): Promise<LegacyTimeline> {
   }
 
   // ── derived: every PR ──
+  /* Load rows go through the one definition (records-core, QA F9): 1–5 reps, and strictly heavier than
+     an earlier mark — the first mark on a lift is a baseline, and a timeline of "records" that includes
+     the first bench anyone ever logged says something that did not happen. Other kinds pass as before. */
+  const realLoadRecords = new Set(
+    annotateRecords(prRows.filter((r) => r.measure_kind === 'load'))
+      .filter((a) => a.isRecord)
+      .map((a) => a.row.id),
+  );
   for (const r of prRows) {
     if (!r.achieved_on) continue;
-    const load = r.load_value != null ? `${Math.round(r.load_value)} ${r.load_unit ?? 'lb'}` : null;
+    if (r.measure_kind === 'load' && !realLoadRecords.has(r.id)) continue;
+    const load = r.load_value != null ? `${Math.round(Number(r.load_value) * 100) / 100} ${r.load_unit ?? 'lb'}` : null;
     place(
       {
         id: r.id,

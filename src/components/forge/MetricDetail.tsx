@@ -16,7 +16,7 @@ import { unitLabel } from '@/domain/settings/units';
 /**
  * P-2 Metric Detail overlay (`Forge Progress Hub.dc.html` §10) — one lift's progression in full: the
  * latest figure and what it has done since you started, the dated chart (tap a point to read it), a
- * Best / Start / Sessions / Change strip, plate-club milestones, and the recent sessions listed.
+ * Heaviest (Best, for a reps metric) / Start / Sessions / Change strip, plate-club milestones, and the recent sessions listed.
  *
  * ══ WHAT THE LINE IS ══
  *
@@ -78,7 +78,7 @@ export function MetricDetail({ metric, onClose }: { metric: MetricSeries; onClos
   const prIdx = pts.map((p, i) => (p.isPR ? i : -1)).filter((i) => i >= 0);
   const recent = [...pts].reverse().slice(0, 5);
   const changeText = changeLabel(metric, units);
-  // Labels the Best / Start / Change strip directly above it — those figures are now converted, so this
+  // Labels the Heaviest / Start / Change strip directly above it — those figures are now converted, so this
   // caption has to move with them or it names the wrong unit for its own numbers.
   const unitWord = metric.unit === 'reps' ? 'reps' : unitLabel(units);
 
@@ -158,7 +158,10 @@ export function MetricDetail({ metric, onClose }: { metric: MetricSeries; onClos
 
         {/* stat strip */}
         <View style={styles.strip}>
-          <Stat label="Best" value={`${max}`} />
+          {/* "Heaviest", not "Best" (QA F9): this is the heaviest set at ANY reps — a 500×8 day. A lift's
+              best/PR is 1–5 reps (records-core) and is shown as such on the Best card and the pinned PR;
+              two different numbers both called "best" read as the app contradicting itself. */}
+          <Stat label={metric.unit === 'weight' ? 'Heaviest' : 'Best'} value={`${max}`} />
           <Stat label="Start" value={`${start}`} />
           <Stat label="Sessions" value={`${metric.sessions}`} />
           <Stat label="Change" value={`${change >= 0 ? '+' : '−'}${Math.abs(change)}`} />

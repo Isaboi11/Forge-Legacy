@@ -23,6 +23,7 @@ import {
   type TimelineKind,
 } from '@/data/legacy-timeline-live';
 import { useQuery } from '@/lib/useQuery';
+import { useUnits } from '@/lib/settings';
 
 /**
  * Legacy Timeline (L-2) — every mark, in order.
@@ -252,6 +253,9 @@ function ChapterHeader({ chapter: c, onPress }: { chapter: TimelineChapter; onPr
 
 function EventRow({ event: e, onPress }: { event: TimelineEvent; onPress?: () => void }) {
   const major = isMajor(e.kind);
+  // A PR's title carries stored pounds ("Bench Press PR · 150 lb") — said in the athlete's own units.
+  const { fmt } = useUnits();
+  const title = fmt(e.title);
   const body = (
     <>
       <View style={[styles.eventMark, major ? styles.eventMarkMajor : styles.eventMarkPlain]}>
@@ -259,7 +263,7 @@ function EventRow({ event: e, onPress }: { event: TimelineEvent; onPress?: () =>
       </View>
       <View style={styles.eventBody}>
         <Text style={styles.eventTitle} numberOfLines={1}>
-          {e.title}
+          {title}
         </Text>
         {e.sub ? (
           <Text style={styles.eventSub} numberOfLines={1}>
@@ -277,7 +281,7 @@ function EventRow({ event: e, onPress }: { event: TimelineEvent; onPress?: () =>
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${e.title}${e.sub ? `, ${e.sub}` : ''}, ${markDate(e.at)}`}
+      accessibilityLabel={`${title}${e.sub ? `, ${e.sub}` : ''}, ${markDate(e.at)}`}
       style={({ pressed }) => [styles.eventRow, pressed ? styles.pressed : null]}
     >
       {body}
