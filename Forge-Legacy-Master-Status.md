@@ -907,6 +907,10 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### Label scan reads "¼ cup"; Create Food says what it still needs (2026-09-26, `20eae5c7` · ✅ WEB `index-43e0c612a56bbeff025b0d5752e99aaa.js` (alias + deployment MATCH, string found live) · ✅ OTA build 9 iOS `01a0e0f9-2d2c-70b7-afff-49566771b3be` from `ota/build9-js` `5d67d953`, fingerprint MATCHED, manifest serves it)
+
+PO scanned maple syrup: serving size not found, Create Food greyed out with placeholder "80" and no reason. readServing now reads fraction glyphs + unbracketed weights + "Serv. Size"; validateFood returns "Still needed: …"; placeholder "Amount". Unverified against the PO's actual photo — if a rescan still misses, get the photo.
+
 ### ⭐ Recipes findable outside Meal Plan (2026-09-26, `51d605ba` · ✅ WEB `index-edf412445236271b365786e70b5f3378.js` (hash MATCH) · ✅ BUILD 9 iOS `01a0e0de-ad97-727c-8e3c-ab7b782fb557` from lane `843c93cf` (fingerprint MATCHED; manifest serves it) · tsc 0 · lint 0)
 
 PO: recipes were reachable only from Meal Plan. **Log Food** gets a My Recipes filter and matching recipes above search results; **My Foods** gets a Recipes tab (row → the recipe, + → log, Create recipe → My Recipes). All three doors (plus Recipe) share one "How much did you eat?" sheet (`EatenSheet`) and one log function (`lib/log-recipe`). New: `mealForHour` (day.ts), `recipeRowMeta`.
