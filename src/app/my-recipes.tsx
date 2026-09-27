@@ -27,27 +27,35 @@ import {
   detectAllergens,
   filterList,
   formFrom,
+  hasOwnFood,
+  ingredientName,
+  ingredientPortion,
   listMeta,
   missingLine,
+  ownFoodFrom,
+  per100,
   pickGrams,
   planHint,
-  portionOf,
   qtyLabel,
   recipeFrom,
   savedToast,
   searchFoods,
+  searchOwnFoods,
   switchUnit,
   toggleAllergen,
   toggleMealType,
   totalsOf,
   withIngredient,
   withoutIngredient,
+  type OwnFood,
   type RecipeForm,
 } from '@/domain/nutrition/user-recipes';
 import { draftFromRead, importToast, ingredientFrom, unmatchedNote, type UnmatchedLine } from '@/domain/nutrition/recipe-import';
 import { recipePhotoError } from '@/domain/nutrition/recipe-photo-read';
-import { fetchMealPlanWeek, fetchUserRecipes, saveUserRecipe } from '@/data/nutrition-live';
+import { fetchMealPlanWeek, fetchMyFoods, fetchUserRecipes, saveUserRecipe } from '@/data/nutrition-live';
 import { takeRecipeDraft } from '@/lib/recipe-draft-stash';
+import { takeRecipeFood } from '@/lib/recipe-food-handoff';
+import { labelScanAvailable } from '@/lib/label-scan';
 import { readRecipePhoto } from '@/data/recipe-photo-live';
 import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
 import { callerModalGone, pickImagesFromLibrary } from '@/lib/useMediaPicker';
@@ -61,8 +69,11 @@ const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
 const ALLERGEN_LABEL = Object.fromEntries(ALLERGENS.map((a) => [a.key, a.label])) as Record<string, string>;
 const FILTERS: { key: PlanSlot | 'all'; label: string }[] = [{ key: 'all', label: 'All' }, ...MEAL_TYPES];
 
-/** `line` — the unmatched photo line this pick resolves; it leaves the list once the ingredient is added. */
-type Pick = { key: IngredientKey; unit: 'g' | 'portion'; qty: number; index: number | null; line?: number };
+/**
+ * The amount sheet's subject — a catalogue food (`key`) or one of the athlete's own (`food`).
+ * `line` — the unmatched photo line this pick resolves; it leaves the list once the ingredient is added.
+ */
+type Pick = { key?: IngredientKey; food?: OwnFood; unit: 'g' | 'portion'; qty: number; index: number | null; line?: number };
 
 const UNMATCHED_WHY: Record<UnmatchedLine['reason'], string> = {
   no_match: 'Not in Forge’s foods. Search for something close, or drop it.',
@@ -88,7 +99,11 @@ const UNMATCHED_WHY: Record<UnmatchedLine['reason'], string> = {
  *    under "Not matched" for the athlete to pick or drop — never guessed (Kitchen-Scope §3.4), and the
  *    totals say they are approximate until then. Library only: see `pickImageFromLibrary` on the camera.
  *  · Ingredient search covers Forge's 106-ingredient USDA catalogue (the `.dc` searched its own
- *    50-food list); the athlete's Create Food items are not offered yet, as they carry no allergen tags.
+ *    50-food list) AND the athlete's own foods (PO 2026-09-26). "Scan a label" opens Create Food with its
+ *    scanner (`?for=recipe&scan=1`) — the read is checked on that form, saved to My Foods, and handed back
+ *    here (`recipe-food-handoff`) straight into the amount sheet. "Add your own food" is the same without
+ *    the camera (and the only road on web / builds without it). Own foods carry no allergen tags, so the
+ *    allergen block says Forge can't see into them rather than "None detected".
  */
 export default function MyRecipesScreen() {
   const router = useRouter();
@@ -109,6 +124,7 @@ export default function MyRecipesScreen() {
   const [reloads, setReloads] = useState(0);
   useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
   const listQ = useQuery(fetchUserRecipes, [reloads]);
+  const myFoodsQ = useQuery(fetchMyFoods, [reloads]);
   const weekQ = useQuery(useCallback(() => fetchMealPlanWeek(monday), [monday]), [monday, reloads]);
 
   const list = useMemo(() => listQ.data ?? [], [listQ.data]);
@@ -149,6 +165,28 @@ export default function MyRecipesScreen() {
   const detected = form ? detectAllergens(form.ingredients) : [];
   const missing = form ? missingLine(form) : '';
   const results = foodQ.trim() ? searchFoods(foodQ, 6) : [];
+  const ownResults = foodQ.trim() ? searchOwnFoods(myFoodsQ.data ?? [], foodQ, 3) : [];
+  const ownInRecipe = form ? hasOwnFood(form.ingredients) : false;
+  const canScanLabel = labelScanAvailable();
+
+  /* An ingredient made in Create Food (`?for=recipe`) lands here on the way back — taken once, straight
+     into the amount sheet so the athlete says how much they used. */
+  useFocusEffect(
+    useCallback(() => {
+      const made = takeRecipeFood();
+      if (!made) return;
+      const own = ownFoodFrom(made);
+      if (!own) {
+        showToast(`${made.name} needs a serving weight in grams to go in a recipe`);
+        return;
+      }
+      setFoodQ('');
+      setPick({ food: own, unit: 'portion', qty: 1, index: null });
+    }, [showToast]),
+  );
+
+  const addOwnFood = (scan: boolean) =>
+    router.push({ pathname: '/create-food', params: scan ? { for: 'recipe', scan: '1' } : { for: 'recipe' } });
 
   const clearImport = () => {
     setUnmatched([]);
@@ -240,9 +278,16 @@ export default function MyRecipesScreen() {
   };
 
   /* ── the pick sheet ── */
-  const pickFood = pick ? INGREDIENTS[pick.key] : null;
-  const pickPortion = pickFood ? portionOf(pickFood.us) : null;
+  const pickFood = pick ? per100(pick) : null;
+  const pickName = pick ? ingredientName(pick) : '';
+  const pickPortion = pick ? ingredientPortion(pick) : null;
   const pickG = pick && pickPortion ? pickGrams(pick.unit, pick.qty, pickPortion) : 0;
+  const pickPerLine =
+    pick?.food && pickFood && pickPortion
+      ? `${fmt((pickFood.kcal * pickPortion.g) / 100)} cal per serving · 1 serving = ${pick.food.servingText}${/\bg$/.test(pick.food.servingText) ? '' : ` (${fmt(pickPortion.g)} g)`}`
+      : pickFood && pickPortion
+        ? `${fmt(pickFood.kcal)} cal per 100 g · ${pickPortion.label} = ${fmt(pickPortion.g)} g`
+        : '';
 
   return (
     <View style={styles.screen}>
@@ -432,22 +477,27 @@ export default function MyRecipesScreen() {
             </View>
 
             {form.ingredients.map((x, i) => {
-              const ing = INGREDIENTS[x.key];
-              const p = portionOf(ing.us);
-              const amount = x.unit === 'g' ? `${fmt(x.g)} g` : `${qtyLabel('portion', x.qty, p)} · ${fmt(x.g)} g`;
+              const name = ingredientName(x);
+              const p = ingredientPortion(x);
+              const kcal = ((per100(x)?.kcal ?? 0) * x.g) / 100;
+              const amount = x.unit === 'g' || !p ? `${fmt(x.g)} g` : `${qtyLabel('portion', x.qty, p)} · ${fmt(x.g)} g`;
               return (
-                <View key={`${x.key}-${i}`} style={styles.ingRow}>
-                  <Pressable accessibilityRole="button" style={styles.ingText} onPress={() => setPick({ key: x.key, unit: x.unit, qty: x.qty, index: i })}>
+                <View key={`${x.key ?? x.food?.id}-${i}`} style={styles.ingRow}>
+                  <Pressable
+                    accessibilityRole="button"
+                    style={styles.ingText}
+                    onPress={() => setPick({ key: x.key, food: x.food, unit: x.unit, qty: x.qty, index: i })}
+                  >
                     <Text style={styles.ingName} numberOfLines={1}>
-                      {ing.name}
+                      {name}
                     </Text>
-                    <Text style={styles.ingAmount}>{amount}</Text>
+                    <Text style={styles.ingAmount}>{x.food ? `${amount} · My food` : amount}</Text>
                   </Pressable>
                   <Text style={styles.ingCal}>
-                    {fmt((ing.kcal * x.g) / 100)}
+                    {fmt(kcal)}
                     <Text style={styles.calUnit}> cal</Text>
                   </Text>
-                  <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${ing.name}`} style={styles.xBtn} onPress={() => setForm(withoutIngredient(form, i))}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${name}`} style={styles.xBtn} onPress={() => setForm(withoutIngredient(form, i))}>
                     <XGlyph />
                   </Pressable>
                 </View>
@@ -505,13 +555,29 @@ export default function MyRecipesScreen() {
             <View style={styles.searchWrap}>
               <InputField value={foodQ} onChange={setFoodQ} placeholder="Search foods to add" accessibilityLabel="Search foods" leadingIcon={<SearchGlyph />} />
             </View>
-            {results.length ? (
+            {results.length || ownResults.length ? (
               <View style={styles.results}>
+                {ownResults.map((o, j) => (
+                  <Pressable
+                    key={`own-${o.id}`}
+                    accessibilityRole="button"
+                    style={({ pressed }) => [styles.result, j > 0 && styles.resultDivider, pressed && styles.pressed]}
+                    onPress={() => setPick({ food: o, unit: 'portion', qty: 1, index: null })}
+                  >
+                    <View style={styles.resultText}>
+                      <Text style={styles.resultName} numberOfLines={1}>
+                        {o.name}
+                      </Text>
+                      <Text style={styles.resultSub}>{`My food · ${fmt((o.kcal100 * o.serving.g) / 100)} cal per ${o.servingText}`}</Text>
+                    </View>
+                    <PlusGlyph />
+                  </Pressable>
+                ))}
                 {results.map((h, j) => (
                   <Pressable
                     key={h.key}
                     accessibilityRole="button"
-                    style={({ pressed }) => [styles.result, j > 0 && styles.resultDivider, pressed && styles.pressed]}
+                    style={({ pressed }) => [styles.result, (j > 0 || ownResults.length > 0) && styles.resultDivider, pressed && styles.pressed]}
                     onPress={() => setPick({ key: h.key, unit: 'portion', qty: 1, index: null })}
                   >
                     <View style={styles.resultText}>
@@ -525,8 +591,22 @@ export default function MyRecipesScreen() {
                 ))}
               </View>
             ) : foodQ.trim() ? (
-              <Text style={styles.noResults}>No foods match. Try a simpler word, like “chicken”.</Text>
+              <Text style={styles.noResults}>No foods match. Try a simpler word, or scan its label.</Text>
             ) : null}
+
+            {/* the athlete's own ingredient — a packaged food Forge's catalogue doesn't have */}
+            <View style={styles.ownActions}>
+              {canScanLabel ? (
+                <Pressable accessibilityRole="button" style={({ pressed }) => [styles.ownBtn, pressed && styles.pressed]} onPress={() => addOwnFood(true)}>
+                  <EngravedIcon name="camera" size={18} />
+                  <Text style={styles.ownBtnText}>Scan a label</Text>
+                </Pressable>
+              ) : null}
+              <Pressable accessibilityRole="button" style={({ pressed }) => [styles.ownBtn, pressed && styles.pressed]} onPress={() => addOwnFood(false)}>
+                <EngravedIcon name="plus" size={18} />
+                <Text style={styles.ownBtnText}>{canScanLabel ? 'Type it in' : 'Add your own food'}</Text>
+              </Pressable>
+            </View>
 
             {/* allergens */}
             <View style={styles.h2Row}>
@@ -550,9 +630,12 @@ export default function MyRecipesScreen() {
                     ))}
                   </View>
                 ) : (
-                  <Text style={styles.noneDetected}>None detected</Text>
+                  <Text style={styles.noneDetected}>{ownInRecipe ? 'None found in Forge’s foods' : 'None detected'}</Text>
                 )}
               </View>
+            ) : null}
+            {ownInRecipe ? (
+              <Text style={styles.allergenLead}>Forge can’t see allergens in your own foods. Check their labels, add any with Edit, then confirm.</Text>
             ) : null}
             {editAllergens ? (
               <>
@@ -723,10 +806,11 @@ export default function MyRecipesScreen() {
       </BottomSheet>
 
       {/* pick sheet */}
-      <BottomSheet open={!!pick && !!form} onClose={() => setPick(null)} title={pickFood?.name ?? ''}>
+      <BottomSheet open={!!pick && !!form} onClose={() => setPick(null)} title={pickName}>
         {pick && pickFood && pickPortion && form ? (
           <View style={styles.pickBody}>
-            <Text style={styles.pickPer}>{`${fmt(pickFood.kcal)} cal per 100 g · ${pickPortion.label} = ${fmt(pickPortion.g)} g`}</Text>
+            <Text style={styles.pickPer}>{pickPerLine}</Text>
+            {pick.food ? <Text style={styles.pickAsk}>How much goes into the whole recipe?</Text> : null}
             <View style={styles.pickUnits} accessibilityRole="radiogroup">
               {(['portion', 'g'] as const).map((u) => {
                 const on = pick.unit === u;
@@ -778,7 +862,8 @@ export default function MyRecipesScreen() {
               variant="primary"
               fullWidth
               onPress={() => {
-                setForm(withIngredient(form, { key: pick.key, g: pickG, unit: pick.unit, qty: pick.qty }, pick.index));
+                const amount = { g: pickG, unit: pick.unit, qty: pick.qty };
+                setForm(withIngredient(form, pick.food ? { food: pick.food, ...amount } : { key: pick.key, ...amount }, pick.index));
                 if (pick.line != null) setUnmatched((all) => all.filter((_, j) => j !== pick.line));
                 setPick(null);
                 setFoodQ('');
@@ -1024,6 +1109,21 @@ const styles = StyleSheet.create({
   resultName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   resultSub: { fontSize: 12, color: flColor.gray400 },
   noResults: { paddingTop: 10, paddingHorizontal: 2, fontSize: 13, color: flColor.gray400 },
+  ownActions: { flexDirection: 'row', gap: 8, paddingTop: 10 },
+  ownBtn: {
+    flex: 1,
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal800,
+  },
+  ownBtnText: { fontSize: 13.5, fontWeight: '600', color: flColor.bronzeInk },
 
   allergenLead: { marginTop: 12, marginBottom: 12, paddingHorizontal: 2, fontSize: 13, lineHeight: 20, color: flColor.gray400 },
   allergenSummary: { gap: 12, paddingTop: 14, paddingHorizontal: 2 },
@@ -1096,6 +1196,7 @@ const styles = StyleSheet.create({
 
   pickBody: { paddingBottom: 12 },
   pickPer: { marginTop: -8, fontSize: 13, color: flColor.gray400 },
+  pickAsk: { marginTop: 14, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   pickUnits: { flexDirection: 'row', gap: 6, marginTop: 18 },
   pickQty: {
     marginTop: 12,

@@ -69,7 +69,7 @@ export function dishCards(dishes: readonly KitchenDish[], avoid: readonly string
     const draft = draftFromRead(read);
     const tagged = [...detectAllergens(draft.form.ingredients), ...allergensByWord(d)];
     if (tagged.some((a) => banned.has(a))) continue;
-    if (breaksDiet(d, draft.form.ingredients.map((i) => i.key), diet)) continue;
+    if (breaksDiet(d, draft.form.ingredients.flatMap((i) => (i.key ? [i.key] : [])), diet)) continue;
     const t = totalsOf(draft.form.ingredients);
     const y = Math.max(1, d.servings);
     out.push({

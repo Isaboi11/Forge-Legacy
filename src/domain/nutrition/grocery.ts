@@ -62,16 +62,16 @@ export function buyAmount(buy: BuyUnit, grams: number): string {
 
 /** The week's list: every cook's ingredients × the servings it makes, summed per ingredient. */
 export function groceryList(days: PlanDay[], household: number): GroceryList {
-  const acc = new Map<string, { grams: number; uses: GroceryUse[] }>();
+  const acc = new Map<string, { grams: number; uses: GroceryUse[]; name: string }>();
   const cooks = cooksOf(days, household);
   for (const c of cooks) {
     const view = recipeView(c.recipeId);
     if (!view) continue;
     const use = { day: DAY_NAMES[c.d], slot: SLOT_LABEL[c.slot], recipe: view.name, servings: c.servingsCooked };
-    for (const { key: ingredient, g: perServing } of view.ingredients) {
+    for (const { key: ingredient, g: perServing, name } of view.ingredients) {
       const key = SAME_ITEM[ingredient] ?? ingredient;
       const g = perServing * c.servingsCooked;
-      const a = acc.get(key) ?? { grams: 0, uses: [] };
+      const a = acc.get(key) ?? { grams: 0, uses: [], name };
       a.grams += g;
       a.uses.push({ ...use, grams: Math.round(g) });
       acc.set(key, a);
@@ -82,7 +82,8 @@ export function groceryList(days: PlanDay[], household: number): GroceryList {
     const ing = INGREDIENTS[key as keyof typeof INGREDIENTS];
     return {
       key,
-      name: meta?.name ?? ing?.name ?? key,
+      /* An athlete's own food (`own:<id>`) is in neither table — it brings its own name. */
+      name: meta?.name ?? ing?.name ?? a.name,
       aisle: meta?.aisle ?? 'Pantry',
       amount: meta ? buyAmount(meta.buy, a.grams) : `${Math.round(a.grams)} g`,
       grams: Math.round(a.grams),

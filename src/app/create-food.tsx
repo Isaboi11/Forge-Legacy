@@ -1,5 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
@@ -36,6 +36,7 @@ import {
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { labelScanAvailable, takeLabelScan } from '@/lib/label-scan';
+import { leaveRecipeFood } from '@/lib/recipe-food-handoff';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { forgeOr } from '@/constants/theme-scrim';
@@ -81,12 +82,15 @@ const EMPTY: Fields = { name: '', brand: '', amount: '', unitWeight: '', cal: ''
 export default function CreateFoodScreen() {
   const router = useRouter();
   const { showToast } = useToast();
-  const params = useLocalSearchParams<{ meal?: string; date?: string; food?: string; mode?: string; from?: string; gtin?: string }>();
+  const params = useLocalSearchParams<{ meal?: string; date?: string; food?: string; mode?: string; from?: string; gtin?: string; for?: string; scan?: string }>();
   const { width } = useWindowDimensions();
 
   const iso = typeof params.date === 'string' && params.date ? params.date : localToday();
   const editId = params.mode === 'edit' && typeof params.food === 'string' && params.food ? params.food : null;
   const editing = editId != null;
+  /* Opened from the recipe builder (`?for=recipe`): the food is saved to My Foods and handed back as an
+     ingredient (`recipe-food-handoff`) — no meal, nothing logged. */
+  const forRecipe = params.for === 'recipe' && !editing;
 
   const [meal, setMeal] = useState<MealSlot>(
     (MEAL_SLOTS as readonly string[]).includes(String(params.meal)) ? (params.meal as MealSlot) : 'breakfast',
@@ -100,6 +104,14 @@ export default function CreateFoodScreen() {
   const [scan, setScan] = useState<ScanState | null>(null);
   const [labelOpen, setLabelOpen] = useState(false);
   const canScan = !editing && labelScanAvailable();
+  /* "Scan a label" in the recipe builder (`?scan=1`) means the camera, not the form: open it once, on
+     arrival. Back from it — scanned or "Enter manually" — lands on this form as usual. */
+  const autoScanned = useRef(false);
+  useEffect(() => {
+    if (autoScanned.current || params.scan !== '1' || !canScan) return;
+    autoScanned.current = true;
+    router.push('/scan-label');
+  }, [params.scan, canScan, router]);
   /* Amendment 004 (LOCKED): a food made after a barcode missed can be shared under that barcode. The box
      starts ticked (PO, Q1) and appears ONLY with a barcode (CF-D2) — "overnight oats" stays personal. */
   const gtin = !editing && typeof params.gtin === 'string' ? params.gtin.replace(/\D/g, '') : '';
@@ -248,6 +260,13 @@ export default function CreateFoodScreen() {
       }
       const shareNote = !shared ? '' : shared.shared ? ' · shared with Forge' : ` · not shared: ${SHARE_REFUSAL[shared.reason ?? 'unavailable']}`;
 
+      if (forRecipe) {
+        leaveRecipeFood(food);
+        showToast(`${food.name} saved to My Foods${shareNote}`);
+        router.back();
+        return;
+      }
+
       if (thenLog && !editing) {
         const serving = input.servings[0];
         const macros = portionMacros(food, { serving, quantity: 1 });
@@ -289,7 +308,7 @@ export default function CreateFoodScreen() {
 
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={[styles.title, canScan && !scan && styles.titleWithScan, scan && styles.titleScanned]}>
-          {editing ? 'Edit food' : 'Create food'}
+          {editing ? 'Edit food' : forRecipe ? 'Add an ingredient' : 'Create food'}
         </Text>
 
         {/* A1 / A2 — the shortcut into the form, and the one line of context after a barcode miss */}
@@ -472,21 +491,23 @@ export default function CreateFoodScreen() {
       {/* commit */}
       <View style={styles.footer}>
         {validity.reason ? <Text style={styles.blocker}>{validity.reason}</Text> : null}
-        {!editing ? (
+        {!editing && !forRecipe ? (
           <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
             <Text style={styles.mealLineLabel}>Adding to</Text>
             <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
             <Chevron />
           </Pressable>
         ) : null}
-        <Button variant="primary" fullWidth disabled={!validity.ok || saving} onPress={() => save(!editing)}>
+        <Button variant="primary" fullWidth disabled={!validity.ok || saving} onPress={() => save(!editing && !forRecipe)}>
           {editing
             ? 'Save changes'
-            : calories.calories > 0
-              ? `Create food · ${Math.round(calories.calories).toLocaleString('en-US')} cal`
-              : 'Create food'}
+            : forRecipe
+              ? 'Add to recipe'
+              : calories.calories > 0
+                ? `Create food · ${Math.round(calories.calories).toLocaleString('en-US')} cal`
+                : 'Create food'}
         </Button>
-        {!editing ? (
+        {!editing && !forRecipe ? (
           <Pressable accessibilityRole="button" disabled={!validity.ok || saving} onPress={() => save(false)}>
             <Text style={[styles.saveOnly, (!validity.ok || saving) && styles.saveOnlyOff]}>Create without logging</Text>
           </Pressable>
