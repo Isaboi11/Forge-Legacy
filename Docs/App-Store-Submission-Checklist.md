@@ -6,11 +6,11 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
 
 ✅ done · 🔨 in progress · ⏳ waiting on someone else · ⬜ not started
 
-**Last updated:** 2026-09-25
+**Last updated:** 2026-09-26
 
 ## Where we are
 - **Waiting on others:** Apple (Small Business Program — no word as of 09-25)
-- **PO to-do:** find a lawyer · ~~decide if Nutrition ships~~ (09-25: yes, opens on approval) · write the recipes ·
+- **PO to-do:** ~~find a lawyer~~ (09-26: legal review good) · ~~decide if Nutrition ships~~ (09-25: yes, opens on approval) · write the recipes ·
   ~~RevenueCat tidy-up~~ (done 09-25)
 - **Claude to-do:** build 9 (paywall, mic, form check, barcode) → sandbox purchase test
 
@@ -67,7 +67,8 @@ No lifetime plan. United States only at launch.
 - ⬜ Referral reward: "1 month free" offer for a referrer who is already paying (referrer only)
 - ⬜ Review screenshot on each subscription: one paywall screenshot from build 9 uploaded to each product's
   "Review Information" box (Apple-only, never shown on the store). Premium tab for Premium/Early Bird, AI tab for AI/Tester AI
-- ⬜ Sandbox test on build 9: buy, force-quit, reinstall, restore — then check `store_events` shows `applied` · 09-25: first try showed no plans — every account is Premium while testing, so the test account needs a FREE `athlete_entitlement` row first
+- 🔨 Sandbox test on build 9: buy, force-quit, reinstall, restore — then check `store_events` shows `applied` · 09-25: first try showed no plans — every account is Premium while testing, so the test account needs a FREE `athlete_entitlement` row first ·
+  ✅ **buy works** 09-25 (webhook landed in 5 s; screen stayed Free until a force-quit → fixed `d284de8c`) · ⬜ buy again to confirm the screen updates by itself · ⬜ reinstall + restore
 
 ## 3. Store listing
 - ✅ Description, age rating, reviewer account, support URL
@@ -78,7 +79,7 @@ No lifetime plan. United States only at launch.
 ## 4. Legal
 - 🔨 Mock review done 09-25 (`Docs/Legal/Mock-Legal-Review-2026-09-25.md`): policy + Terms FAIL as is — false 200 m
   route trim, Anthropic gets photos/video frames, missing providers, Terms say "no subscription"; Washington
-  My Health My Data Act needs a consent step. ⬜ Claude applies the text fixes · ⬜ Lawyer reviews Terms + Privacy Policy
+  My Health My Data Act needs a consent step. ✅ text fixes applied (live 09-26) · ✅ PO: legal review of Terms + Privacy Policy is good — 09-26
 - ⬜ Terms + Privacy links on the paywall (Apple 3.1.2) and in the App Store description
 
 ## 5. Nutrition (only if it ships in the first release — PO to decide)
@@ -103,7 +104,7 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
   privacy rewrite (nutrition, AI/Anthropic, all providers, route correction, Holt memory) `94010207`, new
   `/health-data` page, subscription terms (auto-renew, trial, Early Bird, refunds, Apple EULA) `f198ea07`.
   In-app legal summaries updated too: web `index-4e10f078…` + build 9 iOS `01a0df09-5476…` (lane `da09e79c`).
-  🔨 in-app consent for Washington (Nutrition + AI sharing) — built 09-26 `3414c39d` (all 7 AI functions gated client-side; Settings → Health Data & AI to withdraw) · ✅ 0224 applied 09-26 · ✅ LIVE: build 9 iOS `01a0df2f-a17b…` (lane `f2adcd4f`) + web `index-de14dc70…` · ⬜ PO sees both prompts · ⬜ server-side refusal in the AI functions (follow-up) · ⬜ a real lawyer still signs off
+  🔨 in-app consent for Washington (Nutrition + AI sharing) — built 09-26 `3414c39d` (all 7 AI functions gated client-side; Settings → Health Data & AI to withdraw) · ✅ 0224 applied 09-26 · ✅ LIVE: build 9 iOS `01a0df2f-a17b…` (lane `f2adcd4f`) + web `index-de14dc70…` · ⬜ PO sees both prompts · ⬜ server-side refusal in the AI functions (follow-up) · ✅ legal review signed off (PO 09-26)
 - ✅ Search failure message — 09-24: a failed source falls back to saved foods, and with no connection the
   app now says "Couldn't connect to food search" with Try again (Log Food + the meal editor). Not deployed yet
 - ✅ First-time welcome screen for the tab — built 09-24 (`eefe43dd`), on web; not yet seen by the PO
@@ -113,7 +114,7 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
 - ✅ Data export includes nutrition — 09-24: with food data, Export My Data gives one .zip (workouts.csv +
   food log, targets, my foods, my meals, my recipes, meal plans, grocery items you added); without, the same CSV. Not deployed yet
 - ⬜ Holt meal plans — Amendment 002 LOCKED 09-24 (`ce224fac`); not built yet
-- ✅ Barcode camera + label scan built — 09-24/25, ship in build 9 (iPhone only; hidden on build 8 + web) · ⬜ test both on a phone
+- ✅ Barcode camera + label scan built — 09-24/25, ship in build 9 (iPhone only; hidden on build 8 + web) · ✅ PO tested both on a phone — look good 09-26
 - 🔨 Photo food logging (Premium AI) — built 09-26 (`728de7fd`): the photo names the foods, the numbers come from
   food search; 3 credits, ~1¢/photo, photo not stored · ✅ 0223 applied + `meal-photo-read` deployed 09-26 ·
   ✅ eval on 10 PO photos: AI named every meal; matching fixed (`a64f96a6`, `b607ea08`), 31/35 auto-matched, none wrong ·
@@ -128,6 +129,6 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
 - ⬜ forgelegacy.app: swap "Get TestFlight invite" for the App Store link (site went live 09-25 as the
   Clean v2 design; TestFlight emails land in `testflight_requests`)
 - ⬜ Phase F: default to Free + remove "free while testing" (4 files, see GO-LIVE)
-- ✅ Build 9 built + uploaded to TestFlight — 09-25 (EAS `6c59b9c9`, commit `f7704585`). Watch Swift + label reader compiled first try. ⚠ Apple 401 on the stored key: the PO had to run build + submit interactively; the first EAS submit sat IN_QUEUE 1h+ and was cancelled · ⬜ test on device
+- ✅ Build 9 built + uploaded to TestFlight — 09-25 (EAS `6c59b9c9`, commit `f7704585`). Watch Swift + label reader compiled first try. ⚠ Apple 401 on the stored key: the PO had to run build + submit interactively; the first EAS submit sat IN_QUEUE 1h+ and was cancelled · 🔨 PO testing on device — looking good 09-26
 - ⬜ Add the 10 subscriptions for review together with build 9
 - ⬜ Check Apple's agreement banner · clean tree · all gates green · submit
