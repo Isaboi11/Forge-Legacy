@@ -551,6 +551,8 @@ const styles = StyleSheet.create({
   pasteBox: {
     minHeight: 160,
     maxHeight: 320,
+    // Scrolls inside itself once it hits its cap — clip, or the scrolled-away lines draw outside the box.
+    overflow: 'hidden',
     marginTop: 16,
     padding: 16,
     borderRadius: flRadius.md,

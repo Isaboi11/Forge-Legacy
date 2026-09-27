@@ -5083,7 +5083,10 @@ const styles = StyleSheet.create({
     maxHeight: 108,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: flRadius.pill,
+    /* Half the one-line height, not `pill`: a pill at one line, a rounded box at four. A full pill radius on
+       a tall box curved into the text, and without the clip the scrolled lines drew above it (PO, 09-26). */
+    borderRadius: 22,
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.surfaceRecessed,

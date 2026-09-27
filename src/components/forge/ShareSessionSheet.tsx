@@ -651,7 +651,7 @@ const styles = StyleSheet.create({
   sharedTitle: { fontSize: 20, fontWeight: '700', color: flColor.cream100 },
   sharedLine: { fontSize: 14, fontWeight: '600', color: flColor.bronze300, textAlign: 'center' },
   sharedHint: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600, textAlign: 'center', marginBottom: 8 },
-  bodyInput: { minHeight: 64, maxHeight: 140, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, color: flColor.cream100, fontSize: 14, lineHeight: 20, paddingHorizontal: 12, paddingVertical: 10, textAlignVertical: 'top' },
+  bodyInput: { minHeight: 64, maxHeight: 140, overflow: 'hidden', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, color: flColor.cream100, fontSize: 14, lineHeight: 20, paddingHorizontal: 12, paddingVertical: 10, textAlignVertical: 'top' },
   already: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2, paddingVertical: 9, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   alreadyText: { flex: 1, fontSize: 12.5, fontWeight: '600', lineHeight: 17, color: flColor.bronze300 },
   preview: { alignItems: 'center', marginBottom: 6 },

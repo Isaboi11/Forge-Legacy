@@ -980,6 +980,8 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 44,
     maxHeight: 120,
+    // Scrolls inside itself once it hits its cap — clip, or the scrolled-away lines draw outside the box.
+    overflow: 'hidden',
     backgroundColor: flColor.charcoal800,
     borderWidth: 1,
     borderColor: flColor.charcoal500,

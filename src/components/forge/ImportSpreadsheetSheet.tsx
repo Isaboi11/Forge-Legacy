@@ -708,6 +708,8 @@ const styles = StyleSheet.create({
   impHintStrong: { color: flColor.cream100, fontWeight: '700' },
   impPaste: {
     height: 148,
+    // Scrolls inside itself once it hits its cap — clip, or the scrolled-away lines draw outside the box.
+    overflow: 'hidden',
     borderRadius: flRadius.md,
     borderWidth: 1,
     borderColor: flColor.charcoal600,
