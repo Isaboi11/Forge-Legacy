@@ -1,5 +1,5 @@
 import type { Targets } from './day.ts';
-import type { Allergen, MealPlanPrefs } from './meal-plan-setup.ts';
+import { ROTATE_SIZE, routineOf, type Allergen, type MealPlanPrefs } from './meal-plan-setup.ts';
 import {
   INGREDIENTS,
   RECIPE_SOURCES,
@@ -34,6 +34,16 @@ import {
  *  · Leftovers: a dinner that keeps (`leftoverDays ≥ 1`, reheat ≠ poor) feeds a later lunch — tomorrow
  *    first, later within its keep days (PO: yes, a leftover may go further). At most 4 a week.
  *  · Locked and LOGGED meals survive a rebuild; locking a dinner that feeds a leftover locks that too.
+ *
+ * ══ THE ATHLETE'S ROUTINE ══ (PO 09-27, 0226) — the setup asks, per meal, same / a few / mix (`routineOf`):
+ *  · `same` puts ONE recipe on every day; `rotate` takes turns between up to `ROTATE_SIZE`. A lock or a logged
+ *    meal in that slot IS the routine's recipe, wherever in the week it sits. Neither is a "repeat" — they are
+ *    what was asked for — and neither counts toward the variety rules the `vary` meals keep.
+ *  · Leftovers only land in a `vary` lunch, and only from a dinner that is not `same`: a routine lunch is
+ *    already decided, and a same-every-night dinner feeding lunch would make lunch the same too.
+ *  · `shareIngredients` rewards a recipe for reusing what the week already buys and lifts the 3-a-week protein
+ *    cap (buying chicken once for three dinners is the point); never two of a protein in one day still holds.
+ *  · `ownRecipesOnly` plans from My Recipes alone — Forge's library is left out of the pool.
  *
  * PO answers 2026-09-23: macro targets come from the Targets screen; everyone in the household eats the
  * same portion (so cooked servings = people × portion × meals fed).
@@ -295,7 +305,8 @@ export function fits(r: Recipe, p: MealPlanPrefs): boolean {
 export const fitsSlot = (r: Recipe, slot: PlanSlot, p: MealPlanPrefs): boolean =>
   r.mealTypes.includes(slot) && fits(r, p) && (p.cookMinutes == null || r.minutes <= p.cookMinutes);
 
-const pool = (slot: PlanSlot, p: MealPlanPrefs): Recipe[] => [...RECIPES, ...USER_RECIPES].filter((r) => fitsSlot(r, slot, p));
+const pool = (slot: PlanSlot, p: MealPlanPrefs): Recipe[] =>
+  [...(p.ownRecipesOnly ? [] : RECIPES), ...USER_RECIPES].filter((r) => fitsSlot(r, slot, p));
 
 /* ── the plan's shape ───────────────────────────────────────────────────── */
 
@@ -404,12 +415,18 @@ interface Tally {
 
 const emptyTally = (): Tally => ({ recipe: {}, protein: {}, format: {} });
 
-/** Cooks already in a set of days (leftovers are not new cooks and do not count toward variety). */
-function tallyOf(days: PlanDay[], skip?: { d: number; i: number }): Tally {
+type Routines = Pick<MealPlanPrefs, 'routine' | 'shareIngredients'>;
+
+/**
+ * Cooks already in a set of days (leftovers are not new cooks and do not count toward variety). A meal the
+ * athlete asked to repeat (`same` / `rotate`) is left out too: it is their routine, not the plan running dry.
+ */
+function tallyOf(days: PlanDay[], skip?: { d: number; i: number }, p?: Routines): Tally {
   const t = emptyTally();
   days.forEach((day, d) =>
     day.items.forEach((it, i) => {
       if (it.leftover || (skip && skip.d === d && skip.i === i)) return;
+      if (p && !it.extra && routineOf(p, it.slot) !== 'vary') return;
       const r = RECIPE_BY_ID[it.recipeId];
       if (!r) return;
       t.recipe[r.id] = (t.recipe[r.id] ?? 0) + 1;
@@ -420,22 +437,74 @@ function tallyOf(days: PlanDay[], skip?: { d: number; i: number }): Tally {
   return t;
 }
 
+/** How often each recipe is cooked in one meal across the week — what a `same` / `rotate` meal repeats. */
+type SlotUse = Record<string, number>;
+
+function slotUseOf(days: PlanDay[], slot: PlanSlot, skip?: { d: number; i: number }): SlotUse {
+  const use: SlotUse = {};
+  days.forEach((day, d) =>
+    day.items.forEach((it, i) => {
+      if (it.slot !== slot || it.extra || it.leftover || (skip && skip.d === d && skip.i === i)) return;
+      use[it.recipeId] = (use[it.recipeId] ?? 0) + 1;
+    }),
+  );
+  return use;
+}
+
 const recipeAllowance = (slot: PlanSlot): number => (slot === 'breakfast' ? 3 : 1);
 
-/** The variety penalty for adding `r` to a day that already has `dayProteins`. */
-function varietyPenalty(r: Recipe, slot: PlanSlot, t: Tally, dayProteins: string[]): number {
-  let pen = 0;
+/**
+ * The variety penalty for adding `r` to a day that already has `dayProteins`. For a routine meal it is only
+ * the day's protein clash, plus — for `rotate` — a nudge to fill the rotation before repeating, then to take
+ * turns evenly.
+ */
+function varietyPenalty(r: Recipe, slot: PlanSlot, t: Tally, dayProteins: string[], p?: Routines, use?: SlotUse): number {
+  const clash = r.proteinSource !== 'mixed' && dayProteins.includes(r.proteinSource) ? 600 : 0;
+  const routine = p ? routineOf(p, slot) : 'vary';
+  if (routine === 'same') return clash;
+  if (routine === 'rotate') {
+    const n = use?.[r.id] ?? 0;
+    const filling = Object.keys(use ?? {}).length < ROTATE_SIZE;
+    return clash + n * 30 + (n > 0 && filling ? 60 : 0);
+  }
+  let pen = clash;
   if ((t.recipe[r.id] ?? 0) >= recipeAllowance(slot)) pen += 1000;
   else if (slot === 'breakfast' && (t.recipe[r.id] ?? 0) > 0) pen += 60; // routine is fine, variety is nicer
-  if (r.proteinSource !== 'mixed') {
-    if ((t.protein[r.proteinSource] ?? 0) >= 3) pen += 600;
-    if (dayProteins.includes(r.proteinSource)) pen += 600;
-  }
+  if (r.proteinSource !== 'mixed' && !p?.shareIngredients && (t.protein[r.proteinSource] ?? 0) >= 3) pen += 600;
   if (r.format !== 'snack' && (t.format[r.format] ?? 0) >= 2) pen += 300;
   return pen;
 }
 
 const isRepeat = (r: Recipe, slot: PlanSlot, t: Tally): boolean => (t.recipe[r.id] ?? 0) >= recipeAllowance(slot);
+
+/* ── shared ingredients ─────────────────────────────────────────────────── */
+
+/** Pantry basics every recipe has — sharing them shortens no grocery list. */
+const PANTRY = new Set(['salt', 'pepper', 'black pepper', 'water', 'oil', 'olive oil', 'vegetable oil', 'cooking spray', 'kosher salt']);
+const SHARE_BONUS = 70;
+const SHARE_MAX = 5;
+
+const buyNames = (r: Recipe): Set<string> => new Set(r.ingredientNames.map((n) => n.trim()).filter((n) => n && !PANTRY.has(n)));
+
+/** A negative penalty for each ingredient `r` shares with what the week already buys (capped). 0 when not asked. */
+function shareBonus(r: Recipe, bought: Set<string> | null): number {
+  if (!bought || !bought.size) return 0;
+  let n = 0;
+  for (const x of buyNames(r)) if (bought.has(x) && ++n >= SHARE_MAX) break;
+  return -n * SHARE_BONUS;
+}
+
+function boughtOf(days: PlanDay[], skip?: { d: number; i: number }): Set<string> {
+  const out = new Set<string>();
+  days.forEach((day, d) =>
+    day.items.forEach((it, i) => {
+      if (it.leftover || (skip && skip.d === d && skip.i === i)) return;
+      const r = RECIPE_BY_ID[it.recipeId];
+      if (r) for (const x of buyNames(r)) out.add(x);
+    }),
+  );
+  return out;
+}
 
 /* ── the solver ─────────────────────────────────────────────────────────── */
 
@@ -485,6 +554,18 @@ export function planWeek({ prefs, target, seed, locked }: PlanInput): PlanDay[] 
   for (const s of slots) pools[s] = pool(s, prefs);
 
   const tally = emptyTally();
+  const bought: Set<string> | null = prefs.shareIngredients ? new Set() : null;
+  /* Each routine meal's recipes so far. Seeded from the locks first, so a pick locked on Thursday is the
+     `same` breakfast Monday gets too — the routine is the athlete's, wherever they set it. */
+  const use: Partial<Record<PlanSlot, SlotUse>> = {};
+  for (const s of slots) use[s] = {};
+  for (const [k, l] of Object.entries(locked)) {
+    const [, s] = k.split('-') as [string, PlanSlot];
+    if (l.leftover || !use[s] || !RECIPE_BY_ID[l.recipeId]) continue;
+    use[s]![l.recipeId] = (use[s]![l.recipeId] ?? 0) + 1;
+  }
+  /* Leftovers only into a `vary` lunch, from a dinner that is not `same` (header). */
+  const feedsLunch = routineOf(prefs, 'lunch') === 'vary' && routineOf(prefs, 'dinner') !== 'same';
   const days: PlanDay[] = [];
   /* Lunches promised to a leftover: day → the cook that feeds it. Locked leftovers are placed first. */
   const pending: Record<number, Lock> = {};
@@ -522,10 +603,21 @@ export function planWeek({ prefs, target, seed, locked }: PlanInput): PlanDay[] 
     );
 
     /* Ten candidates per slot: variety-clean first, shuffled within, so a repeat is only reached for when
-       the clean list runs dry. */
+       the clean list runs dry. A routine meal whose recipes are all chosen plans from those alone. */
+    const candidates = (s: PlanSlot): Recipe[] => {
+      const r = routineOf(prefs, s);
+      const cap = r === 'same' ? 1 : r === 'rotate' ? ROTATE_SIZE : 0;
+      if (cap) {
+        /* `fits`, not `fitsSlot`: a routine set by the athlete's own pick may break the cook-time cap or the
+           slot ("tacos for breakfast" is theirs to choose, as `placeMeal` says). The hard rules still hold. */
+        const chosen = Object.keys(use[s] ?? {}).map((id) => RECIPE_BY_ID[id]).filter((x) => x && fits(x, prefs));
+        if (chosen.length >= cap) return chosen;
+      }
+      return pools[s] ?? [];
+    };
     const lists = free.map((s) =>
-      shuffle(pools[s] ?? [], rand)
-        .map((r) => ({ r, pen: varietyPenalty(r, s, tally, dayProteins) }))
+      shuffle(candidates(s), rand)
+        .map((r) => ({ r, pen: varietyPenalty(r, s, tally, dayProteins, prefs, use[s]) + shareBonus(r, bought) }))
         .sort((a, b) => a.pen - b.pen)
         .slice(0, 10)
         .map((x) => x.r),
@@ -559,7 +651,8 @@ export function planWeek({ prefs, target, seed, locked }: PlanInput): PlanDay[] 
         if (picks.some((x) => x?.r.id === r.id)) continue;
         const portion = bestPortion(r, aim);
         const k = r.kcal * portion;
-        const add = slotScore(k, aim) + varietyPenalty(r, s, tally, proteins) + Math.abs(portion - 1) * 80;
+        const add =
+          slotScore(k, aim) + varietyPenalty(r, s, tally, proteins, prefs, use[s]) + shareBonus(r, bought) + Math.abs(portion - 1) * 80;
         picks.push({ r, portion });
         walk(
           i + 1,
@@ -582,7 +675,8 @@ export function planWeek({ prefs, target, seed, locked }: PlanInput): PlanDay[] 
       }
       const c = chosen[free.indexOf(s)];
       if (!c) continue; // nothing in the library fits this slot at all — the screen says so
-      items.push({ slot: s, recipeId: c.r.id, portion: c.portion, leftover: false, ...(isRepeat(c.r, s, tally) ? { repeated: true } : {}) });
+      const repeated = routineOf(prefs, s) === 'vary' && isRepeat(c.r, s, tally);
+      items.push({ slot: s, recipeId: c.r.id, portion: c.portion, leftover: false, ...(repeated ? { repeated: true } : {}) });
     }
 
     /* Day-level portion nudge: still outside ±5%? Step free portions toward the target, one at a time. */
@@ -610,6 +704,12 @@ export function planWeek({ prefs, target, seed, locked }: PlanInput): PlanDay[] 
     for (const it of items) {
       if (it.leftover) continue;
       const r = RECIPE_BY_ID[it.recipeId];
+      if (bought) for (const x of buyNames(r)) bought.add(x);
+      if (routineOf(prefs, it.slot) !== 'vary') {
+        /* Locked picks were counted up front; only what the planner chose today is new. */
+        if (!fixed[it.slot]) use[it.slot]![r.id] = (use[it.slot]![r.id] ?? 0) + 1;
+        continue;
+      }
       tally.recipe[r.id] = (tally.recipe[r.id] ?? 0) + 1;
       tally.protein[r.proteinSource] = (tally.protein[r.proteinSource] ?? 0) + 1;
       tally.format[r.format] = (tally.format[r.format] ?? 0) + 1;
@@ -617,7 +717,7 @@ export function planWeek({ prefs, target, seed, locked }: PlanInput): PlanDay[] 
 
     /* This dinner feeds a later lunch — tomorrow first, then within its keep days. */
     const dinner = items.find((x) => x.slot === 'dinner' && !x.leftover);
-    if (dinner && slots.includes('lunch') && leftovers < MAX_LEFTOVERS) {
+    if (dinner && feedsLunch && slots.includes('lunch') && leftovers < MAX_LEFTOVERS) {
       const r = RECIPE_BY_ID[dinner.recipeId];
       if (r.keeps) {
         for (let e = d + 1; e <= Math.min(6, d + r.leftoverDays); e++) {
@@ -690,14 +790,18 @@ export function alternatives(days: PlanDay[], d: number, idx: number, p: MealPla
   const it = day.items[idx];
   const others = day.items.reduce((t, x, i) => t + (i === idx ? 0 : itemTotals(x).kcal), 0);
   const inDay = new Set(day.items.map((x) => x.recipeId));
-  const tally = tallyOf(days, { d, i: idx });
+  const skip = { d, i: idx };
+  const tally = tallyOf(days, skip, p);
+  const use = slotUseOf(days, it.slot, skip);
+  const bought = p.shareIngredients ? boughtOf(days, skip) : null;
   const proteins = day.items.filter((x, i) => i !== idx && !x.leftover).map((x) => RECIPE_BY_ID[x.recipeId]?.proteinSource as string);
   return pool(it.slot, p)
     .filter((r) => !inDay.has(r.id))
     .map((r) => {
       const portion = bestPortion(r, target.kcal - others);
       const kcal = Math.round(r.kcal * portion);
-      return { recipe: r, portion, kcal, gap: Math.abs(target.kcal - others - kcal), pen: varietyPenalty(r, it.slot, tally, proteins) };
+      const pen = varietyPenalty(r, it.slot, tally, proteins, p, use) + shareBonus(r, bought);
+      return { recipe: r, portion, kcal, gap: Math.abs(target.kcal - others - kcal), pen };
     })
     .sort((a, b) => a.gap + a.pen * 0.5 - (b.gap + b.pen * 0.5))
     .slice(0, n)
@@ -902,6 +1006,17 @@ export interface MealPlanWeek {
   locked: Locks;
   /** `slotKey-recipeId` → the diary row "Log meal" created, so it can be undone exactly. */
   logged: Record<string, string>;
+  /** The athlete cleared it (0226 `cleared_at`): Forge fills nothing in until they rebuild or change the setup. */
+  cleared?: boolean;
+}
+
+/**
+ * "Clear week" (PO 09-27: *"we need a button to completely clear the week"*). Every meal off the plan, locked
+ * ones too, and the plan forgets which were logged — the DIARY keeps every row; clearing a plan never
+ * un-eats a meal. `cleared` is what stops `resolveWeek` filling an empty week straight back in.
+ */
+export function clearWeek(week: MealPlanWeek): MealPlanWeek {
+  return { ...week, days: Array.from({ length: 7 }, () => ({ items: [] })), locked: {}, logged: {}, cleared: true };
 }
 
 export const logKey = (d: number, it: Pick<PlanItem, 'slot' | 'extra' | 'recipeId'>): string => `${slotKey(d, it)}-${it.recipeId}`;
@@ -928,7 +1043,7 @@ export function keptLocks(week: MealPlanWeek, prefs: MealPlanPrefs): Locks {
 /** Rebuild with a new seed, keeping locks and logged meals. */
 export function rebuildWeek(week: MealPlanWeek, prefs: MealPlanPrefs, target: Targets): MealPlanWeek {
   const seed = week.seed + 1;
-  return { ...week, seed, days: planWeek({ prefs, target, seed, locked: keptLocks(week, prefs) }) };
+  return { ...week, seed, days: planWeek({ prefs, target, seed, locked: keptLocks(week, prefs) }), cleared: false };
 }
 
 /** Every recipe id in a stored plan still exists and carries a portion — else it is rebuilt, not half-drawn. */
@@ -962,6 +1077,11 @@ export function resolveWeek(
   target: Targets,
   weekStart: string,
 ): { week: MealPlanWeek; rebuilt: boolean } {
+  /* A week the athlete CLEARED stays as they left it — empty, or holding only what they have placed since.
+     A new target changes no meal in it, so it is only re-stamped; a new setup ("Build my week") builds. */
+  if (stored?.cleared && stored.weekStart === weekStart && planIsReadable(stored.days) && stored.prefsUpdatedAt === prefsUpdatedAt) {
+    return { week: stored.targetKcal === target.kcal ? stored : { ...stored, targetKcal: target.kcal }, rebuilt: false };
+  }
   if (
     stored &&
     stored.weekStart === weekStart &&

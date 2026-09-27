@@ -26,6 +26,7 @@ import {
   RECIPE_BY_ID,
   addSnack,
   alternatives,
+  clearWeek,
   dayTotals,
   feedsDay,
   itemTotals,
@@ -176,12 +177,16 @@ export default function MealPlanScreen() {
    */
   const premiumAi = usePremiumAi();
   const nutritionAccess = useNutritionAccess();
-  const canHolt = premiumAi && nutritionAccess;
+  /* "Only plan from my recipes" (0226) means Holt is never offered to write dishes into the week. */
+  const canHolt = premiumAi && nutritionAccess && !prefsQ.data?.ownRecipesOnly;
   const [fill, setFill] = useState<
     { phase: 'writing' } | { phase: 'review'; picks: { slot: PlanSlotName; card: DishCard }[] } | { phase: 'saving' } | null
   >(null);
   const [active, setActive] = useState(0);
   const [busy, setBusy] = useState(false);
+  /* Clear week (PO 09-27): asked first, then saved BEFORE the screen shows it — a clear that failed to save
+     would look done and refill on reopen. */
+  const [clearing, setClearing] = useState<'ask' | 'saving' | null>(null);
 
   /* ⛔ The doors. No saved setup, or a gate the setup would show — hand over, and let it explain. */
   if (loaded && (!prefs || gate != null || !target)) return <Redirect href="/meal-plan-setup" />;
@@ -276,6 +281,21 @@ export default function MealPlanScreen() {
     }
   };
   const anyEmpty = !!week && !!prefs && emptySlots(week.days, prefs.meals).length > 0;
+
+  const confirmClear = async () => {
+    if (!week || !resolved) return;
+    setClearing('saving');
+    const next = clearWeek(week);
+    try {
+      await saveMealPlanWeek(next);
+      setEdits({ base: resolved.week, week: next });
+      showToast('Week cleared');
+      setClearing(null);
+    } catch (e) {
+      showToast(errorMessage(e));
+      setClearing('ask');
+    }
+  };
 
   /* ── the sheet ── */
   let sheetTitle = '';
@@ -522,7 +542,26 @@ export default function MealPlanScreen() {
           {prefs && target ? (
             <Text style={styles.lede}>{`Built around ${grouped(target.kcal)} cal a day · cooking for ${prefs.household}.`}</Text>
           ) : null}
-          {anyEmpty && canHolt ? (
+          {week && !weekEmpty ? (
+            <Pressable accessibilityRole="button" hitSlop={6} style={styles.clearLink} onPress={() => setClearing('ask')}>
+              <Text style={styles.linkQuiet}>Clear week</Text>
+            </Pressable>
+          ) : null}
+          {week?.cleared && weekEmpty ? (
+            <View style={styles.short}>
+              <Text style={styles.shortText}>Week cleared. Tap + Add on any meal, or</Text>
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={6}
+                onPress={() => {
+                  if (!prefs || !target) return;
+                  void commit(rebuildWeek(week, prefs, target), 'Week rebuilt');
+                }}
+              >
+                <Text style={styles.shortLink}>rebuild it</Text>
+              </Pressable>
+            </View>
+          ) : anyEmpty && canHolt ? (
             <View style={styles.short}>
               <Text style={styles.shortText}>{weekEmpty ? 'No recipes to plan from yet.' : 'Some meals have nothing that fits yet.'}</Text>
               <Pressable accessibilityRole="button" hitSlop={6} onPress={() => void startFill()} disabled={!!fill}>
@@ -575,7 +614,8 @@ export default function MealPlanScreen() {
           ? week.days.map((day, d) => {
               const totals = dayTotals(day);
               const isOpen = !!open[d];
-              const gap = shortBy(day, targetKcal);
+              /* A week the athlete cleared is theirs to fill: no "short" nag under seven empty days. */
+              const gap = week.cleared ? 0 : shortBy(day, targetKcal);
               return (
                 <View
                   key={dates[d].iso}
@@ -786,6 +826,22 @@ export default function MealPlanScreen() {
             </Button>
             <Button variant="text" fullWidth onPress={() => setFill(null)} disabled={fill?.phase === 'saving'}>
               Not now
+            </Button>
+          </View>
+        </View>
+      </BottomSheet>
+
+      <BottomSheet open={clearing != null} onClose={() => (clearing === 'ask' ? setClearing(null) : undefined)} title="Clear this week?">
+        <View style={styles.sheetBody}>
+          <Text style={styles.sheetMeta}>
+            Every meal comes off the plan, locked ones too. Anything you logged stays in your diary.
+          </Text>
+          <View style={styles.actions}>
+            <Button variant="primary" fullWidth disabled={clearing !== 'ask'} onPress={() => void confirmClear()}>
+              {clearing === 'saving' ? 'Clearing…' : 'Clear week'}
+            </Button>
+            <Button variant="text" fullWidth onPress={() => setClearing(null)} disabled={clearing === 'saving'}>
+              Keep it
             </Button>
           </View>
         </View>
@@ -1006,6 +1062,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
   },
   footerLinks: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
+  clearLink: { alignSelf: 'flex-start', marginLeft: -4 },
   budgetLine: { textAlign: 'center', fontSize: 12.5, color: flColor.gray400, paddingBottom: 4 },
   linkBronze: { paddingVertical: 10, paddingHorizontal: 4, fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
   linkQuiet: { paddingVertical: 10, paddingHorizontal: 4, fontSize: 13, fontWeight: '600', color: flColor.gray400 },

@@ -6,7 +6,7 @@ import { offProductToFood } from '@/domain/nutrition/off-product';
 import { opsFor, overlayDay, type OutboxOp } from '@/domain/nutrition/outbox';
 import { isFirstRun } from '@/domain/nutrition/first-run';
 import type { SavedItemRow } from '@/domain/nutrition/my-foods';
-import type { MealPlanPrefs } from '@/domain/nutrition/meal-plan-setup';
+import { cleanRoutine, routineOf, type MealPlanPrefs } from '@/domain/nutrition/meal-plan-setup';
 import type { GroceryState } from '@/domain/nutrition/grocery';
 import { registerAll, type UserRecipe } from '@/domain/nutrition/user-recipes';
 import {
@@ -1346,6 +1346,10 @@ export async function saveTargets(
   if (error) throw error;
 }
 
+/** 0226's prefs columns — latched like `microsColumn`: one failed call, then the old shape until reopened. */
+let prefs0226: boolean | null = null;
+const PREFS_0226 = ', routine, share_ingredients, own_recipes_only';
+
 /* ── Meal Plan Setup (0210) ─────────────────────────────────────────────── */
 
 /**
@@ -1355,11 +1359,17 @@ export async function saveTargets(
 export async function fetchMealPlanPrefs(): Promise<(MealPlanPrefs & { updatedAt: string | null }) | null> {
   const id = await athleteId();
   if (!id) return null;
-  const { data, error } = await supabase
-    .from('meal_plan_prefs')
-    .select('diet, allergens, dislikes, meals, cook_minutes, household, weekly_budget_usd, updated_at')
-    .eq('athlete_id', id)
-    .maybeSingle();
+  const read = (with0226: boolean) =>
+    supabase
+      .from('meal_plan_prefs')
+      .select(`diet, allergens, dislikes, meals, cook_minutes, household, weekly_budget_usd, updated_at${with0226 ? PREFS_0226 : ''}`)
+      .eq('athlete_id', id)
+      .maybeSingle();
+  let { data, error } = await read(prefs0226 !== false);
+  if (error && prefs0226 !== false && isMissingColumn(error)) {
+    prefs0226 = false;
+    ({ data, error } = await read(false));
+  }
   if (error || !data) return null;
   const r = data as Record<string, any>;
   return {
@@ -1370,30 +1380,50 @@ export async function fetchMealPlanPrefs(): Promise<(MealPlanPrefs & { updatedAt
     cookMinutes: r.cook_minutes ?? null,
     household: Number(r.household ?? 1),
     weeklyBudgetUsd: r.weekly_budget_usd != null ? Number(r.weekly_budget_usd) : null,
+    routine: cleanRoutine(r.routine),
+    shareIngredients: r.share_ingredients === true,
+    ownRecipesOnly: r.own_recipes_only === true,
     updatedAt: r.updated_at ?? null,
   };
 }
 
-/** Save the setup. Throws on any failure — the screen must not say "saved" when nothing was. */
+/**
+ * Save the setup. Throws on any failure — the screen must not say "saved" when nothing was.
+ *
+ * ⚠ BEFORE 0226 IS PASTED the routine, sharing and my-recipes-only answers have no columns. The rest of the
+ * setup still saves; if any of those three was actually answered, it then throws, so nobody is told "Building
+ * your week" over a routine that was quietly dropped.
+ */
 export async function saveMealPlanPrefs(prefs: MealPlanPrefs): Promise<void> {
   const id = await athleteId();
   if (!id) throw new Error('Not signed in');
-  const { error } = await supabase.from('meal_plan_prefs').upsert(
-    {
-      athlete_id: id,
-      diet: prefs.diet,
-      allergens: prefs.allergens,
-      dislikes: prefs.dislikes,
-      meals: prefs.meals,
-      cook_minutes: prefs.cookMinutes,
-      household: prefs.household,
-      weekly_budget_usd: prefs.weeklyBudgetUsd,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'athlete_id' },
-  );
+  const base = {
+    athlete_id: id,
+    diet: prefs.diet,
+    allergens: prefs.allergens,
+    dislikes: prefs.dislikes,
+    meals: prefs.meals,
+    cook_minutes: prefs.cookMinutes,
+    household: prefs.household,
+    weekly_budget_usd: prefs.weeklyBudgetUsd,
+    updated_at: new Date().toISOString(),
+  };
+  const extra = { routine: prefs.routine ?? {}, share_ingredients: !!prefs.shareIngredients, own_recipes_only: !!prefs.ownRecipesOnly };
+  const write = (with0226: boolean) =>
+    supabase.from('meal_plan_prefs').upsert(with0226 ? { ...base, ...extra } : base, { onConflict: 'athlete_id' });
+  let { error } = await write(prefs0226 !== false);
+  if (error && prefs0226 !== false && isMissingColumn(error)) {
+    prefs0226 = false;
+    ({ error } = await write(false));
+  }
   if (error) throw error;
+  const answered = prefs.meals.some((m) => routineOf(prefs, m) !== 'vary') || !!prefs.shareIngredients || !!prefs.ownRecipesOnly;
+  if (prefs0226 === false && answered) throw new Error('Saved, except your meal pattern: that needs an app update that isn’t live yet.');
 }
+
+/** 0226's `meal_plan_weeks.cleared_at`, latched like `prefs0226`. */
+let weekCleared0226: boolean | null = null;
+const CLEAR_NOT_LIVE = 'Clearing the week needs an app update that isn’t live yet.';
 
 /* ── Meal Plan week (0211) ──────────────────────────────────────────────── */
 
@@ -1401,12 +1431,18 @@ export async function saveMealPlanPrefs(prefs: MealPlanPrefs): Promise<void> {
 export async function fetchMealPlanWeek(weekStart: string): Promise<MealPlanWeek | null> {
   const id = await athleteId();
   if (!id) return null;
-  const { data, error } = await supabase
-    .from('meal_plan_weeks')
-    .select('week_start, seed, target_kcal, prefs_updated_at, days, locked, logged')
-    .eq('athlete_id', id)
-    .eq('week_start', weekStart)
-    .maybeSingle();
+  const read = (withCleared: boolean) =>
+    supabase
+      .from('meal_plan_weeks')
+      .select(`week_start, seed, target_kcal, prefs_updated_at, days, locked, logged${withCleared ? ', cleared_at' : ''}`)
+      .eq('athlete_id', id)
+      .eq('week_start', weekStart)
+      .maybeSingle();
+  let { data, error } = await read(weekCleared0226 !== false);
+  if (error && weekCleared0226 !== false && isMissingColumn(error)) {
+    weekCleared0226 = false;
+    ({ data, error } = await read(false));
+  }
   if (error || !data) return null;
   const r = data as Record<string, any>;
   return {
@@ -1417,27 +1453,41 @@ export async function fetchMealPlanWeek(weekStart: string): Promise<MealPlanWeek
     days: r.days as PlanDay[],
     locked: (r.locked ?? {}) as Locks,
     logged: (r.logged ?? {}) as Record<string, string>,
+    cleared: r.cleared_at != null,
   };
 }
 
-/** Save the week as it stands. Throws — a swap the athlete saw must not silently vanish on reopen. */
+/**
+ * Save the week as it stands. Throws — a swap the athlete saw must not silently vanish on reopen.
+ *
+ * ⚠ `cleared_at` is 0226. Before it is pasted an ordinary save drops the column and goes through, but a CLEARED
+ * week throws: saved without the mark it would be refilled the next time the plan opens.
+ */
 export async function saveMealPlanWeek(week: MealPlanWeek): Promise<void> {
   const id = await athleteId();
   if (!id) throw new Error('Not signed in');
-  const { error } = await supabase.from('meal_plan_weeks').upsert(
-    {
-      athlete_id: id,
-      week_start: week.weekStart,
-      seed: week.seed,
-      target_kcal: Math.round(week.targetKcal),
-      prefs_updated_at: week.prefsUpdatedAt,
-      days: week.days,
-      locked: week.locked,
-      logged: week.logged,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'athlete_id,week_start' },
-  );
+  const base = {
+    athlete_id: id,
+    week_start: week.weekStart,
+    seed: week.seed,
+    target_kcal: Math.round(week.targetKcal),
+    prefs_updated_at: week.prefsUpdatedAt,
+    days: week.days,
+    locked: week.locked,
+    logged: week.logged,
+    updated_at: new Date().toISOString(),
+  };
+  const write = (withCleared: boolean) => {
+    const row: Record<string, unknown> = withCleared ? { ...base, cleared_at: week.cleared ? base.updated_at : null } : base;
+    return supabase.from('meal_plan_weeks').upsert(row, { onConflict: 'athlete_id,week_start' });
+  };
+  if (week.cleared && weekCleared0226 === false) throw new Error(CLEAR_NOT_LIVE);
+  let { error } = await write(weekCleared0226 !== false);
+  if (error && weekCleared0226 !== false && isMissingColumn(error)) {
+    weekCleared0226 = false;
+    if (week.cleared) throw new Error(CLEAR_NOT_LIVE);
+    ({ error } = await write(false));
+  }
   if (error) throw error;
 }
 

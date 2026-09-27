@@ -18,12 +18,14 @@ import {
   MAX_HOUSEHOLD,
   MIN_HOUSEHOLD,
   PLAN_MEALS,
+  ROUTINES,
   addDislike,
   blockedNote,
   clampHousehold,
   draftFrom,
   parseBudget,
   prefsFrom,
+  routineOf,
   setupGate,
   toggleAllergen,
   toggleMeal,
@@ -291,6 +293,55 @@ export default function MealPlanSetupScreen() {
                   })}
                 </View>
 
+                {/* PO 09-27: "I eat the same breakfast everyday. I have the same lunch every day, but dinner is
+                    different." One answer per meal, so any combination is possible. */}
+                {d.meals.length ? (
+                  <>
+                    <Text style={styles.question}>Same every day, or mix it up?</Text>
+                    <View style={styles.routineList}>
+                      {PLAN_MEALS.filter((m) => d.meals.includes(m.key)).map((m) => (
+                        <View key={m.key} style={styles.routineRow}>
+                          <Text style={styles.routineLabel}>{m.label}</Text>
+                          <View style={[styles.tabs, styles.routineTabs]} accessibilityRole="radiogroup" accessibilityLabel={`${m.label} routine`}>
+                            {ROUTINES.map((r) => {
+                              const on = routineOf(d, m.key) === r.key;
+                              return (
+                                <Pressable
+                                  key={r.key}
+                                  accessibilityRole="radio"
+                                  accessibilityState={{ checked: on }}
+                                  style={[styles.tab, on && styles.tabOn]}
+                                  onPress={() => set({ routine: { ...d.routine, [m.key]: r.key } })}
+                                >
+                                  <Text style={[styles.tabText, on && styles.tabTextOn]} numberOfLines={1}>
+                                    {r.label}
+                                  </Text>
+                                </Pressable>
+                              );
+                            })}
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                    <Text style={styles.helper}>Same: one meal all week. A few: two or three that take turns. Mix: something new each day.</Text>
+                  </>
+                ) : null}
+
+                <Text style={styles.question}>Your recipes</Text>
+                <View style={styles.toggleList}>
+                  <Toggle
+                    label="Only plan from my recipes"
+                    on={!!d.ownRecipesOnly}
+                    onPress={() => set({ ownRecipesOnly: !d.ownRecipesOnly })}
+                  />
+                  <Toggle
+                    label="Share ingredients across meals"
+                    on={!!d.shareIngredients}
+                    onPress={() => set({ shareIngredients: !d.shareIngredients })}
+                  />
+                </View>
+                <Text style={styles.helper}>Sharing ingredients means a shorter grocery list: the week reuses what you’re already buying.</Text>
+
                 <Text style={styles.question}>Time to cook</Text>
                 <View style={styles.tabs} accessibilityRole="radiogroup">
                   {COOK_TIMES.map((t) => {
@@ -390,6 +441,22 @@ function Choice({ label, on, role, onPress }: { label: string; on: boolean; role
   );
 }
 
+function Toggle({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: on }}
+      style={[styles.choice, styles.mealChoice, styles.toggle, on && styles.choiceOn]}
+      onPress={onPress}
+    >
+      <Text style={[styles.choiceText, on && styles.choiceTextOn]}>{label}</Text>
+      <View style={[styles.box, on && styles.boxOn]}>
+        {on ? <EngravedIcon name="check" size={10} color={flColor.onBronze} /> : null}
+      </View>
+    </Pressable>
+  );
+}
+
 function Glyph({ kind, dim }: { kind: 'plus' | 'minus'; dim: boolean }) {
   return <EngravedIcon name={kind} size={16} color={dim ? flColor.charcoal500 : flColor.gray400} />;
 }
@@ -455,6 +522,13 @@ const styles = StyleSheet.create({
   mealChoice: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, paddingHorizontal: 14 },
   box: { width: 16, height: 16, borderRadius: 4, borderWidth: 1.5, borderColor: flColor.charcoal500, alignItems: 'center', justifyContent: 'center' },
   boxOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronze400 },
+
+  routineList: { gap: 10 },
+  routineRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  routineLabel: { width: 78, paddingLeft: 2, fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
+  routineTabs: { flex: 1 },
+  toggleList: { gap: 8 },
+  toggle: { flexBasis: 'auto', flexGrow: 0 },
 
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 14 },
   chip: {

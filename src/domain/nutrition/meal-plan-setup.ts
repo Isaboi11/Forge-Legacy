@@ -52,6 +52,25 @@ export const COOK_TIMES: readonly { key: CookTime; label: string }[] = [
   { key: null, label: 'No limit' },
 ];
 
+/**
+ * How a meal repeats across the week (PO 09-27: *"I eat the same breakfast everyday. I have the same lunch every
+ * day, but dinner is different. Where as someone might want a different breakfast, same lunch and same dinner, or
+ * any combination."*). Asked per meal, so every combination is one answer each.
+ *  · `same`   — one recipe on all seven days.
+ *  · `rotate` — a few (up to `ROTATE_SIZE`) that take turns.
+ *  · `vary`   — something different each day: the planner's variety rules, as they were before this question.
+ */
+export type Routine = 'same' | 'rotate' | 'vary';
+
+export const ROUTINES: readonly { key: Routine; label: string }[] = [
+  { key: 'same', label: 'Same' },
+  { key: 'rotate', label: 'A few' },
+  { key: 'vary', label: 'Mix' },
+];
+
+/** The most recipes a `rotate` meal takes turns between. */
+export const ROTATE_SIZE = 3;
+
 export const MIN_HOUSEHOLD = 1;
 export const MAX_HOUSEHOLD = 8;
 export const MAX_DISLIKES = 50;
@@ -67,6 +86,33 @@ export interface MealPlanPrefs {
   household: number;
   /** Whole dollars a week, or null for no budget. Only ever an ESTIMATE target (NUT-D3). */
   weeklyBudgetUsd: number | null;
+  /*
+   * The three below are 0226. Optional because a row saved before it (or a read before it is pasted) has none
+   * of them, and "no answer" must plan exactly as the week did before the question existed — read them through
+   * `routineOf`, never directly.
+   */
+  /** Per meal; a missing meal is `vary`. */
+  routine?: Partial<Record<MealSlot, Routine>>;
+  /** Prefer recipes that reuse what the week already buys — a shorter grocery list. */
+  shareIngredients?: boolean;
+  /** Plan from My Recipes alone: Forge's library is left out and Holt is never offered to write dishes. */
+  ownRecipesOnly?: boolean;
+}
+
+/** A meal's routine, `vary` when unanswered. */
+export const routineOf = (p: Pick<MealPlanPrefs, 'routine'>, slot: MealSlot): Routine => p.routine?.[slot] ?? 'vary';
+
+const ROUTINE_KEYS: readonly string[] = ROUTINES.map((r) => r.key);
+
+/** A stored routine, kept to known meals and values — a hand-edited or future row never reaches the planner raw. */
+export function cleanRoutine(raw: unknown): Partial<Record<MealSlot, Routine>> {
+  const out: Partial<Record<MealSlot, Routine>> = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const m of PLAN_MEALS) {
+    const v = (raw as Record<string, unknown>)[m.key];
+    if (typeof v === 'string' && ROUTINE_KEYS.includes(v)) out[m.key] = v as Routine;
+  }
+  return out;
 }
 
 /** What the screen holds while it is being filled in. `allergyMode` null = not answered yet. */
@@ -85,6 +131,9 @@ export function freshDraft(): SetupDraft {
     cookMinutes: 30,
     household: 1,
     weeklyBudgetUsd: null,
+    routine: {},
+    shareIngredients: false,
+    ownRecipesOnly: false,
   };
 }
 
@@ -176,5 +225,9 @@ export function prefsFrom(d: SetupDraft): MealPlanPrefs {
     cookMinutes: d.cookMinutes,
     household: clampHousehold(d.household),
     weeklyBudgetUsd: d.weeklyBudgetUsd && d.weeklyBudgetUsd > 0 ? d.weeklyBudgetUsd : null,
+    /* Only the meals being planned; a meal switched off keeps no routine to surprise anyone later. */
+    routine: Object.fromEntries(d.meals.map((m) => [m, routineOf(d, m)])) as Partial<Record<MealSlot, Routine>>,
+    shareIngredients: !!d.shareIngredients,
+    ownRecipesOnly: !!d.ownRecipesOnly,
   };
 }
