@@ -48,8 +48,8 @@ async function loadPantry(todayIso: string): Promise<PantryItem[]> {
  *
  * Colours are Nutrition Home's rings (protein green, carbs PLUM, fat blue), so one key is learned once. The
  * words and every state (nothing logged, no target, past a target) are `homeNutritionView`'s, and tested.
- * One button, one screen-reader sentence. Hidden without Nutrition access, and until the day has loaded,
- * so it never flashes zeros. It re-reads on focus.
+ * One button, one screen-reader sentence. Hidden without Nutrition access, without macro targets, and until
+ * the day has loaded, so it never flashes zeros. It re-reads on focus.
  */
 const MACRO_COLOR: Record<MacroKey, string> = {
   protein: flColor.macroProtein,
@@ -83,7 +83,9 @@ export function HomeNutritionCard({ onOpen }: { onOpen: () => void }) {
   const care = useCareLine(reloads);
   const wantGap = loaded && care.known && !care.active && tips !== 'off' && !!data?.targets && (data?.entries.length ?? 0) > 0 && hour >= GAP_LINE_FROM_HOUR;
   const { data: pantry } = useQuery(async () => (wantGap ? loadPantry(localToday()) : null), [wantGap, reloads]);
-  if (!mayUseNutrition || !data) return null;
+  /* No macro goals, no card (PO, 2026-09-26): an athlete who has not set targets has not taken up Nutrition,
+     and Home is not the place to invite them. */
+  if (!mayUseNutrition || !data?.targets) return null;
 
   const eaten = totals(data.entries);
   const v = homeNutritionView(eaten, data.entries.length > 0, data.targets);
