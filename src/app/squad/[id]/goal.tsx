@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
 
   hero: { marginHorizontal: -16, paddingHorizontal: 18, paddingTop: 20, paddingBottom: 24, position: 'relative' },
   heroKicker: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  kickerText: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  kickerText: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   goalTitle: { fontFamily: flFont.display, fontSize: 27, fontWeight: '600', color: flColor.cream100, lineHeight: 32, marginTop: 12 },
   figures: { flexDirection: 'row', alignItems: 'flex-end', gap: 9, marginTop: 20 },
   done: { fontFamily: flFont.display, fontSize: 46, fontWeight: '700', letterSpacing: -1.2, color: flColor.cream100, lineHeight: 46 },
@@ -595,11 +595,11 @@ const styles = StyleSheet.create({
   paceCell: { flex: 1, alignItems: 'center', gap: 8, paddingVertical: 17, paddingHorizontal: 6 },
   paceCellDiv: { borderRightWidth: 1, borderRightColor: flColor.charcoal700 },
   paceValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '700', color: flColor.cream100, textAlign: 'center' },
-  paceLabel: { fontSize: 9.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk, textAlign: 'center', lineHeight: 13 },
+  paceLabel: { fontSize: 9.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.labelInk, textAlign: 'center', lineHeight: 13 },
   paceNote: { fontSize: 12.5, lineHeight: 19, color: flColor.gray400, marginTop: 14, marginHorizontal: 2 },
 
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 28, marginBottom: 12, marginHorizontal: 2 },
-  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   sectionMeta: { fontSize: 11.5, color: flColor.gray600 },
 
   contribCard: { backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, boxShadow: flShadow.card, paddingHorizontal: 16 },
@@ -630,9 +630,9 @@ const styles = StyleSheet.create({
   mileRow: { flexDirection: 'row', gap: 14 },
   mileRail: { width: 34, alignItems: 'center' },
   mileDot: { width: 34, height: 34, borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
-  mileDotOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronze400, boxShadow: flShadow.glowSubtle },
+  mileDotOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronze400, boxShadow: flShadow.glowSubtle },
   mileLine: { width: 1, flex: 1, minHeight: 14, backgroundColor: flColor.charcoal700 },
-  mileLineOn: { backgroundColor: flColor.bronzeBorder },
+  mileLineOn: { backgroundColor: flColor.accentBorder },
   mileBody: { flex: 1, minWidth: 0 },
   mileBodyPad: { paddingBottom: 18 },
   mileTitle: { fontFamily: flFont.display, fontSize: 15.5, fontWeight: '600', color: flColor.gray400, lineHeight: 19 },
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
   ownerNote: { fontSize: 12, color: flColor.gray400, marginTop: 12 },
 
   closeCard: { marginTop: 26, paddingVertical: 17, paddingHorizontal: 18, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card, overflow: 'hidden' },
-  closeLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronzeInk },
+  closeLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.labelInk },
   closeTitle: { fontFamily: flFont.display, fontSize: 16.5, fontWeight: '600', color: flColor.cream100, lineHeight: 21, marginTop: 7 },
   closeBody: { fontSize: 12.5, lineHeight: 19, color: flColor.gray400, marginTop: 8 },
 });

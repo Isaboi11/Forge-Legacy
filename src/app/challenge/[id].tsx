@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
 
   // standings
   standHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 26, marginBottom: 12, marginHorizontal: 4 },
-  standLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronzeInk },
+  standLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.labelInk },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendText: { fontSize: 9, fontWeight: '600', letterSpacing: 0.8, color: flColor.gray600 },
   standList: { gap: 8 },
@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
   standRowLeader: { borderColor: flColor.bronzeBorder },
   standRowThird: {},
   /** Applied last so it wins on border and glow, while a leader's wash survives underneath. */
-  standRowSelf: { borderColor: flColor.bronze400, boxShadow: `0 0 0 1px ${flColor.bronzeBorder}, 0 0 18px rgba(186, 134, 84,0.16), ${flShadow.card}` },
+  standRowSelf: { borderColor: flColor.bronze400, boxShadow: `0 0 0 1px ${flColor.accentBorder}, 0 0 18px rgba(186, 134, 84,0.16), ${flShadow.card}` },
   standRowPressed: { opacity: 0.9 },
   rankSlot: { width: 24, alignItems: 'center', flexShrink: 0 },
   rankNum: { fontFamily: flFont.display, fontSize: 17, fontWeight: '700', color: flColor.gray600 },
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
   callOffLabel: { fontSize: 13, fontWeight: '600', color: flColor.gray600 },
 
   // how it works
-  sectionLabel: { marginTop: 26, marginBottom: 12, marginHorizontal: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { marginTop: 26, marginBottom: 12, marginHorizontal: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   rulesCard: { gap: 14, padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed },
   ruleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   ruleIcon: { width: 30, height: 30, flexShrink: 0, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeTint },

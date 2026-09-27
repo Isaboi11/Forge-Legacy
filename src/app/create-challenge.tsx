@@ -741,12 +741,12 @@ function TickGlyph() {
 const styles = StyleSheet.create({
   scopeToggle: { flexDirection: 'row', gap: 6, marginBottom: 12, padding: 4, borderRadius: flRadius.md, backgroundColor: flColor.surfaceRecessed },
   scopeTab: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: flRadius.sm },
-  scopeTabOn: { backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorder },
+  scopeTabOn: { backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.accentBorder },
   scopeTabText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
   scopeTabTextOn: { color: flColor.bronze300 },
   friendList: { gap: 8 },
   friendRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 11, paddingVertical: 9, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
-  friendRowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  friendRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   friendRowPressed: { opacity: 0.88 },
   friendBody: { flex: 1, minWidth: 0 },
   friendName: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
@@ -780,7 +780,7 @@ const styles = StyleSheet.create({
   pillTextBronze: { color: flColor.bronze300 },
 
   // sections
-  sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   card: { backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, padding: 15, gap: 16, boxShadow: flShadow.card },
 
   // badges — still used by the measure rows in the picker sheet
@@ -831,7 +831,7 @@ const styles = StyleSheet.create({
   measureRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   measureRowOn: { backgroundColor: flColor.bronzeTint },
   measureIcon: { width: 32, height: 32, flexShrink: 0, borderRadius: flRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.charcoal600 },
-  measureIconOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  measureIconOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   measureBody: { flex: 1, minWidth: 0, gap: 2 },
   measureTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   measureTitle: { fontSize: 14, fontWeight: '600', color: flColor.gray400 },
@@ -906,7 +906,7 @@ const styles = StyleSheet.create({
   },
   eyebrowRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   eyebrowRule: { width: 16, height: 1, backgroundColor: flColor.bronzeBorder },
-  eyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2, color: flColor.bronzeInk },
+  eyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2, color: flColor.labelInk },
   reviewName: { marginTop: 10, fontFamily: flFont.display, fontSize: 26, fontWeight: '700', textAlign: 'center', color: flColor.cream100, textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 0 },
   reviewNameMuted: { color: flColor.charcoal500 },
   reviewTagline: { marginTop: 7, fontSize: 11.5, textAlign: 'center', color: flColor.gray600 },

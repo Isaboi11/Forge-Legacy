@@ -1015,8 +1015,8 @@ const styles = StyleSheet.create({
   anchorName: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.cream100, marginTop: 3 },
 
   primary: { padding: 18, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, marginBottom: 16 },
-  primaryDone: { borderColor: flColor.bronzeBorderSubtle },
-  primaryEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 8 },
+  primaryDone: { borderColor: flColor.accentBorderSubtle },
+  primaryEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 8 },
   primaryName: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100 },
   primaryProgress: { marginTop: 16 },
   narrativeState: { fontSize: 13, color: flColor.gray400, marginTop: 12 },
@@ -1034,14 +1034,14 @@ const styles = StyleSheet.create({
   addText: { fontSize: 14, fontWeight: '600', color: flColor.bronze300 },
 
   // detail
-  detailEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 8 },
+  detailEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 8 },
   detailName: { fontFamily: flFont.display, fontSize: 26, fontWeight: '600', color: flColor.cream100 },
   detailBlock: { marginTop: 28, gap: 12 },
   detailLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray600 },
   detailBig: { fontFamily: flFont.display, fontSize: 24, fontWeight: '600', color: flColor.cream100 },
   updateBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(196,142,74,0.06)', marginTop: 4 },
   updateText: { fontSize: 14, fontWeight: '600', color: flColor.bronze300 },
-  achievedPill: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 16, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
+  achievedPill: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 16, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.accentBorderSubtle, backgroundColor: flColor.bronzeTint },
   achievedPillText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
   narrativeCopy: { fontSize: 13.5, lineHeight: 21, color: flColor.gray400 },
   markLink: { alignSelf: 'center', paddingVertical: 10 },
@@ -1055,7 +1055,7 @@ const styles = StyleSheet.create({
   // form
   field: { marginBottom: 20 },
   fieldHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
   fieldCounter: { fontSize: 11, color: flColor.gray600 },
   fieldHeadTight: { marginBottom: 5 },
   fieldHint: { marginBottom: 10, fontSize: 12, lineHeight: 17.5, color: flColor.gray600 },
@@ -1063,7 +1063,7 @@ const styles = StyleSheet.create({
   customUnit: { marginTop: 10 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingVertical: 9, paddingHorizontal: 14, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   chipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   chipTextOn: { color: flColor.bronze300 },
 
@@ -1077,11 +1077,11 @@ const styles = StyleSheet.create({
 
   // body goals — direction, form, and the reading they start from
   dirBlock: { marginTop: 4 },
-  dirLabel: { marginTop: 14, fontSize: 11, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk },
+  dirLabel: { marginTop: 14, fontSize: 11, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.labelInk },
   dirSummary: { marginTop: 12, fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
   dirProblem: { marginTop: 12, fontSize: 12.5, lineHeight: 18, color: flColor.redMuted },
   startRow: { marginTop: 14 },
-  startLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk },
+  startLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.labelInk },
   startInput: { marginTop: 8 },
   startNote: { marginTop: 7, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
   autoNote: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 12, paddingHorizontal: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint, marginTop: 4 },
@@ -1107,6 +1107,6 @@ const styles = StyleSheet.create({
 
   // sheet
   sheet: { paddingHorizontal: 2, paddingBottom: 8 },
-  sheetLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 10 },
+  sheetLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 10 },
   sheetActions: { marginTop: 16 },
 });

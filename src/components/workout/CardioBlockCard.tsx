@@ -1474,7 +1474,7 @@ const styles = StyleSheet.create({
   liveDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: flColor.greenMuted },
   bandCaption: { position: 'absolute', bottom: 11, right: 14, fontSize: 11, fontWeight: '600', letterSpacing: 0.2, color: flColor.gray400 },
   bandLabel: { position: 'absolute', top: 11, left: 14, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  bandLabelText: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, color: flColor.bronzeInk },
+  bandLabelText: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, color: flColor.labelInk },
   loggedBadge: { position: 'absolute', top: 10, right: 12, flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 4, paddingHorizontal: 9, borderRadius: 999, borderWidth: 1, borderColor: 'rgba(90,158,104,0.34)', backgroundColor: 'rgba(90,158,104,0.12)' },
   loggedBadgeText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 1, color: flColor.greenMuted },
 
@@ -1526,7 +1526,7 @@ const styles = StyleSheet.create({
   stepBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal900, alignItems: 'center', justifyContent: 'center' },
   stepGlyph: { fontSize: 22, lineHeight: 26, color: flColor.bronze300 },
   computed: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 12, paddingTop: 2 },
-  computedLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, color: flColor.bronzeInk },
+  computedLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, color: flColor.labelInk },
   computedValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.bronze300 },
   formActions: { flexDirection: 'row', gap: 9 },
   half: { flex: 1 },

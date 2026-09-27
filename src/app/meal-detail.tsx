@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
   moreButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 
   identity: { gap: 6, paddingHorizontal: 2, paddingBottom: 22 },
-  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
   mealName: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100, letterSpacing: -0.3, lineHeight: 34 },
 
   totalsRow: {
@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
     paddingBottom: 26,
   },
   totalCal: { fontFamily: flFont.display, fontSize: 48, color: flColor.cream100, letterSpacing: -0.8, lineHeight: 48 },
-  totalCalLabel: { marginTop: 8, fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  totalCalLabel: { marginTop: 8, fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
   totalsMacros: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, paddingBottom: 1 },
   totalMacro: { alignItems: 'flex-end', gap: 5 },
   totalMacroValue: { fontSize: 17, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },

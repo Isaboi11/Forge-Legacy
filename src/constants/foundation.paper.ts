@@ -36,8 +36,8 @@ export const flColor = {
   charcoal900: '#F6F2E8', //  app canvas
   charcoal800: '#F9F6EF', //  card surface
   charcoal700: '#F1EBDD', //  elevated / sheet
-  charcoal600: '#CDBD9F', //  border / divider
-  charcoal500: '#B9A98A', //  hairline / hover edge
+  charcoal600: '#CCC2B2', //  border / divider — warm taupe, not tan (see "BRONZE IS EARNED" below)
+  charcoal500: '#B5AA98', //  hairline / hover edge
 
   cream100: '#28231D', //     primary TEXT (see the header — this is a role, not a colour name)
   gray400: '#6E6860', //      secondary text
@@ -71,19 +71,52 @@ export const flColor = {
    */
   bronzeInk: '#88683A',
   bronzeDark: '#5C4726',
+  /**
+   * ══ BRONZE IS EARNED — THE ALABASTER HIERARCHY (PO design review, 2026-09-26) ══
+   *
+   * *"Too much gold/bronze sitting at roughly the same visual importance… The target should be less
+   * gold competition, not less character."* Four tiers, roughly 70% cream · 20% ink · 7% bronze · 3%
+   * functional colour:
+   *
+   *   1. Dark ink (`cream100`) — primary information: headlines, names, numbers.
+   *   2. Bronze — ACTION and ACHIEVEMENT only: the primary CTA, the active tab, honors and ranks,
+   *      progress, selected states. Those draw with `bronzeSolid`/`bronzeFill`/`accentBorder`.
+   *   3. Warm taupe — supporting UI: card edges, dividers, secondary icons, section labels.
+   *   4. Cream — the canvas, untouched. The PO: *"Don't make the background whiter."*
+   *
+   * So on Alabaster `bronzeBorder`/`bronzeBorderSubtle` are now TAUPE — the names are roles, like
+   * `cream100` (see the header), and ~700 call sites draw plain card edges with them. A chosen chip,
+   * a pressed row, an earned badge moved to `accentBorder`, which keeps the bronze.
+   *
+   * `labelInk` is the section-label ink: a warm taupe-brown at 5.08:1 on base (bronzeInk was 4.51), so
+   * the labels get QUIETER and more legible at once. Links and actions keep `bronzeInk`.
+   */
+  labelInk: '#6F6456',
 
   greenMuted: '#3E7A4C',
   redMuted: '#A6402F',
   blueMuted: '#3C6D92',
   /** Carbs, on Nutrition's macro rings (PO, 2026-09-24: the carb ring was bronze, the same as calories). Beside green protein and blue fat; not red, which reads as "over". */
   plumMuted: '#765A92',
+  /**
+   * The macro rings and bars — a step MORE saturated than the muted trio, same hues (PO, 2026-09-26:
+   * *"the macro colors are useful because they encode information… allow them to be slightly more
+   * prominent"*). Strokes only; every one clears 3.8:1 on the card. Success/error copy keeps `*Muted`.
+   */
+  macroProtein: '#3A8751',
+  macroCarb: '#7C58A8',
+  macroFat: '#3573A8',
 
   overlayDark: 'rgba(35,31,26,0.42)',
   innerHighlight: 'rgba(255,255,255,0.92)',
   innerHighlightMd: 'rgba(255,255,255,1)',
 
-  bronzeBorder: 'rgba(164,122,61,0.52)',
-  bronzeBorderSubtle: 'rgba(164,122,61,0.26)',
+  /** ⚠ TAUPE, not bronze — see "BRONZE IS EARNED" above. This file's warm hairline ink, `rgba(122,104,78,…)`. */
+  bronzeBorder: 'rgba(122,104,78,0.30)',
+  bronzeBorderSubtle: 'rgba(122,104,78,0.17)',
+  /** Selected / pressed / earned / in progress — the bronze edge, a touch firmer than the old `bronzeBorder`. */
+  accentBorder: 'rgba(164,122,61,0.60)',
+  accentBorderSubtle: 'rgba(164,122,61,0.32)',
   bronzeTint: 'rgba(164,122,61,0.085)',
 
   /** ⚠ NOT inverted — see the file header. */
@@ -243,7 +276,8 @@ export const flText = {
   primary: flColor.cream100,
   secondary: flColor.gray400,
   tertiary: flColor.gray600,
-  bronzeLabel: flColor.bronzeInk,
+  /** ⚠ Taupe on Alabaster (the name is the Forge role) — eyebrows are supporting UI, not achievement. */
+  bronzeLabel: flColor.labelInk,
 } as const satisfies FlText;
 
 export const flIcon = {
@@ -253,12 +287,16 @@ export const flIcon = {
   containerBorder: flColor.bronzeBorderSubtle,
   /**
    * The engraved icons, one step darker than Forge's. Forge's top stop `#F3D9AE` is near-cream and would vanish
-   * on this ground; these reuse the palette's own bronzes (`bronze400` → `bronze600` → `bronzeDark`), so the top
-   * of every glyph clears 3:1 on base the way `flIcon.bronze` already does.
+   * on this ground, so the top of every glyph clears 3:1 on base (3.42) the way `flIcon.bronze` does.
+   *
+   * ⚠ AGED BRONZE, NOT BRIGHT BRONZE (PO, 2026-09-26). These were the palette's own bronzes (`bronze400` →
+   *   `bronze600` → `bronzeDark`), and with 700 glyphs on screen that made every row icon compete with the
+   *   CTA. Same hue family, roughly a third less chroma: the glyphs read as engraved metal sitting back in
+   *   the page, and the solid bronze of a button or the active tab is what the eye finds first.
    */
-  engravedTop: flColor.bronze400,
-  engravedMid: flColor.bronze600,
-  engravedBottom: flColor.bronzeDark,
+  engravedTop: '#977D5B',
+  engravedMid: '#7A6246',
+  engravedBottom: '#54432F',
 } as const satisfies FlIcon;
 
 // ─────────────────────────────────────────────────────────────────────────────

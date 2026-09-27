@@ -581,11 +581,11 @@ const styles = StyleSheet.create({
   emptyBtnText: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
 
   // section labels — one token, used everywhere
-  sectionLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginHorizontal: 2, marginBottom: 10 },
-  sectionLabelInline: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
-  sectionLabelFlex: { flex: 1, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginHorizontal: 2, marginBottom: 10 },
+  sectionLabelInline: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
+  sectionLabelFlex: { flex: 1, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
 
-  chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   chipOff: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   inkOn: { color: flColor.bronze300 },
   inkOff: { color: flColor.gray600 },
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
   poseRow: { flexDirection: 'row', gap: 7, marginBottom: 20 },
   poseBtn: { flex: 1, gap: 5 },
   poseTile: { width: '100%', aspectRatio: 3 / 4, borderRadius: 7, overflow: 'hidden', borderWidth: 1.5, backgroundColor: flColor.surfaceRecessed },
-  poseTileOn: { borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
+  poseTileOn: { borderColor: flColor.accentBorder, boxShadow: flShadow.glowSubtle },
   poseTileOff: { borderColor: flColor.charcoal700 },
   poseImg: { width: '100%', height: '100%' },
   /** An unselected thumbnail is still legible, just plainly not in the card. */

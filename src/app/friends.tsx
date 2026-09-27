@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
   commentInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   commentInput: { flex: 1, minWidth: 0, height: 42, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 13.5, color: flColor.cream100 },
   sendBtn: { paddingHorizontal: 15, paddingVertical: 11, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
-  sendBtnOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  sendBtnOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   sendLabel: { fontSize: 12.5, fontWeight: '700', color: flColor.gray600 },
   sendLabelOn: { color: flColor.bronze300 },
 

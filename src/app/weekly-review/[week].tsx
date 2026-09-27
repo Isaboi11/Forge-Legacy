@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
 
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   dateRule: { width: 18, height: 1, backgroundColor: flColor.bronzeBorder },
-  dates: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronzeInk },
+  dates: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.labelInk },
 
   holt: { flexDirection: 'row', alignItems: 'flex-start', gap: 15, marginTop: 18 },
   holtBody: { flex: 1, minWidth: 0, gap: 8 },
@@ -371,10 +371,10 @@ const styles = StyleSheet.create({
   statValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
   statValue: { fontFamily: flFont.display, fontSize: 25, fontWeight: '600', lineHeight: 27, color: flColor.cream100 },
   statUnit: { fontSize: 12, fontWeight: '600', color: flColor.gray600 },
-  statLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  statLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.labelInk },
 
   section: { marginTop: 26 },
-  sectionLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 8 },
+  sectionLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 8 },
   card: {
     overflow: 'hidden',
     borderRadius: flRadius.lg,

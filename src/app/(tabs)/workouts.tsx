@@ -35,6 +35,7 @@ import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Workouts tab root (plural). Distinct from `/workout` (singular) — the active session.
@@ -286,7 +287,7 @@ export default function WorkoutsScreen() {
           hitSlop={8}
           style={({ pressed }) => [styles.discoverBack, pressed ? styles.pressed : null]}
         >
-          <EngravedIcon name="chevron-left" size={16} color={flColor.bronze400} />
+          <EngravedIcon name="chevron-left" size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
           <Text style={styles.discoverBackText}>Back</Text>
         </Pressable>
       ) : null}
@@ -637,7 +638,7 @@ export default function WorkoutsScreen() {
                   </View>
                   <View style={styles.holtCta}>
                     <Text style={styles.holtCtaText}>Ask Holt</Text>
-                    <ChevronRightIcon size={13} color={flColor.bronze300} />
+                    <ChevronRightIcon size={13} color={forgeOr(flColor.bronze300, flColor.gray600)} />
                   </View>
                 </Pressable>
               </>
@@ -706,7 +707,7 @@ function NavCard({
         <Text style={styles.rowTitle}>{title}</Text>
         <Text style={styles.rowSub}>{sub}</Text>
       </View>
-      <ChevronRightIcon size={18} color={flColor.bronze400} />
+      <ChevronRightIcon size={18} color={forgeOr(flColor.bronze400, flColor.gray600)} />
     </Pressable>
   );
 }
@@ -725,7 +726,7 @@ function FirstRunDoor({ icon, title, sub, onPress }: { icon: ReactNode; title: s
         <Text style={styles.doorTitle}>{title}</Text>
         <Text style={styles.doorSub}>{sub}</Text>
       </View>
-      <ChevronRightIcon size={16} color={flColor.bronze400} />
+      <ChevronRightIcon size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
     </Pressable>
   );
 }
@@ -825,7 +826,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   segmentActive: {
-    borderColor: flColor.bronzeBorder,
+    borderColor: flColor.accentBorder,
     boxShadow: flShadow.card,
   },
   segmentText: {

@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.trainTogetherCard,
   },
   cardLive: {
-    borderColor: flColor.bronzeBorder,
+    borderColor: flColor.accentBorder,
   },
   /*
    * ══ A ROUNDED RECTANGLE INSIDE A ROUNDED RECTANGLE ══

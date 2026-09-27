@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal800,
     boxShadow: flShadow.card,
   },
-  cardPressed: { transform: [{ scale: 0.96 }], borderColor: flColor.bronzeBorder },
+  cardPressed: { transform: [{ scale: 0.96 }], borderColor: flColor.accentBorder },
 
   cover: { width: '100%', aspectRatio: 5 / 4, backgroundColor: '#0b0a09' },
   coverDim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(6,7,9,0.3)' },
@@ -781,7 +781,7 @@ const styles = StyleSheet.create({
   },
 
   chip: { position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 11, paddingVertical: 5, borderRadius: flRadius.pill, borderWidth: 1 },
-  chipActive: { backgroundColor: 'rgba(196,142,74,0.16)', borderColor: flColor.bronzeBorder },
+  chipActive: { backgroundColor: 'rgba(196,142,74,0.16)', borderColor: flColor.accentBorder },
   chipSealed: { backgroundColor: flColor.surfaceRecessed, borderColor: flColor.charcoal600 },
   chipText: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase' },
   chipTextActive: { color: flColor.bronze300 },
@@ -813,7 +813,7 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', textAlign: 'center', color: flColor.gray600 },
 
   monthStack: { marginTop: 24, gap: 30 },
-  monthLabel: { paddingHorizontal: 2, paddingBottom: 14, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  monthLabel: { paddingHorizontal: 2, paddingBottom: 14, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   dayStack: { position: 'relative', gap: 16 },
   connector: { position: 'absolute', left: SPINE_X, top: 10, bottom: 10, width: 1 },
 

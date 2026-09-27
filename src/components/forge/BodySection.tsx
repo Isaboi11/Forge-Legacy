@@ -230,7 +230,7 @@ export function BodySection() {
               <Text style={styles.photosTitle}>{driftLine(targetDrift, null).title}</Text>
               <Text style={styles.photosSub}>{driftLine(targetDrift, null).detail}</Text>
             </View>
-            <EngravedIcon name="chevron-right" size={16} color={flColor.bronze400} />
+            <EngravedIcon name="chevron-right" size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
           </Pressable>
         ) : null}
 
@@ -242,7 +242,7 @@ export function BodySection() {
             <Text style={styles.photosTitle}>Progress photos</Text>
             <Text style={styles.photosSub}>Take new progress pics</Text>
           </View>
-          <EngravedIcon name="chevron-right" size={16} color={flColor.bronze400} />
+          <EngravedIcon name="chevron-right" size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
         </Pressable>
       </View>
 
@@ -284,7 +284,7 @@ const DOT_RING = forgeOr<string>('#070707', flColor.charcoal800);
 const styles = StyleSheet.create({
   section: { paddingHorizontal: 22, paddingTop: 20 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 2, paddingBottom: 12 },
-  label: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk },
+  label: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.labelInk },
   controls: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   changeCtl: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   changeLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },

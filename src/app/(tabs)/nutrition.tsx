@@ -356,9 +356,9 @@ export default function NutritionScreen() {
           onPress={() => router.push('/nutrition-targets')}
           style={styles.macroRow}
         >
-          <MacroRing label="Protein" value={eaten.protein} target={targets?.protein ?? null} color={flColor.greenMuted} />
-          <MacroRing label="Carbs" value={eaten.carb} target={targets?.carb ?? null} color={flColor.plumMuted} />
-          <MacroRing label="Fat" value={eaten.fat} target={targets?.fat ?? null} color={flColor.blueMuted} />
+          <MacroRing label="Protein" value={eaten.protein} target={targets?.protein ?? null} color={flColor.macroProtein} />
+          <MacroRing label="Carbs" value={eaten.carb} target={targets?.carb ?? null} color={flColor.macroCarb} />
+          <MacroRing label="Fat" value={eaten.fat} target={targets?.fat ?? null} color={flColor.macroFat} />
         </Pressable>
 
         {/* ── actions ───────────────────────────────────────────────────── */}
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
   },
   heroCentre: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: 4 },
   heroValue: { fontFamily: flFont.display, fontSize: 52, color: flColor.cream100, letterSpacing: -1, lineHeight: 54 },
-  heroLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  heroLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
   heroCaption: { fontSize: 13, color: flColor.gray400 },
   heroSetTarget: { fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
 
@@ -610,7 +610,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   mealBody: { flex: 1, minWidth: 0, gap: 3 },
-  mealEyebrow: { fontSize: 10, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.bronzeInk },
+  mealEyebrow: { fontSize: 10, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.labelInk },
   mealName: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   mealSummary: { fontSize: 12.5, color: flColor.gray600 },
   mealRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },

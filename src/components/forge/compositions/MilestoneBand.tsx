@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
   eyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' },
   /* `bronzeInk`, not `bronze400`: it is the palette's TEXT-safe bronze in both themes — 4.51:1 on
      Alabaster's base, where `bronze400` measures 3.40:1 and sits under the bar. */
-  eyebrow: { fontSize: 8.5, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronzeInk },
+  eyebrow: { fontSize: 8.5, fontWeight: '700', letterSpacing: 2.4, color: flColor.labelInk },
 
   from: { alignItems: 'center', marginTop: 14 },
   /* ⚠ SECONDARY, NOT TERTIARY. This was `gray600` — Alabaster's #8B8377, which measures about 2.9:1 on

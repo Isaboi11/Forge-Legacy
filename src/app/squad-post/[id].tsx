@@ -475,7 +475,7 @@ export default function SquadPostRoute() {
                   style={({ pressed }) => [styles.openSession, pressed ? { opacity: 0.85 } : null]}
                 >
                   <Text style={styles.openSessionText}>See every set</Text>
-                  <EngravedIcon name="chevron-right" size={15} color={flColor.bronze300} />
+                  <EngravedIcon name="chevron-right" size={15} color={forgeOr(flColor.bronze300, flColor.gray600)} />
                 </Pressable>
               ) : null}
             </>
@@ -869,7 +869,7 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: flRadius.lg,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
+    borderColor: flColor.accentBorder,
     backgroundColor: forgeOr('#171109', flColor.charcoal800),
     alignItems: 'center',
     justifyContent: 'center',
@@ -910,7 +910,7 @@ const styles = StyleSheet.create({
   engTextOn: { color: flColor.bronze300 },
 
   comments: { paddingHorizontal: 18, paddingTop: 16, marginTop: 10, borderTopWidth: 8, borderTopColor: flColor.charcoal900 },
-  commentsCount: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 14 },
+  commentsCount: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 14 },
   noComments: { fontSize: 13, color: flColor.gray600, paddingVertical: 6 },
   comment: { flexDirection: 'row', gap: 11, marginBottom: 16 },
   commentBody: { flex: 1, minWidth: 0 },
@@ -920,7 +920,7 @@ const styles = StyleSheet.create({
   commentText: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400, marginTop: 4 },
 
   /* The kind, named under the count — a flame alone cannot say which of four it was. */
-  engKind: { fontSize: 11, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronzeInk },
+  engKind: { fontSize: 11, fontWeight: '600', letterSpacing: 0.4, color: flColor.labelInk },
 
   ackIntro: { fontSize: 13, lineHeight: 19, color: flColor.gray400, marginBottom: 12 },
   ackList: { gap: 8 },
@@ -935,7 +935,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
   },
-  ackRowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  ackRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   ackRowPressed: { opacity: 0.75 },
   ackRowText: { flex: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   ackRowTextOn: { color: flColor.bronze300 },
@@ -990,6 +990,6 @@ const styles = StyleSheet.create({
     color: flColor.cream100,
   },
   sendBtn: { width: 42, height: 42, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  sendBtnOn: { backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), borderColor: flColor.bronzeBorder },
+  sendBtnOn: { backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), borderColor: flColor.accentBorder },
   sendBtnOff: { backgroundColor: flColor.charcoal800, borderColor: flColor.charcoal600 },
 });

@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     borderRadius: flRadius.pill,
     backgroundColor: flColor.bronzeTint,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
+    borderColor: flColor.accentBorderSubtle,
   },
   prText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.8, color: flColor.bronze300 },
   stat: { fontSize: 12, color: flColor.gray600 },

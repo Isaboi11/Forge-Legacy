@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 28 },
 
   identity: { gap: 6, paddingHorizontal: 2, paddingBottom: 22 },
-  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
   title: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100, letterSpacing: -0.3, lineHeight: 34 },
 
   tabs: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: flRadius.pill, backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: flColor.charcoal600 },
@@ -785,7 +785,7 @@ const styles = StyleSheet.create({
   heightCell: { flex: 1, minWidth: 0 },
 
   activityBlock: { gap: 9 },
-  activityLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk },
+  activityLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.labelInk },
   activityList: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, overflow: 'hidden' },
   activityRow: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 56, paddingVertical: 9, paddingHorizontal: 16 },
   activityRowOn: { backgroundColor: 'rgba(191,143,79,0.06)' },
@@ -802,7 +802,7 @@ const styles = StyleSheet.create({
 
   goalRow: { flexDirection: 'row', gap: 8 },
   goalButton: { flex: 1, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
-  goalButtonOn: { backgroundColor: 'rgba(191,143,79,0.08)', borderColor: flColor.bronzeBorder },
+  goalButtonOn: { backgroundColor: 'rgba(191,143,79,0.08)', borderColor: flColor.accentBorder },
   goalText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
   goalTextOn: { color: flColor.bronze300 },
 

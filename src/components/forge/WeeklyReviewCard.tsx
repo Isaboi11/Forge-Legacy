@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   },
   head: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   headText: { flex: 1, minWidth: 0, gap: 6 },
-  eyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk },
+  eyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.labelInk },
   title: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', lineHeight: 22, color: flColor.cream100 },
   note: { fontSize: 14, lineHeight: 21, color: flColor.gray400 },
 
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   statValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
   statValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', lineHeight: 20, color: flColor.cream100 },
   statUnit: { fontSize: 11, fontWeight: '600', color: flColor.gray600 },
-  statLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  statLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.labelInk },
 
   actions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   primary: {

@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   sheetBlurb: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
 
   recentBlock: { gap: 8 },
-  recentLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, color: flColor.bronzeInk },
+  recentLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, color: flColor.labelInk },
   recentRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.surfaceRecessed,
   },
-  recentRowOn: { borderColor: flColor.bronzeBorder },
+  recentRowOn: { borderColor: flColor.accentBorder },
   recentArt: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.xs, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.bronzeTint, overflow: 'hidden' },
   recentArtImg: { width: '100%', height: '100%' },
   recentText: { flex: 1, minWidth: 0, gap: 2 },

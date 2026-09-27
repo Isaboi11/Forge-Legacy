@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  eyebrow: { marginTop: 20, fontSize: 11, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk, textAlign: 'center' },
+  eyebrow: { marginTop: 20, fontSize: 11, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk, textAlign: 'center' },
   headline: { marginTop: 11, fontFamily: flFont.display, fontSize: 27, fontWeight: '600', letterSpacing: -0.4, lineHeight: 30, color: flColor.cream100, textAlign: 'center' },
   body: { marginTop: 11, maxWidth: 274, fontFamily: flFont.sans, fontSize: 13.5, lineHeight: 21, color: flColor.gray400, textAlign: 'center' },
 

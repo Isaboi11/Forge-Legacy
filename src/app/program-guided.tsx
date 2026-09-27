@@ -969,7 +969,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.7,
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
     borderWidth: 1,
     borderColor: flColor.bronzeBorderSubtle,
     backgroundColor: flColor.bronzeTint,

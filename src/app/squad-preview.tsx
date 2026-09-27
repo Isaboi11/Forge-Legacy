@@ -565,15 +565,15 @@ const styles = StyleSheet.create({
   statCol: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 15, paddingHorizontal: 6 },
   statColDivided: { borderLeftWidth: 1, borderLeftColor: flColor.charcoal700 },
   statValue: { fontFamily: flFont.display, fontSize: 21, fontWeight: '700', lineHeight: 22, color: flColor.cream100 },
-  statLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk },
+  statLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.labelInk },
 
   // sections + cards
-  sectionLabel: { marginTop: 22, marginBottom: 12, marginHorizontal: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
-  sectionLabelInline: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { marginTop: 22, marginBottom: 12, marginHorizontal: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
+  sectionLabelInline: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   card: { backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, boxShadow: flShadow.card, paddingHorizontal: 15, paddingVertical: 16 },
 
   // goal
-  goalKicker: { marginBottom: 7, fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  goalKicker: { marginBottom: 7, fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
   goalTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', lineHeight: 23, color: flColor.cream100 },
   goalTrack: { marginTop: 14, height: 10, borderRadius: flRadius.pill, overflow: 'hidden', backgroundColor: flColor.charcoal700, boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.6)' },
   goalFill: { height: '100%', borderRadius: flRadius.pill, overflow: 'hidden', boxShadow: flShadow.glowSubtle },
@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
   // commit bar
   commitBar: { paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700, boxShadow: '0 -10px 26px rgba(0,0,0,0.4)' },
   commitBtn: { position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1 },
-  commitBtnFilled: { borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
+  commitBtnFilled: { borderColor: flColor.accentBorder, boxShadow: flShadow.glowSubtle },
   commitBtnDone: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   commitBtnPressed: { transform: [{ scale: 0.96 }], opacity: 0.9 },
   commitBtnBusy: { opacity: 0.6 },
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
 
   // request-note sheet
   sheetBody: { gap: 8 },
-  sheetLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sheetLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.labelInk },
   sheetInput: {
     minHeight: 96,
     paddingHorizontal: 13,

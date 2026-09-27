@@ -4148,7 +4148,7 @@ function ProgramCardView({
           style={({ pressed }) => [styles.previewRow, pressed && styles.previewRowPressed]}
         >
           <Text style={styles.previewRowText}>Preview program</Text>
-          <EngravedIcon name="chevron-right" size={16} color={flColor.bronze400} />
+          <EngravedIcon name="chevron-right" size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
         </Pressable>
         )}
       </CardSurface>
@@ -4286,7 +4286,7 @@ function DayCardView({
           style={({ pressed }) => [styles.previewRow, pressed && styles.previewRowPressed]}
         >
           <Text style={styles.previewRowText}>Preview session</Text>
-          <EngravedIcon name="chevron-right" size={16} color={flColor.bronze400} />
+          <EngravedIcon name="chevron-right" size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
         </Pressable>
         )}
       </CardSurface>
@@ -4578,8 +4578,8 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.trainTogetherCard,
   },
   homeCardPlain: { backgroundColor: wash(0.028), borderWidth: 1, borderColor: wash(0.07) },
-  homeCardPressed: { backgroundColor: bronzeWash(0.08), borderColor: flColor.bronzeBorderSubtle },
-  homeTag: { fontSize: 8.5, fontWeight: '700', letterSpacing: 1.8, color: flColor.bronzeInk },
+  homeCardPressed: { backgroundColor: bronzeWash(0.08), borderColor: flColor.accentBorderSubtle },
+  homeTag: { fontSize: 8.5, fontWeight: '700', letterSpacing: 1.8, color: flColor.labelInk },
   homeCardTitle: { fontSize: 13.5, fontWeight: '600', lineHeight: 17.5, color: flColor.cream100 },
   homeCardSub: { fontSize: 11, lineHeight: 15.5, color: flColor.gray600 },
   /* ⚠ `marginTop: auto` is load-bearing — it holds the three arrows on one baseline when the three subs
@@ -4622,11 +4622,11 @@ const styles = StyleSheet.create({
   /* §4 — the conversation begins here, and only once there is one. */
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 18, paddingBottom: 4 },
   dividerRule: { flex: 1, height: 1 },
-  dividerLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronzeInk },
+  dividerLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2.4, color: flColor.labelInk },
 
   /* ══ THE ATHLETE'S TURN (§5) ══ Eyebrow, bubble, then the time and the ticks. */
   meBlock: { alignItems: 'flex-end', gap: 5 },
-  meEyebrow: { fontSize: 9, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronzeInk },
+  meEyebrow: { fontSize: 9, fontWeight: '700', letterSpacing: 2.2, color: flColor.labelInk },
   meRow: {
     maxWidth: '78%',
     paddingHorizontal: 15,
@@ -4652,7 +4652,7 @@ const styles = StyleSheet.create({
   holtGutterPast: { opacity: 0.7 },
   holtTime: { fontSize: 9, color: flColor.gray600 },
   holtBody: { flex: 1, minWidth: 0, gap: 7 },
-  holtEyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronzeInk },
+  holtEyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2.4, color: flColor.labelInk },
   holtText: { fontSize: 16.5, lineHeight: 24, color: flColor.cream100 },
   holtTextPast: { fontSize: 15.5, lineHeight: 22.5, color: flColor.gray400 },
   /* ⚠ INSIDE the content column, so the answers align to the question and not to the mark. */
@@ -4666,7 +4666,7 @@ const styles = StyleSheet.create({
      reason is the rule above everything else on this surface: bronze is the ACCENT. When every option
      is already bronze-edged, choosing one has nowhere left to go — the selected state had no contrast
      to gain, so the whole indicator system was invisible. */
-  ctlOn: { borderColor: flColor.bronzeBorder, backgroundColor: bronzeWash(0.13) },
+  ctlOn: { borderColor: flColor.accentBorder, backgroundColor: bronzeWash(0.13) },
   ctlTextOn: { fontWeight: '600' },
 
   // multi — collects taps, then a deliberate Build.
@@ -4728,7 +4728,7 @@ const styles = StyleSheet.create({
   /* ⚠ ROUND = PICK ONE, SQUARE = PICK MANY. The indicator's shape carries the rule (§6). */
   optDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: wash(0.16), alignItems: 'center', justifyContent: 'center' },
   optSquare: { width: 17, height: 17, borderRadius: 5, borderWidth: 1, borderColor: wash(0.16), alignItems: 'center', justifyContent: 'center' },
-  optDotOn: { borderColor: flColor.bronzeBorder, backgroundColor: bronzeWash(0.18) },
+  optDotOn: { borderColor: flColor.accentBorder, backgroundColor: bronzeWash(0.18) },
 
   // grid — places and kit. Taller than a chip because the names are longer.
   gridWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -4791,7 +4791,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     boxShadow: flShadow.trainTogetherCard,
   },
-  buildLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronzeInk },
+  buildLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 2.2, color: flColor.labelInk },
   buildSteps: { gap: 11 },
   buildStep: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   buildIcon: { width: 14, height: 14, alignItems: 'center', justifyContent: 'center' },
@@ -5055,7 +5055,7 @@ const styles = StyleSheet.create({
   // Three across, so six stats form two clean rows and a dropped cell reflows rather than leaving a hole.
   stat: { width: '31%', gap: 3 },
   statValue: { fontFamily: flFont.display, fontSize: 19, color: flColor.cream100 },
-  statLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, color: flColor.bronzeInk },
+  statLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, color: flColor.labelInk },
   ribbonWrap: { gap: 7 },
   ribbon: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 46 },
   bar: { flex: 1, borderRadius: 1, backgroundColor: flColor.bronze600 },
@@ -5092,7 +5092,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     outlineWidth: 0,
   },
-  inputTyping: { borderColor: flColor.bronzeBorder, boxShadow: `0 0 0 3px ${bronzeWash(0.07)}` },
+  inputTyping: { borderColor: flColor.accentBorder, boxShadow: `0 0 0 3px ${bronzeWash(0.07)}` },
   sendWrap: { width: 44, height: 44 },
   sendOff: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.charcoal600 },
   /* The only large bronze fill the system permits, and this is a sanctioned use of it (§17.4). */

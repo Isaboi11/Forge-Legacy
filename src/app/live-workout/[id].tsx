@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   fill: { height: 4, backgroundColor: flColor.bronze400 },
 
   card: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, paddingHorizontal: 14, paddingVertical: 12, gap: 8 },
-  cardCurrent: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  cardCurrent: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   cardDone: { opacity: 0.78 },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   cardName: { flex: 1, fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },

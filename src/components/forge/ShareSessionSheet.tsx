@@ -696,7 +696,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.surfaceRecessed,
   },
-  tilePressed: { borderColor: flColor.bronzeBorder },
+  tilePressed: { borderColor: flColor.accentBorder },
   tileOff: { opacity: 0.45 },
   tileLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
 

@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  trackOn: { borderColor: flColor.bronzeBorder },
+  trackOn: { borderColor: flColor.accentBorder },
   trackOff: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   knob: { position: 'absolute', top: 2, left: 2, width: 21, height: 21, borderRadius: 999 },
 });

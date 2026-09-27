@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingVertical: 9, paddingHorizontal: 15, borderRadius: flRadius.pill, borderWidth: 1 },
-  chipActive: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  chipActive: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   chipIdle: { borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
   chipText: { fontSize: 12.5, fontWeight: '600' },
   chipTextActive: { color: flColor.bronze300 },

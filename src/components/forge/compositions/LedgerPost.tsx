@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
   counterText: { fontSize: 11, fontWeight: '600', color: flColor.onMedia }, // a fixed dark chip over media
 
   marker: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 17, paddingHorizontal: LEDGER_GUTTER },
-  markerLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  markerLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
 
   title: { marginTop: 7, paddingHorizontal: LEDGER_GUTTER, fontFamily: flFont.display, fontSize: 22, fontWeight: '600', lineHeight: 25.3, letterSpacing: 0.2, color: flColor.cream100 },
   context: { marginTop: 4, paddingHorizontal: LEDGER_GUTTER, fontSize: 12.5, color: flColor.gray600 },
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 26, marginTop: 15, paddingHorizontal: LEDGER_GUTTER },
   stat: { gap: 3 },
   statValue: { fontFamily: flFont.display, fontSize: 21, fontWeight: '600', lineHeight: 21, color: flColor.cream100 },
-  statLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.bronzeInk },
+  statLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.labelInk },
 
   playlist: {
     flexDirection: 'row',

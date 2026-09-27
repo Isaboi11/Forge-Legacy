@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 34 },
   scroll: { paddingHorizontal: 22, paddingBottom: 44 },
 
-  tag: { marginTop: 6, fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  tag: { marginTop: 6, fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
   // The demo now sits above the identity block; the `.dc` breathes here rather than butting them up.
   tagAfterDemo: { marginTop: 20 },
   name: { marginTop: 6, fontFamily: flFont.display, fontSize: 30, fontWeight: '600', letterSpacing: -0.3, color: flColor.cream100 },
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: flRadius.pill,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
+    borderColor: flColor.accentBorder,
     backgroundColor: flColor.bronzeTint,
   },
   bestText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 0.7, textTransform: 'uppercase', color: flColor.bronze300 },

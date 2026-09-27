@@ -470,7 +470,7 @@ const styles = StyleSheet.create({
 
   // section
   sectionRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 22, marginBottom: 14, marginHorizontal: 4 },
-  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   countBadge: {
     minWidth: 22,
     height: 22,

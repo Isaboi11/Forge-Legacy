@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   takenBanner: { marginTop: 16, padding: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   takenText: { fontSize: 12, color: flColor.bronze300 },
 
-  sectionLabel: { marginTop: 26, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { marginTop: 26, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   sectionSub: { marginTop: 5, marginBottom: 12, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
 
   days: { gap: 10 },

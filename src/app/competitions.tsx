@@ -506,14 +506,14 @@ const styles = StyleSheet.create({
   chipRail: { marginTop: 14 },
   chipRailContent: { gap: 8, paddingHorizontal: 22, paddingBottom: 6 },
   chip: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: flRadius.pill, borderWidth: 1 },
-  chipOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder },
+  chipOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
   chipOff: { backgroundColor: 'transparent', borderColor: flColor.charcoal600 },
   chipLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
   chipLabelOn: { color: flColor.bronze300 },
 
   // sections
-  sectionLabel: { marginTop: 24, marginBottom: 12, marginHorizontal: 22, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
-  sectionLabelInline: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { marginTop: 24, marginBottom: 12, marginHorizontal: 22, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
+  sectionLabelInline: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 24, marginBottom: 12, marginHorizontal: 22 },
   section: { marginHorizontal: 22, gap: 10 },
   stack: { marginHorizontal: 22, gap: 12 },
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     boxShadow: `${flShadow.card}, ${flShadow.glowSubtle}`,
   },
   typeRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  typeName: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk },
+  typeName: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.labelInk },
   activeName: { marginTop: 9, fontFamily: flFont.display, fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   oppRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 6 },
   oppText: { flexShrink: 1, fontSize: 12.5, color: flColor.gray400 },
@@ -618,9 +618,9 @@ const styles = StyleSheet.create({
 
   // stats — 1px gaps over a hairline-coloured ground, as the design does it
   statGrid: { marginHorizontal: 22, flexDirection: 'row', flexWrap: 'wrap', gap: 1, backgroundColor: flColor.charcoal700, borderRadius: flRadius.lg, overflow: 'hidden' },
-  championsRow: { flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 24, marginHorizontal: 22, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
+  championsRow: { flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 24, marginHorizontal: 22, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.accentBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
   championsRowPressed: { opacity: 0.92 },
-  championsIcon: { width: 40, height: 40, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  championsIcon: { width: 40, height: 40, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   championsBody: { flex: 1, minWidth: 0 },
   championsTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   championsSub: { marginTop: 2, fontSize: 11.5, color: flColor.gray600 },
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.glowSubtle,
   },
   favBody: { flex: 1, minWidth: 0, gap: 2 },
-  favEyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  favEyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.labelInk },
   favType: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100 },
 
   // empties

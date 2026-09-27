@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   heroHintTiny: { marginTop: 3, fontSize: 11, letterSpacing: 0.2, color: flColor.gray600 },
 
   // sections + cards
-  sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   card: {
     backgroundColor: flColor.charcoal900,
     borderWidth: 1,
@@ -422,13 +422,13 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.surfaceRecessed,
   },
-  crestCellOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  crestCellOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   crestCaption: { marginTop: 11, fontSize: 11, lineHeight: 16, color: flColor.gray600 },
 
   // category chips (same chip as the Discover Squads filter row)
   catRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   catChip: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: flRadius.pill, borderWidth: 1, overflow: 'hidden' },
-  catChipOn: { borderColor: flColor.bronzeBorder },
+  catChipOn: { borderColor: flColor.accentBorder },
   catChipOff: { borderColor: flColor.charcoal500, backgroundColor: flColor.surfaceRecessed },
   catChipLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
   catChipLabelOn: { color: flColor.onBronze },
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
   // commit bar
   commitBar: { paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   commitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1 },
-  commitBtnOn: { borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
+  commitBtnOn: { borderColor: flColor.accentBorder, boxShadow: flShadow.glowSubtle },
   commitBtnOff: { backgroundColor: flColor.charcoal800, borderColor: flColor.charcoal600, opacity: 0.75 },
   commitLabel: { fontSize: 15, fontWeight: '600', color: flColor.onBronze },
   commitLabelOff: { fontSize: 15, fontWeight: '600', color: flColor.gray600 },

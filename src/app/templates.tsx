@@ -21,6 +21,7 @@ import { useProfile } from '@/lib/profile';
 import { useToast } from '@/hooks/useCeremony';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Workout Templates (W-26).
@@ -461,7 +462,7 @@ function PlayGlyph({ size = 13, color = flColor.bronze300 }: { size?: number; co
 }
 function Chevron({ size = 15 }: { size?: number }) {
   return (
-    <EngravedIcon name="chevron-right" size={size} color={flColor.bronze400} />
+    <EngravedIcon name="chevron-right" size={size} color={forgeOr(flColor.bronze400, flColor.gray600)} />
   );
 }
 function LinesGlyph({ size = 26, color = flColor.bronze400 }: { size?: number; color?: string }) {
@@ -497,7 +498,7 @@ const styles = StyleSheet.create({
   // "From Forge" shelf
   shelf: { marginBottom: 22, gap: 10 },
   shelfHead: { marginBottom: 2 },
-  shelfLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  shelfLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
   shelfSub: { marginTop: 3, fontSize: 12, color: flColor.gray600 },
   yoursHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   reorderBtn: { paddingVertical: 6, paddingLeft: 12 },

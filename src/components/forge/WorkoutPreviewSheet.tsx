@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     lineHeight: 16,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
     marginBottom: 10,
   },
   section: { marginTop: 6 },

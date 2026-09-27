@@ -751,7 +751,7 @@ export default function SquadDetailRoute() {
                   <Text style={styles.setGoalTitle}>Set a squad goal</Text>
                   <Text style={styles.setGoalSub}>One long-term objective the whole squad pushes toward.</Text>
                 </View>
-                <ChevronIcon color={flColor.bronze400} />
+                <ChevronIcon color={forgeOr(flColor.bronze400, flColor.gray600)} />
               </Pressable>
             </View>
           ) : null}
@@ -1782,7 +1782,7 @@ const styles = StyleSheet.create({
 
   // current goal
   goalHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 10 },
+  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 10 },
   goalTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', lineHeight: 28, color: flColor.cream100, marginBottom: 14 },
   progressTrack: { height: 10, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal700, overflow: 'hidden', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.6)' },
   progressFill: { height: '100%', borderRadius: flRadius.pill, boxShadow: flShadow.glowSubtle },
@@ -1806,11 +1806,11 @@ const styles = StyleSheet.create({
   // edit goal sheet
   goalSheetBody: { gap: 16 },
   goalSheetSub: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
-  goalFieldLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 9 },
+  goalFieldLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 9 },
   goalChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   goalSubChips: { marginTop: 8 },
   goalChip: { paddingVertical: 9, paddingHorizontal: 16, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  goalChipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  goalChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   goalChipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   goalChipTextOn: { color: flColor.bronze300 },
   goalAutoNote: { fontSize: 12, lineHeight: 17, color: flColor.gray600 },
@@ -1884,7 +1884,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal800,
     boxShadow: flShadow.card,
   },
-  recordsRowPressed: { transform: [{ scale: 0.96 }], borderColor: flColor.bronzeBorder },
+  recordsRowPressed: { transform: [{ scale: 0.96 }], borderColor: flColor.accentBorder },
   recordsIcon: {
     width: 38,
     height: 38,
@@ -1923,7 +1923,7 @@ const styles = StyleSheet.create({
   ciFirst: { maxWidth: 72, fontSize: 12.5, color: flColor.gray400 },
   ciCtaDisc: { width: 58, height: 58, borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronzeBorder, borderStyle: 'dashed', backgroundColor: flColor.bronzeTint, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   ciCtaText: { color: flColor.bronze300, fontWeight: '600' },
-  ciProgressFill: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: flColor.bronzeBorder },
+  ciProgressFill: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: flColor.accentBorder },
 
   // check-in video viewer (full-screen)
   viewerRoot: { flex: 1, backgroundColor: 'rgba(0,0,0,0.94)' },
@@ -1948,7 +1948,7 @@ const styles = StyleSheet.create({
   // squad feed
   feedSection: { paddingHorizontal: 20, marginTop: 10 },
   feedHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
-  feedLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  feedLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   compHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 28, marginBottom: 12, marginHorizontal: 2 },
   viewAll: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   viewAllText: { fontSize: 12, fontWeight: '500', color: flColor.bronzeInk },
@@ -1956,7 +1956,7 @@ const styles = StyleSheet.create({
   compTop: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   compEmblem: { width: 46, height: 46, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, boxShadow: flShadow.glowSubtle },
   compIdentity: { flex: 1, minWidth: 0, gap: 4 },
-  compEyebrow: { fontSize: 9, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronzeInk },
+  compEyebrow: { fontSize: 9, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.labelInk },
   compName: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   compStat: { flexShrink: 0, alignItems: 'center', gap: 2, paddingLeft: 13, borderLeftWidth: 1, borderLeftColor: flColor.charcoal600 },
   compStatLabel: { fontSize: 8, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
@@ -1978,7 +1978,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
   },
-  ackRowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  ackRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   ackRowPressed: { opacity: 0.75 },
   ackRowText: { flex: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   ackRowTextOn: { color: flColor.bronze300 },

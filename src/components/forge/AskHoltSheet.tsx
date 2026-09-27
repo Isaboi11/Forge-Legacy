@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.surfaceRecessed,
   },
-  chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   chipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   chipTextOn: { color: flColor.bronze300 },
 

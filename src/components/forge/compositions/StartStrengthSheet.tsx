@@ -5,6 +5,7 @@ import Svg from 'react-native-svg';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flRadius } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * "Start Strength" — the three ways into a lifting session, from `Forge Strength Start.dc.html`.
@@ -100,7 +101,7 @@ export function StartOptionRow({ title, sub, icon, onPress }: { title: string; s
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.sub}>{sub}</Text>
       </View>
-      <EngravedIcon name="chevron-right" size={18} color={flColor.bronze400} />
+      <EngravedIcon name="chevron-right" size={18} color={forgeOr(flColor.bronze400, flColor.gray600)} />
     </Pressable>
   );
 }
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
   },
-  rowPressed: { opacity: 0.88, borderColor: flColor.bronzeBorder },
+  rowPressed: { opacity: 0.88, borderColor: flColor.accentBorder },
   ring: {
     width: 42,
     height: 42,

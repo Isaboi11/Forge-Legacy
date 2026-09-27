@@ -21,6 +21,7 @@ import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ForgeSymbol, type SymbolName } from '@/components/forge/ForgeSymbol';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import type { Accomplishment, Chapter, FeaturedMoment, Goal, Honor, TimelineEntry } from '@/types/legacy';
+import { forgeOr } from '@/constants/theme-scrim';
 
 export function humanizeEvent(t: string): string {
   return t
@@ -85,7 +86,7 @@ export function CurrentChapter({ chapter, dayCount, onOpen }: { chapter: Chapter
         style={s.chapterNameRow}
       >
         <Text style={s.chapterName}>{chapter.name}</Text>
-        <ChevronRightIcon size={18} color={flColor.bronze400} />
+        <ChevronRightIcon size={18} color={forgeOr(flColor.bronze400, flColor.gray600)} />
       </Pressable>
 
       {chapter.goal.kind !== 'none' ? (
@@ -329,7 +330,7 @@ const s = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     letterSpacing: 0.2,
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
     marginBottom: 10,
   },
   standardEmpty: { marginTop: 8, fontFamily: flFont.display, fontStyle: 'italic', fontSize: 15, lineHeight: 22, color: flColor.gray600 },
@@ -523,7 +524,7 @@ const s = StyleSheet.create({
     height: 72,
     borderRadius: flRadius.round,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
+    borderColor: flColor.accentBorderSubtle,
     backgroundColor: flColor.charcoal800,
     alignItems: 'center',
     justifyContent: 'center',

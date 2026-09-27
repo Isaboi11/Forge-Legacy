@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 2,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
   },
   title: {
     fontFamily: flFont.display,

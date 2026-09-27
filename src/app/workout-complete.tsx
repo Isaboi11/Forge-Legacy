@@ -1356,8 +1356,8 @@ function SealMedallion({ size = 132, sealed = false }: { size?: number; sealed?:
           <Rect width={gs} height={gs} fill="url(#sealGlow)" />
         </Svg>
       </Animated.View>
-      <View style={{ position: 'absolute', top: 0, left: 0, width: size, height: size, borderRadius: size / 2, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, boxShadow: `${flShadow.glowSubtle}, ${flShadow.borderInset}` }} />
-      <View style={{ position: 'absolute', top: 10, left: 10, width: size - 20, height: size - 20, borderRadius: (size - 20) / 2, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle }} />
+      <View style={{ position: 'absolute', top: 0, left: 0, width: size, height: size, borderRadius: size / 2, borderWidth: 1, borderColor: flColor.accentBorder, backgroundColor: flColor.charcoal800, boxShadow: `${flShadow.glowSubtle}, ${flShadow.borderInset}` }} />
+      <View style={{ position: 'absolute', top: 10, left: 10, width: size - 20, height: size - 20, borderRadius: (size - 20) / 2, borderWidth: 1, borderColor: flColor.accentBorderSubtle }} />
       <View style={{ position: 'relative', zIndex: 1 }}>
         <ForgeMarkGlyph size={Math.round(size * 0.5)} />
       </View>
@@ -1404,7 +1404,7 @@ function CaptureSeal({ size }: { size: number }) {
           height: size,
           borderRadius: size / 2,
           borderWidth: 1,
-          borderColor: flColor.bronzeBorder,
+          borderColor: flColor.accentBorder,
           backgroundColor: flColor.charcoal800,
           boxShadow: flShadow.borderInset,
         }}
@@ -1418,7 +1418,7 @@ function CaptureSeal({ size }: { size: number }) {
           height: size - inset * 2,
           borderRadius: (size - inset * 2) / 2,
           borderWidth: 1,
-          borderColor: flColor.bronzeBorderSubtle,
+          borderColor: flColor.accentBorderSubtle,
         }}
       />
       <ForgeMarkGlyph size={Math.round(size * 0.47)} color={flColor.bronze300} />
@@ -1656,7 +1656,7 @@ const styles = StyleSheet.create({
   capName: { fontFamily: flFont.display, fontSize: 26, fontWeight: '700', lineHeight: 28, letterSpacing: 0.3, color: flColor.cream100, textAlign: 'center', marginTop: 15 },
   capMeta: { fontFamily: flFont.sans, fontSize: 12.5, letterSpacing: 0.3, color: flColor.gray600, textAlign: 'center', marginTop: 6 },
   capSection: { width: '100%', maxWidth: 322, marginTop: 30, gap: 7 },
-  capSectionLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  capSectionLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
   capSectionBody: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 19.5, color: flColor.gray400, marginBottom: 4 },
   capRows: {
     width: '100%',
@@ -1692,7 +1692,7 @@ const styles = StyleSheet.create({
   quoteRow: { flexDirection: 'row', gap: 12, maxWidth: 300, marginTop: 26, alignSelf: 'center' },
   quoteRule: { width: 2, borderRadius: 1 },
 
-  firstEyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  firstEyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.labelInk },
   revealChapter: { fontFamily: flFont.display, fontSize: 30, fontWeight: '600', color: flColor.cream100, textAlign: 'center', marginTop: 6, letterSpacing: -0.3 },
   revealLine: { fontFamily: flFont.sans, fontSize: 14.5, color: flColor.gray400, textAlign: 'center', marginTop: 4 },
   /* The status line, the name and the date as ONE child of the centred stack — see the note at the
@@ -1756,7 +1756,7 @@ const styles = StyleSheet.create({
   recVolume: { fontFamily: flFont.display, fontSize: 46, fontWeight: '600', color: flColor.cream100 },
   recVolumeLabel: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray600, marginTop: -2 },
   recList: { marginTop: 26, gap: 2 },
-  recHeading: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginTop: 28, marginBottom: 10 },
+  recHeading: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginTop: 28, marginBottom: 10 },
   recRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 14, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
   recRowText: { gap: 2 },
   recExName: { fontFamily: flFont.sans, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
@@ -1765,7 +1765,7 @@ const styles = StyleSheet.create({
     gap: 1,
     marginBottom: 18,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
+    borderColor: flColor.accentBorder,
     borderRadius: flRadius.md,
     backgroundColor: 'rgba(191,143,79,0.05)',
     overflow: 'hidden',
@@ -1853,14 +1853,14 @@ const styles = StyleSheet.create({
   // hero ladder
   heroFeatured: { flexDirection: 'row', alignItems: 'center', gap: 14, width: '100%', maxWidth: 312, marginTop: 24, paddingVertical: 16, paddingHorizontal: 18, borderRadius: flRadius.lg, backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
   heroTextF: { flex: 1, minWidth: 0, gap: 2, alignItems: 'flex-start' },
-  heroEyebrowF: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  heroEyebrowF: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   heroTitleF: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', color: flColor.cream100, lineHeight: 22 },
   heroNoteF: { fontSize: 11.5, color: flColor.gray400 },
   /* No fill, no border, no card — see the note on `Hero`. What is left is a centred caption: glyph,
      label, fact. `marginTop: 4` because `center`'s own 12pt gap is now doing the separating. */
   heroStandard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, maxWidth: 300, marginTop: 4 },
   heroLineS: { flexShrink: 1, textAlign: 'center' },
-  heroEyebrowS: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  heroEyebrowS: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   heroDotS: { fontSize: 10, color: flColor.bronzeBorder },
   heroTitleS: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
 
@@ -1914,7 +1914,7 @@ const styles = StyleSheet.create({
   },
   sessNoteHint: { fontSize: 12, color: flColor.gray600 },
   longGameWrap: { marginTop: 32, paddingTop: 26, borderTopWidth: 1, borderTopColor: flColor.bronzeBorderSubtle },
-  longGameLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 8 },
+  longGameLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 8 },
   chapterCard: { flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 4, padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   chapterGlyph: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
   chapterText: { flex: 1, minWidth: 0, gap: 2 },

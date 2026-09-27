@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1.1,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
     marginBottom: 9,
   },
   well: {

@@ -381,10 +381,10 @@ const styles = StyleSheet.create({
   topBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   topTitle: { flex: 1, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray400 },
 
-  eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk },
+  eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.labelInk },
   date: { marginTop: 6, fontFamily: flFont.display, fontSize: 30, fontWeight: '700', letterSpacing: -0.3, lineHeight: 32, color: flColor.cream100 },
   captureType: { marginTop: 8, fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
-  chapterLabel: { marginTop: 5, fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
+  chapterLabel: { marginTop: 5, fontSize: 13, fontWeight: '600', color: flColor.labelInk },
   metaLine: { marginTop: 6, fontSize: 12.5, color: flColor.gray600 },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 11 },
   tagPill: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   /* The same segmented shape Compare uses for Side by side / Slider, so the two read as one control. */
   layoutToggle: { flexDirection: 'row', gap: 8, marginTop: 22 },
   layoutSeg: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: flRadius.pill, borderWidth: 1 },
-  layoutSegOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder },
+  layoutSegOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
   layoutSegOff: { backgroundColor: 'transparent', borderColor: flColor.charcoal600 },
   layoutSegText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   layoutSegTextOn: { color: flColor.bronze300 },
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   viewValue: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
 
   reflSection: { marginTop: 22, paddingTop: 20, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
-  reflLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 10 },
+  reflLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 10 },
   reflText: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 17.5, lineHeight: 28, color: flColor.gray400 },
 
   siblings: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 24, paddingTop: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },

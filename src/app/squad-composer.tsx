@@ -780,7 +780,7 @@ function RecapStat({ n, label }: { n: string; label: string }) {
 }
 
 function ChevronRight() {
-  return <EngravedIcon name="chevron-right" size={17} color={flColor.bronze400} />;
+  return <EngravedIcon name="chevron-right" size={17} color={forgeOr(flColor.bronze400, flColor.gray600)} />;
 }
 function PlusInCircle() {
   return <EngravedIcon name="plus" size={20} color={flColor.bronze300} />;
@@ -929,7 +929,7 @@ const styles = StyleSheet.create({
 
   // pick step
   pickScroll: { paddingHorizontal: 18, paddingTop: 8, paddingBottom: 32 },
-  groupLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginLeft: 2, marginBottom: 12 },
+  groupLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginLeft: 2, marginBottom: 12 },
   groupLabelGap: { marginTop: 24 },
 
   // ── audience (composer merge) ──
@@ -979,7 +979,7 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.card,
   },
   typeCardLocked: { borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed, opacity: 0.72, boxShadow: 'none' },
-  typeCardPressed: { transform: [{ scale: 0.96 }], borderColor: flColor.bronzeBorder },
+  typeCardPressed: { transform: [{ scale: 0.96 }], borderColor: flColor.accentBorder },
   typeIcon: {
     width: 38,
     height: 38,
@@ -999,7 +999,7 @@ const styles = StyleSheet.create({
   // compose step
   composeScroll: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 40, gap: 14 },
   postBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: flRadius.md, borderWidth: 1 },
-  postBtnOn: { borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), boxShadow: flShadow.glowSubtle },
+  postBtnOn: { borderColor: flColor.accentBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), boxShadow: flShadow.glowSubtle },
   postBtnOff: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   postBtnText: { fontSize: 13.5, fontWeight: '700', letterSpacing: 0.3 },
   postBtnTextOn: { color: forgeOr<string>(flColor.bronze300, flColor.onBronze) },
@@ -1012,7 +1012,7 @@ const styles = StyleSheet.create({
   authorMeta: { fontSize: 11.5, color: flColor.gray600, marginTop: 1 },
 
   fieldWrap: { gap: 7 },
-  fieldLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk, marginLeft: 2 },
+  fieldLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.labelInk, marginLeft: 2 },
   input: {
     backgroundColor: flColor.charcoal900,
     borderWidth: 1,
@@ -1027,7 +1027,7 @@ const styles = StyleSheet.create({
   area: { lineHeight: 22 },
 
   preview: { gap: 9, marginTop: 4 },
-  previewLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk, marginLeft: 2 },
+  previewLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.labelInk, marginLeft: 2 },
   previewCard: {
     height: 170,
     borderRadius: flRadius.md,
@@ -1040,14 +1040,14 @@ const styles = StyleSheet.create({
   },
   previewValue: { fontFamily: flFont.display, fontSize: 46, fontWeight: '700', lineHeight: 48, color: flColor.bronze300, textShadowColor: 'rgba(186, 134, 84,0.5)', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 20 },
   previewExercise: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
-  previewTag: { fontSize: 9, fontWeight: '600', letterSpacing: 2.5, color: flColor.bronzeInk },
+  previewTag: { fontSize: 9, fontWeight: '600', letterSpacing: 2.5, color: flColor.labelInk },
 
   gateNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, padding: 12, borderRadius: flRadius.md, backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: flColor.charcoal700 },
   gateNoteText: { flex: 1, minWidth: 0, fontSize: 11.5, lineHeight: 17, color: flColor.gray400 },
 
   // recap / pr pickers
   pickerWrap: { gap: 10 },
-  pickerLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk, marginLeft: 2 },
+  pickerLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.labelInk, marginLeft: 2 },
   pickerBusy: { height: 90, alignItems: 'center', justifyContent: 'center' },
   pickerEmpty: { fontSize: 13, lineHeight: 20, color: flColor.gray400, paddingVertical: 18, paddingHorizontal: 4 },
   pickerList: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, overflow: 'hidden' },

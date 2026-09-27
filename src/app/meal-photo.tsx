@@ -32,6 +32,7 @@ import { useMediaPicker } from '@/lib/useMediaPicker';
 import { ensureConsent } from '@/lib/consent';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Log from a Photo — Nutrition Architecture §2 "Log a meal from a photo" (Premium AI, credits).
@@ -156,7 +157,7 @@ export default function MealPhotoScreen() {
       <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
         <Text style={styles.mealLineLabel}>Adding to</Text>
         <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
-        <EngravedIcon name="chevron-down" size={13} color={flColor.bronze400} />
+        <EngravedIcon name="chevron-down" size={13} color={forgeOr(flColor.bronze400, flColor.gray600)} />
         {iso !== today ? <Text style={styles.mealLineDay}>{dayLabel(iso, today)}</Text> : null}
       </Pressable>
 
@@ -504,7 +505,7 @@ const styles = StyleSheet.create({
 
   totals: { flexDirection: 'row', alignItems: 'baseline', gap: 8, paddingBottom: 6 },
   totalKcal: { fontFamily: flFont.display, fontSize: 40, color: flColor.cream100 },
-  totalLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  totalLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
   totalMacros: { flex: 1, textAlign: 'right', fontSize: 13, color: flColor.gray400 },
   sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600, paddingTop: 10, paddingBottom: 2 },
 
@@ -539,7 +540,7 @@ const styles = StyleSheet.create({
   fieldLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.gray600 },
   servingWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   choice: { paddingVertical: 9, paddingHorizontal: 14, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal800, ...flBorder.subtle },
-  choiceOn: { backgroundColor: flColor.bronzeDark, borderColor: flColor.bronzeBorder },
+  choiceOn: { backgroundColor: flColor.bronzeDark, borderColor: flColor.accentBorder },
   choiceText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   choiceTextOn: { color: flColor.bronze300 },
   qtyRow: { gap: 6 },
@@ -555,6 +556,6 @@ const styles = StyleSheet.create({
   },
   previewRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, paddingTop: 4 },
   previewKcal: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100 },
-  previewLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  previewLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
   previewMacros: { flex: 1, textAlign: 'right', fontSize: 12.5, color: flColor.gray400 },
 });

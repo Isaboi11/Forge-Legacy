@@ -863,7 +863,7 @@ const styles = StyleSheet.create({
 
   identity: { gap: 6, paddingHorizontal: 2, paddingTop: 2, paddingBottom: 18 },
   identityForm: { gap: 6, paddingHorizontal: 2, paddingTop: 2, paddingBottom: 20 },
-  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
   title: { fontFamily: flFont.display, fontSize: 30, lineHeight: 34, letterSpacing: -0.3, color: flColor.cream100 },
   lede: { marginTop: 4, fontSize: 14, lineHeight: 21, color: flColor.gray400 },
 
@@ -878,7 +878,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal800,
   },
-  chipOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder },
+  chipOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
   chipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   chipTextOn: { color: flColor.bronze300 },
 
@@ -916,8 +916,8 @@ const styles = StyleSheet.create({
   missing: { textAlign: 'center', fontSize: 12.5, color: flColor.gray400 },
 
   labelRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, paddingTop: 22, paddingBottom: 9 },
-  fieldLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk },
-  fieldLabelSolo: { paddingBottom: 9, fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk },
+  fieldLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.labelInk },
+  fieldLabelSolo: { paddingBottom: 9, fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.labelInk },
   fieldHint: { fontSize: 12, color: flColor.gray400 },
   types: { flexDirection: 'row', gap: 6 },
   typeBtn: {
@@ -1079,7 +1079,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal500,
     backgroundColor: flColor.surfaceRecessed,
   },
-  trackOn: { backgroundColor: flColor.bronzeSolid, borderColor: flColor.bronzeBorder },
+  trackOn: { backgroundColor: flColor.bronzeSolid, borderColor: flColor.accentBorder },
   knob: { width: 20, height: 20, borderRadius: 10, backgroundColor: flColor.gray600 },
   knobOn: { backgroundColor: flColor.cream100, transform: [{ translateX: 20 }] },
 

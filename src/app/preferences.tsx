@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   body: { paddingHorizontal: 18, paddingTop: 6 },
 
-  sectionLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 11 },
+  sectionLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 11 },
 
   card: { padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, marginBottom: 22, overflow: 'hidden' },
   unitsHead: { flexDirection: 'row', alignItems: 'center', gap: 14 },
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal800,
     alignItems: 'center',
   },
-  segOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  segOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   segText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   segTextOn: { color: flColor.bronze300 },
 

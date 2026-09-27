@@ -73,6 +73,7 @@ import type { Program, Workout } from '@/domain/training/schema';
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
 import { enrichSessionExercises } from '@/domain/home-artwork/catalog';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * "Chapter I — Building Your Foundation" → { number, name }, from the live DB chapter name (no hardcode).
@@ -108,7 +109,7 @@ function GetStartedRow({ label, sub, icon, onPress }: { label: string; sub: stri
           {sub}
         </Text>
       </View>
-      <ChevronRightIcon size={16} color={flColor.bronze400} />
+      <ChevronRightIcon size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
     </Pressable>
   );
 }
@@ -1492,7 +1493,7 @@ const styles = StyleSheet.create({
      eyebrow, display serif title, sans explanation. Serif is for the moment, sans for the instructions. */
   startHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 22, paddingTop: 12 },
   startHeadText: { flex: 1, minWidth: 0 },
-  startEyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  startEyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.labelInk },
   startTitle: { marginTop: 6, fontFamily: flFont.display, fontSize: 28, lineHeight: 32, fontWeight: '600', letterSpacing: -0.3, color: flColor.cream100 },
   startSub: { marginTop: 6, fontSize: 14, lineHeight: 19, color: flColor.gray400 },
   startClose: {
@@ -1505,7 +1506,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   startSection: { gap: 3, marginBottom: 2 },
-  startSectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  startSectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.labelInk },
   startSectionSub: { fontSize: 13, lineHeight: 18, color: flColor.gray400 },
   startRule: { height: 1, backgroundColor: flColor.charcoal600, marginVertical: 10 },
   /* Tightened from 12 — the stack read as a web form at its old height. The lead card carries the
@@ -1550,7 +1551,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.surfaceRecessed,
   },
-  pathPressed: { opacity: 0.88, borderColor: flColor.bronzeBorder },
+  pathPressed: { opacity: 0.88, borderColor: flColor.accentBorder },
   pathCardTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100 },
   pathCardSub: { marginTop: 5, fontSize: 13, lineHeight: 18.5, color: flColor.gray600 },
   pathQuiet: { alignSelf: 'center', marginTop: 6, paddingVertical: 8 },

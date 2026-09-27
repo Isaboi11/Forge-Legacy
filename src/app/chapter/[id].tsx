@@ -219,7 +219,7 @@ export default function ChapterDetailScreen() {
                     {primary.targetDate ? <Text style={styles.expected}>Expected by {monthYear(primary.targetDate)}</Text> : <View />}
                     <View style={styles.viewGoalLink}>
                       <Text style={styles.viewGoal}>View Goal</Text>
-                      <EngravedIcon name="chevron-right" size={14} color={flColor.bronze400} />
+                      <EngravedIcon name="chevron-right" size={14} color={forgeOr(flColor.bronze400, flColor.gray600)} />
                     </View>
                   </View>
                 </Pressable>
@@ -241,7 +241,7 @@ export default function ChapterDetailScreen() {
                 <Text style={styles.allText}>
                   {goalCount} {goalCount === 1 ? 'Goal' : 'Goals'}
                 </Text>
-                <EngravedIcon name="chevron-right" size={15} color={flColor.bronze400} />
+                <EngravedIcon name="chevron-right" size={15} color={forgeOr(flColor.bronze400, flColor.gray600)} />
               </Pressable>
             ) : null}
 
@@ -504,14 +504,14 @@ function SupportingRow({ goal, onPress }: { goal: Goal; onPress: () => void }) {
 
 const styles = StyleSheet.create({
   addPhoto: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 10, paddingVertical: 15, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
-  addPhotoPressed: { opacity: 0.88, borderColor: flColor.bronzeBorder },
+  addPhotoPressed: { opacity: 0.88, borderColor: flColor.accentBorder },
   addPhotoLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
   root: { flex: 1, backgroundColor: flColor.base },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   err: { fontSize: 14, color: flColor.gray400 },
   body: { paddingHorizontal: 18, paddingTop: 8 },
 
-  eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.labelInk },
   title: { fontFamily: flFont.display, fontSize: 34, fontWeight: '600', color: flColor.cream100, marginTop: 6 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   nameInput: { fontFamily: flFont.sans, fontSize: 16, color: flColor.cream100, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed, borderRadius: flRadius.md, paddingHorizontal: 14, paddingVertical: 12 },
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
   creed: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 14, lineHeight: 21, color: flColor.gray400, marginTop: 16 },
 
   section: { marginTop: 30 },
-  sectionEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 12 },
+  sectionEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 12 },
 
   primaryCard: { padding: 18, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('rgba(46, 35, 20, 0.42)', flColor.bronzeTint) },
   primaryName: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100, marginBottom: 14 },
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
   programHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   programIcon: { width: 30, height: 30, borderRadius: flRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   programName: { flex: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
-  programCount: { fontSize: 13, fontWeight: '700', color: flColor.bronzeInk },
+  programCount: { fontSize: 13, fontWeight: '700', color: flColor.labelInk },
   programNext: { fontSize: 11.5, color: flColor.gray600, marginTop: 8 },
   workoutTally: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 4, paddingVertical: 14, paddingHorizontal: 14, borderRadius: flRadius.lg, backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.charcoal600 },
   tallyNum: { fontFamily: flFont.display, fontSize: 30, fontWeight: '700', color: flColor.cream100 },

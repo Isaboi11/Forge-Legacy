@@ -34,6 +34,7 @@ import { useUnits } from '@/lib/settings';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { ShareSessionSheet } from '@/components/forge/ShareSessionSheet';
 import { playlistLabel, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * W-19 Activity Detail (`Forge Activity Detail.dc.html`) — one logged session, read-only. Reached from
@@ -522,7 +523,7 @@ function Body({
             <Text style={styles.summaryTitle}>See the full summary</Text>
             <Text style={styles.summarySub}>The seal, the volume, and the session in full</Text>
           </View>
-          <EngravedIcon name="chevron-right" size={16} color={flColor.bronze400} />
+          <EngravedIcon name="chevron-right" size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
         </Pressable>
       )}
     </ScrollView>
@@ -621,7 +622,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.6,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
     marginBottom: 14,
   },
   section: { marginBottom: 18 },

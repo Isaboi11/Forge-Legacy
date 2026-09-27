@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
 
   intro: { paddingTop: 6, paddingBottom: 22 },
   microRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 9 },
-  micro: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk },
+  micro: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.labelInk },
   h1: { fontFamily: flFont.display, fontSize: 27, fontWeight: '600', color: flColor.cream100, marginBottom: 9 },
   lede: { fontSize: 13, lineHeight: 20, color: flColor.gray400 },
   ledeStrong: { color: flColor.cream100, fontWeight: '700' },
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
   },
-  cardOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  cardOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 },
   disc: {
     width: 34,
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: flColor.charcoal600,
   },
-  discOn: { backgroundColor: 'rgba(186, 134, 84,0.14)', borderColor: flColor.bronzeBorder },
+  discOn: { backgroundColor: 'rgba(186, 134, 84,0.14)', borderColor: flColor.accentBorder },
   check: {
     width: 22,
     height: 22,

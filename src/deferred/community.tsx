@@ -26,6 +26,7 @@ import { getSelfProfile } from '@/domain/profile/placeholder-data';
 import { useShareSheet } from '@/hooks/useShareSheet';
 import { COMMUNITY_DATA } from '@/data/community-placeholder';
 import { getCommunityFeed, type FeedPost } from '@/data/post-placeholder';
+import { forgeOr } from '@/constants/theme-scrim';
 import type {
   AboutInfo,
   ActiveChallenge,
@@ -658,7 +659,7 @@ function ChallengesTab({ comps }: { comps: Competition[] }) {
                 accessibilityLabel={open ? `Join ${c.title}` : `View ${c.title}`}
                 style={[styles.compBtn, open ? styles.compBtnJoin : styles.compBtnView]}
               >
-                {open ? <PlusIcon /> : <ChevronRightIcon size={15} color={flColor.bronze300} />}
+                {open ? <PlusIcon /> : <ChevronRightIcon size={15} color={forgeOr(flColor.bronze300, flColor.gray600)} />}
                 <Text style={styles.compBtnText}>{open ? 'Join Challenge' : 'View Challenge'}</Text>
               </Pressable>
             </View>
@@ -1152,7 +1153,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1.6,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
     marginBottom: 12,
     paddingHorizontal: 4,
   },
@@ -1232,7 +1233,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1.4,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
   },
   pinnedBody: { padding: 15 },
 
@@ -1422,14 +1423,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.7,
     textTransform: 'uppercase',
     textAlign: 'center',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
   },
   aboutEyebrow: {
     fontSize: 11,
     fontWeight: '600',
     letterSpacing: 1.6,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
     marginTop: 22,
     marginBottom: 12,
     paddingHorizontal: 4,
@@ -1459,7 +1460,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  honorIconEarned: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  honorIconEarned: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   honorName: { fontSize: 14, fontWeight: '500', color: flColor.cream100 },
   aboutButtons: { gap: 10, marginTop: 22 },
   aboutBtn: {

@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
   liftTitle: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   liftPerf: { marginTop: 2, fontSize: 12, fontWeight: '600', color: flColor.bronze300 },
   field: { marginTop: 24 },
-  fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
   fieldHint: { marginTop: 5, fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
 
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 9, paddingHorizontal: 6, paddingVertical: 6, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 10 },
   chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
-  chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   chipText: { fontSize: 12, fontWeight: '600', color: flColor.gray600 },
   chipTextOn: { color: flColor.bronze300 },
 
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
   inputMulti: { minHeight: 88, textAlignVertical: 'top' },
 
   starRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 24, paddingHorizontal: 14, paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
-  starRowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  starRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   starBody: { flex: 1, minWidth: 0 },
   starTitle: { fontSize: 13, fontWeight: '600', color: flColor.cream100 },
   starSub: { marginTop: 2, fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },

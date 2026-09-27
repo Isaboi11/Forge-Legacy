@@ -523,12 +523,12 @@ const styles = StyleSheet.create({
   factValue: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   pinned: { flexDirection: 'row', alignItems: 'center', gap: 11, marginTop: 12, paddingVertical: 11, paddingHorizontal: 14, borderRadius: flRadius.lg, backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   pinnedText: { flex: 1, minWidth: 0, gap: 1 },
-  pinnedLabel: { fontFamily: flFont.sans, fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  pinnedLabel: { fontFamily: flFont.sans, fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
   pinnedValue: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.cream100 },
 
   section: { paddingHorizontal: 22, paddingTop: 20 },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 2, paddingBottom: 8 },
-  sectionLabel: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.labelInk },
   sectionCaption: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray600 },
   editLink: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   editText: { fontFamily: flFont.sans, fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
   /* Every rung carries a transparent 1px border so the current one's real border does not shift its node
      a pixel right of the line. */
   rung: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 5, borderRadius: flRadius.xl, paddingRight: 8, borderWidth: 1, borderColor: 'transparent' },
-  rungCurrent: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, paddingVertical: 9 },
+  rungCurrent: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint, paddingVertical: 9 },
   rungNode: { width: 70, alignItems: 'center', justifyContent: 'center' },
   /* The line. Absolute on the ROW (inside its border), so `-1` reaches over the border to meet the next
      row's half with no seam. 34 = the node column's centre, less half the line. */

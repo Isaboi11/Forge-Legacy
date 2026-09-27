@@ -513,12 +513,12 @@ const styles = StyleSheet.create({
   lede: { marginTop: 2, marginBottom: 14, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
 
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 14, paddingRight: 6, height: 52, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
-  inputRowArmed: { borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
+  inputRowArmed: { borderColor: flColor.accentBorder, boxShadow: flShadow.glowSubtle },
   prefix: { fontSize: 16, fontWeight: '700', color: flColor.gray600 },
   prefixArmed: { color: flColor.bronze300 },
   input: { flex: 1, minWidth: 0, fontSize: 15, color: flColor.cream100, paddingVertical: 0 },
   addBtn: { minWidth: 66, height: 40, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
-  addBtnArmed: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  addBtnArmed: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   addBtnLabel: { fontSize: 13.5, fontWeight: '700', color: flColor.gray600 },
   addBtnLabelArmed: { color: flColor.bronze300 },
 
@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
 
   section: { marginTop: 22 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10, paddingHorizontal: 2 },
-  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   countBadge: { minWidth: 18, paddingHorizontal: 5, paddingVertical: 1, alignItems: 'center', borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   countBadgeText: { fontSize: 9.5, fontWeight: '700', color: flColor.bronze300 },
   card: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, overflow: 'hidden' },
@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
   rowHandle: { marginTop: 1, fontSize: 11, color: flColor.gray600 },
   rowSquad: { marginTop: 1, fontSize: 10.5, color: flColor.bronzeInk },
   rowBtn: { flexShrink: 0, paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
-  rowBtnArmed: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  rowBtnArmed: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   rowBtnLabel: { fontSize: 11.5, fontWeight: '600', color: flColor.gray600 },
   rowBtnLabelArmed: { fontSize: 11.5, fontWeight: '700', color: flColor.bronze300 },
   friendsMark: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10 },

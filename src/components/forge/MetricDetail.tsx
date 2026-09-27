@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   barTitle: { flex: 1, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.cream100, textAlign: 'center' },
 
   body: { paddingHorizontal: 22, paddingTop: 8 },
-  eyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  eyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   big: { fontFamily: flFont.display, fontSize: 44, fontWeight: '700', letterSpacing: -1, color: flColor.cream100, marginTop: 6 },
   sub: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray600, marginTop: 2 },
   gain: { fontFamily: flFont.sans, fontSize: 13, color: flColor.bronze300, marginTop: 6 },
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   stripUnit: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray600, marginTop: 7, textAlign: 'right' },
 
   section: { marginTop: 28 },
-  sectionLabel: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 10 },
+  sectionLabel: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 10 },
   mRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   mName: { flex: 1, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   mDate: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },
@@ -257,6 +257,6 @@ const styles = StyleSheet.create({
   rTitle: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   rRight: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   rDate: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },
-  prPill: { paddingVertical: 2, paddingHorizontal: 7, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  prPill: { paddingVertical: 2, paddingHorizontal: 7, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   prPillText: { fontFamily: flFont.sans, fontSize: 8.5, fontWeight: '800', letterSpacing: 0.8, color: flColor.bronze300 },
 });

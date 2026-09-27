@@ -10,6 +10,7 @@ import { rankAscent } from '@/domain/rank/identity';
 import { structuredDevelopment, type RankSignals } from '@/domain/rank/rank';
 import { rungStandards, type StandardRow } from '@/domain/rank/standards';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * ONE RUNG, OPENED — when it was earned and what it took, or what it asks and where you stand.
@@ -216,14 +217,14 @@ function SeeAll({ onPress }: { onPress: () => void }) {
 }
 
 function Chevron() {
-  return <EngravedIcon name="chevron-right" size={16} color={flColor.bronze400} />;
+  return <EngravedIcon name="chevron-right" size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />;
 }
 
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 22, paddingTop: 10 },
   headBadge: { width: 48, alignItems: 'center' },
   headText: { flex: 1, minWidth: 0, gap: 3 },
-  eyebrow: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk },
+  eyebrow: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.labelInk },
   eyebrowAhead: { color: flColor.gray600 },
   title: { fontFamily: flFont.display, fontSize: 24, lineHeight: 28, fontWeight: '600', color: flColor.cream100 },
   saying: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 14, lineHeight: 19, color: flColor.bronze300 },
@@ -240,7 +241,7 @@ const styles = StyleSheet.create({
   },
   loading: { paddingVertical: 36, alignItems: 'center' },
   body: { gap: 10, paddingBottom: 6 },
-  section: { marginTop: 10, fontSize: 10.5, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk },
+  section: { marginTop: 10, fontSize: 10.5, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.labelInk },
   figures: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 12 },
   figure: { width: '33.33%', gap: 2 },
   figureN: { fontFamily: flFont.display, fontSize: 22, lineHeight: 26, fontWeight: '600', color: flColor.cream100 },
@@ -274,7 +275,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal800,
   },
-  sessionPressed: { opacity: 0.85, borderColor: flColor.bronzeBorder },
+  sessionPressed: { opacity: 0.85, borderColor: flColor.accentBorder },
   sessionText: { flex: 1, minWidth: 0, gap: 2 },
   sessionName: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   sessionDate: { fontSize: 12, color: flColor.gray400 },

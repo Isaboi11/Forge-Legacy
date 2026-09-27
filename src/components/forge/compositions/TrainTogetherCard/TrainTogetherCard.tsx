@@ -1,3 +1,4 @@
+import { forgeOr } from '@/constants/theme-scrim';
 /**
  * ⚠️ LEGACY (2026-07-14) — the `TrainTogetherCard` component is NO LONGER USED ON
  * HOME. Superseded this session (STEP C) by `YourCircleCard`, the rework to the
@@ -73,7 +74,7 @@ export function TrainTogetherCard({ liveUsers, onJoinLiveUser, onChoosePartner }
               </View>
               <View style={styles.joinAction}>
                 <Text style={styles.joinText}>Join / View</Text>
-                <ChevronRightIcon size={16} color={flColor.bronze400} />
+                <ChevronRightIcon size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
               </View>
             </Pressable>
 
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   friendsIconEmphasized: {
-    borderColor: flColor.bronzeBorder,
+    borderColor: flColor.accentBorder,
     boxShadow: flShadow.glowSubtle,
   },
   divider: {

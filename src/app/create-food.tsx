@@ -37,6 +37,7 @@ import { useToast } from '@/hooks/useCeremony';
 import { labelScanAvailable, takeLabelScan } from '@/lib/label-scan';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Create Food — built to `Create Food.dc.html`, wired to `user_foods` (0205) and its micronutrients
@@ -599,7 +600,7 @@ function ScanCard({ onPress }: { onPress: () => void }) {
         <Text style={styles.scanTitle}>Scan label</Text>
         <Text style={styles.scanSub}>Fill from a Nutrition Facts photo</Text>
       </View>
-      <EngravedIcon name="chevron-right" size={14} color={flColor.bronze400} />
+      <EngravedIcon name="chevron-right" size={14} color={forgeOr(flColor.bronze400, flColor.gray600)} />
     </Pressable>
   );
 }

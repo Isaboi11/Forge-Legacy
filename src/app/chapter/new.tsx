@@ -277,11 +277,11 @@ const styles = StyleSheet.create({
   barTitle: { flex: 1, fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray400 },
 
   body: { paddingHorizontal: 26, paddingTop: 8, paddingBottom: 28 },
-  eyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  eyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.labelInk },
   title: { fontFamily: flFont.display, fontSize: 26, fontWeight: '700', letterSpacing: -0.3, lineHeight: 32, color: flColor.cream100, marginTop: 10 },
   sub: { fontFamily: flFont.sans, fontSize: 13.5, lineHeight: 21, color: flColor.gray400, marginTop: 12 },
 
-  fieldLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginTop: 22, marginBottom: 8 },
+  fieldLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginTop: 22, marginBottom: 8 },
   well: { paddingVertical: 14, borderTopWidth: 1, borderBottomWidth: 1, borderColor: HAIRLINE, marginTop: 20 },
   input: { fontFamily: flFont.sans, fontSize: 17, fontWeight: '500', color: flColor.cream100 },
   counter: { fontFamily: flFont.sans, fontSize: 11, color: flColor.gray600, marginTop: 8, textAlign: 'right' },
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   suggestLabel: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600, marginTop: 26, marginBottom: 12 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingVertical: 10, paddingHorizontal: 15, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   chipText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   chipTextOn: { color: flColor.bronze300 },
 

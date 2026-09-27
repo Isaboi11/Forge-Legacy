@@ -1789,7 +1789,7 @@ const styles = StyleSheet.create({
   flip: { transform: [{ rotate: '180deg' }] },
 
   pill: { paddingVertical: 5, paddingHorizontal: 11, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
-  pillActive: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  pillActive: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   pillText: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray400 },
   pillTextActive: { color: flColor.bronze300 },
 
@@ -1807,7 +1807,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorderSubtle,
     backgroundColor: flColor.bronzeTint,
   },
-  nextLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  nextLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
   nextName: { fontFamily: flFont.display, fontSize: 18, lineHeight: 24, color: flColor.cream100 },
   sharpen: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.bronzeBorderSubtle, gap: 9 },
   sharpenLabel: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
@@ -1870,12 +1870,12 @@ const styles = StyleSheet.create({
   statValue: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.bronze300, fontVariant: ['tabular-nums'] },
   statLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
 
-  sectionLabel: { marginTop: 26, marginBottom: 6, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { marginTop: 26, marginBottom: 6, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   sectionSub: { marginBottom: 12, fontSize: 12.5, color: flColor.gray600 },
 
   weeks: { gap: 8 },
   weekCard: { borderWidth: 1, borderColor: flColor.charcoal600, borderRadius: flRadius.lg, overflow: 'hidden', backgroundColor: flColor.charcoal900 },
-  weekCardCurrent: { borderColor: flColor.bronzeBorder },
+  weekCardCurrent: { borderColor: flColor.accentBorder },
   weekHead: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 13, paddingHorizontal: 15 },
   weekHeadCurrent: { backgroundColor: flColor.bronzeTint },
   currentDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 4, borderColor: flColor.bronze300 },
@@ -1899,7 +1899,7 @@ const styles = StyleSheet.create({
   dayBlock: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   dayHead: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, paddingHorizontal: 15 },
   dayNum: { width: 24, height: 24, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
-  dayNumDone: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  dayNumDone: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   dayNumText: { fontSize: 11, fontWeight: '700', color: flColor.gray600 },
   dayNumTextDone: { color: flColor.bronze300 },
   dayText: { flex: 1, minWidth: 0 },
@@ -1908,7 +1908,7 @@ const styles = StyleSheet.create({
 
   exList: { paddingLeft: 51, paddingRight: 15, paddingBottom: 12 },
   exRow: { paddingVertical: 9, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
-  blockLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 5 },
+  blockLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 5 },
   exName: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100, marginBottom: 5 },
   setList: { gap: 3 },
   setRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },

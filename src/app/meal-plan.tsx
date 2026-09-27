@@ -827,7 +827,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 28 },
 
   identity: { gap: 6, paddingHorizontal: 2, paddingTop: 2, paddingBottom: 18 },
-  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
   titleRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 },
   title: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100, letterSpacing: -0.3, lineHeight: 34 },
   range: { fontSize: 14, fontWeight: '600', color: flColor.gray400 },
@@ -855,7 +855,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal800,
   },
-  stripDayOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder },
+  stripDayOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
   stripDow: { fontSize: 11, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray400 },
   stripNum: { fontSize: 15, fontWeight: '600', color: flColor.gray400 },
   stripTextOn: { color: flColor.bronze300 },

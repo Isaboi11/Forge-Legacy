@@ -61,6 +61,7 @@ import { LEGAL } from '@/domain/settings/content';
 import { billing, billingAvailable, openManageSubscriptions } from '@/lib/billing';
 import { ENTITLEMENT_RETRY_MESSAGE, useEntitlementState } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * P-8 Subscription — the purchase and management surface.
@@ -650,7 +651,7 @@ export default function SubscriptionScreen() {
                 ) : null}
 
                 <Pressable onPress={toIncluded} accessibilityRole="button" accessibilityLabel="See what’s included" style={styles.seeMore}>
-                  <EngravedIcon name="chevron-down" size={16} color={flColor.bronze400} />
+                  <EngravedIcon name="chevron-down" size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
                   <View style={styles.seeMoreRow}>
                     <View style={styles.seeMoreRule} />
                     <Text style={styles.seeMoreText}>See what’s included</Text>
@@ -1088,7 +1089,7 @@ const styles = StyleSheet.create({
   aiRow: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 15 },
   aiText: { flex: 1 },
   aiSwitch: { width: 44, height: 26, borderRadius: flRadius.pill, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 2 },
-  aiSwitchOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder, alignItems: 'flex-end' },
+  aiSwitchOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder, alignItems: 'flex-end' },
   aiSwitchOff: { backgroundColor: flColor.charcoal700, borderColor: flColor.charcoal600, alignItems: 'flex-start' },
   aiKnob: { width: 18, height: 18, borderRadius: 9 },
   aiKnobOn: { backgroundColor: flColor.bronze300 },
@@ -1113,7 +1114,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 2.4,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
     marginTop: 13,
   },
   tagline: {
@@ -1173,7 +1174,7 @@ const styles = StyleSheet.create({
   },
   planRowLead: { paddingHorizontal: 16, paddingVertical: 18 },
   planRowQuiet: { paddingHorizontal: 16, paddingVertical: 12 },
-  planRowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
+  planRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
   badge: {
     position: 'absolute',
     top: -9,
@@ -1194,7 +1195,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  radioOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeSolid },
+  radioOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeSolid },
   planText: { flex: 1 },
   planTitle: { fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   planTitleQuiet: { fontSize: 15 },
@@ -1234,7 +1235,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1.6,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
     marginTop: 26,
     marginBottom: 10,
   },
@@ -1308,7 +1309,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
     boxShadow: flShadow.card,
   },
-  planCardLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  planCardLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   planCardValue: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', color: flColor.cream100, marginTop: 6 },
   planCardLine: { fontSize: 12.5, color: flColor.gray400, marginTop: 5 },
   manage: { marginTop: 22 },

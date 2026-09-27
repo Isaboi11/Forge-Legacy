@@ -1,3 +1,4 @@
+import { forgeOr } from '@/constants/theme-scrim';
 /**
  * ProgramMissionGrid — the Home 2-column Program | Mission grid.
  * Source of truth: Forge Home.dc.html (§ Program | Mission, lines 142–186).
@@ -64,7 +65,7 @@ function ColumnHeader({ label }: { label: string }) {
   return (
     <View style={styles.header}>
       <Text style={styles.eyebrow}>{label}</Text>
-      <ChevronRightIcon size={14} color={flColor.bronze400} />
+      <ChevronRightIcon size={14} color={forgeOr(flColor.bronze400, flColor.gray600)} />
     </View>
   )
 }
@@ -306,7 +307,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1.6,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
   },
   tileTitle: {
     fontFamily: flFont.display,

@@ -1117,7 +1117,7 @@ const styles = StyleSheet.create({
   // Goal / Experience / Equipment: one column of full-width tiles, unlike the 2-across Sex/Units rows —
   // every option here carries a description line, and two of those side by side is four lines of nothing.
   tileStack: { gap: 10 },
-  primaryTag: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronzeInk },
+  primaryTag: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, color: flColor.labelInk },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   gearChip: { paddingVertical: 9, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed },
   gearChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
@@ -1144,7 +1144,7 @@ const styles = StyleSheet.create({
   skipCost: { fontFamily: flFont.sans, fontSize: 12, lineHeight: 17, color: flColor.gray600, textAlign: 'center', maxWidth: 300 },
 
   transition: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 36, gap: 20 },
-  tEyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk, textAlign: 'center' },
+  tEyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.labelInk, textAlign: 'center' },
   tTitle: { fontFamily: flFont.display, fontSize: 34, fontWeight: '600', lineHeight: 40, color: flColor.cream100, textAlign: 'center' },
   tBody: { fontFamily: flFont.sans, fontSize: 15, lineHeight: 23, color: flColor.gray400, textAlign: 'center' },
   tAccent: { color: flColor.bronzeInk, fontWeight: '600' },
@@ -1159,7 +1159,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch', marginTop: 4, padding: 18, borderRadius: flRadius.lg,
     borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, gap: 3,
   },
-  dayLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.bronzeInk },
+  dayLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.labelInk },
   dayName: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
   exList: { marginTop: 10, gap: 9 },
   exRow: { flexDirection: 'row', alignItems: 'baseline', gap: 11 },

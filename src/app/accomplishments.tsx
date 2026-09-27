@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
   rowSub: { fontSize: 12, color: flColor.gray600, marginTop: 2 },
 
   // detail
-  featBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginBottom: 12, paddingVertical: 5, paddingHorizontal: 11, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
+  featBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginBottom: 12, paddingVertical: 5, paddingHorizontal: 11, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.accentBorderSubtle, backgroundColor: flColor.bronzeTint },
   featBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze300 },
   detailName: { fontFamily: flFont.display, fontSize: 26, fontWeight: '600', color: flColor.cream100 },
   detailDate: { fontSize: 13, color: flColor.gray400, marginTop: 6 },
@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
   // form
   field: { marginBottom: 20 },
   fieldHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
   fieldCounter: { fontSize: 11, color: flColor.gray600 },
   input: {
     borderRadius: flRadius.md,
@@ -760,7 +760,7 @@ const styles = StyleSheet.create({
 
   chapterList: { gap: 8 },
   chapterChip: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  chapterChipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  chapterChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   chapterChipLabel: { fontSize: 14, fontWeight: '600', color: flColor.gray400 },
   chapterChipLabelOn: { color: flColor.cream100 },
   chapterChipSub: { fontSize: 11, color: flColor.gray600, marginTop: 1 },

@@ -454,7 +454,7 @@ export default function LegacyScreen() {
                 style={styles.viewTimeline}
               >
                 <Text style={styles.viewTimelineText}>View Full Timeline</Text>
-                <ChevronRightIcon size={15} color={flColor.bronze400} />
+                <ChevronRightIcon size={15} color={forgeOr(flColor.bronze400, flColor.gray600)} />
               </Pressable>
             </View>
           </View>
@@ -779,7 +779,7 @@ function ProgressBadge({ rankFamily, rankLevel, sex, onPress }: { rankFamily?: R
         <Text style={styles.progressPillText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
           Progress
         </Text>
-        <ChevronRightIcon size={9} color={flColor.bronze300} />
+        <ChevronRightIcon size={9} color={forgeOr(flColor.bronze300, flColor.gray600)} />
       </View>
     </Pressable>
   );
@@ -826,7 +826,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 2,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
     marginBottom: 10,
   },
   firstRunTitle: {
@@ -959,7 +959,7 @@ const styles = StyleSheet.create({
      that one is an optional space to fill, this is the spine of the product being absent, and it should
      read as the primary thing to do rather than as one more empty shelf. */
   inviteCard: { padding: 24, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, boxShadow: flShadow.card },
-  inviteEyebrow: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk },
+  inviteEyebrow: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.labelInk },
   inviteTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.3, color: flColor.cream100, marginTop: 12 },
   inviteBody: { fontFamily: flFont.sans, fontSize: 13.5, lineHeight: 21, color: flColor.gray400, marginTop: 10 },
   inviteBtn: { marginTop: 20, paddingVertical: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, alignItems: 'center' },

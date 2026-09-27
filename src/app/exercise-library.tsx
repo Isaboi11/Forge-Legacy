@@ -34,6 +34,7 @@ import {
 } from '@/domain/exercise-library/hub-core';
 import { useQuery } from '@/lib/useQuery';
 import { usePersist } from '@/hooks/usePersist';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * W-21 Exercise Library (`Forge Exercise Library.dc.html`) — browse, search and filter the whole
@@ -495,7 +496,7 @@ function HubSection({ title, onViewAll, children }: { title: string; onViewAll?:
         {onViewAll ? (
           <Pressable onPress={onViewAll} accessibilityRole="button" accessibilityLabel={`View all ${title}`} style={styles.viewAll}>
             <Text style={styles.viewAllText}>View all</Text>
-            <EngravedIcon name="chevron-right" size={13} color={flColor.bronze400} />
+            <EngravedIcon name="chevron-right" size={13} color={forgeOr(flColor.bronze400, flColor.gray600)} />
           </Pressable>
         ) : null}
       </View>
@@ -570,7 +571,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterBtnOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  filterBtnOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   filterBadge: {
     position: 'absolute',
     top: 4,
@@ -623,7 +624,7 @@ const styles = StyleSheet.create({
   hubSection: { marginBottom: 26 },
 
   customRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  customRowPressed: { borderColor: flColor.bronzeBorderSubtle, opacity: 0.9 },
+  customRowPressed: { borderColor: flColor.accentBorderSubtle, opacity: 0.9 },
   customText: { flex: 1, minWidth: 0, gap: 3 },
   customName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   customSub: { fontSize: 11.5, color: flColor.gray600 },
@@ -681,7 +682,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   cardName: { fontFamily: flFont.display, fontSize: 15.5, fontWeight: '600', color: flColor.cream100 },
-  cardCount: { fontSize: 11.5, color: flColor.bronzeInk },
+  cardCount: { fontSize: 11.5, color: flColor.labelInk },
 
   empty: { paddingVertical: 56, alignItems: 'center', gap: 8 },
   emptyTitle: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.cream100 },
@@ -695,7 +696,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.4,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
     marginBottom: 10,
   },
   // Sits between the label and its chips, so it is read before the choice rather than after it.
@@ -708,7 +709,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: flColor.charcoal600,
   },
-  filterChipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  filterChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   filterChipText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   filterChipTextOn: { color: flColor.bronze300 },
   sheetActions: { flexDirection: 'row', gap: 10 },

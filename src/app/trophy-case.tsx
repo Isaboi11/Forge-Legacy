@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
 
   /* Label · engraved rule · value — the rule fills whatever the two ends leave. */
   sublineRow: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 22, paddingBottom: 15 },
-  sublineLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sublineLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.labelInk },
   sublineRule: { flex: 1, height: 1, backgroundColor: flColor.charcoal700 },
   sublineValue: { fontSize: 10.5, color: flColor.gray600 },
 
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
   tallyLabel: { fontSize: 8.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
 
   scroll: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 40 },
-  sectionLabel: { paddingHorizontal: 2, paddingBottom: 12, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { paddingHorizontal: 2, paddingBottom: 12, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   sectionLabelGap: { paddingTop: 24 },
 
   /* 1px gaps over a charcoal ground read as engraved hairlines between the cells. */

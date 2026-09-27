@@ -10,6 +10,7 @@ import { fetchPinManager, pinCandidate, unpin } from '@/data/legacy-pins-live';
 import { canPinMore, pinCountLabel, pinFor, type PinCandidate, type PinRef } from '@/domain/legacy/pins';
 import type { PinKind } from '@/types/legacy';
 import { useQuery } from '@/lib/useQuery';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * L-13 Pin manager (`Forge Legacy.dc.html` §pin sheet) — curate the "My Museum · Pinned Legacy" strip.
@@ -93,7 +94,7 @@ export function PinManagerSheet({ open, onClose }: { open: boolean; onClose: (ch
                     <Text style={styles.sectionLabel}>{g.label}</Text>
                     <Text style={styles.sectionCount}>{g.items.length}</Text>
                     <View style={{ transform: [{ rotate: isCollapsed ? '-90deg' : '0deg' }] }}>
-                      <EngravedIcon name="chevron-down" size={14} color={flColor.bronze400} />
+                      <EngravedIcon name="chevron-down" size={14} color={forgeOr(flColor.bronze400, flColor.gray600)} />
                     </View>
                   </Pressable>
 
@@ -148,7 +149,7 @@ export function PinManagerSheet({ open, onClose }: { open: boolean; onClose: (ch
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 2 },
   intro: { fontSize: 13, lineHeight: 20, color: flColor.gray400, marginBottom: 14 },
-  count: { color: flColor.bronzeInk, fontWeight: '700' },
+  count: { color: flColor.labelInk, fontWeight: '700' },
 
   list: { maxHeight: 380 },
   listPad: { gap: 8, paddingBottom: 6 },
@@ -156,11 +157,11 @@ const styles = StyleSheet.create({
 
   section: { gap: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 6, paddingBottom: 2, paddingHorizontal: 2 },
-  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
   sectionCount: { flex: 1, fontSize: 11, fontWeight: '600', color: flColor.gray600, fontVariant: ['tabular-nums'] },
 
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal900 },
-  rowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  rowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   rowDim: { opacity: 0.42 },
   rowIcon: { width: 38, height: 38, borderRadius: flRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   rowText: { flex: 1, minWidth: 0 },

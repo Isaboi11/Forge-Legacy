@@ -71,12 +71,21 @@ export const flColor = {
    */
   bronzeInk: '#BA8654',
   bronzeDark: '#543D2C',
+  /**
+   * Small uppercase section labels and eyebrows. ⚠ `bronzeInk` exactly — Forge is unchanged; the split
+   * exists because Alabaster moves its labels off bronze (PO, 2026-09-26 — see the Paper twin).
+   */
+  labelInk: '#BA8654',
 
   greenMuted: '#5A9E68',
   redMuted: '#BE5A4C',
   blueMuted: '#568AAE',
   /** Carbs, on Nutrition's macro rings (PO, 2026-09-24: the carb ring was bronze, the same as calories). Beside green protein and blue fat; not red, which reads as "over". */
   plumMuted: '#9C7BB5',
+  /** The macro rings and bars. ⚠ The muted values exactly — Forge is unchanged; see the Paper twin. */
+  macroProtein: '#5A9E68',
+  macroCarb: '#9C7BB5',
+  macroFat: '#568AAE',
 
   overlayDark: 'rgba(0, 0, 0, 0.75)',
   innerHighlight: 'rgba(255, 255, 255, 0.04)',
@@ -84,6 +93,13 @@ export const flColor = {
 
   bronzeBorder: 'rgba(181, 138, 97, 0.40)',
   bronzeBorderSubtle: 'rgba(181, 138, 97, 0.19)',
+  /**
+   * The edge of a SELECTED, pressed, earned or in-progress thing. ⚠ `bronzeBorder`/`bronzeBorderSubtle`
+   * exactly — Forge is unchanged. The split exists because Alabaster's plain card edge is taupe, and a
+   * chosen chip still has to read as chosen there (PO, 2026-09-26 — see the Paper twin).
+   */
+  accentBorder: 'rgba(181, 138, 97, 0.40)',
+  accentBorderSubtle: 'rgba(181, 138, 97, 0.19)',
   bronzeTint: 'rgba(181, 138, 97, 0.05)',
 
   // Forged-metal button + engraved-medallion tokens (from foundation.css)

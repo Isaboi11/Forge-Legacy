@@ -5,6 +5,7 @@ import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { flColor, flRadius, flShadow } from '@/constants/foundation';
 import type { Program } from '@/domain/training/schema';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * One Forge program on a shelf — Discover's "For You" and search results, and the full `/program-catalog`.
@@ -42,7 +43,7 @@ export function ProgramCatalogRow({ program, held, onPress }: { program: Program
           </Pill>
         </View>
       </View>
-      <ChevronRightIcon size={18} color={flColor.bronze400} />
+      <ChevronRightIcon size={18} color={forgeOr(flColor.bronze400, flColor.gray600)} />
     </Pressable>
   );
 }

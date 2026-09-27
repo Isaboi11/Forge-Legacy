@@ -787,7 +787,7 @@ const styles = StyleSheet.create({
   action: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, opacity: 0.55 },
   actionLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   actionNote: { fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
-  actionLive: { opacity: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  actionLive: { opacity: 1, borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   actionQuiet: { backgroundColor: flColor.charcoal800, borderColor: flColor.bronzeBorderSubtle },
   actionPressed: { opacity: 0.8 },
   actionLabelLive: { color: flColor.bronze300 },

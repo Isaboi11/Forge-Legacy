@@ -34,6 +34,7 @@ import {
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { useQuery } from '@/lib/useQuery';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Food Detail — built to `Food Detail.dc.html`, wired to the catalogue and the diary.
@@ -382,7 +383,7 @@ export default function FoodDetailScreen() {
           <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
             <Text style={styles.mealLineLabel}>Adding to</Text>
             <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
-            <EngravedIcon name="chevron-down" size={13} color={flColor.bronze400} />
+            <EngravedIcon name="chevron-down" size={13} color={forgeOr(flColor.bronze400, flColor.gray600)} />
           </Pressable>
         )}
         <Button variant="primary" fullWidth disabled={!macros || macros.kcal <= 0 || saving} onPress={add}>
@@ -449,7 +450,7 @@ const styles = StyleSheet.create({
 
   calorieRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, paddingHorizontal: 2, paddingBottom: 22 },
   calorieValue: { fontFamily: flFont.display, fontSize: 56, color: flColor.cream100, letterSpacing: -1, lineHeight: 56 },
-  calorieLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk, marginTop: 8 },
+  calorieLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk, marginTop: 8 },
   impact: { flex: 1, textAlign: 'right', fontSize: 13, color: flColor.gray400, paddingBottom: 2 },
 
   servingCard: {
@@ -538,7 +539,7 @@ const styles = StyleSheet.create({
 
   sheetBody: { gap: 10, paddingBottom: 8 },
   choice: { paddingVertical: 12, paddingHorizontal: 14, borderRadius: flRadius.md, backgroundColor: flColor.charcoal800, ...flBorder.subtle },
-  choiceOn: { backgroundColor: flColor.bronzeDark, borderColor: flColor.bronzeBorder },
+  choiceOn: { backgroundColor: flColor.bronzeDark, borderColor: flColor.accentBorder },
   choiceText: { fontSize: 14, fontWeight: '600', color: flColor.gray400 },
   choiceTextOn: { color: flColor.bronze300 },
 });

@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.surfaceRecessed,
   },
-  fieldOpen: { borderColor: flColor.bronzeBorder },
+  fieldOpen: { borderColor: flColor.accentBorder },
   pressed: { opacity: 0.9 },
   fieldText: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   fieldPlaceholder: { fontWeight: '500', color: flColor.gray600 },
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
 
   days: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 2 },
   day: { flexBasis: '14.2857%', height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.sm },
-  daySelected: { backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorder },
+  daySelected: { backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.accentBorder },
   dayText: { fontSize: 13.5, color: flColor.gray400, fontVariant: ['tabular-nums'] },
   dayTextSelected: { color: flColor.bronze300, fontWeight: '700' },
   dayTextToday: { color: flColor.cream100, fontWeight: '700' },

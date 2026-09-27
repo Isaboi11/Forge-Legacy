@@ -804,7 +804,7 @@ const styles = StyleSheet.create({
   grain: { opacity: 0.06, zIndex: 20 },
 
   topBar: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 20, paddingRight: 10, zIndex: 6 },
-  eyebrow: { flexShrink: 1, fontSize: 10, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  eyebrow: { flexShrink: 1, fontSize: 10, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
   skip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 12 },
   skipText: { fontSize: 12, fontWeight: '600', color: flColor.gray600 },
 
@@ -849,7 +849,7 @@ const styles = StyleSheet.create({
   name: { flexShrink: 1, fontWeight: '500', textAlign: 'center', color: flColor.cream100 },
   nameStrong: { fontWeight: '700' },
   nameSelf: { color: forgeOr<string>(flColor.bronze300, flColor.bronzeInk), fontWeight: '700' },
-  youPill: { flexGrow: 0, flexShrink: 0, paddingHorizontal: 6, paddingVertical: 1, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  youPill: { flexGrow: 0, flexShrink: 0, paddingHorizontal: 6, paddingVertical: 1, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   youPillText: { fontSize: 8, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: forgeOr<string>(flColor.bronze300, flColor.bronzeInk) },
   score: { marginTop: 2, fontSize: 11, fontWeight: '600', color: flColor.gray600 },
 

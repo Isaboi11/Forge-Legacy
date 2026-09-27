@@ -17,6 +17,7 @@ import { useAppPrefs } from '@/lib/settings';
 import { saveAppPrefs } from '@/data/settings-live';
 import type { HoltTips } from '@/domain/settings/preferences';
 import { useQuery } from '@/lib/useQuery';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * This week's Grocery List as a pantry: bought, have-it and still to buy (`pantryFrom`). Built the same way
@@ -51,9 +52,9 @@ async function loadPantry(todayIso: string): Promise<PantryItem[]> {
  * so it never flashes zeros. It re-reads on focus.
  */
 const MACRO_COLOR: Record<MacroKey, string> = {
-  protein: flColor.greenMuted,
-  carb: flColor.plumMuted,
-  fat: flColor.blueMuted,
+  protein: flColor.macroProtein,
+  carb: flColor.macroCarb,
+  fat: flColor.macroFat,
 };
 
 export function HomeNutritionCard({ onOpen }: { onOpen: () => void }) {
@@ -104,7 +105,7 @@ export function HomeNutritionCard({ onOpen }: { onOpen: () => void }) {
         <Text style={styles.right} numberOfLines={1}>
           {v.right}
         </Text>
-        <ChevronRightIcon size={16} color={flColor.bronze400} />
+        <ChevronRightIcon size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
       </View>
 
       <View style={styles.macros}>

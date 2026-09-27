@@ -1127,10 +1127,10 @@ const styles = StyleSheet.create({
 
   catRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 15, paddingHorizontal: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   catRowLabel: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
-  catRowCount: { fontSize: 12, fontWeight: '600', color: flColor.bronzeInk, fontVariant: ['tabular-nums'] },
+  catRowCount: { fontSize: 12, fontWeight: '600', color: flColor.labelInk, fontVariant: ['tabular-nums'] },
 
   row: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 11, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  rowSel: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  rowSel: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   rowIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
   rowText: { flex: 1, minWidth: 0, gap: 2 },
   rowNameLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -1144,7 +1144,7 @@ const styles = StyleSheet.create({
   /* Deliberately quieter than a category row: no fill, dashed edge, bronze only on the glyph and the
      label. It reads as an action available rather than an option being offered. */
   ownRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4, paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal600 },
-  ownRowPressed: { borderColor: flColor.bronzeBorderSubtle, opacity: 0.9 },
+  ownRowPressed: { borderColor: flColor.accentBorderSubtle, opacity: 0.9 },
   ownRowText: { fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
 
   empty: { paddingVertical: 56, paddingHorizontal: 24, alignItems: 'center', gap: 12 },
@@ -1225,12 +1225,12 @@ const styles = StyleSheet.create({
   sheetTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   filterScroll: { maxHeight: 380 },
   filterGroup: { marginBottom: 20 },
-  filterGroupLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 11 },
+  filterGroupLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 11 },
   // Sits between the label and its chips, so it is read before the choice rather than after it.
   filterGroupHint: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600, marginTop: -5, marginBottom: 11 },
   filterChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   filterChip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
-  filterChipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  filterChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   filterChipText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   filterChipTextOn: { color: flColor.bronze300 },
   filterActions: { flexDirection: 'row', gap: 10 },
@@ -1238,7 +1238,7 @@ const styles = StyleSheet.create({
 
   persistBlurb: { fontSize: 13, lineHeight: 19, color: flColor.gray400 },
   persistRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
-  persistRowHi: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  persistRowHi: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   persistIcon: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
   persistText: { flex: 1, minWidth: 0, gap: 2 },
   persistName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },

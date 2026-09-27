@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 28 },
 
   identity: { gap: 6, paddingHorizontal: 2, paddingTop: 2, paddingBottom: 8 },
-  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
   title: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100, letterSpacing: -0.3, lineHeight: 34 },
   lede: { marginTop: 4, fontSize: 14, lineHeight: 21, color: flColor.gray400 },
 
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal800,
   },
-  choiceOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder },
+  choiceOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
   choiceText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
   choiceTextOn: { color: flColor.bronze300 },
   mealChoice: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, paddingHorizontal: 14 },

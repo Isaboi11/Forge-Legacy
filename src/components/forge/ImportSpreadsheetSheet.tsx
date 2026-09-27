@@ -731,13 +731,13 @@ const styles = StyleSheet.create({
   impSkippedHead: { fontFamily: flFont.sans, fontSize: 11.5, lineHeight: 16, color: flColor.gray400, marginBottom: 2 },
   impSkippedLine: { fontFamily: flFont.sans, fontSize: 11, lineHeight: 15, color: flColor.gray600 },
   impSummary: { padding: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
-  impSummaryLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 5 },
+  impSummaryLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 5 },
   impSummaryText: { fontFamily: flFont.sans, fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
   impNote: { fontFamily: flFont.sans, fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
 
   impWeekBlock: { gap: 10 },
   impWeekHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
-  impWeekLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  impWeekLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   impWeekRule: { flex: 1, height: 1, backgroundColor: flColor.charcoal600 },
 
   impDayCard: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, overflow: 'hidden' },
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
   /* An input rather than text, because a misread name is the one thing the steppers could never fix. */
   impItemNameInput: { flex: 1, fontFamily: flFont.sans, fontSize: 12.5, color: flColor.cream100, paddingVertical: 2 },
   impRemove: { width: 20, height: 20, marginLeft: 2, alignItems: 'center', justifyContent: 'center' },
-  impSectionTag: { fontFamily: flFont.sans, fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, color: flColor.bronzeInk },
+  impSectionTag: { fontFamily: flFont.sans, fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, color: flColor.labelInk },
   impItemSource: { fontFamily: flFont.sans, fontSize: 10.5, lineHeight: 14, color: flColor.gray600 },
   impItemMatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.bronzeInk },
   impItemUnmatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray600 },

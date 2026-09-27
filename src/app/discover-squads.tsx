@@ -484,19 +484,19 @@ const styles = StyleSheet.create({
   filterRow: { marginHorizontal: -6 },
   filterRowContent: { gap: 8, paddingHorizontal: 6, paddingTop: 14, paddingBottom: 2 },
   chip: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: flRadius.pill, borderWidth: 1, overflow: 'hidden' },
-  chipOn: { borderColor: flColor.bronzeBorder },
+  chipOn: { borderColor: flColor.accentBorder },
   chipOff: { borderColor: flColor.charcoal500, backgroundColor: flColor.charcoal800 },
   chipLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
   chipLabelOn: { color: flColor.onBronze },
 
   // results header
   resultsHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 22, marginBottom: 12, marginHorizontal: 4 },
-  resultsLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  resultsLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   resultsCount: { fontSize: 11.5, color: flColor.gray600 },
 
   // card
   card: { position: 'relative', overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, boxShadow: flShadow.card },
-  cardPressed: { transform: [{ scale: 0.96 }], borderColor: flColor.bronzeBorder },
+  cardPressed: { transform: [{ scale: 0.96 }], borderColor: flColor.accentBorder },
   cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 13, paddingHorizontal: 15, paddingTop: 15 },
   crest: {
     width: 52,

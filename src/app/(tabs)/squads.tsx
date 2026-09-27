@@ -380,7 +380,7 @@ function SearchIcon() {
 }
 function ChevronIcon() {
   return (
-    <EngravedIcon name="chevron-right" size={18} color={flColor.bronze400} />
+    <EngravedIcon name="chevron-right" size={18} color={forgeOr(flColor.bronze400, flColor.gray600)} />
   );
 }
 function StarIcon({ filled = false, size = 18 }: { filled?: boolean; size?: number }) {
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
   cardStack: { gap: 16 },
   sectionHeaderPad: { paddingHorizontal: 4, marginTop: 4 },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
-  headerLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  headerLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   createFooter: { marginTop: 8 },
   joinLink: { marginTop: 14, alignItems: 'center', paddingVertical: 6 },
   joinLinkText: { fontSize: 13, color: flColor.gray400 },
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   },
   crestPhoto: { width: '100%', height: '100%', borderRadius: flRadius.round },
   identityBody: { flex: 1, minWidth: 0, gap: 5, paddingTop: 1 },
-  ownedLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.bronzeInk },
+  ownedLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.labelInk },
   nameRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
   squadName: { flex: 1, fontSize: 21, fontWeight: '700', lineHeight: 24, letterSpacing: -0.3, color: flColor.cream100 },
   nameActions: { flexDirection: 'row', alignItems: 'center', gap: 1, flexShrink: 0, marginTop: 2 },

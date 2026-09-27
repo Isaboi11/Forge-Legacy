@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     boxShadow: `${flShadow.borderInset}, ${flShadow.card}`,
   },
   codeCardTop: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 18, alignItems: 'center' },
-  codeEyebrow: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk },
+  codeEyebrow: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.labelInk },
   codeValue: {
     fontFamily: MONO,
     fontSize: 38,
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
   regenText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
 
   // share
-  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginTop: 30, marginBottom: 12, marginLeft: 4 },
+  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginTop: 30, marginBottom: 12, marginLeft: 4 },
   tileGrid: { flexDirection: 'row', gap: 10 },
   tile: { flex: 1, alignItems: 'center', gap: 11, paddingVertical: 18, paddingHorizontal: 8, borderRadius: flRadius.lg, borderWidth: 1 },
   tilePrimary: { backgroundColor: forgeOr('#17120B', flColor.charcoal700), borderColor: flColor.bronzeBorder, boxShadow: `${flShadow.borderInset}, ${flShadow.card}` },
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.surfaceRecessed,
   },
-  linkRowCopied: { borderColor: flColor.bronzeBorder },
+  linkRowCopied: { borderColor: flColor.accentBorder },
   linkText: { flex: 1, minWidth: 0, fontFamily: MONO, fontSize: 12.5, color: flColor.gray400 },
   linkCopyWrap: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 0 },
   linkCopyText: { fontSize: 12, fontWeight: '600', color: flColor.bronzeInk },

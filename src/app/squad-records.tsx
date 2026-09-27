@@ -395,12 +395,12 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorder,
     backgroundColor: flColor.bronzeTint,
   },
-  newBannerLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: flColor.bronzeInk },
+  newBannerLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: flColor.labelInk },
   newBannerRow: { flexDirection: 'row', alignItems: 'center', gap: 11 },
   oldValue: { fontFamily: flFont.display, fontSize: 17, color: flColor.gray600, textDecorationLine: 'line-through' },
   newValue: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', color: flColor.bronze300 },
 
-  sheetLabel: { marginBottom: 11, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sheetLabel: { marginBottom: 11, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   currentCard: {
     flexDirection: 'row',
     alignItems: 'center',

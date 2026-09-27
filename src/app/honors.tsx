@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.6,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
   },
   strip: { gap: 16, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 4 },
   tile: { alignItems: 'center', gap: 8 },
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.6,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
   },
   sheetName: {
     fontFamily: flFont.display,

@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   heroKit: { marginTop: 8, fontSize: 12, lineHeight: 17.5, color: flColor.gray600 },
 
   section: { marginBottom: 20 },
-  sectionLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 9 },
+  sectionLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 9 },
   exRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 13, marginBottom: 7, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed },
   exText: { flex: 1, minWidth: 0 },
   exName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },

@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: flRadius.md,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
+    borderColor: flColor.accentBorder,
   },
   label: {
     fontSize: 10.5,

@@ -146,7 +146,7 @@ export function HoltMark({
             width: size,
             height: size,
             borderRadius: size / 2,
-            borderColor: state === 'building' ? flColor.bronzeBorder : flColor.bronzeBorderSubtle,
+            borderColor: state === 'building' ? flColor.accentBorder : flColor.accentBorderSubtle,
           },
           state === 'thinking' && still
             ? { boxShadow: flShadow.glowSubtle }
@@ -157,8 +157,8 @@ export function HoltMark({
                 boxShadow: pulse.interpolate({
                   inputRange: [0, 1],
                   outputRange: [
-                    `0 0 0 1px ${flColor.bronzeBorderSubtle}, 0 0 10px rgba(186,146,92,0.10)`,
-                    `0 0 0 1px ${flColor.bronzeBorder}, 0 0 26px rgba(186,146,92,0.34)`,
+                    `0 0 0 1px ${flColor.accentBorderSubtle}, 0 0 10px rgba(186,146,92,0.10)`,
+                    `0 0 0 1px ${flColor.accentBorder}, 0 0 26px rgba(186,146,92,0.34)`,
                   ],
                 }) as unknown as string,
               }

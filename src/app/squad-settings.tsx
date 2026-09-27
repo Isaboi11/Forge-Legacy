@@ -987,7 +987,7 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: flColor.charcoal700, marginTop: 15 },
 
   // sections
-  sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   dangerLabel: { marginTop: 44, color: flColor.redMuted },
   stdRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   stdBtn: {
@@ -1030,7 +1030,7 @@ const styles = StyleSheet.create({
   capHint: { marginTop: 10, fontSize: 11, lineHeight: 16, color: flColor.gray600 },
   catRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   catChip: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: flRadius.pill, borderWidth: 1, overflow: 'hidden' },
-  catChipOn: { borderColor: flColor.bronzeBorder },
+  catChipOn: { borderColor: flColor.accentBorder },
   catChipOff: { borderColor: flColor.charcoal500, backgroundColor: flColor.surfaceRecessed },
   catChipLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
   catChipLabelOn: { color: flColor.onBronze },
@@ -1101,7 +1101,7 @@ const styles = StyleSheet.create({
 
   // edit sheet
   sheetBody: { gap: 18 },
-  faLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 9 },
+  faLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 9 },
   editPhotoWrap: { alignItems: 'center', gap: 10 },
   editPhotoDisc: { width: 76, height: 76, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: flColor.charcoal900, boxShadow: `0 0 0 2px ${flColor.bronze400}, 0 0 14px rgba(186, 134, 84,0.26)` },
   editPhotoImg: { width: '100%', height: '100%', borderRadius: flRadius.round },

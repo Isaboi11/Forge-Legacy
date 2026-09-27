@@ -843,7 +843,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 18, paddingBottom: 190 },
 
   head: { paddingTop: 6, paddingBottom: 16, gap: 7 },
-  fieldLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronzeInk },
+  fieldLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.labelInk },
   nameInput: {
     fontFamily: flFont.display,
     fontSize: 21,
@@ -880,7 +880,7 @@ const styles = StyleSheet.create({
   sectionRuled: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray400 },
-  sectionLabelMain: { color: flColor.bronzeInk },
+  sectionLabelMain: { color: flColor.labelInk },
   sectionReq: { fontSize: 10, color: flColor.gray600 },
   spacer: { flex: 1 },
   sectionCount: { fontSize: 11.5, fontWeight: '600', color: flColor.gray600 },

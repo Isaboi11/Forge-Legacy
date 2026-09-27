@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1.4,
     textTransform: 'uppercase',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
     opacity: 0.7,
     flexShrink: 0,
   },
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     fontSize: 13,
     fontWeight: '600',
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
     letterSpacing: -0.1,
   },
 })

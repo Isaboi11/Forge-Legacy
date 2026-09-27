@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   filterLabel: { width: 44, flexShrink: 0, fontSize: 9.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
   chips: { gap: 6, paddingRight: 12 },
   chip: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
-  chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   chipText: { fontSize: 11.5, fontWeight: '600', color: flColor.gray400 },
   chipTextOn: { color: flColor.bronze300 },
 
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   cardOwned: { opacity: 0.62 },
   cardText: { flex: 1, minWidth: 0 },
   cardName: { fontFamily: flFont.display, fontSize: 16.5, fontWeight: '600', color: flColor.cream100 },
-  cardMeta: { marginTop: 3, fontSize: 11.5, color: flColor.bronzeInk },
+  cardMeta: { marginTop: 3, fontSize: 11.5, color: flColor.labelInk },
   cardBlurb: { marginTop: 5, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
   cta: { flexShrink: 0, paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   ctaLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.bronze300 },

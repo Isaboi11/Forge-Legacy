@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
 
   identity: { gap: 6, paddingHorizontal: 2, paddingTop: 2, paddingBottom: 18 },
   identityForm: { gap: 6, paddingHorizontal: 2, paddingTop: 2, paddingBottom: 20 },
-  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
   title: { fontFamily: flFont.display, fontSize: 30, lineHeight: 34, letterSpacing: -0.3, color: flColor.cream100 },
   lede: { marginTop: 4, fontSize: 14, lineHeight: 21, color: flColor.gray400 },
 
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal800,
   },
-  tabOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder },
+  tabOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
   tabText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
   tabTextOn: { color: flColor.bronze300 },
 

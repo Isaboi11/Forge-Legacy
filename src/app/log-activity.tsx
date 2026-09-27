@@ -208,14 +208,14 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28 },
 
-  sectionLabel: { marginTop: 22, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabel: { marginTop: 22, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   card: { backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, padding: 16, gap: 18, boxShadow: flShadow.card },
-  faLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 9 },
+  faLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 9 },
 
   // activity chips
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   chipLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
   chipLabelOn: { color: flColor.bronze300 },
 
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   // commit bar
   commitBar: { paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   commitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1 },
-  commitBtnOn: { borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
+  commitBtnOn: { borderColor: flColor.accentBorder, boxShadow: flShadow.glowSubtle },
   commitBtnOff: { backgroundColor: flColor.charcoal800, borderColor: flColor.charcoal600, opacity: 0.75 },
   commitLabel: { fontSize: 15, fontWeight: '600', color: flColor.onBronze },
   commitLabelOff: { fontSize: 15, fontWeight: '600', color: flColor.gray600 },

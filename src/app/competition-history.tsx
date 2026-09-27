@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
   chipLabel: { marginHorizontal: 20, marginBottom: 6, fontSize: 8.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.gray600 },
   chipStrip: { gap: 7, paddingHorizontal: 20 },
   chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
-  chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   chipText: { fontSize: 11.5, fontWeight: '600', color: flColor.gray600 },
   chipTextOn: { color: flColor.bronze300 },
 

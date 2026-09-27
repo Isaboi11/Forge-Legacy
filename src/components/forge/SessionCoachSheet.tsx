@@ -808,7 +808,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     gap: 10,
   },
-  noticeLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronzeInk },
+  noticeLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, color: flColor.labelInk },
 
   /* ── TREATMENT THREE: rows. The divider is on the row, so the last one in a list has one too —
      which is correct here: every list in this sheet is followed by another group, never by the edge. */
@@ -858,7 +858,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   chipPressed: { opacity: 0.82 },
   chipText: { fontSize: 13.5, fontWeight: '500', color: flColor.cream100 },
 });

@@ -976,7 +976,7 @@ const styles = StyleSheet.create({
   // Feedback (0167). Stacked rather than tabular: the body is the point and it needs the full width.
   feedbackList: { marginTop: 10 },
   // ── Errors (0176) ──────────────────────────────────────────────────────────
-  errCount: { flex: 1, fontSize: 11, fontWeight: '600', color: flColor.bronzeInk },
+  errCount: { flex: 1, fontSize: 11, fontWeight: '600', color: flColor.labelInk },
   errMessage: { marginTop: 5, fontSize: 13, lineHeight: 19, color: flColor.cream100 },
   errStale: { marginTop: 4, fontSize: 11, fontWeight: '600', color: flColor.bronzeInk },
   errBuilds: { marginTop: 3, fontSize: 10.5, color: flColor.gray400 },
@@ -1016,7 +1016,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.8,
-    color: flColor.bronzeInk,
+    color: flColor.labelInk,
   },
   feedbackWho: { flex: 1, minWidth: 0, fontSize: 11.5, color: flColor.gray600 },
   feedbackWhen: { flexShrink: 0, fontSize: 11.5, color: flColor.gray400 },

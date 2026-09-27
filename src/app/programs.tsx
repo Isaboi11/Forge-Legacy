@@ -13,6 +13,7 @@ import { flColor, flRadius, flShadow } from '@/constants/foundation';
 import { fetchMyPrograms, type SavedProgram } from '@/data/programs-live';
 import { isSealed, sessionsPerWeek, shelvePrograms, viewForState } from '@/domain/program/progress-core';
 import { useQuery } from '@/lib/useQuery';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * ══ YOUR PROGRAMS — the athlete's own program library (Workouts restructure, PO 2026-09-22) ══
@@ -145,7 +146,7 @@ function ProgramRow({ program, onPress }: { program: SavedProgram; onPress: () =
       <View style={[styles.statePill, isActive && styles.statePillActive]}>
         <Text style={[styles.statePillText, isActive && styles.statePillTextActive]}>{pill}</Text>
       </View>
-      <ChevronRightIcon size={18} color={flColor.bronze400} />
+      <ChevronRightIcon size={18} color={forgeOr(flColor.bronze400, flColor.gray600)} />
     </Pressable>
   );
 }
@@ -209,7 +210,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal800,
   },
-  statePillActive: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  statePillActive: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   statePillText: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
   statePillTextActive: { color: flColor.bronze300 },
   digest: {
@@ -258,6 +259,6 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorderSubtle,
     backgroundColor: flColor.bronzeTint,
   },
-  createRowPressed: { opacity: 0.88, borderColor: flColor.bronzeBorder },
+  createRowPressed: { opacity: 0.88, borderColor: flColor.accentBorder },
   createRowText: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
 });
