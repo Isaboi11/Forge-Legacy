@@ -907,6 +907,11 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### ⭐ QA fix batch 2 (2026-09-26 · ✅ WEB `index-28df53ca4ee35bc47ba9a60c9e20ac60.js` (alias + deployment MATCH) · ✅ OTA build 9 iOS `01a0e069-5405-721f-9f49-40506b642361` (manifest serves it) from `ota/build9-js` `c0d79e56`, fingerprint MATCHED; carries the other session's Alabaster sweep `96a29515`/`a447dc37` · ⛔ 0200 + 4 coach bundles NOT yet pasted)
+
+Main commits: `64355182` F7 (End workout saves; Discard asks) · `b92fb0b6` F6/F12 (invite join waits for the entitlement read; Send hidden on a preview) · `2331a3a1` R2-F3/F4 (repeat foods log real numbers; drinks pass looksSane) · `cf126173` F4 (M-5 confirm seals; L-6 Skip writes nothing; chapter honors = this chapter's only — ⚠ PO to decide on one-time honors) · `f249713a` F9 (`records-core.ts`, one best/record rule, credited per workout) · `2738fdc4` R2-F6 (medical stops: 21/21 QA phrasings, 0/41 false stops) · `e0fb66f4` R2-F8/F10/F13/F14 (Holt) · `7a0b0596` + `edcc3051` F11 (149 catalogue corrections, 343 coaching records regenerated and **published by the PO**, 735 published) · `6dc45d6d` 0200 re-audited, safe to paste.
+PO steps: paste `supabase/apply/pending-0200.sql` · re-paste coach-ask, coach-interpret, coach-form-check, coach-kitchen (medical-routing inlined). Open: `muscle-building-intermediate` front-delt band test fails after the rear-delt re-filing (program-content decision); in-workout Holt bubble (F10 remainder, `CoachSays` in workout.tsx).
+
 ### ⭐ Alabaster: bronze is earned — the gold hierarchy (2026-09-26, `15bed3f9` · ✅ BUILD 9 iOS `01a0e066-e5d7-7c89-8e1c-aabe50abff2c` from lane `ota/build9-js` `c0d79e56` (fingerprint MATCHED; manifest serves it; new hexes found in the `.hbc`, old tan `#CDBD9F` absent) · ⛔ NOT yet on web · tsc 0 · lint 0 on 142 files)
 
 PO design review (8/10): too much gold at one visual weight. New Alabaster hierarchy — ink = information, bronze = action + achievement, warm taupe = supporting UI, cream = canvas (unchanged). Forge renders identically: every new token equals the Forge value it replaced.
