@@ -917,7 +917,7 @@ PO screenshot: Nutrition's meal cards were **black blocks on cream** and the **L
 - **DRAFT for PO review** — podium (bronze-fill champion pedestal, parchment avatar wells), trophy-case tier metals (silver was **1.44:1**), archive band plates without a photo, rank seal parchment channel with the dark enamel centre kept for the flame raster. Side-by-side: https://claude.ai/artifact/Y97koHL7JP2LomR42s8QN5
 - ⏳ **Still owed:** `workout.tsx` (20 bronze-text sites + wheel fades `[charcoal900, 'rgba(0,0,0,0)']`) — skipped because another session had it open; 32 rank badge PNGs need a light art pass; PO sign-off on the medal drafts.
 
-### ⭐ Full-app QA (two rounds) + the top fixes (2026-09-26 · committed `f01bf9bf` · `4956523c` · `bad8462d` · `b56a34d5` · ✅ 0225 APPLIED (readback 8·2·17·true·false·true·false·0·0) · ✅ coach-ask + coach-interpret re-pasted by PO · ✅ WEB `index-1a5654d7ae8dbc5cd69bbce4cb1478d2.js` (alias + deployment URL MATCH) from `ota/build9-js` `840c55ef` (fingerprint MATCHED build 9 `6c59b9c9`) · ⛔ build 9 OTA NOT published — PO runs it)
+### ⭐ Full-app QA (two rounds) + the top fixes (2026-09-26 · committed `f01bf9bf` · `4956523c` · `bad8462d` · `b56a34d5` · ✅ 0225 APPLIED (readback 8·2·17·true·false·true·false·0·0) · ✅ coach-ask + coach-interpret re-pasted by PO · ✅ WEB `index-1a5654d7ae8dbc5cd69bbce4cb1478d2.js` (alias + deployment URL MATCH) from `ota/build9-js` `840c55ef` (fingerprint MATCHED build 9 `6c59b9c9`) · ✅ OTA build 9 iOS `01a0e031-e49d-72b5-8db2-837fcd3cb571` (runtime `b322e3de…`, manifest serves it) from the same lane)
 
 16 Playwright test lanes drove the live web preview in both themes, using sandbox + claudetest. **311 issues (3 critical, 25 high)** → `Docs/QA/Full-App-QA-2026-09-26.md`. The only flow not covered is onboarding a brand-new account. 41 AI calls. Fixed and committed:
 - **F1 / F3:** Start asks "Switch programs?" (W-3 §13) before ending the running program. Guided adds Save for later. Remove from Planned is gone from the active program.
@@ -926,7 +926,7 @@ PO screenshot: Nutrition's meal cards were **black blocks on cream** and the **L
 - **F2 / F8:** squad goal Save is reachable (pinned footer). Five two-button rows no longer push Save off screen.
 - F5 (privacy text) was already fixed by `f198ea07`.
 
-Remaining PO step: the build 9 OTA from `C:/Users/isaia/forge-ota9-wt` (lane `840c55ef`). Tests 4,527/4,527 on main; the lane fails 5 consent/onboarding source tests that read `site/` and old migrations the lane does not carry (none in the fix files).
+Lane head for the next build-9 OTA: `840c55ef`. Tests 4,527/4,527 on main; the lane fails 5 consent/onboarding source tests that read `site/` and old migrations the lane does not carry (none in the fix files).
 
 ### ⭐ Meal Plan: choose your own meal for any slot, kept on rebuild (2026-09-26, `3e62afcd` · ✅ WEB `index-de14dc7019ac534a287fc669051f5569.js` (alias MATCH) · ✅ OTA build 9 iOS `01a0df20-d23c-7609…` (`ota/build9-js`, on top of the other session's legal-summaries OTA) · not yet seen by the PO)
 
