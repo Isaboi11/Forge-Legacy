@@ -233,7 +233,7 @@ export default function AthleteProfileScreen() {
         actions={data.isSelf ? null : <OverflowButton onPress={() => setActionsOpen(true)} />}
       />
 
-      <Animated.ScrollView
+      <Animated.ScrollView keyboardDismissMode="on-drag"
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
@@ -395,7 +395,7 @@ export default function AthleteProfileScreen() {
             <View style={styles.sectionHeaderPad}>
               <SectionHeader label="Accomplishments" />
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
+            <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
               {data.accomplishments.map((a) => (
                 <AccomplishmentCard key={a.id} item={toAccomplishment(a)} />
               ))}

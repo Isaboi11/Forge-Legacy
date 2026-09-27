@@ -293,7 +293,7 @@ const cardStyles = StyleSheet.create({
 
 function ScrollableTabs({ items, activeKey, onPress }: InnerTabProps) {
   return (
-    <ScrollView
+    <ScrollView keyboardDismissMode="on-drag"
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={scrollStyles.content}

@@ -584,7 +584,7 @@ export default function SubscriptionScreen() {
         </View>
       ) : (
         <>
-          <ScrollView
+          <ScrollView keyboardDismissMode="on-drag"
             ref={scrollRef}
             contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom + (canBuy ? 96 : 0) }]}
             showsVerticalScrollIndicator={false}

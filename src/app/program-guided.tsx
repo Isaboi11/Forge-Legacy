@@ -344,7 +344,7 @@ function Guided() {
       {/* A sibling, not a wrapper — `ScreenBackground` paints behind and takes no children. */}
       <ScreenBackground image={SCREEN_BG.bg2} overlay={{ flat: 'rgba(6,7,8,0.3)' }} />
       {started ? <AppBar title="Build a Program" onBack={back} /> : <AppBar title="Build a Program" onClose={() => router.back()} />}
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 120 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

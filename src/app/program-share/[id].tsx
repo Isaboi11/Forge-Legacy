@@ -124,7 +124,7 @@ export default function ProgramShareScreen() {
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.32)' }} />
       <AppBar title="Shared Program" onBack={goBack} />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.from}>
           <Avatar src={data.fromAvatarUrl ?? undefined} name={data.fromName} size={40} />
           <View style={styles.fromText}>

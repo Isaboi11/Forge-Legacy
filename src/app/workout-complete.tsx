@@ -934,7 +934,7 @@ export default function WorkoutComplete() {
 
     return (
       <Shell>
-        <ScrollView contentContainerStyle={styles.capScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.capScroll} showsVerticalScrollIndicator={false}>
           <Animated.View style={[styles.capBlock, { opacity: rise, transform: [{ translateY: riseY }] }]}>
             {/* No ember glow and no pulse. The glow belongs to the ceremony, and this is not one. */}
             <CaptureSeal size={72} />
@@ -1057,7 +1057,7 @@ export default function WorkoutComplete() {
           <EngravedIcon name="book" size={20} />
           <Text style={styles.recHeaderTitle}>The Record</Text>
         </View>
-        <ScrollView contentContainerStyle={styles.recScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.recScroll} showsVerticalScrollIndicator={false}>
           {/* NAME IT HERE, WHERE YOU ALREADY KNOW WHAT IT WAS. The eyebrow has always shown the
               session's name; it was simply not a control, and nothing anywhere else was either — the
               app could name a workout and the athlete could not. Tapping opens the same sheet the

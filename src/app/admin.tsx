@@ -179,7 +179,7 @@ export default function AdminScreen() {
       <ScreenBackground image={SCREEN_BG.legacyMountains} imageOpacity={0.18} overlay={{ flat: 'rgba(5,5,5,0.72)' }} />
       <AppBar title="Creator Dashboard" onBack={goBack} />
 
-      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <View style={styles.rangeRow}>
           <RangeControl options={RANGES.map((r) => ({ key: r.key, label: r.label }))} value={range} onChange={setRange} />
         </View>

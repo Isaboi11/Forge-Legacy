@@ -179,7 +179,7 @@ export default function RecipeScreen() {
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.46)' }} />
       <AppBar title="" transparent onBack={() => router.back()} />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} onScroll={onScroll} scrollEventThrottle={64}>
+      <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={styles.content} onScroll={onScroll} scrollEventThrottle={64}>
         <View style={styles.identity}>
           <Text style={styles.eyebrow}>Nutrition</Text>
           <Text style={styles.title}>{r.name}</Text>

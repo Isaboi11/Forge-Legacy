@@ -117,7 +117,7 @@ export default function ChallengeResultsScreen() {
 
   return (
     <Shell onBack={goBack}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Hero result={data} />
         <ChampionSpotlight result={data} />
         <YourResult result={data} />

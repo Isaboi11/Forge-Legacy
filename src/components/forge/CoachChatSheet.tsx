@@ -2551,7 +2551,7 @@ export function CoachChatSheet({
             }}
           />
         ) : (
-        <ScrollView
+        <ScrollView keyboardDismissMode="on-drag"
           ref={scroller}
           style={styles.thread}
           contentContainerStyle={[styles.threadInner, { paddingBottom: threadPad }]}
@@ -3932,7 +3932,7 @@ function PlanPreview({
         </Text>
       </View>
 
-      <ScrollView style={styles.previewScroll} contentContainerStyle={styles.previewInner}>
+      <ScrollView keyboardDismissMode="on-drag" style={styles.previewScroll} contentContainerStyle={styles.previewInner}>
         <View style={styles.draftBanner}>
           <Text style={styles.draftBannerText}>DRAFT — NOT SAVED YET</Text>
         </View>

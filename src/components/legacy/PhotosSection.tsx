@@ -25,7 +25,7 @@ export function PhotosSection({ photos, totalCount, onPhotoPress, onViewAll }: P
   return (
     <View>
       <SectionLabel label="Photos" count={totalCount} />
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.strip}

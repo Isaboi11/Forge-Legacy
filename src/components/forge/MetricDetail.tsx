@@ -96,7 +96,7 @@ export function MetricDetail({ metric, onClose }: { metric: MetricSeries; onClos
         <View style={styles.barBtn} />
       </View>
 
-      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         <Text style={styles.eyebrow}>{metric.category} · Latest</Text>
         <Text style={styles.big}>{currentLabel(metric, units)}</Text>
         {/* The reps the top set was moved for. Without it "245 lb" is half a fact, and the line would

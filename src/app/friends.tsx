@@ -198,7 +198,7 @@ export default function FriendsFeedScreen() {
           </Pressable>
         </View>
       ) : (
-        <ScrollView
+        <ScrollView keyboardDismissMode="on-drag"
           ref={tourScroller}
           onScroll={onTourScroll}
           scrollEventThrottle={16}

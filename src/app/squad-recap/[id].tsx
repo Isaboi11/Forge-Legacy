@@ -83,7 +83,7 @@ export default function SquadRecapScreen() {
 
   return (
     <Shell onBack={goBack}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── Header ── */}
         <View style={styles.hero}>
           <View style={styles.heroDisc}>

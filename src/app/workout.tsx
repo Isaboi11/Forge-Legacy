@@ -3710,7 +3710,7 @@ export default function WorkoutScreen() {
         during a live cardio bout. Swiping past a running treadmill bout is exactly the hole the bout
         lock was built to close, so the pager snaps back instead.
       */}
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         ref={pagerRef}
         horizontal
         pagingEnabled
@@ -3727,7 +3727,7 @@ export default function WorkoutScreen() {
             {pi !== exIdx ? (
               <ExercisePeek ex={pe} />
             ) : (
-            <ScrollView
+            <ScrollView keyboardDismissMode="on-drag"
               ref={tourScroller}
               onScroll={onTourScroll}
               scrollEventThrottle={16}
@@ -4974,7 +4974,7 @@ export default function WorkoutScreen() {
           <Pressable style={styles.pickerBackdrop} onPress={() => setOverviewOpen(false)} accessibilityLabel="Close" />
           <View style={[styles.picker, styles.overviewSheet]}>
             <Text style={styles.pickerTitle}>All Exercises</Text>
-            <ScrollView style={styles.overviewList} contentContainerStyle={styles.overviewListContent} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode="on-drag" style={styles.overviewList} contentContainerStyle={styles.overviewListContent} showsVerticalScrollIndicator={false}>
               {session.exercises.map((e, i) => {
                 const total = e.sets.length;
                 const done = e.sets.filter((s) => s.done).length;
@@ -5072,7 +5072,7 @@ export default function WorkoutScreen() {
           */}
           <View style={[styles.picker, styles.optionsSheet]}>
             <Text style={styles.pickerTitle}>Workout Options</Text>
-            <ScrollView style={styles.optScroll} contentContainerStyle={styles.optList} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode="on-drag" style={styles.optScroll} contentContainerStyle={styles.optList} showsVerticalScrollIndicator={false}>
               <OptionRow
                 onPress={openWorkoutName}
                 title="Name this workout"
@@ -5193,7 +5193,7 @@ export default function WorkoutScreen() {
               <Text style={styles.partnerHeaderTitle}>Invite to join</Text>
               <Text style={styles.partnerCount}>{ex.name}</Text>
             </View>
-            <ScrollView style={styles.partnerScroll} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode="on-drag" style={styles.partnerScroll} showsVerticalScrollIndicator={false}>
               {(partners ?? []).length === 0 ? (
                 <Text style={styles.partnerEmpty}>Add a friend or join a squad, and the people you train alongside show up here.</Text>
               ) : (
@@ -5235,7 +5235,7 @@ export default function WorkoutScreen() {
               <Text style={styles.partnerHeaderTitle}>Trained with</Text>
               <Text style={styles.partnerCount}>{taggedPartners.length} of 3</Text>
             </View>
-            <ScrollView style={styles.partnerScroll} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode="on-drag" style={styles.partnerScroll} showsVerticalScrollIndicator={false}>
               {(partners ?? []).length === 0 ? (
                 <Text style={styles.partnerEmpty}>
                   Add a friend or join a squad, and the people you train alongside show up here.
@@ -6169,7 +6169,7 @@ function WheelPicker({ options, value, unit, onChange }: { options: number[]; va
       <View style={styles.wheelBand} pointerEvents="none" />
       <LinearGradient colors={[flColor.charcoal900, 'rgba(0,0,0,0)']} style={styles.wheelFadeTop} pointerEvents="none" />
       <LinearGradient colors={['rgba(0,0,0,0)', flColor.charcoal900]} style={styles.wheelFadeBottom} pointerEvents="none" />
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
         snapToInterval={WHEEL_ITEM}

@@ -74,7 +74,7 @@ export function PinManagerSheet({ open, onClose }: { open: boolean; onClose: (ch
           Feature your proudest moments at the top of your Legacy. <Text style={styles.count}>{pinCountLabel(pins)}</Text>
         </Text>
 
-        <ScrollView style={styles.list} contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" style={styles.list} contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
           {loading ? (
             <Text style={styles.empty}>Loading…</Text>
           ) : candidates.length === 0 ? (

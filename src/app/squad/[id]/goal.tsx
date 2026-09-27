@@ -208,7 +208,7 @@ export default function SquadGoalScreen() {
         ) : undefined
       }
     >
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ═══ HERO ═══ */}
         <View style={styles.hero}>
           <LinearGradient colors={['rgba(181,138,97,0.09)', 'transparent']} locations={[0, 0.68]} style={StyleSheet.absoluteFill} pointerEvents="none" />

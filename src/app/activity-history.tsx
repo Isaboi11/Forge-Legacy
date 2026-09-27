@@ -96,7 +96,7 @@ export default function ActivityHistoryScreen() {
 
       {/* type filter — All + every modality the app can actually log, single-select */}
       <View style={styles.chipStrip}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+        <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
           <Chip label="All" on={filter === 'all'} onPress={() => setFilter('all')} />
           {ACTIVITY_ORDER.map((t) => (
             <Chip
@@ -137,7 +137,7 @@ export default function ActivityHistoryScreen() {
           ) : null}
         </View>
       ) : (
-        <SectionList
+        <SectionList keyboardDismissMode="on-drag"
           sections={sections}
           keyExtractor={(r) => r.id}
           stickySectionHeadersEnabled

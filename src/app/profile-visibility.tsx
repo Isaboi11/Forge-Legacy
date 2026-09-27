@@ -128,7 +128,7 @@ export default function ProfileVisibilityScreen() {
           <ActivityIndicator color={flColor.bronze400} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
           <Text style={styles.intro}>
             Choose who can see each part of your Legacy when they open your profile. Anything set to a smaller audience
             simply won’t appear for others.

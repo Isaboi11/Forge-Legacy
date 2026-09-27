@@ -174,7 +174,7 @@ export default function SquadRequestsScreen() {
       <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="Join Requests" onBack={goBack} />
 
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}

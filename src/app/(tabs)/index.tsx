@@ -1030,7 +1030,7 @@ export default function HomeScreen() {
         onAvatar={() => router.push('/account-settings')}
       />
 
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}

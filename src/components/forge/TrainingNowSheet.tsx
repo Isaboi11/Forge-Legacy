@@ -50,7 +50,7 @@ export function TrainingNowSheet({ open, onClose, athletes, onAthlete, onAskToJo
           </Pressable>
         </View>
       ) : (
-        <ScrollView style={styles.list} contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" style={styles.list} contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
           {athletes.map((a) => (
             <Pressable
               key={a.userId}

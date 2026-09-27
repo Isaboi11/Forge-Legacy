@@ -258,7 +258,7 @@ export function SessionCoachSheet({
         </View>
         </View>
 
-        <ScrollView style={styles.thread} contentContainerStyle={styles.threadInner} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" style={styles.thread} contentContainerStyle={styles.threadInner} showsVerticalScrollIndicator={false}>
           {/*
             ══ 1 · THE ADAPTATION, WHEN THERE IS ONE — AND IT SITS ABOVE THE CARD ══
 

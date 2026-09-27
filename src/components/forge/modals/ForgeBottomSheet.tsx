@@ -108,7 +108,7 @@ export function ForgeBottomSheet({
   }, [dismissible, onClose])
 
   const BodyContent = scrollableContent ? (
-    <ScrollView
+    <ScrollView keyboardDismissMode="on-drag"
       style={styles.scrollContent}
       contentContainerStyle={[styles.scrollPad, { paddingBottom: insets.bottom + 12 }]}
       showsVerticalScrollIndicator={false}

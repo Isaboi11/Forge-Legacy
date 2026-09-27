@@ -66,7 +66,7 @@ export function ForgeModal({
   const isFullScreen = variant === 'fullScreen'
 
   const BodyContent = scrollable ? (
-    <ScrollView
+    <ScrollView keyboardDismissMode="on-drag"
       style={styles.scrollBody}
       contentContainerStyle={styles.scrollBodyContent}
       showsVerticalScrollIndicator={false}

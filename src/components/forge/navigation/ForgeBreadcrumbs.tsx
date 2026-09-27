@@ -15,7 +15,7 @@ import type { ForgeBreadcrumbsProps } from './types'
 
 export function ForgeBreadcrumbs({ items }: ForgeBreadcrumbsProps) {
   return (
-    <ScrollView
+    <ScrollView keyboardDismissMode="on-drag"
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}

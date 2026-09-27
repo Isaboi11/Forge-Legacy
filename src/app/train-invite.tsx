@@ -118,7 +118,7 @@ export default function TrainInviteScreen() {
       <AppBar title="Train Together" onClose={close} />
 
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <Text style={styles.lede}>They’ll get their own copy to log. At the end you’re both credited for training together.</Text>
 
           <Text style={styles.fieldLabel}>Who</Text>

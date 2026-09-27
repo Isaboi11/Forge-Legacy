@@ -237,7 +237,7 @@ export default function CompetitionHistoryScreen() {
           </Pressable>
         </View>
       ) : (
-        <ScrollView
+        <ScrollView keyboardDismissMode="on-drag"
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
           stickyHeaderIndices={groups.map((_, i) => i * 2)}
@@ -294,7 +294,7 @@ function ChipRow<T extends string>({
   return (
     <View style={styles.chipBlock}>
       <Text style={styles.chipLabel}>{label}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipStrip}>
+      <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipStrip}>
         {items.map((it) => {
           const on = it === current;
           return (

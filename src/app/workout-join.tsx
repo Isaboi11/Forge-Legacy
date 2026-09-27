@@ -173,7 +173,7 @@ export default function WorkoutJoinScreen() {
       <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
       <AppBar title="Join Workout" onBack={close} />
 
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.senderWrap}>
           <View style={styles.ember} pointerEvents="none" />
           <Avatar name={host?.name ?? 'Athlete'} src={host?.avatarUrl ?? undefined} size={88} ring />

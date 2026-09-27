@@ -141,7 +141,7 @@ export default function CommunityScreen() {
         }
       />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── PENDING-ASSET cover banner — geometric bronze/charcoal placeholder, never a fabricated image ── */}
         <BannerPlaceholder />
 

@@ -406,7 +406,7 @@ export default function SquadPostRoute() {
         targetName={post.authorName}
       />
 
-      <ScrollView style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode="on-drag" style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.body}>
           {/* author — or the squad itself, on a post nobody wrote (a goal's close, 0200). No profile to open,
               and "Athlete" over the squad's own announcement would invent a person. */}

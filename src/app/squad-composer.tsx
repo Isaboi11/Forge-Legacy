@@ -429,7 +429,7 @@ export default function SquadComposerRoute() {
           subtitle={fromSquad ? 'Training, recognition & coordination' : 'Share it where it belongs'}
           onBack={() => router.back()}
         />
-        <ScrollView contentContainerStyle={styles.pickScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.pickScroll} showsVerticalScrollIndicator={false}>
           {/*
             The destination, chosen before the type, and only when it IS a choice — entering from a
             squad has already answered it.
@@ -470,7 +470,7 @@ export default function SquadComposerRoute() {
 
               {/* Which squad, once one is needed. */}
               {needsSquad && (squads ?? []).length > 0 ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.squadStrip}>
+                <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.squadStrip}>
                   {(squads ?? []).map((s) => (
                     <Pressable
                       key={s.id}
@@ -549,7 +549,7 @@ export default function SquadComposerRoute() {
           </Pressable>
         }
       />
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}

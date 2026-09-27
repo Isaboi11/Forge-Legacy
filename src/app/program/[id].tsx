@@ -900,7 +900,7 @@ export default function ProgramDetailScreen() {
         }
       />
 
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}

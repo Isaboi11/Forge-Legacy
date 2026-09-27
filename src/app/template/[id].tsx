@@ -200,7 +200,7 @@ export default function TemplateDetailScreen() {
         </View>
       ) : t ? (
         <>
-          <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             {/* hero */}
             <Text style={styles.eyebrow}>WORKOUT TEMPLATE</Text>
             <Text style={styles.title}>{t.name}</Text>

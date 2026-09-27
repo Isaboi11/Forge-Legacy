@@ -173,7 +173,7 @@ export function BottomSheet({ open, onClose, dismissible = true, title, header, 
           ) : null}
 
           {scroll ? (
-            <ScrollView
+            <ScrollView keyboardDismissMode="on-drag"
               /*
                * The cap is EXPLICIT, not just `flexShrink: 1`. Shrinking a flex child relies on the
                * parent resolving a definite height from `maxHeight: '88%'`, and when it doesn't the

@@ -43,7 +43,7 @@ export function NutritionFirstRun({ onLog, onTargets }: { onLog: () => void; onT
 
   return (
     <View style={styles.root}>
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, s.content]} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={[styles.content, s.content]} showsVerticalScrollIndicator={false}>
         <View style={[styles.mark, s.mark]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <RingMark size={s.ringSize} dotted={!compact} />
         </View>

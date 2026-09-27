@@ -261,7 +261,7 @@ export default function MealDetailScreen() {
         }
       />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.identity}>
           <Text style={styles.eyebrow}>{mealDateLabel(iso, todayIso)}</Text>
           <Text style={styles.mealName}>{MEAL_LABELS[meal]}</Text>

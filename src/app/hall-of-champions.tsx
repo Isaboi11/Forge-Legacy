@@ -132,7 +132,7 @@ function Body({ hall, onOpen }: { hall: SquadHall; onOpen: (id: string) => void 
 
   return (
     <Animated.View style={[styles.bodyWrap, { opacity: rise, transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} stickyHeaderIndices={groups.map((_, i) => i * 2)}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} stickyHeaderIndices={groups.map((_, i) => i * 2)}>
         {groups.flatMap((g) => [
           <View key={`y${g.year}`} style={styles.yearHead}>
             <Text style={styles.yearLabel}>{g.year}</Text>

@@ -282,7 +282,7 @@ function ProgramImport() {
         }
       />
 
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 140 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

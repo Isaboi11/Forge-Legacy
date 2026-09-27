@@ -268,7 +268,7 @@ export default function ButtonLibraryPreview() {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <StatusBar barStyle="light-content" backgroundColor={color.background.primary} />
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.pageTitle}>Button Library</Text>
         <Text style={styles.pageSubtitle}>
           The permanent, reusable button system for Forge Legacy. Every variant, state, and

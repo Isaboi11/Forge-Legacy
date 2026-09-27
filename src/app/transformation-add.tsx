@@ -230,7 +230,7 @@ export default function TransformationAddRoute() {
   return (
     <View style={styles.root}>
       <TopBar title={isEdit ? 'Edit Progress Set' : 'New Progress Set'} onClose={() => router.back()} />
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.tiedRow}>
           <Text style={styles.tiedText}>
             Tied to <Text style={styles.tiedName}>{chapterName}</Text>

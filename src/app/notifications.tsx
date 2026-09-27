@@ -131,7 +131,7 @@ export default function NotificationsScreen() {
           <ActivityIndicator color={flColor.bronze400} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
           {NOTIF_SECTIONS.map((sec) => (
             <View key={sec.key} style={styles.section}>
               <Text style={styles.sectionLabel}>{sec.label}</Text>
@@ -174,7 +174,7 @@ export default function NotificationsScreen() {
                     </View>
 
                     <Text style={[styles.editorLabel, styles.editorLabelSpaced]}>Time</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hourRow}>
+                    <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hourRow}>
                       {BRIEFING_HOURS.map((h) => {
                         const on = briefing.hour === h;
                         return (

@@ -292,7 +292,7 @@ export default function WorkoutsScreen() {
         </Pressable>
       ) : null}
 
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -577,7 +577,7 @@ export default function WorkoutsScreen() {
                     wrapped block; no "See all" — All Programs sits on For You. ── */}
                 <View>
                   <SectionHeader label="Browse by Focus" />
-                  <ScrollView
+                  <ScrollView keyboardDismissMode="on-drag"
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     style={styles.focusScroller}

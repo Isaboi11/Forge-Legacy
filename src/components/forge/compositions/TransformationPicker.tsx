@@ -96,7 +96,7 @@ export function EntryStrip({
   return (
     <View style={styles.stripBlock}>
       <Text style={styles.stripLabel}>{label}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+      <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
         {entries.map((e) => {
           const on = e.id === selectedId;
           const taken = e.id === otherId;

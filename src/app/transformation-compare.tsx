@@ -123,7 +123,7 @@ export default function TransformationCompareRoute() {
       {/* ⚠ THE PAGE MUST NOT SCROLL UNDER AN ADJUSTING FINGER. A drag on a photograph is vertical as often
           as it is horizontal, and the responder claims it — but the scroller is the outer view and would
           still take the gesture on some paths. Off is the honest answer for a mode you leave. */}
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} scrollEnabled={!adjusting}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} scrollEnabled={!adjusting}>
         <Text style={styles.framing}>Side by side, only when you choose to look.</Text>
 
         <View style={styles.selectRow}>
@@ -250,7 +250,7 @@ export default function TransformationCompareRoute() {
       </ScrollView>
 
       <BottomSheet open={!!pickerFor} onClose={() => setPickerFor(null)} title={pickerFor === 'a' ? 'Earlier entry' : 'Later entry'}>
-        <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
           {entries.map((e, i) => (
             <Pressable key={e.id} onPress={() => selectEntry(e.id)} accessibilityRole="button" accessibilityLabel={`Select ${e.label}`} style={[styles.pickerRow, i > 0 ? styles.pickerRowDiv : null]}>
               <Text style={styles.pickerName}>{e.label}</Text>

@@ -109,7 +109,7 @@ export default function InboxScreen() {
           <Text style={styles.emptyText}>Requests, invitations and what your squads are doing all land here.</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           {grouped.map((group) => (
             <View key={group.label} style={styles.group}>
               <Text style={styles.sectionLabel}>{group.label}</Text>

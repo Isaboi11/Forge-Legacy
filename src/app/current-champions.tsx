@@ -205,7 +205,7 @@ function Body({ champions: d, onOpen }: { champions: CurrentChampions; onOpen: (
 
   return (
     <Animated.View style={[styles.bodyWrap, { opacity: rise, transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }]}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <FeaturedTitle title={featured} onPress={() => onOpen(featured)} />
 
         {rest.length > 0 ? (

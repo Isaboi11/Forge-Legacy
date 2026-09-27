@@ -135,7 +135,7 @@ export default function HonorsScreen() {
       ) : total === 0 ? (
         <EmptyHonors />
       ) : (
-        <ScrollView
+        <ScrollView keyboardDismissMode="on-drag"
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -144,7 +144,7 @@ export default function HonorsScreen() {
         >
           <TourAnchor id="honors-recent">
             <Text style={styles.sectionLabel}>Recent</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+            <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
               {recent.map((h) => (
                 <HonorTile key={h.slug} honor={h} size={72} showYear={recentNeedsYear} onPress={() => setSelected(h)} />
               ))}
@@ -161,7 +161,7 @@ export default function HonorsScreen() {
                 </View>
                 <Text style={styles.catCount}>{group.honors.length}</Text>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+              <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
                 {group.honors.map((h) => (
                   <HonorTile key={h.slug} honor={h} size={56} onPress={() => setSelected(h)} />
                 ))}

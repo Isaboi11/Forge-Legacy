@@ -254,7 +254,7 @@ export default function NutritionScreen() {
         }
       />
 
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         style={styles.scroll}
         contentContainerStyle={[styles.content, { paddingBottom: TAB_SCREEN_BOTTOM_GAP }]}
         showsVerticalScrollIndicator={false}

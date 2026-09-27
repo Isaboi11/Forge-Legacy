@@ -153,7 +153,7 @@ export default function TransformationRoute() {
         }
       />
 
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -402,7 +402,7 @@ function EntryCard({ entry, isNewest, onOpen, onLongPress }: { entry: Transforma
         shelf is gone; neither workaround is needed and neither is left behind.
       */}
       {shot.length > 0 ? (
-        <ScrollView
+        <ScrollView keyboardDismissMode="on-drag"
           horizontal
           showsHorizontalScrollIndicator={false}
           decelerationRate="fast"

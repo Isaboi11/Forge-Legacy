@@ -257,7 +257,7 @@ function Body({
   const ordinal = ordinalLine(detail);
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       {/* Says whose this is before anything else, because every number below belongs to them and the
           screen is otherwise identical to the one showing your own training. */}
       {shared ? (

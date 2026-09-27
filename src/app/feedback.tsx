@@ -77,7 +77,7 @@ export default function FeedbackRoute() {
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
       <AppBar title={FEEDBACK_COPY.title} onBack={() => router.back()} />
 
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"

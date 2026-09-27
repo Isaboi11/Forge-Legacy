@@ -161,7 +161,7 @@ export default function MealPhotoScreen() {
         {iso !== today ? <Text style={styles.mealLineDay}>{dayLabel(iso, today)}</Text> : null}
       </Pressable>
 
-      <ScrollView style={styles.list} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode="on-drag" style={styles.list} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
         {stage.step === 'start' ? (
           <View style={styles.intro}>
             <Text style={styles.introTitle}>Snap the plate, check the list, log it.</Text>

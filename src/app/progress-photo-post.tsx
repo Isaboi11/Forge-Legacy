@@ -322,7 +322,7 @@ export default function ProgressPhotoPostRoute() {
       <AppBar title="Progress Photos"
         subtitle={`${entry.label}${entry.chapterName ? ` · ${entry.chapterName}` : ''}`} onBack={() => (router.canGoBack() ? router.back() : router.replace('/transformation'))} />
 
-      <ScrollView style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode="on-drag" style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* ── FORMAT ── */}
         <View style={styles.formatRow}>
           <Text style={styles.sectionLabelInline}>Format</Text>
@@ -428,7 +428,7 @@ export default function ProgressPhotoPostRoute() {
 
         {/* ── FROM ENTRY ── */}
         <Text style={styles.sectionLabel}>From entry</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.entryStrip}>
+        <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.entryStrip}>
           {entries.slice(0, 6).map((e) => {
             const on = e.id === entry.id;
             return (

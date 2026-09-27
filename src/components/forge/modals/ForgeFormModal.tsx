@@ -112,7 +112,7 @@ export function ForgeFormModal({
             </View>
 
             {/* Form content */}
-            <ScrollView
+            <ScrollView keyboardDismissMode="on-drag"
               style={styles.formArea}
               contentContainerStyle={styles.formContent}
               showsVerticalScrollIndicator={false}

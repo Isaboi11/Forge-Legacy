@@ -398,7 +398,7 @@ export default function ShareConfigRoute() {
           </Pressable>
         </View>
 
-        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
           {/* ── LAYOUT (compare) ── */}
           {isCompare ? (
             <>
@@ -546,7 +546,7 @@ export default function ShareConfigRoute() {
         <Pressable style={styles.pickerBackdrop} onPress={() => setSquadPickerOpen(false)}>
           <Pressable style={styles.pickerCard} onPress={() => {}}>
             <Text style={styles.pickerTitle}>Share to which squads?</Text>
-            <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode="on-drag" style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
               <SquadSelectList squads={mySquads ?? []} selected={squadPick} onChange={setSquadPick} disabled={sharing} />
             </ScrollView>
             <Pressable

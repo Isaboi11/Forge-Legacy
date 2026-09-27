@@ -257,7 +257,7 @@ export default function LegacyScreen() {
         onAvatar={() => router.push('/account-settings')}
       />
 
-      <Animated.ScrollView
+      <Animated.ScrollView keyboardDismissMode="on-drag"
         ref={tourScroller}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -385,7 +385,7 @@ export default function LegacyScreen() {
           <View style={styles.sectionHeaderPad}>
             <SectionHeader label="Pinned Legacy" action="Edit" onAction={() => setPinManager(true)} />
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
+          <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
             {data.pinned.map((pin) => (
               <PinnedCard
                 key={pin.id}
@@ -503,7 +503,7 @@ export default function LegacyScreen() {
               />
             </View>
             {liveAccomplishments.length > 0 ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
+              <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
                 {/* A card opens ITS OWN accomplishment. It used to push the bare route, which landed on
                     the full list and left the athlete to find again the thing they had just tapped.
                     "View all" above is the door to the list, and it keeps that job. */}
@@ -542,7 +542,7 @@ export default function LegacyScreen() {
               {/* The six most recent only. `legacy-live` returns every honor newest-first (and
                   `totalHonorCount` still counts them all) — an unbounded strip turns into a very long
                   swipe the moment the catalog starts landing, and the Hub is where the full set lives. */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.honorStripPad}>
+              <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.honorStripPad}>
                 {data.honors.slice(0, 6).map((h) => (
                   <HonorInsignia key={h.id} honor={h} onPress={() => router.push('/honors')} />
                 ))}

@@ -256,7 +256,7 @@ export default function TrophyCaseScreen() {
         ) : null}
       </View>
 
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}

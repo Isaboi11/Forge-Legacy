@@ -440,7 +440,7 @@ export default function FormCheckScreen() {
   // ── 01 Start ─────────────────────────────────────────────────────────────────
   return (
     <Shell top={top} onClose={close}>
-      <ScrollView style={s.flex} contentContainerStyle={s.startBody} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode="on-drag" style={s.flex} contentContainerStyle={s.startBody} keyboardShouldPersistTaps="handled">
         <HoltSays
           text="Show me a set. Any angle works. Get your whole body in frame and I'll tell you what I see."
           under="Technique only. Nothing about your body, nothing medical."
@@ -775,7 +775,7 @@ function WatchingStage({ phase, lift, landed, onCancel }: { phase: 0 | 1 | 2; li
           <HoltMark size={92} state="thinking" />
         </View>
         <Text style={s.watchNow}>{steps[phase]}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.landed} style={s.landedWrap}>
+        <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.landed} style={s.landedWrap}>
           {landed.map((f) => (
             <View key={f.ms} style={s.landedItem}>
               <View style={s.landedFrame}>
@@ -874,7 +874,7 @@ function ReadStage({
 
   return (
     <>
-      <ScrollView style={s.flex} contentContainerStyle={[s.readBody, { paddingBottom: 28 + insets.bottom }]}>
+      <ScrollView keyboardDismissMode="on-drag" style={s.flex} contentContainerStyle={[s.readBody, { paddingBottom: 28 + insets.bottom }]}>
         <View style={s.readHead}>
           <Text style={s.readLift}>{r.lift.name}</Text>
           {meta ? <Text style={s.readMeta}>{meta}</Text> : null}

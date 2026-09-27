@@ -249,7 +249,7 @@ export default function SquadInviteRoute() {
       <InviteBg />
       <AppBar title="Invite to Squad" onBack={() => router.back()} />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* SQUAD HEADER */}
         <View style={styles.headerRow}>
           <View style={styles.headerCrest}>

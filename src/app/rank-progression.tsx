@@ -83,7 +83,7 @@ export default function RankProgressionScreen() {
           <ActivityIndicator color={flColor.bronze400} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 48 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={[styles.body, { paddingBottom: 48 + insets.bottom }]} showsVerticalScrollIndicator={false}>
           {/* masthead */}
           <Text style={styles.eyebrow}>The Forge Path</Text>
           <View style={styles.rule}>

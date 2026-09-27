@@ -131,7 +131,7 @@ export default function SquadPreviewScreen() {
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
         <AppBar onBack={goBack} />
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <PreviewSkeleton />
         </ScrollView>
       </View>
@@ -222,7 +222,7 @@ export default function SquadPreviewScreen() {
       {/* Title-less by design — the hero carries identity, so the bar doesn't repeat it. */}
       <AppBar onBack={goBack} />
 
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}

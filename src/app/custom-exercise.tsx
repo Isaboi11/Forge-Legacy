@@ -196,7 +196,7 @@ export default function CustomExerciseScreen() {
         </Pressable>
       }
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {capNote ? (
           <View style={[styles.banner, atLimit ? styles.bannerStop : null]}>
             <Text style={styles.bannerText}>{capNote}</Text>
@@ -442,7 +442,7 @@ function MultiSelectSheet({
 }) {
   return (
     <BottomSheet open={open} onClose={onClose} title={title}>
-      <ScrollView style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
         {groups.map((g) => (
           <View key={g.label} style={styles.sheetGroup}>
             <Text style={styles.sheetGroupLabel}>{g.label.toUpperCase()}</Text>

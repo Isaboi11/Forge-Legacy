@@ -83,7 +83,7 @@ function PostDetail({
         }
       />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <SourceBar post={post} />
 
         <View style={styles.body}>

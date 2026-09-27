@@ -268,7 +268,7 @@ export function ForgePickerModal({
             </View>
 
             {filters.length > 0 ? (
-              <ScrollView
+              <ScrollView keyboardDismissMode="on-drag"
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 style={styles.filterRow}
@@ -296,7 +296,7 @@ export function ForgePickerModal({
           </View>
 
           {/* Item list */}
-          <ScrollView
+          <ScrollView keyboardDismissMode="on-drag"
             style={styles.list}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"

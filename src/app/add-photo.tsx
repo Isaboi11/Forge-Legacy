@@ -240,7 +240,7 @@ export default function AddPhotoScreen() {
       <AppBar title="Add a Photo" onClose={close} />
 
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <Text style={styles.destination}>
             Adding to <Text style={styles.destinationName}>{target.name}</Text>
           </Text>
@@ -415,7 +415,7 @@ export default function AddPhotoScreen() {
             accessibilityLabel="Search exercises"
             autoFocus
           />
-          <ScrollView style={styles.liftList} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode="on-drag" style={styles.liftList} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {liftResults.map((x) => (
               <Pressable
                 key={x.key}

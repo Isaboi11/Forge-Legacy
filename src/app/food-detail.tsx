@@ -246,7 +246,7 @@ export default function FoodDetailScreen() {
         }
       />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {/* identity */}
         <View style={styles.identity}>
           <Text style={styles.name}>{food.name}</Text>

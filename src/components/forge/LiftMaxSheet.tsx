@@ -237,7 +237,7 @@ export function LiftMaxSheet({
         </Button>
       }
     >
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.wrap} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={styles.wrap} keyboardShouldPersistTaps="handled">
         {warning ? <Text style={styles.warning}>{warning}</Text> : null}
         <Text style={styles.help}>
           This program prescribes weight as a percentage of your max, so it needs a number to work from.

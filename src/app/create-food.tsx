@@ -286,7 +286,7 @@ export default function CreateFoodScreen() {
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.22)' }} />
       <AppBar title="" transparent onBack={() => router.back()} />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={[styles.title, canScan && !scan && styles.titleWithScan, scan && styles.titleScanned]}>
           {editing ? 'Edit food' : 'Create food'}
         </Text>
@@ -519,7 +519,7 @@ export default function CreateFoodScreen() {
       {/* A5 — the photo, so values can be checked without picking the package back up */}
       <BottomSheet open={labelOpen} onClose={() => setLabelOpen(false)} title="Original label">
         <View style={styles.labelSheet}>
-          <ScrollView
+          <ScrollView keyboardDismissMode="on-drag"
             style={styles.labelZoom}
             maximumZoomScale={4}
             minimumZoomScale={1}

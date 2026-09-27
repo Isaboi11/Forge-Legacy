@@ -84,7 +84,7 @@ export function EditMetricsSheet({
                 style={styles.search}
               />
             ) : null}
-          <ScrollView style={styles.list} contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardDismissMode="on-drag" style={styles.list} contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {selectedRows.map((m, idx) => (
               <View key={m.id} style={styles.row}>
                 <View style={styles.arrows}>

@@ -65,7 +65,7 @@ export default function CeremonyHarness() {
       />
       <AppBar title="Ceremony Harness" onBack={() => router.back()} />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.content}>
         <Text style={styles.note}>
           DEV ONLY · placeholder triggers. No real evaluators exist yet — these stand in until rank/honor/goal/program
           events can enqueue ceremonies. Not a tab; removed when real triggers land.

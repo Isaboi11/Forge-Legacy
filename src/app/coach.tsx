@@ -532,7 +532,7 @@ export default function CoachScreen() {
           </Button>
         </View>
       ) : mode == null ? (
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll}>
           <Eyebrow>COACH HOLT</Eyebrow>
           <Text style={styles.question}>What do you need?</Text>
           <View style={styles.options}>
@@ -588,7 +588,7 @@ export default function CoachScreen() {
       ) : ack ? (
         <Acknowledgement label={ack.label} line={ack.line} />
       ) : (
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll}>
           <Eyebrow>
             COACH HOLT{'\n'}
             <Text style={styles.chapter}>
@@ -651,7 +651,7 @@ function Intro({ onDone }: { onDone: () => void }) {
   const barBottom = useBarBottom();
   return (
     <>
-      <ScrollView contentContainerStyle={styles.introScroll}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.introScroll}>
         <Text style={styles.introName}>I&apos;m Holt.</Text>
         <Text style={styles.introBody}>
           Tell me what you&apos;re after and I&apos;ll write the training that gets you there — a full block,
@@ -1251,7 +1251,7 @@ function Reveal({
   const barBottom = useBarBottom();
   return (
     <>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll}>
         <Eyebrow>BUILT BY HOLT</Eyebrow>
         <Text style={styles.revealTitle}>{built.title}</Text>
         <View style={styles.statRow}>

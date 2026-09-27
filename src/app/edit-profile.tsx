@@ -184,7 +184,7 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
   return (
     <>
       {cropEditor}
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         contentContainerStyle={[styles.scroll, { paddingBottom: 40 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

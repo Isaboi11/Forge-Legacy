@@ -183,7 +183,7 @@ export default function AuthFlow() {
             </View>
           </View>
         ) : (
-          <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
             {/* No way back out of `reset`: they hold a recovery session and nothing else in the app
                 will let them set a password, so an escape here strands them exactly where they started. */}
             {step === 'reset' ? null : (
@@ -368,7 +368,7 @@ export default function AuthFlow() {
 
       {/* The same in-app content sheet Account Settings uses. Nothing is fetched; no browser is opened. */}
       <BottomSheet open={legal !== null} onClose={() => setLegal(null)} title={legal ? LEGAL[legal].host : ''}>
-        <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" style={styles.sheetScroll} contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
           <Text style={styles.sheetTitle}>{legal ? LEGAL[legal].title : ''}</Text>
           <Text style={styles.sheetUpdated}>{legal ? LEGAL[legal].updated : ''}</Text>
           {(legal ? LEGAL[legal].body : []).map((p) => (

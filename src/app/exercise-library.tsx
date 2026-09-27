@@ -259,7 +259,7 @@ export default function ExerciseLibraryScreen() {
         </View>
       ) : null}
 
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -394,7 +394,7 @@ export default function ExerciseLibraryScreen() {
       {/* filter sheet */}
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Filter">
         <View style={styles.sheet}>
-          <ScrollView style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode="on-drag" style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
             <FilterGroup
               label="Where you train"
               options={ENVIRONMENTS.map((e) => ({ value: e, label: e }))}

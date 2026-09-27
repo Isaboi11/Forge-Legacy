@@ -141,7 +141,7 @@ export default function DiscoverSquadsScreen() {
       <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="Discover Squads" onBack={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/squads'))} />
 
-      <ScrollView
+      <ScrollView keyboardDismissMode="on-drag"
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -172,7 +172,7 @@ export default function DiscoverSquadsScreen() {
         </Rise>
 
         {/* ── Category filters ── */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterRowContent}>
+        <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterRowContent}>
           {CATS.map((c) => {
             const on = category === c;
             return (

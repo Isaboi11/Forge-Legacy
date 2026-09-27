@@ -53,7 +53,7 @@ export default function ProgramsScreen() {
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate2} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="Your Programs" onBack={goBack} />
-      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]} showsVerticalScrollIndicator={false}>
         <Text style={styles.lede}>Programs you’ve built, imported, or saved.</Text>
 
         <View style={styles.stack}>

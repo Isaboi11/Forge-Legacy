@@ -273,7 +273,7 @@ function AlbumsView({
   }
 
   return (
-    <ScrollView
+    <ScrollView keyboardDismissMode="on-drag"
       ref={tourScroller}
       onScroll={onTourScroll}
       scrollEventThrottle={16}
@@ -412,7 +412,7 @@ function AlbumView({
   }, [album, months]);
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       <View style={styles.albumHead}>
         <View style={styles.albumChip}>
           {sealed ? <FlameGlyph size={11} color={flColor.gray400} /> : <BookGlyph size={11} color={flColor.bronze300} />}

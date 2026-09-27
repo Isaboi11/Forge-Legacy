@@ -251,7 +251,7 @@ export default function MyRecipesScreen() {
       {!form ? (
         <>
           {/* ═══════════ LIST ═══════════ */}
-          <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <View style={styles.identity}>
               <Text style={styles.eyebrow}>Nutrition</Text>
               <Text style={styles.title}>My recipes</Text>
@@ -275,7 +275,7 @@ export default function MyRecipesScreen() {
             {list.length ? (
               <>
                 <InputField value={q} onChange={setQ} placeholder="Search recipes" accessibilityLabel="Search recipes" leadingIcon={<SearchGlyph />} />
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>
+                <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>
                   {FILTERS.map((fl) => {
                     const on = filter === fl.key;
                     return (
@@ -347,7 +347,7 @@ export default function MyRecipesScreen() {
       ) : (
         <>
           {/* ═══════════ FORM ═══════════ */}
-          <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <View style={styles.identityForm}>
               <Text style={styles.eyebrow}>My recipes</Text>
               <Text style={styles.title}>{form.editId ? 'Edit recipe' : 'New recipe'}</Text>

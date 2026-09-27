@@ -68,7 +68,7 @@ export default function HealthConsentScreen() {
           <ActivityIndicator color={flColor.bronze400} />
         </View>
       ) : (
-        <ScrollView
+        <ScrollView keyboardDismissMode="on-drag"
           contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]}
           showsVerticalScrollIndicator={false}
         >

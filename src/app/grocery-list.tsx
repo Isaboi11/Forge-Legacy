@@ -122,7 +122,7 @@ export default function GroceryListScreen() {
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.46)' }} />
       <AppBar title="" transparent onBack={() => router.back()} />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.identity}>
           <Text style={styles.eyebrow}>Nutrition</Text>
           <Text style={styles.title}>Grocery list</Text>

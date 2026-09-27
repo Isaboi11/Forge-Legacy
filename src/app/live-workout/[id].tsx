@@ -91,7 +91,7 @@ export default function LiveWorkoutScreen() {
           <Text style={styles.quiet}>Nothing to show here.</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.who}>
             <Avatar name={view.name} src={view.avatarUrl ?? undefined} size="listRow" presence={view.training} />
             <View style={styles.whoText}>

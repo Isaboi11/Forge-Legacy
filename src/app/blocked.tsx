@@ -64,7 +64,7 @@ export default function BlockedRoute() {
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacy} overlay={{ flat: 'rgba(5,5,5,0.55)' }} />
       <AppBar title="Blocked People" onBack={() => router.back()} />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.lead}>
           You won’t see each other’s posts, comments or check-ins. They aren’t told they’ve been blocked.
         </Text>
