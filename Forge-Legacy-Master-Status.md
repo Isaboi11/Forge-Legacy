@@ -907,6 +907,10 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### Text boxes keep their text inside (2026-09-26, `a6a1627a` · ✅ WEB `index-08bd9c6901b102209c8b2e3b03a6543c.js` (alias + deployment MATCH, fix found in the live bundle) · ✅ OTA build 9 iOS `01a0e08f-ba72-7a85-b432-131b4730c285` from `ota/build9-js` `25c06688`, fingerprint MATCHED `b322e3de…`, manifest serves it; also carries the other session's `a30fae78` drag-down-to-dismiss-keyboard)
+
+PO screenshot: Holt's kitchen composer drew scrolled-away lines above the box. Capped multiline inputs now `overflow: 'hidden'` (Holt composer, squad-post comment, program-import paste, spreadsheet paste, share message); Holt's composer radius pill → 22. `multiline-inputs-clip.test.mjs` guards it app-wide (verified to fail on the old code).
+
 ### ⭐ Drag down to put the keyboard away — everywhere (2026-09-26, `9781c218` · ✅ OTA build 9 iOS `01a0e08c-699c-7d40-a192-a9270850c0e5` (manifest serves it) · ✅ WEB `index-08bd9c6901b102209c8b2e3b03a6543c.js` (alias MATCH), both from `ota/build9-js`, which also carries the other session's sun/moon switch `25a1d838`)
 
 PO: *"I need to be able to swipe down on the keyboard to make it disappear. Nowhere does it do that now."* `keyboardDismissMode="on-drag"` on all 195 scroll containers, including Holt's chat and BottomSheet's scrolling body. The guard test `src/app/__tests__/keyboard-dismiss.test.mjs` fails on any new container without it. A sheet whose body doesn't scroll still has no drag-to-dismiss for the keyboard.
