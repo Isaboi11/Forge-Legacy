@@ -541,6 +541,8 @@ export default function SubscriptionScreen() {
             {trial ? `${TRIAL_NOTE} ` : ''}
             {AUTO_RENEWAL_NOTE}
           </Text>
+          {/* Apple 3.1.2: Terms + Privacy links in the purchase flow, beside the renewal terms — not only at the foot. */}
+          <LegalLinks />
         </>
       ) : null}
       {viaOnboarding && !isPremium ? (
@@ -759,15 +761,7 @@ export default function SubscriptionScreen() {
 
             {/* Always available, in both states (§5.3). Visually secondary — never inside the bronze button. */}
             <RestoreLink busy={busy === 'restore'} onPress={onRestore} />
-            <View style={styles.legal}>
-              <Pressable onPress={() => void Linking.openURL(`https://${LEGAL.terms.host}`)} accessibilityRole="link" hitSlop={8}>
-                <Text style={styles.legalText}>Terms of Service</Text>
-              </Pressable>
-              <Text style={styles.legalDot}>·</Text>
-              <Pressable onPress={() => void Linking.openURL(`https://${LEGAL.privacy.host}`)} accessibilityRole="link" hitSlop={8}>
-                <Text style={styles.legalText}>Privacy Policy</Text>
-              </Pressable>
-            </View>
+            <LegalLinks />
           </ScrollView>
 
           {/*
@@ -788,6 +782,21 @@ export default function SubscriptionScreen() {
           ) : null}
         </>
       )}
+    </View>
+  );
+}
+
+/** Terms + Privacy (Apple 3.1.2). Shown beside the buy button's renewal terms and again at the foot. */
+function LegalLinks() {
+  return (
+    <View style={styles.legal}>
+      <Pressable onPress={() => void Linking.openURL(`https://${LEGAL.terms.host}`)} accessibilityRole="link" hitSlop={8}>
+        <Text style={styles.legalText}>Terms of Service</Text>
+      </Pressable>
+      <Text style={styles.legalDot}>·</Text>
+      <Pressable onPress={() => void Linking.openURL(`https://${LEGAL.privacy.host}`)} accessibilityRole="link" hitSlop={8}>
+        <Text style={styles.legalText}>Privacy Policy</Text>
+      </Pressable>
     </View>
   );
 }
