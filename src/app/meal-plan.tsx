@@ -29,10 +29,12 @@ import {
   dayTotals,
   feedsDay,
   itemTotals,
+  isSavedMeal,
   keptLocks,
+  mealPicks,
   ownPicks,
   ownPicksHidden,
-  placeMeal,
+  placeOnDays,
   logKey,
   mondayOf,
   portionLabel,
@@ -41,10 +43,12 @@ import {
   shortBy,
   slotKey,
   snackOptions,
+  spanDays,
   swapMeal,
   toggleLock,
   weekDates,
   weekRange,
+  type PlaceSpan,
   type MealPlanWeek,
   type PlanItem,
   type PlanSlotName,
@@ -121,8 +125,11 @@ export default function MealPlanScreen() {
   const [handledSwap, setHandledSwap] = useState<object | null>(null);
   const requested = swapQ.data && swapQ.data !== handledSwap ? swapQ.data : null;
   const sheet = requested ? { d: requested.d, i: requested.i, mode: 'swap' as const } : picked;
+  /* "Choose my own": which days the pick goes on. Back to just the tapped day each time the picker opens. */
+  const [span, setSpan] = useState<PlaceSpan>('day');
   const setSheet = (next: typeof picked) => {
     if (requested) setHandledSwap(requested);
+    if (next?.mode === 'pick') setSpan('day');
     setPicked(next);
   };
 
@@ -280,25 +287,70 @@ export default function MealPlanScreen() {
     const total = dayTotals(day).kcal;
     if (mode === 'pick' && sheet.slot && target) {
       /* ══ CHOOSE MY OWN ══ (PO 09-26: "I need to be able to add in my own things where I want.") Any of the
-         athlete's recipes, made-for-this-meal first; the pick is locked so a rebuild keeps it (`placeMeal`). */
+         athlete's recipes, made-for-this-meal first, then their saved meals ("sometimes people repeat the meal
+         for lunches or dinners") — on this day, Monday–Friday, or every day. Each pick is locked, so a
+         rebuild keeps it (`placeOnDays` → `placeMeal`). */
       const slot = sheet.slot;
       const picks = ownPicks(slot, prefs);
+      const meals = mealPicks();
       const hidden = ownPicksHidden(prefs);
-      sheetTitle = `${dates[d].name} ${SLOT_LABEL[slot].toLowerCase()}`;
-      sheetMeta = 'Your recipes. What you pick here stays when you rebuild the week.';
+      const slotWord = SLOT_LABEL[slot].toLowerCase();
+      const place = (recipeId: string, name: string) => {
+        const out = placeOnDays(week, spanDays(span, d), slot, recipeId, prefs, target);
+        const where = span === 'day' ? dates[d].name : span === 'weekdays' ? 'Monday to Friday' : 'every day';
+        void commit({ ...week, days: out.days, locked: out.locked }, `${name} · ${where} ${slotWord} · kept on rebuild`);
+      };
+      sheetTitle = `${dates[d].name} ${slotWord}`;
+      sheetMeta = 'Your recipes and meals. What you pick here stays when you rebuild the week.';
       sheetBody = (
         <View>
+          <View style={styles.spanRow} accessibilityRole="radiogroup">
+            {(
+              [
+                ['day', `Just ${dates[d].name}`],
+                ['weekdays', 'Mon–Fri'],
+                ['week', 'Every day'],
+              ] as [PlaceSpan, string][]
+            ).map(([key, label]) => {
+              const on = span === key;
+              return (
+                <Pressable
+                  key={key}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: on }}
+                  style={[styles.spanChip, on && styles.spanChipOn]}
+                  onPress={() => setSpan(key)}
+                >
+                  <Text style={[styles.spanText, on && styles.spanTextOn]}>{label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {picks.length ? <Text style={styles.pickLabel}>Your recipes</Text> : null}
           <OptionList
             empty={false}
             options={picks.map(({ recipe, forSlot }) => ({
               key: recipe.id,
               name: recipe.name,
               cal: recipe.kcal,
-              sub: `${recipe.minutes} min · ${recipe.protein}g protein${forSlot ? '' : ` · not tagged ${SLOT_LABEL[slot].toLowerCase()}`}`,
-              pick: () => void commit({ ...week, ...placeMeal(week.days, week.locked, d, slot, recipe.id, prefs, target) }, `Added to ${dates[d].name} · kept on rebuild`),
+              sub: `${recipe.minutes} min · ${recipe.protein}g protein${forSlot ? '' : ` · not tagged ${slotWord}`}`,
+              pick: () => place(recipe.id, recipe.name),
             }))}
           />
-          {!picks.length ? <Text style={styles.optionEmpty}>No recipes of yours can go in your plans yet.</Text> : null}
+          {meals.length ? <Text style={styles.pickLabel}>Your meals</Text> : null}
+          <OptionList
+            empty={false}
+            options={meals.map((m) => ({
+              key: m.id,
+              name: m.name,
+              cal: m.kcal,
+              sub: `Saved meal · ${m.protein}g protein`,
+              pick: () => place(m.id, m.name),
+            }))}
+          />
+          {!picks.length && !meals.length ? (
+            <Text style={styles.optionEmpty}>Nothing of yours can go in your plans yet. Add a recipe or a meal below.</Text>
+          ) : null}
           {hidden.count ? (
             <Text style={styles.optionEmpty}>{`${hidden.count} of your recipes can't go in your plans (${hidden.example}).`}</Text>
           ) : null}
@@ -306,11 +358,21 @@ export default function MealPlanScreen() {
             <ActionRow
               icon={<BookGlyph />}
               label="New recipe"
-              hint={canHolt ? 'Type one in or scan a screenshot' : 'Type one in'}
+              hint={canHolt ? 'Type one in or add a picture' : 'Type one in'}
               onPress={() => {
                 setSheet(null);
-                /* `add=1`: the ways to add one — type it, or a screenshot — not straight into a blank form. */
+                /* `add=1`: the ways to add one — type it, or a picture — not straight into a blank form. */
                 router.push({ pathname: '/my-recipes', params: { add: '1' } });
+              }}
+            />
+            <ActionRow
+              icon={<MealGlyph />}
+              label="New meal"
+              hint="Foods you eat together, like your usual lunch"
+              last={!canHolt}
+              onPress={() => {
+                setSheet(null);
+                router.push({ pathname: '/my-foods', params: { newMeal: '1' } });
               }}
             />
             {canHolt ? (
@@ -373,20 +435,24 @@ export default function MealPlanScreen() {
         );
       } else {
         sheetTitle = r.name;
-        sheetMeta = `${grouped(mine)} cal · ${it.leftover && it.cookDay != null ? `Leftover from ${dates[it.cookDay].name} dinner` : `${r.minutes} min`}${it.portion !== 1 ? ` · ${portionLabel(it.portion)}` : ''}`;
+        const meal = isSavedMeal(it.recipeId);
+        sheetMeta = `${grouped(mine)} cal · ${meal ? 'Saved meal' : it.leftover && it.cookDay != null ? `Leftover from ${dates[it.cookDay].name} dinner` : `${r.minutes} min`}${it.portion !== 1 ? ` · ${portionLabel(it.portion)}` : ''}`;
         sheetBody = (
           <View style={styles.actions}>
-            <ActionRow
-              icon={<BookGlyph />}
-              label="Open recipe"
-              onPress={() => {
-                setSheet(null);
-                router.push({ pathname: '/recipe', params: { id: it.recipeId, d: String(d), i: String(i) } });
-              }}
-            />
+            {/* A saved meal has no recipe page — its foods are in My Meals. */}
+            {!meal ? (
+              <ActionRow
+                icon={<BookGlyph />}
+                label="Open recipe"
+                onPress={() => {
+                  setSheet(null);
+                  router.push({ pathname: '/recipe', params: { id: it.recipeId, d: String(d), i: String(i) } });
+                }}
+              />
+            ) : null}
             <ActionRow icon={<SwapGlyph />} label="Swap meal" chevron onPress={() => setSheet({ d, i, mode: 'swap' })} />
             {!it.extra ? (
-              <ActionRow icon={<BookGlyph />} label="Choose my own" hint="Any of your recipes · kept when you rebuild" chevron onPress={() => setSheet({ d, i, slot: it.slot, mode: 'pick' })} />
+              <ActionRow icon={<BookGlyph />} label="Choose my own" hint="Any of your recipes or meals · kept when you rebuild" chevron onPress={() => setSheet({ d, i, slot: it.slot, mode: 'pick' })} />
             ) : null}
             <ActionRow
               icon={<LockGlyph shut={isLocked} />}
@@ -562,7 +628,9 @@ export default function MealPlanScreen() {
                     const metaParts =
                       it.leftover && it.cookDay != null
                         ? [`From ${dates[it.cookDay].name} dinner`]
-                        : [`${r.minutes} min`, ...(feeds != null ? [`leftovers for ${dates[feeds].name} lunch`] : [])];
+                        : isSavedMeal(it.recipeId)
+                          ? ['Saved meal']
+                          : [`${r.minutes} min`, ...(feeds != null ? [`leftovers for ${dates[feeds].name} lunch`] : [])];
                     if (it.portion !== 1) metaParts.push(portionLabel(it.portion));
                     /* PO 2026-09-23 (open question 1): when the library runs out, repeat — and say so. */
                     if (it.repeated) metaParts.push('Repeated · nothing else fits');
@@ -820,6 +888,10 @@ function LogGlyph({ logged }: { logged: boolean }) {
   return <EngravedIcon name={logged ? 'check' : 'plus'} size={17} />;
 }
 
+function MealGlyph() {
+  return <EngravedIcon name="list-plus" size={17} />;
+}
+
 function BookGlyph() {
   return <EngravedIcon name="book" size={17} />;
 }
@@ -966,5 +1038,22 @@ const styles = StyleSheet.create({
   optionSub: { fontSize: 12, color: flColor.gray400 },
   optionCal: { fontSize: 14, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
   optionEmpty: { fontSize: 13, color: flColor.gray400 },
+  pickLabel: { paddingTop: 14, paddingBottom: 2, fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.labelInk },
+  spanRow: { flexDirection: 'row', gap: 6, paddingBottom: 4 },
+  spanChip: {
+    flex: 1,
+    minWidth: 0,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal800,
+  },
+  spanChipOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
+  spanText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
+  spanTextOn: { color: flColor.bronze300 },
   back: { alignSelf: 'center', marginTop: 6 },
 });

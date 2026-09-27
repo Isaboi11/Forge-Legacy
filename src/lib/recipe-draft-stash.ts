@@ -19,23 +19,3 @@ export function takeRecipeDraft(): RecipeRead | null {
   stashed = null;
   return r;
 }
-
-/**
- * ONE PICKED PICTURE, HANDED TO MY RECIPES — the Nutrition tab's "Recipe from a screenshot" (PO 09-26: "have a
- * screenshot of the recipe and be able to import it … in an easy access spot").
- *
- * ⚠ THE PICK HAPPENS ON THE TAB, INSIDE THE TAP. A web file input only opens on a user gesture, so My Recipes
- * cannot open the picker by itself on arrival. The tab picks, leaves the uri here, and pushes
- * `/my-recipes?scan=1`; the screen takes it on focus and runs the same read as its own "Scan a recipe".
- */
-let stashedPhoto: string | null = null;
-
-export function stashRecipePhoto(uri: string): void {
-  stashedPhoto = uri;
-}
-
-export function takeRecipePhoto(): string | null {
-  const u = stashedPhoto;
-  stashedPhoto = null;
-  return u;
-}

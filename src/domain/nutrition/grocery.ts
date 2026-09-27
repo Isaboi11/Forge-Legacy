@@ -62,17 +62,22 @@ export function buyAmount(buy: BuyUnit, grams: number): string {
 
 /** The week's list: every cook's ingredients × the servings it makes, summed per ingredient. */
 export function groceryList(days: PlanDay[], household: number): GroceryList {
-  const acc = new Map<string, { grams: number; uses: GroceryUse[]; name: string }>();
+  /* `n` + `label`: a saved meal's food with no weight on record is counted by the serving ("5 × 1 container"). */
+  const acc = new Map<string, { grams: number; uses: GroceryUse[]; name: string; n: number; label: string | null }>();
   const cooks = cooksOf(days, household);
   for (const c of cooks) {
     const view = recipeView(c.recipeId);
     if (!view) continue;
     const use = { day: DAY_NAMES[c.d], slot: SLOT_LABEL[c.slot], recipe: view.name, servings: c.servingsCooked };
-    for (const { key: ingredient, g: perServing, name } of view.ingredients) {
+    for (const { key: ingredient, g: perServing, name, serving } of view.ingredients) {
       const key = SAME_ITEM[ingredient] ?? ingredient;
       const g = perServing * c.servingsCooked;
-      const a = acc.get(key) ?? { grams: 0, uses: [], name };
+      const a = acc.get(key) ?? { grams: 0, uses: [], name, n: 0, label: null };
       a.grams += g;
+      if (serving) {
+        a.n += serving.qty * c.servingsCooked;
+        a.label = a.label ?? serving.label;
+      }
       a.uses.push({ ...use, grams: Math.round(g) });
       acc.set(key, a);
     }
@@ -85,7 +90,11 @@ export function groceryList(days: PlanDay[], household: number): GroceryList {
       /* An athlete's own food (`own:<id>`) is in neither table — it brings its own name. */
       name: meta?.name ?? ing?.name ?? a.name,
       aisle: meta?.aisle ?? 'Pantry',
-      amount: meta ? buyAmount(meta.buy, a.grams) : `${Math.round(a.grams)} g`,
+      amount: meta
+        ? buyAmount(meta.buy, a.grams)
+        : a.grams > 0 || !a.label
+          ? `${Math.round(a.grams)} g`
+          : `${Math.round(a.n * 10) / 10} × ${a.label}`,
       grams: Math.round(a.grams),
       staple: !!meta?.staple,
       cost: meta?.price ? (a.grams * meta.price.per100g) / 100 : null,

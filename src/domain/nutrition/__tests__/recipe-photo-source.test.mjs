@@ -165,8 +165,8 @@ test('the app holds no key and calls only the Edge Function', () => {
 
 test('the entry point needs Premium AI AND Nutrition, and is hidden otherwise', () => {
   assert.match(SCREEN, /const scanOn = premiumAi && nutritionAccess;/);
-  assert.match(SCREEN, /\.\.\.\(scanOn \? \[\{ id: 'scan', title: 'Scan a recipe'/);
-  assert.ok(!/title: 'Scan a recipe'[^}]*soon: true/.test(SCREEN), 'no "Soon" row for anyone');
+  assert.match(SCREEN, /\.\.\.\(scanOn \? \[\{ id: 'scan', title: 'Add a picture'/);
+  assert.ok(!/title: 'Add a picture'[^}]*soon: true/.test(SCREEN), 'no "Soon" row for anyone');
 });
 
 test('the one picker path, library only, after the sheet is gone; the draft is not saved', () => {
@@ -184,18 +184,10 @@ test('the one picker path, library only, after the sheet is gone; the draft is n
   assert.match(scan, /if \(scanning\.current\) return;/);
 });
 
-test('the Nutrition tab picks a screenshot inside the tap and hands it to the same read (PO 09-26)', () => {
+test('the Nutrition tab’s Add sheet: one Recipe row that opens the ways to add one (PO 09-26)', () => {
   const TAB = read('src/app/(tabs)/nutrition.tsx');
-  const fn = TAB.slice(at('const recipeFromScreenshot = async', TAB), at('══ 0206', TAB));
-  // Same order as My Recipes: sheet gone → consent → picker. A throw is said, never read as a cancel.
-  assert.match(
-    fn,
-    /await callerModalGone\(\);\n\s*if \(!\(await ensureConsent\('ai_sharing'\)\)\) return;\n\s*const picked = await pickImagesFromLibrary\(1\);/,
-  );
-  assert.match(fn, /showToast\(RECIPE_PICK_FAILED\)/);
-  assert.match(fn, /stashRecipePhoto\(picked\[0\]\);\n\s*router\.push\('\/my-recipes'\);/);
-  // Seen only by Premium AI (the tab itself is already behind the 0206 allowlist).
-  assert.match(TAB, /\{premiumAi \? \(\s*<AddRow\s+icon="image"/);
-  // My Recipes takes it once, on focus, into `readPicked`.
-  assert.match(SCREEN, /const uri = takeRecipePhoto\(\);\n\s*if \(uri\) void readPicked\(uri\);/);
+  // "Add a recipe" and "Recipe from a screenshot" were one category — now one row, into My Recipes' add sheet.
+  assert.match(TAB, /title="Recipe"[\s\S]{0,160}pathname: '\/my-recipes', params: \{ add: '1' \}/);
+  assert.ok(!/pickImagesFromLibrary|Recipe from a screenshot/.test(TAB), 'the picture is picked on My Recipes, not the tab');
+  assert.match(SCREEN, /useState\(\(\) => params\.add === '1'\)/);
 });

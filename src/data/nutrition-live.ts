@@ -9,7 +9,19 @@ import type { SavedItemRow } from '@/domain/nutrition/my-foods';
 import type { MealPlanPrefs } from '@/domain/nutrition/meal-plan-setup';
 import type { GroceryState } from '@/domain/nutrition/grocery';
 import { registerAll, type UserRecipe } from '@/domain/nutrition/user-recipes';
-import { RECIPE_BY_ID, itemTotals, logKey, portionLabel, type Locks, type MealPlanWeek, type PlanDay } from '@/domain/nutrition/meal-planner';
+import {
+  MEAL_ID_PREFIX,
+  RECIPE_BY_ID,
+  isSavedMeal,
+  itemTotals,
+  logKey,
+  portionLabel,
+  registerSavedMeals,
+  type Locks,
+  type MealPlanWeek,
+  type PlanDay,
+  type PlanMealSource,
+} from '@/domain/nutrition/meal-planner';
 import { isTransportFailure } from '@/domain/workout/pending-save';
 import {
   heldItems,
@@ -1450,9 +1462,16 @@ export async function togglePlanLog(
   const logged = { ...week.logged };
   const existing = logged[key];
   if (existing) {
-    await removeEntry(existing);
+    /* A saved meal logs one row per food, remembered comma-joined; a recipe is one row. */
+    for (const entryId of existing.split(',')) await removeEntry(entryId);
     delete logged[key];
     return { week: { ...week, logged }, logged: false };
+  }
+  /* A saved meal logs its real foods (with their micros), exactly as logging it from My Meals does. */
+  if (isSavedMeal(it.recipeId)) {
+    const rows = await logSavedMeal(it.recipeId.slice(MEAL_ID_PREFIX.length), todayIso, it.slot);
+    if (rows.length) logged[key] = rows.map((e) => e.id).join(',');
+    return { week: { ...week, logged }, logged: rows.length > 0 };
   }
   const mine = itemTotals(it);
   const [entry] = await addEntries(todayIso, [
@@ -1531,7 +1550,40 @@ export async function fetchUserRecipes(): Promise<UserRecipe[]> {
     .order('created_at', { ascending: false });
   const list = error ? [] : ((data ?? []) as Record<string, any>[]).map(toUserRecipe);
   registerAll(list);
+  /* Saved meals go in the same book at the same moment — every screen that reads a week calls this first. */
+  registerSavedMeals(await fetchPlanMeals(id));
   return list;
+}
+
+/** The athlete's saved meals with their foods' numbers — what a plan slot holding one reads. Remembered on
+    a failed read, so a blip can't make a stored week look unreadable and get rebuilt. */
+async function fetchPlanMeals(id: string): Promise<PlanMealSource[]> {
+  const { data, error } = await supabase
+    .from('saved_meals')
+    .select('id, name, saved_meal_items(name, grams, serving_label, quantity, kcal, protein, carb, fat)')
+    .eq('athlete_id', id)
+    .order('name');
+  return remembered<PlanMealSource[]>(
+    id,
+    'planMeals',
+    error,
+    () =>
+      ((data ?? []) as Record<string, any>[]).map((r) => ({
+        id: r.id,
+        name: r.name,
+        items: ((r.saved_meal_items ?? []) as Record<string, any>[]).map((x) => ({
+          name: String(x.name ?? ''),
+          grams: x.grams != null ? Number(x.grams) : null,
+          servingLabel: x.serving_label ?? null,
+          quantity: Number(x.quantity) || 1,
+          kcal: Number(x.kcal) || 0,
+          protein: Number(x.protein) || 0,
+          carb: Number(x.carb) || 0,
+          fat: Number(x.fat) || 0,
+        })),
+      })),
+    [],
+  );
 }
 
 /** Insert or update one recipe. Returns it as stored. Throws — the form must not say "saved" when it wasn't. */

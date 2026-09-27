@@ -37,11 +37,8 @@ import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 import { useToast } from '@/hooks/useCeremony';
 import { autoPrompts, consentAllows, NUTRITION_DOOR } from '@/domain/consent/consent';
 import { ensureConsent, useConsent, warmConsents } from '@/lib/consent';
-import { RECIPE_PICK_FAILED } from '@/domain/nutrition/recipe-import';
-import { useEntitlementState, useNutritionAccess, usePremiumAi, useTier } from '@/lib/entitlement';
+import { useEntitlementState, useNutritionAccess, useTier } from '@/lib/entitlement';
 import { labelScanAvailable } from '@/lib/label-scan';
-import { stashRecipePhoto } from '@/lib/recipe-draft-stash';
-import { callerModalGone, pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { useProfile } from '@/lib/profile';
 import { TAB_SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { useQuery } from '@/lib/useQuery';
@@ -64,8 +61,8 @@ import { useQuery } from '@/lib/useQuery';
  * ⚠ **"ADD" REPLACED "SCAN" IN THE PAIR** (PO 09-26, `Docs/Nutrition-Flow-Scenarios-2026-09-26.md`). The
  * flow walk found recipes, the label scan, Create Meal and the recipe screenshot all 3–4 taps deep, and the
  * tab's "Scan" was the BARCODE — so "where do I scan the nutrition facts?" had no answer here. "Add" opens one
- * sheet holding every way something gets INTO nutrition, each named for what it is; the barcode is one row
- * of it (and still the icon in Log Food's search). A deliberate delta from the `.dc`, which drew "Scan".
+ * sheet with one row per KIND of thing (recipe · meal · scan · what you've saved); how it gets in — typed, a
+ * picture, label or barcode — is chosen one step on. The barcode is also still the icon in Log Food's search. A deliberate delta from the `.dc`, which drew "Scan".
  *
  * ⚠ **MEAL PLAN IS PREMIUM AND STILL VISIBLE**, carrying a "PREMIUM" tag — PO, 2026-09-22: *"have it show
  * but make it so that they know it's part of premium"*. That is a deliberate amendment of NUT-D8 (which
@@ -121,8 +118,6 @@ export default function NutritionScreen() {
   const [iso, setIso] = useState(todayIso);
   const [reloads, setReloads] = useState(0);
   const [addOpen, setAddOpen] = useState(false);
-  /* The screenshot read is Holt's model: Premium AI and the allowlist, or the row is not there (as in My Recipes). */
-  const premiumAi = usePremiumAi();
   const canScanLabel = labelScanAvailable();
 
   const { data: day, loading } = useQuery(useCallback(() => fetchDay(iso), [iso]), [iso, reloads]);
@@ -172,25 +167,6 @@ export default function NutritionScreen() {
   const addGo = (to: Parameters<typeof router.push>[0]) => {
     setAddOpen(false);
     router.push(to);
-  };
-
-  /*
-   * "Recipe from a screenshot" — picked HERE, inside the tap (a web file input opens only on a gesture), then
-   * handed to My Recipes, which reads it and opens the unsaved draft. Consent before the picker, sheet gone
-   * before either rises — the same order as My Recipes' own "Scan a recipe".
-   */
-  const recipeFromScreenshot = async () => {
-    setAddOpen(false);
-    await callerModalGone();
-    if (!(await ensureConsent('ai_sharing'))) return;
-    const picked = await pickImagesFromLibrary(1);
-    if (picked === 'failed') {
-      showToast(RECIPE_PICK_FAILED);
-      return;
-    }
-    if (!picked.length) return;
-    stashRecipePhoto(picked[0]);
-    router.push('/my-recipes');
   };
 
   /*
@@ -465,50 +441,58 @@ export default function NutritionScreen() {
 
       {/* ── add: every way in, each named for what it is ─────────────────── */}
       <BottomSheet open={addOpen} onClose={() => setAddOpen(false)} title="Add">
+        {/* One row per KIND of thing (PO 09-26: "a lot of options for the same category"). How it gets in —
+            typed, a picture, a camera — is chosen on the screen the row opens, not here. */}
         <View style={styles.addList}>
           <AddRow
             icon="book"
-            title="Add a recipe"
-            sub="Type it in, one ingredient at a time."
-            onPress={() => addGo({ pathname: '/my-recipes', params: { new: '1' } })}
-          />
-          {premiumAi ? (
-            <AddRow
-              icon="image"
-              title="Recipe from a screenshot"
-              sub="Pick a photo or screenshot of a recipe. You check it before it’s saved."
-              onPress={() => void recipeFromScreenshot()}
-            />
-          ) : null}
-          <AddRow
-            icon="document"
-            title={canScanLabel ? 'Scan a nutrition label' : 'Type in a nutrition label'}
-            sub={canScanLabel ? 'Point the camera at the Nutrition Facts panel.' : 'Copy a Nutrition Facts panel into a new food.'}
-            onPress={() =>
-              addGo({
-                pathname: '/create-food',
-                params: { date: iso, meal: mealForHour(new Date().getHours()), ...(canScanLabel ? { scan: '1' } : {}) },
-              })
-            }
-          />
-          <AddRow
-            icon="barcode-scan"
-            title="Scan a barcode"
-            sub="Look up a packaged food."
-            onPress={() => addGo({ pathname: '/log-food', params: { date: iso, scan: '1' } })}
+            title="Recipe"
+            sub="Type it in, or add a picture of one."
+            onPress={() => addGo({ pathname: '/my-recipes', params: { add: '1' } })}
           />
           <AddRow
             icon="list-plus"
-            title="Create a meal"
+            title="Meal"
             sub="Foods you eat together, logged in one tap."
             onPress={() => addGo({ pathname: '/my-foods', params: { newMeal: '1' } })}
           />
+          {/* Both scans are one kind — a packaged food — so one row, with the two ways side by side. */}
+          <View style={[styles.addRow, styles.addDivider]}>
+            <View style={styles.addIcon}>
+              <EngravedIcon name="barcode-scan" size={20} />
+            </View>
+            <View style={styles.addText}>
+              <Text style={styles.addTitle}>Scan</Text>
+              <Text style={styles.addSub}>A packaged food.</Text>
+              <View style={styles.scanPair}>
+                <View style={styles.actionHalf}>
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    onPress={() =>
+                      addGo({
+                        pathname: '/create-food',
+                        params: { date: iso, meal: mealForHour(new Date().getHours()), ...(canScanLabel ? { scan: '1' } : {}) },
+                      })
+                    }
+                  >
+                    Nutrition label
+                  </Button>
+                </View>
+                <View style={styles.actionHalf}>
+                  <Button variant="secondary" fullWidth onPress={() => addGo({ pathname: '/log-food', params: { date: iso, scan: '1' } })}>
+                    Barcode
+                  </Button>
+                </View>
+              </View>
+            </View>
+          </View>
           <AddRow
             icon="bookmark"
-            title="My recipes"
-            sub="See, edit and log the recipes you’ve saved."
+            title="My foods, meals & recipes"
+            sub="Everything you’ve saved, to see, edit or log."
             last
-            onPress={() => addGo('/my-recipes')}
+            onPress={() => addGo('/my-foods')}
           />
         </View>
       </BottomSheet>
@@ -525,7 +509,7 @@ function AddRow({
   last,
   onPress,
 }: {
-  icon: 'book' | 'image' | 'document' | 'barcode-scan' | 'list-plus' | 'bookmark';
+  icon: 'book' | 'list-plus' | 'bookmark';
   title: string;
   sub: string;
   last?: boolean;
@@ -722,6 +706,7 @@ const styles = StyleSheet.create({
   addText: { flex: 1, gap: 3 },
   addTitle: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   addSub: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
+  scanPair: { flexDirection: 'row', gap: 8, marginTop: 8 },
 
   mealsHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 2, paddingBottom: 12 },
   careLine: { marginBottom: 18 },

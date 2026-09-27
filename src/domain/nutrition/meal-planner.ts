@@ -120,6 +120,8 @@ export interface RecipeViewIngredient {
   /** Grams in ONE serving. */
   g: number;
   us: UsMeasure | null;
+  /** A saved meal's food with no weight on record ("1 container"): bought by the serving, not the gram. */
+  serving?: { label: string; qty: number };
 }
 
 /** What the Recipe screen and the Grocery List read: the same shape for Forge's recipes and the athlete's. */
@@ -187,6 +189,85 @@ export function registerUserRecipes(entries: { recipe: Recipe; view: RecipeView;
   }
 }
 
+/* ── the athlete's saved meals (My Meals), placeable by hand ─────────────── */
+
+/** A saved meal's id in the plan: `m:<saved_meals.id>`, beside `u:` for the athlete's recipes. */
+export const MEAL_ID_PREFIX = 'm:';
+export const isSavedMeal = (id: string): boolean => id.startsWith(MEAL_ID_PREFIX);
+
+/** One saved meal as the plan reads it. Each item's numbers are for the whole item, as it was logged. */
+export interface PlanMealSource {
+  id: string;
+  name: string;
+  items: { name: string; grams: number | null; servingLabel: string | null; quantity: number; kcal: number; protein: number; carb: number; fat: number }[];
+}
+
+let SAVED_MEALS: Recipe[] = [];
+
+/**
+ * Put the athlete's saved meals in the book (PO 09-26: *"sometimes people repeat the meal for lunches or
+ * dinners"*), so a slot can hold "Usual lunch" as well as a recipe.
+ *
+ * ⚠ **NEVER IN THE PLANNER'S POOL.** A saved meal goes only where the athlete puts it — the planner has no
+ * idea what is in it (no allergens, no diet, no cook time), so it must never choose one on its own. It is
+ * a plate, not a batch: it never keeps, so it never feeds a leftover.
+ *
+ * ⚠ Same rule as `registerUserRecipes`: register BEFORE resolving a week that may name one, or the stored
+ * week looks unreadable and is rebuilt. `fetchUserRecipes` does both, so every week reader gets it.
+ */
+export function registerSavedMeals(list: readonly PlanMealSource[]): void {
+  for (const r of SAVED_MEALS) {
+    delete RECIPE_BY_ID[r.id];
+    delete VIEW_BY_ID[r.id];
+  }
+  SAVED_MEALS = [];
+  for (const m of list) {
+    if (!m.items.length) continue;
+    const id = `${MEAL_ID_PREFIX}${m.id}`;
+    const sum = (k: 'kcal' | 'protein' | 'carb' | 'fat') => Math.round(m.items.reduce((t, x) => t + (Number(x[k]) || 0), 0));
+    const recipe: Recipe = {
+      id,
+      slot: 'lunch',
+      mealTypes: SLOT_ORDER,
+      name: m.name,
+      minutes: 0,
+      kcal: sum('kcal'),
+      protein: sum('protein'),
+      carb: sum('carb'),
+      fat: sum('fat'),
+      allergens: [],
+      diet: 'any',
+      ingredientNames: m.items.map((x) => x.name.toLowerCase()),
+      leftoverDays: 0,
+      reheat: 'ok',
+      proteinSource: 'mixed',
+      format: 'meal',
+      keeps: false,
+    };
+    const view: RecipeView = {
+      id,
+      name: m.name,
+      minutes: 0,
+      equipment: [],
+      steps: [],
+      ingredients: m.items.map((x) => ({
+        key: `meal:${x.name.toLowerCase().trim()}`,
+        name: x.name,
+        g: x.grams != null && x.grams > 0 ? x.grams : 0,
+        us: null,
+        ...(x.grams != null && x.grams > 0 ? {} : { serving: { label: x.servingLabel || 'serving', qty: x.quantity > 0 ? x.quantity : 1 } }),
+      })),
+      mine: true,
+    };
+    RECIPE_BY_ID[id] = recipe;
+    VIEW_BY_ID[id] = view;
+    SAVED_MEALS.push(recipe);
+  }
+}
+
+/** The saved meals a slot's picker offers, by name. */
+export const mealPicks = (): Recipe[] => [...SAVED_MEALS].sort((a, b) => a.name.localeCompare(b.name));
+
 /* ── the hard filters ───────────────────────────────────────────────────── */
 
 const DIET_OK: Record<MealPlanPrefs['diet'], RecipeDiet[]> = {
@@ -201,6 +282,9 @@ const stem = (s: string): string => s.toLowerCase().trim().replace(/e?s$/, '');
 
 /** Diet, allergens and dislikes — the rules that hold wherever a recipe appears, leftover or not. */
 export function fits(r: Recipe, p: MealPlanPrefs): boolean {
+  /* A saved meal is a plate the athlete logged and chose by hand. Forge can't see inside it, and it is never
+     picked for them (`registerSavedMeals`), so a rebuild keeps it rather than dropping it on a guess. */
+  if (isSavedMeal(r.id)) return true;
   if (!DIET_OK[p.diet].includes(r.diet)) return false;
   if (r.allergens.some((a) => p.allergens.includes(a))) return false;
   const hay = r.ingredientNames.join(' | ');
@@ -721,8 +805,42 @@ export function placeMeal(
   return { days: out.days, locked: { ...out.locked, [slotKey(d, placed)]: lockOf(placed) } };
 }
 
+/** Which days a pick goes on — the day tapped, Monday–Friday, or all seven. */
+export type PlaceSpan = 'day' | 'weekdays' | 'week';
+
+export function spanDays(span: PlaceSpan, d: number): number[] {
+  if (span === 'week') return [0, 1, 2, 3, 4, 5, 6];
+  if (span === 'weekdays') return [0, 1, 2, 3, 4];
+  return [d];
+}
+
+/**
+ * The same pick on several days (PO 09-26: *"sometimes people repeat the meal for lunches or dinners"*) —
+ * `placeMeal` once per day, so each one is locked and kept on rebuild like a single pick. Days already
+ * holding a LOGGED meal in that slot are left alone: what was eaten is not rewritten.
+ */
+export function placeOnDays(
+  week: Pick<MealPlanWeek, 'days' | 'locked' | 'logged'>,
+  ds: readonly number[],
+  slot: PlanSlot,
+  recipeId: string,
+  p: MealPlanPrefs,
+  target: Targets,
+): { days: PlanDay[]; locked: Locks; placed: number } {
+  let out = { days: week.days, locked: week.locked };
+  let placed = 0;
+  for (const d of ds) {
+    const cur = out.days[d]?.items.find((it) => it.slot === slot && !it.extra);
+    if (cur && week.logged[logKey(d, cur)]) continue;
+    out = placeMeal(out.days, out.locked, d, slot, recipeId, p, target);
+    placed++;
+  }
+  return { ...out, placed };
+}
+
 /** Why one of the athlete's recipes can't go in their plan — the hard rules `fits` holds — or null when it can. */
 export function whyNot(r: Recipe, p: MealPlanPrefs): string | null {
+  if (isSavedMeal(r.id)) return null;
   if (!DIET_OK[p.diet].includes(r.diet)) return `Not ${p.diet}`;
   const a = r.allergens.find((x) => p.allergens.includes(x));
   if (a) return `Has ${a.replace(/_/g, ' ')}`;

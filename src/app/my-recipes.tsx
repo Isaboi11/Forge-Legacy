@@ -53,7 +53,7 @@ import {
 import { RECIPE_PICK_FAILED, draftFromRead, importToast, ingredientFrom, unmatchedNote, type UnmatchedLine } from '@/domain/nutrition/recipe-import';
 import { recipePhotoError } from '@/domain/nutrition/recipe-photo-read';
 import { fetchMealPlanWeek, fetchMyFoods, fetchUserRecipes, saveUserRecipe } from '@/data/nutrition-live';
-import { takeRecipeDraft, takeRecipePhoto } from '@/lib/recipe-draft-stash';
+import { takeRecipeDraft } from '@/lib/recipe-draft-stash';
 import { takeRecipeFood } from '@/lib/recipe-food-handoff';
 import { labelScanAvailable } from '@/lib/label-scan';
 import { readRecipePhoto } from '@/data/recipe-photo-live';
@@ -92,7 +92,7 @@ const UNMATCHED_WHY: Record<UnmatchedLine['reason'], string> = {
  *
  * Deltas from the `.dc`, each deliberate:
  *  · Its preview fixtures (two sample recipes) are not seeded — a real list starts empty.
- *  · "Paste a recipe" shows as "Soon", exactly as the `.dc` draws it. "Scan a recipe" is LIVE (PO
+ *  · "Paste a recipe" shows as "Soon", exactly as the `.dc` draws it. "Add a picture" (was "Scan a recipe") is LIVE (PO
  *    2026-09-25) for athletes with Premium AI and Nutrition, and hidden for everyone else: a screenshot is
  *    read by `recipe-photo-read`, matched to the catalogue by `draftFromRead`, and opens as an UNSAVED,
  *    UNCONFIRMED draft of this same form. Lines Forge can't match with certainty are listed as written
@@ -139,8 +139,8 @@ export default function MyRecipesScreen() {
 
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<PlanSlot | 'all'>('all');
-  /* `?add=1` — "Add a recipe" from the Nutrition tab or an empty meal-plan slot: arrive on the ways to add
-     one (type it, or a screenshot), not on the list you then have to find the button in. */
+  /* `?add=1` — "Recipe" from the Nutrition tab's Add sheet or the meal plan: arrive on the ways to add one
+     (type it in, or a picture), not on the list you then have to find the button in. */
   const [addSheet, setAddSheet] = useState(() => params.add === '1');
   const [foodQ, setFoodQ] = useState('');
   const [pick, setPick] = useState<Pick | null>(null);
@@ -195,7 +195,7 @@ export default function MyRecipesScreen() {
     setFromPhoto(false);
   };
 
-  /** The read itself — from this screen's own pick, or a picture the Nutrition tab picked (`takeRecipePhoto`). */
+  /** The read itself, once a picture is picked. */
   const readPicked = useCallback(async (uri: string) => {
     setScanBusy(true);
     setScanError(null);
@@ -248,15 +248,6 @@ export default function MyRecipesScreen() {
       scanning.current = false;
     }
   };
-
-  /* A screenshot picked on the Nutrition tab lands here — taken once, and read exactly like one picked here.
-     Consent was asked on the tab, before its picker opened. */
-  useFocusEffect(
-    useCallback(() => {
-      const uri = takeRecipePhoto();
-      if (uri) void readPicked(uri);
-    }, [readPicked]),
-  );
 
   /** Pick a catalogue food for an unmatched line — with the page's amount when it converts for that food. */
   const pickForLine = (lineIndex: number, key: IngredientKey) => {
@@ -792,9 +783,9 @@ export default function MyRecipesScreen() {
       <BottomSheet open={addSheet} onClose={() => setAddSheet(false)} title="Add a recipe">
         <View style={styles.methods}>
           {[
-            { id: 'manual', title: 'Enter manually', sub: 'Build a recipe from ingredients.', soon: false },
+            { id: 'manual', title: 'Type it in', sub: 'Add the ingredients one at a time.', soon: false },
             { id: 'paste', title: 'Paste a recipe', sub: 'Paste text or a recipe link.', soon: true },
-            ...(scanOn ? [{ id: 'scan', title: 'Scan a recipe', sub: 'Upload a screenshot or photo of one. You check it before it’s saved.', soon: false }] : []),
+            ...(scanOn ? [{ id: 'scan', title: 'Add a picture', sub: 'A screenshot or photo of a recipe. You check it before it’s saved.', soon: false }] : []),
           ].map((m, j, all) => (
             <Pressable
               key={m.title}
