@@ -573,6 +573,16 @@ export interface RecentFood {
   servingLabel: string | null;
   quantity: number;
   kcal: number;
+  /**
+   * The rest of the stored portion, so the round + can log it again exactly (QA R2-F3). Before these were
+   * read, the + rebuilt the food with every value unknown and wrote "100 g · 0 cal" — which then became
+   * the Recent row, so every later repeat was 0 too. May be NaN in a list cached before they existed.
+   */
+  protein: number;
+  carb: number;
+  fat: number;
+  grams: number | null;
+  micros: Record<string, number> | null;
 }
 
 /**
@@ -584,7 +594,7 @@ export async function fetchRecentFoods(limit = 30): Promise<RecentFood[]> {
   if (!id) return [];
   const { data, error } = await supabase
     .from('food_log_entries')
-    .select('source, source_key, name, brand, serving_label, quantity, kcal, created_at')
+    .select('source, source_key, name, brand, serving_label, quantity, kcal, protein, carb, fat, grams, micros, created_at')
     .eq('athlete_id', id)
     .not('source_key', 'is', null)
     .order('created_at', { ascending: false })
@@ -614,6 +624,11 @@ export async function fetchRecentFoods(limit = 30): Promise<RecentFood[]> {
       servingLabel: r.serving_label,
       quantity: Number(r.quantity),
       kcal: Number(r.kcal),
+      protein: Number(r.protein),
+      carb: Number(r.carb),
+      fat: Number(r.fat),
+      grams: r.grams != null ? Number(r.grams) : null,
+      micros: r.micros ?? null,
     });
     if (out.length >= limit) break;
   }

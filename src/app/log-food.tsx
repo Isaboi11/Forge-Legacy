@@ -15,22 +15,27 @@ import { flBorder, flColor, flFont, flRadius } from '@/constants/foundation';
 import { localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
 import {
   defaultServing,
+  energyKnown,
   looksSane,
+  MAY_STORE_MICROS,
   portionLabel,
   portionMacros,
   quickAddMacros,
+  repeatMacros,
   SOURCE_LABEL,
   type CatalogFood,
 } from '@/domain/nutrition/serving';
 import {
   addEntries,
   fetchFavorites,
+  fetchFoodByKey,
   fetchMyFoods,
   fetchRecentFoods,
   fetchSavedMeals,
   logSavedMeal,
   lookupBarcode,
   searchFoods,
+  type RecentFood,
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { labelScanAvailable } from '@/lib/label-scan';
@@ -152,13 +157,21 @@ export default function LogFoodScreen() {
   };
 
 
+  const openDetail = (key: string) => router.push({ pathname: '/food-detail', params: { key, date: iso, meal } });
+
   /** One tap: the food's default serving, quantity 1, straight into the day. */
   const logNow = async (food: CatalogFood) => {
+    /* ⚠ UNKNOWN CALORIES ARE NEVER LOGGED AS ZERO (QA R2-F3). A food whose energy we don't actually know —
+       null, or "0 kcal, no macros" on something that isn't water — goes to Food Detail instead. */
+    if (!energyKnown(food)) {
+      openDetail(food.key);
+      return;
+    }
     const serving = defaultServing(food);
     const macros = portionMacros(food, { serving, quantity: 1 });
     if (macros.kcal === 0 && macros.grams == null) {
       // No weighed serving to assume — send them to Food Detail to choose one rather than log a zero.
-      router.push({ pathname: '/food-detail', params: { key: food.key, date: iso, meal } });
+      openDetail(food.key);
       return;
     }
     await addEntries(iso, [
@@ -171,10 +184,45 @@ export default function LogFoodScreen() {
         servingLabel: portionLabel({ serving, quantity: 1 }),
         quantity: 1,
         macros,
+        micros: MAY_STORE_MICROS.has(food.source) ? (food.micros ?? null) : null,
       },
     ]);
     setReloads((n) => n + 1);
     showToast(`${food.name} · ${macros.kcal} cal added to ${MEAL_LABELS[meal]}`);
+  };
+
+  /**
+   * The round + on a row. A Recent row logs again exactly what was logged last time — same serving, same
+   * numbers (a repeat breakfast is two taps). A Favorite, or a Recent whose stored numbers can't be trusted,
+   * is only a pointer, so the food is read first; if it can't be read, Food Detail opens (QA R2-F3).
+   */
+  const logRow = async (row: Row) => {
+    if (!row.pointer) return logNow(row.food);
+    const again = row.repeat ? repeatMacros(row.repeat) : null;
+    if (row.repeat && again) {
+      await addEntries(iso, [
+        {
+          meal,
+          source: row.repeat.source,
+          sourceKey: row.repeat.key,
+          name: row.repeat.name,
+          brand: row.repeat.brand,
+          servingLabel: row.repeat.servingLabel,
+          quantity: Number.isFinite(row.repeat.quantity) && row.repeat.quantity > 0 ? row.repeat.quantity : 1,
+          macros: again,
+          micros: MAY_STORE_MICROS.has(row.repeat.source) ? row.repeat.micros : null,
+        },
+      ]);
+      setReloads((n) => n + 1);
+      showToast(`${row.repeat.name} · ${Math.round(again.kcal)} cal added to ${MEAL_LABELS[meal]}`);
+      return;
+    }
+    const food = await fetchFoodByKey(row.food.key);
+    if (!food) {
+      openDetail(row.food.key);
+      return;
+    }
+    return logNow(food);
   };
 
   const barBottom = useBarBottom(SCREEN_BOTTOM_GAP);
@@ -274,7 +322,7 @@ export default function LogFoodScreen() {
                     {row.meta}
                   </Text>
                 </View>
-                <Pressable accessibilityRole="button" accessibilityLabel={`Add ${row.food.name}`} hitSlop={6} onPress={() => logNow(row.food)}>
+                <Pressable accessibilityRole="button" accessibilityLabel={`Add ${row.food.name}`} hitSlop={6} onPress={() => logRow(row)}>
                   <AddCircle />
                 </Pressable>
               </Pressable>
@@ -372,6 +420,10 @@ interface Row {
   key: string;
   food: CatalogFood;
   meta: string;
+  /** Known by name only (Recent, Favorites): the + must not log `food` as it stands — see `logRow`. */
+  pointer?: boolean;
+  /** Recent only: the portion last logged, which the + repeats. */
+  repeat?: RecentFood;
 }
 
 const SEARCH_PAGE = 10;
@@ -397,7 +449,7 @@ function buildRows({
 }: {
   results: CatalogFood[] | null;
   filter: Filter;
-  recents: Awaited<ReturnType<typeof fetchRecentFoods>> | null | undefined;
+  recents: RecentFood[] | null | undefined;
   favorites: Awaited<ReturnType<typeof fetchFavorites>> | null | undefined;
   myFoods: CatalogFood[] | null | undefined;
 }): Row[] {
@@ -430,6 +482,7 @@ function buildRows({
       key: f.key,
       food: pointerFood(f.key, f.name, f.brand),
       meta: f.brand ?? 'Saved',
+      pointer: true,
     }));
   }
 
@@ -437,12 +490,17 @@ function buildRows({
     key: r.key,
     food: pointerFood(r.key, r.name, r.brand),
     meta: [`${Math.round(r.kcal)} cal`, r.servingLabel, r.brand].filter(Boolean).join(' · '),
+    pointer: true,
+    repeat: r,
   }));
 }
 
 /**
  * A row we know by name but not yet by numbers. Opening it re-reads the real food; the empty serving list
  * means `servingOptions` offers "100 g", so a portion is always expressible.
+ *
+ * ⚠ **NEVER LOG THIS AS IT STANDS.** Every number is unknown; `logNow` on it used to write "100 g · 0 cal"
+ * (QA R2-F3). The + goes through `logRow`, which repeats the stored portion or reads the food first.
  */
 function pointerFood(key: string, name: string, brand: string | null): CatalogFood {
   const source = (key.split(':')[0] as CatalogFood['source']) ?? 'custom';

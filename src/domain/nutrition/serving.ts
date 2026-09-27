@@ -116,22 +116,112 @@ export function portionLabel(portion: Portion): string {
   return /^\d+(\.\d+)?\s*(g|ml)\b/i.test(serving.label) && quantity === 1 ? head : `${head} (${total} g)`;
 }
 
+/* ── alcohol & missing energy (QA R2-F3 / R2-F4, 2026-09-26) ─────────────── */
+
+/** Ethanol carries ~7 kcal/g and sits in none of protein, carbs or fat — the whole of a drink's "surplus". */
+const KCAL_PER_G_ALCOHOL = 7;
+
+/* Names that say "this is alcohol". Checked against name + brand ("Original" by "Truly Hard Seltzer").
+   Each class carries the most alcohol, in g per 100 g, a real product of that class holds — so a drink's
+   surplus is allowed, but a per-serving figure filed as per-100 g (a 12 oz beer's 153 kcal) still fails. */
+const NOT_A_DRINK = /non[- ]?alcoholic|alcohol[- ]free|\broot beer\b|\bginger (beer|ale)\b|\bbirch beer\b|vinegar|\bsauce\b|\b0(\.0)?\s*% ?abv/i;
+const ALCOHOL_CLASSES: { re: RegExp; maxAlcoholG: number }[] = [
+  // Spirits, liqueurs, cocktails: up to 190-proof grain spirit.
+  {
+    re: /\b(vodka|whiske?y|bourbon|scotch|rum|gin|tequila|mezcal|brandy|cognac|liqueurs?|schnapps|absinthe|spirits?|cocktails?|margarita|martini|mojito|daiquiri|soju|baijiu|everclear|amaretto|kahlua|sambuca|ouzo|grappa|proof)\b/i,
+    maxAlcoholG: 80,
+  },
+  // Wine, sake, fortified and dessert wines (port ~20% ABV ≈ 16 g/100 g).
+  { re: /\b(wines?|sake|champagne|prosecco|cava|sherry|port|vermouth|mead|sangria|madeira|marsala)\b/i, maxAlcoholG: 16 },
+  // Beer, cider, hard seltzer: a 12.5% barleywine is ~10 g/100 g.
+  {
+    re: /\b(beers?|lagers?|ales?|ipa|stouts?|porters?|pilsners?|pils|hefeweizen|witbier|ciders?|hard (seltzer|kombucha|lemonade|tea)|malt beverage|shandy)\b/i,
+    maxAlcoholG: 10,
+  },
+];
+
+/** Grams of alcohol per 100 g the food's NAME allows — 0 for anything that isn't an alcoholic drink. */
+export function alcoholAllowance(food: Pick<CatalogFood, 'name' | 'brand'>): number {
+  const text = `${food.name ?? ''} ${food.brand ?? ''}`;
+  if (NOT_A_DRINK.test(text)) return 0;
+  return ALCOHOL_CLASSES.reduce((max, c) => (c.re.test(text) ? Math.max(max, c.maxAlcoholG) : max), 0);
+}
+
+/* Foods that genuinely have no energy at all. Only these may report "0 kcal, no macros" and be believed;
+   anything else with that shape is a row whose numbers were never filled in. */
+const TRULY_ZERO =
+  /\b(water|diet|zero|sugar[- ]free|unsweetened|black coffee|coffee|espresso|tea|club soda|seltzer|sparkling|mineral|sweetener|stevia|sucralose|salt)\b/i;
+
+/** Alcohol per 100 g, when the source stated it (FDC nutrient 221 lands here as `micros.alcohol`). */
+function statedAlcohol(food: CatalogFood): number | null {
+  const a = food.micros?.alcohol;
+  return typeof a === 'number' && Number.isFinite(a) && a >= 0 ? a : null;
+}
+
+const macroEnergy = (food: CatalogFood): number =>
+  (food.protein100 ?? 0) * 4 + (food.carb100 ?? 0) * 4 + (food.fat100 ?? 0) * 9;
+
 /**
- * ⚠ A source sanity check, not a nutrition opinion: energy should be about 4P + 4C + 9F. Beyond ±25% the
- * record is wrong (a mis-keyed label, a per-serving figure filed as per-100 g), and a wrong food poisons
- * every day it is logged into. Tolerant on purpose — fibre, alcohol and rounding all move it honestly.
+ * Do we actually KNOW this food's calories? `null` is unknown, and so is "0 kcal with no macros" unless the
+ * food is one that really has none (water, diet soda, black coffee). A community "Red Wine · 0 cal" row is
+ * missing data, not a free glass of wine — and a one-tap log must never write it as zero (R2-F3).
+ */
+export function energyKnown(food: CatalogFood): boolean {
+  const kcal = food.kcal100;
+  if (kcal == null || !Number.isFinite(kcal) || kcal < 0) return false;
+  if (kcal > 0 || macroEnergy(food) > 0) return true;
+  return TRULY_ZERO.test(food.name ?? '') && alcoholAllowance(food) === 0;
+}
+
+/**
+ * ⚠ A source sanity check, not a nutrition opinion: energy should be about 4P + 4C + 9F (+ 7 × alcohol).
+ * Beyond ±25% the record is wrong (a mis-keyed label, a per-serving figure filed as per-100 g), and a wrong
+ * food poisons every day it is logged into. Tolerant on purpose — fibre and rounding move it honestly.
  * (Absolute slack added 2026-09-26: the photo eval found raw lime and fresh basil filtered out of search.)
+ *
+ * ⚠ **ALCOHOL IS ENERGY THE MACROS DON'T COUNT** (QA R2-F4). Before this, every wine, beer and spirit failed
+ * the ratio and search hid them all, while a community "Red Wine · 0 cal" row with no numbers passed. Now a
+ * stated alcohol figure joins the sum; failing that, a food NAMED as a drink may run a surplus up to its
+ * class's alcohol ceiling — never a deficit, and never on a non-drink. "0 kcal, no macros" is missing data.
  */
 export function looksSane(food: CatalogFood): boolean {
   const kcal = food.kcal100;
   if (kcal == null || kcal < 0 || kcal > 900) return false; // >900 kcal/100 g beats pure fat
-  const fromMacros = (food.protein100 ?? 0) * 4 + (food.carb100 ?? 0) * 4 + (food.fat100 ?? 0) * 9;
-  if (fromMacros === 0) return kcal === 0 || kcal < 40; // drinks and spices legitimately report nothing
+  if (!energyKnown(food)) return false;
+  const alcohol = statedAlcohol(food);
+  const fromMacros = macroEnergy(food) + (alcohol ?? 0) * KCAL_PER_G_ALCOHOL;
+  if (fromMacros === 0 && kcal < 40) return true; // coffee, spices, diet soda legitimately report nothing
   if (kcal === 0) return false;
   // Low-energy produce misses the ratio honestly: fibre carbs carry ~2 kcal/g, not 4 (a raw lime is 30 kcal
   // against 46 from its macros). A few kcal is never a mis-keyed record, so a small absolute gap passes.
   const gap = Math.abs(fromMacros - kcal);
-  return gap <= 20 || gap / kcal <= 0.25;
+  if (gap <= 20 || gap / kcal <= 0.25) return true;
+  // No stated alcohol: a drink may carry the energy its alcohol class allows, on top of its macros.
+  if (alcohol == null) {
+    const surplus = kcal - fromMacros;
+    const allowance = alcoholAllowance(food) * KCAL_PER_G_ALCOHOL;
+    return allowance > 0 && surplus > 0 && surplus <= allowance + 20;
+  }
+  return false;
+}
+
+/**
+ * The numbers a diary row stored, re-used for a one-tap repeat from Recent (R2-F3). Null when they cannot
+ * be trusted — a non-number (an old cached list without them) or a zero-calorie row, which is either
+ * missing data or a row an earlier bug already wrote as 0. The caller then re-reads the food instead.
+ */
+export function repeatMacros(stored: {
+  kcal: number;
+  protein: number;
+  carb: number;
+  fat: number;
+  grams: number | null;
+}): PortionMacros | null {
+  const { kcal, protein, carb, fat } = stored;
+  if (![kcal, protein, carb, fat].every((n) => typeof n === 'number' && Number.isFinite(n) && n >= 0)) return null;
+  if (kcal <= 0) return null;
+  const grams = typeof stored.grams === 'number' && Number.isFinite(stored.grams) && stored.grams > 0 ? stored.grams : null;
+  return { kcal, protein, carb, fat, grams };
 }
 
 /** A Quick Add: calories the athlete typed, with optional macros and no food behind them. */
