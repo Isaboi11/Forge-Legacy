@@ -54,6 +54,30 @@
 -- The first run closes every goal already past its deadline. One that ended within the last 7 days —
 -- Moch 1's — gets its post and push. Older ones close silently into the log: nobody is told in September
 -- about a goal that ended in June. §3 of the bundle lists exactly which squads the first run will touch.
+-- (2026-09-26: Moch 1's deadline is now more than 7 days gone, so it closes SILENTLY — see below.)
+--
+-- ══ RE-AUDITED 2026-09-26, BEFORE THE FIRST PASTE — 25 MIGRATIONS (0201–0225) LANDED AFTER THIS WAS WRITTEN ══
+--
+-- Every object below was grepped across 0201–0225, every `supabase/apply` bundle, and every branch:
+--
+--   · NOTHING later defines or alters any of them. `squad_goal_figure`, `squad_goal_unit`,
+--     `squad_goal_act_as`, `squad_goal_record_close`, `squad_goals_due`, `squad_goals_close_due`,
+--     `squads_goal_lifecycle` (function + trigger), `squad_goal_notifications`, `squad_goal_closures`
+--     (+ its policy), `squads.goal_closed_at` / `goal_outcome` / `squads_goal_outcome_check`, and the
+--     `forge-squad-goals` cron job are all NEW — creating them overwrites nothing.
+--   · `ensure_weekly_recap` is the ONE pre-existing function restated here. Its newest definition is
+--     still 0057 (0101, 0103 and 0126 only mention it in comments). This body = 0057's byte for byte plus
+--     the one `goal_closed_at` predicate — re-diffed programmatically on 2026-09-26.
+--   · The functions 0202, 0217 and 0225 restated (`notification_events_for`, `push_pref_default`,
+--     `push_pref_key`, `training_now`, `set_training_status`, …) are NOT touched here, so the paste cannot
+--     roll them back. §3 of the bundle reads their stored source to prove it.
+--   · Dependencies unchanged since writing: `squad_metric_sum` (0103), `archive_squad_goal` (0101),
+--     `squad_member_contributions` (0107), `push_outbox` + `push_outbox_event_uk` (0120/0135),
+--     `push_tokens.disabled_at`, `squad_posts_type_check` still allows 'milestone' (0192). The authorless
+--     milestone post triggers no second notification: union branch 10 needs `author_id is not null` and
+--     branch 12 needs `type = 'weekly'` (both still true in 0225's body).
+--   · 0202 already set `notif_prefs.squad_goals` true for everyone who had it false, and flipped
+--     `push_pref_default('squad_goals')` to true — consistent with this file's default-ON sender.
 --
 -- Depends on 0099 (completions, archive), 0103 (dates, window), 0107 (contributions), 0120 (push_outbox,
 -- pg_cron), 0057 (weekly recap). Idempotent. Safe to run twice.

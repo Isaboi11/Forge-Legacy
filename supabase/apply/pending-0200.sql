@@ -29,7 +29,16 @@
 --   directly and serves the inbox rows from its own function, so the paste order between them is free.
 --
 -- ⚠ BACKFILL: the first run closes every goal already past its deadline. Deadlines within the last 7
---   days get a post and a push (Moch 1's should be one). Older ones close silently into the log.
+--   days get a post and a push. Older ones close silently into the log. (Written 09-10 expecting Moch 1
+--   to be announced; by 09-26 its deadline is >7 days gone, so it closes SILENTLY unless re-dated.)
+--
+-- ⚠ RE-AUDITED 2026-09-26 AGAINST 0201–0225 (QA B3). Nothing 0200 creates was defined by any later
+--   migration, bundle or branch; the only existing function it replaces, `ensure_weekly_recap`, is still
+--   0057's newest body plus one predicate. Pasting it now rolls NOTHING back. §3 proves that from the
+--   stored source of the functions 0202/0217/0225 restated. Client already deployed (web + build 9 OTA)
+--   and calls exactly these names — the ORDER rule above is satisfied.
+--
+-- ⚠ THE SQL EDITOR SHOWS ONLY THE LAST RESULT. §3 is therefore ONE select: a check / result table.
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 
@@ -93,6 +102,30 @@
 -- The first run closes every goal already past its deadline. One that ended within the last 7 days —
 -- Moch 1's — gets its post and push. Older ones close silently into the log: nobody is told in September
 -- about a goal that ended in June. §3 of the bundle lists exactly which squads the first run will touch.
+-- (2026-09-26: Moch 1's deadline is now more than 7 days gone, so it closes SILENTLY — see below.)
+--
+-- ══ RE-AUDITED 2026-09-26, BEFORE THE FIRST PASTE — 25 MIGRATIONS (0201–0225) LANDED AFTER THIS WAS WRITTEN ══
+--
+-- Every object below was grepped across 0201–0225, every `supabase/apply` bundle, and every branch:
+--
+--   · NOTHING later defines or alters any of them. `squad_goal_figure`, `squad_goal_unit`,
+--     `squad_goal_act_as`, `squad_goal_record_close`, `squad_goals_due`, `squad_goals_close_due`,
+--     `squads_goal_lifecycle` (function + trigger), `squad_goal_notifications`, `squad_goal_closures`
+--     (+ its policy), `squads.goal_closed_at` / `goal_outcome` / `squads_goal_outcome_check`, and the
+--     `forge-squad-goals` cron job are all NEW — creating them overwrites nothing.
+--   · `ensure_weekly_recap` is the ONE pre-existing function restated here. Its newest definition is
+--     still 0057 (0101, 0103 and 0126 only mention it in comments). This body = 0057's byte for byte plus
+--     the one `goal_closed_at` predicate — re-diffed programmatically on 2026-09-26.
+--   · The functions 0202, 0217 and 0225 restated (`notification_events_for`, `push_pref_default`,
+--     `push_pref_key`, `training_now`, `set_training_status`, …) are NOT touched here, so the paste cannot
+--     roll them back. §3 of the bundle reads their stored source to prove it.
+--   · Dependencies unchanged since writing: `squad_metric_sum` (0103), `archive_squad_goal` (0101),
+--     `squad_member_contributions` (0107), `push_outbox` + `push_outbox_event_uk` (0120/0135),
+--     `push_tokens.disabled_at`, `squad_posts_type_check` still allows 'milestone' (0192). The authorless
+--     milestone post triggers no second notification: union branch 10 needs `author_id is not null` and
+--     branch 12 needs `type = 'weekly'` (both still true in 0225's body).
+--   · 0202 already set `notif_prefs.squad_goals` true for everyone who had it false, and flipped
+--     `push_pref_default('squad_goals')` to true — consistent with this file's default-ON sender.
 --
 -- Depends on 0099 (completions, archive), 0103 (dates, window), 0107 (contributions), 0120 (push_outbox,
 -- pg_cron), 0057 (weekly recap). Idempotent. Safe to run twice.
@@ -861,24 +894,99 @@ begin
 end $$;
 
 -- ═════════════════════════════════════════════════════════════════════════════
--- §3 — REPORT. Read-only.
+-- §3 — REPORT. Read-only. ONE select, because the editor shows only the last result.
 -- ═════════════════════════════════════════════════════════════════════════════
 --
--- PREDICTION, before it runs:
---   · Result 1 — one row per squad the first run will close. Moch 1 should be here as `closed`, with
---     `due_announce = true` if its deadline passed within the last 7 days. Any squad whose goal is
---     already met shows as `met`. A live goal short of its deadline is NOT listed — that is correct.
---   · Result 2 — 1 row: forge-squad-goals, */15 * * * *.
---   · Result 3 — 0 closures, 0 posts: nothing has closed until the job's first run.
---   Paste this §3 again 15 minutes later: Result 1 empty, Result 3 counting the squads Result 1 listed.
+-- Every check reads CATALOGS or stored SOURCE (`prosrc`), never calls an auth-guarded function — the
+-- editor runs as `postgres` with no auth.uid(). `squad_goals_due()` is safe to call: it guards nothing on
+-- auth.uid(), sets the owner's subject transaction-local, and resets it.
+--
+-- PREDICTION, before it runs — 10 rows, in this order:
+--    1 · due now — one entry per squad the FIRST run will close: `Name → closed (silent)` for a deadline
+--        more than 7 days gone (Moch 1, as of 09-26), `→ closed + post/push` within 7 days, `→ met + post/push`
+--        for a goal already at target. `none` is also a valid answer. A live goal short of its deadline is
+--        never listed.
+--    2 · cron job — `1 job · */15 * * * * · active`. Exactly 1 even after a second paste.
+--    3 · closures logged — `0 closures · 0 announced · 0 posts` (unless the paste straddled a quarter hour
+--        and the job already ran; then row 1 is `none` and these count what row 1 would have listed).
+--    4 · squads columns — `goal_closed_at + goal_outcome present`
+--    5 · client grants — `squad_goal_notifications: authenticated yes · squad_goal_act_as: client no`
+--    6 · ensure_weekly_recap — `0057 body + 0200 goal guard`
+--    7 · notification_events_for — `0225 body — untouched`
+--    8 · training_now — `0225 body — untouched`
+--    9 · set_training_status — `0217 body — untouched`
+--   10 · push_pref_default — `0202 body (squad_goals true) — untouched`
+-- Anything reading MISSING / UNEXPECTED / REGRESSED is a stop: report it before doing anything else.
+--
+-- 15 minutes later, paste §3 again: row 1 `none`, row 3 counting the squads row 1 listed (announced +
+-- posts = the ones marked post/push).
 
-select due_name, due_outcome, due_total, due_target, due_ends, due_announce
-  from public.squad_goals_due()
- order by due_name;
-
-select jobname, schedule, active from cron.job where jobname = 'forge-squad-goals';
-
-select count(*)                                  as closures,
-       count(*) filter (where announced)         as announced,
-       count(*) filter (where post_id is not null) as posts
-  from public.squad_goal_closures;
+with
+due as (select * from public.squad_goals_due()),
+src as (
+  select p.proname, string_agg(p.prosrc, ' ') as body
+    from pg_proc p
+   where p.pronamespace = 'public'::regnamespace
+     and p.proname in ('ensure_weekly_recap', 'notification_events_for', 'training_now',
+                       'set_training_status', 'push_pref_default')
+   group by p.proname
+)
+select n, check_name, result from (
+  select 1 as n, 'due now (first run closes)' as check_name,
+         coalesce((select string_agg(d.due_name || ' → ' || d.due_outcome
+                                     || case when d.due_announce then ' + post/push' else ' (silent)' end,
+                                     '; ' order by d.due_name) from due d), 'none') as result
+  union all
+  select 2, 'cron job',
+         (select count(*)::text || ' job · '
+                 || coalesce(max(j.schedule), 'MISSING') || ' · '
+                 || case when bool_and(j.active) then 'active' else 'INACTIVE' end
+            from cron.job j where j.jobname = 'forge-squad-goals')
+  union all
+  select 3, 'closures logged',
+         (select count(*)::text || ' closures · '
+                 || (count(*) filter (where c.announced))::text || ' announced · '
+                 || (count(*) filter (where c.post_id is not null))::text || ' posts'
+            from public.squad_goal_closures c)
+  union all
+  select 4, 'squads columns',
+         case when (select count(*) from information_schema.columns
+                     where table_schema = 'public' and table_name = 'squads'
+                       and column_name in ('goal_closed_at', 'goal_outcome')) = 2
+              then 'goal_closed_at + goal_outcome present' else 'MISSING' end
+  union all
+  select 5, 'client grants',
+         'squad_goal_notifications: authenticated '
+           || case when has_function_privilege('authenticated', 'public.squad_goal_notifications()', 'execute') then 'yes' else 'NO' end
+           || ' · squad_goal_act_as: client '
+           || case when has_function_privilege('authenticated', 'public.squad_goal_act_as(uuid)', 'execute')
+                     or has_function_privilege('anon', 'public.squad_goal_act_as(uuid)', 'execute') then 'YES — REGRESSED' else 'no' end
+  union all
+  select 6, 'ensure_weekly_recap',
+         (select case when s.body like '%v_sq.goal_closed_at >= v_prev%'
+                       and s.body like '%Lost the race to a concurrent caller%'
+                       and s.body like '%recap_week = v_prev::date%'
+                      then '0057 body + 0200 goal guard' else 'UNEXPECTED' end
+            from src s where s.proname = 'ensure_weekly_recap')
+  union all
+  select 7, 'notification_events_for',
+         (select case when s.body like '%not public.is_blocked(p_user, e.actor_id)%'
+                      then '0225 body — untouched' else 'REGRESSED (0225 filter gone)' end
+            from src s where s.proname = 'notification_events_for')
+  union all
+  select 8, 'training_now',
+         (select case when s.body like '%is_blocked(v_uid, p.id)%'
+                      then '0225 body — untouched' else 'REGRESSED (0225 filter gone)' end
+            from src s where s.proname = 'training_now')
+  union all
+  select 9, 'set_training_status',
+         (select case when s.body like '%WHO WAS TOLD%'
+                      then '0217 body — untouched' else 'REGRESSED (0217 return gone)' end
+            from src s where s.proname = 'set_training_status')
+  union all
+  select 10, 'push_pref_default',
+         (select case when s.body ~ 'when ''squad_goals''\s+then true'
+                      then '0202 body (squad_goals true) — untouched' else 'REGRESSED (pre-0202 body)' end
+            from src s where s.proname = 'push_pref_default')
+) r
+order by n;
