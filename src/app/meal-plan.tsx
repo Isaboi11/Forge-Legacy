@@ -306,10 +306,11 @@ export default function MealPlanScreen() {
             <ActionRow
               icon={<BookGlyph />}
               label="New recipe"
-              hint="Type one in or scan a screenshot"
+              hint={canHolt ? 'Type one in or scan a screenshot' : 'Type one in'}
               onPress={() => {
                 setSheet(null);
-                router.push({ pathname: '/my-recipes', params: { new: '1' } });
+                /* `add=1`: the ways to add one — type it, or a screenshot — not straight into a blank form. */
+                router.push({ pathname: '/my-recipes', params: { add: '1' } });
               }}
             />
             {canHolt ? (
@@ -461,12 +462,17 @@ export default function MealPlanScreen() {
               <Pressable accessibilityRole="button" hitSlop={6} onPress={() => void startFill()} disabled={!!fill}>
                 <Text style={styles.shortLink}>{fill?.phase === 'writing' ? 'Holt is writing…' : 'Let Holt fill them'}</Text>
               </Pressable>
+              {/* Her own recipes are the other way to fill a week (PO 09-26) — offered beside Holt, not behind him. */}
+              <Text style={styles.shortText}>or</Text>
+              <Pressable accessibilityRole="button" hitSlop={6} onPress={() => router.push({ pathname: '/my-recipes', params: { add: '1' } })}>
+                <Text style={styles.shortLink}>add a recipe</Text>
+              </Pressable>
             </View>
           ) : weekEmpty ? (
             <View style={styles.short}>
               <Text style={styles.shortText}>No recipes to plan from yet.</Text>
-              <Pressable accessibilityRole="button" hitSlop={6} onPress={() => router.push('/my-recipes')}>
-                <Text style={styles.shortLink}>Add one in My Recipes</Text>
+              <Pressable accessibilityRole="button" hitSlop={6} onPress={() => router.push({ pathname: '/my-recipes', params: { add: '1' } })}>
+                <Text style={styles.shortLink}>Add a recipe</Text>
               </Pressable>
             </View>
           ) : null}

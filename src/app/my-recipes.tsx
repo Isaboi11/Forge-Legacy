@@ -50,10 +50,10 @@ import {
   type OwnFood,
   type RecipeForm,
 } from '@/domain/nutrition/user-recipes';
-import { draftFromRead, importToast, ingredientFrom, unmatchedNote, type UnmatchedLine } from '@/domain/nutrition/recipe-import';
+import { RECIPE_PICK_FAILED, draftFromRead, importToast, ingredientFrom, unmatchedNote, type UnmatchedLine } from '@/domain/nutrition/recipe-import';
 import { recipePhotoError } from '@/domain/nutrition/recipe-photo-read';
 import { fetchMealPlanWeek, fetchMyFoods, fetchUserRecipes, saveUserRecipe } from '@/data/nutrition-live';
-import { takeRecipeDraft } from '@/lib/recipe-draft-stash';
+import { takeRecipeDraft, takeRecipePhoto } from '@/lib/recipe-draft-stash';
 import { takeRecipeFood } from '@/lib/recipe-food-handoff';
 import { labelScanAvailable } from '@/lib/label-scan';
 import { readRecipePhoto } from '@/data/recipe-photo-live';
@@ -108,7 +108,7 @@ const UNMATCHED_WHY: Record<UnmatchedLine['reason'], string> = {
 export default function MyRecipesScreen() {
   const router = useRouter();
   const { showToast } = useToast();
-  const params = useLocalSearchParams<{ new?: string; edit?: string; draft?: string }>();
+  const params = useLocalSearchParams<{ new?: string; edit?: string; draft?: string; add?: string }>();
   /* A dish Holt wrote ("See the recipe", Kitchen Scope §1.4) arrives as `?draft=1` with the read stashed —
      taken ONCE, here, and opened unsaved exactly like a scanned recipe. `from` says where it came from. */
   const [seed] = useState(() => {
@@ -139,7 +139,9 @@ export default function MyRecipesScreen() {
 
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<PlanSlot | 'all'>('all');
-  const [addSheet, setAddSheet] = useState(false);
+  /* `?add=1` — "Add a recipe" from the Nutrition tab or an empty meal-plan slot: arrive on the ways to add
+     one (type it, or a screenshot), not on the list you then have to find the button in. */
+  const [addSheet, setAddSheet] = useState(() => params.add === '1');
   const [foodQ, setFoodQ] = useState('');
   const [pick, setPick] = useState<Pick | null>(null);
   const [editAllergens, setEditAllergens] = useState(false);
@@ -193,6 +195,33 @@ export default function MyRecipesScreen() {
     setFromPhoto(false);
   };
 
+  /** The read itself — from this screen's own pick, or a picture the Nutrition tab picked (`takeRecipePhoto`). */
+  const readPicked = useCallback(async (uri: string) => {
+    setScanBusy(true);
+    setScanError(null);
+    try {
+      const r = await readRecipePhoto(uri);
+      if (r.kind === 'no_consent') {
+        setScanError(AI_DECLINED_LINE);
+        return;
+      }
+      if (r.kind !== 'ok') {
+        setScanError(recipePhotoError(r));
+        return;
+      }
+      const draft = draftFromRead(r.read);
+      setPick(null);
+      setFoodQ('');
+      setEditAllergens(false);
+      setUnmatched(draft.unmatched);
+      setFromPhoto(true);
+      setOverride({ form: draft.form });
+      showToast(importToast(draft));
+    } finally {
+      setScanBusy(false);
+    }
+  }, [showToast]);
+
   /*
    * ⚠ ONE READ AT A TIME, HELD BY A REF — a fast double tap would otherwise pay for two reads before the
    * busy state renders (the same guard as `program-import.tsx`).
@@ -210,33 +239,24 @@ export default function MyRecipesScreen() {
       if (!(await ensureConsent('ai_sharing'))) return;
       const picked = await pickImagesFromLibrary(1);
       if (picked === 'failed') {
-        setScanError('That picture couldn’t be opened. Take a screenshot of the recipe and upload that instead.');
+        setScanError(RECIPE_PICK_FAILED);
         return;
       }
       if (!picked.length) return;
-      setScanBusy(true);
-      const r = await readRecipePhoto(picked[0]);
-      if (r.kind === 'no_consent') {
-        setScanError(AI_DECLINED_LINE);
-        return;
-      }
-      if (r.kind !== 'ok') {
-        setScanError(recipePhotoError(r));
-        return;
-      }
-      const draft = draftFromRead(r.read);
-      setPick(null);
-      setFoodQ('');
-      setEditAllergens(false);
-      setUnmatched(draft.unmatched);
-      setFromPhoto(true);
-      setForm(draft.form);
-      showToast(importToast(draft));
+      await readPicked(picked[0]);
     } finally {
-      setScanBusy(false);
       scanning.current = false;
     }
   };
+
+  /* A screenshot picked on the Nutrition tab lands here — taken once, and read exactly like one picked here.
+     Consent was asked on the tab, before its picker opened. */
+  useFocusEffect(
+    useCallback(() => {
+      const uri = takeRecipePhoto();
+      if (uri) void readPicked(uri);
+    }, [readPicked]),
+  );
 
   /** Pick a catalogue food for an unmatched line — with the page's amount when it converts for that food. */
   const pickForLine = (lineIndex: number, key: IngredientKey) => {

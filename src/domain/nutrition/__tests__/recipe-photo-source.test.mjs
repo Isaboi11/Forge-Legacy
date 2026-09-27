@@ -177,8 +177,25 @@ test('the one picker path, library only, after the sheet is gone; the draft is n
     SCREEN,
     /await callerModalGone\(\);\n(?:\s*\/\*[\s\S]*?\*\/\n)?\s*if \(!\(await ensureConsent\('ai_sharing'\)\)\) return;\n\s*const picked = await pickImagesFromLibrary\(1\);/,
   );
-  const scan = SCREEN.slice(at('const scanRecipe = async', SCREEN), at('const pickForLine', SCREEN));
+  // The read is its own step (`readPicked`) so a picture picked on the Nutrition tab runs the same one.
+  const scan = SCREEN.slice(at('const readPicked = useCallback', SCREEN), at('const pickForLine', SCREEN));
   assert.ok(!/saveUserRecipe/.test(scan), 'a read opens a draft; only Save saves');
-  assert.match(scan, /setForm\(draft\.form\);/);
+  assert.match(scan, /setOverride\(\{ form: draft\.form \}\);/);
   assert.match(scan, /if \(scanning\.current\) return;/);
+});
+
+test('the Nutrition tab picks a screenshot inside the tap and hands it to the same read (PO 09-26)', () => {
+  const TAB = read('src/app/(tabs)/nutrition.tsx');
+  const fn = TAB.slice(at('const recipeFromScreenshot = async', TAB), at('══ 0206', TAB));
+  // Same order as My Recipes: sheet gone → consent → picker. A throw is said, never read as a cancel.
+  assert.match(
+    fn,
+    /await callerModalGone\(\);\n\s*if \(!\(await ensureConsent\('ai_sharing'\)\)\) return;\n\s*const picked = await pickImagesFromLibrary\(1\);/,
+  );
+  assert.match(fn, /showToast\(RECIPE_PICK_FAILED\)/);
+  assert.match(fn, /stashRecipePhoto\(picked\[0\]\);\n\s*router\.push\('\/my-recipes'\);/);
+  // Seen only by Premium AI (the tab itself is already behind the 0206 allowlist).
+  assert.match(TAB, /\{premiumAi \? \(\s*<AddRow\s+icon="image"/);
+  // My Recipes takes it once, on focus, into `readPicked`.
+  assert.match(SCREEN, /const uri = takeRecipePhoto\(\);\n\s*if \(uri\) void readPicked\(uri\);/);
 });

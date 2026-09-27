@@ -35,6 +35,13 @@ import {
  * athlete to pick — or drop. Its calories count for nothing until they do.
  */
 
+/**
+ * The picker threw (a HEIC on desktop Chrome, `pickImagesFromLibrary`) — said, never read as a cancel. Shared
+ * by My Recipes' "Scan a recipe" and the Nutrition tab's "Recipe from a screenshot". Lives here, not in
+ * `recipe-photo-read.ts`, because that file is inlined into the Edge Function's paste copy.
+ */
+export const RECIPE_PICK_FAILED = 'That picture couldn’t be opened. Take a screenshot of the recipe and upload that instead.';
+
 export interface UnmatchedLine {
   /** As written on the page. */
   text: string;
