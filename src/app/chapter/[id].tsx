@@ -19,7 +19,7 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { forgeOr } from '@/constants/theme-scrim';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
-import { fetchChapterDetail, renameChapter } from '@/data/chapter-detail-live';
+import { fetchChapterDetail, renameChapter, sealChapter } from '@/data/chapter-detail-live';
 import { CHAPTER_TITLE_MAX, DEFAULT_CHAPTER_I_TITLE, isValidChapterTitle } from '@/domain/legacy/chapter-name';
 import { goalSections, isAchieved, isQuantifiable, progressLabel, progressPct, type Goal } from '@/domain/goals/goals';
 import { useToast } from '@/hooks/useCeremony';
@@ -33,9 +33,11 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
  * for the ACTIVE chapter only (a sealed chapter is a record). Seal Chapter (M-5) archives it after a
  * confirm.
  *
- * M-5 sealing is live: "Seal Chapter" opens the reflection ceremony (`chapter/reflect`), which writes the
- * closing reflection and archives the chapter (or "Skip for now" seals without one). A sealed chapter
- * with no reflection offers "Add one now" (the ceremony's post path).
+ * M-5 sealing is live and CONFIRMED HERE: "Seal Chapter" opens the M-5 confirmation ("Seal [Chapter]?" ·
+ * "Seal This Chapter" / "Not yet"). Only "Seal This Chapter" writes the seal; on success the chapter is
+ * archived and L-6 (`chapter/reflect?path=sealing`) opens on the already-sealed chapter, where writing a
+ * reflection is optional and "Skip" skips only the reflection (L-6 Decision 1 / §4.1, M-5 §5.2). A sealed
+ * chapter with no reflection offers "Add one now" (the ceremony's post path).
  *
  * PHOTOS ARE CREATED HERE AND NOWHERE ELSE. `L-15-Photos-Architecture` §2 names the chapter screens as
  * the only photo creation paths and §6 makes the gallery browse-only, so the Add Photo control lives on
@@ -72,6 +74,22 @@ export default function ChapterDetailScreen() {
   const [savingName, setSavingName] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
   const primeKeyboard = useKeyboardPrimer();
+
+  /**
+   * M-5 · the seal confirmation (QA F4).
+   *
+   * ⚠ THIS USED TO NOT EXIST. "Seal Chapter" pushed straight to the reflection screen, which had no way
+   *   back and whose only live control, "Skip for now", sealed the chapter permanently with no confirm —
+   *   under an eyebrow that already read "Chapter Sealed". The locked order is M-5 confirm → seal → L-6
+   *   (`M-5-Chapter-Sealing-Confirmation-Spec` §1/§5.2, `Chapter-Reflection-Wireframe-Spec-L6` Decision 1):
+   *   the seal is the deliberate act, and the reflection that follows is optional enrichment.
+   *
+   * Failure keeps the sheet open with the spec's inline error and the chapter NOT sealed (M-5 §10). The
+   * sheet cannot be swiped away mid-write (M-5 §5.3/§6: "Not yet" is inactive while in flight).
+   */
+  const [sealOpen, setSealOpen] = useState(false);
+  const [sealing, setSealing] = useState(false);
+  const [sealError, setSealError] = useState<string | null>(null);
 
   const openRename = () => {
     /* ⚠ FIRST, AND SYNCHRONOUSLY — the sheet's field is inside a `<Modal>`, so it does not exist yet and
@@ -122,9 +140,30 @@ export default function ChapterDetailScreen() {
   const { primary, active: supporting } = goalSections(data.goals);
   const goalCount = data.goals.length;
 
-  // Sealing runs through the M-5 reflection ceremony (write, or "Skip for now") — that screen commits the
-  // seal. No native confirm; the ceremony IS the confirmation.
-  const goSeal = () => router.push({ pathname: '/chapter/reflect', params: { id: data.id, path: 'sealing' } });
+  // M-5 first: nothing is written until "Seal This Chapter" is pressed in the sheet below.
+  const goSeal = () => {
+    setSealError(null);
+    setSealOpen(true);
+  };
+  const closeSeal = () => {
+    if (!sealing) setSealOpen(false);
+  };
+  const confirmSeal = async () => {
+    if (sealing) return;
+    setSealing(true);
+    setSealError(null);
+    try {
+      await sealChapter(data.id);
+      setSealOpen(false);
+      // REPLACE, not push: once sealed there is no L-3 to go back to. A back gesture from L-6 lands on the
+      // Legacy hub (L-6 §4.1 "Back gesture → L-1"), never on this screen re-rendered as a fresh archive.
+      router.replace({ pathname: '/chapter/reflect', params: { id: data.id, path: 'sealing' } });
+    } catch {
+      setSealError('Something went wrong. Try again.');
+    } finally {
+      setSealing(false);
+    }
+  };
   const goReflect = () => router.push({ pathname: '/chapter/reflect', params: { id: data.id, path: 'post' } });
 
   return (
@@ -317,7 +356,8 @@ export default function ChapterDetailScreen() {
           </Pressable>
         </TourAnchor>
 
-        {/* honors */}
+        {/* honors — earned in THIS chapter (the same rows as its tally). L-3 §19.3: an active chapter keeps
+            the section with a forward-looking line when empty; a sealed one with none omits it. */}
         {data.honors.length ? (
           <View style={styles.section}>
             <SectionHeader label="Honors" action="View all" onAction={() => router.push('/honors')} />
@@ -326,6 +366,11 @@ export default function ChapterDetailScreen() {
                 <HonorInsignia key={h.id} honor={h} />
               ))}
             </ScrollView>
+          </View>
+        ) : data.isActive ? (
+          <View style={styles.section}>
+            <SectionHeader label="Honors" action="View all" onAction={() => router.push('/honors')} />
+            <Text style={styles.honorEmpty}>Keep building. Honors are earned as your legacy grows.</Text>
           </View>
         ) : null}
 
@@ -401,6 +446,27 @@ export default function ChapterDetailScreen() {
               {savingName ? 'Saving…' : 'Save Name'}
             </Button>
           </View>
+        </View>
+      </BottomSheet>
+
+      {/* M-5 · Seal confirmation. A BottomSheet per the reconciled overlay system (see ConfirmSheet), built
+          inline because M-5 needs what ConfirmSheet lacks: an in-flight state and an inline error. */}
+      <BottomSheet open={sealOpen} onClose={closeSeal} dismissible={!sealing} title={`Seal ${data.number} — ${data.title}?`}>
+        <Text style={styles.sealBody}>
+          Your goals, honors, and progress will be permanently locked. Active programs carry forward into your next chapter—their progress at this moment is preserved in this chapter&rsquo;s record.
+        </Text>
+        {sealError ? (
+          <Text style={styles.sealError} accessibilityLiveRegion="polite">
+            {sealError}
+          </Text>
+        ) : null}
+        <View style={styles.sealActions}>
+          <Button variant="primary" fullWidth disabled={sealing} onPress={() => void confirmSeal()} accessibilityLabel="Seal this chapter">
+            {sealing ? 'Sealing…' : 'Seal This Chapter'}
+          </Button>
+          <Button variant="text" fullWidth disabled={sealing} onPress={closeSeal} accessibilityLabel="Not yet">
+            Not yet
+          </Button>
         </View>
       </BottomSheet>
 
@@ -536,4 +602,8 @@ const styles = StyleSheet.create({
   sealInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
   sealText: { fontSize: 15, fontWeight: '700', color: '#F7F5F1' },
   sealNote: { fontSize: 12, lineHeight: 18, color: flColor.gray600, textAlign: 'center' },
+  sealBody: { fontSize: 14.5, lineHeight: 22, color: flColor.gray400 },
+  sealError: { fontSize: 13, lineHeight: 19, color: flColor.redMuted, marginTop: 12 },
+  sealActions: { gap: 6, marginTop: 20 },
+  honorEmpty: { fontSize: 13, lineHeight: 20, color: flColor.gray400 },
 });

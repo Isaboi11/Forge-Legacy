@@ -13,8 +13,10 @@ import type { Chapter, Honor, TimelineEntry } from '@/types/legacy';
  * new set of queries.
  *
  * Goals and Current Programs are inherently CURRENT, so they show for the ACTIVE chapter only — a sealed
- * chapter is a record, not a live workspace. Honors and timeline aren't chapter-scoped in the schema yet,
- * so they show the athlete's recent set (flagged, not fabricated per-chapter).
+ * chapter is a record, not a live workspace. Honors are the ones earned INSIDE this chapter
+ * (`honor_instances.chapter_id`) — the same rows its tally counts, so the list and the number agree on
+ * every screen (QA F4: the seal ceremony said "0 honors" beside a strip of the athlete's all-time set).
+ * The timeline isn't chapter-scoped yet, so it shows the athlete's recent set (flagged, not fabricated).
  */
 
 export interface ChapterProgramView {
@@ -92,12 +94,18 @@ export async function fetchChapterDetail(chapterId: string): Promise<ChapterDeta
     );
   }
 
+  // ONE honor source for the whole chapter: the strip on L-3, the L-4 stat tile and the M-5/L-6 header
+  // all read `honors` / `honorCount` from here. One-time account honors (chapter_id null) belong to no
+  // chapter by the 0098 rule (`chapter-tallies.ts`) and live on the Honors hub instead.
+  const honors = legacy.honors.filter((h) => h.chapterId === chapter.id);
+  const honorCount = honors.length;
+
   // Sealed "This Chapter" outcome stats (all real spine data).
   const achievedGoals = goals.filter((g) => isAchieved(g)).length;
   const durationLabel = chapter.dateRangeFull?.split('·')[1]?.trim() ?? null;
   const outcomeStats: OutcomeStat[] = [
     { value: String(chapter.workoutCount), label: chapter.workoutCount === 1 ? 'Workout' : 'Workouts' },
-    { value: String(chapter.honorCount), label: chapter.honorCount === 1 ? 'Honor' : 'Honors' },
+    { value: String(honorCount), label: honorCount === 1 ? 'Honor' : 'Honors' },
     ...(goals.length ? [{ value: `${achievedGoals} / ${goals.length}`, label: 'Goals met' }] : []),
     ...(durationLabel ? [{ value: durationLabel, label: 'Duration' }] : []),
   ];
@@ -114,10 +122,10 @@ export async function fetchChapterDetail(chapterId: string): Promise<ChapterDeta
     creed: isActive ? 'Every workout becomes part of this chapter.' : 'A chapter written, then sealed — its outcomes permanent.',
     reflection: chapter.reflection ?? null,
     workoutCount: chapter.workoutCount,
-    honorCount: chapter.honorCount,
+    honorCount,
     goals,
     programs,
-    honors: legacy.honors,
+    honors,
     timeline: legacy.timelineEntries,
     outcomeHeadline,
     outcomeStats,

@@ -735,7 +735,7 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
     {
       key: 'cd-seal',
       title: 'Sealing ends it, permanently',
-      body: 'You’ll write a reflection, and then the chapter becomes history: outcomes freeze and can’t be edited. Memories can still be added afterwards — enriching the record is allowed, rewriting it isn’t.',
+      body: 'You confirm first, then the chapter becomes history: outcomes freeze and can’t be edited. A reflection is optional after. Memories can still be added afterwards — enriching the record is allowed, rewriting it isn’t.',
       anchor: 'chapter-seal',
       pad: 10,
       radius: 18,

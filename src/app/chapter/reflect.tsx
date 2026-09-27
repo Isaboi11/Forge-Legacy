@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -10,25 +10,28 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { themeScrim } from '@/constants/theme-scrim';
-import { fetchChapterDetail, saveReflection, sealChapter } from '@/data/chapter-detail-live';
+import { fetchChapterDetail, saveReflection } from '@/data/chapter-detail-live';
 import { isAchieved, isQuantifiable, progressLabel } from '@/domain/goals/goals';
 import { usePersist } from '@/hooks/usePersist';
 import { useQuery } from '@/lib/useQuery';
 
 /**
- * M-5 · Chapter Reflection ceremony (`Forge Chapter Reflection.dc.html`). The closing surface of sealing
- * a chapter — the athlete writes what the chapter meant before it becomes permanent. Two entry paths
- * (query `path`):
+ * L-6 · Chapter Reflection (`Forge Chapter Reflection.dc.html`, `Chapter-Reflection-Wireframe-Spec-L6`).
+ * The athlete writes what the chapter meant. It NEVER seals anything — the seal is M-5's, confirmed on
+ * Chapter Detail before this screen opens (L-6 Decision 1: "The chapter seals at M-5 confirmation — not at
+ * L-6 exit… 'Skip' has no archival consequences. Nothing is pending."). Two entry paths (query `path`):
  *
- *   • sealing — reached from Chapter Detail's "Seal Chapter". This screen IS the seal ceremony: writing a
- *     reflection + "Seal Chapter" seals WITH it; "Skip for now" seals WITHOUT one (add it later). Both
- *     archive the chapter.
- *   • post — add a reflection to an already-sealed chapter that never got one. "Save Reflection" writes it.
- *     If the chapter already has a reflection, it's shown locked/read-only (a reflection is permanent).
+ *   • sealing (Path A, §4.1) — reached from M-5 on a chapter that is ALREADY sealed. "Complete
+ *     Reflection" writes the reflection; "Skip" skips only the reflection (Decision 3: never required).
+ *     Both then show the sealed record. No app-bar back (§4.1 — the chapter is archived; there is nothing
+ *     to go back to); "Skip" is the exit, and it confirms first only if unsaved words would be lost (§9.3).
+ *   • post (Path B, §4.2) — add a reflection to an already-sealed chapter that never got one. "Save
+ *     Reflection" writes it; back/Cancel return to L-4. If the chapter already has a reflection, it's shown
+ *     locked/read-only (a reflection is permanent, Decision 9).
  *
- * Safety deviation from the .dc (which hides the app-bar back on the sealing path): sealing is
- * irreversible, so a back arrow is kept on BOTH paths to cancel without sealing. An exit while there's
- * unsaved text raises the M-6 discard ConfirmSheet.
+ * ⚠ QA F4 (2026-09-26): this screen used to BE the seal — no way back, "Skip for now" sealed the chapter
+ *   permanently with no confirm, and the eyebrow read "Chapter Sealed" before anything was. The seal moved
+ *   to M-5 on Chapter Detail, so every word on this screen is now true when it is shown.
  */
 
 const PROMPTS = [
@@ -59,6 +62,9 @@ export default function ChapterReflectionScreen() {
   const seed = isPost ? '' : existing;
   const text = draft ?? seed;
   const hasText = text.trim().length > 0;
+  // Words that leaving would lose. The pre-filled notes are already on the chapter record, so leaving them
+  // untouched loses nothing and must not raise a "discard?" question.
+  const dirty = draft !== null && draft.trim() !== seed.trim();
 
   const [focus, setFocus] = useState(false);
   const [promptsOpen, setPromptsOpen] = useState(false);
@@ -86,8 +92,8 @@ export default function ChapterReflectionScreen() {
     router.replace('/legacy');
   };
   const attemptExit = () => {
-    if (hasText && !saved) return setConfirmOpen(true);
-    // Nothing written — a bare back cancels (no seal).
+    if (dirty && !saved) return setConfirmOpen(true);
+    // Nothing unsaved — a bare back/Cancel returns to L-4.
     router.back();
   };
 
@@ -106,43 +112,33 @@ export default function ChapterReflectionScreen() {
   const complete = () => {
     if (!hasText || busy) return;
     setBusy(true);
-    persist(() => (isPost ? saveReflection(id, text.trim()) : sealChapter(id, text.trim())), {
+    persist(() => saveReflection(id, text.trim()), {
       onOk: () => {
         setSaved(true);
         setBusy(false);
-        // The summary underneath describes a chapter that is only NOW sealed — its date range, duration
-        // and reflection all change with the write. Reading the pre-seal copy under the word "Sealed"
-        // would be a confident, specific, false claim.
+        // The sealed record underneath shows the reflection — re-read so it shows the words just written.
         refetch();
       },
       rollback: () => setBusy(false),
       message: isPost
         ? 'Couldn’t save your reflection — check your connection and try again.'
-        : 'Couldn’t seal the chapter — check your connection and try again. Your reflection is still here.',
+        : 'Couldn’t save your reflection — check your connection and try again. Your chapter is sealed and your words are still here.',
     });
   };
-  // Sealing only: seal without a reflection. Same failure shape as `complete` — a seal that did not
-  // happen must never look like one that did.
+  // Path A "Skip": skip the REFLECTION, nothing else. The chapter was sealed at M-5, so this writes nothing
+  // and goes on to the sealed record (L-6 §9.2 / §13.4 — no confirm unless unsaved words would be lost).
   const skip = () => {
     if (busy || isPost) return;
-    setBusy(true);
-    persist(() => sealChapter(id), {
-      onOk: () => {
-        setSaved(true);
-        setBusy(false);
-        refetch(); // same reason as `complete` — the summary must describe the sealed chapter
-      },
-      rollback: () => setBusy(false),
-      message: 'Couldn’t seal the chapter — check your connection and try again.',
-    });
+    if (dirty) return setConfirmOpen(true);
+    setSaved(true);
   };
 
   return (
     <View style={styles.root}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(5,5,5,0.42)' }} />
 
-      {/* app bar — a back/cancel only on the POST path (matches the .dc). On the sealing path the screen IS
-          the commitment: the only ways forward both seal (write + "Seal Chapter", or "Skip for now"). */}
+      {/* app bar — back/Cancel only on the POST path (L-6 §4.2). Path A has none (§4.1): the chapter is
+          already sealed, so there is nothing behind this screen to return to — "Skip" is the exit. */}
       <View style={[styles.bar, { paddingTop: insets.top + 6 }]}>
         {isPost ? (
           <>
@@ -155,12 +151,18 @@ export default function ChapterReflectionScreen() {
         ) : null}
       </View>
 
+      {/* Path A on a chapter that is NOT sealed can only be a stale link (M-5 now seals before routing
+          here). Send it back to Chapter Detail, where the seal is confirmed — never show the "sealed"
+          ceremony for a chapter that is still open. */}
+      {!isPost && data?.isActive ? <Redirect href={{ pathname: '/chapter/[id]', params: { id } }} /> : null}
+
       {loading || !data || !header ? (
         <View style={styles.center}>{loading ? <ActivityIndicator color={flColor.bronze400} /> : <Text style={styles.err}>Chapter not found.</Text>}</View>
       ) : (
         <>
           <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 32 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            {/* what they built — read-only */}
+            {/* what they built — read-only. True on both paths: this screen only ever shows a sealed chapter
+                (M-5 seals before Path A opens; Path B is reached from L-4). */}
             <Text style={styles.eyebrow}>Chapter Sealed</Text>
             <Text style={styles.title}>{header.name}</Text>
             <Text style={styles.range}>{header.range}</Text>
@@ -218,13 +220,27 @@ export default function ChapterReflectionScreen() {
           {!locked ? (
             <View style={[styles.footer, { paddingBottom: 14 + insets.bottom }]}>
               <Text style={styles.permanence}>
-                {isPost ? 'Once saved, this reflection becomes part of your legacy. It can’t be edited.' : 'Your reflection becomes a permanent part of this chapter.'}
+                {isPost
+                  ? 'Once saved, this reflection becomes part of your legacy. It can’t be edited.'
+                  : 'Your chapter is sealed. A reflection is optional — once written, it becomes a permanent part of it.'}
               </Text>
-              <Button variant="primary" fullWidth disabled={!hasText || busy} onPress={complete} accessibilityLabel={isPost ? 'Save reflection' : 'Seal chapter'}>
-                {isPost ? 'Save Reflection' : 'Seal Chapter'}
+              <Button
+                variant="primary"
+                fullWidth
+                disabled={!hasText || busy}
+                onPress={complete}
+                accessibilityLabel={isPost ? 'Save reflection' : 'Complete reflection'}
+              >
+                {isPost ? 'Save Reflection' : 'Complete Reflection'}
               </Button>
-              <Pressable onPress={isPost ? attemptExit : skip} disabled={busy} accessibilityRole="button" accessibilityLabel={isPost ? 'Cancel' : 'Skip for now'} style={styles.tertiary}>
-                <Text style={styles.tertiaryText}>{isPost ? 'Cancel' : 'Skip for now'}</Text>
+              <Pressable
+                onPress={isPost ? attemptExit : skip}
+                disabled={busy}
+                accessibilityRole="button"
+                accessibilityLabel={isPost ? 'Cancel, return to chapter without saving' : 'Skip, continue without saving a reflection'}
+                style={styles.tertiary}
+              >
+                <Text style={styles.tertiaryText}>{isPost ? 'Cancel' : 'Skip'}</Text>
               </Pressable>
             </View>
           ) : null}
@@ -236,13 +252,19 @@ export default function ChapterReflectionScreen() {
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         headline={isPost ? 'Discard your reflection?' : 'Leave without saving?'}
-        body="You’ve written something here. If you leave now, it won’t be saved."
+        body={
+          isPost
+            ? 'You’ve written something here. If you leave now, it won’t be saved.'
+            : 'You’ve written something here. If you skip now, it won’t be saved. Your chapter stays sealed either way.'
+        }
         confirmLabel={isPost ? 'Discard' : 'Leave'}
         cancelLabel="Keep writing"
         tone="destructive"
         onConfirm={() => {
           setConfirmOpen(false);
-          router.back();
+          // Path B → back to L-4. Path A → on to the sealed record, exactly as a bare "Skip" does (§9.3).
+          if (isPost) router.back();
+          else setSaved(true);
         }}
       />
 

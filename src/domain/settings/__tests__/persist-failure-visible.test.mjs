@@ -61,16 +61,32 @@ for (const [label, path] of GUARDED) {
   });
 }
 
-test("Seal Chapter has a rejection arm on BOTH the seal and the skip", () => {
+test('The reflection write has a rejection arm, and the reflection screen never seals', () => {
   const src = code('../../../app/chapter/reflect.tsx');
-  // `saved` gates the "This chapter has been sealed." overlay. If it can be reached without the write
-  // resolving, a failed seal looks exactly like a successful one.
+  // `saved` gates the sealed-record overlay. If it can be reached without the write resolving, a failed
+  // save looks exactly like a successful one.
   assert.ok(
     !/void\s+action\s*\.then/.test(src),
     'the old `void action.then(...).finally(...)` shape drops the rejection — .finally() re-throws',
   );
-  const persistCalls = src.match(/persist\(/g) ?? [];
-  assert.ok(persistCalls.length >= 2, 'both `complete` (seal/reflect) and `skip` (seal only) must be guarded');
+  assert.ok(/persist\(\s*\(\)\s*=>\s*saveReflection\(/.test(src), '`complete` must route saveReflection through usePersist');
+  // QA F4: L-6 used to BE the seal, and its "Skip for now" sealed the chapter with no confirm. The seal
+  // belongs to M-5 on Chapter Detail (L-6 Decision 1); "Skip" here skips only the reflection.
+  assert.ok(!/sealChapter\s*\(/.test(src), 'L-6 must not seal — sealing is M-5’s confirmed act on Chapter Detail');
+});
+
+test('M-5 seals only from its confirm, and a failed seal stays on screen with the chapter unsealed', () => {
+  const src = code('../../../app/chapter/[id].tsx');
+  const at = src.indexOf('const confirmSeal');
+  assert.ok(at > 0, 'Chapter Detail must own the M-5 confirm handler');
+  const body = src.slice(at, src.indexOf('\n  };', at));
+  assert.ok(/try\s*\{[\s\S]*await sealChapter\(/.test(body), 'the seal write must be awaited inside a try');
+  assert.ok(/catch[\s\S]*setSealError\(/.test(body), 'a failed seal must surface M-5’s inline error');
+  // L-6 opens only AFTER the write resolved — never optimistically.
+  assert.ok(body.indexOf('await sealChapter(') < body.indexOf("'/chapter/reflect'"), 'route to L-6 only after the seal resolved');
+  // "Seal Chapter" itself must open the confirm, not the reflection screen.
+  const goSeal = src.slice(src.indexOf('const goSeal'), src.indexOf('const closeSeal'));
+  assert.ok(/setSealOpen\(true\)/.test(goSeal) && !/chapter\/reflect/.test(goSeal), '"Seal Chapter" must open M-5 first');
 });
 
 test('Profile Visibility never writes defaults over a blob it has not read', () => {

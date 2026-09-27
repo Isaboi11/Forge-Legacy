@@ -224,6 +224,7 @@ export async function fetchLegacyData(): Promise<LegacyData> {
     // the catalog (initiative) have none, so the code catalog resolves those by slug.
     glyph: h.category ? categoryGlyph(CATEGORY_ID[h.category] ?? 'training') : categoryGlyph(honorMeta(h.honor_type, h.display_name).category),
     dateEarned: fmtDate(h.date_earned),
+    chapterId: h.chapter_id,
   }));
 
   const chapters = (chRows ?? []) as ChapterRow[];
