@@ -10,6 +10,7 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
+import { EatenSheet } from '@/components/forge/compositions/EatenSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flBorder, flColor, flFont, flRadius } from '@/constants/foundation';
@@ -33,15 +34,18 @@ import {
   fetchMyFoods,
   fetchRecentFoods,
   fetchSavedMeals,
+  fetchUserRecipes,
   logSavedMeal,
   lookupBarcode,
   searchFoods,
   type RecentFood,
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
+import { filterList, recipeRowMeta, type UserRecipe } from '@/domain/nutrition/user-recipes';
+import { logRecipeEaten } from '@/lib/log-recipe';
 import { labelScanAvailable } from '@/lib/label-scan';
 import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
-import { useQuery } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { forgeOr } from '@/constants/theme-scrim';
 
@@ -78,13 +82,15 @@ const ScanCamera: ComponentType<{ paused: boolean; onScan: (digits: string) => v
       (require('@/components/forge/BarcodeCamera') as typeof import('@/components/forge/BarcodeCamera')).BarcodeCamera
     : null;
 
-type Filter = 'recent' | 'favorites' | 'mine' | 'meals';
+type Filter = 'recent' | 'favorites' | 'mine' | 'meals' | 'recipes';
 
 const FILTERS: { id: Filter; label: string }[] = [
   { id: 'recent', label: 'Recent' },
   { id: 'favorites', label: 'Favorites' },
   { id: 'mine', label: 'My Foods' },
   { id: 'meals', label: 'My Meals' },
+  /* PO 2026-09-26: recipes were reachable only from Meal Plan. Logging one asks how much you ate. */
+  { id: 'recipes', label: 'My Recipes' },
 ];
 
 export default function LogFoodScreen() {
@@ -129,6 +135,23 @@ export default function LogFoodScreen() {
   const { data: favorites } = useQuery(fetchFavorites, [reloads]);
   const { data: myFoods } = useQuery(fetchMyFoods, [reloads]);
   const { data: savedMeals } = useQuery(fetchSavedMeals, [reloads]);
+  const { data: myRecipes } = useQuery(fetchUserRecipes, [reloads]);
+  /* The recipe whose "How much did you eat?" sheet is open. */
+  const [eatRecipe, setEatRecipe] = useState<UserRecipe | null>(null);
+  const [eatBusy, setEatBusy] = useState(false);
+  const logRecipe = async (u: UserRecipe, servings: number) => {
+    if (eatBusy) return;
+    setEatBusy(true);
+    try {
+      await logRecipeEaten(iso, meal, u, servings);
+      setEatRecipe(null);
+      showToast(`${u.name} added to ${MEAL_LABELS[meal]}`);
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setEatBusy(false);
+    }
+  };
 
   /* Debounced so a paid or rate-limited source is never called per keystroke (Architecture §5). The
      cleanup cancels a pending search, so an abandoned query cannot land on top of a newer one. */
@@ -290,6 +313,24 @@ export default function LogFoodScreen() {
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.list} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
         {searching ? <Text style={styles.status}>Searching…</Text> : null}
 
+        {/* Your recipes — the filter's list, or the ones matching a search, above the food results. Tapping
+            one asks how much you ate (`EatenSheet`) before anything is logged. */}
+        {(results == null ? (filter === 'recipes' ? filterList(myRecipes ?? [], '', 'all') : []) : filterList(myRecipes ?? [], trimmed, 'all').slice(0, 3)).map(
+          (u) => (
+            <Pressable key={u.id} accessibilityRole="button" style={styles.row} onPress={() => setEatRecipe(u)}>
+              <View style={styles.rowBody}>
+                <Text style={styles.rowName} numberOfLines={1}>
+                  {u.name}
+                </Text>
+                <Text style={styles.rowMeta} numberOfLines={1}>
+                  {results == null ? recipeRowMeta(u) : `My recipe · ${recipeRowMeta(u)}`}
+                </Text>
+              </View>
+              <AddCircle />
+            </Pressable>
+          ),
+        )}
+
         {/* My Meals is a different row shape: it logs several foods at once. */}
         {results == null && filter === 'meals'
           ? (savedMeals ?? []).map((m) => (
@@ -336,7 +377,10 @@ export default function LogFoodScreen() {
           </Pressable>
         ) : null}
 
-        {!searching && rows.length === 0 && !(results == null && filter === 'meals' && (savedMeals ?? []).length) ? (
+        {!searching &&
+        rows.length === 0 &&
+        !(results == null && filter === 'meals' && (savedMeals ?? []).length) &&
+        !(results == null && filter === 'recipes' && (myRecipes ?? []).length) ? (
           <Text style={styles.empty}>{emptyCopy(filter, results, query, failed)}</Text>
         ) : null}
         {!searching && failed ? (
@@ -346,6 +390,11 @@ export default function LogFoodScreen() {
         ) : null}
 
         {/* The door to My Foods & Meals — where these two lists are edited, deleted and (meals) built. */}
+        {results == null && filter === 'recipes' ? (
+          <Pressable accessibilityRole="button" style={styles.more} onPress={() => router.push('/my-recipes')}>
+            <Text style={styles.footerAction}>Edit or add recipes</Text>
+          </Pressable>
+        ) : null}
         {results == null && (filter === 'mine' || filter === 'meals') ? (
           <Pressable
             accessibilityRole="button"
@@ -376,6 +425,14 @@ export default function LogFoodScreen() {
         </Pressable>
       </View>
 
+      <EatenSheet
+        recipe={eatRecipe}
+        busy={eatBusy}
+        onClose={() => setEatRecipe(null)}
+        onLog={(q) => {
+          if (eatRecipe) void logRecipe(eatRecipe, q);
+        }}
+      />
       <MealPicker open={mealPickerOpen} meal={meal} onPick={setMeal} onClose={() => setMealPickerOpen(false)} />
 
       <BarcodeSheet
@@ -477,6 +534,8 @@ function buildRows({
     }));
   }
 
+  if (filter === 'recipes') return [];
+
   if (filter === 'favorites') {
     /* A favourite is a pointer. Until it is opened, only the name and brand are known — the numbers come
        from the source when the portion sheet needs them, which is also why the row has no calorie line. */
@@ -530,6 +589,8 @@ function emptyCopy(filter: Filter, results: CatalogFood[] | null, query: string,
       return 'No foods of your own yet. Create Food adds one from a label.';
     case 'meals':
       return 'No saved meals yet. Build one below, or save a meal you already logged.';
+    case 'recipes':
+      return 'No recipes yet. Add one below, and log it here with how much you ate.';
     default:
       return 'Nothing logged yet. Search for a food to start.';
   }

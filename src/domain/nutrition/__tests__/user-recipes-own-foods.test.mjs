@@ -148,3 +148,18 @@ test('the eaten label reads like a person says it', () => {
   assert.equal(servingsEatenLabel(1.5), '1½ servings');
   assert.equal(servingsEatenLabel(2), '2 servings');
 });
+
+test('a recipe row reads its per-serving calories and how many it makes', async () => {
+  const { recipeRowMeta } = await import('../user-recipes.ts');
+  const u = { ...BOWL, ingredients: [{ key: 'chicken_breast', g: 800, unit: 'g', qty: 800 }] };
+  const per = Math.round(totalsOf(u.ingredients).kcal / 4).toLocaleString('en-US');
+  assert.equal(recipeRowMeta(u), `${per} cal per serving · makes 4`);
+});
+
+test('a log with no meal chosen defaults by the hour', async () => {
+  const { mealForHour } = await import('../day.ts');
+  assert.equal(mealForHour(7), 'breakfast');
+  assert.equal(mealForHour(12), 'lunch');
+  assert.equal(mealForHour(18), 'dinner');
+  assert.equal(mealForHour(22), 'snacks');
+});

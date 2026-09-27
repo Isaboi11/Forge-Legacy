@@ -4,7 +4,6 @@ import { Pressable, ScrollView, StyleSheet, Text, View, type NativeScrollEvent, 
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
-import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { Pill } from '@/components/forge/composites/Pill';
 import { ScreenBackground } from '@/components/screen-background';
@@ -15,12 +14,13 @@ import { grouped, localToday } from '@/domain/nutrition/day';
 import { ALLERGENS } from '@/domain/nutrition/meal-plan-setup';
 import { DAY_NAMES, RECIPE_BY_ID, feedsDay, itemTotals, logKey, mondayOf, portionLabel, recipeView, slotKey, toggleLock } from '@/domain/nutrition/meal-planner';
 import { batchNote, ingredientRows, servingsFor, servingsLabel } from '@/domain/nutrition/recipe-view';
-import { EAT_STEP, clampEaten, eatenTotals, servingsEatenLabel } from '@/domain/nutrition/user-recipes';
-import { addEntries, fetchMealPlanPrefs, fetchMealPlanWeek, fetchUserRecipes, saveMealPlanWeek, togglePlanLog } from '@/data/nutrition-live';
+import { EatenSheet } from '@/components/forge/compositions/EatenSheet';
+import { fetchMealPlanPrefs, fetchMealPlanWeek, fetchUserRecipes, saveMealPlanWeek, togglePlanLog } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { requestSwap } from '@/lib/meal-plan-intent';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { useUnits } from '@/lib/settings';
+import { logRecipeEaten } from '@/lib/log-recipe';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
 const ALLERGEN_LABEL = Object.fromEntries(ALLERGENS.map((a) => [a.key, a.label])) as Record<string, string>;
@@ -69,8 +69,8 @@ export default function RecipeScreen() {
   const [n, setN] = useState<number | null>(null);
   const [cooking, setCooking] = useState(false);
   const [busy, setBusy] = useState(false);
-  /* "How much did you eat?" — servings, open while non-null. My Recipes only (PO 2026-09-26). */
-  const [eat, setEat] = useState<number | null>(null);
+  /* "How much did you eat?" — My Recipes only (PO 2026-09-26). */
+  const [eatOpen, setEatOpen] = useState(false);
 
   /* Where this recipe sits in the week — only when the plan still has it there. */
   const d = params.d != null ? Number(params.d) : NaN;
@@ -140,31 +140,17 @@ export default function RecipeScreen() {
   const isMine = !ctx && src.mine;
   /* The athlete's own recipe as saved — its exact totals and how many servings the whole thing makes. */
   const mine = src.mine ? (mineQ.data ?? []).find((u) => u.id === r.id) : undefined;
-  const makes = mine ? Math.max(1, mine.yield) : 1;
   /* An own food (a scanned or typed label) is in it: Forge can't see its allergens, and its numbers are
      the label's, not USDA's. */
   const hasOwn = src.ingredients.some((x) => x.key.startsWith('own:'));
-  const eaten = (q: number) =>
-    mine ? eatenTotals(mine, q) : { kcal: Math.round(r.kcal * q), protein: r.protein * q, carb: r.carb * q, fat: r.fat * q };
 
-  /* Opened from My Recipes: log what they ATE today, in the recipe's first meal type. There is no week
-     row to remember it in, so it is a one-way log — the diary is where it can be undone. */
+  /* Opened from My Recipes: log what they ATE today, in the recipe's first meal type. */
   const logEaten = async (q: number) => {
-    if (busy) return;
+    if (busy || !mine) return;
     setBusy(true);
     try {
-      const t = eaten(q);
-      await addEntries(todayIso, [
-        {
-          meal: r.mealTypes[0] ?? 'dinner',
-          source: 'quick',
-          name: r.name,
-          servingLabel: `${servingsEatenLabel(q)} · My recipe`,
-          quantity: clampEaten(q),
-          macros: { kcal: t.kcal, protein: t.protein, carb: t.carb, fat: t.fat, grams: null },
-        },
-      ]);
-      setEat(null);
+      await logRecipeEaten(todayIso, r.mealTypes[0] ?? 'dinner', mine, q);
+      setEatOpen(false);
       showToast('Added to today’s diary');
     } catch (e) {
       showToast(errorMessage(e));
@@ -180,7 +166,11 @@ export default function RecipeScreen() {
         showToast('Open this from your meal plan to log it');
         return;
       }
-      setEat(1);
+      if (!mine) {
+        showToast('One moment, your recipe is still loading');
+        return;
+      }
+      setEatOpen(true);
       return;
     }
     setBusy(true);
@@ -357,63 +347,7 @@ export default function RecipeScreen() {
       </View>
 
       {/* how much did you eat — My Recipes only; the plan's own portion covers a planned meal */}
-      <BottomSheet open={eat != null} onClose={() => setEat(null)} title="How much did you eat?">
-        {eat != null ? (
-          <View style={styles.eatBody}>
-            <Text style={styles.eatLead}>{`The recipe makes ${makes} ${makes === 1 ? 'serving' : 'servings'}.`}</Text>
-            <View style={styles.eatQty}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Less"
-                style={styles.eatStep}
-                onPress={() => setEat(clampEaten(eat - EAT_STEP))}
-              >
-                <Text style={styles.eatStepText}>−</Text>
-              </Pressable>
-              <Text style={styles.eatQtyText}>{servingsEatenLabel(eat)}</Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="More"
-                style={styles.eatStep}
-                onPress={() => setEat(clampEaten(eat + EAT_STEP))}
-              >
-                <Text style={styles.eatStepText}>+</Text>
-              </Pressable>
-            </View>
-            <View style={styles.eatChips}>
-              {[...new Set([0.5, 1, 2, ...(makes > 2 ? [makes] : [])])].map((v) => {
-                const on = eat === v;
-                return (
-                  <Pressable
-                    key={v}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: on }}
-                    style={[styles.eatChip, on && styles.eatChipOn]}
-                    onPress={() => setEat(v)}
-                  >
-                    <Text style={[styles.eatChipText, on && styles.eatChipTextOn]}>{v === makes && makes > 2 ? 'All of it' : servingsEatenLabel(v)}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-            {(() => {
-              const t = eaten(eat);
-              return (
-                <View style={styles.eatTotals}>
-                  <Text style={styles.eatCal}>
-                    {grouped(t.kcal)}
-                    <Text style={styles.calUnit}> cal</Text>
-                  </Text>
-                  <Text style={styles.eatMacros}>{`${Math.round(t.protein)}g protein · ${Math.round(t.carb)}g carbs · ${Math.round(t.fat)}g fat`}</Text>
-                </View>
-              );
-            })()}
-            <Button variant="primary" fullWidth disabled={busy} onPress={() => void logEaten(eat)}>
-              Add to today’s diary
-            </Button>
-          </View>
-        ) : null}
-      </BottomSheet>
+      <EatenSheet recipe={eatOpen ? (mine ?? null) : null} busy={busy} onClose={() => setEatOpen(false)} onLog={(q) => void logEaten(q)} />
     </View>
   );
 }
@@ -528,26 +462,4 @@ const styles = StyleSheet.create({
   logWrap: { flex: 1, alignItems: 'flex-end' },
   logWrapFull: { alignItems: 'stretch' },
 
-  eatBody: { gap: 16, paddingBottom: 12 },
-  eatLead: { marginTop: -8, fontSize: 13, color: flColor.gray400 },
-  eatQty: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.charcoal600,
-    backgroundColor: flColor.surfaceRecessed,
-  },
-  eatStep: { width: 56, height: '100%', alignItems: 'center', justifyContent: 'center' },
-  eatStepText: { fontSize: 22, color: flColor.gray400 },
-  eatQtyText: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
-  eatChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  eatChip: { height: 36, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
-  eatChipOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
-  eatChipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  eatChipTextOn: { color: flColor.bronzeInk },
-  eatTotals: { gap: 4 },
-  eatCal: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100, fontVariant: ['tabular-nums'] },
-  eatMacros: { fontSize: 13, color: flColor.gray400 },
 });

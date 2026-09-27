@@ -225,6 +225,14 @@ export function localToday(): string {
   return toLocalIso(new Date());
 }
 
+/** Which meal an hour most likely means — a default for a log with no meal chosen, always changeable. */
+export function mealForHour(hour: number): MealSlot {
+  if (hour < 10) return 'breakfast';
+  if (hour < 15) return 'lunch';
+  if (hour < 21) return 'dinner';
+  return 'snacks';
+}
+
 /**
  * Move a calendar day. UTC arithmetic on the date parts only — a local-time `Date` shifts by an hour
  * across a DST boundary and can land on the wrong day, which would silently re-file a whole day's food.

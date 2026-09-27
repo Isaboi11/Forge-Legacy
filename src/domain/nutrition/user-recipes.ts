@@ -445,3 +445,9 @@ export function servingsEatenLabel(servings: number): string {
   const text = `${whole || ''}${n - whole >= 0.5 ? '½' : ''}`;
   return `${text} ${n === 1 || n === 0.5 ? 'serving' : 'servings'}`;
 }
+
+/** A recipe as a row wherever it is logged from: "420 cal per serving · makes 4". */
+export function recipeRowMeta(u: Pick<UserRecipe, 'ingredients' | 'yield'>): string {
+  const y = Math.max(1, u.yield);
+  return `${Math.round(totalsOf(u.ingredients).kcal / y).toLocaleString('en-US')} cal per serving · makes ${y}`;
+}

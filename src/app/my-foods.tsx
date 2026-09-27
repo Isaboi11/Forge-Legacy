@@ -8,6 +8,7 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
+import { EatenSheet } from '@/components/forge/compositions/EatenSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
@@ -35,17 +36,21 @@ import {
   fetchMyFoods,
   fetchSavedMealItems,
   fetchSavedMeals,
+  fetchUserRecipes,
   saveSavedMeal,
   searchFoods,
   type SavedMeal,
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
+import { localToday, mealForHour } from '@/domain/nutrition/day';
+import { filterList, recipeRowMeta, totalsOf, type UserRecipe } from '@/domain/nutrition/user-recipes';
+import { logRecipeEaten } from '@/lib/log-recipe';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
 
-type Tab = 'foods' | 'meals';
+type Tab = 'foods' | 'meals' | 'recipes';
 type Sheet = { kind: 'food' | 'meal'; id: string; step: 'menu' | 'confirm' };
 type Editor = { id: string | null; name: string; items: MealItem[]; loading: boolean };
 
@@ -66,6 +71,9 @@ type Editor = { id: string | null; name: string; items: MealItem[]; loading: boo
  *  · Lists sort A–Z (as Log Food lists them), not newest first: `user_foods` reads carry no date.
  *  · "Add a food" searches the athlete's own foods, then the live food search (USDA · Open Food
  *    Facts · FatSecret), where the `.dc` searched its own sample list.
+ *  · A third tab, Recipes (PO 2026-09-26: recipes were reachable only from Meal Plan). It lists My Recipes;
+ *    a row opens the recipe, and its + logs it after "How much did you eat?" (`EatenSheet`). Building and
+ *    editing stay in My Recipes (`?tab=recipes` opens here on Recipes).
  */
 export default function MyFoodsScreen() {
   const router = useRouter();
@@ -76,10 +84,30 @@ export default function MyFoodsScreen() {
   useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
   const foodsQ = useQuery(fetchMyFoods, [reloads]);
   const mealsQ = useQuery(fetchSavedMeals, [reloads]);
+  const recipesQ = useQuery(fetchUserRecipes, [reloads]);
   const foods = useMemo(() => foodsQ.data ?? [], [foodsQ.data]);
   const meals = useMemo(() => mealsQ.data ?? [], [mealsQ.data]);
+  const recipes = useMemo(() => recipesQ.data ?? [], [recipesQ.data]);
 
-  const [tab, setTab] = useState<Tab>(params.tab === 'meals' || params.newMeal === '1' ? 'meals' : 'foods');
+  const [tab, setTab] = useState<Tab>(
+    params.tab === 'recipes' ? 'recipes' : params.tab === 'meals' || params.newMeal === '1' ? 'meals' : 'foods',
+  );
+  /* The recipe whose "How much did you eat?" sheet is open — logged today, in the meal for this hour. */
+  const [eatRecipe, setEatRecipe] = useState<UserRecipe | null>(null);
+  const logRecipe = async (u: UserRecipe, servings: number) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const meal = mealForHour(new Date().getHours());
+      await logRecipeEaten(localToday(), meal, u, servings);
+      setEatRecipe(null);
+      showToast(`${u.name} added to today’s diary`);
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
   const [q, setQ] = useState('');
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [busy, setBusy] = useState(false);
@@ -89,11 +117,13 @@ export default function MyFoodsScreen() {
 
   /* ── list ── */
   const onFoods = tab === 'foods';
+  const onRecipes = tab === 'recipes';
   const shownFoods = foods.filter((f) => matchesQuery(f.name, q));
   const shownMeals = meals.filter((m) => matchesQuery(m.name, q));
-  const count = onFoods ? foods.length : meals.length;
-  const shownCount = onFoods ? shownFoods.length : shownMeals.length;
-  const settled = onFoods ? foodsQ.settled : mealsQ.settled;
+  const shownRecipes = filterList(recipes, q, 'all');
+  const count = onFoods ? foods.length : onRecipes ? recipes.length : meals.length;
+  const shownCount = onFoods ? shownFoods.length : onRecipes ? shownRecipes.length : shownMeals.length;
+  const settled = onFoods ? foodsQ.settled : onRecipes ? recipesQ.settled : mealsQ.settled;
 
   const editFood = (key: string) => {
     setSheet(null);
@@ -208,6 +238,7 @@ export default function MyFoodsScreen() {
                 [
                   ['foods', `Foods · ${foods.length}`],
                   ['meals', `Meals · ${meals.length}`],
+                  ['recipes', `Recipes · ${recipes.length}`],
                 ] as const
               ).map(([key, label]) => {
                 const on = tab === key;
@@ -234,8 +265,8 @@ export default function MyFoodsScreen() {
                   <InputField
                     value={q}
                     onChange={setQ}
-                    placeholder={onFoods ? 'Search my foods' : 'Search my meals'}
-                    accessibilityLabel={onFoods ? 'Search my foods' : 'Search my meals'}
+                    placeholder={onFoods ? 'Search my foods' : onRecipes ? 'Search my recipes' : 'Search my meals'}
+                    accessibilityLabel={onFoods ? 'Search my foods' : onRecipes ? 'Search my recipes' : 'Search my meals'}
                     leadingIcon={<SearchGlyph />}
                   />
                 </View>
@@ -251,7 +282,20 @@ export default function MyFoodsScreen() {
                           onMore={() => setSheet({ kind: 'food', id: f.key, step: 'menu' })}
                         />
                       ))
-                    : shownMeals.map((m) => (
+                    : onRecipes
+                      ? shownRecipes.map((u) => (
+                          <ListRow
+                            key={u.id}
+                            name={u.name}
+                            meta={recipeRowMeta(u)}
+                            kcal={totalsOf(u.ingredients).kcal / Math.max(1, u.yield)}
+                            onEdit={() => router.push({ pathname: '/recipe', params: { id: u.id } })}
+                            onMore={() => setEatRecipe(u)}
+                            moreIcon="plus"
+                            moreLabel={`Log ${u.name}`}
+                          />
+                        ))
+                      : shownMeals.map((m) => (
                         <ListRow
                           key={m.id}
                           name={m.name}
@@ -269,11 +313,13 @@ export default function MyFoodsScreen() {
               </>
             ) : settled ? (
               <View style={styles.empty}>
-                <Text style={styles.emptyTitle}>{onFoods ? 'No foods of your own yet' : 'No saved meals yet'}</Text>
+                <Text style={styles.emptyTitle}>{onFoods ? 'No foods of your own yet' : onRecipes ? 'No recipes yet' : 'No saved meals yet'}</Text>
                 <Text style={styles.emptyBody}>
                   {onFoods
                     ? 'Create a food when you can’t find it in search, like something homemade or from a local shop.'
-                    : 'Save foods you eat together, like a post-lift shake, and log them all in one tap.'}
+                    : onRecipes
+                      ? 'Save something you cook, like a pot of chili. Scan each ingredient’s label, then log how much you ate.'
+                      : 'Save foods you eat together, like a post-lift shake, and log them all in one tap.'}
                 </Text>
               </View>
             ) : null}
@@ -282,9 +328,15 @@ export default function MyFoodsScreen() {
             <Button
               variant="primary"
               fullWidth
-              onPress={() => (onFoods ? router.push('/create-food') : setEditor({ id: null, name: '', items: [], loading: false }))}
+              onPress={() =>
+                onFoods
+                  ? router.push('/create-food')
+                  : onRecipes
+                    ? router.push({ pathname: '/my-recipes', params: { new: '1' } })
+                    : setEditor({ id: null, name: '', items: [], loading: false })
+              }
             >
-              {onFoods ? 'Create food' : 'Create meal'}
+              {onFoods ? 'Create food' : onRecipes ? 'Create recipe' : 'Create meal'}
             </Button>
           </View>
         </>
@@ -453,11 +505,36 @@ export default function MyFoodsScreen() {
           </View>
         ) : null}
       </BottomSheet>
+
+      <EatenSheet
+        recipe={eatRecipe}
+        busy={busy}
+        onClose={() => setEatRecipe(null)}
+        onLog={(q) => {
+          if (eatRecipe) void logRecipe(eatRecipe, q);
+        }}
+      />
     </View>
   );
 }
 
-function ListRow({ name, meta, kcal, onEdit, onMore }: { name: string; meta: string; kcal: number; onEdit: () => void; onMore: () => void }) {
+function ListRow({
+  name,
+  meta,
+  kcal,
+  onEdit,
+  onMore,
+  moreIcon = 'more',
+  moreLabel,
+}: {
+  name: string;
+  meta: string;
+  kcal: number;
+  onEdit: () => void;
+  onMore: () => void;
+  moreIcon?: 'more' | 'plus';
+  moreLabel?: string;
+}) {
   return (
     <View style={styles.row}>
       <Pressable accessibilityRole="button" style={({ pressed }) => [styles.rowMain, pressed && styles.pressed]} onPress={onEdit}>
@@ -474,8 +551,8 @@ function ListRow({ name, meta, kcal, onEdit, onMore }: { name: string; meta: str
           <Text style={styles.calUnit}> cal</Text>
         </Text>
       </Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel={`Options for ${name}`} style={styles.moreBtn} onPress={onMore}>
-        <EngravedIcon name="more" size={16} color={flColor.gray400} />
+      <Pressable accessibilityRole="button" accessibilityLabel={moreLabel ?? `Options for ${name}`} style={styles.moreBtn} onPress={onMore}>
+        {moreIcon === 'plus' ? <EngravedIcon name="plus" size={18} /> : <EngravedIcon name="more" size={16} color={flColor.gray400} />}
       </Pressable>
     </View>
   );
