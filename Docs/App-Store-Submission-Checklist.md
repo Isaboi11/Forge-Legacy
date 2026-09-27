@@ -6,7 +6,7 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
 
 ✅ done · 🔨 in progress · ⏳ waiting on someone else · ⬜ not started
 
-**Last updated:** 2026-09-26
+**Last updated:** 2026-09-27
 
 ## Where we are
 - **Waiting on others:** Apple (Small Business Program — no word as of 09-25)
@@ -14,7 +14,7 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
   ~~RevenueCat tidy-up~~ (done 09-25)
 - **Claude to-do:** build 9 (paywall, mic, form check, barcode) → sandbox purchase test
 - **💻 PO laptop work (from the 09-26 QA fixes; ask Claude to put each on the clipboard):**
-  - ⬜ Paste `supabase/apply/pending-0200.sql` in the SQL editor (squad goals close; stops a 404 on every screen) and send Claude the 10-row result
+  - ✅ `pending-0200.sql` applied 09-27 (squad goals close; 10/10 rows green). First paste stopped on the grant check — revokes from PUBLIC alone left the new functions callable; fixed to also revoke from anon + authenticated, re-pasted clean. Moch 1 closes as **met, silent** (deadline >7 days gone)
   - ⬜ Re-paste 4 coach functions (stronger food/diet safety stops): coach-ask, coach-interpret, coach-form-check, coach-kitchen
   - ⬜ Turn Premium AI back off for claudetest (one SQL line; Claude has it)
 

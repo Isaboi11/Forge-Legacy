@@ -801,15 +801,16 @@ $$;
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 11 · grants
 -- ─────────────────────────────────────────────────────────────────────────────
--- ⚠ Revoke FROM PUBLIC, never from `authenticated` alone: Postgres grants EXECUTE to PUBLIC on every new
+-- ⚠ Revoke from PUBLIC, anon AND authenticated (fixed 09-27: PUBLIC alone left them callable — Supabase grants
+-- anon + authenticated directly on every new function, as 0214 notes). Postgres grants EXECUTE to PUBLIC on every new
 -- function. `squad_goal_act_as` above all — it sets the request's subject — is reachable by nothing a
 -- client can call.
-revoke execute on function public.squad_goal_act_as(uuid) from public;
-revoke execute on function public.squad_goal_record_close(uuid, timestamptz, text, int, text, text, timestamptz, numeric, text, boolean) from public;
-revoke execute on function public.squad_goals_due() from public;
-revoke execute on function public.squad_goals_close_due() from public;
-revoke execute on function public.squads_goal_lifecycle() from public;
-revoke execute on function public.squad_goal_notifications() from public;
+revoke execute on function public.squad_goal_act_as(uuid) from public, anon, authenticated;
+revoke execute on function public.squad_goal_record_close(uuid, timestamptz, text, int, text, text, timestamptz, numeric, text, boolean) from public, anon, authenticated;
+revoke execute on function public.squad_goals_due() from public, anon, authenticated;
+revoke execute on function public.squad_goals_close_due() from public, anon, authenticated;
+revoke execute on function public.squads_goal_lifecycle() from public, anon, authenticated;
+revoke execute on function public.squad_goal_notifications() from public, anon, authenticated;
 grant execute on function public.squad_goal_notifications() to authenticated;
 
 commit;
